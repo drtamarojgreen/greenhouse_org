@@ -1,0 +1,1 @@
+Integrated simplified content from `README.md` into `docs/index.html` and added a link to the main website.
