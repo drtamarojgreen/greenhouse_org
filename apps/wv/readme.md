@@ -107,6 +107,8 @@ Currently, the following backend services are available:
     *   `getEvents(filter)`: Retrieves a list of events, with optional filtering.
     *   `getEventById(eventId)`: Retrieves a specific event by its ID.
     *   `registerForEvent(eventId, registrationDetails)`: Registers a user for an event.
+*   `youtubeFeed.jsw`: Provides functions to retrieve YouTube channel video feed data.
+    *   `getLatestVideosFromFeed()`: Retrieves a list of the latest videos from the YouTube channel's RSS feed.
 
 More services will be added as new applications are developed.
 *   `eventCalendars.jsw`: Provides functions to retrieve and manage event data.
