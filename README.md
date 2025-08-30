@@ -106,6 +106,25 @@ To contribute to or manage the IT infrastructure, please follow these guidelines
 
 ---
 
+## ⚙️ Development & Operational Practices
+
+To ensure efficient development, robust operations, and high-quality digital services, we adhere to and manage the following practices and assets:
+
+-   **Code Style Guides**: We maintain comprehensive code style guides to ensure consistency and readability across our codebase.
+-   **Browser Testing Tools**: Integrated browser testing tools are utilized for thorough quality assurance across various web environments.
+-   **Content Strategy**: A well-defined content strategy is developed and documented to guide the creation and management of all digital content.
+-   **Microservices Architecture**: Our website's microservices architecture is meticulously documented to facilitate understanding and maintenance.
+-   **Custom CSS**: Custom CSS is managed and stored for consistent and tailored styling across our platforms.
+
+-   **Open Graph Tags**: We manage Open Graph tags to optimize content presentation and sharing on social media platforms.
+-   **Favicon Management**: Favicon files are hosted and managed to ensure consistent brand representation across browser tabs and bookmarks.
+-   **DevOps Practices**: We share and implement best practices and tools for DevOps to streamline development, deployment, and operations.
+-   **Static Content Hosting**: Static content, such as PDFs and images, is efficiently hosted to ensure fast and reliable delivery.
+-   **Resource Links**: A curated list of useful resources is maintained for developers to support ongoing learning and problem-solving.
+-   **Custom Scripts**: Custom scripts are stored and utilized for automation of various development and operational tasks.
+
+---
+
 ## 🧩 Contribution Guidelines
 
 To ensure code quality and maintainability, all contributions must adhere to the following:

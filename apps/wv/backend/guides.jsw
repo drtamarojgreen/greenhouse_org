@@ -1,0 +1,45 @@
+// apps/wv/backend/guides.jsw
+
+/**
+ * This file contains backend functions for managing self-help guides and toolkits.
+ * These functions can be called from your site's page code.
+ * For more information, visit: https://support.wix.com/en/article/corvid-web-modules-calling-backend-code-from-the-frontend
+ */
+
+export async function getGuides() {
+  // In a real application, you would fetch this data from a database (e.g., Wix Data Collections)
+  // or an external API.
+  const guides = [
+    {
+      id: "1",
+      title: "Dr. Green's Greenhouse for Mental Health Development Report",
+      description: "A comprehensive report on the development of Greenhouse for Mental Health by Dr. Green.",
+      fileUrl: "/assets/Dr Greens Greenhouse for Mental Health Development Report.pdf",
+      category: "Reports",
+      tags: ["report", "development", "Dr. Green"]
+    },
+    {
+      id: "2",
+      title: "End of Year 2024 Report: Mental Health Advocacy and Awareness",
+      description: "An end-of-year report detailing mental health advocacy and awareness initiatives in 2024.",
+      fileUrl: "/assets/End of Year 2024 Report_ Mental Health Advocacy and Awareness.pdf",
+      category: "Reports",
+      tags: ["report", "advocacy", "awareness", "2024"]
+    },
+    {
+      id: "3",
+      title: "Greenhouse for Mental Health Development YouTube Channel Report",
+      description: "A report on the performance and content of the Greenhouse for Mental Health Development YouTube Channel.",
+      fileUrl: "/assets/Greenhouse for Mental Health Development YouTube Channel Report.pdf",
+      category: "Reports",
+      tags: ["report", "YouTube", "channel", "media"]
+    }
+  ];
+
+  return guides;
+}
+
+export async function getGuideById(guideId) {
+  const guides = await getGuides();
+  return guides.find(guide => guide.id === guideId);
+}
