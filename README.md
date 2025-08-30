@@ -41,6 +41,57 @@ Our current technology stack is designed to provide a robust and scalable founda
 
 ---
 
+## ✨ Platform Capabilities
+
+Our platform is built with professional-grade tools designed for modern mental health service websites, ensuring secure, accessible, and patient-friendly web solutions. We remove technical complexity while ensuring compliance and high standards.
+
+### Key Features & Components
+
+Our comprehensive suite of features includes:
+
+#### Practice Management Components
+-   **Appointment Booking** - Secure, compliant scheduling system.
+-   **Provider Directory** - Professional staff listings with credentials.
+-   **Services Catalog** - Treatment options and therapy modalities.
+-   **Insurance Verification** - Real-time insurance eligibility checking.
+-   **Contact Forms** - Secure intake and contact forms.
+-   **Testimonials** - Patient success stories (anonymized).
+
+#### Security & Compliance
+Our platform is built with security and compliance from the ground up, offering:
+-   **Data Encryption**: AES-256 encryption at rest and in transit.
+-   **Access Controls**: Role-based permissions and authentication.
+-   **Audit Logging**: Comprehensive activity tracking.
+-   **Data Backup**: Automated, encrypted backups.
+-   **Incident Response**: Built-in breach detection and reporting.
+-   **Consent Management**: Patient consent and privacy controls.
+-   **Secure Messaging**: Encrypted patient communication.
+
+#### Therapeutic Design System
+Our UI components are designed with mental health contexts in mind, featuring:
+-   **Calming Themes** - Anxiety-reducing color palettes and layouts.
+-   **Accessible Navigation** - Screen reader optimized navigation.
+-   **Crisis Resources** - Emergency contact and resource components.
+-   **Progress Trackers** - Patient journey visualization tools.
+-   **Wellness Content** - Mental health education components.
+
+#### Accessibility Standards
+We adhere to WCAG 2.1 AA compliance by default, ensuring:
+-   **Color Contrast**: Minimum 4.5:1 ratio for all text.
+-   **Keyboard Navigation**: Full keyboard accessibility.
+-   **Screen Reader Support**: Semantic HTML and ARIA labels.
+-   **Focus Management**: Clear focus indicators and logical order.
+-   **Responsive Design**: Works across all devices and orientations.
+-   **Timeout Management**: Accessibility-friendly session handling.
+-   **Mental Health Specific Considerations**: Includes calming animations (with reduced motion options), clear language, quick emergency access, and privacy controls.
+
+#### Analytics & Insights
+We provide privacy-compliant analytics and built-in practice insights:
+-   **Privacy-Compliant Analytics**: Anonymous user flows, accessibility usage patterns, site speed and reliability monitoring (with anonymized IPs, respect for Do Not Track, and no third-party sharing).
+-   **Built-in Practice Insights**: Track appointment conversion rates, accessibility usage, device preferences, anonymous search patterns, and page performance (Core Web Vitals).
+
+---
+
 ## 🚀 Getting Started
 
 To contribute to or manage the IT infrastructure, please follow these guidelines:
@@ -52,15 +103,6 @@ To contribute to or manage the IT infrastructure, please follow these guidelines
     *   Start development server: `npm run dev` (or equivalent)
 3.  **Wix Velo Development**: Utilize the integrated development environment within Wix for scripting and database management tasks.
 4.  **Documentation**: Refer to the `/docs` directory for comprehensive API references, system architecture diagrams, and operational workflows.
-
----
-
-## 🔐 Security & Compliance
-
-Adherence to stringent security and compliance standards is paramount for all public-facing services. We prioritize:
-- Data encryption in transit and at rest.
-- Regular security audits and vulnerability assessments.
-- Adherence to industry best practices for web application security.
 
 ---
 
@@ -78,5 +120,6 @@ To ensure code quality and maintainability, all contributions must adhere to the
 
 For technical assistance or inquiries, please contact:
 
--   **IT Lead**: Tamaro (tamaro@greenhousementalhealth.org)
+-   **IT Lead**: Tamaro (cito@greenhousementalhealth.org)
+-   **Office Manager**: Niel (officemanager@greenhousementalhealth.org)
 -   **Clinic Director**: Dr. Ayodele Green (admin@greenhousementalhealth.org)
