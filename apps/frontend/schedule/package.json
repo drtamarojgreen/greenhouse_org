@@ -1,0 +1,15 @@
+{
+  "name": "schedule-app",
+  "version": "1.0.0",
+  "description": "Appointment scheduler application for Dr. Green's Greenhouse for Mental Health.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node ../../../tests/apps/frontend/schedule/run_all_tests.js",
+    "test:unit": "node ../../../tests/apps/frontend/schedule/run_unit_tests.js",
+    "test:bdd": "node ../../../tests/apps/frontend/schedule/run_bdd_tests.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

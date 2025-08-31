@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Scheduler</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #appointment-form { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        #appointment-list { border: 1px solid #eee; padding: 10px; }
+        .appointment-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .appointment-item:last-child { border-bottom: none; } 
+    </style>
+</head>
+<body>
+    <h1>Appointment Scheduler</h1>
+
+    <div id="appointment-form">
+        <h2>Schedule New Appointment</h2>
+        <label for="title">Title:</label><br>
+        <input type="text" id="title" name="title" required><br><br>
+        <label for="date">Date:</label><br>
+        <input type="date" id="date" name="date" required><br><br>
+        <label for="time">Time:</label><br>
+        <input type="time" id="time" name="time" required><br><br>
+        <label for="platform">Platform:</label><br>
+        <input type="text" id="platform" name="platform" placeholder="e.g., Google Calendar" required><br><br>
+        <button onclick="addAppointment()">Add Appointment</button>
+    </div>
+
+    <div id="appointment-list">
+        <h2>Your Appointments</h2>
+        <ul id="appointments">
+            <!-- Appointments will be loaded here -->
+        </ul>
+    </div>
+
+    <script src="app.js"></script> <!-- Renamed from index.js for clarity -->
+</body>
+</html>
