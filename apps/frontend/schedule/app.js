@@ -1,15 +1,46 @@
 document.addEventListener('DOMContentLoaded', () => {
     fetchEvents();
     fetchServices();
-    // Set the form to its default state
     resetForm();
+    setupModal(); // Set up modal event listeners
 });
+
+function setupModal() {
+    const modal = document.getElementById('conflict-modal');
+    const closeButton = document.querySelector('.close-button');
+
+    closeButton.onclick = () => {
+        modal.style.display = 'none';
+    };
+
+    window.onclick = (event) => {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    };
+}
+
+function showConflictModal(conflictData) {
+    const modal = document.getElementById('conflict-modal');
+    const conflictDetailsDiv = document.getElementById('conflict-details');
+    conflictDetailsDiv.innerHTML = ''; // Clear previous conflicts
+
+    let conflictHtml = '<ul>';
+    conflictData.conflicts.forEach(conflict => {
+        const conflictingEvent = conflict.conflictingEvent;
+        conflictHtml += `<li><strong>${conflictingEvent.title}</strong> on ${conflictingEvent.date} at ${conflictingEvent.time} (Service: ${conflictingEvent.serviceId || 'N/A'})</li>`;
+    });
+    conflictHtml += '</ul>';
+
+    conflictDetailsDiv.innerHTML = conflictHtml;
+    modal.style.display = 'block';
+}
 
 async function fetchServices() {
     const response = await fetch('/api/services');
     const services = await response.json();
     const select = document.getElementById('service');
-    select.innerHTML = ''; // Clear existing options
+    select.innerHTML = '';
 
     services.forEach(service => {
         const option = document.createElement('option');
@@ -23,7 +54,7 @@ async function fetchEvents() {
     const response = await fetch('/api/events');
     const events = await response.json();
     const ul = document.getElementById('events');
-    ul.innerHTML = ''; // Clear existing list
+    ul.innerHTML = '';
 
     if (events.length === 0) {
         ul.innerHTML = '<li>No events scheduled.</li>';
@@ -33,12 +64,11 @@ async function fetchEvents() {
     events.forEach(event => {
         const li = document.createElement('li');
         li.className = 'event-item';
-        // Use single quotes for onclick, and escape the stringified JSON
         const eventJsonString = JSON.stringify(event).replace(/'/g, "&apos;");
         li.innerHTML = `
             <strong>${event.title}</strong><br>
             Date: ${event.date} at ${event.time}<br>
-            Platform: ${event.platform} (Service: ${event.serviceId || 'N/A'})
+            Meeting Platform: ${event.platform} (Service: ${event.serviceId || 'N/A'})
             <div style="margin-top: 5px;">
                 <button onclick='editEvent(${eventJsonString})'>Edit</button>
                 <button onclick='deleteEvent(${event.id})'>Delete</button>
@@ -65,7 +95,6 @@ function resetForm() {
     button.textContent = 'Add Event';
     button.onclick = proposeAndAddEvent;
 
-    // Remove existing cancel button if any
     const existingCancelButton = document.getElementById('cancel-edit-btn');
     if (existingCancelButton) {
         existingCancelButton.remove();
@@ -84,17 +113,14 @@ function editEvent(event) {
     button.textContent = 'Update Event';
     button.onclick = () => updateEvent(event.id);
 
-    // Add a cancel button if it doesn't exist
     if (!document.getElementById('cancel-edit-btn')) {
         const cancelButton = document.createElement('button');
         cancelButton.textContent = 'Cancel';
         cancelButton.id = 'cancel-edit-btn';
-        cancelButton.type = 'button'; // Prevent form submission
+        cancelButton.type = 'button';
         cancelButton.onclick = resetForm;
-        // insert after the update button
         button.parentNode.insertBefore(cancelButton, button.nextSibling);
     }
-     // Scroll to the form to make it visible for editing
     form.scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -118,13 +144,12 @@ async function updateEvent(eventId) {
         title,
         date,
         time,
-        platform,
+        platform: platform,
         start: startDateTime.toISOString(),
         end: endDateTime.toISOString(),
         serviceId
     };
 
-    // Step 1: Propose the updated event to check for conflicts
     const proposeResponse = await fetch('/api/events/propose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -133,20 +158,13 @@ async function updateEvent(eventId) {
 
     if (proposeResponse.status === 409) {
         const conflictData = await proposeResponse.json();
-        let conflictMessage = 'Conflict detected during update!\n\nProposed Change:\n';
-        conflictMessage += `Title: ${conflictData.proposedEvent.title}, Date: ${conflictData.proposedEvent.date}, Time: ${conflictData.proposedEvent.time}\n\n`;
-        conflictMessage += 'Conflicting Events:\n';
-        conflictData.conflicts.forEach(conflict => {
-            conflictMessage += `- ${conflict.conflictingEvent.title} on ${conflict.conflictingEvent.date} at ${conflict.conflictingEvent.time} (Service: ${conflict.conflictingEvent.serviceId || 'N/A'})\n`;
-        });
-        alert(conflictMessage);
+        showConflictModal(conflictData);
         return;
     } else if (!proposeResponse.ok) {
         alert('Failed to propose event update for conflict check.');
         return;
     }
 
-    // Step 2: If no conflicts, update the event
     const updateResponse = await fetch(`/api/events/${eventId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -161,7 +179,6 @@ async function updateEvent(eventId) {
     }
 }
 
-
 async function deleteEvent(eventId) {
     if (!confirm('Are you sure you want to delete this event?')) {
         return;
@@ -172,12 +189,11 @@ async function deleteEvent(eventId) {
     });
 
     if (response.ok) {
-        fetchEvents(); // Refresh the list
+        fetchEvents();
     } else {
         alert('Failed to delete event.');
     }
 }
-
 
 async function proposeAndAddEvent() {
     const title = document.getElementById('title').value;
@@ -198,7 +214,7 @@ async function proposeAndAddEvent() {
         title,
         date,
         time,
-        platform,
+        platform: platform,
         start: startDateTime.toISOString(),
         end: endDateTime.toISOString(),
         serviceId
@@ -212,13 +228,7 @@ async function proposeAndAddEvent() {
 
     if (proposeResponse.status === 409) {
         const conflictData = await proposeResponse.json();
-        let conflictMessage = 'Conflict detected!\n\nProposed Event:\n';
-        conflictMessage += `Title: ${conflictData.proposedEvent.title}, Date: ${conflictData.proposedEvent.date}, Time: ${conflictData.proposedEvent.time}\n\n`;
-        conflictMessage += 'Conflicting Events:\n';
-        conflictData.conflicts.forEach(conflict => {
-            conflictMessage += `- ${conflict.conflictingEvent.title} on ${conflict.conflictingEvent.date} at ${conflict.conflictingEvent.time} (Service: ${conflict.conflictingEvent.serviceId || 'N/A'})\n`;
-        });
-        alert(conflictMessage);
+        showConflictModal(conflictData);
         return;
     } else if (!proposeResponse.ok) {
         alert('Failed to propose event for conflict check.');
