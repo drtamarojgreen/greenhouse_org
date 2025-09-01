@@ -3,7 +3,7 @@
    ============================================================================= */
 
 /* Target the section containing images */
-.wixui-section {
+div div div div div section:nth-child(5) .wixui-section {
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
   padding: 60px 20px !important;
   margin: 40px auto !important;
@@ -17,7 +17,7 @@
 }
 
 /* Add elegant border gradient */
-.wixui-section::before {
+div div div div div section:nth-child(5) .wixui-section::before {
   content: '' !important;
   position: absolute !important;
   top: 0 !important;
@@ -35,7 +35,7 @@
 }
 
 /* Style all wixui-image containers */
-.wixui-image {
+div div div div div section:nth-child(5) .wixui-image {
   position: relative !important;
   margin: 20px !important;
   border-radius: 20px !important;
@@ -47,7 +47,7 @@
 }
 
 /* Enhanced hover effects for image containers */
-.wixui-image:hover {
+div div div div div section:nth-child(5) .wixui-image:hover {
   transform: translateY(-15px) scale(1.03) !important;
   box-shadow: 
     0 30px 60px rgba(0, 0, 0, 0.25),
@@ -56,12 +56,12 @@
 }
 
 /* First image gets purple accent */
-.wixui-image:first-of-type {
+div div div div div section:nth-child(5) .wixui-image:first-of-type {
   border-color: #732751 !important;
   animation: slideInLeft 1.2s ease-out 0.3s both !important;
 }
 
-.wixui-image:first-of-type:hover {
+div div div div div section:nth-child(5) .wixui-image:first-of-type:hover {
   border-color: #357438 !important;
   box-shadow: 
     0 30px 60px rgba(0, 0, 0, 0.25),
@@ -69,12 +69,12 @@
 }
 
 /* Second image gets green accent */
-.wixui-image:nth-of-type(2) {
+div div div div div section:nth-child(5) .wixui-image:nth-of-type(2) {
   border-color: #357438 !important;
   animation: slideInRight 1.2s ease-out 0.6s both !important;
 }
 
-.wixui-image:nth-of-type(2):hover {
+div div div div div section:nth-child(5) .wixui-image:nth-of-type(2):hover {
   border-color: #732751 !important;
   box-shadow: 
     0 30px 60px rgba(0, 0, 0, 0.25),
@@ -82,7 +82,7 @@
 }
 
 /* Add overlay effects to image containers */
-.wixui-image::before {
+div div div div div section:nth-child(5) .wixui-image::before {
   content: '' !important;
   position: absolute !important;
   top: 0 !important;
@@ -101,12 +101,12 @@
   pointer-events: none !important;
 }
 
-.wixui-image:hover::before {
+div div div div div section:nth-child(5) .wixui-image:hover::before {
   opacity: 1 !important;
 }
 
 /* Add corner accent elements */
-.wixui-image::after {
+div div div div div section:nth-child(5) .wixui-image::after {
   content: '✨' !important;
   position: absolute !important;
   top: 15px !important;
@@ -118,20 +118,20 @@
   z-index: 3 !important;
 }
 
-.wixui-image:hover::after {
+div div div div div section:nth-child(5) .wixui-image:hover::after {
   opacity: 1 !important;
   transform: scale(1) rotate(0deg) !important;
 }
 
 /* Style the inner div containers */
-.wixui-image .j7pOnl {
+div div div div div section:nth-child(5) .wixui-image .j7pOnl {
   position: relative !important;
   overflow: hidden !important;
   border-radius: 16px !important;
 }
 
 /* Style the actual images */
-.wixui-image img {
+div div div div div section:nth-child(5) .wixui-image img {
   width: 100% !important;
   height: auto !important;
   display: block !important;
@@ -140,13 +140,13 @@
 }
 
 /* Enhanced image hover effects */
-.wixui-image:hover img {
+div div div div div section:nth-child(5) .wixui-image:hover img {
   transform: scale(1.05) !important;
   filter: brightness(1.1) contrast(1.05) saturate(1.1) !important;
 }
 
 /* Add subtle image overlays with different styles per image */
-.wixui-image:first-of-type img::after {
+div div div div div section:nth-child(5) .wixui-image:first-of-type img::after {
   content: '' !important;
   position: absolute !important;
   top: 0 !important;
@@ -159,7 +159,7 @@
 }
 
 /* Add floating elements around the section */
-.wixui-section::after {
+div div div div div section:nth-child(5) .wixui-section::after {
   content: '🌿 🌱 ✨ 💫 🌸 🍃' !important;
   position: absolute !important;
   top: 20px !important;
@@ -177,7 +177,7 @@
 }
 
 /* Create a sophisticated grid layout for multiple images */
-.wixui-section > div > div {
+div div div div div section:nth-child(5) .wixui-section > div > div {
   display: flex !important;
   flex-wrap: wrap !important;
   justify-content: center !important;
@@ -188,16 +188,16 @@
 }
 
 /* Add magnetic hover effect between images */
-.wixui-image:first-of-type:hover ~ .wixui-image:nth-of-type(2) {
+div div div div div section:nth-child(5) .wixui-image:first-of-type:hover ~ div div div div div section:nth-child(5) .wixui-image:nth-of-type(2) {
   transform: translateX(-10px) translateY(-5px) !important;
 }
 
-.wixui-image:nth-of-type(2):hover ~ .wixui-image:first-of-type {
+div div div div div section:nth-child(5) .wixui-image:nth-of-type(2):hover ~ div div div div div section:nth-child(5) .wixui-image:first-of-type {
   transform: translateX(10px) translateY(-5px) !important;
 }
 
 /* Add loading animation shimmer */
-.wixui-image .j7pOnl::before {
+div div div div div section:nth-child(5) .wixui-image .j7pOnl::before {
   content: '' !important;
   position: absolute !important;
   top: 0 !important;
@@ -327,15 +327,15 @@
     padding: 30px 10px !important;
   }
   
-  .wixui-image {
+  div div div div div section:nth-child(5) .wixui-image {
     border-radius: 15px !important;
   }
   
-  .wixui-image .j7pOnl {
+  div div div div div section:nth-child(5) .wixui-image .j7pOnl {
     border-radius: 12px !important;
   }
   
-  .wixui-image img {
+  div div div div div section:nth-child(5) .wixui-image img {
     border-radius: 12px !important;
   }
 }
@@ -344,21 +344,21 @@
    ACCESSIBILITY AND FOCUS STATES
    ============================================================================= */
 
-.wixui-image:focus-within {
+div div div div div section:nth-child(5) .wixui-image:focus-within {
   outline: 3px solid #732751 !important;
   outline-offset: 5px !important;
 }
 
 /* Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
-  .wixui-image,
-  .wixui-image img,
-  .wixui-section::before {
+  div div div div div section:nth-child(5) .wixui-image,
+  div div div div div section:nth-child(5) .wixui-image img,
+  div div div div div section:nth-child(5) .wixui-section::before {
     animation: none !important;
     transition: none !important;
   }
   
-  .wixui-image:hover {
+  div div div div div section:nth-child(5) .wixui-image:hover {
     transform: none !important;
   }
 }
