@@ -3,6 +3,12 @@ div.wixui-column-strip__column div div section div div div iframe {
             overflow-y: auto;
 }
 
+h3 span span {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #357438;
+}
+
 /* General container styles */
   .conditions-container, 
   .conditions-floating-elements {
