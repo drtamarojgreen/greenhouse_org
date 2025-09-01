@@ -87,8 +87,6 @@ bgMedia_comp-lkai78901 img {
   border-radius: 20px;
 }
 
-</style>
-<style>
   /* Scoped reset and box-sizing */
   .insurance-container, 
   .insurance-container * {
@@ -97,7 +95,7 @@ bgMedia_comp-lkai78901 img {
     box-sizing: border-box;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
-    color: #2d3e2d;
+    color: #357438;
   }
 
   /* Container styling */
@@ -114,7 +112,7 @@ bgMedia_comp-lkai78901 img {
     text-align: center;
     margin-bottom: 50px;
     padding: 50px 30px;
-    background: linear-gradient(135deg, #4caf50, #66bb6a, #81c784);
+    background: linear-gradient(135deg, #357438, #66bb6a, #81c784);
     border-radius: 25px;
     color: white;
     box-shadow: 0 15px 40px rgba(76, 175, 80, 0.3);
@@ -158,11 +156,11 @@ bgMedia_comp-lkai78901 img {
     padding: 40px;
     margin-bottom: 40px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    border-left: 5px solid #4caf50;
+    border-left: 5px solid #357438;
   }
 
   .insurance-container .services-intro h2 {
-    color: #4caf50;
+    color: #357438;
     font-size: 2.2em;
     margin-bottom: 20px;
     display: flex;
@@ -177,7 +175,7 @@ bgMedia_comp-lkai78901 img {
 
   .insurance-container .services-intro p {
     font-size: 1.15em;
-    color: #555;
+    color: #732751;
     line-height: 1.7;
   }
 
@@ -198,11 +196,11 @@ bgMedia_comp-lkai78901 img {
     left: 0;
     right: 0;
     height: 6px;
-    background: linear-gradient(90deg, #4caf50, #66bb6a, #81c784, #a5d6a7);
+    background: linear-gradient(90deg, #357438, #66bb6a, #81c784, #a5d6a7);
   }
 
   .insurance-container .insurance-title {
-    color: #4caf50;
+    color: #357438;
     font-size: 2.4em;
     margin-bottom: 10px;
     text-align: center;
@@ -261,7 +259,7 @@ bgMedia_comp-lkai78901 img {
 
   .insurance-container .insurance-card:hover {
     transform: translateY(-8px) scale(1.02);
-    border-color: #4caf50;
+    border-color: #357438;
     box-shadow: 0 20px 40px rgba(76, 175, 80, 0.2);
   }
 
@@ -301,7 +299,7 @@ bgMedia_comp-lkai78901 img {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
     gap: 20px;
-    background: linear-gradient(135deg, #4caf50, #66bb6a);
+    background: linear-gradient(135deg, #357438, #66bb6a);
     color: white;
     margin-bottom: 25px;
     padding: 35px;
@@ -347,7 +345,7 @@ bgMedia_comp-lkai78901 img {
   }
 
   .insurance-container .additional-title {
-    color: #4caf50;
+    color: #357438;
     font-size: 1.6em;
     margin-bottom: 20px;
     text-align: center;
@@ -372,9 +370,9 @@ bgMedia_comp-lkai78901 img {
   }
 
   .insurance-container .provider-tag:hover {
-    background: #4caf50;
+    background: #357438;
     color: white;
-    border-color: #4caf50;
+    border-color: #357438;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
   }
@@ -633,11 +631,11 @@ nav ul li:nth-child(6) a div div p {
     border-radius: 20px;
     padding: 30px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    border-left: 5px solid #4caf50;
+    border-left: 5px solid #357438;
   }
 
   .insurance-container .services-intro h2 {
-    color: #4caf50;
+    color: #357438;
     font-size: 2.2em;
     margin-bottom: 20px;
     display: flex;
@@ -652,7 +650,7 @@ nav ul li:nth-child(6) a div div p {
 
   .insurance-container .services-intro p {
     font-size: 1.15em;
-    color: #555;
+    color: #732751;
     line-height: 1.7;
   }
 
@@ -681,11 +679,11 @@ nav ul li:nth-child(6) a div div p {
     left: 0;
     right: 0;
     height: 6px;
-    background: linear-gradient(90deg, #4caf50, #66bb6a, #81c784, #a5d6a7);
+    background: linear-gradient(90deg, #357438, #66bb6a, #81c784, #a5d6a7);
   }
 
   .insurance-container .insurance-title {
-    color: #4caf50;
+    color: #357438;
     font-size: 2.2em;
     margin-bottom: 10px;
     text-align: center;
@@ -715,7 +713,7 @@ nav ul li:nth-child(6) a div div p {
   /* Featured insurance section */
   .featured-insurance {
     margin-bottom: 25px;
-    background: linear-gradient(135deg, #4caf50, #66bb6a);
+    background: linear-gradient(135deg, #357438, #66bb6a);
     border-radius: 18px;
     padding: 25px;
     color: white;
@@ -837,7 +835,7 @@ nav ul li:nth-child(6) a div div p {
   }
 
   .insurance-container .additional-title {
-    color: #4caf50;
+    color: #357438;
     font-size: 1.6em;
     margin-bottom: 20px;
     text-align: center;
@@ -863,9 +861,9 @@ nav ul li:nth-child(6) a div div p {
   }
 
   .insurance-container .provider-tag:hover {
-    background: #4caf50;
+    background: #357438;
     color: white;
-    border-color: #4caf50;
+    border-color: #357438;
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(76, 175, 80, 0.3);
   }
