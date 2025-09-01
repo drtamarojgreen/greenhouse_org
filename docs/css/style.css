@@ -1,4 +1,611 @@
+@media only screen and (min-width: 600px) {
+#comp-lkai77mo {
+	height: 100px;
+}
+
+
+#comp-loyy4dkt {
+	left: -262px;
+	margin: 0px 0px 0px 50%;
+}
+
+comp-lm6rvdnf {
+	margin: 0px 0px 0px 50px;
+	left: -134px;
+}
+
+#comp-loyy6cjc {
+	left: -280px;
+	margin: 0px 0px 0px 50%;
+}
+#comp-loxgk6zt2 {
+    	margin: 0 50%;
+    	left: -225px;
+    	width: 450px;
+}
+
+#comp-loxgk6zi {
+	margin: 0 50%;
+	left: -400px;
+	text-align: center;
+}
+
+#comp-lm6rvdnf {
+	margin: 2px 0px 2px 45%;
+	left: -76px;
+}
+#comp-lm6s02op {
+	margin: 2px 0px 2px 40%;
+	left: -76px;
+}
+#comp-lm6s18vs {
+	margin: 2px 0px 2px 40%;
+	left: -76px;
+}
+
+#comp-lm6s2cfd {
+	margin: 2px 0px 2px 40%;
+	left: -76px;
+
+}
+
+#comp-loxca7pz {
+	margin: 2px 0px 2px 5px;
+	left: 55%;
+}
+
+#comp-loxcbe17 {
+	margin: 2px 0px 2px 5px;
+	left: 55%;
+}
+
+#comp-loxcniy0 {
+	margin: 2px 0px 2px 5px;
+	left: 55%;
+}
+
+div.uYj0Sg {
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+}
+
+.TkiuMl img {
+  border-radius: 25px;
+}
+
+.sJUitSz {
+  border-radius: 25px;
+}
+
+bgMedia_comp-lkai78901 img {
+  border-radius: 35px;
+}
+
+.MazNVa .BI8PVQ img {
+  border-radius: 20px;
+}
+
+</style>
+<style>
   /* Scoped reset and box-sizing */
+  .insurance-container, 
+  .insurance-container * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #2d3e2d;
+  }
+
+  /* Container styling */
+  .insurance-container {
+    /* background: linear-gradient(135deg, #e8f5e8 0%, #f0faf4 50%, #e0f7e0 100%);*/
+    min-height: 100vh;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  /* Hero section */
+  .insurance-container .hero-section {
+    text-align: center;
+    margin-bottom: 50px;
+    padding: 50px 30px;
+    background: linear-gradient(135deg, #4caf50, #66bb6a, #81c784);
+    border-radius: 25px;
+    color: white;
+    box-shadow: 0 15px 40px rgba(76, 175, 80, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .insurance-container .hero-section::before {
+    content: '';
+    position: absolute;
+    top: -100%;
+    right: -100%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: heroGlow 8s ease-in-out infinite alternate;
+  }
+
+  .insurance-container .hero-title {
+    font-size: 2.8em;
+    margin-bottom: 20px;
+    font-weight: 300;
+    letter-spacing: 1px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .insurance-container .hero-subtitle {
+    font-size: 1.3em;
+    opacity: 0.95;
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Services intro */
+  .insurance-container .services-intro {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    border-left: 5px solid #4caf50;
+  }
+
+  .insurance-container .services-intro h2 {
+    color: #4caf50;
+    font-size: 2.2em;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+  }
+
+  .insurance-container .services-intro h2::before {
+    content: "🌱";
+    font-size: 1.1em;
+    margin-right: 15px;
+  }
+
+  .insurance-container .services-intro p {
+    font-size: 1.15em;
+    color: #555;
+    line-height: 1.7;
+  }
+
+  /* Insurance section */
+  .insurance-container .insurance-section {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .insurance-container .insurance-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #4caf50, #66bb6a, #81c784, #a5d6a7);
+  }
+
+  .insurance-container .insurance-title {
+    color: #4caf50;
+    font-size: 2.4em;
+    margin-bottom: 10px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 600;
+  }
+
+  .insurance-container .insurance-title::before {
+    content: "🏥";
+    font-size: 1em;
+    margin-right: 20px;
+  }
+
+  .insurance-container .insurance-subtitle {
+    text-align: center;
+    font-size: 1.2em;
+    color: #666;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #f8fdf9;
+    border-radius: 15px;
+    border: 2px solid #e8f5e8;
+  }
+
+  .insurance-container .insurance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 20px;
+  }
+
+  .insurance-container .insurance-card {
+    background: linear-gradient(135deg, #f8fdf9, #ffffff);
+    border: 3px solid #e8f5e8;
+    border-radius: 18px;
+    padding: 25px;
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .insurance-container .insurance-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(76, 175, 80, 0.1), transparent);
+    transition: left 0.6s ease;
+  }
+
+  .insurance-container .insurance-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: #4caf50;
+    box-shadow: 0 20px 40px rgba(76, 175, 80, 0.2);
+  }
+
+  .insurance-container .insurance-card:hover::before {
+    left: 100%;
+  }
+
+  .insurance-container .insurance-logo {
+    font-size: 2.5em;
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .insurance-container .insurance-name {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: #2d3e2d;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .insurance-container .insurance-type {
+    font-size: 0.95em;
+    color: #666;
+    background: rgba(76, 175, 80, 0.1);
+    padding: 5px 12px;
+    border-radius: 20px;
+    display: inline-block;
+    position: relative;
+    z-index: 2;
+  }
+
+  .insurance-container .featured-insurance {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    background: linear-gradient(135deg, #4caf50, #66bb6a);
+    color: white;
+    margin-bottom: 25px;
+    padding: 35px;
+  }
+
+  .insurance-container .featured-insurance .insurance-card {
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+  }
+
+  .insurance-container .featured-insurance .insurance-name {
+    color: white;
+  }
+
+  .insurance-container .featured-insurance .insurance-type {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+
+  .insurance-container .featured-title {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 1.8em;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .insurance-container .featured-title::before {
+    content: "⭐";
+    margin-right: 15px;
+  }
+
+  .insurance-container .additional-providers {
+    margin-top: 30px;
+    padding: 30px;
+    background: #f0faf4;
+    border-radius: 18px;
+    border: 2px solid #e8f5e8;
+  }
+
+  .insurance-container .additional-title {
+    color: #4caf50;
+    font-size: 1.6em;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .insurance-container .provider-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+  }
+
+  .insurance-container .provider-tag {
+    background: white;
+    border: 2px solid #e8f5e8;
+    border-radius: 25px;
+    padding: 12px 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .insurance-container .provider-tag:hover {
+    background: #4caf50;
+    color: white;
+    border-color: #4caf50;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+  }
+
+  .insurance-container .insurance-contact-cta {
+    margin-top: 40px;
+    text-align: center;
+    padding: 30px;
+    background: linear-gradient(135deg, #66bb6a, #81c784);
+    color: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3);
+  }
+
+  .insurance-container .insurance-contact-cta h3 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+  }
+
+  .insurance-container .insurance-contact-cta p {
+    font-size: 1.1em;
+    opacity: 0.9;
+  }
+
+  /* Floating icons */
+  .insurance-floating-elements {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    overflow: hidden;
+  }
+
+  .insurance-floating-elements .floating-icon {
+    position: absolute;
+    font-size: 20px;
+    animation: floatIcons 25s linear infinite;
+    opacity: 0.08;
+  }
+
+  .insurance-floating-elements .floating-icon:nth-child(1) { left: 5%; animation-delay: 0s; }
+  .insurance-floating-elements .floating-icon:nth-child(2) { left: 25%; animation-delay: 8s; }
+  .insurance-floating-elements .floating-icon:nth-child(3) { left: 45%; animation-delay: 16s; }
+  .insurance-floating-elements .floating-icon:nth-child(4) { left: 65%; animation-delay: 4s; }
+  .insurance-floating-elements .floating-icon:nth-child(5) { left: 85%; animation-delay: 12s; }
+
+  /* Animations */
+  @keyframes heroGlow {
+    0% { transform: translateX(-10px) translateY(-10px); }
+    100% { transform: translateX(10px) translateY(10px); }
+  }
+
+  @keyframes floatIcons {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.08; }
+    90% { opacity: 0.08; }
+    100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .insurance-container .hero-title {
+      font-size: 2.2em;
+    }
+
+    .insurance-container .hero-subtitle {
+      font-size: 1.1em;
+    }
+
+    .insurance-container .insurance-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .insurance-container .featured-insurance {
+      grid-template-columns: 1fr;
+    }
+
+    .insurance-container {
+      padding: 20px 15px;
+    }
+
+    .insurance-container .services-intro,
+    .insurance-container .insurance-section {
+      padding: 30px 20px;
+    }
+  }
+
+/* HEADER & MENU FONT STYLES */
+.font_0.wixui-rich-text__text,
+.font_2.wixui-rich-text__text,
+.StylableHorizontalMenu3372578893__menuItem .itemDepth02233374943__label {
+  font-family: 'Quicksand', sans-serif !important; /* unify or swap to 'Inter' if desired */
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: none; /* change to uppercase for a bolder look */
+}
+
+/* MENU SPECIFIC TWEAKS */
+.StylableHorizontalMenu3372578893__menuItem .itemDepth02233374943__label {
+  font-weight: 500 !important;
+  font-size: 16px !important;
+  text-transform: uppercase; /* optional */
+}
+
+/* MENU HOVER EFFECT */
+.StylableHorizontalMenu3372578893__menuItem:hover .itemDepth02233374943__label {
+  color: #357438 !important;
+  text-shadow: 0 1px 4px rgba(53,116,56,0.2) !important;
+  transition: all 0.3s ease;
+}
+
+/* HEADER ACCENT UNDERLINE */
+.font_0.wixui-rich-text__text::after {
+  content: '';
+  display: block;
+  margin: 8px auto 0;
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #732751, #357438);
+  border-radius: 3px;
+}
+
+html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-layout.masterPage.css-editing-scope header#SITE_HEADER div section div h1 span span {
+	color: #fff;
+	border-radius: 10px;
+	padding: 2px 1px 2px 1px;
+  font-family: 'Quicksand', sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: none;  
+background-clip: text;
+  background: linear-gradient(90deg, rgba(53, 116, 56, 0.2), rgba(115, 39, 81, 0.2) );
+  -webkit-background-clip: text;
+background-clip: text;
+  text-shadow: 2px 2px 5px #732751;
+  animation: gradientSwap 6s infinite alternate ease-in-out;
+}
+
+html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-layout.masterPage.css-editing-scope header#SITE_HEADER div section div p span span {
+	color: #fff;
+	border-radius: 10px;
+	padding: 2px 1px 2px 1px;
+  background: linear-gradient(90deg,  rgba(115, 39, 81, 0.2), rgba(53, 116, 56, 0.2) );
+  -webkit-background-clip: text;
+  text-shadow: 2px 2px 5px #357438;
+background-clip: text;
+  animation: gradientSwap 6s infinite alternate ease-in-out;
+}
+
+[id^="bgLayers_comp"] [id^="bgLayers_comp"] h1.wixui-rich-text__text, [id^="bgLayers_comp"] [id^="bgLayers_comp"] p.wixui-rich-text__text {
+  font-family: 'Quicksand', sans-serif !important;
+  color: rgb(53, 116, 56);
+}
+
+nav ul li a div div p{
+
+}
+
+nav ul li a div div p:hover {
+  background: rgba(53, 116, 56,0.1);
+  transform: translateX(6px);
+  box-shadow: 4px 6px 18px rgba(0,0,0,0.15);
+  background-image: linear-gradient(90deg, #357438, #732751);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+nav ul li a div div p {
+  display: inline-block; 
+  transition: transform 0.3s ease;
+  animation: nudgePause 2s ease-in-out infinite;
+}
+
+nav ul li:nth-child(1) a div div p {
+  animation: nudge 0.6s ease-in-out 0s 1;
+   animation-delay: 0s;
+}
+
+nav ul li:nth-child(2) a div div p {
+  animation: nudge 0.6s ease-in-out 0.1s 1;
+   animation-delay: 0.2s;
+}
+
+nav ul li:nth-child(3) a div div p {
+  animation: nudge 0.6s ease-in-out 0.2s 1;
+   animation-delay: 0.4s;
+}
+
+nav ul li:nth-child(4) a div div p {
+  animation: nudge 0.6s ease-in-out 0.3s 1;
+   animation-delay: 0.6s;
+}
+
+nav ul li:nth-child(5) a div div p {
+  animation: nudge 0.6s ease-in-out 0.4s 1;
+   animation-delay: 0.8s;
+}
+
+nav ul li:nth-child(6) a div div p {
+  animation: nudge 0.6s ease-in-out 0.5s 1;
+   animation-delay: 1.0s;
+}
+
+
+@keyframes nudge {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(6px); } 
+}
+
+@keyframes nudgePause {
+  0%, 25%, 100% { transform: translateX(0); } 
+  50% { transform: translateX(6px); }
+}
+
+@keyframes gradientSwap {
+  0% {
+    background: linear-gradient(90deg, #732751, #357438);
+    text-shadow: 2px 2px 5px #357438;
+  }
+  100% {
+    background: linear-gradient(90deg, #357438, #732751);
+    text-shadow: 2px 2px 5px #732751;
+  }
+}
+
+/* Scoped reset and box-sizing */
   .insurance-container, 
   .insurance-container * {
     margin: 0;
@@ -308,6 +915,27 @@
   .insurance-floating-elements .floating-icon:nth-child(4) { left: 65%; animation-delay: 4s; }
   .insurance-floating-elements .floating-icon:nth-child(5) { left: 85%; animation-delay: 12s; }
 
+html body div div div nav li p {
+  font-size: 1.5em;
+}
+
+p:nth-child(1) > span:nth-child(1) > span:nth-child(1) > span:nth-child(1) {
+  font-family: quicksand,sans-serif;
+}
+
+p:nth-child(2) > span:nth-child(1) > span:nth-child(1), p:nth-child(1) > span:nth-child(1) > span:nth-child(1) > span:nth-child(1){
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+#step-1 > div:nth-child(2) > h3:nth-child(1), #step-2 > div:nth-child(2) > h3:nth-child(1), #step-3 > div:nth-child(2) > h3:nth-child(1) {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+html body iframe #wrapper div h3, html body iframe #wrapper div h3, 
+html body iframe #wrapper div h3, html body iframe #wrapper div div {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;  
+}
+
   /* Animations */
   @keyframes floatIcons {
     0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
@@ -360,23 +988,3 @@
   }
 
 
-html body div div div nav li p {
-  font-size: 1.5em;
-}
-
-p:nth-child(1) > span:nth-child(1) > span:nth-child(1) > span:nth-child(1) {
-  font-family: quicksand,sans-serif;
-}
-
-p:nth-child(2) > span:nth-child(1) > span:nth-child(1), p:nth-child(1) > span:nth-child(1) > span:nth-child(1) > span:nth-child(1){
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-}
-
-#step-1 > div:nth-child(2) > h3:nth-child(1), #step-2 > div:nth-child(2) > h3:nth-child(1), #step-3 > div:nth-child(2) > h3:nth-child(1) {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-}
-
-html body iframe #wrapper div h3, html body iframe #wrapper div h3, 
-html body iframe #wrapper div h3, html body iframe #wrapper div div {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;  
-}
