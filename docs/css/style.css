@@ -586,6 +586,16 @@ nav ul li:nth-child(6) a div div p {
    animation-delay: 1.0s;
 }
 
+section.wixui-column-strip div div p h3.font_2 > span > span {
+	color: #732751;
+	text-align: center;
+	font-weight: 600;
+}
+
+section.wixui-column-strip div div p > span > span {
+	color: #357438;
+	text-align: center;
+}
 
 @keyframes nudge {
   0%, 100% { transform: translateX(0); }
