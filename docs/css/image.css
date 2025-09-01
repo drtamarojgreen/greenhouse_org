@@ -12,11 +12,12 @@ div div div div div section:nth-child(5) .wixui-section {
   box-shadow: 
     0 25px 50px rgba(0, 0, 0, 0.15),
     0 10px 30px rgba(115, 39, 81, 0.1) !important;
-  position: relative !important;
-  overflow: hidden !important;
+/*  position: relative !important;
+  overflow: hidden !important;*/
 }
 
 /* Add elegant border gradient */
+/*
 div div div div div section:nth-child(5) .wixui-section::before {
   content: '' !important;
   position: absolute !important;
@@ -33,10 +34,11 @@ div div div div div section:nth-child(5) .wixui-section::before {
   background-size: 200% 100% !important;
   animation: gradientFlow 10s ease-in-out infinite !important;
 }
+*/
 
 /* Style all wixui-image containers */
 div div div div div section:nth-child(5) .wixui-image {
-  position: relative !important;
+/*  position: relative !important;*/
   margin: 20px !important;
   border-radius: 20px !important;
   overflow: hidden !important;
@@ -84,11 +86,11 @@ div div div div div section:nth-child(5) .wixui-image:nth-of-type(2):hover {
 /* Add overlay effects to image containers */
 div div div div div section:nth-child(5) .wixui-image::before {
   content: '' !important;
-  position: absolute !important;
+/*  position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  bottom: 0 !important;
+  bottom: 0 !important;*/
   background: linear-gradient(
     135deg, 
     rgba(115, 39, 81, 0.1) 0%, 
@@ -108,9 +110,9 @@ div div div div div section:nth-child(5) .wixui-image:hover::before {
 /* Add corner accent elements */
 div div div div div section:nth-child(5) .wixui-image::after {
   content: '✨' !important;
-  position: absolute !important;
+/*  position: absolute !important;
   top: 15px !important;
-  right: 15px !important;
+  right: 15px !important;*/
   font-size: 24px !important;
   opacity: 0 !important;
   transform: scale(0) rotate(-180deg) !important;
@@ -125,7 +127,7 @@ div div div div div section:nth-child(5) .wixui-image:hover::after {
 
 /* Style the inner div containers */
 div div div div div section:nth-child(5) .wixui-image .j7pOnl {
-  position: relative !important;
+/*  position: relative !important;*/
   overflow: hidden !important;
   border-radius: 16px !important;
 }
@@ -148,11 +150,11 @@ div div div div div section:nth-child(5) .wixui-image:hover img {
 /* Add subtle image overlays with different styles per image */
 div div div div div section:nth-child(5) .wixui-image:first-of-type img::after {
   content: '' !important;
-  position: absolute !important;
+/*  position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  bottom: 0 !important;
+  bottom: 0 !important;*/
   background: linear-gradient(45deg, rgba(115, 39, 81, 0.1), transparent) !important;
   opacity: 0 !important;
   transition: opacity 0.3s ease !important;
@@ -161,11 +163,11 @@ div div div div div section:nth-child(5) .wixui-image:first-of-type img::after {
 /* Add floating elements around the section */
 div div div div div section:nth-child(5) .wixui-section::after {
   content: '🌿 🌱 ✨ 💫 🌸 🍃' !important;
-  position: absolute !important;
+/*  position: absolute !important;
   top: 20px !important;
   left: 20px !important;
   right: 20px !important;
-  bottom: 20px !important;
+  bottom: 20px !important;*/
   display: flex !important;
   align-items: center !important;
   justify-content: space-around !important;
@@ -199,11 +201,11 @@ div div div div div section:nth-child(5) .wixui-image:nth-of-type(2):hover ~ div
 /* Add loading animation shimmer */
 div div div div div section:nth-child(5) .wixui-image .j7pOnl::before {
   content: '' !important;
-  position: absolute !important;
+/*  position: absolute !important;
   top: 0 !important;
   left: -100% !important;
   width: 100% !important;
-  height: 100% !important;
+  height: 100% !important;*/
   background: linear-gradient(
     90deg, 
     transparent 0%, 
