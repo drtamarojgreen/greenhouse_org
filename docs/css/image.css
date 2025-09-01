@@ -61,6 +61,7 @@ div div div div div section:nth-child(5) .wixui-image:hover {
 div div div div div section:nth-child(5) .wixui-image:first-of-type {
   border-color: #732751 !important;
   animation: slideInLeft 1.2s ease-out 0.3s both !important;
+   left:20%;
 }
 
 div div div div div section:nth-child(5) .wixui-image:first-of-type:hover {
@@ -68,6 +69,7 @@ div div div div div section:nth-child(5) .wixui-image:first-of-type:hover {
   box-shadow: 
     0 30px 60px rgba(0, 0, 0, 0.25),
     0 15px 35px rgba(115, 39, 81, 0.3) !important;
+   right:20%;
 }
 
 /* Second image gets green accent */
