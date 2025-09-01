@@ -165,6 +165,12 @@
     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.15);
   }
 
+li.treatment-item > strong {
+	color: #357438;
+}
+li.treatment-item > div {
+	color: #732751;
+}
   .conditions-container .treatment-description {
     color: #732751;
     font-size: 0.95em;
