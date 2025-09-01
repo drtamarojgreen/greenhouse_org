@@ -26,25 +26,29 @@ const checkConflict = (newEvent) => {
     const conflicts = [];
     const newEventStart = new Date(newEvent.start);
     const newEventEnd = new Date(newEvent.end);
+    const targetServiceId = newEvent.serviceId;
 
-    for (const serviceId in services) {
-        services[serviceId].events.forEach(existingEvent => {
-            const existingEventStart = new Date(existingEvent.start);
-            const existingEventEnd = new Date(existingEvent.end);
-
-            // Check for overlap
-            if (
-                (newEventStart < existingEventEnd && newEventEnd > existingEventStart) &&
-                (newEvent.id !== existingEvent.id) // Don't conflict with itself during update
-            ) {
-                conflicts.push({
-                    type: 'time_overlap',
-                    proposedEvent: newEvent,
-                    conflictingEvent: existingEvent
-                });
-            }
-        });
+    if (!services[targetServiceId]) {
+        // If the service doesn't exist, there can't be any conflicts within it.
+        return [];
     }
+
+    services[targetServiceId].events.forEach(existingEvent => {
+        const existingEventStart = new Date(existingEvent.start);
+        const existingEventEnd = new Date(existingEvent.end);
+
+        // Check for overlap
+        if (
+            (newEventStart < existingEventEnd && newEventEnd > existingEventStart) &&
+            (newEvent.id !== existingEvent.id) // Don't conflict with itself during update
+        ) {
+            conflicts.push({
+                type: 'time_overlap',
+                proposedEvent: newEvent,
+                conflictingEvent: { ...existingEvent, serviceId: targetServiceId }
+            });
+        }
+    });
     return conflicts;
 };
 
