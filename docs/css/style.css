@@ -512,7 +512,7 @@ background-clip: text;
 background-clip: text;
   text-shadow: 2px 2px 5px #732751;
   animation: gradientSwap 6s infinite alternate ease-in-out;
-	font-size: .8em;
+	font-size: .6em;
 }
 
 html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-layout.masterPage.css-editing-scope header#SITE_HEADER div section div p span span {
@@ -524,7 +524,7 @@ html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-lay
   text-shadow: 2px 2px 5px #357438;
 background-clip: text;
   animation: gradientSwap 6s infinite alternate ease-in-out;
-	font-size: .8em;
+	font-size: .6em;
 }
 
 [id^="bgLayers_comp"] [id^="bgLayers_comp"] h1.wixui-rich-text__text, [id^="bgLayers_comp"] [id^="bgLayers_comp"] p.wixui-rich-text__text {
