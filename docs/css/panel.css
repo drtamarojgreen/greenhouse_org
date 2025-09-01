@@ -3,7 +3,7 @@
   .conditions-floating-elements {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
-    color: #2d3e2d;
+    color: #357438;
   }
 
   /* Container layout */
@@ -88,7 +88,7 @@
   /* Section titles */
   .conditions-container .section-title {
     font-size: 1.8em;
-    color: #4caf50;
+    color: #357438;
     margin-bottom: 25px;
     display: flex;
     align-items: center;
@@ -124,7 +124,7 @@
 
   .conditions-container .condition-item:hover {
     background: #e8f5e8;
-    border-color: #4caf50;
+    border-color: #357438;
     transform: translateX(5px);
   }
 
@@ -150,7 +150,7 @@
 
   .conditions-container .treatment-item {
     background: #f0f9ff;
-    border-left: 4px solid #4caf50;
+    border-left: 4px solid #357438;
     margin-bottom: 15px;
     padding: 20px;
     border-radius: 0 12px 12px 0;
@@ -166,7 +166,7 @@
   }
 
   .conditions-container .treatment-description {
-    color: #2e3d2f;
+    color: #732751;
     font-size: 0.95em;
     margin-bottom: 15px;
     font-style: italic;
