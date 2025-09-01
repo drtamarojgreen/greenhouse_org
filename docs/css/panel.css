@@ -1,4 +1,9 @@
-  /* General container styles */
+div.wixui-column-strip__column div div section div div div iframe {
+            border: none;
+            overflow-y: auto;
+}
+
+/* General container styles */
   .conditions-container, 
   .conditions-floating-elements {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
