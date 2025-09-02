@@ -112,3 +112,9 @@ div div div div div section:nth-child(5) .wixui-section::after {
   }
 }
 
+html body div#SITE_CONTAINER div#main_MF.main_MF div#site-root.site-root div#masterPage.mesh-layout.masterPage.css-editing-scope footer#SITE_FOOTER.xU8fqS.SITE_FOOTER.wixui-footer div div div div div.wixui-image:nth-child(1) div img {
+  border-radius: 15px !important;
+  border: 5px solid transparent !important;
+  background: linear-gradient(45deg, #732751, #357438) !important;
+  background-clip: padding-box !important;
+}
