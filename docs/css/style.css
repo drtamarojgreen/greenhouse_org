@@ -100,17 +100,17 @@ bgMedia_comp-lkai78901 img {
   }
 }
 
-#SITE_PAGES_TRANSITION_GROUP div section.wixui-section div section div > div > div.wixui-rich-text > p:nth-child(1) > span > span > span {
+#SITE_PAGES_TRANSITION_GROUP div section.wixui-section:nth-child(1) div section div > div > div.wixui-rich-text > p:nth-child(1) > span > span > span {
   display: inline-block;
   animation: grow 4s ease-in-out 10;
 }
 
-#SITE_PAGES_TRANSITION_GROUP div section.wixui-section div section div > div > div.wixui-rich-text > p:nth-child(1) > span > span > span::before {
+#SITE_PAGES_TRANSITION_GROUP div section.wixui-section:nth-child(1) div section div > div > div.wixui-rich-text > p:nth-child(1) > span > span > span::before {
   content: '🌿';
   margin-right: 10px;
 }
 
-#SITE_PAGES_TRANSITION_GROUP div section.wixui-section div section div > div > div.wixui-rich-text > p:nth-child(1) > span > span > span::after {
+#SITE_PAGES_TRANSITION_GROUP div section.wixui-section:nth-child(1) div section div > div > div.wixui-rich-text > p:nth-child(1) > span > span > span::after {
   content: '🌱';
   margin-left: 10px;
 }
