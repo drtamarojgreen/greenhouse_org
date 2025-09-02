@@ -87,6 +87,35 @@ bgMedia_comp-lkai78901 img {
   border-radius: 20px;
 }
 
+
+@keyframes grow {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+#SITE_PAGES_TRANSITION_GROUP div section.wixui-section div section div > div > div.wixui-rich-text > p:nth-child(1) > span > span > span {
+  display: inline-block;
+  animation: grow 2s ease-in-out infinite;
+}
+
+#SITE_PAGES_TRANSITION_GROUP div section.wixui-section div section div > div > div.wixui-rich-text > p:nth-child(1) > span > span > span::before {
+  content: '🌿';
+  margin-right: 10px;
+}
+
+#SITE_PAGES_TRANSITION_GROUP div section.wixui-section div section div > div > div.wixui-rich-text > p:nth-child(1) > span > span > span::after {
+  content: '🌱';
+  margin-left: 10px;
+}
+
+
   /* Scoped reset and box-sizing */
   .insurance-container, 
   .insurance-container * {
