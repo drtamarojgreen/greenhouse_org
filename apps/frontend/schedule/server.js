@@ -1,147 +1,195 @@
-const express = require('express');
-const bodyParser = require('body-parser');
+const http = require('http');
 const path = require('path');
+const fs = require('fs');
+const url = require('url');
 
-const app = express();
 const port = 3000;
 
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '.'))); // Serve static files from current directory
-
-// In-memory data store for events (renamed from appointments for consistency)
-let events = [];
+// In-memory data store and helpers (copied from original server.js)
 let nextEventId = 1;
-
-// Mock services and their events
 const services = {
     'serviceA': { name: 'Service A', events: [] },
     'serviceB': { name: 'Service B', events: [] }
 };
-
-// Helper to generate unique IDs
 const generateId = () => nextEventId++;
-
-// Helper to check for conflicts
 const checkConflict = (newEvent) => {
     const newEventStart = new Date(newEvent.start);
     const newEventEnd = new Date(newEvent.end);
-
-    // First, create a flat array of all events from all services, adding the serviceId to each event object.
     let allEventsWithServiceId = [];
     for (const serviceId in services) {
         const serviceEvents = services[serviceId].events.map(event => ({ ...event, serviceId }));
         allEventsWithServiceId = allEventsWithServiceId.concat(serviceEvents);
     }
-
-    // Now, filter this flat array to find any conflicting events.
     const conflicts = allEventsWithServiceId
         .filter(existingEvent => {
             const existingEventStart = new Date(existingEvent.start);
             const existingEventEnd = new Date(existingEvent.end);
-
-            // Check for time overlap and ensure the event doesn't conflict with itself.
             return (newEventStart < existingEventEnd && newEventEnd > existingEventStart) && (newEvent.id !== existingEvent.id);
         })
         .map(conflictingEvent => ({
             type: 'time_overlap',
             proposedEvent: newEvent,
-            conflictingEvent: conflictingEvent // The serviceId is already in this object
+            conflictingEvent: conflictingEvent
         }));
-
     return conflicts;
 };
 
-// API Endpoints
-
-// GET /api/events - Get all events from all services
-app.get('/api/events', (req, res) => {
-    let allEvents = [];
-    for (const serviceId in services) {
-        allEvents = allEvents.concat(services[serviceId].events.map(event => ({ ...event, serviceId })));
-    }
-    res.json(allEvents);
-});
-
-// POST /api/events/propose - Propose a new event and check for conflicts
-app.post('/api/events/propose', (req, res) => {
-    const proposedEvent = { ...req.body, id: req.body.id || generateId() }; // Use existing ID for updates, new for creation
-    const conflicts = checkConflict(proposedEvent);
-
-    if (conflicts.length > 0) {
-        res.status(409).json({ // 409 Conflict
-            message: 'Proposed event conflicts with existing events.',
-            proposedEvent: proposedEvent,
-            conflicts: conflicts
+// Helper function to parse request body
+function getBody(req) {
+    return new Promise((resolve, reject) => {
+        let body = '';
+        req.on('data', chunk => body += chunk.toString());
+        req.on('end', () => {
+            try {
+                if (body === '') {
+                    resolve({});
+                    return;
+                }
+                resolve(JSON.parse(body));
+            } catch (error) {
+                reject(error);
+            }
         });
+        req.on('error', err => reject(err));
+    });
+}
+
+// Main server logic
+const server = http.createServer(async (req, res) => {
+    const parsedUrl = url.parse(req.url, true);
+    const pathname = parsedUrl.pathname;
+    const method = req.method.toUpperCase();
+
+    // API Routes
+    if (pathname.startsWith('/api/')) {
+        res.setHeader('Content-Type', 'application/json');
+
+        if (pathname === '/api/events' && method === 'GET') {
+            let allEvents = [];
+            for (const serviceId in services) {
+                allEvents = allEvents.concat(services[serviceId].events.map(event => ({ ...event, serviceId })));
+            }
+            res.writeHead(200);
+            res.end(JSON.stringify(allEvents));
+
+        } else if (pathname === '/api/events/propose' && method === 'POST') {
+            try {
+                const body = await getBody(req);
+                const proposedEvent = { ...body, id: body.id || generateId() };
+                const conflicts = checkConflict(proposedEvent);
+                if (conflicts.length > 0) {
+                    res.writeHead(409);
+                    res.end(JSON.stringify({ message: 'Proposed event conflicts with existing events.', proposedEvent, conflicts }));
+                } else {
+                    res.writeHead(200);
+                    res.end(JSON.stringify({ message: 'No conflicts detected.', proposedEvent }));
+                }
+            } catch (error) {
+                res.writeHead(400);
+                res.end(JSON.stringify({ message: 'Invalid JSON in request body.' }));
+            }
+
+        } else if (pathname === '/api/events' && method === 'POST') {
+            try {
+                const { serviceId, ...newEvent } = await getBody(req);
+                if (!serviceId || !services[serviceId]) {
+                    res.writeHead(400);
+                    return res.end(JSON.stringify({ message: 'Invalid serviceId provided.' }));
+                }
+                const eventToAdd = { ...newEvent, id: generateId() };
+                services[serviceId].events.push(eventToAdd);
+                res.writeHead(201);
+                res.end(JSON.stringify(eventToAdd));
+            } catch (error) {
+                res.writeHead(400);
+                res.end(JSON.stringify({ message: 'Invalid JSON in request body.' }));
+            }
+
+        } else if (pathname.startsWith('/api/events/') && (method === 'PUT' || method === 'DELETE')) {
+            const idMatch = pathname.match(/\/api\/events\/(\d+)/);
+            if (!idMatch) {
+                res.writeHead(404);
+                return res.end(JSON.stringify({ message: 'Event not found.' }));
+            }
+            const eventId = parseInt(idMatch[1]);
+            let found = false;
+            let serviceIdFound = null;
+
+            for (const serviceId in services) {
+                const index = services[serviceId].events.findIndex(e => e.id === eventId);
+                if (index !== -1) {
+                    found = true;
+                    serviceIdFound = serviceId;
+                    break;
+                }
+            }
+
+            if (!found) {
+                res.writeHead(404);
+                return res.end(JSON.stringify({ message: 'Event not found.' }));
+            }
+
+            if (method === 'PUT') {
+                try {
+                    const updatedEventData = await getBody(req);
+                    const index = services[serviceIdFound].events.findIndex(e => e.id === eventId);
+                    services[serviceIdFound].events[index] = { ...services[serviceIdFound].events[index], ...updatedEventData, id: eventId };
+                    res.writeHead(200);
+                    res.end(JSON.stringify(services[serviceIdFound].events[index]));
+                } catch (error) {
+                    res.writeHead(400);
+                    res.end(JSON.stringify({ message: 'Invalid JSON in request body.' }));
+                }
+            } else { // DELETE
+                services[serviceIdFound].events = services[serviceIdFound].events.filter(e => e.id !== eventId);
+                res.writeHead(204);
+                res.end();
+            }
+
+        } else if (pathname === '/api/services' && method === 'GET') {
+            const serviceList = Object.keys(services).map(id => ({ id, name: services[id].name }));
+            res.writeHead(200);
+            res.end(JSON.stringify(serviceList));
+
+        } else {
+            res.writeHead(404);
+            res.end(JSON.stringify({ message: 'API endpoint not found.' }));
+        }
+
+    // Static File Server
     } else {
-        // If no conflicts, we can proceed to add/update the event
-        // For now, we just return success. Actual addition/update happens via /api/events POST/PUT
-        res.status(200).json({
-            message: 'No conflicts detected.',
-            proposedEvent: proposedEvent
+        const safePath = pathname === '/' ? 'index.html' : pathname.substring(1);
+        const fullPath = path.join(__dirname, safePath);
+        const extname = String(path.extname(fullPath)).toLowerCase();
+        const mimeTypes = {
+            '.html': 'text/html',
+            '.js': 'text/javascript',
+            '.css': 'text/css',
+            '.json': 'application/json',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+        };
+        const contentType = mimeTypes[extname] || 'application/octet-stream';
+
+        fs.readFile(fullPath, (error, content) => {
+            if (error) {
+                if (error.code == 'ENOENT') {
+                    res.writeHead(404, { 'Content-Type': 'text/html' });
+                    res.end('404: File Not Found');
+                } else {
+                    res.writeHead(500);
+                    res.end('Server Error: ' + error.code);
+                }
+            } else {
+                res.writeHead(200, { 'Content-Type': contentType });
+                res.end(content, 'utf-8');
+            }
         });
     }
-});
-
-// POST /api/events - Add a new event to a specific service
-app.post('/api/events', (req, res) => {
-    const { serviceId, ...newEvent } = req.body;
-    if (!serviceId || !services[serviceId]) {
-        return res.status(400).json({ message: 'Invalid serviceId provided.' });
-    }
-
-    const eventToAdd = { ...newEvent, id: generateId() };
-    services[serviceId].events.push(eventToAdd);
-    res.status(201).json(eventToAdd);
-});
-
-// PUT /api/events/:id - Update an event in its respective service
-app.put('/api/events/:id', (req, res) => {
-    const eventId = parseInt(req.params.id);
-    const updatedEventData = req.body;
-    let found = false;
-
-    for (const serviceId in services) {
-        const index = services[serviceId].events.findIndex(e => e.id === eventId);
-        if (index !== -1) {
-            services[serviceId].events[index] = { ...services[serviceId].events[index], ...updatedEventData, id: eventId };
-            found = true;
-            return res.json(services[serviceId].events[index]);
-        }
-    }
-
-    if (!found) {
-        res.status(404).json({ message: 'Event not found.' });
-    }
-});
-
-// DELETE /api/events/:id - Delete an event from its respective service
-app.delete('/api/events/:id', (req, res) => {
-    const eventId = parseInt(req.params.id);
-    let found = false;
-
-    for (const serviceId in services) {
-        const initialLength = services[serviceId].events.length;
-        services[serviceId].events = services[serviceId].events.filter(e => e.id !== eventId);
-        if (services[serviceId].events.length < initialLength) {
-            found = true;
-            return res.status(204).send(); // No Content
-        }
-    }
-
-    if (!found) {
-        res.status(404).json({ message: 'Event not found.' });
-    }
-});
-
-// GET /api/services - List available services
-app.get('/api/services', (req, res) => {
-    const serviceList = Object.keys(services).map(id => ({ id, name: services[id].name }));
-    res.json(serviceList);
 });
 
 // Start the server
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`Server running at http://localhost:${port}/`);
     console.log('To stop the server, press Ctrl+C');
 });
