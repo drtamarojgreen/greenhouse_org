@@ -1,0 +1,74 @@
+// In a real Wix application, this would likely be a Wix Data Collection.
+export let services = {
+    'serviceA': { name: 'Service A', events: [] },
+    'serviceB': { name: 'Service B', events: [] }
+};
+
+// --- Exported API Functions ---
+
+/**
+ * Lists all available services for the frontend.
+ * @returns {Array} - An array of service objects with id and name.
+ */
+export function getServices() {
+    return Object.keys(services).map(id => ({
+        id,
+        name: services[id].name
+    }));
+}
+
+// --- Data Manipulation Helpers for Internal Backend Use ---
+
+/**
+ * Returns the raw services object including events.
+ * Intended for use by other backend modules (e.g., scheduling.jsw).
+ * @returns {object} - The full services object.
+ */
+export function getServiceEvents() {
+    return services;
+}
+
+/**
+ * Adds an event to a specific service's event list.
+ * @param {string} serviceId - The ID of the service.
+ * @param {object} event - The event object to add.
+ */
+export function addEventToService(serviceId, event) {
+    if (services[serviceId]) {
+        services[serviceId].events.push(event);
+    }
+}
+
+/**
+ * Updates an event within a specific service's event list.
+ * @param {string} serviceId - The ID of the service.
+ * @param {number} eventId - The ID of the event to update.
+ * @param {object} updatedData - The new event data.
+ * @returns {object|null} - The updated event or null if not found.
+ */
+export function updateEventInService(serviceId, eventId, updatedData) {
+    if (services[serviceId]) {
+        const eventIndex = services[serviceId].events.findIndex(e => e.id === eventId);
+        if (eventIndex !== -1) {
+            const eventToUpdate = services[serviceId].events[eventIndex];
+            services[serviceId].events[eventIndex] = { ...eventToUpdate, ...updatedData };
+            return services[serviceId].events[eventIndex];
+        }
+    }
+    return null;
+}
+
+/**
+ * Deletes an event from a specific service's event list.
+ * @param {string} serviceId - The ID of the service.
+ * @param {number} eventId - The ID of the event to delete.
+ * @returns {boolean} - True if deletion was successful, false otherwise.
+ */
+export function deleteEventFromService(serviceId, eventId) {
+    if (services[serviceId]) {
+        const initialLength = services[serviceId].events.length;
+        services[serviceId].events = services[serviceId].events.filter(e => e.id !== eventId);
+        return services[serviceId].events.length < initialLength;
+    }
+    return false;
+}
