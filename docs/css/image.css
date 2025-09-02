@@ -32,7 +32,16 @@ div div div div div section:nth-child(5) .wixui-image img {
   display: block !important;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
   border-radius: 16px !important;
+  background: linear-gradient(to right, #357438, #732751); 
+  padding: 5px;
 }
+
+#SITE_FOOTER > div div div.wixui-image:nth-child(1) > img {
+  border-radius: 16px !important;
+  background: linear-gradient(to right, #357438, #732751); 
+  padding: 5px;
+}
+
 
 /* Enhanced image hover effects */
 div div div div div section:nth-child(5) .wixui-image:hover img {
