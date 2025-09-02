@@ -6,10 +6,49 @@
     <title>Event Scheduler</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
-        #appointment-form { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
-        #appointment-list { border: 1px solid #eee; padding: 10px; }
+        #event-form { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        #event-list { border: 1px solid #eee; padding: 10px; }
         .event-item { border-bottom: 1px solid #eee; padding: 10px 0; }
-        .appointment-item:last-child { border-bottom: none; } 
+
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -23,8 +62,8 @@
         <input type="date" id="date" name="date" required><br><br>
         <label for="time">Time:</label><br>
         <input type="time" id="time" name="time" required><br><br>
-        <label for="platform">Platform:</label><br>
-        <input type="text" id="platform" name="platform" placeholder="e.g., Google Calendar" required><br><br>
+        <label for="platform">Meeting Platform:</label><br>
+        <input type="text" id="platform" name="platform" placeholder="e.g., Google Meet, Zoom" required><br><br>
         <label for="service">Service:</label><br>
         <select id="service" name="service" required>
             <!-- Services will be loaded here -->
@@ -37,6 +76,18 @@
         <ul id="events">
             <!-- Events will be loaded here -->
         </ul>
+    </div>
+
+    <!-- The Modal -->
+    <div id="conflict-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Scheduling Conflict Detected</h2>
+            <p>The proposed event overlaps with the following existing event(s):</p>
+            <div id="conflict-details">
+                <!-- Conflict details will be populated by JavaScript -->
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script> <!-- Renamed from index.js for clarity -->

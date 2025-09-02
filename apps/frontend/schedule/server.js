@@ -23,32 +23,31 @@ const generateId = () => nextEventId++;
 
 // Helper to check for conflicts
 const checkConflict = (newEvent) => {
-    const conflicts = [];
     const newEventStart = new Date(newEvent.start);
     const newEventEnd = new Date(newEvent.end);
-    const targetServiceId = newEvent.serviceId;
 
-    if (!services[targetServiceId]) {
-        // If the service doesn't exist, there can't be any conflicts within it.
-        return [];
+    // First, create a flat array of all events from all services, adding the serviceId to each event object.
+    let allEventsWithServiceId = [];
+    for (const serviceId in services) {
+        const serviceEvents = services[serviceId].events.map(event => ({ ...event, serviceId }));
+        allEventsWithServiceId = allEventsWithServiceId.concat(serviceEvents);
     }
 
-    services[targetServiceId].events.forEach(existingEvent => {
-        const existingEventStart = new Date(existingEvent.start);
-        const existingEventEnd = new Date(existingEvent.end);
+    // Now, filter this flat array to find any conflicting events.
+    const conflicts = allEventsWithServiceId
+        .filter(existingEvent => {
+            const existingEventStart = new Date(existingEvent.start);
+            const existingEventEnd = new Date(existingEvent.end);
 
-        // Check for overlap
-        if (
-            (newEventStart < existingEventEnd && newEventEnd > existingEventStart) &&
-            (newEvent.id !== existingEvent.id) // Don't conflict with itself during update
-        ) {
-            conflicts.push({
-                type: 'time_overlap',
-                proposedEvent: newEvent,
-                conflictingEvent: { ...existingEvent, serviceId: targetServiceId }
-            });
-        }
-    });
+            // Check for time overlap and ensure the event doesn't conflict with itself.
+            return (newEventStart < existingEventEnd && newEventEnd > existingEventStart) && (newEvent.id !== existingEvent.id);
+        })
+        .map(conflictingEvent => ({
+            type: 'time_overlap',
+            proposedEvent: newEvent,
+            conflictingEvent: conflictingEvent // The serviceId is already in this object
+        }));
+
     return conflicts;
 };
 
