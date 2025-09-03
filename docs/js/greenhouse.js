@@ -40,7 +40,7 @@
             if (typeof window.loadScheduleApp === 'function') {
                 window.loadScheduleApp(targetSelector, githubPagesBaseUrl);
             } else {
-                console.error('loadScheduleApp function not found in scheduler.js. Ensure it's exposed globally.');
+                console.error('loadScheduleApp function not found in scheduler.js.');
             }
         });
     }
