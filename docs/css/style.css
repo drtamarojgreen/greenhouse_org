@@ -136,21 +136,15 @@ html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-lay
     left: 0;
     width: 100%;
     height: 100%;
-    
-    /* The flare itself: a gradient that's mostly transparent with a light-yellow highlight */
     background: linear-gradient(
         to right, 
         transparent 20%, 
-        rgba(255, 255, 224, 0.7) 50%, /* Light Yellow (ivory) for a soft sun effect */
+        rgba(255, 255, 224, 0.7) 50%, 
         transparent 80%
     );
-    
-    /* The flare starts off-screen to the left */
     transform: translateX(-100%);
-    
-    /* Apply the animation. It will run infinitely for demonstration. */
     animation: sunlight-flare 3s ease-in-out infinite;
-    animation-delay: 1s; /* Give a small delay before the first animation runs */
+    animation-delay: 1s; 
 }
 
 /* The keyframe animation that moves the flare from left to right */
@@ -170,24 +164,19 @@ html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-lay
 /* The watering can icon that follows the cursor */
 .watering-can-icon {
     position: fixed;
-    /* Using a unicode character for the icon */
     font-size: 2.5rem;
     z-index: 9999;
-    /* This makes the icon ignore mouse events, so you can still interact with elements behind it */
     pointer-events: none;
-    /* A little offset so the cursor points to the spout, not the middle */
     transform: translate(-10px, -10px);
     transition: transform 0.1s ease-out;
 }
 
-/* The heading's "bloom" effect when hovered */
 .can-effect-active #effect-heading.blooming {
     transform: scale(1.05);
     color: #357438; /* A nice green color */
     transition: transform 0.3s ease, color 0.3s ease;
 }
 
-/* Water droplet particle styles */
 .water-droplet {
     position: fixed;
     width: 8px;
