@@ -14,13 +14,13 @@
         h1.textContent = 'Request an Appointment';
         panel1.appendChild(h1);
 
-        const eventFormDiv = document.createElement('div');
-        eventFormDiv.id = 'event-form';
-        panel1.appendChild(eventFormDiv);
+        const appointmentFormDiv = document.createElement('div');
+        appointmentFormDiv.id = 'appointment-form';
+        panel1.appendChild(appointmentFormDiv);
 
         const h2 = document.createElement('h2');
         h2.textContent = 'Appointment Details';
-        eventFormDiv.appendChild(h2);
+        appointmentFormDiv.appendChild(h2);
 
         // Form elements
         const labels = ['Title', 'Date', 'Time', 'Meeting Platform', 'Service'];
@@ -32,15 +32,15 @@
             const label = document.createElement('label');
             label.htmlFor = ids[i];
             label.textContent = labels[i] + ':';
-            eventFormDiv.appendChild(label);
-            eventFormDiv.appendChild(document.createElement('br'));
+            appointmentFormDiv.appendChild(label);
+            appointmentFormDiv.appendChild(document.createElement('br'));
 
             if (types[i] === 'select') {
                 const select = document.createElement('select');
                 select.id = ids[i];
                 select.name = ids[i];
                 select.required = true;
-                eventFormDiv.appendChild(select);
+                appointmentFormDiv.appendChild(select);
             } else {
                 const input = document.createElement('input');
                 input.type = types[i];
@@ -50,30 +50,30 @@
                 if (placeholders[i]) {
                     input.placeholder = placeholders[i];
                 }
-                eventFormDiv.appendChild(input);
+                appointmentFormDiv.appendChild(input);
             }
-            eventFormDiv.appendChild(document.createElement('br'));
-            eventFormDiv.appendChild(document.createElement('br'));
+            appointmentFormDiv.appendChild(document.createElement('br'));
+            appointmentFormDiv.appendChild(document.createElement('br'));
         }
 
         const button = document.createElement('button');
-        button.textContent = 'Add Event';
-        button.onclick = proposeAndAddEvent; // This function is in app.js
-        eventFormDiv.appendChild(button);
+        button.textContent = 'Request Appointment';
+        button.onclick = proposeAndAddAppointment; // This function is in app.js
+        appointmentFormDiv.appendChild(button);
 
         // Hidden event list (for app.js to potentially use, but not displayed)
-        const eventListDiv = document.createElement('div');
-        eventListDiv.id = 'event-list';
-        eventListDiv.style.display = 'none';
-        panel1.appendChild(eventListDiv);
+        const appointmentListDiv = document.createElement('div');
+        appointmentListDiv.id = 'appointment-list';
+        appointmentListDiv.style.display = 'none';
+        panel1.appendChild(appointmentListDiv);
 
-        const eventListH2 = document.createElement('h2');
-        eventListH2.textContent = 'Your Events';
-        eventListDiv.appendChild(eventListH2);
+        const appointmentListH2 = document.createElement('h2');
+        appointmentListH2.textContent = 'Your Appointments';
+        appointmentListDiv.appendChild(appointmentListH2);
 
-        const eventListUl = document.createElement('ul');
-        eventListUl.id = 'events';
-        eventListDiv.appendChild(eventListUl);
+        const appointmentListUl = document.createElement('ul');
+        appointmentListUl.id = 'appointments';
+        appointmentListDiv.appendChild(appointmentListUl);
 
         // Hidden conflict modal
         const conflictModalDiv = document.createElement('div');
@@ -96,7 +96,7 @@
         modalContentDiv.appendChild(conflictH2);
 
         const conflictP = document.createElement('p');
-        conflictP.textContent = 'The proposed event overlaps with the following existing event(s):';
+        conflictP.textContent = 'The proposed appointment overlaps with the following existing appointment(s):';
         modalContentDiv.appendChild(conflictP);
 
         const conflictDetailsDiv = document.createElement('div');
