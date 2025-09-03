@@ -65,6 +65,9 @@ function createWaterDropletParticle() {
 function activateWateringCanEffect() {
     headingElementForCan = document.getElementById('effect-heading');
     // Do nothing if the effect is already active or the heading doesn't exist
+    headingElementForCans = document.querySelectors('body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-layout.masterPage.css-editing-scope header#SITE_HEADER div section div p span spa');
+    headingElementForCan = headingElementForCans[0];
+    
     if (!headingElementForCan || document.querySelector('.watering-can-icon')) return;
 
     // Create the icon element

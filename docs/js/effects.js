@@ -102,4 +102,5 @@ function deactivateWateringCanEffect() {
     }
 }
 
+    activateWateringCanEffect(); // Activate the effect
 });
