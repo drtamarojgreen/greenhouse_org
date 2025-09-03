@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Style Showcase</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/image.css">
+</head>
+<body>
+
+    <h1>Showcase of CSS Effects</h1>
+
+    <h2>Animated Heading</h2>
+    <div id="SITE_PAGES_TRANSITION_GROUP">
+        <div>
+            <section class="wixui-section">
+                <div>
+                    <section>
+                        <div>
+                            <div>
+                                <div class="wixui-rich-text">
+                                    <p>
+                                        <span>
+                                            <span>
+                                                <span>Bloom into your better self</span>
+                                            </span>
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>Injected Scheduler App</h2>
+    <div id="scheduler-app-container"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('scheduler-app-container');
+            const iframe = document.createElement('iframe');
+            iframe.src = '../apps/frontend/schedule/index.html';
+            iframe.width = '100%';
+            iframe.height = '600px';
+            iframe.style.border = '1px solid #ccc';
+            iframe.style.borderRadius = '5px';
+            container.appendChild(iframe);
+        });
+    </script>
+
+</body>
+</html>
