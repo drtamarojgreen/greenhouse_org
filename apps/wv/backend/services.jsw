@@ -37,9 +37,9 @@ export async function getServiceAppointments() {
 }
 
 /**
- * Adds an event to a specific service's event list.
+ * Adds an appointment to a specific service's appointment list.
  * @param {string} serviceId - The ID of the service.
- * @param {object} event - The event object to add.
+ * @param {object} appointment - The appointment object to add.
  */
 export async function addAppointmentToService(serviceId, appointment) {
     try {
@@ -55,11 +55,11 @@ export async function addAppointmentToService(serviceId, appointment) {
 }
 
 /**
- * Updates an event within a specific service's event list.
+ * Updates an appointment within a specific service's appointment list.
  * @param {string} serviceId - The ID of the service.
- * @param {number} eventId - The ID of the event to update.
- * @param {object} updatedData - The new event data.
- * @returns {object|null} - The updated event or null if not found.
+ * @param {string} appointmentId - The ID of the appointment to update.
+ * @param {object} updatedData - The new appointment data.
+ * @returns {object|null} - The updated appointment or null if not found.
  */
 export async function updateAppointmentInService(serviceId, appointmentId, updatedData) {
     try {
@@ -83,9 +83,9 @@ export async function updateAppointmentInService(serviceId, appointmentId, updat
 }
 
 /**
- * Deletes an event from a specific service's event list.
+ * Deletes an appointment from a specific service's appointment list.
  * @param {string} serviceId - The ID of the service.
- * @param {number} eventId - The ID of the event to delete.
+ * @param {string} appointmentId - The ID of the appointment to delete.
  * @returns {boolean} - True if deletion was successful, false otherwise.
  */
 export async function deleteAppointmentFromService(serviceId, appointmentId) {

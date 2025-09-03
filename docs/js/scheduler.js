@@ -1,10 +1,8 @@
-(function() {
-    const targetSelector = '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column';
-    const githubPagesBaseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
+// No IIFE wrapper here anymore. This file will be loaded by greenhouse.js.
 
-    // Function to create the patient appointment request form DOM
-    function createPatientFormDom() {
-        const fragment = document.createDocumentFragment(); // Use a fragment to append multiple elements efficiently
+    // Function to build the patient appointment request form UI
+    function buildPatientFormUI() {
+        const fragment = document.createDocumentFragment();
 
         // First Panel (Scheduling App)
         const panel1 = document.createElement('div');
@@ -61,7 +59,7 @@
         button.onclick = proposeAndAddAppointment; // This function is in app.js
         appointmentFormDiv.appendChild(button);
 
-        // Hidden event list (for app.js to potentially use, but not displayed)
+        // Hidden appointment list (for app.js to potentially use, but not displayed)
         const appointmentListDiv = document.createElement('div');
         appointmentListDiv.id = 'appointment-list';
         appointmentListDiv.style.display = 'none';
@@ -130,27 +128,61 @@
         return fragment; // Return the fragment containing both panels
     }
 
-    async function loadScheduleApp() {
+    // Function to load and execute the Dashboard UI script
+    async function buildDashboardUI() {
+        const response = await fetch(`${githubPagesBaseUrl}js/dashboard.js`); // Updated path
+        if (!response.ok) throw new Error(`Failed to load dashboard.js: ${response.statusText}`);
+        const scriptText = await response.text();
+
+        const scriptElement = document.createElement('script');
+        scriptElement.textContent = scriptText;
+        document.body.appendChild(scriptElement);
+
+        // Assuming buildDashboardUI function is now globally available from dashboard.js
+        // This will return the fragment created by the function in dashboard.js
+        return window.buildDashboardUI();
+    }
+
+    // Function to load and execute the Admin UI script
+    async function buildAdminUI() {
+        const response = await fetch(`${githubPagesBaseUrl}js/admin.js`); // Updated path
+        if (!response.ok) throw new Error(`Failed to load admin.js: ${response.statusText}`);
+        const scriptText = await response.text();
+
+        const scriptElement = document.createElement('script');
+        scriptElement.textContent = scriptText;
+        document.body.appendChild(scriptElement);
+
+        // Assuming buildAdminUI function is now globally available from admin.js
+        // This will return the fragment created by the function in admin.js
+        return window.buildAdminUI();
+    }
+
+    // Central function to render the appropriate view
+    async function renderView(viewType) { // Made async
+        switch (viewType) {
+            case 'dashboard':
+                return await buildDashboardUI(); // Await the async function
+            case 'admin':
+                return await buildAdminUI(); // Await the async function
+            case 'patient':
+            default:
+                return buildPatientFormUI();
+        }
+    }
+
+    window.loadScheduleApp = async function(targetSelector, githubPagesBaseUrl) { // Exposed globally
         try {
             const urlParams = new URLSearchParams(window.location.search);
             const view = urlParams.get('view');
 
-            let appDomFragment;
-            if (view === 'dashboard') {
-                console.log('Dashboard view requested. Not yet implemented.');
-                return;
-            } else if (view === 'admin') {
-                console.log('Admin view requested. Not yet implemented.');
-                return;
-            } else {
-                appDomFragment = createPatientFormDom(); // Default to patient form
-            }
+            let appDomFragment = await renderView(view); // Await renderView
 
-            const cssResponse = await fetch(`${githubPagesBaseUrl}apps/frontend/schedule/schedule.css`);
+            const cssResponse = await fetch(`${githubPagesBaseUrl}css/schedule.css`); // Updated path
             if (!cssResponse.ok) throw new Error(`Failed to load CSS: ${cssResponse.statusText}`);
             const cssText = await cssResponse.text();
 
-            const appJsResponse = await fetch(`${githubPagesBaseUrl}apps/frontend/schedule/app.js`);
+            const appJsResponse = await fetch(`${githubPagesBaseUrl}js/app.js`); // Updated path
             if (!appJsResponse.ok) throw new Error(`Failed to load app.js: ${appJsResponse.statusText}`);
             const appJsText = await appJsResponse.text();
 
@@ -176,7 +208,4 @@
         } catch (error) {
             console.error('Error loading schedule app:', error);
         }
-    }
-
-    loadScheduleApp();
-})();
+    }; // End of global function definition

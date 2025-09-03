@@ -185,7 +185,7 @@ async function deleteAppointment(appointmentId, serviceId) { // Renamed function
     }
 
     try {
-        await deleteAppointment(appointmentId, serviceId); // Call Velo backend function
+        await deleteAppointmentFromService(serviceId, appointmentId); // Call Velo backend function
         fetchAppointments(); // Call fetchAppointments
     } catch (error) {
         console.error("Error deleting appointment:", error);
