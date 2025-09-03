@@ -23,22 +23,22 @@
         <select id="service" name="service" required>
             <!-- Services will be loaded here -->
         </select><br><br>
-        <button onclick="proposeAndAddEvent()">Request Appointment</button>
+        <button onclick="proposeAndAddAppointment()">Request Appointment</button>
     </div>
 
-    <div id="event-list" style="display:none;">
-        <h2>Your Events</h2>
-        <ul id="events">
+    <div id="appointment-list" style="display:none;">
+        <h2>Your Appointments</h2>
+        <ul id="appointments">
             <!-- Events will be loaded here -->
         </ul>
     </div>
 
-    <!-- The Modal -->
+    <!-- Appointment Conflict Modal -->
     <div id="conflict-modal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close-button">&times;</span>
             <h2>Scheduling Conflict Detected</h2>
-            <p>The proposed event overlaps with the following existing event(s):</p>
+            <p>The proposed appointment overlaps with the following existing appointment(s):</p>
             <div id="conflict-details">
                 <!-- Conflict details will be populated by JavaScript -->
             </div>
