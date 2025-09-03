@@ -1,0 +1,49 @@
+/* Styles for the Interactive Watering Can effect */
+
+/* The class 'can-effect-active' will be added by the controller JS to the body tag */
+
+/* The watering can icon that follows the cursor */
+.watering-can-icon {
+    position: fixed;
+    /* Using a unicode character for the icon */
+    font-size: 2.5rem;
+    z-index: 9999;
+    /* This makes the icon ignore mouse events, so you can still interact with elements behind it */
+    pointer-events: none;
+    /* A little offset so the cursor points to the spout, not the middle */
+    transform: translate(-10px, -10px);
+    transition: transform 0.1s ease-out;
+}
+
+/* The heading's "bloom" effect when hovered */
+.can-effect-active #effect-heading.blooming {
+    transform: scale(1.05);
+    color: #357438; /* A nice green color */
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+/* Water droplet particle styles */
+.water-droplet {
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    background-color: #5dadec; /* A light blue for water */
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    /* The 'fall' animation is applied on creation */
+    animation: fall 1s ease-in forwards;
+}
+
+/* Keyframe animation for the falling droplets */
+@keyframes fall {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        /* How far the drops fall before disappearing */
+        transform: translateY(80px);
+        opacity: 0;
+    }
+}

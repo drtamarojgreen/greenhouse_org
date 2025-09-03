@@ -1,0 +1,47 @@
+/* Styles for the Vine Growth effect */
+
+/* The class 'vine-effect-active' will be added by the controller JS to the body tag */
+.vine-effect-active #effect-heading {
+    position: relative; /* Needed for positioning the SVG vine absolutely */
+    color: transparent; /* The original text color is hidden, JS will create animated spans */
+}
+
+/* Individual letter spans created by JS */
+.vine-effect-active #effect-heading span {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* This class is added to the body to start all animations */
+.vine-effect-active.animation-running #effect-heading span {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* The SVG element that will contain the vine path */
+.vine-svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 150%; /* Taller than the text to allow the vine to grow outside the text box */
+    overflow: visible;
+    z-index: -1; /* Ensures the vine is drawn behind the text */
+}
+
+/* The vine path itself */
+.vine-path {
+    stroke-width: 3px;
+    stroke: #357438; /* A nice green color for the vine */
+    fill: none;
+    /* The dasharray and dashoffset will be set by JavaScript to match the path length */
+    transition: stroke-dashoffset 4s ease-in-out;
+}
+
+/* When the animation is running, the dashoffset is animated to 0, a drawing the vine */
+.vine-effect-active.animation-running .vine-path {
+    stroke-dashoffset: 0;
+}

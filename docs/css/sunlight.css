@@ -1,0 +1,45 @@
+/* Styles for the Gentle Sunlight Flare effect */
+
+/* The class 'flare-effect-active' will be added by the main controller
+   to the heading element to trigger this effect. */
+
+#effect-heading.flare-effect-active {
+    position: relative; /* Required for the pseudo-element's absolute positioning */
+    overflow: hidden;   /* Keeps the flare contained within the heading's bounds */
+}
+
+#effect-heading.flare-effect-active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    /* The flare itself: a gradient that's mostly transparent with a light-yellow highlight */
+    background: linear-gradient(
+        to right, 
+        transparent 20%, 
+        rgba(255, 255, 224, 0.7) 50%, /* Light Yellow (ivory) for a soft sun effect */
+        transparent 80%
+    );
+    
+    /* The flare starts off-screen to the left */
+    transform: translateX(-100%);
+    
+    /* Apply the animation. It will run infinitely for demonstration. */
+    animation: sunlight-flare 3s ease-in-out infinite;
+    animation-delay: 1s; /* Give a small delay before the first animation runs */
+}
+
+/* The keyframe animation that moves the flare from left to right */
+@keyframes sunlight-flare {
+    0% {
+        /* Start position (off-screen left) */
+        transform: translateX(-100%);
+    }
+    100% {
+        /* End position (off-screen right) */
+        transform: translateX(100%);
+    }
+}

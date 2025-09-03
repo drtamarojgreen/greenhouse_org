@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heading Effects Test</title>
+    <!-- CSS for Effects -->
+    <link rel="stylesheet" href="css/vine-effect.css">
+    <link rel="stylesheet" href="css/watering-can-effect.css">
+    <link rel="stylesheet" href="css/sunlight.css">
+    <style>
+        /* Basic styles for layout */
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .controls {
+            margin-top: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+        #effect-heading {
+            font-size: 4rem;
+            color: #333;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="effect-heading">Bloom into your better self</h1>
+
+    <div class="controls">
+        <button id="btn-vine">Vine Growth Effect</button>
+        <button id="btn-can">Watering Can Effect</button>
+        <button id="btn-flare">Sunlight Flare Effect</button>
+        <button id="btn-reset">Reset</button>
+    </div>
+
+    <!-- JS for Effects -->
+    <script src="js/vine-effect.js"></script>
+    <script src="js/watering-can-effect.js"></script>
+    <!-- Sunlight flare is CSS-only, but the controller will manage the class -->
+    <script src="js/effects-controller.js"></script>
+
+</body>
+</html>
