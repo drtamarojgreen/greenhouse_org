@@ -1,10 +1,8 @@
-document.addEventListener('DOMContentLoaded', function() {
-
 // Module-level variables to hold state
 let canIconElement;
 let headingElementForCan;
 let pouringIntervalId;
-console.log("effects js successfully loaded");
+
 // We define the event handler functions so we can properly add and remove them.
 const handleMouseMoveForCan = (e) => {
     if (canIconElement) {
@@ -103,4 +101,3 @@ function deactivateWateringCanEffect() {
 }
 
     activateWateringCanEffect(); // Activate the effect
-});
