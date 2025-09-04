@@ -159,7 +159,7 @@
     }
 
     // Central function to render the appropriate view
-    async function renderView(viewType, proposeAndAddAppointment) { // Made async
+    async function renderView(viewType) { // Made async
         switch (viewType) {
             case 'dashboard':
                 return await buildDashboardUI(); // Await the async function
@@ -167,7 +167,7 @@
                 return await buildAdminUI(); // Await the async function
             case 'patient':
             default:
-                return buildPatientFormUI(proposeAndAddAppointment);
+                return buildPatientFormUI();
         }
     }
 
@@ -202,6 +202,11 @@
             const styleElement = document.createElement('style');
             styleElement.textContent = cssText;
             document.head.appendChild(styleElement);
+            
+            // Initialize the app after the DOM is built
+            if (window.AppointmentApp && typeof window.AppointmentApp.init === 'function') {
+                window.AppointmentApp.init();
+            }
 
             console.log('Schedule app loaded successfully!');
 
