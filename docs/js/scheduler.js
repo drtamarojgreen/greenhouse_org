@@ -1,7 +1,7 @@
 // No IIFE wrapper here anymore. This file will be loaded by greenhouse.js.
 
     // Function to build the patient appointment request form UI
-    function buildPatientFormUI(proposeAndAddAppointment) {
+    function buildPatientFormUI() {
         const fragment = document.createDocumentFragment();
 
         // First Panel (Scheduling App)
@@ -56,7 +56,7 @@
 
         const button = document.createElement('button');
         button.textContent = 'Request Appointment';
-        button.onclick = proposeAndAddAppointment; // This function is in app.js
+        button.onclick = AppointmentApp.proposeAndAddAppointment; // This function is in app.js
         appointmentFormDiv.appendChild(button);
 
         // Hidden appointment list (for app.js to potentially use, but not displayed)
@@ -184,7 +184,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const view = urlParams.get('view');
 
-            let appDomFragment = await renderView(view, window.proposeAndAddAppointment); // Await renderView
+            let appDomFragment = await renderView(view); // Await renderView
 
             const cssResponse = await fetch(`${githubPagesBaseUrl}css/schedule.css`); // Updated path
             if (!cssResponse.ok) throw new Error(`Failed to load CSS: ${cssResponse.statusText}`);
