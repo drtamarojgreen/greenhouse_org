@@ -172,8 +172,17 @@
     }
 
     window.loadScheduleApp = async function(targetSelector, githubPagesBaseUrl) { // Exposed globally
+        const targetElement = document.querySelector(targetSelector);
+
+        if (!targetElement) {
+            console.error('Target element not found:', targetSelector);
+            // If the target isn't there, we can't show an error in it.
+            // The console error will have to suffice.
+            return;
+        }
+
         try {
-            const appJsResponse = await fetch(`${githubPagesBaseUrl}js/app.js`); // Updated path
+            const appJsResponse = await fetch(`${githubPagesBaseUrl}js/app.js`);
             if (!appJsResponse.ok) throw new Error(`Failed to load app.js: ${appJsResponse.statusText}`);
             const appJsText = await appJsResponse.text();
 
@@ -184,20 +193,14 @@
             const urlParams = new URLSearchParams(window.location.search);
             const view = urlParams.get('view');
 
-            let appDomFragment = await renderView(view); // Await renderView
+            let appDomFragment = await renderView(view);
 
-            const cssResponse = await fetch(`${githubPagesBaseUrl}css/schedule.css`); // Updated path
+            const cssResponse = await fetch(`${githubPagesBaseUrl}css/schedule.css`);
             if (!cssResponse.ok) throw new Error(`Failed to load CSS: ${cssResponse.statusText}`);
             const cssText = await cssResponse.text();
 
-            const targetElement = document.querySelector(targetSelector);
-            if (targetElement) {
-                targetElement.innerHTML = '';
-                targetElement.appendChild(appDomFragment);
-            } else {
-                console.error('Target element not found:', targetSelector);
-                return;
-            }
+            targetElement.innerHTML = '';
+            targetElement.appendChild(appDomFragment);
 
             const styleElement = document.createElement('style');
             styleElement.textContent = cssText;
@@ -212,5 +215,6 @@
 
         } catch (error) {
             console.error('Error loading schedule app:', error);
+            targetElement.innerHTML = `<p style="color: red;">Failed to load the scheduling application. Please check the console for more details and try again later.</p>`;
         }
     }; // End of global function definition

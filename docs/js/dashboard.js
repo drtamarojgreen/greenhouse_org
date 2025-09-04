@@ -114,6 +114,7 @@ async function buildDashboardUI() {
             renderConflicts(conflicts, conflictResolutionDiv.querySelector('#conflictList'));
         } catch (error) {
             console.error("Error loading initial data:", error);
+            scheduleContainer.innerHTML = '<p style="color: red;">Error loading dashboard data. Please try refreshing the page. See console for more details.</p>';
         }
     }
 

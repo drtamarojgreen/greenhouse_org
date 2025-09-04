@@ -50,7 +50,8 @@ async function buildAdminUI() {
     } catch (error) {
         console.error("Error fetching data:", error);
         const p = document.createElement('p');
-        p.textContent = 'Failed to load appointment details.';
+        p.style.color = 'red';
+        p.textContent = 'Failed to load appointment details. Please check the console and try again.';
         fragment.appendChild(p);
         return fragment;
     }
