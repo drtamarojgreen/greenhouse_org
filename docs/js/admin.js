@@ -1,7 +1,8 @@
 // docs/js/admin.js
 
 // Import necessary Velo backend functions (these are placeholders until implemented)
-// import { getAppointmentById, updateAppointment, deleteAppointment } from 'backend/adminScheduling'; // Assuming an adminScheduling module
+import { getAppointmentById, updateAppointment, deleteAppointment } from 'backend/adminScheduling';
+import { getServiceTypes } from 'backend/services';
 
 /**
  * Builds the UI for the Individual Appointment Admin page.
@@ -31,45 +32,35 @@ async function buildAdminUI() {
     form.id = 'individual-appointment-form';
     fragment.appendChild(form);
 
-    // Mock appointment data for now
-    let currentAppointment = {
-        _id: appointmentId,
-        title: 'Mock Appointment Title',
-        start: '2025-09-10T14:00:00Z',
-        end: '2025-09-10T15:00:00Z',
-        platform: 'Zoom',
-        serviceRef: 'serviceA',
-        confirmed: false,
-        conflicts: 'None',
-        firstName: 'John',
-        lastName: 'Doe',
-        contactInfo: 'john.doe@example.com',
-        anonymousId: 'anonXYZ'
-    };
+    // Fetch real data
+    let currentAppointment;
+    let serviceTypes;
+    try {
+        [currentAppointment, serviceTypes] = await Promise.all([
+            getAppointmentById(appointmentId),
+            getServiceTypes()
+        ]);
 
-    // Simulate fetching data
-    // try {
-    //     currentAppointment = await getAppointmentById(appointmentId);
-    //     if (!currentAppointment) {
-    //         const p = document.createElement('p');
-    //         p.textContent = 'Appointment not found.';
-    //         fragment.appendChild(p);
-    //         return fragment;
-    //     }
-    // } catch (error) {
-    //     console.error("Error fetching appointment:", error);
-    //     const p = document.createElement('p');
-    //     p.textContent = 'Failed to load appointment details.';
-    //     fragment.appendChild(p);
-    //     return fragment;
-    // }
+        if (!currentAppointment) {
+            const p = document.createElement('p');
+            p.textContent = 'Appointment not found.';
+            fragment.appendChild(p);
+            return fragment;
+        }
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        const p = document.createElement('p');
+        p.textContent = 'Failed to load appointment details.';
+        fragment.appendChild(p);
+        return fragment;
+    }
 
     const fields = [
         { label: 'Title', id: 'adminTitle', type: 'text', value: currentAppointment.title },
         { label: 'Start Time', id: 'adminStart', type: 'datetime-local', value: currentAppointment.start ? currentAppointment.start.substring(0, 16) : '' },
         { label: 'End Time', id: 'adminEnd', type: 'datetime-local', value: currentAppointment.end ? currentAppointment.end.substring(0, 16) : '' },
         { label: 'Platform', id: 'adminPlatform', type: 'text', value: currentAppointment.platform },
-        { label: 'Service ID', id: 'adminServiceRef', type: 'text', value: currentAppointment.serviceRef, readOnly: true },
+        { label: 'Service', id: 'adminService', type: 'select', value: currentAppointment.serviceRef, options: serviceTypes.map(st => ({ value: st._id, text: st.name })) },
         { label: 'Confirmed', id: 'adminConfirmed', type: 'checkbox', value: currentAppointment.confirmed },
         { label: 'Conflicts', id: 'adminConflicts', type: 'textarea', value: currentAppointment.conflicts },
         { label: 'First Name', id: 'adminFirstName', type: 'text', value: currentAppointment.firstName },
@@ -88,6 +79,17 @@ async function buildAdminUI() {
         if (field.type === 'textarea') {
             input = document.createElement('textarea');
             input.rows = 3;
+        } else if (field.type === 'select') {
+            input = document.createElement('select');
+            field.options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.text;
+                if (opt.value === field.value) {
+                    option.selected = true;
+                }
+                input.appendChild(option);
+            });
         } else {
             input = document.createElement('input');
             input.type = field.type;

@@ -1,7 +1,8 @@
 // docs/js/dashboard.js
 
 // Import necessary Velo backend functions (these are placeholders until implemented)
-// import { getAppointmentsByDateRange, getConflictsForDateRange, updateAppointmentStatus, resolveConflict } from 'backend/adminScheduling'; // Assuming a new adminScheduling module
+import { getAppointmentsByDateRange, getConflictsForDateRange, updateAppointmentStatus, resolveConflict } from 'backend/adminScheduling';
+import { getServiceTypes } from 'backend/services';
 
 /**
  * Builds the UI for the Administrator Dashboard.
@@ -96,28 +97,32 @@ async function buildDashboardUI() {
     conflictResolutionDiv.innerHTML = '<h2>Conflicts to Resolve</h2><ul id="conflictList"><li>No conflicts found.</li></ul>';
     fragment.appendChild(conflictResolutionDiv);
 
-    // Initial render with mock data
-    const mockAppointments = [
-        { _id: 'a1', title: 'Meeting with Client A', start: '2025-09-08T09:00:00Z', end: '2025-09-08T10:00:00Z', serviceRef: 'serviceA', confirmed: true, anonymousId: 'anon1' },
-        { _id: 'a2', title: 'Team Sync', start: '2025-09-08T09:30:00Z', end: '2025-09-08T10:30:00Z', serviceRef: 'serviceB', confirmed: false, anonymousId: 'anon2' },
-        { _id: 'a3', title: 'Client B Call', start: '2025-09-09T11:00:00Z', end: '2025-09-09T12:00:00Z', serviceRef: 'serviceA', confirmed: true, anonymousId: 'anon3' },
-    ];
+    // Initial data load
+    async function loadInitialData() {
+        const today = new Date();
+        const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() + 1).toISOString().split('T')[0];
+        const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (7 - today.getDay())).toISOString().split('T')[0];
 
-    const mockConflicts = [
-        {
-            type: 'time_overlap',
-            proposedAppointment: mockAppointments[1],
-            conflictingAppointment: mockAppointments[0]
+        try {
+            const [appointments, conflicts, serviceTypes] = await Promise.all([
+                getAppointmentsByDateRange(startDate, endDate),
+                getConflictsForDateRange(startDate, endDate),
+                getServiceTypes()
+            ]);
+
+            renderSchedule(appointments, serviceTypes, scheduleContainer);
+            renderConflicts(conflicts, conflictResolutionDiv.querySelector('#conflictList'));
+        } catch (error) {
+            console.error("Error loading initial data:", error);
         }
-    ];
+    }
 
-    renderSchedule(mockAppointments, scheduleContainer);
-    renderConflicts(mockConflicts, conflictResolutionDiv.querySelector('#conflictList'));
+    loadInitialData();
 
     
 
     // Helper function to render the schedule as a table
-    function renderSchedule(appointments, container) {
+    function renderSchedule(appointments, serviceTypes, container) {
         container.innerHTML = '<h3>Weekly Overview</h3>';
         if (appointments.length === 0) {
             container.innerHTML += '<p>No appointments for this period.</p>';
@@ -193,9 +198,10 @@ async function buildDashboardUI() {
             if (hour >= 9 && hour <= 17) {
                 const rowIndex = hour - 9;
                 const cell = tbody.rows[rowIndex].cells[dayIndex + 1];
+                const service = serviceTypes.find(st => st._id === app.serviceRef);
                 const div = document.createElement('div');
-                div.className = `service-${app.serviceRef.slice(-1).toLowerCase()}`;
-                div.textContent = app.title;
+                div.className = `service-${app.serviceRef}`;
+                div.textContent = service ? service.name : app.title;
                 cell.appendChild(div);
 
                 // Make the cell editable
