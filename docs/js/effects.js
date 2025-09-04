@@ -102,4 +102,7 @@ function deactivateWateringCanEffect() {
 }
 
     activateWateringCanEffect(); // Activate the effect
+<<<<<<< HEAD
 })();
+=======
+>>>>>>> 6b0d71c2ed0198a28a2306fbb0377088b7fbdcc0
