@@ -1,7 +1,7 @@
 // No IIFE wrapper here anymore. This file will be loaded by greenhouse.js.
 
     // Function to build the patient appointment request form UI
-    function buildPatientFormUI() {
+    function buildPatientFormUI(proposeAndAddAppointment) {
         const fragment = document.createDocumentFragment();
 
         // First Panel (Scheduling App)
@@ -159,7 +159,7 @@
     }
 
     // Central function to render the appropriate view
-    async function renderView(viewType) { // Made async
+    async function renderView(viewType, proposeAndAddAppointment) { // Made async
         switch (viewType) {
             case 'dashboard':
                 return await buildDashboardUI(); // Await the async function
@@ -167,24 +167,28 @@
                 return await buildAdminUI(); // Await the async function
             case 'patient':
             default:
-                return buildPatientFormUI();
+                return buildPatientFormUI(proposeAndAddAppointment);
         }
     }
 
     window.loadScheduleApp = async function(targetSelector, githubPagesBaseUrl) { // Exposed globally
         try {
+            const appJsResponse = await fetch(`${githubPagesBaseUrl}js/app.js`); // Updated path
+            if (!appJsResponse.ok) throw new Error(`Failed to load app.js: ${appJsResponse.statusText}`);
+            const appJsText = await appJsResponse.text();
+
+            const scriptElement = document.createElement('script');
+            scriptElement.textContent = appJsText;
+            document.body.appendChild(scriptElement);
+
             const urlParams = new URLSearchParams(window.location.search);
             const view = urlParams.get('view');
 
-            let appDomFragment = await renderView(view); // Await renderView
+            let appDomFragment = await renderView(view, window.proposeAndAddAppointment); // Await renderView
 
             const cssResponse = await fetch(`${githubPagesBaseUrl}css/schedule.css`); // Updated path
             if (!cssResponse.ok) throw new Error(`Failed to load CSS: ${cssResponse.statusText}`);
             const cssText = await cssResponse.text();
-
-            const appJsResponse = await fetch(`${githubPagesBaseUrl}js/app.js`); // Updated path
-            if (!appJsResponse.ok) throw new Error(`Failed to load app.js: ${appJsResponse.statusText}`);
-            const appJsText = await appJsResponse.text();
 
             const targetElement = document.querySelector(targetSelector);
             if (targetElement) {
@@ -198,10 +202,6 @@
             const styleElement = document.createElement('style');
             styleElement.textContent = cssText;
             document.head.appendChild(styleElement);
-
-            const scriptElement = document.createElement('script');
-            scriptElement.textContent = appJsText;
-            document.body.appendChild(scriptElement);
 
             console.log('Schedule app loaded successfully!');
 

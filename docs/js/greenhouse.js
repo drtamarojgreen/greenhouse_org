@@ -23,7 +23,7 @@
                 callback();
             }
         } catch (error) {
-            console.error(`Error loading script ${url}:`, error);
+            // console.error(`Error loading script ${url}:`, error);
         }
     }
 
