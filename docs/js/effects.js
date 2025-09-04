@@ -1,3 +1,4 @@
+(function() {
 // Module-level variables to hold state
 let canIconElement;
 let headingElementForCan;
@@ -101,3 +102,4 @@ function deactivateWateringCanEffect() {
 }
 
     activateWateringCanEffect(); // Activate the effect
+})();

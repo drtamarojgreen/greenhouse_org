@@ -18,17 +18,72 @@ async function buildDashboardUI() {
     description.textContent = 'Review and resolve scheduling conflicts for the week. Select a date range to view appointments.';
     fragment.appendChild(description);
 
-    // Date Range Selection
-    const dateRangeDiv = document.createElement('div');
-    dateRangeDiv.className = 'date-range-selector';
-    dateRangeDiv.innerHTML = `
-        <label for="startDate">Start Date:</label>
-        <input type="date" id="startDate">
-        <label for="endDate">End Date:</label>
-        <input type="date" id="endDate">
-        <button id="fetchScheduleBtn">Load Schedule</button>
-    `;
-    fragment.appendChild(dateRangeDiv);
+    // New Appointment Box
+    const newAppointmentBox = document.createElement('div');
+    newAppointmentBox.id = 'new-appointment-box';
+    newAppointmentBox.textContent = 'New Appointment';
+    newAppointmentBox.draggable = true;
+    fragment.appendChild(newAppointmentBox);
+
+    newAppointmentBox.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', 'new-appointment');
+    });
+
+    // Calendar Dropdown
+    const calendarContainer = document.createElement('div');
+    calendarContainer.id = 'calendar-container';
+    fragment.appendChild(calendarContainer);
+
+    function renderCalendar(year, month) {
+        calendarContainer.innerHTML = '';
+        const table = document.createElement('table');
+        const header = table.createTHead();
+        const body = table.createTBody();
+        const headerRow = header.insertRow();
+
+        const prevButton = headerRow.insertCell();
+        prevButton.textContent = '<';
+        prevButton.onclick = () => renderCalendar(month === 0 ? year - 1 : year, (month - 1 + 12) % 12);
+
+        const monthCell = headerRow.insertCell();
+        monthCell.colSpan = 5;
+        monthCell.textContent = `${new Date(year, month).toLocaleString('default', { month: 'long' })} ${year}`;
+
+        const nextButton = headerRow.insertCell();
+        nextButton.textContent = '>';
+        nextButton.onclick = () => renderCalendar(month === 11 ? year + 1 : year, (month + 1) % 12);
+
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const daysRow = header.insertRow();
+        days.forEach(day => {
+            const cell = daysRow.insertCell();
+            cell.textContent = day;
+        });
+
+        const date = new Date(year, month);
+        let day = 1;
+        for (let i = 0; i < 6; i++) {
+            const row = body.insertRow();
+            for (let j = 0; j < 7; j++) {
+                if (i === 0 && j < date.getDay()) {
+                    row.insertCell();
+                } else if (day > new Date(year, month + 1, 0).getDate()) {
+                    break;
+                } else {
+                    const cell = row.insertCell();
+                    cell.textContent = day;
+                    if (day === new Date().getDate() && year === new Date().getFullYear() && month === new Date().getMonth()) {
+                        cell.classList.add('today');
+                    }
+                    day++;
+                }
+            }
+        }
+
+        calendarContainer.appendChild(table);
+    }
+
+    renderCalendar(new Date().getFullYear(), new Date().getMonth());
 
     // Schedule Display Area
     const scheduleContainer = document.createElement('div');
@@ -41,41 +96,27 @@ async function buildDashboardUI() {
     conflictResolutionDiv.innerHTML = '<h2>Conflicts to Resolve</h2><ul id="conflictList"><li>No conflicts found.</li></ul>';
     fragment.appendChild(conflictResolutionDiv);
 
-    // Event Listeners for date range and schedule loading
-    // This part would typically be handled by app.js or a dedicated dashboard.js logic file
-    // For programmatic UI, we attach them here.
-    fragment.querySelector('#fetchScheduleBtn').addEventListener('click', async () => {
-        const startDate = fragment.querySelector('#startDate').value;
-        const endDate = fragment.querySelector('#endDate').value;
+    // Initial render with mock data
+    const mockAppointments = [
+        { _id: 'a1', title: 'Meeting with Client A', start: '2025-09-08T09:00:00Z', end: '2025-09-08T10:00:00Z', serviceRef: 'serviceA', confirmed: true, anonymousId: 'anon1' },
+        { _id: 'a2', title: 'Team Sync', start: '2025-09-08T09:30:00Z', end: '2025-09-08T10:30:00Z', serviceRef: 'serviceB', confirmed: false, anonymousId: 'anon2' },
+        { _id: 'a3', title: 'Client B Call', start: '2025-09-09T11:00:00Z', end: '2025-09-09T12:00:00Z', serviceRef: 'serviceA', confirmed: true, anonymousId: 'anon3' },
+    ];
 
-        if (!startDate || !endDate) {
-            alert('Please select both start and end dates.');
-            return;
+    const mockConflicts = [
+        {
+            type: 'time_overlap',
+            proposedAppointment: mockAppointments[1],
+            conflictingAppointment: mockAppointments[0]
         }
+    ];
 
-        // Mock data for now, replace with actual backend calls
-        // const appointments = await getAppointmentsByDateRange(startDate, endDate);
-        // const conflicts = await getConflictsForDateRange(startDate, endDate);
+    renderSchedule(mockAppointments, scheduleContainer);
+    renderConflicts(mockConflicts, conflictResolutionDiv.querySelector('#conflictList'));
 
-        const mockAppointments = [
-            { _id: 'a1', title: 'Meeting with Client A', start: '2025-09-08T09:00:00Z', end: '2025-09-08T10:00:00Z', serviceRef: 'serviceA', confirmed: true, anonymousId: 'anon1' },
-            { _id: 'a2', title: 'Team Sync', start: '2025-09-08T09:30:00Z', end: '2025-09-08T10:30:00Z', serviceRef: 'serviceB', confirmed: false, anonymousId: 'anon2' },
-            { _id: 'a3', title: 'Client B Call', start: '2025-09-09T11:00:00Z', end: '2025-09-09T12:00:00Z', serviceRef: 'serviceA', confirmed: true, anonymousId: 'anon3' },
-        ];
+    
 
-        const mockConflicts = [
-            {
-                type: 'time_overlap',
-                proposedAppointment: mockAppointments[1],
-                conflictingAppointment: mockAppointments[0]
-            }
-        ];
-
-        renderSchedule(mockAppointments, scheduleContainer);
-        renderConflicts(mockConflicts, conflictResolutionDiv.querySelector('#conflictList'));
-    });
-
-    // Helper function to render the schedule (simplified)
+    // Helper function to render the schedule as a table
     function renderSchedule(appointments, container) {
         container.innerHTML = '<h3>Weekly Overview</h3>';
         if (appointments.length === 0) {
@@ -83,13 +124,103 @@ async function buildDashboardUI() {
             return;
         }
 
-        const ul = document.createElement('ul');
-        appointments.forEach(app => {
-            const li = document.createElement('li');
-            li.textContent = `${app.title} (${new Date(app.start).toLocaleString()})`;
-            ul.appendChild(li);
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
+
+        // Create header row
+        const headerRow = document.createElement('tr');
+        const days = ['Time', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        days.forEach(day => {
+            const th = document.createElement('th');
+            th.textContent = day;
+            headerRow.appendChild(th);
         });
-        container.appendChild(ul);
+        thead.appendChild(headerRow);
+
+        // Create time slot rows
+        for (let i = 9; i <= 17; i++) {
+            const timeSlotRow = document.createElement('tr');
+            const timeCell = document.createElement('td');
+            timeCell.className = 'time-slot';
+            timeCell.textContent = `${i}:00`;
+            timeSlotRow.appendChild(timeCell);
+
+            for (let j = 0; j < 7; j++) {
+                const cell = document.createElement('td');
+                cell.className = 'editable';
+                cell.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+
+                cell.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const data = e.dataTransfer.getData('text/plain');
+                    if (data === 'new-appointment') {
+                        const div = document.createElement('div');
+                        div.className = 'service-new';
+                        div.textContent = 'New Appointment';
+
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.id = `reminder-${Date.now()}`;
+                        const label = document.createElement('label');
+                        label.htmlFor = checkbox.id;
+                        label.textContent = 'Request Reminder';
+
+                        div.appendChild(checkbox);
+                        div.appendChild(label);
+
+                        cell.appendChild(div);
+                    }
+                });
+
+                timeSlotRow.appendChild(cell);
+            }
+            tbody.appendChild(timeSlotRow);
+        }
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        container.appendChild(table);
+
+        // Populate the table with appointments
+        appointments.forEach(app => {
+            const appDate = new Date(app.start);
+            const dayIndex = (appDate.getDay() + 6) % 7; // Monday is 0
+            const hour = appDate.getHours();
+
+            if (hour >= 9 && hour <= 17) {
+                const rowIndex = hour - 9;
+                const cell = tbody.rows[rowIndex].cells[dayIndex + 1];
+                const div = document.createElement('div');
+                div.className = `service-${app.serviceRef.slice(-1).toLowerCase()}`;
+                div.textContent = app.title;
+                cell.appendChild(div);
+
+                // Make the cell editable
+                cell.addEventListener('click', () => {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = div.textContent;
+                    cell.innerHTML = '';
+                    cell.appendChild(input);
+                    input.focus();
+
+                    input.addEventListener('blur', () => {
+                        div.textContent = input.value;
+                        cell.innerHTML = '';
+                        cell.appendChild(div);
+                    });
+
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            input.blur();
+                        }
+                    });
+                });
+            }
+        });
     }
 
     // Helper function to render conflicts

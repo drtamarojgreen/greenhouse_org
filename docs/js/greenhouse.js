@@ -3,7 +3,7 @@
 (function() {
     const githubPagesBaseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
     const schedulePagePath = '/schedule/'; // Adjust if the path is different on the live site
-    const targetSelector = '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column';
+    let targetSelector = '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column';
 
     // Function to load and execute a script by injecting its content
     async function loadScript(url, callback) {
@@ -34,6 +34,15 @@
 
     // Check if it's the schedule page and load scheduler.js conditionally
     if (window.location.pathname.includes(schedulePagePath)) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const view = urlParams.get('view');
+
+        if (view === 'dashboard') {
+            targetSelector = '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)';
+        } else if (view === 'admin') {
+            targetSelector = '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column';
+        }
+
         loadScript(`${githubPagesBaseUrl}js/scheduler.js`, () => { // Updated path
             // Once scheduler.js is loaded, call its main function
             // It should now expose loadScheduleApp globally
