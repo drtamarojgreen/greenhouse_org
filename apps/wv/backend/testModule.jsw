@@ -1,0 +1,4 @@
+// backend/testModule.jsw
+export function hello() {
+    return "Hello from Wix Backend!";
+}
