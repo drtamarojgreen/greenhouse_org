@@ -1,3 +1,4 @@
+// Version: 0.0.0.0
 /**
  * @file scheduler.js
  * @description This script contains the core functionality for the Greenhouse appointment scheduling application.
