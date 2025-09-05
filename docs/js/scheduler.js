@@ -20,26 +20,26 @@
 (function() {
     /**
      * @description The script element that is currently being executed.
-     * This is used to retrieve the data-target-selector attribute.
+     * This is used to retrieve configuration attributes from the loader script.
      * @type {HTMLScriptElement}
      */
     const scriptElement = document.currentScript;
 
     /**
      * @description The CSS selector for the element where the scheduler app will be rendered.
-     * This is passed from greenhouse.js via the data-target-selector attribute.
      * @type {string|null}
      */
     const targetSelector = scriptElement.getAttribute('data-target-selector');
 
     /**
-     * @constant {string} githubPagesBaseUrl - The base URL for fetching application assets.
-     * @todo This should be passed in or configured differently to avoid hardcoding.
+     * @description The base URL for fetching application assets.
+     * @type {string|null}
      */
-    const githubPagesBaseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
+    const baseUrl = scriptElement.getAttribute('data-base-url');
 
-    // If no target selector is found, exit without doing anything.
-    if (!targetSelector) {
+    // If the target selector or base URL are not found, exit without doing anything.
+    if (!targetSelector || !baseUrl) {
+        console.error('Scheduler script missing required data attributes (target-selector or base-url).');
         return;
     }
 
@@ -52,7 +52,7 @@
          * @description The base URL for fetching resources, to be set on initialization.
          * @type {string}
          */
-        githubPagesBaseUrl: '',
+        baseUrl: '',
 
         /**
          * @function buildPatientFormUI
@@ -218,7 +218,7 @@
          * @returns {Promise<void>}
          */
         async loadScript(scriptName) {
-            const response = await fetch(`${this.githubPagesBaseUrl}js/${scriptName}`);
+            const response = await fetch(`${this.baseUrl}js/${scriptName}`);
             if (!response.ok) throw new Error(`Failed to load ${scriptName}: ${response.statusText}`);
             const scriptText = await response.text();
 
@@ -269,17 +269,40 @@
         },
 
         /**
+         * @function displayError
+         * @description Displays a visible error message on the page.
+         * @param {string} message - The error message to display.
+         */
+        displayError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'greenhouse-app-error';
+            errorDiv.style.color = 'red';
+            errorDiv.style.backgroundColor = '#fff0f0';
+            errorDiv.style.border = '1px solid red';
+            errorDiv.style.padding = '15px';
+            errorDiv.style.margin = '20px';
+            errorDiv.style.textAlign = 'center';
+            errorDiv.style.fontFamily = 'Arial, sans-serif';
+            errorDiv.style.zIndex = '10000';
+            errorDiv.style.position = 'relative';
+            errorDiv.textContent = message;
+            document.body.insertAdjacentElement('afterbegin', errorDiv);
+        },
+
+        /**
          * @function init
          * @description Initializes the entire scheduling application.
          * @param {string} targetSelector - The CSS selector for the element to load the app into.
-         * @param {string} githubPagesBaseUrl - The base URL for fetching assets.
+         * @param {string} baseUrl - The base URL for fetching assets.
          */
-        async init(targetSelector, githubPagesBaseUrl) {
-            this.githubPagesBaseUrl = githubPagesBaseUrl;
+        async init(targetSelector, baseUrl) {
+            this.baseUrl = baseUrl;
             const targetElement = document.querySelector(targetSelector);
 
             if (!targetElement) {
-                console.error('Target element not found:', targetSelector);
+                const errorMessage = `Greenhouse App Error: The target element "${targetSelector}" was not found on the page. The application cannot be loaded.`;
+                console.error(errorMessage);
+                this.displayError(errorMessage);
                 return;
             }
 
@@ -291,7 +314,7 @@
                 const appDomFragment = await this.renderView();
 
                 // Load CSS
-                const cssResponse = await fetch(`${this.githubPagesBaseUrl}css/schedule.css`);
+                const cssResponse = await fetch(`${this.baseUrl}css/schedule.css`);
                 if (!cssResponse.ok) throw new Error(`Failed to load CSS: ${cssResponse.statusText}`);
                 const cssText = await cssResponse.text();
 
@@ -313,11 +336,13 @@
 
             } catch (error) {
                 console.error('Error loading schedule app:', error);
-                targetElement.innerHTML = `<p style="color: red;">Failed to load the scheduling application. Please check the console for details.</p>`;
+                const errorMessage = 'Failed to load the scheduling application. Please check the console for details or contact support.';
+                this.displayError(errorMessage);
+                targetElement.innerHTML = `<p style="color: red;">${errorMessage}</p>`;
             }
         }
     };
 
     // Initialize the scheduler application.
-    GreenhouseAppsScheduler.init(targetSelector, githubPagesBaseUrl);
+    GreenhouseAppsScheduler.init(targetSelector, baseUrl);
 })();

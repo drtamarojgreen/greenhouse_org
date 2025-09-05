@@ -18,31 +18,35 @@
 
 (function() {
     /**
-     * @constant {string} githubPagesBaseUrl - The base URL for fetching application assets.
-     * This points to the GitHub Pages site where the application assets are hosted.
+     * @description Configuration for the Greenhouse application loader.
      */
-    const githubPagesBaseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
-
-    /**
-     * @constant {string} schedulePagePath - The path segment that identifies the schedule page.
-     * This is used to determine whether to load the scheduling application.
-     */
-    const schedulePagePath = '/schedule/';
-
-    /**
-     * @description The default CSS selector for the target element where the scheduler app will be rendered.
-     * This can be overridden based on the view (e.g., dashboard, admin).
-     * @type {string}
-     */
-    let targetSelector = '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column';
+    const config = {
+        /**
+         * The base URL for fetching application assets from the GitHub Pages site.
+         */
+        githubPagesBaseUrl: 'https://drtamarojgreen.github.io/greenhouse_org/',
+        /**
+         * The path segment that identifies the schedule page.
+         */
+        schedulePagePath: '/schedule/',
+        /**
+         * CSS selectors for the different views of the scheduling application.
+         * These are specific to the Wix site structure and may need updating if the site changes.
+         */
+        selectors: {
+            patient: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
+            dashboard: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)',
+            admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column'
+        }
+    };
 
     /**
      * @function loadScript
      * @description Asynchronously loads a script from a given URL and injects it into the page.
      * @param {string} url - The URL of the script to load.
-     * @param {string} [selector] - An optional CSS selector to be passed to the loaded script via a data attribute.
+     * @param {Object} [attributes={}] - An optional map of data attributes to set on the script element.
      */
-    async function loadScript(url, selector) {
+    async function loadScript(url, attributes = {}) {
         try {
             // Fetch the script content from the provided URL.
             const response = await fetch(url);
@@ -53,10 +57,9 @@
             const scriptElement = document.createElement('script');
             scriptElement.textContent = scriptText;
 
-            // If a selector is provided, set it as a data attribute on the script element.
-            // This allows the loaded script to know where to render its content.
-            if (selector) {
-                scriptElement.setAttribute('data-target-selector', selector);
+            // Set any data attributes passed in the attributes object.
+            for (const [key, value] of Object.entries(attributes)) {
+                scriptElement.setAttribute(`data-${key}`, value);
             }
 
             // Append the script element to the body to execute it.
@@ -69,22 +72,31 @@
     // --- Main execution logic ---
 
     // Load the visual effects script on all pages.
-    loadScript(`${githubPagesBaseUrl}js/effects.js`);
+    loadScript(`${config.githubPagesBaseUrl}js/effects.js`);
 
     // Check if the current page is the schedule page.
-    if (window.location.pathname.includes(schedulePagePath)) {
+    if (window.location.pathname.includes(config.schedulePagePath)) {
         // Parse URL parameters to determine the view.
         const urlParams = new URLSearchParams(window.location.search);
-        const view = urlParams.get('view');
+        const view = urlParams.get('view'); // e.g., 'dashboard' or 'admin'
 
-        // Adjust the target selector based on the view.
-        if (view === 'dashboard') {
-            targetSelector = '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)';
-        } else if (view === 'admin') {
-            targetSelector = '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column';
+        // Determine the correct selector, defaulting to the patient view.
+        let targetSelector;
+        if (view === 'dashboard' && config.selectors.dashboard) {
+            targetSelector = config.selectors.dashboard;
+        } else if (view === 'admin' && config.selectors.admin) {
+            targetSelector = config.selectors.admin;
+        } else {
+            targetSelector = config.selectors.patient;
         }
 
-        // Load the scheduler script and pass the target selector to it.
-        loadScript(`${githubPagesBaseUrl}js/scheduler.js`, targetSelector);
+        // Define the attributes to be passed to the scheduler script.
+        const schedulerAttributes = {
+            'target-selector': targetSelector,
+            'base-url': config.githubPagesBaseUrl
+        };
+
+        // Load the scheduler script and pass the necessary data attributes to it.
+        loadScript(`${config.githubPagesBaseUrl}js/scheduler.js`, schedulerAttributes);
     }
 })();
