@@ -1,8 +1,54 @@
-// docs/js/dashboard.js
+async function getAppointmentsByDateRange(startDate, endDate) {
+  const response = await fetch(`/_functions/getAppointmentsByDateRange?startDate=${startDate}&endDate=${endDate}`);
+  if (!response.ok) {
+    throw new Error(`Failed to get appointments: ${response.statusText}`);
+  }
+  return response.json();
+}
 
-// Import necessary Velo backend functions (these are placeholders until implemented)
-import { getAppointmentsByDateRange, getConflictsForDateRange, updateAppointmentStatus, resolveConflict } from 'backend/adminScheduling';
-import { getServiceTypes } from 'backend/services';
+async function getConflictsForDateRange(startDate, endDate) {
+  const response = await fetch(`/_functions/getConflictsForDateRange?startDate=${startDate}&endDate=${endDate}`);
+  if (!response.ok) {
+    throw new Error(`Failed to get conflicts: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+async function updateAppointmentStatus(appointmentId, status) {
+  const response = await fetch('/_functions/updateAppointmentStatus', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ appointmentId, status }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to update appointment status: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+async function resolveConflict(conflictId, resolution) {
+  const response = await fetch('/_functions/resolveConflict', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ conflictId, resolution }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to resolve conflict: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+async function getServiceTypes() {
+  const response = await fetch('/_functions/getServiceTypes');
+  if (!response.ok) {
+    throw new Error(`Failed to get service types: ${response.statusText}`);
+  }
+  return response.json();
+}
 
 /**
  * Builds the UI for the Administrator Dashboard.
@@ -188,7 +234,11 @@ async function buildDashboardUI() {
 
         table.appendChild(thead);
         table.appendChild(tbody);
-        container.appendChild(table);
+
+        const tableWrapper = document.createElement('div');
+        tableWrapper.style.overflowX = 'auto';
+        tableWrapper.appendChild(table);
+        container.appendChild(tableWrapper);
 
         // Populate the table with appointments
         appointments.forEach(app => {
