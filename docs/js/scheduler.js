@@ -1,15 +1,62 @@
+/**
+ * @file scheduler.js
+ * @description This script contains the core functionality for the Greenhouse appointment scheduling application.
+ * It is responsible for rendering the various scheduling views (patient, dashboard, admin) and handling
+ * user interactions within those views.
+ *
+ * @integration This script is not loaded directly by the host page. Instead, it is loaded by `greenhouse.js`
+ * when the scheduling application is needed. `greenhouse.js` passes the target selector for rendering
+ * via a `data-target-selector` attribute on the script tag. This design allows the scheduler to be
+ * a self-contained module that can be easily dropped into any page without requiring manual
+ * configuration or initialization.
+ *
+ * @design The script is designed to be completely anonymous and self-contained. It uses an Immediately
+ * Invoked Function Expression (IIFE) to avoid polluting the global namespace. It also uses a
+ * data-driven approach to receive information from the loader script, further decoupling the application
+ * from the loader. This design is crucial for preventing conflicts with other scripts on the site,
+ * which is known to be sensitive to global namespace pollution.
+ */
 
 (function() {
     /**
-     * @namespace Scheduler
-     * @description Manages the loading and rendering of different scheduling views (Patient, Dashboard, Admin).
+     * @description The script element that is currently being executed.
+     * This is used to retrieve the data-target-selector attribute.
+     * @type {HTMLScriptElement}
      */
-    const Scheduler = {
-        // Base URL for fetching resources, to be set on initialization
+    const scriptElement = document.currentScript;
+
+    /**
+     * @description The CSS selector for the element where the scheduler app will be rendered.
+     * This is passed from greenhouse.js via the data-target-selector attribute.
+     * @type {string|null}
+     */
+    const targetSelector = scriptElement.getAttribute('data-target-selector');
+
+    /**
+     * @constant {string} githubPagesBaseUrl - The base URL for fetching application assets.
+     * @todo This should be passed in or configured differently to avoid hardcoding.
+     */
+    const githubPagesBaseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
+
+    // If no target selector is found, exit without doing anything.
+    if (!targetSelector) {
+        return;
+    }
+
+    /**
+     * @namespace GreenhouseAppsScheduler
+     * @description The main object for the scheduling application.
+     */
+    const GreenhouseAppsScheduler = {
+        /**
+         * @description The base URL for fetching resources, to be set on initialization.
+         * @type {string}
+         */
         githubPagesBaseUrl: '',
 
         /**
-         * Builds the UI for the patient-facing appointment request form.
+         * @function buildPatientFormUI
+         * @description Builds the UI for the patient-facing appointment request form.
          * @returns {DocumentFragment} A DocumentFragment containing the form UI.
          */
         buildPatientFormUI() {
@@ -55,7 +102,8 @@
         },
 
         /**
-         * Creates the form fields for the patient appointment request.
+         * @function createFormFields
+         * @description Creates the form fields for the patient appointment request.
          * @returns {HTMLFormElement} The generated form element.
          */
         createFormFields() {
@@ -106,7 +154,8 @@
         },
 
         /**
-         * Creates hidden elements used by the application (e.g., conflict modal).
+         * @function createHiddenElements
+         * @description Creates hidden elements used by the application (e.g., conflict modal).
          * @returns {DocumentFragment}
          */
         createHiddenElements() {
@@ -137,7 +186,8 @@
         },
 
         /**
-         * Creates the instructional panel content.
+         * @function createInstructionsPanel
+         * @description Creates the instructional panel content.
          * @returns {DocumentFragment}
          */
         createInstructionsPanel() {
@@ -162,7 +212,8 @@
         },
 
         /**
-         * Dynamically loads a script and appends it to the body.
+         * @function loadScript
+         * @description Dynamically loads a script and appends it to the body.
          * @param {string} scriptName - The name of the script file (e.g., 'dashboard.js').
          * @returns {Promise<void>}
          */
@@ -183,7 +234,8 @@
         },
 
         /**
-         * Renders the appropriate view (Patient, Dashboard, or Admin) based on URL parameters.
+         * @function renderView
+         * @description Renders the appropriate view (Patient, Dashboard, or Admin) based on URL parameters.
          * @returns {Promise<DocumentFragment>} A promise that resolves with the DOM fragment for the view.
          */
         async renderView() {
@@ -217,7 +269,8 @@
         },
 
         /**
-         * Initializes the entire scheduling application.
+         * @function init
+         * @description Initializes the entire scheduling application.
          * @param {string} targetSelector - The CSS selector for the element to load the app into.
          * @param {string} githubPagesBaseUrl - The base URL for fetching assets.
          */
@@ -265,8 +318,6 @@
         }
     };
 
-    // Expose the init function to the global scope, namespaced under Greenhouse
-    window.Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.loadScheduleApp = Scheduler.init.bind(Scheduler);
-
+    // Initialize the scheduler application.
+    GreenhouseAppsScheduler.init(targetSelector, githubPagesBaseUrl);
 })();
