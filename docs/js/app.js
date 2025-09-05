@@ -243,6 +243,10 @@ const AppointmentApp = (function() { // Start of IIFE
         fetchServices();
         resetForm();
         setupModal();
+        const proposeBtn = document.getElementById('propose-appointment-btn');
+        if (proposeBtn) {
+            proposeBtn.onclick = proposeAndAddAppointment;
+        }
     }
 
     // Return the public interface of the module
