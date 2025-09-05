@@ -8,6 +8,7 @@ import { getServiceAppointments, addAppointmentToService, updateAppointmentInSer
  * @param {object} newAppointment - The appointment object to check.
  * @returns {Array} - A list of conflicting appointments.
  */
+/*
 async function checkAppointmentConflict(newAppointment) { // Made async
     const newAppointmentStart = new Date(newAppointment.start);
     const newAppointmentEnd = new Date(newAppointment.end);
@@ -53,7 +54,9 @@ export async function proposeAppointment(proposedAppointment) { // Made async
     }
     return { message: 'No conflicts detected.' };
 }
+*/
 
+/*
 /**
  * Retrieves all appointments from all services.
  * @returns {Array} - A flat array of all appointments.
@@ -112,3 +115,4 @@ export async function deleteAppointment(appointmentId, serviceId) { // Made asyn
     }
     return { message: `Appointment ${appointmentId} deleted successfully.` };
 }
+*/

@@ -3,7 +3,7 @@ function GreenhousePatientApp() {
     // All functions are now private to the GreenhousePatientApp scope.
 
     async function getServices() {
-        const response = await fetch('/_functions/getServices');
+        const response = await fetch('/_api/getServices');
         if (!response.ok) {
             throw new Error(`Failed to get services: ${response.statusText}`);
         }
@@ -19,7 +19,7 @@ function GreenhousePatientApp() {
     }
 
     async function proposeAppointment(appointment) {
-        const response = await fetch('/_functions/proposeAppointment', {
+        const response = await fetch('/_api/proposeAppointment', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ function GreenhousePatientApp() {
     }
 
     async function createAppointment(appointment) {
-        const response = await fetch('/_functions/createAppointment', {
+        const response = await fetch('/_api/createAppointment', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -51,12 +51,12 @@ function GreenhousePatientApp() {
     }
 
     async function updateAppointment(appointmentId, updatedAppointment) {
-        const response = await fetch(`/_functions/updateAppointment`, {
+        const response = await fetch(`/_api/updateAppointment/${appointmentId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ appointmentId, updatedAppointment }),
+            body: JSON.stringify(updatedAppointment),
         });
         if (!response.ok) {
             throw new Error(`Failed to update appointment: ${response.statusText}`);
@@ -64,8 +64,8 @@ function GreenhousePatientApp() {
         return response.json();
     }
 
-    async function deleteAppointmentFromService(serviceId, appointmentId) {
-        const response = await fetch(`/_functions/deleteAppointment?serviceId=${serviceId}&appointmentId=${appointmentId}`, {
+    async function deleteAppointmentFromService(serviceId, appointmentId) { // serviceId parameter is now unused
+        const response = await fetch(`/_api/deleteAppointment/${appointmentId}`, {
             method: 'DELETE',
         });
         if (!response.ok) {

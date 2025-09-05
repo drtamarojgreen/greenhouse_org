@@ -26,6 +26,7 @@ export async function getServices() {
  * Intended for use by other backend modules (e.g., scheduling.jsw).
  * @returns {object} - The full services object.
  */
+/*
 export async function getServiceAppointments() {
     try {
         const results = await wixData.query("Appointments").find();
@@ -35,12 +36,14 @@ export async function getServiceAppointments() {
         throw new Error("Failed to retrieve all appointments.");
     }
 }
+*/
 
 /**
  * Adds an appointment to a specific service's appointment list.
  * @param {string} serviceId - The ID of the service.
  * @param {object} appointment - The appointment object to add.
  */
+/*
 export async function addAppointmentToService(serviceId, appointment) {
     try {
         // Assuming 'appointment' object already contains necessary fields like title, start, end, etc.
@@ -53,6 +56,7 @@ export async function addAppointmentToService(serviceId, appointment) {
         throw new Error("Failed to add appointment.");
     }
 }
+*/
 
 /**
  * Updates an appointment within a specific service's appointment list.
@@ -61,6 +65,7 @@ export async function addAppointmentToService(serviceId, appointment) {
  * @param {object} updatedData - The new appointment data.
  * @returns {object|null} - The updated appointment or null if not found.
  */
+/*
 export async function updateAppointmentInService(serviceId, appointmentId, updatedData) {
     try {
         // Query for the appointment by its _id and serviceRef
@@ -81,6 +86,7 @@ export async function updateAppointmentInService(serviceId, appointmentId, updat
         throw new Error("Failed to update appointment.");
     }
 }
+*/
 
 /**
  * Deletes an appointment from a specific service's appointment list.
@@ -88,6 +94,7 @@ export async function updateAppointmentInService(serviceId, appointmentId, updat
  * @param {string} appointmentId - The ID of the appointment to delete.
  * @returns {boolean} - True if deletion was successful, false otherwise.
  */
+/*
 export async function deleteAppointmentFromService(serviceId, appointmentId) {
     try {
         const results = await wixData.query("Appointments")
@@ -106,3 +113,4 @@ export async function deleteAppointmentFromService(serviceId, appointmentId) {
         throw new Error("Failed to delete appointment.");
     }
 }
+*/
