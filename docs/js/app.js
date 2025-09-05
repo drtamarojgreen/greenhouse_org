@@ -1,5 +1,74 @@
-import { getServices } from 'backend/services';
-import { getAppointments, proposeAppointment, createAppointment, updateAppointment, deleteAppointmentFromService } from 'backend/scheduling'; // Corrected import for deleteAppointmentFromService
+async function getServices() {
+  const response = await fetch('/_functions/getServices');
+  if (!response.ok) {
+    throw new Error(`Failed to get services: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+async function getAppointments() {
+  const response = await fetch('/_functions/getAppointments');
+  if (!response.ok) {
+    throw new Error(`Failed to get appointments: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+async function proposeAppointment(appointment) {
+  const response = await fetch('/_functions/proposeAppointment', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(appointment),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    const error = new Error(`Failed to propose appointment: ${response.statusText}`);
+    error.code = response.status;
+    error.data = errorData;
+    throw error;
+  }
+  return response.json();
+}
+
+async function createAppointment(appointment) {
+  const response = await fetch('/_functions/createAppointment', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(appointment),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to create appointment: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+async function updateAppointment(appointmentId, updatedAppointment) {
+  const response = await fetch(`/_functions/updateAppointment`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ appointmentId, updatedAppointment }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to update appointment: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+async function deleteAppointmentFromService(serviceId, appointmentId) {
+    const response = await fetch(`/_functions/deleteAppointment?serviceId=${serviceId}&appointmentId=${appointmentId}`, {
+        method: 'DELETE',
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to delete appointment: ${response.statusText}`);
+    }
+    return response.json();
+}
 
 const AppointmentApp = (function() { // Start of IIFE
 
