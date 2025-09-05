@@ -80,14 +80,14 @@
         const urlParams = new URLSearchParams(window.location.search);
         const view = urlParams.get('view'); // e.g., 'dashboard' or 'admin'
 
-        // Determine the correct selector, defaulting to the patient view.
+        // Determine the correct selector, defaulting to the dashboard view.
         let targetSelector;
-        if (view === 'dashboard' && config.selectors.dashboard) {
-            targetSelector = config.selectors.dashboard;
+        if (view === 'patient' && config.selectors.patient) {
+            targetSelector = config.selectors.patient;
         } else if (view === 'admin' && config.selectors.admin) {
             targetSelector = config.selectors.admin;
         } else {
-            targetSelector = config.selectors.patient;
+            targetSelector = config.selectors.dashboard;
         }
 
         // Define the attributes to be passed to the scheduler script.
