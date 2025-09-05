@@ -56,7 +56,7 @@
 
         const button = document.createElement('button');
         button.textContent = 'Request Appointment';
-        button.onclick = AppointmentApp.proposeAndAddAppointment; // This function is in app.js
+        button.id = 'propose-appointment-btn';
         appointmentFormDiv.appendChild(button);
 
         // Hidden appointment list (for app.js to potentially use, but not displayed)
