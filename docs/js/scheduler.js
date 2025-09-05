@@ -318,9 +318,31 @@
                 if (!cssResponse.ok) throw new Error(`Failed to load CSS: ${cssResponse.statusText}`);
                 const cssText = await cssResponse.text();
 
-                // Clear target and append new content
-                targetElement.innerHTML = '';
-                targetElement.appendChild(appDomFragment);
+                // Find the parent wixui-section and its container by crawling up the DOM
+                let parentWixuiSection = targetElement;
+                while (parentWixuiSection && !(parentWixuiSection.tagName === 'SECTION' && parentWixuiSection.classList.contains('wixui-section'))) {
+                    parentWixuiSection = parentWixuiSection.parentElement;
+                }
+
+                // Create a new container for the app
+                const appContainer = document.createElement('section');
+                appContainer.id = 'greenhouse-app-container';
+                appContainer.style.width = '100%';
+                appContainer.style.position = 'relative';
+                appContainer.style.padding = '20px';
+                appContainer.style.boxSizing = 'border-box';
+
+                // Append the app to the new container
+                appContainer.appendChild(appDomFragment);
+
+                if (!parentWixuiSection) {
+                    console.error('Could not find the parent wixui-section. Falling back to prepending to the target element.');
+                    targetElement.prepend(appContainer);
+                } else {
+                    const container = parentWixuiSection.parentElement;
+                    // Prepend the new container to the container element
+                    container.prepend(appContainer);
+                }
 
                 // Append styles to the head
                 const styleElement = document.createElement('style');
