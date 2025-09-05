@@ -10,7 +10,7 @@ function GreenhousePatientApp() {
     }
 
     async function getAppointments() {
-        const response = await fetch('/_functions/getAppointments');
+        const response = await fetch('/_api/getAppointments');
         if (!response.ok) {
             throw new Error(`Failed to get appointments: ${response.statusText}`);
         }
