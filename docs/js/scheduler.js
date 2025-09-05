@@ -136,7 +136,7 @@
                         input.placeholder = field.placeholder;
                     }
                 }
-                input.id = field.id;
+                input.id = 'greenhouse-patient-app-' + field.id;
                 input.name = field.id;
                 input.required = true;
                 form.appendChild(input);
