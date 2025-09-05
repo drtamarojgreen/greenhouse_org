@@ -242,30 +242,41 @@
             const urlParams = new URLSearchParams(window.location.search);
             const view = urlParams.get('view');
 
+            let appInstance;
+            let appDomFragment;
+
             switch (view) {
                 case 'dashboard':
-                    await this.loadScript('dashboard.js');
-                    if (window.Dashboard && typeof window.Dashboard.init === 'function') {
-                        return await window.Dashboard.init();
-                    }
+                    await this.loadScript('GreenhouseDashboardApp.js');
+                    appInstance = GreenhouseDashboardApp();
+                    appDomFragment = appInstance.buildDashboardUI();
                     break;
                 case 'admin':
-                    await this.loadScript('admin.js');
-                    if (window.Admin && typeof window.Admin.init === 'function') {
-                        return await window.Admin.init();
-                    }
+                    await this.loadScript('GreenhouseAdminApp.js');
+                    appInstance = GreenhouseAdminApp();
+                    appDomFragment = appInstance.buildForm(); // Admin app builds a form
                     break;
                 case 'patient':
                 default:
-                    return this.buildPatientFormUI();
+                    await this.loadScript('GreenhousePatientApp.js');
+                    appInstance = GreenhousePatientApp();
+                    appDomFragment = this.buildPatientFormUI(); // Patient app builds its own UI
+                    break;
             }
-            // Return an empty fragment or an error message if the view fails to load
-            const errorFragment = document.createDocumentFragment();
-            const p = document.createElement('p');
-            p.textContent = 'Error: View could not be loaded.';
-            p.style.color = 'red';
-            errorFragment.appendChild(p);
-            return errorFragment;
+
+            // Store the app instance for later initialization
+            this.currentAppInstance = appInstance;
+
+            if (appDomFragment) {
+                return appDomFragment;
+            } else {
+                const errorFragment = document.createDocumentFragment();
+                const p = document.createElement('p');
+                p.textContent = 'Error: View could not be loaded.';
+                p.style.color = 'red';
+                errorFragment.appendChild(p);
+                return errorFragment;
+            }
         },
 
         /**
@@ -308,7 +319,7 @@
 
             try {
                 // Load main application logic
-                await this.loadScript('app.js');
+                await this.loadScript('GreenhousePatientApp.js');
 
                 // Render the correct view
                 const appDomFragment = await this.renderView();
@@ -350,8 +361,8 @@
                 document.head.appendChild(styleElement);
 
                 // Initialize the main app logic after the DOM is built
-                if (window.AppointmentApp && typeof window.AppointmentApp.init === 'function') {
-                    window.AppointmentApp.init();
+                if (this.currentAppInstance && typeof this.currentAppInstance.init === 'function') {
+                    this.currentAppInstance.init();
                 }
 
                 console.log('Schedule app loaded successfully!');
