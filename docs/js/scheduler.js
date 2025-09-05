@@ -318,9 +318,6 @@
             }
 
             try {
-                // Load test integration script first
-                await this.loadScript('test_integration.js');
-
                 // Load main application logic
                 await this.loadScript('GreenhousePatientApp.js');
 
