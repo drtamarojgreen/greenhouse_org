@@ -46,8 +46,8 @@
         loadScript(`${githubPagesBaseUrl}js/scheduler.js`, () => { // Updated path
             // Once scheduler.js is loaded, call its main function
             // It should now expose loadScheduleApp globally
-            if (typeof window.loadScheduleApp === 'function') {
-                window.loadScheduleApp(targetSelector, githubPagesBaseUrl);
+            if (typeof window.Greenhouse.loadScheduleApp === 'function') {
+                window.Greenhouse.loadScheduleApp(targetSelector, githubPagesBaseUrl);
             } else {
                 console.error('loadScheduleApp function not found in scheduler.js.');
             }
