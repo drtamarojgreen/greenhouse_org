@@ -1,7 +1,7 @@
 function GreenhouseAdminApp() {
     // Velo backend function wrappers
     async function getAppointmentById(appointmentId) {
-        const response = await fetch(`/_functions/getAppointmentById?appointmentId=${appointmentId}`);
+        const response = await fetch(`/_api/getAppointmentById/${appointmentId}`);
         if (!response.ok) {
             throw new Error(`Failed to get appointment: ${response.statusText}`);
         }
@@ -9,7 +9,7 @@ function GreenhouseAdminApp() {
     }
 
     async function updateAppointment(appointmentId, updatedData) {
-        const response = await fetch(`/_functions/updateAppointment`, {
+        const response = await fetch(`/_api/updateAppointment/${appointmentId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -23,7 +23,7 @@ function GreenhouseAdminApp() {
     }
 
     async function deleteAppointment(appointmentId, serviceRef) {
-        const response = await fetch(`/_functions/deleteAppointment?appointmentId=${appointmentId}&serviceRef=${serviceRef}`, {
+        const response = await fetch(`/_api/deleteAppointment/${appointmentId}`, {
             method: 'DELETE',
         });
         if (!response.ok) {
@@ -33,7 +33,7 @@ function GreenhouseAdminApp() {
     }
 
     async function getServiceTypes() {
-        const response = await fetch('/_functions/getServiceTypes');
+        const response = await fetch('/_api/getServiceTypes');
         if (!response.ok) {
             throw new Error(`Failed to get service types: ${response.statusText}`);
         }
@@ -210,10 +210,10 @@ function GreenhouseAdminApp() {
 
         try {
             await updateAppointment(appointmentId, updatedData);
-            alert('Appointment updated successfully!');
+            GreenhouseUtils.displaySuccess('Appointment updated successfully!');
         } catch (error) {
             console.error("Error updating appointment:", error);
-            alert('Failed to update appointment.');
+            GreenhouseUtils.displayError('Failed to update appointment.');
         }
     }
 
@@ -226,12 +226,12 @@ function GreenhouseAdminApp() {
         if (confirm('Are you sure you want to delete this appointment?')) {
             try {
                 await deleteAppointment(appointmentId, serviceRef);
-                alert('Appointment deleted successfully!');
+                GreenhouseUtils.displaySuccess('Appointment deleted successfully!');
                 // Optionally, redirect or clear the form
                 document.getElementById('greenhouse-admin-app-individual-appointment-form').innerHTML = '<p>Appointment has been deleted.</p>';
             } catch (error) {
                 console.error("Error deleting appointment:", error);
-                alert('Failed to delete appointment.');
+                GreenhouseUtils.displayError('Failed to delete appointment.');
             }
         }
     }

@@ -6,7 +6,7 @@ There are two main types of applications in this repository:
 
 ## 1. Velo Backend Services (`wv/`)
 
-The `apps/wv/` directory contains backend web modules (`.jsw` files) for Wix Velo. These services provide functionality for features like FAQs, guides, quizzes, and more.
+The `apps/wv/` directory contains backend HTTP functions (.web.js files) for Wix Velo. These services provide functionality for features like FAQs, guides, quizzes, and more.
 
 These services are not standalone applications. Their code must be manually added to the **Backend** section of your Wix site editor.
 

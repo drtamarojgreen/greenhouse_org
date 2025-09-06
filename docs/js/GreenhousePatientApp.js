@@ -122,35 +122,48 @@ function GreenhousePatientApp() {
             });
         } catch (error) {
             console.error("Error fetching services:", error);
-            alert("Failed to load services.");
+            GreenhouseUtils.displayError("Failed to load services.");
+            const select = document.getElementById('greenhouse-patient-app-service-select');
+            if (select) {
+                select.innerHTML = '<option value="">Failed to load services.</option>';
+            }
         }
     }
 
     async function fetchAppointments() {
-        const appointments = await getAppointments();
-        const ul = document.getElementById('greenhouse-patient-app-appointments-list'); // Renamed ID
-        ul.innerHTML = '';
+        try {
+            const appointments = await getAppointments();
+            const ul = document.getElementById('greenhouse-patient-app-appointments-list'); // Renamed ID
+            ul.innerHTML = '';
 
-        if (appointments.length === 0) {
-            ul.innerHTML = '<li>No appointments scheduled.</li>';
-            return;
+            if (appointments.length === 0) {
+                ul.innerHTML = '<li>No appointments scheduled.</li>';
+                return;
+            }
+
+            appointments.forEach(appointment => {
+                const li = document.createElement('li');
+                li.className = 'greenhouse-patient-app-appointment-item'; // Renamed class
+                const appointmentJsonString = JSON.stringify(appointment).replace(/'/g, "&apos;");
+                li.innerHTML = `
+                    <strong>${appointment.title}</strong><br>
+                    Date: ${appointment.date} at ${appointment.time}<br>
+                    Meeting Platform: ${appointment.platform} (Service: ${appointment.serviceRef || 'N/A'})
+                    <div style="margin-top: 5px;">
+                        <button data-action='edit' data-appointment='${appointmentJsonString}' class="greenhouse-patient-app-button">Edit</button>
+                        <button data-action='delete' data-appointment-id='${appointment._id}' data-service-id='${appointment.serviceRef}' class="greenhouse-patient-app-button">Delete</button>
+                    </div>
+                `;
+                ul.appendChild(li);
+            });
+        } catch (error) {
+            console.error("Error fetching appointments:", error);
+            GreenhouseUtils.displayError("Failed to load appointments.");
+            const ul = document.getElementById('greenhouse-patient-app-appointments-list');
+            if (ul) {
+                ul.innerHTML = '<li>Failed to load appointments.</li>';
+            }
         }
-
-        appointments.forEach(appointment => {
-            const li = document.createElement('li');
-            li.className = 'greenhouse-patient-app-appointment-item'; // Renamed class
-            const appointmentJsonString = JSON.stringify(appointment).replace(/'/g, "&apos;");
-            li.innerHTML = `
-                <strong>${appointment.title}</strong><br>
-                Date: ${appointment.date} at ${appointment.time}<br>
-                Meeting Platform: ${appointment.platform} (Service: ${appointment.serviceRef || 'N/A'})
-                <div style="margin-top: 5px;">
-                    <button data-action='edit' data-appointment='${appointmentJsonString}' class="greenhouse-patient-app-button">Edit</button>
-                    <button data-action='delete' data-appointment-id='${appointment._id}' data-service-id='${appointment.serviceRef}' class="greenhouse-patient-app-button">Delete</button>
-                </div>
-            `;
-            ul.appendChild(li);
-        });
     }
 
     function clearFormInputs() {

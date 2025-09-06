@@ -1096,8 +1096,13 @@
             }
 
             appState.isLoading = true;
-
             try {
+                // Load utility script
+                await this.loadScript('GreenhouseUtils.js');
+
+                // Load main application logic
+                await this.loadScript('GreenhousePatientApp.js');
+                
                 console.log('Scheduler: Starting initialization');
 
                 // Set configuration

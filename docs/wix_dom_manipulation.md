@@ -12,8 +12,8 @@ The architecture can be broken down into the following components:
 2.  **Loader Script (`greenhouse.js`)**: A single script loaded on all pages of the Wix site that acts as an entry point.
 3.  **Application Core (`scheduler.js`)**: The main script for the scheduling application.
 4.  **View Scripts (`dashboard.js`, `admin.js`)**: Scripts that build the UI for specific views within the application.
-5.  **Logic Script (`app.js`)**: A script that contains the business logic for the patient-facing form.
-6.  **Wix Velo Backend**: Backend functions that provide data and services to the application.
+5.  **Logic Script (`GreenhousePatientApp.js`)**: A script that contains the business logic for the patient-facing form.
+6.  **Wix Velo Backend HTTP Functions**: Backend functions that provide data and services to the application via `/_api/` endpoints.
 
 ## Process Flow
 
@@ -33,10 +33,10 @@ graph TD
     J --> M{Inject UI into Wix DOM};
     K --> M;
     L --> M;
-    M --> N[Load app.js];
+    M --> N[Load GreenhousePatientApp.js];
     N --> O{Initialize app logic};
     O --> P[Attach event listeners];
-    P --> Q[Interact with Velo backend];
+    P --> Q[Interact with Velo backend HTTP Functions];
 ```
 
 ## File Descriptions
@@ -62,7 +62,7 @@ graph TD
     *   Loads the necessary view script (`dashboard.js` or `admin.js`) or builds the patient form UI itself.
     *   Fetches the `schedule.css` stylesheet and injects it into the `<head>`.
     *   Clears the `innerHTML` of the target element and appends the new UI to it.
-    *   Loads `app.js` to provide interactivity for the patient form.
+    *   Loads `GreenhousePatientApp.js` to provide interactivity for the patient form.
 
 ### `dashboard.js`
 
@@ -72,13 +72,75 @@ graph TD
     *   Fetches appointment data from the Wix Velo backend.
     *   Exposes a `buildDashboardUI` function that is called by `scheduler.js`.
 
-### `app.js`
+### `GreenhousePatientApp.js`
 
 *   **Purpose**: To provide the business logic for the patient appointment request form.
 *   **Functionality**:
     *   Handles form submissions, user input, and validation.
-    *   Communicates with the Wix Velo backend to create and update appointments.
-    *   **Important**: This script is only intended to be used with the `patient` view and will cause errors if loaded with other views.
+    *   Communicates with the Wix Velo backend via HTTP Functions (`/_api/` endpoints) to create, read, update, and delete appointments and services.
+    *   **Important**: This script is only intended to be used with the `patient` view.
+
+## Wix Velo HTTP Functions (`.web.js`)
+
+The following HTTP Functions are deployed in the `apps/wv/backend/` directory and provide API endpoints accessible via `/_api/` calls.
+
+*   **`getAppointments.web.js`**:
+    *   Purpose: Retrieves all appointments from the "Appointments" collection.
+    *   Endpoint: `/_api/getAppointments` (GET)
+*   **`getServices.web.js`**:
+    *   Purpose: Retrieves all available services from the "Services" collection.
+    *   Endpoint: `/_api/getServices` (GET)
+*   **`proposeAppointment.web.js`**:
+    *   Purpose: Proposes an appointment and checks for conflicts against existing appointments.
+    *   Endpoint: `/_api/proposeAppointment` (POST)
+*   **`createAppointment.web.js`**:
+    *   Purpose: Creates a new appointment in the "Appointments" collection.
+    *   Endpoint: `/_api/createAppointment` (POST)
+*   **`updateAppointment.web.js`**:
+    *   Purpose: Updates an existing appointment in the "Appointments" collection.
+    *   Endpoint: `/_api/updateAppointment/{appointmentId}` (PUT)
+*   **`deleteAppointment.web.js`**:
+    *   Purpose: Deletes an appointment from the "Appointments" collection.
+    *   Endpoint: `/_api/deleteAppointment/{appointmentId}` (DELETE)
+*   **`getAppointmentsByDateRange.web.js`**:
+    *   Purpose: Retrieves appointments within a specific date range from the "Appointments" collection.
+    *   Endpoint: `/_api/getAppointmentsByDateRange?startDate={startDate}&endDate={endDate}` (GET)
+*   **`getConflictsForDateRange.web.js`**:
+    *   Purpose: Retrieves existing appointments within a given date range for conflict checking.
+    *   Endpoint: `/_api/getConflictsForDateRange?startDate={startDate}&endDate={endDate}` (GET)
+*   **`getServiceTypes.web.js`**:
+    *   Purpose: Retrieves all service types from the "Services" collection.
+    *   Endpoint: `/_api/getServiceTypes` (GET)
+*   **`getEvents.web.js`**:
+    *   Purpose: Retrieves event data (currently hardcoded).
+    *   Endpoint: `/_api/getEvents` (GET)
+*   **`getEventById.web.js`**:
+    *   Purpose: Retrieves a specific event by ID (currently from hardcoded data).
+    *   Endpoint: `/_api/getEventById/{eventId}` (GET)
+*   **`registerForEvent.web.js`**:
+    *   Purpose: Handles event registration (currently simulated).
+    *   Endpoint: `/_api/registerForEvent` (POST)
+*   **`getFAQs.web.js`**:
+    *   Purpose: Retrieves FAQ data (currently hardcoded).
+    *   Endpoint: `/_api/getFAQs` (GET)
+*   **`addFAQ.web.js`**:
+    *   Purpose: Adds a new FAQ (currently simulated).
+    *   Endpoint: `/_api/addFAQ` (POST)
+*   **`getGuides.web.js`**:
+    *   Purpose: Retrieves self-help guide data (currently hardcoded).
+    *   Endpoint: `/_api/getGuides` (GET)
+*   **`getGuideById.web.js`**:
+    *   Purpose: Retrieves a specific guide by ID (currently from hardcoded data).
+    *   Endpoint: `/_api/getGuideById/{guideId}` (GET)
+*   **`getQuiz.web.js`**:
+    *   Purpose: Retrieves quiz data by ID (currently from hardcoded data).
+    *   Endpoint: `/_api/getQuiz/{quizId}` (GET)
+*   **`submitQuizResults.web.js`**:
+    *   Purpose: Submits quiz results (currently simulated).
+    *   Endpoint: `/_api/submitQuizResults` (POST)
+*   **`getLatestVideosFromFeed.web.js`**:
+    *   Purpose: Retrieves latest video feed data (currently hardcoded).
+    *   Endpoint: `/_api/getLatestVideosFromFeed` (GET)
 
 ## Challenges of Wix DOM Manipulation
 
@@ -102,7 +164,7 @@ After further review, a final set of changes are being made to fully decouple th
 
 The `scheduler.js` script is being modified to remove the conditional initialization of `AppointmentApp`. This logic was a remnant of a previous implementation and was the root cause of the "disappearing schedule" issue.
 
-The `AppointmentApp` object, which is defined in `app.js`, is being renamed to `GreenhousePatientApp` to better reflect its purpose and to adhere to the new naming convention.
+The `AppointmentApp` object, which was previously defined in `app.js`, is now `GreenhousePatientApp` and is defined in `GreenhousePatientApp.js` to better reflect its purpose and to adhere to the new naming convention.
 
 ### Implementation Impact
 
@@ -116,8 +178,8 @@ This change will have the following positive impacts on the implementation:
 
 A thorough review of the entire workflow has been conducted to ensure that this change will not introduce any new problems.
 
-*   **Dashboard View:** The dashboard view, which is the primary view for the schedule page, does not depend on the logic in `app.js`. Removing the initialization of `GreenhousePatientApp` will have no negative impact on the dashboard.
-*   **Patient View:** The patient view, which is used for requesting appointments, *does* depend on the logic in `app.js`. To ensure that this view continues to function correctly, the initialization of `GreenhousePatientApp` will be moved into the `patient` view's rendering logic within `scheduler.js`. This ensures that the patient form is only initialized when it is actually being displayed.
+*   **Dashboard View:** The dashboard view, which is the primary view for the schedule page, does not depend on the logic in `GreenhousePatientApp.js`. Removing the initialization of `GreenhousePatientApp` will have no negative impact on the dashboard.
+*   **Patient View:** The patient view, which is used for requesting appointments, *does* depend on the logic in `GreenhousePatientApp.js`. To ensure that this view continues to function correctly, the initialization of `GreenhousePatientApp` will be moved into the `patient` view's rendering logic within `scheduler.js`. This ensures that the patient form is only loaded and initialized when it is actually being displayed.
 
 ### Normal Performance
 
@@ -126,7 +188,7 @@ With these changes, the javascripts will now perform as a cohesive and stable ap
 *   **`greenhouse.js`**: Continues to act as the main loader.
 *   **`scheduler.js`**: Acts as a true application core, loading the appropriate view and not concerning itself with the internal logic of those views.
 *   **`dashboard.js`**: Provides the dashboard UI, which will now render without interference.
-*   **`app.js` (as `GreenhousePatientApp`)**: Provides the logic for the patient form, and is only loaded and initialized when the patient view is active.
+*   **`GreenhousePatientApp.js`**: Provides the logic for the patient form, and is only loaded and initialized when the patient view is active.
 
 ### Final Confirmation
 

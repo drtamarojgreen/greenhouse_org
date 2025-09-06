@@ -1,6 +1,6 @@
 function GreenhouseDashboardApp() {
     async function getAppointmentsByDateRange(startDate, endDate) {
-        const response = await fetch(`/_functions/getAppointmentsByDateRange?startDate=${startDate}&endDate=${endDate}`);
+        const response = await fetch(`/_api/getAppointmentsByDateRange?startDate=${startDate}&endDate=${endDate}`);
         if (!response.ok) {
             throw new Error(`Failed to get appointments: ${response.statusText}`);
         }
@@ -8,7 +8,7 @@ function GreenhouseDashboardApp() {
     }
 
     async function getConflictsForDateRange(startDate, endDate) {
-        const response = await fetch(`/_functions/getConflictsForDateRange?startDate=${startDate}&endDate=${endDate}`);
+        const response = await fetch(`/_api/getConflictsForDateRange?startDate=${startDate}&endDate=${endDate}`);
         if (!response.ok) {
             throw new Error(`Failed to get conflicts: ${response.statusText}`);
         }
@@ -16,7 +16,7 @@ function GreenhouseDashboardApp() {
     }
 
     async function updateAppointmentStatus(appointmentId, status) {
-        const response = await fetch('/_functions/updateAppointmentStatus', {
+        const response = await fetch('/_api/updateAppointmentStatus', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -30,7 +30,7 @@ function GreenhouseDashboardApp() {
     }
 
     async function resolveConflict(conflictId, resolution) {
-        const response = await fetch('/_functions/resolveConflict', {
+        const response = await fetch('/_api/resolveConflict', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ function GreenhouseDashboardApp() {
     }
 
     async function getServiceTypes() {
-        const response = await fetch('/_functions/getServiceTypes');
+        const response = await fetch('/_api/getServiceTypes');
         if (!response.ok) {
             throw new Error(`Failed to get service types: ${response.statusText}`);
         }
