@@ -172,10 +172,6 @@ const GreenhouseSchedulerUI = (function() {
         conflictResolutionDiv.innerHTML = '<h2>Conflicts to Resolve</h2><ul id="greenhouse-dashboard-app-conflict-list"><li>No conflicts found.</li></ul>'; // Renamed ID
         fragment.appendChild(conflictResolutionDiv);
 
-        // Initial render of calendar and event listeners
-        renderCalendar(new Date().getFullYear(), new Date().getMonth());
-        addDashboardEventListeners(fragment); // Pass fragment to attach listeners
-
         return fragment;
     }
 
@@ -574,6 +570,102 @@ const GreenhouseSchedulerUI = (function() {
         return form;
     }
 
+    function setupModal() {
+        const modal = document.getElementById('greenhouse-conflict-modal');
+        const closeButton = modal.querySelector('.greenhouse-modal-close');
+        const cancelButton = modal.querySelector('#greenhouse-conflict-cancel');
+        const resolveButton = modal.querySelector('#greenhouse-conflict-resolve');
+
+        closeButton.addEventListener('click', () => {
+            modal.style.display = 'none';
+            document.body.classList.remove('greenhouse-modal-open');
+        });
+
+        cancelButton.addEventListener('click', () => {
+            modal.style.display = 'none';
+            document.body.classList.remove('greenhouse-modal-open');
+        });
+
+        resolveButton.addEventListener('click', () => {
+            modal.style.display = 'none';
+            document.body.classList.remove('greenhouse-modal-open');
+            // Optionally, navigate user to a different part of the form or calendar
+        });
+
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.style.display !== 'none') {
+                modal.style.display = 'none';
+                document.body.classList.remove('greenhouse-modal-open');
+            }
+        });
+
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                document.body.classList.remove('greenhouse-modal-open');
+            }
+        });
+    }
+
+    function showConflictModal(conflictData) {
+        const modal = document.getElementById('greenhouse-conflict-modal');
+        const conflictDetailsDiv = document.getElementById('greenhouse-conflict-details');
+
+        if (conflictDetailsDiv) {
+            conflictDetailsDiv.innerHTML = ''; // Clear previous content
+            if (conflictData && conflictData.conflicts && conflictData.conflicts.length > 0) {
+                const ul = document.createElement('ul');
+                conflictData.conflicts.forEach(conflict => {
+                    const li = document.createElement('li');
+                    li.textContent = `Conflict: ${conflict.title} on ${conflict.date} at ${conflict.time}`;
+                    ul.appendChild(li);
+                });
+                conflictDetailsDiv.appendChild(ul);
+            } else {
+                conflictDetailsDiv.textContent = 'No specific conflict details available.';
+            }
+        }
+
+        if (modal) {
+            modal.style.display = 'block';
+            document.body.classList.add('greenhouse-modal-open');
+        }
+    }
+
+    function clearFormInputs() {
+        document.getElementById('greenhouse-patient-app-title-input').value = '';
+        document.getElementById('greenhouse-patient-app-date-input').value = '';
+        document.getElementById('greenhouse-patient-app-time-input').value = '';
+        document.getElementById('greenhouse-patient-app-platform-input').value = '';
+        document.getElementById('greenhouse-patient-app-service-select').value = ''; // Reset select to default
+    }
+
+    function resetForm() {
+        const form = document.getElementById('greenhouse-patient-appointment-form');
+        if (form) {
+            form.reset();
+            // Clear any validation messages
+            form.querySelectorAll('.greenhouse-form-error').forEach(el => el.style.display = 'none');
+            form.querySelectorAll('.greenhouse-form-error-input').forEach(el => el.classList.remove('greenhouse-form-error-input'));
+        }
+    }
+
+    function editAppointment(appointment) {
+        document.getElementById('greenhouse-patient-app-title-input').value = appointment.title;
+        document.getElementById('greenhouse-patient-app-date-input').value = appointment.date;
+        document.getElementById('greenhouse-patient-app-time-input').value = appointment.time;
+        document.getElementById('greenhouse-patient-app-platform-input').value = appointment.platform;
+        document.getElementById('greenhouse-patient-app-service-select').value = appointment.serviceRef;
+
+        // Change button to "Update Appointment"
+        const submitButton = document.getElementById('greenhouse-propose-appointment-btn');
+        submitButton.textContent = 'Update Appointment';
+        submitButton.dataset.action = 'update-appointment';
+        submitButton.dataset.appointmentId = appointment._id; // Store ID for update
+    }
+
     function showComponent(componentName) {
         for (const key in components) {
             if (key === componentName) {
@@ -587,6 +679,11 @@ const GreenhouseSchedulerUI = (function() {
     return {
         buildSchedulerUI,
         showComponent,
+        setupModal,
+        showConflictModal,
+        clearFormInputs,
+        resetForm,
+        editAppointment,
         buildPatientFormUI,
         createFormFields,
         addFormValidation,
@@ -600,8 +697,4 @@ const GreenhouseSchedulerUI = (function() {
     };
 })();
 
-    return {
-        buildSchedulerUI,
-        showComponent
-    };
-})();
+    
