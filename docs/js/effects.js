@@ -1,105 +1,380 @@
+/**
+ * @file effects.js
+ * @description Visual effects system for the Greenhouse Mental Health website.
+ * Provides interactive animations including a watering can cursor effect with particle system.
+ * 
+ * @features
+ * - Watering can cursor that follows mouse movement
+ * - Particle system that creates water droplets
+ * - Blooming effect on hover over target elements
+ * - Robust element detection with fallback selectors
+ * - Memory leak prevention with proper cleanup
+ */
+
 (function() {
-// Module-level variables to hold state
-let canIconElement;
-let headingElementForCan;
-let pouringIntervalId;
+    'use strict';
 
-// We define the event handler functions so we can properly add and remove them.
-const handleMouseMoveForCan = (e) => {
-    if (canIconElement) {
-        // Update the icon's position to follow the cursor
-        canIconElement.style.left = `${e.clientX}px`;
-        canIconElement.style.top = `${e.clientY}px`;
+    /**
+     * @description Configuration for the effects system
+     */
+    const config = {
+        /**
+         * Timeout for waiting for elements to appear (in milliseconds)
+         */
+        elementWaitTimeout: 10000,
+        /**
+         * Particle system configuration
+         */
+        particles: {
+            interval: 100,        // ms between particle creation
+            lifetime: 1000,       // ms particle lives before cleanup
+            spoutOffsetX: 20,     // offset from can icon for droplet spawn
+            spoutOffsetY: 30,
+            randomness: 5         // random offset range for natural effect
+        },
+        /**
+         * Primary selectors for target elements (specific to current Wix structure)
+         */
+        selectors: {
+            heading: 'body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-layout.masterPage.css-editing-scope header#SITE_HEADER div section div p span span'
+        },
+        /**
+         * Fallback selectors to try if primary selectors fail
+         */
+        fallbackSelectors: {
+            heading: [
+                'header#SITE_HEADER p span span',
+                'header p span span',
+                '#SITE_HEADER span',
+                'header span',
+                'h1',
+                'h2',
+                '.site-title',
+                '[data-testid="richTextElement"] span'
+            ]
+        }
+    };
+
+    /**
+     * Module-level state variables
+     */
+    let state = {
+        canIconElement: null,
+        headingElement: null,
+        pouringIntervalId: null,
+        isActive: false,
+        isInitialized: false
+    };
+
+    /**
+     * @function waitForElement
+     * @description Waits for an element to appear in the DOM with fallback options
+     * @param {string|string[]} selectors - Primary selector or array of selectors to try
+     * @param {number} [timeout=10000] - Maximum time to wait in milliseconds
+     * @returns {Promise<Element>} Promise that resolves with the found element
+     */
+    function waitForElement(selectors, timeout = config.elementWaitTimeout) {
+        return new Promise((resolve, reject) => {
+            const selectorArray = Array.isArray(selectors) ? selectors : [selectors];
+            
+            // Check if element already exists
+            for (const selector of selectorArray) {
+                try {
+                    const element = document.querySelector(selector);
+                    if (element) {
+                        console.log(`Effects: Found element with selector: ${selector}`);
+                        return resolve(element);
+                    }
+                } catch (e) {
+                    console.warn(`Effects: Invalid selector: ${selector}`);
+                }
+            }
+            
+            console.log(`Effects: Waiting for element with selectors: ${selectorArray.join(', ')}`);
+            
+            const observer = new MutationObserver(() => {
+                for (const selector of selectorArray) {
+                    try {
+                        const element = document.querySelector(selector);
+                        if (element) {
+                            console.log(`Effects: Element found with selector: ${selector}`);
+                            observer.disconnect();
+                            return resolve(element);
+                        }
+                    } catch (e) {
+                        // Invalid selector, continue to next
+                        continue;
+                    }
+                }
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: false
+            });
+            
+            setTimeout(() => {
+                observer.disconnect();
+                reject(new Error(`Element not found within ${timeout}ms. Tried selectors: ${selectorArray.join(', ')}`));
+            }, timeout);
+        });
     }
-};
 
-const handleHeadingEnterForCan = () => {
-    if (headingElementForCan) {
-        headingElementForCan.classList.add('blooming');
-        startPouringWater(); // Start the particle effect
+    /**
+     * Event handler functions with proper context binding
+     */
+    const eventHandlers = {
+        handleMouseMove: (e) => {
+            if (state.canIconElement && state.isActive) {
+                // Offset the icon slightly so cursor is visible
+                state.canIconElement.style.left = `${e.clientX + 10}px`;
+                state.canIconElement.style.top = `${e.clientY - 10}px`;
+            }
+        },
+
+        handleHeadingEnter: () => {
+            if (state.headingElement && state.isActive) {
+                state.headingElement.classList.add('blooming');
+                particleSystem.start();
+            }
+        },
+
+        handleHeadingLeave: () => {
+            if (state.headingElement && state.isActive) {
+                state.headingElement.classList.remove('blooming');
+                particleSystem.stop();
+            }
+        },
+
+        handleVisibilityChange: () => {
+            if (document.hidden) {
+                particleSystem.stop();
+            }
+        }
+    };
+
+    /**
+     * Particle system for water droplet effects
+     */
+    const particleSystem = {
+        start() {
+            if (state.pouringIntervalId || !state.isActive) return; // Already running or inactive
+            
+            console.log('Effects: Starting particle system');
+            state.pouringIntervalId = setInterval(() => {
+                this.createParticle();
+            }, config.particles.interval);
+        },
+
+        stop() {
+            if (state.pouringIntervalId) {
+                console.log('Effects: Stopping particle system');
+                clearInterval(state.pouringIntervalId);
+                state.pouringIntervalId = null;
+            }
+        },
+
+        createParticle() {
+            if (!state.canIconElement || !state.isActive) return;
+
+            try {
+                const droplet = document.createElement('div');
+                droplet.className = 'water-droplet';
+                droplet.setAttribute('aria-hidden', 'true'); // Accessibility
+
+                const canRect = state.canIconElement.getBoundingClientRect();
+                const randomX = Math.random() * config.particles.randomness * 2 - config.particles.randomness;
+                const randomY = Math.random() * config.particles.randomness * 2 - config.particles.randomness;
+                
+                // Position drops to fall from the "spout" of the can icon
+                const startX = canRect.left + config.particles.spoutOffsetX + randomX;
+                const startY = canRect.top + config.particles.spoutOffsetY + randomY;
+                
+                droplet.style.left = `${startX}px`;
+                droplet.style.top = `${startY}px`;
+                
+                document.body.appendChild(droplet);
+
+                // Clean up after animation completes
+                setTimeout(() => {
+                    if (droplet.parentNode) {
+                        droplet.remove();
+                    }
+                }, config.particles.lifetime);
+
+            } catch (error) {
+                console.error('Effects: Error creating particle:', error);
+            }
+        }
+    };
+
+    /**
+     * @function createCanIcon
+     * @description Creates and configures the watering can cursor icon
+     */
+    function createCanIcon() {
+        if (state.canIconElement) return; // Already exists
+
+        state.canIconElement = document.createElement('div');
+        state.canIconElement.className = 'watering-can-icon';
+        state.canIconElement.innerHTML = '🪴'; // Potted Plant emoji as the icon
+        state.canIconElement.setAttribute('aria-hidden', 'true'); // Hide from screen readers
+        state.canIconElement.style.pointerEvents = 'none'; // Don't interfere with mouse events
+        
+        document.body.appendChild(state.canIconElement);
+        console.log('Effects: Watering can icon created');
     }
-};
 
-const handleHeadingLeaveForCan = () => {
-    if (headingElementForCan) {
-        headingElementForCan.classList.remove('blooming');
-        stopPouringWater(); // Stop the particle effect
+    /**
+     * @function attachEventListeners
+     * @description Attaches all necessary event listeners
+     */
+    function attachEventListeners() {
+        window.addEventListener('mousemove', eventHandlers.handleMouseMove, { passive: true });
+        document.addEventListener('visibilitychange', eventHandlers.handleVisibilityChange);
+        
+        if (state.headingElement) {
+            state.headingElement.addEventListener('mouseenter', eventHandlers.handleHeadingEnter);
+            state.headingElement.addEventListener('mouseleave', eventHandlers.handleHeadingLeave);
+        }
+        
+        console.log('Effects: Event listeners attached');
     }
-};
 
-// --- Particle System ---
-
-function startPouringWater() {
-    if (pouringIntervalId) return; // Already pouring
-    pouringIntervalId = setInterval(createWaterDropletParticle, 100);
-}
-
-function stopPouringWater() {
-    clearInterval(pouringIntervalId);
-    pouringIntervalId = null;
-}
-
-function createWaterDropletParticle() {
-    if (!canIconElement) return;
-    const droplet = document.createElement('div');
-    droplet.className = 'water-droplet';
-    
-    const canRect = canIconElement.getBoundingClientRect();
-    // Position drops to fall from the "spout" of the can icon
-    const startX = canRect.left + 20 + (Math.random() * 10 - 5);
-    const startY = canRect.top + 30 + (Math.random() * 10 - 5);
-    droplet.style.left = `${startX}px`;
-    droplet.style.top = `${startY}px`;
-
-    document.body.appendChild(droplet);
-
-    // Clean up the DOM by removing the droplet after its animation is finished
-    setTimeout(() => {
-        droplet.remove();
-    }, 1000); // This duration must match the 'fall' animation duration in the CSS
-}
-
-// --- Activation/Deactivation ---
-
-function activateWateringCanEffect() {
-    //headingElementForCan = document.getElementById('effect-heading');
-    // Do nothing if the effect is already active or the heading doesn't exist
-    let headingElementForCans = document.querySelectorAll('body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-layout.masterPage.css-editing-scope header#SITE_HEADER div section div p span span');
-    headingElementForCan = headingElementForCans[0];
-    
-    if (!headingElementForCan || document.querySelector('.watering-can-icon')) return;
-
-    // Create the icon element
-    canIconElement = document.createElement('div');
-    canIconElement.className = 'watering-can-icon';
-    canIconElement.innerHTML = '🪴'; // Potted Plant emoji as the icon
-    document.body.appendChild(canIconElement);
-
-    // Attach all necessary event listeners
-    window.addEventListener('mousemove', handleMouseMoveForCan);
-    headingElementForCan.addEventListener('mouseenter', handleHeadingEnterForCan);
-    headingElementForCan.addEventListener('mouseleave', handleHeadingLeaveForCan);
-}
-
-function deactivateWateringCanEffect() {
-    // Stop any running animations/intervals
-    stopPouringWater();
-    
-    // Remove the icon from the DOM
-    if (canIconElement) {
-        canIconElement.remove();
-        canIconElement = null;
+    /**
+     * @function detachEventListeners
+     * @description Removes all event listeners to prevent memory leaks
+     */
+    function detachEventListeners() {
+        window.removeEventListener('mousemove', eventHandlers.handleMouseMove);
+        document.removeEventListener('visibilitychange', eventHandlers.handleVisibilityChange);
+        
+        if (state.headingElement) {
+            state.headingElement.removeEventListener('mouseenter', eventHandlers.handleHeadingEnter);
+            state.headingElement.removeEventListener('mouseleave', eventHandlers.handleHeadingLeave);
+        }
+        
+        console.log('Effects: Event listeners detached');
     }
-    
-    // Detach all event listeners to prevent memory leaks
-    window.removeEventListener('mousemove', handleMouseMoveForCan);
-    if (headingElementForCan) {
-        headingElementForCan.classList.remove('blooming');
-        headingElementForCan.removeEventListener('mouseenter', handleHeadingEnterForCan);
-        headingElementForCan.removeEventListener('mouseleave', handleHeadingLeaveForCan);
-        headingElementForCan = null;
-    }
-}
 
-    activateWateringCanEffect(); // Activate the effect
+    /**
+     * @function activate
+     * @description Activates the watering can effect
+     */
+    async function activate() {
+        if (state.isActive) {
+            console.log('Effects: Already active, skipping activation');
+            return;
+        }
+
+        try {
+            console.log('Effects: Activating watering can effect');
+
+            // Check if effect is already present
+            if (document.querySelector('.watering-can-icon')) {
+                console.log('Effects: Watering can icon already exists');
+                return;
+            }
+
+            // Build selectors array (primary + fallbacks)
+            const selectorsToTry = [
+                config.selectors.heading,
+                ...config.fallbackSelectors.heading
+            ].filter(Boolean);
+
+            // Wait for heading element
+            state.headingElement = await waitForElement(selectorsToTry);
+            
+            // Create icon and attach listeners
+            createCanIcon();
+            attachEventListeners();
+            
+            state.isActive = true;
+            console.log('Effects: Watering can effect activated successfully');
+
+        } catch (error) {
+            console.warn('Effects: Could not activate watering can effect:', error.message);
+            // Graceful degradation - don't break the page
+        }
+    }
+
+    /**
+     * @function deactivate
+     * @description Deactivates the watering can effect and cleans up resources
+     */
+    function deactivate() {
+        if (!state.isActive) return;
+
+        console.log('Effects: Deactivating watering can effect');
+
+        // Stop particle system
+        particleSystem.stop();
+
+        // Remove icon from DOM
+        if (state.canIconElement) {
+            state.canIconElement.remove();
+            state.canIconElement = null;
+        }
+
+        // Clean up heading element state
+        if (state.headingElement) {
+            state.headingElement.classList.remove('blooming');
+        }
+
+        // Remove event listeners
+        detachEventListeners();
+
+        // Reset state
+        state.isActive = false;
+        state.headingElement = null;
+
+        console.log('Effects: Watering can effect deactivated');
+    }
+
+    /**
+     * @function initialize
+     * @description Initializes the effects system
+     */
+    async function initialize() {
+        if (state.isInitialized) return;
+
+        console.log('Effects: Initializing effects system');
+        
+        // Handle page unload cleanup
+        window.addEventListener('beforeunload', deactivate);
+        
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                particleSystem.stop();
+            }
+        });
+
+        state.isInitialized = true;
+        
+        // Activate the watering can effect
+        await activate();
+    }
+
+    /**
+     * Main execution - Wait for DOM then initialize
+     */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+        // DOM is ready, but give Wix a moment to finish rendering
+        setTimeout(initialize, 500);
+    }
+
+    /**
+     * Expose public API for debugging/external control
+     */
+    window.GreenhouseEffects = {
+        activate,
+        deactivate,
+        getState: () => ({ ...state }),
+        getConfig: () => ({ ...config })
+    };
+
 })();
