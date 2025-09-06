@@ -71,32 +71,34 @@
 
     // --- Main execution logic ---
 
-    // Load the visual effects script on all pages.
-    loadScript(`${config.githubPagesBaseUrl}js/effects.js`);
+    (async function() {
+        // Load the visual effects script on all pages.
+        await loadScript(`${config.githubPagesBaseUrl}js/effects.js`);
 
-    // Check if the current page is the schedule page.
-    if (window.location.pathname.includes(config.schedulePagePath)) {
-        // Parse URL parameters to determine the view.
-        const urlParams = new URLSearchParams(window.location.search);
-        const view = urlParams.get('view'); // e.g., 'dashboard' or 'admin'
+        // Check if the current page is the schedule page.
+        if (window.location.pathname.includes(config.schedulePagePath)) {
+            // Parse URL parameters to determine the view.
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view'); // e.g., 'dashboard' or 'admin'
 
-        // Determine the correct selector, defaulting to the dashboard view.
-        let targetSelector;
-        if (view === 'patient' && config.selectors.patient) {
-            targetSelector = config.selectors.patient;
-        } else if (view === 'admin' && config.selectors.admin) {
-            targetSelector = config.selectors.admin;
-        } else {
-            targetSelector = config.selectors.dashboard;
+            // Determine the correct selector, defaulting to the dashboard view.
+            let targetSelector;
+            if (view === 'patient' && config.selectors.patient) {
+                targetSelector = config.selectors.patient;
+            } else if (view === 'admin' && config.selectors.admin) {
+                targetSelector = config.selectors.admin;
+            } else {
+                targetSelector = config.selectors.dashboard;
+            }
+
+            // Define the attributes to be passed to the scheduler script.
+            const schedulerAttributes = {
+                'target-selector': targetSelector,
+                'base-url': config.githubPagesBaseUrl
+            };
+
+            // Load the scheduler script and pass the necessary data attributes to it.
+            await loadScript(`${config.githubPagesBaseUrl}js/scheduler.js`, schedulerAttributes);
         }
-
-        // Define the attributes to be passed to the scheduler script.
-        const schedulerAttributes = {
-            'target-selector': targetSelector,
-            'base-url': config.githubPagesBaseUrl
-        };
-
-        // Load the scheduler script and pass the necessary data attributes to it.
-        loadScript(`${config.githubPagesBaseUrl}js/scheduler.js`, schedulerAttributes);
-    }
+    })();
 })();
