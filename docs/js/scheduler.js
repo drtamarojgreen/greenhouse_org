@@ -1,8 +1,6 @@
-// Version: 0.0.0.1
+// Version: 0.0.2
 /**
  * @file scheduler.js
- */
-console.log("Loading scheduler.js - Version 0.0.0.1");
  * @description This script contains the core functionality for the Greenhouse appointment scheduling application.
  * It is responsible for rendering the various scheduling views (patient, dashboard, admin) and handling
  * user interactions within those views.
@@ -21,6 +19,34 @@ console.log("Loading scheduler.js - Version 0.0.0.1");
  */
 
 (function() {
+    'use strict';
+
+    console.log("Loading Greenhouse Scheduler - Version 0.1.0");
+
+    /**
+     * @description Configuration for the scheduler application
+     */
+    const config = {
+        /**
+         * Timeout for waiting for elements and resources (in milliseconds)
+         */
+        loadTimeout: 15000,
+        /**
+         * Retry configuration for failed operations
+         */
+        retries: {
+            maxAttempts: 3,
+            delay: 1000
+        },
+        /**
+         * DOM manipulation settings
+         */
+        dom: {
+            insertionDelay: 500,  // Delay before inserting into DOM (for Wix compatibility)
+            observerTimeout: 10000
+        }
+    };
+
     /**
      * @description The script element that is currently being executed.
      * This is used to retrieve configuration attributes from the loader script.
@@ -29,60 +55,153 @@ console.log("Loading scheduler.js - Version 0.0.0.1");
     const scriptElement = document.currentScript;
 
     /**
-     * @description The CSS selector for the element where the scheduler app will be rendered.
-     * @type {string|null}
+     * Application state management
      */
-    const targetSelector = scriptElement.getAttribute('data-target-selector');
+    const appState = {
+        isInitialized: false,
+        isLoading: false,
+        currentView: null,
+        currentAppInstance: null,
+        targetElement: null,
+        baseUrl: null,
+        targetSelector: null,
+        loadedScripts: new Set(),
+        errors: []
+    };
 
     /**
-     * @description The base URL for fetching application assets.
-     * @type {string|null}
+     * @function validateConfiguration
+     * @description Validates the configuration passed from the loader script
+     * @returns {boolean} True if configuration is valid
      */
-    const baseUrl = scriptElement.getAttribute('data-base-url');
+    function validateConfiguration() {
+        appState.targetSelector = scriptElement?.getAttribute('data-target-selector');
+        appState.baseUrl = scriptElement?.getAttribute('data-base-url');
+        const view = scriptElement?.getAttribute('data-view');
 
-    // If the target selector or base URL are not found, exit without doing anything.
-    if (!targetSelector || !baseUrl) {
-        console.error('Scheduler script missing required data attributes (target-selector or base-url).');
-        return;
+        if (!appState.targetSelector) {
+            console.error('Scheduler: Missing required data-target-selector attribute');
+            return false;
+        }
+
+        if (!appState.baseUrl) {
+            console.error('Scheduler: Missing required data-base-url attribute');
+            return false;
+        }
+
+        // Ensure baseUrl ends with slash
+        if (!appState.baseUrl.endsWith('/')) {
+            appState.baseUrl += '/';
+        }
+
+        appState.currentView = view || new URLSearchParams(window.location.search).get('view') || 'patient';
+
+        console.log(`Scheduler: Configuration validated - View: ${appState.currentView}, Target: ${appState.targetSelector}`);
+        return true;
+    }
+
+    /**
+     * @function waitForElement
+     * @description Waits for an element to appear in the DOM
+     * @param {string} selector - CSS selector for the element
+     * @param {number} [timeout=10000] - Maximum time to wait in milliseconds
+     * @returns {Promise<Element>} Promise that resolves with the found element
+     */
+    function waitForElement(selector, timeout = config.dom.observerTimeout) {
+        return new Promise((resolve, reject) => {
+            const element = document.querySelector(selector);
+            if (element) {
+                console.log(`Scheduler: Found target element immediately: ${selector}`);
+                return resolve(element);
+            }
+
+            console.log(`Scheduler: Waiting for target element: ${selector}`);
+
+            const observer = new MutationObserver(() => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    observer.disconnect();
+                    console.log(`Scheduler: Target element found: ${selector}`);
+                    resolve(element);
+                }
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+
+            setTimeout(() => {
+                observer.disconnect();
+                reject(new Error(`Target element not found within ${timeout}ms: ${selector}`));
+            }, timeout);
+        });
+    }
+
+    /**
+     * @function retryOperation
+     * @description Retries an async operation with exponential backoff
+     * @param {Function} operation - The async operation to retry
+     * @param {string} operationName - Name for logging
+     * @param {number} [maxAttempts=3] - Maximum retry attempts
+     * @returns {Promise} Result of the operation
+     */
+    async function retryOperation(operation, operationName, maxAttempts = config.retries.maxAttempts) {
+        let lastError;
+        
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                console.log(`Scheduler: ${operationName} - Attempt ${attempt}/${maxAttempts}`);
+                return await operation();
+            } catch (error) {
+                lastError = error;
+                console.warn(`Scheduler: ${operationName} failed on attempt ${attempt}:`, error.message);
+                
+                if (attempt < maxAttempts) {
+                    const delay = config.retries.delay * Math.pow(2, attempt - 1);
+                    console.log(`Scheduler: Retrying ${operationName} in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+        
+        throw new Error(`${operationName} failed after ${maxAttempts} attempts. Last error: ${lastError.message}`);
     }
 
     /**
      * @namespace GreenhouseAppsScheduler
-     * @description The main object for the scheduling application.
+     * @description The main object for the scheduling application
      */
     const GreenhouseAppsScheduler = {
         /**
-         * @description The base URL for fetching resources, to be set on initialization.
-         * @type {string}
-         */
-        baseUrl: '',
-
-        /**
          * @function buildPatientFormUI
-         * @description Builds the UI for the patient-facing appointment request form.
-         * @returns {DocumentFragment} A DocumentFragment containing the form UI.
+         * @description Builds the UI for the patient-facing appointment request form
+         * @returns {DocumentFragment} A DocumentFragment containing the form UI
          */
         buildPatientFormUI() {
             const fragment = document.createDocumentFragment();
 
             // Main container for the two-panel layout
             const layoutContainer = document.createElement('div');
-            layoutContainer.className = 'wixui-layout-container'; // A class for styling the layout
+            layoutContainer.className = 'greenhouse-layout-container';
+            layoutContainer.setAttribute('data-component', 'patient-form');
 
             // Panel 1: Scheduling Form
             const panel1 = document.createElement('div');
-            panel1.className = 'wixui-column-strip__column';
+            panel1.className = 'greenhouse-form-panel';
 
             const h1 = document.createElement('h1');
             h1.textContent = 'Request an Appointment';
+            h1.className = 'greenhouse-form-title';
             panel1.appendChild(h1);
 
             const appointmentFormDiv = document.createElement('div');
-            appointmentFormDiv.id = 'appointment-form';
+            appointmentFormDiv.id = 'greenhouse-appointment-form-container';
             panel1.appendChild(appointmentFormDiv);
 
             const h2 = document.createElement('h2');
             h2.textContent = 'Appointment Details';
+            h2.className = 'greenhouse-form-subtitle';
             appointmentFormDiv.appendChild(h2);
 
             const form = this.createFormFields();
@@ -95,7 +214,7 @@ console.log("Loading scheduler.js - Version 0.0.0.1");
 
             // Panel 2: Instructional Text
             const panel2 = document.createElement('div');
-            panel2.className = 'wixui-column-strip__column';
+            panel2.className = 'greenhouse-instructions-panel';
             panel2.appendChild(this.createInstructionsPanel());
             layoutContainer.appendChild(panel2);
 
@@ -106,279 +225,997 @@ console.log("Loading scheduler.js - Version 0.0.0.1");
 
         /**
          * @function createFormFields
-         * @description Creates the form fields for the patient appointment request.
-         * @returns {HTMLFormElement} The generated form element.
+         * @description Creates the form fields for the patient appointment request
+         * @returns {HTMLFormElement} The generated form element
          */
         createFormFields() {
             const form = document.createElement('form');
-            form.id = 'patient-appointment-form';
+            form.id = 'greenhouse-patient-appointment-form';
+            form.className = 'greenhouse-form';
+            form.setAttribute('novalidate', ''); // We'll handle validation ourselves
 
             const fields = [
-                { label: 'Title', id: 'title', type: 'text', placeholder: 'e.g., Initial Consultation' },
-                { label: 'Date', id: 'date', type: 'date', placeholder: '' },
-                { label: 'Time', id: 'time', type: 'time', placeholder: '' },
-                { label: 'Meeting Platform', id: 'platform', type: 'text', placeholder: 'e.g., Google Meet, Zoom' },
-                { label: 'Service', id: 'service', type: 'select', placeholder: '' }
+                { 
+                    label: 'Title', 
+                    id: 'title', 
+                    type: 'text', 
+                    placeholder: 'e.g., Initial Consultation',
+                    required: true
+                },
+                { 
+                    label: 'Date', 
+                    id: 'date', 
+                    type: 'date', 
+                    placeholder: '',
+                    required: true
+                },
+                { 
+                    label: 'Time', 
+                    id: 'time', 
+                    type: 'time', 
+                    placeholder: '',
+                    required: true
+                },
+                { 
+                    label: 'Meeting Platform', 
+                    id: 'platform', 
+                    type: 'text', 
+                    placeholder: 'e.g., Google Meet, Zoom',
+                    required: true
+                },
+                { 
+                    label: 'Service', 
+                    id: 'service', 
+                    type: 'select', 
+                    placeholder: '',
+                    required: true,
+                    options: [
+                        { value: '', text: 'Please select a service...' },
+                        { value: 'consultation', text: 'Initial Consultation' },
+                        { value: 'therapy', text: 'Therapy Session' },
+                        { value: 'followup', text: 'Follow-up Appointment' },
+                        { value: 'other', text: 'Other' }
+                    ]
+                }
             ];
 
             fields.forEach(field => {
+                const fieldContainer = document.createElement('div');
+                fieldContainer.className = 'greenhouse-form-field';
+
                 const label = document.createElement('label');
-                label.htmlFor = field.id;
-                label.textContent = field.label + ':';
-                form.appendChild(label);
-                form.appendChild(document.createElement('br'));
+                label.htmlFor = `greenhouse-patient-app-${field.id}`;
+                label.textContent = field.label + (field.required ? ' *' : '');
+                label.className = 'greenhouse-form-label';
+                fieldContainer.appendChild(label);
 
                 let input;
                 if (field.type === 'select') {
                     input = document.createElement('select');
-                    // Options for select will be populated dynamically
+                    input.className = 'greenhouse-form-select';
+                    
+                    // Add options for select
+                    if (field.options) {
+                        field.options.forEach(option => {
+                            const optionElement = document.createElement('option');
+                            optionElement.value = option.value;
+                            optionElement.textContent = option.text;
+                            if (option.value === '') optionElement.disabled = true;
+                            input.appendChild(optionElement);
+                        });
+                    }
                 } else {
                     input = document.createElement('input');
                     input.type = field.type;
+                    input.className = 'greenhouse-form-input';
                     if (field.placeholder) {
                         input.placeholder = field.placeholder;
                     }
+                    if (field.type === 'date') {
+                        // Set minimum date to today
+                        input.min = new Date().toISOString().split('T')[0];
+                    }
                 }
-                input.id = 'greenhouse-patient-app-' + field.id;
+                
+                input.id = `greenhouse-patient-app-${field.id}`;
                 input.name = field.id;
-                input.required = true;
-                form.appendChild(input);
-                form.appendChild(document.createElement('br'));
-                form.appendChild(document.createElement('br'));
+                if (field.required) {
+                    input.required = true;
+                    input.setAttribute('aria-required', 'true');
+                }
+
+                fieldContainer.appendChild(input);
+
+                // Add error message container
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'greenhouse-form-error';
+                errorMsg.id = `error-${field.id}`;
+                errorMsg.setAttribute('role', 'alert');
+                errorMsg.style.display = 'none';
+                fieldContainer.appendChild(errorMsg);
+
+                form.appendChild(fieldContainer);
             });
 
+            // Submit button
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'greenhouse-form-button-container';
+
             const button = document.createElement('button');
-            button.type = 'submit'; // Use submit type for form
+            button.type = 'submit';
             button.textContent = 'Request Appointment';
-            button.id = 'propose-appointment-btn';
-            form.appendChild(button);
+            button.id = 'greenhouse-propose-appointment-btn';
+            button.className = 'greenhouse-form-submit-btn';
+            buttonContainer.appendChild(button);
+
+            // Loading indicator
+            const loadingSpinner = document.createElement('div');
+            loadingSpinner.className = 'greenhouse-loading-spinner';
+            loadingSpinner.style.display = 'none';
+            loadingSpinner.innerHTML = '<div class="spinner"></div><span>Processing...</span>';
+            buttonContainer.appendChild(loadingSpinner);
+
+            form.appendChild(buttonContainer);
+
+            // Add form validation
+            this.addFormValidation(form);
 
             return form;
         },
 
         /**
+         * @function addFormValidation
+         * @description Adds client-side validation to the form
+         * @param {HTMLFormElement} form - The form to add validation to
+         */
+        addFormValidation(form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const isValid = this.validateForm(form);
+                if (isValid) {
+                    this.handleFormSubmission(form);
+                }
+            });
+
+            // Real-time validation on blur
+            const inputs = form.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('blur', () => {
+                    this.validateField(input);
+                });
+
+                input.addEventListener('input', () => {
+                    // Clear error on input
+                    const errorEl = document.getElementById(`error-${input.name}`);
+                    if (errorEl) {
+                        errorEl.style.display = 'none';
+                        input.classList.remove('greenhouse-form-error-input');
+                    }
+                });
+            });
+        },
+
+        /**
+         * @function validateForm
+         * @description Validates the entire form
+         * @param {HTMLFormElement} form - The form to validate
+         * @returns {boolean} True if form is valid
+         */
+        validateForm(form) {
+            const inputs = form.querySelectorAll('input[required], select[required]');
+            let isValid = true;
+
+            inputs.forEach(input => {
+                if (!this.validateField(input)) {
+                    isValid = false;
+                }
+            });
+
+            return isValid;
+        },
+
+        /**
+         * @function validateField
+         * @description Validates a single form field
+         * @param {HTMLInputElement|HTMLSelectElement} field - The field to validate
+         * @returns {boolean} True if field is valid
+         */
+        validateField(field) {
+            const errorEl = document.getElementById(`error-${field.name}`);
+            let isValid = true;
+            let errorMessage = '';
+
+            // Check if required field is empty
+            if (field.required && !field.value.trim()) {
+                isValid = false;
+                errorMessage = `${field.name.charAt(0).toUpperCase() + field.name.slice(1)} is required.`;
+            }
+
+            // Additional validation based on field type
+            if (isValid && field.value.trim()) {
+                switch (field.type) {
+                    case 'date':
+                        const selectedDate = new Date(field.value);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        if (selectedDate < today) {
+                            isValid = false;
+                            errorMessage = 'Please select a future date.';
+                        }
+                        break;
+                    case 'time':
+                        const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+                        if (!timeRegex.test(field.value)) {
+                            isValid = false;
+                            errorMessage = 'Please enter a valid time.';
+                        }
+                        break;
+                }
+            }
+
+            // Show/hide error message
+            if (errorEl) {
+                if (isValid) {
+                    errorEl.style.display = 'none';
+                    field.classList.remove('greenhouse-form-error-input');
+                } else {
+                    errorEl.textContent = errorMessage;
+                    errorEl.style.display = 'block';
+                    field.classList.add('greenhouse-form-error-input');
+                }
+            }
+
+            return isValid;
+        },
+
+        /**
+         * @function handleFormSubmission
+         * @description Handles form submission with loading states
+         * @param {HTMLFormElement} form - The form being submitted
+         */
+        async handleFormSubmission(form) {
+            const submitBtn = form.querySelector('#greenhouse-propose-appointment-btn');
+            const loadingSpinner = form.querySelector('.greenhouse-loading-spinner');
+
+            try {
+                // Show loading state
+                submitBtn.style.display = 'none';
+                loadingSpinner.style.display = 'flex';
+
+                // Collect form data
+                const formData = new FormData(form);
+                const appointmentData = Object.fromEntries(formData.entries());
+
+                console.log('Scheduler: Form submitted with data:', appointmentData);
+
+                // Simulate API call (replace with actual implementation)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Show success message
+                this.showSuccessMessage('Appointment request submitted successfully!');
+                form.reset();
+
+            } catch (error) {
+                console.error('Scheduler: Form submission error:', error);
+                this.showErrorMessage('Failed to submit appointment request. Please try again.');
+            } finally {
+                // Hide loading state
+                submitBtn.style.display = 'block';
+                loadingSpinner.style.display = 'none';
+            }
+        },
+
+        /**
          * @function createHiddenElements
-         * @description Creates hidden elements used by the application (e.g., conflict modal).
+         * @description Creates hidden elements used by the application (e.g., conflict modal)
          * @returns {DocumentFragment}
          */
         createHiddenElements() {
             const fragment = document.createDocumentFragment();
 
             const appointmentListDiv = document.createElement('div');
-            appointmentListDiv.id = 'appointment-list';
+            appointmentListDiv.id = 'greenhouse-appointment-list';
+            appointmentListDiv.className = 'greenhouse-appointment-list';
             appointmentListDiv.style.display = 'none';
             fragment.appendChild(appointmentListDiv);
 
             const conflictModalDiv = document.createElement('div');
-            conflictModalDiv.id = 'conflict-modal';
-            conflictModalDiv.className = 'modal';
+            conflictModalDiv.id = 'greenhouse-conflict-modal';
+            conflictModalDiv.className = 'greenhouse-modal';
             conflictModalDiv.style.display = 'none';
+            conflictModalDiv.setAttribute('role', 'dialog');
+            conflictModalDiv.setAttribute('aria-labelledby', 'conflict-modal-title');
 
-            const modalContent = `
-                <div class="modal-content">
-                    <span class="close-button">&times;</span>
-                    <h2>Scheduling Conflict Detected</h2>
+            const modalContent = document.createElement('div');
+            modalContent.className = 'greenhouse-modal-content';
+            modalContent.innerHTML = `
+                <div class="greenhouse-modal-header">
+                    <h2 id="conflict-modal-title">Scheduling Conflict Detected</h2>
+                    <button class="greenhouse-modal-close" type="button" aria-label="Close modal">&times;</button>
+                </div>
+                <div class="greenhouse-modal-body">
                     <p>The proposed appointment overlaps with the following existing appointment(s):</p>
-                    <div id="conflict-details"></div>
+                    <div id="greenhouse-conflict-details"></div>
+                </div>
+                <div class="greenhouse-modal-footer">
+                    <button type="button" class="greenhouse-btn greenhouse-btn-secondary" id="greenhouse-conflict-cancel">Cancel</button>
+                    <button type="button" class="greenhouse-btn greenhouse-btn-primary" id="greenhouse-conflict-resolve">Choose Different Time</button>
                 </div>
             `;
-            conflictModalDiv.innerHTML = modalContent;
+
+            conflictModalDiv.appendChild(modalContent);
             fragment.appendChild(conflictModalDiv);
+
+            // Add modal event listeners
+            this.addModalEventListeners(conflictModalDiv);
 
             return fragment;
         },
 
         /**
+         * @function addModalEventListeners
+         * @description Adds event listeners to modal elements
+         * @param {HTMLElement} modal - The modal element
+         */
+        addModalEventListeners(modal) {
+            const closeBtn = modal.querySelector('.greenhouse-modal-close');
+            const cancelBtn = modal.querySelector('#greenhouse-conflict-cancel');
+            
+            const closeModal = () => {
+                modal.style.display = 'none';
+                document.body.classList.remove('greenhouse-modal-open');
+            };
+
+            closeBtn?.addEventListener('click', closeModal);
+            cancelBtn?.addEventListener('click', closeModal);
+
+            // Close on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.style.display !== 'none') {
+                    closeModal();
+                }
+            });
+
+            // Close on backdrop click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        },
+
+        /**
          * @function createInstructionsPanel
-         * @description Creates the instructional panel content.
+         * @description Creates the instructional panel content
          * @returns {DocumentFragment}
          */
         createInstructionsPanel() {
             const fragment = document.createDocumentFragment();
+            
             const h2 = document.createElement('h2');
-            h2.textContent = 'How to Use the Calendar';
+            h2.textContent = 'How to Request an Appointment';
+            h2.className = 'greenhouse-instructions-title';
             fragment.appendChild(h2);
 
-            const paragraphs = [
-                'To request an appointment, please fill out the form on the left. Provide your preferred title, date, time, meeting platform, and the service you require.',
-                'Our team will review your request and confirm the appointment. You will receive a notification once your appointment is scheduled.',
-                'Please ensure all fields are accurately completed to avoid delays in scheduling. If you have any questions, feel free to contact us.'
+            const instructions = [
+                {
+                    title: 'Fill Out the Form',
+                    text: 'Complete all required fields including your preferred date, time, and type of service.'
+                },
+                {
+                    title: 'Review Your Request',
+                    text: 'Double-check your information before submitting to ensure accuracy.'
+                },
+                {
+                    title: 'Wait for Confirmation',
+                    text: 'Our team will review your request and send you a confirmation within 24 hours.'
+                },
+                {
+                    title: 'Need Help?',
+                    text: 'If you have questions or need to make changes, please contact our office directly.'
+                }
             ];
 
-            paragraphs.forEach(text => {
-                const p = document.createElement('p');
-                p.textContent = text;
-                fragment.appendChild(p);
+            const instructionsList = document.createElement('div');
+            instructionsList.className = 'greenhouse-instructions-list';
+
+            instructions.forEach((instruction, index) => {
+                const instructionItem = document.createElement('div');
+                instructionItem.className = 'greenhouse-instruction-item';
+
+                const stepNumber = document.createElement('div');
+                stepNumber.className = 'greenhouse-step-number';
+                stepNumber.textContent = index + 1;
+
+                const instructionContent = document.createElement('div');
+                instructionContent.className = 'greenhouse-instruction-content';
+
+                const instructionTitle = document.createElement('h3');
+                instructionTitle.textContent = instruction.title;
+                instructionTitle.className = 'greenhouse-instruction-title';
+
+                const instructionText = document.createElement('p');
+                instructionText.textContent = instruction.text;
+                instructionText.className = 'greenhouse-instruction-text';
+
+                instructionContent.appendChild(instructionTitle);
+                instructionContent.appendChild(instructionText);
+
+                instructionItem.appendChild(stepNumber);
+                instructionItem.appendChild(instructionContent);
+                instructionsList.appendChild(instructionItem);
             });
+
+            fragment.appendChild(instructionsList);
 
             return fragment;
         },
 
         /**
          * @function loadScript
-         * @description Dynamically loads a script and appends it to the body.
-         * @param {string} scriptName - The name of the script file (e.g., 'dashboard.js').
+         * @description Dynamically loads a script with retry logic and caching
+         * @param {string} scriptName - The name of the script file (e.g., 'dashboard.js')
          * @returns {Promise<void>}
          */
         async loadScript(scriptName) {
-            const response = await fetch(`${this.baseUrl}js/${scriptName}`);
-            if (!response.ok) throw new Error(`Failed to load ${scriptName}: ${response.statusText}`);
-            const scriptText = await response.text();
-
-            // Avoid re-adding the script if it already exists
-            if (document.querySelector(`script[data-script-name="${scriptName}"]`)) {
+            // Check if script already loaded
+            if (appState.loadedScripts.has(scriptName)) {
+                console.log(`Scheduler: Script ${scriptName} already loaded, skipping`);
                 return;
             }
 
-            const scriptElement = document.createElement('script');
-            scriptElement.dataset.scriptName = scriptName;
-            scriptElement.textContent = scriptText;
-            document.body.appendChild(scriptElement);
+            const loadOperation = async () => {
+                const response = await fetch(`${appState.baseUrl}js/${scriptName}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.text();
+            };
+
+            try {
+                const scriptText = await retryOperation(
+                    loadOperation,
+                    `Loading script ${scriptName}`
+                );
+
+                // Avoid re-adding the script if it already exists in DOM
+                if (document.querySelector(`script[data-script-name="${scriptName}"]`)) {
+                    console.log(`Scheduler: Script ${scriptName} already in DOM`);
+                    appState.loadedScripts.add(scriptName);
+                    return;
+                }
+
+                const scriptElement = document.createElement('script');
+                scriptElement.dataset.scriptName = scriptName;
+                scriptElement.dataset.loadedBy = 'greenhouse-scheduler';
+                scriptElement.textContent = scriptText;
+                document.body.appendChild(scriptElement);
+
+                appState.loadedScripts.add(scriptName);
+                console.log(`Scheduler: Successfully loaded script ${scriptName}`);
+
+            } catch (error) {
+                console.error(`Scheduler: Failed to load script ${scriptName}:`, error);
+                throw error;
+            }
+        },
+
+        /**
+         * @function loadCSS
+         * @description Loads and applies CSS with error handling
+         * @returns {Promise<void>}
+         */
+        async loadCSS() {
+            const loadOperation = async () => {
+                const response = await fetch(`${appState.baseUrl}css/schedule.css`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.text();
+            };
+
+            try {
+                const cssText = await retryOperation(loadOperation, 'Loading CSS');
+
+                // Check if CSS already loaded
+                if (document.querySelector('style[data-greenhouse-scheduler-css]')) {
+                    console.log('Scheduler: CSS already loaded');
+                    return;
+                }
+
+                const styleElement = document.createElement('style');
+                styleElement.setAttribute('data-greenhouse-scheduler-css', 'true');
+                styleElement.textContent = cssText;
+                document.head.appendChild(styleElement);
+
+                console.log('Scheduler: CSS loaded successfully');
+
+            } catch (error) {
+                console.warn('Scheduler: Failed to load CSS, using fallback styles:', error);
+                this.loadFallbackCSS();
+            }
+        },
+
+        /**
+         * @function loadFallbackCSS
+         * @description Loads minimal fallback CSS if main CSS fails
+         */
+        loadFallbackCSS() {
+            const fallbackCSS = `
+                .greenhouse-layout-container { display: flex; flex-wrap: wrap; gap: 20px; }
+                .greenhouse-form-panel { flex: 1; min-width: 300px; }
+                .greenhouse-instructions-panel { flex: 1; min-width: 250px; }
+                .greenhouse-form-field { margin-bottom: 15px; }
+                .greenhouse-form-label { display: block; margin-bottom: 5px; font-weight: bold; }
+                .greenhouse-form-input, .greenhouse-form-select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+                .greenhouse-form-submit-btn { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+                .greenhouse-form-error { color: red; font-size: 0.875em; margin-top: 5px; }
+                .greenhouse-loading-spinner { display: flex; align-items: center; gap: 10px; }
+            `;
+
+            const styleElement = document.createElement('style');
+            styleElement.setAttribute('data-greenhouse-scheduler-fallback-css', 'true');
+            styleElement.textContent = fallbackCSS;
+            document.head.appendChild(styleElement);
         },
 
         /**
          * @function renderView
-         * @description Renders the appropriate view (Patient, Dashboard, or Admin) based on URL parameters.
-         * @returns {Promise<DocumentFragment>} A promise that resolves with the DOM fragment for the view.
+         * @description Renders the appropriate view based on the current view state
+         * @returns {Promise<DocumentFragment>} A promise that resolves with the DOM fragment for the view
          */
         async renderView() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const view = urlParams.get('view');
+            console.log(`Scheduler: Rendering view: ${appState.currentView}`);
 
-            let appInstance;
             let appDomFragment;
 
-            switch (view) {
-                case 'dashboard':
-                    await this.loadScript('GreenhouseDashboardApp.js');
-                    appInstance = GreenhouseDashboardApp();
-                    appDomFragment = appInstance.buildDashboardUI();
-                    break;
-                case 'admin':
-                    await this.loadScript('GreenhouseAdminApp.js');
-                    appInstance = GreenhouseAdminApp();
-                    appDomFragment = appInstance.buildForm(); // Admin app builds a form
-                    break;
-                case 'patient':
-                default:
-                    await this.loadScript('GreenhousePatientApp.js');
-                    appInstance = GreenhousePatientApp();
-                    appDomFragment = this.buildPatientFormUI(); // Patient app builds its own UI
-                    break;
-            }
+            try {
+                switch (appState.currentView) {
+                    case 'dashboard':
+                        await this.loadScript('GreenhouseDashboardApp.js');
+                        if (typeof GreenhouseDashboardApp === 'function') {
+                            appState.currentAppInstance = GreenhouseDashboardApp();
+                            appDomFragment = appState.currentAppInstance.buildDashboardUI();
+                        } else {
+                            throw new Error('GreenhouseDashboardApp not found or not a function');
+                        }
+                        break;
 
-            // Store the app instance for later initialization
-            this.currentAppInstance = appInstance;
+                    case 'admin':
+                        await this.loadScript('GreenhouseAdminApp.js');
+                        if (typeof GreenhouseAdminApp === 'function') {
+                            appState.currentAppInstance = GreenhouseAdminApp();
+                            appDomFragment = appState.currentAppInstance.buildForm();
+                        } else {
+                            throw new Error('GreenhouseAdminApp not found or not a function');
+                        }
+                        break;
 
-            if (appDomFragment) {
+                    case 'patient':
+                    default:
+                        await this.loadScript('GreenhousePatientApp.js');
+                        if (typeof GreenhousePatientApp === 'function') {
+                            appState.currentAppInstance = GreenhousePatientApp();
+                        }
+                        // Build the patient UI regardless of whether the external script loaded
+                        appDomFragment = this.buildPatientFormUI();
+                        break;
+                }
+
+                if (!appDomFragment) {
+                    throw new Error('Failed to create view DOM fragment');
+                }
+
                 return appDomFragment;
-            } else {
-                const errorFragment = document.createDocumentFragment();
-                const p = document.createElement('p');
-                p.textContent = 'Error: View could not be loaded.';
-                p.style.color = 'red';
-                errorFragment.appendChild(p);
-                return errorFragment;
+
+            } catch (error) {
+                console.error(`Scheduler: Error rendering ${appState.currentView} view:`, error);
+                return this.createErrorView(`Failed to load ${appState.currentView} view: ${error.message}`);
             }
+        },
+
+        /**
+         * @function createErrorView
+         * @description Creates an error view when rendering fails
+         * @param {string} message - Error message to display
+         * @returns {DocumentFragment}
+         */
+        createErrorView(message) {
+            const fragment = document.createDocumentFragment();
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'greenhouse-error-view';
+            errorDiv.innerHTML = `
+                <div class="greenhouse-error-content">
+                    <h2>Unable to Load Application</h2>
+                    <p>${message}</p>
+                    <p>Please refresh the page or contact support if the problem persists.</p>
+                    <button onclick="window.location.reload()" class="greenhouse-btn greenhouse-btn-primary">
+                        Refresh Page
+                    </button>
+                </div>
+            `;
+            fragment.appendChild(errorDiv);
+            return fragment;
+        },
+
+        /**
+         * @function showSuccessMessage
+         * @description Shows a success message to the user
+         * @param {string} message - Success message to display
+         */
+        showSuccessMessage(message) {
+            this.showNotification(message, 'success');
+        },
+
+        /**
+         * @function showErrorMessage
+         * @description Shows an error message to the user
+         * @param {string} message - Error message to display
+         */
+        showErrorMessage(message) {
+            this.showNotification(message, 'error');
+        },
+
+        /**
+         * @function showNotification
+         * @description Shows a notification message with auto-dismiss
+         * @param {string} message - Message to display
+         * @param {string} type - Type of notification ('success', 'error', 'info')
+         * @param {number} [duration=5000] - Auto-dismiss duration in milliseconds
+         */
+        showNotification(message, type = 'info', duration = 5000) {
+            // Remove any existing notifications
+            const existingNotifications = document.querySelectorAll('.greenhouse-notification');
+            existingNotifications.forEach(notification => notification.remove());
+
+            const notification = document.createElement('div');
+            notification.className = `greenhouse-notification greenhouse-notification-${type}`;
+            notification.setAttribute('role', 'alert');
+            notification.innerHTML = `
+                <div class="greenhouse-notification-content">
+                    <span class="greenhouse-notification-message">${message}</span>
+                    <button class="greenhouse-notification-close" type="button" aria-label="Close notification">&times;</button>
+                </div>
+            `;
+
+            // Position at top of viewport
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                max-width: 400px;
+                padding: 15px;
+                border-radius: 4px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                font-family: Arial, sans-serif;
+                animation: slideInRight 0.3s ease-out;
+            `;
+
+            // Apply type-specific styles
+            switch (type) {
+                case 'success':
+                    notification.style.backgroundColor = '#d4edda';
+                    notification.style.color = '#155724';
+                    notification.style.border = '1px solid #c3e6cb';
+                    break;
+                case 'error':
+                    notification.style.backgroundColor = '#f8d7da';
+                    notification.style.color = '#721c24';
+                    notification.style.border = '1px solid #f5c6cb';
+                    break;
+                default:
+                    notification.style.backgroundColor = '#d1ecf1';
+                    notification.style.color = '#0c5460';
+                    notification.style.border = '1px solid #bee5eb';
+            }
+
+            document.body.appendChild(notification);
+
+            // Add close functionality
+            const closeBtn = notification.querySelector('.greenhouse-notification-close');
+            const removeNotification = () => {
+                notification.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => notification.remove(), 300);
+            };
+
+            closeBtn.addEventListener('click', removeNotification);
+
+            // Auto-dismiss
+            if (duration > 0) {
+                setTimeout(removeNotification, duration);
+            }
+        },
+
+        /**
+         * @function findOptimalContainer
+         * @description Finds the best container for inserting the application
+         * @param {Element} targetElement - The target element from the selector
+         * @returns {Object} Container info with element and insertion strategy
+         */
+        findOptimalContainer(targetElement) {
+            // Strategy 1: Find parent wixui-section
+            let parentWixuiSection = targetElement;
+            while (parentWixuiSection && !(parentWixuiSection.tagName === 'SECTION' && parentWixuiSection.classList.contains('wixui-section'))) {
+                parentWixuiSection = parentWixuiSection.parentElement;
+            }
+
+            if (parentWixuiSection?.parentElement) {
+                return {
+                    container: parentWixuiSection.parentElement,
+                    strategy: 'wixui-section-parent',
+                    insertionMethod: 'prepend'
+                };
+            }
+
+            // Strategy 2: Find any section parent
+            let sectionParent = targetElement;
+            while (sectionParent && sectionParent.tagName !== 'SECTION') {
+                sectionParent = sectionParent.parentElement;
+            }
+
+            if (sectionParent?.parentElement) {
+                return {
+                    container: sectionParent.parentElement,
+                    strategy: 'section-parent',
+                    insertionMethod: 'prepend'
+                };
+            }
+
+            // Strategy 3: Use the target element directly
+            return {
+                container: targetElement,
+                strategy: 'target-direct',
+                insertionMethod: 'prepend'
+            };
+        },
+
+        /**
+         * @function insertApplication
+         * @description Inserts the application into the optimal container
+         * @param {DocumentFragment} appDomFragment - The application DOM fragment
+         * @param {Element} targetElement - The target element
+         */
+        insertApplication(appDomFragment, targetElement) {
+            const containerInfo = this.findOptimalContainer(targetElement);
+            
+            console.log(`Scheduler: Using insertion strategy: ${containerInfo.strategy}`);
+
+            // Create the main app container
+            const appContainer = document.createElement('section');
+            appContainer.id = 'greenhouse-app-container';
+            appContainer.className = 'greenhouse-app-container';
+            appContainer.setAttribute('data-greenhouse-app', appState.currentView);
+            appContainer.style.cssText = `
+                width: 100%;
+                position: relative;
+                padding: 20px;
+                box-sizing: border-box;
+                background: #fff;
+            `;
+
+            // Add the application content to the container
+            appContainer.appendChild(appDomFragment);
+
+            // Insert using the determined strategy
+            switch (containerInfo.insertionMethod) {
+                case 'prepend':
+                    containerInfo.container.prepend(appContainer);
+                    break;
+                case 'append':
+                    containerInfo.container.appendChild(appContainer);
+                    break;
+                default:
+                    containerInfo.container.prepend(appContainer);
+            }
+
+            console.log('Scheduler: Application inserted into DOM');
+            return appContainer;
         },
 
         /**
          * @function displayError
-         * @description Displays a visible error message on the page.
-         * @param {string} message - The error message to display.
+         * @description Displays a visible error message on the page
+         * @param {string} message - The error message to display
+         * @param {Element} [targetElement] - Element to insert error near
          */
-        displayError(message) {
+        displayError(message, targetElement = null) {
             const errorDiv = document.createElement('div');
             errorDiv.id = 'greenhouse-app-error';
-            errorDiv.style.color = 'red';
-            errorDiv.style.backgroundColor = '#fff0f0';
-            errorDiv.style.border = '1px solid red';
-            errorDiv.style.padding = '15px';
-            errorDiv.style.margin = '20px';
-            errorDiv.style.textAlign = 'center';
-            errorDiv.style.fontFamily = 'Arial, sans-serif';
-            errorDiv.style.zIndex = '10000';
-            errorDiv.style.position = 'relative';
-            errorDiv.textContent = message;
-            document.body.insertAdjacentElement('afterbegin', errorDiv);
+            errorDiv.className = 'greenhouse-app-error';
+            errorDiv.setAttribute('role', 'alert');
+            errorDiv.style.cssText = `
+                color: #721c24;
+                background-color: #f8d7da;
+                border: 1px solid #f5c6cb;
+                padding: 15px;
+                margin: 20px;
+                border-radius: 4px;
+                text-align: center;
+                font-family: Arial, sans-serif;
+                z-index: 10000;
+                position: relative;
+            `;
+            
+            errorDiv.innerHTML = `
+                <strong>Greenhouse Scheduler Error:</strong><br>
+                ${message}
+                <br><br>
+                <button onclick="window.location.reload()" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Reload Page
+                </button>
+            `;
+
+            if (targetElement) {
+                targetElement.prepend(errorDiv);
+            } else {
+                document.body.insertAdjacentElement('afterbegin', errorDiv);
+            }
+
+            // Also log to console with more details
+            console.error('Greenhouse Scheduler Error:', {
+                message,
+                targetSelector: appState.targetSelector,
+                baseUrl: appState.baseUrl,
+                view: appState.currentView,
+                errors: appState.errors
+            });
+        },
+
+        /**
+         * @function initializeApplication
+         * @description Initializes the loaded application instance
+         */
+        initializeApplication() {
+            try {
+                if (appState.currentAppInstance && typeof appState.currentAppInstance.init === 'function') {
+                    console.log('Scheduler: Initializing application instance');
+                    appState.currentAppInstance.init();
+                } else if (appState.currentAppInstance) {
+                    console.log('Scheduler: Application instance loaded but has no init method');
+                } else {
+                    console.log('Scheduler: No application instance to initialize');
+                }
+            } catch (error) {
+                console.error('Scheduler: Error initializing application instance:', error);
+                this.showErrorMessage('Application loaded but failed to initialize properly.');
+            }
         },
 
         /**
          * @function init
-         * @description Initializes the entire scheduling application.
-         * @param {string} targetSelector - The CSS selector for the element to load the app into.
-         * @param {string} baseUrl - The base URL for fetching assets.
+         * @description Main initialization function for the scheduler application
+         * @param {string} targetSelector - The CSS selector for the element to load the app into
+         * @param {string} baseUrl - The base URL for fetching assets
          */
         async init(targetSelector, baseUrl) {
-            this.baseUrl = baseUrl;
-            const targetElement = document.querySelector(targetSelector);
-
-            if (!targetElement) {
-                const errorMessage = `Greenhouse App Error: The target element "${targetSelector}" was not found on the page. The application cannot be loaded.`;
-                console.error(errorMessage);
-                this.displayError(errorMessage);
+            if (appState.isInitialized || appState.isLoading) {
+                console.log('Scheduler: Already initialized or loading, skipping');
                 return;
             }
 
-            try {
-                // Load main application logic
-                await this.loadScript('GreenhousePatientApp.js');
+            appState.isLoading = true;
 
-                // Render the correct view
+            try {
+                console.log('Scheduler: Starting initialization');
+
+                // Set configuration
+                appState.targetSelector = targetSelector;
+                appState.baseUrl = baseUrl;
+
+                // Wait for target element to be available
+                appState.targetElement = await waitForElement(targetSelector);
+
+                // Load CSS first (non-blocking)
+                this.loadCSS().catch(error => {
+                    console.warn('Scheduler: CSS loading failed, continuing with fallback:', error);
+                });
+
+                // Load the main application logic
+                await this.loadScript('GreenhousePatientApp.js').catch(error => {
+                    console.warn('Scheduler: Patient app script failed to load:', error);
+                });
+
+                // Render the appropriate view
                 const appDomFragment = await this.renderView();
 
-                // Load CSS
-                const cssResponse = await fetch(`${this.baseUrl}css/schedule.css`);
-                if (!cssResponse.ok) throw new Error(`Failed to load CSS: ${cssResponse.statusText}`);
-                const cssText = await cssResponse.text();
+                // Insert application into DOM with delay for Wix compatibility
+                await new Promise(resolve => setTimeout(resolve, config.dom.insertionDelay));
+                
+                const appContainer = this.insertApplication(appDomFragment, appState.targetElement);
 
-                // Find the parent wixui-section and its container by crawling up the DOM
-                let parentWixuiSection = targetElement;
-                while (parentWixuiSection && !(parentWixuiSection.tagName === 'SECTION' && parentWixuiSection.classList.contains('wixui-section'))) {
-                    parentWixuiSection = parentWixuiSection.parentElement;
-                }
+                // Initialize the application instance
+                this.initializeApplication();
 
-                // Create a new container for the app
-                const appContainer = document.createElement('section');
-                appContainer.id = 'greenhouse-app-container';
-                appContainer.style.width = '100%';
-                appContainer.style.position = 'relative';
-                appContainer.style.padding = '20px';
-                appContainer.style.boxSizing = 'border-box';
+                appState.isInitialized = true;
+                console.log('Scheduler: Initialization completed successfully');
 
-                // Append the app to the new container
-                appContainer.appendChild(appDomFragment);
-
-                if (!parentWixuiSection) {
-                    console.error('Could not find the parent wixui-section. Falling back to prepending to the target element.');
-                    targetElement.prepend(appContainer);
-                } else {
-                    const container = parentWixuiSection.parentElement;
-                    // Prepend the new container to the container element
-                    container.prepend(appContainer);
-                }
-
-                // Append styles to the head
-                const styleElement = document.createElement('style');
-                styleElement.textContent = cssText;
-                document.head.appendChild(styleElement);
-
-                // Initialize the main app logic after the DOM is built
-                if (this.currentAppInstance && typeof this.currentAppInstance.init === 'function') {
-                    this.currentAppInstance.init();
-                }
-
-                console.log('Schedule app loaded successfully!');
+                // Show success notification
+                this.showNotification('Scheduling application loaded successfully', 'success', 3000);
 
             } catch (error) {
-                console.error('Error loading schedule app:', error);
-                const errorMessage = 'Failed to load the scheduling application. Please check the console for details or contact support.';
-                this.displayError(errorMessage);
-                targetElement.innerHTML = `<p style="color: red;">${errorMessage}</p>`;
+                console.error('Scheduler: Initialization failed:', error);
+                appState.errors.push(error);
+
+                const errorMessage = error.message.includes('not found') 
+                    ? `Target element "${targetSelector}" not found. Please check if the page has loaded completely.`
+                    : `Failed to load the scheduling application: ${error.message}`;
+
+                this.displayError(errorMessage, appState.targetElement);
+                this.showErrorMessage('Failed to load scheduling application');
+
+            } finally {
+                appState.isLoading = false;
             }
         }
     };
 
-    // Initialize the scheduler application.
-    GreenhouseAppsScheduler.init(targetSelector, baseUrl);
+    // --- Main Execution Logic ---
+
+    /**
+     * Main execution function
+     */
+    async function main() {
+        try {
+            // Validate configuration from script attributes
+            if (!validateConfiguration()) {
+                console.error('Scheduler: Invalid configuration, cannot proceed');
+                return;
+            }
+
+            // Add global error handler
+            window.addEventListener('error', (event) => {
+                if (event.filename && event.filename.includes('greenhouse')) {
+                    console.error('Scheduler: Global error caught:', event.error);
+                    appState.errors.push(event.error);
+                }
+            });
+
+            // Add unhandled promise rejection handler
+            window.addEventListener('unhandledrejection', (event) => {
+                console.error('Scheduler: Unhandled promise rejection:', event.reason);
+                appState.errors.push(event.reason);
+            });
+
+            // Initialize the scheduler application
+            await GreenhouseAppsScheduler.init(appState.targetSelector, appState.baseUrl);
+
+        } catch (error) {
+            console.error('Scheduler: Main execution failed:', error);
+        }
+    }
+
+    // Add CSS animations
+    const animationCSS = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+
+    const animationStyle = document.createElement('style');
+    animationStyle.setAttribute('data-greenhouse-animations', 'true');
+    animationStyle.textContent = animationCSS;
+    document.head.appendChild(animationStyle);
+
+    // Expose public API for debugging
+    window.GreenhouseScheduler = {
+        getState: () => ({ ...appState }),
+        getConfig: () => ({ ...config }),
+        reinitialize: () => {
+            appState.isInitialized = false;
+            appState.isLoading = false;
+            return main();
+        },
+        showNotification: GreenhouseAppsScheduler.showNotification.bind(GreenhouseAppsScheduler)
+    };
+
+    // Execute main function
+    main();
+
 })();
