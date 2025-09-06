@@ -1,0 +1,27 @@
+import wixData from 'wix-data';
+
+// Get all quotes
+export function getQuotes() {
+    return wixData.query("InspirationalQuotes")
+        .find()
+        .then((results) => {
+            return results.items;
+        })
+        .catch((err) => {
+            let errorMsg = err;
+        });
+}
+
+// Get a random quote
+export function getRandomQuote() {
+    return wixData.query("InspirationalQuotes")
+        .find()
+        .then((results) => {
+            const items = results.items;
+            const randomIndex = Math.floor(Math.random() * items.length);
+            return items[randomIndex];
+        })
+        .catch((err) => {
+            let errorMsg = err;
+        });
+}

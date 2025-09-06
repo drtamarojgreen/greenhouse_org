@@ -30,6 +30,10 @@
          */
         schedulePagePath: '/schedule/',
         /**
+         * Timeout for waiting for elements to appear (in milliseconds).
+         */
+        elementWaitTimeout: 15000,
+        /**
          * CSS selectors for the different views of the scheduling application.
          * These are specific to the Wix site structure and may need updating if the site changes.
          */
@@ -37,8 +41,64 @@
             patient: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
             dashboard: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)',
             admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column'
+        },
+        /**
+         * Fallback selectors to try if primary selectors fail.
+         */
+        fallbackSelectors: {
+            patient: '.wixui-column-strip__column:first-child',
+            dashboard: '.wixui-column-strip__column:nth-child(2)',
+            admin: '.wixui-column-strip__column:last-child'
         }
     };
+
+    /**
+     * @function waitForElement
+     * @description Waits for an element to appear in the DOM, with fallback options.
+     * @param {string|string[]} selectors - Primary selector or array of selectors to try.
+     * @param {number} [timeout=15000] - Maximum time to wait in milliseconds.
+     * @returns {Promise<Element>} Promise that resolves with the found element.
+     */
+    function waitForElement(selectors, timeout = config.elementWaitTimeout) {
+        return new Promise((resolve, reject) => {
+            const selectorArray = Array.isArray(selectors) ? selectors : [selectors];
+            
+            // Check if element already exists
+            for (const selector of selectorArray) {
+                const element = document.querySelector(selector);
+                if (element) {
+                    console.log(`Greenhouse: Found element with selector: ${selector}`);
+                    return resolve(element);
+                }
+            }
+            
+            console.log(`Greenhouse: Waiting for element with selectors: ${selectorArray.join(', ')}`);
+            
+            const observer = new MutationObserver(() => {
+                for (const selector of selectorArray) {
+                    const element = document.querySelector(selector);
+                    if (element) {
+                        console.log(`Greenhouse: Element found with selector: ${selector}`);
+                        observer.disconnect();
+                        return resolve(element);
+                    }
+                }
+            });
+            
+            // Observe changes to the entire document
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: false
+            });
+            
+            // Set timeout
+            setTimeout(() => {
+                observer.disconnect();
+                reject(new Error(`Element not found within ${timeout}ms. Tried selectors: ${selectorArray.join(', ')}`));
+            }, timeout);
+        });
+    }
 
     /**
      * @function loadScript
@@ -48,6 +108,8 @@
      */
     async function loadScript(url, attributes = {}) {
         try {
+            console.log(`Greenhouse: Loading script from ${url}`);
+            
             // Fetch the script content from the provided URL.
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Failed to load script: ${url} - ${response.statusText}`);
@@ -64,39 +126,89 @@
 
             // Append the script element to the body to execute it.
             document.body.appendChild(scriptElement);
+            console.log(`Greenhouse: Successfully loaded script from ${url}`);
         } catch (error) {
-            console.error(`Error loading script ${url}:`, error);
+            console.error(`Greenhouse: Error loading script ${url}:`, error);
+        }
+    }
+
+    /**
+     * @function loadSchedulerApplication
+     * @description Loads the scheduler application after ensuring the target element exists.
+     */
+    async function loadSchedulerApplication() {
+        try {
+            console.log('Greenhouse: Initializing scheduler application');
+            
+            // Parse URL parameters to determine the view.
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view') || 'dashboard'; // Default to dashboard
+            
+            console.log(`Greenhouse: Loading scheduler for view: ${view}`);
+
+            // Determine the correct selectors to try
+            let selectorsToTry = [];
+            
+            if (view === 'patient' && config.selectors.patient) {
+                selectorsToTry.push(config.selectors.patient);
+                if (config.fallbackSelectors.patient) {
+                    selectorsToTry.push(config.fallbackSelectors.patient);
+                }
+            } else if (view === 'admin' && config.selectors.admin) {
+                selectorsToTry.push(config.selectors.admin);
+                if (config.fallbackSelectors.admin) {
+                    selectorsToTry.push(config.fallbackSelectors.admin);
+                }
+            } else {
+                selectorsToTry.push(config.selectors.dashboard);
+                if (config.fallbackSelectors.dashboard) {
+                    selectorsToTry.push(config.fallbackSelectors.dashboard);
+                }
+            }
+
+            // Wait for the target element to be available
+            const targetElement = await waitForElement(selectorsToTry);
+            const targetSelector = selectorsToTry.find(selector => document.querySelector(selector));
+
+            // Define the attributes to be passed to the scheduler script.
+            const schedulerAttributes = {
+                'target-selector': targetSelector,
+                'base-url': config.githubPagesBaseUrl,
+                'view': view
+            };
+
+            // Load the scheduler script and pass the necessary data attributes to it.
+            await loadScript(`${config.githubPagesBaseUrl}js/scheduler.js`, schedulerAttributes);
+            
+        } catch (error) {
+            console.error('Greenhouse: Failed to load scheduler application:', error);
+        }
+    }
+
+    /**
+     * @function initialize
+     * @description Main initialization function that runs when the DOM is ready.
+     */
+    async function initialize() {
+        console.log('Greenhouse: Initializing application loader');
+        
+        // Load the visual effects script on all pages (no need to wait for specific elements)
+        loadScript(`${config.githubPagesBaseUrl}js/effects.js`);
+
+        // Check if the current page is the schedule page.
+        if (window.location.pathname.includes(config.schedulePagePath)) {
+            await loadSchedulerApplication();
         }
     }
 
     // --- Main execution logic ---
-
-    // Load the visual effects script on all pages.
-    loadScript(`${config.githubPagesBaseUrl}js/effects.js`);
-
-    // Check if the current page is the schedule page.
-    if (window.location.pathname.includes(config.schedulePagePath)) {
-        // Parse URL parameters to determine the view.
-        const urlParams = new URLSearchParams(window.location.search);
-        const view = urlParams.get('view'); // e.g., 'dashboard' or 'admin'
-
-        // Determine the correct selector, defaulting to the dashboard view.
-        let targetSelector;
-        if (view === 'patient' && config.selectors.patient) {
-            targetSelector = config.selectors.patient;
-        } else if (view === 'admin' && config.selectors.admin) {
-            targetSelector = config.selectors.admin;
-        } else {
-            targetSelector = config.selectors.dashboard;
-        }
-
-        // Define the attributes to be passed to the scheduler script.
-        const schedulerAttributes = {
-            'target-selector': targetSelector,
-            'base-url': config.githubPagesBaseUrl
-        };
-
-        // Load the scheduler script and pass the necessary data attributes to it.
-        loadScript(`${config.githubPagesBaseUrl}js/scheduler.js`, schedulerAttributes);
+    
+    // Wait for DOM to be ready, then initialize
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+        // DOM is already ready, but give Wix a moment to finish rendering
+        setTimeout(initialize, 1000);
     }
+
 })();

@@ -2,6 +2,18 @@
 
 A simple web application that displays inspirational quotes.
 
+## Wix Integration
+
+This app integrates with the Wix backend to fetch quotes from a Wix Data Collection.
+
+### Wix Data Collection
+
+*   **Collection Name:** `InspirationalQuotes`
+*   **Fields:**
+    *   `text` (Text) - The quote itself.
+    *   `author` (Text) - The author of the quote.
+    *   `tags` (Array of Strings) - Tags for categorizing quotes (e.g., "motivation", "positivity").
+
 ## To Run
 
 1.  Navigate to the `apps/frontend/inspiration` directory.
