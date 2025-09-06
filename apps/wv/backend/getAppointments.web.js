@@ -1,6 +1,8 @@
-// Version: 0.0.0.0
+// Version: 0.0.0.1
 import wixData from 'wix-data';
 import { response } from 'wix-http-functions';
+
+console.log("Loading getAppointments.web.js - Version 0.0.0.1");
 
 /**
  * HTTP GET function to retrieve all appointments from the "Appointments" collection.

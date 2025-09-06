@@ -1,6 +1,8 @@
-// Version: 0.0.0.0
+// Version: 0.0.0.1
 /**
  * @file scheduler.js
+ */
+console.log("Loading scheduler.js - Version 0.0.0.1");
  * @description This script contains the core functionality for the Greenhouse appointment scheduling application.
  * It is responsible for rendering the various scheduling views (patient, dashboard, admin) and handling
  * user interactions within those views.

@@ -1,4 +1,5 @@
-// Version: 0.0.0.0
+// Version: 0.0.0.1
+console.log("Loading GreenhousePatientApp.js - Version 0.0.0.1");
 function GreenhousePatientApp() {
     // All functions are now private to the GreenhousePatientApp scope.
 
