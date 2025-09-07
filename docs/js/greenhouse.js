@@ -34,6 +34,10 @@
          */
         booksPagePath: '/books/',
         /**
+         * The path segment that identifies the videos page.
+         */
+        videosPagePath: '/videos/',
+        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -54,7 +58,8 @@
             patient: '.wixui-column-strip__column:first-child',
             dashboard: '.wixui-column-strip__column:nth-child(2)',
             admin: '.wixui-column-strip__column:last-child',
-            books: '.wixui-column-strip__column:first-child' // Assuming similar fallback to patient view for now
+            books: '.wixui-column-strip__column:first-child', // Assuming similar fallback to patient view for now
+            videos: '.wixui-column-strip__column:first-child' // Assuming similar fallback to patient view for now
         }
     };
 
@@ -240,6 +245,53 @@
     }
 
     /**
+     * @function loadVideosApplication
+     * @description Loads the videos application after ensuring the target element exists.
+     */
+    async function loadVideosApplication() {
+        try {
+            console.log('Greenhouse: Initializing videos application');
+            
+            // Parse URL parameters to determine the view.
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view') || 'default'; // Default to 'default' view for videos
+            
+            console.log(`Greenhouse: Loading videos for view: ${view}`);
+
+            // Determine the correct selectors to try
+            let selectorsToTry = [];
+            
+            // For videos, we'll use the 'videos' selector regardless of a specific 'view' parameter for now
+            if (config.selectors.videos) {
+                selectorsToTry.push(config.selectors.videos);
+                if (config.fallbackSelectors.videos) {
+                    selectorsToTry.push(config.fallbackSelectors.videos);
+                }
+            } else {
+                // Fallback if no specific videos selector is defined
+                selectorsToTry.push('.wixui-column-strip__column:first-child');
+            }
+
+            // Wait for the target element to be available
+            const targetElement = await waitForElement(selectorsToTry);
+            const targetSelector = selectorsToTry.find(selector => document.querySelector(selector));
+
+            // Define the attributes to be passed to the videos script.
+            const videosAttributes = {
+                'target-selector': targetSelector,
+                'base-url': config.githubPagesBaseUrl,
+                'view': view
+            };
+
+            // Load the videos script and pass the necessary data attributes to it.
+            await loadScript(`${config.githubPagesBaseUrl}js/videos.js`, videosAttributes);
+            
+        } catch (error) {
+            console.error('Greenhouse: Failed to load videos application:', error);
+        }
+    }
+
+    /**
      * @function initialize
      * @description Main initialization function that runs when the DOM is ready.
      */
@@ -254,6 +306,8 @@
             await loadSchedulerApplication();
         } else if (window.location.pathname.includes(config.booksPagePath)) {
             await loadBooksApplication();
+        } else if (window.location.pathname.includes(config.videosPagePath)) {
+            await loadVideosApplication();
         }
     }
 
