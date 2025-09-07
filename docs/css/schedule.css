@@ -36,11 +36,6 @@ h1, h2 {
     order: -1; /* This makes it appear first in a flex/grid container */
 }
 
-/* Ensure the app container is the first item in the grid layout */
-.wixui-column-strip__column > #greenhouse-app-container {
-    order: -1; /* This makes it appear first in a flex/grid container */
-}
-
 /* Responsive adjustments for two columns */
 
 

@@ -147,6 +147,7 @@
             console.log(`Greenhouse: Successfully loaded script from ${url}`);
         } catch (error) {
             console.error(`Greenhouse: Error loading script ${url}:`, error);
+            throw error; // Re-throw to propagate the error
         }
     }
 

@@ -237,34 +237,33 @@
          * @returns {Promise<void>}
          */
         async loadCSS() {
-            const loadOperation = async () => {
-                const response = await fetch(`${appState.baseUrl}css/news.css`);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return await response.text();
-            };
+            const cssUrl = `${appState.baseUrl}css/news.css`;
 
-            try {
-                const cssText = await retryOperation(loadOperation, 'Loading CSS');
-
-                // Check if CSS already loaded
-                if (document.querySelector('style[data-greenhouse-news-css]')) {
-                    console.log('News: CSS already loaded');
-                    return;
-                }
-
-                const styleElement = document.createElement('style');
-                styleElement.setAttribute('data-greenhouse-news-css', 'true');
-                styleElement.textContent = cssText;
-                document.head.appendChild(styleElement);
-
-                console.log('News: CSS loaded successfully');
-
-            } catch (error) {
-                console.warn('News: Failed to load CSS, using fallback styles:', error);
-                this.loadFallbackCSS();
+            // Check if CSS already loaded
+            if (document.querySelector(`link[href="${cssUrl}"]`)) {
+                console.log(`News: CSS ${cssUrl} already loaded, skipping`);
+                return;
             }
+
+            return new Promise((resolve, reject) => {
+                const linkElement = document.createElement('link');
+                linkElement.rel = 'stylesheet';
+                linkElement.type = 'text/css';
+                linkElement.href = cssUrl;
+                linkElement.setAttribute('data-greenhouse-news-css', 'true');
+
+                linkElement.onload = () => {
+                    console.log(`News: CSS ${cssUrl} loaded successfully`);
+                    resolve();
+                };
+                linkElement.onerror = (event) => {
+                    console.error(`News: Failed to load CSS ${cssUrl}:`, event);
+                    this.loadFallbackCSS(); // Load fallback if main CSS fails
+                    reject(new Error(`Failed to load CSS: ${cssUrl}`));
+                };
+
+                document.head.appendChild(linkElement);
+            });
         },
 
         /**
