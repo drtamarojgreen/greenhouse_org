@@ -28,6 +28,11 @@ h1, h2 {
     margin-bottom: 20px; /* Space between panels on smaller screens */
 }
 
+/* Ensure the app container is the first item in the grid layout */
+.wixui-column-strip__column > #greenhouse-app-container {
+    order: -1; /* This makes it appear first in a flex/grid container */
+}
+
 /* Responsive adjustments for two columns */
 
 

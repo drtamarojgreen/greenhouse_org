@@ -9,6 +9,11 @@
     margin-bottom: 20px; /* Space between panels on smaller screens */
 }
 
+/* Ensure the app container is the first item in the grid layout */
+.wixui-column-strip__column > #greenhouse-app-container {
+    order: -1; /* This makes it appear first in a flex/grid container */
+}
+
 /* Form Elements Styling (if any forms are added to books app) */
 #book-search-form, .greenhouse-books-content {
     margin-bottom: 20px;

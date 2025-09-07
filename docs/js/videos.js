@@ -512,39 +512,12 @@
          * @returns {Object} Container info with element and insertion strategy
          */
         findOptimalContainer(targetElement) {
-            // Strategy 1: Find parent wixui-section
-            let parentWixuiSection = targetElement;
-            while (parentWixuiSection && !(parentWixuiSection.tagName === 'SECTION' && parentWixuiSection.classList.contains('wixui-section'))) {
-                parentWixuiSection = parentWixuiSection.parentElement;
-            }
-
-            if (parentWixuiSection?.parentElement) {
-                return {
-                    container: parentWixuiSection.parentElement,
-                    strategy: 'wixui-section-parent',
-                    insertionMethod: 'prepend'
-                };
-            }
-
-            // Strategy 2: Find any section parent
-            let sectionParent = targetElement;
-            while (sectionParent && sectionParent.tagName !== 'SECTION') {
-                sectionParent = sectionParent.parentElement;
-            }
-
-            if (sectionParent?.parentElement) {
-                return {
-                    container: sectionParent.parentElement,
-                    strategy: 'section-parent',
-                    insertionMethod: 'prepend'
-                };
-            }
-
-            // Strategy 3: Use the target element directly
+            // Always use the target element directly as the container
+            // This ensures the app is inserted into the specific column identified by greenhouse.js
             return {
                 container: targetElement,
                 strategy: 'target-direct',
-                insertionMethod: 'prepend'
+                insertionMethod: 'prepend' // Prepend to ensure it's the first child
             };
         },
 
