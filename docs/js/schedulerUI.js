@@ -169,7 +169,18 @@ const GreenhouseSchedulerUI = (function() {
         // Conflict Resolution Area
         const conflictResolutionDiv = document.createElement('div');
         conflictResolutionDiv.id = 'greenhouse-dashboard-app-conflict-resolution-area'; // Renamed ID
-        conflictResolutionDiv.innerHTML = '<h2>Conflicts to Resolve</h2><ul id="greenhouse-dashboard-app-conflict-list"><li>No conflicts found.</li></ul>'; // Renamed ID
+
+        const h2Conflicts = document.createElement('h2');
+        h2Conflicts.textContent = 'Conflicts to Resolve';
+        conflictResolutionDiv.appendChild(h2Conflicts);
+
+        const ulConflictList = document.createElement('ul');
+        ulConflictList.id = 'greenhouse-dashboard-app-conflict-list';
+        const liNoConflicts = document.createElement('li');
+        liNoConflicts.textContent = 'No conflicts found.';
+        ulConflictList.appendChild(liNoConflicts);
+        conflictResolutionDiv.appendChild(ulConflictList);
+
         fragment.appendChild(conflictResolutionDiv);
 
         return fragment;
@@ -360,20 +371,46 @@ const GreenhouseSchedulerUI = (function() {
 
         const modalContent = document.createElement('div');
         modalContent.className = 'greenhouse-modal-content';
-        modalContent.innerHTML = `
-            <div class="greenhouse-modal-header">
-                <h2 id="conflict-modal-title">Scheduling Conflict Detected</h2>
-                <button class="greenhouse-modal-close" type="button" aria-label="Close modal">&times;</button>
-            </div>
-            <div class="greenhouse-modal-body">
-                <p>The proposed appointment overlaps with the following existing appointment(s):</p>
-                <div id="greenhouse-conflict-details"></div>
-            </div>
-            <div class="greenhouse-modal-footer">
-                <button type="button" class="greenhouse-btn greenhouse-btn-secondary" id="greenhouse-conflict-cancel">Cancel</button>
-                <button type="button" class="greenhouse-btn greenhouse-btn-primary" id="greenhouse-conflict-resolve">Choose Different Time</button>
-            </div>
-        `;
+
+        const modalHeader = document.createElement('div');
+        modalHeader.className = 'greenhouse-modal-header';
+        const h2ModalTitle = document.createElement('h2');
+        h2ModalTitle.id = 'conflict-modal-title';
+        h2ModalTitle.textContent = 'Scheduling Conflict Detected';
+        const closeButton = document.createElement('button');
+        closeButton.className = 'greenhouse-modal-close';
+        closeButton.type = 'button';
+        closeButton.setAttribute('aria-label', 'Close modal');
+        closeButton.textContent = '×'; // Times symbol
+        modalHeader.appendChild(h2ModalTitle);
+        modalHeader.appendChild(closeButton);
+        modalContent.appendChild(modalHeader);
+
+        const modalBody = document.createElement('div');
+        modalBody.className = 'greenhouse-modal-body';
+        const pOverlap = document.createElement('p');
+        pOverlap.textContent = 'The proposed appointment overlaps with the following existing appointment(s):';
+        const conflictDetailsDiv = document.createElement('div');
+        conflictDetailsDiv.id = 'greenhouse-conflict-details';
+        modalBody.appendChild(pOverlap);
+        modalBody.appendChild(conflictDetailsDiv);
+        modalContent.appendChild(modalBody);
+
+        const modalFooter = document.createElement('div');
+        modalFooter.className = 'greenhouse-modal-footer';
+        const cancelButton = document.createElement('button');
+        cancelButton.type = 'button';
+        cancelButton.className = 'greenhouse-btn greenhouse-btn-secondary';
+        cancelButton.id = 'greenhouse-conflict-cancel';
+        cancelButton.textContent = 'Cancel';
+        const resolveButton = document.createElement('button');
+        resolveButton.type = 'button';
+        resolveButton.className = 'greenhouse-btn greenhouse-btn-primary';
+        resolveButton.id = 'greenhouse-conflict-resolve';
+        resolveButton.textContent = 'Choose Different Time';
+        modalFooter.appendChild(cancelButton);
+        modalFooter.appendChild(resolveButton);
+        modalContent.appendChild(modalFooter);
 
         conflictModalDiv.appendChild(modalContent);
         fragment.appendChild(conflictModalDiv);

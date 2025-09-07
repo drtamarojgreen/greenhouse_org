@@ -56,19 +56,35 @@ function GreenhouseDashboardApp() {
         const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() + 1).toISOString().split('T')[0];
         const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (7 - today.getDay())).toISOString().split('T')[0];
 
-        try {
-            const [appointments, conflicts, serviceTypes] = await Promise.all([
-                getAppointmentsByDateRange(startDate, endDate),
-                getConflictsForDateRange(startDate, endDate),
-                getServiceTypes()
-            ]);
+        let appointments = [];
+        let conflicts = [];
+        let serviceTypes = [];
 
-            GreenhouseSchedulerUI.renderSchedule(appointments, serviceTypes, document.getElementById('greenhouse-dashboard-app-schedule-container')); // Renamed ID
-            GreenhouseSchedulerUI.renderConflicts(conflicts, document.getElementById('greenhouse-dashboard-app-conflict-list')); // Renamed ID
+        try {
+            appointments = await getAppointmentsByDateRange(startDate, endDate);
         } catch (error) {
-            console.error("Error loading initial data:", error);
-            document.getElementById('greenhouse-dashboard-app-schedule-container').innerHTML = '<p style="color: red;">Error loading dashboard data. Please try refreshing the page. See console for more details.</p>'; // Renamed ID
+            console.error("Error fetching appointments:", error);
+            GreenhouseUtils.displayError('Failed to load appointments data.');
         }
+
+        try {
+            conflicts = await getConflictsForDateRange(startDate, endDate);
+        } catch (error) {
+            console.error("Error fetching conflicts:", error);
+            GreenhouseUtils.displayError('Failed to load conflicts data.');
+        }
+
+        try {
+            serviceTypes = await getServiceTypes();
+        } catch (error) {
+            console.error("Error fetching service types:", error);
+            GreenhouseUtils.displayError('Failed to load service types data.');
+        }
+
+        // Always attempt to render, even if data fetching failed
+        GreenhouseSchedulerUI.renderSchedule(appointments, serviceTypes, document.getElementById('greenhouse-dashboard-app-schedule-container'));
+        GreenhouseSchedulerUI.renderConflicts(conflicts, document.getElementById('greenhouse-dashboard-app-conflict-list'));
+    }
     }
 
     function handleAction(event) {
