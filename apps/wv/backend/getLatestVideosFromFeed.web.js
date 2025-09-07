@@ -6,7 +6,7 @@ import { response } from 'wix-http-functions';
  * Endpoint: /_api/getLatestVideosFromFeed
  * Note: Currently returns hardcoded data.
  */
-export async function get(request) {
+export async function get_getLatestVideosFromFeed(request) {
     try {
         // Hardcoded data (as in original .jsw)
         const simulatedFeedData = [

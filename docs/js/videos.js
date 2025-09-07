@@ -1,13 +1,13 @@
-// Version: 0.0.2
+// Version: 0.0.1
 /**
- * @file scheduler.js
- * @description This script contains the core functionality for the Greenhouse appointment scheduling application.
- * It is responsible for rendering the various scheduling views (patient, dashboard, admin) and handling
+ * @file videos.js
+ * @description This script contains the core functionality for the Greenhouse videos application.
+ * It is responsible for rendering the various video views and handling
  * user interactions within those views.
  *
  * @integration This script is not loaded directly by the host page. Instead, it is loaded by `greenhouse.js`
- * when the scheduling application is needed. `greenhouse.js` passes the target selector for rendering
- * via a `data-target-selector` attribute on the script tag. This design allows the scheduler to be
+ * when the videos application is needed. `greenhouse.js` passes the target selector for rendering
+ * via a `data-target-selector` attribute on the script tag. This design allows the videos app to be
  * a self-contained module that can be easily dropped into any page without requiring manual
  * configuration or initialization.
  *
@@ -21,10 +21,10 @@
 (function() {
     'use strict';
 
-    console.log("Loading Greenhouse Scheduler - Version 0.1.0");
+    console.log("Loading Greenhouse Videos - Version 0.1.0");
 
     /**
-     * @description Configuration for the scheduler application
+     * @description Configuration for the videos application
      */
     const config = {
         /**
@@ -44,6 +44,13 @@
         dom: {
             insertionDelay: 500,  // Delay before inserting into DOM (for Wix compatibility)
             observerTimeout: 10000
+        },
+        /**
+         * API endpoint for fetching videos.
+         * This will likely need to be configured to call the backend `getLatestVideosFromFeed.web.js`.
+         */
+        api: {
+            getVideos: '/_api/getLatestVideosFromFeed' // Placeholder, actual path might vary
         }
     };
 
@@ -80,12 +87,12 @@
         const view = scriptElement?.getAttribute('data-view');
 
         if (!appState.targetSelector) {
-            console.error('Scheduler: Missing required data-target-selector attribute');
+            console.error('Videos: Missing required data-target-selector attribute');
             return false;
         }
 
         if (!appState.baseUrl) {
-            console.error('Scheduler: Missing required data-base-url attribute');
+            console.error('Videos: Missing required data-base-url attribute');
             return false;
         }
 
@@ -94,9 +101,9 @@
             appState.baseUrl += '/';
         }
 
-        appState.currentView = view || new URLSearchParams(window.location.search).get('view') || 'patient';
+        appState.currentView = view || new URLSearchParams(window.location.search).get('view') || 'default';
 
-        console.log(`Scheduler: Configuration validated - View: ${appState.currentView}, Target: ${appState.targetSelector}`);
+        console.log(`Videos: Configuration validated - View: ${appState.currentView}, Target: ${appState.targetSelector}`);
         return true;
     }
 
@@ -111,17 +118,17 @@
         return new Promise((resolve, reject) => {
             const element = document.querySelector(selector);
             if (element) {
-                console.log(`Scheduler: Found target element immediately: ${selector}`);
+                console.log(`Videos: Found target element immediately: ${selector}`);
                 return resolve(element);
             }
 
-            console.log(`Scheduler: Waiting for target element: ${selector}`);
+            console.log(`Videos: Waiting for target element: ${selector}`);
 
             const observer = new MutationObserver(() => {
                 const element = document.querySelector(selector);
                 if (element) {
                     observer.disconnect();
-                    console.log(`Scheduler: Target element found: ${selector}`);
+                    console.log(`Videos: Target element found: ${selector}`);
                     resolve(element);
                 }
             });
@@ -151,15 +158,15 @@
         
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                console.log(`Scheduler: ${operationName} - Attempt ${attempt}/${maxAttempts}`);
+                console.log(`Videos: ${operationName} - Attempt ${attempt}/${maxAttempts}`);
                 return await operation();
             } catch (error) {
                 lastError = error;
-                console.warn(`Scheduler: ${operationName} failed on attempt ${attempt}:`, error.message);
+                console.warn(`Videos: ${operationName} failed on attempt ${attempt}:`, error.message);
                 
                 if (attempt < maxAttempts) {
                     const delay = config.retries.delay * Math.pow(2, attempt - 1);
-                    console.log(`Scheduler: Retrying ${operationName} in ${delay}ms...`);
+                    console.log(`Videos: Retrying ${operationName} in ${delay}ms...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
@@ -169,22 +176,22 @@
     }
 
     /**
-     * @namespace GreenhouseAppsScheduler
-     * @description The main object for the scheduling application
+     * @namespace GreenhouseAppsVideos
+     * @description The main object for the videos application
      */
-    const GreenhouseAppsScheduler = {
+    const GreenhouseAppsVideos = {
         
 
         /**
          * @function loadScript
          * @description Dynamically loads a script with retry logic and caching
-         * @param {string} scriptName - The name of the script file (e.g., 'dashboard.js')
+         * @param {string} scriptName - The name of the script file (e.g., 'videosUI.js')
          * @returns {Promise<void>}
          */
         async loadScript(scriptName) {
             // Check if script already loaded
             if (appState.loadedScripts.has(scriptName)) {
-                console.log(`Scheduler: Script ${scriptName} already loaded, skipping`);
+                console.log(`Videos: Script ${scriptName} already loaded, skipping`);
                 return;
             }
 
@@ -204,22 +211,22 @@
 
                 // Avoid re-adding the script if it already exists in DOM
                 if (document.querySelector(`script[data-script-name="${scriptName}"]`)) {
-                    console.log(`Scheduler: Script ${scriptName} already in DOM`);
+                    console.log(`Videos: Script ${scriptName} already in DOM`);
                     appState.loadedScripts.add(scriptName);
                     return;
                 }
 
                 const scriptElement = document.createElement('script');
                 scriptElement.dataset.scriptName = scriptName;
-                scriptElement.dataset.loadedBy = 'greenhouse-scheduler';
+                scriptElement.dataset.loadedBy = 'greenhouse-videos';
                 scriptElement.textContent = scriptText;
                 document.body.appendChild(scriptElement);
 
                 appState.loadedScripts.add(scriptName);
-                console.log(`Scheduler: Successfully loaded script ${scriptName}`);
+                console.log(`Videos: Successfully loaded script ${scriptName}`);
 
             } catch (error) {
-                console.error(`Scheduler: Failed to load script ${scriptName}:`, error);
+                console.error(`Videos: Failed to load script ${scriptName}:`, error);
                 throw error;
             }
         },
@@ -230,33 +237,34 @@
          * @returns {Promise<void>}
          */
         async loadCSS() {
-            const cssUrl = `${appState.baseUrl}css/schedule.css`;
+            const loadOperation = async () => {
+                const response = await fetch(`${appState.baseUrl}css/videos.css`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.text();
+            };
 
-            // Check if CSS already loaded
-            if (document.querySelector(`link[href="${cssUrl}"]`)) {
-                console.log(`Scheduler: CSS ${cssUrl} already loaded, skipping`);
-                return;
+            try {
+                const cssText = await retryOperation(loadOperation, 'Loading CSS');
+
+                // Check if CSS already loaded
+                if (document.querySelector('style[data-greenhouse-videos-css]')) {
+                    console.log('Videos: CSS already loaded');
+                    return;
+                }
+
+                const styleElement = document.createElement('style');
+                styleElement.setAttribute('data-greenhouse-videos-css', 'true');
+                styleElement.textContent = cssText;
+                document.head.appendChild(styleElement);
+
+                console.log('Videos: CSS loaded successfully');
+
+            } catch (error) {
+                console.warn('Videos: Failed to load CSS, using fallback styles:', error);
+                this.loadFallbackCSS();
             }
-
-            return new Promise((resolve, reject) => {
-                const linkElement = document.createElement('link');
-                linkElement.rel = 'stylesheet';
-                linkElement.type = 'text/css';
-                linkElement.href = cssUrl;
-                linkElement.setAttribute('data-greenhouse-scheduler-css', 'true');
-
-                linkElement.onload = () => {
-                    console.log(`Scheduler: CSS ${cssUrl} loaded successfully`);
-                    resolve();
-                };
-                linkElement.onerror = (event) => {
-                    console.error(`Scheduler: Failed to load CSS ${cssUrl}:`, event);
-                    this.loadFallbackCSS(); // Load fallback if main CSS fails
-                    reject(new Error(`Failed to load CSS: ${cssUrl}`));
-                };
-
-                document.head.appendChild(linkElement);
-            });
         },
 
         /**
@@ -266,20 +274,49 @@
         loadFallbackCSS() {
             const fallbackCSS = `
                 .greenhouse-layout-container { display: flex; flex-wrap: wrap; gap: 20px; }
-                .greenhouse-form-panel { flex: 1; min-width: 300px; }
-                .greenhouse-instructions-panel { flex: 1; min-width: 250px; }
-                .greenhouse-form-field { margin-bottom: 15px; }
-                .greenhouse-form-label { display: block; margin-bottom: 5px; font-weight: bold; }
-                .greenhouse-form-input, .greenhouse-form-select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-                .greenhouse-form-submit-btn { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-                .greenhouse-form-error { color: red; font-size: 0.875em; margin-top: 5px; }
+                .greenhouse-video-item { flex: 1; min-width: 300px; border: 1px solid #eee; padding: 15px; border-radius: 8px; }
+                .greenhouse-video-title { font-weight: bold; margin-bottom: 10px; }
+                .greenhouse-video-player { width: 100%; height: 200px; background-color: #000; margin-bottom: 10px; }
                 .greenhouse-loading-spinner { display: flex; align-items: center; gap: 10px; }
             `;
 
             const styleElement = document.createElement('style');
-            styleElement.setAttribute('data-greenhouse-scheduler-fallback-css', 'true');
+            styleElement.setAttribute('data-greenhouse-videos-fallback-css', 'true');
             styleElement.textContent = fallbackCSS;
             document.head.appendChild(styleElement);
+        },
+
+        /**
+         * @function fetchVideos
+         * @description Fetches video data from the backend.
+         * @returns {Promise<Array>} A promise that resolves with an array of video objects.
+         */
+        async fetchVideos() {
+            try {
+                console.log('Videos: Fetching videos from API');
+                // Assuming the API endpoint is relative to the current domain for Wix backend functions
+                const response = await fetch(config.api.getVideos);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                console.log('Videos: Successfully fetched videos:', data);
+                return data;
+            } catch (error) {
+                console.error('Videos: Failed to fetch videos:', error);
+                // Display a less intrusive error message within the videos list itself
+                const videosListElement = document.getElementById('videos-list');
+                if (videosListElement) {
+                    videosListElement.innerHTML = `<p>Failed to load videos: ${error.message}. Please check the backend configuration.</p>`;
+                }
+                this.showErrorMessage(`Failed to load videos: ${error.message}`);
+                // Only show the critical overlay if it's a 404, and prevent re-initialization
+                if (error.message.includes('status: 404')) {
+                    appState.hasCriticalError = true;
+                    this.displayCriticalErrorOverlay(`Failed to load videos: ${error.message}`);
+                }
+                return [];
+            }
         },
 
         /**
@@ -288,41 +325,17 @@
          * @returns {Promise<DocumentFragment>} A promise that resolves with the DOM fragment for the view
          */
         async renderView() {
-            console.log(`Scheduler: Rendering view: ${appState.currentView}`);
+            console.log(`Videos: Rendering view: ${appState.currentView}`);
 
             let appDomFragment;
 
             try {
-                switch (appState.currentView) {
-                    case 'dashboard':
-                        await this.loadScript('GreenhouseDashboardApp.js');
-                        if (typeof GreenhouseDashboardApp === 'function') {
-                            appState.currentAppInstance = GreenhouseDashboardApp();
-                            appDomFragment = GreenhouseSchedulerUI.buildDashboardUI(); // Call from schedulerUI
-                        } else {
-                            throw new Error('GreenhouseDashboardApp not found or not a function');
-                        }
-                        break;
+                appDomFragment = this.createDefaultVideosView();
+                const videosListContainer = appDomFragment.querySelector('#videos-list');
 
-                    case 'admin':
-                        await this.loadScript('GreenhouseAdminApp.js');
-                        if (typeof GreenhouseAdminApp === 'function') {
-                            appState.currentAppInstance = GreenhouseAdminApp();
-                            appDomFragment = appState.currentAppInstance.buildForm();
-                        } else {
-                            throw new Error('GreenhouseAdminApp not found or not a function');
-                        }
-                        break;
-
-                    case 'patient':
-                    default:
-                        await this.loadScript('GreenhousePatientApp.js');
-                        if (typeof GreenhousePatientApp === 'function') {
-                            appState.currentAppInstance = GreenhousePatientApp();
-                        }
-                        // Build the patient UI regardless of whether the external script loaded
-                        appDomFragment = GreenhouseSchedulerUI.buildPatientFormUI();
-                        break;
+                if (videosListContainer) {
+                    const videos = await this.fetchVideos();
+                    this.displayVideos(videos, videosListContainer);
                 }
 
                 if (!appDomFragment) {
@@ -332,8 +345,60 @@
                 return appDomFragment;
 
             } catch (error) {
-                console.error(`Scheduler: Error rendering ${appState.currentView} view:`, error);
+                console.error(`Videos: Error rendering ${appState.currentView} view:`, error);
                 return this.createErrorView(`Failed to load ${appState.currentView} view: ${error.message}`);
+            }
+        },
+
+        /**
+         * @function createDefaultVideosView
+         * @description Creates a default view for the videos application.
+         * @returns {DocumentFragment}
+         */
+        createDefaultVideosView() {
+            const fragment = document.createDocumentFragment();
+            const videosDiv = document.createElement('div');
+            videosDiv.className = 'greenhouse-videos-view';
+            videosDiv.innerHTML = `
+                <div class="greenhouse-videos-content">
+                    <h2>Greenhouse Shorts</h2>
+                    <p>Check out the latest short videos from @greenhousemhd!</p>
+                    <div id="videos-list" class="greenhouse-layout-container">
+                        <!-- Videos will be loaded here -->
+                        <p>Loading videos...</p>
+                    </div>
+                </div>
+            `;
+            fragment.appendChild(videosDiv);
+            return fragment;
+        },
+
+        /**
+         * @function displayVideos
+         * @description Displays the fetched videos in the specified container.
+         * @param {Array} videos - An array of video objects.
+         * @param {Element} container - The DOM element to display videos in.
+         */
+        displayVideos(videos, container) {
+            container.innerHTML = ''; // Clear "Loading videos..."
+            if (videos && videos.length > 0) {
+                videos.forEach(video => {
+                    const videoItem = document.createElement('div');
+                    videoItem.className = 'greenhouse-video-item';
+                    videoItem.innerHTML = `
+                        <h3 class="greenhouse-video-title">${video.title || 'Untitled Video'}</h3>
+                        <iframe class="greenhouse-video-player" 
+                                src="${video.embedUrl || video.url}" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                        </iframe>
+                        <p>${video.description || ''}</p>
+                    `;
+                    container.appendChild(videoItem);
+                });
+            } else {
+                container.innerHTML = '<p>No videos found at this time.</p>';
             }
         },
 
@@ -475,7 +540,7 @@
         insertApplication(appDomFragment, targetElement) {
             const containerInfo = this.findOptimalContainer(targetElement);
             
-            console.log(`Scheduler: Using insertion strategy: ${containerInfo.strategy}`);
+            console.log(`Videos: Using insertion strategy: ${containerInfo.strategy}`);
 
             // Create the main app container
             const appContainer = document.createElement('section');
@@ -505,7 +570,7 @@
                     containerInfo.container.prepend(appContainer);
             }
 
-            console.log('Scheduler: Application inserted into DOM');
+            console.log('Videos: Application inserted into DOM');
             return appContainer;
         },
 
@@ -516,40 +581,61 @@
          * @param {Element} [targetElement] - Element to insert error near
          */
         displayError(message, targetElement = null) {
+            console.error('Videos: General error display (deprecated):', message);
+            this.showErrorMessage(message);
+        },
+
+        /**
+         * @function displayCriticalErrorOverlay
+         * @description Displays a full-page critical error overlay.
+         * @param {string} message - The error message to display.
+         */
+        displayCriticalErrorOverlay(message) {
+            // Remove any existing critical error displays
+            const existingError = document.getElementById('greenhouse-critical-error-overlay');
+            if (existingError) {
+                existingError.remove();
+            }
+
             const errorDiv = document.createElement('div');
-            errorDiv.id = 'greenhouse-app-error';
-            errorDiv.className = 'greenhouse-app-error';
+            errorDiv.id = 'greenhouse-critical-error-overlay'; // Unique ID
+            errorDiv.className = 'greenhouse-app-error-overlay'; // New class for styling
             errorDiv.setAttribute('role', 'alert');
             errorDiv.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white overlay */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 100000; /* Very high z-index */
+                    font-family: Arial, sans-serif;
                 color: #721c24;
-                background-color: #f8d7da;
-                border: 1px solid #f5c6cb;
-                padding: 15px;
-                margin: 20px;
-                border-radius: 4px;
                 text-align: center;
-                font-family: Arial, sans-serif;
-                z-index: 10000;
-                position: relative;
+                padding: 20px;
+                box-sizing: border-box;
             `;
             
             errorDiv.innerHTML = `
-                <strong>Greenhouse Scheduler Error:</strong><br>
-                ${message}
-                <br><br>
-                <button onclick="window.location.reload()" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Reload Page
-                </button>
-            `;
+                <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                        <h2 style="color: #721c24; margin-top: 0;">Greenhouse Videos Application Error</h2>
+                        <p style="font-size: 1.1em;">${message}</p>
+                        <p>This issue might be related to the backend service not being available or incorrectly configured on the Wix site.</p>
+                        <p>Please ensure the <code>getLatestVideosFromFeed.web.js</code> backend function is correctly deployed and accessible at <code>/_functions/getLatestVideosFromFeed</code> on <code>https://www.greenhousementalhealth.org</code>.</p>
+                        <button onclick="window.location.reload()" style="padding: 12px 24px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin-top: 20px;">
+                            Reload Page
+                        </button>
+                    </div>
+                `;
 
-            if (targetElement) {
-                targetElement.prepend(errorDiv);
-            } else {
-                document.body.insertAdjacentElement('afterbegin', errorDiv);
-            }
+            document.body.appendChild(errorDiv);
 
             // Also log to console with more details
-            console.error('Greenhouse Scheduler Error:', {
+            console.error('Greenhouse Videos Critical Error:', {
                 message,
                 targetSelector: appState.targetSelector,
                 baseUrl: appState.baseUrl,
@@ -565,40 +651,37 @@
         initializeApplication() {
             try {
                 if (appState.currentAppInstance && typeof appState.currentAppInstance.init === 'function') {
-                    console.log('Scheduler: Initializing application instance');
+                    console.log('Videos: Initializing application instance');
                     appState.currentAppInstance.init();
                 } else if (appState.currentAppInstance) {
-                    console.log('Scheduler: Application instance loaded but has no init method');
+                    console.log('Videos: Application instance loaded but has no init method');
                 } else {
-                    console.log('Scheduler: No application instance to initialize');
+                    console.log('Videos: No application instance to initialize');
                 }
             } catch (error) {
-                console.error('Scheduler: Error initializing application instance:', error);
+                console.error('Videos: Error initializing application instance:', error);
                 this.showErrorMessage('Application loaded but failed to initialize properly.');
             }
         },
 
         /**
          * @function init
-         * @description Main initialization function for the scheduler application
+         * @description Main initialization function for the videos application
          * @param {string} targetSelector - The CSS selector for the element to load the app into
          * @param {string} baseUrl - The base URL for fetching assets
          */
         async init(targetSelector, baseUrl) {
             if (appState.isInitialized || appState.isLoading) {
-                console.log('Scheduler: Already initialized or loading, skipping');
+                console.log('Videos: Already initialized or loading, skipping');
                 return;
             }
 
             appState.isLoading = true;
             try {
-                // Load utility script
-                await this.loadScript('GreenhouseUtils.js');
-
-                // Load main application logic
-                await this.loadScript('GreenhousePatientApp.js');
+                // Load utility script (if needed, for now assuming not)
+                // await this.loadScript('GreenhouseUtils.js');
                 
-                console.log('Scheduler: Starting initialization');
+                console.log('Videos: Starting initialization');
 
                 // Set configuration
                 appState.targetSelector = targetSelector;
@@ -609,12 +692,7 @@
 
                 // Load CSS first (non-blocking)
                 this.loadCSS().catch(error => {
-                    console.warn('Scheduler: CSS loading failed, continuing with fallback:', error);
-                });
-
-                // Load the main application logic
-                await this.loadScript('GreenhousePatientApp.js').catch(error => {
-                    console.warn('Scheduler: Patient app script failed to load:', error);
+                    console.warn('Videos: CSS loading failed, continuing with fallback:', error);
                 });
 
                 // Render the appropriate view
@@ -625,25 +703,30 @@
                 
                 const appContainer = this.insertApplication(appDomFragment, appState.targetElement);
 
-                // Initialize the application instance
+                // Initialize the application instance (if any specific video app logic is needed)
                 this.initializeApplication();
 
                 appState.isInitialized = true;
-                console.log('Scheduler: Initialization completed successfully');
+                console.log('Videos: Initialization completed successfully');
 
                 // Show success notification
-                this.showNotification('Scheduling application loaded successfully', 'success', 3000);
+                this.showNotification('Videos application loaded successfully', 'success', 3000);
 
             } catch (error) {
-                console.error('Scheduler: Initialization failed:', error);
+                console.error('Videos: Initialization failed:', error);
                 appState.errors.push(error);
 
                 const errorMessage = error.message.includes('not found') 
                     ? `Target element "${targetSelector}" not found. Please check if the page has loaded completely.`
-                    : `Failed to load the scheduling application: ${error.message}`;
+                    : `Failed to load the videos application: ${error.message}`;
 
-                this.displayError(errorMessage, appState.targetElement);
-                this.showErrorMessage('Failed to load scheduling application');
+                // Only display the critical error overlay if it's a 404 from init, otherwise just log and show notification
+                if (error.message.includes('status: 404')) {
+                    appState.hasCriticalError = true;
+                    this.displayCriticalErrorOverlay(errorMessage);
+                } else {
+                    this.showErrorMessage('Failed to load videos application');
+                }
 
             } finally {
                 appState.isLoading = false;
@@ -656,33 +739,39 @@
     /**
      * Main execution function
      */
-    async function main() {
-        try {
-            // Validate configuration from script attributes
-            if (!validateConfiguration()) {
-                console.error('Scheduler: Invalid configuration, cannot proceed');
-                return;
-            }
+        async function main() {
+            try {
+                // If a critical error has occurred, prevent further re-initialization attempts
+                if (appState.hasCriticalError) {
+                    console.error('Videos: Critical error detected, preventing re-initialization.');
+                    return;
+                }
+
+                // Validate configuration from script attributes
+                if (!validateConfiguration()) {
+                    console.error('Videos: Invalid configuration, cannot proceed');
+                    return;
+                }
 
             // Add global error handler
             window.addEventListener('error', (event) => {
                 if (event.filename && event.filename.includes('greenhouse')) {
-                    console.error('Scheduler: Global error caught:', event.error);
+                    console.error('Videos: Global error caught:', event.error);
                     appState.errors.push(event.error);
                 }
             });
 
             // Add unhandled promise rejection handler
             window.addEventListener('unhandledrejection', (event) => {
-                console.error('Scheduler: Unhandled promise rejection:', event.reason);
+                console.error('Videos: Unhandled promise rejection:', event.reason);
                 appState.errors.push(event.reason);
             });
 
-            // Initialize the scheduler application
-            await GreenhouseAppsScheduler.init(appState.targetSelector, appState.baseUrl);
+            // Initialize the videos application
+            await GreenhouseAppsVideos.init(appState.targetSelector, appState.baseUrl);
 
         } catch (error) {
-            console.error('Scheduler: Main execution failed:', error);
+            console.error('Videos: Main execution failed:', error);
         }
     }
 
@@ -704,7 +793,7 @@
     document.head.appendChild(animationStyle);
 
     // Expose public API for debugging
-    window.GreenhouseScheduler = {
+    window.GreenhouseVideos = {
         getState: () => ({ ...appState }),
         getConfig: () => ({ ...config }),
         reinitialize: () => {
@@ -712,7 +801,7 @@
             appState.isLoading = false;
             return main();
         },
-        showNotification: GreenhouseAppsScheduler.showNotification.bind(GreenhouseAppsScheduler)
+        showNotification: GreenhouseAppsVideos.showNotification.bind(GreenhouseAppsVideos)
     };
 
     // Execute main function

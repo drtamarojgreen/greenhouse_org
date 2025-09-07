@@ -30,6 +30,18 @@
          */
         schedulePagePath: '/schedule/',
         /**
+         * The path segment that identifies the books page.
+         */
+        booksPagePath: '/books/',
+        /**
+         * The path segment that identifies the videos page.
+         */
+        videosPagePath: '/videos/',
+        /**
+         * The path segment that identifies the news page.
+         */
+        newsPagePath: '/news/',
+        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -40,7 +52,10 @@
         selectors: {
             patient: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
             dashboard: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)',
-            admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column'
+            admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
+            books: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div > section.wixui-section', // User-specified selector for books
+            videos: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
+            news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column' // Reverting to a generic column selector
         },
         /**
          * Fallback selectors to try if primary selectors fail.
@@ -48,7 +63,10 @@
         fallbackSelectors: {
             patient: '.wixui-column-strip__column:first-child',
             dashboard: '.wixui-column-strip__column:nth-child(2)',
-            admin: '.wixui-column-strip__column:last-child'
+            admin: '.wixui-column-strip__column:last-child',
+            books: 'section.wixui-section', // Fallback to a more general section if the specific one isn't found
+            videos: '.wixui-column-strip__column:first-child', // Reverting to a generic column selector
+            news: '.wixui-column-strip__column:first-child' // Reverting to a generic column selector
         }
     };
 
@@ -129,6 +147,7 @@
             console.log(`Greenhouse: Successfully loaded script from ${url}`);
         } catch (error) {
             console.error(`Greenhouse: Error loading script ${url}:`, error);
+            throw error; // Re-throw to propagate the error
         }
     }
 
@@ -178,10 +197,152 @@
             };
 
             // Load the scheduler script and pass the necessary data attributes to it.
+            await loadScript(`${config.githubPagesBaseUrl}js/schedulerUI.js`);
             await loadScript(`${config.githubPagesBaseUrl}js/scheduler.js`, schedulerAttributes);
             
         } catch (error) {
             console.error('Greenhouse: Failed to load scheduler application:', error);
+        }
+    }
+
+    /**
+     * @function loadBooksApplication
+     * @description Loads the books application after ensuring the target element exists.
+     */
+    async function loadBooksApplication() {
+        try {
+            console.log('Greenhouse: Initializing books application');
+            
+            // Parse URL parameters to determine the view.
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view') || 'default'; // Default to 'default' view for books
+            
+            console.log(`Greenhouse: Loading books for view: ${view}`);
+
+            // Determine the correct selectors to try
+            let selectorsToTry = [];
+            
+            // For books, we'll use the 'books' selector regardless of a specific 'view' parameter for now
+            if (config.selectors.books) {
+                selectorsToTry.push(config.selectors.books);
+                if (config.fallbackSelectors.books) {
+                    selectorsToTry.push(config.fallbackSelectors.books);
+                }
+            } else {
+                // Fallback if no specific books selector is defined
+                selectorsToTry.push('.wixui-column-strip__column:first-child');
+            }
+
+            // Wait for the target element to be available
+            const targetElement = await waitForElement(selectorsToTry);
+            const targetSelector = selectorsToTry.find(selector => document.querySelector(selector));
+
+            // Define the attributes to be passed to the books script.
+            const booksAttributes = {
+                'target-selector': targetSelector,
+                'base-url': config.githubPagesBaseUrl,
+                'view': view
+            };
+
+            // Load the books script and pass the necessary data attributes to it.
+            await loadScript(`${config.githubPagesBaseUrl}js/books.js`, booksAttributes);
+            
+        } catch (error) {
+            console.error('Greenhouse: Failed to load books application:', error);
+        }
+    }
+
+    /**
+     * @function loadVideosApplication
+     * @description Loads the videos application after ensuring the target element exists.
+     */
+    async function loadVideosApplication() {
+        try {
+            console.log('Greenhouse: Initializing videos application');
+            
+            // Parse URL parameters to determine the view.
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view') || 'default'; // Default to 'default' view for videos
+            
+            console.log(`Greenhouse: Loading videos for view: ${view}`);
+
+            // Determine the correct selectors to try
+            let selectorsToTry = [];
+            
+            // For videos, we'll use the 'videos' selector regardless of a specific 'view' parameter for now
+            if (config.selectors.videos) {
+                selectorsToTry.push(config.selectors.videos);
+                if (config.fallbackSelectors.videos) {
+                    selectorsToTry.push(config.fallbackSelectors.videos);
+                }
+            } else {
+                // Fallback if no specific videos selector is defined
+                selectorsToTry.push('.wixui-column-strip__column:first-child');
+            }
+
+            // Wait for the target element to be available
+            const targetElement = await waitForElement(selectorsToTry);
+            const targetSelector = selectorsToTry.find(selector => document.querySelector(selector));
+
+            // Define the attributes to be passed to the videos script.
+            const videosAttributes = {
+                'target-selector': targetSelector,
+                'base-url': config.githubPagesBaseUrl,
+                'view': view
+            };
+
+            // Load the videos script and pass the necessary data attributes to it.
+            await loadScript(`${config.githubPagesBaseUrl}js/videos.js`, videosAttributes);
+            
+        } catch (error) {
+            console.error('Greenhouse: Failed to load videos application:', error);
+        }
+    }
+
+    /**
+     * @function loadNewsApplication
+     * @description Loads the news application after ensuring the target element exists.
+     */
+    async function loadNewsApplication() {
+        try {
+            console.log('Greenhouse: Initializing news application');
+            
+            // Parse URL parameters to determine the view.
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view') || 'default'; // Default to 'default' view for news
+            
+            console.log(`Greenhouse: Loading news for view: ${view}`);
+
+            // Determine the correct selectors to try
+            let selectorsToTry = [];
+            
+            // For news, we'll use the 'news' selector regardless of a specific 'view' parameter for now
+            if (config.selectors.news) {
+                selectorsToTry.push(config.selectors.news);
+                if (config.fallbackSelectors.news) {
+                    selectorsToTry.push(config.fallbackSelectors.news);
+                }
+            } else {
+                // Fallback if no specific news selector is defined
+                selectorsToTry.push('.wixui-column-strip__column:first-child');
+            }
+
+            // Wait for the target element to be available
+            const targetElement = await waitForElement(selectorsToTry);
+            const targetSelector = selectorsToTry.find(selector => document.querySelector(selector));
+
+            // Define the attributes to be passed to the news script.
+            const newsAttributes = {
+                'target-selector': targetSelector,
+                'base-url': config.githubPagesBaseUrl,
+                'view': view
+            };
+
+            // Load the news script and pass the necessary data attributes to it.
+            await loadScript(`${config.githubPagesBaseUrl}js/news.js`, newsAttributes);
+            
+        } catch (error) {
+            console.error('Greenhouse: Failed to load news application:', error);
         }
     }
 
@@ -198,6 +359,12 @@
         // Check if the current page is the schedule page.
         if (window.location.pathname.includes(config.schedulePagePath)) {
             await loadSchedulerApplication();
+        } else if (window.location.pathname.includes(config.booksPagePath)) {
+            await loadBooksApplication();
+        } else if (window.location.pathname.includes(config.videosPagePath)) {
+            await loadVideosApplication();
+        } else if (window.location.pathname.includes(config.newsPagePath)) {
+            await loadNewsApplication();
         }
     }
 

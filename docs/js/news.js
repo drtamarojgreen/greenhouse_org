@@ -1,13 +1,13 @@
-// Version: 0.0.2
+// Version: 0.0.1
 /**
- * @file scheduler.js
- * @description This script contains the core functionality for the Greenhouse appointment scheduling application.
- * It is responsible for rendering the various scheduling views (patient, dashboard, admin) and handling
+ * @file news.js
+ * @description This script contains the core functionality for the Greenhouse news application.
+ * It is responsible for rendering the various news views and handling
  * user interactions within those views.
  *
  * @integration This script is not loaded directly by the host page. Instead, it is loaded by `greenhouse.js`
- * when the scheduling application is needed. `greenhouse.js` passes the target selector for rendering
- * via a `data-target-selector` attribute on the script tag. This design allows the scheduler to be
+ * when the news application is needed. `greenhouse.js` passes the target selector for rendering
+ * via a `data-target-selector` attribute on the script tag. This design allows the news app to be
  * a self-contained module that can be easily dropped into any page without requiring manual
  * configuration or initialization.
  *
@@ -21,10 +21,10 @@
 (function() {
     'use strict';
 
-    console.log("Loading Greenhouse Scheduler - Version 0.1.0");
+    console.log("Loading Greenhouse News - Version 0.1.0");
 
     /**
-     * @description Configuration for the scheduler application
+     * @description Configuration for the news application
      */
     const config = {
         /**
@@ -44,6 +44,13 @@
         dom: {
             insertionDelay: 500,  // Delay before inserting into DOM (for Wix compatibility)
             observerTimeout: 10000
+        },
+        /**
+         * API endpoint for fetching news.
+         * This will likely need to be configured to call the backend `getNews.web.js`.
+         */
+        api: {
+            getNews: '/_api/getNews' // Placeholder, actual path might vary
         }
     };
 
@@ -80,12 +87,12 @@
         const view = scriptElement?.getAttribute('data-view');
 
         if (!appState.targetSelector) {
-            console.error('Scheduler: Missing required data-target-selector attribute');
+            console.error('News: Missing required data-target-selector attribute');
             return false;
         }
 
         if (!appState.baseUrl) {
-            console.error('Scheduler: Missing required data-base-url attribute');
+            console.error('News: Missing required data-base-url attribute');
             return false;
         }
 
@@ -94,9 +101,9 @@
             appState.baseUrl += '/';
         }
 
-        appState.currentView = view || new URLSearchParams(window.location.search).get('view') || 'patient';
+        appState.currentView = view || new URLSearchParams(window.location.search).get('view') || 'default';
 
-        console.log(`Scheduler: Configuration validated - View: ${appState.currentView}, Target: ${appState.targetSelector}`);
+        console.log(`News: Configuration validated - View: ${appState.currentView}, Target: ${appState.targetSelector}`);
         return true;
     }
 
@@ -111,17 +118,17 @@
         return new Promise((resolve, reject) => {
             const element = document.querySelector(selector);
             if (element) {
-                console.log(`Scheduler: Found target element immediately: ${selector}`);
+                console.log(`News: Found target element immediately: ${selector}`);
                 return resolve(element);
             }
 
-            console.log(`Scheduler: Waiting for target element: ${selector}`);
+            console.log(`News: Waiting for target element: ${selector}`);
 
             const observer = new MutationObserver(() => {
                 const element = document.querySelector(selector);
                 if (element) {
                     observer.disconnect();
-                    console.log(`Scheduler: Target element found: ${selector}`);
+                    console.log(`News: Target element found: ${selector}`);
                     resolve(element);
                 }
             });
@@ -151,15 +158,15 @@
         
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                console.log(`Scheduler: ${operationName} - Attempt ${attempt}/${maxAttempts}`);
+                console.log(`News: ${operationName} - Attempt ${attempt}/${maxAttempts}`);
                 return await operation();
             } catch (error) {
                 lastError = error;
-                console.warn(`Scheduler: ${operationName} failed on attempt ${attempt}:`, error.message);
+                console.warn(`News: ${operationName} failed on attempt ${attempt}:`, error.message);
                 
                 if (attempt < maxAttempts) {
                     const delay = config.retries.delay * Math.pow(2, attempt - 1);
-                    console.log(`Scheduler: Retrying ${operationName} in ${delay}ms...`);
+                    console.log(`News: Retrying ${operationName} in ${delay}ms...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
@@ -169,22 +176,22 @@
     }
 
     /**
-     * @namespace GreenhouseAppsScheduler
-     * @description The main object for the scheduling application
+     * @namespace GreenhouseAppsNews
+     * @description The main object for the news application
      */
-    const GreenhouseAppsScheduler = {
+    const GreenhouseAppsNews = {
         
 
         /**
          * @function loadScript
          * @description Dynamically loads a script with retry logic and caching
-         * @param {string} scriptName - The name of the script file (e.g., 'dashboard.js')
+         * @param {string} scriptName - The name of the script file (e.g., 'newsUI.js')
          * @returns {Promise<void>}
          */
         async loadScript(scriptName) {
             // Check if script already loaded
             if (appState.loadedScripts.has(scriptName)) {
-                console.log(`Scheduler: Script ${scriptName} already loaded, skipping`);
+                console.log(`News: Script ${scriptName} already loaded, skipping`);
                 return;
             }
 
@@ -204,22 +211,22 @@
 
                 // Avoid re-adding the script if it already exists in DOM
                 if (document.querySelector(`script[data-script-name="${scriptName}"]`)) {
-                    console.log(`Scheduler: Script ${scriptName} already in DOM`);
+                    console.log(`News: Script ${scriptName} already in DOM`);
                     appState.loadedScripts.add(scriptName);
                     return;
                 }
 
                 const scriptElement = document.createElement('script');
                 scriptElement.dataset.scriptName = scriptName;
-                scriptElement.dataset.loadedBy = 'greenhouse-scheduler';
+                scriptElement.dataset.loadedBy = 'greenhouse-news';
                 scriptElement.textContent = scriptText;
                 document.body.appendChild(scriptElement);
 
                 appState.loadedScripts.add(scriptName);
-                console.log(`Scheduler: Successfully loaded script ${scriptName}`);
+                console.log(`News: Successfully loaded script ${scriptName}`);
 
             } catch (error) {
-                console.error(`Scheduler: Failed to load script ${scriptName}:`, error);
+                console.error(`News: Failed to load script ${scriptName}:`, error);
                 throw error;
             }
         },
@@ -230,11 +237,11 @@
          * @returns {Promise<void>}
          */
         async loadCSS() {
-            const cssUrl = `${appState.baseUrl}css/schedule.css`;
+            const cssUrl = `${appState.baseUrl}css/news.css`;
 
             // Check if CSS already loaded
             if (document.querySelector(`link[href="${cssUrl}"]`)) {
-                console.log(`Scheduler: CSS ${cssUrl} already loaded, skipping`);
+                console.log(`News: CSS ${cssUrl} already loaded, skipping`);
                 return;
             }
 
@@ -243,14 +250,14 @@
                 linkElement.rel = 'stylesheet';
                 linkElement.type = 'text/css';
                 linkElement.href = cssUrl;
-                linkElement.setAttribute('data-greenhouse-scheduler-css', 'true');
+                linkElement.setAttribute('data-greenhouse-news-css', 'true');
 
                 linkElement.onload = () => {
-                    console.log(`Scheduler: CSS ${cssUrl} loaded successfully`);
+                    console.log(`News: CSS ${cssUrl} loaded successfully`);
                     resolve();
                 };
                 linkElement.onerror = (event) => {
-                    console.error(`Scheduler: Failed to load CSS ${cssUrl}:`, event);
+                    console.error(`News: Failed to load CSS ${cssUrl}:`, event);
                     this.loadFallbackCSS(); // Load fallback if main CSS fails
                     reject(new Error(`Failed to load CSS: ${cssUrl}`));
                 };
@@ -266,20 +273,39 @@
         loadFallbackCSS() {
             const fallbackCSS = `
                 .greenhouse-layout-container { display: flex; flex-wrap: wrap; gap: 20px; }
-                .greenhouse-form-panel { flex: 1; min-width: 300px; }
-                .greenhouse-instructions-panel { flex: 1; min-width: 250px; }
-                .greenhouse-form-field { margin-bottom: 15px; }
-                .greenhouse-form-label { display: block; margin-bottom: 5px; font-weight: bold; }
-                .greenhouse-form-input, .greenhouse-form-select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-                .greenhouse-form-submit-btn { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-                .greenhouse-form-error { color: red; font-size: 0.875em; margin-top: 5px; }
+                .greenhouse-news-item { flex: 1; min-width: 300px; border: 1px solid #eee; padding: 15px; border-radius: 8px; }
+                .greenhouse-news-title { font-weight: bold; margin-bottom: 10px; }
+                .greenhouse-news-date { font-size: 0.8em; color: #666; margin-bottom: 10px; }
                 .greenhouse-loading-spinner { display: flex; align-items: center; gap: 10px; }
             `;
 
             const styleElement = document.createElement('style');
-            styleElement.setAttribute('data-greenhouse-scheduler-fallback-css', 'true');
+            styleElement.setAttribute('data-greenhouse-news-fallback-css', 'true');
             styleElement.textContent = fallbackCSS;
             document.head.appendChild(styleElement);
+        },
+
+        /**
+         * @function fetchNews
+         * @description Fetches news data from the backend.
+         * @returns {Promise<Array>} A promise that resolves with an array of news objects.
+         */
+        async fetchNews() {
+            try {
+                console.log('News: Fetching news from API');
+                // Assuming the API endpoint is relative to the current domain for Wix backend functions
+                const response = await fetch(config.api.getNews);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                console.log('News: Successfully fetched news:', data);
+                return data;
+            } catch (error) {
+                console.error('News: Failed to fetch news:', error);
+                this.showErrorMessage('Failed to load news. Please try again later.');
+                return [];
+            }
         },
 
         /**
@@ -288,41 +314,17 @@
          * @returns {Promise<DocumentFragment>} A promise that resolves with the DOM fragment for the view
          */
         async renderView() {
-            console.log(`Scheduler: Rendering view: ${appState.currentView}`);
+            console.log(`News: Rendering view: ${appState.currentView}`);
 
             let appDomFragment;
 
             try {
-                switch (appState.currentView) {
-                    case 'dashboard':
-                        await this.loadScript('GreenhouseDashboardApp.js');
-                        if (typeof GreenhouseDashboardApp === 'function') {
-                            appState.currentAppInstance = GreenhouseDashboardApp();
-                            appDomFragment = GreenhouseSchedulerUI.buildDashboardUI(); // Call from schedulerUI
-                        } else {
-                            throw new Error('GreenhouseDashboardApp not found or not a function');
-                        }
-                        break;
+                appDomFragment = this.createDefaultNewsView();
+                const newsListContainer = appDomFragment.querySelector('#news-list');
 
-                    case 'admin':
-                        await this.loadScript('GreenhouseAdminApp.js');
-                        if (typeof GreenhouseAdminApp === 'function') {
-                            appState.currentAppInstance = GreenhouseAdminApp();
-                            appDomFragment = appState.currentAppInstance.buildForm();
-                        } else {
-                            throw new Error('GreenhouseAdminApp not found or not a function');
-                        }
-                        break;
-
-                    case 'patient':
-                    default:
-                        await this.loadScript('GreenhousePatientApp.js');
-                        if (typeof GreenhousePatientApp === 'function') {
-                            appState.currentAppInstance = GreenhousePatientApp();
-                        }
-                        // Build the patient UI regardless of whether the external script loaded
-                        appDomFragment = GreenhouseSchedulerUI.buildPatientFormUI();
-                        break;
+                if (newsListContainer) {
+                    const newsItems = await this.fetchNews();
+                    this.displayNews(newsItems, newsListContainer);
                 }
 
                 if (!appDomFragment) {
@@ -332,8 +334,56 @@
                 return appDomFragment;
 
             } catch (error) {
-                console.error(`Scheduler: Error rendering ${appState.currentView} view:`, error);
+                console.error(`News: Error rendering ${appState.currentView} view:`, error);
                 return this.createErrorView(`Failed to load ${appState.currentView} view: ${error.message}`);
+            }
+        },
+
+        /**
+         * @function createDefaultNewsView
+         * @description Creates a default view for the news application.
+         * @returns {DocumentFragment}
+         */
+        createDefaultNewsView() {
+            const fragment = document.createDocumentFragment();
+            const newsDiv = document.createElement('div');
+            newsDiv.className = 'greenhouse-news-view';
+            newsDiv.innerHTML = `
+                <div class="greenhouse-news-content">
+                    <h2>Greenhouse News</h2>
+                    <p>Stay up-to-date with the latest news from Greenhouse Mental Health!</p>
+                    <div id="news-list" class="greenhouse-layout-container">
+                        <!-- News will be loaded here -->
+                        <p>Loading news...</p>
+                    </div>
+                </div>
+            `;
+            fragment.appendChild(newsDiv);
+            return fragment;
+        },
+
+        /**
+         * @function displayNews
+         * @description Displays the fetched news items in the specified container.
+         * @param {Array} newsItems - An array of news objects.
+         * @param {Element} container - The DOM element to display news in.
+         */
+        displayNews(newsItems, container) {
+            container.innerHTML = ''; // Clear "Loading news..."
+            if (newsItems && newsItems.length > 0) {
+                newsItems.forEach(item => {
+                    const newsItem = document.createElement('div');
+                    newsItem.className = 'greenhouse-news-item';
+                    newsItem.innerHTML = `
+                        <h3 class="greenhouse-news-title">${item.title || 'Untitled News'}</h3>
+                        <p class="greenhouse-news-date">${item.date ? new Date(item.date).toLocaleDateString() : ''}</p>
+                        <p>${item.description || ''}</p>
+                        ${item.link ? `<a href="${item.link}" target="_blank" rel="noopener noreferrer">Read More</a>` : ''}
+                    `;
+                    container.appendChild(newsItem);
+                });
+            } else {
+                container.innerHTML = '<p>No news found at this time.</p>';
             }
         },
 
@@ -475,7 +525,7 @@
         insertApplication(appDomFragment, targetElement) {
             const containerInfo = this.findOptimalContainer(targetElement);
             
-            console.log(`Scheduler: Using insertion strategy: ${containerInfo.strategy}`);
+            console.log(`News: Using insertion strategy: ${containerInfo.strategy}`);
 
             // Create the main app container
             const appContainer = document.createElement('section');
@@ -505,7 +555,7 @@
                     containerInfo.container.prepend(appContainer);
             }
 
-            console.log('Scheduler: Application inserted into DOM');
+            console.log('News: Application inserted into DOM');
             return appContainer;
         },
 
@@ -534,7 +584,7 @@
             `;
             
             errorDiv.innerHTML = `
-                <strong>Greenhouse Scheduler Error:</strong><br>
+                <strong>Greenhouse News Error:</strong><br>
                 ${message}
                 <br><br>
                 <button onclick="window.location.reload()" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -549,7 +599,7 @@
             }
 
             // Also log to console with more details
-            console.error('Greenhouse Scheduler Error:', {
+            console.error('Greenhouse News Error:', {
                 message,
                 targetSelector: appState.targetSelector,
                 baseUrl: appState.baseUrl,
@@ -565,40 +615,37 @@
         initializeApplication() {
             try {
                 if (appState.currentAppInstance && typeof appState.currentAppInstance.init === 'function') {
-                    console.log('Scheduler: Initializing application instance');
+                    console.log('News: Initializing application instance');
                     appState.currentAppInstance.init();
                 } else if (appState.currentAppInstance) {
-                    console.log('Scheduler: Application instance loaded but has no init method');
+                    console.log('News: Application instance loaded but has no init method');
                 } else {
-                    console.log('Scheduler: No application instance to initialize');
+                    console.log('News: No application instance to initialize');
                 }
             } catch (error) {
-                console.error('Scheduler: Error initializing application instance:', error);
+                console.error('News: Error initializing application instance:', error);
                 this.showErrorMessage('Application loaded but failed to initialize properly.');
             }
         },
 
         /**
          * @function init
-         * @description Main initialization function for the scheduler application
+         * @description Main initialization function for the news application
          * @param {string} targetSelector - The CSS selector for the element to load the app into
          * @param {string} baseUrl - The base URL for fetching assets
          */
         async init(targetSelector, baseUrl) {
             if (appState.isInitialized || appState.isLoading) {
-                console.log('Scheduler: Already initialized or loading, skipping');
+                console.log('News: Already initialized or loading, skipping');
                 return;
             }
 
             appState.isLoading = true;
             try {
-                // Load utility script
-                await this.loadScript('GreenhouseUtils.js');
-
-                // Load main application logic
-                await this.loadScript('GreenhousePatientApp.js');
+                // Load utility script (if needed, for now assuming not)
+                // await this.loadScript('GreenhouseUtils.js');
                 
-                console.log('Scheduler: Starting initialization');
+                console.log('News: Starting initialization');
 
                 // Set configuration
                 appState.targetSelector = targetSelector;
@@ -609,12 +656,7 @@
 
                 // Load CSS first (non-blocking)
                 this.loadCSS().catch(error => {
-                    console.warn('Scheduler: CSS loading failed, continuing with fallback:', error);
-                });
-
-                // Load the main application logic
-                await this.loadScript('GreenhousePatientApp.js').catch(error => {
-                    console.warn('Scheduler: Patient app script failed to load:', error);
+                    console.warn('News: CSS loading failed, continuing with fallback:', error);
                 });
 
                 // Render the appropriate view
@@ -625,25 +667,25 @@
                 
                 const appContainer = this.insertApplication(appDomFragment, appState.targetElement);
 
-                // Initialize the application instance
+                // Initialize the application instance (if any specific news app logic is needed)
                 this.initializeApplication();
 
                 appState.isInitialized = true;
-                console.log('Scheduler: Initialization completed successfully');
+                console.log('News: Initialization completed successfully');
 
                 // Show success notification
-                this.showNotification('Scheduling application loaded successfully', 'success', 3000);
+                this.showNotification('News application loaded successfully', 'success', 3000);
 
             } catch (error) {
-                console.error('Scheduler: Initialization failed:', error);
+                console.error('News: Initialization failed:', error);
                 appState.errors.push(error);
 
                 const errorMessage = error.message.includes('not found') 
                     ? `Target element "${targetSelector}" not found. Please check if the page has loaded completely.`
-                    : `Failed to load the scheduling application: ${error.message}`;
+                    : `Failed to load the news application: ${error.message}`;
 
                 this.displayError(errorMessage, appState.targetElement);
-                this.showErrorMessage('Failed to load scheduling application');
+                this.showErrorMessage('Failed to load news application');
 
             } finally {
                 appState.isLoading = false;
@@ -660,29 +702,29 @@
         try {
             // Validate configuration from script attributes
             if (!validateConfiguration()) {
-                console.error('Scheduler: Invalid configuration, cannot proceed');
+                console.error('News: Invalid configuration, cannot proceed');
                 return;
             }
 
             // Add global error handler
             window.addEventListener('error', (event) => {
                 if (event.filename && event.filename.includes('greenhouse')) {
-                    console.error('Scheduler: Global error caught:', event.error);
+                    console.error('News: Global error caught:', event.error);
                     appState.errors.push(event.error);
                 }
             });
 
             // Add unhandled promise rejection handler
             window.addEventListener('unhandledrejection', (event) => {
-                console.error('Scheduler: Unhandled promise rejection:', event.reason);
+                console.error('News: Unhandled promise rejection:', event.reason);
                 appState.errors.push(event.reason);
             });
 
-            // Initialize the scheduler application
-            await GreenhouseAppsScheduler.init(appState.targetSelector, appState.baseUrl);
+            // Initialize the news application
+            await GreenhouseAppsNews.init(appState.targetSelector, appState.baseUrl);
 
         } catch (error) {
-            console.error('Scheduler: Main execution failed:', error);
+            console.error('News: Main execution failed:', error);
         }
     }
 
@@ -704,7 +746,7 @@
     document.head.appendChild(animationStyle);
 
     // Expose public API for debugging
-    window.GreenhouseScheduler = {
+    window.GreenhouseNews = {
         getState: () => ({ ...appState }),
         getConfig: () => ({ ...config }),
         reinitialize: () => {
@@ -712,7 +754,7 @@
             appState.isLoading = false;
             return main();
         },
-        showNotification: GreenhouseAppsScheduler.showNotification.bind(GreenhouseAppsScheduler)
+        showNotification: GreenhouseAppsNews.showNotification.bind(GreenhouseAppsNews)
     };
 
     // Execute main function
