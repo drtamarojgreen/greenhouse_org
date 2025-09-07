@@ -38,6 +38,10 @@
          */
         videosPagePath: '/videos/',
         /**
+         * The path segment that identifies the news page.
+         */
+        newsPagePath: '/news/',
+        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -49,7 +53,9 @@
             patient: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
             dashboard: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)',
             admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
-            books: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column' // Assuming similar structure to patient view for now
+            books: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div > section.wixui-section', // User-specified selector for books
+            videos: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
+            news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column' // Reverting to a generic column selector
         },
         /**
          * Fallback selectors to try if primary selectors fail.
@@ -58,8 +64,9 @@
             patient: '.wixui-column-strip__column:first-child',
             dashboard: '.wixui-column-strip__column:nth-child(2)',
             admin: '.wixui-column-strip__column:last-child',
-            books: '.wixui-column-strip__column:first-child', // Assuming similar fallback to patient view for now
-            videos: '.wixui-column-strip__column:first-child' // Assuming similar fallback to patient view for now
+            books: 'section.wixui-section', // Fallback to a more general section if the specific one isn't found
+            videos: '.wixui-column-strip__column:first-child', // Reverting to a generic column selector
+            news: '.wixui-column-strip__column:first-child' // Reverting to a generic column selector
         }
     };
 
