@@ -305,9 +305,16 @@
                 return data;
             } catch (error) {
                 console.error('Videos: Failed to fetch videos:', error);
-                this.showErrorMessage('Failed to load videos. Please try again later.');
+                // Display a less intrusive error message within the videos list itself
+                const videosListElement = document.getElementById('videos-list');
+                if (videosListElement) {
+                    videosListElement.innerHTML = `<p>Failed to load videos: ${error.message}. Please check the backend configuration.</p>`;
+                }
+                this.showErrorMessage(`Failed to load videos: ${error.message}`);
+                // Only show the critical overlay if it's a 404, and prevent re-initialization
                 if (error.message.includes('status: 404')) {
-                    appState.hasCriticalError = true; // Set critical error flag on 404
+                    appState.hasCriticalError = true;
+                    this.displayCriticalErrorOverlay(`Failed to load videos: ${error.message}`);
                 }
                 return [];
             }
@@ -575,6 +582,16 @@
          * @param {Element} [targetElement] - Element to insert error near
          */
         displayError(message, targetElement = null) {
+            console.error('Videos: General error display (deprecated):', message);
+            this.showErrorMessage(message);
+        },
+
+        /**
+         * @function displayCriticalErrorOverlay
+         * @description Displays a full-page critical error overlay.
+         * @param {string} message - The error message to display.
+         */
+        displayCriticalErrorOverlay(message) {
             // Remove any existing critical error displays
             const existingError = document.getElementById('greenhouse-critical-error-overlay');
             if (existingError) {
@@ -704,8 +721,13 @@
                     ? `Target element "${targetSelector}" not found. Please check if the page has loaded completely.`
                     : `Failed to load the videos application: ${error.message}`;
 
-                this.displayError(errorMessage, appState.targetElement);
-                this.showErrorMessage('Failed to load videos application');
+                // Only display the critical error overlay if it's a 404 from init, otherwise just log and show notification
+                if (error.message.includes('status: 404')) {
+                    appState.hasCriticalError = true;
+                    this.displayCriticalErrorOverlay(errorMessage);
+                } else {
+                    this.showErrorMessage('Failed to load videos application');
+                }
 
             } finally {
                 appState.isLoading = false;

@@ -215,11 +215,13 @@
                     this.observeBooksListElement(booksListElement); // Start observing after content is loaded
                 } catch (error) {
                     console.error("Books: Error fetching books:", error);
-                    // Use displayError for persistent on-page error
-                    this.displayError(`Failed to load books: ${error.message}`, booksListElement.parentElement);
+                    // Display a less intrusive error message within the books list itself
+                    booksListElement.innerHTML = `<p>Failed to load books: ${error.message}. Please check the backend configuration.</p>`;
                     this.showErrorMessage(`Failed to load books: ${error.message}`);
+                    // Only show the critical overlay if it's a 404, and prevent re-initialization
                     if (error.message.includes('status: 404')) {
-                        appState.hasCriticalError = true; // Set critical error flag on 404
+                        appState.hasCriticalError = true;
+                        this.displayCriticalErrorOverlay(`Failed to load books: ${error.message}`);
                     }
                 }
             },
