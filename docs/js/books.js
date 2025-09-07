@@ -215,7 +215,97 @@
                     console.error("Books: Error fetching books:", error);
                     // Use displayError for persistent on-page error
                     this.displayError(`Failed to load books: ${error.message}`, booksListElement.parentElement);
+                    const bookData = data.items; // Assuming the backend returns { items: [...] }
+
+                    // Clear loading message and ensure the element is ready
+                    booksListElement.innerHTML = ''; 
+                    
+                    if (bookData && bookData.length > 0) {
+                        bookData.forEach(book => {
+                            const bookElement = document.createElement('div');
+                            bookElement.classList.add('book');
+                            bookElement.innerHTML = `
+                                <h3><a href="${book.url}" target="_blank" rel="noopener noreferrer">${book.title}</a></h3>
+                                <p>by ${book.author}</p>
+                            `;
+                            booksListElement.appendChild(bookElement);
+                        });
+                    } else {
+                        booksListElement.innerHTML = '<p>No book recommendations available at this time.</p>';
+                    }
+                    this.observeBooksListElement(booksListElement); // Start observing after content is loaded
+                } catch (error) {
+                    console.error("Books: Error fetching books:", error);
+                    // Use displayError for persistent on-page error
+                    this.displayError(`Failed to load books: ${error.message}`, booksListElement.parentElement);
+                    const bookData = data.items; // Assuming the backend returns { items: [...] }
+
+                    // Clear loading message and ensure the element is ready
+                    booksListElement.innerHTML = ''; 
+                    
+                    if (bookData && bookData.length > 0) {
+                        bookData.forEach(book => {
+                            const bookElement = document.createElement('div');
+                            bookElement.classList.add('book');
+                            bookElement.innerHTML = `
+                                <h3><a href="${book.url}" target="_blank" rel="noopener noreferrer">${book.title}</a></h3>
+                                <p>by ${book.author}</p>
+                            `;
+                            booksListElement.appendChild(bookElement);
+                        });
+                    } else {
+                        booksListElement.innerHTML = '<p>No book recommendations available at this time.</p>';
+                    }
+                    this.observeBooksListElement(booksListElement); // Start observing after content is loaded
+                } catch (error) {
+                    console.error("Books: Error fetching books:", error);
+                    // Use displayError for persistent on-page error
+                    this.displayError(`Failed to load books: ${error.message}`, booksListElement.parentElement);
                     this.showErrorMessage(`Failed to load books: ${error.message}`);
+                }
+            },
+
+            /**
+             * @function observeBooksListElement
+             * @description Observes the #books-list element for removal and re-renders if it disappears.
+             * @param {Element} elementToObserve - The #books-list element.
+             */
+            observeBooksListElement(elementToObserve) {
+                if (!elementToObserve) return;
+
+                const observer = new MutationObserver((mutations) => {
+                    let wasRemoved = false;
+                    for (const mutation of mutations) {
+                        if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+                            for (const removedNode of mutation.removedNodes) {
+                                if (removedNode === elementToObserve) {
+                                    wasRemoved = true;
+                                    break;
+                                }
+                                if (removedNode.contains && removedNode.contains(elementToObserve)) {
+                                    wasRemoved = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (wasRemoved) {
+                        console.warn('Books: #books-list element was removed from DOM. Attempting to re-render.');
+                        observer.disconnect(); // Disconnect old observer
+                        // Re-initialize the app, which will re-render and re-fetch
+                        appState.isInitialized = false;
+                        appState.isLoading = false;
+                        main(); 
+                    }
+                });
+
+                // Observe the parent element for changes to its children
+                if (elementToObserve.parentElement) {
+                    observer.observe(elementToObserve.parentElement, { childList: true, subtree: true });
+                    console.log('Books: Started observing #books-list element for changes.');
+                } else {
+                    console.warn('Books: Cannot observe #books-list element, no parent found.');
                 }
             },
 
