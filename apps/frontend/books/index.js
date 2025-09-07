@@ -21,7 +21,7 @@ async function fetchAndDisplayBooks() {
         });
     } catch (error) {
         console.error("Error fetching books:", error);
-        bookList.innerHTML = '<p>Failed to load books. Please try again later.</p>';
+        bookList.innerHTML = `<p>Failed to load books: ${error.message}. Please try again later.</p>`;
     }
 }
 

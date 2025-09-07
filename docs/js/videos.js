@@ -237,33 +237,34 @@
          * @returns {Promise<void>}
          */
         async loadCSS() {
-            const cssUrl = `${appState.baseUrl}css/videos.css`;
+            const loadOperation = async () => {
+                const response = await fetch(`${appState.baseUrl}css/videos.css`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.text();
+            };
 
-            // Check if CSS already loaded
-            if (document.querySelector(`link[href="${cssUrl}"]`)) {
-                console.log(`Videos: CSS ${cssUrl} already loaded, skipping`);
-                return;
+            try {
+                const cssText = await retryOperation(loadOperation, 'Loading CSS');
+
+                // Check if CSS already loaded
+                if (document.querySelector('style[data-greenhouse-videos-css]')) {
+                    console.log('Videos: CSS already loaded');
+                    return;
+                }
+
+                const styleElement = document.createElement('style');
+                styleElement.setAttribute('data-greenhouse-videos-css', 'true');
+                styleElement.textContent = cssText;
+                document.head.appendChild(styleElement);
+
+                console.log('Videos: CSS loaded successfully');
+
+            } catch (error) {
+                console.warn('Videos: Failed to load CSS, using fallback styles:', error);
+                this.loadFallbackCSS();
             }
-
-            return new Promise((resolve, reject) => {
-                const linkElement = document.createElement('link');
-                linkElement.rel = 'stylesheet';
-                linkElement.type = 'text/css';
-                linkElement.href = cssUrl;
-                linkElement.setAttribute('data-greenhouse-videos-css', 'true');
-
-                linkElement.onload = () => {
-                    console.log(`Videos: CSS ${cssUrl} loaded successfully`);
-                    resolve();
-                };
-                linkElement.onerror = (event) => {
-                    console.error(`Videos: Failed to load CSS ${cssUrl}:`, event);
-                    this.loadFallbackCSS(); // Load fallback if main CSS fails
-                    reject(new Error(`Failed to load CSS: ${cssUrl}`));
-                };
-
-                document.head.appendChild(linkElement);
-            });
         },
 
         /**

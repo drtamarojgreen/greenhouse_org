@@ -230,33 +230,34 @@
          * @returns {Promise<void>}
          */
         async loadCSS() {
-            const cssUrl = `${appState.baseUrl}css/books.css`;
+            const loadOperation = async () => {
+                const response = await fetch(`${appState.baseUrl}css/books.css`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.text();
+            };
 
-            // Check if CSS already loaded
-            if (document.querySelector(`link[href="${cssUrl}"]`)) {
-                console.log(`Books: CSS ${cssUrl} already loaded, skipping`);
-                return;
+            try {
+                const cssText = await retryOperation(loadOperation, 'Loading CSS');
+
+                // Check if CSS already loaded
+                if (document.querySelector('style[data-greenhouse-books-css]')) {
+                    console.log('Books: CSS already loaded');
+                    return;
+                }
+
+                const styleElement = document.createElement('style');
+                styleElement.setAttribute('data-greenhouse-books-css', 'true');
+                styleElement.textContent = cssText;
+                document.head.appendChild(styleElement);
+
+                console.log('Books: CSS loaded successfully');
+
+            } catch (error) {
+                console.warn('Books: Failed to load CSS, using fallback styles:', error);
+                this.loadFallbackCSS();
             }
-
-            return new Promise((resolve, reject) => {
-                const linkElement = document.createElement('link');
-                linkElement.rel = 'stylesheet';
-                linkElement.type = 'text/css';
-                linkElement.href = cssUrl;
-                linkElement.setAttribute('data-greenhouse-books-css', 'true');
-
-                linkElement.onload = () => {
-                    console.log(`Books: CSS ${cssUrl} loaded successfully`);
-                    resolve();
-                };
-                linkElement.onerror = (event) => {
-                    console.error(`Books: Failed to load CSS ${cssUrl}:`, event);
-                    this.loadFallbackCSS(); // Load fallback if main CSS fails
-                    reject(new Error(`Failed to load CSS: ${cssUrl}`));
-                };
-
-                document.head.appendChild(linkElement);
-            });
         },
 
         /**
