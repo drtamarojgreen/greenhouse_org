@@ -300,6 +300,53 @@
     }
 
     /**
+     * @function loadNewsApplication
+     * @description Loads the news application after ensuring the target element exists.
+     */
+    async function loadNewsApplication() {
+        try {
+            console.log('Greenhouse: Initializing news application');
+            
+            // Parse URL parameters to determine the view.
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view') || 'default'; // Default to 'default' view for news
+            
+            console.log(`Greenhouse: Loading news for view: ${view}`);
+
+            // Determine the correct selectors to try
+            let selectorsToTry = [];
+            
+            // For news, we'll use the 'news' selector regardless of a specific 'view' parameter for now
+            if (config.selectors.news) {
+                selectorsToTry.push(config.selectors.news);
+                if (config.fallbackSelectors.news) {
+                    selectorsToTry.push(config.fallbackSelectors.news);
+                }
+            } else {
+                // Fallback if no specific news selector is defined
+                selectorsToTry.push('.wixui-column-strip__column:first-child');
+            }
+
+            // Wait for the target element to be available
+            const targetElement = await waitForElement(selectorsToTry);
+            const targetSelector = selectorsToTry.find(selector => document.querySelector(selector));
+
+            // Define the attributes to be passed to the news script.
+            const newsAttributes = {
+                'target-selector': targetSelector,
+                'base-url': config.githubPagesBaseUrl,
+                'view': view
+            };
+
+            // Load the news script and pass the necessary data attributes to it.
+            await loadScript(`${config.githubPagesBaseUrl}js/news.js`, newsAttributes);
+            
+        } catch (error) {
+            console.error('Greenhouse: Failed to load news application:', error);
+        }
+    }
+
+    /**
      * @function initialize
      * @description Main initialization function that runs when the DOM is ready.
      */
@@ -316,6 +363,8 @@
             await loadBooksApplication();
         } else if (window.location.pathname.includes(config.videosPagePath)) {
             await loadVideosApplication();
+        } else if (window.location.pathname.includes(config.newsPagePath)) {
+            await loadNewsApplication();
         }
     }
 
