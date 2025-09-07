@@ -1,4 +1,3 @@
-
 import { response } from 'wix-http-functions';
 
 const bookData = [
