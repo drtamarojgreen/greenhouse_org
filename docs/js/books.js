@@ -195,7 +195,9 @@
                     const data = await response.json();
                     const bookData = data.items; // Assuming the backend returns { items: [...] }
 
-                    booksListElement.innerHTML = ''; // Clear loading message
+                    // Clear loading message and ensure the element is ready
+                    booksListElement.innerHTML = ''; 
+                    
                     if (bookData && bookData.length > 0) {
                         bookData.forEach(book => {
                             const bookElement = document.createElement('div');
@@ -211,7 +213,8 @@
                     }
                 } catch (error) {
                     console.error("Books: Error fetching books:", error);
-                    booksListElement.innerHTML = `<p>Failed to load books: ${error.message}. Please try again later.</p>`;
+                    // Use displayError for persistent on-page error
+                    this.displayError(`Failed to load books: ${error.message}`, booksListElement.parentElement);
                     this.showErrorMessage(`Failed to load books: ${error.message}`);
                 }
             },
@@ -656,7 +659,8 @@
                     // Initialize the application instance (if any specific book app logic is needed)
                     this.initializeApplication();
 
-                    // Fetch and display books after the app is inserted
+                    // Fetch and display books after the app is inserted, with an additional delay
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Additional delay
                     await this.fetchAndDisplayBooks();
 
                     appState.isInitialized = true;
