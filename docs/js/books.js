@@ -211,51 +211,6 @@
                     } else {
                         booksListElement.innerHTML = '<p>No book recommendations available at this time.</p>';
                     }
-                } catch (error) {
-                    console.error("Books: Error fetching books:", error);
-                    // Use displayError for persistent on-page error
-                    this.displayError(`Failed to load books: ${error.message}`, booksListElement.parentElement);
-                    const bookData = data.items; // Assuming the backend returns { items: [...] }
-
-                    // Clear loading message and ensure the element is ready
-                    booksListElement.innerHTML = ''; 
-                    
-                    if (bookData && bookData.length > 0) {
-                        bookData.forEach(book => {
-                            const bookElement = document.createElement('div');
-                            bookElement.classList.add('book');
-                            bookElement.innerHTML = `
-                                <h3><a href="${book.url}" target="_blank" rel="noopener noreferrer">${book.title}</a></h3>
-                                <p>by ${book.author}</p>
-                            `;
-                            booksListElement.appendChild(bookElement);
-                        });
-                    } else {
-                        booksListElement.innerHTML = '<p>No book recommendations available at this time.</p>';
-                    }
-                    this.observeBooksListElement(booksListElement); // Start observing after content is loaded
-                } catch (error) {
-                    console.error("Books: Error fetching books:", error);
-                    // Use displayError for persistent on-page error
-                    this.displayError(`Failed to load books: ${error.message}`, booksListElement.parentElement);
-                    const bookData = data.items; // Assuming the backend returns { items: [...] }
-
-                    // Clear loading message and ensure the element is ready
-                    booksListElement.innerHTML = ''; 
-                    
-                    if (bookData && bookData.length > 0) {
-                        bookData.forEach(book => {
-                            const bookElement = document.createElement('div');
-                            bookElement.classList.add('book');
-                            bookElement.innerHTML = `
-                                <h3><a href="${book.url}" target="_blank" rel="noopener noreferrer">${book.title}</a></h3>
-                                <p>by ${book.author}</p>
-                            `;
-                            booksListElement.appendChild(bookElement);
-                        });
-                    } else {
-                        booksListElement.innerHTML = '<p>No book recommendations available at this time.</p>';
-                    }
                     this.observeBooksListElement(booksListElement); // Start observing after content is loaded
                 } catch (error) {
                     console.error("Books: Error fetching books:", error);
