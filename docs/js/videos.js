@@ -73,7 +73,8 @@
         baseUrl: null,
         targetSelector: null,
         loadedScripts: new Set(),
-        errors: []
+        errors: [],
+        hasCriticalError: false // New flag to track critical errors
     };
 
     /**
@@ -305,6 +306,9 @@
             } catch (error) {
                 console.error('Videos: Failed to fetch videos:', error);
                 this.showErrorMessage('Failed to load videos. Please try again later.');
+                if (error.message.includes('status: 404')) {
+                    appState.hasCriticalError = true; // Set critical error flag on 404
+                }
                 return [];
             }
         },
@@ -571,40 +575,51 @@
          * @param {Element} [targetElement] - Element to insert error near
          */
         displayError(message, targetElement = null) {
+            // Remove any existing critical error displays
+            const existingError = document.getElementById('greenhouse-critical-error-overlay');
+            if (existingError) {
+                existingError.remove();
+            }
+
             const errorDiv = document.createElement('div');
-            errorDiv.id = 'greenhouse-app-error';
-            errorDiv.className = 'greenhouse-app-error';
+            errorDiv.id = 'greenhouse-critical-error-overlay'; // Unique ID
+            errorDiv.className = 'greenhouse-app-error-overlay'; // New class for styling
             errorDiv.setAttribute('role', 'alert');
             errorDiv.style.cssText = `
-                color: #721c24;
-                background-color: #f8d7da;
-                border: 1px solid #f5c6cb;
-                padding: 15px;
-                margin: 20px;
-                border-radius: 4px;
-                text-align: center;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white overlay */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 100000; /* Very high z-index */
                 font-family: Arial, sans-serif;
-                z-index: 10000;
-                position: relative;
+                color: #721c24;
+                text-align: center;
+                padding: 20px;
+                box-sizing: border-box;
             `;
             
             errorDiv.innerHTML = `
-                <strong>Greenhouse Videos Error:</strong><br>
-                ${message}
-                <br><br>
-                <button onclick="window.location.reload()" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Reload Page
-                </button>
+                <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                    <h2 style="color: #721c24; margin-top: 0;">Greenhouse Videos Application Error</h2>
+                    <p style="font-size: 1.1em;">${message}</p>
+                    <p>This issue might be related to the backend service not being available or incorrectly configured on the Wix site.</p>
+                    <p>Please ensure the <code>getLatestVideosFromFeed.web.js</code> backend function is correctly deployed and accessible at <code>/_functions/getLatestVideosFromFeed</code> on <code>https://www.greenhousementalhealth.org</code>.</p>
+                    <button onclick="window.location.reload()" style="padding: 12px 24px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin-top: 20px;">
+                        Reload Page
+                    </button>
+                </div>
             `;
 
-            if (targetElement) {
-                targetElement.prepend(errorDiv);
-            } else {
-                document.body.insertAdjacentElement('afterbegin', errorDiv);
-            }
+            document.body.appendChild(errorDiv);
 
             // Also log to console with more details
-            console.error('Greenhouse Videos Error:', {
+            console.error('Greenhouse Videos Critical Error:', {
                 message,
                 targetSelector: appState.targetSelector,
                 baseUrl: appState.baseUrl,
@@ -703,13 +718,19 @@
     /**
      * Main execution function
      */
-    async function main() {
-        try {
-            // Validate configuration from script attributes
-            if (!validateConfiguration()) {
-                console.error('Videos: Invalid configuration, cannot proceed');
-                return;
-            }
+        async function main() {
+            try {
+                // If a critical error has occurred, prevent further re-initialization attempts
+                if (appState.hasCriticalError) {
+                    console.error('Videos: Critical error detected, preventing re-initialization.');
+                    return;
+                }
+
+                // Validate configuration from script attributes
+                if (!validateConfiguration()) {
+                    console.error('Videos: Invalid configuration, cannot proceed');
+                    return;
+                }
 
             // Add global error handler
             window.addEventListener('error', (event) => {
