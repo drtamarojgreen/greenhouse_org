@@ -26,7 +26,7 @@ div div div div div section:nth-child(5) .wixui-image .j7pOnl {
 }
 
 /* Style the actual images */
-div div div div div section:nth-child(5) .wixui-image img {
+div div div div div section:nth-child(5) .wixui-image img, footer#SITE_FOOTER img[alt="Lavender Flowers"] {
   width: 100% !important;
   height: auto !important;
   display: block !important;
@@ -36,7 +36,7 @@ div div div div div section:nth-child(5) .wixui-image img {
   padding: 5px;
 }
 
-#SITE_FOOTER > div div div.wixui-image:nth-child(1) > img {
+#SITE_FOOTER > div div div.wixui-image:nth-child(1) > img, footer#SITE_FOOTER img[alt="Lavender Flowers"] {
   border-radius: 16px !important;
   background: linear-gradient(to right, #357438, #732751); 
   padding: 5px;

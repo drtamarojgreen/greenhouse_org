@@ -1,27 +1,27 @@
-const quotes = [
-    {
-        text: "The best way to predict the future is to create it.",
-        author: "Peter Drucker"
-    },
-    {
-        text: "You miss 100% of the shots you don’t take.",
-        author: "Wayne Gretzky"
-    },
-    {
-        text: "The only way to do great work is to love what you do.",
-        author: "Steve Jobs"
-    },
-    {
-        text: "Believe you can and you're halfway there.",
-        author: "Theodore Roosevelt"
-    }
-];
-
 const quoteText = document.getElementById('quote-text');
 const quoteAuthor = document.getElementById('quote-author');
 const newQuoteBtn = document.getElementById('new-quote-btn');
 
+let quotes = []; // Will store fetched quotes
+
+async function fetchQuotes() {
+    try {
+        const response = await fetch('/_api/getInspiration');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        quotes = data.items; // Assuming the backend returns { items: [...] }
+        displayQuote(); // Display a quote once fetched
+    } catch (error) {
+        console.error("Error fetching quotes:", error);
+        quoteText.textContent = "Failed to load quotes.";
+        quoteAuthor.textContent = "";
+    }
+}
+
 function getRandomQuote() {
+    if (quotes.length === 0) return { text: "No quotes available.", author: "" };
     return quotes[Math.floor(Math.random() * quotes.length)];
 }
 
@@ -33,5 +33,5 @@ function displayQuote() {
 
 newQuoteBtn.addEventListener('click', displayQuote);
 
-// Display initial quote
-displayQuote();
+// Fetch and display initial quote
+fetchQuotes();

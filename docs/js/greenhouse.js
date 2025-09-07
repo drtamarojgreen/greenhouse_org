@@ -30,6 +30,10 @@
          */
         schedulePagePath: '/schedule/',
         /**
+         * The path segment that identifies the books page.
+         */
+        booksPagePath: '/books/',
+        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -40,7 +44,8 @@
         selectors: {
             patient: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
             dashboard: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)',
-            admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column'
+            admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
+            books: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column' // Assuming similar structure to patient view for now
         },
         /**
          * Fallback selectors to try if primary selectors fail.
@@ -48,7 +53,8 @@
         fallbackSelectors: {
             patient: '.wixui-column-strip__column:first-child',
             dashboard: '.wixui-column-strip__column:nth-child(2)',
-            admin: '.wixui-column-strip__column:last-child'
+            admin: '.wixui-column-strip__column:last-child',
+            books: '.wixui-column-strip__column:first-child' // Assuming similar fallback to patient view for now
         }
     };
 
@@ -186,6 +192,53 @@
     }
 
     /**
+     * @function loadBooksApplication
+     * @description Loads the books application after ensuring the target element exists.
+     */
+    async function loadBooksApplication() {
+        try {
+            console.log('Greenhouse: Initializing books application');
+            
+            // Parse URL parameters to determine the view.
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view') || 'default'; // Default to 'default' view for books
+            
+            console.log(`Greenhouse: Loading books for view: ${view}`);
+
+            // Determine the correct selectors to try
+            let selectorsToTry = [];
+            
+            // For books, we'll use the 'books' selector regardless of a specific 'view' parameter for now
+            if (config.selectors.books) {
+                selectorsToTry.push(config.selectors.books);
+                if (config.fallbackSelectors.books) {
+                    selectorsToTry.push(config.fallbackSelectors.books);
+                }
+            } else {
+                // Fallback if no specific books selector is defined
+                selectorsToTry.push('.wixui-column-strip__column:first-child');
+            }
+
+            // Wait for the target element to be available
+            const targetElement = await waitForElement(selectorsToTry);
+            const targetSelector = selectorsToTry.find(selector => document.querySelector(selector));
+
+            // Define the attributes to be passed to the books script.
+            const booksAttributes = {
+                'target-selector': targetSelector,
+                'base-url': config.githubPagesBaseUrl,
+                'view': view
+            };
+
+            // Load the books script and pass the necessary data attributes to it.
+            await loadScript(`${config.githubPagesBaseUrl}js/books.js`, booksAttributes);
+            
+        } catch (error) {
+            console.error('Greenhouse: Failed to load books application:', error);
+        }
+    }
+
+    /**
      * @function initialize
      * @description Main initialization function that runs when the DOM is ready.
      */
@@ -198,6 +251,8 @@
         // Check if the current page is the schedule page.
         if (window.location.pathname.includes(config.schedulePagePath)) {
             await loadSchedulerApplication();
+        } else if (window.location.pathname.includes(config.booksPagePath)) {
+            await loadBooksApplication();
         }
     }
 

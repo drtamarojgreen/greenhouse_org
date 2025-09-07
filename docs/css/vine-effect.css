@@ -18,6 +18,8 @@
 .vine-effect-active.animation-running #effect-heading span {
     opacity: 1;
     transform: translateY(0);
+    color: #333; /* Restore text color */
+
 }
 
 /* The SVG element that will contain the vine path */
