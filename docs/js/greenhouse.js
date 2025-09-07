@@ -184,6 +184,7 @@
             };
 
             // Load the scheduler script and pass the necessary data attributes to it.
+            await loadScript(`${config.githubPagesBaseUrl}js/schedulerUI.js`);
             await loadScript(`${config.githubPagesBaseUrl}js/scheduler.js`, schedulerAttributes);
             
         } catch (error) {
