@@ -50,7 +50,7 @@
          * This will likely need to be configured to call the backend `getNews.web.js`.
          */
         api: {
-            getNews: '/_functions/getNews' // Placeholder, actual path might vary
+            getNews: '/_api/getNews' // Placeholder, actual path might vary
         }
     };
 

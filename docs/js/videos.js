@@ -50,7 +50,7 @@
          * This will likely need to be configured to call the backend `getLatestVideosFromFeed.web.js`.
          */
         api: {
-            getVideos: '/_functions/getLatestVideosFromFeed' // Placeholder, actual path might vary
+            getVideos: '/_api/getLatestVideosFromFeed' // Placeholder, actual path might vary
         }
     };
 
