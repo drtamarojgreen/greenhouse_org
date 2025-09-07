@@ -606,57 +606,8 @@
              * @param {Element} [targetElement] - Element to insert error near
              */
             displayError(message, targetElement = null) {
-                // Remove any existing critical error displays
-                const existingError = document.getElementById('greenhouse-critical-error-overlay');
-                if (existingError) {
-                    existingError.remove();
-                }
-
-                const errorDiv = document.createElement('div');
-                errorDiv.id = 'greenhouse-critical-error-overlay'; // Unique ID
-                errorDiv.className = 'greenhouse-app-error-overlay'; // New class for styling
-                errorDiv.setAttribute('role', 'alert');
-                errorDiv.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white overlay */
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 100000; /* Very high z-index */
-                    font-family: Arial, sans-serif;
-                    color: #721c24;
-                    text-align: center;
-                    padding: 20px;
-                    box-sizing: border-box;
-                `;
-                
-                errorDiv.innerHTML = `
-                    <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-                        <h2 style="color: #721c24; margin-top: 0;">Greenhouse Books Application Error</h2>
-                        <p style="font-size: 1.1em;">${message}</p>
-                        <p>This issue might be related to the backend service not being available or incorrectly configured on the Wix site.</p>
-                        <p>Please ensure the <code>getBooks.web.js</code> backend function is correctly deployed and accessible at <code>/_api/getBooks</code> on <code>https://www.greenhousementalhealth.org</code>.</p>
-                        <button onclick="window.location.reload()" style="padding: 12px 24px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin-top: 20px;">
-                            Reload Page
-                        </button>
-                    </div>
-                `;
-
-                document.body.appendChild(errorDiv);
-
-                // Also log to console with more details
-                console.error('Greenhouse Books Critical Error:', {
-                    message,
-                    targetSelector: appState.targetSelector,
-                    baseUrl: appState.baseUrl,
-                    view: appState.currentView,
-                    errors: appState.errors
-                });
+                console.error('Books: General error display:', message);
+                this.showNotification(message, 'error'); // Use existing notification system
             },
 
             /**
@@ -740,6 +691,7 @@
                         : `Failed to load the books application: ${error.message}`;
 
                     this.displayError(errorMessage, appState.targetElement);
+                    // No critical overlay, just a notification
                     this.showErrorMessage('Failed to load books application');
 
                 } finally {

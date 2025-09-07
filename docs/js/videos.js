@@ -73,8 +73,7 @@
         baseUrl: null,
         targetSelector: null,
         loadedScripts: new Set(),
-        errors: [],
-        hasCriticalError: false // New flag to track critical errors
+        errors: []
     };
 
     /**
@@ -614,7 +613,7 @@
                 justify-content: center;
                 align-items: center;
                 z-index: 100000; /* Very high z-index */
-                font-family: Arial, sans-serif;
+                    font-family: Arial, sans-serif;
                 color: #721c24;
                 text-align: center;
                 padding: 20px;
@@ -623,15 +622,15 @@
             
             errorDiv.innerHTML = `
                 <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-                    <h2 style="color: #721c24; margin-top: 0;">Greenhouse Videos Application Error</h2>
-                    <p style="font-size: 1.1em;">${message}</p>
-                    <p>This issue might be related to the backend service not being available or incorrectly configured on the Wix site.</p>
-                    <p>Please ensure the <code>getLatestVideosFromFeed.web.js</code> backend function is correctly deployed and accessible at <code>/_functions/getLatestVideosFromFeed</code> on <code>https://www.greenhousementalhealth.org</code>.</p>
-                    <button onclick="window.location.reload()" style="padding: 12px 24px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin-top: 20px;">
-                        Reload Page
-                    </button>
-                </div>
-            `;
+                        <h2 style="color: #721c24; margin-top: 0;">Greenhouse Videos Application Error</h2>
+                        <p style="font-size: 1.1em;">${message}</p>
+                        <p>This issue might be related to the backend service not being available or incorrectly configured on the Wix site.</p>
+                        <p>Please ensure the <code>getLatestVideosFromFeed.web.js</code> backend function is correctly deployed and accessible at <code>/_functions/getLatestVideosFromFeed</code> on <code>https://www.greenhousementalhealth.org</code>.</p>
+                        <button onclick="window.location.reload()" style="padding: 12px 24px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin-top: 20px;">
+                            Reload Page
+                        </button>
+                    </div>
+                `;
 
             document.body.appendChild(errorDiv);
 
