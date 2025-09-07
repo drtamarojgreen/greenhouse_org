@@ -172,537 +172,581 @@
      * @namespace GreenhouseAppsBooks
      * @description The main object for the books application
      */
-    const GreenhouseAppsBooks = {
-        
-
-        /**
-         * @function loadScript
-         * @description Dynamically loads a script with retry logic and caching
-         * @param {string} scriptName - The name of the script file (e.g., 'booksUI.js')
-         * @returns {Promise<void>}
-         */
-        async loadScript(scriptName) {
-            // Check if script already loaded
-            if (appState.loadedScripts.has(scriptName)) {
-                console.log(`Books: Script ${scriptName} already loaded, skipping`);
-                return;
-            }
-
-            const loadOperation = async () => {
-                const response = await fetch(`${appState.baseUrl}js/${scriptName}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const GreenhouseAppsBooks = {
+            /**
+             * @function fetchAndDisplayBooks
+             * @description Fetches book data from the backend and displays it in the #books-list element.
+             */
+            async fetchAndDisplayBooks() {
+                const booksListElement = document.getElementById('books-list');
+                if (!booksListElement) {
+                    console.error("Books: #books-list element not found for displaying books.");
+                    return;
                 }
-                return await response.text();
-            };
 
-            try {
-                const scriptText = await retryOperation(
-                    loadOperation,
-                    `Loading script ${scriptName}`
-                );
+                booksListElement.innerHTML = '<p>Loading books...</p>'; // Show loading state
 
-                // Avoid re-adding the script if it already exists in DOM
-                if (document.querySelector(`script[data-script-name="${scriptName}"]`)) {
-                    console.log(`Books: Script ${scriptName} already in DOM`);
+                try {
+                    // Use a relative path for the API call, assuming Wix handles the routing
+                    const response = await fetch('/_api/getBooks'); 
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    const bookData = data.items; // Assuming the backend returns { items: [...] }
+
+                    booksListElement.innerHTML = ''; // Clear loading message
+                    if (bookData && bookData.length > 0) {
+                        bookData.forEach(book => {
+                            const bookElement = document.createElement('div');
+                            bookElement.classList.add('book');
+                            bookElement.innerHTML = `
+                                <h3><a href="${book.url}" target="_blank" rel="noopener noreferrer">${book.title}</a></h3>
+                                <p>by ${book.author}</p>
+                            `;
+                            booksListElement.appendChild(bookElement);
+                        });
+                    } else {
+                        booksListElement.innerHTML = '<p>No book recommendations available at this time.</p>';
+                    }
+                } catch (error) {
+                    console.error("Books: Error fetching books:", error);
+                    booksListElement.innerHTML = `<p>Failed to load books: ${error.message}. Please try again later.</p>`;
+                    this.showErrorMessage(`Failed to load books: ${error.message}`);
+                }
+            },
+
+            /**
+             * @function loadScript
+             * @description Dynamically loads a script with retry logic and caching
+             * @param {string} scriptName - The name of the script file (e.g., 'booksUI.js')
+             * @returns {Promise<void>}
+             */
+            async loadScript(scriptName) {
+                // Check if script already loaded
+                if (appState.loadedScripts.has(scriptName)) {
+                    console.log(`Books: Script ${scriptName} already loaded, skipping`);
+                    return;
+                }
+
+                const loadOperation = async () => {
+                    const response = await fetch(`${appState.baseUrl}js/${scriptName}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return await response.text();
+                };
+
+                try {
+                    const scriptText = await retryOperation(
+                        loadOperation,
+                        `Loading script ${scriptName}`
+                    );
+
+                    // Avoid re-adding the script if it already exists in DOM
+                    if (document.querySelector(`script[data-script-name="${scriptName}"]`)) {
+                        console.log(`Books: Script ${scriptName} already in DOM`);
+                        appState.loadedScripts.add(scriptName);
+                        return;
+                    }
+
+                    const scriptElement = document.createElement('script');
+                    scriptElement.dataset.scriptName = scriptName;
+                    scriptElement.dataset.loadedBy = 'greenhouse-books';
+                    scriptElement.textContent = scriptText;
+                    document.body.appendChild(scriptElement);
+
                     appState.loadedScripts.add(scriptName);
-                    return;
+                    console.log(`Books: Successfully loaded script ${scriptName}`);
+
+                } catch (error) {
+                    console.error(`Books: Failed to load script ${scriptName}:`, error);
+                    throw error;
                 }
+            },
 
-                const scriptElement = document.createElement('script');
-                scriptElement.dataset.scriptName = scriptName;
-                scriptElement.dataset.loadedBy = 'greenhouse-books';
-                scriptElement.textContent = scriptText;
-                document.body.appendChild(scriptElement);
+            /**
+             * @function loadCSS
+             * @description Loads and applies CSS with error handling
+             * @returns {Promise<void>}
+             */
+            async loadCSS() {
+                const loadOperation = async () => {
+                    const response = await fetch(`${appState.baseUrl}css/books.css`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return await response.text();
+                };
 
-                appState.loadedScripts.add(scriptName);
-                console.log(`Books: Successfully loaded script ${scriptName}`);
+                try {
+                    const cssText = await retryOperation(loadOperation, 'Loading CSS');
 
-            } catch (error) {
-                console.error(`Books: Failed to load script ${scriptName}:`, error);
-                throw error;
-            }
-        },
+                    // Check if CSS already loaded
+                    if (document.querySelector('style[data-greenhouse-books-css]')) {
+                        console.log('Books: CSS already loaded');
+                        return;
+                    }
 
-        /**
-         * @function loadCSS
-         * @description Loads and applies CSS with error handling
-         * @returns {Promise<void>}
-         */
-        async loadCSS() {
-            const loadOperation = async () => {
-                const response = await fetch(`${appState.baseUrl}css/books.css`);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    const styleElement = document.createElement('style');
+                    styleElement.setAttribute('data-greenhouse-books-css', 'true');
+                    styleElement.textContent = cssText;
+                    document.head.appendChild(styleElement);
+
+                    console.log('Books: CSS loaded successfully');
+
+                } catch (error) {
+                    console.warn('Books: Failed to load CSS, using fallback styles:', error);
+                    this.loadFallbackCSS();
                 }
-                return await response.text();
-            };
+            },
 
-            try {
-                const cssText = await retryOperation(loadOperation, 'Loading CSS');
-
-                // Check if CSS already loaded
-                if (document.querySelector('style[data-greenhouse-books-css]')) {
-                    console.log('Books: CSS already loaded');
-                    return;
-                }
+            /**
+             * @function loadFallbackCSS
+             * @description Loads minimal fallback CSS if main CSS fails
+             */
+            loadFallbackCSS() {
+                const fallbackCSS = `
+                    .greenhouse-layout-container { display: flex; flex-wrap: wrap; gap: 20px; }
+                    .greenhouse-form-panel { flex: 1; min-width: 300px; }
+                    .greenhouse-instructions-panel { flex: 1; min-width: 250px; }
+                    .greenhouse-form-field { margin-bottom: 15px; }
+                    .greenhouse-form-label { display: block; margin-bottom: 5px; font-weight: bold; }
+                    .greenhouse-form-input, .greenhouse-form-select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+                    .greenhouse-form-submit-btn { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+                    .greenhouse-form-error { color: red; font-size: 0.875em; margin-top: 5px; }
+                    .greenhouse-loading-spinner { display: flex; align-items: center; gap: 10px; }
+                `;
 
                 const styleElement = document.createElement('style');
-                styleElement.setAttribute('data-greenhouse-books-css', 'true');
-                styleElement.textContent = cssText;
+                styleElement.setAttribute('data-greenhouse-books-fallback-css', 'true');
+                styleElement.textContent = fallbackCSS;
                 document.head.appendChild(styleElement);
+            },
 
-                console.log('Books: CSS loaded successfully');
+            /**
+             * @function renderView
+             * @description Renders the appropriate view based on the current view state
+             * @returns {Promise<DocumentFragment>} A promise that resolves with the DOM fragment for the view
+             */
+            async renderView() {
+                console.log(`Books: Rendering view: ${appState.currentView}`);
 
-            } catch (error) {
-                console.warn('Books: Failed to load CSS, using fallback styles:', error);
-                this.loadFallbackCSS();
-            }
-        },
+                let appDomFragment;
 
-        /**
-         * @function loadFallbackCSS
-         * @description Loads minimal fallback CSS if main CSS fails
-         */
-        loadFallbackCSS() {
-            const fallbackCSS = `
-                .greenhouse-layout-container { display: flex; flex-wrap: wrap; gap: 20px; }
-                .greenhouse-form-panel { flex: 1; min-width: 300px; }
-                .greenhouse-instructions-panel { flex: 1; min-width: 250px; }
-                .greenhouse-form-field { margin-bottom: 15px; }
-                .greenhouse-form-label { display: block; margin-bottom: 5px; font-weight: bold; }
-                .greenhouse-form-input, .greenhouse-form-select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-                .greenhouse-form-submit-btn { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-                .greenhouse-form-error { color: red; font-size: 0.875em; margin-top: 5px; }
-                .greenhouse-loading-spinner { display: flex; align-items: center; gap: 10px; }
-            `;
+                try {
+                    // For now, a simple default view for books
+                    appDomFragment = this.createDefaultBooksView();
 
-            const styleElement = document.createElement('style');
-            styleElement.setAttribute('data-greenhouse-books-fallback-css', 'true');
-            styleElement.textContent = fallbackCSS;
-            document.head.appendChild(styleElement);
-        },
+                    if (!appDomFragment) {
+                        throw new Error('Failed to create view DOM fragment');
+                    }
 
-        /**
-         * @function renderView
-         * @description Renders the appropriate view based on the current view state
-         * @returns {Promise<DocumentFragment>} A promise that resolves with the DOM fragment for the view
-         */
-        async renderView() {
-            console.log(`Books: Rendering view: ${appState.currentView}`);
+                    return appDomFragment;
 
-            let appDomFragment;
-
-            try {
-                // For now, a simple default view for books
-                appDomFragment = this.createDefaultBooksView();
-
-                if (!appDomFragment) {
-                    throw new Error('Failed to create view DOM fragment');
+                } catch (error) {
+                    console.error(`Books: Error rendering ${appState.currentView} view:`, error);
+                    return this.createErrorView(`Failed to load ${appState.currentView} view: ${error.message}`);
                 }
+            },
 
-                return appDomFragment;
-
-            } catch (error) {
-                console.error(`Books: Error rendering ${appState.currentView} view:`, error);
-                return this.createErrorView(`Failed to load ${appState.currentView} view: ${error.message}`);
-            }
-        },
-
-        /**
-         * @function createDefaultBooksView
-         * @description Creates a default view for the books application.
-         * @returns {DocumentFragment}
-         */
-        createDefaultBooksView() {
-            const fragment = document.createDocumentFragment();
-            const booksDiv = document.createElement('div');
-            booksDiv.className = 'greenhouse-books-view';
-            booksDiv.innerHTML = `
-                <div class="greenhouse-books-content">
-                    <h2>Greenhouse Books</h2>
-                    <p>Welcome to the Greenhouse Books section. Here you will find a curated list of recommended readings.</p>
-                    <div id="books-list">
-                        <!-- Books will be loaded here -->
-                        <p>Loading books...</p>
+            /**
+             * @function createDefaultBooksView
+             * @description Creates a default view for the books application.
+             * @returns {DocumentFragment}
+             */
+            createDefaultBooksView() {
+                const fragment = document.createDocumentFragment();
+                const booksDiv = document.createElement('div');
+                booksDiv.className = 'greenhouse-books-view';
+                booksDiv.innerHTML = `
+                    <div class="greenhouse-books-content">
+                        <h2>Greenhouse Books</h2>
+                        <p>Welcome to the Greenhouse Books section. Here you will find a curated list of recommended readings.</p>
+                        <div id="books-list">
+                            <!-- Books will be loaded here -->
+                            <p>Loading books...</p>
+                        </div>
                     </div>
-                </div>
-            `;
-            fragment.appendChild(booksDiv);
-            return fragment;
-        },
+                `;
+                fragment.appendChild(booksDiv);
+                return fragment;
+            },
 
-        /**
-         * @function createErrorView
-         * @description Creates an error view when rendering fails
-         * @param {string} message - Error message to display
-         * @returns {DocumentFragment}
-         */
-        createErrorView(message) {
-            const fragment = document.createDocumentFragment();
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'greenhouse-error-view';
-            errorDiv.innerHTML = `
-                <div class="greenhouse-error-content">
-                    <h2>Unable to Load Application</h2>
-                    <p>${message}</p>
-                    <p>Please refresh the page or contact support if the problem persists.</p>
-                    <button onclick="window.location.reload()" class="greenhouse-btn greenhouse-btn-primary">
-                        Refresh Page
-                    </button>
-                </div>
-            `;
-            fragment.appendChild(errorDiv);
-            return fragment;
-        },
+            /**
+             * @function createErrorView
+             * @description Creates an error view when rendering fails
+             * @param {string} message - Error message to display
+             * @returns {DocumentFragment}
+             */
+            createErrorView(message) {
+                const fragment = document.createDocumentFragment();
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'greenhouse-error-view';
+                errorDiv.innerHTML = `
+                    <div class="greenhouse-error-content">
+                        <h2>Unable to Load Application</h2>
+                        <p>${message}</p>
+                        <p>Please refresh the page or contact support if the problem persists.</p>
+                        <button onclick="window.location.reload()" class="greenhouse-btn greenhouse-btn-primary">
+                            Refresh Page
+                        </button>
+                    </div>
+                `;
+                fragment.appendChild(errorDiv);
+                return fragment;
+            },
 
-        /**
-         * @function showSuccessMessage
-         * @description Shows a success message to the user
-         * @param {string} message - Success message to display
-         */
-        showSuccessMessage(message) {
-            this.showNotification(message, 'success');
-        },
+            /**
+             * @function showSuccessMessage
+             * @description Shows a success message to the user
+             * @param {string} message - Success message to display
+             */
+            showSuccessMessage(message) {
+                this.showNotification(message, 'success');
+            },
 
-        /**
-         * @function showErrorMessage
-         * @description Shows an error message to the user
-         * @param {string} message - Error message to display
-         */
-        showErrorMessage(message) {
-            this.showNotification(message, 'error');
-        },
+            /**
+             * @function showErrorMessage
+             * @description Shows an error message to the user
+             * @param {string} message - Error message to display
+             */
+            showErrorMessage(message) {
+                this.showNotification(message, 'error');
+            },
 
-        /**
-         * @function showNotification
-         * @description Shows a notification message with auto-dismiss
-         * @param {string} message - Message to display
-         * @param {string} type - Type of notification ('success', 'error', 'info')
-         * @param {number} [duration=5000] - Auto-dismiss duration in milliseconds
-         */
-        showNotification(message, type = 'info', duration = 5000) {
-            // Remove any existing notifications
-            const existingNotifications = document.querySelectorAll('.greenhouse-notification');
-            existingNotifications.forEach(notification => notification.remove());
+            /**
+             * @function showNotification
+             * @description Shows a notification message with auto-dismiss
+             * @param {string} message - Message to display
+             * @param {string} type - Type of notification ('success', 'error', 'info')
+             * @param {number} [duration=5000] - Auto-dismiss duration in milliseconds
+             */
+            showNotification(message, type = 'info', duration = 5000) {
+                // Remove any existing notifications
+                const existingNotifications = document.querySelectorAll('.greenhouse-notification');
+                existingNotifications.forEach(notification => notification.remove());
 
-            const notification = document.createElement('div');
-            notification.className = `greenhouse-notification greenhouse-notification-${type}`;
-            notification.setAttribute('role', 'alert');
-            notification.innerHTML = `
-                <div class="greenhouse-notification-content">
-                    <span class="greenhouse-notification-message">${message}</span>
-                    <button class="greenhouse-notification-close" type="button" aria-label="Close notification">&times;</button>
-                </div>
-            `;
+                const notification = document.createElement('div');
+                notification.className = `greenhouse-notification greenhouse-notification-${type}`;
+                notification.setAttribute('role', 'alert');
+                notification.innerHTML = `
+                    <div class="greenhouse-notification-content">
+                        <span class="greenhouse-notification-message">${message}</span>
+                        <button class="greenhouse-notification-close" type="button" aria-label="Close notification">&times;</button>
+                    </div>
+                `;
 
-            // Position at top of viewport
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 10000;
-                max-width: 400px;
-                padding: 15px;
-                border-radius: 4px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                font-family: Arial, sans-serif;
-                animation: slideInRight 0.3s ease-out;
-            `;
+                // Position at top of viewport
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 10000;
+                    max-width: 400px;
+                    padding: 15px;
+                    border-radius: 4px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    font-family: Arial, sans-serif;
+                    animation: slideInRight 0.3s ease-out;
+                `;
 
-            // Apply type-specific styles
-            switch (type) {
-                case 'success':
-                    notification.style.backgroundColor = '#d4edda';
-                    notification.style.color = '#155724';
-                    notification.style.border = '1px solid #c3e6cb';
-                    break;
-                case 'error':
-                    notification.style.backgroundColor = '#f8d7da';
-                    notification.style.color = '#721c24';
-                    notification.style.border = '1px solid #f5c6cb';
-                    break;
-                default:
-                    notification.style.backgroundColor = '#d1ecf1';
-                    notification.style.color = '#0c5460';
-                    notification.style.border = '1px solid #bee5eb';
-            }
-
-            document.body.appendChild(notification);
-
-            // Add close functionality
-            const closeBtn = notification.querySelector('.greenhouse-notification-close');
-            const removeNotification = () => {
-                notification.style.animation = 'slideOutRight 0.3s ease-in';
-                setTimeout(() => notification.remove(), 300);
-            };
-
-            closeBtn.addEventListener('click', removeNotification);
-
-            // Auto-dismiss
-            if (duration > 0) {
-                setTimeout(removeNotification, duration);
-            }
-        },
-
-        /**
-         * @function findOptimalContainer
-         * @description Finds the best container for inserting the application
-         * @param {Element} targetElement - The target element from the selector
-         * @returns {Object} Container info with element and insertion strategy
-         */
-        findOptimalContainer(targetElement) {
-            // Always use the target element directly as the container
-            // This ensures the app is inserted into the specific column identified by greenhouse.js
-            return {
-                container: targetElement,
-                strategy: 'target-direct',
-                insertionMethod: 'prepend' // Prepend to ensure it's the first child
-            };
-        },
-
-        /**
-         * @function insertApplication
-         * @description Inserts the application into the optimal container
-         * @param {DocumentFragment} appDomFragment - The application DOM fragment
-         * @param {Element} targetElement - The target element
-         */
-        insertApplication(appDomFragment, targetElement) {
-            const containerInfo = this.findOptimalContainer(targetElement);
-            
-            console.log(`Books: Using insertion strategy: ${containerInfo.strategy}`);
-
-            // Create the main app container
-            const appContainer = document.createElement('section');
-            appContainer.id = 'greenhouse-app-container';
-            appContainer.className = 'greenhouse-app-container';
-            appContainer.setAttribute('data-greenhouse-app', appState.currentView);
-            appContainer.style.cssText = `
-                width: 100%;
-                position: relative;
-                padding: 20px;
-                box-sizing: border-box;
-                background: #fff;
-            `;
-
-            // Add the application content to the container
-            appContainer.appendChild(appDomFragment);
-
-            // Insert using the determined strategy
-            switch (containerInfo.insertionMethod) {
-                case 'prepend':
-                    containerInfo.container.prepend(appContainer);
-                    break;
-                case 'append':
-                    containerInfo.container.appendChild(appContainer);
-                    break;
-                default:
-                    containerInfo.container.prepend(appContainer);
-            }
-
-            console.log('Books: Application inserted into DOM');
-            return appContainer;
-        },
-
-        /**
-         * @function displayError
-         * @description Displays a visible error message on the page
-         * @param {string} message - The error message to display
-         * @param {Element} [targetElement] - Element to insert error near
-         */
-        displayError(message, targetElement = null) {
-            const errorDiv = document.createElement('div');
-            errorDiv.id = 'greenhouse-app-error';
-            errorDiv.className = 'greenhouse-app-error';
-            errorDiv.setAttribute('role', 'alert');
-            errorDiv.style.cssText = `
-                color: #721c24;
-                background-color: #f8d7da;
-                border: 1px solid #f5c6cb;
-                padding: 15px;
-                margin: 20px;
-                border-radius: 4px;
-                text-align: center;
-                font-family: Arial, sans-serif;
-                z-index: 10000;
-                position: relative;
-            `;
-            
-            errorDiv.innerHTML = `
-                <strong>Greenhouse Books Error:</strong><br>
-                ${message}
-                <br><br>
-                <button onclick="window.location.reload()" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Reload Page
-                </button>
-            `;
-
-            if (targetElement) {
-                targetElement.prepend(errorDiv);
-            } else {
-                document.body.insertAdjacentElement('afterbegin', errorDiv);
-            }
-
-            // Also log to console with more details
-            console.error('Greenhouse Books Error:', {
-                message,
-                targetSelector: appState.targetSelector,
-                baseUrl: appState.baseUrl,
-                view: appState.currentView,
-                errors: appState.errors
-            });
-        },
-
-        /**
-         * @function initializeApplication
-         * @description Initializes the loaded application instance
-         */
-        initializeApplication() {
-            try {
-                if (appState.currentAppInstance && typeof appState.currentAppInstance.init === 'function') {
-                    console.log('Books: Initializing application instance');
-                    appState.currentAppInstance.init();
-                } else if (appState.currentAppInstance) {
-                    console.log('Books: Application instance loaded but has no init method');
-                } else {
-                    console.log('Books: No application instance to initialize');
+                // Apply type-specific styles
+                switch (type) {
+                    case 'success':
+                        notification.style.backgroundColor = '#d4edda';
+                        notification.style.color = '#155724';
+                        notification.style.border = '1px solid #c3e6cb';
+                        break;
+                    case 'error':
+                        notification.style.backgroundColor = '#f8d7da';
+                        notification.style.color = '#721c24';
+                        notification.style.border = '1px solid #f5c6cb';
+                        break;
+                    default:
+                        notification.style.backgroundColor = '#d1ecf1';
+                        notification.style.color = '#0c5460';
+                        notification.style.border = '1px solid #bee5eb';
                 }
-            } catch (error) {
-                console.error('Books: Error initializing application instance:', error);
-                this.showErrorMessage('Application loaded but failed to initialize properly.');
+
+                document.body.appendChild(notification);
+
+                // Add close functionality
+                const closeBtn = notification.querySelector('.greenhouse-notification-close');
+                const removeNotification = () => {
+                    notification.style.animation = 'slideOutRight 0.3s ease-in';
+                    setTimeout(() => notification.remove(), 300);
+                };
+
+                closeBtn.addEventListener('click', removeNotification);
+
+                // Auto-dismiss
+                if (duration > 0) {
+                    setTimeout(removeNotification, duration);
+                }
+            },
+
+            /**
+             * @function findOptimalContainer
+             * @description Finds the best container for inserting the application
+             * @param {Element} targetElement - The target element from the selector
+             * @returns {Object} Container info with element and insertion strategy
+             */
+            findOptimalContainer(targetElement) {
+                // Always use the target element directly as the container
+                // This ensures the app is inserted into the specific column identified by greenhouse.js
+                return {
+                    container: targetElement,
+                    strategy: 'target-direct',
+                    insertionMethod: 'prepend' // Prepend to ensure it's the first child
+                };
+            },
+
+            /**
+             * @function insertApplication
+             * @description Inserts the application into the optimal container
+             * @param {DocumentFragment} appDomFragment - The application DOM fragment
+             * @param {Element} targetElement - The target element
+             */
+            insertApplication(appDomFragment, targetElement) {
+                const containerInfo = this.findOptimalContainer(targetElement);
+                
+                console.log(`Books: Using insertion strategy: ${containerInfo.strategy}`);
+
+                // Create the main app container
+                const appContainer = document.createElement('section');
+                appContainer.id = 'greenhouse-app-container';
+                appContainer.className = 'greenhouse-app-container';
+                appContainer.setAttribute('data-greenhouse-app', appState.currentView);
+                appContainer.style.cssText = `
+                    width: 100%;
+                    position: relative;
+                    padding: 20px;
+                    box-sizing: border-box;
+                    background: #fff;
+                `;
+
+                // Add the application content to the container
+                appContainer.appendChild(appDomFragment);
+
+                // Insert using the determined strategy
+                switch (containerInfo.insertionMethod) {
+                    case 'prepend':
+                        containerInfo.container.prepend(appContainer);
+                        break;
+                    case 'append':
+                        containerInfo.container.appendChild(appContainer);
+                        break;
+                    default:
+                        containerInfo.container.prepend(appContainer);
+                }
+
+                console.log('Books: Application inserted into DOM');
+                return appContainer;
+            },
+
+            /**
+             * @function displayError
+             * @description Displays a visible error message on the page
+             * @param {string} message - The error message to display
+             * @param {Element} [targetElement] - Element to insert error near
+             */
+            displayError(message, targetElement = null) {
+                const errorDiv = document.createElement('div');
+                errorDiv.id = 'greenhouse-app-error';
+                errorDiv.className = 'greenhouse-app-error';
+                errorDiv.setAttribute('role', 'alert');
+                errorDiv.style.cssText = `
+                    color: #721c24;
+                    background-color: #f8d7da;
+                    border: 1px solid #f5c6cb;
+                    padding: 15px;
+                    margin: 20px;
+                    border-radius: 4px;
+                    text-align: center;
+                    font-family: Arial, sans-serif;
+                    z-index: 10000;
+                    position: relative;
+                `;
+                
+                errorDiv.innerHTML = `
+                    <strong>Greenhouse Books Error:</strong><br>
+                    ${message}
+                    <br><br>
+                    <button onclick="window.location.reload()" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Reload Page
+                    </button>
+                `;
+
+                if (targetElement) {
+                    targetElement.prepend(errorDiv);
+                } else {
+                    document.body.insertAdjacentElement('afterbegin', errorDiv);
+                }
+
+                // Also log to console with more details
+                console.error('Greenhouse Books Error:', {
+                    message,
+                    targetSelector: appState.targetSelector,
+                    baseUrl: appState.baseUrl,
+                    view: appState.currentView,
+                    errors: appState.errors
+                });
+            },
+
+            /**
+             * @function initializeApplication
+             * @description Initializes the loaded application instance
+             */
+            initializeApplication() {
+                try {
+                    if (appState.currentAppInstance && typeof appState.currentAppInstance.init === 'function') {
+                        console.log('Books: Initializing application instance');
+                        appState.currentAppInstance.init();
+                    } else if (appState.currentAppInstance) {
+                        console.log('Books: Application instance loaded but has no init method');
+                    } else {
+                        console.log('Books: No application instance to initialize');
+                    }
+                } catch (error) {
+                    console.error('Books: Error initializing application instance:', error);
+                    this.showErrorMessage('Application loaded but failed to initialize properly.');
+                }
+            },
+
+            /**
+             * @function init
+             * @description Main initialization function for the books application
+             * @param {string} targetSelector - The CSS selector for the element to load the app into
+             * @param {string} baseUrl - The base URL for fetching assets
+             */
+            async init(targetSelector, baseUrl) {
+                if (appState.isInitialized || appState.isLoading) {
+                    console.log('Books: Already initialized or loading, skipping');
+                    return;
+                }
+
+                appState.isLoading = true;
+                try {
+                    // Load utility script (if needed, for now assuming not)
+                    // await this.loadScript('GreenhouseUtils.js');
+                    
+                    console.log('Books: Starting initialization');
+
+                    // Set configuration
+                    appState.targetSelector = targetSelector;
+                    appState.baseUrl = baseUrl;
+
+                    // Wait for target element to be available
+                    appState.targetElement = await waitForElement(targetSelector);
+
+                    // Load CSS first (non-blocking)
+                    this.loadCSS().catch(error => {
+                        console.warn('Books: CSS loading failed, continuing with fallback:', error);
+                    });
+
+                    // Render the appropriate view
+                    const appDomFragment = await this.renderView();
+
+                    // Insert application into DOM with delay for Wix compatibility
+                    await new Promise(resolve => setTimeout(resolve, config.dom.insertionDelay));
+                    
+                    const appContainer = this.insertApplication(appDomFragment, appState.targetElement);
+
+                    // Initialize the application instance (if any specific book app logic is needed)
+                    this.initializeApplication();
+
+                    // Fetch and display books after the app is inserted
+                    await this.fetchAndDisplayBooks();
+
+                    appState.isInitialized = true;
+                    console.log('Books: Initialization completed successfully');
+
+                    // Show success notification
+                    this.showNotification('Books application loaded successfully', 'success', 3000);
+
+                } catch (error) {
+                    console.error('Books: Initialization failed:', error);
+                    appState.errors.push(error);
+
+                    const errorMessage = error.message.includes('not found') 
+                        ? `Target element "${targetSelector}" not found. Please check if the page has loaded completely.`
+                        : `Failed to load the books application: ${error.message}`;
+
+                    this.displayError(errorMessage, appState.targetElement);
+                    this.showErrorMessage('Failed to load books application');
+
+                } finally {
+                    appState.isLoading = false;
+                }
             }
-        },
+        };
+
+        // --- Main Execution Logic ---
 
         /**
-         * @function init
-         * @description Main initialization function for the books application
-         * @param {string} targetSelector - The CSS selector for the element to load the app into
-         * @param {string} baseUrl - The base URL for fetching assets
+         * Main execution function
          */
-        async init(targetSelector, baseUrl) {
-            if (appState.isInitialized || appState.isLoading) {
-                console.log('Books: Already initialized or loading, skipping');
-                return;
-            }
-
-            appState.isLoading = true;
+        async function main() {
             try {
-                // Load utility script (if needed, for now assuming not)
-                // await this.loadScript('GreenhouseUtils.js');
-                
-                console.log('Books: Starting initialization');
+                // Validate configuration from script attributes
+                if (!validateConfiguration()) {
+                    console.error('Books: Invalid configuration, cannot proceed');
+                    return;
+                }
 
-                // Set configuration
-                appState.targetSelector = targetSelector;
-                appState.baseUrl = baseUrl;
-
-                // Wait for target element to be available
-                appState.targetElement = await waitForElement(targetSelector);
-
-                // Load CSS first (non-blocking)
-                this.loadCSS().catch(error => {
-                    console.warn('Books: CSS loading failed, continuing with fallback:', error);
+                // Add global error handler
+                window.addEventListener('error', (event) => {
+                    if (event.filename && event.filename.includes('greenhouse')) {
+                        console.error('Books: Global error caught:', event.error);
+                        appState.errors.push(event.error);
+                    }
                 });
 
-                // Render the appropriate view
-                const appDomFragment = await this.renderView();
+                // Add unhandled promise rejection handler
+                window.addEventListener('unhandledrejection', (event) => {
+                    console.error('Books: Unhandled promise rejection:', event.reason);
+                    appState.errors.push(event.reason);
+                });
 
-                // Insert application into DOM with delay for Wix compatibility
-                await new Promise(resolve => setTimeout(resolve, config.dom.insertionDelay));
-                
-                const appContainer = this.insertApplication(appDomFragment, appState.targetElement);
-
-                // Initialize the application instance (if any specific book app logic is needed)
-                this.initializeApplication();
-
-                appState.isInitialized = true;
-                console.log('Books: Initialization completed successfully');
-
-                // Show success notification
-                this.showNotification('Books application loaded successfully', 'success', 3000);
+                // Initialize the books application
+                await GreenhouseAppsBooks.init(appState.targetSelector, appState.baseUrl);
 
             } catch (error) {
-                console.error('Books: Initialization failed:', error);
-                appState.errors.push(error);
+                console.error('Books: Main execution failed:', error);
+            }
+        }
 
-                const errorMessage = error.message.includes('not found') 
-                    ? `Target element "${targetSelector}" not found. Please check if the page has loaded completely.`
-                    : `Failed to load the books application: ${error.message}`;
+        // Add CSS animations
+        const animationCSS = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
 
-                this.displayError(errorMessage, appState.targetElement);
-                this.showErrorMessage('Failed to load books application');
+        const animationStyle = document.createElement('style');
+        animationStyle.setAttribute('data-greenhouse-animations', 'true');
+        animationStyle.textContent = animationCSS;
+        document.head.appendChild(animationStyle);
 
-            } finally {
+        // Expose public API for debugging
+        window.GreenhouseBooks = {
+            getState: () => ({ ...appState }),
+            getConfig: () => ({ ...config }),
+            reinitialize: () => {
+                appState.isInitialized = false;
                 appState.isLoading = false;
-            }
-        }
-    };
+                return main();
+            },
+            showNotification: GreenhouseAppsBooks.showNotification.bind(GreenhouseAppsBooks)
+        };
 
-    // --- Main Execution Logic ---
+        // Execute main function
+        main();
 
-    /**
-     * Main execution function
-     */
-    async function main() {
-        try {
-            // Validate configuration from script attributes
-            if (!validateConfiguration()) {
-                console.error('Books: Invalid configuration, cannot proceed');
-                return;
-            }
-
-            // Add global error handler
-            window.addEventListener('error', (event) => {
-                if (event.filename && event.filename.includes('greenhouse')) {
-                    console.error('Books: Global error caught:', event.error);
-                    appState.errors.push(event.error);
-                }
-            });
-
-            // Add unhandled promise rejection handler
-            window.addEventListener('unhandledrejection', (event) => {
-                console.error('Books: Unhandled promise rejection:', event.reason);
-                appState.errors.push(event.reason);
-            });
-
-            // Initialize the books application
-            await GreenhouseAppsBooks.init(appState.targetSelector, appState.baseUrl);
-
-        } catch (error) {
-            console.error('Books: Main execution failed:', error);
-        }
-    }
-
-    // Add CSS animations
-    const animationCSS = `
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-
-    const animationStyle = document.createElement('style');
-    animationStyle.setAttribute('data-greenhouse-animations', 'true');
-    animationStyle.textContent = animationCSS;
-    document.head.appendChild(animationStyle);
-
-    // Expose public API for debugging
-    window.GreenhouseBooks = {
-        getState: () => ({ ...appState }),
-        getConfig: () => ({ ...config }),
-        reinitialize: () => {
-            appState.isInitialized = false;
-            appState.isLoading = false;
-            return main();
-        },
-        showNotification: GreenhouseAppsBooks.showNotification.bind(GreenhouseAppsBooks)
-    };
-
-    // Execute main function
-    main();
-
-})();
+    })();
