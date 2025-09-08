@@ -112,7 +112,7 @@ html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-lay
 #greenhouse-title-for-vine-effect.vine-effect-active.animation-running span {
     opacity: 1;
     transform: translateY(0);
-    color: #357438; 
+    color: #357438; /* Restore text color to match vine */
 }
 
 /* The SVG element that will contain the vine path */
@@ -140,3 +140,4 @@ html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-lay
 .vine-effect-active.animation-running .vine-path {
     stroke-dashoffset: 0;
 }
+
