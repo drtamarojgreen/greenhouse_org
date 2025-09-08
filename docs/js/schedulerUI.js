@@ -740,7 +740,8 @@ const GreenhouseSchedulerUI = (function() {
         buildAdminAppointmentForm,
         renderCalendar, // Expose the new function
         renderWeekly, // Expose the new function
-        addDashboardEventListeners // Expose the new function
+        addDashboardEventListeners, // Expose the new function
+        renderConflicts // Expose the new function
     };
 
     /**
@@ -923,6 +924,42 @@ const GreenhouseSchedulerUI = (function() {
                 }
             });
         }
+    }
+
+    /**
+     * Renders the list of conflicts.
+     * @param {Array<object>} conflicts - List of conflict objects.
+     * @param {HTMLElement} targetElement - The DOM element to render conflicts into.
+     */
+    function renderConflicts(conflicts, targetElement) {
+        if (!targetElement) {
+            console.error('Target element for conflict rendering not found.');
+            return;
+        }
+
+        // Clear previous conflict content
+        while (targetElement.firstChild) {
+            targetElement.removeChild(targetElement.firstChild);
+        }
+
+        if (conflicts && conflicts.length > 0) {
+            conflicts.forEach(conflict => {
+                const li = document.createElement('li');
+                li.className = 'conflict-item'; // Add a class for styling
+                li.innerHTML = `
+                    <strong>Conflict: ${conflict.title}</strong><br>
+                    Date: ${conflict.date} at ${conflict.time}<br>
+                    Reason: ${conflict.reason || 'N/A'}
+                    <button data-action="resolve-conflict" data-conflict-id="${conflict.id}">Resolve</button>
+                `;
+                targetElement.appendChild(li);
+            });
+        } else {
+            const li = document.createElement('li');
+            li.textContent = 'No conflicts found.';
+            targetElement.appendChild(li);
+        }
+        console.log('SchedulerUI: Conflicts rendered.');
     }
 })();
 
