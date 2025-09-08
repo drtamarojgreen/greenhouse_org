@@ -416,7 +416,8 @@
 
             setTimeout(() => {
                 observer.disconnect();
-                reject(new Error(`Element with selector "${selector}" not found.`));
+                console.warn(`Vine Effect: Element with selector "${selector}" not found within ${timeout}ms. Skipping vine effect activation.`);
+                resolve(null); // Resolve with null instead of rejecting
             }, timeout);
         });
     }

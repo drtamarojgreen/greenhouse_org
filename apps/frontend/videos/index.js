@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function fetchVideos() {
     try {
-        const response = await fetch('/apps/wv/backend/getLatestVideosFromFeed.web.js');
+        const response = await fetch('/_functions/getLatestVideosFromFeed');
         const videos = await response.json();
         displayVideos(videos);
     } catch (error) {

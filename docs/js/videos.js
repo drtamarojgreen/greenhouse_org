@@ -280,8 +280,8 @@
          * @returns {Promise<void>}
          */
         async loadCSS() {
-            const loadOperation = async () => {
-                const response = await fetch(`${appState.baseUrl}css/videos.css`);
+            const loadOperation = async (cssFileName) => {
+                const response = await fetch(`${appState.baseUrl}css/${cssFileName}`);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
@@ -289,20 +289,29 @@
             };
 
             try {
-                const cssText = await retryOperation(loadOperation, 'Loading CSS');
-
-                // Check if CSS already loaded
-                if (document.querySelector('style[data-greenhouse-videos-css]')) {
-                    console.log('Videos: CSS already loaded');
-                    return;
+                // Load videos.css
+                const videosCssText = await retryOperation(() => loadOperation('videos.css'), 'Loading videos.css');
+                if (!document.querySelector('style[data-greenhouse-videos-css]')) {
+                    const styleElement = document.createElement('style');
+                    styleElement.setAttribute('data-greenhouse-videos-css', 'true');
+                    styleElement.textContent = videosCssText;
+                    document.head.appendChild(styleElement);
+                    console.log('Videos: videos.css loaded successfully');
+                } else {
+                    console.log('Videos: videos.css already loaded');
                 }
 
-                const styleElement = document.createElement('style');
-                styleElement.setAttribute('data-greenhouse-videos-css', 'true');
-                styleElement.textContent = cssText;
-                document.head.appendChild(styleElement);
-
-                console.log('Videos: CSS loaded successfully');
+                // Load video.css (new file)
+                const videoCssText = await retryOperation(() => loadOperation('video.css'), 'Loading video.css');
+                if (!document.querySelector('style[data-greenhouse-video-css]')) {
+                    const styleElement = document.createElement('style');
+                    styleElement.setAttribute('data-greenhouse-video-css', 'true');
+                    styleElement.textContent = videoCssText;
+                    document.head.appendChild(styleElement);
+                    console.log('Videos: video.css loaded successfully');
+                } else {
+                    console.log('Videos: video.css already loaded');
+                }
 
             } catch (error) {
                 console.warn('Videos: Failed to load CSS, using fallback styles:', error);
@@ -424,45 +433,55 @@
          */
         displayVideos(videos, container) {
             container.innerHTML = ''; // Clear "Loading videos..."
-            if (videos && videos.length > 0) {
-                videos.forEach((video, index) => {
-                    const videoItem = document.createElement('div');
-                    videoItem.setAttribute('role', 'listitem');
-                    videoItem.className = 'T7n0L6';
-                    videoItem.innerHTML = `
-                        <div id="comp-mf8yayls__item-${index}" class="comp-mf8yayls YzqVVZ wixui-repeater__item">
-                            <div id="bgLayers_comp-mf8yayls__item-${index}" data-hook="bgLayers" data-motion-part="BG_LAYER comp-mf8yayls__item-${index}" class="MW5IWV">
-                                <div data-testid="colorUnderlay" class="LWbAav Kv1aVt"></div>
-                                <div id="bgMedia_comp-mf8yayls__item-${index}" data-motion-part="BG_MEDIA comp-mf8yayls__item-${index}" class="VgO9Yg"></div>
-                            </div>
-                            <div data-mesh-id="comp-mf8yayls__item-${index}inlineContent" data-testid="inline-content" class="">
-                                <div data-mesh-id="comp-mf8yayls__item-${index}inlineContent-gridContainer" data-testid="mesh-container-content">
-                                    <div id="comp-mf8yayly__item-${index}" class="Z_l5lU MMl86N zQ9jDz qvSjx3 Vq6kJx comp-mf8yayly wixui-rich-text" data-testid="richTextElement">
-                                        <h2 class="font_5 wixui-rich-text__text" style="font-size:20px;"><span style="font-size:20px;" class="wixui-rich-text__text">${video.title || 'Untitled Video'}</span></h2>
-                                    </div>
-                                    <div id="comp-mf8yaym0__item-${index}" class="Z_l5lU ku3DBC zQ9jDz qvSjx3 Vq6kJx comp-mf8yaym0 wixui-rich-text" data-testid="richTextElement">
-                                        <p class="font_8 wixui-rich-text__text" style="font-size:16px; line-height:1.6em;"><span style="font-size:16px;" class="wixui-rich-text__text">${video.description || ''}</span></p>
-                                    </div>
-                                    <div id="comp-mf8yaym2__item-${index}" class="MazNVa comp-mf8yaym2 wixui-image">
-                                        <div data-testid="linkElement" class="j7pOnl">
-                                            <iframe class="greenhouse-video-player" 
-                                                    src="${video.embedUrl || video.url}" 
-                                                    frameborder="0" 
-                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                                    allowfullscreen
-                                                    style="width: 100%; height: 212px; object-fit: cover;">
-                                            </iframe>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(videoItem);
-                });
-            } else {
-                container.innerHTML = '<p>No videos found at this time.</p>';
-            }
+
+            const videosToDisplay = (videos && videos.length > 0) ? videos : [
+                { title: 'Placeholder Video 1', description: 'This is a placeholder video. No content available.', embedUrl: 'https://www.youtube.com/embed/placeholder1' },
+                { title: 'Placeholder Video 2', description: 'This is a placeholder video. No content available.', embedUrl: 'https://www.youtube.com/embed/placeholder2' },
+                { title: 'Placeholder Video 3', description: 'This is a placeholder video. No content available.', embedUrl: 'https://www.youtube.com/embed/placeholder3' }
+            ];
+
+            // Add the grid container for styling
+            const videoGridContainer = document.createElement('div');
+            videoGridContainer.className = 'video-grid-container';
+            container.appendChild(videoGridContainer);
+
+            videosToDisplay.forEach((video) => {
+                const videoItem = document.createElement('div');
+                videoItem.className = 'video-item';
+                if (!videos || videos.length === 0) { // Add placeholder class if no real videos
+                    videoItem.classList.add('placeholder');
+                }
+
+                const videoContent = document.createElement('div');
+                videoContent.className = 'video-content';
+
+                const videoTitle = document.createElement('h2');
+                videoTitle.className = 'video-title';
+                videoTitle.textContent = video.title || 'Untitled Video';
+
+                const videoDescription = document.createElement('p');
+                videoDescription.className = 'video-description';
+                videoDescription.textContent = video.description || '';
+
+                const videoPlayerContainer = document.createElement('div');
+                videoPlayerContainer.className = 'video-player-container';
+
+                const iframe = document.createElement('iframe');
+                iframe.src = video.embedUrl || video.url;
+                iframe.frameBorder = '0';
+                iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                iframe.allowFullscreen = true;
+
+                videoPlayerContainer.appendChild(iframe);
+
+                videoContent.appendChild(videoTitle);
+                videoContent.appendChild(videoDescription);
+                videoItem.appendChild(videoPlayerContainer); // Player before content for visual
+                videoItem.appendChild(videoContent);
+
+                videoGridContainer.appendChild(videoItem);
+            });
+        }
         },
 
         /**
