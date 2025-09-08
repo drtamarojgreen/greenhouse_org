@@ -713,6 +713,13 @@ const GreenhouseSchedulerUI = (function() {
         }
     }
 
+    function addDashboardEventListeners(dashboardContainer, handleAction) {
+        if (dashboardContainer) {
+            dashboardContainer.addEventListener('click', handleAction);
+            // Add other dashboard-specific event listeners here if needed in the future
+        }
+    }
+
     return {
         buildSchedulerUI,
         showComponent,
@@ -732,7 +739,8 @@ const GreenhouseSchedulerUI = (function() {
         createInstructionsPanel,
         buildAdminAppointmentForm,
         renderCalendar, // Expose the new function
-        renderWeekly // Expose the new function
+        renderWeekly, // Expose the new function
+        addDashboardEventListeners // Expose the new function
     };
 
     /**

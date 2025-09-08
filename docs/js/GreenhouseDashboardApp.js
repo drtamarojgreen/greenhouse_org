@@ -126,14 +126,11 @@ function GreenhouseDashboardApp(GreenhouseSchedulerUI) {
 
     function init() {
         const dashboardContainer = document.getElementById('greenhouse-app-container'); // Assuming this is the main container
-        if (dashboardContainer) {
-            dashboardContainer.addEventListener('click', handleAction);
-            // The drag and drop event listeners are now handled by schedulerUI.js
-        }
+        // The drag and drop event listeners are now handled by schedulerUI.js
 
         // Initial render of calendar and event listeners (moved from schedulerUI.js)
         GreenhouseSchedulerUI.renderCalendar(new Date().getFullYear(), new Date().getMonth());
-        GreenhouseSchedulerUI.addDashboardEventListeners(dashboardContainer); // Pass the container for event delegation
+        GreenhouseSchedulerUI.addDashboardEventListeners(dashboardContainer, handleAction); // Pass the container for event delegation
 
         loadInitialData();
     }
