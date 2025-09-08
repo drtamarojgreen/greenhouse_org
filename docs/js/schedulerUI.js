@@ -14,7 +14,7 @@ const GreenhouseSchedulerUI = (function() {
         components.mainContainer = mainContainer;
 
         // Patient Form
-        const patientForm = buildPatientForm();
+        const patientForm = buildPatientFormUI();
         components.patientForm = patientForm;
         mainContainer.appendChild(patientForm);
 
@@ -32,7 +32,7 @@ const GreenhouseSchedulerUI = (function() {
         return fragment;
     }
 
-    function buildPatientForm() {
+    function buildPatientFormUI() {
         const formContainer = document.createElement('div');
         formContainer.id = 'greenhouse-patient-form';
         formContainer.style.display = 'none'; // Initially hidden
@@ -722,7 +722,7 @@ const GreenhouseSchedulerUI = (function() {
         resetForm,
         editAppointment,
         buildPatientFormUI,
-        createFormFields,
+        buildDashboardUI,
         addFormValidation,
         validateForm,
         validateField,
