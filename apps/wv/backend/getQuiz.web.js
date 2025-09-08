@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP GET function to retrieve a quiz by its ID.
- * Endpoint: /_api/getQuiz/{quizId}
+ * Endpoint: /_function/getQuiz/{quizId}
  * Note: Currently searches hardcoded data.
  */
 export async function get(request) {

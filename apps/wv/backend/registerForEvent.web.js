@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP POST function to register for an event.
- * Endpoint: /_api/registerForEvent
+ * Endpoint: /_function/registerForEvent
  * Note: Currently simulates registration.
  */
 export async function post(request) {

@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP GET function to retrieve FAQs.
- * Endpoint: /_api/getFAQs
+ * Endpoint: /_function/getFAQs
  * Note: Currently returns hardcoded data.
  */
 export async function get(request) {

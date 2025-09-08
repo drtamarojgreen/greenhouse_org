@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP GET function to retrieve scheduling conflicts for a given date range.
- * Endpoint: /_api/getConflictsForDateRange?startDate={startDate}&endDate={endDate}
+ * Endpoint: /_function/getConflictsForDateRange?startDate={startDate}&endDate={endDate}
  */
 export async function get(request) {
     try {

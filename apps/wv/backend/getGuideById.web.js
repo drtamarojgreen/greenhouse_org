@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP GET function to retrieve a guide by its ID.
- * Endpoint: /_api/getGuideById/{guideId}
+ * Endpoint: /_function/getGuideById/{guideId}
  * Note: Currently searches hardcoded data.
  */
 export async function get(request) {

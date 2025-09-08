@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP POST function to create a new appointment.
- * Endpoint: /_api/createAppointment
+ * Endpoint: /_function/createAppointment
  */
 export async function post(request) {
     try {

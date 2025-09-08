@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP GET function to retrieve all service types.
- * Endpoint: /_api/getServiceTypes
+ * Endpoint: /_function/getServiceTypes
  */
 export async function get(request) {
     try {

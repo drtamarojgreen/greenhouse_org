@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP POST function to resolve a conflict.
- * Endpoint: /_api/resolveConflict
+ * Endpoint: /_function/resolveConflict
  */
 export async function post(request) {
     try {

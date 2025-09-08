@@ -237,52 +237,54 @@
          * @returns {Promise<void>}
          */
         async loadCSS() {
-            const cssUrl = `${appState.baseUrl}css/news.css`;
+            const newsCssUrl = `${appState.baseUrl}css/news.css`;
+            const pagesCssUrl = `${appState.baseUrl}css/pages.css`;
 
-            // Check if CSS already loaded
-            if (document.querySelector(`link[href="${cssUrl}"]`)) {
-                console.log(`News: CSS ${cssUrl} already loaded, skipping`);
-                return;
-            }
-
-            return new Promise((resolve, reject) => {
+            // Load news.css
+            if (!document.querySelector(`link[href="${newsCssUrl}"]`)) {
                 const linkElement = document.createElement('link');
                 linkElement.rel = 'stylesheet';
                 linkElement.type = 'text/css';
-                linkElement.href = cssUrl;
+                linkElement.href = newsCssUrl;
                 linkElement.setAttribute('data-greenhouse-news-css', 'true');
-
-                linkElement.onload = () => {
-                    console.log(`News: CSS ${cssUrl} loaded successfully`);
-                    resolve();
-                };
-                linkElement.onerror = (event) => {
-                    console.error(`News: Failed to load CSS ${cssUrl}:`, event);
-                    this.loadFallbackCSS(); // Load fallback if main CSS fails
-                    reject(new Error(`Failed to load CSS: ${cssUrl}`));
-                };
-
                 document.head.appendChild(linkElement);
-            });
-        },
+                await new Promise((resolve, reject) => {
+                    linkElement.onload = () => {
+                        console.log(`News: CSS ${newsCssUrl} loaded successfully`);
+                        resolve();
+                    };
+                    linkElement.onerror = (event) => {
+                        console.error(`News: Failed to load CSS ${newsCssUrl}:`, event);
+                        GreenhouseUtils.displayError(`Failed to load news specific styles.`);
+                        reject(new Error(`Failed to load CSS: ${newsCssUrl}`));
+                    };
+                });
+            } else {
+                console.log(`News: CSS ${newsCssUrl} already loaded, skipping`);
+            }
 
-        /**
-         * @function loadFallbackCSS
-         * @description Loads minimal fallback CSS if main CSS fails
-         */
-        loadFallbackCSS() {
-            const fallbackCSS = `
-                .greenhouse-layout-container { display: flex; flex-wrap: wrap; gap: 20px; }
-                .greenhouse-news-item { flex: 1; min-width: 300px; border: 1px solid #eee; padding: 15px; border-radius: 8px; }
-                .greenhouse-news-title { font-weight: bold; margin-bottom: 10px; }
-                .greenhouse-news-date { font-size: 0.8em; color: #666; margin-bottom: 10px; }
-                .greenhouse-loading-spinner { display: flex; align-items: center; gap: 10px; }
-            `;
-
-            const styleElement = document.createElement('style');
-            styleElement.setAttribute('data-greenhouse-news-fallback-css', 'true');
-            styleElement.textContent = fallbackCSS;
-            document.head.appendChild(styleElement);
+            // Load pages.css
+            if (!document.querySelector(`link[href="${pagesCssUrl}"]`)) {
+                const linkElement = document.createElement('link');
+                linkElement.rel = 'stylesheet';
+                linkElement.type = 'text/css';
+                linkElement.href = pagesCssUrl;
+                linkElement.setAttribute('data-greenhouse-pages-css', 'true');
+                document.head.appendChild(linkElement);
+                await new Promise((resolve, reject) => {
+                    linkElement.onload = () => {
+                        console.log(`News: CSS ${pagesCssUrl} loaded successfully`);
+                        resolve();
+                    };
+                    linkElement.onerror = (event) => {
+                        console.error(`News: Failed to load CSS ${pagesCssUrl}:`, event);
+                        GreenhouseUtils.displayError(`Failed to load general page styles.`);
+                        reject(new Error(`Failed to load CSS: ${pagesCssUrl}`));
+                    };
+                });
+            } else {
+                console.log(`News: CSS ${pagesCssUrl} already loaded, skipping`);
+            }
         },
 
         /**
@@ -397,16 +399,28 @@
             const fragment = document.createDocumentFragment();
             const errorDiv = document.createElement('div');
             errorDiv.className = 'greenhouse-error-view';
-            errorDiv.innerHTML = `
-                <div class="greenhouse-error-content">
-                    <h2>Unable to Load Application</h2>
-                    <p>${message}</p>
-                    <p>Please refresh the page or contact support if the problem persists.</p>
-                    <button onclick="window.location.reload()" class="greenhouse-btn greenhouse-btn-primary">
-                        Refresh Page
-                    </button>
-                </div>
-            `;
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'greenhouse-error-content';
+
+            const title = document.createElement('h2');
+            title.textContent = 'Unable to Load Application';
+            contentDiv.appendChild(title);
+
+            const msgParagraph = document.createElement('p');
+            msgParagraph.textContent = message;
+            contentDiv.appendChild(msgParagraph);
+
+            const refreshParagraph = document.createElement('p');
+            refreshParagraph.textContent = 'Please refresh the page or contact support if the problem persists.';
+            contentDiv.appendChild(refreshParagraph);
+
+            const refreshButton = document.createElement('button');
+            refreshButton.onclick = () => window.location.reload();
+            refreshButton.className = 'greenhouse-btn greenhouse-btn-primary';
+            refreshButton.textContent = 'Refresh Page';
+            contentDiv.appendChild(refreshButton);
+
+            errorDiv.appendChild(contentDiv);
             fragment.appendChild(errorDiv);
             return fragment;
         },
@@ -417,7 +431,7 @@
          * @param {string} message - Success message to display
          */
         showSuccessMessage(message) {
-            this.showNotification(message, 'success');
+            GreenhouseUtils.displaySuccess(message);
         },
 
         /**
@@ -426,7 +440,7 @@
          * @param {string} message - Error message to display
          */
         showErrorMessage(message) {
-            this.showNotification(message, 'error');
+            GreenhouseUtils.displayError(message);
         },
 
         /**
@@ -437,66 +451,13 @@
          * @param {number} [duration=5000] - Auto-dismiss duration in milliseconds
          */
         showNotification(message, type = 'info', duration = 5000) {
-            // Remove any existing notifications
-            const existingNotifications = document.querySelectorAll('.greenhouse-notification');
-            existingNotifications.forEach(notification => notification.remove());
-
-            const notification = document.createElement('div');
-            notification.className = `greenhouse-notification greenhouse-notification-${type}`;
-            notification.setAttribute('role', 'alert');
-            notification.innerHTML = `
-                <div class="greenhouse-notification-content">
-                    <span class="greenhouse-notification-message">${message}</span>
-                    <button class="greenhouse-notification-close" type="button" aria-label="Close notification">&times;</button>
-                </div>
-            `;
-
-            // Position at top of viewport
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 10000;
-                max-width: 400px;
-                padding: 15px;
-                border-radius: 4px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                font-family: Arial, sans-serif;
-                animation: slideInRight 0.3s ease-out;
-            `;
-
-            // Apply type-specific styles
-            switch (type) {
-                case 'success':
-                    notification.style.backgroundColor = '#d4edda';
-                    notification.style.color = '#155724';
-                    notification.style.border = '1px solid #c3e6cb';
-                    break;
-                case 'error':
-                    notification.style.backgroundColor = '#f8d7da';
-                    notification.style.color = '#721c24';
-                    notification.style.border = '1px solid #f5c6cb';
-                    break;
-                default:
-                    notification.style.backgroundColor = '#d1ecf1';
-                    notification.style.color = '#0c5460';
-                    notification.style.border = '1px solid #bee5eb';
-            }
-
-            document.body.appendChild(notification);
-
-            // Add close functionality
-            const closeBtn = notification.querySelector('.greenhouse-notification-close');
-            const removeNotification = () => {
-                notification.style.animation = 'slideOutRight 0.3s ease-in';
-                setTimeout(() => notification.remove(), 300);
-            };
-
-            closeBtn.addEventListener('click', removeNotification);
-
-            // Auto-dismiss
-            if (duration > 0) {
-                setTimeout(removeNotification, duration);
+            // Use GreenhouseUtils for notifications
+            if (type === 'success') {
+                GreenhouseUtils.displaySuccess(message, duration);
+            } else if (type === 'error') {
+                GreenhouseUtils.displayError(message, duration);
+            } else {
+                GreenhouseUtils.displayInfo(message, duration);
             }
         },
 
@@ -530,15 +491,8 @@
             // Create the main app container
             const appContainer = document.createElement('section');
             appContainer.id = 'greenhouse-app-container';
-            appContainer.className = 'greenhouse-app-container';
+            appContainer.className = 'greenhouse-app-container'; // Apply base styles from CSS
             appContainer.setAttribute('data-greenhouse-app', appState.currentView);
-            appContainer.style.cssText = `
-                width: 100%;
-                position: relative;
-                padding: 20px;
-                box-sizing: border-box;
-                background: #fff;
-            `;
 
             // Add the application content to the container
             appContainer.appendChild(appDomFragment);
@@ -561,43 +515,13 @@
 
         /**
          * @function displayError
-         * @description Displays a visible error message on the page
+         * @description Displays a visible error message on the page using GreenhouseUtils
          * @param {string} message - The error message to display
-         * @param {Element} [targetElement] - Element to insert error near
+         * @param {Element} [targetElement] - Element to insert error near (currently unused, as GreenhouseUtils handles global display)
          */
         displayError(message, targetElement = null) {
-            const errorDiv = document.createElement('div');
-            errorDiv.id = 'greenhouse-app-error';
-            errorDiv.className = 'greenhouse-app-error';
-            errorDiv.setAttribute('role', 'alert');
-            errorDiv.style.cssText = `
-                color: #721c24;
-                background-color: #f8d7da;
-                border: 1px solid #f5c6cb;
-                padding: 15px;
-                margin: 20px;
-                border-radius: 4px;
-                text-align: center;
-                font-family: Arial, sans-serif;
-                z-index: 10000;
-                position: relative;
-            `;
+            GreenhouseUtils.displayError(`Greenhouse News Error: ${message}`);
             
-            errorDiv.innerHTML = `
-                <strong>Greenhouse News Error:</strong><br>
-                ${message}
-                <br><br>
-                <button onclick="window.location.reload()" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Reload Page
-                </button>
-            `;
-
-            if (targetElement) {
-                targetElement.prepend(errorDiv);
-            } else {
-                document.body.insertAdjacentElement('afterbegin', errorDiv);
-            }
-
             // Also log to console with more details
             console.error('Greenhouse News Error:', {
                 message,
@@ -642,8 +566,8 @@
 
             appState.isLoading = true;
             try {
-                // Load utility script (if needed, for now assuming not)
-                // await this.loadScript('GreenhouseUtils.js');
+                // Load utility script
+                await this.loadScript('GreenhouseUtils.js');
                 
                 console.log('News: Starting initialization');
 
@@ -727,23 +651,6 @@
             console.error('News: Main execution failed:', error);
         }
     }
-
-    // Add CSS animations
-    const animationCSS = `
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-
-    const animationStyle = document.createElement('style');
-    animationStyle.setAttribute('data-greenhouse-animations', 'true');
-    animationStyle.textContent = animationCSS;
-    document.head.appendChild(animationStyle);
 
     // Expose public API for debugging
     window.GreenhouseNews = {

@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP GET function to retrieve an appointment by its ID.
- * Endpoint: /_api/getAppointmentById/{appointmentId}
+ * Endpoint: /_function/getAppointmentById/{appointmentId}
  */
 export async function get(request) {
     try {
