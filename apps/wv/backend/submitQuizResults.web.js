@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP POST function to submit quiz results.
- * Endpoint: /_function/submitQuizResults
+ * Endpoint: /_functions/submitQuizResults
  * Note: Currently simulates submission.
  */
 export async function post(request) {

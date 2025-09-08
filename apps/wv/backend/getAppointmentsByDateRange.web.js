@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP GET function to retrieve appointments within a specific date range.
- * Endpoint: /_function/getAppointmentsByDateRange?startDate={startDate}&endDate={endDate}
+ * Endpoint: /_functions/getAppointmentsByDateRange?startDate={startDate}&endDate={endDate}
  */
 export async function get(request) {
     try {

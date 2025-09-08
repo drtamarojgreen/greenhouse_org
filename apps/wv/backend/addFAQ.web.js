@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP POST function to add a new FAQ.
- * Endpoint: /_function/addFAQ
+ * Endpoint: /_functions/addFAQ
  * Note: Currently simulates addition.
  */
 export async function post(request) {

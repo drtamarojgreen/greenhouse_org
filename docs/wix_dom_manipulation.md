@@ -13,7 +13,7 @@ The architecture can be broken down into the following components:
 3.  **Application Core (`scheduler.js`)**: The main script for the scheduling application.
 4.  **View Scripts (`dashboard.js`, `admin.js`)**: Scripts that build the UI for specific views within the application.
 5.  **Logic Script (`GreenhousePatientApp.js`)**: A script that contains the business logic for the patient-facing form.
-6.  **Wix Velo Backend HTTP Functions**: Backend functions that provide data and services to the application via `/_function/` endpoints.
+6.  **Wix Velo Backend HTTP Functions**: Backend functions that provide data and services to the application via `/_functions/` endpoints.
 
 ## Process Flow
 
@@ -77,70 +77,70 @@ graph TD
 *   **Purpose**: To provide the business logic for the patient appointment request form.
 *   **Functionality**:
     *   Handles form submissions, user input, and validation.
-    *   Communicates with the Wix Velo backend via HTTP Functions (`/_function/` endpoints) to create, read, update, and delete appointments and services.
+    *   Communicates with the Wix Velo backend via HTTP Functions (`/_functions/` endpoints) to create, read, update, and delete appointments and services.
     *   **Important**: This script is only intended to be used with the `patient` view.
 
 ## Wix Velo HTTP Functions (`.web.js`)
 
-The following HTTP Functions are deployed in the `apps/wv/backend/` directory and provide API endpoints accessible via `/_function/` calls.
+The following HTTP Functions are deployed in the `apps/wv/backend/` directory and provide API endpoints accessible via `/_functions/` calls.
 
 *   **`getAppointments.web.js`**:
     *   Purpose: Retrieves all appointments from the "Appointments" collection.
-    *   Endpoint: `/_function/getAppointments` (GET)
+    *   Endpoint: `/_functions/getAppointments` (GET)
 *   **`getServices.web.js`**:
     *   Purpose: Retrieves all available services from the "Services" collection.
-    *   Endpoint: `/_function/getServices` (GET)
+    *   Endpoint: `/_functions/getServices` (GET)
 *   **`proposeAppointment.web.js`**:
     *   Purpose: Proposes an appointment and checks for conflicts against existing appointments.
-    *   Endpoint: `/_function/proposeAppointment` (POST)
+    *   Endpoint: `/_functions/proposeAppointment` (POST)
 *   **`createAppointment.web.js`**:
     *   Purpose: Creates a new appointment in the "Appointments" collection.
-    *   Endpoint: `/_function/createAppointment` (POST)
+    *   Endpoint: `/_functions/createAppointment` (POST)
 *   **`updateAppointment.web.js`**:
     *   Purpose: Updates an existing appointment in the "Appointments" collection.
-    *   Endpoint: `/_function/updateAppointment/{appointmentId}` (PUT)
+    *   Endpoint: `/_functions/updateAppointment/{appointmentId}` (PUT)
 *   **`deleteAppointment.web.js`**:
     *   Purpose: Deletes an appointment from the "Appointments" collection.
-    *   Endpoint: `/_function/deleteAppointment/{appointmentId}` (DELETE)
+    *   Endpoint: `/_functions/deleteAppointment/{appointmentId}` (DELETE)
 *   **`getAppointmentsByDateRange.web.js`**:
     *   Purpose: Retrieves appointments within a specific date range from the "Appointments" collection.
-    *   Endpoint: `/_function/getAppointmentsByDateRange?startDate={startDate}&endDate={endDate}` (GET)
+    *   Endpoint: `/_functions/getAppointmentsByDateRange?startDate={startDate}&endDate={endDate}` (GET)
 *   **`getConflictsForDateRange.web.js`**:
     *   Purpose: Retrieves existing appointments within a given date range for conflict checking.
-    *   Endpoint: `/_function/getConflictsForDateRange?startDate={startDate}&endDate={endDate}` (GET)
+    *   Endpoint: `/_functions/getConflictsForDateRange?startDate={startDate}&endDate={endDate}` (GET)
 *   **`getServiceTypes.web.js`**:
     *   Purpose: Retrieves all service types from the "Services" collection.
-    *   Endpoint: `/_function/getServiceTypes` (GET)
+    *   Endpoint: `/_functions/getServiceTypes` (GET)
 *   **`getEvents.web.js`**:
     *   Purpose: Retrieves event data (currently hardcoded).
-    *   Endpoint: `/_function/getEvents` (GET)
+    *   Endpoint: `/_functions/getEvents` (GET)
 *   **`getEventById.web.js`**:
     *   Purpose: Retrieves a specific event by ID (currently from hardcoded data).
-    *   Endpoint: `/_function/getEventById/{eventId}` (GET)
+    *   Endpoint: `/_functions/getEventById/{eventId}` (GET)
 *   **`registerForEvent.web.js`**:
     *   Purpose: Handles event registration (currently simulated).
-    *   Endpoint: `/_function/registerForEvent` (POST)
+    *   Endpoint: `/_functions/registerForEvent` (POST)
 *   **`getFAQs.web.js`**:
     *   Purpose: Retrieves FAQ data (currently hardcoded).
-    *   Endpoint: `/_function/getFAQs` (GET)
+    *   Endpoint: `/_functions/getFAQs` (GET)
 *   **`addFAQ.web.js`**:
     *   Purpose: Adds a new FAQ (currently simulated).
-    *   Endpoint: `/_function/addFAQ` (POST)
+    *   Endpoint: `/_functions/addFAQ` (POST)
 *   **`getGuides.web.js`**:
     *   Purpose: Retrieves self-help guide data (currently hardcoded).
-    *   Endpoint: `/_function/getGuides` (GET)
+    *   Endpoint: `/_functions/getGuides` (GET)
 *   **`getGuideById.web.js`**:
     *   Purpose: Retrieves a specific guide by ID (currently from hardcoded data).
-    *   Endpoint: `/_function/getGuideById/{guideId}` (GET)
+    *   Endpoint: `/_functions/getGuideById/{guideId}` (GET)
 *   **`getQuiz.web.js`**:
     *   Purpose: Retrieves quiz data by ID (currently from hardcoded data).
-    *   Endpoint: `/_function/getQuiz/{quizId}` (GET)
+    *   Endpoint: `/_functions/getQuiz/{quizId}` (GET)
 *   **`submitQuizResults.web.js`**:
     *   Purpose: Submits quiz results (currently simulated).
-    *   Endpoint: `/_function/submitQuizResults` (POST)
+    *   Endpoint: `/_functions/submitQuizResults` (POST)
 *   **`getLatestVideosFromFeed.web.js`**:
     *   Purpose: Retrieves latest video feed data (currently hardcoded).
-    *   Endpoint: `/_function/getLatestVideosFromFeed` (GET)
+    *   Endpoint: `/_functions/getLatestVideosFromFeed` (GET)
 
 ## Challenges of Wix DOM Manipulation
 

@@ -6,7 +6,7 @@ console.log("Loading getAppointments.web.js - Version 0.0.0.1");
 
 /**
  * HTTP GET function to retrieve all appointments from the "Appointments" collection.
- * Endpoint: /_function/getAppointments
+ * Endpoint: /_functions/getAppointments
  */
 export async function get(request) {
     try {

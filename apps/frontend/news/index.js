@@ -2,7 +2,7 @@ const newsContainer = document.getElementById('news-container');
 
 async function fetchAndDisplayNews() {
     try {
-        const response = await fetch('/_function/getNews');
+        const response = await fetch('/_functions/getNews');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

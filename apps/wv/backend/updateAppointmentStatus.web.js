@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP PUT function to update an appointment's status.
- * Endpoint: /_function/updateAppointmentStatus
+ * Endpoint: /_functions/updateAppointmentStatus
  */
 export async function put(request) {
     try {

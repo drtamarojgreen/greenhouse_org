@@ -189,7 +189,7 @@
 
                 try {
                     // Use a relative path for the API call, assuming the server.js handles the routing
-                    const response = await fetch('/_function/getBooks'); 
+                    const response = await fetch('/_functions/getBooks'); 
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }

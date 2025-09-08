@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP GET function to retrieve events.
- * Endpoint: /_function/getEvents?category={category}
+ * Endpoint: /_functions/getEvents?category={category}
  * Note: Currently returns hardcoded data.
  */
 export async function get(request) {

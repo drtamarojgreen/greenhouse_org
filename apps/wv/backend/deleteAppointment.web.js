@@ -3,7 +3,7 @@ import { response } from 'wix-http-functions';
 
 /**
  * HTTP DELETE function to delete an appointment.
- * Endpoint: /_function/deleteAppointment/{appointmentId}
+ * Endpoint: /_functions/deleteAppointment/{appointmentId}
  */
 export async function del(request) { // 'del' is the function name for DELETE requests
     try {
