@@ -62,6 +62,7 @@ function GreenhouseDashboardApp() {
 
         try {
             appointments = await getAppointmentsByDateRange(startDate, endDate);
+            console.log('GreenhouseDashboardApp: Appointments data fetched successfully.', appointments); // Added log
         } catch (error) {
             console.error("Error fetching appointments:", error);
             GreenhouseUtils.displayError('Failed to load appointments data.');
@@ -69,6 +70,7 @@ function GreenhouseDashboardApp() {
 
         try {
             conflicts = await getConflictsForDateRange(startDate, endDate);
+            console.log('GreenhouseDashboardApp: Conflicts data fetched successfully.', conflicts); // Added log
         } catch (error) {
             console.error("Error fetching conflicts:", error);
             GreenhouseUtils.displayError('Failed to load conflicts data.');
@@ -76,13 +78,14 @@ function GreenhouseDashboardApp() {
 
         try {
             serviceTypes = await getServiceTypes();
+            console.log('GreenhouseDashboardApp: Service types data fetched successfully.', serviceTypes); // Added log
         } catch (error) {
             console.error("Error fetching service types:", error);
             GreenhouseUtils.displayError('Failed to load service types data.');
         }
 
         // Always attempt to render, even if data fetching failed
-        GreenhouseSchedulerUI.renderSchedule(appointments, serviceTypes, document.getElementById('greenhouse-dashboard-app-schedule-container'));
+        GreenhouseSchedulerUI.renderWeekly(appointments, serviceTypes, document.getElementById('greenhouse-dashboard-app-schedule-container'));
         GreenhouseSchedulerUI.renderConflicts(conflicts, document.getElementById('greenhouse-dashboard-app-conflict-list'));
     }
 

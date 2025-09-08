@@ -3,24 +3,19 @@
 
     const config = {
         elementWaitTimeout: 10000,
-        textToFind: "GREENHOUSE FOR MENTAL HEALTH DEVELOPMENT",
+        targetSelector: "#SITE_PAGES_TRANSITION_GROUP div section.wixui-section:nth-child(1) div section div > div > div.wixui-rich-text h2", // New config for selector
         idToApply: "greenhouse-title-for-vine-effect"
     };
 
-    function waitForElementByText(text, timeout = config.elementWaitTimeout) {
+    function waitForElementBySelector(selector, timeout = config.elementWaitTimeout) {
         return new Promise((resolve, reject) => {
             const findElement = () => {
-                const allElements = document.querySelectorAll('h1, h2, h3, p, span, div');
-                for (let i = 0; i < allElements.length; i++) {
-                    if (allElements[i].textContent.trim().toUpperCase() === text) {
-                        return allElements[i];
-                    }
-                }
-                return null;
+                return document.querySelector(selector);
             };
 
             let element = findElement();
             if (element) {
+                console.log(`Vine Effect: Element found with selector: ${selector}`); // Added log
                 resolve(element);
                 return;
             }
@@ -35,20 +30,19 @@
 
             observer.observe(document.body, {
                 childList: true,
-                subtree: true,
-                characterData: true
+                subtree: true
             });
 
             setTimeout(() => {
                 observer.disconnect();
-                reject(new Error(`Element with text "${text}" not found.`));
+                reject(new Error(`Element with selector "${selector}" not found.`));
             }, timeout);
         });
     }
 
     async function activateVineEffect() {
         try {
-            const heading = await waitForElementByText(config.textToFind);
+            const heading = await waitForElementBySelector(config.targetSelector);
             if (!heading || heading.dataset.vineInitialized === 'true') return;
 
             heading.id = config.idToApply;

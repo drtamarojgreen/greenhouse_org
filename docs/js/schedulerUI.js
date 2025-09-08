@@ -730,8 +730,192 @@ const GreenhouseSchedulerUI = (function() {
         createHiddenElements,
         addModalEventListeners,
         createInstructionsPanel,
-        buildAdminAppointmentForm
+        buildAdminAppointmentForm,
+        renderCalendar, // Expose the new function
+        renderSchedule // Expose the new function
     };
+
+    /**
+     * Renders a calendar view for the given year and month using createElement.
+     * @param {number} year - The year to display.
+     * @param {number} month - The month to display (0-indexed).
+     */
+    function renderCalendar(year, month) {
+        const calendarContainer = document.getElementById('greenhouse-dashboard-app-calendar-container');
+        if (!calendarContainer) {
+            console.error('Calendar container not found: #greenhouse-dashboard-app-calendar-container');
+            return;
+        }
+
+        // Clear previous calendar content
+        while (calendarContainer.firstChild) {
+            calendarContainer.removeChild(calendarContainer.firstChild);
+        }
+
+        const date = new Date(year, month);
+        const monthName = date.toLocaleString('default', { month: 'long' });
+        const currentYear = date.getFullYear();
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'calendar-header';
+
+        const prevButton = document.createElement('button');
+        prevButton.dataset.action = 'prev-month';
+        prevButton.dataset.year = currentYear;
+        prevButton.dataset.month = month;
+        prevButton.textContent = 'Prev';
+        header.appendChild(prevButton);
+
+        const title = document.createElement('h2');
+        title.textContent = `${monthName} ${currentYear}`;
+        header.appendChild(title);
+
+        const nextButton = document.createElement('button');
+        nextButton.dataset.action = 'next-month';
+        nextButton.dataset.year = currentYear;
+        nextButton.dataset.month = month;
+        nextButton.textContent = 'Next';
+        header.appendChild(nextButton);
+
+        calendarContainer.appendChild(header);
+
+        // Table
+        const table = document.createElement('table');
+        table.className = 'calendar-table';
+
+        // Table Head
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+            const th = document.createElement('th');
+            th.textContent = day;
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // Table Body
+        const tbody = document.createElement('tbody');
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        let dateCounter = 1;
+        for (let i = 0; i < 6; i++) { // Up to 6 weeks
+            const row = document.createElement('tr');
+            for (let j = 0; j < 7; j++) { // 7 days a week
+                const cell = document.createElement('td');
+                if (i === 0 && j < firstDayOfMonth) {
+                    // Empty cells before the first day of the month
+                    cell.textContent = '';
+                } else if (dateCounter > daysInMonth) {
+                    // Empty cells after the last day of the month
+                    cell.textContent = '';
+                } else {
+                    cell.textContent = dateCounter;
+                    cell.dataset.date = `${currentYear}-${String(month + 1).padStart(2, '0')}-${String(dateCounter).padStart(2, '0')}`;
+                    cell.dataset.action = 'select-date'; // For future date selection
+                    dateCounter++;
+                }
+                row.appendChild(cell);
+            }
+            tbody.appendChild(row);
+            if (dateCounter > daysInMonth && i > 3) break; // Stop if all days rendered and at least 4 rows
+        }
+        table.appendChild(tbody);
+        calendarContainer.appendChild(table);
+    }
+
+    /**
+     * Renders the detailed schedule view (e.g., weekly/hourly) with appointments.
+     * @param {Array<object>} appointments - List of appointment objects.
+     * @param {Array<object>} serviceTypes - List of service type objects.
+     * @param {HTMLElement} targetElement - The DOM element to render the schedule into.
+     */
+    function renderWeekly(appointments, serviceTypes, targetElement) {
+        if (!targetElement) {
+            console.error('Target element for schedule rendering not found.');
+            return;
+        }
+
+        // Clear previous schedule content
+        while (targetElement.firstChild) {
+            targetElement.removeChild(targetElement.firstChild);
+        }
+
+        const h2 = document.createElement('h2');
+        h2.textContent = 'Weekly Schedule';
+        targetElement.appendChild(h2);
+
+        const scheduleGrid = document.createElement('div');
+        scheduleGrid.className = 'schedule-grid'; // Apply CSS for grid layout
+
+        // Create headers for days of the week
+        const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        daysOfWeek.forEach(day => {
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'schedule-day-header';
+            dayHeader.textContent = day;
+            scheduleGrid.appendChild(dayHeader);
+        });
+
+        // Create time slots (e.g., 9 AM to 5 PM)
+        const startHour = 9;
+        const endHour = 17; // 5 PM
+        const hours = [];
+        for (let i = startHour; i <= endHour; i++) {
+            hours.push(`${i % 12 === 0 ? 12 : i % 12}${i < 12 ? 'AM' : 'PM'}`);
+        }
+
+        // Create time column (first column)
+        const timeColumn = document.createElement('div');
+        timeColumn.className = 'schedule-time-column';
+        hours.forEach(hour => {
+            const timeSlot = document.createElement('div');
+            timeSlot.className = 'schedule-time-slot-label';
+            timeSlot.textContent = hour;
+            timeColumn.appendChild(timeSlot);
+        });
+        scheduleGrid.appendChild(timeColumn);
+
+
+        // Create cells for each day and hour
+        for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+            const dayColumn = document.createElement('div');
+            dayColumn.className = 'schedule-day-column';
+            for (let hourIndex = 0; hourIndex < hours.length; hourIndex++) {
+                const cell = document.createElement('div');
+                cell.className = 'schedule-cell';
+                // Add data attributes for date and time for potential appointment dropping
+                cell.dataset.day = dayIndex;
+                cell.dataset.hour = startHour + hourIndex;
+                dayColumn.appendChild(cell);
+            }
+            scheduleGrid.appendChild(dayColumn);
+        }
+
+        targetElement.appendChild(scheduleGrid);
+        console.log('SchedulerUI: Weekly schedule rendered.'); // Added log
+
+        // Populate appointments (basic example)
+        if (appointments && appointments.length > 0) {
+            appointments.forEach(appointment => {
+                const apptDate = new Date(appointment.start);
+                const apptDay = apptDate.getDay(); // 0 for Sunday, 1 for Monday, etc.
+                const apptHour = apptDate.getHours();
+
+                // Find the corresponding cell in the grid
+                const cell = scheduleGrid.querySelector(`[data-day="${apptDay}"][data-hour="${apptHour}"]`);
+                if (cell) {
+                    const apptDiv = document.createElement('div');
+                    apptDiv.className = 'appointment-item';
+                    apptDiv.textContent = `${appointment.title} (${apptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                    // Add more details or styling as needed
+                    cell.appendChild(apptDiv);
+                }
+            });
+        }
+    }
 })();
 
     
