@@ -85,7 +85,6 @@ function GreenhouseDashboardApp() {
         GreenhouseSchedulerUI.renderSchedule(appointments, serviceTypes, document.getElementById('greenhouse-dashboard-app-schedule-container'));
         GreenhouseSchedulerUI.renderConflicts(conflicts, document.getElementById('greenhouse-dashboard-app-conflict-list'));
     }
-    }
 
     function handleAction(event) {
         const target = event.target;
