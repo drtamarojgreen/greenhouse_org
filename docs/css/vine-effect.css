@@ -1,25 +1,21 @@
 /* Styles for the Vine Growth effect */
 
-/* The class 'vine-effect-active' will be added by the controller JS to the body tag */
-.vine-effect-active #effect-heading {
-    position: relative; /* Needed for positioning the SVG vine absolutely */
-    color: transparent; /* The original text color is hidden, JS will create animated spans */
+#greenhouse-title-for-vine-effect.vine-effect-active {
+    position: relative;
+    color: transparent;
 }
 
-/* Individual letter spans created by JS */
-.vine-effect-active #effect-heading span {
+#greenhouse-title-for-vine-effect.vine-effect-active span {
     display: inline-block;
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
-/* This class is added to the body to start all animations */
-.vine-effect-active.animation-running #effect-heading span {
+#greenhouse-title-for-vine-effect.vine-effect-active.animation-running span {
     opacity: 1;
     transform: translateY(0);
     color: #333; /* Restore text color */
-
 }
 
 /* The SVG element that will contain the vine path */
