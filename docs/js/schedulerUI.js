@@ -732,7 +732,7 @@ const GreenhouseSchedulerUI = (function() {
         createInstructionsPanel,
         buildAdminAppointmentForm,
         renderCalendar, // Expose the new function
-        renderSchedule // Expose the new function
+        renderWeekly // Expose the new function
     };
 
     /**
