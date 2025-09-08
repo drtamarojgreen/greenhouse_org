@@ -95,3 +95,48 @@ html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-lay
     }
 }
 
+/* Styles for the Vine Growth effect */
+
+#greenhouse-title-for-vine-effect.vine-effect-active {
+    position: relative;
+    color: transparent;
+}
+
+#greenhouse-title-for-vine-effect.vine-effect-active span {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+#greenhouse-title-for-vine-effect.vine-effect-active.animation-running span {
+    opacity: 1;
+    transform: translateY(0);
+    color: #333; /* Restore text color */
+}
+
+/* The SVG element that will contain the vine path */
+.vine-svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 150%; /* Taller than the text to allow the vine to grow outside the text box */
+    overflow: visible;
+    z-index: 1; /* Ensures the vine is drawn in front of the text */
+}
+
+/* The vine path itself */
+.vine-path {
+    stroke-width: 3px;
+    stroke: #357438; /* A nice green color for the vine */
+    fill: none;
+    /* The dasharray and dashoffset will be set by JavaScript to match the path length */
+    transition: stroke-dashoffset 4s ease-in-out;
+}
+
+/* When the animation is running, the dashoffset is animated to 0, a drawing the vine */
+.vine-effect-active.animation-running .vine-path {
+    stroke-dashoffset: 0;
+}
