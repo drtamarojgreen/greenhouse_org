@@ -73,7 +73,8 @@
         baseUrl: null,
         targetSelector: null,
         loadedScripts: new Set(),
-        errors: []
+        errors: [],
+        hasCriticalError: false // New flag to track critical errors
     };
 
     /**
@@ -180,7 +181,49 @@
      * @description The main object for the videos application
      */
     const GreenhouseAppsVideos = {
-        
+        /**
+         * @function observeVideosListElement
+         * @description Observes the #videos-list element for removal and re-renders if it disappears.
+         * @param {Element} elementToObserve - The #videos-list element.
+         */
+        observeVideosListElement(elementToObserve) {
+            if (!elementToObserve) return;
+
+            const observer = new MutationObserver((mutations) => {
+                let wasRemoved = false;
+                for (const mutation of mutations) {
+                    if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+                        for (const removedNode of mutation.removedNodes) {
+                            if (removedNode === elementToObserve) {
+                                wasRemoved = true;
+                                break;
+                            }
+                            if (removedNode.contains && removedNode.contains(elementToObserve)) {
+                                wasRemoved = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (wasRemoved) {
+                    console.warn('Videos: #videos-list element was removed from DOM. Attempting to re-render.');
+                    observer.disconnect(); // Disconnect old observer
+                    // Re-initialize the app, which will re-render and re-fetch
+                    appState.isInitialized = false;
+                    appState.isLoading = false;
+                    main(); 
+                }
+            });
+
+            // Observe the parent element for changes to its children
+            if (elementToObserve.parentElement) {
+                observer.observe(elementToObserve.parentElement, { childList: true, subtree: true });
+                console.log('Videos: Started observing #videos-list element for changes.');
+            } else {
+                console.warn('Videos: Cannot observe #videos-list element, no parent found.');
+            }
+        },
 
         /**
          * @function loadScript
@@ -252,20 +295,20 @@
                 if (document.querySelector('style[data-greenhouse-videos-css]')) {
                     console.log('Videos: CSS already loaded');
                     return;
+                    }
+                    this.observeVideosListElement(videosListContainer); // Start observing after content is loaded
+                } catch (error) {
+                    console.error("Videos: Error fetching videos:", error);
+                    // Display a less intrusive error message within the videos list itself
+                    videosListElement.innerHTML = `<p>Failed to load videos: ${error.message}. Please check the backend configuration.</p>`;
+                    this.showErrorMessage(`Failed to load videos: ${error.message}`);
+                    // Only show the critical overlay if it's a 404, and prevent re-initialization
+                    if (error.message.includes('status: 404')) {
+                        appState.hasCriticalError = true;
+                        this.displayCriticalErrorOverlay(`Failed to load videos: ${error.message}`);
+                    }
                 }
-
-                const styleElement = document.createElement('style');
-                styleElement.setAttribute('data-greenhouse-videos-css', 'true');
-                styleElement.textContent = cssText;
-                document.head.appendChild(styleElement);
-
-                console.log('Videos: CSS loaded successfully');
-
-            } catch (error) {
-                console.warn('Videos: Failed to load CSS, using fallback styles:', error);
-                this.loadFallbackCSS();
-            }
-        },
+            },
 
         /**
          * @function loadFallbackCSS
@@ -722,7 +765,7 @@
 
                 // Only display the critical error overlay if it's a 404 from init, otherwise just log and show notification
                 if (error.message.includes('status: 404')) {
-                    appState.hasCriticalError = true;
+                    appState.hasCriticalError = true; // Set critical error flag
                     this.displayCriticalErrorOverlay(errorMessage);
                 } else {
                     this.showErrorMessage('Failed to load videos application');
@@ -741,9 +784,9 @@
      */
         async function main() {
             try {
-                // If a critical error has occurred, prevent further re-initialization attempts
-                if (appState.hasCriticalError) {
-                    console.error('Videos: Critical error detected, preventing re-initialization.');
+                // If a critical error has occurred or is already loading, prevent further re-initialization attempts
+                if (appState.hasCriticalError || appState.isLoading) {
+                    console.error('Videos: Critical error detected or already loading, preventing re-initialization.');
                     return;
                 }
 
