@@ -444,21 +444,50 @@
             const svgNS = "http://www.w3.org/2000/svg";
             const svg = document.createElementNS(svgNS, "svg");
             svg.setAttribute("class", "vine-svg");
-            svg.setAttribute("viewBox", "0 0 800 120");
+
+            // --- Dynamic Path Generation ---
+            const headingWidth = heading.offsetWidth;
+            const originalWidth = 800; // The original width the path was designed for
+            const scaleFactor = headingWidth / originalWidth;
+
+            // Update viewBox to match the new width
+            svg.setAttribute("viewBox", `0 0 ${headingWidth} 120`);
+
+            // Scale the x-coordinates of the path
+            const scaledPath = `M${10 * scaleFactor},110 C${150 * scaleFactor},-30 ${250 * scaleFactor},150 ${400 * scaleFactor},60 S${550 * scaleFactor},-30 ${700 * scaleFactor},60 S${790 * scaleFactor},100 ${790 * scaleFactor},100`;
 
             const path = document.createElementNS(svgNS, "path");
             path.setAttribute("class", "vine-path");
-            path.setAttribute("d", "M10,110 C150,-30 250,150 400,60 S550,-30 700,60 S790,100 790,100");
+            path.setAttribute("d", scaledPath);
 
             svg.appendChild(path);
             heading.appendChild(svg);
 
             const pathLength = path.getTotalLength();
             path.style.strokeDasharray = pathLength;
-            path.style.strokeDashoffset = pathLength;
 
-            setTimeout(() => {
+            // Function to run a single animation cycle
+            const runAnimationCycle = () => {
+                // 1. Reset the animation state
+                heading.classList.remove('animation-running');
+                path.style.transition = 'none'; // Disable transition for the reset
+                path.style.strokeDashoffset = pathLength;
+
+                // 2. Force a DOM reflow. This is a crucial step to ensure the browser applies the reset styles
+                // before it tries to apply the new animation state.
+                void heading.offsetWidth;
+
+                // 3. Re-enable transitions and add the class to start the animation
+                path.style.transition = 'stroke-dashoffset 4s ease-in-out';
                 heading.classList.add('animation-running');
+            };
+
+            // Run the first animation cycle immediately after a short delay
+            setTimeout(() => {
+                runAnimationCycle();
+                // Set an interval to repeat the animation.
+                // The animation takes 4s. We'll add a 2s pause before repeating.
+                setInterval(runAnimationCycle, 6000); // 4000ms animation + 2000ms pause
             }, 100);
 
         } catch (error) {
