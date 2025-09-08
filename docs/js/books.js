@@ -185,7 +185,10 @@
                     return;
                 }
 
-                booksListElement.innerHTML = '<p>Loading books...</p>'; // Show loading state
+                while (booksListElement.firstChild) {
+                    booksListElement.removeChild(booksListElement.firstChild);
+                }
+                booksListElement.appendChild(createElement('p', {}, 'Loading books...')); // Show loading state
 
                 try {
                     // Use a relative path for the API call, assuming the server.js handles the routing
@@ -197,31 +200,38 @@
                     const bookData = data.items; // Assuming the backend returns { items: [...] }
 
                     // Clear loading message and ensure the element is ready
-                    booksListElement.innerHTML = ''; 
+                    while (booksListElement.firstChild) {
+                        booksListElement.removeChild(booksListElement.firstChild);
+                    }
                     
                     if (bookData && bookData.length > 0) {
                         bookData.forEach(book => {
-                            const bookElement = document.createElement('div');
-                            bookElement.classList.add('book');
-                            bookElement.innerHTML = `
-                                <h3><a href="${book.url}" target="_blank" rel="noopener noreferrer">${book.title}</a></h3>
-                                <p>by ${book.author}</p>
-                            `;
+                            const bookElement = createElement('div', { className: 'book' },
+                                createElement('h3', { className: 'book-title' },
+                                    createElement('a', { href: book.url, target: '_blank', rel: 'noopener noreferrer' }, book.title || 'Untitled Book')
+                                ),
+                                createElement('p', { className: 'book-author' }, `by ${book.author || 'Unknown Author'}`)
+                            );
                             booksListElement.appendChild(bookElement);
                         });
                     } else {
-                        booksListElement.innerHTML = '<p>No book recommendations available at this time.</p>';
+                        booksListElement.appendChild(createElement('p', {}, 'No book recommendations available at this time.'));
                     }
                     this.observeBooksListElement(booksListElement); // Start observing after content is loaded
                 } catch (error) {
                     console.error("Books: Error fetching books:", error);
                     // Display a less intrusive error message within the books list itself
-                    booksListElement.innerHTML = `<p>Failed to load books: ${error.message}. Please check the backend configuration.</p>`;
+                    while (booksListElement.firstChild) {
+                        booksListElement.removeChild(booksListElement.firstChild);
+                    }
+                    booksListElement.appendChild(createElement('p', {}, `Failed to load books: ${error.message}. Please check the backend configuration.`));
                     this.showErrorMessage(`Failed to load books: ${error.message}`);
                     // Only show the critical overlay if it's a 404, and prevent re-initialization
                     if (error.message.includes('status: 404')) {
                         appState.hasCriticalError = true;
-                        this.displayCriticalErrorOverlay(`Failed to load books: ${error.message}`);
+                        // Assuming displayCriticalErrorOverlay also uses createElement or is handled elsewhere
+                        // For now, just logging as it's not defined in the provided snippet
+                        console.error(`Books: Critical error overlay triggered: Failed to load books: ${error.message}`);
                     }
                 }
             },
@@ -410,45 +420,36 @@
              * @returns {DocumentFragment}
              */
             createDefaultBooksView() {
-                const fragment = document.createDocumentFragment();
-                const booksDiv = document.createElement('div');
-                booksDiv.className = 'greenhouse-books-view';
-                booksDiv.innerHTML = `
-                    <div class="greenhouse-books-content">
-                        <h2>Greenhouse Books</h2>
-                        <p>Welcome to the Greenhouse Books section. Here you will find a curated list of recommended readings.</p>
-                        <div id="books-list">
-                            <!-- Books will be loaded here -->
-                            <p>Loading books...</p>
-                        </div>
-                    </div>
-                `;
-                fragment.appendChild(booksDiv);
-                return fragment;
+                const booksListElement = createElement('div', { id: 'books-list', className: 'greenhouse-layout-container' });
+                booksListElement.appendChild(createElement('p', {}, 'Loading books...'));
+
+                return createElement('div', { className: 'greenhouse-books-view' },
+                    createElement('div', { className: 'greenhouse-books-content' },
+                        createElement('h2', {}, 'Greenhouse Books'),
+                        createElement('p', {}, 'Welcome to the Greenhouse Books section. Here you will find a curated list of recommended readings.'),
+                        booksListElement
+                    )
+                );
             },
 
             /**
              * @function createErrorView
              * @description Creates an error view when rendering fails
              * @param {string} message - Error message to display
-             * @returns {DocumentFragment}
+             * @returns {HTMLElement}
              */
             createErrorView(message) {
-                const fragment = document.createDocumentFragment();
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'greenhouse-error-view';
-                errorDiv.innerHTML = `
-                    <div class="greenhouse-error-content">
-                        <h2>Unable to Load Application</h2>
-                        <p>${message}</p>
-                        <p>Please refresh the page or contact support if the problem persists.</p>
-                        <button onclick="window.location.reload()" class="greenhouse-btn greenhouse-btn-primary">
-                            Refresh Page
-                        </button>
-                    </div>
-                `;
-                fragment.appendChild(errorDiv);
-                return fragment;
+                return createElement('div', { className: 'greenhouse-error-view' },
+                    createElement('div', { className: 'greenhouse-error-content' },
+                        createElement('h2', {}, 'Unable to Load Application'),
+                        createElement('p', {}, message),
+                        createElement('p', {}, 'Please refresh the page or contact support if the problem persists.'),
+                        createElement('button', {
+                            onclick: 'window.location.reload()',
+                            className: 'greenhouse-btn greenhouse-btn-primary'
+                        }, 'Refresh Page')
+                    )
+                );
             },
 
             /**
@@ -606,8 +607,8 @@
              * @param {Element} [targetElement] - Element to insert error near
              */
             displayError(message, targetElement = null) {
+                GreenhouseUtils.displayError(`Greenhouse Books Error: ${message}`);
                 console.error('Books: General error display:', message);
-                this.showNotification(message, 'error'); // Use existing notification system
             },
 
             /**
@@ -644,8 +645,8 @@
 
                 appState.isLoading = true;
                 try {
-                    // Load utility script (if needed, for now assuming not)
-                    // await this.loadScript('GreenhouseUtils.js');
+                    // Load utility script
+                    await this.loadScript('GreenhouseUtils.js');
                     
                     console.log('Books: Starting initialization');
 
@@ -680,7 +681,7 @@
                     console.log('Books: Initialization completed successfully');
 
                     // Show success notification
-                    this.showNotification('Books application loaded successfully', 'success', 3000);
+                    GreenhouseUtils.displaySuccess('Books application loaded successfully');
 
                 } catch (error) {
                     console.error('Books: Initialization failed:', error);
@@ -699,6 +700,30 @@
                 }
             }
         };
+
+        /**
+         * Creates a DOM element with specified tag, attributes, and children.
+         * @param {string} tag - The HTML tag name.
+         * @param {object} [attributes={}] - An object of attribute key-value pairs.
+         * @param {...(HTMLElement|string)} children - Child elements or strings.
+         * @returns {HTMLElement} The created DOM element.
+         */
+        function createElement(tag, attributes = {}, ...children) {
+            const element = document.createElement(tag);
+            for (const key in attributes) {
+                if (attributes.hasOwnProperty(key)) {
+                    element.setAttribute(key, attributes[key]);
+                }
+            }
+            children.forEach(child => {
+                if (typeof child === 'string') {
+                    element.appendChild(document.createTextNode(child));
+                } else {
+                    element.appendChild(child);
+                }
+            });
+            return element;
+        }
 
         // --- Main Execution Logic ---
 
@@ -753,9 +778,7 @@
             }
         `;
 
-        const animationStyle = document.createElement('style');
-        animationStyle.setAttribute('data-greenhouse-animations', 'true');
-        animationStyle.textContent = animationCSS;
+        const animationStyle = createElement('style', { 'data-greenhouse-animations': 'true' }, animationCSS);
         document.head.appendChild(animationStyle);
 
         // Expose public API for debugging

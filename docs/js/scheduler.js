@@ -342,33 +342,11 @@
          * @returns {DocumentFragment}
          */
         createErrorView(message) {
-            const fragment = document.createDocumentFragment();
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'greenhouse-error-view';
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'greenhouse-error-content';
+            // Use GreenhouseUtils to display a prominent error message
+            GreenhouseUtils.displayError(`Unable to Load Application: ${message}. Please refresh the page or contact support if the problem persists.`, 0); // 0 for sticky error
 
-            const title = document.createElement('h2');
-            title.textContent = 'Unable to Load Application';
-            contentDiv.appendChild(title);
-
-            const msgParagraph = document.createElement('p');
-            msgParagraph.textContent = message;
-            contentDiv.appendChild(msgParagraph);
-
-            const refreshParagraph = document.createElement('p');
-            refreshParagraph.textContent = 'Please refresh the page or contact support if the problem persists.';
-            contentDiv.appendChild(refreshParagraph);
-
-            const refreshButton = document.createElement('button');
-            refreshButton.onclick = () => window.location.reload();
-            refreshButton.className = 'greenhouse-btn greenhouse-btn-primary';
-            refreshButton.textContent = 'Refresh Page';
-            contentDiv.appendChild(refreshButton);
-
-            errorDiv.appendChild(contentDiv);
-            fragment.appendChild(errorDiv);
-            return fragment;
+            // Return an empty fragment as GreenhouseUtils handles the display
+            return document.createDocumentFragment();
         },
 
         /**
@@ -435,20 +413,11 @@
             console.log(`Scheduler: Using insertion strategy: ${containerInfo.strategy}`);
 
             // Create the main app container
-            const appContainer = document.createElement('section');
-            appContainer.id = 'greenhouse-app-container';
-            appContainer.className = 'greenhouse-app-container';
-            appContainer.setAttribute('data-greenhouse-app', appState.currentView);
-            appContainer.style.cssText = `
-                width: 100%;
-                position: relative;
-                padding: 20px;
-                box-sizing: border-box;
-                background: #fff;
-            `;
-
-            // Add the application content to the container
-            appContainer.appendChild(appDomFragment);
+            const appContainer = createElement('section', {
+                id: 'greenhouse-app-container',
+                className: 'greenhouse-app-container',
+                'data-greenhouse-app': appState.currentView
+            }, appDomFragment);
 
             // Insert using the determined strategy
             switch (containerInfo.insertionMethod) {
@@ -569,8 +538,8 @@
                     ? `Target element "${targetSelector}" not found. Please check if the page has loaded completely.`
                     : `Failed to load the scheduling application: ${error.message}`;
 
-                this.displayError(errorMessage, appState.targetElement);
-                this.showErrorMessage('Failed to load scheduling application');
+                // Use createErrorView which now leverages GreenhouseUtils for display
+                this.createErrorView(errorMessage);
 
             } finally {
                 appState.isLoading = false;

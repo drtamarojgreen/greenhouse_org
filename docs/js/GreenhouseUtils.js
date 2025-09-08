@@ -1,57 +1,46 @@
-// docs/js/GreenhouseUtils.js
-
 const GreenhouseUtils = (function() {
-
     /**
-     * Displays a non-blocking error message on the page.
-     * @param {string} message - The error message to display.
-     * @param {string} [type='error'] - The type of message (e.g., 'error', 'success', 'info').
+     * Display a non-blocking notification
+     * @param {string} message - The message text
+     * @param {'error'|'success'|'info'} type - Message type
+     * @param {number} duration - How long to show message (ms)
      */
-    function displayMessage(message, type = 'error') {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `greenhouse-app-message greenhouse-app-message--${type}`;
-        messageDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            border-radius: 8px;
-            font-family: Arial, sans-serif;
-            font-size: 16px;
-            color: white;
-            z-index: 10000;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-        `;
+    function displayMessage(message, type = 'error', duration = 5000) {
+        console.debug(`[GreenhouseUtils] Showing ${type} message: "${message}"`);
 
-        if (type === 'error') {
-            messageDiv.style.backgroundColor = '#dc3545'; // Red
-        } else if (type === 'success') {
-            messageDiv.style.backgroundColor = '#28a745'; // Green
-        } else if (type === 'info') {
-            messageDiv.style.backgroundColor = '#007bff'; // Blue
-        }
+        // Create container
+        const notif = document.createElement('div');
+        notif.className = `greenhouse-notification greenhouse-notification-${type}`;
 
-        messageDiv.textContent = message;
-        document.body.appendChild(messageDiv);
+        // Message span
+        const messageSpan = document.createElement('span');
+        messageSpan.className = 'greenhouse-notification-message';
+        messageSpan.textContent = message;
+        notif.appendChild(messageSpan);
 
-        // Fade in
-        setTimeout(() => {
-            messageDiv.style.opacity = '1';
-        }, 100);
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'greenhouse-notification-close';
+        closeBtn.textContent = '×';
+        closeBtn.onclick = () => removeNotification(notif);
+        notif.appendChild(closeBtn);
 
-        // Fade out and remove after a few seconds
-        setTimeout(() => {
-            messageDiv.style.opacity = '0';
-            messageDiv.addEventListener('transitionend', () => messageDiv.remove());
-        }, 5000);
+        document.body.appendChild(notif);
+
+        // Auto-remove after duration
+        setTimeout(() => removeNotification(notif), duration);
     }
 
-    return {
-        displayError: (message) => displayMessage(message, 'error'),
-        displaySuccess: (message) => displayMessage(message, 'success'),
-        displayInfo: (message) => displayMessage(message, 'info'),
-    };
+    /** Animate and remove notification */
+    function removeNotification(notif) {
+        notif.style.animation = 'slideOutRight 0.3s ease forwards';
+        notif.addEventListener('animationend', () => notif.remove());
+    }
 
+    // Public API
+    return {
+        displayError: (msg, duration) => displayMessage(msg, 'error', duration),
+        displaySuccess: (msg, duration) => displayMessage(msg, 'success', duration),
+        displayInfo: (msg, duration) => displayMessage(msg, 'info', duration),
+    };
 })();

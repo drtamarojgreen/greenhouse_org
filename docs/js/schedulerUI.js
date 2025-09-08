@@ -9,8 +9,7 @@ const GreenhouseSchedulerUI = (function() {
         // Main container
         const mainContainer = document.createElement('section');
         mainContainer.id = 'greenhouse-app-container';
-        mainContainer.className = 'greenhouse-app-container';
-        mainContainer.style.gridArea = '2 / 1 / 1 / 2'; // Added grid-area
+        mainContainer.className = 'greenhouse-app-container greenhouse-scheduler-main-container';
         components.mainContainer = mainContainer;
 
         // Patient Form
@@ -35,7 +34,7 @@ const GreenhouseSchedulerUI = (function() {
     function buildPatientFormUI() {
         const formContainer = document.createElement('div');
         formContainer.id = 'greenhouse-patient-form';
-        formContainer.style.display = 'none'; // Initially hidden
+        formContainer.classList.add('greenhouse-hidden'); // Initially hidden via class
 
         const h1 = document.createElement('h1');
         h1.textContent = 'Request an Appointment';
@@ -98,10 +97,9 @@ const GreenhouseSchedulerUI = (function() {
             fieldContainer.appendChild(input);
 
             const errorDiv = document.createElement('div');
-            errorDiv.className = 'greenhouse-form-error';
+            errorDiv.className = 'greenhouse-form-error greenhouse-hidden'; // Initially hidden via class
             errorDiv.id = `error-${fieldInfo.id}`;
             errorDiv.setAttribute('role', 'alert');
-            errorDiv.style.display = 'none';
             fieldContainer.appendChild(errorDiv);
 
             form.appendChild(fieldContainer);
@@ -189,7 +187,7 @@ const GreenhouseSchedulerUI = (function() {
     function buildAdminForm() {
         const formContainer = document.createElement('div');
         formContainer.id = 'greenhouse-admin-form';
-        formContainer.style.display = 'none'; // Initially hidden
+        formContainer.classList.add('greenhouse-hidden'); // Initially hidden via class
 
         const h1 = document.createElement('h1');
         h1.textContent = 'Admin Settings';
@@ -297,11 +295,11 @@ const GreenhouseSchedulerUI = (function() {
         // Show/hide error message
         if (errorEl) {
             if (isValid) {
-                errorEl.style.display = 'none';
+                errorEl.classList.add('greenhouse-hidden');
                 field.classList.remove('greenhouse-form-error-input');
             } else {
                 errorEl.textContent = errorMessage;
-                errorEl.style.display = 'block';
+                errorEl.classList.remove('greenhouse-hidden');
                 field.classList.add('greenhouse-form-error-input');
             }
         }
@@ -320,8 +318,9 @@ const GreenhouseSchedulerUI = (function() {
 
         try {
             // Show loading state
-            submitBtn.style.display = 'none';
-            loadingSpinner.style.display = 'flex';
+            submitBtn.classList.add('greenhouse-hidden');
+            loadingSpinner.classList.remove('greenhouse-hidden');
+            loadingSpinner.classList.add('greenhouse-flex');
 
             // Collect form data
             const formData = new FormData(form);
@@ -343,8 +342,9 @@ const GreenhouseSchedulerUI = (function() {
             // GreenhouseAppsScheduler.showErrorMessage('Failed to submit appointment request. Please try again.');
         } finally {
             // Hide loading state
-            submitBtn.style.display = 'block';
-            loadingSpinner.style.display = 'none';
+            submitBtn.classList.remove('greenhouse-hidden');
+            loadingSpinner.classList.add('greenhouse-hidden');
+            loadingSpinner.classList.remove('greenhouse-flex');
         }
     }
 
@@ -358,14 +358,12 @@ const GreenhouseSchedulerUI = (function() {
 
         const appointmentListDiv = document.createElement('div');
         appointmentListDiv.id = 'greenhouse-appointment-list';
-        appointmentListDiv.className = 'greenhouse-appointment-list';
-        appointmentListDiv.style.display = 'none';
+        appointmentListDiv.className = 'greenhouse-appointment-list greenhouse-hidden';
         fragment.appendChild(appointmentListDiv);
 
         const conflictModalDiv = document.createElement('div');
         conflictModalDiv.id = 'greenhouse-conflict-modal';
-        conflictModalDiv.className = 'greenhouse-modal';
-        conflictModalDiv.style.display = 'none';
+        conflictModalDiv.className = 'greenhouse-modal greenhouse-hidden';
         conflictModalDiv.setAttribute('role', 'dialog');
         conflictModalDiv.setAttribute('aria-labelledby', 'conflict-modal-title');
 
@@ -431,7 +429,7 @@ const GreenhouseSchedulerUI = (function() {
         const cancelBtn = modal.querySelector('#greenhouse-conflict-cancel');
         
         const closeModal = () => {
-            modal.style.display = 'none';
+            modal.classList.add('greenhouse-hidden');
             document.body.classList.remove('greenhouse-modal-open');
         };
 
@@ -440,7 +438,7 @@ const GreenhouseSchedulerUI = (function() {
 
         // Close on escape key
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal.style.display !== 'none') {
+            if (e.key === 'Escape' && !modal.classList.contains('greenhouse-hidden')) {
                 closeModal();
             }
         });
@@ -596,12 +594,9 @@ const GreenhouseSchedulerUI = (function() {
         const deleteButton = document.createElement('button');
         deleteButton.type = 'button';
         deleteButton.textContent = 'Delete Appointment';
-        deleteButton.style.marginLeft = '10px';
-        deleteButton.style.backgroundColor = 'red';
-        deleteButton.style.color = 'white';
+        deleteButton.classList.add('greenhouse-admin-app-button', 'greenhouse-admin-app-button-delete'); // Added class
         deleteButton.dataset.action = 'delete-appointment'; // Added data-action
         deleteButton.dataset.serviceRef = currentAppointment.serviceRef; // Added serviceRef
-        deleteButton.className = 'greenhouse-admin-app-button'; // Added class
         form.appendChild(deleteButton);
 
         return form;
@@ -613,35 +608,30 @@ const GreenhouseSchedulerUI = (function() {
         const cancelButton = modal.querySelector('#greenhouse-conflict-cancel');
         const resolveButton = modal.querySelector('#greenhouse-conflict-resolve');
 
-        closeButton.addEventListener('click', () => {
-            modal.style.display = 'none';
+        const closeModal = () => {
+            modal.classList.add('greenhouse-hidden');
             document.body.classList.remove('greenhouse-modal-open');
-        });
+        };
 
-        cancelButton.addEventListener('click', () => {
-            modal.style.display = 'none';
-            document.body.classList.remove('greenhouse-modal-open');
-        });
+        closeButton.addEventListener('click', closeModal);
+        cancelButton.addEventListener('click', closeModal);
 
         resolveButton.addEventListener('click', () => {
-            modal.style.display = 'none';
-            document.body.classList.remove('greenhouse-modal-open');
+            closeModal();
             // Optionally, navigate user to a different part of the form or calendar
         });
 
         // Close on escape key
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal.style.display !== 'none') {
-                modal.style.display = 'none';
-                document.body.classList.remove('greenhouse-modal-open');
+            if (e.key === 'Escape' && !modal.classList.contains('greenhouse-hidden')) {
+                closeModal();
             }
         });
 
         // Close on backdrop click
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                modal.style.display = 'none';
-                document.body.classList.remove('greenhouse-modal-open');
+                closeModal();
             }
         });
     }
@@ -666,7 +656,7 @@ const GreenhouseSchedulerUI = (function() {
         }
 
         if (modal) {
-            modal.style.display = 'block';
+            modal.classList.remove('greenhouse-hidden');
             document.body.classList.add('greenhouse-modal-open');
         }
     }
@@ -684,7 +674,7 @@ const GreenhouseSchedulerUI = (function() {
         if (form) {
             form.reset();
             // Clear any validation messages
-            form.querySelectorAll('.greenhouse-form-error').forEach(el => el.style.display = 'none');
+            form.querySelectorAll('.greenhouse-form-error').forEach(el => el.classList.add('greenhouse-hidden'));
             form.querySelectorAll('.greenhouse-form-error-input').forEach(el => el.classList.remove('greenhouse-form-error-input'));
         }
     }
@@ -706,9 +696,9 @@ const GreenhouseSchedulerUI = (function() {
     function showComponent(componentName) {
         for (const key in components) {
             if (key === componentName) {
-                components[key].style.display = 'block';
+                components[key].classList.remove('greenhouse-hidden');
             } else if (key !== 'mainContainer') {
-                components[key].style.display = 'none';
+                components[key].classList.add('greenhouse-hidden');
             }
         }
     }
@@ -962,5 +952,3 @@ const GreenhouseSchedulerUI = (function() {
         console.log('SchedulerUI: Conflicts rendered.');
     }
 })();
-
-    

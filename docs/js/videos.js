@@ -152,43 +152,16 @@
         },
 
         async loadCSS() {
-            const loadOperation = async (cssFileName) => {
-                const response = await fetch(`${appState.baseUrl}css/${cssFileName}`);
-                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                return await response.text();
-            };
-            try {
-                const videosCssText = await retryOperation(() => loadOperation('videos.css'), 'Loading videos.css');
-                if (!document.querySelector('style[data-greenhouse-videos-css]')) {
-                    const styleElement = document.createElement('style');
-                    styleElement.setAttribute('data-greenhouse-videos-css', 'true');
-                    styleElement.textContent = videosCssText;
-                    document.head.appendChild(styleElement);
-                }
-                const videoCssText = await retryOperation(() => loadOperation('video.css'), 'Loading video.css');
-                if (!document.querySelector('style[data-greenhouse-video-css]')) {
-                    const styleElement = document.createElement('style');
-                    styleElement.setAttribute('data-greenhouse-video-css', 'true');
-                    styleElement.textContent = videoCssText;
-                    document.head.appendChild(styleElement);
-                }
-            } catch {
-                this.loadFallbackCSS();
+            // Load pages.css for general app styles
+            if (!document.querySelector('link[data-greenhouse-pages-css]')) {
+                const linkElement = createElement('link', {
+                    rel: 'stylesheet',
+                    type: 'text/css',
+                    href: `${appState.baseUrl}css/pages.css`,
+                    'data-greenhouse-pages-css': 'true'
+                });
+                document.head.appendChild(linkElement);
             }
-        },
-
-        loadFallbackCSS() {
-            const fallbackCSS = `
-                .greenhouse-layout-container { display: flex; flex-wrap: wrap; gap: 20px; }
-                .greenhouse-video-item { flex: 1; min-width: 300px; border: 1px solid #eee; padding: 15px; border-radius: 8px; }
-                .greenhouse-video-title { font-weight: bold; margin-bottom: 10px; }
-                .greenhouse-video-player { width: 100%; height: 200px; background-color: #000; margin-bottom: 10px; }
-                .greenhouse-loading-spinner { display: flex; align-items: center; gap: 10px; }
-            `;
-            const styleElement = document.createElement('style');
-            styleElement.setAttribute('data-greenhouse-videos-fallback-css', 'true');
-            styleElement.textContent = fallbackCSS;
-            document.head.appendChild(styleElement);
         },
 
         async fetchVideos() {
@@ -203,8 +176,10 @@
             } catch (error) {
                 const videosListElement = document.getElementById('videos-list');
                 if (videosListElement) {
-                    videosListElement.innerHTML = `<p>Failed to load videos: ${error.message}</p>`;
+                    videosListElement.innerHTML = '';
+                    videosListElement.appendChild(createElement('p', {}, `Failed to load videos: ${error.message}`));
                 }
+                GreenhouseUtils.displayError(`Failed to load videos: ${error.message}`);
                 if (error.message.includes('status: 404')) {
                     appState.hasCriticalError = true;
                     this.displayCriticalErrorOverlay(`Failed to load videos: ${error.message}`);
@@ -224,61 +199,52 @@
                 }
                 return appDomFragment;
             } catch (error) {
+                GreenhouseUtils.displayError(`Failed to load ${appState.currentView} view: ${error.message}`);
                 return this.createErrorView(`Failed to load ${appState.currentView} view: ${error.message}`);
             }
         },
 
         createDefaultVideosView() {
-            const fragment = document.createDocumentFragment();
-            const videosDiv = document.createElement('div');
-            videosDiv.className = 'greenhouse-videos-view';
-            videosDiv.innerHTML = `
-                <div class="greenhouse-videos-content">
-                    <h2>Greenhouse Shorts</h2>
-                    <p>Check out the latest short videos from @greenhousemhd!</p>
-                    <div id="videos-list" class="greenhouse-layout-container">
-                        <p>Loading videos...</p>
-                    </div>
-                </div>
-            `;
-            fragment.appendChild(videosDiv);
-            return fragment;
+            const videosDiv = createElement('div', { className: 'greenhouse-videos-view' },
+                createElement('div', { className: 'greenhouse-videos-content' },
+                    createElement('h2', {}, 'Greenhouse Shorts'),
+                    createElement('p', {}, 'Check out the latest short videos from @greenhousemhd!'),
+                    createElement('div', { id: 'videos-list', className: 'greenhouse-layout-container' },
+                        createElement('p', {}, 'Loading videos...')
+                    )
+                )
+            );
+            return videosDiv;
         },
 
         displayVideos(videos, container) {
-            container.innerHTML = '';
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
             const videosToDisplay = (videos && videos.length > 0) ? videos : [
                 { title: 'Placeholder Video 1', description: 'No content available.', embedUrl: 'https://www.youtube.com/embed/placeholder1' },
                 { title: 'Placeholder Video 2', description: 'No content available.', embedUrl: 'https://www.youtube.com/embed/placeholder2' }
             ];
-            const videoGridContainer = document.createElement('div');
-            videoGridContainer.className = 'video-grid-container';
+            const videoGridContainer = createElement('div', { className: 'video-grid-container' });
             container.appendChild(videoGridContainer);
 
             videosToDisplay.forEach((video) => {
-                const videoItem = document.createElement('div');
-                videoItem.className = 'video-item';
+                const videoItem = createElement('div', { className: 'video-item' });
                 if (!videos || videos.length === 0) {
                     videoItem.classList.add('placeholder');
                 }
-                const videoContent = document.createElement('div');
-                videoContent.className = 'video-content';
-                const videoTitle = document.createElement('h2');
-                videoTitle.className = 'video-title';
-                videoTitle.textContent = video.title || 'Untitled Video';
-                const videoDescription = document.createElement('p');
-                videoDescription.className = 'video-description';
-                videoDescription.textContent = video.description || '';
-                const videoPlayerContainer = document.createElement('div');
-                videoPlayerContainer.className = 'video-player-container';
-                const iframe = document.createElement('iframe');
-                iframe.src = video.embedUrl || video.url;
-                iframe.frameBorder = '0';
-                iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
-                iframe.setAttribute('allowfullscreen', '');
-                videoPlayerContainer.appendChild(iframe);
-                videoContent.appendChild(videoTitle);
-                videoContent.appendChild(videoDescription);
+                const videoContent = createElement('div', { className: 'video-content' },
+                    createElement('h2', { className: 'video-title' }, video.title || 'Untitled Video'),
+                    createElement('p', { className: 'video-description' }, video.description || '')
+                );
+                const videoPlayerContainer = createElement('div', { className: 'video-player-container' },
+                    createElement('iframe', {
+                        src: video.embedUrl || video.url,
+                        frameBorder: '0',
+                        allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+                        allowfullscreen: ''
+                    })
+                );
                 videoItem.appendChild(videoPlayerContainer);
                 videoItem.appendChild(videoContent);
                 videoGridContainer.appendChild(videoItem);
@@ -286,98 +252,78 @@
         },
 
         createErrorView(message) {
-            const fragment = document.createDocumentFragment();
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'greenhouse-error-view';
-            errorDiv.innerHTML = `
-                <div class="greenhouse-error-content">
-                    <h2>Unable to Load Application</h2>
-                    <p>${message}</p>
-                    <p>Please refresh the page or contact support.</p>
-                    <button class="greenhouse-btn greenhouse-btn-primary">Refresh Page</button>
-                </div>
-            `;
+            const errorDiv = createElement('div', { className: 'greenhouse-error-view' },
+                createElement('div', { className: 'greenhouse-error-content' },
+                    createElement('h2', {}, 'Unable to Load Application'),
+                    createElement('p', {}, message),
+                    createElement('p', {}, 'Please refresh the page or contact support.'),
+                    createElement('button', { className: 'greenhouse-btn greenhouse-btn-primary' }, 'Refresh Page')
+                )
+            );
             const btn = errorDiv.querySelector('button');
             btn.addEventListener('click', () => window.location.reload());
-            fragment.appendChild(errorDiv);
-            return fragment;
+            return errorDiv;
         },
 
+        showSuccessMessage(message) { GreenhouseUtils.displaySuccess(message); },
+        showErrorMessage(message) { GreenhouseUtils.displayError(message); },
         showNotification(message, type = 'info', duration = 5000) {
-            const existing = document.querySelectorAll('.greenhouse-notification');
-            existing.forEach(el => el.remove());
-            const notification = document.createElement('div');
-            notification.className = `greenhouse-notification greenhouse-notification-${type}`;
-            notification.innerHTML = `
-                <div class="greenhouse-notification-content">
-                    <span>${message}</span>
-                    <button type="button">&times;</button>
-                </div>
-            `;
-            notification.style.cssText = `
-                position: fixed; top: 20px; right: 20px; z-index: 10000;
-                padding: 15px; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                background: #d1ecf1; color: #0c5460;
-            `;
-            document.body.appendChild(notification);
-            const closeBtn = notification.querySelector('button');
-            closeBtn.addEventListener('click', () => notification.remove());
-            if (duration > 0) {
-                setTimeout(() => notification.remove(), duration);
-            }
+            if (type === 'success') GreenhouseUtils.displaySuccess(message, duration);
+            else if (type === 'error') GreenhouseUtils.displayError(message, duration);
+            else GreenhouseUtils.displayInfo(message, duration);
         },
 
         async init(targetSelector, baseUrl) {
             if (appState.isInitialized || appState.isLoading) return;
             appState.isLoading = true;
             try {
+                await this.loadScript('GreenhouseUtils.js'); // Load GreenhouseUtils
                 appState.targetSelector = targetSelector;
                 appState.baseUrl = baseUrl;
                 appState.targetElement = await waitForElement(targetSelector);
-                this.loadCSS().catch(() => this.loadFallbackCSS());
+                this.loadCSS();
                 const appDomFragment = await this.renderView();
                 await new Promise(res => setTimeout(res, config.dom.insertionDelay));
-                const appContainer = document.createElement('section');
-                appContainer.id = 'greenhouse-app-container';
-                appContainer.appendChild(appDomFragment);
+                const appContainer = createElement('section', {
+                    id: 'greenhouse-app-container',
+                    className: 'greenhouse-app-container',
+                    'data-greenhouse-app': appState.currentView
+                }, appDomFragment);
                 appState.targetElement.prepend(appContainer);
                 appState.isInitialized = true;
-                this.showNotification('Videos app loaded', 'success', 3000);
+                this.showNotification('Videos app loaded successfully', 'success', 3000);
             } catch (error) {
                 appState.errors.push(error);
-                if (error.message.includes('status: 404')) {
-                    appState.hasCriticalError = true;
-                    this.displayCriticalErrorOverlay(error.message);
-                } else {
-                    this.showNotification('Failed to load videos app', 'error');
-                }
+                this.showErrorMessage('Failed to load videos application');
             } finally {
                 appState.isLoading = false;
             }
-        },
-
-        displayCriticalErrorOverlay(message) {
-            const existingError = document.getElementById('greenhouse-critical-error-overlay');
-            if (existingError) existingError.remove();
-            const errorDiv = document.createElement('div');
-            errorDiv.id = 'greenhouse-critical-error-overlay';
-            errorDiv.style.cssText = `
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background-color: rgba(255,255,255,0.95); display: flex;
-                justify-content: center; align-items: center; z-index: 100000;
-            `;
-            errorDiv.innerHTML = `
-                <div style="background:#f8d7da; padding:30px; border-radius:8px;">
-                    <h2>Greenhouse Videos Application Error</h2>
-                    <p>${message}</p>
-                    <button>Reload Page</button>
-                </div>
-            `;
-            document.body.appendChild(errorDiv);
-            const btn = errorDiv.querySelector('button');
-            btn.addEventListener('click', () => window.location.reload());
         }
     };
+
+    /**
+     * Creates a DOM element with specified tag, attributes, and children.
+     * @param {string} tag - The HTML tag name.
+     * @param {object} [attributes={}] - An object of attribute key-value pairs.
+     * @param {...(HTMLElement|string)} children - Child elements or strings.
+     * @returns {HTMLElement} The created DOM element.
+     */
+    function createElement(tag, attributes = {}, ...children) {
+        const element = document.createElement(tag);
+        for (const key in attributes) {
+            if (attributes.hasOwnProperty(key)) {
+                element.setAttribute(key, attributes[key]);
+            }
+        }
+        children.forEach(child => {
+            if (typeof child === 'string') {
+                element.appendChild(document.createTextNode(child));
+            } else if (child instanceof Node) {
+                element.appendChild(child);
+            }
+        });
+        return element;
+    }
 
     async function main() {
         if (appState.hasCriticalError || appState.isLoading) return;
@@ -392,20 +338,6 @@
         });
         await GreenhouseAppsVideos.init(appState.targetSelector, appState.baseUrl);
     }
-
-    const animationCSS = `
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    const animationStyle = document.createElement('style');
-    animationStyle.textContent = animationCSS;
-    document.head.appendChild(animationStyle);
 
     window.GreenhouseVideos = {
         getState: () => ({ ...appState }),
