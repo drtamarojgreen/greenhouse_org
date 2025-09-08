@@ -1,4 +1,4 @@
-function GreenhouseDashboardApp() {
+function GreenhouseDashboardApp(GreenhouseSchedulerUI) {
     async function getAppointmentsByDateRange(startDate, endDate) {
         const response = await fetch(`/_api/getAppointmentsByDateRange?startDate=${startDate}&endDate=${endDate}`);
         if (!response.ok) {

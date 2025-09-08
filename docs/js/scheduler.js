@@ -297,8 +297,8 @@
                     case 'dashboard':
                         await this.loadScript('GreenhouseDashboardApp.js');
                         if (typeof GreenhouseDashboardApp === 'function') {
-                            appState.currentAppInstance = GreenhouseDashboardApp();
-                            appDomFragment = GreenhouseSchedulerUI.buildDashboardUI(); // Call from schedulerUI
+                            appState.currentAppInstance = GreenhouseDashboardApp(GreenhouseSchedulerUI);
+                            appDomFragment = appState.currentAppInstance.buildDashboardUI(); // Call from the instance
                         } else {
                             throw new Error('GreenhouseDashboardApp not found or not a function');
                         }
