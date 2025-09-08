@@ -295,20 +295,20 @@
                 if (document.querySelector('style[data-greenhouse-videos-css]')) {
                     console.log('Videos: CSS already loaded');
                     return;
-                    }
-                    this.observeVideosListElement(videosListContainer); // Start observing after content is loaded
-                } catch (error) {
-                    console.error("Videos: Error fetching videos:", error);
-                    // Display a less intrusive error message within the videos list itself
-                    videosListElement.innerHTML = `<p>Failed to load videos: ${error.message}. Please check the backend configuration.</p>`;
-                    this.showErrorMessage(`Failed to load videos: ${error.message}`);
-                    // Only show the critical overlay if it's a 404, and prevent re-initialization
-                    if (error.message.includes('status: 404')) {
-                        appState.hasCriticalError = true;
-                        this.displayCriticalErrorOverlay(`Failed to load videos: ${error.message}`);
-                    }
                 }
-            },
+
+                const styleElement = document.createElement('style');
+                styleElement.setAttribute('data-greenhouse-videos-css', 'true');
+                styleElement.textContent = cssText;
+                document.head.appendChild(styleElement);
+
+                console.log('Videos: CSS loaded successfully');
+
+            } catch (error) {
+                console.warn('Videos: Failed to load CSS, using fallback styles:', error);
+                this.loadFallbackCSS();
+            }
+        },
 
         /**
          * @function loadFallbackCSS
@@ -425,18 +425,38 @@
         displayVideos(videos, container) {
             container.innerHTML = ''; // Clear "Loading videos..."
             if (videos && videos.length > 0) {
-                videos.forEach(video => {
+                videos.forEach((video, index) => {
                     const videoItem = document.createElement('div');
-                    videoItem.className = 'greenhouse-video-item';
+                    videoItem.setAttribute('role', 'listitem');
+                    videoItem.className = 'T7n0L6';
                     videoItem.innerHTML = `
-                        <h3 class="greenhouse-video-title">${video.title || 'Untitled Video'}</h3>
-                        <iframe class="greenhouse-video-player" 
-                                src="${video.embedUrl || video.url}" 
-                                frameborder="0" 
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                allowfullscreen>
-                        </iframe>
-                        <p>${video.description || ''}</p>
+                        <div id="comp-mf8yayls__item-${index}" class="comp-mf8yayls YzqVVZ wixui-repeater__item">
+                            <div id="bgLayers_comp-mf8yayls__item-${index}" data-hook="bgLayers" data-motion-part="BG_LAYER comp-mf8yayls__item-${index}" class="MW5IWV">
+                                <div data-testid="colorUnderlay" class="LWbAav Kv1aVt"></div>
+                                <div id="bgMedia_comp-mf8yayls__item-${index}" data-motion-part="BG_MEDIA comp-mf8yayls__item-${index}" class="VgO9Yg"></div>
+                            </div>
+                            <div data-mesh-id="comp-mf8yayls__item-${index}inlineContent" data-testid="inline-content" class="">
+                                <div data-mesh-id="comp-mf8yayls__item-${index}inlineContent-gridContainer" data-testid="mesh-container-content">
+                                    <div id="comp-mf8yayly__item-${index}" class="Z_l5lU MMl86N zQ9jDz qvSjx3 Vq6kJx comp-mf8yayly wixui-rich-text" data-testid="richTextElement">
+                                        <h2 class="font_5 wixui-rich-text__text" style="font-size:20px;"><span style="font-size:20px;" class="wixui-rich-text__text">${video.title || 'Untitled Video'}</span></h2>
+                                    </div>
+                                    <div id="comp-mf8yaym0__item-${index}" class="Z_l5lU ku3DBC zQ9jDz qvSjx3 Vq6kJx comp-mf8yaym0 wixui-rich-text" data-testid="richTextElement">
+                                        <p class="font_8 wixui-rich-text__text" style="font-size:16px; line-height:1.6em;"><span style="font-size:16px;" class="wixui-rich-text__text">${video.description || ''}</span></p>
+                                    </div>
+                                    <div id="comp-mf8yaym2__item-${index}" class="MazNVa comp-mf8yaym2 wixui-image">
+                                        <div data-testid="linkElement" class="j7pOnl">
+                                            <iframe class="greenhouse-video-player" 
+                                                    src="${video.embedUrl || video.url}" 
+                                                    frameborder="0" 
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                                    allowfullscreen
+                                                    style="width: 100%; height: 212px; object-fit: cover;">
+                                            </iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     `;
                     container.appendChild(videoItem);
                 });
@@ -565,12 +585,21 @@
          * @returns {Object} Container info with element and insertion strategy
          */
         findOptimalContainer(targetElement) {
-            // Always use the target element directly as the container
-            // This ensures the app is inserted into the specific column identified by greenhouse.js
+            // Use the wixui-repeater as the container for consistency with other apps
+            const repeaterContainer = targetElement.closest('.wixui-repeater');
+            if (repeaterContainer) {
+                return {
+                    container: repeaterContainer,
+                    strategy: 'wix-repeater',
+                    insertionMethod: 'prepend'
+                };
+            }
+
+            // Fallback to the original strategy if no repeater is found
             return {
                 container: targetElement,
                 strategy: 'target-direct',
-                insertionMethod: 'prepend' // Prepend to ensure it's the first child
+                insertionMethod: 'prepend'
             };
         },
 

@@ -54,7 +54,7 @@
             dashboard: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)',
             admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
             books: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div > section.wixui-section', // User-specified selector for books
-            videos: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
+            videos: '.wixui-repeater', // Selector for the videos repeater
             news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column' // Reverting to a generic column selector
         },
         /**
@@ -65,7 +65,7 @@
             dashboard: '.wixui-column-strip__column:nth-child(2)',
             admin: '.wixui-column-strip__column:last-child',
             books: 'section.wixui-section', // Fallback to a more general section if the specific one isn't found
-            videos: '.wixui-column-strip__column:first-child', // Reverting to a generic column selector
+            videos: '.wixui-column-strip__column:first-child', // Fallback to a generic column selector
             news: '.wixui-column-strip__column:first-child' // Reverting to a generic column selector
         }
     };
