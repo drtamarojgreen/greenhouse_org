@@ -6,7 +6,7 @@ let quotes = []; // Will store fetched quotes
 
 async function fetchQuotes() {
     try {
-        const response = await fetch('/_api/getInspiration');
+        const response = await fetch('/_function/getInspiration');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

@@ -1,6 +1,6 @@
 function GreenhouseDashboardApp(GreenhouseSchedulerUI) {
     async function getAppointmentsByDateRange(startDate, endDate) {
-        const response = await fetch(`/_api/getAppointmentsByDateRange?startDate=${startDate}&endDate=${endDate}`);
+        const response = await fetch(`/_function/getAppointmentsByDateRange?startDate=${startDate}&endDate=${endDate}`);
         if (!response.ok) {
             throw new Error(`Failed to get appointments: ${response.statusText}`);
         }
@@ -8,7 +8,7 @@ function GreenhouseDashboardApp(GreenhouseSchedulerUI) {
     }
 
     async function getConflictsForDateRange(startDate, endDate) {
-        const response = await fetch(`/_api/getConflictsForDateRange?startDate=${startDate}&endDate=${endDate}`);
+        const response = await fetch(`/_function/getConflictsForDateRange?startDate=${startDate}&endDate=${endDate}`);
         if (!response.ok) {
             throw new Error(`Failed to get conflicts: ${response.statusText}`);
         }
@@ -16,7 +16,7 @@ function GreenhouseDashboardApp(GreenhouseSchedulerUI) {
     }
 
     async function updateAppointmentStatus(appointmentId, status) {
-        const response = await fetch('/_api/updateAppointmentStatus', {
+        const response = await fetch('/_function/updateAppointmentStatus', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -30,7 +30,7 @@ function GreenhouseDashboardApp(GreenhouseSchedulerUI) {
     }
 
     async function resolveConflict(conflictId, resolution) {
-        const response = await fetch('/_api/resolveConflict', {
+        const response = await fetch('/_function/resolveConflict', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ function GreenhouseDashboardApp(GreenhouseSchedulerUI) {
     }
 
     async function getServiceTypes() {
-        const response = await fetch('/_api/getServiceTypes');
+        const response = await fetch('/_function/getServiceTypes');
         if (!response.ok) {
             throw new Error(`Failed to get service types: ${response.statusText}`);
         }

@@ -13,7 +13,7 @@ The architecture can be broken down into the following components:
 3.  **Application Core (`scheduler.js`)**: The main script for the scheduling application.
 4.  **View Scripts (`dashboard.js`, `admin.js`)**: Scripts that build the UI for specific views within the application.
 5.  **Logic Script (`GreenhousePatientApp.js`)**: A script that contains the business logic for the patient-facing form.
-6.  **Wix Velo Backend HTTP Functions**: Backend functions that provide data and services to the application via `/_api/` endpoints.
+6.  **Wix Velo Backend HTTP Functions**: Backend functions that provide data and services to the application via `/_function/` endpoints.
 
 ## Process Flow
 
@@ -77,70 +77,70 @@ graph TD
 *   **Purpose**: To provide the business logic for the patient appointment request form.
 *   **Functionality**:
     *   Handles form submissions, user input, and validation.
-    *   Communicates with the Wix Velo backend via HTTP Functions (`/_api/` endpoints) to create, read, update, and delete appointments and services.
+    *   Communicates with the Wix Velo backend via HTTP Functions (`/_function/` endpoints) to create, read, update, and delete appointments and services.
     *   **Important**: This script is only intended to be used with the `patient` view.
 
 ## Wix Velo HTTP Functions (`.web.js`)
 
-The following HTTP Functions are deployed in the `apps/wv/backend/` directory and provide API endpoints accessible via `/_api/` calls.
+The following HTTP Functions are deployed in the `apps/wv/backend/` directory and provide API endpoints accessible via `/_function/` calls.
 
 *   **`getAppointments.web.js`**:
     *   Purpose: Retrieves all appointments from the "Appointments" collection.
-    *   Endpoint: `/_api/getAppointments` (GET)
+    *   Endpoint: `/_function/getAppointments` (GET)
 *   **`getServices.web.js`**:
     *   Purpose: Retrieves all available services from the "Services" collection.
-    *   Endpoint: `/_api/getServices` (GET)
+    *   Endpoint: `/_function/getServices` (GET)
 *   **`proposeAppointment.web.js`**:
     *   Purpose: Proposes an appointment and checks for conflicts against existing appointments.
-    *   Endpoint: `/_api/proposeAppointment` (POST)
+    *   Endpoint: `/_function/proposeAppointment` (POST)
 *   **`createAppointment.web.js`**:
     *   Purpose: Creates a new appointment in the "Appointments" collection.
-    *   Endpoint: `/_api/createAppointment` (POST)
+    *   Endpoint: `/_function/createAppointment` (POST)
 *   **`updateAppointment.web.js`**:
     *   Purpose: Updates an existing appointment in the "Appointments" collection.
-    *   Endpoint: `/_api/updateAppointment/{appointmentId}` (PUT)
+    *   Endpoint: `/_function/updateAppointment/{appointmentId}` (PUT)
 *   **`deleteAppointment.web.js`**:
     *   Purpose: Deletes an appointment from the "Appointments" collection.
-    *   Endpoint: `/_api/deleteAppointment/{appointmentId}` (DELETE)
+    *   Endpoint: `/_function/deleteAppointment/{appointmentId}` (DELETE)
 *   **`getAppointmentsByDateRange.web.js`**:
     *   Purpose: Retrieves appointments within a specific date range from the "Appointments" collection.
-    *   Endpoint: `/_api/getAppointmentsByDateRange?startDate={startDate}&endDate={endDate}` (GET)
+    *   Endpoint: `/_function/getAppointmentsByDateRange?startDate={startDate}&endDate={endDate}` (GET)
 *   **`getConflictsForDateRange.web.js`**:
     *   Purpose: Retrieves existing appointments within a given date range for conflict checking.
-    *   Endpoint: `/_api/getConflictsForDateRange?startDate={startDate}&endDate={endDate}` (GET)
+    *   Endpoint: `/_function/getConflictsForDateRange?startDate={startDate}&endDate={endDate}` (GET)
 *   **`getServiceTypes.web.js`**:
     *   Purpose: Retrieves all service types from the "Services" collection.
-    *   Endpoint: `/_api/getServiceTypes` (GET)
+    *   Endpoint: `/_function/getServiceTypes` (GET)
 *   **`getEvents.web.js`**:
     *   Purpose: Retrieves event data (currently hardcoded).
-    *   Endpoint: `/_api/getEvents` (GET)
+    *   Endpoint: `/_function/getEvents` (GET)
 *   **`getEventById.web.js`**:
     *   Purpose: Retrieves a specific event by ID (currently from hardcoded data).
-    *   Endpoint: `/_api/getEventById/{eventId}` (GET)
+    *   Endpoint: `/_function/getEventById/{eventId}` (GET)
 *   **`registerForEvent.web.js`**:
     *   Purpose: Handles event registration (currently simulated).
-    *   Endpoint: `/_api/registerForEvent` (POST)
+    *   Endpoint: `/_function/registerForEvent` (POST)
 *   **`getFAQs.web.js`**:
     *   Purpose: Retrieves FAQ data (currently hardcoded).
-    *   Endpoint: `/_api/getFAQs` (GET)
+    *   Endpoint: `/_function/getFAQs` (GET)
 *   **`addFAQ.web.js`**:
     *   Purpose: Adds a new FAQ (currently simulated).
-    *   Endpoint: `/_api/addFAQ` (POST)
+    *   Endpoint: `/_function/addFAQ` (POST)
 *   **`getGuides.web.js`**:
     *   Purpose: Retrieves self-help guide data (currently hardcoded).
-    *   Endpoint: `/_api/getGuides` (GET)
+    *   Endpoint: `/_function/getGuides` (GET)
 *   **`getGuideById.web.js`**:
     *   Purpose: Retrieves a specific guide by ID (currently from hardcoded data).
-    *   Endpoint: `/_api/getGuideById/{guideId}` (GET)
+    *   Endpoint: `/_function/getGuideById/{guideId}` (GET)
 *   **`getQuiz.web.js`**:
     *   Purpose: Retrieves quiz data by ID (currently from hardcoded data).
-    *   Endpoint: `/_api/getQuiz/{quizId}` (GET)
+    *   Endpoint: `/_function/getQuiz/{quizId}` (GET)
 *   **`submitQuizResults.web.js`**:
     *   Purpose: Submits quiz results (currently simulated).
-    *   Endpoint: `/_api/submitQuizResults` (POST)
+    *   Endpoint: `/_function/submitQuizResults` (POST)
 *   **`getLatestVideosFromFeed.web.js`**:
     *   Purpose: Retrieves latest video feed data (currently hardcoded).
-    *   Endpoint: `/_api/getLatestVideosFromFeed` (GET)
+    *   Endpoint: `/_function/getLatestVideosFromFeed` (GET)
 
 ## Challenges of Wix DOM Manipulation
 

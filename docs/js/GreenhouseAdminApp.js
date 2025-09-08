@@ -1,7 +1,7 @@
 function GreenhouseAdminApp() {
     // Velo backend function wrappers
     async function getAppointmentById(appointmentId) {
-        const response = await fetch(`/_api/getAppointmentById/${appointmentId}`);
+        const response = await fetch(`/_function/getAppointmentById/${appointmentId}`);
         if (!response.ok) {
             throw new Error(`Failed to get appointment: ${response.statusText}`);
         }
@@ -9,7 +9,7 @@ function GreenhouseAdminApp() {
     }
 
     async function updateAppointment(appointmentId, updatedData) {
-        const response = await fetch(`/_api/updateAppointment/${appointmentId}`, {
+        const response = await fetch(`/_function/updateAppointment/${appointmentId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -23,7 +23,7 @@ function GreenhouseAdminApp() {
     }
 
     async function deleteAppointment(appointmentId, serviceRef) {
-        const response = await fetch(`/_api/deleteAppointment/${appointmentId}`, {
+        const response = await fetch(`/_function/deleteAppointment/${appointmentId}`, {
             method: 'DELETE',
         });
         if (!response.ok) {
@@ -33,7 +33,7 @@ function GreenhouseAdminApp() {
     }
 
     async function getServiceTypes() {
-        const response = await fetch('/_api/getServiceTypes');
+        const response = await fetch('/_function/getServiceTypes');
         if (!response.ok) {
             throw new Error(`Failed to get service types: ${response.statusText}`);
         }
