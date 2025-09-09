@@ -64,8 +64,8 @@ footer#SITE_FOOTER img[alt="The Greenhouse for Mental Health Development Logo - 
 
 
 @keyframes slideLR {
-  from { margin-left: 30%; }
-  to   { margin-left: 45%; }
+  from { margin-left: 45%; }
+  to   { margin-left: 55%; }
 }
 
 #SITE_FOOTER > div div div.wixui-image:nth-child(1) > img, footer#SITE_FOOTER img[alt="Lavender Flowers"] {
