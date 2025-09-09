@@ -216,3 +216,7 @@ body {
     padding: 5px;
 }
 
+section#greenhouse-app-container-left.greenhouse-app-container {
+    grid-template-columns: 200px;
+}
+

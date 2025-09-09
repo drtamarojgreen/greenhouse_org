@@ -5,6 +5,12 @@
   left: -50px;
 }    
 
+#SITE_FOOTER div.wixui-image:nth-child(5){
+    left: 0;
+    margin-left: 43%;
+    width: 20%;
+}    
+
 #SITE_FOOTER div.wixui-image:nth-child(7){
     float: left;
   margin: 0px 40% 0px 40%;
