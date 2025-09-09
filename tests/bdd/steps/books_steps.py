@@ -1,0 +1,21 @@
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from tests.bdd_runner import step
+
+@step(r'I am on the books page')
+def given_i_am_on_the_books_page(context):
+    context.driver.get('https://greenhousementalhealth.org/books/')
+
+@step(r'I should see the main books container')
+def then_i_should_see_the_main_books_container(context):
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.CLASS_NAME, 'greenhouse-books-view'))
+    )
+
+@step(r'I should see the book list')
+def then_i_should_see_the_book_list(context):
+    WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.ID, 'books-list'))
+    )
