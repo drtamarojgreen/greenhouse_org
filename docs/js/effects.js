@@ -448,8 +448,9 @@
             // Update viewBox to match the new width
             svg.setAttribute("viewBox", `0 0 ${headingWidth} 120`);
 
-            // Scale the x-coordinates of the path
-            const scaledPath = `M${10 * scaleFactor},110 C${150 * scaleFactor},-30 ${250 * scaleFactor},150 ${400 * scaleFactor},60 S${550 * scaleFactor},-30 ${700 * scaleFactor},60 S${790 * scaleFactor},100 ${790 * scaleFactor},100`;
+            // Scale the x-coordinates of the path to be relative to headingWidth
+            // Adjusting the control points and end points to better fit the dynamic width
+            const scaledPath = `M${headingWidth * 0.01},110 C${headingWidth * 0.18}, -30 ${headingWidth * 0.32},150 ${headingWidth * 0.5},60 S${headingWidth * 0.68},-30 ${headingWidth * 0.82},60 S${headingWidth * 0.99},100 ${headingWidth * 0.99},100`;
 
             const path = document.createElementNS(svgNS, "path");
             path.setAttribute("class", "vine-path");
@@ -481,8 +482,8 @@
             setTimeout(() => {
                 runAnimationCycle();
                 // Set an interval to repeat the animation.
-                // The animation takes 4s. We'll add a 2s pause before repeating.
-                setInterval(runAnimationCycle, 6000); // 4000ms animation + 2000ms pause
+                // The animation takes 6s. We'll add a 2s pause before repeating.
+                setInterval(runAnimationCycle, 8000); // 6000ms animation + 2000ms pause
             }, 100);
 
         } catch (error) {

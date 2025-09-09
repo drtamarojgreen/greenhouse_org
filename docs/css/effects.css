@@ -99,7 +99,7 @@ html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-lay
 
 #greenhouse-title-for-vine-effect.vine-effect-active {
     position: relative;
-    color: #357438;
+    /* color: #357438; - Removed to allow span color to show */
 }
 
 #greenhouse-title-for-vine-effect.vine-effect-active span {
@@ -133,11 +133,10 @@ html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-lay
     stroke: #357438; /* A nice green color for the vine */
     fill: none;
     /* The dasharray and dashoffset will be set by JavaScript to match the path length */
-    transition: stroke-dashoffset 4s ease-in-out;
+    transition: stroke-dashoffset 6s ease-in-out; /* Increased duration to 6s */
 }
 
 /* When the animation is running, the dashoffset is animated to 0, a drawing the vine */
 .vine-effect-active.animation-running .vine-path {
     stroke-dashoffset: 0;
 }
-

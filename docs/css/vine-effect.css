@@ -2,7 +2,7 @@
 
 #greenhouse-title-for-vine-effect.vine-effect-active {
     position: relative;
-    color: transparent;
+    /* color: transparent; - Removed to allow span color to show */
 }
 
 #greenhouse-title-for-vine-effect.vine-effect-active span {
