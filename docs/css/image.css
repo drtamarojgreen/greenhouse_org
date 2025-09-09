@@ -18,7 +18,13 @@
   left: 0px;
   width: 20%;
   display: block;
-}    
+    overflow: visible;
+    display: block;
+    height: auto;
+    z-index: 10;
+    position: relative;
+}
+  
 /* temporary placeholder */
 
 
