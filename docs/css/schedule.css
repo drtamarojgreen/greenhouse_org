@@ -1,46 +1,26 @@
-/* General Body and Container Styling */
-/*
-body {
+/* Scoped styles for the Greenhouse Schedule App */
+.greenhouse-app-container {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    background-color: #f4f7f6; 
-    color: #333;
     line-height: 1.6;
+    color: #333; /* Default text color */
 }
-*/
 
-/*
-h1, h2 {
-    color: #2c3e50; 
-    text-align: center;
-    margin-bottom: 25px;
-    font-weight: 600;
-}
-*/
-
-/* Layout for two-column structure (used by scheduler.js) */
-.wixui-column-strip__column {
+.greenhouse-app-container .wixui-column-strip__column {
     display: flex;
     flex-direction: column;
     padding: 20px;
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    margin-bottom: 20px; /* Space between panels on smaller screens */
+    margin-bottom: 20px;
 }
 
-/* Ensure the app container is the first item in the grid layout */
-.wixui-column-strip__column > #greenhouse-app-container {
-    order: -1; /* This makes it appear first in a flex/grid container */
+.greenhouse-app-container .wixui-column-strip__column > #greenhouse-app-container {
+    order: -1;
 }
 
-/* Responsive adjustments for two columns */
-
-
-/* Form Elements Styling */
-#event-form, .container {
+.greenhouse-app-container #event-form,
+.greenhouse-app-container .container {
     margin-bottom: 20px;
     padding: 25px;
     border: 1px solid #e0e0e0;
@@ -49,40 +29,40 @@ h1, h2 {
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-label {
+.greenhouse-app-container label {
     display: block;
     margin-bottom: 8px;
     font-weight: 500;
-    color: #555;
+    color: #357438; /* Consistent with primary green */
 }
 
-input[type="text"],
-input[type="date"],
-input[type="time"],
-select {
-    width: calc(100% - 22px); /* Account for padding and border */
+.greenhouse-app-container input[type="text"],
+.greenhouse-app-container input[type="date"],
+.greenhouse-app-container input[type="time"],
+.greenhouse-app-container select {
+    width: calc(100% - 22px);
     padding: 12px;
     margin-bottom: 15px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    box-sizing: border-box;
     font-size: 1rem;
     color: #333;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-input[type="text"]:focus,
-input[type="date"]:focus,
-input[type="time"]:focus,
-select:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+.greenhouse-app-container input[type="text"]:focus,
+.greenhouse-app-container input[type="date"]:focus,
+.greenhouse-app-container input[type="time"]:focus,
+.greenhouse-app-container select:focus {
+    border-color: #357438; /* Primary green */
+    box-shadow: 0 0 0 3px rgba(53, 116, 56, 0.25); /* Primary green shadow */
     outline: none;
 }
 
-button {
+.greenhouse-app-container button {
     padding: 12px 25px;
-    background-color: #007bff; /* Primary blue */
+    background-color: #357438; /* Primary green */
     color: white;
     border: none;
     border-radius: 5px;
@@ -90,20 +70,19 @@ button {
     font-size: 1rem;
     font-weight: 600;
     transition: background-color 0.3s ease, transform 0.2s ease;
-    margin-right: 10px; /* Space between buttons */
+    margin-right: 10px;
 }
 
-button:hover {
-    background-color: #0056b3; /* Darker blue on hover */
-    transform: translateY(-1px); /* Slight lift effect */
+.greenhouse-app-container button:hover {
+    background-color: #2d3e2d; /* Darker green on hover */
+    transform: translateY(-1px);
 }
 
-button:active {
+.greenhouse-app-container button:active {
     transform: translateY(0);
 }
 
-/* Weekly Schedule Table Styling */
-.schedule-table {
+.greenhouse-app-container .schedule-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
@@ -113,86 +92,83 @@ button:active {
     overflow: hidden;
 }
 
-.schedule-table th,
-.schedule-table td {
+.greenhouse-app-container .schedule-table th,
+.greenhouse-app-container .schedule-table td {
     border: 1px solid #e0e0e0;
-    padding: 8px; /* Reduced padding for a tighter schedule view */
+    padding: 8px;
     text-align: center;
-    font-size: 0.85rem; /* Smaller font size */
+    font-size: 0.85rem;
     color: #444;
     vertical-align: middle;
-    height: 40px; /* Fixed height for time slots */
-    position: relative; /* For absolute positioning of appointments */
+    height: 40px;
+    position: relative;
 }
 
-.schedule-table th {
-    background-color: #e9ecef;
-    color: #333;
+.greenhouse-app-container .schedule-table th {
+    background-color: #e8f5e8; /* Light green from theme */
+    color: #357438; /* Primary green */
     font-weight: 600;
     text-transform: uppercase;
     padding: 10px 5px;
 }
 
-.time-column-header {
-    width: 60px; /* Fixed width for the time column header */
+.greenhouse-app-container .time-column-header {
+    width: 60px;
     min-width: 60px;
     max-width: 60px;
-    background-color: #dbe4eb !important; /* Distinct background for the corner */
+    background-color: #f0faf4 !important; /* Lighter green from theme */
+    color: #357438;
 }
 
-.time-slot-label {
-    background-color: #f0f2f5;
+.greenhouse-app-container .time-slot-label {
+    background-color: #f0faf4; /* Lighter green from theme */
     font-weight: 500;
-    color: #555;
-    width: 60px; /* Fixed width for time labels */
+    color: #357438; /* Primary green */
+    width: 60px;
     min-width: 60px;
     max-width: 60px;
     text-align: right;
     padding-right: 10px;
 }
 
-.schedule-cell {
+.greenhouse-app-container .schedule-cell {
     background-color: #fff;
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
-.schedule-cell:hover {
-    background-color: #e6f7ff;
+.greenhouse-app-container .schedule-cell:hover {
+    background-color: #e8f5e8; /* Light green hover */
 }
 
-/* Offset shading for legibility */
-.schedule-table tr:nth-child(odd) .schedule-cell:nth-child(even) {
-    background-color: #f8f8f8; /* Light grey for odd rows, even cells */
+.greenhouse-app-container .schedule-table tr:nth-child(odd) .schedule-cell:nth-child(even) {
+    background-color: #f8fdf9; /* Very light green */
 }
 
-.schedule-table tr:nth-child(even) .schedule-cell:nth-child(odd) {
-    background-color: #f8f8f8; /* Light grey for even rows, odd cells */
+.greenhouse-app-container .schedule-table tr:nth-child(even) .schedule-cell:nth-child(odd) {
+    background-color: #f8fdf9; /* Very light green */
 }
 
-/* Further refine shading for better contrast */
-.schedule-table tr:nth-child(odd) .schedule-cell:nth-child(odd) {
-    background-color: #ffffff; /* White for odd rows, odd cells */
+.greenhouse-app-container .schedule-table tr:nth-child(odd) .schedule-cell:nth-child(odd) {
+    background-color: #ffffff;
 }
 
-.schedule-table tr:nth-child(even) .schedule-cell:nth-child(even) {
-    background-color: #ffffff; /* White for even rows, even cells */
+.greenhouse-app-container .schedule-table tr:nth-child(even) .schedule-cell:nth-child(even) {
+    background-color: #ffffff;
 }
 
-/* Ensure time column is always distinct */
-.schedule-table td.time-slot-label {
-    background-color: #f0f2f5;
+.greenhouse-app-container .schedule-table td.time-slot-label {
+    background-color: #f0faf4; /* Lighter green from theme */
 }
 
-/* Styling for appointments within cells */
-.schedule-cell .appointment-item {
+.greenhouse-app-container .schedule-cell .appointment-item {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #d4edda; /* Light green for appointments */
-    border: 1px solid #28a745;
+    background-color: #a5d6a7; /* Medium light green */
+    border: 1px solid #357438; /* Primary green border */
     border-radius: 4px;
     padding: 2px 5px;
     margin: 2px;
@@ -207,8 +183,7 @@ button:active {
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* General Table Styling (for other tables, if any) */
-table:not(.schedule-table) {
+.greenhouse-app-container table:not(.schedule-table) {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
@@ -218,8 +193,8 @@ table:not(.schedule-table) {
     overflow: hidden;
 }
 
-table:not(.schedule-table) th,
-table:not(.schedule-table) td {
+.greenhouse-app-container table:not(.schedule-table) th,
+.greenhouse-app-container table:not(.schedule-table) td {
     border: 1px solid #e0e0e0;
     padding: 12px;
     text-align: center;
@@ -228,20 +203,19 @@ table:not(.schedule-table) td {
     vertical-align: top;
 }
 
-table:not(.schedule-table) th {
-    background-color: #e9ecef;
-    color: #333;
+.greenhouse-app-container table:not(.schedule-table) th {
+    background-color: #e8f5e8; /* Light green from theme */
+    color: #357438; /* Primary green */
     font-weight: 600;
     text-transform: uppercase;
 }
 
-table:not(.schedule-table) tr:nth-child(even) {
-    background-color: #f8f9fa;
+.greenhouse-app-container table:not(.schedule-table) tr:nth-child(even) {
+    background-color: #f8fdf9; /* Very light green */
 }
 
-/* Appointment Item Styling (for admin.html) */
-.appointment-item {
-    border: 1px solid #e0e0e0;
+.greenhouse-app-container .appointment-item {
+    border: 1px solid #e8f5e8; /* Light green border */
     padding: 15px;
     margin-bottom: 15px;
     border-radius: 8px;
@@ -252,104 +226,100 @@ table:not(.schedule-table) tr:nth-child(even) {
     gap: 8px;
 }
 
-.appointment-item strong {
-    color: #007bff;
+.greenhouse-app-container .appointment-item strong {
+    color: #357438; /* Primary green */
     font-size: 1.1rem;
 }
 
-.appointment-item button {
+.greenhouse-app-container .appointment-item button {
     padding: 8px 15px;
     font-size: 0.9rem;
     margin-top: 10px;
-    align-self: flex-start; /* Align buttons to the start */
+    align-self: flex-start;
 }
 
-/* Modal styles (existing, slightly enhanced) */
-.modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 1000; /* Sit on top, higher than other content */
+.greenhouse-app-container .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
     left: 0;
     top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.6); /* Darker overlay */
-    backdrop-filter: blur(3px); /* Optional: blur background */
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+    backdrop-filter: blur(3px);
 }
 
-.modal-content {
+.greenhouse-app-container .modal-content {
     background-color: #ffffff;
-    margin: 10% auto; /* Adjusted margin for better vertical centering */
+    margin: 10% auto;
     padding: 30px;
-    border: none; /* Removed border, relying on shadow */
+    border: none;
     border-radius: 10px;
     width: 90%;
     max-width: 550px;
     position: relative;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2); /* Stronger shadow */
-    animation: fadeIn 0.3s ease-out; /* Simple fade-in animation */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    animation: fadeIn 0.3s ease-out;
 }
 
-.close-button {
+.greenhouse-app-container .close-button {
     color: #888;
     position: absolute;
     top: 15px;
     right: 25px;
     font-size: 32px;
-    font-weight: normal; /* Less bold */
+    font-weight: normal;
     cursor: pointer;
     transition: color 0.2s ease;
 }
 
-.close-button:hover,
-.close-button:focus {
+.greenhouse-app-container .close-button:hover,
+.greenhouse-app-container .close-button:focus {
     color: #333;
     text-decoration: none;
 }
 
-/* Keyframe for modal animation */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* General utility classes */
-.text-center { text-align: center; }
-.margin-top-20 { margin-top: 20px; }
-/* Service-specific colors */
-.service-a { background-color: #e6f7ff; /* Light Blue */ }
-.service-b { background-color: #fffbe6; /* Light Yellow */ }
-.service-c { background-color: #e6ffe6; /* Light Green */ }
+.greenhouse-app-container .text-center { text-align: center; }
+.greenhouse-app-container .margin-top-20 { margin-top: 20px; }
 
-/* Conflict styling */
-.conflict {
+.greenhouse-app-container .service-a { background-color: #e8f5e8; /* Light Green */ }
+.greenhouse-app-container .service-b { background-color: #f0faf4; /* Lighter Green */ }
+.greenhouse-app-container .service-c { background-color: #a5d6a7; /* Medium Light Green */ }
+
+.greenhouse-app-container .conflict {
     background-color: #ffe6e6; /* Light Red */
     border: 2px solid #ff4d4d; /* Red border */
     font-weight: bold;
     color: #cc0000;
     position: relative;
 }
-.conflict::after {
-    content: '⚠️'; /* Warning emoji */
+.greenhouse-app-container .conflict::after {
+    content: '⚠️';
     position: absolute;
     top: 2px;
     right: 2px;
     font-size: 0.8em;
 }
-/* Conflict Cell and Item Styling for Stacked Display */
-.conflict-cell {
-    position: relative; /* Establish positioning context for children */
-    overflow: hidden; /* Hide content that overflows */
-    padding: 0; /* Remove padding from cell to give full space to items */
-    display: flex; /* Use flexbox to manage items */
-    flex-direction: column; /* Stack items vertically */
-    justify-content: center; /* Center items vertically */
-    align-items: center; /* Center items horizontally */
-    min-height: 50px; /* Ensure cells have a minimum height */
+
+.greenhouse-app-container .conflict-cell {
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 50px;
 }
 
-.conflict-item {
+.greenhouse-app-container .conflict-item {
     width: 100%;
     padding: 4px 8px;
     box-sizing: border-box;
@@ -357,41 +327,36 @@ table:not(.schedule-table) tr:nth-child(even) {
     font-size: 0.85em;
     font-weight: bold;
     color: #333;
-    border-bottom: 1px solid rgba(0,0,0,0.1); /* Separator for stacked items */
-    /* For overlapping effect, if desired, use position absolute and z-index */
-    /* For now, simple stacking with margin is sufficient for visual */
+    border-bottom: 1px solid rgba(0,0,0,0.1);
 }
 
-.conflict-item:last-child {
-    border-bottom: none; /* No border for the last item */
+.greenhouse-app-container .conflict-item:last-child {
+    border-bottom: none;
 }
 
-/* Re-adjusting service colors for better visibility on stacked items */
-.service-a { background-color: #a8e0ff; /* Sky Blue */ }
-.service-b { background-color: #ffd700; /* Gold */ }
-.service-c { background-color: #90ee90; /* Light Green */ }
+.greenhouse-app-container .service-a { background-color: #e8f5e8; /* Light Green */ }
+.greenhouse-app-container .service-b { background-color: #f0faf4; /* Lighter Green */ }
+.greenhouse-app-container .service-c { background-color: #a5d6a7; /* Medium Light Green */ }
 
-/* The .conflict class is now used on the inner conflict-item for specific conflict highlighting */
-.conflict-item.conflict {
+.greenhouse-app-container .conflict-item.conflict {
     background-color: #ff6347; /* Tomato Red */
     border: 1px solid #dc143c; /* Crimson border */
-    color: white; /* White text for better contrast */
+    color: white;
 }
-.conflict-item.conflict::after {
-    content: '⚠️'; /* Warning emoji */
+.greenhouse-app-container .conflict-item.conflict::after {
+    content: '⚠️';
     margin-left: 5px;
     font-size: 0.9em;
 }
-/* Shading alternate days (columns) for readability */
-table th:nth-child(even),
-table td:nth-child(even) {
-    background-color: #f0f0f0; /* Light grey for alternate columns */
+
+.greenhouse-app-container table th:nth-child(even),
+.greenhouse-app-container table td:nth-child(even) {
+    background-color: #f0faf4; /* Light green for alternate columns */
 }
 
-/* Refine existing row shading to work with column shading */
-table tr:nth-child(odd) td:nth-child(even) {
-    background-color: #e8e8e8; /* Slightly darker where row and column shading overlap */
+.greenhouse-app-container table tr:nth-child(odd) td:nth-child(even) {
+    background-color: #e8f5e8; /* Slightly darker where row and column shading overlap */
 }
-table tr:nth-child(even) td:nth-child(odd) {
-    background-color: #f8f8f8; /* Lighter where row and column shading overlap */
+.greenhouse-app-container table tr:nth-child(even) td:nth-child(odd) {
+    background-color: #f8fdf9; /* Lighter where row and column shading overlap */
 }
