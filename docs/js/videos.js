@@ -4,6 +4,8 @@
  * @description Core functionality for the Greenhouse videos application.
  */
 
+import { get_getLatestVideosFromFeed } from 'backend/getLatestVideosFromFeed';
+
 (function() {
     'use strict';
 
@@ -19,9 +21,9 @@
             insertionDelay: 500,
             observerTimeout: 10000
         },
-        api: {
-            getVideos: '/_functions/getLatestVideosFromFeed'
-        }
+        // api: { // No longer needed with direct backend import
+        //     getVideos: '/_functions/getLatestVideosFromFeed'
+        // }
     };
 
     const scriptElement = document.currentScript;
@@ -166,13 +168,12 @@
 
         async fetchVideos() {
             try {
-                const response = await fetch(config.api.getVideos);
-                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                const contentType = response.headers.get('content-type') || '';
-                if (!contentType.includes('application/json')) {
-                    throw new Error(`Unexpected response type: ${contentType}`);
+                const response = await get_getLatestVideosFromFeed(); // Call the backend function directly
+                if (response.status !== 200) {
+                    throw new Error(`Backend error: ${response.body.message || 'Unknown error'}`);
                 }
-                return await response.json();
+                const data = response.body; // The backend function returns the array directly in the body
+                return data;
             } catch (error) {
                 const videosListElement = document.getElementById('videos-list');
                 if (videosListElement) {
