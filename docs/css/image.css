@@ -5,7 +5,7 @@
   left: -50px;
 }    
 
-#SITE_FOOTER div.wixui-image:nth-child(2){
+#SITE_FOOTER div.wixui-image:nth-child(7){
     float: left;
   margin: 0px 45% 0px 45%;
   left: 0px;
@@ -59,7 +59,7 @@ footer#SITE_FOOTER img[alt="The Greenhouse for Mental Health Development Logo - 
   border-radius: 16px !important;
   background: linear-gradient(to right, #357438, #732751); 
   padding: 5px;
-  animation: slideLR 12s ease-in-out infinite alternate;
+  animation: slideLR 8s ease-in-out infinite alternate;
 }
 
 
