@@ -17,12 +17,6 @@ html body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-lay
 
 }
 
-#SITE_FOOTER div.wixui-image{
-    float: left;
-  margin: 0px 40% 0px 40%;
-  left: 0px;
-  left: -50px;
-}    
 
 div.details h3.title {
     color: #9400FF;

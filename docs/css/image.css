@@ -1,4 +1,18 @@
+#SITE_FOOTER div.wixui-image{
+    float: left;
+  margin: 0px 40% 0px 40%;
+  left: 0px;
+  left: -50px;
+}    
+
+#SITE_FOOTER div.wixui-image:nth-child(2){
+    float: left;
+  margin: 0px 45% 0px 45%;
+  left: 0px;
+  left: -50px;
+}    
 /* temporary placeholder */
+
 
 /* Add corner accent elements */
 div div div div div section:nth-child(5) .wixui-image::after {
@@ -34,6 +48,24 @@ div div div div div section:nth-child(5) .wixui-image img, footer#SITE_FOOTER im
   border-radius: 16px !important;
   background: linear-gradient(to right, #357438, #732751); 
   padding: 5px;
+}
+
+
+footer#SITE_FOOTER img[alt="The Greenhouse for Mental Health Development Logo - Bloom into your better self"] {
+  width: 70% !important;
+  height: 70% !important;
+  display: block !important;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(to right, #357438, #732751); 
+  padding: 5px;
+  animation: slideLR 12s ease-in-out infinite alternate;
+}
+
+
+@keyframes slideLR {
+  from { margin-left: 30%; }
+  to   { margin-left: 45%; }
 }
 
 #SITE_FOOTER > div div div.wixui-image:nth-child(1) > img, footer#SITE_FOOTER img[alt="Lavender Flowers"] {
