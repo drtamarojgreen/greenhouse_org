@@ -106,18 +106,8 @@ import { get_getNews } from 'backend/getNews';
     const GreenhouseAppsNews = {
         async loadCSS() {
             console.debug("🎨 loadCSS called");
-            if (!document.querySelector('link[data-greenhouse-pages-css]')) {
-                const linkElement = createElement('link', {
-                    rel: 'stylesheet',
-                    type: 'text/css',
-                    href: `${appState.baseUrl}css/pages.css`,
-                    'data-greenhouse-pages-css': 'true'
-                });
-                document.head.appendChild(linkElement);
-                console.debug("✅ CSS loaded:", linkElement.href);
-            } else {
-                console.debug("✔️ CSS already present");
-            }
+            // No CSS specific to news app to load dynamically.
+            // pages.css is loaded globally.
         },
 
         async fetchNews() {

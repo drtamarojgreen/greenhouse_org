@@ -231,7 +231,6 @@
          */
         async loadCSS() {
             const cssUrl = `${appState.baseUrl}css/schedule.css`;
-            const pagesCssUrl = `${appState.baseUrl}css/pages.css`;
 
             // Check if schedule.css already loaded
             if (!document.querySelector(`link[href="${cssUrl}"]`)) {
@@ -256,28 +255,6 @@
                 console.log(`Scheduler: CSS ${cssUrl} already loaded, skipping`);
             }
 
-            // Load pages.css if not already loaded
-            if (!document.querySelector(`link[href="${pagesCssUrl}"]`)) {
-                const linkElement = document.createElement('link');
-                linkElement.rel = 'stylesheet';
-                linkElement.type = 'text/css';
-                linkElement.href = pagesCssUrl;
-                linkElement.setAttribute('data-greenhouse-pages-css', 'true');
-                document.head.appendChild(linkElement);
-                await new Promise((resolve, reject) => {
-                    linkElement.onload = () => {
-                        console.log(`Scheduler: CSS ${pagesCssUrl} loaded successfully`);
-                        resolve();
-                    };
-                    linkElement.onerror = (event) => {
-                        console.error(`Scheduler: Failed to load CSS ${pagesCssUrl}:`, event);
-                        GreenhouseUtils.displayError(`Failed to load general page styles.`);
-                        reject(new Error(`Failed to load CSS: ${pagesCssUrl}`));
-                    };
-                });
-            } else {
-                console.log(`Scheduler: CSS ${pagesCssUrl} already loaded, skipping`);
-            }
         },
 
         /**

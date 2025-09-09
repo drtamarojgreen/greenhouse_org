@@ -12,6 +12,22 @@ body {
   background-color: #f9faf9;
 }
 
+#SITE_PAGES_TRANSITION_GROUP h1.font_0.wixui-rich-text__text {
+  text-align: center !important;
+  font-family: 'Quicksand', sans-serif !important;
+  color: rgb(53, 116, 56) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: none;
+}
+
+#SITE_PAGES_TRANSITION_GROUP p.font_8.wixui-rich-text__text {
+  color: rgb(53, 116, 56) !important;
+  font-family: 'Quicksand', sans-serif !important;
+  font-weight: 200 !important;
+  text-transform: none;
+}
+
 /* Containers */
 .greenhouse-app-container {
   display: grid;

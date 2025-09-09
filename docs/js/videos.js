@@ -154,16 +154,7 @@ import { get_getLatestVideosFromFeed } from 'backend/getLatestVideosFromFeed';
         },
 
         async loadCSS() {
-            // Load pages.css for general app styles
-            if (!document.querySelector('link[data-greenhouse-pages-css]')) {
-                const linkElement = createElement('link', {
-                    rel: 'stylesheet',
-                    type: 'text/css',
-                    href: `${appState.baseUrl}css/pages.css`,
-                    'data-greenhouse-pages-css': 'true'
-                });
-                document.head.appendChild(linkElement);
-            }
+            // pages.css is loaded globally, no need to inject here.
         },
 
         async fetchVideos() {
