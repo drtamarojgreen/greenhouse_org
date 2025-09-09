@@ -204,3 +204,15 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+#greenhouse-dashboard-app-new-appointment-box {
+    width: 200px;
+    display: block;
+    height: 20px;
+    background-color: green;
+    border-radius: 10px;
+    text-align: center;
+    color: #fff;
+    padding: 5px;
+}
+
