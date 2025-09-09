@@ -362,7 +362,10 @@
         } else if (window.location.pathname.includes(config.booksPagePath)) {
             await loadBooksApplication();
         } else if (window.location.pathname.includes(config.videosPagePath)) {
-            await loadVideosApplication();
+            //await loadVideosApplication();
+
+
+            
         } else if (window.location.pathname.includes(config.newsPagePath)) {
             await loadNewsApplication();
         }
