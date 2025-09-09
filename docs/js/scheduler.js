@@ -62,9 +62,11 @@
         isLoading: false,
         currentView: null,
         currentAppInstance: null,
-        targetElement: null,
+        targetElementLeft: null, // New: for left panel
+        targetElementRight: null, // New: for right panel
         baseUrl: null,
-        targetSelector: null,
+        targetSelectorLeft: null, // New: for left panel
+        targetSelectorRight: null, // New: for right panel
         loadedScripts: new Set(),
         errors: []
     };
@@ -75,12 +77,17 @@
      * @returns {boolean} True if configuration is valid
      */
     function validateConfiguration() {
-        appState.targetSelector = scriptElement?.getAttribute('data-target-selector');
+        appState.targetSelectorLeft = scriptElement?.getAttribute('data-target-selector-left');
+        appState.targetSelectorRight = scriptElement?.getAttribute('data-target-selector-right');
         appState.baseUrl = scriptElement?.getAttribute('data-base-url');
         const view = scriptElement?.getAttribute('data-view');
 
-        if (!appState.targetSelector) {
-            console.error('Scheduler: Missing required data-target-selector attribute');
+        if (!appState.targetSelectorLeft && view !== 'dashboard') { // targetSelectorLeft is required for patient/admin
+            console.error('Scheduler: Missing required data-target-selector-left attribute for patient/admin view');
+            return false;
+        }
+        if (!appState.targetSelectorLeft && !appState.targetSelectorRight && view === 'dashboard') { // Both required for dashboard
+            console.error('Scheduler: Missing required data-target-selector-left or data-target-selector-right attributes for dashboard view');
             return false;
         }
 
@@ -273,7 +280,10 @@
                         await this.loadScript('GreenhouseDashboardApp.js');
                         if (typeof GreenhouseDashboardApp === 'function') {
                             appState.currentAppInstance = GreenhouseDashboardApp(GreenhouseSchedulerUI);
-                                                                            appDomFragment = GreenhouseSchedulerUI.buildDashboardUI(); // Call from schedulerUI
+                            // For dashboard, we build two fragments, one for each panel
+                            const leftPanelFragment = GreenhouseSchedulerUI.buildDashboardLeftPanelUI();
+                            const rightPanelFragment = GreenhouseSchedulerUI.buildDashboardRightPanelUI();
+                            appDomFragment = { left: leftPanelFragment, right: rightPanelFragment }; // Return an object with both fragments
                         } else {
                             throw new Error('GreenhouseDashboardApp not found or not a function');
                         }
@@ -380,36 +390,62 @@
 
         /**
          * @function insertApplication
-         * @description Inserts the application into the optimal container
-         * @param {DocumentFragment} appDomFragment - The application DOM fragment
-         * @param {Element} targetElement - The target element
+         * @description Inserts the application into the optimal container(s).
+         * For dashboard view, it inserts into two separate target elements.
+         * For other views, it inserts into a single target element.
+         * @param {DocumentFragment|Object} appDomContent - The application DOM fragment or an object with left/right fragments.
+         * @param {Element} targetElementLeft - The target element for the left panel.
+         * @param {Element} [targetElementRight] - The target element for the right panel (optional, for dashboard).
          */
-        insertApplication(appDomFragment, targetElement) {
-            const containerInfo = this.findOptimalContainer(targetElement);
-            
-            console.log(`Scheduler: Using insertion strategy: ${containerInfo.strategy}`);
+        insertApplication(appDomContent, targetElementLeft, targetElementRight = null) {
+            console.log(`Scheduler: Inserting application for view: ${appState.currentView}`);
 
-            // Create the main app container
-            const appContainer = document.createElement('section');
-            appContainer.id = 'greenhouse-app-container';
-            appContainer.className = 'greenhouse-app-container';
-            appContainer.setAttribute('data-greenhouse-app', appState.currentView);
-            appContainer.appendChild(appDomFragment);
+            if (appState.currentView === 'dashboard' && targetElementRight) {
+                // Insert left panel content
+                const leftAppContainer = document.createElement('section');
+                leftAppContainer.id = 'greenhouse-app-container-left';
+                leftAppContainer.className = 'greenhouse-app-container greenhouse-scheduler-left-panel';
+                leftAppContainer.setAttribute('data-greenhouse-app', appState.currentView);
+                leftAppContainer.appendChild(appDomContent.left);
+                targetElementLeft.prepend(leftAppContainer);
+                console.log('Scheduler: Left dashboard panel inserted into DOM');
 
-            // Insert using the determined strategy
-            switch (containerInfo.insertionMethod) {
-                case 'prepend':
-                    containerInfo.container.prepend(appContainer);
-                    break;
-                case 'append':
-                    containerInfo.container.appendChild(appContainer);
-                    break;
-                default:
-                    containerInfo.container.prepend(appContainer);
+                // Insert right panel content
+                const rightAppContainer = document.createElement('section');
+                rightAppContainer.id = 'greenhouse-app-container-right';
+                rightAppContainer.className = 'greenhouse-app-container greenhouse-scheduler-right-panel';
+                rightAppContainer.setAttribute('data-greenhouse-app', appState.currentView);
+                rightAppContainer.appendChild(appDomContent.right);
+                targetElementRight.prepend(rightAppContainer);
+                console.log('Scheduler: Right dashboard panel inserted into DOM');
+
+                return { left: leftAppContainer, right: rightAppContainer };
+            } else {
+                // For patient/admin views, or if dashboard but only one target, use existing logic
+                const containerInfo = this.findOptimalContainer(targetElementLeft);
+                
+                console.log(`Scheduler: Using insertion strategy: ${containerInfo.strategy}`);
+
+                const appContainer = document.createElement('section');
+                appContainer.id = 'greenhouse-app-container';
+                appContainer.className = 'greenhouse-app-container';
+                appContainer.setAttribute('data-greenhouse-app', appState.currentView);
+                appContainer.appendChild(appDomContent);
+
+                switch (containerInfo.insertionMethod) {
+                    case 'prepend':
+                        containerInfo.container.prepend(appContainer);
+                        break;
+                    case 'append':
+                        containerInfo.container.appendChild(appContainer);
+                        break;
+                    default:
+                        containerInfo.container.prepend(appContainer);
+                }
+
+                console.log('Scheduler: Application inserted into DOM');
+                return appContainer;
             }
-
-            console.log('Scheduler: Application inserted into DOM');
-            return appContainer;
         },
 
         /**
@@ -424,7 +460,8 @@
             // Also log to console with more details
             console.error('Greenhouse Scheduler Error:', {
                 message,
-                targetSelector: appState.targetSelector,
+                targetSelectorLeft: appState.targetSelectorLeft,
+                targetSelectorRight: appState.targetSelectorRight,
                 baseUrl: appState.baseUrl,
                 view: appState.currentView,
                 errors: appState.errors
@@ -454,10 +491,11 @@
         /**
          * @function init
          * @description Main initialization function for the scheduler application
-         * @param {string} targetSelector - The CSS selector for the element to load the app into
+         * @param {string} targetSelectorLeft - The CSS selector for the left panel element
+         * @param {string} [targetSelectorRight] - The CSS selector for the right panel element (optional, for dashboard)
          * @param {string} baseUrl - The base URL for fetching assets
          */
-        async init(targetSelector, baseUrl) {
+        async init(targetSelectorLeft, targetSelectorRight, baseUrl) {
             if (appState.isInitialized || appState.isLoading) {
                 console.log('Scheduler: Already initialized or loading, skipping');
                 return;
@@ -474,11 +512,15 @@
                 console.log('Scheduler: Starting initialization');
 
                 // Set configuration
-                appState.targetSelector = targetSelector;
+                appState.targetSelectorLeft = targetSelectorLeft;
+                appState.targetSelectorRight = targetSelectorRight;
                 appState.baseUrl = baseUrl;
 
-                // Wait for target element to be available
-                appState.targetElement = await waitForElement(targetSelector);
+                // Wait for target elements to be available
+                appState.targetElementLeft = await waitForElement(targetSelectorLeft);
+                if (targetSelectorRight) {
+                    appState.targetElementRight = await waitForElement(targetSelectorRight);
+                }
 
                 // Load CSS first (non-blocking)
                 this.loadCSS().catch(error => {
@@ -496,7 +538,12 @@
                 // Insert application into DOM with delay for Wix compatibility
                 await new Promise(resolve => setTimeout(resolve, config.dom.insertionDelay));
                 
-                const appContainer = this.insertApplication(appDomFragment, appState.targetElement);
+                // Insert application into DOM
+                if (appState.currentView === 'dashboard') {
+                    this.insertApplication(appDomFragment, appState.targetElementLeft, appState.targetElementRight);
+                } else {
+                    this.insertApplication(appDomFragment, appState.targetElementLeft);
+                }
 
                 // Initialize the application instance
                 this.initializeApplication();
@@ -512,7 +559,7 @@
                 appState.errors.push(error);
 
                 const errorMessage = error.message.includes('not found') 
-                    ? `Target element "${targetSelector}" not found. Please check if the page has loaded completely.`
+                    ? `Target element "${targetSelectorLeft}" not found. Please check if the page has loaded completely.`
                     : `Failed to load the scheduling application: ${error.message}`;
 
                 // Use createErrorView which now leverages GreenhouseUtils for display
@@ -552,7 +599,11 @@
             });
 
             // Initialize the scheduler application
-            await GreenhouseAppsScheduler.init(appState.targetSelector, appState.baseUrl);
+            await GreenhouseAppsScheduler.init(
+                appState.targetSelectorLeft,
+                appState.targetSelectorRight,
+                appState.baseUrl
+            );
 
         } catch (error) {
             console.error('Scheduler: Main execution failed:', error);

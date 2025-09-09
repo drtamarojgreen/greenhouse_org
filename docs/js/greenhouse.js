@@ -51,7 +51,8 @@
          */
         selectors: {
             patient: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
-            dashboard: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)',
+            dashboardLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // First column for schedule/conflicts
+            dashboardRight: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)', // Second column for calendar
             admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
             books: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div > section.wixui-section', // User-specified selector for books
             videos: '.wixui-repeater', // Selector for the videos repeater
@@ -62,7 +63,8 @@
          */
         fallbackSelectors: {
             patient: '.wixui-column-strip__column:first-child',
-            dashboard: '.wixui-column-strip__column:nth-child(2)',
+            dashboardLeft: '.wixui-column-strip__column:first-child',
+            dashboardRight: '.wixui-column-strip__column:nth-child(2)',
             admin: '.wixui-column-strip__column:last-child',
             books: 'section.wixui-section', // Fallback to a more general section if the specific one isn't found
             videos: '.wixui-column-strip__column:first-child', // Fallback to a generic column selector
@@ -166,32 +168,48 @@
             console.log(`Greenhouse: Loading scheduler for view: ${view}`);
 
             // Determine the correct selectors to try
-            let selectorsToTry = [];
-            
-            if (view === 'patient' && config.selectors.patient) {
-                selectorsToTry.push(config.selectors.patient);
-                if (config.fallbackSelectors.patient) {
-                    selectorsToTry.push(config.fallbackSelectors.patient);
-                }
-            } else if (view === 'admin' && config.selectors.admin) {
-                selectorsToTry.push(config.selectors.admin);
-                if (config.fallbackSelectors.admin) {
-                    selectorsToTry.push(config.fallbackSelectors.admin);
-                }
-            } else {
-                selectorsToTry.push(config.selectors.dashboard);
-                if (config.fallbackSelectors.dashboard) {
-                    selectorsToTry.push(config.fallbackSelectors.dashboard);
-                }
-            }
+            let targetSelectorLeft = null;
+            let targetSelectorRight = null;
+            let selectorsToTryLeft = [];
+            let selectorsToTryRight = [];
 
-            // Wait for the target element to be available
-            const targetElement = await waitForElement(selectorsToTry);
-            const targetSelector = selectorsToTry.find(selector => document.querySelector(selector));
+            if (view === 'patient') {
+                selectorsToTryLeft.push(config.selectors.patient);
+                if (config.fallbackSelectors.patient) {
+                    selectorsToTryLeft.push(config.fallbackSelectors.patient);
+                }
+                const targetElement = await waitForElement(selectorsToTryLeft);
+                targetSelectorLeft = selectorsToTryLeft.find(selector => document.querySelector(selector));
+            } else if (view === 'admin') {
+                selectorsToTryLeft.push(config.selectors.admin);
+                if (config.fallbackSelectors.admin) {
+                    selectorsToTryLeft.push(config.fallbackSelectors.admin);
+                }
+                const targetElement = await waitForElement(selectorsToTryLeft);
+                targetSelectorLeft = selectorsToTryLeft.find(selector => document.querySelector(selector));
+            } else if (view === 'dashboard') {
+                selectorsToTryLeft.push(config.selectors.dashboardLeft);
+                if (config.fallbackSelectors.dashboardLeft) {
+                    selectorsToTryLeft.push(config.fallbackSelectors.dashboardLeft);
+                }
+                selectorsToTryRight.push(config.selectors.dashboardRight);
+                if (config.fallbackSelectors.dashboardRight) {
+                    selectorsToTryRight.push(config.fallbackSelectors.dashboardRight);
+                }
+
+                const [targetElementLeft, targetElementRight] = await Promise.all([
+                    waitForElement(selectorsToTryLeft),
+                    waitForElement(selectorsToTryRight)
+                ]);
+
+                targetSelectorLeft = selectorsToTryLeft.find(selector => document.querySelector(selector));
+                targetSelectorRight = selectorsToTryRight.find(selector => document.querySelector(selector));
+            }
 
             // Define the attributes to be passed to the scheduler script.
             const schedulerAttributes = {
-                'target-selector': targetSelector,
+                'target-selector-left': targetSelectorLeft,
+                'target-selector-right': targetSelectorRight,
                 'base-url': config.githubPagesBaseUrl,
                 'view': view
             };

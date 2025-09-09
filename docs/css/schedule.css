@@ -102,51 +102,141 @@ button:active {
     transform: translateY(0);
 }
 
-/* Table Styling (for dashboard.html) */
-table {
+/* Weekly Schedule Table Styling */
+.schedule-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     background-color: #ffffff;
     border-radius: 8px;
-    overflow: hidden; /* Ensures rounded corners apply to table content */
+    overflow: hidden;
 }
 
-th, td {
+.schedule-table th,
+.schedule-table td {
     border: 1px solid #e0e0e0;
-    padding: 12px; /* Default padding for cells */
+    padding: 8px; /* Reduced padding for a tighter schedule view */
     text-align: center;
-    font-size: 0.95rem;
+    font-size: 0.85rem; /* Smaller font size */
     color: #444;
-    vertical-align: top; /* Align content to top for stacked items */
+    vertical-align: middle;
+    height: 40px; /* Fixed height for time slots */
+    position: relative; /* For absolute positioning of appointments */
 }
 
-th {
-    background-color: #e9ecef; /* Light grey header */
+.schedule-table th {
+    background-color: #e9ecef;
     color: #333;
     font-weight: 600;
     text-transform: uppercase;
+    padding: 10px 5px;
 }
 
-tr:nth-child(even) {
-    background-color: #f8f9fa; /* Zebra striping */
+.time-column-header {
+    width: 60px; /* Fixed width for the time column header */
+    min-width: 60px;
+    max-width: 60px;
+    background-color: #dbe4eb !important; /* Distinct background for the corner */
 }
 
-.time-slot {
+.time-slot-label {
     background-color: #f0f2f5;
     font-weight: 500;
     color: #555;
+    width: 60px; /* Fixed width for time labels */
+    min-width: 60px;
+    max-width: 60px;
+    text-align: right;
+    padding-right: 10px;
 }
 
-.editable {
+.schedule-cell {
     background-color: #fff;
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
-.editable:hover {
-    background-color: #e6f7ff; /* Light blue on hover for editable cells */
+.schedule-cell:hover {
+    background-color: #e6f7ff;
+}
+
+/* Offset shading for legibility */
+.schedule-table tr:nth-child(odd) .schedule-cell:nth-child(even) {
+    background-color: #f8f8f8; /* Light grey for odd rows, even cells */
+}
+
+.schedule-table tr:nth-child(even) .schedule-cell:nth-child(odd) {
+    background-color: #f8f8f8; /* Light grey for even rows, odd cells */
+}
+
+/* Further refine shading for better contrast */
+.schedule-table tr:nth-child(odd) .schedule-cell:nth-child(odd) {
+    background-color: #ffffff; /* White for odd rows, odd cells */
+}
+
+.schedule-table tr:nth-child(even) .schedule-cell:nth-child(even) {
+    background-color: #ffffff; /* White for even rows, even cells */
+}
+
+/* Ensure time column is always distinct */
+.schedule-table td.time-slot-label {
+    background-color: #f0f2f5;
+}
+
+/* Styling for appointments within cells */
+.schedule-cell .appointment-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #d4edda; /* Light green for appointments */
+    border: 1px solid #28a745;
+    border-radius: 4px;
+    padding: 2px 5px;
+    margin: 2px;
+    font-size: 0.75rem;
+    color: #155724;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* General Table Styling (for other tables, if any) */
+table:not(.schedule-table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+table:not(.schedule-table) th,
+table:not(.schedule-table) td {
+    border: 1px solid #e0e0e0;
+    padding: 12px;
+    text-align: center;
+    font-size: 0.95rem;
+    color: #444;
+    vertical-align: top;
+}
+
+table:not(.schedule-table) th {
+    background-color: #e9ecef;
+    color: #333;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+table:not(.schedule-table) tr:nth-child(even) {
+    background-color: #f8f9fa;
 }
 
 /* Appointment Item Styling (for admin.html) */

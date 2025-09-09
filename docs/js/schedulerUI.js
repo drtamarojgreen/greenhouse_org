@@ -3,34 +3,22 @@ const GreenhouseSchedulerUI = (function() {
 
     const components = {};
 
+    /**
+     * Builds the main scheduler UI container.
+     * @returns {HTMLElement} The main container element.
+     */
     function buildSchedulerUI() {
-        const fragment = document.createDocumentFragment();
-
-        // Main container
         const mainContainer = document.createElement('section');
         mainContainer.id = 'greenhouse-app-container';
         mainContainer.className = 'greenhouse-app-container greenhouse-scheduler-main-container';
         components.mainContainer = mainContainer;
-
-        // Patient Form
-        const patientForm = buildPatientFormUI();
-        components.patientForm = patientForm;
-        mainContainer.appendChild(patientForm);
-
-        // Dashboard
-        const dashboard = buildDashboardUI(); // Updated to use the new dashboard UI function
-        components.dashboard = dashboard;
-        mainContainer.appendChild(dashboard);
-
-        // Admin Form
-        const adminForm = buildAdminForm();
-        components.adminForm = adminForm;
-        mainContainer.appendChild(adminForm);
-
-        fragment.appendChild(mainContainer);
-        return fragment;
+        return mainContainer;
     }
 
+    /**
+     * Builds the UI for the Patient Appointment Request Form.
+     * @returns {HTMLElement} The patient form container.
+     */
     function buildPatientFormUI() {
         const formContainer = document.createElement('div');
         formContainer.id = 'greenhouse-patient-form';
@@ -133,10 +121,10 @@ const GreenhouseSchedulerUI = (function() {
     }
 
     /**
-     * Builds the UI for the Administrator Dashboard.
-     * @returns {DocumentFragment} A DocumentFragment containing the dashboard UI.
+     * Builds the UI for the Administrator Dashboard (left panel: schedule and conflicts).
+     * @returns {DocumentFragment} A DocumentFragment containing the dashboard UI for the left panel.
      */
-    function buildDashboardUI() {
+    function buildDashboardLeftPanelUI() {
         const fragment = document.createDocumentFragment();
 
         const h1 = document.createElement('h1');
@@ -147,26 +135,21 @@ const GreenhouseSchedulerUI = (function() {
         description.textContent = 'Review and resolve scheduling conflicts for the week. Select a date range to view appointments.';
         fragment.appendChild(description);
 
-        // New Appointment Box
+        // New Appointment Box (draggable)
         const newAppointmentBox = document.createElement('div');
-        newAppointmentBox.id = 'greenhouse-dashboard-app-new-appointment-box'; // Renamed ID
+        newAppointmentBox.id = 'greenhouse-dashboard-app-new-appointment-box';
         newAppointmentBox.textContent = 'New Appointment';
         newAppointmentBox.draggable = true;
         fragment.appendChild(newAppointmentBox);
 
-        // Calendar Dropdown
-        const calendarContainer = document.createElement('div');
-        calendarContainer.id = 'greenhouse-dashboard-app-calendar-container'; // Renamed ID
-        fragment.appendChild(calendarContainer);
-
         // Schedule Display Area
         const scheduleContainer = document.createElement('div');
-        scheduleContainer.id = 'greenhouse-dashboard-app-schedule-container'; // Renamed ID
+        scheduleContainer.id = 'greenhouse-dashboard-app-schedule-container';
         fragment.appendChild(scheduleContainer);
 
         // Conflict Resolution Area
         const conflictResolutionDiv = document.createElement('div');
-        conflictResolutionDiv.id = 'greenhouse-dashboard-app-conflict-resolution-area'; // Renamed ID
+        conflictResolutionDiv.id = 'greenhouse-dashboard-app-conflict-resolution-area';
 
         const h2Conflicts = document.createElement('h2');
         h2Conflicts.textContent = 'Conflicts to Resolve';
@@ -180,6 +163,21 @@ const GreenhouseSchedulerUI = (function() {
         conflictResolutionDiv.appendChild(ulConflictList);
 
         fragment.appendChild(conflictResolutionDiv);
+
+        return fragment;
+    }
+
+    /**
+     * Builds the UI for the Administrator Dashboard (right panel: calendar).
+     * @returns {DocumentFragment} A DocumentFragment containing the calendar UI for the right panel.
+     */
+    function buildDashboardRightPanelUI() {
+        const fragment = document.createDocumentFragment();
+
+        // Calendar Container
+        const calendarContainer = document.createElement('div');
+        calendarContainer.id = 'greenhouse-dashboard-app-calendar-container';
+        fragment.appendChild(calendarContainer);
 
         return fragment;
     }
@@ -719,7 +717,9 @@ const GreenhouseSchedulerUI = (function() {
         resetForm,
         editAppointment,
         buildPatientFormUI,
-        buildDashboardUI,
+        buildDashboardLeftPanelUI, // Exposed for left panel
+        buildDashboardRightPanelUI, // Exposed for right panel
+        buildAdminForm, // Expose admin form
         addFormValidation,
         validateForm,
         validateField,
@@ -728,10 +728,10 @@ const GreenhouseSchedulerUI = (function() {
         addModalEventListeners,
         createInstructionsPanel,
         buildAdminAppointmentForm,
-        renderCalendar, // Expose the new function
-        renderWeekly, // Expose the new function
-        addDashboardEventListeners, // Expose the new function
-        renderConflicts // Expose the new function
+        renderCalendar,
+        renderWeekly,
+        addDashboardEventListeners,
+        renderConflicts
     };
 
     /**
@@ -846,69 +846,65 @@ const GreenhouseSchedulerUI = (function() {
         h2.textContent = 'Weekly Schedule';
         targetElement.appendChild(h2);
 
-        const scheduleGrid = document.createElement('div');
-        scheduleGrid.className = 'schedule-grid'; // Apply CSS for grid layout
+        const table = document.createElement('table');
+        table.className = 'schedule-table'; // Use a specific class for the weekly schedule table
 
-        // Create headers for days of the week
+        // Table Head: Days of the week
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        const emptyTh = document.createElement('th');
+        emptyTh.className = 'time-column-header';
+        headerRow.appendChild(emptyTh); // Empty corner for time column
         const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         daysOfWeek.forEach(day => {
-            const dayHeader = document.createElement('div');
-            dayHeader.className = 'schedule-day-header';
-            dayHeader.textContent = day;
-            scheduleGrid.appendChild(dayHeader);
+            const th = document.createElement('th');
+            th.textContent = day;
+            headerRow.appendChild(th);
         });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
 
-        // Create time slots (e.g., 9 AM to 5 PM)
+        // Table Body: Time slots and appointment cells
+        const tbody = document.createElement('tbody');
         const startHour = 9;
         const endHour = 17; // 5 PM
-        const hours = [];
+
         for (let i = startHour; i <= endHour; i++) {
-            hours.push(`${i % 12 === 0 ? 12 : i % 12}${i < 12 ? 'AM' : 'PM'}`);
-        }
+            const row = document.createElement('tr');
+            const timeCell = document.createElement('td');
+            timeCell.className = 'time-slot-label';
+            timeCell.textContent = `${i % 12 === 0 ? 12 : i % 12}${i < 12 ? 'AM' : 'PM'}`;
+            row.appendChild(timeCell);
 
-        // Create time column (first column)
-        const timeColumn = document.createElement('div');
-        timeColumn.className = 'schedule-time-column';
-        hours.forEach(hour => {
-            const timeSlot = document.createElement('div');
-            timeSlot.className = 'schedule-time-slot-label';
-            timeSlot.textContent = hour;
-            timeColumn.appendChild(timeSlot);
-        });
-        scheduleGrid.appendChild(timeColumn);
-
-
-        // Create cells for each day and hour
-        for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-            const dayColumn = document.createElement('div');
-            dayColumn.className = 'schedule-day-column';
-            for (let hourIndex = 0; hourIndex < hours.length; hourIndex++) {
-                const cell = document.createElement('div');
-                cell.className = 'schedule-cell';
-                // Add data attributes for date and time for potential appointment dropping
+            for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                const cell = document.createElement('td');
+                cell.className = 'schedule-cell editable'; // Add editable class
                 cell.dataset.day = dayIndex;
-                cell.dataset.hour = startHour + hourIndex;
-                dayColumn.appendChild(cell);
+                cell.dataset.hour = i;
+                // Add data attributes for date (e.g., current week's dates)
+                // This will need to be dynamically set based on the current week being viewed
+                // For now, just day and hour
+                row.appendChild(cell);
             }
-            scheduleGrid.appendChild(dayColumn);
+            tbody.appendChild(row);
         }
+        table.appendChild(tbody);
+        targetElement.appendChild(table);
 
-        targetElement.appendChild(scheduleGrid);
-        console.log('SchedulerUI: Weekly schedule rendered.'); // Added log
+        console.log('SchedulerUI: Weekly schedule table rendered.');
 
-        // Populate appointments (basic example)
+        // Populate appointments
         if (appointments && appointments.length > 0) {
             appointments.forEach(appointment => {
                 const apptDate = new Date(appointment.start);
                 const apptDay = apptDate.getDay(); // 0 for Sunday, 1 for Monday, etc.
                 const apptHour = apptDate.getHours();
 
-                // Find the corresponding cell in the grid
-                const cell = scheduleGrid.querySelector(`[data-day="${apptDay}"][data-hour="${apptHour}"]`);
+                const cell = targetElement.querySelector(`.schedule-cell[data-day="${apptDay}"][data-hour="${apptHour}"]`);
                 if (cell) {
                     const apptDiv = document.createElement('div');
                     apptDiv.className = 'appointment-item';
-                    apptDiv.textContent = `${appointment.title} (${apptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                    apptDiv.textContent = `${appointment.title} (${apptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
                     // Add more details or styling as needed
                     cell.appendChild(apptDiv);
                 }
