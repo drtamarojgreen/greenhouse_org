@@ -413,11 +413,11 @@
             console.log(`Scheduler: Using insertion strategy: ${containerInfo.strategy}`);
 
             // Create the main app container
-            const appContainer = createElement('section', {
-                id: 'greenhouse-app-container',
-                className: 'greenhouse-app-container',
-                'data-greenhouse-app': appState.currentView
-            }, appDomFragment);
+            const appContainer = document.createElement('section');
+            appContainer.id = 'greenhouse-app-container';
+            appContainer.className = 'greenhouse-app-container';
+            appContainer.setAttribute('data-greenhouse-app', appState.currentView);
+            appContainer.appendChild(appDomFragment);
 
             // Insert using the determined strategy
             switch (containerInfo.insertionMethod) {
