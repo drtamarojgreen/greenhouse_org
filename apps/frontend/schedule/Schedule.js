@@ -1,60 +1,33 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+// Velo API Reference: https://www.wix.com/velo/reference/api-overview/introduction
 
-const hostname = '127.0.0.1';
-const port = 3000;
+import { fetch } from 'wix-fetch';
 
-const server = http.createServer((req, res) => {
-  console.log(`Request for ${req.url}`);
+$w.onReady(function () {
+    const url = "https://drtamarojgreen.github.io/greenhouse_org/endpoints/schedule/main.json";
 
-  let filePath = '.' + req.url;
-  if (filePath === './') {
-    filePath = './index.html';
-  }
+    fetch(url, { method: 'get' })
+        .then((httpResponse) => {
+            if (httpResponse.ok) {
+                return httpResponse.json();
+            } else {
+                return Promise.reject("Fetch not successful");
+            }
+        })
+        .then((data) => {
+            const events = data.items;
+            $w("#scheduleRepeater").data = events;
 
-  const extname = String(path.extname(filePath)).toLowerCase();
-  const mimeTypes = {
-    '.html': 'text/html',
-    '.js': 'text/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-    '.wav': 'audio/wav',
-    '.mp4': 'video/mp4',
-    '.woff': 'application/font-woff',
-    '.ttf': 'application/font-ttf',
-    '.eot': 'application/vnd.ms-fontobject',
-    '.otf': 'application/font-otf',
-    '.wasm': 'application/wasm'
-  };
-
-  const contentType = mimeTypes[extname] || 'application/octet-stream';
-
-  fs.readFile(filePath, function(error, content) {
-    if (error) {
-      if(error.code == 'ENOENT') {
-        fs.readFile('./404.html', function(error, content) {
-          res.writeHead(404, { 'Content-Type': 'text/html' });
-          res.end(content, 'utf-8');
+            $w("#scheduleRepeater").onItemReady(($item, itemData, index) => {
+                $item("#eventTitle").text = itemData.title;
+                $item("#eventDate").text = itemData.date;
+                $item("#eventTime").text = itemData.time;
+                $item("#eventDescription").text = itemData.description;
+            });
+        })
+        .catch(err => {
+            console.error("Error fetching or parsing data:", err);
+            // You could display an error message to the user on the page
+            // For example: $w("#errorMessage").text = "Could not load schedule.";
+            // $w("#errorMessage").show();
         });
-      }
-      else {
-        res.writeHead(500);
-        res.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
-        res.end();
-      }
-    }
-    else {
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content, 'utf-8');
-    }
-  });
-});
-
-server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`);
 });

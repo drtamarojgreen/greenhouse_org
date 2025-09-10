@@ -1,27 +1,30 @@
-# Videos Path
+# Videos
 
-This directory holds the frontend Velo code for running the videos section of the main site.
+This directory contains the frontend code for the **Videos** page of the main Greenhouse for Mental Health website:
+
+👉 [https://greenhousementalhealth.org/videos/](https://greenhousementalhealth.org/videos/)
+
+---
 
 ## How it works
 
-The `Videos.js` file contains the Velo code that interacts with the backend to fetch and display videos from a YouTube feed on the `https://greenhousementalhealth.org/videos/` page.
+The `Videos.js` file contains Velo code that fetches a list of videos from a static JSON file and displays them on the page in a repeater.
 
-### Example Velo Code for `Videos.js`:
+### Key Features:
 
-```javascript
-import { getLatestVideosFromFeed } from 'backend/getLatestVideosFromFeed';
+-   **External Data Source**: The video list is fetched from a JSON file hosted on GitHub Pages:
+    ```
+    https://drtamarojgreen.github.io/greenhouse_org/endpoints/videos/main.json
+    ```
+-   **Dynamic List of Videos**: The fetched videos are displayed in a repeater element on the page.
 
-$w.onReady(function () {
-  loadVideos();
-});
+### Velo Elements Used:
 
-async function loadVideos() {
-  try {
-    const videos = await getLatestVideosFromFeed();
-    // Code to display videos on the frontend
-    console.log("Loaded videos:", videos);
-  } catch (error) {
-    console.error("Error loading videos:", error);
-  }
-}
-```
+-   `$w("#videosRepeater")`: A repeater to display the list of videos.
+-   `$item("#videoTitle")`: A text element inside the repeater for the video title.
+-   `$item("#videoPlayer")`: A video player element to display the video.
+-   `$item("#videoDescription")`: A text element for the video description.
+
+---
+
+This approach makes the Videos page lightweight and easy to update. New videos can be added simply by updating the JSON file on GitHub.

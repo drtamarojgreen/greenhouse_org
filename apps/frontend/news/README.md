@@ -1,27 +1,30 @@
-# News Path
+# News
 
-This directory holds the frontend Velo code for running the news section of the main site.
+This directory contains the frontend code for the **News** page of the main Greenhouse for Mental Health website:
+
+👉 [https://greenhousementalhealth.org/news/](https://greenhousementalhealth.org/news/)
+
+---
 
 ## How it works
 
-The `News.js` file contains the Velo code that interacts with the backend to fetch and display news articles on the `https://greenhousementalhealth.org/news/` page.
+The `News.js` file contains Velo code that fetches a list of news articles from a static JSON file and displays them on the page in a repeater.
 
-### Example Velo Code for `News.js`:
+### Key Features:
 
-```javascript
-import { getNews } from 'backend/getNews';
+-   **External Data Source**: The news list is fetched from a JSON file hosted on GitHub Pages:
+    ```
+    https://drtamarojgreen.github.io/greenhouse_org/endpoints/news/main.json
+    ```
+-   **Dynamic List of Articles**: The fetched articles are displayed in a repeater element on the page.
 
-$w.onReady(function () {
-  loadNews();
-});
+### Velo Elements Used:
 
-async function loadNews() {
-  try {
-    const newsArticles = await getNews();
-    // Code to display news articles on the frontend
-    console.log("Loaded news articles:", newsArticles);
-  } catch (error) {
-    console.error("Error loading news articles:", error);
-  }
-}
-```
+-   `$w("#newsRepeater")`: A repeater to display the list of articles.
+-   `$item("#newsTitle")`: A text element inside the repeater for the article title. This element is also configured to link to the article's URL.
+-   `$item("#newsSource")`: A text element for the article source.
+-   `$item("#newsDate")`: A text element for the article date.
+
+---
+
+This approach makes the News page lightweight and easy to update. New articles can be added simply by updating the JSON file on GitHub.

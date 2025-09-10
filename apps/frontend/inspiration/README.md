@@ -1,27 +1,30 @@
-# Inspiration Path
+# Inspiration
 
-This directory holds the frontend Velo code for running the inspiration section of the main site.
+This directory contains the frontend code for the **Inspiration** page of the main Greenhouse for Mental Health website:
+
+👉 [https://greenhousementalhealth.org/inspiration/](https://greenhousementalhealth.org/inspiration/)
+
+---
 
 ## How it works
 
-The `Inspiration.js` file contains the Velo code that interacts with the backend to fetch and display inspirational quotes on the `https://greenhousementalhealth.org/inspiration/` page.
+The `Inspiration.js` file contains Velo code that fetches inspirational quotes from a static JSON file and displays them on the page.
 
-### Example Velo Code for `Inspiration.js`:
+### Key Features:
 
-```javascript
-import { getInspiration } from 'backend/getInspiration';
+-   **External Data Source**: Quotes are fetched from a JSON file hosted on GitHub Pages:
+    ```
+    https://drtamarojgreen.github.io/greenhouse_org/endpoints/inspiration/main.json
+    ```
+-   **Random Quote on Load**: When the page loads, a random quote is displayed.
+-   **New Quote Button**: Users can click a "New Quote" button to display a different random quote.
 
-$w.onReady(function () {
-  loadInspiration();
-});
+### Velo Elements Used:
 
-async function loadInspiration() {
-  try {
-    const quotes = await getInspiration();
-    // Code to display quotes on the frontend
-    console.log("Loaded inspirational quotes:", quotes);
-  } catch (error) {
-    console.error("Error loading inspirational quotes:", error);
-  }
-}
-```
+-   `$w("#quote-text")`: A text element to display the quote.
+-   `$w("#quote-author")`: A text element to display the author of the quote.
+-   `$w("#new-quote-btn")`: A button that the user can click to get a new quote.
+
+---
+
+This approach makes the Inspiration page lightweight and easy to update. New quotes can be added simply by updating the JSON file on GitHub, without needing to change any code in the Wix editor.
