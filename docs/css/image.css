@@ -1,9 +1,14 @@
-#SITE_FOOTER div.wixui-image{
+/*#SITE_FOOTER div.wixui-image{
     float: left;
   margin: 0px 40% 0px 40%;
   left: 0px;
   left: -50px;
-}    
+} */   
+
+  #SITE_FOOTER .wixui-image {
+    margin: 0 auto;
+    width: fit-content;
+  }
 
 #SITE_FOOTER div.wixui-image:nth-child(5){
     left: 0;
