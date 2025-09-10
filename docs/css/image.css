@@ -95,7 +95,8 @@ footer#SITE_FOOTER img[alt="The Greenhouse for Mental Health Development Logo - 
 #SITE_FOOTER > div div div.wixui-image:nth-child(1) > img, footer#SITE_FOOTER img[alt="Lavender Flowers"] {
   border-radius: 16px !important;
   background: linear-gradient(to right, #357438, #732751); 
-  padding: 5px;
+  padding: 0px;
+  position: relative;
 }
 
 

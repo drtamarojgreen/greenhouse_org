@@ -14,7 +14,7 @@ The `Books.js` file contains Velo code that fetches a list of books from a stati
 
 -   **External Data Source**: The book list is fetched from a JSON file hosted on GitHub Pages:
     ```
-    https://drtamarojgreen.github.io/greenhouse_org/endpoints/books/main.json
+    https://drtamarojgreen.github.io/greenhouse_org/endpoints/books/books.json
     ```
 -   **Dynamic List of Books**: The fetched books are displayed in a repeater element on the page.
 
