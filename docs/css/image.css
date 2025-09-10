@@ -16,7 +16,7 @@
   margin: 0px 40% 0px 40%;
   left: 0px;
   left: 0px;
-  width: 20%;
+  width: 200px;
   display: block;
     overflow: visible;
     display: block;
@@ -66,11 +66,11 @@ div div div div div section:nth-child(5) .wixui-image img, footer#SITE_FOOTER im
 
 
 footer#SITE_FOOTER img[alt="The Greenhouse for Mental Health Development Logo - Bloom into your better self"] {
-  width: 70% !important;
-  height: 70% !important;
-  display: block !important;
+  width: 200px;
+  height: auto;
+  display: block;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-  border-radius: 16px !important;
+  border-radius: 16px;
   background: linear-gradient(to right, #357438, #732751); 
   padding: 5px;
   animation: slideLR 8s ease-in-out infinite alternate;
