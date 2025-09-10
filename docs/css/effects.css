@@ -190,7 +190,7 @@ h6.font_6.wixui-rich-text__text::before {
     width: 100%;
     height: 150%; /* Taller than the text to allow the vine to grow outside the text box */
     overflow: visible;
-    z-index: -1; /* Ensures the vine is drawn behind the text */
+    z-index: 1; /* Ensures the vine is drawn behind the text */
 }
 
 /* The vine path itself */
