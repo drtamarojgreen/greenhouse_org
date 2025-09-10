@@ -72,3 +72,43 @@ These are cutting-edge tools we are exploring to build next-generation features.
 *   **In Simple Terms:** Video Diffusion is a cutting-edge AI technique for generating video from text descriptions or images. It works by starting with a frame of random digital "noise" (like TV static) and then gradually refining it, step-by-step, into a clear, coherent video that matches the user's prompt. It is a powerful new form of creative expression.
 
 *   **How We Might Use It:** This technology could allow us to create unique and highly engaging visual content for our website at a scale that would be impossible with traditional video production. We could generate custom animated explainers, abstract background visuals, or thematic videos that perfectly match our brand and message.
+
+---
+
+## Frontend Applications: The Interactive Pages of Our Website
+
+Our website is more than just a collection of static pages. It features several interactive applications that provide dynamic, engaging experiences for our visitors. These applications are built using Wix Velo, a powerful platform that allows us to write JavaScript code to create custom functionality.
+
+A key principle behind our frontend applications is that they are **lightweight and easy to update**. Instead of storing their content directly in the website, they fetch it from external JSON files hosted on GitHub. This means we can update the content of our apps—like adding a new book to the Books page or a new video to the Videos page—simply by updating a text file, without needing to touch the website's code.
+
+This approach makes our website more flexible and easier to maintain. It also ensures that our pages load quickly, providing a smooth experience for our visitors.
+
+### The Books Page
+
+*   **The Analogy:** Think of the Books page as a dynamic, self-updating library shelf. Instead of manually arranging books, this shelf automatically displays the latest recommended readings from a curated list.
+*   **In Simple Terms:** This page displays a list of recommended books related to mental health. The list is not hard-coded on the page; instead, it's fetched from a simple text file (a JSON file) on GitHub. This makes it easy to add or remove books without having to edit the website itself. The page uses a "repeater" element to display each book with its title, author, and description.
+
+### The Inspiration Page
+
+*   **The Analogy:** The Inspiration page is like a digital "quote of the day" calendar. Every time you visit, it shows you a new uplifting or thought-provoking quote.
+*   **In Simple Terms:** This page displays inspirational quotes to provide a moment of reflection for our visitors. When the page loads, it fetches a list of quotes from a JSON file and displays one at random. A "New Quote" button allows visitors to see another quote from the list. This keeps the page fresh and engaging.
+
+### The News Page
+
+*   **The Analogy:** The News page is our website's newsstand, automatically updated with the latest headlines from trusted sources.
+*   **In Simple Terms:** This page keeps our visitors informed about the latest news in mental health. It fetches a list of news articles from a JSON file and displays them in a list. Each item in the list shows the article's title, source, and date, and links to the full article.
+
+### The Projects Page
+
+*   **The Analogy:** The Projects page is a transparent, open blueprint of our community and development initiatives. It's like looking at an architect's table, where all the plans are laid out for everyone to see.
+*   **In Simple Terms:** This page showcases the various projects and initiatives Greenhouse for Mental Health is involved in. Unlike other pages, it's designed to be completely independent of the main website's backend systems. It fetches all its content from a JSON file on GitHub, making it a "living portfolio" that is both transparent and easy to update.
+
+### The Schedule Page
+
+*   **The Analogy:** The Schedule page is a community bulletin board that always has the most current information about upcoming events.
+*   **In Simple Terms:** This page displays a schedule of events, such as workshops, webinars, and support group meetings. The schedule is loaded from a JSON file, so it can be updated easily without needing to make changes to the website's code. Each event is displayed with its title, date, time, and a brief description.
+
+### The Videos Page
+
+*   **The Analogy:** The Videos page is our own curated on-demand video channel. It's a library of helpful video content that visitors can browse at their leisure.
+*   **In Simple Terms:** This page provides a collection of educational and supportive videos. The list of videos is fetched from a JSON file and displayed in a repeater. Each video has a title, a description, and an embedded video player, so visitors can watch the videos directly on the page.
