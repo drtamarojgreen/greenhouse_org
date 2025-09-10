@@ -57,12 +57,14 @@ div.details div.desc {
 }
 
 h6.font_6.wixui-rich-text__text {
+    /* Fallback color for browsers that don't support background-clip: text */
+    color: #357438;
     background: linear-gradient(90deg, #357438, #9400FF);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     position: relative;
     display: inline-block;
-    color: #357438; /* base theme color */
     overflow: hidden;
 }
 
