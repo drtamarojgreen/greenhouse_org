@@ -2,16 +2,20 @@
 import unittest
 import os
 import re
+import logging
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service as FirefoxService
-from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver.firefox.options import Options
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Step Registry ---
 _step_registry = {}
 
-def step(pattern):
+def step_decorator(registry, pattern):
     def decorator(func):
-        _step_registry[pattern] = func
+        logging.info(f"Registering step: '{pattern}'")
+        registry[pattern] = func
         return func
     return decorator
 
@@ -20,12 +24,6 @@ class BDDTestRunner:
     def __init__(self, features_dir, steps_dir):
         self.features_dir = features_dir
         self.steps_dir = steps_dir
-        self.load_step_definitions()
-
-    def load_step_definitions(self):
-        for filename in os.listdir(self.steps_dir):
-            if filename.endswith('.py'):
-                __import__(f'bdd.steps.{filename[:-3]}')
 
     def run_tests(self):
         suite = unittest.TestSuite()
@@ -33,7 +31,7 @@ class BDDTestRunner:
             if feature_filename.endswith('.feature'):
                 feature_path = os.path.join(self.features_dir, feature_filename)
                 test_case_class = self.create_test_case_class(feature_path)
-                suite.addTest(unittest.makeSuite(test_case_class))
+                suite.addTest(unittest.TestLoader().loadTestsFromTestCase(test_case_class))
         
         runner = unittest.TextTestRunner()
         runner.run(suite)
@@ -47,17 +45,21 @@ class BDDTestRunner:
 
         class BDDTestCase(unittest.TestCase):
             driver = None
+            _step_registry = _step_registry
 
             @classmethod
             def setUpClass(cls):
-                # Assuming geckodriver is in the PATH or managed by webdriver_manager
                 # The user mentioned geckodriver in test/
                 geckodriver_path = '/home/tamarojgreen/development/LLM/greenhouse_org/test/geckodriver'
+                
+                options = Options()
+                options.add_argument("-headless")
+
                 if os.path.exists(geckodriver_path):
                     service = FirefoxService(executable_path=geckodriver_path)
-                    cls.driver = webdriver.Firefox(service=service)
+                    cls.driver = webdriver.Firefox(service=service, options=options)
                 else:
-                    cls.driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
+                    raise FileNotFoundError(f"GeckoDriver not found at {geckodriver_path}")
                 cls.driver.implicitly_wait(10)
 
             @classmethod
@@ -66,8 +68,10 @@ class BDDTestRunner:
                     cls.driver.quit()
 
             def _execute_step(self, step_text):
+                step_text = re.sub(r'^(Given|When|Then|And|But) ', '', step_text).strip()
                 found_match = False
-                for pattern, func in _step_registry.items():
+                for pattern, func in self._step_registry.items():
+                    # Ensure the pattern matches the step_text (without Given/When/Then)
                     match = re.match(pattern, step_text)
                     if match:
                         func(self, *match.groups())
@@ -87,8 +91,8 @@ class BDDTestRunner:
                     steps = [s.strip() for s in steps_text.strip().split('\n') if s.strip()]
                     for step_line in steps:
                         # Remove Given/When/Then/And/But
-                        step_to_execute = re.sub(r'^(Given|When|Then|And|But) ', '', step_line).strip()
-                        self._execute_step(step_to_execute)
+                        stripped_step_line = re.sub(r'^(Given|When|Then|And|But) ', '', step_line).strip()
+                        self._execute_step(stripped_step_line)
                 return test_method
 
             steps_for_scenario = steps_by_scenario[i]
@@ -98,10 +102,26 @@ class BDDTestRunner:
         BDDTestCase.__name__ = class_name
         return BDDTestCase
 
+def register_all_steps(registry):
+    # Explicitly import and register steps from each module
+    from tests.bdd.steps import books_steps
+    from tests.bdd.steps import videos_steps
+    from tests.bdd.steps import news_steps
+    from tests.bdd.steps import common_steps
+    from tests.bdd.steps import schedule_steps
+
+    books_steps.register_steps(registry)
+    videos_steps.register_steps(registry)
+    news_steps.register_steps(registry)
+    common_steps.register_steps(registry)
+    schedule_steps.register_steps(registry)
+
 if __name__ == '__main__':
     # Add tests directory to path to allow importing steps
     import sys
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     
-    runner = BDDTestRunner('bdd/features', 'bdd/steps')
+    register_all_steps(_step_registry) # Register all steps into the global _step_registry
+
+    runner = BDDTestRunner('tests/bdd/features', 'tests/bdd/steps')
     runner.run_tests()
