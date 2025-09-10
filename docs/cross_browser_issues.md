@@ -89,18 +89,19 @@ Manually testing on every combination of browser, OS, and device is impractical.
 - **Debugging**: Includes built-in developer tools for inspecting and debugging issues directly within the remote environment.
 - **Automation**: These platforms can be integrated into our CI/CD pipeline for automated testing in the future.
 
-## 5. Resolved Issues & Key Best Practices
+## 5. Known Issues and Action Plan
 
-The following issues, identified during static analysis, have been resolved. The solutions serve as best practices for future development.
+The following issues were identified during a static analysis of the codebase. They are prioritized based on their potential impact on user experience and browser compatibility.
 
-| Priority | Issue Description | Status | Solution |
+| Priority | Issue Description | Affected File(s) | Recommended Action |
 | :--- | :--- | :--- | :--- |
-| **Critical** | JS typo (`querySelectors` vs `querySelectorAll`) caused a runtime error. | ✅ **Resolved** | Corrected the method name in `docs/js/watering-can-effect.js`. |
-| **High** | `mousemove` listener caused poor animation performance. | ✅ **Resolved** | Refactored to use `requestAnimationFrame` to update DOM, ensuring smooth animation synced with browser repaints. |
-| **High** | `backdrop-filter` lacked Safari prefix and a fallback. | ✅ **Resolved** | Added `-webkit-backdrop-filter` and a `background-color` fallback to `docs/css/style.css` for graceful degradation. |
-| **Medium** | `setTimeout` for animation cleanup was brittle. | ✅ **Resolved** | Replaced the timer with an `animationend` event listener, decoupling the JS from CSS animation timing. |
-| **Medium** | `background-clip: text` had incorrect fallback property order. | ✅ **Resolved** | Reordered CSS properties in `docs/css/effects.css` to ensure the solid color fallback works correctly. |
-| **Low** | Inefficient DOM creation in a `setInterval` loop. | 📝 **Documented** | Not fixed, but documented as a potential future performance improvement (refactor to use an object pool). |
+| **Critical** | JS typo (`querySelectors` instead of `querySelectorAll`) will cause a runtime error and break the watering can effect. | `docs/js/watering-can-effect.js` | Fix the typo. |
+| **High** | The `mousemove` event listener for the watering can effect updates the DOM directly, which is likely to cause animation stuttering ("jank") on some browsers. | `docs/js/watering-can-effect.js` | Refactor the event handler to use `requestAnimationFrame` for smoother DOM updates. |
+| **High** | The CSS `backdrop-filter` property is used without the `-webkit-` prefix for Safari compatibility and lacks a visual fallback for unsupported browsers like Firefox. | `docs/css/style.css` | Add the `-webkit-backdrop-filter` property and a `background-color` with transparency as a fallback. |
+| **Medium** | The watering can effect uses a hardcoded `setTimeout` to remove particle elements, which is brittle. If the CSS animation duration changes, this will break. | `docs/js/watering-can-effect.js` | Refactor to use the `animationend` event for element cleanup. |
+| **Medium** | The CSS for gradient text (`background-clip: text`) has an incorrect property order, which prevents the solid `color` from acting as a proper fallback. | `docs/css/effects.css` | Move the fallback `color` property so it is defined *before* the `background-clip` rules. |
+| **Low** | The watering can effect creates and destroys DOM elements inside a `setInterval` loop, which is inefficient. | `docs/js/watering-can-effect.js` | (Future Improvement) Refactor to use an object pool pattern for the particle elements to improve performance. |
+
 
 ### Key Cross-Browser Best Practices
 Based on the fixes implemented, developers should adhere to the following best practices:
