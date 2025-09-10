@@ -55,8 +55,8 @@ div div div div div section:nth-child(5) .wixui-image .j7pOnl {
 
 /* Style the actual images */
 div div div div div section:nth-child(5) .wixui-image img, footer#SITE_FOOTER img[alt="Lavender Flowers"] {
-  width: 70% !important;
-  height: 70% !important;
+/*  width: 70% !important;
+  height: 70% !important;*/
   display: block !important;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
   border-radius: 16px !important;
@@ -66,8 +66,8 @@ div div div div div section:nth-child(5) .wixui-image img, footer#SITE_FOOTER im
 
 
 footer#SITE_FOOTER img[alt="The Greenhouse for Mental Health Development Logo - Bloom into your better self"] {
-  width: 200px;
-  height: auto;
+  /*width: 200px;
+  height: auto;*/
   display: block;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
   border-radius: 16px;
@@ -78,8 +78,8 @@ footer#SITE_FOOTER img[alt="The Greenhouse for Mental Health Development Logo - 
 
 
 @keyframes slideLR {
-  from { margin-left: 30%; }
-  to   { margin-left: 50%; }
+  from { margin-left: 20%; }
+  to   { margin-left: 40%; }
 }
 
 #SITE_FOOTER > div div div.wixui-image:nth-child(1) > img, footer#SITE_FOOTER img[alt="Lavender Flowers"] {
