@@ -1,9 +1,14 @@
-#SITE_FOOTER div.wixui-image{
+/*#SITE_FOOTER div.wixui-image{
     float: left;
   margin: 0px 40% 0px 40%;
   left: 0px;
   left: -50px;
-}    
+} */   
+
+  #SITE_FOOTER .wixui-image {
+/*    margin: 0 auto;
+    width: fit-content;*/
+  }
 
 #SITE_FOOTER div.wixui-image:nth-child(5){
     left: 0;
@@ -13,19 +18,22 @@
 
 #SITE_FOOTER div.wixui-image:nth-child(7){
     float: left;
-  margin: 0px 40% 0px 40%;
+  margin: 0 auto;
   left: 0px;
-  left: 0px;
-  width: 200px;
   display: block;
     overflow: visible;
     display: block;
     height: auto;
     z-index: 10;
     position: relative;
+    border: none;
+    background: none;
 }
   
 /* temporary placeholder */
+#comp-lxxkurdp > div {
+  overflow:visible;
+}
 
 
 /* Add corner accent elements */
@@ -69,11 +77,13 @@ footer#SITE_FOOTER img[alt="The Greenhouse for Mental Health Development Logo - 
   /*width: 200px;
   height: auto;*/
   display: block;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-  border-radius: 16px;
-  background: linear-gradient(to right, #357438, #732751); 
+/*  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) ;*/
+  border-radius: 0px;
+  border:none;
+  /* background: linear-gradient(to right, #357438, #732751); */
+  background: none; 
   padding: 5px;
-  animation: slideLR 8s ease-in-out infinite alternate;
+/*  animation: slideLR 8s ease-in-out infinite alternate;*/
 }
 
 
@@ -85,7 +95,8 @@ footer#SITE_FOOTER img[alt="The Greenhouse for Mental Health Development Logo - 
 #SITE_FOOTER > div div div.wixui-image:nth-child(1) > img, footer#SITE_FOOTER img[alt="Lavender Flowers"] {
   border-radius: 16px !important;
   background: linear-gradient(to right, #357438, #732751); 
-  padding: 5px;
+  padding: 0px;
+  position: relative;
 }
 
 
