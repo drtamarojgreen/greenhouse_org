@@ -1,42 +1,32 @@
-document.addEventListener('DOMContentLoaded', () => {
-    fetchBooks();
-});
+// Velo API Reference: https://www.wix.com/velo/reference/api-overview/introduction
 
-async function fetchBooks() {
-    try {
-        const response = await fetch('/apps/wv/backend/getBooks.web.js');
-        const books = await response.json();
-        displayBooks(books);
-    } catch (error) {
-        console.error('Error fetching books:', error);
-        document.getElementById('book-list').innerHTML = '<p>Failed to load books. Please try again later.</p>';
-    }
-}
+import { fetch } from 'wix-fetch';
 
-function displayBooks(books) {
-    const bookList = document.getElementById('book-list');
-    bookList.innerHTML = ''; // Clear existing content
+$w.onReady(function () {
+    const url = "https://drtamarojgreen.github.io/greenhouse_org/endpoints/books/main.json";
 
-    if (books && books.length > 0) {
-        books.forEach(book => {
-            const bookCard = document.createElement('div');
-            bookCard.className = 'book-card';
+    fetch(url, { method: 'get' })
+        .then((httpResponse) => {
+            if (httpResponse.ok) {
+                return httpResponse.json();
+            } else {
+                return Promise.reject("Fetch not successful");
+            }
+        })
+        .then((data) => {
+            const books = data.items;
+            $w("#booksRepeater").data = books;
 
-            const bookTitle = document.createElement('h2');
-            bookTitle.textContent = book.title;
-
-            const bookAuthor = document.createElement('p');
-            bookAuthor.textContent = `Author: ${book.author}`;
-
-            const bookDescription = document.createElement('p');
-            bookDescription.textContent = book.description;
-
-            bookCard.appendChild(bookTitle);
-            bookCard.appendChild(bookAuthor);
-            bookCard.appendChild(bookDescription);
-            bookList.appendChild(bookCard);
+            $w("#booksRepeater").onItemReady(($item, itemData, index) => {
+                $item("#bookTitle").text = itemData.title;
+                $item("#bookAuthor").text = itemData.author;
+                $item("#bookDescription").text = itemData.description;
+            });
+        })
+        .catch(err => {
+            console.error("Error fetching or parsing data:", err);
+            // You could display an error message to the user on the page
+            // For example: $w("#errorMessage").text = "Could not load books.";
+            // $w("#errorMessage").show();
         });
-    } else {
-        bookList.innerHTML = '<p>No books available at the moment.</p>';
-    }
-}
+});

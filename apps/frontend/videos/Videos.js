@@ -1,45 +1,32 @@
-document.addEventListener('DOMContentLoaded', () => {
-    fetchVideos();
-});
+// Velo API Reference: https://www.wix.com/velo/reference/api-overview/introduction
 
-async function fetchVideos() {
-    try {
-        const response = await fetch('/_functions/getLatestVideosFromFeed');
-        const videos = await response.json();
-        displayVideos(videos);
-    } catch (error) {
-        console.error('Error fetching videos:', error);
-        document.getElementById('video-list').innerHTML = '<p>Failed to load videos. Please try again later.</p>';
-    }
-}
+import { fetch } from 'wix-fetch';
 
-function displayVideos(videos) {
-    const videoList = document.getElementById('video-list');
-    videoList.innerHTML = ''; // Clear existing content
+$w.onReady(function () {
+    const url = "https://drtamarojgreen.github.io/greenhouse_org/endpoints/videos/main.json";
 
-    if (videos && videos.length > 0) {
-        videos.forEach(video => {
-            const videoCard = document.createElement('div');
-            videoCard.className = 'video-card';
+    fetch(url, { method: 'get' })
+        .then((httpResponse) => {
+            if (httpResponse.ok) {
+                return httpResponse.json();
+            } else {
+                return Promise.reject("Fetch not successful");
+            }
+        })
+        .then((data) => {
+            const videos = data.items;
+            $w("#videosRepeater").data = videos;
 
-            const videoTitle = document.createElement('h2');
-            videoTitle.textContent = video.title;
-
-            const videoPlayer = document.createElement('iframe');
-            videoPlayer.src = video.embedUrl || video.url;
-            videoPlayer.frameborder = "0";
-            videoPlayer.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-            videoPlayer.allowFullscreen = true;
-
-            const videoDescription = document.createElement('p');
-            videoDescription.textContent = video.description;
-
-            videoCard.appendChild(videoTitle);
-            videoCard.appendChild(videoPlayer);
-            videoCard.appendChild(videoDescription);
-            videoList.appendChild(videoCard);
+            $w("#videosRepeater").onItemReady(($item, itemData, index) => {
+                $item("#videoTitle").text = itemData.title;
+                $item("#videoPlayer").src = itemData.embedUrl;
+                $item("#videoDescription").text = itemData.description;
+            });
+        })
+        .catch(err => {
+            console.error("Error fetching or parsing data:", err);
+            // You could display an error message to the user on the page
+            // For example: $w("#errorMessage").text = "Could not load videos.";
+            // $w("#errorMessage").show();
         });
-    } else {
-        videoList.innerHTML = '<p>No videos available at the moment.</p>';
-    }
-}
+});

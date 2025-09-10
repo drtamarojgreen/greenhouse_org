@@ -1,37 +1,42 @@
-const quoteText = document.getElementById('quote-text');
-const quoteAuthor = document.getElementById('quote-author');
-const newQuoteBtn = document.getElementById('new-quote-btn');
+// Velo API Reference: https://www.wix.com/velo/reference/api-overview/introduction
 
-let quotes = []; // Will store fetched quotes
+import { fetch } from 'wix-fetch';
 
-async function fetchQuotes() {
-    try {
-        const response = await fetch('/_functions/getInspiration');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        quotes = data.items; // Assuming the backend returns { items: [...] }
-        displayQuote(); // Display a quote once fetched
-    } catch (error) {
-        console.error("Error fetching quotes:", error);
-        quoteText.textContent = "Failed to load quotes.";
-        quoteAuthor.textContent = "";
-    }
-}
+let quotes = [];
 
-function getRandomQuote() {
-    if (quotes.length === 0) return { text: "No quotes available.", author: "" };
-    return quotes[Math.floor(Math.random() * quotes.length)];
-}
+$w.onReady(function () {
+    const url = "https://drtamarojgreen.github.io/greenhouse_org/endpoints/inspiration/main.json";
+
+    fetch(url, { method: 'get' })
+        .then((httpResponse) => {
+            if (httpResponse.ok) {
+                return httpResponse.json();
+            } else {
+                return Promise.reject("Fetch not successful");
+            }
+        })
+        .then((data) => {
+            quotes = data.items;
+            displayQuote();
+        })
+        .catch(err => {
+            console.error("Error fetching or parsing data:", err);
+            $w("#quote-text").text = "Could not load quotes.";
+            $w("#quote-author").text = "";
+        });
+
+    $w("#new-quote-btn").onClick(() => {
+        displayQuote();
+    });
+});
 
 function displayQuote() {
-    const { text, author } = getRandomQuote();
-    quoteText.textContent = `"${text}"`;
-    quoteAuthor.textContent = `- ${author}`;
+    if (quotes.length > 0) {
+        const quote = quotes[Math.floor(Math.random() * quotes.length)];
+        $w("#quote-text").text = `"${quote.text}"`;
+        $w("#quote-author").text = `- ${quote.author}`;
+    } else {
+        $w("#quote-text").text = "No quotes available.";
+        $w("#quote-author").text = "";
+    }
 }
-
-newQuoteBtn.addEventListener('click', displayQuote);
-
-// Fetch and display initial quote
-fetchQuotes();
