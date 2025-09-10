@@ -20,6 +20,7 @@
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     margin-bottom: 20px;
+    
 }
 
 .greenhouse-app-container .wixui-column-strip__column > #greenhouse-app-container {
@@ -27,9 +28,12 @@
 }
 
 .greenhouse-app-container .calendar-header{
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px; /* space between columns */
+ display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #ddd;
 }
 
 .greenhouse-app-container .calendar-header > * {
