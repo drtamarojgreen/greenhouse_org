@@ -4,14 +4,25 @@
 let canIconElement;
 let headingElementForCan;
 let pouringIntervalId;
+let latestMouseX = 0;
+let latestMouseY = 0;
+let animationFrameId;
+
+// --- Animation Loop for Performance ---
+function updateIconPosition() {
+    if (canIconElement) {
+        canIconElement.style.left = `${latestMouseX}px`;
+        canIconElement.style.top = `${latestMouseY}px`;
+    }
+    // Continue the loop
+    animationFrameId = requestAnimationFrame(updateIconPosition);
+}
 
 // We define the event handler functions so we can properly add and remove them.
 const handleMouseMoveForCan = (e) => {
-    if (canIconElement) {
-        // Update the icon's position to follow the cursor
-        canIconElement.style.left = `${e.clientX}px`;
-        canIconElement.style.top = `${e.clientY}px`;
-    }
+    // Only store the latest mouse position, don't update the DOM here.
+    latestMouseX = e.clientX;
+    latestMouseY = e.clientY;
 };
 
 const handleHeadingEnterForCan = () => {
@@ -54,10 +65,11 @@ function createWaterDropletParticle() {
 
     document.body.appendChild(droplet);
 
-    // Clean up the DOM by removing the droplet after its animation is finished
-    setTimeout(() => {
+    // Clean up the DOM by removing the droplet after its animation is finished.
+    // This is more robust than a setTimeout because it respects the actual animation duration.
+    droplet.addEventListener('animationend', () => {
         droplet.remove();
-    }, 1000); // This duration must match the 'fall' animation duration in the CSS
+    });
 }
 
 // --- Activation/Deactivation ---
@@ -65,7 +77,7 @@ function createWaterDropletParticle() {
 function activateWateringCanEffect() {
     headingElementForCan = document.getElementById('effect-heading');
     // Do nothing if the effect is already active or the heading doesn't exist
-    headingElementForCans = document.querySelectors('body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-layout.masterPage.css-editing-scope header#SITE_HEADER div section div p span spa');
+    headingElementForCans = document.querySelectorAll('body div#SITE_CONTAINER div div#site-root.site-root div#masterPage.mesh-layout.masterPage.css-editing-scope header#SITE_HEADER div section div p span spa');
     headingElementForCan = headingElementForCans[0];
     
     if (!headingElementForCan || document.querySelector('.watering-can-icon')) return;
@@ -80,11 +92,15 @@ function activateWateringCanEffect() {
     window.addEventListener('mousemove', handleMouseMoveForCan);
     headingElementForCan.addEventListener('mouseenter', handleHeadingEnterForCan);
     headingElementForCan.addEventListener('mouseleave', handleHeadingLeaveForCan);
+
+    // Start the animation loop
+    animationFrameId = requestAnimationFrame(updateIconPosition);
 }
 
 function deactivateWateringCanEffect() {
     // Stop any running animations/intervals
     stopPouringWater();
+    cancelAnimationFrame(animationFrameId); // Stop the animation loop
     
     // Remove the icon from the DOM
     if (canIconElement) {
