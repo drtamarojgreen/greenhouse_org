@@ -1,10 +1,27 @@
-# Mental Health News App
+# News Path
 
-A simple web application that displays mental health news and research articles.
+This directory holds the frontend Velo code for running the news section of the main site.
 
-## To Run
+## How it works
 
-1.  Navigate to the `apps/frontend/news` directory.
-2.  Run `npm install` to install dependencies (currently none).
-3.  Run `npm start` to start the server.
-4.  Open a web browser and go to `http://localhost:3002`.
+The `News.js` file contains the Velo code that interacts with the backend to fetch and display news articles on the `https://greenhousementalhealth.org/news/` page.
+
+### Example Velo Code for `News.js`:
+
+```javascript
+import { getNews } from 'backend/getNews';
+
+$w.onReady(function () {
+  loadNews();
+});
+
+async function loadNews() {
+  try {
+    const newsArticles = await getNews();
+    // Code to display news articles on the frontend
+    console.log("Loaded news articles:", newsArticles);
+  } catch (error) {
+    console.error("Error loading news articles:", error);
+  }
+}
+```

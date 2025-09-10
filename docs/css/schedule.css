@@ -1,3 +1,8 @@
+[id^="bgLayers_comp"] {
+    pointer-events: none;
+}
+
+
 /* Scoped styles for the Greenhouse Schedule App */
 .greenhouse-app-container {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -31,6 +36,10 @@
   background: #f0f0f0;
   padding: 15px;
   border-radius: 6px;
+}
+
+#greenhouse-dashboard-app-calendar-container .calendar-header h2 {
+
 }
 
 .greenhouse-app-container #event-form,

@@ -1,22 +1,27 @@
-# Inspirational Quotes App
+# Inspiration Path
 
-A simple web application that displays inspirational quotes.
+This directory holds the frontend Velo code for running the inspiration section of the main site.
 
-## Wix Integration
+## How it works
 
-This app integrates with the Wix backend to fetch quotes from a Wix Data Collection.
+The `Inspiration.js` file contains the Velo code that interacts with the backend to fetch and display inspirational quotes on the `https://greenhousementalhealth.org/inspiration/` page.
 
-### Wix Data Collection
+### Example Velo Code for `Inspiration.js`:
 
-*   **Collection Name:** `InspirationalQuotes`
-*   **Fields:**
-    *   `text` (Text) - The quote itself.
-    *   `author` (Text) - The author of the quote.
-    *   `tags` (Array of Strings) - Tags for categorizing quotes (e.g., "motivation", "positivity").
+```javascript
+import { getInspiration } from 'backend/getInspiration';
 
-## To Run
+$w.onReady(function () {
+  loadInspiration();
+});
 
-1.  Navigate to the `apps/frontend/inspiration` directory.
-2.  Run `npm install` to install dependencies (currently none).
-3.  Run `npm start` to start the server.
-4.  Open a web browser and go to `http://localhost:3001`.
+async function loadInspiration() {
+  try {
+    const quotes = await getInspiration();
+    // Code to display quotes on the frontend
+    console.log("Loaded inspirational quotes:", quotes);
+  } catch (error) {
+    console.error("Error loading inspirational quotes:", error);
+  }
+}
+```
