@@ -469,13 +469,13 @@
                 path.style.transition = 'none'; // Disable transition for the reset
                 path.style.strokeDashoffset = pathLength;
 
-                // 2. Force a DOM reflow. This is a crucial step to ensure the browser applies the reset styles
-                // before it tries to apply the new animation state.
-                void heading.offsetWidth;
-
+            // 2. Schedule the animation to start on the next frame. This is a more performant way to
+            // ensure the browser has processed the reset styles before starting the new animation.
+            requestAnimationFrame(() => {
                 // 3. Re-enable transitions and add the class to start the animation
-                path.style.transition = 'stroke-dashoffset 4s ease-in-out';
+                path.style.transition = `stroke-dashoffset ${config.duration / 1000}s ease-in-out`;
                 heading.classList.add('animation-running');
+            });
             };
 
             // Run the first animation cycle immediately after a short delay
