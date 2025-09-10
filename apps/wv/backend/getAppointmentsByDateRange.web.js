@@ -2,27 +2,28 @@ import wixData from 'wix-data';
 import { response } from 'wix-http-functions';
 
 /**
- * HTTP GET function to retrieve appointments within a specific date range.
- * Endpoint: /_functions/getAppointmentsByDateRange?startDate={startDate}&endDate={endDate}
+ * HTTP GET function to retrieve appointments for a specific therapist within a date range.
+ * Endpoint: /_functions/getAppointmentsByDateRange?startDate={startDate}&endDate={endDate}&therapistId={therapistId}
  */
 export async function get(request) {
     try {
-        const startDate = request.query.startDate;
-        const endDate = request.query.endDate;
+        const { startDate, endDate, therapistId } = request.query;
 
-        if (!startDate || !endDate) {
+        if (!startDate || !endDate || !therapistId) {
             return response({
                 status: 400,
                 headers: { "Content-Type": "application/json" },
-                body: { message: "startDate and endDate are required query parameters." }
+                body: { message: "startDate, endDate, and therapistId are required query parameters." }
             });
         }
 
-        // Query appointments within the date range
-        const results = await wixData.query("Appointments")
-                                .ge("start", new Date(startDate))
-                                .le("end", new Date(endDate))
-                                .find();
+        // Build the query
+        const query = wixData.query("Appointments")
+            .eq("therapistId", therapistId)
+            .ge("startDate", new Date(startDate))
+            .le("startDate", new Date(endDate)); // Changed 'end' to 'startDate' for more accurate daily view
+
+        const results = await query.find();
 
         return response({
             status: 200,
