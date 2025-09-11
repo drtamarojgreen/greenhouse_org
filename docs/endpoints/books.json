@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "text1": "Explore Our Curated Collection of Mental Health Literature",
+    "Section1RgularLongtext1": "Dive into insightful books covering psychobiography, neuroscience in PTSD treatment, and the impact of technology on human cognition. Our selection aims to provide valuable resources for understanding and improving mental well-being.",
+    "Section2RegularTitle1": "Featured Books",
+    "Section2RegularSubtitle1": "Deepen Your Understanding",
+    "Section2RegularLongtext1": "Each book offers unique perspectives and research-backed insights into various aspects of mental health and human behavior. From practical guides for researchers to explorations of modern challenges, find resources to support your journey."
+  },
+  "books": [
+    {
+      "title": "The Psychobiographer's Handbook: A Practical Guide to Research and Ethics Kindle Edition",
+      "author": "Joseph G. Ponterotto (Author)",
+      "description": "A comprehensive and practical guide on conducting rigorous, ethical, and impactful psychobiographical research"
+    },
+    {
+      "title": "Retraining the Brain: Applied Neuroscience in Exposure Therapy for PTSD 1st Edition, Kindle Edition",
+      "author": "Sheila Rauch (Author), Carmen McLean (Author)",
+      "description": "Rauch and McLean bridge the gap between neuroscience research and the treatment of PTSD patients."
+    },
+    {
+      "title": "Human Capacity in the Attention Economy: How Information Technology Changes How We Think, Feel and Behave 1st Edition,",
+      "author": "Sean Lane (Editor), Paul Atchley (Editor)",
+      "description": "This edited volume investigates the impact of information technology through the lens of human cognitive capacity and the ways in which it influences how we think, feel and behave."
+    }
+  ]
+}
