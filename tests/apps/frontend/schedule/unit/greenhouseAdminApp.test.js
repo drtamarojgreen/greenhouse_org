@@ -216,7 +216,7 @@ const mockWindow = {
 global.document = mockWindow.document;
 global.window = mockWindow;
 global.fetch = mockWindow.fetch;
-global.console = mockWindow.console;
+// global.console = mockWindow.console; // DO NOT MOCK GLOBALLY
 global.URLSearchParams = mockWindow.URLSearchParams;
 global.confirm = mockWindow.confirm;
 
@@ -224,12 +224,12 @@ global.confirm = mockWindow.confirm;
 // Load the actual GreenhouseAdminApp.js content
 const fs = require('fs');
 const path = require('path');
-const adminAppPath = path.resolve(__dirname, '../../../../docs/js/GreenhouseAdminApp.js');
+const adminAppPath = path.resolve(__dirname, '../../../../../docs/js/GreenhouseAdminApp.js');
 const adminAppCode = fs.readFileSync(adminAppPath, 'utf8');
 eval(adminAppCode); // Execute the script in the mocked environment
-window.GreenhouseAdminApp = GreenhouseAdminApp; // Expose it globally
 
 function runGreenhouseAdminAppTests() {
+    const GreenhouseAdminApp = window.GreenhouseAdminApp;
     let passed = 0;
     let failed = 0;
 
@@ -331,5 +331,5 @@ try {
     console.log("All GreenhouseAdminApp unit tests passed!");
 } catch (error) {
     console.error("GreenhouseAdminApp unit tests failed:", error.message);
-    process.exit(1);
+    throw error;
 }

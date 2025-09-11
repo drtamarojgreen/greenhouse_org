@@ -79,6 +79,7 @@ const mockWindow = {
         debug: () => {}
     },
     setTimeout: (fn, delay) => fn(), // Mock setTimeout to execute immediately
+    addEventListener: () => {}, // Mock addEventListener
     GreenhouseUtils: {
         appState: {
             isInitialized: false,
@@ -137,7 +138,7 @@ const mockWindow = {
 // Inject mocks into the global scope for testing
 global.document = mockWindow.document;
 global.window = mockWindow;
-global.console = mockWindow.console;
+// global.console = mockWindow.console; // DO NOT MOCK GLOBALLY
 global.setTimeout = mockWindow.setTimeout;
 global.URLSearchParams = mockWindow.URLSearchParams;
 
@@ -145,11 +146,12 @@ global.URLSearchParams = mockWindow.URLSearchParams;
 // Load the actual scheduler.js content
 const fs = require('fs');
 const path = require('path');
-const schedulerPath = path.resolve(__dirname, '../../../../docs/js/scheduler.js');
+const schedulerPath = path.resolve(__dirname, '../../../../../docs/js/scheduler.js');
 const schedulerCode = fs.readFileSync(schedulerPath, 'utf8');
 eval(schedulerCode); // Execute the script in the mocked environment
 
 function runSchedulerTests() {
+    const GreenhouseScheduler = window.GreenhouseScheduler;
     let passed = 0;
     let failed = 0;
 
@@ -314,5 +316,5 @@ try {
     console.log("All Scheduler unit tests passed!");
 } catch (error) {
     console.error("Scheduler unit tests failed:", error.message);
-    process.exit(1);
+    throw error;
 }

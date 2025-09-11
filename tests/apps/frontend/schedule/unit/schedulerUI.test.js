@@ -132,18 +132,18 @@ const mockWindow = {
 // Inject mocks into the global scope for testing
 global.document = mockWindow.document;
 global.window = mockWindow;
-global.console = mockWindow.console;
+// global.console = mockWindow.console; // DO NOT MOCK GLOBALLY
 
 
 // Load the actual schedulerUI.js content
 const fs = require('fs');
 const path = require('path');
-const schedulerUIPath = path.resolve(__dirname, '../../../../docs/js/schedulerUI.js');
+const schedulerUIPath = path.resolve(__dirname, '../../../../../docs/js/schedulerUI.js');
 const schedulerUICode = fs.readFileSync(schedulerUIPath, 'utf8');
 eval(schedulerUICode); // Execute the script in the mocked environment
-window.GreenhouseSchedulerUI = GreenhouseSchedulerUI; // Expose it globally
 
 function runSchedulerUITests() {
+    const GreenhouseSchedulerUI = window.GreenhouseSchedulerUI;
     let passed = 0;
     let failed = 0;
 
@@ -265,5 +265,5 @@ try {
     console.log("All GreenhouseSchedulerUI unit tests passed!");
 } catch (error) {
     console.error("GreenhouseSchedulerUI unit tests failed:", error.message);
-    process.exit(1);
+    throw error;
 }
