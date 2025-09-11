@@ -3,7 +3,7 @@
 import { fetch } from 'wix-fetch';
 
 $w.onReady(function () {
-    const url = "https://drtamarojgreen.github.io/greenhouse_org/endpoints/news/main.json";
+    const url = "https://drtamarojgreen.github.io/greenhouse_org/endpoints/news.json";
 
     fetch(url, { method: 'get' })
         .then((httpResponse) => {
@@ -14,14 +14,18 @@ $w.onReady(function () {
             }
         })
         .then((data) => {
-            const articles = data.items;
+            // Populate the header elements
+            $w("#Section1ListHeaderTitle1").text = data.header.title;
+            $w("#Section1ListHeaderLongText1").text = data.header.longText;
+
+            // Populate news repeater
+            const articles = data.articles;
             $w("#newsRepeater").data = articles;
 
             $w("#newsRepeater").onItemReady(($item, itemData, index) => {
-                $item("#newsTitle").text = itemData.title;
-                $item("#newsTitle").link = itemData.url;
-                $item("#newsSource").text = itemData.source;
+                $item("#newsHeadline").text = itemData.headline;
                 $item("#newsDate").text = itemData.date;
+                $item("#newsContent").text = itemData.content;
             });
         })
         .catch(err => {
