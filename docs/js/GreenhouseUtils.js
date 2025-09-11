@@ -1,4 +1,4 @@
-const GreenhouseUtils = (function() {
+window.GreenhouseUtils = (function() {
     /**
      * @description Configuration for shared utilities and application state.
      */
