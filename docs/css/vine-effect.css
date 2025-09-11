@@ -2,6 +2,7 @@
 
 #greenhouse-title-for-vine-effect.vine-effect-active {
     position: relative;
+    white-space: nowrap;
     /* color: transparent; - Removed to allow span color to show */
 }
 
@@ -16,6 +17,7 @@
     opacity: 1;
     transform: translateY(0);
     color: #333; /* Restore text color */
+    animation: bounce 1s;
 }
 
 /* The SVG element that will contain the vine path */
@@ -42,4 +44,16 @@
 /* When the animation is running, the dashoffset is animated to 0, a drawing the vine */
 .vine-effect-active.animation-running .vine-path {
     stroke-dashoffset: 0;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-20px);
+    }
+    60% {
+        transform: translateY(-10px);
+    }
 }

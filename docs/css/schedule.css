@@ -2,6 +2,11 @@
     pointer-events: none;
 }
 
+/* More robust selector for Wix background layers */
+div[class*="bgLayer"] {
+    pointer-events: none !important;
+}
+
 
 /* Scoped styles for the Greenhouse Schedule App */
 .greenhouse-app-container {
