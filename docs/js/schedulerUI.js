@@ -1,8 +1,6 @@
 const GreenhouseSchedulerUI = (function() {
     'use strict';
 
-    const components = {};
-
     /**
      * Builds the main scheduler UI container.
      * @returns {HTMLElement} The main container element.
@@ -11,18 +9,24 @@ const GreenhouseSchedulerUI = (function() {
         const mainContainer = document.createElement('section');
         mainContainer.id = 'greenhouse-app-container';
         mainContainer.className = 'greenhouse-app-container greenhouse-scheduler-main-container';
-        components.mainContainer = mainContainer;
         return mainContainer;
     }
 
     /**
      * Builds the UI for the Patient Appointment Request Form.
+     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
      * @returns {HTMLElement} The patient form container.
      */
-    function buildPatientFormUI() {
+    function buildPatientFormUI(targetElement) {
+        if (!targetElement) {
+            console.error('SchedulerUI: Target element for patient form is null.');
+            return null;
+        }
+
         const formContainer = document.createElement('div');
         formContainer.id = 'greenhouse-patient-form';
-        formContainer.classList.add('greenhouse-hidden'); // Initially hidden via class
+        formContainer.setAttribute('data-identifier', 'patient-form-container');
+        // formContainer.classList.add('greenhouse-hidden'); // Initial visibility handled by app
 
         const h1 = document.createElement('h1');
         h1.textContent = 'Request an Appointment';
@@ -32,6 +36,7 @@ const GreenhouseSchedulerUI = (function() {
         form.id = 'greenhouse-patient-appointment-form';
         form.className = 'greenhouse-form';
         form.noValidate = true;
+        form.setAttribute('data-identifier', 'patient-appointment-form');
 
         const fields = [
             { label: 'Title', id: 'title', type: 'text', placeholder: 'e.g., Initial Consultation', required: true },
@@ -82,12 +87,14 @@ const GreenhouseSchedulerUI = (function() {
             if (fieldInfo.required) {
                 input.required = true;
             }
+            input.setAttribute('data-identifier', `patient-app-${fieldInfo.id}`);
             fieldContainer.appendChild(input);
 
             const errorDiv = document.createElement('div');
             errorDiv.className = 'greenhouse-form-error greenhouse-hidden'; // Initially hidden via class
             errorDiv.id = `error-${fieldInfo.id}`;
             errorDiv.setAttribute('role', 'alert');
+            errorDiv.setAttribute('data-identifier', `patient-app-error-${fieldInfo.id}`);
             fieldContainer.appendChild(errorDiv);
 
             form.appendChild(fieldContainer);
@@ -101,11 +108,12 @@ const GreenhouseSchedulerUI = (function() {
         submitButton.id = 'greenhouse-propose-appointment-btn';
         submitButton.className = 'greenhouse-form-submit-btn';
         submitButton.textContent = 'Request Appointment';
+        submitButton.setAttribute('data-identifier', 'propose-appointment-btn');
         buttonContainer.appendChild(submitButton);
 
         const loadingSpinner = document.createElement('div');
-        loadingSpinner.className = 'greenhouse-loading-spinner';
-        loadingSpinner.style.display = 'none';
+        loadingSpinner.className = 'greenhouse-loading-spinner greenhouse-hidden'; // Initially hidden
+        loadingSpinner.setAttribute('data-identifier', 'loading-spinner');
         const spinner = document.createElement('div');
         spinner.className = 'spinner';
         loadingSpinner.appendChild(spinner);
@@ -116,40 +124,48 @@ const GreenhouseSchedulerUI = (function() {
 
         form.appendChild(buttonContainer);
         formContainer.appendChild(form);
+        targetElement.appendChild(formContainer); // Attach to targetElement
 
         return formContainer;
     }
 
     /**
      * Builds the UI for the Administrator Dashboard (left panel: schedule and conflicts).
-     * @returns {DocumentFragment} A DocumentFragment containing the dashboard UI for the left panel.
+     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
+     * @returns {Object} An object containing references to the created inner UI elements.
      */
-    function buildDashboardLeftPanelUI() {
-        const fragment = document.createDocumentFragment();
+    function buildDashboardLeftPanelUI(targetElement) {
+        if (!targetElement) {
+            console.error('SchedulerUI: Target element for left dashboard panel is null.');
+            return {};
+        }
 
         const h1 = document.createElement('h1');
         h1.textContent = 'Administrator Dashboard: Weekly Schedule & Conflict Resolution';
-        fragment.appendChild(h1);
+        targetElement.appendChild(h1);
 
         const description = document.createElement('p');
         description.textContent = 'Review and resolve scheduling conflicts for the week. Select a date range to view appointments.';
-        fragment.appendChild(description);
+        targetElement.appendChild(description);
 
         // New Appointment Box (draggable)
         const newAppointmentBox = document.createElement('div');
         newAppointmentBox.id = 'greenhouse-dashboard-app-new-appointment-box';
         newAppointmentBox.textContent = 'New Appointment';
         newAppointmentBox.draggable = true;
-        fragment.appendChild(newAppointmentBox);
+        newAppointmentBox.setAttribute('data-identifier', 'new-appointment-box');
+        targetElement.appendChild(newAppointmentBox);
 
         // Schedule Display Area
         const scheduleContainer = document.createElement('div');
         scheduleContainer.id = 'greenhouse-dashboard-app-schedule-container';
-        fragment.appendChild(scheduleContainer);
+        scheduleContainer.setAttribute('data-identifier', 'schedule-container');
+        targetElement.appendChild(scheduleContainer);
 
         // Conflict Resolution Area
         const conflictResolutionDiv = document.createElement('div');
         conflictResolutionDiv.id = 'greenhouse-dashboard-app-conflict-resolution-area';
+        conflictResolutionDiv.setAttribute('data-identifier', 'conflict-resolution-area');
 
         const h2Conflicts = document.createElement('h2');
         h2Conflicts.textContent = 'Conflicts to Resolve';
@@ -157,35 +173,52 @@ const GreenhouseSchedulerUI = (function() {
 
         const ulConflictList = document.createElement('ul');
         ulConflictList.id = 'greenhouse-dashboard-app-conflict-list';
+        ulConflictList.setAttribute('data-identifier', 'conflict-list');
         const liNoConflicts = document.createElement('li');
         liNoConflicts.textContent = 'No conflicts found.';
         ulConflictList.appendChild(liNoConflicts);
         conflictResolutionDiv.appendChild(ulConflictList);
 
-        fragment.appendChild(conflictResolutionDiv);
+        targetElement.appendChild(conflictResolutionDiv);
 
-        return fragment;
+        return { scheduleContainer, conflictList: ulConflictList, conflictResolutionArea: conflictResolutionDiv };
     }
 
     /**
      * Builds the UI for the Administrator Dashboard (right panel: calendar).
-     * @returns {DocumentFragment} A DocumentFragment containing the calendar UI for the right panel.
+     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
+     * @returns {Object} An object containing references to the created inner UI elements.
      */
-    function buildDashboardRightPanelUI() {
-        const fragment = document.createDocumentFragment();
+    function buildDashboardRightPanelUI(targetElement) {
+        if (!targetElement) {
+            console.error('SchedulerUI: Target element for right dashboard panel is null.');
+            return {};
+        }
 
         // Calendar Container
         const calendarContainer = document.createElement('div');
         calendarContainer.id = 'greenhouse-dashboard-app-calendar-container';
-        fragment.appendChild(calendarContainer);
+        calendarContainer.setAttribute('data-identifier', 'calendar-container');
+        targetElement.appendChild(calendarContainer);
 
-        return fragment;
+        return { calendarContainer };
     }
 
-    function buildAdminForm() {
+    /**
+     * Builds the UI for the Administrator Settings Form.
+     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
+     * @returns {HTMLElement} The admin form container.
+     */
+    function buildAdminFormUI(targetElement) {
+        if (!targetElement) {
+            console.error('SchedulerUI: Target element for admin form is null.');
+            return null;
+        }
+
         const formContainer = document.createElement('div');
         formContainer.id = 'greenhouse-admin-form';
-        formContainer.classList.add('greenhouse-hidden'); // Initially hidden via class
+        formContainer.setAttribute('data-identifier', 'admin-form-container');
+        // formContainer.classList.add('greenhouse-hidden'); // Initial visibility handled by app
 
         const h1 = document.createElement('h1');
         h1.textContent = 'Admin Settings';
@@ -194,162 +227,18 @@ const GreenhouseSchedulerUI = (function() {
         const form = document.createElement('form');
         form.id = 'greenhouse-admin-settings-form';
         form.className = 'greenhouse-form';
+        form.setAttribute('data-identifier', 'admin-settings-form');
         formContainer.appendChild(form);
+        targetElement.appendChild(formContainer); // Attach to targetElement
 
         return formContainer;
     }
 
     /**
-     * @function addFormValidation
-     * @description Adds client-side validation to the form
-     * @param {HTMLFormElement} form - The form to add validation to
-     */
-    function addFormValidation(form) {
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const isValid = validateForm(form);
-            if (isValid) {
-                handleFormSubmission(form);
-            }
-        });
-
-        // Real-time validation on blur
-        const inputs = form.querySelectorAll('input, select');
-        inputs.forEach(input => {
-            input.addEventListener('blur', () => {
-                validateField(input);
-            });
-
-            input.addEventListener('input', () => {
-                // Clear error on input
-                const errorEl = document.getElementById(`error-${input.name}`);
-                if (errorEl) {
-                    errorEl.style.display = 'none';
-                    input.classList.remove('greenhouse-form-error-input');
-                }
-            });
-        });
-    }
-
-    /**
-     * @function validateForm
-     * @description Validates the entire form
-     * @param {HTMLFormElement} form - The form to validate
-     * @returns {boolean} True if form is valid
-     */
-    function validateForm(form) {
-        const inputs = form.querySelectorAll('input[required], select[required]');
-        let isValid = true;
-
-        inputs.forEach(input => {
-            if (!validateField(input)) {
-                isValid = false;
-            }
-        });
-
-        return isValid;
-    }
-
-    /**
-     * @function validateField
-     * @description Validates a single form field
-     * @param {HTMLInputElement|HTMLSelectElement} field - The field to validate
-     * @returns {boolean} True if field is valid
-     */
-    function validateField(field) {
-        const errorEl = document.getElementById(`error-${field.name}`);
-        let isValid = true;
-        let errorMessage = '';
-
-        // Check if required field is empty
-        if (field.required && !field.value.trim()) {
-            isValid = false;
-            errorMessage = `${field.name.charAt(0).toUpperCase() + field.name.slice(1)} is required.`;
-        }
-
-        // Additional validation based on field type
-        if (isValid && field.value.trim()) {
-            switch (field.type) {
-                case 'date':
-                    const selectedDate = new Date(field.value);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    if (selectedDate < today) {
-                        isValid = false;
-                        errorMessage = 'Please select a future date.';
-                    }
-                    break;
-                case 'time':
-                    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-                    if (!timeRegex.test(field.value)) {
-                        isValid = false;
-                        errorMessage = 'Please enter a valid time.';
-                    }
-                    break;
-            }
-        }
-
-        // Show/hide error message
-        if (errorEl) {
-            if (isValid) {
-                errorEl.classList.add('greenhouse-hidden');
-                field.classList.remove('greenhouse-form-error-input');
-            } else {
-                errorEl.textContent = errorMessage;
-                errorEl.classList.remove('greenhouse-hidden');
-                field.classList.add('greenhouse-form-error-input');
-            }
-        }
-
-        return isValid;
-    }
-
-    /**
-     * @function handleFormSubmission
-     * @description Handles form submission with loading states
-     * @param {HTMLFormElement} form - The form being submitted
-     */
-    async function handleFormSubmission(form) {
-        const submitBtn = form.querySelector('#greenhouse-propose-appointment-btn');
-        const loadingSpinner = form.querySelector('.greenhouse-loading-spinner');
-
-        try {
-            // Show loading state
-            submitBtn.classList.add('greenhouse-hidden');
-            loadingSpinner.classList.remove('greenhouse-hidden');
-            loadingSpinner.classList.add('greenhouse-flex');
-
-            // Collect form data
-            const formData = new FormData(form);
-            const appointmentData = Object.fromEntries(formData.entries());
-
-            console.log('Scheduler: Form submitted with data:', appointmentData);
-
-            // Simulate API call (replace with actual implementation)
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Show success message
-            // This will need to be passed from the main scheduler app
-            // GreenhouseAppsScheduler.showSuccessMessage('Appointment request submitted successfully!');
-            form.reset();
-
-        } catch (error) {
-            console.error('Scheduler: Form submission error:', error);
-            // This will need to be passed from the main scheduler app
-            // GreenhouseAppsScheduler.showErrorMessage('Failed to submit appointment request. Please try again.');
-        } finally {
-            // Hide loading state
-            submitBtn.classList.remove('greenhouse-hidden');
-            loadingSpinner.classList.add('greenhouse-hidden');
-            loadingSpinner.classList.remove('greenhouse-flex');
-        }
-    }
-
-    /**
-     * @function createHiddenElements
-     * @description Creates hidden elements used by the application (e.g., conflict modal)
-     * @returns {DocumentFragment}
+     * Creates hidden elements used by the application (e.g., conflict modal).
+     * These elements are created but not attached to a specific target,
+     * allowing the app-specific logic to manage their attachment and event listeners.
+     * @returns {DocumentFragment} A document fragment containing the hidden elements.
      */
     function createHiddenElements() {
         const fragment = document.createDocumentFragment();
@@ -357,6 +246,7 @@ const GreenhouseSchedulerUI = (function() {
         const appointmentListDiv = document.createElement('div');
         appointmentListDiv.id = 'greenhouse-appointment-list';
         appointmentListDiv.className = 'greenhouse-appointment-list greenhouse-hidden';
+        appointmentListDiv.setAttribute('data-identifier', 'appointment-list');
         fragment.appendChild(appointmentListDiv);
 
         const conflictModalDiv = document.createElement('div');
@@ -364,6 +254,7 @@ const GreenhouseSchedulerUI = (function() {
         conflictModalDiv.className = 'greenhouse-modal greenhouse-hidden';
         conflictModalDiv.setAttribute('role', 'dialog');
         conflictModalDiv.setAttribute('aria-labelledby', 'conflict-modal-title');
+        conflictModalDiv.setAttribute('data-identifier', 'conflict-modal');
 
         const modalContent = document.createElement('div');
         modalContent.className = 'greenhouse-modal-content';
@@ -373,11 +264,13 @@ const GreenhouseSchedulerUI = (function() {
         const h2ModalTitle = document.createElement('h2');
         h2ModalTitle.id = 'conflict-modal-title';
         h2ModalTitle.textContent = 'Scheduling Conflict Detected';
+        h2ModalTitle.setAttribute('data-identifier', 'conflict-modal-title');
         const closeButton = document.createElement('button');
         closeButton.className = 'greenhouse-modal-close';
         closeButton.type = 'button';
         closeButton.setAttribute('aria-label', 'Close modal');
         closeButton.textContent = '×'; // Times symbol
+        closeButton.setAttribute('data-identifier', 'conflict-modal-close-btn');
         modalHeader.appendChild(h2ModalTitle);
         modalHeader.appendChild(closeButton);
         modalContent.appendChild(modalHeader);
@@ -388,6 +281,7 @@ const GreenhouseSchedulerUI = (function() {
         pOverlap.textContent = 'The proposed appointment overlaps with the following existing appointment(s):';
         const conflictDetailsDiv = document.createElement('div');
         conflictDetailsDiv.id = 'greenhouse-conflict-details';
+        conflictDetailsDiv.setAttribute('data-identifier', 'conflict-details');
         modalBody.appendChild(pOverlap);
         modalBody.appendChild(conflictDetailsDiv);
         modalContent.appendChild(modalBody);
@@ -399,11 +293,13 @@ const GreenhouseSchedulerUI = (function() {
         cancelButton.className = 'greenhouse-btn greenhouse-btn-secondary';
         cancelButton.id = 'greenhouse-conflict-cancel';
         cancelButton.textContent = 'Cancel';
+        cancelButton.setAttribute('data-identifier', 'conflict-modal-cancel-btn');
         const resolveButton = document.createElement('button');
         resolveButton.type = 'button';
         resolveButton.className = 'greenhouse-btn greenhouse-btn-primary';
         resolveButton.id = 'greenhouse-conflict-resolve';
         resolveButton.textContent = 'Choose Different Time';
+        resolveButton.setAttribute('data-identifier', 'conflict-modal-resolve-btn');
         modalFooter.appendChild(cancelButton);
         modalFooter.appendChild(resolveButton);
         modalContent.appendChild(modalFooter);
@@ -411,50 +307,21 @@ const GreenhouseSchedulerUI = (function() {
         conflictModalDiv.appendChild(modalContent);
         fragment.appendChild(conflictModalDiv);
 
-        // Add modal event listeners
-        addModalEventListeners(conflictModalDiv);
-
         return fragment;
     }
 
     /**
-     * @function addModalEventListeners
-     * @description Adds event listeners to modal elements
-     * @param {HTMLElement} modal - The modal element
-     */
-    function addModalEventListeners(modal) {
-        const closeBtn = modal.querySelector('.greenhouse-modal-close');
-        const cancelBtn = modal.querySelector('#greenhouse-conflict-cancel');
-        
-        const closeModal = () => {
-            modal.classList.add('greenhouse-hidden');
-            document.body.classList.remove('greenhouse-modal-open');
-        };
-
-        closeBtn?.addEventListener('click', closeModal);
-        cancelBtn?.addEventListener('click', closeModal);
-
-        // Close on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !modal.classList.contains('greenhouse-hidden')) {
-                closeModal();
-            }
-        });
-
-        // Close on backdrop click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeModal();
-            }
-        });
-    }
-
-    /**
      * @function createInstructionsPanel
-     * @description Creates the instructional panel content
+     * @description Creates the instructional panel content.
+     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
      * @returns {DocumentFragment}
      */
-    function createInstructionsPanel() {
+    function createInstructionsPanel(targetElement) {
+        if (!targetElement) {
+            console.error('SchedulerUI: Target element for instructions panel is null.');
+            return null;
+        }
+
         const fragment = document.createDocumentFragment();
         
         const h2 = document.createElement('h2');
@@ -483,6 +350,7 @@ const GreenhouseSchedulerUI = (function() {
 
         const instructionsList = document.createElement('div');
         instructionsList.className = 'greenhouse-instructions-list';
+        instructionsList.setAttribute('data-identifier', 'instructions-list');
 
         instructions.forEach((instruction, index) => {
             const instructionItem = document.createElement('div');
@@ -512,40 +380,55 @@ const GreenhouseSchedulerUI = (function() {
         });
 
         fragment.appendChild(instructionsList);
+        targetElement.appendChild(fragment); // Attach to targetElement
 
         return fragment;
     }
 
     /**
      * Builds the HTML form for editing an appointment.
-     * @param {object} currentAppointment - The appointment data.
-     * @param {Array<object>} serviceTypes - The available service types.
+     * This function is now purely for UI creation and does not handle data population or event listeners.
+     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
+     * @param {object} currentAppointment - The appointment data (used for initial values).
+     * @param {Array<object>} serviceTypes - The available service types (used for select options).
      * @returns {HTMLFormElement} The generated form element.
      */
-    function buildAdminAppointmentForm(currentAppointment, serviceTypes) {
+    function buildAdminAppointmentFormUI(targetElement, currentAppointment = {}, serviceTypes = []) {
+        if (!targetElement) {
+            console.error('SchedulerUI: Target element for admin appointment form is null.');
+            return null;
+        }
+
         const form = document.createElement('form');
-        form.id = 'greenhouse-admin-app-individual-appointment-form'; // Renamed ID
-        form.dataset.appointmentId = currentAppointment._id; // Add appointment ID to form
+        form.id = 'greenhouse-admin-app-individual-appointment-form';
+        form.setAttribute('data-identifier', 'admin-appointment-form');
+        if (currentAppointment._id) {
+            form.dataset.appointmentId = currentAppointment._id;
+        }
 
         const fields = [
-            { label: 'Title', id: 'adminTitle', type: 'text', value: currentAppointment.title },
+            { label: 'Title', id: 'adminTitle', type: 'text', value: currentAppointment.title || '' },
             { label: 'Start Time', id: 'adminStart', type: 'datetime-local', value: currentAppointment.start ? currentAppointment.start.substring(0, 16) : '' },
             { label: 'End Time', id: 'adminEnd', type: 'datetime-local', value: currentAppointment.end ? currentAppointment.end.substring(0, 16) : '' },
-            { label: 'Platform', id: 'adminPlatform', type: 'text', value: currentAppointment.platform },
-            { label: 'Service', id: 'adminService', type: 'select', value: currentAppointment.serviceRef, options: serviceTypes.map(st => ({ value: st._id, text: st.name })) },
-            { label: 'Confirmed', id: 'adminConfirmed', type: 'checkbox', value: currentAppointment.confirmed },
-            { label: 'Conflicts', id: 'adminConflicts', type: 'textarea', value: JSON.stringify(currentAppointment.conflicts, null, 2) },
-            { label: 'First Name', id: 'adminFirstName', type: 'text', value: currentAppointment.firstName },
-            { label: 'Last Name', id: 'adminLastName', type: 'text', value: currentAppointment.lastName },
-            { label: 'Contact Info', id: 'adminContactInfo', type: 'text', value: currentAppointment.contactInfo },
-            { label: 'Anonymous ID', id: 'adminAnonymousId', type: 'text', value: currentAppointment.anonymousId, readOnly: true }
+            { label: 'Platform', id: 'adminPlatform', type: 'text', value: currentAppointment.platform || '' },
+            { label: 'Service', id: 'adminService', type: 'select', value: currentAppointment.serviceRef || '', options: serviceTypes.map(st => ({ value: st._id, text: st.name })) },
+            { label: 'Confirmed', id: 'adminConfirmed', type: 'checkbox', value: currentAppointment.confirmed || false },
+            { label: 'Conflicts', id: 'adminConflicts', type: 'textarea', value: currentAppointment.conflicts ? JSON.stringify(currentAppointment.conflicts, null, 2) : '', readOnly: true },
+            { label: 'First Name', id: 'adminFirstName', type: 'text', value: currentAppointment.firstName || '' },
+            { label: 'Last Name', id: 'adminLastName', type: 'text', value: currentAppointment.lastName || '' },
+            { label: 'Contact Info', id: 'adminContactInfo', type: 'text', value: currentAppointment.contactInfo || '' },
+            { label: 'Anonymous ID', id: 'adminAnonymousId', type: 'text', value: currentAppointment.anonymousId || '', readOnly: true }
         ];
 
         fields.forEach(field => {
+            const fieldContainer = document.createElement('div');
+            fieldContainer.className = 'greenhouse-form-field';
+
             const label = document.createElement('label');
-            label.htmlFor = `greenhouse-admin-app-${field.id}`; // Renamed ID
+            label.htmlFor = `greenhouse-admin-app-${field.id}`;
             label.textContent = field.label + ':';
-            form.appendChild(label);
+            label.className = 'greenhouse-form-label';
+            fieldContainer.appendChild(label);
 
             let input;
             if (field.type === 'textarea') {
@@ -553,6 +436,13 @@ const GreenhouseSchedulerUI = (function() {
                 input.rows = 3;
             } else if (field.type === 'select') {
                 input = document.createElement('select');
+                // Add a default "Select a service" option if not already present
+                if (!field.options.some(opt => opt.value === '')) {
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = 'Select a service...';
+                    input.appendChild(defaultOption);
+                }
                 field.options.forEach(opt => {
                     const option = document.createElement('option');
                     option.value = opt.value;
@@ -567,9 +457,11 @@ const GreenhouseSchedulerUI = (function() {
                 input.type = field.type;
             }
 
-            input.id = `greenhouse-admin-app-${field.id}`; // Renamed ID
+            input.id = `greenhouse-admin-app-${field.id}`;
             input.name = field.id;
+            input.className = 'greenhouse-form-input';
             input.readOnly = field.readOnly || false;
+            input.setAttribute('data-identifier', `admin-app-${field.id}`);
 
             if (field.type === 'checkbox') {
                 input.checked = field.value;
@@ -577,374 +469,46 @@ const GreenhouseSchedulerUI = (function() {
                 input.value = field.value;
             }
 
-            form.appendChild(input);
-            form.appendChild(document.createElement('br'));
-            form.appendChild(document.createElement('br'));
+            fieldContainer.appendChild(input);
+            form.appendChild(fieldContainer);
         });
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'greenhouse-form-button-container';
 
         const saveButton = document.createElement('button');
         saveButton.type = 'submit';
         saveButton.textContent = 'Save Changes';
-        saveButton.dataset.action = 'save-changes'; // Added data-action
-        saveButton.className = 'greenhouse-admin-app-button'; // Added class
-        form.appendChild(saveButton);
+        saveButton.dataset.action = 'save-changes';
+        saveButton.className = 'greenhouse-admin-app-button greenhouse-form-submit-btn';
+        saveButton.setAttribute('data-identifier', 'admin-save-btn');
+        buttonContainer.appendChild(saveButton);
 
         const deleteButton = document.createElement('button');
         deleteButton.type = 'button';
         deleteButton.textContent = 'Delete Appointment';
-        deleteButton.classList.add('greenhouse-admin-app-button', 'greenhouse-admin-app-button-delete'); // Added class
-        deleteButton.dataset.action = 'delete-appointment'; // Added data-action
-        deleteButton.dataset.serviceRef = currentAppointment.serviceRef; // Added serviceRef
-        form.appendChild(deleteButton);
+        deleteButton.classList.add('greenhouse-admin-app-button', 'greenhouse-admin-app-button-delete');
+        deleteButton.dataset.action = 'delete-appointment';
+        if (currentAppointment.serviceRef) {
+            deleteButton.dataset.serviceRef = currentAppointment.serviceRef;
+        }
+        deleteButton.setAttribute('data-identifier', 'admin-delete-btn');
+        buttonContainer.appendChild(deleteButton);
+
+        form.appendChild(buttonContainer);
+        targetElement.appendChild(form); // Attach to targetElement
 
         return form;
     }
 
-    function setupModal() {
-        const modal = document.getElementById('greenhouse-conflict-modal');
-        const closeButton = modal.querySelector('.greenhouse-modal-close');
-        const cancelButton = modal.querySelector('#greenhouse-conflict-cancel');
-        const resolveButton = modal.querySelector('#greenhouse-conflict-resolve');
-
-        const closeModal = () => {
-            modal.classList.add('greenhouse-hidden');
-            document.body.classList.remove('greenhouse-modal-open');
-        };
-
-        closeButton.addEventListener('click', closeModal);
-        cancelButton.addEventListener('click', closeModal);
-
-        resolveButton.addEventListener('click', () => {
-            closeModal();
-            // Optionally, navigate user to a different part of the form or calendar
-        });
-
-        // Close on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !modal.classList.contains('greenhouse-hidden')) {
-                closeModal();
-            }
-        });
-
-        // Close on backdrop click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeModal();
-            }
-        });
-    }
-
-    function showConflictModal(conflictData) {
-        const modal = document.getElementById('greenhouse-conflict-modal');
-        const conflictDetailsDiv = document.getElementById('greenhouse-conflict-details');
-
-        if (conflictDetailsDiv) {
-            conflictDetailsDiv.innerHTML = ''; // Clear previous content
-            if (conflictData && conflictData.conflicts && conflictData.conflicts.length > 0) {
-                const ul = document.createElement('ul');
-                conflictData.conflicts.forEach(conflict => {
-                    const li = document.createElement('li');
-                    li.textContent = `Conflict: ${conflict.title} on ${conflict.date} at ${conflict.time}`;
-                    ul.appendChild(li);
-                });
-                conflictDetailsDiv.appendChild(ul);
-            } else {
-                conflictDetailsDiv.textContent = 'No specific conflict details available.';
-            }
-        }
-
-        if (modal) {
-            modal.classList.remove('greenhouse-hidden');
-            document.body.classList.add('greenhouse-modal-open');
-        }
-    }
-
-    function clearFormInputs() {
-        document.getElementById('greenhouse-patient-app-title-input').value = '';
-        document.getElementById('greenhouse-patient-app-date-input').value = '';
-        document.getElementById('greenhouse-patient-app-time-input').value = '';
-        document.getElementById('greenhouse-patient-app-platform-input').value = '';
-        document.getElementById('greenhouse-patient-app-service-select').value = ''; // Reset select to default
-    }
-
-    function resetForm() {
-        const form = document.getElementById('greenhouse-patient-appointment-form');
-        if (form) {
-            form.reset();
-            // Clear any validation messages
-            form.querySelectorAll('.greenhouse-form-error').forEach(el => el.classList.add('greenhouse-hidden'));
-            form.querySelectorAll('.greenhouse-form-error-input').forEach(el => el.classList.remove('greenhouse-form-error-input'));
-        }
-    }
-
-    function editAppointment(appointment) {
-        document.getElementById('greenhouse-patient-app-title-input').value = appointment.title;
-        document.getElementById('greenhouse-patient-app-date-input').value = appointment.date;
-        document.getElementById('greenhouse-patient-app-time-input').value = appointment.time;
-        document.getElementById('greenhouse-patient-app-platform-input').value = appointment.platform;
-        document.getElementById('greenhouse-patient-app-service-select').value = appointment.serviceRef;
-
-        // Change button to "Update Appointment"
-        const submitButton = document.getElementById('greenhouse-propose-appointment-btn');
-        submitButton.textContent = 'Update Appointment';
-        submitButton.dataset.action = 'update-appointment';
-        submitButton.dataset.appointmentId = appointment._id; // Store ID for update
-    }
-
-    function showComponent(componentName) {
-        for (const key in components) {
-            if (key === componentName) {
-                components[key].classList.remove('greenhouse-hidden');
-            } else if (key !== 'mainContainer') {
-                components[key].classList.add('greenhouse-hidden');
-            }
-        }
-    }
-
-    function addDashboardEventListeners(dashboardContainer, handleAction) {
-        if (dashboardContainer) {
-            dashboardContainer.addEventListener('click', handleAction);
-            // Add other dashboard-specific event listeners here if needed in the future
-        }
-    }
-
     return {
         buildSchedulerUI,
-        showComponent,
-        setupModal,
-        showConflictModal,
-        clearFormInputs,
-        resetForm,
-        editAppointment,
         buildPatientFormUI,
-        buildDashboardLeftPanelUI, // Exposed for left panel
-        buildDashboardRightPanelUI, // Exposed for right panel
-        buildAdminForm, // Expose admin form
-        addFormValidation,
-        validateForm,
-        validateField,
-        handleFormSubmission,
+        buildDashboardLeftPanelUI,
+        buildDashboardRightPanelUI,
+        buildAdminFormUI,
         createHiddenElements,
-        addModalEventListeners,
         createInstructionsPanel,
-        buildAdminAppointmentForm,
-        renderCalendar,
-        renderWeekly,
-        addDashboardEventListeners,
-        renderConflicts
+        buildAdminAppointmentFormUI,
     };
-
-    /**
-     * Renders a calendar view for the given year and month using createElement.
-     * @param {number} year - The year to display.
-     * @param {number} month - The month to display (0-indexed).
-     */
-    function renderCalendar(year, month) {
-        const calendarContainer = document.getElementById('greenhouse-dashboard-app-calendar-container');
-        if (!calendarContainer) {
-            console.error('Calendar container not found: #greenhouse-dashboard-app-calendar-container');
-            return;
-        }
-
-        // Clear previous calendar content
-        while (calendarContainer.firstChild) {
-            calendarContainer.removeChild(calendarContainer.firstChild);
-        }
-
-        const date = new Date(year, month);
-        const monthName = date.toLocaleString('default', { month: 'long' });
-        const currentYear = date.getFullYear();
-
-        // Header
-        const header = document.createElement('div');
-        header.className = 'calendar-header';
-
-        const prevButton = document.createElement('button');
-        prevButton.dataset.action = 'prev-month';
-        prevButton.dataset.year = currentYear;
-        prevButton.dataset.month = month;
-        prevButton.textContent = 'Prev';
-        header.appendChild(prevButton);
-
-        const title = document.createElement('h2');
-        title.textContent = `${monthName} ${currentYear}`;
-        header.appendChild(title);
-
-        const nextButton = document.createElement('button');
-        nextButton.dataset.action = 'next-month';
-        nextButton.dataset.year = currentYear;
-        nextButton.dataset.month = month;
-        nextButton.textContent = 'Next';
-        header.appendChild(nextButton);
-
-        calendarContainer.appendChild(header);
-
-        // Table
-        const table = document.createElement('table');
-        table.className = 'calendar-table';
-
-        // Table Head
-        const thead = document.createElement('thead');
-        const headerRow = document.createElement('tr');
-        ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
-            const th = document.createElement('th');
-            th.textContent = day;
-            headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-
-        // Table Body
-        const tbody = document.createElement('tbody');
-        const firstDayOfMonth = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-        let dateCounter = 1;
-        for (let i = 0; i < 6; i++) { // Up to 6 weeks
-            const row = document.createElement('tr');
-            for (let j = 0; j < 7; j++) { // 7 days a week
-                const cell = document.createElement('td');
-                if (i === 0 && j < firstDayOfMonth) {
-                    // Empty cells before the first day of the month
-                    cell.textContent = '';
-                } else if (dateCounter > daysInMonth) {
-                    // Empty cells after the last day of the month
-                    cell.textContent = '';
-                } else {
-                    cell.textContent = dateCounter;
-                    cell.dataset.date = `${currentYear}-${String(month + 1).padStart(2, '0')}-${String(dateCounter).padStart(2, '0')}`;
-                    cell.dataset.action = 'select-date'; // For future date selection
-                    dateCounter++;
-                }
-                row.appendChild(cell);
-            }
-            tbody.appendChild(row);
-            if (dateCounter > daysInMonth && i > 3) break; // Stop if all days rendered and at least 4 rows
-        }
-        table.appendChild(tbody);
-        calendarContainer.appendChild(table);
-    }
-
-    /**
-     * Renders the detailed schedule view (e.g., weekly/hourly) with appointments.
-     * @param {Array<object>} appointments - List of appointment objects.
-     * @param {Array<object>} serviceTypes - List of service type objects.
-     * @param {HTMLElement} targetElement - The DOM element to render the schedule into.
-     */
-    function renderWeekly(appointments, serviceTypes, targetElement) {
-        if (!targetElement) {
-            console.error('Target element for schedule rendering not found.');
-            return;
-        }
-
-        // Clear previous schedule content
-        while (targetElement.firstChild) {
-            targetElement.removeChild(targetElement.firstChild);
-        }
-
-        const h2 = document.createElement('h2');
-        h2.textContent = 'Weekly Schedule';
-        targetElement.appendChild(h2);
-
-        const table = document.createElement('table');
-        table.className = 'schedule-table'; // Use a specific class for the weekly schedule table
-
-        // Table Head: Days of the week
-        const thead = document.createElement('thead');
-        const headerRow = document.createElement('tr');
-        const emptyTh = document.createElement('th');
-        emptyTh.className = 'time-column-header';
-        headerRow.appendChild(emptyTh); // Empty corner for time column
-        const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        daysOfWeek.forEach(day => {
-            const th = document.createElement('th');
-            th.textContent = day;
-            headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-
-        // Table Body: Time slots and appointment cells
-        const tbody = document.createElement('tbody');
-        const startHour = 9;
-        const endHour = 17; // 5 PM
-
-        for (let i = startHour; i <= endHour; i++) {
-            const row = document.createElement('tr');
-            const timeCell = document.createElement('td');
-            timeCell.className = 'time-slot-label';
-            timeCell.textContent = `${i % 12 === 0 ? 12 : i % 12}${i < 12 ? 'AM' : 'PM'}`;
-            row.appendChild(timeCell);
-
-            for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-                const cell = document.createElement('td');
-                cell.className = 'schedule-cell editable'; // Add editable class
-                cell.dataset.day = dayIndex;
-                cell.dataset.hour = i;
-                // Add data attributes for date (e.g., current week's dates)
-                // This will need to be dynamically set based on the current week being viewed
-                // For now, just day and hour
-                row.appendChild(cell);
-            }
-            tbody.appendChild(row);
-        }
-        table.appendChild(tbody);
-        targetElement.appendChild(table);
-
-        console.log('SchedulerUI: Weekly schedule table rendered.');
-
-        // Populate appointments
-        if (appointments && appointments.length > 0) {
-            appointments.forEach(appointment => {
-                const apptDate = new Date(appointment.start);
-                const apptDay = apptDate.getDay(); // 0 for Sunday, 1 for Monday, etc.
-                const apptHour = apptDate.getHours();
-
-                const cell = targetElement.querySelector(`.schedule-cell[data-day="${apptDay}"][data-hour="${apptHour}"]`);
-                if (cell) {
-                    const apptDiv = document.createElement('div');
-                    apptDiv.className = 'appointment-item';
-                    apptDiv.textContent = `${appointment.title} (${apptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
-                    // Add more details or styling as needed
-                    cell.appendChild(apptDiv);
-                }
-            });
-        }
-    }
-
-    /**
-     * Renders the list of conflicts.
-     * @param {Array<object>} conflicts - List of conflict objects.
-     * @param {HTMLElement} targetElement - The DOM element to render conflicts into.
-     */
-    function renderConflicts(conflicts, targetElement) {
-        if (!targetElement) {
-            console.error('Target element for conflict rendering not found.');
-            return;
-        }
-
-        // Clear previous conflict content
-        while (targetElement.firstChild) {
-            targetElement.removeChild(targetElement.firstChild);
-        }
-
-        if (conflicts && conflicts.length > 0) {
-            conflicts.forEach(conflict => {
-                const li = document.createElement('li');
-                li.className = 'conflict-item'; // Add a class for styling
-                li.innerHTML = `
-                    <strong>Conflict: ${conflict.title}</strong><br>
-                    Date: ${conflict.date} at ${conflict.time}<br>
-                    Reason: ${conflict.reason || 'N/A'}
-                    <button data-action="resolve-conflict" data-conflict-id="${conflict.id}">Resolve</button>
-                `;
-                targetElement.appendChild(li);
-            });
-        } else {
-            const li = document.createElement('li');
-            li.textContent = 'No conflicts found.';
-            targetElement.appendChild(li);
-        }
-        console.log('SchedulerUI: Conflicts rendered.');
-    }
 })();

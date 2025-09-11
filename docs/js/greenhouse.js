@@ -17,6 +17,13 @@
  */
 
 (function() {
+    // Import GreenhouseUtils
+    const GreenhouseUtils = window.GreenhouseUtils;
+    if (!GreenhouseUtils) {
+        console.error('Greenhouse: GreenhouseUtils not found. Ensure GreenhouseUtils.js is loaded before greenhouse.js.');
+        return;
+    }
+
     /**
      * @description Configuration for the Greenhouse application loader.
      */
@@ -73,83 +80,71 @@
     };
 
     /**
-     * @function waitForElement
-     * @description Waits for an element to appear in the DOM, with fallback options.
-     * @param {string|string[]} selectors - Primary selector or array of selectors to try.
-     * @param {number} [timeout=15000] - Maximum time to wait in milliseconds.
-     * @returns {Promise<Element>} Promise that resolves with the found element.
+     * @function loadApplication
+     * @description Generic function to load an application.
+     * @param {string} appName - The name of the application (e.g., 'scheduler', 'books').
+     * @param {string} scriptName - The main script file for the application (e.g., 'scheduler.js').
+     * @param {string|string[]} mainSelector - The primary CSS selector(s) for the application's main container.
+     * @param {string|string[]} [fallbackSelector] - Optional fallback CSS selector(s).
+     * @param {string} [uiScriptName] - Optional UI script file (e.g., 'schedulerUI.js').
+     * @param {string} [viewParam='default'] - The URL parameter for the view (e.g., 'dashboard' for scheduler).
+     * @param {string} [rightPanelSelector] - Optional selector for a right panel (e.g., for dashboard view).
+     * @param {string} [rightPanelFallbackSelector] - Optional fallback selector for a right panel.
      */
-    function waitForElement(selectors, timeout = config.elementWaitTimeout) {
-        return new Promise((resolve, reject) => {
-            const selectorArray = Array.isArray(selectors) ? selectors : [selectors];
-            
-            // Check if element already exists
-            for (const selector of selectorArray) {
-                const element = document.querySelector(selector);
-                if (element) {
-                    console.log(`Greenhouse: Found element with selector: ${selector}`);
-                    return resolve(element);
-                }
-            }
-            
-            console.log(`Greenhouse: Waiting for element with selectors: ${selectorArray.join(', ')}`);
-            
-            const observer = new MutationObserver(() => {
-                for (const selector of selectorArray) {
-                    const element = document.querySelector(selector);
-                    if (element) {
-                        console.log(`Greenhouse: Element found with selector: ${selector}`);
-                        observer.disconnect();
-                        return resolve(element);
-                    }
-                }
-            });
-            
-            // Observe changes to the entire document
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true,
-                attributes: false
-            });
-            
-            // Set timeout
-            setTimeout(() => {
-                observer.disconnect();
-                reject(new Error(`Element not found within ${timeout}ms. Tried selectors: ${selectorArray.join(', ')}`));
-            }, timeout);
-        });
-    }
-
-    /**
-     * @function loadScript
-     * @description Asynchronously loads a script from a given URL and injects it into the page.
-     * @param {string} url - The URL of the script to load.
-     * @param {Object} [attributes={}] - An optional map of data attributes to set on the script element.
-     */
-    async function loadScript(url, attributes = {}) {
+    async function loadApplication(appName, scriptName, mainSelector, fallbackSelector, uiScriptName = null, viewParam = 'default', rightPanelSelector = null, rightPanelFallbackSelector = null) {
         try {
-            console.log(`Greenhouse: Loading script from ${url}`);
+            console.log(`Greenhouse: Initializing ${appName} application`);
             
-            // Fetch the script content from the provided URL.
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`Failed to load script: ${url} - ${response.statusText}`);
-            const scriptText = await response.text();
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view') || viewParam;
+            
+            console.log(`Greenhouse: Loading ${appName} for view: ${view}`);
 
-            // Create a new script element.
-            const scriptElement = document.createElement('script');
-            scriptElement.textContent = scriptText;
-
-            // Set any data attributes passed in the attributes object.
-            for (const [key, value] of Object.entries(attributes)) {
-                scriptElement.setAttribute(`data-${key}`, value);
+            let selectorsToTryLeft = Array.isArray(mainSelector) ? [...mainSelector] : [mainSelector];
+            if (fallbackSelector) {
+                selectorsToTryLeft.push(...(Array.isArray(fallbackSelector) ? fallbackSelector : [fallbackSelector]));
             }
 
-            // Append the script element to the body to execute it.
-            document.body.appendChild(scriptElement);
-            console.log(`Greenhouse: Successfully loaded script from ${url}`);
+            let targetSelectorLeft = null;
+            let targetSelectorRight = null;
+
+            // Determine target selectors based on whether a right panel is expected
+            if (rightPanelSelector) {
+                let selectorsToTryRight = Array.isArray(rightPanelSelector) ? [...rightPanelSelector] : [rightPanelSelector];
+                if (rightPanelFallbackSelector) {
+                    selectorsToTryRight.push(...(Array.isArray(rightPanelFallbackSelector) ? rightPanelFallbackSelector : [rightPanelFallbackSelector]));
+                }
+
+                // Wait for both left and right target elements
+                const [targetElementLeft, targetElementRight] = await Promise.all([
+                    GreenhouseUtils.waitForElement(selectorsToTryLeft, config.elementWaitTimeout),
+                    GreenhouseUtils.waitForElement(selectorsToTryRight, config.elementWaitTimeout)
+                ]);
+
+                // Find the actual selector that matched for both
+                targetSelectorLeft = selectorsToTryLeft.find(selector => document.querySelector(selector));
+                targetSelectorRight = selectorsToTryRight.find(selector => document.querySelector(selector));
+
+            } else {
+                // For single-panel applications, only wait for the left target element
+                const targetElement = await GreenhouseUtils.waitForElement(selectorsToTryLeft, config.elementWaitTimeout);
+                targetSelectorLeft = selectorsToTryLeft.find(selector => document.querySelector(selector));
+            }
+
+            const appAttributes = {
+                'target-selector-left': targetSelectorLeft,
+                'target-selector-right': targetSelectorRight, // Will be null if not a two-panel app
+                'base-url': config.githubPagesBaseUrl,
+                'view': view
+            };
+
+            if (uiScriptName) {
+                await GreenhouseUtils.loadScript(uiScriptName, config.githubPagesBaseUrl);
+            }
+            await GreenhouseUtils.loadScript(scriptName, config.githubPagesBaseUrl, appAttributes);
+            
         } catch (error) {
-            console.error(`Greenhouse: Error loading script ${url}:`, error);
-            throw error; // Re-throw to propagate the error
+            console.error(`Greenhouse: Failed to load ${appName} application:`, error);
         }
     }
 
@@ -158,69 +153,16 @@
      * @description Loads the scheduler application after ensuring the target element exists.
      */
     async function loadSchedulerApplication() {
-        try {
-            console.log('Greenhouse: Initializing scheduler application');
-            
-            // Parse URL parameters to determine the view.
-            const urlParams = new URLSearchParams(window.location.search);
-            const view = urlParams.get('view') || 'dashboard'; // Default to dashboard
-            
-            console.log(`Greenhouse: Loading scheduler for view: ${view}`);
-
-            // Determine the correct selectors to try
-            let targetSelectorLeft = null;
-            let targetSelectorRight = null;
-            let selectorsToTryLeft = [];
-            let selectorsToTryRight = [];
-
-            if (view === 'patient') {
-                selectorsToTryLeft.push(config.selectors.patient);
-                if (config.fallbackSelectors.patient) {
-                    selectorsToTryLeft.push(config.fallbackSelectors.patient);
-                }
-                const targetElement = await waitForElement(selectorsToTryLeft);
-                targetSelectorLeft = selectorsToTryLeft.find(selector => document.querySelector(selector));
-            } else if (view === 'admin') {
-                selectorsToTryLeft.push(config.selectors.admin);
-                if (config.fallbackSelectors.admin) {
-                    selectorsToTryLeft.push(config.fallbackSelectors.admin);
-                }
-                const targetElement = await waitForElement(selectorsToTryLeft);
-                targetSelectorLeft = selectorsToTryLeft.find(selector => document.querySelector(selector));
-            } else if (view === 'dashboard') {
-                selectorsToTryLeft.push(config.selectors.dashboardLeft);
-                if (config.fallbackSelectors.dashboardLeft) {
-                    selectorsToTryLeft.push(config.fallbackSelectors.dashboardLeft);
-                }
-                selectorsToTryRight.push(config.selectors.dashboardRight);
-                if (config.fallbackSelectors.dashboardRight) {
-                    selectorsToTryRight.push(config.fallbackSelectors.dashboardRight);
-                }
-
-                const [targetElementLeft, targetElementRight] = await Promise.all([
-                    waitForElement(selectorsToTryLeft),
-                    waitForElement(selectorsToTryRight)
-                ]);
-
-                targetSelectorLeft = selectorsToTryLeft.find(selector => document.querySelector(selector));
-                targetSelectorRight = selectorsToTryRight.find(selector => document.querySelector(selector));
-            }
-
-            // Define the attributes to be passed to the scheduler script.
-            const schedulerAttributes = {
-                'target-selector-left': targetSelectorLeft,
-                'target-selector-right': targetSelectorRight,
-                'base-url': config.githubPagesBaseUrl,
-                'view': view
-            };
-
-            // Load the scheduler script and pass the necessary data attributes to it.
-            await loadScript(`${config.githubPagesBaseUrl}js/schedulerUI.js`);
-            await loadScript(`${config.githubPagesBaseUrl}js/scheduler.js`, schedulerAttributes);
-            
-        } catch (error) {
-            console.error('Greenhouse: Failed to load scheduler application:', error);
-        }
+        await loadApplication(
+            'scheduler',
+            'scheduler.js',
+            config.selectors.dashboardLeft,
+            config.fallbackSelectors.dashboardLeft,
+            'schedulerUI.js',
+            'dashboard',
+            config.selectors.dashboardRight,
+            config.fallbackSelectors.dashboardRight
+        );
     }
 
     /**
@@ -228,46 +170,12 @@
      * @description Loads the books application after ensuring the target element exists.
      */
     async function loadBooksApplication() {
-        try {
-            console.log('Greenhouse: Initializing books application');
-            
-            // Parse URL parameters to determine the view.
-            const urlParams = new URLSearchParams(window.location.search);
-            const view = urlParams.get('view') || 'default'; // Default to 'default' view for books
-            
-            console.log(`Greenhouse: Loading books for view: ${view}`);
-
-            // Determine the correct selectors to try
-            let selectorsToTry = [];
-            
-            // For books, we'll use the 'books' selector regardless of a specific 'view' parameter for now
-            if (config.selectors.books) {
-                selectorsToTry.push(config.selectors.books);
-                if (config.fallbackSelectors.books) {
-                    selectorsToTry.push(config.fallbackSelectors.books);
-                }
-            } else {
-                // Fallback if no specific books selector is defined
-                selectorsToTry.push('.wixui-column-strip__column:first-child');
-            }
-
-            // Wait for the target element to be available
-            const targetElement = await waitForElement(selectorsToTry);
-            const targetSelector = selectorsToTry.find(selector => document.querySelector(selector));
-
-            // Define the attributes to be passed to the books script.
-            const booksAttributes = {
-                'target-selector': targetSelector,
-                'base-url': config.githubPagesBaseUrl,
-                'view': view
-            };
-
-            // Load the books script and pass the necessary data attributes to it.
-            await loadScript(`${config.githubPagesBaseUrl}js/books.js`, booksAttributes);
-            
-        } catch (error) {
-            console.error('Greenhouse: Failed to load books application:', error);
-        }
+        await loadApplication(
+            'books',
+            'books.js',
+            config.selectors.books,
+            config.fallbackSelectors.books
+        );
     }
 
     /**
@@ -275,46 +183,12 @@
      * @description Loads the videos application after ensuring the target element exists.
      */
     async function loadVideosApplication() {
-        try {
-            console.log('Greenhouse: Initializing videos application');
-            
-            // Parse URL parameters to determine the view.
-            const urlParams = new URLSearchParams(window.location.search);
-            const view = urlParams.get('view') || 'default'; // Default to 'default' view for videos
-            
-            console.log(`Greenhouse: Loading videos for view: ${view}`);
-
-            // Determine the correct selectors to try
-            let selectorsToTry = [];
-            
-            // For videos, we'll use the 'videos' selector regardless of a specific 'view' parameter for now
-            if (config.selectors.videos) {
-                selectorsToTry.push(config.selectors.videos);
-                if (config.fallbackSelectors.videos) {
-                    selectorsToTry.push(config.fallbackSelectors.videos);
-                }
-            } else {
-                // Fallback if no specific videos selector is defined
-                selectorsToTry.push('.wixui-column-strip__column:first-child');
-            }
-
-            // Wait for the target element to be available
-            const targetElement = await waitForElement(selectorsToTry);
-            const targetSelector = selectorsToTry.find(selector => document.querySelector(selector));
-
-            // Define the attributes to be passed to the videos script.
-            const videosAttributes = {
-                'target-selector': targetSelector,
-                'base-url': config.githubPagesBaseUrl,
-                'view': view
-            };
-
-            // Load the videos script and pass the necessary data attributes to it.
-            await loadScript(`${config.githubPagesBaseUrl}js/videos.js`, videosAttributes);
-            
-        } catch (error) {
-            console.error('Greenhouse: Failed to load videos application:', error);
-        }
+        await loadApplication(
+            'videos',
+            'videos.js',
+            config.selectors.videos,
+            config.fallbackSelectors.videos
+        );
     }
 
     /**
@@ -322,46 +196,12 @@
      * @description Loads the news application after ensuring the target element exists.
      */
     async function loadNewsApplication() {
-        try {
-            console.log('Greenhouse: Initializing news application');
-            
-            // Parse URL parameters to determine the view.
-            const urlParams = new URLSearchParams(window.location.search);
-            const view = urlParams.get('view') || 'default'; // Default to 'default' view for news
-            
-            console.log(`Greenhouse: Loading news for view: ${view}`);
-
-            // Determine the correct selectors to try
-            let selectorsToTry = [];
-            
-            // For news, we'll use the 'news' selector regardless of a specific 'view' parameter for now
-            if (config.selectors.news) {
-                selectorsToTry.push(config.selectors.news);
-                if (config.fallbackSelectors.news) {
-                    selectorsToTry.push(config.fallbackSelectors.news);
-                }
-            } else {
-                // Fallback if no specific news selector is defined
-                selectorsToTry.push('.wixui-column-strip__column:first-child');
-            }
-
-            // Wait for the target element to be available
-            const targetElement = await waitForElement(selectorsToTry);
-            const targetSelector = selectorsToTry.find(selector => document.querySelector(selector));
-
-            // Define the attributes to be passed to the news script.
-            const newsAttributes = {
-                'target-selector': targetSelector,
-                'base-url': config.githubPagesBaseUrl,
-                'view': view
-            };
-
-            // Load the news script and pass the necessary data attributes to it.
-            await loadScript(`${config.githubPagesBaseUrl}js/news.js`, newsAttributes);
-            
-        } catch (error) {
-            console.error('Greenhouse: Failed to load news application:', error);
-        }
+        await loadApplication(
+            'news',
+            'news.js',
+            config.selectors.news,
+            config.fallbackSelectors.news
+        );
     }
 
     /**

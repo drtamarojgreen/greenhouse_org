@@ -1,19 +1,53 @@
-// Version: 0.0.0.1
-console.log("Loading GreenhousePatientApp.js - Version 0.0.0.1");
-function GreenhousePatientApp() {
-    // All functions are now private to the GreenhousePatientApp scope.
+const GreenhousePatientApp = (function() {
+    'use strict';
 
+    const GreenhouseUtils = window.GreenhouseUtils;
+    const GreenhouseSchedulerUI = window.GreenhouseSchedulerUI;
+
+    if (!GreenhouseUtils) {
+        console.error('GreenhousePatientApp: GreenhouseUtils not found. Ensure GreenhouseUtils.js is loaded.');
+        return;
+    }
+    if (!GreenhouseSchedulerUI) {
+        console.error('GreenhousePatientApp: GreenhouseSchedulerUI not found. Ensure schedulerUI.js is loaded.');
+        return;
+    }
+
+    console.log("Loading GreenhousePatientApp.js - Version 0.0.0.2"); // Updated version
+
+    const patientAppState = {
+        leftAppContainer: null,
+        rightAppContainer: null,
+        patientFormContainer: null,
+        patientAppointmentForm: null,
+        serviceSelect: null,
+        titleInput: null,
+        dateInput: null,
+        timeInput: null,
+        platformInput: null,
+        proposeAppointmentBtn: null,
+        loadingSpinner: null,
+        appointmentsList: null,
+        conflictModal: null,
+        conflictDetailsDiv: null,
+        conflictModalCloseBtn: null,
+        conflictModalCancelBtn: null,
+        conflictModalResolveBtn: null,
+    };
+
+    /**
+     * API Calls
+     */
     async function getServices() {
         try {
             const response = await fetch('/_functions/getServices');
             if (!response.ok) {
-                GreenhouseUtils.displayError(`Failed to get services: ${response.statusText}`);
-                return null; // Indicate failure
+                throw new Error(`Failed to get services: ${response.statusText}`);
             }
             return response.json();
         } catch (error) {
             GreenhouseUtils.displayError(`Error fetching services: ${error.message}`);
-            return null; // Indicate failure
+            throw error;
         }
     }
 
@@ -21,13 +55,12 @@ function GreenhousePatientApp() {
         try {
             const response = await fetch('/_functions/getAppointments');
             if (!response.ok) {
-                GreenhouseUtils.displayError(`Failed to get appointments: ${response.statusText}`);
-                return null; // Indicate failure
+                throw new Error(`Failed to get appointments: ${response.statusText}`);
             }
             return response.json();
         } catch (error) {
             GreenhouseUtils.displayError(`Error fetching appointments: ${error.message}`);
-            return null; // Indicate failure
+            throw error;
         }
     }
 
@@ -43,24 +76,21 @@ function GreenhousePatientApp() {
             if (!response.ok) {
                 const errorData = await response.json();
                 if (response.status === 409) {
-                    // For 409 conflicts, return the error data for specific handling
                     const error = new Error(`Conflict: ${response.statusText}`);
                     error.code = response.status;
                     error.data = errorData;
-                    throw error; // Still throw for 409 to be caught by specific handlers
+                    throw error;
                 } else {
-                    GreenhouseUtils.displayError(`Failed to propose appointment: ${response.statusText}`);
-                    return null; // Indicate general failure
+                    throw new Error(`Failed to propose appointment: ${response.statusText}`);
                 }
             }
             return response.json();
         } catch (error) {
-            // If it's a 409 error re-thrown, re-throw it
             if (error.code === 409) {
                 throw error;
             }
             GreenhouseUtils.displayError(`Error proposing appointment: ${error.message}`);
-            return null; // Indicate general failure
+            throw error;
         }
     }
 
@@ -74,13 +104,12 @@ function GreenhousePatientApp() {
                 body: JSON.stringify(appointment),
             });
             if (!response.ok) {
-                GreenhouseUtils.displayError(`Failed to create appointment: ${response.statusText}`);
-                return null; // Indicate failure
+                throw new Error(`Failed to create appointment: ${response.statusText}`);
             }
             return response.json();
         } catch (error) {
             GreenhouseUtils.displayError(`Error creating appointment: ${error.message}`);
-            return null; // Indicate failure
+            throw error;
         }
     }
 
@@ -94,135 +123,231 @@ function GreenhousePatientApp() {
                 body: JSON.stringify(updatedAppointment),
             });
             if (!response.ok) {
-                GreenhouseUtils.displayError(`Failed to update appointment: ${response.statusText}`);
-                return null; // Indicate failure
+                throw new Error(`Failed to update appointment: ${response.statusText}`);
             }
             return response.json();
         } catch (error) {
             GreenhouseUtils.displayError(`Error updating appointment: ${error.message}`);
-            return null; // Indicate failure
+            throw error;
         }
     }
 
-    async function deleteAppointmentFromService(serviceId, appointmentId) { // serviceId parameter is now unused
+    async function deleteAppointment(appointmentId) {
         try {
             const response = await fetch(`/_functions/deleteAppointment/${appointmentId}`, {
                 method: 'DELETE',
             });
             if (!response.ok) {
-                GreenhouseUtils.displayError(`Failed to delete appointment: ${response.statusText}`);
-                return null; // Indicate failure
+                throw new Error(`Failed to delete appointment: ${response.statusText}`);
             }
             return response.json();
         } catch (error) {
             GreenhouseUtils.displayError(`Error deleting appointment: ${error.message}`);
-            return null; // Indicate failure
+            throw error;
         }
     }
 
-    async function fetchServices() {
+    /**
+     * UI Population Functions
+     */
+    async function populateServices() {
         try {
             const services = await getServices();
-            const select = document.getElementById('greenhouse-patient-app-service-select'); // Renamed ID
-            select.innerHTML = '';
+            if (!patientAppState.serviceSelect) {
+                console.error('PatientApp: Service select element not found for population.');
+                return;
+            }
+            patientAppState.serviceSelect.innerHTML = '';
+
+            // Add default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Please select a service...';
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            patientAppState.serviceSelect.appendChild(defaultOption);
 
             services.forEach(service => {
                 const option = document.createElement('option');
-                option.value = service.id;
+                option.value = service._id; // Assuming service objects have an _id
                 option.textContent = service.name;
-                select.appendChild(option);
+                patientAppState.serviceSelect.appendChild(option);
             });
         } catch (error) {
             console.error("Error fetching services:", error);
             GreenhouseUtils.displayError("Failed to load services.");
-            const select = document.getElementById('greenhouse-patient-app-service-select');
-            if (select) {
-                select.innerHTML = '<option value="">Failed to load services.</option>';
+            if (patientAppState.serviceSelect) {
+                patientAppState.serviceSelect.innerHTML = '<option value="">Failed to load services.</option>';
             }
         }
     }
 
-    async function fetchAppointments() {
+    async function populateAppointments() {
         try {
             const appointments = await getAppointments();
-            const ul = document.getElementById('greenhouse-patient-app-appointments-list'); // Renamed ID
-            ul.innerHTML = '';
+            if (!patientAppState.appointmentsList) {
+                console.error('PatientApp: Appointments list element not found for population.');
+                return;
+            }
+            patientAppState.appointmentsList.innerHTML = '';
 
             if (appointments.length === 0) {
-                ul.innerHTML = '<li>No appointments scheduled.</li>';
+                patientAppState.appointmentsList.innerHTML = '<li>No appointments scheduled.</li>';
                 return;
             }
 
             appointments.forEach(appointment => {
                 const li = document.createElement('li');
-                li.className = 'greenhouse-patient-app-appointment-item'; // Renamed class
-                const appointmentJsonString = JSON.stringify(appointment).replace(/'/g, "&apos;");
+                li.className = 'greenhouse-patient-app-appointment-item';
+                const appointmentJsonString = JSON.stringify(appointment).replace(/'/g, "'");
                 li.innerHTML = `
                     <strong>${appointment.title}</strong><br>
                     Date: ${appointment.date} at ${appointment.time}<br>
                     Meeting Platform: ${appointment.platform} (Service: ${appointment.serviceRef || 'N/A'})
                     <div style="margin-top: 5px;">
-                        <button data-action='edit' data-appointment='${appointmentJsonString}' class="greenhouse-patient-app-button">Edit</button>
-                        <button data-action='delete' data-appointment-id='${appointment._id}' data-service-id='${appointment.serviceRef}' class="greenhouse-patient-app-button">Delete</button>
+                        <button data-action='edit-appointment' data-appointment='${appointmentJsonString}' class="greenhouse-patient-app-button">Edit</button>
+                        <button data-action='delete-appointment' data-appointment-id='${appointment._id}' class="greenhouse-patient-app-button">Delete</button>
                     </div>
                 `;
-                ul.appendChild(li);
+                patientAppState.appointmentsList.appendChild(li);
             });
         } catch (error) {
             console.error("Error fetching appointments:", error);
             GreenhouseUtils.displayError("Failed to load appointments.");
-            const ul = document.getElementById('greenhouse-patient-app-appointments-list');
-            if (ul) {
-                ul.innerHTML = '<li>Failed to load appointments.</li>';
+            if (patientAppState.appointmentsList) {
+                patientAppState.appointmentsList.innerHTML = '<li>Failed to load appointments.</li>';
             }
         }
     }
 
-    async function proposeAndAddAppointment() {
-        const title = document.getElementById('greenhouse-patient-app-title-input').value;
-        const date = document.getElementById('greenhouse-patient-app-date-input').value;
-        const time = document.getElementById('greenhouse-patient-app-time-input').value;
-        const platform = document.getElementById('greenhouse-patient-app-platform-input').value;
-        const serviceId = document.getElementById('greenhouse-patient-app-service-select').value;
+    function populateFormForEdit(appointment) {
+        if (!patientAppState.titleInput || !patientAppState.dateInput || !patientAppState.timeInput || !patientAppState.platformInput || !patientAppState.serviceSelect) {
+            console.error('PatientApp: Form input elements not found for edit population.');
+            return;
+        }
+        patientAppState.titleInput.value = appointment.title;
+        patientAppState.dateInput.value = appointment.date;
+        patientAppState.timeInput.value = appointment.time;
+        patientAppState.platformInput.value = appointment.platform;
+        patientAppState.serviceSelect.value = appointment.serviceRef;
 
-        if (!title || !date || !time || !platform || !serviceId) {
-            GreenhouseUtils.displayError('Please fill in all fields.');
+        patientAppState.proposeAppointmentBtn.textContent = 'Update Appointment';
+        patientAppState.proposeAppointmentBtn.dataset.action = 'update-appointment';
+        patientAppState.proposeAppointmentBtn.dataset.appointmentId = appointment._id;
+    }
+
+    function resetForm() {
+        if (patientAppState.patientAppointmentForm) {
+            patientAppState.patientAppointmentForm.reset();
+            patientAppState.proposeAppointmentBtn.textContent = 'Request Appointment';
+            patientAppState.proposeAppointmentBtn.dataset.action = 'propose-and-add-appointment';
+            delete patientAppState.proposeAppointmentBtn.dataset.appointmentId;
+
+            // Clear any validation messages
+            patientAppState.patientAppointmentForm.querySelectorAll('.greenhouse-form-error').forEach(el => el.classList.add('greenhouse-hidden'));
+            patientAppState.patientAppointmentForm.querySelectorAll('.greenhouse-form-error-input').forEach(el => el.classList.remove('greenhouse-form-error-input'));
+        }
+    }
+
+    function showLoadingSpinner(show) {
+        if (patientAppState.loadingSpinner) {
+            if (show) {
+                patientAppState.loadingSpinner.classList.remove('greenhouse-hidden');
+                patientAppState.loadingSpinner.classList.add('greenhouse-flex');
+                patientAppState.proposeAppointmentBtn.classList.add('greenhouse-hidden');
+            } else {
+                patientAppState.loadingSpinner.classList.add('greenhouse-hidden');
+                patientAppState.loadingSpinner.classList.remove('greenhouse-flex');
+                patientAppState.proposeAppointmentBtn.classList.remove('greenhouse-hidden');
+            }
+        }
+    }
+
+    function showConflictModal(conflictData) {
+        if (!patientAppState.conflictModal || !patientAppState.conflictDetailsDiv) {
+            console.error('PatientApp: Conflict modal elements not found.');
             return;
         }
 
-        const startDateTime = new Date(`${date}T${time}:00`);
-        const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+        patientAppState.conflictDetailsDiv.innerHTML = '';
+        if (conflictData && conflictData.conflicts && conflictData.conflicts.length > 0) {
+            const ul = document.createElement('ul');
+            conflictData.conflicts.forEach(conflict => {
+                const li = document.createElement('li');
+                li.textContent = `Conflict: ${conflict.title} on ${conflict.date} at ${conflict.time}`;
+                ul.appendChild(li);
+            });
+            patientAppState.conflictDetailsDiv.appendChild(ul);
+        } else {
+            patientAppState.conflictDetailsDiv.textContent = 'No specific conflict details available.';
+        }
 
-        const proposedAppointment = {
-            title,
-            date,
-            time,
-            platform: platform,
+        patientAppState.conflictModal.classList.remove('greenhouse-hidden');
+        document.body.classList.add('greenhouse-modal-open');
+    }
+
+    function hideConflictModal() {
+        if (patientAppState.conflictModal) {
+            patientAppState.conflictModal.classList.add('greenhouse-hidden');
+            document.body.classList.remove('greenhouse-modal-open');
+        }
+    }
+
+    /**
+     * Event Handlers
+     */
+    async function handleFormSubmission(event) {
+        event.preventDefault();
+
+        if (!GreenhouseUtils.validateForm(patientAppState.patientAppointmentForm, 'patient-app-error-')) {
+            GreenhouseUtils.displayError('Please correct the errors in the form.');
+            return;
+        }
+
+        showLoadingSpinner(true);
+
+        const isUpdate = patientAppState.proposeAppointmentBtn.dataset.action === 'update-appointment';
+        const appointmentId = patientAppState.proposeAppointmentBtn.dataset.appointmentId;
+
+        const appointmentData = {
+            title: patientAppState.titleInput.value,
+            date: patientAppState.dateInput.value,
+            time: patientAppState.timeInput.value,
+            platform: patientAppState.platformInput.value,
+            serviceRef: patientAppState.serviceSelect.value,
+        };
+
+        const startDateTime = new Date(`${appointmentData.date}T${appointmentData.time}:00`);
+        const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000); // Assuming 1-hour appointments
+
+        const fullAppointment = {
+            ...appointmentData,
             start: startDateTime.toISOString(),
             end: endDateTime.toISOString(),
-            serviceRef: serviceId
         };
 
         try {
-            await proposeAppointment(proposedAppointment);
+            // Always propose first to check for conflicts
+            await proposeAppointment(fullAppointment);
+
+            if (isUpdate) {
+                await updateAppointment(appointmentId, fullAppointment);
+                GreenhouseUtils.displaySuccess('Appointment updated successfully!');
+            } else {
+                await createAppointment(fullAppointment);
+                GreenhouseUtils.displaySuccess('Appointment requested successfully!');
+            }
+            resetForm();
+            populateAppointments();
         } catch (error) {
             if (error.code === 409) {
-                GreenhouseSchedulerUI.showConflictModal(error.data);
-                return;
+                showConflictModal(error.data);
             } else {
-                console.error("Error proposing appointment:", error);
-                GreenhouseUtils.displayError('Failed to propose appointment for conflict check.');
-                return;
+                console.error("Error during appointment operation:", error);
+                GreenhouseUtils.displayError(`Failed to ${isUpdate ? 'update' : 'request'} appointment: ${error.message}`);
             }
-        }
-
-        try {
-            await createAppointment(proposedAppointment);
-            GreenhouseSchedulerUI.clearFormInputs();
-            fetchAppointments();
-        } catch (error) {
-            console.error("Error adding appointment:", error);
-            GreenhouseUtils.displayError('Failed to add appointment after conflict check.');
+        } finally {
+            showLoadingSpinner(false);
         }
     }
 
@@ -231,95 +356,133 @@ function GreenhousePatientApp() {
         const action = target.dataset.action;
 
         if (action) {
-            const appointmentId = target.dataset.appointmentId;
-            const serviceId = target.dataset.serviceId;
-            const appointmentJson = target.dataset.appointment;
-
             switch (action) {
-                case 'edit':
-                    GreenhouseSchedulerUI.editAppointment(JSON.parse(appointmentJson));
+                case 'edit-appointment':
+                    const appointment = JSON.parse(target.dataset.appointment);
+                    populateFormForEdit(appointment);
                     break;
-                case 'delete':
-                    // TODO: Replace with GreenhouseSchedulerUI.showConfirmationModal
-                    // For now, assume confirmed to proceed with refactoring
-                    deleteAppointment(appointmentId, serviceId);
-                    break;
-                case 'propose-and-add-appointment':
-                    proposeAndAddAppointment();
-                    break;
-                case 'update-appointment':
-                    // This updateAppointment is the local one, not the API one
-                    // It needs to call the UI update function from schedulerUI
-                    const title = document.getElementById('greenhouse-patient-app-title-input').value;
-                    const date = document.getElementById('greenhouse-patient-app-date-input').value;
-                    const time = document.getElementById('greenhouse-patient-app-time-input').value;
-                    const platform = document.getElementById('greenhouse-patient-app-platform-input').value;
-                    const serviceIdUpdate = document.getElementById('greenhouse-patient-app-service-select').value;
-
-                    if (!title || !date || !time || !platform || !serviceIdUpdate) {
-                        GreenhouseUtils.displayError('Please fill in all fields.');
-                        return;
-                    }
-
-                    const startDateTime = new Date(`${date}T${time}:00`);
-                    const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
-
-                    const updatedAppointment = {
-                        _id: appointmentId,
-                        title,
-                        date,
-                        time,
-                        platform: platform,
-                        start: startDateTime.toISOString(),
-                        end: endDateTime.toISOString(),
-                        serviceRef: serviceIdUpdate
-                    };
-
-                    // Call the API update function
-                    (async () => {
-                        try {
-                            await proposeAppointment(updatedAppointment);
-                        } catch (error) {
-                            if (error.code === 409) {
-                                GreenhouseSchedulerUI.showConflictModal(error.data);
-                                return;
-                            } else {
-                                console.error("Error proposing appointment update:", error);
-                                GreenhouseUtils.displayError('Failed to propose appointment update for conflict check.');
-                                return;
+                case 'delete-appointment':
+                    if (confirm('Are you sure you want to delete this appointment?')) {
+                        const appointmentId = target.dataset.appointmentId;
+                        (async () => {
+                            try {
+                                await deleteAppointment(appointmentId);
+                                GreenhouseUtils.displaySuccess('Appointment deleted successfully!');
+                                populateAppointments();
+                            } catch (error) {
+                                console.error("Error deleting appointment:", error);
+                                GreenhouseUtils.displayError('Failed to delete appointment.');
                             }
-                        }
-
-                        try {
-                            await updateAppointment(appointmentId, updatedAppointment); // This is the API call
-                            GreenhouseSchedulerUI.resetForm();
-                            fetchAppointments();
-                        } catch (error) {
-                            console.error("Error updating appointment:", error);
-                            GreenhouseUtils.displayError('Failed to update appointment.');
-                        }
-                    })();
+                        })();
+                    }
                     break;
-                case 'reset-form':
-                    GreenhouseSchedulerUI.resetForm();
+                case 'conflict-modal-close':
+                case 'conflict-modal-cancel':
+                    hideConflictModal();
+                    break;
+                case 'conflict-modal-resolve':
+                    hideConflictModal();
+                    // Optionally, navigate user to a different part of the form or calendar
+                    GreenhouseUtils.displayInfo('Please choose a different time for your appointment.');
                     break;
             }
         }
     }
 
-    function init() {
-        fetchAppointments();
-        fetchServices();
-        GreenhouseSchedulerUI.resetForm();
-        GreenhouseSchedulerUI.setupModal();
-        const container = document.getElementById('greenhouse-app-container'); // This is the main app container
-        if(container){
-            container.addEventListener('click', handleAction);
+    /**
+     * @function init
+     * @description Initializes the Patient application.
+     * @param {HTMLElement} leftAppContainer - The main DOM element for the left panel (form).
+     * @param {HTMLElement} rightAppContainer - The main DOM element for the right panel (instructions/appointments list).
+     */
+    async function init(leftAppContainer, rightAppContainer) {
+        patientAppState.leftAppContainer = leftAppContainer;
+        patientAppState.rightAppContainer = rightAppContainer;
+
+        // Get references to UI elements created by schedulerUI.js
+        patientAppState.patientFormContainer = leftAppContainer.querySelector('[data-identifier="patient-form-container"]');
+        patientAppState.patientAppointmentForm = leftAppContainer.querySelector('[data-identifier="patient-appointment-form"]');
+        patientAppState.serviceSelect = leftAppContainer.querySelector('[data-identifier="patient-app-service"]');
+        patientAppState.titleInput = leftAppContainer.querySelector('[data-identifier="patient-app-title"]');
+        patientAppState.dateInput = leftAppContainer.querySelector('[data-identifier="patient-app-date"]');
+        patientAppState.timeInput = leftAppContainer.querySelector('[data-identifier="patient-app-time"]');
+        patientAppState.platformInput = leftAppContainer.querySelector('[data-identifier="patient-app-platform"]');
+        patientAppState.proposeAppointmentBtn = leftAppContainer.querySelector('[data-identifier="propose-appointment-btn"]');
+        patientAppState.loadingSpinner = leftAppContainer.querySelector('[data-identifier="loading-spinner"]');
+        
+        // Assuming an appointments list will be created in the right panel by schedulerUI.js
+        // For now, I'll create a placeholder if it doesn't exist, but ideally schedulerUI.js should create it.
+        let appointmentsListElement = rightAppContainer.querySelector('[data-identifier="appointment-list"]');
+        if (!appointmentsListElement) {
+            appointmentsListElement = document.createElement('ul');
+            appointmentsListElement.id = 'greenhouse-patient-app-appointments-list';
+            appointmentsListElement.setAttribute('data-identifier', 'appointment-list');
+            rightAppContainer.appendChild(appointmentsListElement);
         }
-        // The propose button is now handled by event delegation
+        patientAppState.appointmentsList = appointmentsListElement;
+
+        // Get references to conflict modal elements (created by scheduler.js and appended to body)
+        patientAppState.conflictModal = document.querySelector('[data-identifier="conflict-modal"]');
+        patientAppState.conflictDetailsDiv = document.querySelector('[data-identifier="conflict-details"]');
+        patientAppState.conflictModalCloseBtn = document.querySelector('[data-identifier="conflict-modal-close-btn"]');
+        patientAppState.conflictModalCancelBtn = document.querySelector('[data-identifier="conflict-modal-cancel-btn"]');
+        patientAppState.conflictModalResolveBtn = document.querySelector('[data-identifier="conflict-modal-resolve-btn"]');
+
+
+        // Add event listeners
+        if (patientAppState.patientAppointmentForm) {
+            patientAppState.patientAppointmentForm.addEventListener('submit', handleFormSubmission);
+            // Real-time validation on blur
+            const inputs = patientAppState.patientAppointmentForm.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('blur', () => {
+                    const errorEl = patientAppState.patientAppointmentForm.querySelector(`[data-identifier="patient-app-error-${input.name}"]`);
+                    GreenhouseUtils.validateField(input, errorEl);
+                });
+                input.addEventListener('input', () => {
+                    const errorEl = patientAppState.patientAppointmentForm.querySelector(`[data-identifier="patient-app-error-${input.name}"]`);
+                    if (errorEl) {
+                        errorEl.classList.add('greenhouse-hidden');
+                        input.classList.remove('greenhouse-form-error-input');
+                    }
+                });
+            });
+        }
+
+        // Delegate click events for edit/delete buttons on the appointments list
+        if (patientAppState.appointmentsList) {
+            patientAppState.appointmentsList.addEventListener('click', handleAction);
+        }
+
+        // Add event listeners for the conflict modal
+        if (patientAppState.conflictModalCloseBtn) patientAppState.conflictModalCloseBtn.addEventListener('click', handleAction);
+        if (patientAppState.conflictModalCancelBtn) patientAppState.conflictModalCancelBtn.addEventListener('click', handleAction);
+        if (patientAppState.conflictModalResolveBtn) patientAppState.conflictModalResolveBtn.addEventListener('click', handleAction);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && patientAppState.conflictModal && !patientAppState.conflictModal.classList.contains('greenhouse-hidden')) {
+                hideConflictModal();
+            }
+        });
+        if (patientAppState.conflictModal) {
+            patientAppState.conflictModal.addEventListener('click', (e) => {
+                if (e.target === patientAppState.conflictModal) {
+                    hideConflictModal();
+                }
+            });
+        }
+
+
+        // Load initial data
+        await populateServices();
+        await populateAppointments();
+        resetForm(); // Ensure form is in a clean state
     }
 
     return {
-        init: init
+        init: init,
+        // Expose functions that might be needed by scheduler.js or for debugging
+        populateAppointments: populateAppointments,
+        populateServices: populateServices,
+        showConflictModal: showConflictModal, // Expose for scheduler.js to call if needed
     };
-}
+})();

@@ -1,5 +1,29 @@
-function GreenhouseAdminApp() {
-    // Velo backend function wrappers
+const GreenhouseAdminApp = (function() {
+    'use strict';
+
+    const GreenhouseUtils = window.GreenhouseUtils;
+    const GreenhouseSchedulerUI = window.GreenhouseSchedulerUI;
+
+    if (!GreenhouseUtils) {
+        console.error('GreenhouseAdminApp: GreenhouseUtils not found. Ensure GreenhouseUtils.js is loaded.');
+        return;
+    }
+    if (!GreenhouseSchedulerUI) {
+        console.error('GreenhouseAdminApp: GreenhouseSchedulerUI not found. Ensure schedulerUI.js is loaded.');
+        return;
+    }
+
+    const adminAppState = {
+        leftAppContainer: null,
+        adminFormContainer: null,
+        adminAppointmentForm: null,
+        currentAppointment: null,
+        serviceTypes: [],
+    };
+
+    /**
+     * API Calls
+     */
     async function getAppointmentById(appointmentId) {
         const response = await fetch(`/_functions/getAppointmentById/${appointmentId}`);
         if (!response.ok) {
@@ -22,7 +46,7 @@ function GreenhouseAdminApp() {
         return response.json();
     }
 
-    async function deleteAppointment(appointmentId, serviceRef) {
+    async function deleteAppointment(appointmentId) {
         const response = await fetch(`/_functions/deleteAppointment/${appointmentId}`, {
             method: 'DELETE',
         });
@@ -41,109 +65,50 @@ function GreenhouseAdminApp() {
     }
 
     /**
-     * Initializes the admin UI by fetching data and building the form.
-     * @returns {Promise<DocumentFragment>} A promise that resolves with the admin UI fragment.
+     * Data Loading and Population
      */
-    async function init() {
-        const fragment = document.createDocumentFragment();
-
-        const h1 = document.createElement('h1');
-        h1.textContent = 'Individual Appointment Administration';
-        fragment.appendChild(h1);
-
-        const description = document.createElement('p');
-        description.textContent = 'View and administer details for a specific appointment.';
-        fragment.appendChild(description);
-
-        const appointmentId = new URLSearchParams(window.location.search).get('appointmentId');
-
-        if (!appointmentId) {
-            const p = document.createElement('p');
-            p.textContent = 'No appointment ID provided. Please navigate from the dashboard or provide an ID in the URL.';
-            fragment.appendChild(p);
-            return fragment;
-        }
-
+    async function loadAppointmentData(appointmentId) {
         try {
             const [currentAppointment, serviceTypes] = await Promise.all([
                 getAppointmentById(appointmentId),
                 getServiceTypes()
             ]);
 
+            adminAppState.currentAppointment = currentAppointment;
+            adminAppState.serviceTypes = serviceTypes;
+
             if (!currentAppointment) {
-                const p = document.createElement('p');
-                p.textContent = 'Appointment not found.';
-                fragment.appendChild(p);
-                return fragment;
+                GreenhouseUtils.displayError('Appointment not found.');
+                adminAppState.adminFormContainer.innerHTML = '<p>Appointment not found.</p>';
+                return;
             }
 
-            const form = GreenhouseSchedulerUI.buildAdminAppointmentForm(currentAppointment, serviceTypes);
-            fragment.appendChild(form);
+            // Build and append the form using schedulerUI, passing initial data
+            GreenhouseSchedulerUI.buildAdminAppointmentFormUI(adminAppState.adminFormContainer, currentAppointment, serviceTypes);
+            adminAppState.adminAppointmentForm = adminAppState.adminFormContainer.querySelector('[data-identifier="admin-appointment-form"]');
 
-            // Attach event listener to the form for delegation
-            form.addEventListener('click', handleAction);
-            form.addEventListener('submit', handleAction);
-
+            // Attach event listeners to the form for delegation
+            if (adminAppState.adminAppointmentForm) {
+                adminAppState.adminAppointmentForm.addEventListener('click', handleAction);
+                adminAppState.adminAppointmentForm.addEventListener('submit', handleAction);
+            }
 
         } catch (error) {
             console.error("Error fetching data:", error);
-            const p = document.createElement('p');
-            p.style.color = 'red';
-            p.textContent = 'Failed to load appointment details. Please check the console and try again.';
-            fragment.appendChild(p);
-        }
-
-        return fragment;
-    }
-
-    
-
-    /**
-     * Handles the form submission to save appointment changes.
-     * @param {Event} e - The form submission event.
-     * @param {string} appointmentId - The ID of the appointment to update.
-     */
-    async function handleSave(e) {
-        e.preventDefault();
-        const form = e.target; // The form element itself
-        const appointmentId = form.dataset.appointmentId; // Get appointmentId from form's dataset
-
-        const updatedData = {
-            _id: appointmentId,
-            title: document.getElementById('greenhouse-admin-app-adminTitle').value,
-            start: document.getElementById('greenhouse-admin-app-adminStart').value,
-            end: document.getElementById('greenhouse-admin-app-adminEnd').value,
-            platform: document.getElementById('greenhouse-admin-app-adminPlatform').value,
-            serviceRef: document.getElementById('greenhouse-admin-app-adminService').value,
-            confirmed: document.getElementById('greenhouse-admin-app-adminConfirmed').checked,
-            conflicts: document.getElementById('greenhouse-admin-app-adminConflicts').value, // Note: This should be parsed if it's edited
-            firstName: document.getElementById('greenhouse-admin-app-adminFirstName').value,
-            lastName: document.getElementById('greenhouse-admin-app-adminLastName').value,
-            contactInfo: document.getElementById('greenhouse-admin-app-adminContactInfo').value,
-            anonymousId: document.getElementById('greenhouse-admin-app-adminAnonymousId').value
-        };
-
-        try {
-            await updateAppointment(appointmentId, updatedData);
-            GreenhouseUtils.displaySuccess('Appointment updated successfully!');
-        } catch (error) {
-            console.error("Error updating appointment:", error);
-            GreenhouseUtils.displayError('Failed to update appointment.');
+            GreenhouseUtils.displayError('Failed to load appointment details. Please check the console and try again.');
+            adminAppState.adminFormContainer.innerHTML = '<p style="color:red;">Failed to load appointment details. Please check the console and try again.</p>';
         }
     }
 
     /**
-     * Handles the click event to delete an appointment.
-     * @param {string} appointmentId - The ID of the appointment to delete.
-     * @param {string} serviceRef - The service reference, which might be needed for deletion.
+     * Event Handlers
      */
-    async function handleDelete(appointmentId, serviceRef) {
+    async function handleDelete(appointmentId) {
         if (confirm('Are you sure you want to delete this appointment?')) {
             try {
-                await deleteAppointment(appointmentId, serviceRef);
+                await deleteAppointment(appointmentId);
                 GreenhouseUtils.displaySuccess('Appointment deleted successfully!');
-                // Optionally, redirect or clear the form
-                document.getElementById('greenhouse-admin-app-individual-appointment-form').innerHTML = '<p>Appointment has been deleted.</p>';
+                adminAppState.adminFormContainer.innerHTML = '<p>Appointment has been deleted.</p>';
             } catch (error) {
                 console.error("Error deleting appointment:", error);
                 GreenhouseUtils.displayError('Failed to delete appointment.');
@@ -151,29 +116,86 @@ function GreenhouseAdminApp() {
         }
     }
 
-    function handleAction(event) {
+    async function handleAction(event) {
         const target = event.target;
         const action = target.dataset.action;
+        const form = target.closest('form'); // Get the closest form element
 
-        if (action) {
-            // For submit events, the target is the form itself
-            if (event.type === 'submit' && action === 'save-changes') {
-                handleSave(event);
+        if (!form) {
+            console.warn('GreenhouseAdminApp: Action triggered outside a form context.');
+            return;
+        }
+
+        const appointmentId = form.dataset.appointmentId;
+
+        if (event.type === 'submit' && action === 'save-changes') {
+            event.preventDefault(); // Prevent default form submission
+
+            if (!GreenhouseUtils.validateForm(form, 'admin-app-admin')) { // Assuming admin-app-admin as prefix
+                GreenhouseUtils.displayError('Please correct the errors in the form.');
                 return;
             }
 
-            const appointmentId = target.dataset.appointmentId || target.closest('form').dataset.appointmentId;
-            const serviceRef = target.dataset.serviceRef;
+            const updatedData = {
+                _id: appointmentId,
+                title: form.querySelector('[data-identifier="admin-app-adminTitle"]').value,
+                start: form.querySelector('[data-identifier="admin-app-adminStart"]').value,
+                end: form.querySelector('[data-identifier="admin-app-adminEnd"]').value,
+                platform: form.querySelector('[data-identifier="admin-app-adminPlatform"]').value,
+                serviceRef: form.querySelector('[data-identifier="admin-app-adminService"]').value,
+                confirmed: form.querySelector('[data-identifier="admin-app-adminConfirmed"]').checked,
+                conflicts: form.querySelector('[data-identifier="admin-app-adminConflicts"]').value,
+                firstName: form.querySelector('[data-identifier="admin-app-adminFirstName"]').value,
+                lastName: form.querySelector('[data-identifier="admin-app-adminLastName"]').value,
+                contactInfo: form.querySelector('[data-identifier="admin-app-adminContactInfo"]').value,
+                anonymousId: form.querySelector('[data-identifier="admin-app-adminAnonymousId"]').value
+            };
 
-            switch (action) {
-                case 'delete-appointment':
-                    handleDelete(appointmentId, serviceRef);
-                    break;
+            try {
+                await updateAppointment(appointmentId, updatedData);
+                GreenhouseUtils.displaySuccess('Appointment updated successfully!');
+            } catch (error) {
+                console.error("Error updating appointment:", error);
+                GreenhouseUtils.displayError('Failed to update appointment.');
             }
+            return;
+        }
+
+        switch (action) {
+            case 'delete-appointment':
+                handleDelete(appointmentId);
+                break;
         }
     }
 
+    /**
+     * @function init
+     * @description Initializes the Admin application.
+     * @param {HTMLElement} leftAppContainer - The main DOM element for the left panel.
+     * @param {HTMLElement} [rightAppContainer] - The main DOM element for the right panel (not used in Admin view).
+     */
+    async function init(leftAppContainer, rightAppContainer = null) {
+        adminAppState.leftAppContainer = leftAppContainer;
+        adminAppState.adminFormContainer = leftAppContainer.querySelector('[data-identifier="admin-form-container"]');
+
+        const appointmentId = new URLSearchParams(window.location.search).get('appointmentId');
+
+        if (!appointmentId) {
+            GreenhouseUtils.displayError('No appointment ID provided for Admin view.');
+            if (adminAppState.adminFormContainer) {
+                adminAppState.adminFormContainer.innerHTML = '<p>No appointment ID provided. Please navigate from the dashboard or provide an ID in the URL.</p>';
+            }
+            return;
+        }
+
+        await loadAppointmentData(appointmentId);
+    }
+
     return {
-        init: init
+        init: init,
+        getAppointmentById: getAppointmentById,
+        updateAppointment: updateAppointment,
+        deleteAppointment: deleteAppointment,
+        getServiceTypes: getServiceTypes,
     };
-}
+})();
