@@ -355,6 +355,11 @@
         
         // Activate the watering can effect
         await activate();
+
+        // Activate the vine effect if it exists
+        if (window.GreenhouseEffects && window.GreenhouseEffects.activateVineEffect) {
+            await window.GreenhouseEffects.activateVineEffect();
+        }
     }
 
     /**
@@ -382,13 +387,13 @@
 (function() {
     'use strict';
 
-    const config = {
+    const vineConfig = {
         elementWaitTimeout: 10000,
         targetSelector: "#SITE_PAGES_TRANSITION_GROUP div section.wixui-section:nth-child(1) div section div > div > div.wixui-rich-text h2", // New config for selector
         idToApply: "greenhouse-title-for-vine-effect"
     };
 
-    function waitForElementBySelector(selector, timeout = config.elementWaitTimeout) {
+    function waitForElementBySelector(selector, timeout = vineConfig.elementWaitTimeout) {
         return new Promise((resolve, reject) => {
             const findElement = () => {
                 return document.querySelector(selector);
@@ -416,23 +421,32 @@
 
             setTimeout(() => {
                 observer.disconnect();
-                console.warn(`Vine Effect: Element with selector "${selector}" not found within ${timeout}ms. Skipping vine effect activation.`);
-                resolve(null); // Resolve with null instead of rejecting
+                reject(new Error(`Element with selector "${selector}" not found.`));
             }, timeout);
         });
     }
 
     async function activateVineEffect() {
         try {
-            const heading = await waitForElementBySelector(config.targetSelector);
+            const heading = await waitForElementBySelector(vineConfig.targetSelector);
             if (!heading || heading.dataset.vineInitialized === 'true') return;
 
-            heading.id = config.idToApply;
-            heading.dataset.originalText = heading.textContent;
+            heading.id = vineConfig.idToApply;
+            const originalText = heading.textContent;
+            heading.dataset.originalText = originalText;
             heading.dataset.vineInitialized = 'true';
             heading.classList.add('vine-effect-active');
 
-            heading.innerHTML = heading.dataset.originalText.split('').map(char => {
+            // Get dimensions before modifying innerHTML
+            const rect = heading.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+
+            // Lock the width and display to prevent wrapping
+            heading.style.width = `${width}px`;
+            heading.style.display = 'inline-block';
+
+            heading.innerHTML = originalText.split('').map(char => {
                 return `<span>${char === ' ' ? '&nbsp;' : char}</span>`;
             }).join('');
 
@@ -440,50 +454,23 @@
             const svg = document.createElementNS(svgNS, "svg");
             svg.setAttribute("class", "vine-svg");
 
-            // --- Dynamic Path Generation ---
-            const headingWidth = heading.offsetWidth;
-            const originalWidth = 800; // The original width the path was designed for
-            const scaleFactor = headingWidth / originalWidth;
-
-            // Update viewBox to match the new width
-            svg.setAttribute("viewBox", `0 0 ${headingWidth} 120`);
-
-            // Scale the x-coordinates of the path to be relative to headingWidth
-            // Adjusting the control points and end points to better fit the dynamic width
-            const scaledPath = `M${headingWidth * 0.01},110 C${headingWidth * 0.18}, -30 ${headingWidth * 0.32},150 ${headingWidth * 0.5},60 S${headingWidth * 0.68},-30 ${headingWidth * 0.82},60 S${headingWidth * 0.99},100 ${headingWidth * 0.99},100`;
+            // Dynamic scaling
+            svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
 
             const path = document.createElementNS(svgNS, "path");
             path.setAttribute("class", "vine-path");
-            path.setAttribute("d", scaledPath);
+            // Adjusted path to scale with the dynamic viewBox
+            path.setAttribute("d", `M${width*0.01},${height*0.9} C${width*0.1875},-0.25 ${width*0.3125},${height*1.25} ${width*0.5},${height*0.5} S${width*0.6875},-0.25 ${width*0.875},${height*0.5} S${width*0.9875},${height*0.833} ${width*0.9875},${height*0.833}`);
 
             svg.appendChild(path);
             heading.appendChild(svg);
 
             const pathLength = path.getTotalLength();
             path.style.strokeDasharray = pathLength;
+            path.style.strokeDashoffset = pathLength;
 
-            // Function to run a single animation cycle
-            const runAnimationCycle = () => {
-                // 1. Reset the animation state
-                heading.classList.remove('animation-running');
-                path.style.transition = 'none'; // Disable transition for the reset
-                path.style.strokeDashoffset = pathLength;
-
-            // 2. Schedule the animation to start on the next frame. This is a more performant way to
-            // ensure the browser has processed the reset styles before starting the new animation.
-            requestAnimationFrame(() => {
-                // 3. Re-enable transitions and add the class to start the animation
-                path.style.transition = `stroke-dashoffset ${config.duration / 1000}s ease-in-out`;
-                heading.classList.add('animation-running');
-            });
-            };
-
-            // Run the first animation cycle immediately after a short delay
             setTimeout(() => {
-                runAnimationCycle();
-                // Set an interval to repeat the animation.
-                // The animation takes 6s. We'll add a 2s pause before repeating.
-                setInterval(runAnimationCycle, 8000); // 6000ms animation + 2000ms pause
+                heading.classList.add('animation-running');
             }, 100);
 
         } catch (error) {
@@ -491,15 +478,9 @@
         }
     }
 
-    function initialize() {
-        activateVineEffect();
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize);
-    } else {
-        // Give Wix a moment to finish rendering
-        setTimeout(initialize, 500);
+    // Expose the activateVineEffect function to the global GreenhouseEffects object
+    if (window.GreenhouseEffects) {
+        window.GreenhouseEffects.activateVineEffect = activateVineEffect;
     }
 
 })();
