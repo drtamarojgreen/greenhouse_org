@@ -132,10 +132,9 @@ const mockWindow = {
     Date: class extends Date {
         constructor(dateString) {
             if (dateString) {
-                super(dateString);
-            } else {
-                super('2025-01-01T12:00:00.000Z'); // Fixed date for consistent tests (Wednesday)
+                return new Date(dateString);
             }
+            return new Date('2025-01-01T12:00:00.000Z'); // Fixed date for consistent tests (Wednesday)
         }
         static now() {
             return new Date('2025-01-01T12:00:00.000Z').getTime();
@@ -152,7 +151,7 @@ const mockWindow = {
 global.document = mockWindow.document;
 global.window = mockWindow;
 global.fetch = mockWindow.fetch;
-// global.console = mockWindow.console; // DO NOT MOCK GLOBALLY
+global.console = mockWindow.console;
 global.Date = mockWindow.Date;
 global.URLSearchParams = mockWindow.URLSearchParams;
 
@@ -160,12 +159,12 @@ global.URLSearchParams = mockWindow.URLSearchParams;
 // Load the actual GreenhouseDashboardApp.js content
 const fs = require('fs');
 const path = require('path');
-const dashboardAppPath = path.resolve(__dirname, '../../../../../docs/js/GreenhouseDashboardApp.js');
+const dashboardAppPath = path.resolve(__dirname, '../../../../docs/js/GreenhouseDashboardApp.js');
 const dashboardAppCode = fs.readFileSync(dashboardAppPath, 'utf8');
 eval(dashboardAppCode); // Execute the script in the mocked environment
+window.GreenhouseDashboardApp = GreenhouseDashboardApp; // Expose it globally
 
 function runGreenhouseDashboardAppTests() {
-    const GreenhouseDashboardApp = window.GreenhouseDashboardApp;
     let passed = 0;
     let failed = 0;
 
@@ -219,11 +218,11 @@ function runGreenhouseDashboardAppTests() {
 
     // Test 1: init function
     GreenhouseDashboardApp.init(mockLeftContainer, mockRightContainer);
-    // assert(mockLeftContainer.listeners && mockLeftContainer.listeners.has('click'), 'init adds click listener to left container');
-    // assert(mockRightContainer.listeners && mockRightContainer.listeners.has('click'), 'init adds click listener to right container');
-    // assert(mockCalendarTitle.textContent.includes('January 2025'), 'Calendar title is initially populated');
-    // assert(mockCalendarTbody.children.length > 0, 'Calendar tbody is initially populated');
-    // assert(mockScheduleTbody.children.length > 0, 'Schedule tbody is initially populated'); // Assuming loadInitialData runs
+    assert(mockLeftContainer.listeners && mockLeftContainer.listeners.has('click'), 'init adds click listener to left container');
+    assert(mockRightContainer.listeners && mockRightContainer.listeners.has('click'), 'init adds click listener to right container');
+    assert(mockCalendarTitle.textContent.includes('January 2025'), 'Calendar title is initially populated');
+    assert(mockCalendarTbody.children.length > 0, 'Calendar tbody is initially populated');
+    assert(mockScheduleTbody.children.length > 0, 'Schedule tbody is initially populated'); // Assuming loadInitialData runs
 
     // Test 2: populateCalendar - navigation
     // Simulate clicking next month
@@ -273,5 +272,5 @@ try {
     console.log("All GreenhouseDashboardApp unit tests passed!");
 } catch (error) {
     console.error("GreenhouseDashboardApp unit tests failed:", error.message);
-    throw error;
+    process.exit(1);
 }

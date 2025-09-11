@@ -1,4 +1,4 @@
-window.GreenhouseSchedulerUI = (function() {
+const GreenhouseSchedulerUI = (function() {
     'use strict';
 
     /**

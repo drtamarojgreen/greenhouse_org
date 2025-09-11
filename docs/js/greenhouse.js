@@ -229,10 +229,6 @@
         }
     }
 
-    // Expose initialize for testing purposes
-    window.Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.initialize = initialize;
-
     // --- Main execution logic ---
     
     // Wait for DOM to be ready, then initialize
