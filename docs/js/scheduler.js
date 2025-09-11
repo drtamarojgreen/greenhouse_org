@@ -14,7 +14,7 @@
  * for shared utilities and `schedulerUI.js` for all UI creation. App-specific logic is loaded dynamically.
  */
 
-(function() {
+const GreenhouseScheduler = (function() {
     'use strict';
 
     // Import GreenhouseUtils and GreenhouseSchedulerUI
@@ -287,7 +287,7 @@
     }
 
     // Expose public API for debugging
-    window.GreenhouseScheduler = {
+    const publicApi = {
         getState: () => ({ ...GreenhouseUtils.appState }),
         getConfig: () => ({ ...GreenhouseUtils.config }),
         reinitialize: () => {
@@ -301,4 +301,5 @@
     // Execute main function
     main();
 
+    return publicApi;
 })();

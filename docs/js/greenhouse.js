@@ -212,7 +212,7 @@
         console.log('Greenhouse: Initializing application loader');
         
         // Load the visual effects script on all pages (no need to wait for specific elements)
-        loadScript(`${config.githubPagesBaseUrl}js/effects.js`);
+        GreenhouseUtils.loadScript(`${config.githubPagesBaseUrl}js/effects.js`);
 
         // Check if the current page is the schedule page.
         if (window.location.pathname.includes(config.schedulePagePath)) {
@@ -228,6 +228,10 @@
             await loadNewsApplication();
         }
     }
+
+    // Expose initialize for testing purposes
+    window.Greenhouse = window.Greenhouse || {};
+    window.Greenhouse.initialize = initialize;
 
     // --- Main execution logic ---
     
