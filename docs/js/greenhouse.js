@@ -17,6 +17,8 @@
  */
 
 (function() {
+    // Import GreenhouseUtils
+    const GreenhouseUtils = window.GreenhouseUtils;
     if (!GreenhouseUtils) {
         console.error('Greenhouse: GreenhouseUtils not found. Ensure GreenhouseUtils.js is loaded before greenhouse.js.');
         return;
