@@ -1,4 +1,4 @@
-window.GreenhouseDashboardApp = (function() {
+const GreenhouseDashboardApp = (function() {
     'use strict';
 
     const GreenhouseUtils = window.GreenhouseUtils;

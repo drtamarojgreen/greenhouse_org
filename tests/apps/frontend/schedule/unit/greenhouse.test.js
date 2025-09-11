@@ -210,7 +210,7 @@ const mockWindow = {
 // Inject mocks into the global scope for testing
 global.document = mockWindow.document;
 global.window = mockWindow;
-// global.console = mockWindow.console; // DO NOT MOCK THE CONSOLE GLOBALLY
+global.console = mockWindow.console;
 global.setTimeout = mockWindow.setTimeout;
 global.URLSearchParams = mockWindow.URLSearchParams;
 
@@ -218,7 +218,7 @@ global.URLSearchParams = mockWindow.URLSearchParams;
 // Load the actual greenhouse.js content
 const fs = require('fs');
 const path = require('path');
-const greenhousePath = path.resolve(__dirname, '../../../../../docs/js/greenhouse.js');
+const greenhousePath = path.resolve(__dirname, '../../../../docs/js/greenhouse.js');
 const greenhouseCode = fs.readFileSync(greenhousePath, 'utf8');
 eval(greenhouseCode); // Execute the script in the mocked environment
 
@@ -273,7 +273,7 @@ function runGreenhouseTests() {
     };
     
     // Manually trigger initialize since DOMContentLoaded is mocked to fire immediately
-    window.Greenhouse.initialize().then(() => {
+    window.initialize().then(() => {
         assert(mockWindow.GreenhouseUtils.appState.loadedScripts.has('schedulerUI.js'), 'schedulerUI.js is loaded for schedule page');
         assert(mockWindow.GreenhouseUtils.appState.loadedScripts.has('scheduler.js'), 'scheduler.js is loaded for schedule page');
         assert(mockWindow.GreenhouseUtils.appState.targetSelectorLeft === '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', 'Correct left selector passed to scheduler');
@@ -292,7 +292,7 @@ function runGreenhouseTests() {
         }
         return null;
     };
-    window.Greenhouse.initialize().then(() => {
+    window.initialize().then(() => {
         assert(mockWindow.GreenhouseUtils.appState.loadedScripts.has('books.js'), 'books.js is loaded for books page');
         assert(mockWindow.GreenhouseUtils.appState.targetSelectorLeft === '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div > section.wixui-section', 'Correct selector passed to books app');
     }).catch(e => assert(false, `Books application load failed: ${e.message}`));
@@ -300,7 +300,7 @@ function runGreenhouseTests() {
     // Test 3: loadVideosApplication (currently commented out in greenhouse.js, so this test will assert it's NOT loaded)
     resetAppState();
     mockWindow.location.pathname = '/videos/';
-    window.Greenhouse.initialize().then(() => {
+    window.initialize().then(() => {
         assert(!mockWindow.GreenhouseUtils.appState.loadedScripts.has('videos.js'), 'videos.js is NOT loaded when commented out');
     }).catch(e => assert(false, `Videos application load failed: ${e.message}`));
 
@@ -315,7 +315,7 @@ function runGreenhouseTests() {
         }
         return null;
     };
-    window.Greenhouse.initialize().then(() => {
+    window.initialize().then(() => {
         assert(mockWindow.GreenhouseUtils.appState.loadedScripts.has('news.js'), 'news.js is loaded for news page');
         assert(mockWindow.GreenhouseUtils.appState.targetSelectorLeft === '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', 'Correct selector passed to news app');
     }).catch(e => assert(false, `News application load failed: ${e.message}`));
@@ -330,7 +330,7 @@ function runGreenhouseTests() {
         return Promise.resolve();
     };
     mockWindow.location.pathname = '/'; // Any page
-    window.Greenhouse.initialize().then(() => {
+    window.initialize().then(() => {
         assert(scriptAppended, 'effects.js is loaded on all pages via GreenhouseUtils.loadScript');
     }).catch(e => assert(false, `effects.js load failed: ${e.message}`));
 
@@ -349,5 +349,5 @@ try {
     console.log("All Greenhouse unit tests passed!");
 } catch (error) {
     console.error("Greenhouse unit tests failed:", error.message);
-    throw error;
+    process.exit(1);
 }

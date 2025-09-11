@@ -207,7 +207,7 @@ const mockWindow = {
 global.document = mockWindow.document;
 global.window = mockWindow;
 global.fetch = mockWindow.fetch;
-// global.console = mockWindow.console; // DO NOT MOCK GLOBALLY
+global.console = mockWindow.console;
 global.setTimeout = mockWindow.setTimeout;
 global.clearTimeout = mockWindow.clearTimeout;
 global.setInterval = mockWindow.setInterval;
@@ -220,12 +220,12 @@ global.URLSearchParams = mockWindow.URLSearchParams;
 // Load the actual GreenhouseUtils.js content
 const fs = require('fs');
 const path = require('path');
-const greenhouseUtilsPath = path.resolve(__dirname, '../../../../../docs/js/GreenhouseUtils.js');
+const greenhouseUtilsPath = path.resolve(__dirname, '../../../../docs/js/GreenhouseUtils.js');
 const greenhouseUtilsCode = fs.readFileSync(greenhouseUtilsPath, 'utf8');
 eval(greenhouseUtilsCode); // Execute the script in the mocked environment
+window.GreenhouseUtils = GreenhouseUtils; // Expose it globally for other modules
 
 function runGreenhouseUtilsTests() {
-    const GreenhouseUtils = window.GreenhouseUtils;
     let passed = 0;
     let failed = 0;
 
@@ -407,5 +407,5 @@ try {
     console.log("All GreenhouseUtils unit tests passed!");
 } catch (error) {
     console.error("GreenhouseUtils unit tests failed:", error.message);
-    throw error;
+    process.exit(1);
 }

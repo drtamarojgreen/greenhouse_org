@@ -331,7 +331,7 @@ const mockWindow = {
 global.document = mockWindow.document;
 global.window = mockWindow;
 global.fetch = mockWindow.fetch;
-// global.console = mockWindow.console; // DO NOT MOCK GLOBALLY
+global.console = mockWindow.console;
 global.URLSearchParams = mockWindow.URLSearchParams;
 global.confirm = mockWindow.confirm;
 global.Date = mockWindow.Date;
@@ -340,12 +340,12 @@ global.Date = mockWindow.Date;
 // Load the actual GreenhousePatientApp.js content
 const fs = require('fs');
 const path = require('path');
-const patientAppPath = path.resolve(__dirname, '../../../../../docs/js/GreenhousePatientApp.js');
+const patientAppPath = path.resolve(__dirname, '../../../../docs/js/GreenhousePatientApp.js');
 const patientAppCode = fs.readFileSync(patientAppPath, 'utf8');
 eval(patientAppCode); // Execute the script in the mocked environment
+window.GreenhousePatientApp = GreenhousePatientApp; // Expose it globally
 
 function runGreenhousePatientAppTests() {
-    const GreenhousePatientApp = window.GreenhousePatientApp;
     let passed = 0;
     let failed = 0;
 
@@ -494,5 +494,5 @@ try {
     console.log("All GreenhousePatientApp unit tests passed!");
 } catch (error) {
     console.error("GreenhousePatientApp unit tests failed:", error.message);
-    throw error;
+    process.exit(1);
 }
