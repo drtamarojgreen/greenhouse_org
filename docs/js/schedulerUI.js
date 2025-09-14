@@ -386,8 +386,74 @@ window.GreenhouseSchedulerUI = (function() {
     }
 
     /**
+     * Builds the UI for the Patient Calendar.
+     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
+     * @returns {HTMLElement} The calendar container.
+     */
+    function buildPatientCalendarUI(targetElement) {
+        if (!targetElement) {
+            console.error('SchedulerUI: Target element for patient calendar is null.');
+            return null;
+        }
+
+        const calendarContainer = document.createElement('div');
+        calendarContainer.id = 'greenhouse-patient-app-calendar-container';
+        calendarContainer.setAttribute('data-identifier', 'calendar-container');
+        calendarContainer.className = 'greenhouse-calendar-container';
+
+        const header = document.createElement('div');
+        header.className = 'calendar-header';
+
+        const prevButton = document.createElement('button');
+        prevButton.dataset.action = 'prev-month';
+        prevButton.textContent = 'Prev';
+        header.appendChild(prevButton);
+
+        const title = document.createElement('h2');
+        title.setAttribute('data-identifier', 'calendar-title');
+        title.textContent = 'Month Year'; // Placeholder
+        header.appendChild(title);
+
+        const nextButton = document.createElement('button');
+        nextButton.dataset.action = 'next-month';
+        nextButton.textContent = 'Next';
+        header.appendChild(nextButton);
+
+        calendarContainer.appendChild(header);
+
+        const table = document.createElement('table');
+        table.className = 'calendar-table';
+
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+            const th = document.createElement('th');
+            th.textContent = day;
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        tbody.setAttribute('data-identifier', 'calendar-tbody');
+        table.appendChild(tbody);
+
+        calendarContainer.appendChild(table);
+        targetElement.appendChild(calendarContainer);
+
+        return calendarContainer;
+    }
+
+    /**
      * Builds the HTML form for editing an appointment.
      * This function is now purely for UI creation and does not handle data population or event listeners.
+>>>>>>> 5d71a27ad5c78d2fa15a39c087794049641402d4
+     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
+     * @param {object} currentAppointment - The appointment data (used for initial values).
+     * @param {Array<object>} serviceTypes - The available service types (used for select options).
+     * @returns {HTMLFormElement} The generated form element.
+     */
+    function buildAdminAppointmentFormUI(targetElement, currentAppointment = {}, serviceTypes = []) {
      * @param {HTMLElement} targetElement - The DOM element to append the UI to.
      * @param {object} currentAppointment - The appointment data (used for initial values).
      * @param {Array<object>} serviceTypes - The available service types (used for select options).
