@@ -160,23 +160,12 @@
 
         console.log(`Greenhouse: Loading scheduler for view: ${view}`);
 
-        if (view === 'dashboard') {
-            // Dashboard view has two panels (schedule/conflicts and calendar)
-            await loadApplication(
-                'scheduler',
-                'scheduler.js',
-                config.selectors.dashboardLeft,
-                config.fallbackSelectors.dashboardLeft,
-                'schedulerUI.js',
-                'dashboard', // Explicitly pass view
-                config.selectors.dashboardRight,
-                config.fallbackSelectors.dashboardRight
-            );
-        } else {
-            // Patient and Admin views have a single panel.
-            // Determine the correct selector based on the view.
-            const mainSelector = (view === 'admin') ? config.selectors.admin : config.selectors.patient;
-            const fallbackSelector = (view === 'admin') ? config.fallbackSelectors.admin : config.fallbackSelectors.patient;
+        if (view === 'dashboard' || view === 'patient') {
+            // Dashboard and Patient views have two panels.
+            const mainSelector = (view === 'dashboard') ? config.selectors.dashboardLeft : config.selectors.patient;
+            const fallbackSelector = (view === 'dashboard') ? config.fallbackSelectors.dashboardLeft : config.fallbackSelectors.patient;
+            const rightPanelSelector = config.selectors.dashboardRight; // Use dashboard's right selector for both
+            const rightPanelFallbackSelector = config.fallbackSelectors.dashboardRight;
 
             await loadApplication(
                 'scheduler',
@@ -184,7 +173,22 @@
                 mainSelector,
                 fallbackSelector,
                 'schedulerUI.js',
-                view, // Pass the current view ('patient' or 'admin')
+                view, // Pass the current view
+                rightPanelSelector,
+                rightPanelFallbackSelector
+            );
+        } else {
+            // Admin view has a single panel.
+            const mainSelector = config.selectors.admin;
+            const fallbackSelector = config.fallbackSelectors.admin;
+
+            await loadApplication(
+                'scheduler',
+                'scheduler.js',
+                mainSelector,
+                fallbackSelector,
+                'schedulerUI.js',
+                'admin', // Pass the admin view
                 null, // No right panel selector for single-panel views
                 null  // No right panel fallback selector
             );
