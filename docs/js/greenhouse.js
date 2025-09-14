@@ -151,18 +151,44 @@
     /**
      * @function loadSchedulerApplication
      * @description Loads the scheduler application after ensuring the target element exists.
+     * This function is view-aware and will load different configurations based on the 'view' URL parameter.
      */
     async function loadSchedulerApplication() {
-        await loadApplication(
-            'scheduler',
-            'scheduler.js',
-            config.selectors.dashboardLeft,
-            config.fallbackSelectors.dashboardLeft,
-            'schedulerUI.js',
-            'dashboard',
-            config.selectors.dashboardRight,
-            config.fallbackSelectors.dashboardRight
-        );
+        const urlParams = new URLSearchParams(window.location.search);
+        // Default to 'patient' view if no view is specified, as it's the most common use case.
+        const view = urlParams.get('view') || 'patient';
+
+        console.log(`Greenhouse: Loading scheduler for view: ${view}`);
+
+        if (view === 'dashboard') {
+            // Dashboard view has two panels (schedule/conflicts and calendar)
+            await loadApplication(
+                'scheduler',
+                'scheduler.js',
+                config.selectors.dashboardLeft,
+                config.fallbackSelectors.dashboardLeft,
+                'schedulerUI.js',
+                'dashboard', // Explicitly pass view
+                config.selectors.dashboardRight,
+                config.fallbackSelectors.dashboardRight
+            );
+        } else {
+            // Patient and Admin views have a single panel.
+            // Determine the correct selector based on the view.
+            const mainSelector = (view === 'admin') ? config.selectors.admin : config.selectors.patient;
+            const fallbackSelector = (view === 'admin') ? config.fallbackSelectors.admin : config.fallbackSelectors.patient;
+
+            await loadApplication(
+                'scheduler',
+                'scheduler.js',
+                mainSelector,
+                fallbackSelector,
+                'schedulerUI.js',
+                view, // Pass the current view ('patient' or 'admin')
+                null, // No right panel selector for single-panel views
+                null  // No right panel fallback selector
+            );
+        }
     }
 
     /**
