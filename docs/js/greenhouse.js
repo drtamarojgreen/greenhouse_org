@@ -58,6 +58,7 @@
          */
         selectors: {
             patient: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
+            patientRight: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)', // Right column for patient instructions
             dashboardLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // First column for schedule/conflicts
             dashboardRight: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)', // Second column for calendar
             admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
@@ -70,6 +71,7 @@
          */
         fallbackSelectors: {
             patient: '.wixui-column-strip__column:first-child',
+            patientRight: '.wixui-column-strip__column:nth-child(2)', // Fallback for patient instructions
             dashboardLeft: '.wixui-column-strip__column:first-child',
             dashboardRight: '.wixui-column-strip__column:nth-child(2)',
             admin: '.wixui-column-strip__column:last-child',
@@ -172,21 +174,41 @@
                 config.selectors.dashboardRight,
                 config.fallbackSelectors.dashboardRight
             );
-        } else {
-            // Patient and Admin views have a single panel.
-            // Determine the correct selector based on the view.
-            const mainSelector = (view === 'admin') ? config.selectors.admin : config.selectors.patient;
-            const fallbackSelector = (view === 'admin') ? config.fallbackSelectors.admin : config.fallbackSelectors.patient;
-
+        } else if (view === 'patient') {
+            // Patient view has a left panel for the form and a right panel for instructions
             await loadApplication(
                 'scheduler',
                 'scheduler.js',
-                mainSelector,
-                fallbackSelector,
+                config.selectors.patient,
+                config.fallbackSelectors.patient,
                 'schedulerUI.js',
-                view, // Pass the current view ('patient' or 'admin')
+                'patient', // Explicitly pass view
+                config.selectors.patientRight, // Right panel for patient instructions
+                config.fallbackSelectors.patientRight // Fallback for right panel
+            );
+        } else if (view === 'admin') {
+            // Admin view has a single panel.
+            await loadApplication(
+                'scheduler',
+                'scheduler.js',
+                config.selectors.admin,
+                config.fallbackSelectors.admin,
+                'schedulerUI.js',
+                'admin', // Pass the current view 'admin'
                 null, // No right panel selector for single-panel views
                 null  // No right panel fallback selector
+            );
+        } else {
+            // Fallback for any other unexpected view, default to patient
+            await loadApplication(
+                'scheduler',
+                'scheduler.js',
+                config.selectors.patient,
+                config.fallbackSelectors.patient,
+                'schedulerUI.js',
+                'patient', // Default to patient view
+                config.selectors.patientRight, // Right panel for patient instructions
+                config.fallbackSelectors.patientRight // Fallback for right panel
             );
         }
     }
