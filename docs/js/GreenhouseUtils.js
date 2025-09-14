@@ -172,60 +172,74 @@ window.GreenhouseUtils = (function() {
 
     /**
      * @function loadScript
-     * @description Dynamically loads a script from a given URL and injects it into the page.
+     * @description Dynamically loads a script from a given URL, injects it, and waits for it to execute.
      * @param {string} scriptName - The name of the script file (e.g., 'dashboard.js')
      * @param {string} baseUrl - The base URL for fetching assets.
      * @param {Object} [attributes={}] - An optional map of data attributes to set on the script element.
-     * @returns {Promise<void>}
+     * @returns {Promise<void>} A promise that resolves when the script has been successfully loaded and executed.
      */
     async function loadScript(scriptName, baseUrl, attributes = {}) {
         const scriptUrl = `${baseUrl}js/${scriptName}`;
-        // Check if script already loaded
         if (appState.loadedScripts.has(scriptName)) {
             console.log(`GreenhouseUtils: Script ${scriptName} already loaded, skipping`);
-            return;
+            return Promise.resolve();
         }
 
-        const loadOperation = async () => {
-            const response = await fetch(scriptUrl);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            return await response.text();
-        };
-
-        try {
-            const scriptText = await retryOperation(
-                loadOperation,
-                `Loading script ${scriptName}`
-            );
-
-            // Avoid re-adding the script if it already exists in DOM
-            if (document.querySelector(`script[data-script-name="${scriptName}"]`)) {
-                console.log(`GreenhouseUtils: Script ${scriptName} already in DOM`);
-                appState.loadedScripts.add(scriptName);
-                return;
-            }
-
-            const scriptElement = document.createElement('script');
-            scriptElement.dataset.scriptName = scriptName;
-            scriptElement.dataset.loadedBy = 'greenhouse-scheduler'; // Or a more generic identifier
-            scriptElement.textContent = scriptText;
-
-            // Set any data attributes passed in the attributes object.
-            for (const [key, value] of Object.entries(attributes)) {
-                scriptElement.setAttribute(`data-${key}`, value);
-            }
-
-            document.body.appendChild(scriptElement);
-
+        // Avoid re-adding the script if it already exists in DOM
+        if (document.querySelector(`script[data-script-name="${scriptName}"]`)) {
+            console.log(`GreenhouseUtils: Script ${scriptName} already in DOM`);
             appState.loadedScripts.add(scriptName);
-            console.log(`GreenhouseUtils: Successfully loaded script ${scriptName}`);
-
-        } catch (error) {
-            console.error(`GreenhouseUtils: Failed to load script ${scriptName}:`, error);
-            throw error;
+            return Promise.resolve();
         }
+
+        return new Promise(async (resolve, reject) => {
+            const loadOperation = async () => {
+                const response = await fetch(scriptUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.text();
+            };
+
+            try {
+                const scriptText = await retryOperation(
+                    loadOperation,
+                    `Loading script ${scriptName}`
+                );
+
+                const scriptElement = document.createElement('script');
+                scriptElement.dataset.scriptName = scriptName;
+                scriptElement.dataset.loadedBy = 'greenhouse-scheduler';
+
+                for (const [key, value] of Object.entries(attributes)) {
+                    scriptElement.setAttribute(`data-${key}`, value);
+                }
+
+                const blob = new Blob([scriptText], { type: 'text/javascript' });
+                const objectUrl = URL.createObjectURL(blob);
+
+                scriptElement.onload = () => {
+                    appState.loadedScripts.add(scriptName);
+                    console.log(`GreenhouseUtils: Successfully loaded and executed script ${scriptName}`);
+                    URL.revokeObjectURL(objectUrl);
+                    resolve();
+                };
+
+                scriptElement.onerror = () => {
+                    const error = new Error(`Failed to execute script ${scriptName}`);
+                    console.error(`GreenhouseUtils: ${error.message}`);
+                    URL.revokeObjectURL(objectUrl);
+                    reject(error);
+                };
+
+                scriptElement.src = objectUrl;
+                document.body.appendChild(scriptElement);
+
+            } catch (error) {
+                console.error(`GreenhouseUtils: Failed to load script ${scriptName}:`, error);
+                reject(error);
+            }
+        });
     }
 
     /**
