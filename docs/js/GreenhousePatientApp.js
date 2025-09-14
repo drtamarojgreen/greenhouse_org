@@ -402,6 +402,12 @@ const GreenhousePatientApp = (function() {
      * @param {HTMLElement} rightAppContainer - The main DOM element for the right panel (instructions/appointments list).
      */
     async function init(leftAppContainer, rightAppContainer) {
+        // Guard against null containers, which can happen during Wix initialization
+        if (!leftAppContainer) {
+            console.error("GreenhousePatientApp: init() called with a null leftAppContainer. Aborting initialization.");
+            return;
+        }
+
         patientAppState.leftAppContainer = leftAppContainer;
         patientAppState.rightAppContainer = rightAppContainer;
 
@@ -417,13 +423,17 @@ const GreenhousePatientApp = (function() {
         patientAppState.loadingSpinner = leftAppContainer.querySelector('[data-identifier="loading-spinner"]');
         
         // Assuming an appointments list will be created in the right panel by schedulerUI.js
-        // For now, I'll create a placeholder if it doesn't exist, but ideally schedulerUI.js should create it.
-        let appointmentsListElement = rightAppContainer.querySelector('[data-identifier="appointment-list"]');
+        // If right panel doesn't exist, we'll append the list to the left panel as a fallback.
+        let appointmentsListElement = rightAppContainer ? rightAppContainer.querySelector('[data-identifier="appointment-list"]') : null;
         if (!appointmentsListElement) {
             appointmentsListElement = document.createElement('ul');
             appointmentsListElement.id = 'greenhouse-patient-app-appointments-list';
+            appointmentsListElement.className = 'greenhouse-patient-app-appointments-list';
             appointmentsListElement.setAttribute('data-identifier', 'appointment-list');
-            rightAppContainer.appendChild(appointmentsListElement);
+
+            // Append to right container if it exists, otherwise append to the left as a fallback
+            const targetContainer = rightAppContainer || leftAppContainer;
+            targetContainer.appendChild(appointmentsListElement);
         }
         patientAppState.appointmentsList = appointmentsListElement;
 

@@ -162,17 +162,22 @@
 
         console.log(`Greenhouse: Loading scheduler for view: ${view}`);
 
-        if (view === 'dashboard') {
-            // Dashboard view has two panels (schedule/conflicts and calendar)
+        if (view === 'dashboard' || view === 'patient') {
+            // Dashboard and Patient views have two panels.
+            const mainSelector = (view === 'dashboard') ? config.selectors.dashboardLeft : config.selectors.patient;
+            const fallbackSelector = (view === 'dashboard') ? config.fallbackSelectors.dashboardLeft : config.fallbackSelectors.patient;
+            const rightPanelSelector = config.selectors.dashboardRight; // Use dashboard's right selector for both
+            const rightPanelFallbackSelector = config.fallbackSelectors.dashboardRight;
+
             await loadApplication(
                 'scheduler',
                 'scheduler.js',
-                config.selectors.dashboardLeft,
-                config.fallbackSelectors.dashboardLeft,
+                mainSelector,
+                fallbackSelector,
                 'schedulerUI.js',
-                'dashboard', // Explicitly pass view
-                config.selectors.dashboardRight,
-                config.fallbackSelectors.dashboardRight
+                view, // Pass the current view
+                rightPanelSelector,
+                rightPanelFallbackSelector
             );
         } else if (view === 'patient') {
             // Patient view has a left panel for the form and a right panel for instructions
@@ -194,7 +199,7 @@
                 config.selectors.admin,
                 config.fallbackSelectors.admin,
                 'schedulerUI.js',
-                'admin', // Pass the current view 'admin'
+                'admin', // Pass the admin view
                 null, // No right panel selector for single-panel views
                 null  // No right panel fallback selector
             );
