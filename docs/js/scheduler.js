@@ -255,8 +255,15 @@
     async function main() {
         try {
             // Validate configuration from script attributes
-            if (!GreenhouseUtils.validateConfiguration()) {
-                console.error('Scheduler: Invalid configuration, cannot proceed');
+            try {
+                if (!GreenhouseUtils.validateConfiguration()) {
+                    console.error('Scheduler: Invalid configuration, cannot proceed');
+                    GreenhouseAppsScheduler.createErrorView('Invalid application configuration. Please ensure all required attributes are present.');
+                    return;
+                }
+            } catch (configError) {
+                console.error('Scheduler: Error during configuration validation:', configError);
+                GreenhouseAppsScheduler.createErrorView(`Configuration validation failed: ${configError.message}`);
                 return;
             }
 
@@ -275,14 +282,21 @@
             });
 
             // Initialize the scheduler application
-            await GreenhouseAppsScheduler.init(
-                GreenhouseUtils.appState.targetSelectorLeft,
-                GreenhouseUtils.appState.targetSelectorRight,
-                GreenhouseUtils.appState.baseUrl
-            );
+            try {
+                await GreenhouseAppsScheduler.init(
+                    GreenhouseUtils.appState.targetSelectorLeft,
+                    GreenhouseUtils.appState.targetSelectorRight,
+                    GreenhouseUtils.appState.baseUrl
+                );
+            } catch (initError) {
+                console.error('Scheduler: Error during application initialization:', initError);
+                GreenhouseAppsScheduler.createErrorView(`Application initialization failed: ${initError.message}`);
+                return;
+            }
 
         } catch (error) {
             console.error('Scheduler: Main execution failed:', error);
+            GreenhouseAppsScheduler.createErrorView(`An unexpected error occurred during main execution: ${error.message}`);
         }
     }
 
