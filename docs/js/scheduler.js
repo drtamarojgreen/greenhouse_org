@@ -109,7 +109,9 @@
                     case 'patient':
                     default: // 'patient' is the default view
                         GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
-                        GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer); // Patient view has instructions on the right
+                        if (rightAppContainer) {
+                            GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer); // Patient view has instructions on the right
+                        }
                         await GreenhouseUtils.loadScript('GreenhousePatientApp.js', GreenhouseUtils.appState.baseUrl);
                         if (typeof GreenhousePatientApp === 'object' && GreenhousePatientApp !== null) {
                             GreenhouseUtils.appState.currentAppInstance = GreenhousePatientApp; // Store reference to the module
