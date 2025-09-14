@@ -89,7 +89,7 @@
                             GreenhouseSchedulerUI.buildDashboardRightPanelUI(rightAppContainer);
                         }
                         await GreenhouseUtils.loadScript('GreenhouseDashboardApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhouseDashboardApp === 'function') {
+                        if (typeof GreenhouseDashboardApp === 'object') {
                             GreenhouseUtils.appState.currentAppInstance = GreenhouseDashboardApp; // Store reference to the module
                         } else {
                             throw new Error('GreenhouseDashboardApp not found or not a function');
@@ -99,7 +99,7 @@
                     case 'admin':
                         GreenhouseSchedulerUI.buildAdminFormUI(leftAppContainer);
                         await GreenhouseUtils.loadScript('GreenhouseAdminApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhouseAdminApp === 'function') {
+                        if (typeof GreenhouseAdminApp === 'object') {
                             GreenhouseUtils.appState.currentAppInstance = GreenhouseAdminApp; // Store reference to the module
                         } else {
                             throw new Error('GreenhouseAdminApp not found or not a function');
@@ -111,7 +111,7 @@
                         GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
                         GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer); // Patient view has instructions on the right
                         await GreenhouseUtils.loadScript('GreenhousePatientApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhousePatientApp === 'function') {
+                        if (typeof GreenhousePatientApp === 'object') {
                             GreenhouseUtils.appState.currentAppInstance = GreenhousePatientApp; // Store reference to the module
                         } else {
                             throw new Error('GreenhousePatientApp not found or not a function');
