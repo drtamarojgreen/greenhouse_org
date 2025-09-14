@@ -212,7 +212,7 @@
         console.log('Greenhouse: Initializing application loader');
         
         // Load the visual effects script on all pages (no need to wait for specific elements)
-        GreenhouseUtils.loadScript(`${config.githubPagesBaseUrl}js/effects.js`);
+        GreenhouseUtils.loadScript('effects.js', config.githubPagesBaseUrl);
 
         // Check if the current page is the schedule page.
         if (window.location.pathname.includes(config.schedulePagePath)) {
