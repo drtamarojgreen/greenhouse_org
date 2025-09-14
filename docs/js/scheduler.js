@@ -89,14 +89,6 @@
                             GreenhouseSchedulerUI.buildDashboardRightPanelUI(rightAppContainer);
                         }
                         await GreenhouseUtils.loadScript('GreenhouseDashboardApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhouseDashboardApp === 'object') {
-                            GreenhouseUtils.appState.currentAppInstance = GreenhouseDashboardApp; // Store reference to the module
-                        } else {
-                            throw new Error('GreenhouseDashboardApp not found or not a function');
-                        }
-                        break;
-
-                    await GreenhouseUtils.loadScript('GreenhouseDashboardApp.js', GreenhouseUtils.appState.baseUrl);
                         if (typeof GreenhouseDashboardApp === 'object' && GreenhouseDashboardApp !== null) {
                             GreenhouseUtils.appState.currentAppInstance = GreenhouseDashboardApp; // Store reference to the module
                         } else {
@@ -115,7 +107,7 @@
                         break;
 
                     case 'patient':
-                    default:
+                    default: // 'patient' is the default view
                         GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
                         GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer); // Patient view has instructions on the right
                         await GreenhouseUtils.loadScript('GreenhousePatientApp.js', GreenhouseUtils.appState.baseUrl);
@@ -123,17 +115,6 @@
                             GreenhouseUtils.appState.currentAppInstance = GreenhousePatientApp; // Store reference to the module
                         } else {
                             throw new Error('GreenhousePatientApp not found or not an object');
-                        }
-
-                    case 'patient':
-                    default:
-                        GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
-                        GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer); // Patient view has instructions on the right
-                        await GreenhouseUtils.loadScript('GreenhousePatientApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhousePatientApp === 'object') {
-                            GreenhouseUtils.appState.currentAppInstance = GreenhousePatientApp; // Store reference to the module
-                        } else {
-                            throw new Error('GreenhousePatientApp not found or not a function');
                         }
                         break;
                 }
