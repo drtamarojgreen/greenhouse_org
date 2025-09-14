@@ -215,25 +215,17 @@ window.GreenhouseUtils = (function() {
                     scriptElement.setAttribute(`data-${key}`, value);
                 }
 
-                const blob = new Blob([scriptText], { type: 'text/javascript' });
-                const objectUrl = URL.createObjectURL(blob);
-
-                scriptElement.onload = () => {
+                try {
+                    scriptElement.textContent = scriptText;
+                    document.body.appendChild(scriptElement);
                     appState.loadedScripts.add(scriptName);
                     console.log(`GreenhouseUtils: Successfully loaded and executed script ${scriptName}`);
-                    URL.revokeObjectURL(objectUrl);
                     resolve();
-                };
-
-                scriptElement.onerror = () => {
-                    const error = new Error(`Failed to execute script ${scriptName}`);
+                } catch (e) {
+                    const error = new Error(`Failed to execute script ${scriptName}: ${e.message}`);
                     console.error(`GreenhouseUtils: ${error.message}`);
-                    URL.revokeObjectURL(objectUrl);
                     reject(error);
-                };
-
-                scriptElement.src = objectUrl;
-                document.body.appendChild(scriptElement);
+                }
 
             } catch (error) {
                 console.error(`GreenhouseUtils: Failed to load script ${scriptName}:`, error);
