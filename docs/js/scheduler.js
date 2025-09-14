@@ -96,15 +96,34 @@
                         }
                         break;
 
+                    await GreenhouseUtils.loadScript('GreenhouseDashboardApp.js', GreenhouseUtils.appState.baseUrl);
+                        if (typeof GreenhouseDashboardApp === 'object' && GreenhouseDashboardApp !== null) {
+                            GreenhouseUtils.appState.currentAppInstance = GreenhouseDashboardApp; // Store reference to the module
+                        } else {
+                            throw new Error('GreenhouseDashboardApp not found or not an object');
+                        }
+                        break;
+
                     case 'admin':
                         GreenhouseSchedulerUI.buildAdminFormUI(leftAppContainer);
                         await GreenhouseUtils.loadScript('GreenhouseAdminApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhouseAdminApp === 'object') {
+                        if (typeof GreenhouseAdminApp === 'object' && GreenhouseAdminApp !== null) {
                             GreenhouseUtils.appState.currentAppInstance = GreenhouseAdminApp; // Store reference to the module
                         } else {
-                            throw new Error('GreenhouseAdminApp not found or not a function');
+                            throw new Error('GreenhouseAdminApp not found or not an object');
                         }
                         break;
+
+                    case 'patient':
+                    default:
+                        GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
+                        GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer); // Patient view has instructions on the right
+                        await GreenhouseUtils.loadScript('GreenhousePatientApp.js', GreenhouseUtils.appState.baseUrl);
+                        if (typeof GreenhousePatientApp === 'object' && GreenhousePatientApp !== null) {
+                            GreenhouseUtils.appState.currentAppInstance = GreenhousePatientApp; // Store reference to the module
+                        } else {
+                            throw new Error('GreenhousePatientApp not found or not an object');
+                        }
 
                     case 'patient':
                     default:
