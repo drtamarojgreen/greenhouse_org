@@ -45,7 +45,7 @@ window.GreenhouseUtils = (function() {
      * This is used to retrieve configuration attributes from the loader script.
      * @type {HTMLScriptElement}
      */
-    const scriptElement = document.currentScript;
+    const currentExecutingScriptElement = document.currentScript;
 
     /**
      * @function displayMessage
@@ -140,10 +140,25 @@ window.GreenhouseUtils = (function() {
      * @returns {boolean} True if configuration is valid
      */
     function validateConfiguration() {
-        appState.targetSelectorLeft = scriptElement?.getAttribute('data-target-selector-left');
-        appState.targetSelectorRight = scriptElement?.getAttribute('data-target-selector-right');
-        appState.baseUrl = scriptElement?.getAttribute('data-base-url');
-        const view = scriptElement?.getAttribute('data-view');
+        let scriptAttributes = {};
+        // Try to get attributes from the current executing script element
+        if (currentExecutingScriptElement) {
+            scriptAttributes = {
+                'target-selector-left': currentExecutingScriptElement.getAttribute('data-target-selector-left'),
+                'target-selector-right': currentExecutingScriptElement.getAttribute('data-target-selector-right'),
+                'base-url': currentExecutingScriptElement.getAttribute('data-base-url'),
+                'view': currentExecutingScriptElement.getAttribute('data-view')
+            };
+        }
+
+        // Fallback to global attributes if currentScript attributes are missing (e.g., for blob URLs)
+        // This global variable is set by loadScript just before appending the script.
+        const globalAttributes = window._greenhouseScriptAttributes || {};
+
+        appState.targetSelectorLeft = scriptAttributes['target-selector-left'] || globalAttributes['target-selector-left'];
+        appState.targetSelectorRight = scriptAttributes['target-selector-right'] || globalAttributes['target-selector-right'];
+        appState.baseUrl = scriptAttributes['base-url'] || globalAttributes['base-url'];
+        const view = scriptAttributes['view'] || globalAttributes['view'];
 
         if (!appState.targetSelectorLeft && view !== 'dashboard') { // targetSelectorLeft is required for patient/admin
             console.error('GreenhouseUtils: Missing required data-target-selector-left attribute for patient/admin view');
@@ -166,7 +181,11 @@ window.GreenhouseUtils = (function() {
 
         appState.currentView = view || new URLSearchParams(window.location.search).get('view') || 'patient';
 
-        console.log(`GreenhouseUtils: Configuration validated - View: ${appState.currentView}, Target: ${appState.targetSelector}`);
+        console.log(`GreenhouseUtils: validateConfiguration - scriptAttributes:`, scriptAttributes);
+        console.log(`GreenhouseUtils: validateConfiguration - globalAttributes:`, globalAttributes);
+        console.log(`GreenhouseUtils: validateConfiguration - Determined View: ${view}, Target Left: ${appState.targetSelectorLeft}, Target Right: ${appState.targetSelectorRight}`);
+        
+        console.log(`GreenhouseUtils: Configuration validated - View: ${appState.currentView}, Target Left: ${appState.targetSelectorLeft}, Target Right: ${appState.targetSelectorRight}`);
         return true;
     }
 
@@ -215,6 +234,10 @@ window.GreenhouseUtils = (function() {
                     scriptElement.setAttribute(`data-${key}`, value);
                 }
 
+                // Temporarily store attributes globally for scripts loaded via blob URLs
+                window._greenhouseScriptAttributes = attributes;
+                console.log(`GreenhouseUtils: loadScript - Setting _greenhouseScriptAttributes for ${scriptName}:`, attributes);
+
                 const blob = new Blob([scriptText], { type: 'text/javascript' });
                 const objectUrl = URL.createObjectURL(blob);
 
@@ -234,6 +257,7 @@ window.GreenhouseUtils = (function() {
                     const error = new Error(`Failed to execute script ${scriptName}`);
                     console.error(`GreenhouseUtils: ${error.message}`);
                     URL.revokeObjectURL(objectUrl);
+                    delete window._greenhouseScriptAttributes; // Clean up global variable
                     reject(error);
                 };
 
@@ -242,6 +266,7 @@ window.GreenhouseUtils = (function() {
 
             } catch (error) {
                 console.error(`GreenhouseUtils: Failed to load script ${scriptName}:`, error);
+                delete window._greenhouseScriptAttributes; // Clean up global variable on error too
                 reject(error);
             }
         });

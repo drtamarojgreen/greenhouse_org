@@ -89,32 +89,32 @@
                             GreenhouseSchedulerUI.buildDashboardRightPanelUI(rightAppContainer);
                         }
                         await GreenhouseUtils.loadScript('GreenhouseDashboardApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhouseDashboardApp === 'function') {
+                        if (typeof GreenhouseDashboardApp === 'object' && GreenhouseDashboardApp !== null) {
                             GreenhouseUtils.appState.currentAppInstance = GreenhouseDashboardApp; // Store reference to the module
                         } else {
-                            throw new Error('GreenhouseDashboardApp not found or not a function');
+                            throw new Error('GreenhouseDashboardApp not found or not an object');
                         }
                         break;
 
                     case 'admin':
                         GreenhouseSchedulerUI.buildAdminFormUI(leftAppContainer);
                         await GreenhouseUtils.loadScript('GreenhouseAdminApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhouseAdminApp === 'function') {
+                        if (typeof GreenhouseAdminApp === 'object' && GreenhouseAdminApp !== null) {
                             GreenhouseUtils.appState.currentAppInstance = GreenhouseAdminApp; // Store reference to the module
                         } else {
-                            throw new Error('GreenhouseAdminApp not found or not a function');
+                            throw new Error('GreenhouseAdminApp not found or not an object');
                         }
                         break;
 
                     case 'patient':
-                    default:
+                    default: // 'patient' is the default view
                         GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
                         GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer); // Patient view has instructions on the right
                         await GreenhouseUtils.loadScript('GreenhousePatientApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhousePatientApp === 'function') {
+                        if (typeof GreenhousePatientApp === 'object' && GreenhousePatientApp !== null) {
                             GreenhouseUtils.appState.currentAppInstance = GreenhousePatientApp; // Store reference to the module
                         } else {
-                            throw new Error('GreenhousePatientApp not found or not a function');
+                            throw new Error('GreenhousePatientApp not found or not an object');
                         }
                         break;
                 }
@@ -255,8 +255,15 @@
     async function main() {
         try {
             // Validate configuration from script attributes
-            if (!GreenhouseUtils.validateConfiguration()) {
-                console.error('Scheduler: Invalid configuration, cannot proceed');
+            try {
+                if (!GreenhouseUtils.validateConfiguration()) {
+                    console.error('Scheduler: Invalid configuration, cannot proceed');
+                    GreenhouseAppsScheduler.createErrorView('Invalid application configuration. Please ensure all required attributes are present.');
+                    return;
+                }
+            } catch (configError) {
+                console.error('Scheduler: Error during configuration validation:', configError);
+                GreenhouseAppsScheduler.createErrorView(`Configuration validation failed: ${configError.message}`);
                 return;
             }
 
@@ -275,14 +282,21 @@
             });
 
             // Initialize the scheduler application
-            await GreenhouseAppsScheduler.init(
-                GreenhouseUtils.appState.targetSelectorLeft,
-                GreenhouseUtils.appState.targetSelectorRight,
-                GreenhouseUtils.appState.baseUrl
-            );
+            try {
+                await GreenhouseAppsScheduler.init(
+                    GreenhouseUtils.appState.targetSelectorLeft,
+                    GreenhouseUtils.appState.targetSelectorRight,
+                    GreenhouseUtils.appState.baseUrl
+                );
+            } catch (initError) {
+                console.error('Scheduler: Error during application initialization:', initError);
+                GreenhouseAppsScheduler.createErrorView(`Application initialization failed: ${initError.message}`);
+                return;
+            }
 
         } catch (error) {
             console.error('Scheduler: Main execution failed:', error);
+            GreenhouseAppsScheduler.createErrorView(`An unexpected error occurred during main execution: ${error.message}`);
         }
     }
 
