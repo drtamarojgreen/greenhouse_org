@@ -82,47 +82,32 @@
             console.log(`Scheduler: Rendering view: ${GreenhouseUtils.appState.currentView}`);
 
             try {
-                switch (GreenhouseUtils.appState.currentView) {
-                    case 'dashboard':
-                        GreenhouseSchedulerUI.buildDashboardLeftPanelUI(leftAppContainer);
-                        if (rightAppContainer) {
-                            GreenhouseSchedulerUI.buildDashboardRightPanelUI(rightAppContainer);
-                        }
-                        await GreenhouseUtils.loadScript('GreenhouseDashboardApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhouseDashboardApp === 'object' && GreenhouseDashboardApp !== null) {
-                            GreenhouseUtils.appState.currentAppInstance = GreenhouseDashboardApp; // Store reference to the module
-                        } else {
-                            throw new Error('GreenhouseDashboardApp not found or not an object');
-                        }
-                        break;
+                // --- BEGIN: Display All Views (Temporary for Development) ---
+                // As per user request, all scheduler UI components are displayed by default
+                // until the application is completely developed and authorization checks are in place.
+                // This ensures all elements are visible for testing and development purposes.
+                console.log('Scheduler: Rendering ALL UI components for development purposes.');
 
-                    case 'admin':
-                        GreenhouseSchedulerUI.buildAdminFormUI(leftAppContainer);
-                        await GreenhouseUtils.loadScript('GreenhouseAdminApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhouseAdminApp === 'object' && GreenhouseAdminApp !== null) {
-                            GreenhouseUtils.appState.currentAppInstance = GreenhouseAdminApp; // Store reference to the module
-                        } else {
-                            throw new Error('GreenhouseAdminApp not found or not an object');
-                        }
-                        break;
-
-                    case 'patient':
-                    default: // 'patient' is the default view
-                        GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
-                        if (rightAppContainer) {
-                            GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer); // Patient view has instructions on the right
-                        }
-                        await GreenhouseUtils.loadScript('GreenhousePatientApp.js', GreenhouseUtils.appState.baseUrl);
-                        if (typeof GreenhousePatientApp === 'object' && GreenhousePatientApp !== null) {
-                            GreenhouseUtils.appState.currentAppInstance = GreenhousePatientApp; // Store reference to the module
-                        } else {
-                            throw new Error('GreenhousePatientApp not found or not an object');
-                        }
-                        break;
+                // Patient View Components
+                GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
+                if (rightAppContainer) {
+                    GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer);
+                    GreenhouseSchedulerUI.buildPatientCalendarUI(rightAppContainer);
                 }
+
+                // Dashboard View Components
+                GreenhouseSchedulerUI.buildDashboardLeftPanelUI(leftAppContainer);
+                if (rightAppContainer) {
+                    GreenhouseSchedulerUI.buildDashboardRightPanelUI(rightAppContainer);
+                }
+
+                // Admin View Components (assuming it also goes into leftAppContainer for now)
+                GreenhouseSchedulerUI.buildAdminFormUI(leftAppContainer);
+                // --- END: Display All Views ---
+
             } catch (error) {
-                console.error(`Scheduler: Error rendering ${GreenhouseUtils.appState.currentView} view:`, error);
-                this.createErrorView(`Failed to load ${GreenhouseUtils.appState.currentView} view: ${error.message}`);
+                console.error(`Scheduler: Error rendering all views:`, error);
+                this.createErrorView(`Failed to load all scheduler views: ${error.message}`);
             }
         },
 
@@ -137,23 +122,48 @@
 
         /**
          * @function initializeApplication
-         * @description Initializes the loaded application instance, passing the main application containers.
+         * @description Initializes all loaded application instances, passing the main application containers.
+         * This function is modified to initialize all known scheduler apps for development purposes.
          * @param {Element} [leftAppContainer] - The main DOM element for the left panel.
          * @param {Element} [rightAppContainer] - The main DOM element for the right panel (optional, for dashboard).
          */
-        initializeApplication(leftAppContainer, rightAppContainer = null) {
+        async initializeApplication(leftAppContainer, rightAppContainer = null) {
+            console.log('Scheduler: Initializing ALL application instances for development purposes.');
             try {
-                if (GreenhouseUtils.appState.currentAppInstance && typeof GreenhouseUtils.appState.currentAppInstance.init === 'function') {
-                    console.log('Scheduler: Initializing application instance');
-                    GreenhouseUtils.appState.currentAppInstance.init(leftAppContainer, rightAppContainer);
-                } else if (GreenhouseUtils.appState.currentAppInstance) {
-                    console.log('Scheduler: Application instance loaded but has no init method');
+                // Load all app scripts
+                await Promise.all([
+                    GreenhouseUtils.loadScript('GreenhouseDashboardApp.js', GreenhouseUtils.appState.baseUrl),
+                    GreenhouseUtils.loadScript('GreenhousePatientApp.js', GreenhouseUtils.appState.baseUrl),
+                    GreenhouseUtils.loadScript('GreenhouseAdminApp.js', GreenhouseUtils.appState.baseUrl)
+                ]);
+
+                // Initialize Dashboard App
+                if (typeof GreenhouseDashboardApp === 'object' && GreenhouseDashboardApp !== null && typeof GreenhouseDashboardApp.init === 'function') {
+                    console.log('Scheduler: Initializing GreenhouseDashboardApp');
+                    GreenhouseDashboardApp.init(leftAppContainer, rightAppContainer);
                 } else {
-                    console.log('Scheduler: No application instance to initialize');
+                    console.warn('Scheduler: GreenhouseDashboardApp not found or has no init method.');
                 }
+
+                // Initialize Patient App
+                if (typeof GreenhousePatientApp === 'object' && GreenhousePatientApp !== null && typeof GreenhousePatientApp.init === 'function') {
+                    console.log('Scheduler: Initializing GreenhousePatientApp');
+                    GreenhousePatientApp.init(leftAppContainer, rightAppContainer);
+                } else {
+                    console.warn('Scheduler: GreenhousePatientApp not found or has no init method.');
+                }
+
+                // Initialize Admin App
+                if (typeof GreenhouseAdminApp === 'object' && GreenhouseAdminApp !== null && typeof GreenhouseAdminApp.init === 'function') {
+                    console.log('Scheduler: Initializing GreenhouseAdminApp');
+                    GreenhouseAdminApp.init(leftAppContainer, rightAppContainer);
+                } else {
+                    console.warn('Scheduler: GreenhouseAdminApp not found or has no init method.');
+                }
+
             } catch (error) {
-                console.error('Scheduler: Error initializing application instance:', error);
-                GreenhouseUtils.displayError('Application loaded but failed to initialize properly.');
+                console.error('Scheduler: Error initializing one or more application instances:', error);
+                GreenhouseUtils.displayError('One or more scheduler applications failed to initialize properly.');
             }
         },
 
@@ -178,6 +188,8 @@
                 GreenhouseUtils.appState.targetSelectorLeft = targetSelectorLeft;
                 GreenhouseUtils.appState.targetSelectorRight = targetSelectorRight;
                 GreenhouseUtils.appState.baseUrl = baseUrl;
+                // Set currentView to a generic value as all views are rendered by default for development.
+                GreenhouseUtils.appState.currentView = 'all'; 
 
                 // Wait for target elements to be available
                 GreenhouseUtils.appState.targetElementLeft = await GreenhouseUtils.waitForElement(targetSelectorLeft, GreenhouseUtils.config.dom.observerTimeout);
@@ -207,7 +219,7 @@
                     rightAppContainer.setAttribute('data-greenhouse-app', GreenhouseUtils.appState.currentView);
                 }
 
-                // Render the appropriate view by calling schedulerUI to build and attach to these containers
+                // Render ALL views by calling schedulerUI to build and attach to these containers
                 await this.renderView(leftAppContainer, rightAppContainer);
 
                 // Append the main application containers to the Wix-provided target elements
@@ -218,8 +230,8 @@
                     console.log('Scheduler: Right panel container inserted into DOM');
                 }
 
-                // Initialize the application instance, passing the main application containers
-                this.initializeApplication(leftAppContainer, rightAppContainer);
+                // Initialize ALL application instances, passing the main application containers
+                await this.initializeApplication(leftAppContainer, rightAppContainer);
 
                 // Create and append hidden elements (like modals) to the body
                 const hiddenElementsFragment = GreenhouseSchedulerUI.createHiddenElements();

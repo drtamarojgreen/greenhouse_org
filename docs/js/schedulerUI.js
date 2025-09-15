@@ -424,6 +424,17 @@ window.GreenhouseSchedulerUI = (function() {
         });
 
         fragment.appendChild(instructionsList);
+
+        // Add the appointments list container to the right panel as well
+        const appointmentListDiv = document.createElement('ul'); // Changed to ul for a list
+        appointmentListDiv.id = 'greenhouse-patient-app-appointments-list';
+        appointmentListDiv.className = 'greenhouse-patient-app-appointments-list';
+        appointmentListDiv.setAttribute('data-identifier', 'appointment-list');
+        const noAppointmentsLi = document.createElement('li');
+        noAppointmentsLi.textContent = 'No appointments scheduled.';
+        appointmentListDiv.appendChild(noAppointmentsLi);
+        fragment.appendChild(appointmentListDiv);
+
         targetElement.appendChild(fragment); // Attach to targetElement
 
         return fragment;

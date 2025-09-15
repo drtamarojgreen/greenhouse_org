@@ -180,14 +180,23 @@ const GreenhouseAdminApp = (function() {
 
         const appointmentId = new URLSearchParams(window.location.search).get('appointmentId');
 
+        // As per user request, display all UI elements by default.
+        // If no appointmentId is provided, display a generic message in the admin form.
         if (!appointmentId) {
-            GreenhouseUtils.displayError('No appointment ID provided for Admin view.');
             if (adminAppState.adminFormContainer) {
-                adminAppState.adminFormContainer.innerHTML = '<p>No appointment ID provided. Please navigate from the dashboard or provide an ID in the URL.</p>';
+                adminAppState.adminFormContainer.innerHTML = '<p>Admin Appointment Form: Provide an appointment ID in the URL (e.g., ?appointmentId=123) to load and edit a specific appointment.</p>';
+            }
+            // Also ensure the form UI is built, even if empty
+            GreenhouseSchedulerUI.buildAdminAppointmentFormUI(adminAppState.adminFormContainer, {}, []);
+            adminAppState.adminAppointmentForm = adminAppState.adminFormContainer.querySelector('[data-identifier="admin-appointment-form"]');
+            if (adminAppState.adminAppointmentForm) {
+                adminAppState.adminAppointmentForm.addEventListener('click', handleAction);
+                adminAppState.adminAppointmentForm.addEventListener('submit', handleAction);
             }
             return;
         }
 
+        // If an appointmentId is provided, proceed to load and populate data.
         await loadAppointmentData(appointmentId);
     }
 

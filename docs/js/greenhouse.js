@@ -152,70 +152,35 @@
 
     /**
      * @function loadSchedulerApplication
-     * @description Loads the scheduler application after ensuring the target element exists.
-     * This function is view-aware and will load different configurations based on the 'view' URL parameter.
+     * @description Loads the scheduler application.
+     * As per user request, this function now loads all scheduler UI elements by default for development.
+     * The 'view' parameter is no longer used to conditionally load UI components here,
+     * but is still passed to `scheduler.js` for potential future use in app-specific logic.
      */
     async function loadSchedulerApplication() {
+        console.log(`Greenhouse: Loading scheduler application (displaying all views for development).`);
+
+        // Always use the dashboard selectors as they provide both left and right panels,
+        // which are necessary to display all UI components.
+        const mainSelector = config.selectors.dashboardLeft;
+        const fallbackSelector = config.fallbackSelectors.dashboardLeft;
+        const rightPanelSelector = config.selectors.dashboardRight;
+        const rightPanelFallbackSelector = config.fallbackSelectors.dashboardRight;
+
+        // Pass a generic 'all' view or the actual view if present, but scheduler.js will render all.
         const urlParams = new URLSearchParams(window.location.search);
-        // Default to 'patient' view if no view is specified, as it's the most common use case.
-        const view = urlParams.get('view') || 'patient';
+        const view = urlParams.get('view') || 'all'; 
 
-        console.log(`Greenhouse: Loading scheduler for view: ${view}`);
-
-        if (view === 'dashboard' || view === 'patient') {
-            // Dashboard and Patient views have two panels.
-            const mainSelector = (view === 'dashboard') ? config.selectors.dashboardLeft : config.selectors.patient;
-            const fallbackSelector = (view === 'dashboard') ? config.fallbackSelectors.dashboardLeft : config.fallbackSelectors.patient;
-            const rightPanelSelector = config.selectors.dashboardRight; // Use dashboard's right selector for both
-            const rightPanelFallbackSelector = config.fallbackSelectors.dashboardRight;
-
-            await loadApplication(
-                'scheduler',
-                'scheduler.js',
-                mainSelector,
-                fallbackSelector,
-                'schedulerUI.js',
-                view, // Pass the current view
-                rightPanelSelector,
-                rightPanelFallbackSelector
-            );
-        } else if (view === 'patient') {
-            // Patient view has a left panel for the form and a right panel for instructions
-            await loadApplication(
-                'scheduler',
-                'scheduler.js',
-                config.selectors.patient,
-                config.fallbackSelectors.patient,
-                'schedulerUI.js',
-                'patient', // Explicitly pass view
-                config.selectors.patientRight, // Right panel for patient instructions
-                config.fallbackSelectors.patientRight // Fallback for right panel
-            );
-        } else if (view === 'admin') {
-            // Admin view has a single panel.
-            await loadApplication(
-                'scheduler',
-                'scheduler.js',
-                config.selectors.admin,
-                config.fallbackSelectors.admin,
-                'schedulerUI.js',
-                'admin', // Pass the admin view
-                null, // No right panel selector for single-panel views
-                null  // No right panel fallback selector
-            );
-        } else {
-            // Fallback for any other unexpected view, default to patient
-            await loadApplication(
-                'scheduler',
-                'scheduler.js',
-                config.selectors.patient,
-                config.fallbackSelectors.patient,
-                'schedulerUI.js',
-                'patient', // Default to patient view
-                config.selectors.patientRight, // Right panel for patient instructions
-                config.fallbackSelectors.patientRight // Fallback for right panel
-            );
-        }
+        await loadApplication(
+            'scheduler',
+            'scheduler.js',
+            mainSelector,
+            fallbackSelector,
+            'schedulerUI.js',
+            view, // Pass the determined view, though scheduler.js will render all UI
+            rightPanelSelector,
+            rightPanelFallbackSelector
+        );
     }
 
     /**
