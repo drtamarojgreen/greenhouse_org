@@ -156,6 +156,14 @@ window.GreenhouseSchedulerUI = (function() {
         newAppointmentBox.setAttribute('data-identifier', 'new-appointment-box');
         targetElement.appendChild(newAppointmentBox);
 
+        // Button to fetch and populate data
+        const fetchButton = document.createElement('button');
+        fetchButton.id = 'greenhouse-fetch-schedule-data-btn';
+        fetchButton.className = 'greenhouse-btn greenhouse-btn-primary';
+        fetchButton.textContent = 'Fetch and Populate Schedule Data';
+        fetchButton.setAttribute('data-identifier', 'fetch-schedule-data-btn');
+        targetElement.appendChild(fetchButton);
+
         // Schedule Display Area
         const scheduleContainer = document.createElement('div');
         scheduleContainer.id = 'greenhouse-dashboard-app-schedule-container';
@@ -447,13 +455,6 @@ window.GreenhouseSchedulerUI = (function() {
     /**
      * Builds the HTML form for editing an appointment.
      * This function is now purely for UI creation and does not handle data population or event listeners.
->>>>>>> 5d71a27ad5c78d2fa15a39c087794049641402d4
-     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
-     * @param {object} currentAppointment - The appointment data (used for initial values).
-     * @param {Array<object>} serviceTypes - The available service types (used for select options).
-     * @returns {HTMLFormElement} The generated form element.
-     */
-    function buildAdminAppointmentFormUI(targetElement, currentAppointment = {}, serviceTypes = []) {
      * @param {HTMLElement} targetElement - The DOM element to append the UI to.
      * @param {object} currentAppointment - The appointment data (used for initial values).
      * @param {Array<object>} serviceTypes - The available service types (used for select options).
@@ -567,6 +568,20 @@ window.GreenhouseSchedulerUI = (function() {
         return form;
     }
 
+    /**
+     * Placeholder function to initiate fetching and populating schedule data
+     * by calling the corresponding function in GreenhouseDashboardApp.
+     */
+    function fetchAndPopulateScheduleData() {
+        console.log('SchedulerUI: Initiating data fetch and population via GreenhouseDashboardApp...');
+        // Assuming GreenhouseDashboardApp is globally accessible or passed appropriately
+        if (window.GreenhouseDashboardApp && typeof window.GreenhouseDashboardApp.triggerDataFetchAndPopulation === 'function') {
+            window.GreenhouseDashboardApp.triggerDataFetchAndPopulation();
+        } else {
+            console.error('GreenhouseSchedulerUI: GreenhouseDashboardApp.triggerDataFetchAndPopulation not found or not a function.');
+        }
+    }
+
     return {
         buildSchedulerUI,
         buildPatientFormUI,
@@ -576,5 +591,6 @@ window.GreenhouseSchedulerUI = (function() {
         createHiddenElements,
         createInstructionsPanel,
         buildAdminAppointmentFormUI,
+        fetchAndPopulateScheduleData, // Expose the new function
     };
 })();

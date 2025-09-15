@@ -75,7 +75,7 @@ window.GreenhouseDashboardApp = (function() {
     /**
      * Data Loading and Population
      */
-    async function loadInitialData() {
+    async function triggerDataFetchAndPopulation() {
         const today = new Date();
         const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() + 1).toISOString().split('T')[0];
         const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (7 - today.getDay())).toISOString().split('T')[0];
@@ -334,6 +334,14 @@ window.GreenhouseDashboardApp = (function() {
         dashboardAppState.conflictList = leftAppContainer.querySelector('[data-identifier="conflict-list"]');
         dashboardAppState.calendarContainer = rightAppContainer.querySelector('[data-identifier="calendar-container"]');
 
+        // Get reference to the new fetch button
+        const fetchButton = leftAppContainer.querySelector('[data-identifier="fetch-schedule-data-btn"]');
+        if (fetchButton) {
+            fetchButton.addEventListener('click', GreenhouseSchedulerUI.fetchAndPopulateScheduleData);
+        } else {
+            console.warn('GreenhouseDashboardApp: Fetch schedule data button not found.');
+        }
+
         // Initial population of calendar
         populateCalendar(dashboardAppState.currentYear, dashboardAppState.currentMonth);
 
@@ -341,7 +349,8 @@ window.GreenhouseDashboardApp = (function() {
         dashboardAppState.leftAppContainer.addEventListener('click', handleAction);
         dashboardAppState.rightAppContainer.addEventListener('click', handleAction);
 
-        loadInitialData();
+        // Do not load initial data automatically, wait for button click
+        // loadInitialData();
     }
 
     return {
