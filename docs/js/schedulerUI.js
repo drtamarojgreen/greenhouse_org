@@ -168,6 +168,42 @@ window.GreenhouseSchedulerUI = (function() {
         const scheduleContainer = document.createElement('div');
         scheduleContainer.id = 'greenhouse-dashboard-app-schedule-container';
         scheduleContainer.setAttribute('data-identifier', 'schedule-container');
+
+        // Create the basic weekly schedule table structure
+        const scheduleTable = document.createElement('table');
+        scheduleTable.className = 'greenhouse-schedule-table'; // Add a class for styling
+
+        const tableHead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        ['Time', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].forEach(day => {
+            const th = document.createElement('th');
+            th.textContent = day;
+            headerRow.appendChild(th);
+        });
+        tableHead.appendChild(headerRow);
+        scheduleTable.appendChild(tableHead);
+
+        const tableBody = document.createElement('tbody');
+        tableBody.setAttribute('data-identifier', 'schedule-tbody'); // Important for populateWeekly to find it
+
+        // Create rows for hours (e.g., 8 AM to 5 PM)
+        for (let hour = 8; hour <= 17; hour++) { // Example: 8 AM to 5 PM
+            const row = document.createElement('tr');
+            const timeCell = document.createElement('td');
+            timeCell.textContent = `${hour % 12 === 0 ? 12 : hour % 12}${hour < 12 ? ' AM' : ' PM'}`;
+            row.appendChild(timeCell);
+
+            for (let day = 0; day < 7; day++) { // 0 for Sunday, 6 for Saturday
+                const dataCell = document.createElement('td');
+                dataCell.className = 'schedule-cell';
+                dataCell.dataset.day = day;
+                dataCell.dataset.hour = hour;
+                row.appendChild(dataCell);
+            }
+            tableBody.appendChild(row);
+        }
+        scheduleTable.appendChild(tableBody);
+        scheduleContainer.appendChild(scheduleTable);
         targetElement.appendChild(scheduleContainer);
 
         // Conflict Resolution Area
