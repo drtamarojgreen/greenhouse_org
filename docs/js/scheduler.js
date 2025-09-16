@@ -30,6 +30,8 @@
         return;
     }
 
+    let resilienceObserver = null; // For resilience against DOM wipes
+
     console.log("Loading Greenhouse Scheduler - Version 0.1.1"); // Updated version
 
     /**
@@ -172,6 +174,60 @@
         },
 
         /**
+         * @function observeAndReinitializeApp
+         * @description Uses a MutationObserver to detect if the app's containers are removed from the DOM and re-initializes if necessary.
+         * @param {HTMLElement} targetElementLeft - The host page element for the left panel.
+         * @param {HTMLElement} [targetElementRight] - The host page element for the right panel.
+         */
+        observeAndReinitializeApp(targetElementLeft, targetElementRight = null) {
+            const reinitializeScheduler = () => {
+                console.warn('Scheduler Resilience: Application container removed from DOM. Re-initializing...');
+                if (resilienceObserver) {
+                    resilienceObserver.disconnect();
+                }
+                // Use a short timeout to prevent race conditions with the host framework's rendering cycle.
+                setTimeout(() => {
+                    if (window.GreenhouseScheduler && typeof window.GreenhouseScheduler.reinitialize === 'function') {
+                        window.GreenhouseScheduler.reinitialize();
+                    }
+                }, 50); // 50ms delay
+            };
+
+            const observerCallback = (mutationsList, observer) => {
+                for (const mutation of mutationsList) {
+                    if (mutation.type === 'childList') {
+                        let leftAppRemoved = false;
+                        let rightAppRemoved = targetElementRight ? false : true; // If no right element, consider it "not removed"
+
+                        // Check if the left application container is gone
+                        if (!targetElementLeft.querySelector('#greenhouse-app-container-left')) {
+                            leftAppRemoved = true;
+                        }
+
+                        // Check if the right application container is gone
+                        if (targetElementRight && !targetElementRight.querySelector('#greenhouse-app-container-right')) {
+                            rightAppRemoved = true;
+                        }
+
+                        if (leftAppRemoved && rightAppRemoved) {
+                            reinitializeScheduler();
+                            return; // Stop observing once re-initialization is triggered
+                        }
+                    }
+                }
+            };
+
+            resilienceObserver = new MutationObserver(observerCallback);
+
+            const observerConfig = { childList: true, subtree: false };
+            resilienceObserver.observe(targetElementLeft, observerConfig);
+            if (targetElementRight) {
+                resilienceObserver.observe(targetElementRight, observerConfig);
+            }
+            console.log('Scheduler Resilience: MutationObserver activated to protect against DOM removal.');
+        },
+
+        /**
          * @function init
          * @description Main initialization function for the scheduler application
          * @param {string} targetSelectorLeft - The CSS selector for the left panel element
@@ -179,6 +235,11 @@
          * @param {string} baseUrl - The base URL for fetching assets
          */
         async init(targetSelectorLeft, targetSelectorRight, baseUrl) {
+            if (resilienceObserver) {
+                resilienceObserver.disconnect();
+                console.log('Scheduler Resilience: Disconnected previous observer.');
+            }
+
             if (GreenhouseUtils.appState.isInitialized || GreenhouseUtils.appState.isLoading) {
                 console.log('Scheduler: Already initialized or loading, skipping');
                 return;
@@ -248,6 +309,9 @@
 
                 // Show success notification
                 GreenhouseUtils.displaySuccess('Scheduling application loaded successfully', 3000);
+
+                // Activate resilience observer
+                this.observeAndReinitializeApp(GreenhouseUtils.appState.targetElementLeft, GreenhouseUtils.appState.targetElementRight);
 
             } catch (error) {
                 console.error('Scheduler: Initialization failed:', error);
