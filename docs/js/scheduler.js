@@ -237,10 +237,10 @@
          * @param {string} baseUrl - The base URL for fetching assets
          */
         async init(targetSelectorLeft, targetSelectorRight, baseUrl) {
-            if (resilienceObserver) {
-                resilienceObserver.disconnect();
-                console.log('Scheduler Resilience: Disconnected previous observer.');
-            }
+            // if (resilienceObserver) {
+            //     resilienceObserver.disconnect();
+            //     console.log('Scheduler Resilience: Disconnected previous observer.');
+            // }
 
             if (GreenhouseUtils.appState.isInitialized || GreenhouseUtils.appState.isLoading) {
                 console.log('Scheduler: Already initialized or loading, skipping');
@@ -326,8 +326,8 @@
                 // Show success notification
                 GreenhouseUtils.displaySuccess('Scheduling application loaded successfully', 3000);
 
-                // Activate resilience observer
-                this.observeAndReinitializeApp(GreenhouseUtils.appState.targetElementLeft, GreenhouseUtils.appState.targetElementRight);
+                // Activate resilience observer - DISABLED to prevent React hydration errors
+                // this.observeAndReinitializeApp(GreenhouseUtils.appState.targetElementLeft, GreenhouseUtils.appState.targetElementRight);
 
             } catch (error) {
                 console.error('Scheduler: Initialization failed:', error);
