@@ -485,11 +485,36 @@ const GreenhousePatientApp = (function() {
         }
 
 
-        // Load initial data after a delay to allow the UI to render first.
-        setTimeout(async () => {
-            await populateServices();
-            await populateAppointments();
-        }, 1000); // 1-second delay
+        // Create and display a button to fetch data
+        const fetchDataBtn = document.createElement('button');
+        fetchDataBtn.textContent = 'Fetch Initial Data';
+        fetchDataBtn.className = 'greenhouse-patient-app-button';
+        fetchDataBtn.style.marginBottom = '10px';
+
+        const targetContainer = rightAppContainer || leftAppContainer;
+        // Insert the button before the appointments list
+        if (patientAppState.appointmentsList) {
+            targetContainer.insertBefore(fetchDataBtn, patientAppState.appointmentsList);
+        } else {
+            targetContainer.appendChild(fetchDataBtn);
+        }
+
+        fetchDataBtn.addEventListener('click', async () => {
+            fetchDataBtn.textContent = 'Fetching...';
+            fetchDataBtn.disabled = true;
+            try {
+                await populateServices();
+                await populateAppointments();
+                // Hide button after successful fetch
+                fetchDataBtn.style.display = 'none';
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                GreenhouseUtils.displayError("Failed to fetch data.");
+                fetchDataBtn.textContent = 'Retry Fetch';
+                fetchDataBtn.disabled = false;
+            }
+        });
+
         resetForm(); // Ensure form is in a clean state
     }
 
