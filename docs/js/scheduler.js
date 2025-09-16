@@ -79,36 +79,40 @@
          * @returns {Promise<void>} A promise that resolves when the view is rendered and app script loaded.
          */
         async renderView(leftAppContainer, rightAppContainer = null) {
-            console.log(`Scheduler: Rendering view: ${GreenhouseUtils.appState.currentView}`);
+            return new Promise((resolve, reject) => {
+                console.log(`Scheduler: Rendering view: ${GreenhouseUtils.appState.currentView}`);
 
-            try {
-                // --- BEGIN: Display All Views (Temporary for Development) ---
-                // As per user request, all scheduler UI components are displayed by default
-                // until the application is completely developed and authorization checks are in place.
-                // This ensures all elements are visible for testing and development purposes.
-                console.log('Scheduler: Rendering ALL UI components for development purposes.');
+                try {
+                    // --- BEGIN: Display All Views (Temporary for Development) ---
+                    // As per user request, all scheduler UI components are displayed by default
+                    // until the application is completely developed and authorization checks are in place.
+                    // This ensures all elements are visible for testing and development purposes.
+                    console.log('Scheduler: Rendering ALL UI components for development purposes.');
 
-                // Dashboard UI
-                GreenhouseSchedulerUI.buildDashboardLeftPanelUI(leftAppContainer);
-                if (rightAppContainer) {
-                    GreenhouseSchedulerUI.buildDashboardRightPanelUI(rightAppContainer);
+                    // Dashboard UI
+                    GreenhouseSchedulerUI.buildDashboardLeftPanelUI(leftAppContainer, 'superadmin');
+                    if (rightAppContainer) {
+                        GreenhouseSchedulerUI.buildDashboardRightPanelUI(rightAppContainer);
+                    }
+
+                    // Patient UI
+                    GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
+                    if (rightAppContainer) {
+                        GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer);
+                        GreenhouseSchedulerUI.buildPatientCalendarUI(rightAppContainer);
+                    }
+
+                    // Admin UI
+                    GreenhouseSchedulerUI.buildAdminFormUI(leftAppContainer);
+                    // --- END: Display All Views (Temporary for Development) ---
+
+                    resolve(); // Resolve the promise when UI rendering is complete
+                } catch (error) {
+                    console.error(`Scheduler: Error rendering all views:`, error);
+                    this.createErrorView(`Failed to load all scheduler views: ${error.message}`);
+                    reject(error); // Reject the promise on error
                 }
-
-                // Patient UI
-                GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
-                if (rightAppContainer) {
-                    GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer);
-                    GreenhouseSchedulerUI.buildPatientCalendarUI(rightAppContainer);
-                }
-
-                // Admin UI
-                GreenhouseSchedulerUI.buildAdminFormUI(leftAppContainer);
-                // --- END: Display All Views (Temporary for Development) ---
-
-            } catch (error) {
-                console.error(`Scheduler: Error rendering all views:`, error);
-                this.createErrorView(`Failed to load all scheduler views: ${error.message}`);
-            }
+            });
         },
 
         /**

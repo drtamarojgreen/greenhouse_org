@@ -134,7 +134,7 @@ window.GreenhouseSchedulerUI = (function() {
      * @param {HTMLElement} targetElement - The DOM element to append the UI to.
      * @returns {Object} An object containing references to the created inner UI elements.
      */
-    function buildDashboardLeftPanelUI(targetElement) {
+    function buildDashboardLeftPanelUI(targetElement, view) {
         if (!targetElement) {
             console.error('SchedulerUI: Target element for left dashboard panel is null.');
             return {};
@@ -156,13 +156,15 @@ window.GreenhouseSchedulerUI = (function() {
         newAppointmentBox.setAttribute('data-identifier', 'new-appointment-box');
         targetElement.appendChild(newAppointmentBox);
 
-        // Button to fetch and populate data
-        const fetchButton = document.createElement('button');
-        fetchButton.id = 'greenhouse-fetch-schedule-data-btn';
-        fetchButton.className = 'greenhouse-btn greenhouse-btn-primary';
-        fetchButton.textContent = 'Fetch and Populate Schedule Data';
-        fetchButton.setAttribute('data-identifier', 'fetch-schedule-data-btn');
-        targetElement.appendChild(fetchButton);
+        if (view === 'superadmin') {
+            // Button to fetch and populate data
+            const fetchButton = document.createElement('button');
+            fetchButton.id = 'greenhouse-fetch-schedule-data-btn';
+            fetchButton.className = 'greenhouse-btn greenhouse-btn-primary';
+            fetchButton.textContent = 'Fetch and Populate Schedule Data';
+            fetchButton.setAttribute('data-identifier', 'fetch-schedule-data-btn');
+            targetElement.appendChild(fetchButton);
+        }
 
         // Schedule Display Area
         const scheduleContainer = document.createElement('div');
