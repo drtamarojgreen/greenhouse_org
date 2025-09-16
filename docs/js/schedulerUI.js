@@ -638,6 +638,7 @@ window.GreenhouseSchedulerUI = (function() {
         createHiddenElements,
         createInstructionsPanel,
         buildAdminAppointmentFormUI,
+        buildPatientCalendarUI, // Expose the patient calendar UI builder
         fetchAndPopulateScheduleData, // Expose the new function
     };
 })();
