@@ -90,7 +90,7 @@
                     console.log('Scheduler: Rendering ALL UI components for development purposes.');
 
                     // Dashboard UI
-                    GreenhouseSchedulerUI.buildDashboardLeftPanelUI(leftAppContainer);
+                    GreenhouseSchedulerUI.buildDashboardLeftPanelUI(leftAppContainer, 'superadmin');
                     if (rightAppContainer) {
                         GreenhouseSchedulerUI.buildDashboardRightPanelUI(rightAppContainer);
                     }
