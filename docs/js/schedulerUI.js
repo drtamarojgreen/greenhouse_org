@@ -28,6 +28,13 @@ window.GreenhouseSchedulerUI = (function() {
         formContainer.setAttribute('data-identifier', 'patient-form-container');
         // formContainer.classList.add('greenhouse-hidden'); // Initial visibility handled by app
 
+        const fetchDataButton = document.createElement('button');
+        fetchDataButton.id = 'greenhouse-patient-fetch-data-btn';
+        fetchDataButton.setAttribute('data-identifier', 'patient-fetch-data-btn');
+        fetchDataButton.textContent = 'Load My Appointments & Services';
+        fetchDataButton.className = 'greenhouse-btn greenhouse-btn-primary';
+        formContainer.appendChild(fetchDataButton);
+
         const h1 = document.createElement('h1');
         h1.textContent = 'Request an Appointment';
         formContainer.appendChild(h1);
