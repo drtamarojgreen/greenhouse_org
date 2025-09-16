@@ -488,9 +488,11 @@ const GreenhousePatientApp = (function() {
         }
 
 
-        // Load initial data
-        await populateServices();
-        await populateAppointments();
+        // Load initial data after a delay to allow the UI to render first.
+        setTimeout(async () => {
+            await populateServices();
+            await populateAppointments();
+        }, 1000); // 1-second delay
         resetForm(); // Ensure form is in a clean state
     }
 
