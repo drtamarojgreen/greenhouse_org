@@ -40,8 +40,7 @@ const GreenhousePatientApp = (function() {
      */
     async function getServices() {
         try {
-            const baseUrl = GreenhouseUtils.appState.baseUrl;
-            const response = await fetch(`${baseUrl}_functions/getServices`);
+            const response = await fetch(`/_functions/getServices`);
             if (!response.ok) {
                 throw new Error(`Failed to get services: ${response.statusText}`);
             }
@@ -54,8 +53,7 @@ const GreenhousePatientApp = (function() {
 
     async function getAppointments() {
         try {
-            const baseUrl = GreenhouseUtils.appState.baseUrl;
-            const response = await fetch(`${baseUrl}_functions/getAppointments`);
+            const response = await fetch(`/_functions/getAppointments`);
             if (!response.ok) {
                 throw new Error(`Failed to get appointments: ${response.statusText}`);
             }
@@ -68,8 +66,7 @@ const GreenhousePatientApp = (function() {
 
     async function proposeAppointment(appointment) {
         try {
-            const baseUrl = GreenhouseUtils.appState.baseUrl;
-            const response = await fetch(`${baseUrl}_functions/proposeAppointment`, {
+            const response = await fetch(`/_functions/proposeAppointment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -99,8 +96,7 @@ const GreenhousePatientApp = (function() {
 
     async function createAppointment(appointment) {
         try {
-            const baseUrl = GreenhouseUtils.appState.baseUrl;
-            const response = await fetch(`${baseUrl}_functions/createAppointment`, {
+            const response = await fetch(`/_functions/createAppointment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -119,8 +115,7 @@ const GreenhousePatientApp = (function() {
 
     async function updateAppointment(appointmentId, updatedAppointment) {
         try {
-            const baseUrl = GreenhouseUtils.appState.baseUrl;
-            const response = await fetch(`${baseUrl}_functions/updateAppointment/${appointmentId}`, {
+            const response = await fetch(`/_functions/updateAppointment/${appointmentId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -139,8 +134,7 @@ const GreenhousePatientApp = (function() {
 
     async function deleteAppointment(appointmentId) {
         try {
-            const baseUrl = GreenhouseUtils.appState.baseUrl;
-            const response = await fetch(`${baseUrl}_functions/deleteAppointment/${appointmentId}`, {
+            const response = await fetch(`/_functions/deleteAppointment/${appointmentId}`, {
                 method: 'DELETE',
             });
             if (!response.ok) {
