@@ -201,6 +201,14 @@
                     GreenhouseUtils.appState.targetElementRight = await GreenhouseUtils.waitForElement(targetSelectorRight, GreenhouseUtils.config.dom.observerTimeout);
                 }
 
+                // Hide the containers to prevent FOUC
+                if (GreenhouseUtils.appState.targetElementLeft) {
+                    GreenhouseUtils.appState.targetElementLeft.style.visibility = 'hidden';
+                }
+                if (GreenhouseUtils.appState.targetElementRight) {
+                    GreenhouseUtils.appState.targetElementRight.style.visibility = 'hidden';
+                }
+
                 // Load CSS first (non-blocking)
                 this.loadCSS().catch(error => {
                     console.warn('Scheduler: CSS loading failed, continuing with fallback:', error);
@@ -245,6 +253,14 @@
 
                 GreenhouseUtils.appState.isInitialized = true;
                 console.log('Scheduler: Initialization completed successfully');
+
+                // Show the containers now that rendering is complete
+                if (GreenhouseUtils.appState.targetElementLeft) {
+                    GreenhouseUtils.appState.targetElementLeft.style.visibility = 'visible';
+                }
+                if (GreenhouseUtils.appState.targetElementRight) {
+                    GreenhouseUtils.appState.targetElementRight.style.visibility = 'visible';
+                }
 
                 // Show success notification
                 GreenhouseUtils.displaySuccess('Scheduling application loaded successfully', 3000);
