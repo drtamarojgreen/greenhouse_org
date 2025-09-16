@@ -30,7 +30,9 @@
         return;
     }
 
-    console.log("Loading Greenhouse Scheduler - Version 0.1.1"); // Updated version
+    let resilienceObserver = null; // For resilience against DOM wipes
+
+    console.log("Loading Greenhouse Scheduler - Version 0.1.2"); // Updated version
 
     /**
      * @namespace GreenhouseAppsScheduler
@@ -172,6 +174,109 @@
         },
 
         /**
+         * @function rebuildUI
+         * @description A lighter-weight re-initialization function to be called by the MutationObserver.
+         * This function re-builds the UI without resetting the entire application state.
+         */
+        async rebuildUI() {
+            console.warn('Scheduler Resilience: Rebuilding UI due to DOM changes.');
+
+            // Find the containers again
+            const leftAppContainer = document.querySelector('#greenhouse-app-container-left');
+            const rightAppContainer = document.querySelector('#greenhouse-app-container-right');
+
+            if (!leftAppContainer) {
+                console.error('Scheduler Resilience: Cannot rebuild UI, left container not found.');
+                // If the main container is gone, we might need a full re-init
+                if (window.GreenhouseScheduler && typeof window.GreenhouseScheduler.reinitialize === 'function') {
+                    window.GreenhouseScheduler.reinitialize();
+                }
+                return;
+            }
+            
+            // Clear the containers
+            leftAppContainer.innerHTML = '';
+            if (rightAppContainer) {
+                rightAppContainer.innerHTML = '';
+            }
+
+            try {
+                // Re-render the view
+                await this.renderView(leftAppContainer, rightAppContainer);
+                // Re-initialize the application modules to re-attach event listeners
+                await this.initializeApplication(leftAppContainer, rightAppContainer);
+                console.log('Scheduler Resilience: UI rebuilt successfully.');
+            } catch (error) {
+                console.error('Scheduler Resilience: Error rebuilding UI:', error);
+                this.createErrorView('Failed to rebuild the scheduler UI after a DOM change.');
+            }
+        },
+
+        /**
+         * @function observeAndReinitializeApp
+         * @description Uses a MutationObserver to detect if the app's containers are removed from the DOM and re-initializes if necessary.
+         * @param {HTMLElement} targetElementLeft - The host page element for the left panel.
+         * @param {HTMLElement} [targetElementRight] - The host page element for the right panel.
+         */
+        observeAndReinitializeApp(targetElementLeft, targetElementRight = null) {
+            let isRebuilding = false; // Add a flag to prevent re-entrant calls
+
+            const reinitializeScheduler = async () => {
+                if (isRebuilding) {
+                    console.log('Scheduler Resilience: Already rebuilding, skipping.');
+                    return;
+                }
+                isRebuilding = true;
+                
+                console.warn('Scheduler Resilience: Application container removed from DOM. Re-initializing...');
+                if (resilienceObserver) {
+                    resilienceObserver.disconnect();
+                }
+
+                // Use a short timeout to prevent race conditions with the host framework's rendering cycle.
+                setTimeout(async () => {
+                    await this.rebuildUI();
+                    // Re-observe after rebuilding
+                    this.observeAndReinitializeApp(targetElementLeft, targetElementRight);
+                    isRebuilding = false; // Reset the flag
+                }, 100); // Increased delay to 100ms
+            };
+
+            const observerCallback = (mutationsList, observer) => {
+                for (const mutation of mutationsList) {
+                    if (mutation.type === 'childList') {
+                        let leftAppRemoved = false;
+                        let rightAppRemoved = targetElementRight ? false : true; // If no right element, consider it "not removed"
+
+                        // Check if the left application container is gone
+                        if (!targetElementLeft.querySelector('#greenhouse-app-container-left')) {
+                            leftAppRemoved = true;
+                        }
+
+                        // Check if the right application container is gone
+                        if (targetElementRight && !targetElementRight.querySelector('#greenhouse-app-container-right')) {
+                            rightAppRemoved = true;
+                        }
+
+                        if (leftAppRemoved && rightAppRemoved) {
+                            reinitializeScheduler();
+                            return; // Stop observing once re-initialization is triggered
+                        }
+                    }
+                }
+            };
+
+            resilienceObserver = new MutationObserver(observerCallback);
+
+            const observerConfig = { childList: true, subtree: false };
+            resilienceObserver.observe(targetElementLeft, observerConfig);
+            if (targetElementRight) {
+                resilienceObserver.observe(targetElementRight, observerConfig);
+            }
+            console.log('Scheduler Resilience: MutationObserver activated to protect against DOM removal.');
+        },
+
+        /**
          * @function init
          * @description Main initialization function for the scheduler application
          * @param {string} targetSelectorLeft - The CSS selector for the left panel element
@@ -179,6 +284,11 @@
          * @param {string} baseUrl - The base URL for fetching assets
          */
         async init(targetSelectorLeft, targetSelectorRight, baseUrl) {
+            if (resilienceObserver) {
+                resilienceObserver.disconnect();
+                console.log('Scheduler Resilience: Disconnected previous observer.');
+            }
+
             if (GreenhouseUtils.appState.isInitialized || GreenhouseUtils.appState.isLoading) {
                 console.log('Scheduler: Already initialized or loading, skipping');
                 return;
@@ -199,6 +309,14 @@
                 GreenhouseUtils.appState.targetElementLeft = await GreenhouseUtils.waitForElement(targetSelectorLeft, GreenhouseUtils.config.dom.observerTimeout);
                 if (targetSelectorRight) {
                     GreenhouseUtils.appState.targetElementRight = await GreenhouseUtils.waitForElement(targetSelectorRight, GreenhouseUtils.config.dom.observerTimeout);
+                }
+
+                // Hide the containers to prevent FOUC
+                if (GreenhouseUtils.appState.targetElementLeft) {
+                    GreenhouseUtils.appState.targetElementLeft.style.visibility = 'hidden';
+                }
+                if (GreenhouseUtils.appState.targetElementRight) {
+                    GreenhouseUtils.appState.targetElementRight.style.visibility = 'hidden';
                 }
 
                 // Load CSS first (non-blocking)
@@ -246,8 +364,19 @@
                 GreenhouseUtils.appState.isInitialized = true;
                 console.log('Scheduler: Initialization completed successfully');
 
+                // Show the containers now that rendering is complete
+                if (GreenhouseUtils.appState.targetElementLeft) {
+                    GreenhouseUtils.appState.targetElementLeft.style.visibility = 'visible';
+                }
+                if (GreenhouseUtils.appState.targetElementRight) {
+                    GreenhouseUtils.appState.targetElementRight.style.visibility = 'visible';
+                }
+
                 // Show success notification
                 GreenhouseUtils.displaySuccess('Scheduling application loaded successfully', 3000);
+
+                // Activate resilience observer
+                this.observeAndReinitializeApp(GreenhouseUtils.appState.targetElementLeft, GreenhouseUtils.appState.targetElementRight);
 
             } catch (error) {
                 console.error('Scheduler: Initialization failed:', error);

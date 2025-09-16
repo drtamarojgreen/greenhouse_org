@@ -485,19 +485,43 @@ const GreenhousePatientApp = (function() {
         }
 
 
-        // Load initial data after a delay to allow the UI to render first.
-        setTimeout(async () => {
-            await populateServices();
-            await populateAppointments();
-        }, 1000); // 1-second delay
         resetForm(); // Ensure form is in a clean state
+
+        const fetchButton = patientAppState.leftAppContainer.querySelector('[data-identifier="patient-fetch-data-btn"]');
+        if (fetchButton) {
+            fetchButton.addEventListener('click', async () => {
+                fetchButton.disabled = true;
+                fetchButton.textContent = 'Loading Data...';
+                try {
+                    await populateServices();
+                    await populateAppointments();
+                    fetchButton.textContent = 'Data Loaded Successfully';
+                    // Optionally hide the button after a short delay
+                    setTimeout(() => {
+                        fetchButton.style.display = 'none';
+                    }, 2000);
+                } catch (error) {
+                    fetchButton.textContent = 'Failed to Load Data. Please Try Again.';
+                    fetchButton.disabled = false;
+                    console.error("Failed to fetch and populate data on button click:", error);
+                    GreenhouseUtils.displayError("Could not load appointment data. Please check the console and try again.");
+                }
+            }, { once: true }); // Use { once: true } to automatically remove the listener after it's invoked
+        }
+    }
+
+    function fetchAndPopulateData() {
+        const fetchButton = patientAppState.leftAppContainer.querySelector('[data-identifier="patient-fetch-data-btn"]');
+        if (fetchButton) {
+            fetchButton.click();
+        }
     }
 
     return {
         init: init,
-        // Expose functions that might be needed by scheduler.js or for debugging
+        fetchAndPopulateData: fetchAndPopulateData, // Expose for external triggering if needed
         populateAppointments: populateAppointments,
         populateServices: populateServices,
-        showConflictModal: showConflictModal, // Expose for scheduler.js to call if needed
+        showConflictModal: showConflictModal,
     };
 })();
