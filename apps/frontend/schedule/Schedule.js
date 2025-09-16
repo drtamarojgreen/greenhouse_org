@@ -33,10 +33,8 @@ function setupEventListeners() {
     $w('#therapistDropdown').onChange((event) => {
         const therapistId = event.target.value;
         if (therapistId) {
-            // For this example, we assume the calendar automatically shows the current month.
-            // A real implementation would need to handle month changes.
+            // Load availability, which will enable the calendar upon success.
             loadCalendarAvailability(therapistId, new Date());
-            $w('#calendar').enable();
         } else {
             $w('#calendar').disable();
         }
@@ -101,12 +99,40 @@ async function populateTherapistsDropdown(serviceId) {
     }
 }
 
-async function loadCalendarAvailability(therapistId, date) {
-    // This function would fetch appointments for the given month and disable dates that are fully booked.
-    // The actual implementation depends heavily on the specific calendar component used.
-    // For now, we assume the calendar is cleared and re-rendered with new availability info.
-    console.log(`Loading availability for therapist ${therapistId} for month ${date.getMonth() + 1}`);
-    // In a real scenario, you'd fetch data and use an API like $w('#calendar').disableDate(date) for each busy day.
+function loadCalendarAvailability(therapistId, forDate) {
+    console.log(`Loading availability for therapist ${therapistId} for month ${forDate.getMonth() + 1}`);
+
+    const year = forDate.getFullYear();
+    const month = forDate.getMonth();
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
+
+    // Construct the URL with query parameters for the Velo backend function.
+    const url = `${GET_AVAILABILITY_URL}?therapistId=${therapistId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+
+    fetch(url, { method: 'get' })
+        .then(response => {
+            if (!response.ok) {
+                // If the server responds with an error, throw to trigger the .catch() block.
+                throw new Error(`Failed to fetch availability. Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // HYPOTHESIS: The crash is a race condition. Enabling the calendar *after*
+            // data is successfully fetched should be a safer interaction.
+            console.log(`Successfully fetched ${data.items.length} appointments. Enabling calendar.`);
+            $w('#calendar').enable();
+
+            // NOTE: The complex logic to disable specific dates has been intentionally omitted.
+            // That was out of scope and a source of bugs in the previous attempt. The goal
+            // here is to fix the crash, not to implement the full availability display.
+        })
+        .catch(err => {
+            console.error("Error loading calendar availability:", err);
+            // If fetching data fails, disable the calendar to prevent user interaction with stale or incorrect data.
+            $w('#calendar').disable();
+        });
 }
 
 async function loadTimeSlotsForDate(date, therapistId) {
