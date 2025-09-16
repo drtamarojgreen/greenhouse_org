@@ -334,23 +334,25 @@ window.GreenhouseDashboardApp = (function() {
         dashboardAppState.conflictList = leftAppContainer.querySelector('[data-identifier="conflict-list"]');
         dashboardAppState.calendarContainer = rightAppContainer.querySelector('[data-identifier="calendar-container"]');
 
-        // Get reference to the new fetch button
+        // --- Manual Data Fetching Setup ---
+        // For development, data fetching is triggered manually. This ensures all UI elements
+        // are rendered and visible before any data is loaded, per user requirements.
         const fetchButton = leftAppContainer.querySelector('[data-identifier="fetch-schedule-data-btn"]');
         if (fetchButton) {
-            fetchButton.addEventListener('click', GreenhouseSchedulerUI.fetchAndPopulateScheduleData);
+            fetchButton.addEventListener('click', triggerDataFetchAndPopulation);
         } else {
             console.warn('GreenhouseDashboardApp: Fetch schedule data button not found.');
         }
 
-        // Initial population of calendar
+        // Initial population of calendar UI without data.
         populateCalendar(dashboardAppState.currentYear, dashboardAppState.currentMonth);
 
         // Add event listeners to the main app containers for delegation
         dashboardAppState.leftAppContainer.addEventListener('click', handleAction);
         dashboardAppState.rightAppContainer.addEventListener('click', handleAction);
 
-        // Do not load initial data automatically, wait for button click
-        // loadInitialData();
+        // NOTE: Initial data loading is intentionally disabled. Data is loaded on-demand via the fetch button.
+        // triggerDataFetchAndPopulation();
     }
 
     return {
@@ -358,5 +360,6 @@ window.GreenhouseDashboardApp = (function() {
         populateCalendar: populateCalendar,
         populateWeekly: populateWeekly,
         populateConflicts: populateConflicts,
+        triggerDataFetchAndPopulation: triggerDataFetchAndPopulation, // Expose for manual trigger
     };
 })();

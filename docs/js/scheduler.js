@@ -88,22 +88,22 @@
                 // This ensures all elements are visible for testing and development purposes.
                 console.log('Scheduler: Rendering ALL UI components for development purposes.');
 
-                // Patient View Components
+                // Dashboard UI
+                GreenhouseSchedulerUI.buildDashboardLeftPanelUI(leftAppContainer);
+                if (rightAppContainer) {
+                    GreenhouseSchedulerUI.buildDashboardRightPanelUI(rightAppContainer);
+                }
+
+                // Patient UI
                 GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
                 if (rightAppContainer) {
                     GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer);
                     GreenhouseSchedulerUI.buildPatientCalendarUI(rightAppContainer);
                 }
 
-                // Dashboard View Components
-                GreenhouseSchedulerUI.buildDashboardLeftPanelUI(leftAppContainer);
-                if (rightAppContainer) {
-                    GreenhouseSchedulerUI.buildDashboardRightPanelUI(rightAppContainer);
-                }
-
-                // Admin View Components (assuming it also goes into leftAppContainer for now)
+                // Admin UI
                 GreenhouseSchedulerUI.buildAdminFormUI(leftAppContainer);
-                // --- END: Display All Views ---
+                // --- END: Display All Views (Temporary for Development) ---
 
             } catch (error) {
                 console.error(`Scheduler: Error rendering all views:`, error);
