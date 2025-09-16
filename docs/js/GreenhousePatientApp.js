@@ -414,6 +414,9 @@ const GreenhousePatientApp = (function() {
         patientAppState.timeInput = leftAppContainer.querySelector('[data-identifier="patient-app-time"]');
         patientAppState.platformInput = leftAppContainer.querySelector('[data-identifier="patient-app-platform"]');
         patientAppState.proposeAppointmentBtn = leftAppContainer.querySelector('[data-identifier="propose-appointment-btn"]');
+        if (patientAppState.proposeAppointmentBtn) {
+            patientAppState.proposeAppointmentBtn.disabled = true;
+        }
         patientAppState.loadingSpinner = leftAppContainer.querySelector('[data-identifier="loading-spinner"]');
         
         // Assuming an appointments list will be created in the right panel by schedulerUI.js
@@ -483,8 +486,8 @@ const GreenhousePatientApp = (function() {
 
 
         // Load initial data
-        await populateServices();
-        await populateAppointments();
+        // await populateServices();
+        // await populateAppointments();
         resetForm(); // Ensure form is in a clean state
     }
 
