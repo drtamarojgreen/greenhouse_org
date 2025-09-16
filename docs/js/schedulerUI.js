@@ -245,7 +245,7 @@ window.GreenhouseSchedulerUI = (function() {
         const calendarContainer = document.createElement('div');
         calendarContainer.id = 'greenhouse-dashboard-app-calendar-container';
         calendarContainer.setAttribute('data-identifier', 'calendar-container');
-        calendarContainer.className = 'greenhouse-calendar-container'; // Use consistent styling
+        calendarContainer.className = 'greenhouse-calendar-container'; // Added for consistent styling
 
         const header = document.createElement('div');
         header.className = 'calendar-header';
@@ -281,7 +281,7 @@ window.GreenhouseSchedulerUI = (function() {
         table.appendChild(thead);
 
         const tbody = document.createElement('tbody');
-        tbody.setAttribute('data-identifier', 'calendar-tbody'); // Crucial for the app to find it
+        tbody.setAttribute('data-identifier', 'calendar-tbody'); // This is the crucial part for the app
         table.appendChild(tbody);
 
         calendarContainer.appendChild(table);
