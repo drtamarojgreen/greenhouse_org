@@ -447,13 +447,6 @@ window.GreenhouseSchedulerUI = (function() {
     /**
      * Builds the HTML form for editing an appointment.
      * This function is now purely for UI creation and does not handle data population or event listeners.
->>>>>>> 5d71a27ad5c78d2fa15a39c087794049641402d4
-     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
-     * @param {object} currentAppointment - The appointment data (used for initial values).
-     * @param {Array<object>} serviceTypes - The available service types (used for select options).
-     * @returns {HTMLFormElement} The generated form element.
-     */
-    function buildAdminAppointmentFormUI(targetElement, currentAppointment = {}, serviceTypes = []) {
      * @param {HTMLElement} targetElement - The DOM element to append the UI to.
      * @param {object} currentAppointment - The appointment data (used for initial values).
      * @param {Array<object>} serviceTypes - The available service types (used for select options).
