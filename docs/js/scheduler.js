@@ -199,14 +199,16 @@
                         let leftAppRemoved = false;
                         let rightAppRemoved = targetElementRight ? false : true; // If no right element, consider it "not removed"
 
-                        // Check if the left application container is gone
-                        if (!targetElementLeft.querySelector('#greenhouse-app-container-left')) {
+                        // Check if a key UI element from the left panel is gone (e.g., the patient form)
+                        if (!targetElementLeft.querySelector('#greenhouse-patient-form')) {
                             leftAppRemoved = true;
+                            console.warn('Scheduler Resilience: Left panel content (patient form) appears to be removed.');
                         }
 
-                        // Check if the right application container is gone
-                        if (targetElementRight && !targetElementRight.querySelector('#greenhouse-app-container-right')) {
+                        // Check if a key UI element from the right panel is gone (e.g., the patient calendar)
+                        if (targetElementRight && !targetElementRight.querySelector('#greenhouse-patient-app-calendar-container')) {
                             rightAppRemoved = true;
+                            console.warn('Scheduler Resilience: Right panel content (patient calendar) appears to be removed.');
                         }
 
                         if (leftAppRemoved && rightAppRemoved) {
@@ -277,31 +279,29 @@
 
                 // Insert application into DOM with delay for Wix compatibility
                 await new Promise(resolve => setTimeout(resolve, GreenhouseUtils.config.dom.insertionDelay));
-                
-                // Create main application containers
-                let leftAppContainer = document.createElement('section');
+
+                // Use the Wix-provided elements as the main containers
+                const leftAppContainer = GreenhouseUtils.appState.targetElementLeft;
+                const rightAppContainer = GreenhouseUtils.appState.targetElementRight;
+
+                // Clear any previous content and mark the containers to avoid conflicts and prepare for rendering
+                leftAppContainer.innerHTML = '';
                 leftAppContainer.id = 'greenhouse-app-container-left';
-                leftAppContainer.className = 'greenhouse-app-container greenhouse-scheduler-left-panel';
+                leftAppContainer.className += ' greenhouse-app-container greenhouse-scheduler-left-panel';
                 leftAppContainer.setAttribute('data-greenhouse-app', GreenhouseUtils.appState.currentView);
-                
-                let rightAppContainer = null;
-                if (GreenhouseUtils.appState.targetSelectorRight) { // Only create right container if a right target selector exists
-                    rightAppContainer = document.createElement('section');
+
+                if (rightAppContainer) {
+                    rightAppContainer.innerHTML = '';
                     rightAppContainer.id = 'greenhouse-app-container-right';
-                    rightAppContainer.className = 'greenhouse-app-container greenhouse-scheduler-right-panel';
+                    rightAppContainer.className += ' greenhouse-app-container greenhouse-scheduler-right-panel';
                     rightAppContainer.setAttribute('data-greenhouse-app', GreenhouseUtils.appState.currentView);
                 }
 
                 // Render ALL views by calling schedulerUI to build and attach to these containers
                 await this.renderView(leftAppContainer, rightAppContainer);
 
-                // Append the main application containers to the Wix-provided target elements
-                GreenhouseUtils.appState.targetElementLeft.prepend(leftAppContainer);
-                console.log('Scheduler: Left panel container inserted into DOM');
-                if (rightAppContainer) {
-                    GreenhouseUtils.appState.targetElementRight.prepend(rightAppContainer);
-                    console.log('Scheduler: Right panel container inserted into DOM');
-                }
+                // The containers are already part of the DOM, so no prepend/append is needed.
+                console.log('Scheduler: UI rendered directly into Wix containers.');
 
                 // Initialize ALL application instances, passing the main application containers
                 await this.initializeApplication(leftAppContainer, rightAppContainer);
