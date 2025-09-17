@@ -305,6 +305,10 @@
                 // Set currentView to a generic value as all views are rendered by default for development.
                 GreenhouseUtils.appState.currentView = 'all'; 
 
+                // Wait for the main scheduling container to be available
+                await GreenhouseUtils.waitForElement('#schedulingContainer', GreenhouseUtils.config.dom.observerTimeout);
+                console.log('Scheduler: Found #schedulingContainer, proceeding with initialization.');
+
                 // Wait for target elements to be available
                 GreenhouseUtils.appState.targetElementLeft = await GreenhouseUtils.waitForElement(targetSelectorLeft, GreenhouseUtils.config.dom.observerTimeout);
                 if (targetSelectorRight) {
