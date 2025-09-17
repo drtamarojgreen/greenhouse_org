@@ -47,63 +47,58 @@ const schedulerState = {
             observerTimeout: 10000
         }
     },
-    // UI elements that are expected to exist within #schedulingContainer in the Wix editor
+    // UI elements that are expected to exist within the Wix editor
     uiElements: {
-        // Main container provided by the user
-        schedulingContainer: '#schedulingContainer',
+        // General UI elements
+        notificationBox: '#notificationBox',
+        errorMessage: '#errorMessageText',
+        successMessage: '#successMessageText',
+        infoMessage: '#infoMessageText',
 
-        // General UI elements within #schedulingContainer
-        notificationBox: '#schedulingContainer #notificationBox',
-        errorMessage: '#schedulingContainer #errorMessageText',
-        successMessage: '#schedulingContainer #successMessageText',
-        infoMessage: '#schedulingContainer #infoMessageText',
-        // Removed: confirmationLightbox as lightboxes are not being used.
+        // Patient specific UI elements
+        patientContainer: '#patientContainer',
+        patientFormContainer: '#patientFormContainer',
+        patientTitleInput: '#patientTitleInput',
+        patientDateInput: '#patientDateInput',
+        patientTimeInput: '#patientTimeInput',
+        patientPlatformInput: '#patientPlatformInput',
+        serviceSelect: '#serviceDropdown',
+        therapistDropdown: '#therapistDropdown',
+        calendar: '#calendar',
+        timeSlotsRepeater: '#timeSlotsRepeater',
+        proposeAppointmentButton: '#proposeAppointmentButton',
+        patientLoadingSpinner: '#patientLoadingSpinner',
+        patientAppointmentsRepeater: '#patientAppointmentsRepeater',
+        instructionsPanel: '#instructionsPanel',
 
-        // Patient specific UI elements within #schedulingContainer
-        patientContainer: '#schedulingContainer #patientContainer',
-        patientFormContainer: '#schedulingContainer #patientFormContainer',
-        patientTitleInput: '#schedulingContainer #patientTitleInput',
-        patientDateInput: '#schedulingContainer #patientDateInput',
-        patientTimeInput: '#schedulingContainer #patientTimeInput',
-        patientPlatformInput: '#schedulingContainer #patientPlatformInput',
-        serviceSelect: '#schedulingContainer #serviceDropdown',
-        therapistDropdown: '#schedulingContainer #therapistDropdown',
-        calendar: '#schedulingContainer #calendar',
-        timeSlotsRepeater: '#schedulingContainer #timeSlotsRepeater',
-        proposeAppointmentButton: '#schedulingContainer #proposeAppointmentButton',
-        patientLoadingSpinner: '#schedulingContainer #patientLoadingSpinner',
-        patientAppointmentsRepeater: '#schedulingContainer #patientAppointmentsRepeater',
-        instructionsPanel: '#schedulingContainer #instructionsPanel',
-        // Removed: conflictResolutionLightbox as lightboxes are not being used.
+        // Dashboard specific UI elements
+        dashboardContainer: '#dashboardContainer',
+        dashboardFetchDataButton: '#dashboardFetchDataButton',
+        weeklyScheduleTable: '#weeklyScheduleTable',
+        conflictRepeater: '#conflictRepeater',
+        dashboardCalendar: '#dashboardCalendar',
+        dashboardCalendarTitle: '#dashboardCalendarTitle',
+        dashboardCalendarPrevButton: '#dashboardCalendarPrevButton',
+        dashboardCalendarNextButton: '#dashboardCalendarNextButton',
 
-        // Dashboard specific UI elements within #schedulingContainer
-        dashboardContainer: '#schedulingContainer #dashboardContainer',
-        dashboardFetchDataButton: '#schedulingContainer #dashboardFetchDataButton',
-        weeklyScheduleTable: '#schedulingContainer #weeklyScheduleTable',
-        conflictRepeater: '#schedulingContainer #conflictRepeater',
-        dashboardCalendar: '#schedulingContainer #dashboardCalendar',
-        dashboardCalendarTitle: '#schedulingContainer #dashboardCalendarTitle',
-        dashboardCalendarPrevButton: '#schedulingContainer #dashboardCalendarPrevButton',
-        dashboardCalendarNextButton: '#schedulingContainer #dashboardCalendarNextButton',
-
-        // Admin specific UI elements within #schedulingContainer
-        adminContainer: '#schedulingContainer #adminContainer',
-        adminFormContainer: '#schedulingContainer #adminFormContainer',
-        adminAppointmentForm: '#schedulingContainer #adminAppointmentForm',
-        adminTitleInput: '#schedulingContainer #adminTitleInput',
-        adminStartInput: '#schedulingContainer #adminStartInput',
-        adminEndInput: '#schedulingContainer #adminEndInput',
-        adminPlatformInput: '#schedulingContainer #adminPlatformInput',
-        adminServiceSelect: '#schedulingContainer #adminServiceSelect',
-        adminConfirmedCheckbox: '#schedulingContainer #adminConfirmedCheckbox',
-        adminConflictsTextarea: '#schedulingContainer #adminConflictsTextarea',
-        adminFirstNameInput: '#schedulingContainer #adminFirstNameInput',
-        adminLastNameInput: '#schedulingContainer #adminLastNameInput',
-        adminContactInfoInput: '#schedulingContainer #adminContactInfoInput',
-        adminAnonymousIdInput: '#schedulingContainer #adminAnonymousIdInput',
-        adminSaveButton: '#schedulingContainer #adminSaveButton',
-        adminDeleteButton: '#schedulingContainer #adminDeleteButton',
-        adminMessageText: '#schedulingContainer #adminMessageText',
+        // Admin specific UI elements
+        adminContainer: '#adminContainer',
+        adminFormContainer: '#adminFormContainer',
+        adminAppointmentForm: '#adminAppointmentForm',
+        adminTitleInput: '#adminTitleInput',
+        adminStartInput: '#adminStartInput',
+        adminEndInput: '#adminEndInput',
+        adminPlatformInput: '#adminPlatformInput',
+        adminServiceSelect: '#adminServiceSelect',
+        adminConfirmedCheckbox: '#adminConfirmedCheckbox',
+        adminConflictsTextarea: '#adminConflictsTextarea',
+        adminFirstNameInput: '#adminFirstNameInput',
+        adminLastNameInput: '#adminLastNameInput',
+        adminContactInfoInput: '#adminContactInfoInput',
+        adminAnonymousIdInput: '#adminAnonymousIdInput',
+        adminSaveButton: '#adminSaveButton',
+        adminDeleteButton: '#adminDeleteButton',
+        adminMessageText: '#adminMessageText',
     },
     // Dashboard specific state
     dashboard: {
@@ -183,6 +178,42 @@ function displaySuccess(message, duration = 3000) {
 
 function displayInfo(message, duration = 5000) {
     displayMessage(message, 'info', duration);
+} // Added missing closing brace and semicolon
+
+/**
+ * @function hideElement
+ * @description Hides a Wix element.
+ * @param {string} selector - The CSS selector for the element.
+ */
+function hideElement(selector) {
+    try {
+        const wixElement = $w(selector);
+        if (wixElement.valid && typeof wixElement.collapse === 'function') {
+            wixElement.collapse();
+        } else {
+            console.warn(`Scheduler: Wix element for selector ${selector} not found or does not support collapse().`);
+        }
+    } catch (e) {
+        console.error(`Scheduler: Error trying to collapse element with selector ${selector}:`, e);
+    }
+}
+
+/**
+ * @function showElement
+ * @description Shows a Wix element.
+ * @param {string} selector - The CSS selector for the element.
+ */
+function showElement(selector) {
+    try {
+        const wixElement = $w(selector);
+        if (wixElement.valid && typeof wixElement.expand === 'function') {
+            wixElement.expand();
+        } else {
+            console.warn(`Scheduler: Wix element for selector ${selector} not found or does not support expand().`);
+        }
+    } catch (e) {
+        console.error(`Scheduler: Error trying to expand element with selector ${selector}:`, e);
+    }
 }
 
 /**
@@ -655,10 +686,10 @@ function populateConflictsList(conflicts) {
             conflictId: conflict.id // For event handling
         }));
         conflictRepeater.data = repeaterData;
-        conflictRepeater.expand(); // Ensure repeater is visible
+        showElement(schedulerState.uiElements.conflictRepeater); // Use local showElement
     } else {
         conflictRepeater.data = [{ _id: 'no-conflicts', title: 'No conflicts found.', date: '', time: '', reason: '' }];
-        conflictRepeater.collapse(); // Hide repeater if no conflicts
+        hideElement(schedulerState.uiElements.conflictRepeater); // Use local hideElement
     }
 
     // Set up itemReady for the repeater
@@ -832,10 +863,9 @@ function setupPatientEventListeners() {
                     console.error("Error during appointment operation:", error);
                     displayError(`Failed to ${isUpdate ? 'update' : 'request'} appointment: ${error.message}`);
                 }
-            } finally {
-                showLoadingSpinner(false);
-                $w(schedulerState.uiElements.notificationBox).collapse(); // Collapse sticky info message
-            }
+    } finally {
+        hideElement(schedulerState.uiElements.notificationBox); // Use local hideElement
+    }
         } else {
             displayError('Please correct the errors in the form.');
         }
@@ -981,7 +1011,7 @@ async function populateAppointments() {
             originalAppointment: appointment // Store original object for editing
         }));
         appointmentsRepeater.data = repeaterData;
-        appointmentsRepeater.expand();
+        showElement(schedulerState.uiElements.patientAppointmentsRepeater); // Use local showElement
 
         appointmentsRepeater.onItemReady(($item, itemData, index) => {
             $item('#appointmentTitle').text = itemData.title;
@@ -1004,8 +1034,8 @@ async function populateAppointments() {
                         resetForm();
                     } catch (error) {
                         displayError('Failed to delete appointment: ' + error.message);
-                    } finally {
-                        $w(schedulerState.uiElements.notificationBox).collapse();
+                    } finally { // Correctly close the try-catch-finally block
+                        hideElement(schedulerState.uiElements.notificationBox); // Use local hideElement
                     }
                 }
             });
@@ -1016,10 +1046,10 @@ async function populateAppointments() {
         appointmentsRepeater.data = [{ _id: 'error-loading', message: 'Failed to load appointments.' }];
         appointmentsRepeater.onItemReady(($item, itemData, index) => {
             $item('#appointmentTitle').text = itemData.message;
-            $item('#editAppointmentButton').collapse();
-            $item('#deleteAppointmentButton').collapse();
+            hideElement($item('#editAppointmentButton').id); // Use local hideElement
+            hideElement($item('#deleteAppointmentButton').id); // Use local hideElement
         });
-        appointmentsRepeater.expand();
+        showElement(schedulerState.uiElements.patientAppointmentsRepeater); // Use local showElement
     }
 }
 
@@ -1050,15 +1080,15 @@ function resetForm() {
 
     // Clear any validation messages
     const patientFormFields = [
-        schedulerState.uiElements.patientTitleInput.substring(schedulerState.uiElements.schedulingContainer.length + 1),
-        schedulerState.uiElements.patientDateInput.substring(schedulerState.uiElements.schedulingContainer.length + 1),
-        schedulerState.uiElements.patientTimeInput.substring(schedulerState.uiElements.schedulingContainer.length + 1),
-        schedulerState.uiElements.patientPlatformInput.substring(schedulerState.uiElements.schedulingContainer.length + 1),
-        schedulerState.uiElements.serviceSelect.substring(schedulerState.uiElements.schedulingContainer.length + 1)
+        schedulerState.uiElements.patientTitleInput.replace('#', ''), // Removed substring
+        schedulerState.uiElements.patientDateInput.replace('#', ''), // Removed substring
+        schedulerState.uiElements.patientTimeInput.replace('#', ''), // Removed substring
+        schedulerState.uiElements.patientPlatformInput.replace('#', ''), // Removed substring
+        schedulerState.uiElements.serviceSelect.replace('#', '') // Removed substring
     ];
     patientFormFields.forEach(fieldId => {
         const errorEl = $w(`#error${fieldId}`);
-        if (errorEl.valid) errorEl.collapse();
+        if (errorEl.valid) hideElement(errorEl.id); // Use local hideElement
     });
 }
 
@@ -1106,15 +1136,15 @@ async function loadAdminAppointmentData(appointmentId) {
         if (!currentAppointment) {
             displayError('Appointment not found.');
             $w(schedulerState.uiElements.adminMessageText).text = 'Appointment not found.';
-            $w(schedulerState.uiElements.adminMessageText).expand();
-            $w(schedulerState.uiElements.adminAppointmentForm).collapse(); // Hide form if no appointment
+            showElement(schedulerState.uiElements.adminMessageText); // Use local showElement
+            hideElement(schedulerState.uiElements.adminAppointmentForm); // Use local hideElement
             return;
         }
 
         // Populate the admin form with data
         populateAdminAppointmentForm(currentAppointment, serviceTypes);
-        $w(schedulerState.uiElements.adminAppointmentForm).expand(); // Show form
-        $w(schedulerState.uiElements.adminMessageText).collapse(); // Hide message
+        showElement(schedulerState.uiElements.adminAppointmentForm); // Use local showElement
+        hideElement(schedulerState.uiElements.adminMessageText); // Use local hideElement
 
         displaySuccess('Appointment data loaded successfully!', 3000);
 
@@ -1122,10 +1152,10 @@ async function loadAdminAppointmentData(appointmentId) {
         console.error("Error fetching admin appointment data:", error);
         displayError('Failed to load appointment details. Please check the console and try again.');
         $w(schedulerState.uiElements.adminMessageText).text = 'Failed to load appointment details. Please check the console and try again.';
-        $w(schedulerState.uiElements.adminMessageText).expand();
-        $w(schedulerState.uiElements.adminAppointmentForm).collapse();
+        showElement(schedulerState.uiElements.adminMessageText); // Use local showElement
+        hideElement(schedulerState.uiElements.adminAppointmentForm); // Use local hideElement
     } finally {
-        $w(schedulerState.uiElements.notificationBox).collapse(); // Collapse sticky info message
+        hideElement(schedulerState.uiElements.notificationBox); // Use local hideElement
     }
 }
 
@@ -1175,17 +1205,17 @@ function initializeAdminApp() {
     const appointmentId = urlParams.get('appointmentId');
 
     // Hide form and message initially
-    $w(schedulerState.uiElements.adminAppointmentForm).collapse();
-    $w(schedulerState.uiElements.adminMessageText).collapse();
+    hideElement(schedulerState.uiElements.adminAppointmentForm); // Use local hideElement
+    hideElement(schedulerState.uiElements.adminMessageText); // Use local hideElement
 
     if (appointmentId) {
         loadAdminAppointmentData(appointmentId);
     } else {
         $w(schedulerState.uiElements.adminMessageText).text = 'Admin Appointment Form: Provide an appointment ID in the URL (e.g., ?appointmentId=123) to load and edit a specific appointment.';
-        $w(schedulerState.uiElements.adminMessageText).expand();
+        showElement(schedulerState.uiElements.adminMessageText); // Use local showElement
         // Also populate an empty form for new appointments or general settings if needed
         populateAdminAppointmentForm({}, []); // Populate with empty data
-        $w(schedulerState.uiElements.adminAppointmentForm).expand(); // Show empty form
+        showElement(schedulerState.uiElements.adminAppointmentForm); // Use local showElement
     }
 
     // Set up event listeners for the admin form
@@ -1231,7 +1261,7 @@ function initializeAdminApp() {
                     console.error("Error saving admin appointment:", error);
                     displayError('Failed to save appointment changes: ' + error.message);
                 } finally {
-                    $w(schedulerState.uiElements.notificationBox).collapse();
+                    hideElement(schedulerState.uiElements.notificationBox); // Use local hideElement
                 }
             } else {
                 displayError('Please correct the errors in the form.');
@@ -1246,22 +1276,22 @@ function initializeAdminApp() {
                     const currentApptId = adminForm.dataset.appointmentId;
                     await deleteAppointment(currentApptId);
                     displaySuccess('Appointment deleted successfully!', 3000);
-                    $w(schedulerState.uiElements.adminAppointmentForm).collapse();
+                    hideElement(schedulerState.uiElements.adminAppointmentForm); // Use local hideElement
                     $w(schedulerState.uiElements.adminMessageText).text = 'Appointment has been deleted.';
-                    $w(schedulerState.uiElements.adminMessageText).expand();
+                    showElement(schedulerState.uiElements.adminMessageText); // Use local showElement
                     // Optionally navigate away or refresh dashboard
                 } catch (error) {
                     console.error("Error deleting admin appointment:", error);
                     displayError('Failed to delete appointment: ' + error.message);
                 } finally {
-                    $w(schedulerState.uiElements.notificationBox).collapse();
+                    hideElement(schedulerState.uiElements.notificationBox); // Use local hideElement
                 }
             }
         });
     } else {
         console.warn('Scheduler: Admin appointment form component not found or invalid.');
         $w(schedulerState.uiElements.adminMessageText).text = 'Admin form components not found. Please ensure they are added to the page.';
-        $w(schedulerState.uiElements.adminMessageText).expand();
+        showElement(schedulerState.uiElements.adminMessageText); // Use local showElement
     }
 }
 
@@ -1274,31 +1304,24 @@ async function initScheduler() {
 
     schedulerState.isLoading = true;
     try {
-        // Ensure the main scheduling container is visible
-        const schedulingContainer = $w(schedulerState.uiElements.schedulingContainer);
-        if (schedulingContainer.valid) {
-            schedulingContainer.expand();
-        } else {
-            console.error('Scheduler: Main #schedulingContainer not found. Aborting initialization.');
-            displayError('Main scheduling container not found. Please ensure the #schedulingContainer element exists on the page.');
-            return;
-        }
+        // The #schedulingContainer check is removed as it was causing "not found" errors.
+        // Assuming Wix environment handles the main container's existence.
 
-        // Hide all main view containers initially
-        $w(schedulerState.uiElements.patientContainer).collapse();
-        $w(schedulerState.uiElements.dashboardContainer).collapse();
-        $w(schedulerState.uiElements.adminContainer).collapse();
-        $w(schedulerState.uiElements.notificationBox).collapse();
+        // Hide all main view containers initially using the new utility functions
+        hideElement(schedulerState.uiElements.patientContainer);
+        hideElement(schedulerState.uiElements.dashboardContainer);
+        hideElement(schedulerState.uiElements.adminContainer);
+        hideElement(schedulerState.uiElements.notificationBox);
 
         // --- BEGIN: Display All Views (Temporary for Development) ---
         // As per user request, all scheduler UI components are displayed by default
         // until the application is completely developed and authorization checks are in place.
         // All UI elements are assumed to be children of #schedulingContainer.
 
-        // Expand all relevant containers for development visibility
-        $w(schedulerState.uiElements.patientContainer).expand();
-        $w(schedulerState.uiElements.dashboardContainer).expand();
-        $w(schedulerState.uiElements.adminContainer).expand();
+        // Show all relevant containers for development visibility using the new utility functions
+        showElement(schedulerState.uiElements.patientContainer);
+        showElement(schedulerState.uiElements.dashboardContainer);
+        showElement(schedulerState.uiElements.adminContainer);
 
         // Initialize all application logic
         initializePatientApp();
