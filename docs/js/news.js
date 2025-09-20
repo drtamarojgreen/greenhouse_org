@@ -5,8 +5,6 @@
  * Debug build with verbose logging.
  */
 
-import { get_getNews } from 'backend/getNews';
-
 (function () {
     'use strict';
 
@@ -17,7 +15,7 @@ import { get_getNews } from 'backend/getNews';
         loadTimeout: 15000,
         retries: { maxAttempts: 3, delay: 1000 },
         dom: { insertionDelay: 500, observerTimeout: 10000 },
-        // api: { getNews: '/_functions/getNews' } // No longer needed with direct backend import
+        api: { getNews: '/_functions/getNews' }
     };
 
     /** ---------------- STATE ---------------- */
@@ -113,14 +111,14 @@ import { get_getNews } from 'backend/getNews';
         async fetchNews() {
             console.debug("🌐 fetchNews called");
             try {
-                const response = await get_getNews(); // Call the backend function directly
-                console.debug("🌍 Backend response:", response);
-                if (response.status !== 200) {
-                    throw new Error(`Backend error: ${response.body.message || 'Unknown error'}`);
+                const response = await fetch(config.api.getNews);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                const data = response.body.items; // Access the items property
-                console.debug("✅ News data received:", data);
-                return data;
+                const data = await response.json();
+                const newsData = data.items;
+                console.debug("✅ News data received:", newsData);
+                return newsData;
             } catch (error) {
                 console.error("❌ fetchNews failed:", error);
                 this.showErrorMessage('Failed to load news. Please try again later.');
