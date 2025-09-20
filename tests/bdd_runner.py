@@ -9,6 +9,35 @@ from selenium.webdriver.firefox.options import Options
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# --- Custom Test Result and Runner for detailed summary ---
+class CustomTestResult(unittest.TextTestResult):
+    def __init__(self, stream, descriptions, verbosity):
+        super().__init__(stream, descriptions, verbosity)
+        self.passed = []
+        self.failed = []
+        self.errored = []
+        self.skipped = []
+
+    def addSuccess(self, test):
+        super().addSuccess(test)
+        self.passed.append(self.getDescription(test))
+
+    def addFailure(self, test, err):
+        super().addFailure(test, err)
+        self.failed.append((self.getDescription(test), self._exc_info_to_string(err, test)))
+
+    def addError(self, test, err):
+        super().addError(test, err)
+        self.errored.append((self.getDescription(test), self._exc_info_to_string(err, test)))
+
+    def addSkip(self, test, reason):
+        super().addSkip(test, reason)
+        self.skipped.append((self.getDescription(test), reason))
+
+class CustomTestRunner(unittest.TextTestRunner):
+    def _makeResult(self):
+        return CustomTestResult(self.stream, self.descriptions, self.verbosity)
+
 # --- Step Registry ---
 _step_registry = {}
 
@@ -33,8 +62,35 @@ class BDDTestRunner:
                 test_case_class = self.create_test_case_class(feature_path)
                 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(test_case_class))
         
-        runner = unittest.TextTestRunner()
-        runner.run(suite)
+        runner = CustomTestRunner(verbosity=2) # Use CustomTestRunner
+        result = runner.run(suite)
+
+        print("\n\n--- Comprehensive Test Summary ---")
+        print(f"Total Tests Run: {result.testsRun}")
+        print(f"Passed: {len(result.passed)}")
+        print(f"Failed: {len(result.failed)}")
+        print(f"Errors: {len(result.errored)}")
+        print(f"Skipped: {len(result.skipped)}")
+
+        if result.passed:
+            print("\n--- Passed Tests ---")
+            for test_desc in result.passed:
+                print(f"- {test_desc}")
+
+        if result.failed:
+            print("\n--- Failed Tests ---")
+            for test_desc, traceback_str in result.failed:
+                print(f"- {test_desc}\n  Reason: {traceback_str.splitlines()[-1]}")
+
+        if result.errored:
+            print("\n--- Errored Tests ---")
+            for test_desc, traceback_str in result.errored:
+                print(f"- {test_desc}\n  Reason: {traceback_str.splitlines()[-1]}")
+
+        if result.skipped:
+            print("\n--- Skipped Tests ---")
+            for test_desc, reason in result.skipped:
+                print(f"- {test_desc}\n  Reason: {reason}")
 
     def create_test_case_class(self, feature_path):
         with open(feature_path, 'r') as f:
@@ -49,17 +105,17 @@ class BDDTestRunner:
 
             @classmethod
             def setUpClass(cls):
-                # The user mentioned geckodriver in test/
-                geckodriver_path = '/home/tamarojgreen/development/LLM/greenhouse_org/test/geckodriver'
+                # Use ChromeDriver as requested by the user
+                chromedriver_path = '/home/tamarojgreen/development/LLM/greenhouse_org/test/chromedriver'
                 
-                options = Options()
-                options.add_argument("-headless")
+                options = webdriver.ChromeOptions()
+                options.add_argument("--headless")
 
-                if os.path.exists(geckodriver_path):
-                    service = FirefoxService(executable_path=geckodriver_path)
-                    cls.driver = webdriver.Firefox(service=service, options=options)
+                if os.path.exists(chromedriver_path):
+                    service = webdriver.chrome.service.Service(executable_path=chromedriver_path)
+                    cls.driver = webdriver.Chrome(service=service, options=options)
                 else:
-                    raise FileNotFoundError(f"GeckoDriver not found at {geckodriver_path}")
+                    raise FileNotFoundError(f"ChromeDriver not found at {chromedriver_path}")
                 cls.driver.implicitly_wait(10)
 
             @classmethod
@@ -109,12 +165,14 @@ def register_all_steps(registry):
     from tests.bdd.steps import news_steps
     from tests.bdd.steps import common_steps
     from tests.bdd.steps import schedule_steps
+    from tests.bdd.steps import projects_steps
 
     books_steps.register_steps(registry)
     videos_steps.register_steps(registry)
     news_steps.register_steps(registry)
     common_steps.register_steps(registry)
     schedule_steps.register_steps(registry)
+    projects_steps.register_steps(registry)
 
 if __name__ == '__main__':
     # Add tests directory to path to allow importing steps

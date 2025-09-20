@@ -11,3 +11,28 @@ Feature: Schedule Page
     And I click the "Confirm Your Booking" button
     Then I should see a confirmation message "Thank You! Your appointment is booked."
     And I should receive a confirmation email
+  
+  Scenario: Schedule page loads basic elements
+    Given I am on the schedule page
+    When the page has loaded
+    Then I should see the site header
+    And I should see the site footer
+    And I should see the main site container
+
+  Scenario: Schedule page loads main application containers
+    Given I am on the schedule page
+    When the page has loaded
+    Then I should see the main schedule container
+
+  Scenario: Schedule page loads dashboard elements
+    Given I am on the schedule page
+    When the page has loaded
+    Then I should see the administrator dashboard title
+    And I should see the new appointment box
+
+  Scenario: Schedule page loads schedule table elements
+    Given I am on the schedule page
+    When the page has loaded
+    Then I should see the weekly schedule title
+    And I should see the time column header
+    And I should see the Sunday column header
