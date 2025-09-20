@@ -306,8 +306,8 @@
                 GreenhouseUtils.appState.currentView = 'all'; 
 
                 // Wait for the main scheduling container to be available
-                await GreenhouseUtils.waitForElement('#schedulingContainer', GreenhouseUtils.config.dom.observerTimeout);
-                console.log('Scheduler: Found #schedulingContainer, proceeding with initialization.');
+                await GreenhouseUtils.waitForElement('#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section', GreenhouseUtils.config.dom.observerTimeout);
+                console.log('Scheduler: Found scheduling container, proceeding with initialization.');
 
                 // Wait for target elements to be available
                 GreenhouseUtils.appState.targetElementLeft = await GreenhouseUtils.waitForElement(targetSelectorLeft, GreenhouseUtils.config.dom.observerTimeout);

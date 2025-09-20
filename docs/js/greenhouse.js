@@ -64,7 +64,10 @@
             admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
             books: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div > section.wixui-section', // User-specified selector for books
             videos: '.wixui-repeater', // Selector for the videos repeater
-            news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column' // Reverting to a generic column selector
+            news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
+            repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
+            repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
+            repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
         },
         /**
          * Fallback selectors to try if primary selectors fail.
@@ -162,9 +165,9 @@
 
         // Always use the dashboard selectors as they provide both left and right panels,
         // which are necessary to display all UI components.
-        const mainSelector = config.selectors.dashboardLeft;
+        const mainSelector = [config.selectors.dashboardLeft, config.selectors.repeaterLeft];
         const fallbackSelector = config.fallbackSelectors.dashboardLeft;
-        const rightPanelSelector = config.selectors.dashboardRight;
+        const rightPanelSelector = [config.selectors.dashboardRight, config.selectors.repeaterRight];
         const rightPanelFallbackSelector = config.fallbackSelectors.dashboardRight;
 
         // Pass a generic 'all' view or the actual view if present, but scheduler.js will render all.
