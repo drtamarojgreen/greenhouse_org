@@ -95,8 +95,9 @@
      * @param {string} [viewParam='default'] - The URL parameter for the view (e.g., 'dashboard' for scheduler).
      * @param {string} [rightPanelSelector] - Optional selector for a right panel (e.g., for dashboard view).
      * @param {string} [rightPanelFallbackSelector] - Optional fallback selector for a right panel.
+     * @param {object} [extraAttributes={}] - Optional object of extra data attributes to add to the script tag.
      */
-    async function loadApplication(appName, scriptName, mainSelector, fallbackSelector, uiScriptName = null, viewParam = 'default', rightPanelSelector = null, rightPanelFallbackSelector = null) {
+    async function loadApplication(appName, scriptName, mainSelector, fallbackSelector, uiScriptName = null, viewParam = 'default', rightPanelSelector = null, rightPanelFallbackSelector = null, extraAttributes = {}) {
         try {
             console.log(`Greenhouse: Initializing ${appName} application`);
             
@@ -140,7 +141,8 @@
                 'target-selector-left': targetSelectorLeft,
                 'target-selector-right': targetSelectorRight, // Will be null if not a two-panel app
                 'base-url': config.githubPagesBaseUrl,
-                'view': view
+                'view': view,
+                ...extraAttributes
             };
 
             if (uiScriptName) {
@@ -163,16 +165,26 @@
     async function loadSchedulerApplication() {
         console.log(`Greenhouse: Loading scheduler application (displaying all views for development).`);
 
-        // Always use the dashboard selectors as they provide both left and right panels,
-        // which are necessary to display all UI components.
+        const schedulerSelectors = {
+            dashboardLeft: config.selectors.dashboardLeft,
+            dashboardRight: config.selectors.dashboardRight,
+            repeaterLeft: config.selectors.repeaterLeft,
+            repeaterRight: config.selectors.repeaterRight
+        };
+
+        const extraAttributes = {
+            'data-scheduler-selectors': JSON.stringify(schedulerSelectors)
+        };
+
+        // The mainSelector and rightPanelSelector are now just for finding *any* valid container to start.
+        // The real work is done in scheduler.js with the full set of selectors.
         const mainSelector = [config.selectors.dashboardLeft, config.selectors.repeaterLeft];
         const fallbackSelector = config.fallbackSelectors.dashboardLeft;
         const rightPanelSelector = [config.selectors.dashboardRight, config.selectors.repeaterRight];
         const rightPanelFallbackSelector = config.fallbackSelectors.dashboardRight;
 
-        // Pass a generic 'all' view or the actual view if present, but scheduler.js will render all.
         const urlParams = new URLSearchParams(window.location.search);
-        const view = urlParams.get('view') || 'all'; 
+        const view = urlParams.get('view') || 'all';
 
         await loadApplication(
             'scheduler',
@@ -180,9 +192,10 @@
             mainSelector,
             fallbackSelector,
             'schedulerUI.js',
-            view, // Pass the determined view, though scheduler.js will render all UI
+            view,
             rightPanelSelector,
-            rightPanelFallbackSelector
+            rightPanelFallbackSelector,
+            extraAttributes
         );
     }
 

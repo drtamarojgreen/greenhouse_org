@@ -80,39 +80,39 @@
          * @param {HTMLElement} [rightAppContainer] - The main DOM element for the right panel (optional, for dashboard).
          * @returns {Promise<void>} A promise that resolves when the view is rendered and app script loaded.
          */
-        async renderView(leftAppContainer, rightAppContainer = null) {
+        async renderView(containers) {
             return new Promise((resolve, reject) => {
-                console.log(`Scheduler: Rendering view: ${GreenhouseUtils.appState.currentView}`);
-
                 try {
-                    // --- BEGIN: Display All Views (Temporary for Development) ---
-                    // As per user request, all scheduler UI components are displayed by default
-                    // until the application is completely developed and authorization checks are in place.
-                    // This ensures all elements are visible for testing and development purposes.
-                    console.log('Scheduler: Rendering ALL UI components for development purposes.');
+                    console.log('Scheduler: Rendering UI components into designated containers.');
 
-                    // Dashboard UI
-                    GreenhouseSchedulerUI.buildDashboardLeftPanelUI(leftAppContainer, 'superadmin');
-                    if (rightAppContainer) {
-                        GreenhouseSchedulerUI.buildDashboardRightPanelUI(rightAppContainer);
+                    // Container 1: Admin Dashboard (from dashboardLeft and dashboardRight)
+                    if (containers.dashboardLeft && containers.dashboardRight) {
+                        console.log('Scheduler: Rendering Admin Dashboard UI.');
+                        // Left Panel: Weekly Schedule & Conflict Resolution
+                        GreenhouseSchedulerUI.buildDashboardLeftPanelUI(containers.dashboardLeft, 'superadmin');
+                        // Right Panel: Admin Appointment Form
+                        GreenhouseSchedulerUI.buildAdminFormUI(containers.dashboardRight);
+                    } else {
+                        console.warn('Scheduler: Admin dashboard containers not found. Skipping render.');
                     }
 
-                    // Patient UI
-                    GreenhouseSchedulerUI.buildPatientFormUI(leftAppContainer);
-                    if (rightAppContainer) {
-                        GreenhouseSchedulerUI.createInstructionsPanel(rightAppContainer);
-                        GreenhouseSchedulerUI.buildPatientCalendarUI(rightAppContainer);
+                    // Container 2: Patient Area (from repeaterLeft and repeaterRight)
+                    if (containers.repeaterLeft && containers.repeaterRight) {
+                        console.log('Scheduler: Rendering Patient Area UI.');
+                        // Left Panel: Request an Appointment Form
+                        GreenhouseSchedulerUI.buildPatientFormUI(containers.repeaterLeft);
+                        // Right Panel: Instructions and Calendar
+                        GreenhouseSchedulerUI.createInstructionsPanel(containers.repeaterRight);
+                        GreenhouseSchedulerUI.buildPatientCalendarUI(containers.repeaterRight);
+                    } else {
+                        console.warn('Scheduler: Patient area containers not found. Skipping render.');
                     }
 
-                    // Admin UI
-                    GreenhouseSchedulerUI.buildAdminFormUI(leftAppContainer);
-                    // --- END: Display All Views (Temporary for Development) ---
-
-                    resolve(); // Resolve the promise when UI rendering is complete
+                    resolve();
                 } catch (error) {
-                    console.error(`Scheduler: Error rendering all views:`, error);
-                    this.createErrorView(`Failed to load all scheduler views: ${error.message}`);
-                    reject(error); // Reject the promise on error
+                    console.error(`Scheduler: Error rendering views:`, error);
+                    this.createErrorView(`Failed to load scheduler views: ${error.message}`);
+                    reject(error);
                 }
             });
         },
