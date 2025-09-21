@@ -81,29 +81,32 @@
         async renderView(containers) {
             return new Promise((resolve, reject) => {
                 try {
-                    console.log('Scheduler: Rendering UI components into designated containers.');
+                    console.log('Scheduler: Rendering custom UI layout as per user instructions.');
 
-                    // Container 1: Admin Dashboard (from dashboardLeft and dashboardRight)
-                    if (containers.dashboardLeft && containers.dashboardRight) {
-                        console.log('Scheduler: Rendering Admin Dashboard UI.');
-                        // Left Panel: Weekly Schedule & Conflict Resolution
+                    // Clear all containers first
+                    Object.values(containers).forEach(container => {
+                        if (container) container.innerHTML = '';
+                    });
+
+                    // dashboardLeft: Weekly Calendar
+                    if (containers.dashboardLeft) {
                         GreenhouseSchedulerUI.buildDashboardLeftPanelUI(containers.dashboardLeft, 'superadmin');
-                        // Right Panel: Admin Appointment Form
-                        GreenhouseSchedulerUI.buildAdminFormUI(containers.dashboardRight);
-                    } else {
-                        console.warn('Scheduler: Admin dashboard containers not found. Skipping render.');
                     }
 
-                    // Container 2: Patient Area (from repeaterLeft and repeaterRight)
-                    if (containers.repeaterLeft && containers.repeaterRight) {
-                        console.log('Scheduler: Rendering Patient Area UI.');
-                        // Left Panel: Request an Appointment Form
-                        GreenhouseSchedulerUI.buildPatientFormUI(containers.repeaterLeft);
-                        // Right Panel: Instructions and Calendar
+                    // dashboardRight: Monthly Calendar
+                    if (containers.dashboardRight) {
+                        GreenhouseSchedulerUI.buildPatientCalendarUI(containers.dashboardRight);
+                    }
+
+                    // repeaterLeft: Conflict Form
+                    if (containers.repeaterLeft) {
+                        GreenhouseSchedulerUI.buildAdminFormUI(containers.repeaterLeft);
+                    }
+
+                    // repeaterRight: Patient Form + any other UI components
+                    if (containers.repeaterRight) {
+                        GreenhouseSchedulerUI.buildPatientFormUI(containers.repeaterRight);
                         GreenhouseSchedulerUI.createInstructionsPanel(containers.repeaterRight);
-                        GreenhouseSchedulerUI.buildPatientCalendarUI(containers.repeaterRight);
-                    } else {
-                        console.warn('Scheduler: Patient area containers not found. Skipping render.');
                     }
 
                     resolve();
@@ -266,10 +269,11 @@
                 console.log('Scheduler: Starting initialization');
 
                 // Set configuration from data attributes
-                const schedulerSelectors = JSON.parse(document.currentScript.dataset.schedulerSelectors || '{}');
+                const scriptAttributes = document.currentScript.dataset || window._greenhouseScriptAttributes || {};
+                const schedulerSelectors = JSON.parse(scriptAttributes.schedulerSelectors || '{}');
                 GreenhouseUtils.appState.schedulerSelectors = schedulerSelectors;
-                GreenhouseUtils.appState.baseUrl = document.currentScript.dataset.baseUrl;
-                GreenhouseUtils.appState.currentView = 'all';
+                GreenhouseUtils.appState.baseUrl = scriptAttributes.baseUrl || window._greenhouseScriptAttributes.baseUrl;
+                GreenhouseUtils.appState.currentView = scriptAttributes.view || window._greenhouseScriptAttributes.view || 'all';
 
                 // Wait for all container elements to be available
                 const [dashboardLeft, dashboardRight, repeaterLeft, repeaterRight] = await Promise.all([
