@@ -1,0 +1,40 @@
+
+{
+  "summary": {
+    "pageTitle": "Inspiration",
+    "titleButton": "Find Your Focus",
+    "sectionTitle": "Mindfulness & DBT Quotes",
+    "sectionSubtitle": "A collection of quotes to inspire and guide your practice.",
+    "sectionText": "Mindfulness is a core component of Dialectical Behavior Therapy (DBT), emphasizing non-judgmental awareness of the present moment to foster self-compassion and emotional balance."
+  },
+  "quotes": [
+    {
+      "text": "Mindfulness isn't difficult. We just need to remember to do it.",
+      "author": "Sharon Salzberg"
+    },
+    {
+      "text": "Wherever you go, there you are.",
+      "author": "Jon Kabat-Zinn"
+    },
+    {
+      "text": "The present moment is filled with joy and happiness. If you are attentive, you will see it.",
+      "author": "Thich Nhat Hanh"
+    },
+    {
+      "text": "Feelings come and go like clouds in a windy sky. Conscious breathing is my anchor.",
+      "author": "Thich Nhat Hanh"
+    },
+    {
+      "text": "In today's rush, we all think too much — seek too much — want too much — and forget about the joy of just being.",
+      "author": "Eckhart Tolle"
+    },
+    {
+      "text": "The little things? The little moments? They aren't little.",
+      "author": "Jon Kabat-Zinn"
+    },
+    {
+        "text": "Pain is inevitable, suffering is optional.",
+        "author": "Haruki Murakami"
+    }
+  ]
+}
