@@ -229,26 +229,38 @@
         observeAndReinitializeApp(containers) {
             let isRebuilding = false;
 
-            const reinitializeScheduler = async () => {
+            const reinitializeScheduler = () => {
                 if (isRebuilding) return;
                 isRebuilding = true;
-                console.warn('Scheduler Resilience: Application container removed. Re-initializing...');
-                if (resilienceObserver) resilienceObserver.disconnect();
+                console.warn('Scheduler Resilience: DOM conflict detected. Re-initializing scheduler...');
+                if (resilienceObserver) resilienceObserver.disconnect(); // Stop observing to prevent loops.
 
-                setTimeout(async () => {
-                    await this.rebuildUI();
-                    this.observeAndReinitializeApp(GreenhouseUtils.appState.containers);
-                    isRebuilding = false;
-                }, 100);
+                // A short delay to let the DOM settle after the wipe from the host framework (e.g., React).
+                setTimeout(() => {
+                    // The existing global reinitialize function handles finding containers and rebuilding the UI from scratch.
+                    if (window.GreenhouseScheduler && typeof window.GreenhouseScheduler.reinitialize === 'function') {
+                        window.GreenhouseScheduler.reinitialize();
+                    } else {
+                        console.error("Scheduler Resilience: Cannot find global reinitialize function to recover from DOM wipe.");
+                    }
+                    // No need to set isRebuilding back to false, as the whole script effectively re-runs.
+                }, 500); // 500ms delay as a safeguard.
             };
 
             const observerCallback = (mutationsList) => {
+                // If the app isn't fully rendered yet, or we are already in the process of rebuilding, do nothing.
+                if (!GreenhouseUtils.appState.isInitialized || isRebuilding) return;
+
                 for (const mutation of mutationsList) {
-                    if (mutation.type === 'childList') {
-                        // Check if any of our containers are no longer in the document
-                        if (Object.values(containers).some(c => c && !document.body.contains(c))) {
-                            reinitializeScheduler();
-                            return;
+                    // We are looking for a 'childList' mutation where our UI nodes are removed.
+                    if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+                        const container = mutation.target;
+
+                        // If the container is now empty, and it's one of the containers we manage, it's a wipe.
+                        if (container.children.length === 0 && Object.values(containers).includes(container)) {
+                             console.warn(`Scheduler Resilience: Detected content wipe in a managed container. Triggering rebuild.`);
+                             reinitializeScheduler();
+                             return; // Exit after starting the re-initialization.
                         }
                     }
                 }
@@ -256,13 +268,13 @@
 
             resilienceObserver = new MutationObserver(observerCallback);
 
-            // Observe the parent of each container
+            // Observe the containers themselves for changes to their direct children.
             Object.values(containers).forEach(container => {
-                if (container && container.parentElement) {
-                    resilienceObserver.observe(container.parentElement, { childList: true, subtree: false });
+                if (container) {
+                    resilienceObserver.observe(container, { childList: true });
                 }
             });
-            console.log('Scheduler Resilience: MutationObserver activated.');
+            console.log('Scheduler Resilience: MutationObserver activated on containers to detect content wipes.');
         },
 
         /**
