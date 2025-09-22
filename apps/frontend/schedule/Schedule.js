@@ -1327,7 +1327,7 @@ $w.onReady(function () {
     // setTimeout(() => {
     //    initScheduler();
     //} , 100);
-    waitForElement('#patientContainer')
+    /*waitForElement('#patientContainer')
         .then(() => {
             console.log('Scheduler: React container found. Initializing scheduler.');
             initScheduler();
@@ -1335,6 +1335,6 @@ $w.onReady(function () {
         .catch(error => {
             console.error('Scheduler: Failed to find React container, scheduler not initialized.', error);
             displayError('Failed to load the scheduling application. The main container was not found.');
-        });
+        });*/
 
 });
