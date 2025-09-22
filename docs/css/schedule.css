@@ -9,7 +9,7 @@ div[class*="bgLayer"] {
 
 
 /* Scoped styles for the Greenhouse Schedule App */
-.greenhouse-app-container {
+#greenhouse-app-container {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
     color: #333; /* Default text color */
@@ -17,7 +17,7 @@ div[class*="bgLayer"] {
     z-index: 9999;
 }
 
-.greenhouse-app-container .wixui-column-strip__column {
+#greenhouse-app-container .wixui-column-strip__column {
     display: flex;
     flex-direction: column;
     padding: 20px;
@@ -28,11 +28,11 @@ div[class*="bgLayer"] {
     
 }
 
-.greenhouse-app-container .wixui-column-strip__column > #greenhouse-app-container {
+#greenhouse-app-container .wixui-column-strip__column > #greenhouse-app-container {
     order: -1;
 }
 
-.greenhouse-app-container .calendar-header{
+#greenhouse-app-container .calendar-header{
  display: flex;
   justify-content: space-between;
   align-items: center;
@@ -41,7 +41,7 @@ div[class*="bgLayer"] {
   border-bottom: 1px solid #ddd;
 }
 
-.greenhouse-app-container .calendar-header > * {
+#greenhouse-app-container .calendar-header > * {
   background: #f0f0f0;
   padding: 15px;
   border-radius: 6px;
@@ -115,16 +115,16 @@ div[class*="bgLayer"] {
     margin-right: 10px;
 }
 
-.greenhouse-app-container button:hover {
+#greenhouse-app-container button:hover {
     background-color: #2d3e2d; /* Darker green on hover */
     transform: translateY(-1px);
 }
 
-.greenhouse-app-container button:active {
+#greenhouse-app-container button:active {
     transform: translateY(0);
 }
 
-.greenhouse-app-container .schedule-table {
+.schedule-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
@@ -134,8 +134,8 @@ div[class*="bgLayer"] {
     overflow: hidden;
 }
 
-.greenhouse-app-container .schedule-table th,
-.greenhouse-app-container .schedule-table td {
+.schedule-table th,
+.schedule-table td {
     border: 1px solid #e0e0e0;
     padding: 8px;
     text-align: center;
@@ -146,7 +146,7 @@ div[class*="bgLayer"] {
     position: relative;
 }
 
-.greenhouse-app-container .schedule-table th {
+.schedule-table th {
     background-color: #e8f5e8; /* Light green from theme */
     color: #357438; /* Primary green */
     font-weight: 600;
@@ -154,7 +154,7 @@ div[class*="bgLayer"] {
     padding: 10px 5px;
 }
 
-.greenhouse-app-container .time-column-header {
+.time-column-header {
     width: 60px;
     min-width: 60px;
     max-width: 60px;
@@ -162,7 +162,7 @@ div[class*="bgLayer"] {
     color: #357438;
 }
 
-.greenhouse-app-container .time-slot-label {
+.time-slot-label {
     background-color: #f0faf4; /* Lighter green from theme */
     font-weight: 500;
     color: #357438; /* Primary green */
@@ -173,37 +173,37 @@ div[class*="bgLayer"] {
     padding-right: 10px;
 }
 
-.greenhouse-app-container .schedule-cell {
+.schedule-cell {
     background-color: #fff;
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
-.greenhouse-app-container .schedule-cell:hover {
+.schedule-cell:hover {
     background-color: #e8f5e8; /* Light green hover */
 }
 
-.greenhouse-app-container .schedule-table tr:nth-child(odd) .schedule-cell:nth-child(even) {
+.schedule-table tr:nth-child(odd) .schedule-cell:nth-child(even) {
     background-color: #f8fdf9; /* Very light green */
 }
 
-.greenhouse-app-container .schedule-table tr:nth-child(even) .schedule-cell:nth-child(odd) {
+.schedule-table tr:nth-child(even) .schedule-cell:nth-child(odd) {
     background-color: #f8fdf9; /* Very light green */
 }
 
-.greenhouse-app-container .schedule-table tr:nth-child(odd) .schedule-cell:nth-child(odd) {
+.schedule-table tr:nth-child(odd) .schedule-cell:nth-child(odd) {
     background-color: #ffffff;
 }
 
-.greenhouse-app-container .schedule-table tr:nth-child(even) .schedule-cell:nth-child(even) {
+.schedule-table tr:nth-child(even) .schedule-cell:nth-child(even) {
     background-color: #ffffff;
 }
 
-.greenhouse-app-container .schedule-table td.time-slot-label {
+.schedule-table td.time-slot-label {
     background-color: #f0faf4; /* Lighter green from theme */
 }
 
-.greenhouse-app-container .schedule-cell .appointment-item {
+.schedule-cell .appointment-item {
     position: absolute;
     top: 0;
     left: 0;
@@ -225,7 +225,7 @@ div[class*="bgLayer"] {
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.greenhouse-app-container table:not(.schedule-table) {
+table:not(.schedule-table) {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
@@ -235,8 +235,8 @@ div[class*="bgLayer"] {
     overflow: hidden;
 }
 
-.greenhouse-app-container table:not(.schedule-table) th,
-.greenhouse-app-container table:not(.schedule-table) td {
+table:not(.schedule-table) th,
+table:not(.schedule-table) td {
     border: 1px solid #e0e0e0;
     padding: 12px;
     text-align: center;
@@ -245,18 +245,18 @@ div[class*="bgLayer"] {
     vertical-align: top;
 }
 
-.greenhouse-app-container table:not(.schedule-table) th {
+table:not(.schedule-table) th {
     background-color: #e8f5e8; /* Light green from theme */
     color: #357438; /* Primary green */
     font-weight: 600;
     text-transform: uppercase;
 }
 
-.greenhouse-app-container table:not(.schedule-table) tr:nth-child(even) {
+table:not(.schedule-table) tr:nth-child(even) {
     background-color: #f8fdf9; /* Very light green */
 }
 
-.greenhouse-app-container .appointment-item {
+.appointment-item {
     border: 1px solid #e8f5e8; /* Light green border */
     padding: 15px;
     margin-bottom: 15px;
@@ -268,12 +268,12 @@ div[class*="bgLayer"] {
     gap: 8px;
 }
 
-.greenhouse-app-container .appointment-item strong {
+.appointment-item strong {
     color: #357438; /* Primary green */
     font-size: 1.1rem;
 }
 
-.greenhouse-app-container .appointment-item button {
+.appointment-item button {
     padding: 8px 15px;
     font-size: 0.9rem;
     margin-top: 10px;
@@ -293,7 +293,7 @@ div[class*="bgLayer"] {
     backdrop-filter: blur(3px);
 }
 
-.greenhouse-app-container .modal-content {
+.modal-content {
     background-color: #ffffff;
     margin: 10% auto;
     padding: 30px;
@@ -317,8 +317,8 @@ div[class*="bgLayer"] {
     transition: color 0.2s ease;
 }
 
-.greenhouse-app-container .close-button:hover,
-.greenhouse-app-container .close-button:focus {
+.close-button:hover,
+.close-button:focus {
     color: #333;
     text-decoration: none;
 }
@@ -328,21 +328,21 @@ div[class*="bgLayer"] {
     to { opacity: 1; transform: translateY(0); }
 }
 
-.greenhouse-app-container .text-center { text-align: center; }
-.greenhouse-app-container .margin-top-20 { margin-top: 20px; }
+.text-center { text-align: center; }
+.margin-top-20 { margin-top: 20px; }
 
-.greenhouse-app-container .service-a { background-color: #e8f5e8; /* Light Green */ }
-.greenhouse-app-container .service-b { background-color: #f0faf4; /* Lighter Green */ }
-.greenhouse-app-container .service-c { background-color: #a5d6a7; /* Medium Light Green */ }
+.service-a { background-color: #e8f5e8; /* Light Green */ }
+.service-b { background-color: #f0faf4; /* Lighter Green */ }
+.service-c { background-color: #a5d6a7; /* Medium Light Green */ }
 
-.greenhouse-app-container .conflict {
+.conflict {
     background-color: #ffe6e6; /* Light Red */
     border: 2px solid #ff4d4d; /* Red border */
     font-weight: bold;
     color: #cc0000;
     position: relative;
 }
-.greenhouse-app-container .conflict::after {
+.conflict::after {
     content: '⚠️';
     position: absolute;
     top: 2px;
@@ -350,7 +350,7 @@ div[class*="bgLayer"] {
     font-size: 0.8em;
 }
 
-.greenhouse-app-container .conflict-cell {
+.conflict-cell {
     position: relative;
     overflow: hidden;
     padding: 0;
@@ -361,7 +361,7 @@ div[class*="bgLayer"] {
     min-height: 50px;
 }
 
-.greenhouse-app-container .conflict-item {
+.conflict-item {
     width: 100%;
     padding: 4px 8px;
     box-sizing: border-box;
@@ -372,33 +372,33 @@ div[class*="bgLayer"] {
     border-bottom: 1px solid rgba(0,0,0,0.1);
 }
 
-.greenhouse-app-container .conflict-item:last-child {
+.conflict-item:last-child {
     border-bottom: none;
 }
 
-.greenhouse-app-container .service-a { background-color: #e8f5e8; /* Light Green */ }
-.greenhouse-app-container .service-b { background-color: #f0faf4; /* Lighter Green */ }
-.greenhouse-app-container .service-c { background-color: #a5d6a7; /* Medium Light Green */ }
+.service-a { background-color: #e8f5e8; /* Light Green */ }
+.service-b { background-color: #f0faf4; /* Lighter Green */ }
+.service-c { background-color: #a5d6a7; /* Medium Light Green */ }
 
-.greenhouse-app-container .conflict-item.conflict {
+.conflict-item.conflict {
     background-color: #ff6347; /* Tomato Red */
     border: 1px solid #dc143c; /* Crimson border */
     color: white;
 }
-.greenhouse-app-container .conflict-item.conflict::after {
+.conflict-item.conflict::after {
     content: '⚠️';
     margin-left: 5px;
     font-size: 0.9em;
 }
 
-.greenhouse-app-container table th:nth-child(even),
-.greenhouse-app-container table td:nth-child(even) {
+table th:nth-child(even),
+table td:nth-child(even) {
     background-color: #f0faf4; /* Light green for alternate columns */
 }
 
-.greenhouse-app-container table tr:nth-child(odd) td:nth-child(even) {
+table tr:nth-child(odd) td:nth-child(even) {
     background-color: #e8f5e8; /* Slightly darker where row and column shading overlap */
 }
-.greenhouse-app-container table tr:nth-child(even) td:nth-child(odd) {
+table tr:nth-child(even) td:nth-child(odd) {
     background-color: #f8fdf9; /* Lighter where row and column shading overlap */
 }
