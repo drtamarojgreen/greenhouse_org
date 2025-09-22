@@ -268,10 +268,13 @@
             try {
                 console.log('Scheduler: Starting initialization');
 
-                // Set configuration from data attributes
+                // Set configuration from data attributes, using global fallback for blob URLs
                 const scriptAttributes = document.currentScript.dataset || window._greenhouseScriptAttributes || {};
-                const schedulerSelectors = JSON.parse(scriptAttributes.schedulerSelectors || '{}');
+                const schedulerSelectorsRaw = scriptAttributes.schedulerSelectors || scriptAttributes['data-scheduler-selectors'] || '{}';
+                const schedulerSelectors = JSON.parse(schedulerSelectorsRaw);
                 GreenhouseUtils.appState.schedulerSelectors = schedulerSelectors;
+                GreenhouseUtils.appState.baseUrl = scriptAttributes['base-url'] || window._greenhouseScriptAttributes['base-url'];
+                GreenhouseUtils.appState.currentView = scriptAttributes.view || window._greenhouseScriptAttributes.view || 'all';
                 GreenhouseUtils.appState.baseUrl = scriptAttributes.baseUrl || window._greenhouseScriptAttributes.baseUrl;
                 GreenhouseUtils.appState.currentView = scriptAttributes.view || window._greenhouseScriptAttributes.view || 'all';
 
@@ -330,7 +333,8 @@
     async function main() {
         try {
             // Simplified validation, main validation now in init
-            if (!document.currentScript.dataset.schedulerSelectors) {
+            const schedulerSelectorsAttr = document.currentScript.dataset.schedulerSelectors || document.currentScript.dataset['scheduler-selectors'];
+            if (!schedulerSelectorsAttr) {
                 console.error('Scheduler: Missing data-scheduler-selectors attribute.');
                 return;
             }

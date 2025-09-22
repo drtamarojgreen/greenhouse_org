@@ -427,6 +427,11 @@
     }
 
     async function activateVineEffect() {
+        if (window.location.pathname !== '/') {
+            console.log('Vine Effect: Not on main page, skipping activation.');
+            return;
+        }
+
         try {
             const heading = await waitForElementBySelector(vineConfig.targetSelector);
             if (!heading || heading.dataset.vineInitialized === 'true') return;
