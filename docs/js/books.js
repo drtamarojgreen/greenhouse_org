@@ -76,9 +76,25 @@
      * @returns {boolean} True if configuration is valid
      */
     function validateConfiguration() {
-        appState.targetSelector = scriptElement?.getAttribute('data-target-selector');
-        appState.baseUrl = scriptElement?.getAttribute('data-base-url');
-        const view = scriptElement?.getAttribute('data-view');
+        const globalAttributes = window._greenhouseScriptAttributes || {};
+
+        // The books app uses a single target selector. We'll prioritize 'target-selector-left'.
+        appState.targetSelector = globalAttributes['target-selector-left']
+                                 || scriptElement?.getAttribute('data-target-selector-left')
+                                 || scriptElement?.getAttribute('data-target-selector');
+
+        appState.baseUrl = globalAttributes['base-url'] || scriptElement?.getAttribute('data-base-url');
+        const view = globalAttributes['view'] || scriptElement?.getAttribute('data-view');
+
+        // Fallback to GreenhouseUtils state if attributes are still missing
+        if (!appState.targetSelector && window.GreenhouseUtils && window.GreenhouseUtils.appState) {
+            appState.targetSelector = window.GreenhouseUtils.appState.targetSelectorLeft;
+             console.log('Books: Falling back to GreenhouseUtils.appState.targetSelectorLeft');
+        }
+        if (!appState.baseUrl && window.GreenhouseUtils && window.GreenhouseUtils.appState) {
+            appState.baseUrl = window.GreenhouseUtils.appState.baseUrl;
+             console.log('Books: Falling back to GreenhouseUtils.appState.baseUrl');
+        }
 
         if (!appState.targetSelector) {
             console.error('Books: Missing required data-target-selector attribute');
