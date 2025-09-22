@@ -89,3 +89,35 @@ def register_steps(registry):
             )
         except TimeoutException:
             context.fail("Timeout: Main site container not found.")
+
+    @step_decorator(registry, r'I select "(.*)" from the service dropdown')
+    def when_i_select_from_service_dropdown(context, service):
+        pass
+
+    @step_decorator(registry, r'I select "(.*)" from the therapist dropdown')
+    def when_i_select_from_therapist_dropdown(context, therapist):
+        pass
+
+    @step_decorator(registry, r'I choose a valid date from the calendar')
+    def when_i_choose_a_valid_date(context):
+        pass
+
+    @step_decorator(registry, r'I select an available time slot "(.*)"')
+    def when_i_select_an_available_time_slot(context, time_slot):
+        pass
+
+    @step_decorator(registry, r'I fill in my details in the booking form')
+    def when_i_fill_in_my_details(context):
+        pass
+
+    @step_decorator(registry, r'I click the "Confirm Your Booking" button')
+    def when_i_click_the_confirm_button(context):
+        pass
+
+    @step_decorator(registry, r'I should see a confirmation message "(.*)"')
+    def then_i_should_see_a_confirmation_message(context, message):
+        pass
+
+    @step_decorator(registry, r'I should receive a confirmation email')
+    def then_i_should_receive_a_confirmation_email(context):
+        pass
