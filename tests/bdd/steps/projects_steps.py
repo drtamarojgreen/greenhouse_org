@@ -34,5 +34,5 @@ def register_steps(registry):
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-hook="item-wrapper"]'))
             )
         except TimeoutException:
-            context.fail("Timeout: Project list 'div[data-hook="item-wrapper"]' not found.")
+            context.fail("""Timeout: Project list 'div[data-hook="item-wrapper"]' not found.""")
 
