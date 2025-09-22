@@ -51,8 +51,8 @@ div[class*="bgLayer"] {
 
 }
 
-.greenhouse-app-container #event-form,
-.greenhouse-app-container .container {
+/* General Form Styling */
+.greenhouse-app-container .greenhouse-form {
     margin-bottom: 20px;
     padding: 25px;
     border: 1px solid #e0e0e0;
@@ -61,36 +61,45 @@ div[class*="bgLayer"] {
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+.greenhouse-app-container .greenhouse-form-field {
+    margin-bottom: 15px;
+}
 
-.greenhouse-app-container label {
+.greenhouse-app-container .greenhouse-form-label {
     display: block;
     margin-bottom: 8px;
     font-weight: 500;
     color: #357438; /* Consistent with primary green */
 }
 
-.greenhouse-app-container input[type="text"],
-.greenhouse-app-container input[type="date"],
-.greenhouse-app-container input[type="time"],
-.greenhouse-app-container select {
-    width: calc(100% - 22px);
+.greenhouse-app-container .greenhouse-form-input {
+    width: calc(100% - 24px); /* Account for padding */
     padding: 12px;
-    margin-bottom: 15px;
     border: 1px solid #ccc;
     border-radius: 5px;
     box-sizing: border-box;
     font-size: 1rem;
-    color: #333;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.greenhouse-app-container input[type="text"]:focus,
-.greenhouse-app-container input[type="date"]:focus,
-.greenhouse-app-container input[type="time"]:focus,
-.greenhouse-app-container select:focus {
+.greenhouse-app-container .greenhouse-form-input:focus {
     border-color: #357438; /* Primary green */
     box-shadow: 0 0 0 3px rgba(53, 116, 56, 0.25); /* Primary green shadow */
     outline: none;
+}
+
+/* Specific styles for buttons using new classes */
+.greenhouse-app-container .greenhouse-btn {
+     /* Base button styles are already covered by the generic 'button' selector */
+     display: inline-block;
+}
+
+.greenhouse-app-container .greenhouse-btn-primary {
+    background-color: #357438; /* Primary green */
+}
+
+.greenhouse-app-container .greenhouse-btn-primary:hover {
+    background-color: #2d3e2d; /* Darker green on hover */
 }
 
 .greenhouse-app-container button {
@@ -271,7 +280,7 @@ div[class*="bgLayer"] {
     align-self: flex-start;
 }
 
-.greenhouse-app-container .modal {
+.greenhouse-app-container .greenhouse-modal {
     display: none;
     position: fixed;
     z-index: 1000;
@@ -297,7 +306,7 @@ div[class*="bgLayer"] {
     animation: fadeIn 0.3s ease-out;
 }
 
-.greenhouse-app-container .close-button {
+.greenhouse-app-container .greenhouse-modal-close {
     color: #888;
     position: absolute;
     top: 15px;
