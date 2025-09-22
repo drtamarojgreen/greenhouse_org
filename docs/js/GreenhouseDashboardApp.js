@@ -344,9 +344,9 @@ window.GreenhouseDashboardApp = (function() {
             console.warn('GreenhouseDashboardApp: Fetch schedule data button not found.');
         }
 
-        // Initial population of calendar UI without data. - DISABLED to prevent React hydration errors.
+        // Initial population of calendar UI. With the new resilience observer, this should be safe.
         // The calendar will be populated when data is fetched or the user interacts with the calendar controls.
-        // populateCalendar(dashboardAppState.currentYear, dashboardAppState.currentMonth);
+        populateCalendar(dashboardAppState.currentYear, dashboardAppState.currentMonth);
 
         // Add event listeners to the main app containers for delegation
         dashboardAppState.leftAppContainer.addEventListener('click', handleAction);
