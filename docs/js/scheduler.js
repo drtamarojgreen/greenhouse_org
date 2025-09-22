@@ -178,8 +178,8 @@
                 // Initialize Admin App
                 if (typeof GreenhouseAdminApp === 'object' && GreenhouseAdminApp !== null && typeof GreenhouseAdminApp.init === 'function') {
                     console.log('Scheduler: Initializing GreenhouseAdminApp');
-                    // Pass the admin right container (where the admin form is)
-                    GreenhouseAdminApp.init(containers.dashboardRight);
+                    // Pass the admin container (where the admin form is)
+                    GreenhouseAdminApp.init(containers.repeaterLeft);
                 } else {
                     console.warn('Scheduler: GreenhouseAdminApp not found or has no init method.');
                 }
