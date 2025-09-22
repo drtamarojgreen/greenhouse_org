@@ -19,14 +19,19 @@ def register_steps(registry):
     @step_decorator(registry, r'I should see the main video container')
     def then_i_should_see_the_main_video_container(context):
         try:
-            WebDriverWait(context.driver, 30).until(
-                EC.presence_of_element_located((By.CLASS_NAME, 'greenhouse-videos-view'))
+            # Based on Videos.js, the main element is the repeater.
+            WebDriverWait(context.driver, 10).until(
+                EC.presence_of_element_located((By.ID, 'videosRepeater'))
             )
         except TimeoutException:
-            context.fail("Timeout: Main video container 'greenhouse-videos-view' not found.")
+            context.fail("Timeout: Main video container '#videosRepeater' not found.")
 
     @step_decorator(registry, r'I should see the video grid')
     def then_i_should_see_the_video_grid(context):
-        WebDriverWait(context.driver, 20).until(
-            EC.presence_of_element_located((By.CLASS_NAME, 'video-grid-container'))
-        )
+        try:
+            # Based on Videos.js, the video grid is the repeater.
+            WebDriverWait(context.driver, 10).until(
+                EC.presence_of_element_located((By.ID, 'videosRepeater'))
+            )
+        except TimeoutException:
+            context.fail("Timeout: Video grid '#videosRepeater' not found.")
