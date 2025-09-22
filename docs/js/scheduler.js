@@ -284,7 +284,7 @@
                 console.log('Scheduler: Starting initialization');
 
                 // Set configuration from data attributes
-                const schedulerSelectorsRaw = scriptAttributes['data-scheduler-selectors'] || ''{}''';
+                const schedulerSelectorsRaw = scriptAttributes['data-scheduler-selectors'] || {};
                 const schedulerSelectors = JSON.parse(schedulerSelectorsRaw);
                 GreenhouseUtils.appState.schedulerSelectors = schedulerSelectors;
                 GreenhouseUtils.appState.baseUrl = scriptAttributes['base-url'];
