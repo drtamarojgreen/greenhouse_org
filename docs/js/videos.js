@@ -159,24 +159,42 @@ import { get_getLatestVideosFromFeed } from 'backend/getLatestVideosFromFeed';
 
         async fetchVideos() {
             try {
-                const response = await get_getLatestVideosFromFeed(); // Call the backend function directly
-                if (response.status !== 200) {
-                    throw new Error(`Backend error: ${response.body.message || 'Unknown error'}`);
+                const jsonLdElement = document.querySelector('script[type="application/ld+json"]');
+                if (!jsonLdElement) {
+                    throw new Error('Structured data script with type "application/ld+json" not found on the page.');
                 }
-                const data = response.body; // The backend function returns the array directly in the body
-                return data;
+
+                const structuredData = JSON.parse(jsonLdElement.textContent);
+                const videoItems = structuredData.itemListElement;
+
+                if (!videoItems || !Array.isArray(videoItems)) {
+                    throw new Error('The "itemListElement" property was not found in the structured data.');
+                }
+
+                // The repeater expects 'title' but the data has 'name'. Let's map it.
+                return videoItems.map(item => {
+                    const video = item.item || item;
+                    return {
+                        id: video['@id'] || video.thumbnailUrl.split('/')[4],
+                        title: video.name, // Map 'name' to 'title'
+                        description: video.description,
+                        embedUrl: video.embedUrl,
+                        published: video.uploadDate
+                    };
+                });
             } catch (error) {
+                console.error("Error evaluating video data from page:", error);
                 const videosListElement = document.getElementById('videos-list');
                 if (videosListElement) {
                     videosListElement.innerHTML = '';
                     videosListElement.appendChild(createElement('p', {}, `Failed to load videos: ${error.message}`));
                 }
                 GreenhouseUtils.displayError(`Failed to load videos: ${error.message}`);
-                if (error.message.includes('status: 404')) {
-                    appState.hasCriticalError = true;
-                    this.displayCriticalErrorOverlay(`Failed to load videos: ${error.message}`);
-                }
-                return [];
+                // Fallback to placeholder data if evaluation fails
+                return [
+                    { title: 'Placeholder Video 1', description: 'Could not load video data from page.', embedUrl: 'https://www.youtube.com/embed/placeholder1' },
+                    { title: 'Placeholder Video 2', description: 'Please check console for errors.', embedUrl: 'https://www.youtube.com/embed/placeholder2' }
+                ];
             }
         },
 
