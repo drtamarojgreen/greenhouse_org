@@ -14,8 +14,17 @@
  * for shared utilities and `schedulerUI.js` for all UI creation. App-specific logic is loaded dynamically.
  */
 
-(function() {
+(async function() {
     'use strict';
+
+    await new Promise(resolve => {
+        const interval = setInterval(() => {
+            if (window.GreenhouseUtils) {
+                clearInterval(interval);
+                resolve();
+            }
+        }, 100);
+    });
 
     // Immediately capture and then clean up the global attributes
     const scriptAttributes = { ...window._greenhouseScriptAttributes };
@@ -275,13 +284,11 @@
                 console.log('Scheduler: Starting initialization');
 
                 // Set configuration from data attributes
-                const schedulerSelectorsRaw = scriptAttributes.schedulerSelectors || scriptAttributes['data-scheduler-selectors'] || '{}';
+                const schedulerSelectorsRaw = scriptAttributes['data-scheduler-selectors'] || ''{}''';
                 const schedulerSelectors = JSON.parse(schedulerSelectorsRaw);
                 GreenhouseUtils.appState.schedulerSelectors = schedulerSelectors;
-                GreenhouseUtils.appState.baseUrl = scriptAttributes['base-url'] || window._greenhouseScriptAttributes['base-url'];
-                GreenhouseUtils.appState.currentView = scriptAttributes.view || window._greenhouseScriptAttributes.view || 'all';
-                GreenhouseUtils.appState.baseUrl = scriptAttributes.baseUrl || window._greenhouseScriptAttributes.baseUrl;
-                GreenhouseUtils.appState.currentView = scriptAttributes.view || window._greenhouseScriptAttributes.view || 'all';
+                GreenhouseUtils.appState.baseUrl = scriptAttributes['base-url'];
+                GreenhouseUtils.appState.currentView = scriptAttributes['view'] || 'all';
 
                 // Wait for all container elements to be available
                 const [dashboardLeft, dashboardRight, repeaterLeft, repeaterRight] = await Promise.all([
