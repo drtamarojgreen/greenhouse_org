@@ -18,41 +18,38 @@ div[class*="bgLayer"] {
 }
 
 #greenhouse-app-container .wixui-column-strip__column {
-    display: flex;
-    flex-direction: column;
     padding: 20px;
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     margin-bottom: 20px;
-    
 }
 
 #greenhouse-app-container .wixui-column-strip__column > #greenhouse-app-container {
     order: -1;
 }
 
-#greenhouse-app-container .calendar-header{
- display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #ddd;
+#greenhouse-app-container .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #ddd;
 }
 
 #greenhouse-app-container .calendar-header > * {
-  background: #f0f0f0;
-  padding: 15px;
-  border-radius: 6px;
+    background: #f0f0f0;
+    padding: 15px;
+    border-radius: 6px;
 }
 
 #greenhouse-dashboard-app-calendar-container .calendar-header h2 {
-
+    /* Styles for the calendar title can go here */
 }
 
 /* General Form Styling */
-.greenhouse-app-container .greenhouse-form {
+#greenhouse-app-container .greenhouse-form {
     margin-bottom: 20px;
     padding: 25px;
     border: 1px solid #e0e0e0;
@@ -61,18 +58,18 @@ div[class*="bgLayer"] {
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.greenhouse-app-container .greenhouse-form-field {
+#greenhouse-app-container .greenhouse-form-field {
     margin-bottom: 15px;
 }
 
-.greenhouse-app-container .greenhouse-form-label {
+#greenhouse-app-container .greenhouse-form-label {
     display: block;
     margin-bottom: 8px;
     font-weight: 500;
     color: #357438; /* Consistent with primary green */
 }
 
-.greenhouse-app-container .greenhouse-form-input {
+#greenhouse-app-container .greenhouse-form-input {
     width: calc(100% - 24px); /* Account for padding */
     padding: 12px;
     border: 1px solid #ccc;
@@ -82,27 +79,27 @@ div[class*="bgLayer"] {
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.greenhouse-app-container .greenhouse-form-input:focus {
+#greenhouse-app-container .greenhouse-form-input:focus {
     border-color: #357438; /* Primary green */
     box-shadow: 0 0 0 3px rgba(53, 116, 56, 0.25); /* Primary green shadow */
     outline: none;
 }
 
 /* Specific styles for buttons using new classes */
-.greenhouse-app-container .greenhouse-btn {
-     /* Base button styles are already covered by the generic 'button' selector */
-     display: inline-block;
+#greenhouse-app-container .greenhouse-btn {
+    /* Base button styles are already covered by the generic 'button' selector */
+    display: inline-block;
 }
 
-.greenhouse-app-container .greenhouse-btn-primary {
+#greenhouse-app-container .greenhouse-btn-primary {
     background-color: #357438; /* Primary green */
 }
 
-.greenhouse-app-container .greenhouse-btn-primary:hover {
+#greenhouse-app-container .greenhouse-btn-primary:hover {
     background-color: #2d3e2d; /* Darker green on hover */
 }
 
-.greenhouse-app-container button {
+#greenhouse-app-container button {
     padding: 12px 25px;
     background-color: #357438; /* Primary green */
     color: white;
