@@ -1,66 +1,33 @@
+import unittest
+import os
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import os
 
-def run_test():
-    # Set up Firefox options for headless browsing
-    firefox_options = Options()
-    firefox_options.add_argument("--headless")
-    firefox_options.add_argument("--disable-gpu")
-    firefox_options.add_argument("--no-sandbox")
+class TestFrontend(unittest.TestCase):
+    def setUp(self):
+        # Set up Firefox options for headless browsing
+        self.firefox_options = Options()
+        self.firefox_options.add_argument("--headless")
+        self.firefox_options.add_argument("--disable-gpu")
+        self.firefox_options.add_argument("--no-sandbox")
 
-    # Path to your demo.html file and geckodriver
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    html_file_path = os.path.abspath(os.path.join(current_dir, '..', 'docs', 'demo.html'))
-    file_url = f'file://{html_file_path}'
-    geckodriver_path = os.path.join(current_dir, 'geckodriver')
-
-    driver = None
-    try:
-        # Initialize the WebDriver
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        geckodriver_path = os.path.join(current_dir, 'geckodriver')
+        
         service = Service(executable_path=geckodriver_path)
-        driver = webdriver.Firefox(service=service, options=firefox_options)
-        driver.get(file_url)
+        self.driver = webdriver.Firefox(service=service, options=self.firefox_options)
+        self.driver.get("https://greenhousementalhealth.org")
 
-        print(f"Navigated to: {driver.current_url}")
+    def tearDown(self):
+        self.driver.quit()
 
-        # Wait for the admin-container to be present
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "admin-container"))
-        )
-        print("Admin container found.")
-
-        # Wait for the dashboard-container to be present
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "dashboard-container"))
-        )
-        print("Dashboard container found.")
-
-        # You can add more assertions here, e.g., check content
-        admin_content = driver.find_element(By.ID, "admin-container").text
-        dashboard_content = driver.find_element(By.ID, "dashboard-container").text
-
-        print(f"Admin Content:\n{admin_content[:200]}...") # Print first 200 chars
-        print(f"Dashboard Content:\n{dashboard_content[:200]}...") # Print first 200 chars
-
-        # Example: Check if a specific element from dashboard is present
-        # try:
-        #     driver.find_element(By.ID, "new-appointment-box")
-        #     print("New appointment box found.")
-        # except:
-        #     print("New appointment box NOT found.")
-
-        print("Test completed successfully.")
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        if driver:
-            driver.quit()
+    def test_homepage_title(self):
+        """Test that the homepage has the correct title."""
+        self.assertEqual(self.driver.title, "Greenhouse for Mental Health | Psychiatrist")
 
 if __name__ == "__main__":
-    run_test()
+    unittest.main()
