@@ -14,7 +14,7 @@ div[class*="bgLayer"] {
     line-height: 1.6;
     color: #333; /* Default text color */
     position: relative;
-    z-index: 9999;
+    z-index: 1000;
 }
 
 #greenhouse-app-container .wixui-column-strip__column {
@@ -70,7 +70,7 @@ div[class*="bgLayer"] {
 }
 
 #greenhouse-app-container .greenhouse-form-input {
-    width: calc(100% - 24px); /* Account for padding */
+    width: 100%;
     padding: 12px;
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -99,7 +99,7 @@ div[class*="bgLayer"] {
     background-color: #2d3e2d; /* Darker green on hover */
 }
 
-#greenhouse-app-container button {
+#greenhouse-app-container .greenhouse-btn {
     padding: 12px 25px;
     background-color: #357438; /* Primary green */
     color: white;
@@ -386,16 +386,4 @@ table:not(.schedule-table) tr:nth-child(even) {
     content: '⚠️';
     margin-left: 5px;
     font-size: 0.9em;
-}
-
-table th:nth-child(even),
-table td:nth-child(even) {
-    background-color: #f0faf4; /* Light green for alternate columns */
-}
-
-table tr:nth-child(odd) td:nth-child(even) {
-    background-color: #e8f5e8; /* Slightly darker where row and column shading overlap */
-}
-table tr:nth-child(even) td:nth-child(odd) {
-    background-color: #f8fdf9; /* Lighter where row and column shading overlap */
 }
