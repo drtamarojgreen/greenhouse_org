@@ -235,16 +235,14 @@
                 console.warn('Scheduler Resilience: DOM conflict detected. Re-initializing scheduler...');
                 if (resilienceObserver) resilienceObserver.disconnect(); // Stop observing to prevent loops.
 
-                // A short delay to let the DOM settle after the wipe from the host framework (e.g., React).
-                setTimeout(() => {
-                    // The existing global reinitialize function handles finding containers and rebuilding the UI from scratch.
+                const interval = setInterval(() => {
                     if (window.GreenhouseScheduler && typeof window.GreenhouseScheduler.reinitialize === 'function') {
+                        clearInterval(interval);
                         window.GreenhouseScheduler.reinitialize();
                     } else {
                         console.error("Scheduler Resilience: Cannot find global reinitialize function to recover from DOM wipe.");
                     }
-                    // No need to set isRebuilding back to false, as the whole script effectively re-runs.
-                }, 500); // 500ms delay as a safeguard.
+                }, 100);
             };
 
             const observerCallback = (mutationsList) => {
