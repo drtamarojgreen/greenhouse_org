@@ -246,19 +246,23 @@
             };
 
             const observerCallback = (mutationsList) => {
-                // If the app isn't fully rendered yet, or we are already in the process of rebuilding, do nothing.
                 if (!GreenhouseUtils.appState.isInitialized || isRebuilding) return;
 
-                for (const mutation of mutationsList) {
-                    // We are looking for a 'childList' mutation where our UI nodes are removed.
-                    if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
-                        const container = mutation.target;
+                const topLevelUiIds = [
+                    'greenhouse-patient-form',
+                    'greenhouse-dashboard-app-schedule-container',
+                    'greenhouse-admin-form',
+                    'greenhouse-patient-app-calendar-container'
+                ];
 
-                        // If the container is now empty, and it's one of the containers we manage, it's a wipe.
-                        if (container.children.length === 0 && Object.values(containers).includes(container)) {
-                             console.warn(`Scheduler Resilience: Detected content wipe in a managed container. Triggering rebuild.`);
-                             reinitializeScheduler();
-                             return; // Exit after starting the re-initialization.
+                for (const mutation of mutationsList) {
+                    if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+                        for (const removedNode of mutation.removedNodes) {
+                            if (removedNode.nodeType === Node.ELEMENT_NODE && topLevelUiIds.includes(removedNode.id)) {
+                                console.warn(`Scheduler Resilience: Detected removal of a top-level UI element (${removedNode.id}). Triggering rebuild.`);
+                                reinitializeScheduler();
+                                return;
+                            }
                         }
                     }
                 }
