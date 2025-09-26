@@ -242,7 +242,7 @@
                     } else {
                         console.error("Scheduler Resilience: Cannot find global reinitialize function to recover from DOM wipe.");
                     }
-                }, 100);
+                }, 5000);
             };
 
             const observerCallback = (mutationsList) => {
