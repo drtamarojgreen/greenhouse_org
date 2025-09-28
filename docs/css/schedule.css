@@ -49,6 +49,25 @@ div[class*="bgLayer"] {
 }
 
 /* --- NEW: Tag-Based Form Styling Strategy --- */
+#greenhouse-dashboard-app-conflict-resolution-area, 
+#greenhouse-admin-app-individual-appointment-form,
+#greenhouse-patient-form
+ {
+    display: block;
+    background: #ffffff;
+}
+
+#greenhouse-admin-app-individual-appointment-form,
+#greenhouse-patient-form
+ {
+    width:100%;
+}
+
+.greenhouse-form-field {
+    width: 59%;
+  display: block;
+  float: left;
+}
 
 /* Style for the <form> tag itself */
 #greenhouse-app-container form {
