@@ -48,36 +48,64 @@ div[class*="bgLayer"] {
     /* Styles for the calendar title can go here */
 }
 
-/* General Form Styling */
+/* --- NEW: Polished & Professional Form Styling --- */
+
+/* Form container with a subtle background and clean separation */
 #greenhouse-app-container .greenhouse-form {
-    margin-bottom: 20px;
-    padding: 25px;
-    border: 1px solid #e0e0e0;
+    background-color: #f9f9f9; /* Slightly off-white background */
+    border: 1px solid #e9e9e9;
     border-radius: 8px;
-    background-color: #fdfdfd;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 32px; /* More generous padding */
+    margin-bottom: 20px;
 }
 
+/* Flexbox layout for each field to align label and input */
 #greenhouse-app-container .greenhouse-form-field {
-    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
 }
 
+/* Right-aligned labels with a modern, slightly muted color */
 #greenhouse-app-container .greenhouse-form-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #357438; /* Consistent with primary green */
+    flex: 0 0 150px;
+    text-align: right;
+    color: #555; /* Softer than pure green for less emphasis */
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 0;
 }
 
-#greenhouse-app-container .greenhouse-form-input {
-    width: calc(100% - 24px); /* Account for padding */
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-    font-size: 1rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+/* Modern input styling for all input types */
+#greenhouse-app-container .greenhouse-form-input,
+#greenhouse-app-container .greenhouse-form select {
+    flex: 1 1 auto;
+    width: auto;
+    padding: 12px 15px;
+    font-size: 16px;
+    background-color: #fff;
+    border: 1px solid #d9d9d9; /* Lighter, more modern border */
+    border-radius: 6px;
+    transition: all 0.2s ease-in-out; /* Smooth transition for all properties */
 }
+
+#greenhouse-app-container .greenhouse-form-input:focus,
+#greenhouse-app-container .greenhouse-form select:focus {
+    outline: none;
+    border-color: #529a55; /* A slightly brighter green for focus */
+    box-shadow: 0 0 0 3px rgba(53, 116, 56, 0.15); /* Softer focus ring */
+}
+
+/* Button container aligned to the right with a separator */
+#greenhouse-app-container .greenhouse-form-button-container {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 20px;
+    margin-top: 20px;
+    border-top: 1px solid #e9e9e9; /* Separator line */
+}
+
 
 #greenhouse-app-container .greenhouse-form-input:focus {
     border-color: #357438; /* Primary green */
