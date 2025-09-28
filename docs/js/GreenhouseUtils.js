@@ -18,7 +18,7 @@ window.GreenhouseUtils = (function() {
          * DOM manipulation settings
          */
         dom: {
-            insertionDelay: 500,  // Delay before inserting into DOM (for Wix compatibility)
+            insertionDelay: 2000,  // Delay before inserting into DOM (for Wix compatibility)
             observerTimeout: 10000
         }
     };
