@@ -17,74 +17,84 @@
 (async function() {
     'use strict';
 
-    // Use centralized dependency manager if available, otherwise fallback to event-based system
-    if (window.GreenhouseDependencyManager) {
-        console.log('Scheduler: Using GreenhouseDependencyManager for dependency loading');
-        try {
-            await window.GreenhouseDependencyManager.waitFor('utils', 12000);
-            console.log('Scheduler: GreenhouseUtils loaded via dependency manager');
-        } catch (error) {
-            console.error('Scheduler: Failed to load GreenhouseUtils via dependency manager:', error.message);
-            console.log('Scheduler: Continuing with graceful degradation');
-        }
-    } else {
-        console.log('Scheduler: Using fallback event-based system with polling');
-        await new Promise(resolve => {
-            // Check if dependency is already available
-            if (window.GreenhouseUtils) {
-                console.log('Scheduler: GreenhouseUtils already available');
-                resolve();
-                return;
+    // Enhanced dependency loading with React compatibility for Firefox
+    const loadDependencies = async () => {
+        if (window.GreenhouseDependencyManager) {
+            console.log('Scheduler: Using GreenhouseDependencyManager for dependency loading');
+            try {
+                await window.GreenhouseDependencyManager.waitFor('utils', 12000);
+                console.log('Scheduler: GreenhouseUtils loaded via dependency manager');
+            } catch (error) {
+                console.error('Scheduler: Failed to load GreenhouseUtils via dependency manager:', error.message);
+                console.log('Scheduler: Continuing with graceful degradation');
             }
+        } else {
+            console.log('Scheduler: Using fallback event-based system with polling');
+            await new Promise(resolve => {
+                // Check if dependency is already available
+                if (window.GreenhouseUtils) {
+                    console.log('Scheduler: GreenhouseUtils already available');
+                    resolve();
+                    return;
+                }
 
-            console.log('Scheduler: Waiting for GreenhouseUtils via event-based system with polling fallback');
-            
-            // Event-based dependency loading with timeout and polling fallback
-            const handleReady = (event) => {
-                console.log('Scheduler: Received greenhouse:utils-ready event', event.detail);
-                window.removeEventListener('greenhouse:utils-ready', handleReady);
-                clearInterval(pollInterval);
-                clearTimeout(timeoutId);
-                resolve();
-            };
-            
-            // Listen for ready event
-            window.addEventListener('greenhouse:utils-ready', handleReady);
-            
-            // Fallback polling mechanism
-            let attempts = 0;
-            const maxAttempts = 200; // 10 seconds at 50ms intervals
-            const pollInterval = setInterval(() => {
-                attempts++;
-                if (window.GreenhouseUtils) {
-                    console.log('Scheduler: GreenhouseUtils found via polling fallback');
+                console.log('Scheduler: Waiting for GreenhouseUtils via event-based system with polling fallback');
+                
+                // Event-based dependency loading with timeout and polling fallback
+                const handleReady = (event) => {
+                    console.log('Scheduler: Received greenhouse:utils-ready event', event.detail);
+                    window.removeEventListener('greenhouse:utils-ready', handleReady);
                     clearInterval(pollInterval);
                     clearTimeout(timeoutId);
-                    window.removeEventListener('greenhouse:utils-ready', handleReady);
                     resolve();
-                } else if (attempts >= maxAttempts) {
+                };
+                
+                // Listen for ready event
+                window.addEventListener('greenhouse:utils-ready', handleReady);
+                
+                // Fallback polling mechanism
+                let attempts = 0;
+                const maxAttempts = 200; // 10 seconds at 50ms intervals
+                const pollInterval = setInterval(() => {
+                    attempts++;
+                    if (window.GreenhouseUtils) {
+                        console.log('Scheduler: GreenhouseUtils found via polling fallback');
+                        clearInterval(pollInterval);
+                        clearTimeout(timeoutId);
+                        window.removeEventListener('greenhouse:utils-ready', handleReady);
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(pollInterval);
+                        clearTimeout(timeoutId);
+                        window.removeEventListener('greenhouse:utils-ready', handleReady);
+                        console.error('Scheduler: GreenhouseUtils not available after 10 second timeout');
+                        // Continue anyway to prevent hanging - graceful degradation
+                        resolve();
+                    }
+                }, 50);
+                
+                // Overall timeout as additional safety net
+                const timeoutId = setTimeout(() => {
                     clearInterval(pollInterval);
-                    clearTimeout(timeoutId);
                     window.removeEventListener('greenhouse:utils-ready', handleReady);
-                    console.error('Scheduler: GreenhouseUtils not available after 10 second timeout');
-                    // Continue anyway to prevent hanging - graceful degradation
-                    resolve();
-                }
-            }, 50);
-            
-            // Overall timeout as additional safety net
-            const timeoutId = setTimeout(() => {
-                clearInterval(pollInterval);
-                window.removeEventListener('greenhouse:utils-ready', handleReady);
-                if (window.GreenhouseUtils) {
-                    console.log('Scheduler: GreenhouseUtils found during timeout cleanup');
-                    resolve();
-                } else {
-                    console.error('Scheduler: Final timeout reached, continuing with graceful degradation');
-                    resolve();
-                }
-            }, 12000); // 12 seconds total timeout
-        });
+                    if (window.GreenhouseUtils) {
+                        console.log('Scheduler: GreenhouseUtils found during timeout cleanup');
+                        resolve();
+                    } else {
+                        console.error('Scheduler: Final timeout reached, continuing with graceful degradation');
+                        resolve();
+                    }
+                }, 12000); // 12 seconds total timeout
+            });
+        }
+    };
+
+    // Use React compatibility layer if available and on Firefox
+    if (window.GreenhouseReactCompatibility && window.GreenhouseReactCompatibility.isFirefox) {
+        console.log('Scheduler: Using React compatibility layer for Firefox');
+        await window.GreenhouseReactCompatibility.loadDependencyWithReactSupport(loadDependencies, 'GreenhouseUtils');
+    } else {
+        await loadDependencies();
     }
 
     // Immediately capture and then clean up the global attributes

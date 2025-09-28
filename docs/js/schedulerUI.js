@@ -23,7 +23,10 @@ window.GreenhouseSchedulerUI = (function() {
             return null;
         }
 
-        const formContainer = document.createElement('div');
+        // Use React-safe element creation if available
+        const createElement = window.GreenhouseReactCompatibility?.createElementSafely || document.createElement.bind(document);
+        
+        const formContainer = createElement('div');
         formContainer.id = 'greenhouse-patient-form';
         formContainer.setAttribute('data-identifier', 'patient-form-container');
         // formContainer.classList.add('greenhouse-hidden'); // Initial visibility handled by app
