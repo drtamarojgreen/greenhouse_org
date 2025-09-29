@@ -85,8 +85,8 @@ export const createAppointment = webMethod(Permissions.SiteMember, async (appoin
                         "first": appointmentData.patientName ? appointmentData.patientName.split(' ')[0] : "Patient",
                         "last": appointmentData.patientName ? appointmentData.patientName.split(' ').slice(1).join(' ') : ""
                     },
-                    "emails": [{ "email": appointmentData.patientEmail, "tag": "main" }],
-                    "phones": appointmentData.patientPhone ? [{ "phone": appointmentData.patientPhone, "tag": "main" }] : []
+                    "emails": [appointmentData.patientEmail],
+                    "phones": appointmentData.patientPhone ? [appointmentData.patientPhone] : []
                 };
 
                 const contact = await wixCrm.createContact(contactInfo);
@@ -100,7 +100,7 @@ export const createAppointment = webMethod(Permissions.SiteMember, async (appoin
                     }
                 };
 
-                await wixCrm.triggeredEmails.emailContact(CONFIRMATION_EMAIL_ID, contact.contactId, emailOptions);
+                await wixCrm.triggeredEmails.emailContact(CONFIRMATION_EMAIL_ID, contact, emailOptions);
                 console.log("Confirmation email sent successfully");
             } catch (emailError) {
                 console.error("Error sending confirmation email:", emailError);
@@ -185,7 +185,8 @@ export const updateAppointment = webMethod(Permissions.SiteMember, async (appoin
         }
 
         // 7. Update the appointment
-        const updatedAppointment = await wixData.update("Appointments", appointmentId, secureUpdateData);
+        secureUpdateData._id = appointmentId;
+        const updatedAppointment = await wixData.update("Appointments", secureUpdateData);
 
         // 8. Log the update for audit
         await wixData.insert("AppointmentAuditLog", {
@@ -242,14 +243,16 @@ export const cancelAppointment = webMethod(Permissions.SiteMember, async (appoin
         console.log(`Backend: Cancelling appointment ${appointmentId} by user ${userId}, admin: ${isAdmin}`);
 
         // 5. Update appointment status
-        const updatedAppointment = await wixData.update("Appointments", appointmentId, {
+        const updatedItem = {
+            _id: appointmentId,
             status: "cancelled",
             cancellationReason: reason,
             cancelledBy: userId,
             cancelledAt: new Date(),
             lastModifiedBy: userId,
             lastModifiedAt: new Date()
-        });
+        };
+        const updatedAppointment = await wixData.update("Appointments", updatedItem);
 
         // 6. Log the cancellation for audit
         await wixData.insert("AppointmentAuditLog", {

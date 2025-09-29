@@ -40,8 +40,8 @@ export async function post(request) {
                 "first": appointmentData.patientName.split(' ')[0],
                 "last": appointmentData.patientName.split(' ').slice(1).join(' ')
             },
-            "emails": [{ "email": appointmentData.patientEmail, "tag": "main" }],
-            "phones": [{ "phone": appointmentData.patientPhone, "tag": "main" }]
+            "emails": [appointmentData.patientEmail],
+            "phones": [appointmentData.patientPhone]
         };
 
         const contact = await wixCrm.createContact(contactInfo);
@@ -57,7 +57,7 @@ export async function post(request) {
             }
         };
 
-        await wixCrm.triggeredEmails.emailContact(CONFIRMATION_EMAIL_ID, contact.contactId, emailOptions);
+        await wixCrm.triggeredEmails.emailContact(CONFIRMATION_EMAIL_ID, contact, emailOptions);
 
         // --- 4. Return Success Response ---
         return response({
