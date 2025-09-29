@@ -453,3 +453,53 @@ table tr:nth-child(even) td:nth-child(odd) {
 }
 
 #greenhouse-admin-form, #greenhouse-dashboard-app-conflict-resolution-area, #greenhouse-patient-app-calendar-container, #greenhouse-instructions-title, #greenhouse-instructions-list {background: #ffffff;}
+
+/* Black sections fix */
+#greenhouse-patient-form form, .appointment-form, .conflicts-form {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  color: #333;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+
+/* Calendar header styling */
+.monthly-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  background: linear-gradient(135deg, #4caf50, #66bb6a);
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 1.1em;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Buttons inside header */
+.monthly-calendar-header button {
+  background: #ffffff;
+  border: none;
+  color: #357438;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.monthly-calendar-header button:hover {
+  background: #e8f5e8;
+  color: #2e7d32;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+/* Middle title (month + year) */
+.monthly-calendar-header .calendar-title {
+  flex-grow: 1;
+  text-align: center;
+}
