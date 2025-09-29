@@ -48,118 +48,130 @@ div[class*="bgLayer"] {
     /* Styles for the calendar title can go here */
 }
 
-/* --- NEW: Tag-Based Form Styling Strategy --- */
-#greenhouse-dashboard-app-conflict-resolution-area, 
-#greenhouse-admin-app-individual-appointment-form,
-#greenhouse-patient-form
- {
-    display: block;
-    background: #ffffff;
-}
+/* ====================================================================
+   FORM STYLES (FOCUSED REFACTOR)
+   ==================================================================== */
 
-#greenhouse-admin-app-individual-appointment-form,
-#greenhouse-patient-form
- {
-    width:100%;
-}
-
-.greenhouse-form-field {
-    width: 59%;
-  display: block;
-  float: left;
-}
-
-/* Style for the <form> tag itself */
+/* --- Form Wrapper --- */
 #greenhouse-app-container form {
-    background-color: white;
-    margin: 2px;
-    padding: 2px;
-    display: block;
+    background-color: var(--form-bg, #ffffff);
+    padding: var(--spacing-xl, 2rem);
+    border-radius: var(--border-radius-md, 8px);
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.05));
     border: 1px solid #e9e9e9;
-    border-radius: 8px;
 }
 
-/* Style for <label> tags */
+/* --- Form Group: Wrapper for Label + Input --- */
+.form-group {
+    margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+/* --- Form Labels --- */
 #greenhouse-app-container label {
     display: block;
-    margin: 15px 0 5px 0; /* Add top margin to separate from previous field */
+    margin-bottom: var(--spacing-sm, 0.5rem);
     font-weight: 600;
-    color: #444;
+    font-size: 0.9rem;
+    color: var(--text-light, #495057);
 }
 
-/* Generic style for all form control tags */
-#greenhouse-app-container input,
+/* --- Form Inputs: text, textarea, select --- */
+#greenhouse-app-container .form-control,
+#greenhouse-app-container input[type="text"],
+#greenhouse-app-container input[type="email"],
+#greenhouse-app-container input[type="date"],
+#greenhouse-app-container input[type="time"],
 #greenhouse-app-container textarea,
 #greenhouse-app-container select {
     display: block;
     width: 100%;
-    padding: 12px 15px;
-    font-size: 16px;
-    background-color: #fdfdfd;
-    border: 1px solid #d9d9d9;
-    border-radius: 6px;
+    padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+    font-size: 1rem;
+    background-color: var(--input-bg, #fdfdfd);
+    border: 1px solid var(--border-color, #ced4da);
+    border-radius: var(--border-radius-sm, 4px);
     box-sizing: border-box;
-    transition: all 0.2s ease-in-out;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Focus style for form controls */
-#greenhouse-app-container input:focus,
+#greenhouse-app-container textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* --- Input Focus State --- */
+#greenhouse-app-container .form-control:focus,
+#greenhouse-app-container input[type="text"]:focus,
+#greenhouse-app-container input[type="email"]:focus,
+#greenhouse-app-container input[type="date"]:focus,
+#greenhouse-app-container input[type="time"]:focus,
 #greenhouse-app-container textarea:focus,
 #greenhouse-app-container select:focus {
-    border-color: #529a55;
+    border-color: var(--primary-green, #357438);
+    box-shadow: 0 0 0 3px rgba(53, 116, 56, 0.2);
     outline: none;
 }
 
-/* The button container still needs its layout */
-#greenhouse-app-container .greenhouse-form-button-container {
-    text-align: right;
-    padding-top: 20px;
-    margin-top: 20px;
+/* --- Button Container --- */
+.form-actions,
+.greenhouse-form-button-container {
+    display: flex;
+    justify-content: flex-end; /* Aligns buttons to the right */
+    gap: var(--spacing-sm, 0.75rem);
+    padding-top: var(--spacing-lg, 1.5rem);
+    margin-top: var(--spacing-lg, 1.5rem);
     border-top: 1px solid #e9e9e9;
 }
 
-
-#greenhouse-app-container .greenhouse-form-input:focus {
-    border-color: #357438; /* Primary green */
-    box-shadow: 0 0 0 3px rgba(53, 116, 56, 0.25); /* Primary green shadow */
-    outline: none;
-}
-
-/* Specific styles for buttons using new classes */
-#greenhouse-app-container .greenhouse-btn {
-    /* Base button styles are already covered by the generic 'button' selector */
-    display: inline-block;
-}
-
-#greenhouse-app-container .greenhouse-btn-primary {
-    background-color: #357438; /* Primary green */
-}
-
-#greenhouse-app-container .greenhouse-btn-primary:hover {
-    background-color: #2d3e2d; /* Darker green on hover */
-}
-
+/* --- General Button Styles --- */
+#greenhouse-app-container .greenhouse-btn,
 #greenhouse-app-container button {
-    padding: 12px 25px;
-    background-color: #357438; /* Primary green */
-    color: white;
-    border: none;
-    border-radius: 5px;
+    padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem);
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-sm, 4px);
     cursor: pointer;
     font-size: 1rem;
     font-weight: 600;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    margin-right: 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
 }
 
+#greenhouse-app-container .greenhouse-btn:hover,
 #greenhouse-app-container button:hover {
-    background-color: #2d3e2d; /* Darker green on hover */
     transform: translateY(-1px);
 }
 
+#greenhouse-app-container .greenhouse-btn:active,
 #greenhouse-app-container button:active {
     transform: translateY(0);
 }
+
+/* --- Primary Button (e.g., Submit, Confirm) --- */
+#greenhouse-app-container .greenhouse-btn-primary,
+#greenhouse-app-container button {
+    background-color: var(--primary-green, #357438);
+    color: var(--white, #fff);
+}
+
+#greenhouse-app-container .greenhouse-btn-primary:hover,
+#greenhouse-app-container button:hover {
+    background-color: var(--primary-green-dark, #2a5a2c);
+}
+
+/* --- Secondary Button (e.g., Cancel) --- */
+#greenhouse-app-container .greenhouse-btn-secondary {
+    background-color: transparent;
+    border-color: var(--border-color, #ced4da);
+    color: var(--text-dark, #212529);
+}
+
+#greenhouse-app-container .greenhouse-btn-secondary:hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+}
+
 
 .schedule-table {
     width: 100%;
