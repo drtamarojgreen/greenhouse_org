@@ -451,3 +451,5 @@ table tr:nth-child(odd) td:nth-child(even) {
 table tr:nth-child(even) td:nth-child(odd) {
     background-color: #f8fdf9; /* Lighter where row and column shading overlap */
 }
+
+#greenhouse-admin-form, #greenhouse-dashboard-app-conflict-resolution-area, #greenhouse-patient-app-calendar-container, #greenhouse-instructions-title, #greenhouse-instructions-list {background: #ffffff;}
