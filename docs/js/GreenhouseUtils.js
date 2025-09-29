@@ -18,7 +18,7 @@ window.GreenhouseUtils = (function() {
          * DOM manipulation settings
          */
         dom: {
-            insertionDelay: 500,  // Delay before inserting into DOM (for Wix compatibility)
+            insertionDelay: 2000,  // Delay before inserting into DOM (for Wix compatibility)
             observerTimeout: 10000
         }
     };
@@ -394,3 +394,22 @@ window.GreenhouseUtils = (function() {
         validateForm: validateForm,   // Expose form validation utility
     };
 })();
+
+// Register with dependency manager if available, otherwise emit ready event
+if (window.GreenhouseDependencyManager) {
+    window.GreenhouseDependencyManager.register('utils', window.GreenhouseUtils, {
+        version: '1.2.0',
+        description: 'Core utilities for Greenhouse applications',
+        features: ['DOM manipulation', 'Script loading', 'Form validation', 'Notifications']
+    });
+    console.log('GreenhouseUtils: Registered with GreenhouseDependencyManager');
+} else {
+    // Fallback to direct event emission for backward compatibility
+    window.dispatchEvent(new CustomEvent('greenhouse:utils-ready', {
+        detail: {
+            utils: window.GreenhouseUtils,
+            timestamp: Date.now()
+        }
+    }));
+    console.log('GreenhouseUtils: Ready event dispatched (fallback mode)');
+}

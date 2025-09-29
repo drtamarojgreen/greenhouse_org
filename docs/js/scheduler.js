@@ -17,14 +17,85 @@
 (async function() {
     'use strict';
 
-    await new Promise(resolve => {
-        const interval = setInterval(() => {
-            if (window.GreenhouseUtils) {
-                clearInterval(interval);
-                resolve();
+    // Enhanced dependency loading with React compatibility for Firefox
+    const loadDependencies = async () => {
+        if (window.GreenhouseDependencyManager) {
+            console.log('Scheduler: Using GreenhouseDependencyManager for dependency loading');
+            try {
+                await window.GreenhouseDependencyManager.waitFor('utils', 12000);
+                console.log('Scheduler: GreenhouseUtils loaded via dependency manager');
+            } catch (error) {
+                console.error('Scheduler: Failed to load GreenhouseUtils via dependency manager:', error.message);
+                console.log('Scheduler: Continuing with graceful degradation');
             }
-        }, 100);
-    });
+        } else {
+            console.log('Scheduler: Using fallback event-based system with polling');
+            await new Promise(resolve => {
+                // Check if dependency is already available
+                if (window.GreenhouseUtils) {
+                    console.log('Scheduler: GreenhouseUtils already available');
+                    resolve();
+                    return;
+                }
+
+                console.log('Scheduler: Waiting for GreenhouseUtils via event-based system with polling fallback');
+
+                // Event-based dependency loading with timeout and polling fallback
+                const handleReady = (event) => {
+                    console.log('Scheduler: Received greenhouse:utils-ready event', event.detail);
+                    window.removeEventListener('greenhouse:utils-ready', handleReady);
+                    clearInterval(pollInterval);
+                    clearTimeout(timeoutId);
+                    resolve();
+                };
+
+                // Listen for ready event
+                window.addEventListener('greenhouse:utils-ready', handleReady);
+
+                // Fallback polling mechanism
+                let attempts = 0;
+                const maxAttempts = 200; // 10 seconds at 50ms intervals
+                const pollInterval = setInterval(() => {
+                    attempts++;
+                    if (window.GreenhouseUtils) {
+                        console.log('Scheduler: GreenhouseUtils found via polling fallback');
+                        clearInterval(pollInterval);
+                        clearTimeout(timeoutId);
+                        window.removeEventListener('greenhouse:utils-ready', handleReady);
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(pollInterval);
+                        clearTimeout(timeoutId);
+                        window.removeEventListener('greenhouse:utils-ready', handleReady);
+                        console.error('Scheduler: GreenhouseUtils not available after 10 second timeout');
+                        // Continue anyway to prevent hanging - graceful degradation
+                        resolve();
+                    }
+                }, 50);
+
+                // Overall timeout as additional safety net
+                const timeoutId = setTimeout(() => {
+                    clearInterval(pollInterval);
+                    window.removeEventListener('greenhouse:utils-ready', handleReady);
+                    if (window.GreenhouseUtils) {
+                        console.log('Scheduler: GreenhouseUtils found during timeout cleanup');
+                        resolve();
+                    } else {
+                        console.error('Scheduler: Final timeout reached, continuing with graceful degradation');
+                        resolve();
+                    }
+                }, 12000); // 12 seconds total timeout
+            });
+        }
+    };
+
+    // Use React compatibility layer if available and on Firefox
+    if (window.GreenhouseReactCompatibility && window.GreenhouseReactCompatibility.isFirefox) {
+        console.log('Scheduler: Using React compatibility layer for Firefox');
+        await window.GreenhouseReactCompatibility.loadDependencyWithReactSupport(loadDependencies, 'GreenhouseUtils');
+    } else {
+        await loadDependencies();
+    }
 
     // Immediately capture and then clean up the global attributes
     const scriptAttributes = { ...window._greenhouseScriptAttributes };
@@ -235,32 +306,34 @@
                 console.warn('Scheduler Resilience: DOM conflict detected. Re-initializing scheduler...');
                 if (resilienceObserver) resilienceObserver.disconnect(); // Stop observing to prevent loops.
 
-                // A short delay to let the DOM settle after the wipe from the host framework (e.g., React).
-                setTimeout(() => {
-                    // The existing global reinitialize function handles finding containers and rebuilding the UI from scratch.
+                const interval = setInterval(() => {
                     if (window.GreenhouseScheduler && typeof window.GreenhouseScheduler.reinitialize === 'function') {
+                        clearInterval(interval);
                         window.GreenhouseScheduler.reinitialize();
                     } else {
                         console.error("Scheduler Resilience: Cannot find global reinitialize function to recover from DOM wipe.");
                     }
-                    // No need to set isRebuilding back to false, as the whole script effectively re-runs.
-                }, 500); // 500ms delay as a safeguard.
+                }, 5000);
             };
 
             const observerCallback = (mutationsList) => {
-                // If the app isn't fully rendered yet, or we are already in the process of rebuilding, do nothing.
                 if (!GreenhouseUtils.appState.isInitialized || isRebuilding) return;
 
-                for (const mutation of mutationsList) {
-                    // We are looking for a 'childList' mutation where our UI nodes are removed.
-                    if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
-                        const container = mutation.target;
+                const topLevelUiIds = [
+                    'greenhouse-patient-form',
+                    'greenhouse-dashboard-app-schedule-container',
+                    'greenhouse-admin-form',
+                    'greenhouse-patient-app-calendar-container'
+                ];
 
-                        // If the container is now empty, and it's one of the containers we manage, it's a wipe.
-                        if (container.children.length === 0 && Object.values(containers).includes(container)) {
-                             console.warn(`Scheduler Resilience: Detected content wipe in a managed container. Triggering rebuild.`);
-                             reinitializeScheduler();
-                             return; // Exit after starting the re-initialization.
+                for (const mutation of mutationsList) {
+                    if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+                        for (const removedNode of mutation.removedNodes) {
+                            if (removedNode.nodeType === Node.ELEMENT_NODE && topLevelUiIds.includes(removedNode.id)) {
+                                console.warn(`Scheduler Resilience: Detected removal of a top-level UI element (${removedNode.id}). Triggering rebuild.`);
+                                reinitializeScheduler();
+                                return;
+                            }
                         }
                     }
                 }
@@ -371,6 +444,17 @@
             });
             window.addEventListener('unhandledrejection', (event) => {
                 console.error('Scheduler: Unhandled promise rejection:', event.reason);
+            });
+
+            // Listen for a request to re-initialize the scheduler.
+            // This single listener handles the response to a DOM conflict.
+            document.addEventListener('greenhouse:request-reinitialization', (e) => {
+                console.warn('Scheduler Resilience: Received re-initialization request.', e.detail.message);
+                if (window.GreenhouseScheduler && typeof window.GreenhouseScheduler.reinitialize === 'function') {
+                    window.GreenhouseScheduler.reinitialize();
+                } else {
+                    console.error("Scheduler Resilience: Cannot re-initialize. The global GreenhouseScheduler API is not available.");
+                }
             });
 
             await GreenhouseAppsScheduler.init();
