@@ -334,16 +334,6 @@ window.GreenhouseDashboardApp = (function() {
         dashboardAppState.conflictList = leftAppContainer.querySelector('[data-identifier="conflict-list"]');
         dashboardAppState.calendarContainer = rightAppContainer.querySelector('[data-identifier="calendar-container"]');
 
-        // --- Manual Data Fetching Setup ---
-        // For development, data fetching is triggered manually. This ensures all UI elements
-        // are rendered and visible before any data is loaded, per user requirements.
-        const fetchButton = leftAppContainer.querySelector('[data-identifier="fetch-schedule-data-btn"]');
-        if (fetchButton) {
-            fetchButton.addEventListener('click', triggerDataFetchAndPopulation);
-        } else {
-            console.warn('GreenhouseDashboardApp: Fetch schedule data button not found.');
-        }
-
         // Initial population of calendar UI. With the new resilience observer, this should be safe.
         // The calendar will be populated when data is fetched or the user interacts with the calendar controls.
         populateCalendar(dashboardAppState.currentYear, dashboardAppState.currentMonth);

@@ -632,14 +632,6 @@ function populateConflictsList(conflicts) {
  * Sets up event listeners and initial UI state.
  */
 function initializeDashboardApp() {
-    // Event listener for fetching data
-    const fetchDataButton = $w(schedulerState.uiElements.dashboardFetchDataButton);
-    if (fetchDataButton.valid) {
-        fetchDataButton.onClick(triggerDataFetchAndPopulation);
-    } else {
-        console.warn('Scheduler: Dashboard fetch data button not found.');
-    }
-
     // Event listeners for calendar navigation
     const prevButton = $w(schedulerState.uiElements.dashboardCalendarPrevButton);
     const nextButton = $w(schedulerState.uiElements.dashboardCalendarNextButton);
@@ -1268,21 +1260,22 @@ async function initScheduler() {
         // hideElement(schedulerState.uiElements.adminContainer); // Removed problematic call
         // hideElement(schedulerState.uiElements.notificationBox); // Removed problematic call
 
-        // --- BEGIN: Display All Views (Temporary for Development) ---
-        // As per user request, all scheduler UI components are displayed by default
-        // until the application is completely developed and authorization checks are in place.
-        // All UI elements are assumed to be children of #schedulingContainer.
+        // --- BEGIN: View Management ---
+        // As per the new requirement, only the patient view is displayed by default.
+        // Using .expand() and .collapse() as it's the standard Velo way to manage visibility.
+        const patientContainer = $w(schedulerState.uiElements.patientContainer);
+        const dashboardContainer = $w(schedulerState.uiElements.dashboardContainer);
+        const adminContainer = $w(schedulerState.uiElements.adminContainer);
 
-        // Show all relevant containers for development visibility using the new utility functions
-        // showElement(schedulerState.uiElements.patientContainer); // Removed problematic call
-        // showElement(schedulerState.uiElements.dashboardContainer); // Removed problematic call
-        // showElement(schedulerState.uiElements.adminContainer); // Removed problematic call
+        if (patientContainer.valid) patientContainer.expand();
+        if (dashboardContainer.valid) dashboardContainer.collapse();
+        if (adminContainer.valid) adminContainer.collapse();
 
         // Initialize all application logic
         initializePatientApp();
         initializeDashboardApp();
         initializeAdminApp();
-        // --- END: Display All Views (Temporary for Development) ---
+        // --- END: View Management ---
 
         schedulerState.isInitialized = true;
         displaySuccess('Scheduling application loaded successfully', 3000);
