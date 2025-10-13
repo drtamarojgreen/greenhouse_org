@@ -2,7 +2,7 @@
  * @file GreenhouseReactCompatibility.js
  * @description React compatibility layer for Greenhouse dependency loading system.
  * Addresses Firefox-specific React hydration and rendering issues.
- * 
+ *
  * @version 1.0.0
  * @author Greenhouse Development Team
  */
@@ -41,14 +41,14 @@ window.GreenhouseReactCompatibility = (function() {
             console.log(`GreenhouseReactCompatibility: React ${state.reactVersion} detected`);
             return true;
         }
-        
+
         // Check for React DevTools
         if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
             state.reactDetected = true;
             console.log('GreenhouseReactCompatibility: React detected via DevTools hook');
             return true;
         }
-        
+
         // Check for React fiber nodes in DOM
         const reactNodes = document.querySelectorAll('[data-reactroot], [data-reactid]');
         if (reactNodes.length > 0) {
@@ -56,7 +56,7 @@ window.GreenhouseReactCompatibility = (function() {
             console.log('GreenhouseReactCompatibility: React detected via DOM nodes');
             return true;
         }
-        
+
         return false;
     }
 
@@ -69,7 +69,7 @@ window.GreenhouseReactCompatibility = (function() {
                 resolve();
                 return;
             }
-            
+
             if (state.isStabilizing) {
                 // Already stabilizing, wait for it to complete
                 const checkStabilization = () => {
@@ -82,9 +82,9 @@ window.GreenhouseReactCompatibility = (function() {
                 checkStabilization();
                 return;
             }
-            
+
             state.isStabilizing = true;
-            
+
             // Wait for React to finish any pending updates
             if (window.React && window.React.unstable_batchedUpdates) {
                 window.React.unstable_batchedUpdates(() => {
@@ -111,18 +111,18 @@ window.GreenhouseReactCompatibility = (function() {
             // Not Firefox or no React detected, proceed normally
             return operation();
         }
-        
+
         console.log(`GreenhouseReactCompatibility: Performing safe ${description}`);
-        
+
         // Wait for React to stabilize
         await waitForReactStabilization();
-        
+
         // Use requestAnimationFrame to ensure we're not interrupting React's render cycle
         return new Promise((resolve, reject) => {
             requestAnimationFrame(() => {
                 try {
                     const result = operation();
-                    
+
                     // Give React time to process any changes
                     setTimeout(() => {
                         resolve(result);
@@ -140,7 +140,7 @@ window.GreenhouseReactCompatibility = (function() {
      */
     function createElementSafely(tagName, attributes = {}, textContent = '') {
         const element = document.createElement(tagName);
-        
+
         // Set attributes safely
         Object.entries(attributes).forEach(([key, value]) => {
             if (key.startsWith('data-') || key === 'id' || key === 'class' || key === 'className') {
@@ -149,14 +149,14 @@ window.GreenhouseReactCompatibility = (function() {
                 element[key] = value;
             }
         });
-        
+
         if (textContent) {
             element.textContent = textContent;
         }
-        
+
         // Mark as Greenhouse-created to avoid React conflicts
         element.setAttribute('data-greenhouse-created', 'true');
-        
+
         return element;
     }
 
@@ -168,18 +168,18 @@ window.GreenhouseReactCompatibility = (function() {
             console.warn('GreenhouseReactCompatibility: Invalid parent or element for insertion');
             return false;
         }
-        
+
         return safeDOMOperation(() => {
             // Check if parent is a React component root
             if (parent.hasAttribute('data-reactroot') || parent._reactInternalFiber) {
                 console.warn('GreenhouseReactCompatibility: Attempting to insert into React root, creating wrapper');
-                
+
                 // Create a wrapper div to isolate from React
                 const wrapper = createElementSafely('div', {
                     'data-greenhouse-wrapper': 'true',
                     'style': 'contents' // CSS contents value to not affect layout
                 });
-                
+
                 wrapper.appendChild(element);
                 parent.appendChild(wrapper);
                 return wrapper;
@@ -197,14 +197,14 @@ window.GreenhouseReactCompatibility = (function() {
         if (!element || !element.parentNode) {
             return false;
         }
-        
+
         return safeDOMOperation(() => {
             // Check if element is React-managed
             if (element._reactInternalFiber || element.__reactInternalInstance) {
                 console.warn('GreenhouseReactCompatibility: Attempting to remove React-managed element');
                 return false;
             }
-            
+
             element.parentNode.removeChild(element);
             return true;
         }, description);
@@ -215,16 +215,16 @@ window.GreenhouseReactCompatibility = (function() {
      */
     async function loadDependencyWithReactSupport(loadFunction, dependencyName) {
         console.log(`GreenhouseReactCompatibility: Loading ${dependencyName} with React support`);
-        
+
         // Detect React if not already done
         if (!state.reactDetected) {
             detectReact();
         }
-        
+
         if (config.isFirefox && state.reactDetected) {
             // Wait for React to stabilize before loading dependencies
             await waitForReactStabilization();
-            
+
             // Use React's scheduling if available
             if (window.React && window.React.unstable_scheduleCallback) {
                 return new Promise((resolve, reject) => {
@@ -242,7 +242,7 @@ window.GreenhouseReactCompatibility = (function() {
                 });
             }
         }
-        
+
         // Fallback to normal loading
         return loadFunction();
     }
@@ -252,7 +252,7 @@ window.GreenhouseReactCompatibility = (function() {
      */
     function setupReactErrorMonitoring() {
         if (!config.isFirefox) return;
-        
+
         // Listen for React errors
         window.addEventListener('error', (event) => {
             const error = event.error;
@@ -265,12 +265,12 @@ window.GreenhouseReactCompatibility = (function() {
                     isStabilizing: state.isStabilizing,
                     pendingOperations: state.pendingOperations.length
                 });
-                
+
                 // Try to provide helpful debugging info
                 const errorNumber = error.message.match(/#(\d+)/);
                 if (errorNumber) {
                     console.log(`GreenhouseReactCompatibility: React error ${errorNumber[1]} detected. This may be related to DOM manipulation conflicts.`);
-                    
+
                     if (errorNumber[1] === '418') {
                         console.log('GreenhouseReactCompatibility: Error 418 is typically a hydration mismatch. Ensuring DOM operations are deferred.');
                     } else if (errorNumber[1] === '423') {
@@ -279,7 +279,7 @@ window.GreenhouseReactCompatibility = (function() {
                 }
             }
         });
-        
+
         // Listen for unhandled promise rejections
         window.addEventListener('unhandledrejection', (event) => {
             if (event.reason && event.reason.message && event.reason.message.includes('React')) {
@@ -294,13 +294,13 @@ window.GreenhouseReactCompatibility = (function() {
     function initialize() {
         console.log('GreenhouseReactCompatibility: Initializing React compatibility layer');
         console.log(`GreenhouseReactCompatibility: Firefox detected: ${config.isFirefox}`);
-        
+
         // Detect React
         detectReact();
-        
+
         // Set up error monitoring
         setupReactErrorMonitoring();
-        
+
         // Periodically check for React if not initially detected
         if (!state.reactDetected) {
             let checks = 0;
@@ -311,7 +311,7 @@ window.GreenhouseReactCompatibility = (function() {
                 }
             }, config.reactCheckInterval);
         }
-        
+
         console.log(`GreenhouseReactCompatibility: Initialized (React detected: ${state.reactDetected})`);
     }
 
@@ -340,11 +340,11 @@ window.GreenhouseReactCompatibility = (function() {
         removeElementSafely,
         loadDependencyWithReactSupport,
         waitForReactStabilization,
-        
+
         // Utility functions
         detectReact,
         getStatus,
-        
+
         // State access
         get isFirefox() { return config.isFirefox; },
         get reactDetected() { return state.reactDetected; },

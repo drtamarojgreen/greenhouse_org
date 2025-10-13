@@ -25,7 +25,7 @@ window.GreenhouseSchedulerUI = (function() {
 
         // Use React-safe element creation if available
         const createElement = window.GreenhouseReactCompatibility?.createElementSafely || document.createElement.bind(document);
-        
+
         const formContainer = createElement('div');
         formContainer.id = 'greenhouse-patient-form';
         formContainer.setAttribute('data-identifier', 'patient-form-container');

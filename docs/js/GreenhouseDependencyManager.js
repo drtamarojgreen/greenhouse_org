@@ -2,7 +2,7 @@
  * @file GreenhouseDependencyManager.js
  * @description Centralized dependency management system for Greenhouse applications.
  * Provides event-based dependency loading, timeout handling, and debugging capabilities.
- * 
+ *
  * @version 1.0.0
  * @author Greenhouse Development Team
  */
@@ -41,13 +41,13 @@ window.GreenhouseDependencyManager = (function() {
     function debugLog(message, data = null) {
         const timestamp = new Date().toISOString();
         const logEntry = { timestamp, message, data };
-        
+
         state.debugLogs.push(logEntry);
-        
+
         if (config.debugMode) {
             console.log(`[GreenhouseDependencyManager] ${message}`, data || '');
         }
-        
+
         // Keep only last 100 debug entries
         if (state.debugLogs.length > 100) {
             state.debugLogs.shift();
@@ -62,9 +62,9 @@ window.GreenhouseDependencyManager = (function() {
      */
     function register(name, value, metadata = {}) {
         const startTime = Date.now();
-        
+
         debugLog(`Registering dependency: ${name}`, { value, metadata });
-        
+
         // Store the dependency
         state.dependencies.set(name, {
             value,
@@ -74,25 +74,25 @@ window.GreenhouseDependencyManager = (function() {
                 version: metadata.version || '1.0.0'
             }
         });
-        
+
         // Record load order
         if (!state.loadOrder.includes(name)) {
             state.loadOrder.push(name);
         }
-        
+
         // Resolve any waiting promises
         if (state.promises.has(name)) {
             const promiseData = state.promises.get(name);
             promiseData.resolve(value);
             state.promises.delete(name);
-            
+
             // Record load time
             const loadTime = startTime - promiseData.requestedAt;
             state.loadTimes.set(name, loadTime);
-            
+
             debugLog(`Dependency ${name} resolved after ${loadTime}ms`);
         }
-        
+
         // Dispatch ready event
         const eventName = `${config.eventPrefix}${name}-ready`;
         window.dispatchEvent(new CustomEvent(eventName, {
@@ -103,7 +103,7 @@ window.GreenhouseDependencyManager = (function() {
                 loadTime: state.loadTimes.get(name) || 0
             }
         }));
-        
+
         debugLog(`Dispatched event: ${eventName}`);
     }
 
@@ -115,27 +115,27 @@ window.GreenhouseDependencyManager = (function() {
      */
     function waitFor(name, timeout = config.defaultTimeout) {
         debugLog(`Waiting for dependency: ${name}`, { timeout });
-        
+
         // Check if dependency is already available
         if (state.dependencies.has(name)) {
             const dep = state.dependencies.get(name);
             debugLog(`Dependency ${name} already available`);
             return Promise.resolve(dep.value);
         }
-        
+
         // Check if we're already waiting for this dependency
         if (state.promises.has(name)) {
             debugLog(`Already waiting for dependency: ${name}`);
             return state.promises.get(name).promise;
         }
-        
+
         // Create new promise for this dependency
         let resolve, reject;
         const promise = new Promise((res, rej) => {
             resolve = res;
             reject = rej;
         });
-        
+
         const promiseData = {
             promise,
             resolve,
@@ -143,9 +143,9 @@ window.GreenhouseDependencyManager = (function() {
             requestedAt: Date.now(),
             timeout
         };
-        
+
         state.promises.set(name, promiseData);
-        
+
         // Set timeout
         const timeoutId = setTimeout(() => {
             if (state.promises.has(name)) {
@@ -153,16 +153,16 @@ window.GreenhouseDependencyManager = (function() {
                 state.errors.set(name, error);
                 state.promises.get(name).reject(error);
                 state.promises.delete(name);
-                
+
                 debugLog(`Dependency ${name} timed out after ${timeout}ms`);
             }
         }, timeout);
-        
+
         // Clean up timeout if resolved early
         promise.finally(() => {
             clearTimeout(timeoutId);
         });
-        
+
         return promise;
     }
 
@@ -174,18 +174,18 @@ window.GreenhouseDependencyManager = (function() {
      */
     async function waitForMultiple(names, timeout = config.defaultTimeout) {
         debugLog(`Waiting for multiple dependencies`, { names, timeout });
-        
-        const promises = names.map(name => 
+
+        const promises = names.map(name =>
             waitFor(name, timeout).then(value => ({ name, value }))
         );
-        
+
         try {
             const results = await Promise.all(promises);
             const dependencies = {};
             results.forEach(({ name, value }) => {
                 dependencies[name] = value;
             });
-            
+
             debugLog(`All dependencies resolved`, { names });
             return dependencies;
         } catch (error) {
@@ -230,24 +230,24 @@ window.GreenhouseDependencyManager = (function() {
      */
     function unregister(name) {
         debugLog(`Unregistering dependency: ${name}`);
-        
+
         const removed = state.dependencies.delete(name);
         state.loadTimes.delete(name);
         state.errors.delete(name);
-        
+
         // Remove from load order
         const index = state.loadOrder.indexOf(name);
         if (index > -1) {
             state.loadOrder.splice(index, 1);
         }
-        
+
         // Reject any waiting promises
         if (state.promises.has(name)) {
             const promiseData = state.promises.get(name);
             promiseData.reject(new Error(`Dependency '${name}' was unregistered`));
             state.promises.delete(name);
         }
-        
+
         return removed;
     }
 
@@ -256,12 +256,12 @@ window.GreenhouseDependencyManager = (function() {
      */
     function clear() {
         debugLog('Clearing all dependencies');
-        
+
         // Reject all waiting promises
         state.promises.forEach((promiseData, name) => {
             promiseData.reject(new Error(`Dependency '${name}' was cleared`));
         });
-        
+
         state.dependencies.clear();
         state.promises.clear();
         state.loadOrder.length = 0;
@@ -278,12 +278,12 @@ window.GreenhouseDependencyManager = (function() {
         const availableDeps = Array.from(state.dependencies.keys());
         const waitingDeps = Array.from(state.promises.keys());
         const errorDeps = Array.from(state.errors.keys());
-        
+
         const loadTimeStats = Array.from(state.loadTimes.values());
-        const avgLoadTime = loadTimeStats.length > 0 
-            ? loadTimeStats.reduce((a, b) => a + b, 0) / loadTimeStats.length 
+        const avgLoadTime = loadTimeStats.length > 0
+            ? loadTimeStats.reduce((a, b) => a + b, 0) / loadTimeStats.length
             : 0;
-        
+
         return {
             timestamp: now,
             available: availableDeps,
@@ -319,7 +319,7 @@ window.GreenhouseDependencyManager = (function() {
                 loadTimes: Object.fromEntries(state.loadTimes),
                 errors: Object.fromEntries(
                     Array.from(state.errors.entries()).map(([name, error]) => [
-                        name, 
+                        name,
                         { message: error.message, stack: error.stack }
                     ])
                 )
@@ -345,21 +345,21 @@ window.GreenhouseDependencyManager = (function() {
         const available = Array.from(state.dependencies.keys());
         const waiting = Array.from(state.promises.keys());
         const errors = Array.from(state.errors.keys());
-        
+
         let visualization = '\n=== Greenhouse Dependency Chain ===\n\n';
-        
+
         visualization += 'Load Order:\n';
         state.loadOrder.forEach((name, index) => {
             const loadTime = state.loadTimes.get(name);
             const timeStr = loadTime ? ` (${loadTime}ms)` : '';
             visualization += `  ${index + 1}. ${name}${timeStr}\n`;
         });
-        
+
         visualization += '\nCurrent Status:\n';
         visualization += `  ✅ Available (${available.length}): ${available.join(', ')}\n`;
         visualization += `  ⏳ Waiting (${waiting.length}): ${waiting.join(', ')}\n`;
         visualization += `  ❌ Errors (${errors.length}): ${errors.join(', ')}\n`;
-        
+
         return visualization;
     }
 
@@ -377,13 +377,13 @@ window.GreenhouseDependencyManager = (function() {
         getMetadata,
         unregister,
         clear,
-        
+
         // Status and debugging
         getStatus,
         getDebugInfo,
         setDebugMode,
         visualizeDependencies,
-        
+
         // Configuration
         config: {
             get: (key) => config[key],

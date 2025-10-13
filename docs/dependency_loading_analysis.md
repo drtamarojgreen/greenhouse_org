@@ -84,7 +84,7 @@ window.dispatchEvent(new CustomEvent('greenhouse:utils-ready', {
                 resolve();
             };
             document.addEventListener('greenhouse:utils-ready', handleReady);
-            
+
             // Timeout fallback
             setTimeout(() => {
                 document.removeEventListener('greenhouse:utils-ready', handleReady);
@@ -110,7 +110,7 @@ Create a centralized dependency manager:
 window.GreenhouseDependencies = {
     _dependencies: new Map(),
     _promises: new Map(),
-    
+
     register(name, value) {
         this._dependencies.set(name, value);
         if (this._promises.has(name)) {
@@ -119,12 +119,12 @@ window.GreenhouseDependencies = {
         }
         window.dispatchEvent(new CustomEvent(`greenhouse:${name}-ready`, { detail: value }));
     },
-    
+
     waitFor(name, timeout = 10000) {
         if (this._dependencies.has(name)) {
             return Promise.resolve(this._dependencies.get(name));
         }
-        
+
         if (!this._promises.has(name)) {
             let resolve, reject;
             const promise = new Promise((res, rej) => {
@@ -134,7 +134,7 @@ window.GreenhouseDependencies = {
             promise.resolve = resolve;
             promise.reject = reject;
             this._promises.set(name, promise);
-            
+
             setTimeout(() => {
                 if (this._promises.has(name)) {
                     this._promises.get(name).reject(new Error(`Dependency ${name} not available within ${timeout}ms`));
@@ -142,7 +142,7 @@ window.GreenhouseDependencies = {
                 }
             }, timeout);
         }
-        
+
         return this._promises.get(name);
     }
 };
@@ -165,7 +165,7 @@ async function loadScript(scriptName, baseUrl, attributes = {}, dependencies = [
     for (const dep of dependencies) {
         await waitForDependency(dep);
     }
-    
+
     // Then load the script (existing logic)
     // ...
 }
@@ -179,9 +179,9 @@ async function waitForDependency(depName) {
                 setTimeout(checkDependency, 50); // Reduced polling interval
             }
         };
-        
+
         checkDependency();
-        
+
         // Timeout after 10 seconds
         setTimeout(() => {
             reject(new Error(`Dependency ${depName} not available`));
@@ -235,14 +235,14 @@ await new Promise(resolve => {
         resolve();
         return;
     }
-    
+
     // Listen for ready event
     const handleReady = () => {
         document.removeEventListener('greenhouse:utils-ready', handleReady);
         resolve();
     };
     document.addEventListener('greenhouse:utils-ready', handleReady);
-    
+
     // Fallback polling with timeout
     let attempts = 0;
     const maxAttempts = 100; // 10 seconds at 100ms intervals

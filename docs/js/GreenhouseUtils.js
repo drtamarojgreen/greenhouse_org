@@ -406,7 +406,7 @@ if (window.GreenhouseDependencyManager) {
 } else {
     // Fallback to direct event emission for backward compatibility
     window.dispatchEvent(new CustomEvent('greenhouse:utils-ready', {
-        detail: { 
+        detail: {
             utils: window.GreenhouseUtils,
             timestamp: Date.now()
         }

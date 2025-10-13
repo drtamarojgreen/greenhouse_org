@@ -45,10 +45,10 @@ While client-side code cannot secure content, it can dynamically show or hide pa
 For instance, you might show different content to logged-in members versus guests.
 
 > **Example: Control Element Visibility by Login Status**
-> 
+>
 > ```javascript
 > import wixUsers from "wix-users";
-> 
+>
 > $w.onReady(() => {
 >   if (wixUsers.currentUser.loggedIn) {
 >     $w("#memberContent").show(); // Show content for logged-in members
@@ -147,7 +147,7 @@ $w.onReady(async function () {
             simplifiedRole = 'admin';
         }
     }
-    
+
     console.log(`Velo: User access level is '${simplifiedRole}'. Preparing to message HtmlComponent.`);
 
     const message = {
@@ -158,7 +158,7 @@ $w.onReady(async function () {
             repeaterLeft: '#repeaterLeftContainer',
             repeaterRight: '#repeaterRightContainer'
         },
-        baseUrl: './' 
+        baseUrl: './'
     };
 
     schedulerHost.onReady(() => {
@@ -188,7 +188,7 @@ window.onmessage = (event) => {
     if (event.data) {
         console.log('scheduler.js: Message received from Velo.', event.data);
         const { role, selectors, baseUrl } = event.data;
-        
+
         // --- 2. Conditional Rendering ---
         // Use the role to determine which UI to build
         if (role === 'admin') {
@@ -217,7 +217,7 @@ function renderAdminView(selectors, baseUrl) {
         // Clear any existing content
         dashboardLeft.innerHTML = '<h2>Admin Dashboard</h2><p>Conflict Resolution Tools Here...</p>';
         dashboardRight.innerHTML = '<h2>Full Calendars</h2><p>Management Interface Here...</p>';
-        
+
         // Ensure repeater containers are hidden if they exist
         const repeaterLeft = document.querySelector(selectors.repeaterLeft);
         const repeaterRight = document.querySelector(selectors.repeaterRight);
@@ -286,7 +286,7 @@ export const getAdminData = webMethod(Permissions.SiteMember, async () => {
     const adminData = {
         // ... sensitive data here ...
     };
-    
+
     return adminData;
 });
 ```

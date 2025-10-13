@@ -93,7 +93,7 @@ window.addEventListener('error', (event) => {
 if (window.GreenhouseReactCompatibility && window.GreenhouseReactCompatibility.isFirefox) {
     console.log('Scheduler: Using React compatibility layer for Firefox');
     await window.GreenhouseReactCompatibility.loadDependencyWithReactSupport(
-        loadDependencies, 
+        loadDependencies,
         'GreenhouseUtils'
     );
 } else {
@@ -104,7 +104,7 @@ if (window.GreenhouseReactCompatibility && window.GreenhouseReactCompatibility.i
 ### Safe Element Creation
 ```javascript
 // Use React-safe element creation
-const createElement = window.GreenhouseReactCompatibility?.createElementSafely || 
+const createElement = window.GreenhouseReactCompatibility?.createElementSafely ||
                     document.createElement.bind(document);
 
 const element = createElement('div', {

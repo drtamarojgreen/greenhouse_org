@@ -21,7 +21,7 @@ The implementation will be divided into three core areas:
 
 2.  **Control Native Elements:** Use the `isAdmin` variable to immediately show or hide any native Wix elements on the page that are outside the main HTML component. For example, an admin-only settings button or a page title.
 
-3.  **Fetch Role-Specific Data:** Based on the `isAdmin` variable, call the appropriate backend web modules. 
+3.  **Fetch Role-Specific Data:** Based on the `isAdmin` variable, call the appropriate backend web modules.
     -   If `isAdmin` is `true`, call secure functions like `getAppointments()` to fetch sensitive, detailed data.
     -   If `isAdmin` is `false`, call public-safe functions like `getPublicAvailability()`.
 

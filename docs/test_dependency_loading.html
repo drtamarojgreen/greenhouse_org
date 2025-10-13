@@ -83,7 +83,7 @@
     <div class="container">
         <h1>🌱 Greenhouse Dependency Loading Test Suite</h1>
         <p>This page tests the improved dependency loading system with all three phases implemented.</p>
-        
+
         <div class="metrics">
             <div class="metric">
                 <div class="metric-value" id="loadTime">--</div>
@@ -141,11 +141,11 @@
             const timestamp = new Date().toISOString();
             const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
             logs.push(logEntry);
-            
+
             const logsElement = document.getElementById('systemLogs');
             logsElement.textContent = logs.join('\n');
             logsElement.scrollTop = logsElement.scrollHeight;
-            
+
             console.log(logEntry);
         }
 
@@ -163,14 +163,14 @@
                 ${details ? `<br><small>${details}</small>` : ''}
             `;
             document.getElementById('testResults').appendChild(resultElement);
-            
+
             testResults.push({ testName, result, details, timestamp: Date.now() });
         }
 
         function updateMetrics() {
             const loadTime = Date.now() - testStartTime;
             document.getElementById('loadTime').textContent = loadTime;
-            
+
             if (window.GreenhouseDependencyManager) {
                 const status = window.GreenhouseDependencyManager.getStatus();
                 document.getElementById('dependencyCount').textContent = status.available.length;
@@ -186,7 +186,7 @@
         async function runPhase1Test() {
             log('Starting Phase 1 test (Polling improvements)');
             updateStatus('Testing Phase 1: Polling improvements...', 'info');
-            
+
             try {
                 // Test timeout functionality
                 const timeoutTest = new Promise((resolve, reject) => {
@@ -200,21 +200,21 @@
                         }
                     }, 50); // 50ms intervals as implemented
                 });
-                
+
                 const timeoutResult = await timeoutTest;
                 addTestResult('Phase 1: Timeout Mechanism', timeoutResult, 'Polling stops after timeout');
-                
+
                 // Test reduced polling interval
                 const intervalTest = true; // We can't easily test the exact interval, but it's implemented
                 addTestResult('Phase 1: Reduced Polling Interval', intervalTest, '50ms intervals instead of 100ms');
-                
+
                 // Test graceful degradation
                 const gracefulTest = window.GreenhouseUtils !== undefined;
                 addTestResult('Phase 1: Graceful Degradation', gracefulTest, 'System continues even if dependencies fail');
-                
+
                 log('Phase 1 test completed');
                 updateStatus('Phase 1 test completed', 'success');
-                
+
             } catch (error) {
                 log(`Phase 1 test failed: ${error.message}`, 'error');
                 updateStatus('Phase 1 test failed', 'error');
@@ -225,7 +225,7 @@
         async function runPhase2Test() {
             log('Starting Phase 2 test (Event-based system)');
             updateStatus('Testing Phase 2: Event-based system...', 'info');
-            
+
             try {
                 // Test event emission
                 let eventReceived = false;
@@ -233,28 +233,28 @@
                     eventReceived = true;
                     log(`Received event: ${event.type} with detail: ${JSON.stringify(event.detail)}`);
                 };
-                
+
                 window.addEventListener('greenhouse:test-ready', eventHandler);
-                
+
                 // Emit a test event
                 window.dispatchEvent(new CustomEvent('greenhouse:test-ready', {
                     detail: { test: true, timestamp: Date.now() }
                 }));
-                
+
                 // Wait a moment for event processing
                 await new Promise(resolve => setTimeout(resolve, 100));
-                
+
                 window.removeEventListener('greenhouse:test-ready', eventHandler);
-                
+
                 addTestResult('Phase 2: Event System', eventReceived, 'Custom events work correctly');
-                
+
                 // Test backward compatibility
                 const backwardCompatTest = window.GreenhouseUtils !== undefined;
                 addTestResult('Phase 2: Backward Compatibility', backwardCompatTest, 'Falls back to polling when needed');
-                
+
                 log('Phase 2 test completed');
                 updateStatus('Phase 2 test completed', 'success');
-                
+
             } catch (error) {
                 log(`Phase 2 test failed: ${error.message}`, 'error');
                 updateStatus('Phase 2 test failed', 'error');
@@ -265,24 +265,24 @@
         async function runPhase3Test() {
             log('Starting Phase 3 test (Dependency Manager)');
             updateStatus('Testing Phase 3: Dependency Manager...', 'info');
-            
+
             try {
                 const hasDepManager = window.GreenhouseDependencyManager !== undefined;
                 addTestResult('Phase 3: Dependency Manager Available', hasDepManager, 'GreenhouseDependencyManager is loaded');
-                
+
                 if (hasDepManager) {
                     const depManager = window.GreenhouseDependencyManager;
-                    
+
                     // Test registration
                     depManager.register('testDep', { test: true }, { version: '1.0.0' });
                     const isRegistered = depManager.isAvailable('testDep');
                     addTestResult('Phase 3: Dependency Registration', isRegistered, 'Can register and check dependencies');
-                    
+
                     // Test retrieval
                     const retrieved = depManager.get('testDep');
                     const retrievalTest = retrieved && retrieved.test === true;
                     addTestResult('Phase 3: Dependency Retrieval', retrievalTest, 'Can retrieve registered dependencies');
-                    
+
                     // Test waiting for dependencies
                     try {
                         const waitResult = await depManager.waitFor('testDep', 1000);
@@ -291,24 +291,24 @@
                     } catch (error) {
                         addTestResult('Phase 3: Dependency Waiting', false, error.message);
                     }
-                    
+
                     // Test status reporting
                     const status = depManager.getStatus();
                     const statusTest = status && Array.isArray(status.available);
                     addTestResult('Phase 3: Status Reporting', statusTest, `${status.available.length} dependencies available`);
-                    
+
                     // Test debug info
                     const debugInfo = depManager.getDebugInfo();
                     const debugTest = debugInfo && debugInfo.state;
                     addTestResult('Phase 3: Debug Information', debugTest, 'Debug information available');
-                    
+
                     // Clean up test dependency
                     depManager.unregister('testDep');
                 }
-                
+
                 log('Phase 3 test completed');
                 updateStatus('Phase 3 test completed', 'success');
-                
+
             } catch (error) {
                 log(`Phase 3 test failed: ${error.message}`, 'error');
                 updateStatus('Phase 3 test failed', 'error');
@@ -349,7 +349,7 @@
         function updateDependencyStatus() {
             const statusElement = document.getElementById('dependencyStatus');
             let statusHTML = '';
-            
+
             if (window.GreenhouseDependencyManager) {
                 const status = window.GreenhouseDependencyManager.getStatus();
                 statusHTML = `
@@ -369,7 +369,7 @@
                     </div>
                 `;
             }
-            
+
             statusElement.innerHTML = statusHTML;
         }
 
@@ -379,7 +379,7 @@
             updateStatus('Test page initialized', 'success');
             updateMetrics();
             updateDependencyStatus();
-            
+
             // Update metrics and status every 2 seconds
             setInterval(() => {
                 updateMetrics();
@@ -389,12 +389,12 @@
 
         // Start initialization when page loads
         window.addEventListener('load', initialize);
-        
+
         // Log when dependencies become available
         window.addEventListener('greenhouse:utils-ready', (event) => {
             log('GreenhouseUtils ready event received');
         });
-        
+
         if (window.GreenhouseDependencyManager) {
             window.addEventListener('greenhouse:dependencyManager-ready', (event) => {
                 log('GreenhouseDependencyManager ready event received');
@@ -404,13 +404,13 @@
 
     <!-- Load React compatibility layer first -->
     <script src="js/GreenhouseReactCompatibility.js"></script>
-    
+
     <!-- Load the dependency manager -->
     <script src="js/GreenhouseDependencyManager.js"></script>
-    
+
     <!-- Then load GreenhouseUtils -->
     <script src="js/GreenhouseUtils.js"></script>
-    
+
     <!-- Finally, test the scheduler loading (commented out to avoid errors) -->
     <!-- <script src="js/scheduler.js"></script> -->
 </body>

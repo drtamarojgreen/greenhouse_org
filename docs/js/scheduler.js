@@ -39,7 +39,7 @@
                 }
 
                 console.log('Scheduler: Waiting for GreenhouseUtils via event-based system with polling fallback');
-                
+
                 // Event-based dependency loading with timeout and polling fallback
                 const handleReady = (event) => {
                     console.log('Scheduler: Received greenhouse:utils-ready event', event.detail);
@@ -48,10 +48,10 @@
                     clearTimeout(timeoutId);
                     resolve();
                 };
-                
+
                 // Listen for ready event
                 window.addEventListener('greenhouse:utils-ready', handleReady);
-                
+
                 // Fallback polling mechanism
                 let attempts = 0;
                 const maxAttempts = 200; // 10 seconds at 50ms intervals
@@ -72,7 +72,7 @@
                         resolve();
                     }
                 }, 50);
-                
+
                 // Overall timeout as additional safety net
                 const timeoutId = setTimeout(() => {
                     clearInterval(pollInterval);

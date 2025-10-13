@@ -97,12 +97,12 @@ export const getPublicAvailability = webMethod(Permissions.Anyone, async () => {
 export const getUserAppointments = webMethod(Permissions.SiteMember, async () => {
     try {
         const currentUser = wixUsersBackend.currentUser;
-        
+
         // Validate user is logged in
         if (!currentUser.loggedIn) {
             throw new Error("Permission Denied: You must be logged in to access your appointments.");
         }
-        
+
         const userId = currentUser.id;
 
         console.log(`Backend: Fetching appointments for user ${userId}`);
@@ -136,7 +136,7 @@ export const getAdminAppointments = webMethod(Permissions.SiteMember, async () =
 
         console.log("Backend: Admin fetching all appointments with full details.");
         const results = await wixData.query("Appointments").find();
-        
+
         return {
             items: results.items,
             userRole: 'admin',

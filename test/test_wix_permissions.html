@@ -48,7 +48,7 @@
     const TestRunner = {
         suites: [],
         stats: { pass: 0, fail: 0 },
-        
+
         describe(name, fn) {
             this.suites.push({ name, fn, tests: [], beforeEach: null });
             fn(); // Execute the suite function to collect tests
@@ -157,7 +157,7 @@
             this.$w = this.create$wMock();
             this.schedulerHost = this.createSchedulerHostMock();
             this.wixUsersBackend = this.createWixUsersBackendMock();
-            
+
             this.$w.elements['#schedulerHost'] = this.schedulerHost;
         },
 
@@ -178,7 +178,7 @@
             };
             return mock;
         },
-        
+
         createWixUsersBackendMock() {
             return this.createWixUsersMock();
         },
@@ -231,7 +231,7 @@
     //================================================================
     // 3. CODE UNDER TEST (Adapted from the markdown)
     //================================================================
-    
+
     async function runVeloOnReadySimple(wixUsers, $w) {
         const currentUser = wixUsers.currentUser;
         let hasAdminAccess = false;
@@ -279,7 +279,11 @@
             console.error("Error getting user roles:", error);
             simplifiedRole = 'public'; // Default to public on error
         }
+<<<<<<< HEAD
+
+=======
         
+>>>>>>> main
         const message = {
             role: simplifiedRole,
             selectors: {
@@ -320,7 +324,7 @@
             renderPublicView(selectors);
         }
     }
-    
+
     async function getAdminData(wixUsersBackend) {
         const roles = await wixUsersBackend.currentUser.getRoles();
         const isAdmin = roles.some(role => role.name === "Administrator" || role.name === "Developer");

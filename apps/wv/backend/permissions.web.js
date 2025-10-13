@@ -15,7 +15,7 @@ console.log("Loading permissions.web.js - Version 1.0.0");
 export const isCurrentUserAdmin = webMethod(Permissions.Anyone, async () => {
     try {
         const currentUser = wixUsersBackend.currentUser;
-        
+
         // Check if user is logged in
         if (!currentUser.loggedIn) {
             return false;
@@ -78,7 +78,7 @@ export const validateAdminPermissions = webMethod(Permissions.SiteMember, async 
  */
 export const validateMemberPermissions = webMethod(Permissions.Anyone, async () => {
     const currentUser = wixUsersBackend.currentUser;
-    
+
     if (!currentUser.loggedIn) {
         throw new Error("Permission Denied: You must be logged in to access this data.");
     }
