@@ -117,6 +117,9 @@
   <script src="../utils/test_framework.js"></script>
   <script src="../utils/assertion_library.js"></script>
 
+  <!-- Load integration tests -->
+  <script src="../tests/integration_schedule_test.js"></script>
+
   <!-- Test page functionality -->
   <script>
     // Capture console output
@@ -271,24 +274,9 @@
 
     // Run basic tests
     async function runTests() {
-      console.log('[Test Page] Running basic tests...');
-      
-      // Test 1: Check if scheduler container exists
-      const container = document.getElementById('scheduler-container');
-      assert.elementExists('#scheduler-container', 'Scheduler container should exist');
-      console.log('✓ Test 1 passed: Scheduler container exists');
-
-      // Test 2: Check if mock backend is initialized
-      const mockData = window.mockVeloBackend._getMockData();
-      assert.isTrue(mockData.appointments.length > 0, 'Mock appointments should be loaded');
-      console.log('✓ Test 2 passed: Mock backend initialized');
-
-      // Test 3: Check if services are available
-      const services = await window.mockVeloBackend.getServices();
-      assert.isTrue(services.items.length > 0, 'Services should be available');
-      console.log('✓ Test 3 passed: Services loaded');
-
-      console.log('[Test Page] All basic tests passed! ✅');
+      console.log('[Test Page] Running integration tests...');
+      // The integration test suite will run automatically via TestFramework
+      await TestFramework.run();
     }
 
     // Initialize on page load
