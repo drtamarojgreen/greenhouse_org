@@ -178,6 +178,16 @@ const GreenhouseAdminApp = (function() {
         adminAppState.leftAppContainer = leftAppContainer;
         adminAppState.adminFormContainer = leftAppContainer.querySelector('[data-identifier="admin-form-container"]');
 
+        // Defensive Programming: Check if the container was found
+        if (!adminAppState.adminFormContainer) {
+            console.error('GreenhouseAdminApp: Could not find the admin form container within the provided leftAppContainer.');
+            // Optionally, display an error message in a more prominent way
+            if (leftAppContainer) {
+                leftAppContainer.innerHTML = '<p style="color: red; font-weight: bold;">Error: Admin application failed to initialize. The required form container is missing.</p>';
+            }
+            return; // Stop execution if the essential container is not found
+        }
+
         const appointmentId = new URLSearchParams(window.location.search).get('appointmentId');
 
         // As per user request, display all UI elements by default.

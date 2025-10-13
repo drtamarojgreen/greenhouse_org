@@ -199,7 +199,10 @@
                             break;
                         case 'admin':
                             if (containers.repeaterLeft) {
-                                GreenhouseSchedulerUI.buildAdminFormUI(containers.repeaterLeft);
+                                // Create a placeholder for the admin app to populate
+                                const adminFormContainer = document.createElement('div');
+                                adminFormContainer.setAttribute('data-identifier', 'admin-form-container');
+                                containers.repeaterLeft.appendChild(adminFormContainer);
                             }
                             break;
                         default:
