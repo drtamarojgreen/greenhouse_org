@@ -13,7 +13,8 @@ Once the frontend UI has been adjusted based on the user's role (as described in
 
 ## 2. Creating a Backend Web Module
 
-In Velo, server-side code that is callable from the frontend is placed in **Web Modules**. These are files with a `.web.js` extension located in your backend code folder.
+In Velo, server-side code that is callable from the frontend is placed in **Web Modules**. These are files with a `.web.js` extension located in your backend code folder. 
+
 
 > **Note:** The older `.jsw` extension is now deprecated. While existing `.jsw` files will continue to work, all new web modules should use the `.web.js` extension.
 
