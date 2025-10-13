@@ -424,7 +424,9 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 // Make available globally
-window.assert = assert;
-window.AssertionError = AssertionError;
+if (typeof window !== 'undefined') {
+  window.assert = assert;
+  window.AssertionError = AssertionError;
+}
 
 console.log('[Assertion Library] Custom assertion library loaded');
