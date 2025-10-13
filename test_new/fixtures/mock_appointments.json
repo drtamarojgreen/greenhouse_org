@@ -1,0 +1,89 @@
+{
+  "appointments": [
+    {
+      "id": "appt_001",
+      "patientName": "John Doe",
+      "patientEmail": "john.doe@example.com",
+      "patientPhone": "(555) 123-4567",
+      "serviceId": "svc_001",
+      "serviceName": "Individual Therapy",
+      "date": "2025-10-20",
+      "time": "10:00",
+      "duration": 60,
+      "status": "pending",
+      "notes": "First time patient",
+      "createdAt": "2025-10-13T10:00:00Z",
+      "updatedAt": "2025-10-13T10:00:00Z"
+    },
+    {
+      "id": "appt_002",
+      "patientName": "Jane Smith",
+      "patientEmail": "jane.smith@example.com",
+      "patientPhone": "(555) 234-5678",
+      "serviceId": "svc_002",
+      "serviceName": "Family Counseling",
+      "date": "2025-10-20",
+      "time": "14:00",
+      "duration": 90,
+      "status": "confirmed",
+      "notes": "Follow-up session",
+      "createdAt": "2025-10-12T14:30:00Z",
+      "updatedAt": "2025-10-13T09:15:00Z"
+    },
+    {
+      "id": "appt_003",
+      "patientName": "Bob Johnson",
+      "patientEmail": "bob.johnson@example.com",
+      "patientPhone": "(555) 345-6789",
+      "serviceId": "svc_003",
+      "serviceName": "Group Therapy",
+      "date": "2025-10-21",
+      "time": "16:00",
+      "duration": 120,
+      "status": "confirmed",
+      "notes": "Regular weekly session",
+      "createdAt": "2025-10-10T11:00:00Z",
+      "updatedAt": "2025-10-10T11:00:00Z"
+    },
+    {
+      "id": "appt_004",
+      "patientName": "Alice Williams",
+      "patientEmail": "alice.williams@example.com",
+      "patientPhone": "(555) 456-7890",
+      "serviceId": "svc_001",
+      "serviceName": "Individual Therapy",
+      "date": "2025-10-20",
+      "time": "10:30",
+      "duration": 60,
+      "status": "pending",
+      "notes": "Potential conflict with appt_001",
+      "createdAt": "2025-10-13T11:00:00Z",
+      "updatedAt": "2025-10-13T11:00:00Z",
+      "conflictsWith": ["appt_001"]
+    },
+    {
+      "id": "appt_005",
+      "patientName": "Charlie Brown",
+      "patientEmail": "charlie.brown@example.com",
+      "patientPhone": "(555) 567-8901",
+      "serviceId": "svc_004",
+      "serviceName": "Psychiatric Evaluation",
+      "date": "2025-10-22",
+      "time": "09:00",
+      "duration": 90,
+      "status": "cancelled",
+      "notes": "Patient requested cancellation",
+      "createdAt": "2025-10-11T15:00:00Z",
+      "updatedAt": "2025-10-13T08:30:00Z"
+    }
+  ],
+  "conflicts": [
+    {
+      "conflictId": "conflict_001",
+      "appointments": ["appt_001", "appt_004"],
+      "reason": "Overlapping time slots",
+      "severity": "high",
+      "detectedAt": "2025-10-13T11:00:00Z"
+    }
+  ]
+}

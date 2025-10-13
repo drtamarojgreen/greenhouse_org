@@ -1,0 +1,37 @@
+{
+  "browsers": ["chrome", "firefox", "safari", "edge"],
+  "headless": false,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "mobileViewports": [
+    {
+      "name": "iPhone 12",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "iPad Pro",
+      "width": 1024,
+      "height": 1366
+    },
+    {
+      "name": "Android Phone",
+      "width": 412,
+      "height": 915
+    }
+  ],
+  "browserOptions": {
+    "chrome": {
+      "args": ["--disable-web-security", "--disable-features=IsolateOrigins,site-per-process"]
+    },
+    "firefox": {
+      "prefs": {
+        "security.fileuri.strict_origin_policy": false
+      }
+    }
+  },
+  "screenshotOnFailure": true,
+  "videoRecording": false
+}

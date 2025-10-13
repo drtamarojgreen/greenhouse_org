@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schedule Test Page - Greenhouse Mental Health</title>
+  
+  <!-- Simulate Wix page structure -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .wix-page-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    #scheduler-container {
+      min-height: 400px;
+      border: 1px dashed #ccc;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    
+    .test-info {
+      background: #e3f2fd;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-left: 4px solid #2196F3;
+    }
+    
+    .test-controls {
+      background: #fff3e0;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-left: 4px solid #ff9800;
+    }
+    
+    .test-controls button {
+      margin: 5px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+    
+    #console-output {
+      background: #263238;
+      color: #aed581;
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+    
+    .console-line {
+      margin: 2px 0;
+    }
+    
+    .console-error {
+      color: #ef5350;
+    }
+    
+    .console-warn {
+      color: #ffb74d;
+    }
+    
+    .console-info {
+      color: #4fc3f7;
+    }
+  </style>
+</head>
+<body>
+  <div class="wix-page-container">
+    <div class="test-info">
+      <h2>🧪 Schedule Test Page</h2>
+      <p>This page simulates the Wix /schedule page DOM structure for local testing.</p>
+      <p><strong>Test Case Coverage:</strong> TC-WIX-01, TC-WIX-02, TC-WIX-08, TC-WIX-09, TC-WIX-10</p>
+    </div>
+
+    <div class="test-controls">
+      <h3>Test Controls</h3>
+      <button onclick="loadScheduler()">Load Scheduler</button>
+      <button onclick="simulatePublicUser()">Simulate Public User</button>
+      <button onclick="simulateAdminUser()">Simulate Admin User</button>
+      <button onclick="clearConsole()">Clear Console</button>
+      <button onclick="runTests()">Run Tests</button>
+    </div>
+
+    <h1>Schedule an Appointment</h1>
+    <p>Welcome to Greenhouse Mental Health. Please use the form below to request an appointment.</p>
+
+    <!-- Main scheduler container - matches Wix DOM structure -->
+    <div id="scheduler-container" class="scheduler-container">
+      <!-- Scheduler will be injected here -->
+      <p style="color: #999; text-align: center;">Scheduler not loaded. Click "Load Scheduler" to begin.</p>
+    </div>
+
+    <!-- Console output for debugging -->
+    <div id="console-output">
+      <div class="console-line console-info">[Test Page] Ready for testing</div>
+    </div>
+  </div>
+
+  <!-- Load mock backends first -->
+  <script src="../mocks/wix_api_mock.js"></script>
+  <script src="../mocks/velo_backend_mock.js"></script>
+
+  <!-- Load test utilities -->
+  <script src="../utils/test_framework.js"></script>
+  <script src="../utils/assertion_library.js"></script>
+
+  <!-- Test page functionality -->
+  <script>
+    // Capture console output
+    const consoleOutput = document.getElementById('console-output');
+    const originalConsole = {
+      log: console.log,
+      error: console.error,
+      warn: console.warn,
+      info: console.info
+    };
+
+    function addConsoleOutput(message, type = 'log') {
+      const line = document.createElement('div');
+      line.className = `console-line console-${type}`;
+      line.textContent = message;
+      consoleOutput.appendChild(line);
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    // Override console methods
+    console.log = function(...args) {
+      originalConsole.log.apply(console, args);
+      addConsoleOutput(args.join(' '), 'log');
+    };
+
+    console.error = function(...args) {
+      originalConsole.error.apply(console, args);
+      addConsoleOutput('ERROR: ' + args.join(' '), 'error');
+    };
+
+    console.warn = function(...args) {
+      originalConsole.warn.apply(console, args);
+      addConsoleOutput('WARN: ' + args.join(' '), 'warn');
+    };
+
+    console.info = function(...args) {
+      originalConsole.info.apply(console, args);
+      addConsoleOutput('INFO: ' + args.join(' '), 'info');
+    };
+
+    // Initialize mock backend
+    async function initializeMocks() {
+      console.log('[Test Page] Initializing mock backend...');
+      const success = await window.mockVeloBackend.initialize();
+      if (success) {
+        console.log('[Test Page] Mock backend initialized successfully');
+      } else {
+        console.error('[Test Page] Failed to initialize mock backend');
+      }
+    }
+
+    // Load scheduler from GitHub Pages (simulating cross-origin)
+    async function loadScheduler() {
+      console.log('[Test Page] Loading scheduler...');
+      
+      try {
+        // In a real test, this would load from GitHub Pages
+        // For now, we'll simulate the scheduler injection
+        const container = document.getElementById('scheduler-container');
+        container.innerHTML = `
+          <div class="scheduler-form">
+            <h2>Request an Appointment</h2>
+            <form id="appointment-form">
+              <div class="form-group">
+                <label for="patient-name">Name:</label>
+                <input type="text" id="patient-name" name="patientName" required>
+              </div>
+              <div class="form-group">
+                <label for="patient-email">Email:</label>
+                <input type="email" id="patient-email" name="patientEmail" required>
+              </div>
+              <div class="form-group">
+                <label for="patient-phone">Phone:</label>
+                <input type="tel" id="patient-phone" name="patientPhone" required>
+              </div>
+              <div class="form-group">
+                <label for="service">Service:</label>
+                <select id="service" name="serviceId" required>
+                  <option value="">Select a service...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="appointment-date">Preferred Date:</label>
+                <input type="date" id="appointment-date" name="date" required>
+              </div>
+              <div class="form-group">
+                <label for="appointment-time">Preferred Time:</label>
+                <input type="time" id="appointment-time" name="time" required>
+              </div>
+              <div class="form-group">
+                <label for="notes">Additional Notes:</label>
+                <textarea id="notes" name="notes" rows="4"></textarea>
+              </div>
+              <button type="submit">Request Appointment</button>
+            </form>
+          </div>
+        `;
+
+        // Load services into dropdown
+        const services = await window.mockVeloBackend.getServices();
+        const serviceSelect = document.getElementById('service');
+        services.items.forEach(service => {
+          const option = document.createElement('option');
+          option.value = service.id;
+          option.textContent = `${service.name} (${service.duration} min)`;
+          serviceSelect.appendChild(option);
+        });
+
+        // Add form submission handler
+        document.getElementById('appointment-form').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const appointmentData = Object.fromEntries(formData);
+          
+          try {
+            const result = await window.mockVeloBackend.createAppointment(appointmentData);
+            console.log('[Test Page] Appointment created:', result);
+            alert('Appointment request submitted successfully!');
+            e.target.reset();
+          } catch (error) {
+            console.error('[Test Page] Failed to create appointment:', error);
+            alert('Error: ' + error.message);
+          }
+        });
+
+        console.log('[Test Page] Scheduler loaded successfully');
+      } catch (error) {
+        console.error('[Test Page] Error loading scheduler:', error);
+      }
+    }
+
+    // Simulate public user
+    function simulatePublicUser() {
+      window.mockVeloBackend.mockLogout();
+      console.log('[Test Page] Simulating public user (not logged in)');
+    }
+
+    // Simulate admin user
+    function simulateAdminUser() {
+      const success = window.mockVeloBackend.mockLogin('admin@greenhousementalhealth.org');
+      if (success) {
+        console.log('[Test Page] Simulating admin user');
+      } else {
+        console.error('[Test Page] Failed to simulate admin user');
+      }
+    }
+
+    // Clear console output
+    function clearConsole() {
+      consoleOutput.innerHTML = '<div class="console-line console-info">[Test Page] Console cleared</div>';
+    }
+
+    // Run basic tests
+    async function runTests() {
+      console.log('[Test Page] Running basic tests...');
+      
+      // Test 1: Check if scheduler container exists
+      const container = document.getElementById('scheduler-container');
+      assert.elementExists('#scheduler-container', 'Scheduler container should exist');
+      console.log('✓ Test 1 passed: Scheduler container exists');
+
+      // Test 2: Check if mock backend is initialized
+      const mockData = window.mockVeloBackend._getMockData();
+      assert.isTrue(mockData.appointments.length > 0, 'Mock appointments should be loaded');
+      console.log('✓ Test 2 passed: Mock backend initialized');
+
+      // Test 3: Check if services are available
+      const services = await window.mockVeloBackend.getServices();
+      assert.isTrue(services.items.length > 0, 'Services should be available');
+      console.log('✓ Test 3 passed: Services loaded');
+
+      console.log('[Test Page] All basic tests passed! ✅');
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', async () => {
+      await initializeMocks();
+      console.log('[Test Page] Page loaded and ready for testing');
+    });
+  </script>
+</body>
+</html>

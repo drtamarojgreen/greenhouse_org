@@ -1,0 +1,15 @@
+{
+  "environment": "local",
+  "baseUrl": "http://localhost:8080",
+  "githubPagesUrl": "https://drtamarojgreen.github.io/greenhouse_org",
+  "wixTestSiteUrl": "https://test.greenhousementalhealth.org",
+  "wixLiveSiteUrl": "https://greenhousementalhealth.org",
+  "timeout": 5000,
+  "retries": 2,
+  "screenshots": true,
+  "verbose": true,
+  "testDataPath": "../fixtures",
+  "mockBackendEnabled": true,
+  "corsSimulation": true,
+  "reportPath": "../reports"
+}
