@@ -166,16 +166,6 @@ window.GreenhouseSchedulerUI = (function() {
         newAppointmentBox.setAttribute('data-identifier', 'new-appointment-box');
         targetElement.appendChild(newAppointmentBox);
 
-        if (view === 'superadmin') {
-            // Button to fetch and populate data
-            const fetchButton = document.createElement('button');
-            fetchButton.id = 'greenhouse-fetch-schedule-data-btn';
-            fetchButton.className = 'greenhouse-btn greenhouse-btn-primary';
-            fetchButton.textContent = 'Fetch and Populate Schedule Data';
-            fetchButton.setAttribute('data-identifier', 'fetch-schedule-data-btn');
-            targetElement.appendChild(fetchButton);
-        }
-
         // Schedule Display Area
         const scheduleContainer = document.createElement('div');
         scheduleContainer.id = 'greenhouse-dashboard-app-schedule-container';
