@@ -681,6 +681,49 @@ window.GreenhouseSchedulerUI = (function() {
         }
     }
 
+    /**
+     * Builds the view selector dropdown.
+     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
+     * @returns {HTMLElement} The view selector container.
+     */
+    function buildViewSelectorUI(targetElement) {
+        if (!targetElement) {
+            console.error('SchedulerUI: Target element for view selector is null.');
+            return null;
+        }
+
+        const selectorContainer = document.createElement('div');
+        selectorContainer.id = 'greenhouse-view-selector-container';
+        selectorContainer.className = 'greenhouse-view-selector-container';
+
+        const label = document.createElement('label');
+        label.htmlFor = 'greenhouse-view-selector';
+        label.textContent = 'Select View:';
+        selectorContainer.appendChild(label);
+
+        const select = document.createElement('select');
+        select.id = 'greenhouse-view-selector';
+        select.name = 'view-selector';
+
+        const options = [
+            { value: 'patient', text: 'Patient View' },
+            { value: 'dashboard', text: 'Dashboard View' },
+            { value: 'admin', text: 'Admin View' }
+        ];
+
+        options.forEach(optionInfo => {
+            const option = document.createElement('option');
+            option.value = optionInfo.value;
+            option.textContent = optionInfo.text;
+            select.appendChild(option);
+        });
+
+        selectorContainer.appendChild(select);
+        targetElement.appendChild(selectorContainer);
+
+        return selectorContainer;
+    }
+
     return {
         buildSchedulerUI,
         buildPatientFormUI,
@@ -692,5 +735,6 @@ window.GreenhouseSchedulerUI = (function() {
         buildAdminAppointmentFormUI,
         buildPatientCalendarUI, // Expose the patient calendar UI builder
         fetchAndPopulateScheduleData, // Expose the new function
+        buildViewSelectorUI,
     };
 })();
