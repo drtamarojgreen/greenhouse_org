@@ -199,7 +199,7 @@
                             break;
                         case 'admin':
                             if (containers.repeaterLeft) {
-                                GreenhouseSchedulerUI.buildAdminFormUI(containers.repeaterLeft);
+                                GreenhouseSchedulerUI.buildAdminAppointmentFormUI(containers.repeaterLeft);
                             }
                             break;
                         default:
