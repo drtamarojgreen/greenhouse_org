@@ -1,0 +1,106 @@
+{
+  "services": [
+    {
+      "id": "svc_001",
+      "name": "Individual Therapy",
+      "description": "One-on-one counseling sessions with a licensed therapist",
+      "duration": 60,
+      "price": 150,
+      "category": "therapy",
+      "available": true,
+      "color": "#4CAF50"
+    },
+    {
+      "id": "svc_002",
+      "name": "Family Counseling",
+      "description": "Therapy sessions for families to improve communication and relationships",
+      "duration": 90,
+      "price": 200,
+      "category": "therapy",
+      "available": true,
+      "color": "#2196F3"
+    },
+    {
+      "id": "svc_003",
+      "name": "Group Therapy",
+      "description": "Therapeutic sessions with multiple participants sharing similar concerns",
+      "duration": 120,
+      "price": 75,
+      "category": "therapy",
+      "available": true,
+      "color": "#FF9800"
+    },
+    {
+      "id": "svc_004",
+      "name": "Psychiatric Evaluation",
+      "description": "Comprehensive mental health assessment by a psychiatrist",
+      "duration": 90,
+      "price": 300,
+      "category": "evaluation",
+      "available": true,
+      "color": "#9C27B0"
+    },
+    {
+      "id": "svc_005",
+      "name": "Couples Therapy",
+      "description": "Counseling for couples to strengthen their relationship",
+      "duration": 75,
+      "price": 175,
+      "category": "therapy",
+      "available": true,
+      "color": "#E91E63"
+    },
+    {
+      "id": "svc_006",
+      "name": "Child Therapy",
+      "description": "Specialized therapy for children and adolescents",
+      "duration": 45,
+      "price": 125,
+      "category": "therapy",
+      "available": true,
+      "color": "#00BCD4"
+    },
+    {
+      "id": "svc_007",
+      "name": "Crisis Intervention",
+      "description": "Immediate support for mental health emergencies",
+      "duration": 60,
+      "price": 200,
+      "category": "emergency",
+      "available": true,
+      "color": "#F44336"
+    },
+    {
+      "id": "svc_008",
+      "name": "Medication Management",
+      "description": "Follow-up appointments for medication monitoring and adjustment",
+      "duration": 30,
+      "price": 100,
+      "category": "medical",
+      "available": true,
+      "color": "#607D8B"
+    }
+  ],
+  "categories": [
+    {
+      "id": "therapy",
+      "name": "Therapy Services",
+      "description": "Various counseling and therapy options"
+    },
+    {
+      "id": "evaluation",
+      "name": "Evaluations",
+      "description": "Comprehensive mental health assessments"
+    },
+    {
+      "id": "emergency",
+      "name": "Emergency Services",
+      "description": "Immediate crisis support"
+    },
+    {
+      "id": "medical",
+      "name": "Medical Services",
+      "description": "Psychiatric medication management"
+    }
+  ]
+}

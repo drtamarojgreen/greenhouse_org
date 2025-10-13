@@ -164,41 +164,60 @@
          * @param {object} containers - An object containing the four container elements.
          * @returns {Promise<void>} A promise that resolves when the view is rendered.
          */
-        async renderView(containers) {
+        async renderView(containers, view = 'patient') {
             return new Promise((resolve, reject) => {
                 try {
-                    console.log('Scheduler: Rendering custom UI layout as per user instructions.');
+                    console.log(`Scheduler: Rendering view for: ${view}`);
 
                     // Clear all containers first
                     Object.values(containers).forEach(container => {
                         if (container) container.innerHTML = '';
                     });
 
-                    // dashboardLeft: Weekly Calendar
-                    if (containers.dashboardLeft) {
-                        GreenhouseSchedulerUI.buildDashboardLeftPanelUI(containers.dashboardLeft, 'superadmin');
-                    }
-
-                    // dashboardRight: Monthly Calendar
-                    if (containers.dashboardRight) {
-                        GreenhouseSchedulerUI.buildPatientCalendarUI(containers.dashboardRight);
-                    }
-
-                    // repeaterLeft: Conflict Form
-                    if (containers.repeaterLeft) {
-                        GreenhouseSchedulerUI.buildAdminFormUI(containers.repeaterLeft);
-                    }
-
-                    // repeaterRight: Patient Form + any other UI components
+                    // Build the view selector in the top-right container
                     if (containers.repeaterRight) {
-                        GreenhouseSchedulerUI.buildPatientFormUI(containers.repeaterRight);
-                        GreenhouseSchedulerUI.createInstructionsPanel(containers.repeaterRight);
+                        GreenhouseSchedulerUI.buildViewSelectorUI(containers.repeaterRight);
+                    }
+
+                    switch (view) {
+                        case 'patient':
+                            if (containers.repeaterLeft) {
+                                GreenhouseSchedulerUI.buildPatientCalendarUI(containers.repeaterLeft);
+                            }
+                            if (containers.repeaterRight) {
+                                GreenhouseSchedulerUI.buildPatientFormUI(containers.repeaterRight);
+                                GreenhouseSchedulerUI.createInstructionsPanel(containers.repeaterRight);
+                            }
+                            break;
+                        case 'dashboard':
+                            if (containers.dashboardLeft) {
+                                GreenhouseSchedulerUI.buildDashboardLeftPanelUI(containers.dashboardLeft, 'superadmin');
+                            }
+                            if (containers.dashboardRight) {
+                                GreenhouseSchedulerUI.buildPatientCalendarUI(containers.dashboardRight);
+                            }
+                            break;
+                        case 'admin':
+                            if (containers.repeaterLeft) {
+                                GreenhouseSchedulerUI.buildAdminFormUI(containers.repeaterLeft);
+                            }
+                            break;
+                        default:
+                            console.warn(`Scheduler: Unknown view selected: ${view}`);
+                            // Default to patient view
+                            if (containers.repeaterLeft) {
+                                GreenhouseSchedulerUI.buildPatientCalendarUI(containers.repeaterLeft);
+                            }
+                            if (containers.repeaterRight) {
+                                GreenhouseSchedulerUI.buildPatientFormUI(containers.repeaterRight);
+                            }
+                            break;
                     }
 
                     resolve();
                 } catch (error) {
-                    console.error(`Scheduler: Error rendering views:`, error);
-                    this.createErrorView(`Failed to load scheduler views: ${error.message}`);
+                    console.error(`Scheduler: Error rendering view '${view}':`, error);
+                    this.createErrorView(`Failed to load scheduler view: ${error.message}`);
                     reject(error);
                 }
             });
@@ -218,46 +237,45 @@
          * @description Initializes all loaded application instances, passing the correct containers to each.
          * @param {object} containers - An object containing the four container elements.
          */
-        async initializeApplication(containers) {
-            console.log('Scheduler: Initializing ALL application instances for development purposes.');
+        async initializeApplication(containers, view = 'patient') {
+            console.log(`Scheduler: Initializing application for view: ${view}`);
             try {
-                // Load all app scripts
-                await Promise.all([
-                    GreenhouseUtils.loadScript('GreenhouseDashboardApp.js', GreenhouseUtils.appState.baseUrl),
-                    GreenhouseUtils.loadScript('GreenhousePatientApp.js', GreenhouseUtils.appState.baseUrl),
-                    GreenhouseUtils.loadScript('GreenhouseAdminApp.js', GreenhouseUtils.appState.baseUrl)
-                ]);
-
-                // Initialize Dashboard App
-                if (typeof GreenhouseDashboardApp === 'object' && GreenhouseDashboardApp !== null && typeof GreenhouseDashboardApp.init === 'function') {
-                    console.log('Scheduler: Initializing GreenhouseDashboardApp');
-                    // Pass the admin containers
-                    GreenhouseDashboardApp.init(containers.dashboardLeft, containers.dashboardRight);
-                } else {
-                    console.warn('Scheduler: GreenhouseDashboardApp not found or has no init method.');
+                switch (view) {
+                    case 'patient':
+                        await GreenhouseUtils.loadScript('GreenhousePatientApp.js', GreenhouseUtils.appState.baseUrl);
+                        if (typeof GreenhousePatientApp === 'object' && GreenhousePatientApp !== null && typeof GreenhousePatientApp.init === 'function') {
+                            console.log('Scheduler: Initializing GreenhousePatientApp');
+                            GreenhousePatientApp.init(containers.repeaterLeft, containers.repeaterRight);
+                        } else {
+                            console.warn('Scheduler: GreenhousePatientApp not found or has no init method.');
+                        }
+                        break;
+                    case 'dashboard':
+                        await GreenhouseUtils.loadScript('GreenhouseDashboardApp.js', GreenhouseUtils.appState.baseUrl);
+                        if (typeof GreenhouseDashboardApp === 'object' && GreenhouseDashboardApp !== null && typeof GreenhouseDashboardApp.init === 'function') {
+                            console.log('Scheduler: Initializing GreenhouseDashboardApp');
+                            GreenhouseDashboardApp.init(containers.dashboardLeft, containers.dashboardRight);
+                        } else {
+                            console.warn('Scheduler: GreenhouseDashboardApp not found or has no init method.');
+                        }
+                        break;
+                    case 'admin':
+                        await GreenhouseUtils.loadScript('GreenhouseAdminApp.js', GreenhouseUtils.appState.baseUrl);
+                        if (typeof GreenhouseAdminApp === 'object' && GreenhouseAdminApp !== null && typeof GreenhouseAdminApp.init === 'function') {
+                            console.log('Scheduler: Initializing GreenhouseAdminApp');
+                            GreenhouseAdminApp.init(containers.repeaterLeft);
+                        } else {
+                            console.warn('Scheduler: GreenhouseAdminApp not found or has no init method.');
+                        }
+                        break;
+                    default:
+                        console.error(`Scheduler: Unknown view '${view}' passed to initializeApplication.`);
+                        GreenhouseUtils.displayError(`Cannot initialize unknown view: ${view}`);
+                        break;
                 }
-
-                // Initialize Patient App
-                if (typeof GreenhousePatientApp === 'object' && GreenhousePatientApp !== null && typeof GreenhousePatientApp.init === 'function') {
-                    console.log('Scheduler: Initializing GreenhousePatientApp');
-                    // Pass the patient containers
-                    GreenhousePatientApp.init(containers.repeaterLeft, containers.repeaterRight);
-                } else {
-                    console.warn('Scheduler: GreenhousePatientApp not found or has no init method.');
-                }
-
-                // Initialize Admin App
-                if (typeof GreenhouseAdminApp === 'object' && GreenhouseAdminApp !== null && typeof GreenhouseAdminApp.init === 'function') {
-                    console.log('Scheduler: Initializing GreenhouseAdminApp');
-                    // Pass the admin container (where the admin form is)
-                    GreenhouseAdminApp.init(containers.repeaterLeft);
-                } else {
-                    console.warn('Scheduler: GreenhouseAdminApp not found or has no init method.');
-                }
-
             } catch (error) {
-                console.error('Scheduler: Error initializing one or more application instances:', error);
-                GreenhouseUtils.displayError('One or more scheduler applications failed to initialize properly.');
+                console.error(`Scheduler: Error initializing application for view '${view}':`, error);
+                GreenhouseUtils.displayError(`An error occurred while loading the ${view} view.`);
             }
         },
 
@@ -373,7 +391,7 @@
                 const schedulerSelectors = JSON.parse(schedulerSelectorsRaw);
                 GreenhouseUtils.appState.schedulerSelectors = schedulerSelectors;
                 GreenhouseUtils.appState.baseUrl = scriptAttributes['base-url'];
-                GreenhouseUtils.appState.currentView = scriptAttributes['view'] || 'all';
+                GreenhouseUtils.appState.currentView = 'patient'; // Default view
 
                 // Wait for all container elements to be available
                 const [dashboardLeft, dashboardRight, repeaterLeft, repeaterRight] = await Promise.all([
@@ -396,12 +414,21 @@
 
                 await new Promise(resolve => setTimeout(resolve, GreenhouseUtils.config.dom.insertionDelay));
 
-                await this.renderView(containers);
+                await this.renderView(containers, GreenhouseUtils.appState.currentView);
 
-                await this.initializeApplication(containers);
+                await this.initializeApplication(containers, GreenhouseUtils.appState.currentView);
 
                 const hiddenElementsFragment = GreenhouseSchedulerUI.createHiddenElements();
                 document.body.appendChild(hiddenElementsFragment);
+
+                // Add event listener for the view selector
+                const viewSelector = document.getElementById('greenhouse-view-selector');
+                if (viewSelector) {
+                    viewSelector.addEventListener('change', (event) => {
+                        const newView = event.target.value;
+                        this.switchView(newView);
+                    });
+                }
 
                 GreenhouseUtils.appState.isInitialized = true;
                 console.log('Scheduler: Initialization completed successfully');
@@ -419,6 +446,23 @@
             } finally {
                 GreenhouseUtils.appState.isLoading = false;
             }
+        },
+
+        async switchView(newView) {
+            console.log(`Scheduler: Switching to view: ${newView}`);
+            GreenhouseUtils.appState.currentView = newView;
+            const containers = GreenhouseUtils.appState.containers;
+
+            // Hide containers to prevent FOUC
+            Object.values(containers).forEach(c => { if (c) c.style.visibility = 'hidden'; });
+
+            await this.renderView(containers, newView);
+            await this.initializeApplication(containers, newView);
+
+            // Show containers now that rendering is complete
+            Object.values(containers).forEach(c => { if (c) c.style.visibility = 'visible'; });
+
+            console.log(`Scheduler: Switched to ${newView} view.`);
         }
     };
 

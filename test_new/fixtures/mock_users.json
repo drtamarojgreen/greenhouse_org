@@ -1,0 +1,127 @@
+{
+  "users": [
+    {
+      "id": "user_admin_001",
+      "email": "admin@greenhousementalhealth.org",
+      "name": "Dr. Tamara Green",
+      "role": "admin",
+      "permissions": [
+        "view_all_appointments",
+        "create_appointment",
+        "update_appointment",
+        "delete_appointment",
+        "resolve_conflicts",
+        "manage_services",
+        "view_reports"
+      ],
+      "active": true
+    },
+    {
+      "id": "user_admin_002",
+      "email": "staff@greenhousementalhealth.org",
+      "name": "Staff Member",
+      "role": "admin",
+      "permissions": [
+        "view_all_appointments",
+        "create_appointment",
+        "update_appointment",
+        "resolve_conflicts"
+      ],
+      "active": true
+    },
+    {
+      "id": "user_public_001",
+      "email": "patient@example.com",
+      "name": "Public User",
+      "role": "public",
+      "permissions": [
+        "request_appointment",
+        "view_services"
+      ],
+      "active": true
+    }
+  ],
+  "roles": [
+    {
+      "id": "admin",
+      "name": "Administrator",
+      "description": "Full access to all scheduler features",
+      "defaultPermissions": [
+        "view_all_appointments",
+        "create_appointment",
+        "update_appointment",
+        "delete_appointment",
+        "resolve_conflicts",
+        "manage_services",
+        "view_reports"
+      ]
+    },
+    {
+      "id": "staff",
+      "name": "Staff Member",
+      "description": "Limited administrative access",
+      "defaultPermissions": [
+        "view_all_appointments",
+        "create_appointment",
+        "update_appointment",
+        "resolve_conflicts"
+      ]
+    },
+    {
+      "id": "public",
+      "name": "Public User",
+      "description": "Basic appointment request access",
+      "defaultPermissions": [
+        "request_appointment",
+        "view_services"
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "id": "view_all_appointments",
+      "name": "View All Appointments",
+      "description": "Access to view all scheduled appointments"
+    },
+    {
+      "id": "create_appointment",
+      "name": "Create Appointment",
+      "description": "Ability to create new appointments"
+    },
+    {
+      "id": "update_appointment",
+      "name": "Update Appointment",
+      "description": "Ability to modify existing appointments"
+    },
+    {
+      "id": "delete_appointment",
+      "name": "Delete Appointment",
+      "description": "Ability to remove appointments"
+    },
+    {
+      "id": "resolve_conflicts",
+      "name": "Resolve Conflicts",
+      "description": "Ability to resolve scheduling conflicts"
+    },
+    {
+      "id": "manage_services",
+      "name": "Manage Services",
+      "description": "Ability to add/edit/remove services"
+    },
+    {
+      "id": "view_reports",
+      "name": "View Reports",
+      "description": "Access to scheduling reports and analytics"
+    },
+    {
+      "id": "request_appointment",
+      "name": "Request Appointment",
+      "description": "Ability to submit appointment requests"
+    },
+    {
+      "id": "view_services",
+      "name": "View Services",
+      "description": "Ability to view available services"
+    }
+  ]
+}
