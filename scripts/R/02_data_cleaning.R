@@ -13,6 +13,7 @@ library(data.table)
 library(haven) # This is needed if the data is still in .XPT format
 
 # Source the data access script to ensure the data-loading function is available.
+# The `tryCatch` block provides more robust error handling if the file is not found.
 tryCatch({
   source("scripts/R/01_data_access.R")
 }, error = function(e) {
@@ -26,7 +27,8 @@ tryCatch({
 #' This includes:
 #'   1. Selecting a subset of variables relevant for the analysis.
 #'   2. Converting special codes (e.g., 7, 9, 77, 99 for 'Don't know' or 'Refused')
-#'      into `NA` for the selected variables.
+#'      into `NA` (Not Available), which is R's
+#' standard representation for missing data.
 #'
 #' @param raw_data A data.table object containing the raw BRFSS data.
 #'

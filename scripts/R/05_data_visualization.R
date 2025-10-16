@@ -10,6 +10,7 @@
 # Load required libraries for visualization and data manipulation.
 library(data.table)
 library(ggplot2)
+library(scales)
 
 # Source the data analysis script, which gives us access to the full pipeline.
 tryCatch({
@@ -21,7 +22,7 @@ tryCatch({
 #' Visualize Depression Prevalence by Age Group
 #'
 #' @description
-#' Creates and saves a bar chart showing the prevalence of depressive disorder across
+#' Creates and saves a bar chart showing the prevalence of depression across
 #' different age groups, based on the analysis of the real 2022 BRFSS data.
 #'
 #' @param analysis_data A data.table object from the analysis step, containing

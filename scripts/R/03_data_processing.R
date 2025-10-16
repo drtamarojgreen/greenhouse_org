@@ -72,9 +72,9 @@ process_brfss_data <- function(cleaned_data) {
   # The MENTHLTH variable uses 88 for "None". We will treat that as 0 days.
   processed_dt[MENTHLTH == 88, MENTHLTH := 0]
   processed_dt[, FMD_INDICATOR := fcase(
-    MENTHLTH >= 14, 1,
-    MENTHLTH < 14, 0,
-    is.na(MENTHLTH), NA_integer_
+    `MENTHLTH` >= 14, 1,
+    `MENTHLTH` < 14, 0,
+    is.na(`MENTHLTH`), NA_integer_
   )]
   # Convert the new indicator to a labeled factor for clarity.
   processed_dt[, FMD_INDICATOR_LABEL := factor(FMD_INDICATOR,

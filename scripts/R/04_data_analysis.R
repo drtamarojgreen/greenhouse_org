@@ -3,7 +3,7 @@
 # Objective:
 # This script is for performing statistical analysis on the processed data.
 # It takes the feature-engineered data from the real BRFSS dataset and
-# calculates summary statistics to derive insights.
+# calculates summary statistics to derive insights from the data.
 #
 # All steps are fully commented.
 
@@ -23,7 +23,7 @@ tryCatch({
 #' @description
 #' Calculates the prevalence of depressive disorder for each age group in the
 #' processed dataset. Prevalence is calculated as the number of "Yes" cases
-#' divided by the total number of valid (non-NA) responses.
+' divided by the total number of valid (non-NA) responses.
 #'
 #' @param processed_data A data.table object containing the processed data with
 #'   'AGE_GROUP' and 'DEPRESSION_STATUS' columns.
