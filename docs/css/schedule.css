@@ -285,11 +285,11 @@ div[class*="bgLayer"] {
 
 .schedule-table th,
 .schedule-table td {
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-color);
     padding: 8px;
     text-align: center;
     font-size: 0.85rem;
-    color: #444;
+    color: var(--text-dark); /* High contrast */
     vertical-align: middle;
     height: 40px;
     position: relative;
@@ -297,8 +297,8 @@ div[class*="bgLayer"] {
 
 .schedule-table th {
     background-color: #e8f5e8; /* Light green from theme */
-    color: #357438; /* Primary green */
-    font-weight: 600;
+    color: var(--primary-green-dark); /* High contrast */
+    font-weight: var(--font-weight-bold);
     text-transform: uppercase;
     padding: 10px 5px;
 }
@@ -308,13 +308,13 @@ div[class*="bgLayer"] {
     min-width: 60px;
     max-width: 60px;
     background-color: #f0faf4 !important; /* Lighter green from theme */
-    color: #357438;
+    color: var(--primary-green-dark); /* High contrast */
 }
 
 .time-slot-label {
     background-color: #f0faf4; /* Lighter green from theme */
     font-weight: 500;
-    color: #357438; /* Primary green */
+    color: var(--primary-green-dark); /* High contrast */
     width: 60px;
     min-width: 60px;
     max-width: 60px;
@@ -359,19 +359,19 @@ div[class*="bgLayer"] {
     right: 0;
     bottom: 0;
     background-color: #a5d6a7; /* Medium light green */
-    border: 1px solid #357438; /* Primary green border */
+    border: 1px solid var(--primary-green-dark);
     border-radius: 4px;
     padding: 2px 5px;
     margin: 2px;
     font-size: 0.75rem;
-    color: #155724;
+    color: var(--text-dark); /* High contrast */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-sm);
 }
 
 table:not(.schedule-table) {
@@ -386,18 +386,18 @@ table:not(.schedule-table) {
 
 table:not(.schedule-table) th,
 table:not(.schedule-table) td {
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-color);
     padding: 12px;
     text-align: center;
     font-size: 0.95rem;
-    color: #444;
+    color: var(--text-dark); /* High contrast */
     vertical-align: top;
 }
 
 table:not(.schedule-table) th {
     background-color: #e8f5e8; /* Light green from theme */
-    color: #357438; /* Primary green */
-    font-weight: 600;
+    color: var(--primary-green-dark); /* High contrast */
+    font-weight: var(--font-weight-bold);
     text-transform: uppercase;
 }
 
@@ -418,7 +418,7 @@ table:not(.schedule-table) tr:nth-child(even) {
 }
 
 .appointment-item strong {
-    color: #357438; /* Primary green */
+    color: var(--primary-green-dark); /* High contrast */
     font-size: 1.1rem;
 }
 
@@ -456,7 +456,7 @@ table:not(.schedule-table) tr:nth-child(even) {
 }
 
 .greenhouse-modal-close {
-    color: #888;
+    color: var(--text-light); /* Better contrast */
     position: absolute;
     top: 15px;
     right: 25px;
@@ -517,7 +517,7 @@ table:not(.schedule-table) tr:nth-child(even) {
     text-align: center;
     font-size: 0.85em;
     font-weight: bold;
-    color: #333;
+    color: var(--text-dark); /* High contrast */
     border-bottom: 1px solid rgba(0,0,0,0.1);
 }
 
