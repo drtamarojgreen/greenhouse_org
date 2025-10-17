@@ -9,7 +9,11 @@ div[class*="bgLayer"] {
 
 
 /* Scoped styles for the Greenhouse Schedule App */
-#greenhouse-app-container {
+/* Use specific container IDs since #greenhouse-app-container does not exist */
+#greenhouse-admin-form,
+#greenhouse-dashboard-app-conflict-resolution-area,
+#greenhouse-patient-app-calendar-container,
+#greenhouse-patient-form {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
     color: #333; /* Default text color */
@@ -17,7 +21,8 @@ div[class*="bgLayer"] {
     z-index: 9999;
 }
 
-#greenhouse-app-container .wixui-column-strip__column {
+#greenhouse-patient-form .wixui-column-strip__column,
+#greenhouse-patient-app-calendar-container .wixui-column-strip__column {
     padding: 20px;
     background-color: #ffffff;
     border-radius: 8px;
@@ -25,11 +30,11 @@ div[class*="bgLayer"] {
     margin-bottom: 20px;
 }
 
-#greenhouse-app-container .wixui-column-strip__column > #greenhouse-app-container {
+#greenhouse-patient-form .wixui-column-strip__column > #greenhouse-app-container {
     order: -1;
 }
 
-#greenhouse-app-container .calendar-header {
+#greenhouse-patient-app-calendar-container .calendar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -38,7 +43,7 @@ div[class*="bgLayer"] {
     border-bottom: 1px solid #ddd;
 }
 
-#greenhouse-app-container .calendar-header > * {
+#greenhouse-patient-app-calendar-container .calendar-header > * {
     background: #f0f0f0;
     padding: 15px;
     border-radius: 6px;
@@ -53,7 +58,8 @@ div[class*="bgLayer"] {
    ==================================================================== */
 
 /* --- Form Wrapper --- */
-#greenhouse-app-container form {
+/* Use the actual ID of the form's container */
+#greenhouse-patient-form form {
     background-color: var(--form-bg, #ffffff);
     padding: var(--spacing-xl, 2rem);
     border-radius: var(--border-radius-md, 8px);
@@ -67,7 +73,8 @@ div[class*="bgLayer"] {
 }
 
 /* --- Form Labels --- */
-#greenhouse-app-container label {
+/* Descend from the correct ID */
+#greenhouse-patient-form label {
     display: block;
     margin-bottom: var(--spacing-sm, 0.5rem);
     font-weight: 600;
@@ -76,13 +83,13 @@ div[class*="bgLayer"] {
 }
 
 /* --- Form Inputs: text, textarea, select --- */
-#greenhouse-app-container .form-control,
-#greenhouse-app-container input[type="text"],
-#greenhouse-app-container input[type="email"],
-#greenhouse-app-container input[type="date"],
-#greenhouse-app-container input[type="time"],
-#greenhouse-app-container textarea,
-#greenhouse-app-container select {
+#greenhouse-patient-form .form-control,
+#greenhouse-patient-form input[type="text"],
+#greenhouse-patient-form input[type="email"],
+#greenhouse-patient-form input[type="date"],
+#greenhouse-patient-form input[type="time"],
+#greenhouse-patient-form textarea,
+#greenhouse-patient-form select {
     display: block;
     width: 100%;
     padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
@@ -94,19 +101,19 @@ div[class*="bgLayer"] {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-#greenhouse-app-container textarea {
+#greenhouse-patient-form textarea {
     min-height: 120px;
     resize: vertical;
 }
 
 /* --- Input Focus State --- */
-#greenhouse-app-container .form-control:focus,
-#greenhouse-app-container input[type="text"]:focus,
-#greenhouse-app-container input[type="email"]:focus,
-#greenhouse-app-container input[type="date"]:focus,
-#greenhouse-app-container input[type="time"]:focus,
-#greenhouse-app-container textarea:focus,
-#greenhouse-app-container select:focus {
+#greenhouse-patient-form .form-control:focus,
+#greenhouse-patient-form input[type="text"]:focus,
+#greenhouse-patient-form input[type="email"]:focus,
+#greenhouse-patient-form input[type="date"]:focus,
+#greenhouse-patient-form input[type="time"]:focus,
+#greenhouse-patient-form textarea:focus,
+#greenhouse-patient-form select:focus {
     border-color: var(--primary-green, #357438);
     box-shadow: 0 0 0 3px rgba(53, 116, 56, 0.2);
     outline: none;
@@ -124,8 +131,8 @@ div[class*="bgLayer"] {
 }
 
 /* --- General Button Styles --- */
-#greenhouse-app-container .greenhouse-btn,
-#greenhouse-app-container button {
+#greenhouse-patient-form .greenhouse-btn,
+#greenhouse-patient-form button {
     padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem);
     border: 1px solid transparent;
     border-radius: var(--border-radius-sm, 4px);
@@ -138,36 +145,36 @@ div[class*="bgLayer"] {
     transition: background-color 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
 }
 
-#greenhouse-app-container .greenhouse-btn:hover,
-#greenhouse-app-container button:hover {
+#greenhouse-patient-form .greenhouse-btn:hover,
+#greenhouse-patient-form button:hover {
     transform: translateY(-1px);
 }
 
-#greenhouse-app-container .greenhouse-btn:active,
-#greenhouse-app-container button:active {
+#greenhouse-patient-form .greenhouse-btn:active,
+#greenhouse-patient-form button:active {
     transform: translateY(0);
 }
 
 /* --- Primary Button (e.g., Submit, Confirm) --- */
-#greenhouse-app-container .greenhouse-btn-primary,
-#greenhouse-app-container button {
+#greenhouse-patient-form .greenhouse-btn-primary,
+#greenhouse-patient-form button {
     background-color: var(--primary-green, #357438);
     color: var(--white, #fff);
 }
 
-#greenhouse-app-container .greenhouse-btn-primary:hover,
-#greenhouse-app-container button:hover {
+#greenhouse-patient-form .greenhouse-btn-primary:hover,
+#greenhouse-patient-form button:hover {
     background-color: var(--primary-green-dark, #2a5a2c);
 }
 
 /* --- Secondary Button (e.g., Cancel) --- */
-#greenhouse-app-container .greenhouse-btn-secondary {
+#greenhouse-patient-form .greenhouse-btn-secondary {
     background-color: transparent;
     border-color: var(--border-color, #ced4da);
     color: var(--text-dark, #212529);
 }
 
-#greenhouse-app-container .greenhouse-btn-secondary:hover {
+#greenhouse-patient-form .greenhouse-btn-secondary:hover {
     background-color: #f8f9fa;
     border-color: #adb5bd;
 }
@@ -329,7 +336,7 @@ table:not(.schedule-table) tr:nth-child(even) {
     align-self: flex-start;
 }
 
-.greenhouse-app-container .greenhouse-modal {
+.greenhouse-modal {
     display: none;
     position: fixed;
     z-index: 1000;
@@ -355,7 +362,7 @@ table:not(.schedule-table) tr:nth-child(even) {
     animation: fadeIn 0.3s ease-out;
 }
 
-.greenhouse-app-container .greenhouse-modal-close {
+.greenhouse-modal-close {
     color: #888;
     position: absolute;
     top: 15px;
