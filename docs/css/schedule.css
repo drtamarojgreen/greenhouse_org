@@ -552,8 +552,6 @@ table tr:nth-child(even) td:nth-child(odd) {
     background-color: #f8fdf9; /* Lighter where row and column shading overlap */
 }
 
-#greenhouse-admin-form, #greenhouse-dashboard-app-conflict-resolution-area, #greenhouse-patient-app-calendar-container, #greenhouse-instructions-title, #greenhouse-instructions-list {background: #ffffff;}
-
 /* Black sections fix */
 #greenhouse-patient-form form, .appointment-form, .conflicts-form {
   background: #ffffff;
@@ -583,7 +581,7 @@ table tr:nth-child(even) td:nth-child(odd) {
 .monthly-calendar-header button {
   background: #ffffff;
   border: none;
-  color: #357438;
+  color: var(--primary-green-dark); /* High contrast */
   font-weight: 600;
   padding: 6px 14px;
   border-radius: 6px;
