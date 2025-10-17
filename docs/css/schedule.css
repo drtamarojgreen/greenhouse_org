@@ -118,12 +118,12 @@ div[class*="bgLayer"] {
     justify-content: space-between;
     align-items: center;
     padding: 10px;
-    background-color: #f9f9f9;
+    background-color: #ffffff;
     border-bottom: 1px solid #ddd;
 }
 
 #greenhouse-patient-app-calendar-container .calendar-header > * {
-    background: #f0f0f0;
+    background: #ffffff;
     padding: 15px;
     border-radius: 6px;
 }
@@ -153,10 +153,10 @@ div[class*="bgLayer"] {
 /* --- Form Labels (Scoped) --- */
 #greenhouse-patient-form label {
     display: block;
-    margin-bottom: var(--spacing-xs);
-    font-weight: var(--font-weight-bold);
-    font-size: var(--font-size-sm);
-    color: var(--text-dark);
+    margin-bottom: var(--spacing-sm, 0.5rem);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-light, #212529);
 }
 
 /* --- Form Inputs (Scoped) --- */
@@ -169,11 +169,11 @@ div[class*="bgLayer"] {
 #greenhouse-patient-form select {
     display: block;
     width: 100%;
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-size: var(--font-size-base);
-    background-color: var(--input-bg);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+    font-size: 1rem;
+    background-color: var(--input-bg, #ffffff);
+    border: 1px solid var(--border-color, #ced4da);
+    border-radius: var(--border-radius-sm, 4px);
     box-sizing: border-box;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -235,13 +235,13 @@ div[class*="bgLayer"] {
 /* --- Primary Button (Scoped & Accessible) --- */
 #greenhouse-patient-form .greenhouse-btn-primary,
 #greenhouse-patient-form button {
-    background-color: var(--primary-green-dark); /* Darker green for WCAG AA */
-    color: var(--white);
+    background-color: var(--primary-green, #2A5C2B);
+    color: var(--white, #fff);
 }
 
 #greenhouse-patient-form .greenhouse-btn-primary:hover,
 #greenhouse-patient-form button:hover {
-    background-color: var(--primary-green); /* Use the lighter green for hover */
+    background-color: var(--primary-green-dark, #214a22);
 }
 
 /* --- Disabled Button State (Scoped) --- */
@@ -296,7 +296,7 @@ div[class*="bgLayer"] {
 }
 
 .schedule-table th {
-    background-color: #e8f5e8; /* Light green from theme */
+    background-color: #ffffff; /* Light green from theme */
     color: #357438; /* Primary green */
     font-weight: 600;
     text-transform: uppercase;
@@ -307,12 +307,12 @@ div[class*="bgLayer"] {
     width: 60px;
     min-width: 60px;
     max-width: 60px;
-    background-color: #f0faf4 !important; /* Lighter green from theme */
+    background-color: #ffffff !important; /* Lighter green from theme */
     color: #357438;
 }
 
 .time-slot-label {
-    background-color: #f0faf4; /* Lighter green from theme */
+    background-color: #ffffff; /* Lighter green from theme */
     font-weight: 500;
     color: #357438; /* Primary green */
     width: 60px;
@@ -333,11 +333,11 @@ div[class*="bgLayer"] {
 }
 
 .schedule-table tr:nth-child(odd) .schedule-cell:nth-child(even) {
-    background-color: #f8fdf9; /* Very light green */
+    background-color: #ffffff; /* Very light green */
 }
 
 .schedule-table tr:nth-child(even) .schedule-cell:nth-child(odd) {
-    background-color: #f8fdf9; /* Very light green */
+    background-color: #ffffff; /* Very light green */
 }
 
 .schedule-table tr:nth-child(odd) .schedule-cell:nth-child(odd) {
@@ -349,7 +349,7 @@ div[class*="bgLayer"] {
 }
 
 .schedule-table td.time-slot-label {
-    background-color: #f0faf4; /* Lighter green from theme */
+    background-color: #ffffff; /* Lighter green from theme */
 }
 
 .schedule-cell .appointment-item {
@@ -395,14 +395,14 @@ table:not(.schedule-table) td {
 }
 
 table:not(.schedule-table) th {
-    background-color: #e8f5e8; /* Light green from theme */
+    background-color: #ffffff; /* Light green from theme */
     color: #357438; /* Primary green */
     font-weight: 600;
     text-transform: uppercase;
 }
 
 table:not(.schedule-table) tr:nth-child(even) {
-    background-color: #f8fdf9; /* Very light green */
+    background-color: #ffffff; /* Very light green */
 }
 
 .appointment-item {
@@ -410,7 +410,7 @@ table:not(.schedule-table) tr:nth-child(even) {
     padding: 15px;
     margin-bottom: 15px;
     border-radius: 8px;
-    background-color: #fdfdfd;
+    background-color: #ffffff;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
@@ -542,14 +542,14 @@ table:not(.schedule-table) tr:nth-child(even) {
 
 table th:nth-child(even),
 table td:nth-child(even) {
-    background-color: #f0faf4; /* Light green for alternate columns */
+    background-color: #ffffff; /* Light green for alternate columns */
 }
 
 table tr:nth-child(odd) td:nth-child(even) {
-    background-color: #e8f5e8; /* Slightly darker where row and column shading overlap */
+    background-color: #ffffff; /* Slightly darker where row and column shading overlap */
 }
 table tr:nth-child(even) td:nth-child(odd) {
-    background-color: #f8fdf9; /* Lighter where row and column shading overlap */
+    background-color: #ffffff; /* Lighter where row and column shading overlap */
 }
 
 #greenhouse-admin-form, #greenhouse-dashboard-app-conflict-resolution-area, #greenhouse-patient-app-calendar-container, #greenhouse-instructions-title, #greenhouse-instructions-list {background: #ffffff;}
