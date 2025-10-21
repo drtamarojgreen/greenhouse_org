@@ -245,7 +245,7 @@
                         await GreenhouseUtils.loadScript('GreenhousePatientApp.js', GreenhouseUtils.appState.baseUrl);
                         if (typeof GreenhousePatientApp === 'object' && GreenhousePatientApp !== null && typeof GreenhousePatientApp.init === 'function') {
                             console.log('Scheduler: Initializing GreenhousePatientApp');
-                            GreenhousePatientApp.init(containers.repeaterLeft, containers.repeaterRight);
+                            await GreenhousePatientApp.init(containers.repeaterLeft, containers.repeaterRight);
                         } else {
                             console.warn('Scheduler: GreenhousePatientApp not found or has no init method.');
                         }
@@ -520,7 +520,7 @@
         }
     };
 
-    // Execute main function
-    main();
+    // Execute main function and attach its promise to the window for testability
+    window.schedulerPromise = main();
 
 })();

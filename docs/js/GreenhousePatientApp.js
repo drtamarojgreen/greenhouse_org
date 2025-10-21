@@ -405,6 +405,13 @@ const GreenhousePatientApp = (function() {
         patientAppState.leftAppContainer = leftAppContainer;
         patientAppState.rightAppContainer = rightAppContainer;
 
+        // Build the patient calendar and append it to the right container
+        if (patientAppState.rightAppContainer) {
+            GreenhouseSchedulerUI.buildPatientCalendarUI(patientAppState.rightAppContainer);
+        } else {
+            console.error("GreenhousePatientApp: rightAppContainer is null, cannot build patient calendar.");
+        }
+
         // Get references to UI elements created by schedulerUI.js
         patientAppState.patientFormContainer = leftAppContainer.querySelector('[data-identifier="patient-form-container"]');
         patientAppState.patientAppointmentForm = leftAppContainer.querySelector('[data-identifier="patient-appointment-form"]');
