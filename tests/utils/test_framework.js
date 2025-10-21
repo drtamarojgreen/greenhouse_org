@@ -396,6 +396,8 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 // Make available globally
-window.TestFramework = testFramework;
+if (typeof window !== 'undefined') {
+  window.TestFramework = testFramework;
+}
 
 console.log('[Test Framework] Lightweight testing framework loaded');
