@@ -1,0 +1,20 @@
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX fda: <http://www.fda.gov/drugsatfda/>
+
+SELECT DISTINCT ?drugName ?activeIngredient
+WHERE {
+  ?app a fda:Application ;
+       fda:hasProduct ?product .
+
+  ?product fda:drugName ?drugName ;
+           fda:activeIngredient ?activeIngredient .
+
+  ?spl dc:source ?app_id ;
+       dc:paragraph ?paragraph .
+
+  BIND(IRI(CONCAT("http://www.fda.gov/drugsatfda/application/", STR(?app_id))) as ?app)
+
+  FILTER(regex(lcase(str(?paragraph)), "suicidal ideation"))
+}
+ORDER BY ?drugName
+LIMIT 200

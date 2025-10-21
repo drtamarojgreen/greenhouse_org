@@ -459,8 +459,24 @@
             await this.renderView(containers, newView);
             await this.initializeApplication(containers, newView);
 
-            // Show containers now that rendering is complete
-            Object.values(containers).forEach(c => { if (c) c.style.visibility = 'visible'; });
+            // Selectively show containers based on the new view
+            const viewContainerMap = {
+                patient: ['repeaterLeft', 'repeaterRight'],
+                dashboard: ['dashboardLeft', 'dashboardRight'],
+                admin: ['repeaterLeft']
+            };
+
+            const requiredContainerKeys = viewContainerMap[newView] || [];
+
+            Object.keys(containers).forEach(key => {
+                if (containers[key]) {
+                    if (requiredContainerKeys.includes(key)) {
+                        containers[key].style.visibility = 'visible';
+                    } else {
+                        containers[key].style.visibility = 'hidden';
+                    }
+                }
+            });
 
             console.log(`Scheduler: Switched to ${newView} view.`);
         }
