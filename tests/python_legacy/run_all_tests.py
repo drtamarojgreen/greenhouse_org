@@ -18,6 +18,7 @@ from test_news_app_refactored import TestNewsApp
 from test_videos_app_refactored import TestVideosApp
 from test_calendar_refactored import TestCalendar
 from test_frontend_refactored import TestFrontendLive, TestFrontendOffline
+from test_scheduler_rendering import TestSchedulerRendering
 
 
 class TestSuiteRunner:
@@ -44,6 +45,12 @@ class TestSuiteRunner:
         suite = unittest.TestSuite()
         suite.addTest(unittest.makeSuite(TestCalendar))
         return suite
+
+    def create_scheduler_rendering_test_suite(self):
+        """Create test suite for scheduler rendering."""
+        suite = unittest.TestSuite()
+        suite.addTest(unittest.makeSuite(TestSchedulerRendering))
+        return suite
     
     def create_frontend_test_suite(self):
         """Create test suite for frontend/live site testing."""
@@ -64,6 +71,7 @@ class TestSuiteRunner:
         # Add all test suites
         suite.addTest(self.create_app_test_suite())
         suite.addTest(self.create_calendar_test_suite())
+        suite.addTest(self.create_scheduler_rendering_test_suite())
         suite.addTest(self.create_offline_test_suite())
         # Note: Frontend live tests are separate due to network dependency
         

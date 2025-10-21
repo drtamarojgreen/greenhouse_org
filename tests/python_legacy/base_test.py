@@ -44,13 +44,8 @@ class BaseSeleniumTest(unittest.TestCase):
         self.firefox_options.add_argument("--no-sandbox")
         self.firefox_options.add_argument("--window-size=1920,1080")
         
-        # Path to geckodriver
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        geckodriver_path = os.path.join(current_dir, 'geckodriver')
-        
-        # Initialize the WebDriver
-        service = Service(executable_path=geckodriver_path)
-        self.driver = webdriver.Firefox(service=service, options=self.firefox_options)
+        # Initialize the WebDriver, assuming geckodriver is in the system's PATH
+        self.driver = webdriver.Firefox(options=self.firefox_options)
         self.driver.implicitly_wait(self.IMPLICIT_WAIT)
     
     def setup_test_environment(self):
