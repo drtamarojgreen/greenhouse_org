@@ -14,24 +14,33 @@ $w.onReady(function () {
             }
         })
         .then((data) => {
-            // Populate the header elements
-            $w("#Section1ListHeaderTitle1").text = data.header.title;
-            $w("#Section1ListHeaderLongText1").text = data.header.longText;
+            // 1. Populate the static header elements using semantic selectors
+            if (data.header) {
+                $w("#Section1ListHeaderTitle1").text = data.header.title;
+                $w("#Section1ListHeaderLongText1").text = data.header.longText;
+            }
 
-            // Populate news repeater
-            const articles = data.articles;
-            $w("#newsRepeater").data = articles;
+            // 2. Manually populate the repeater to avoid using .data and the _id requirement
+            const articles = data.articles || [];
+            const repeater = $w("#newsRepeater");
 
-            $w("#newsRepeater").onItemReady(($item, itemData, index) => {
-                $item("#newsHeadline").text = itemData.headline;
-                $item("#newsDate").text = itemData.date;
-                $item("#newsContent").text = itemData.content;
+            repeater.forEachItem(($item, itemData, index) => {
+                const article = articles[index];
+
+                if (article) {
+                    // If there is data for this item, populate it and ensure it's visible
+                    $item("#newsHeadline").text = article.headline;
+                    $item("#newsDate").text = article.date;
+                    $item("#newsContent").text = article.content;
+                    $item("#newsHeadline").expand(); // Use an element within the item to expand/collapse
+                } else {
+                    // If there is no data for this item, hide it
+                    $item("#newsHeadline").collapse();
+                }
             });
         })
         .catch(err => {
             console.error("Error fetching or parsing data:", err);
-            // You could display an error message to the user on the page
-            // For example: $w("#errorMessage").text = "Could not load news.";
-            // $w("#errorMessage").show();
+            // Optional: Display an error message to the user on the page
         });
 });
