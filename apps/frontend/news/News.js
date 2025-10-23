@@ -15,17 +15,18 @@ $w.onReady(function () {
         })
         .then((data) => {
             // Populate the header elements
-            $w("#Section1ListHeaderTitle1").text = data.header.title;
-            $w("#Section1ListHeaderLongText1").text = data.header.longText;
+            $w("#Section1RegularTitle1").text = data.header.title;
+            $w("#Section1RegularLongtext1").text = data.header.longText;
+
+            $w("#Section2RepeaterHeaderTitle1").text = data.header.title;
 
             // Populate news repeater
-            const articles = data.articles;
+            const articles = data.articles.map(article => ({...article, _id: article.id}));
             $w("#newsRepeater").data = articles;
 
             $w("#newsRepeater").onItemReady(($item, itemData, index) => {
-                $item("#newsHeadline").text = itemData.headline;
-                $item("#newsDate").text = itemData.date;
-                $item("#newsContent").text = itemData.content;
+                $item("#Section2RepeaterItem1Title1").text = itemData.headline;
+                $item("#Section2RepeaterItem1Longtext1").text = itemData.date + " - " + itemData.content;
             });
         })
         .catch(err => {

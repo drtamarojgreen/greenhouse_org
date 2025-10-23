@@ -247,16 +247,65 @@
         }
     };
 
+    /**
+     * @function validateConfiguration
+     * @description Validates the configuration passed from the loader script
+     * @returns {boolean} True if configuration is valid
+     */
+    function validateConfiguration() {
+        appState.targetSelector = scriptElement?.getAttribute('data-target-selector');
+        appState.baseUrl = scriptElement?.getAttribute('data-base-url');
+        const view = scriptElement?.getAttribute('data-view');
+
+        if (!appState.targetSelector) {
+            console.error('News: Missing required data-target-selector attribute');
+            return false;
+        }
+
+        if (!appState.baseUrl) {
+            console.error('News: Missing required data-base-url attribute');
+            return false;
+        }
+
+        // Ensure baseUrl ends with slash
+        if (!appState.baseUrl.endsWith('/')) {
+            appState.baseUrl += '/';
+        }
+
+        appState.currentView = view || new URLSearchParams(window.location.search).get('view') || 'default';
+
+        console.log(`News: Configuration validated - View: ${appState.currentView}, Target: ${appState.targetSelector}`);
+        return true;
+    }
+
     /** ---------------- MAIN EXECUTION ---------------- */
     async function main() {
-        console.debug("🏁 main function starting");
         try {
-            await GreenhouseAppsNews.init(
-                scriptElement?.getAttribute('data-target-selector') || '#news',
-                scriptElement?.getAttribute('data-base-url') || '/'
-            );
+            // Validate configuration from script attributes
+            if (!validateConfiguration()) {
+                console.error('News: Invalid configuration, cannot proceed');
+                return;
+            }
+
+            // Add global error handler
+            window.addEventListener('error', (event) => {
+                if (event.filename && event.filename.includes('greenhouse')) {
+                    console.error('News: Global error caught:', event.error);
+                    appState.errors.push(event.error);
+                }
+            });
+
+            // Add unhandled promise rejection handler
+            window.addEventListener('unhandledrejection', (event) => {
+                console.error('News: Unhandled promise rejection:', event.reason);
+                appState.errors.push(event.reason);
+            });
+
+            // Initialize the news application
+            await GreenhouseAppsNews.init(appState.targetSelector, appState.baseUrl);
+
         } catch (error) {
-            console.error("❌ main execution failed:", error);
+            console.error('News: Main execution failed:', error);
         }
     }
 
