@@ -1,0 +1,28 @@
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX fda: <http://www.fda.gov/drugsatfda/>
+PREFIX rdfs: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT DISTINCT ?drugName ?sponsor ?reviewPriority ?paragraph
+WHERE {
+  # Find applications with a Priority review status
+  ?app a fda:Application ;
+       fda:reviewPriority ?reviewPriority ;
+       fda:sponsorName ?sponsor ;
+       fda:hasProduct ?product .
+
+  # Get the drug name from the product
+  ?product fda:drugName ?drugName .
+
+  # Link to the SPL data via the application number in the SPL's dc:source
+  ?spl dc:source ?app_id ;
+       dc:paragraph ?paragraph .
+
+  # The dc:source is the AppNo, which we can use to reconstruct the application URI
+  BIND(IRI(CONCAT("http://www.fda.gov/drugsatfda/application/", STR(?app_id))) as ?app)
+
+  # Filter for relevant keywords and Priority status
+  FILTER (regex(lcase(str(?paragraph)), "anxiety|depression"))
+  FILTER (lcase(str(?reviewPriority)) = "priority")
+}
+ORDER BY ?drugName
+LIMIT 100

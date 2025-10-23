@@ -1,0 +1,21 @@
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX fda: <http://www.fda.gov/drugsatfda/>
+
+SELECT ?sponsor (COUNT(DISTINCT ?drugName) as ?drugCount)
+WHERE {
+  ?app a fda:Application ;
+       fda:sponsorName ?sponsor ;
+       fda:hasProduct ?product .
+
+  ?product fda:drugName ?drugName .
+
+  ?spl dc:source ?app_id ;
+       dc:paragraph ?paragraph .
+
+  BIND(IRI(CONCAT("http://www.fda.gov/drugsatfda/application/", STR(?app_id))) as ?app)
+
+  FILTER(regex(lcase(str(?paragraph)), "serotonin syndrome"))
+}
+GROUP BY ?sponsor
+HAVING (COUNT(DISTINCT ?drugName) > 5)
+ORDER BY DESC(?drugCount)

@@ -275,16 +275,8 @@
     // Run basic tests
     async function runTests() {
       console.log('[Test Page] Running integration tests...');
-      console.log('[Test Page] TestFramework object:', window.TestFramework);
-      if (window.TestFramework) {
-        console.log('[Test Page] TestFramework keys:', Object.keys(window.TestFramework));
-      }
-      try {
-        await window.TestFramework.run();
-        console.log('[Test Page] TestFramework.run() completed.');
-      } catch (e) {
-        console.error('[Test Page] Error running tests:', e);
-      }
+      // The integration test suite will run automatically via TestFramework
+      await TestFramework.run();
     }
 
     // Initialize on page load

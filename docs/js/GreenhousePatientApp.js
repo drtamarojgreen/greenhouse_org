@@ -16,6 +16,8 @@ const GreenhousePatientApp = (function() {
     console.log("Loading GreenhousePatientApp.js - Version 0.0.0.2"); // Updated version
 
     const patientAppState = {
+        currentDate: new Date(),
+        calendarContainer: null,
         leftAppContainer: null,
         rightAppContainer: null,
         patientFormContainer: null,
@@ -351,6 +353,17 @@ const GreenhousePatientApp = (function() {
         }
     }
 
+    function handleCalendarNavigation(event) {
+        const action = event.target.dataset.action;
+
+        if (action === 'prev-month') {
+            patientAppState.currentDate.setMonth(patientAppState.currentDate.getMonth() - 1);
+        } else if (action === 'next-month') {
+            patientAppState.currentDate.setMonth(patientAppState.currentDate.getMonth() + 1);
+        }
+
+        renderCalendar();
+    }
     function handleAction(event) {
         const target = event.target;
         const action = target.dataset.action;
@@ -390,6 +403,72 @@ const GreenhousePatientApp = (function() {
     }
 
     /**
+     * Renders the calendar for the current month.
+     */
+    function renderCalendar() {
+        if (!patientAppState.calendarContainer) {
+            console.error('PatientApp: Calendar container not found for rendering.');
+            return;
+        }
+
+        const calendarTitle = patientAppState.calendarContainer.querySelector('[data-identifier="calendar-title"]');
+        const calendarBody = patientAppState.calendarContainer.querySelector('[data-identifier="calendar-tbody"]');
+
+        if (!calendarTitle || !calendarBody) {
+            console.error('PatientApp: Calendar title or body not found for rendering.');
+            return;
+        }
+
+        // Clear previous calendar days
+        calendarBody.innerHTML = '';
+
+        const year = patientAppState.currentDate.getFullYear();
+        const month = patientAppState.currentDate.getMonth();
+
+        // Set calendar header
+        calendarTitle.textContent = `${patientAppState.currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
+
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        let currentDateCell = null;
+        let currentRow = document.createElement('tr');
+
+        // Add empty cells for the days before the first day of the month
+        for (let i = 0; i < firstDayOfMonth; i++) {
+            const cell = document.createElement('td');
+            currentRow.appendChild(cell);
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            if (currentRow.children.length === 7) {
+                calendarBody.appendChild(currentRow);
+                currentRow = document.createElement('tr');
+            }
+
+            const cell = document.createElement('td');
+            cell.textContent = day;
+            cell.dataset.day = day;
+
+            // Highlight the current day
+            const today = new Date();
+            if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                cell.classList.add('today');
+            }
+
+            currentRow.appendChild(cell);
+        }
+
+        // Append remaining cells to fill the week
+        while (currentRow.children.length < 7) {
+            const cell = document.createElement('td');
+            currentRow.appendChild(cell);
+        }
+
+        calendarBody.appendChild(currentRow);
+    }
+
+    /**
      * @function init
      * @description Initializes the Patient application.
      * @param {HTMLElement} leftAppContainer - The main DOM element for the left panel (form).
@@ -404,7 +483,7 @@ const GreenhousePatientApp = (function() {
 
         patientAppState.leftAppContainer = leftAppContainer;
         patientAppState.rightAppContainer = rightAppContainer;
-
+        patientAppState.calendarContainer = leftAppContainer.querySelector('[data-identifier="calendar-container"]');
         // Get references to UI elements created by schedulerUI.js
         patientAppState.patientFormContainer = leftAppContainer.querySelector('[data-identifier="patient-form-container"]');
         patientAppState.patientAppointmentForm = leftAppContainer.querySelector('[data-identifier="patient-appointment-form"]');
@@ -438,6 +517,14 @@ const GreenhousePatientApp = (function() {
         patientAppState.conflictModal = document.querySelector('[data-identifier="conflict-modal"]');
         patientAppState.conflictDetailsDiv = document.querySelector('[data-identifier="conflict-details"]');
         patientAppState.conflictModalCloseBtn = document.querySelector('[data-identifier="conflict-modal-close-btn"]');
+
+        if (patientAppState.calendarContainer) {
+            patientAppState.calendarContainer.addEventListener('click', (event) => {
+                if (event.target.dataset.action === 'prev-month' || event.target.dataset.action === 'next-month') {
+                    handleCalendarNavigation(event);
+                }
+            });
+        }
         patientAppState.conflictModalCancelBtn = document.querySelector('[data-identifier="conflict-modal-cancel-btn"]');
         patientAppState.conflictModalResolveBtn = document.querySelector('[data-identifier="conflict-modal-resolve-btn"]');
 
@@ -486,7 +573,7 @@ const GreenhousePatientApp = (function() {
 
 
         resetForm(); // Ensure form is in a clean state
-
+        renderCalendar();
         const fetchButton = patientAppState.leftAppContainer.querySelector('[data-identifier="patient-fetch-data-btn"]');
         if (fetchButton) {
             fetchButton.addEventListener('click', async () => {

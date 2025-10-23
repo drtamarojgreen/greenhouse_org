@@ -28,13 +28,31 @@ $w.onReady(function () {
             }
 
             // Populate books repeater
-            const books = data.books;
-            $w("#booksRepeater").data = books;
+            // 1. FIX: Add a unique `_id` to each book object to satisfy the repeater's data requirement.
+            const books = data.books.map((book, index) => {
+                return {
+                    ...book,
+                    _id: String(index) // Using the index as a simple unique ID
+                };
+            });
 
-            $w("#booksRepeater").onItemReady(($item, itemData, index) => {
-                $item("#bookTitle").text = itemData.title;
-                $item("#bookAuthor").text = itemData.author;
-                $item("#bookDescription").text = itemData.description;
+            // Set the repeater data. This will trigger onItemReady for each item.
+            // Assumes the repeater is the only Repeater element on the page.
+            $w("Repeater").data = books;
+
+            $w("Repeater").onItemReady(($item, itemData, index) => {
+                // 2. FIX: Select text elements by type and populate them by their assumed order.
+                // This is fragile and depends on the element order in the Wix Editor.
+                // Assumed Order: [0] = Title, [1] = Author, [2] = Description
+
+                // Select all text elements within the current repeater item
+                const textElements = $item("Text");
+
+                if (textElements.length >= 3) {
+                    textElements[0].text = itemData.title;       // First Text element is the Title
+                    textElements[1].text = itemData.author;      // Second Text element is the Author
+                    textElements[2].text = itemData.description; // Third Text element is the Description
+                }
             });
         })
         .catch(err => {
