@@ -2,12 +2,12 @@
 /**
 * @file news.js
 * @description This script contains the core functionality for the Greenhouse news application.
-* It is responsible for rendering the various book views and handling
+* It is responsible for rendering the various news views and handling
 * user interactions within those views.
 *
 * @integration This script is not loaded directly by the host page. Instead, it is loaded by `greenhouse.js`
-* when the books application is needed. `green-house.js` passes the target selector for rendering
-* via a `data-target-selector` attribute on the script tag. This design allows the books app to be
+* when the news application is needed. `green-house.js` passes the target selector for rendering
+* via a `data-target-selector` attribute on the script tag. This design allows the news app to be
 * a self-contained module that can be easily dropped into any page without requiring manual
 * configuration or initialization.
 *
@@ -606,7 +606,7 @@ default:
 containerInfo.container.prepend(appContainer);
 }
 
-console.log('Books: Application inserted into DOM');
+console.log('News: Application inserted into DOM');
 return appContainer;
 },
 
@@ -617,8 +617,8 @@ return appContainer;
 * @param {Element} [targetElement] - Element to insert error near
 */
 displayError(message, targetElement = null) {
-GreenhouseUtils.displayError(`Greenhouse Books Error: ${message}`);
-console.error('Books: General error display:', message);
+GreenhouseUtils.displayError(`Greenhouse News Error: ${message}`);
+console.error('News: General error display:', message);
 },
 
 /**
@@ -628,15 +628,15 @@ console.error('Books: General error display:', message);
 initializeApplication() {
 try {
 if (appState.currentAppInstance && typeof appState.currentAppInstance.init === 'function') {
-console.log('Books: Initializing application instance');
+console.log('News: Initializing application instance');
 appState.currentAppInstance.init();
 } else if (appState.currentAppInstance) {
-console.log('Books: Application instance loaded but has no init method');
+console.log('News: Application instance loaded but has no init method');
 } else {
-console.log('Books: No application instance to initialize');
+console.log('News: No application instance to initialize');
 }
 } catch (error) {
-console.error('Books: Error initializing application instance:', error);
+console.error('News: Error initializing application instance:', error);
 this.showErrorMessage('Application loaded but failed to initialize properly.');
 }
 },
@@ -703,7 +703,7 @@ const errorMessage = error.message.includes('not found')
 
 this.displayError(errorMessage, appState.targetElement);
 // No critical overlay, just a notification
-this.showErrorMessage('Failed to load books application');
+this.showErrorMessage('Failed to load news application');
 
 } finally {
 appState.isLoading = false;
