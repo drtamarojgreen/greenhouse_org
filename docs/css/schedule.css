@@ -92,18 +92,18 @@ div[class*="bgLayer"] {
 }
 
 /* De-emphasize instruction block */
-#greenhouse-instructions-container {
+.greenhouse-instructions-container {
     margin-top: var(--spacing-xl);
     order: 3; /* Push to the bottom if in a flex container */
 }
 
-#greenhouse-instructions-title {
+.greenhouse-instructions-title {
     font-size: 1rem; /* Smaller font size */
     color: var(--text-dark); /* Using dark, accessible color */
     margin-bottom: var(--spacing-xs);
 }
 
-#greenhouse-instructions-list {
+.greenhouse-instructions-list {
     font-size: 0.9rem;
     color: var(--text-dark); /* Using dark, accessible color */
     padding-left: var(--spacing-md);
