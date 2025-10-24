@@ -2,10 +2,8 @@
 
 import { fetch } from 'wix-fetch';
 
-let quotes = [];
-
 $w.onReady(function () {
-    const url = "https://drtamarojgreen.github.io/greenhouse_org/endpoints/inspiration/main.json";
+    const url = "https://drtamarojgreen.github.io/greenhouse_org/endpoints/inspiration.json";
 
     fetch(url, { method: 'get' })
         .then((httpResponse) => {
@@ -16,27 +14,30 @@ $w.onReady(function () {
             }
         })
         .then((data) => {
-            quotes = data.items;
-            displayQuote();
+            // Populate the header elements
+            $w("#pageTitle").text = data.summary.pageTitle;
+            $w("#pageTitleButton").label = data.summary.titleButton;
+            $w("#titleRightPanelText").text = data.summary.sectionText;
+
+            // Populate Section 2 Title and Subtitle
+            $w("#Section2RegularTitle1").text = data.summary.sectionTitle;
+            $w("#Section2RegularSubtitle1").text = data.summary.sectionSubtitle;
+
+            // The #Section2RegularLongtext1 is now replaced by the repeater, so we collapse it.
+            $w("#Section2RegularLongtext1").collapse();
+
+
+            // Populate inspiration repeater
+            // We add a unique _id to each item for the repeater to work correctly.
+            const quotes = data.quotes.map((quote, index) => ({...quote, _id: String(index)}));
+            $w("#inspirationRepeater").data = quotes;
+
+            $w("#inspirationRepeater").onItemReady(($item, itemData, index) => {
+                $item("#textQuote").text = itemData.text;
+                $item("#textAuthor").text = itemData.author;
+            });
         })
         .catch(err => {
             console.error("Error fetching or parsing data:", err);
-            $w("#quote-text").text = "Could not load quotes.";
-            $w("#quote-author").text = "";
         });
-
-    $w("#new-quote-btn").onClick(() => {
-        displayQuote();
-    });
 });
-
-function displayQuote() {
-    if (quotes.length > 0) {
-        const quote = quotes[Math.floor(Math.random() * quotes.length)];
-        $w("#quote-text").text = `"${quote.text}"`;
-        $w("#quote-author").text = `- ${quote.author}`;
-    } else {
-        $w("#quote-text").text = "No quotes available.";
-        $w("#quote-author").text = "";
-    }
-}

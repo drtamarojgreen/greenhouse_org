@@ -20,6 +20,10 @@ $w.onReady(function () {
 
             $w("#Section2RepeaterHeaderTitle1").text = data.header.title;
 
+            // Populate the additional info section
+            $w("#Section3RegularTitle1").text = data.header.sectionSubtitle;
+            $w("#Section3RegularLongtext1").text = data.header.sectionText;
+
             // Populate news repeater
             const articles = data.articles.map(article => ({...article, _id: article.id}));
             $w("#newsRepeater").data = articles;
