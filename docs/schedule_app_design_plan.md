@@ -1,66 +1,34 @@
-# Appointment Scheduler Design Plan
+# Scheduler Application Design Plan (As-Built)
+
+**Status: This document reflects the current, implemented design of the scheduler and supersedes any previous plans, especially those referring to a React-based implementation.**
 
 ## 1. Project Goal
 
-To create a unified appointment scheduler that integrates appointments from various platforms, providing a single view for users of Dr. Green's Greenhouse for Mental Health.
+To create a functional appointment scheduler within the Greenhouse for Mental Health's Wix site, allowing patients to request appointments and administrators to manage schedules and conflicts.
 
-## 2. Key Features
+## 2. Implemented Features
 
-*   **Unified Calendar View:** Display appointments from multiple sources (e.g., Google Calendar, Outlook, Calendly) in a single calendar interface.
-*   **Appointment Scheduling:** Allow users to schedule new appointments with healthcare professionals.
-*   **Cross-Platform Synchronization:** Ensure that appointments created or modified within the application are synchronized back to the original platform.
-*   **User Authentication:** Secure user accounts and personal information.
-*   **Email/SMS Reminders:** Send automated reminders for upcoming appointments.
+The current application is built on Wix's Velo platform and includes a parallel static JavaScript implementation. It provides the following core features:
 
-## 3. Technical Stack
+*   **Three-View System:** A single-page application with distinct views for Patients, Administrators (Dashboard), and detailed Admin editing.
+*   **Patient Appointment Requests:** A form for patients to submit requests for new appointments.
+*   **Patient Appointment Management:** Patients can view, edit, and delete their existing appointments.
+*   **Backend Conflict Detection:** A backend Velo function (`proposeAppointment`) checks for scheduling conflicts before an appointment is created.
+*   **Admin Dashboard:** A view for administrators to see a weekly schedule and a list of outstanding conflicts.
 
-*   **Frontend:** React.js with a state management library like Redux.
-*   **Backend:** Node.js with Express.js for the API.
-*   **Database:** PostgreSQL for storing user data, appointment information, and platform integration tokens.
-*   **Authentication:** JWT (JSON Web Tokens).
-*   **Third-Party Integrations:** APIs from Google Calendar, Microsoft Graph (Outlook), and Calendly.
+## 3. Technical Stack (As-Built)
 
-## 4. API Design (Initial Draft)
+*   **Frontend (Primary):** Velo, which is a Wix-specific framework using JavaScript, page elements, and backend communication. The main logic is in `apps/frontend/schedule/Schedule.js`.
+*   **Frontend (Static):** A parallel implementation using vanilla JavaScript, intended to be embedded in any HTML page. The core files are `docs/js/scheduler.js`, `docs/js/schedulerUI.js`, and the `*App.js` modules.
+*   **Backend:** Velo Web Modules (in `apps/wv/backend/`), which are Node.js-like functions that provide the application's API.
+*   **Database:** Wix Data Collections, which are a proprietary NoSQL-like database integrated into the Wix platform.
 
-### Authentication
+## 4. High-Level Architecture
 
-*   `POST /api/auth/register`: Register a new user.
-*   `POST /api/auth/login`: Log in a user and return a JWT.
+The system is designed as a client-server application running entirely within the Wix ecosystem.
 
-### Appointments
+-   The **frontend** (either the Velo page or the static JS) is responsible for building the UI and capturing user input.
+-   The **backend** Velo functions are responsible for all business logic, including data validation, conflict checking, and all interactions with the database.
+-   The frontend communicates with the backend via asynchronous `fetch` calls to the `/_functions/` endpoints.
 
-*   `GET /api/appointments`: Get all appointments for the logged-in user.
-*   `POST /api/appointments`: Create a new appointment.
-*   `PUT /api/appointments/:id`: Update an existing appointment.
-*   `DELETE /api/appointments/:id`: Cancel an appointment.
-
-### Integrations
-
-*   `POST /api/integrations/google/connect`: Initiate the OAuth flow to connect a Google Calendar.
-*   `POST /api/integrations/outlook/connect`: Initiate the OAuth flow to connect an Outlook Calendar.
-*   `POST /api/integrations/calendly/connect`: Connect a Calendly account using an API key.
-
-## 5. Testing Strategy
-
-*   **Unit Tests:** Use Jest and React Testing Library for frontend components and Jest for backend API endpoints.
-*   **Behavior-Driven Development (BDD):** Use Cucumber.js to write feature files that describe the application's behavior from the user's perspective.
-*   **Integration Tests:** Test the integration between the frontend, backend, and third-party APIs.
-
-## 6. Directory Structure
-
-```
-/apps/frontend/schedule
-|-- /src
-|   |-- /components         // Reusable React components
-|   |-- /pages              // Main pages of the application
-|   |-- /services           // API calls and other services
-|   |-- /store              // Redux store
-|   |-- App.js
-|   `-- index.js
-|-- /tests
-|   |-- /features           // feature files
-|   |   `-- /step_definitions // Step definitions for features
-|   `-- /unit               // unit tests
-|-- package.json
-`-- ...
-```
+This architecture ensures that all sensitive logic and data access are secured on the server side.

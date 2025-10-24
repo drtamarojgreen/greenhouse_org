@@ -1,60 +1,55 @@
-# Scheduler Application Development Plan
+# Scheduler Application Development Summary (As-Built)
 
-This document outlines the development plan for completing the Greenhouse for Mental Health appointment scheduler. It details the initial state of the application, the strategic plan for its completion, and the progress made.
+**Status: This document reflects the actual development process of the currently implemented scheduler and supersedes any previous plans.**
+
+This document summarizes the development of the Greenhouse for Mental Health appointment scheduler, from its initial prototype state to its current implementation.
 
 ## 1. Initial State of the Application
 
-The project began with a set of backend Velo (Wix) functions that were largely complete and a frontend that was a non-functional prototype.
+The project began with a set of backend Velo functions and a largely non-functional frontend prototype.
 
 *   **Backend (`/apps/wv/backend/`):**
-    *   Core API functions for creating and retrieving appointments, services, and therapists were already implemented (`createAppointment.web.js`, `getServices.web.js`, etc.).
-    *   The backend correctly used Wix Data Collections (`Services`, `Therapists`, `Appointments`) as defined in the `scheduler_design_plan.md`.
-    *   The `createAppointment` function included logic for preventing double-booking and sending a confirmation email.
+    *   A suite of core API functions for managing appointments and services was already in place (e.g., `createAppointment.web.js`, `getServices.web.js`, `getAppointments.web.js`, `proposeAppointment.web.js`). These functions provided the basic CRUD (Create, Read, Update, Delete) operations necessary for an appointment system.
+    *   The backend included the crucial `proposeAppointment` function, which contains the business logic for conflict detection.
 
 *   **Frontend (`/apps/frontend/schedule/Schedule.js`):**
-    *   The code contained placeholder functions for loading calendar availability and time slots.
-    *   Business logic (like calculating available times) was incorrectly placed on the client-side and was incomplete.
-    *   There was no code for the booking form lightbox.
-    *   Error handling and UI state management were minimal.
+    *   The initial frontend code was a placeholder with a structure for three distinct views (Patient, Dashboard, Admin).
+    *   It contained numerous references to UI elements that did not exist or were not functional.
+    *   The user flow was not implemented, and there was minimal error handling or state management.
+    *   Crucially, early versions relied on Wix Lightboxes for forms, a feature that was later removed, as indicated by comments in the final code.
 
-## 2. Development Strategy & Plan
+## 2. Implemented Development Strategy
 
-To complete the application, a five-phase plan was executed. The strategy was to first strengthen the backend by centralizing key business logic, then build out the frontend to connect to the new backend functions, create the booking form, and finally polish the user experience.
+The development strategy that was actually executed focused on building a simplified, single-form application for patients, while leveraging the existing backend functions. The complex, multi-step process involving therapist selection and interactive availability calendars (as described in early design plans) was **not implemented**.
 
-### Phase 1: Backend Enhancements & Logic Centralization
+The development process consisted of the following key stages:
 
-The goal was to move all availability calculations to the backend to ensure a single source of truth and improve performance and security.
+### Stage 1: Frontend Scaffolding and View Management
 
-1.  **Create `getAvailabilityForTherapist.web.js`:** A new backend function to calculate and return the specific available time slots for a given therapist on a given day.
-2.  **Create `getMonthlyAvailability.web.js`:** A new backend function to return a high-level summary of which days in a month are available or fully booked, allowing the frontend calendar to be rendered efficiently.
+The primary effort was to make the three-view structure functional.
 
-### Phase 2: Frontend Implementation - Calendar and Time Slots
+1.  **View Logic Implementation:** The `initScheduler` function was developed to manage the visibility of the three main containers (`#patientContainer`, `#dashboardContainer`, `#adminContainer`), ensuring only one is visible at a time. The default view was correctly set to the patient container.
+2.  **UI Element Mapping:** The `schedulerState.uiElements` object was populated with the correct IDs for all the interactive elements from the Wix editor, creating a reliable mapping for the code to use.
 
-This phase focused on connecting the main scheduler UI to the new, more intelligent backend functions.
+### Stage 2: Implementing the Patient View
 
-1.  **Implement `loadCalendarAvailability`:** The frontend function was rewritten to call `getMonthlyAvailability.web.js` and use the response to disable unavailable dates in the calendar component.
-2.  **Implement `loadTimeSlotsForDate`:** The frontend function was rewritten to call `getAvailabilityForTherapist.web.js` and display the returned time slots to the user.
+This stage focused on building the core user-facing functionality: the appointment request form.
 
-### Phase 3: Frontend Implementation - Booking Form
+1.  **Form Logic:** The `initializePatientApp` function and its helpers were implemented. This involved:
+    *   Connecting the "Request Appointment" button to an event listener.
+    *   Gathering values from the various input fields (`title`, `date`, `time`, `platform`, `service`).
+    *   Calling the backend `proposeAppointment` and `createAppointment` functions.
+2.  **Data Population:** Logic was implemented to call the `getServices` and `getAppointments` backend functions to populate the service dropdown and the user's list of existing appointments. A manual "Load Data" button was implemented to adhere to the requirement of avoiding automatic data fetches.
+3.  **Client-Side Validation:** Basic client-side validation logic was added to ensure required fields were filled out before submission.
+4.  **Error and Success Messaging:** The `displayError` and `displaySuccess` functions were implemented to provide users with feedback after submitting the form or encountering a conflict.
 
-This phase involved creating the user-facing booking form as a Wix Lightbox.
+### Stage 3: Implementing the Dashboard and Admin Views
 
-1.  **Create `bookingForm.js`:** A new file was created to contain the logic for the booking form lightbox.
-2.  **Implement Lightbox Logic:** The code handles gathering user input, calling the `createAppointment.web.js` backend function to finalize the booking, and displaying any validation or booking-conflict errors.
-3.  **Update `Schedule.js`:** The main scheduler page was updated to pass the necessary data (including human-readable names for service and therapist) to the lightbox.
+These ancillary views were built out to provide staff-level functionality.
 
-### Phase 4: Polishing and Final Touches
-
-This phase focused on improving the overall user experience.
-
-1.  **Implement User-Facing Error Messages:** `console.log` errors were replaced with user-friendly messages on the UI for all data-fetching operations.
-2.  **Refine UI State Management:** Logic was added to disable buttons and dropdowns during data loading to provide clear feedback to the user and prevent invalid actions.
-3.  **Confirm Post-Booking Refresh:** Ensured that the calendar availability would automatically refresh after a successful booking.
-
-### Phase 5: Documentation
-
-This final phase involved creating this document to serve as a comprehensive record of the development process.
+1.  **Dashboard Implementation:** The `initializeDashboardApp` function was built to fetch and display data for the weekly schedule table and the conflict list repeater, using the existing `getAppointmentsByDateRange` and `getConflictsForDateRange` backend functions.
+2.  **Admin View Implementation:** The `initializeAdminApp` function was developed to fetch the data for a single appointment (based on a URL query parameter) and populate a detailed editing form. Event listeners for the "Save" and "Delete" buttons were added to call the corresponding `updateAppointment` and `deleteAppointment` backend functions.
 
 ## 3. Conclusion
 
-By executing this plan, the scheduler application was successfully brought from a prototype stage to a feature-complete and robust state, following the specifications outlined in the initial design documents.
+The development process resulted in a functional, albeit simplified, scheduler application. The final product deviates significantly from the ambitious multi-step flow envisioned in early design documents, instead favoring a more direct, form-based approach for appointment requests. The implemented application correctly utilizes the existing backend infrastructure for its core logic.
