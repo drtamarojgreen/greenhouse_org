@@ -409,11 +409,6 @@ window.GreenhouseSchedulerUI = (function() {
         }
 
         const fragment = document.createDocumentFragment();
-        
-        const h2 = document.createElement('h2');
-        h2.textContent = 'How to Request an Appointment';
-        h2.className = 'greenhouse-instructions-title';
-        fragment.appendChild(h2);
 
         const instructions = [
             {
@@ -437,6 +432,11 @@ window.GreenhouseSchedulerUI = (function() {
         const instructionsList = document.createElement('div');
         instructionsList.className = 'greenhouse-instructions-list';
         instructionsList.setAttribute('data-identifier', 'instructions-list');
+        
+        const h2 = document.createElement('h2');
+        h2.textContent = 'How to Request an Appointment';
+        h2.className = 'greenhouse-instructions-title';
+        instructionsList.appendChild(h2);
 
         instructions.forEach((instruction, index) => {
             const instructionItem = document.createElement('div');
