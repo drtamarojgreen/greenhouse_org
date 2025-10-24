@@ -1,82 +1,56 @@
-# Current Refactor Status: Separating UI Logic
+# Current Refactor Status: Separating UI Logic from Application Logic
 
-This document summarizes the current state of refactoring efforts to separate UI logic from application logic in the Greenhouse project's JavaScript files. The primary goal is to move UI-related functions into a centralized `schedulerUI.js` file.
+This document summarizes the current state of the refactoring effort to separate UI construction and manipulation logic from the core application logic in the static JavaScript scheduler.
 
-## File Status:
+The primary goal is to move all DOM creation and direct manipulation into `schedulerUI.js`, leaving the application-specific files (`GreenhousePatientApp.js`, `GreenhouseDashboardApp.js`, etc.) to handle data fetching, state management, and event handling.
 
-### `GreenhousePatientApp.js`
-*   **Current State**: This file still contains its UI-related functions (`setupModal`, `showConflictModal`, `clearFormInputs`, `resetForm`, `editAppointment`).
-*   **Pending Task**: These UI functions need to be removed from `GreenhousePatientApp.js`. Calls to these functions within `GreenhousePatientApp.js` (e.g., in `init`, `proposeAndAddAppointment`, `handleAction`) need to be updated to point to `GreenhouseSchedulerUI.<functionName>`.
-*   **Error Handling**: API wrapper functions have been updated to use `GreenhouseUtils.displayError`. `alert()` and `confirm()` calls have been replaced or commented out.
+## Refactoring Summary
 
-### `GreenhouseAdminApp.js`
-*   **Current State**: The `buildForm` function (now `buildAdminAppointmentForm`) has been successfully moved from this file to `schedulerUI.js`. Calls to it have been updated.
-*   **Pending Task**: No immediate pending tasks for this file.
+The refactoring is **partially complete**.
 
-### `GreenhouseDashboardApp.js`
-*   **Current State**: Its UI functions (`buildDashboardUI`, `renderSchedule`, `renderConflicts`, `renderCalendar`, `addDashboardEventListeners`) have been successfully moved to `schedulerUI.js`. Calls to these functions have been updated.
-*   **Pending Task**: No immediate pending tasks for this file.
+-   **`schedulerUI.js`:** This file is now responsible for **building the initial HTML structure** for all scheduler views (Patient, Dashboard, Admin). It creates forms, containers, calendars, and modals, but it does not handle their dynamic updates (e.g., showing/hiding modals, populating calendars with dates).
+-   **Application Files (e.g., `GreenhousePatientApp.js`):** These files remain responsible for the **dynamic UI manipulation**. They query the DOM for elements created by `schedulerUI.js` and then update them based on application state or user interaction.
 
-### `schedulerUI.js`
-*   **Current State**: This file now contains the `buildPatientFormUI`, `buildAdminAppointmentForm`, and all dashboard UI functions (`buildDashboardUI`, `renderSchedule`, `renderConflicts`, `renderCalendar`, `addDashboardEventListeners`).
-*   **Pending Task**: The UI functions from `GreenhousePatientApp.js` (`setupModal`, `showConflictModal`, `clearFormInputs`, `resetForm`, `editAppointment`) need to be added to this file, and its `return` statement needs to be updated to expose them.
+## Detailed File Status
 
-### `scheduler.js`
-*   **Current State**: This file has been updated to call UI functions from `GreenhouseSchedulerUI`.
-*   **Pending Task**: No immediate pending tasks for this file.
+### `schedulerUI.js` - UI Construction (Complete)
 
-## Overall Next Steps:
+This file has successfully consolidated the UI *building* logic. It now contains and exports functions for creating the static structure of the scheduler, including:
 
-The immediate next major step is to complete the move of the remaining UI functions from `GreenhousePatientApp.js` to `schedulerUI.js`. This will involve:
+-   `buildSchedulerUI()`: Creates the main app container.
+-   `buildPatientFormUI()`: Creates the patient appointment request form.
+-   `buildPatientCalendarUI()`: Creates the static structure for the patient view calendar.
+-   `buildDashboardLeftPanelUI()` / `buildDashboardRightPanelUI()`: Creates the admin dashboard layout.
+-   `buildAdminFormUI()`: Creates the admin settings form.
+-   `createHiddenElements()`: Creates elements like the conflict modal that are initially hidden.
 
-1.  **Identify UI Functions**: Clearly identify all UI-related functions within `GreenhousePatientApp.js` that need to be moved.
-2.  **Migrate Function Definitions**:
-    *   Copy the complete function definition (including parameters and body) of each identified UI function from `GreenhousePatientApp.js` to `schedulerUI.js`.
-    *   Ensure proper placement within `schedulerUI.js` (e.g., within the `GreenhouseSchedulerUI` module pattern).
-3.  **Remove Original Functions**: Delete the original function definitions from `GreenhousePatientApp.js` after successful migration.
-4.  **Update Function Calls**:
-    *   Locate all calls to the moved UI functions within `GreenhousePatientApp.js`.
-    *   Prefix these calls with `GreenhouseSchedulerUI.` (e.g., `setupModal()` becomes `GreenhouseSchedulerUI.setupModal()`).
-5.  **Expose Functions in `schedulerUI.js`**: Modify the `return` statement in `schedulerUI.js` to explicitly expose all newly added UI functions, making them accessible from other modules.
+### `GreenhousePatientApp.js` - Application Logic & Dynamic UI (Refactoring Incomplete)
 
-## Detailed Implementation Plan for `GreenhousePatientApp.js` and `schedulerUI.js`:
+This file manages the logic for the patient view. While it correctly uses `schedulerUI.js` to build the initial view, it **still contains significant UI manipulation logic** that needs to be moved.
 
-This section outlines the specific steps for each UI function to be migrated.
+-   **API Calls & State Management:** Correctly resides here.
+-   **Event Handlers (`handleFormSubmission`, `handleAction`):** Correctly reside here, as they orchestrate the application logic.
+-   **UI Functions Remaining in this File (To be moved):**
+    -   `populateServices()`: Populates the service dropdown.
+    -   `populateAppointments()`: Renders the list of appointments.
+    -   `populateFormForEdit()`: Fills the form with data for an existing appointment.
+    -   `resetForm()`: Clears form inputs and resets button states.
+    -   `showLoadingSpinner()`: Toggles the visibility of a loading spinner.
+    -   `showConflictModal()` / `hideConflictModal()`: Manages the visibility of the conflict modal.
+    -   `renderCalendar()`: **Crucially, this function, which dynamically draws the calendar days, is still in the App logic file, not the UI file.**
 
-### Function: `setupModal`
-*   **Step 1: Copy to `schedulerUI.js`**: Copy the entire `setupModal` function from `GreenhousePatientApp.js` to `schedulerUI.js`.
-*   **Step 2: Remove from `GreenhousePatientApp.js`**: Delete the `setupModal` function from `GreenhousePatientApp.js`.
-*   **Step 3: Update Calls in `GreenhousePatientApp.js`**: Find all instances of `setupModal(...)` in `GreenhousePatientApp.js` and change them to `GreenhouseSchedulerUI.setupModal(...)`.
-*   **Step 4: Expose in `schedulerUI.js`**: Add `setupModal: setupModal,` to the `return` statement of `GreenhouseSchedulerUI` in `schedulerUI.js`.
+### `GreenhouseDashboardApp.js` / `GreenhouseAdminApp.js`
 
-### Function: `showConflictModal`
-*   **Step 1: Copy to `schedulerUI.js`**: Copy the entire `showConflictModal` function from `GreenhousePatientApp.js` to `schedulerUI.js`.
-*   **Step 2: Remove from `GreenhousePatientApp.js`**: Delete the `showConflictModal` function from `GreenhousePatientApp.js`.
-*   **Step 3: Update Calls in `GreenhousePatientApp.js`**: Find all instances of `showConflictModal(...)` in `GreenhousePatientApp.js` and change them to `GreenhouseSchedulerUI.showConflictModal(...)`.
-*   **Step 4: Expose in `schedulerUI.js`**: Add `showConflictModal: showConflictModal,` to the `return` statement of `GreenhouseSchedulerUI` in `schedulerUI.js`.
+The status of these files reflects a similar pattern to `GreenhousePatientApp.js`. The initial UI construction has been moved to `schedulerUI.js`, but the dynamic rendering and manipulation logic (e.g., populating the dashboard with data) remains within the app-specific files.
 
-### Function: `clearFormInputs`
-*   **Step 1: Copy to `schedulerUI.js`**: Copy the entire `clearFormInputs` function from `GreenhousePatientApp.js` to `schedulerUI.js`.
-*   **Step 2: Remove from `GreenhousePatientApp.js`**: Delete the `clearFormInputs` function from `GreenhousePatientApp.js`.
-*   **Step 3: Update Calls in `GreenhousePatientApp.js`**: Find all instances of `clearFormInputs(...)` in `GreenhousePatientApp.js` and change them to `GreenhouseSchedulerUI.clearFormInputs(...)`.
-*   **Step 4: Expose in `schedulerUI.js`**: Add `clearFormInputs: clearFormInputs,` to the `return` statement of `GreenhouseSchedulerUI` in `schedulerUI.js`.
+## Overall Next Steps
 
-### Function: `resetForm`
-*   **Step 1: Copy to `schedulerUI.js`**: Copy the entire `resetForm` function from `GreenhousePatientApp.js` to `schedulerUI.js`.
-*   **Step 2: Remove from `GreenhousePatientApp.js`**: Delete the `resetForm` function from `GreenhousePatientApp.js`.
-*   **Step 3: Update Calls in `GreenhousePatientApp.js`**: Find all instances of `resetForm(...)` in `GreenhousePatientApp.js` and change them to `GreenhouseSchedulerUI.resetForm(...)`.
-*   **Step 4: Expose in `schedulerUI.js`**: Add `resetForm: resetForm,` to the `return` statement of `GreenhouseSchedulerUI` in `schedulerUI.js`.
+The refactoring is stalled at a critical point. To complete it, the remaining dynamic UI manipulation functions must be migrated from the application logic files into `schedulerUI.js`.
 
-### Function: `editAppointment`
-*   **Step 1: Copy to `schedulerUI.js`**: Copy the entire `editAppointment` function from `GreenhousePatientApp.js` to `schedulerUI.js`.
-*   **Step 2: Remove from `GreenhousePatientApp.js`**: Delete the `editAppointment` function from `GreenhousePatientApp.js`.
-*   **Step 3: Update Calls in `GreenhousePatientApp.js`**: Find all instances of `editAppointment(...)` in `GreenhousePatientApp.js` and change them to `GreenhouseSchedulerUI.editAppointment(...)`.
-*   **Step 4: Expose in `schedulerUI.js`**: Add `editAppointment: editAppointment,` to the `return` statement of `GreenhouseSchedulerUI` in `schedulerUI.js`.
+The immediate next steps are focused on `GreenhousePatientApp.js`:
 
-## Verification Steps:
-
-1.  **Run Unit Tests**: Execute any existing unit tests related to `GreenhousePatientApp.js` and `schedulerUI.js` to ensure no regressions.
-2.  **Manual Testing**:
-    *   Verify that the patient appointment scheduling functionality works as expected.
-    *   Test modal display, form clearing, and appointment editing.
-3.  **Code Review**: Review the modified files to ensure adherence to coding standards and proper separation of concerns.
+1.  **Migrate Dynamic UI Functions:** Move the function definitions for `populateServices`, `populateAppointments`, `populateFormForEdit`, `resetForm`, `showLoadingSpinner`, `showConflictModal`, `hideConflictModal`, and `renderCalendar` from `GreenhousePatientApp.js` into `schedulerUI.js`.
+2.  **Expose New UI Functions:** Update the `return` statement in `schedulerUI.js` to expose these new functions.
+3.  **Refactor Function Calls:** Update `GreenhousePatientApp.js` to call these functions from the `GreenhouseSchedulerUI` module (e.g., `GreenhouseSchedulerUI.renderCalendar(...)`).
+4.  **Pass State as Arguments:** The migrated UI functions must be refactored to be pure functions. Instead of accessing the `patientAppState` object directly, they should accept the necessary data and element references as arguments (e.g., `renderCalendar(calendarContainer, date)` instead of `renderCalendar()`).
+5.  **Repeat for Other App Files:** Apply the same pattern to `GreenhouseDashboardApp.js` and `GreenhouseAdminApp.js`.
