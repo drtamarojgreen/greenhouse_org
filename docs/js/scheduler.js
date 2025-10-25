@@ -186,7 +186,7 @@
                             }
                             if (containers.repeaterRight) {
                                 GreenhouseSchedulerUI.buildPatientFormUI(containers.repeaterRight);
-                                GreenhouseSchedulerUI.createInstructionsPanel(containers.repeaterRight);
+                                GreenhouseSchedulerUI.buildAppointmentsListAndPanel(containers.repeaterRight);
                             }
                             break;
                         case 'dashboard':

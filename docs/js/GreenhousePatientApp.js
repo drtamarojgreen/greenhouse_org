@@ -35,6 +35,11 @@ const GreenhousePatientApp = (function() {
         conflictModalCloseBtn: null,
         conflictModalCancelBtn: null,
         conflictModalResolveBtn: null,
+        calendarModalOverlay: null,
+        calendarModalCloseBtn: null,
+        instructionsPopup: null,
+        instructionsPopupCloseBtn: null,
+        showInstructionsBtn: null,
     };
 
     /**
@@ -571,6 +576,35 @@ const GreenhousePatientApp = (function() {
             });
         }
 
+
+        // Modal and Popup Logic
+        patientAppState.calendarModalOverlay = leftAppContainer.querySelector('#greenhouse-calendar-modal-overlay');
+        patientAppState.calendarModalCloseBtn = leftAppContainer.querySelector('#greenhouse-calendar-modal-close-btn');
+        patientAppState.instructionsPopup = leftAppContainer.querySelector('#greenhouse-instructions-popup');
+        patientAppState.instructionsPopupCloseBtn = leftAppContainer.querySelector('#greenhouse-instructions-popup-close-btn');
+        patientAppState.showInstructionsBtn = leftAppContainer.querySelector('#greenhouse-show-instructions-btn');
+
+        const showCalendarModal = () => patientAppState.calendarModalOverlay.classList.remove('greenhouse-hidden');
+        const hideCalendarModal = () => patientAppState.calendarModalOverlay.classList.add('greenhouse-hidden');
+        const showInstructionsPopup = () => patientAppState.instructionsPopup.classList.remove('greenhouse-hidden');
+        const hideInstructionsPopup = () => patientAppState.instructionsPopup.classList.add('greenhouse-hidden');
+
+        if (patientAppState.dateInput) {
+            patientAppState.dateInput.addEventListener('focus', (e) => {
+                e.preventDefault();
+                showCalendarModal();
+            });
+        }
+        if (patientAppState.calendarModalCloseBtn) patientAppState.calendarModalCloseBtn.addEventListener('click', hideCalendarModal);
+        if (patientAppState.calendarModalOverlay) {
+            patientAppState.calendarModalOverlay.addEventListener('click', (e) => {
+                if (e.target === patientAppState.calendarModalOverlay) {
+                    hideCalendarModal();
+                }
+            });
+        }
+        if (patientAppState.showInstructionsBtn) patientAppState.showInstructionsBtn.addEventListener('click', showInstructionsPopup);
+        if (patientAppState.instructionsPopupCloseBtn) patientAppState.instructionsPopupCloseBtn.addEventListener('click', hideInstructionsPopup);
 
         resetForm(); // Ensure form is in a clean state
         renderCalendar();
