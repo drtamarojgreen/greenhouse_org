@@ -1,95 +1,74 @@
-# Comprehensive Scheduler Design & Implementation Plan
+# Scheduler Design Documentation (As-Built)
 
-This document outlines the plan to complete the design, implementation, and data integration for the Greenhouse for Mental Health appointment scheduler, built on the Wix/Velo platform.
+**Status: This document reflects the current, implemented design of the scheduler and supersedes any previous plans.**
+
+This document outlines the design, user flow, and data schema for the Greenhouse for Mental Health appointment scheduler as it is currently implemented on the Wix/Velo platform.
 
 ## Part 1: Application Design and User Flow
 
-### 1.1. User Flow
+The scheduler is implemented as a single-page application within the Wix site, comprising three distinct views: Patient, Dashboard, and Admin. The default and primary view is the **Patient View**.
 
-The primary user flow for scheduling an appointment will be as follows:
+### 1.1. User Flow (Patient View)
 
-1.  **Service Selection:** The user lands on the scheduler page and is first prompted to select a type of service (e.g., "Individual Therapy," "Family Counseling").
-2.  **Therapist Selection:** Based on the service, a list of available therapists is displayed. The user selects a therapist.
-3.  **Date & Time Selection:** An interactive calendar is displayed, showing the selected therapist's availability. The user picks a date, and available time slots for that day are shown. The user selects a time slot.
-4.  **Information Entry:** The user fills out a booking form with their personal details (Name, Email, Phone Number, a brief note).
-5.  **Confirmation:** The user reviews the appointment details and clicks a "Book Appointment" button.
-6.  **Booking Complete:** The system confirms the booking, and the user sees a "Thank You" message with the appointment details. An automated confirmation email is sent to the user.
+The implemented user flow for requesting an appointment is a direct, form-based process:
 
-### 1.2. UI/UX Design Mockups (Text-based)
+1.  **Page Load:** The user lands on the scheduler page, which displays the Patient View. This view contains an appointment request form and a list of their existing appointments.
+2.  **Data Loading (Manual):** The user must click a "Load My Appointments & Services" button to populate the form's service dropdown and their appointment list. This is an intentional design choice to prevent automatic data requests on page load.
+3.  **Information Entry:** The user fills out a single form with the following details:
+    *   Appointment Title
+    *   Preferred Date
+    *   Preferred Time
+    *   Meeting Platform (e.g., Google Meet, Zoom)
+    *   Service Type (selected from a dropdown)
+4.  **Submission:** The user clicks "Request Appointment."
+5.  **Conflict Check & Confirmation:** The system submits the request to a backend function (`proposeAppointment`) which checks for scheduling conflicts.
+    *   **If no conflict:** The appointment is created, and the user sees a success message. Their appointment list is refreshed.
+    *   **If a conflict exists:** The user sees an error message indicating a conflict, prompting them to choose a different time.
+6.  **Editing/Deleting:** Users can edit or delete their existing appointments directly from the list displayed on the page.
 
-#### a) The Main Scheduler Interface
+### 1.2. UI/UX Design (Implemented)
 
-*   **Layout:** A clean, two-column layout.
-*   **Left Column (Selection Filters):**
-    *   A dropdown menu labeled "Select a Service."
-    *   A dropdown menu labeled "Select a Therapist" (this will be populated based on the service selected).
-*   **Right Column (Calendar View):**
-    *   An interactive monthly calendar will be displayed.
-    *   Days with available slots for the selected therapist will be highlighted.
-    *   Below the calendar, a section will display available time slots (e.g., "9:00 AM," "10:00 AM") for the selected date.
+The UI consists of three containers that are collapsed or expanded to switch between views.
 
-#### b) The Booking Form
+#### a) Patient View (`#patientContainer`)
 
-*   This will appear once a user selects a time slot, perhaps in a modal window (lightbox in Wix terms) or by replacing the calendar view.
-*   **Fields:**
-    *   `Full Name` (Text Input, Required)
-    *   `Email Address` (Email Input, Required)
-    *   `Phone Number` (Phone Input, Required)
-    *   `Appointment Notes` (Text Area, Optional)
-*   **Summary Section:** A non-editable summary of the selected service, therapist, date, and time will be displayed at the top of the form.
-*   **Button:** A clear "Confirm Your Booking" button.
+*   **Layout:** A simple, single-column layout.
+*   **Primary Components:**
+    *   **Appointment Request Form:** Contains input fields for all appointment details.
+    *   **Appointments List:** A repeater element (`#patientAppointmentsRepeater`) that displays a list of the user's currently scheduled appointments, with buttons to "Edit" or "Delete".
 
-#### c) The Confirmation Page/View
+#### b) Dashboard & Admin Views
 
-*   After a successful booking, the form will be replaced with a confirmation message.
-*   **Content:**
-    *   A prominent "Thank You! Your appointment is booked." message.
-    *   A summary of the appointment details (Service, Therapist, Date, Time).
-    *   A note saying, "A confirmation email has been sent to your inbox."
-    *   Buttons to "Book Another Appointment" or "Return to Homepage."
+These views are not part of the primary patient flow and are intended for staff.
+*   **Dashboard View (`#dashboardContainer`):** Displays a weekly schedule table and a list of unresolved scheduling conflicts.
+*   **Admin View (`#adminContainer`):** Provides a detailed form for viewing and editing the raw data of a specific appointment, typically accessed via a URL query parameter (`?appointmentId=...`).
 
 ---
 
-## Part 2: Data Schema (Wix Data Collections)
+## Part 2: Data Schema (Implicit)
 
-For the scheduler to function correctly, the following Wix Data Collections must be set up with the specified fields and permissions.
+The frontend code (`apps/frontend/schedule/Schedule.js`) interacts with a series of Velo backend functions (`/_functions/...`). While the exact database schema is defined in the backend, the frontend API calls imply the existence and structure of the following data collections.
 
-### 2.1. `Services` Collection
+### 2.1. `Services` Collection (Implicit)
 
 *   **Purpose:** Stores the different types of services offered.
-*   **Permissions:** Content (Read-only for public), Admin (Read/Write).
-*   **Fields:**
-    *   `title` (Primary, Text): The name of the.service (e.g., "Individual Therapy").
-    *   `description` (Text): A brief description of the service.
-    *   `duration` (Number): The length of the service in minutes (e.g., 60).
+*   **Accessed Via:** `getServices()` backend function.
+*   **Implied Fields:**
+    *   `_id` (ID): Unique identifier for the service.
+    *   `name` (Text): The name of the service (e.g., "Initial Consultation").
 
-### 2.2. `Therapists` Collection
+### 2.2. `Appointments` Collection (Implicit)
 
-*   **Purpose:** Stores profiles for the healthcare professionals.
-*   **Permissions:** Content (Read-only for public), Admin (Read/Write).
-*   **Fields:**
-    *   `name` (Primary, Text): The full name of the therapist (e.g., "Dr. Emily Carter").
-    *   `email` (Text): The therapist's email address (for internal notifications).
-    *   `services` (Multi-Reference): A reference to the `Services` collection. This indicates which services the therapist provides.
-    *   `workingHours` (Object): A JSON object defining the therapist's weekly availability (e.g., `{"monday": {"start": 9, "end": 17}, "tuesday": ...}`).
-
-### 2.3. `Appointments` Collection
-
-*   **Purpose:** Stores all booked appointments.
-*   **Permissions:**
-    *   **Create:** Site member (any logged-in user can create their own appointment).
-    *   **Read:** Site member author (a user can only read their own appointments). Admin (can read all).
-    *   **Update:** Site member author / Admin.
-    *   **Delete:** Admin.
-*   **Fields:**
-    *   `_id` (Primary, ID): Automatically generated by Wix.
-    *   `therapistId` (Reference): A reference to the `Therapists` collection.
-    *   `serviceId` (Reference): A reference to the `Services` collection.
-    *   `contactId` (Reference): A reference to the Wix CRM `Contacts` collection for the user who booked.
-    *   `startDate` (Date and Time): The start date and time of the appointment.
-    *   `endDate` (Date and Time): The end date and time of the appointment.
-    *   `status` (Text): The current status of the appointment (e.g., "Confirmed," "Cancelled," "Completed").
-    *   `patientName` (Text): The name of the patient.
-    *   `patientEmail` (Text): The email of the patient.
-    *   `patientPhone` (Text): The phone number of the patient.
-    *   `notes` (Text): Any notes the patient included with the booking.
+*   **Purpose:** Stores all proposed and confirmed appointments.
+*   **Accessed Via:** `getAppointments()`, `proposeAppointment()`, `createAppointment()`, `updateAppointment()`, `deleteAppointment()` functions.
+*   **Permissions (Inferred from Frontend Logic):**
+    *   **Create:** Any site member can propose an appointment.
+    *   **Read/Update/Delete:** A user can only manage their own appointments. Admins have broader permissions managed by the backend.
+*   **Implied Fields:**
+    *   `_id` (ID): Automatically generated unique ID.
+    *   `title` (Text): The user-defined title for the appointment.
+    *   `start` (Date and Time): The start date and time of the appointment (calculated from user input).
+    *   `end` (Date and Time): The end date and time of the appointment.
+    *   `platform` (Text): The meeting platform (e.g., "Zoom").
+    *   `serviceRef` (Reference): A reference to the `Services` collection.
+    *   *(Note: The `Therapist` reference from the original design plan is not implemented in the frontend.)*

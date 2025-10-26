@@ -1,52 +1,77 @@
-# Scheduler Debugging Status - Monday, September 8, 2025
+# Scheduler Technical Status and Action Plan
 
-## Overview
-This document summarizes the current status of debugging the Greenhouse scheduling application, focusing on issues encountered and actions taken.
+**Last Updated: October 24, 2025**
 
-## Errors Encountered & Actions Taken
+## 1. Overview
 
-### 1. `Uncaught ReferenceError: renderSchedule is not defined`
-*   **Initial Cause:** `GreenhouseDashboardApp.js` was calling `GreenhouseSchedulerUI.renderSchedule`, but `GreenhouseSchedulerUI.renderSchedule` had been renamed to `GreenhouseSchedulerUI.renderWeekly` in `schedulerUI.js`.
-*   **Action Taken:**
-    *   Renamed `renderSchedule` to `renderWeekly` in `docs/js/schedulerUI.js` (both definition and exposure in `return` object).
-    *   Updated the call in `docs/js/GreenhouseDashboardApp.js` from `GreenhouseSchedulerUI.renderSchedule` to `GreenhouseSchedulerUI.renderWeekly`.
-    *   Modified `docs/js/scheduler.js` to pass `GreenhouseSchedulerUI` to `GreenhouseDashboardApp` and call `buildDashboardUI` from `GreenhouseSchedulerUI` directly.
-*   **Current Status:** This specific `ReferenceError` is no longer appearing in the latest console logs, indicating the code changes on disk have resolved it. The previous appearance was likely due to caching on the live site.
+This document provides a technical summary of the current status of the static JavaScript scheduler, outlining key architectural patterns, unresolved issues, and a clear action plan for remediation.
 
-### 2. `TypeError: appState.currentAppInstance.buildDashboardUI is not a function`
-*   **Cause:** After modifying `scheduler.js` to pass `GreenhouseSchedulerUI` to `GreenhouseDashboardApp`, `scheduler.js` was incorrectly trying to call `appState.currentAppInstance.buildDashboardUI()`. `GreenhouseDashboardApp` does not expose a `buildDashboardUI` method in its return object.
-*   **Action Taken:** Reverted the change in `docs/js/scheduler.js` to call `GreenhouseSchedulerUI.buildDashboardUI()` directly, as `GreenhouseSchedulerUI` is the intended central UI builder.
-*   **Current Status:** This error should be resolved.
+## 2. Current Architecture
 
-### 3. `TypeError: GreenhouseSchedulerUI.addDashboardEventListeners is not a function`
-*   **Cause:** `GreenhouseDashboardApp.js` is trying to call `GreenhouseSchedulerUI.addDashboardEventListeners`, but this function is not exposed in the `GreenhouseSchedulerUI` object (defined in `schedulerUI.js`).
-*   **Action Taken:** (Proposed, but not yet executed due to user intervention) Expose `addDashboardEventListeners` in the `return` object of `GreenhouseSchedulerUI` in `docs/js/schedulerUI.js`.
-*   **Current Status:** This error is still present and needs to be addressed.
+The scheduler's code is fundamentally split into two responsibilities:
 
-### 4. `Calendar container not found: #greenhouse-dashboard-app-calendar-container`
-*   **Cause:** The `renderCalendar` function in `schedulerUI.js` is trying to find the calendar container, but it's not finding it. This suggests a timing issue where `renderCalendar` is called before `buildDashboardUI` has created and appended the container to the DOM.
-*   **Action Taken:** None yet.
-*   **Current Status:** This error is still present and needs to be addressed.
+1.  **Static UI Construction (`schedulerUI.js`):** This module is responsible for building the initial, static HTML structure of the scheduler's different views (Patient, Dashboard, Admin). It creates the containers, forms, and tables but does not populate them with dynamic data or handle user interaction.
 
-### 5. CORS Error (`Cross-Origin Request Blocked`)
-*   **Cause:** The browser's Same-Origin Policy is blocking `greenhouse.js` (running on `greenhousementalhealth.org`) from fetching `schedulerUI.js` (and other assets) from `drtamarojgreen.github.io`.
-*   **Action Taken:** None (cannot be fixed from within this environment).
-*   **Current Status:** This is a critical deployment/server-side configuration issue that needs to be resolved outside of this environment. It prevents the scheduler from loading at all. The successful loading of `news.js` from the same origin suggests the issue might be intermittent, caching-related, or specific to the schedule page's context within Wix.
+2.  **Application Logic & Dynamic Updates (`GreenhousePatientApp.js`, `GreenhouseDashboardApp.js`, etc.):** These modules handle the application's logic. They fetch data, manage state, and, crucially, perform all dynamic UI manipulation. They query the DOM for the static elements created by `schedulerUI.js` and then populate or modify them (e.g., rendering calendar days, showing modals, populating forms).
 
-### 6. `Vine Effect Error`
-*   **Cause:** The vine effect script cannot find its target element using the specified CSS selector.
-*   **Action Taken:** Merged vine effect logic into `docs/js/effects.js` and updated the selector.
-*   **Current Status:** This error still persists. It is secondary to the core scheduler loading issues.
+This separation has led to a number of timing-related bugs, as the application logic often attempts to manipulate DOM elements that may not have been fully rendered and attached to the page yet.
 
-## Current Architectural Understanding
-*   `greenhouse.js` is the central loader, dynamically injecting application-specific scripts (like `scheduler.js`, `GreenhouseDashboardApp.js`, `schedulerUI.js`).
-*   `scheduler.js` loads `GreenhouseDashboardApp.js` (for the dashboard view) and `schedulerUI.js`.
-*   `schedulerUI.js` is intended to be the central place for all UI element building and rendering functions (e.g., `buildDashboardUI`, `renderCalendar`, `renderWeekly`).
-*   `GreenhouseDashboardApp.js` handles data fetching and application logic, delegating UI rendering to `GreenhouseSchedulerUI` (from `schedulerUI.js`).
-*   `dashboard.js` is a local testing/demo file and is not loaded on the live site. Its UI rendering functions are redundant and conflicting with `schedulerUI.js`'s role.
+## 3. Unresolved Technical Issues
 
-## Next Steps (Prioritized)
-1.  **Resolve `TypeError: GreenhouseSchedulerUI.addDashboardEventListeners is not a function`:** Expose `addDashboardEventListeners` in `docs/js/schedulerUI.js`.
-2.  **Resolve `Calendar container not found`:** Investigate timing/DOM insertion for `buildDashboardUI` and `renderCalendar` calls.
-3.  **User Action Required:** Resolve the CORS issue on the live site.
-4.  **Re-evaluate `Vine Effect Error`:** After core scheduler issues and CORS are resolved.
+The following issues, identified in previous debugging sessions, persist in the current codebase and are a direct result of the architectural pattern described above.
+
+### Issue 1: `TypeError` on Missing UI Functions
+
+-   **Symptom:** The application frequently throws `TypeError` exceptions, such as `GreenhouseSchedulerUI.addDashboardEventListeners is not a function`.
+-   **Root Cause:** The application logic files (e.g., `GreenhouseDashboardApp.js`) attempt to call dynamic UI or event-handling functions that they expect to exist in `schedulerUI.js`. However, the refactoring to move these functions from the app files into the UI file was never completed. As a result, `schedulerUI.js` only exposes functions for building the *initial* static view, not for handling its dynamic updates.
+-   **Status:** **Active.** This remains a primary blocker.
+
+### Issue 2: Race Condition - "Container Not Found" Errors
+
+-   **Symptom:** The browser console logs errors like `Calendar container not found: #greenhouse-dashboard-app-calendar-container`.
+-   **Root Cause:** This is a classic race condition. The application logic in `GreenhouseDashboardApp.js` calls a function to render dynamic content (e.g., `populateCalendar`) immediately after initiating the creation of the static UI. The JavaScript event loop does not guarantee that the static container has been appended to the document's DOM before the population logic runs.
+-   **Status:** **Active.** This fundamental timing issue makes the scheduler's rendering unreliable.
+
+### Issue 3: CORS Errors on Live Environment (External Factor)
+
+-   **Symptom:** `Cross-Origin Request Blocked` errors prevent scripts from loading when the application is deployed on the main website.
+-   **Root Cause:** This is a server configuration issue related to the Same-Origin Policy. The live environment is not correctly configured to allow scripts hosted on the primary domain to load assets from the secondary (e.g., GitHub Pages) domain.
+-   **Status:** **Active Blocker.** This is an external dependency that cannot be fixed within the application codebase. It is the most critical issue preventing the scheduler from functioning in production.
+
+## 4. Action Plan (Prioritized)
+
+To stabilize the scheduler, the following steps must be taken:
+
+1.  **Resolve CORS Issue (Highest Priority - External):** The server hosting the assets must be configured with the appropriate CORS headers (e.g., `Access-Control-Allow-Origin`) to allow requests from `greenhousementalhealth.org`. This action is outside the scope of the repository's code.
+
+2.  **Complete the UI Logic Refactoring (Highest Internal Priority):** The separation of concerns between static UI and dynamic updates must be properly completed.
+    -   **Action:** Move all remaining DOM manipulation functions (e.g., `populateCalendar`, `populateWeekly`, `showConflictModal`, `addDashboardEventListeners`) from the `*App.js` files into `schedulerUI.js`.
+    -   **Action:** Ensure the `return` object in `schedulerUI.js` exposes these new functions.
+    -   **Action:** Refactor the `*App.js` files to call these functions via the `GreenhouseSchedulerUI` module (e.g., `GreenhouseSchedulerUI.populateCalendar(...)`).
+    -   **Action:** Ensure that data is passed to these UI functions as arguments, rather than having them access a global state.
+
+3.  **Implement a Post-Render Callback System:** To eliminate the race condition, the `init` functions in the `*App.js` files should not call population logic directly. Instead, the UI building functions in `schedulerUI.js` should accept an optional callback function that is executed *only after* the UI has been successfully appended to the DOM.
+
+    **Example Implementation:**
+    ```javascript
+    // In schedulerUI.js
+    function buildDashboardUI(targetElement, onReadyCallback) {
+        // ... build all elements ...
+        targetElement.appendChild(dashboardContainer);
+
+        // Execute the callback only after the UI is attached
+        if (typeof onReadyCallback === 'function') {
+            onReadyCallback();
+        }
+    }
+
+    // In GreenhouseDashboardApp.js
+    function init(container) {
+        GreenhouseSchedulerUI.buildDashboardUI(container, () => {
+            // This code runs only after the UI is safely in the DOM
+            populateCalendar(new Date().getFullYear(), new Date().getMonth());
+            triggerDataFetchAndPopulation();
+        });
+    }
+    ```
+This action plan directly addresses the root causes of the scheduler's instability and provides a clear path toward a more robust and maintainable implementation.
