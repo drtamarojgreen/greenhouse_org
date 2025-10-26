@@ -38,12 +38,6 @@ window.GreenhouseSchedulerUI = (function() {
         fetchDataButton.className = 'greenhouse-btn greenhouse-btn-primary';
         formContainer.appendChild(fetchDataButton);
 
-        const showInstructionsButton = document.createElement('button');
-        showInstructionsButton.id = 'greenhouse-show-instructions-btn';
-        showInstructionsButton.textContent = 'Show Instructions';
-        showInstructionsButton.className = 'greenhouse-btn greenhouse-btn-secondary';
-        formContainer.appendChild(showInstructionsButton);
-
         const h1 = document.createElement('h1');
         h1.textContent = 'Request an Appointment';
         formContainer.appendChild(h1);
@@ -140,12 +134,6 @@ window.GreenhouseSchedulerUI = (function() {
 
         form.appendChild(buttonContainer);
         formContainer.appendChild(form);
-
-        const calendarModal = buildCalendarModal();
-        const instructionsPopup = buildInstructionsPopup();
-        formContainer.appendChild(calendarModal);
-        formContainer.appendChild(instructionsPopup);
-
         targetElement.appendChild(formContainer); // Attach to targetElement
 
         return formContainer;
@@ -409,11 +397,19 @@ window.GreenhouseSchedulerUI = (function() {
     }
 
     /**
-     * @function buildInstructionsList
+     * @function createInstructionsPanel
      * @description Creates the instructional panel content.
-     * @returns {HTMLElement}
+     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
+     * @returns {DocumentFragment}
      */
-    function buildInstructionsList() {
+    function createInstructionsPanel(targetElement) {
+        if (!targetElement) {
+            console.error('SchedulerUI: Target element for instructions panel is null.');
+            return null;
+        }
+
+        const fragment = document.createDocumentFragment();
+
         const instructions = [
             {
                 title: 'Fill Out the Form',
@@ -469,77 +465,21 @@ window.GreenhouseSchedulerUI = (function() {
             instructionsList.appendChild(instructionItem);
         });
 
-        return instructionsList;
-    }
+        fragment.appendChild(instructionsList);
 
-    /**
-     * @function buildAppointmentsListAndPanel
-     * @description Creates and appends the appointments list.
-     * @param {HTMLElement} targetElement - The DOM element to append the UI to.
-     */
-    function buildAppointmentsListAndPanel(targetElement) {
-        if (!targetElement) {
-            console.error('SchedulerUI: Target element for appointments panel is null.');
-            return;
-        }
-        const appointmentListDiv = document.createElement('ul');
+        // Add the appointments list container to the right panel as well
+        const appointmentListDiv = document.createElement('ul'); // Changed to ul for a list
         appointmentListDiv.id = 'greenhouse-patient-app-appointments-list';
         appointmentListDiv.className = 'greenhouse-patient-app-appointments-list';
         appointmentListDiv.setAttribute('data-identifier', 'appointment-list');
         const noAppointmentsLi = document.createElement('li');
         noAppointmentsLi.textContent = 'No appointments scheduled.';
         appointmentListDiv.appendChild(noAppointmentsLi);
-        targetElement.appendChild(appointmentListDiv);
-    }
+        fragment.appendChild(appointmentListDiv);
 
-    /**
-     * Builds the calendar modal.
-     * @returns {HTMLElement} The modal overlay element.
-     */
-    function buildCalendarModal() {
-        const modalOverlay = document.createElement('div');
-        modalOverlay.id = 'greenhouse-calendar-modal-overlay';
-        modalOverlay.className = 'greenhouse-modal-overlay greenhouse-hidden';
+        targetElement.appendChild(fragment); // Attach to targetElement
 
-        const modalContent = document.createElement('div');
-        modalContent.id = 'greenhouse-calendar-modal-content';
-        modalContent.className = 'greenhouse-modal-content';
-
-        buildPatientCalendarUI(modalContent);
-
-        const closeButton = document.createElement('button');
-        closeButton.textContent = 'Close';
-        closeButton.className = 'greenhouse-modal-close-btn';
-        closeButton.id = 'greenhouse-calendar-modal-close-btn';
-        modalContent.appendChild(closeButton);
-
-        modalOverlay.appendChild(modalContent);
-        return modalOverlay;
-    }
-
-    /**
-     * Builds the instructions popup.
-     * @returns {HTMLElement} The popup container element.
-     */
-    function buildInstructionsPopup() {
-        const popupContainer = document.createElement('div');
-        popupContainer.id = 'greenhouse-instructions-popup';
-        popupContainer.className = 'greenhouse-popup-container greenhouse-hidden';
-
-        const popupContent = document.createElement('div');
-        popupContent.className = 'greenhouse-popup-content';
-
-        const instructionsList = buildInstructionsList();
-        popupContent.appendChild(instructionsList);
-
-        const closeButton = document.createElement('button');
-        closeButton.textContent = 'Close';
-        closeButton.className = 'greenhouse-popup-close-btn';
-        closeButton.id = 'greenhouse-instructions-popup-close-btn';
-        popupContent.appendChild(closeButton);
-
-        popupContainer.appendChild(popupContent);
-        return popupContainer;
+        return fragment;
     }
 
     /**
@@ -781,13 +721,10 @@ window.GreenhouseSchedulerUI = (function() {
         buildDashboardRightPanelUI,
         buildAdminFormUI,
         createHiddenElements,
-        buildAppointmentsListAndPanel,
+        createInstructionsPanel,
         buildAdminAppointmentFormUI,
-        buildPatientCalendarUI,
-        fetchAndPopulateScheduleData,
+        buildPatientCalendarUI, // Expose the patient calendar UI builder
+        fetchAndPopulateScheduleData, // Expose the new function
         buildViewSelectorUI,
-        buildCalendarModal,
-        buildInstructionsPopup,
-        buildInstructionsList,
     };
 })();

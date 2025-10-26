@@ -2,63 +2,112 @@
 
 ## 1. Project Goal
 
-To enhance the user interface of the patient scheduling view by:
-1.  Moving the calendar into a modal dialog that appears only when the user is ready to select a date.
-2.  Placing the instructional text into a separate popup to reduce initial screen clutter.
+To enhance the user interface of the patient scheduling view by refactoring two key components:
+1.  **Calendar Modal:** The patient calendar, currently a static element on the page, will be moved into a modal dialog. This modal will only become visible when the user interacts with the date selection input, creating a more focused workflow.
+2.  **Instruction Popup:** The instructional text will be moved into a separate, dismissible popup. This will reduce initial screen clutter and make the instructions available on demand.
 
-This will create a more focused and guided experience for the user.
+## 2. Detailed Component Modification Strategy
 
-## 2. Component Modification Strategy
+### 2.1. `schedulerUI.js` (UI Generation)
 
-The implementation will require coordinated changes across the HTML-generating, styling, and logic-handling components of the scheduler application.
+This file is responsible for building the DOM elements. The changes will be as follows:
 
-### `schedulerUI.js` (UI Generation)
+- **Step 1: Create Modal Container Function:**
+  - A new function, `buildCalendarModal()`, will be implemented.
+  - This function will generate a `div` for the modal overlay (`#greenhouse-calendar-modal-overlay`) and a `div` for the modal content (`#greenhouse-calendar-modal-content`).
+  - The existing calendar-building logic from `buildPatientCalendarUI` will be called *inside* this new modal structure.
+  - A "Close" button will be added to the modal content.
 
-This file is responsible for building the DOM elements. Its role will be to:
-- **Create a Modal Container:** A new function, `buildCalendarModal()`, will be added. This function will generate the necessary `div` elements for a modal overlay and a modal content panel. The existing logic for building the calendar will be moved inside this new modal structure.
-- **Create a Popup Container:** A new function, `buildInstructionsPopup()`, will be added to generate a container `div` for the instruction text.
-- **Integrate into Patient View:** The main `buildPatientUI` function will be updated to call the new functions, appending the (initially hidden) modal and popup elements to the DOM.
+- **Step 2: Create Popup Container Function:**
+  - A new function, `buildInstructionsPopup()`, will be implemented.
+  - This function will generate a container `div` for the instruction text (`#greenhouse-instructions-popup`).
+  - It will call the existing `buildInstructionsList` function to populate the content.
+  - A "Close" button will be added to the popup.
 
-### `docs/css/schedule.css` (Styling)
+- **Step 3: Integrate into Patient View:**
+  - The main `buildPatientFormUI` function will be updated to:
+    - Call the new `buildCalendarModal()` and `buildInstructionsPopup()` functions to append the (initially hidden) modal and popup elements to the DOM.
+    - Add a "Show Instructions" button (`#greenhouse-show-instructions-btn`) to the patient form area.
+
+- **Step 4: Refactor Instruction Panel:**
+  - The existing `createInstructionsPanel` will be renamed to `buildAppointmentsListAndPanel` and will be modified to only create the appointments list, preventing the duplication of the instruction text.
+
+### 2.2. `docs/css/schedule.css` (Styling)
 
 This file will be updated to control the appearance and visibility of the new UI elements.
-- **Modal Styles:** CSS rules will be created for the modal overlay (e.g., `.modal-overlay`) to cover the screen and for the modal content panel (e.g., `.modal-content`) to position it correctly. A `.hidden` class will be used to control visibility (`display: none`).
-- **Popup Styles:** CSS rules will be added to style the instruction popup and position it relative to its trigger element. It will also be hidden by default.
 
-### `GreenhousePatientApp.js` (Application Logic)
+- **Step 1: Add Modal Styles:**
+  - CSS rules will be created for `.greenhouse-modal-overlay` to make it a fixed-position, full-screen, semi-transparent backdrop.
+  - CSS rules will be added for `.greenhouse-modal-content` to center it, give it a border, background, and appropriate dimensions.
 
-This file handles user interaction and business logic. Its role will be to:
-- **Manage Modal Visibility:**
-    - It will add a `click` event listener to the date selection input field.
-    - When the user clicks this field, the script will remove the `.hidden` class from the calendar modal, making it appear.
-    - It will also implement the logic for closing the modal, such as via a "Close" button inside the modal or by clicking on the overlay.
-- **Manage Popup Visibility:**
-    - It will add a `click` event listener to an "info" icon or "Show Instructions" button.
-    - This listener will toggle the visibility of the instruction popup.
+- **Step 2: Add Popup Styles:**
+  - CSS rules will be added to style the `.greenhouse-popup-container` and position it relative to its trigger element.
 
-### `scheduler.js` (Orchestration)
+- **Step 3: Add Visibility Control:**
+  - A `.greenhouse-hidden` class will be created to control visibility (`display: none`).
 
-This file's role is primarily to ensure that the new UI components are loaded and initialized correctly within the existing view-switching framework. No significant logic changes are anticipated, but it will be reviewed to confirm that the new elements do not cause conflicts.
+### 2.3. `GreenhousePatientApp.js` (Application Logic)
 
-## 3. Step-by-Step Implementation Plan
+This file handles user interaction and business logic.
 
-1.  **Task 1: Create UI Structures in `schedulerUI.js`**
-    - Implement the `buildCalendarModal()` function. It will create a parent `div` with class `.modal-overlay` and a child `div` with class `.modal-content`. The existing calendar container will be generated inside `.modal-content`.
-    - Implement the `buildInstructionsPopup()` function to create a `div` for the popup content.
-    - Modify `buildPatientUI` to call these two functions, ensuring the modal and popup are added to the main application container.
+- **Step 1: Add State Properties:**
+  - New properties will be added to the `patientAppState` object to hold references to the new modal and popup elements.
 
-2.  **Task 2: Style Modal and Popup in `schedule.css`**
-    - Add CSS for `.modal-overlay` to make it a fixed-position, full-screen, semi-transparent backdrop.
-    - Add CSS for `.modal-content` to center it, give it a border, background, and appropriate dimensions.
-    - Add CSS for the instruction popup.
-    - Add a `.hidden { display: none; }` utility class.
+- **Step 2: Implement Modal Visibility Logic:**
+  - An event listener will be added to the date selection input. On `focus`, it will remove the `.greenhouse-hidden` class from the calendar modal.
+  - Event listeners will be added to the modal's "Close" button and the overlay to add the `.greenhouse-hidden` class back, hiding the modal.
 
-3.  **Task 3: Implement Interaction Logic in `GreenhousePatientApp.js`**
-    - In the `init` function, get DOM references to the modal, the date input field, and the modal's close button.
-    - Attach a `click` event listener to the date input that removes the `.hidden` class from the modal.
-    - Attach a `click` event listener to the close button that adds the `.hidden` class back to the modal.
-    - Create or identify the trigger for the instruction list and add a `click` listener to toggle the popup's visibility.
+- **Step 3: Implement Popup Visibility Logic:**
+  - An event listener will be added to the "Show Instructions" button. On `click`, it will toggle the visibility of the instruction popup.
+  - An event listener on the popup's "Close" button will hide the popup.
 
-4.  **Task 4: Verification and Review**
-    - Review `scheduler.js` to ensure that the initialization and view-switching logic remains intact.
-    - Manually test the patient view to confirm the new modal and popup functionality works as expected without regressions.
+### 2.4. `scheduler.js` (Orchestration)
+
+- **Step 1: Update Function Call:**
+  - The call to `createInstructionsPanel` in the `renderView` function will be updated to call the newly renamed `buildAppointmentsListAndPanel` function.
+
+## 3. Testing Plan
+
+A thorough testing process will be required to ensure the new functionality works as expected and does not introduce regressions.
+
+- **Unit Testing (Conceptual):**
+  - **`schedulerUI.js`:** Verify that the `buildCalendarModal` and `buildInstructionsPopup` functions return the correct HTML structures.
+  - **`GreenhousePatientApp.js`:** Test the logic for showing and hiding the modal and popup in isolation.
+
+- **Integration Testing:**
+  - **Objective:** Ensure all components work together correctly in a simulated browser environment.
+  - **Steps:**
+    1.  Start a local web server to serve the static files.
+    2.  Create a Playwright script (`verify_modal_popup.py`) that:
+        - Navigates to the test harness page (`tests/pages/schedule_test_page.html`).
+        - Waits for the application to initialize.
+        - Clicks the date input and verifies that the modal appears.
+        - Takes a screenshot of the open modal.
+        - Clicks the modal's "Close" button and verifies that it disappears.
+        - Clicks the "Show Instructions" button and verifies that the popup appears.
+        - Takes a screenshot of the open popup.
+        - Clicks the popup's "Close" button and verifies that it disappears.
+
+- **User Acceptance Testing (UAT):**
+  - **Objective:** Manually verify the user experience.
+  - **Steps:**
+    1.  Open the test harness in a browser.
+    2.  Confirm that the instruction list is not visible on page load.
+    3.  Click the "Show Instructions" button and confirm the popup appears with the correct content.
+    4.  Close the popup and confirm it disappears.
+    5.  Click on the date input field and confirm the calendar modal appears.
+    6.  Select a date and confirm the modal closes and the date is populated in the input.
+    7.  Re-open the modal and close it using the "Close" button.
+    8.  Re-open the modal and close it by clicking on the overlay.
+
+## 4. Evaluation Criteria
+
+The success of this refactoring will be evaluated based on the following criteria:
+
+- **Functional Correctness:** The modal and popup must appear and disappear reliably on all supported browsers.
+- **UI/UX Improvement:** The initial view of the patient form should be visibly less cluttered. The workflow for selecting a date and viewing instructions should feel intuitive.
+- **No Regressions:** The core functionality of the scheduler (e.g., proposing an appointment) must remain unaffected.
+- **Code Quality:** The new code must adhere to the existing coding style and conventions, including the `.greenhouse-` prefix for all new CSS classes.
+- **Performance:** The changes should not introduce any noticeable performance degradation.
+
+This detailed plan ensures that all aspects of the implementation, from coding to testing and evaluation, are clearly defined and can be executed efficiently.
