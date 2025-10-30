@@ -13,7 +13,13 @@
             neurotransmitters: 0,
             ionsCrossed: 0,
             learningMetric: 0,
-            animationFrameId: null
+            animationFrameId: null,
+            mode: 'synaptic', // 'synaptic' or 'network'
+            particles: [],
+            networkLayout: [
+                { x: 100, y: 100 }, { x: 250, y: 150 }, { x: 150, y: 250 },
+                { x: 400, y: 100 }, { x: 550, y: 150 }, { x: 450, y: 250 }
+            ]
         },
 
         // --- Initialization ---
@@ -49,7 +55,7 @@
             this.targetElement.innerHTML = '';
             const mainContainer = this.createElement('div', { className: 'simulation-main-container' });
             // ... (simulation interface structure remains the same)
-            const topBanner = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'Simulation — not clinical therapy.');
+            const topBanner = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'Educational Model: Simulating conceptual brain activity for research.');
             const contentArea = this.createElement('div', { style: 'display: flex; gap: 20px; margin-top: 20px;' });
             const leftColumn = this.createElement('div', { style: 'flex: 3;' });
             const canvas = this.createElement('canvas', { id: 'simulation-canvas', style: 'width: 100%; height: 400px; background: #f0f0f0; border-radius: 12px;' });
@@ -71,7 +77,7 @@
             this.canvas = document.getElementById('simulation-canvas');
             this.ctx = this.canvas.getContext('2d');
             this.resizeCanvas();
-            this.drawCanvas();
+            this.drawSynapticView();
             this.addSimulationListeners();
         },
 
@@ -96,6 +102,11 @@
                     <option>Slow</option>
                     <option selected>Normal</option>
                     <option>Fast</option>
+                </select>
+                <label style="margin-top: 10px;">Visualization Mode</label>
+                <select class="greenhouse-select" id="mode-select">
+                    <option value="synaptic" selected>Synaptic Close-up</option>
+                    <option value="network">Network Overview</option>
                 </select>
                 <button class="greenhouse-btn-secondary" id="play-pause-btn" style="margin-top: 10px;">Play</button>
                 <button class="greenhouse-btn-secondary" id="reset-btn" style="margin-top: 10px;">Reset Plasticity</button>
@@ -124,10 +135,20 @@
         addSimulationListeners() {
             document.getElementById('intensity-slider').addEventListener('input', e => {
                 this.state.intensity = parseInt(e.target.value, 10);
-                if (!this.state.isRunning) this.drawCanvas(); // Update view if paused
+                if (!this.state.isRunning) this.drawSynapticView(); // Update view if paused
             });
             document.getElementById('speed-select').addEventListener('change', e => {
                 this.state.speed = e.target.value;
+            });
+            document.getElementById('mode-select').addEventListener('change', e => {
+                this.state.mode = e.target.value;
+                if (!this.state.isRunning) {
+                    if (this.state.mode === 'synaptic') {
+                        this.drawSynapticView();
+                    } else {
+                        this.drawNetworkView();
+                    }
+                }
             });
             document.getElementById('play-pause-btn').addEventListener('click', e => {
                 this.state.isRunning = !this.state.isRunning;
@@ -141,7 +162,7 @@
                     synapticWeight: 0.5, neurotransmitters: 0, ionsCrossed: 0, learningMetric: 0
                 });
                 this.updateMetrics();
-                this.drawCanvas();
+                this.drawSynapticView();
             });
             window.addEventListener('resize', () => this.resizeCanvas());
         },
@@ -165,7 +186,11 @@
             this.state.learningMetric = this.state.synapticWeight;
 
             this.updateMetrics();
-            this.drawCanvas();
+            if (this.state.mode === 'synaptic') {
+                this.drawSynapticView();
+            } else {
+                this.drawNetworkView();
+            }
 
             const speedMap = { 'Slow': 1000, 'Normal': 500, 'Fast': 250 };
             setTimeout(() => {
@@ -180,34 +205,129 @@
             document.getElementById('metric-learning').textContent = this.state.learningMetric.toFixed(2);
         },
 
-        drawCanvas() {
+        updateParticles() {
+            const { ctx, canvas } = this;
+            const { width, height } = canvas;
+            const cleftTop = height / 2 - 10;
+            const cleftBottom = height / 2 + 10;
+
+            // Move and draw existing particles
+            this.state.particles.forEach((p, index) => {
+                p.y += p.vy;
+
+                // Remove particle if it has crossed the cleft
+                if (p.y > cleftBottom) {
+                    this.state.particles.splice(index, 1);
+                    return;
+                }
+
+                // Draw particle
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Add new particles if running
+            if (this.state.isRunning) {
+                const newParticles = this.state.neurotransmitters / 20; // Scale down for performance
+                for (let i = 0; i < newParticles; i++) {
+                    this.state.particles.push({
+                        x: Math.random() * (width * 0.6) + (width * 0.2), // Release from middle 60%
+                        y: cleftTop - 5,
+                        vy: 1 + Math.random(), // Speed
+                        radius: 2 + Math.random() * 2,
+                        color: `rgba(0, 123, 255, ${Math.random() * 0.5 + 0.5})`
+                    });
+                }
+            }
+        },
+
+        drawSynapticView() {
             const { ctx, canvas } = this;
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
 
-            // Draw a simple representation of a synapse
             const preSynapticY = height / 2 - 50;
-            const postSynapticY = height / 2 + 50;
+            const cleftHeight = 20;
 
-            // Pre-synaptic neuron (circle)
-            ctx.fillStyle = '#732751';
+            // Pre-synaptic terminal (arc)
+            ctx.fillStyle = 'rgba(115, 39, 81, 0.8)'; // Darker purple
             ctx.beginPath();
-            ctx.arc(width / 4, preSynapticY, 30, 0, Math.PI * 2);
+            ctx.arc(width / 2, preSynapticY, width / 3, 0.2 * Math.PI, 0.8 * Math.PI);
             ctx.fill();
 
-            // Post-synaptic neuron (circle)
-            ctx.fillStyle = '#357438';
+            // Synaptic Cleft (gap)
+            ctx.fillStyle = '#f0f0f0'; // Background color
+            ctx.fillRect(0, preSynapticY + 30, width, cleftHeight);
+
+            // Post-synaptic terminal (arc)
+            ctx.fillStyle = 'rgba(53, 116, 56, 0.8)'; // Darker green
             ctx.beginPath();
-            ctx.arc(width * 3 / 4, postSynapticY, 30, 0, Math.PI * 2);
+            ctx.arc(width / 2, height / 2 + 50, width / 3, 1.2 * Math.PI, 1.8 * Math.PI, true);
             ctx.fill();
 
-            // Connection strength (line thickness)
+            // Animate neurotransmitters
+            this.updateParticles();
+
+            // Connection strength visualization (opacity of a bar in the cleft)
+            ctx.fillStyle = `rgba(45, 62, 45, ${this.state.synapticWeight * 0.7})`;
+            ctx.fillRect(width * 0.2, height / 2 - 5, width * 0.6, 10);
+        },
+
+        drawNeuron(ctx, x, y, radius) {
+            // Draw central body (soma)
+            ctx.fillStyle = 'rgba(53, 116, 56, 0.9)'; // Use a slightly transparent green
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw dendrites
+            const dendriteCount = 5 + Math.floor(Math.random() * 3); // 5 to 7 dendrites
+            ctx.strokeStyle = 'rgba(45, 62, 45, 0.7)'; // Use a slightly transparent dark color
+            ctx.lineWidth = 1.5;
+
+            for (let i = 0; i < dendriteCount; i++) {
+                const angle = (i / dendriteCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.5; // Add some randomness to angle
+                const length = radius * (1.5 + Math.random()); // Random length
+
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(
+                    x + Math.cos(angle) * length,
+                    y + Math.sin(angle) * length
+                );
+                ctx.stroke();
+            }
+        },
+
+        drawNetworkView() {
+            const { ctx, canvas } = this;
+            const { width, height } = canvas;
+            ctx.clearRect(0, 0, width, height);
+
+            // Scale node positions to canvas size
+            const scaleX = width / 650;
+            const scaleY = height / 350;
+
+            // Draw connections
             ctx.strokeStyle = '#2d3e2d';
-            ctx.lineWidth = this.state.synapticWeight * 10;
-            ctx.beginPath();
-            ctx.moveTo(width / 4, preSynapticY);
-            ctx.lineTo(width * 3 / 4, postSynapticY);
-            ctx.stroke();
+            for (let i = 0; i < this.state.networkLayout.length; i++) {
+                for (let j = i + 1; j < this.state.networkLayout.length; j++) {
+                    // Make connection strength vary for visual interest
+                    const weight = (i + j) % 3 === 0 ? this.state.synapticWeight : 0.2 + Math.random() * 0.2;
+                    ctx.lineWidth = weight * 5;
+                    ctx.beginPath();
+                    ctx.moveTo(this.state.networkLayout[i].x * scaleX, this.state.networkLayout[i].y * scaleY);
+                    ctx.lineTo(this.state.networkLayout[j].x * scaleX, this.state.networkLayout[j].y * scaleY);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw neurons
+            this.state.networkLayout.forEach(node => {
+                this.drawNeuron(ctx, node.x * scaleX, node.y * scaleY, 12);
+            });
         },
 
         resizeCanvas() {
@@ -215,7 +335,11 @@
             if (canvas) {
                 canvas.width = canvas.offsetWidth;
                 canvas.height = canvas.offsetHeight;
-                this.drawCanvas();
+                if (this.state.mode === 'synaptic') {
+                    this.drawSynapticView();
+                } else {
+                    this.drawNetworkView();
+                }
             }
         },
 
@@ -223,7 +347,11 @@
         createElement(tag, attributes = {}, ...children) {
             const element = document.createElement(tag);
             for (const key in attributes) {
-                element[key] = attributes[key];
+                if (key.includes('-')) {
+                    element.setAttribute(key, attributes[key]);
+                } else {
+                    element[key] = attributes[key];
+                }
             }
             children.forEach(child => {
                 if (typeof child === 'string') {
