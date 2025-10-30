@@ -49,6 +49,10 @@
          */
         newsPagePath: '/news/',
         /**
+         * The path segment that identifies the models page.
+         */
+        modelsPagePath: '/models/',
+        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -65,6 +69,7 @@
             books: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div > section.wixui-section', // User-specified selector for books
             videos: '.wixui-repeater', // Selector for the videos repeater
             news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
+            models: '#SITE_PAGES_TRANSITION_GROUP', // A general selector for the main content area
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -80,7 +85,8 @@
             admin: '.wixui-column-strip__column:last-child',
             books: 'section.wixui-section', // Fallback to a more general section if the specific one isn't found
             videos: '.wixui-column-strip__column:first-child', // Fallback to a generic column selector
-            news: '.wixui-column-strip__column:first-child' // Reverting to a generic column selector
+            news: '.wixui-column-strip__column:first-child', // Reverting to a generic column selector
+            models: 'main' // Fallback to the main element
         }
     };
 
@@ -239,6 +245,40 @@
     }
 
     /**
+     * @function loadModelsApplication
+     * @description Loads the models application.
+     */
+    async function loadModelsApplication() {
+        try {
+            console.log('Greenhouse: Initializing models application');
+
+            // First, load the specific CSS for the models page
+            await GreenhouseUtils.loadStylesheet('css/model.css', config.githubPagesBaseUrl);
+
+            // Then, wait for the target element to be available
+            const targetElement = await GreenhouseUtils.waitForElement([config.selectors.models, config.fallbackSelectors.models], config.elementWaitTimeout);
+            const targetSelector = targetElement ? (document.querySelector(config.selectors.models) ? config.selectors.models : config.fallbackSelectors.models) : null;
+
+            if (!targetSelector) {
+                throw new Error('Models application container not found');
+            }
+
+            // Now, load the main script for the models application
+            await GreenhouseUtils.loadScript('js/models.js', config.githubPagesBaseUrl);
+
+            // Finally, initialize the application
+            if (window.GreenhouseModels && typeof window.GreenhouseModels.init === 'function') {
+                window.GreenhouseModels.init(targetSelector);
+            } else {
+                console.error('Greenhouse: GreenhouseModels.init function not found after loading script.');
+            }
+
+        } catch (error) {
+            console.error('Greenhouse: Failed to load models application:', error);
+        }
+    }
+
+    /**
      * @function initialize
      * @description Main initialization function that runs when the DOM is ready.
      */
@@ -260,6 +300,8 @@
             
         } else if (window.location.pathname.includes(config.newsPagePath)) {
             await loadNewsApplication();
+        } else if (window.location.pathname.includes(config.modelsPagePath)) {
+            await loadModelsApplication();
         }
     }
 

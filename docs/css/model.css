@@ -1,0 +1,156 @@
+/* docs/css/model.css */
+
+/* --- Core Design System --- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #2d3e2d;
+    line-height: 1.6;
+}
+
+h1, h2, h3 {
+    font-family: 'Quicksand', sans-serif;
+    color: #357438;
+}
+
+a {
+    color: #1d7a1d;
+}
+
+/* --- Component-Specific Styles --- */
+
+.greenhouse-landing-container {
+    padding: 2em;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    background-color: #fff;
+    max-width: 800px;
+    margin: 2em auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.greenhouse-disclaimer-banner {
+    border: 2px solid #f0ad4e;
+    background-color: #fcf8e3;
+    padding: 1em;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-bottom: 1.5em;
+}
+
+.greenhouse-btn-primary {
+    background-color: #1d7a1d;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.8em 1.5em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.greenhouse-btn-primary:hover {
+    background-color: #166616;
+}
+
+.greenhouse-btn-primary:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.greenhouse-btn-secondary {
+    background-color: #6c757d;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.8em 1.5em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.greenhouse-btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.greenhouse-controls-panel,
+.greenhouse-metrics-panel {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 1.5em;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    margin-top: 1.5em;
+}
+
+.greenhouse-simulation-title {
+    font-family: 'Quicksand', sans-serif;
+    color: #357438;
+    font-weight: 600;
+    text-align: center;
+}
+
+.greenhouse-panel-title {
+    font-family: 'Quicksand', sans-serif;
+    color: #005f73;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0.5em;
+    margin-top: 0;
+}
+
+/* --- Form Elements --- */
+.greenhouse-consent-label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5em;
+}
+
+.greenhouse-consent-checkbox {
+    margin-right: 0.5em;
+}
+
+.greenhouse-slider {
+    width: 100%;
+}
+
+.greenhouse-select {
+    padding: 0.5em;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+
+/* --- Safety Overlay --- */
+.greenhouse-safety-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.greenhouse-safety-overlay.visible {
+    visibility: visible;
+    opacity: 1;
+}
+
+.greenhouse-safety-content {
+    background-color: #fff;
+    border: 3px solid #d9534f;
+    border-radius: 8px;
+    padding: 2em;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    text-align: center;
+}
+
+.greenhouse-safety-content h2 {
+    color: #d9534f;
+}
