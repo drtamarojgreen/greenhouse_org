@@ -34,7 +34,7 @@
             const intro = this.createElement('p', {}, 'This is a browser-based educational simulation...');
             const disclaimer = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'Simulation — Educational model only...');
             const consentLabel = this.createElement('label', { className: 'greenhouse-consent-label' });
-            const consentCheckbox = this.createElement('input', { type: 'checkbox', id: 'consent-checkbox', className: 'greenhouse-consent-checkbox' });
+            const consentCheckbox = this.createElement('input', { type: 'checkbox', id: 'consent-checkbox', className: 'greenhouse-consent-checkbox', 'data-testid': 'consent-checkbox' });
             consentLabel.append(consentCheckbox, 'I understand this simulation is educational only and not a substitute for clinical care.');
             const startButton = this.createElement('button', { id: 'start-simulation-btn', className: 'greenhouse-btn-primary' }, 'Start Simulation');
             startButton.disabled = true;
