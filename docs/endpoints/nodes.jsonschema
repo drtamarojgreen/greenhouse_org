@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Node Schema",
+  "description": "Defines the structure for a single conceptual node in the neural simulation.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "A unique identifier for the node (e.g., 'node-1')."
+    },
+    "type": {
+      "type": "string",
+      "enum": ["research", "patient", "user"],
+      "description": "The source type of the note that generated this node."
+    },
+    "label": {
+      "type": "string",
+      "description": "A short, sanitized label for the node (e.g., 'CBT_MDD')."
+    },
+    "domain_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "An array of tags classifying the node's domain (e.g., 'CBT', 'depression')."
+    },
+    "strength_prior": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "The initial strength or confidence in this node, derived from evidence."
+    },
+    "neuro_affinity": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Conceptual neurotransmitter affinities (e.g., 'glutamate', 'serotonin_conceptual')."
+    },
+    "notes_ref": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "An array of references to the original notes that contributed to this node."
+    }
+  },
+  "required": ["id", "type", "label", "domain_tags", "strength_prior"]
+}

@@ -1,0 +1,19 @@
+{
+  "domain_tags": {
+    "mood": ["mood", "depression", "mdd", "dysthymia"],
+    "anxiety": ["anxiety", "gad", "panic", "phobia"],
+    "sleep": ["sleep", "insomnia"],
+    "oud": ["oud", "opioid", "buprenorphine", "suboxone"],
+    "exercise": ["exercise", "running", "physical activity"],
+    "medication": ["medication", "ssri", "snri", "pharmacotherapy"],
+    "dbt": ["dbt", "dialectical behavioral therapy", "distress tolerance", "emotion regulation"],
+    "cbt": ["cbt", "cognitive behavioral therapy", "cognitive restructuring"]
+  },
+  "neurotransmitter_affinity": {
+    "serotonin": ["ssri", "fluoxetine", "sertraline"],
+    "dopamine": ["bupropion", "methylphenidate"],
+    "gaba": ["mindfulness", "mbsr", "box breathing", "meditation"],
+    "glutamate": ["erp", "exposure", "learning"],
+    "opioid": ["buprenorphine", "naloxone"]
+  }
+}

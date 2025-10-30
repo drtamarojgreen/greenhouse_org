@@ -1,0 +1,32 @@
+{
+  "notes": [
+    {
+      "type": "user_note",
+      "content": "Morning 4-7-8 breathing, 10 minutes, mood +2"
+    },
+    {
+      "type": "research_note",
+      "content": "CBT for major depressive disorder reduced symptoms over 12 weeks (PHQ-9 -7)"
+    },
+    {
+      "type": "patient_note",
+      "content": "Patient reported consistent use of mindfulness exercises, correlating with lower anxiety scores."
+    }
+  ],
+  "expected_outcome": {
+    "seed": 12345,
+    "initial_synapse_weights": {
+      "breathing_to_vagal": 0.1,
+      "cbt_to_mood": 0.6
+    },
+    "one_step_update": {
+      "target_synapse": "breathing_to_vagal",
+      "event": {
+        "type": "practice",
+        "intensity": 0.5,
+        "duration": 10
+      },
+      "expected_new_weight": 0.1045
+    }
+  }
+}

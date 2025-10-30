@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Synapse Schema",
+  "description": "Defines the structure for a single conceptual synapse between two nodes in the neural simulation.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "A unique identifier for the synapse (e.g., 'syn-1')."
+    },
+    "pre": {
+      "type": "string",
+      "description": "The ID of the pre-synaptic node."
+    },
+    "post": {
+      "type": "string",
+      "description": "The ID of the post-synaptic node."
+    },
+    "weight": {
+      "type": "number",
+      "minimum": 0,
+      "description": "The current strength of the synaptic connection."
+    },
+    "plasticity_rate": {
+      "type": "number",
+      "minimum": 0,
+      "description": "The rate at which the synapse's weight changes in response to events."
+    },
+    "neurotransmitter": {
+      "type": "string",
+      "description": "The primary conceptual neurotransmitter for this synapse."
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The timestamp of the last event that modified this synapse."
+    }
+  },
+  "required": ["id", "pre", "post", "weight", "plasticity_rate", "neurotransmitter"]
+}

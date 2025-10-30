@@ -89,7 +89,9 @@ a {
     text-align: center;
 }
 
-.greenhouse-panel-title {
+.greenhouse-panel-title,
+.greenhouse-controls-panel h3,
+.greenhouse-metrics-panel h3 {
     font-family: 'Quicksand', sans-serif;
     color: #005f73;
     border-bottom: 2px solid #eee;
