@@ -49,10 +49,6 @@
          */
         newsPagePath: '/news/',
         /**
-         * The path segment that identifies the models page.
-         */
-        modelsPagePath: '/models/',
-        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -300,7 +296,7 @@
             
         } else if (window.location.pathname.includes(config.newsPagePath)) {
             await loadNewsApplication();
-        } else if (window.location.pathname.includes(config.modelsPagePath)) {
+        } else if (window.location.pathname === '/models' || window.location.pathname.startsWith('/models/')) {
             await loadModelsApplication();
         }
     }
