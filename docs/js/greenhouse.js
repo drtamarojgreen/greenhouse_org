@@ -51,7 +51,7 @@
         /**
          * The path segment that identifies the models page.
          */
-        modelsPagePath: '/models/',
+        modelsPagePath: '/models',
         /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
@@ -67,9 +67,9 @@
             dashboardRight: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column:nth-child(2)', // Second column for calendar
             admin: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column',
             books: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div > section.wixui-section', // User-specified selector for books
+            models: '#SITE_PAGES_TRANSITION_GROUP .wixui-section > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             videos: '.wixui-repeater', // Selector for the videos repeater
             news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
-            models: '#SITE_PAGES_TRANSITION_GROUP .wixui-section > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -84,9 +84,9 @@
             dashboardRight: '.wixui-column-strip__column:nth-child(2)',
             admin: '.wixui-column-strip__column:last-child',
             books: 'section.wixui-section', // Fallback to a more general section if the specific one isn't found
+            models: 'section.wixui-section',
             videos: '.wixui-column-strip__column:first-child', // Fallback to a generic column selector
-            news: '.wixui-column-strip__column:first-child', // Reverting to a generic column selector
-            models: 'main' // Fallback to the main element
+            news: '.wixui-column-strip__column:first-child' // Reverting to a generic column selector
         }
     };
 
@@ -246,36 +246,15 @@
 
     /**
      * @function loadModelsApplication
-     * @description Loads the models application.
+     * @description Loads the models application after ensuring the target element exists.
      */
     async function loadModelsApplication() {
-        try {
-            console.log('Greenhouse: Initializing models application');
-
-            // First, load the specific CSS for the models page
-            await GreenhouseUtils.loadStylesheet('css/model.css', config.githubPagesBaseUrl);
-
-            // Then, wait for the target element to be available
-            const targetElement = await GreenhouseUtils.waitForElement([config.selectors.models, config.fallbackSelectors.models], config.elementWaitTimeout);
-            const targetSelector = targetElement ? (document.querySelector(config.selectors.models) ? config.selectors.models : config.fallbackSelectors.models) : null;
-
-            if (!targetSelector) {
-                throw new Error('Models application container not found');
-            }
-
-            // Now, load the main script for the models application
-            await GreenhouseUtils.loadScript('js/models.js', config.githubPagesBaseUrl);
-
-            // Finally, initialize the application
-            if (window.GreenhouseModels && typeof window.GreenhouseModels.init === 'function') {
-                window.GreenhouseModels.init(targetSelector);
-            } else {
-                console.error('Greenhouse: GreenhouseModels.init function not found after loading script.');
-            }
-
-        } catch (error) {
-            console.error('Greenhouse: Failed to load models application:', error);
-        }
+        await loadApplication(
+            'models',
+            'models.js',
+            config.selectors.models,
+            config.fallbackSelectors.models
+        );
     }
 
     /**

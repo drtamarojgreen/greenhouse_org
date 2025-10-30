@@ -17,13 +17,30 @@
         },
 
         // --- Initialization ---
-        init(targetSelector) {
+        init(targetSelector, baseUrl) {
             this.targetElement = document.querySelector(targetSelector);
             if (!this.targetElement) {
                 console.error('Models App: Target element not found');
                 return;
             }
+            this.state.baseUrl = baseUrl;
+            this.loadCSS();
             this.renderConsentScreen();
+        },
+
+        async loadCSS() {
+            const cssUrl = `${this.state.baseUrl}css/model.css`;
+            if (!document.querySelector(`link[href="${cssUrl}"]`)) {
+                const linkElement = document.createElement('link');
+                linkElement.rel = 'stylesheet';
+                linkElement.type = 'text/css';
+                linkElement.href = cssUrl;
+                document.head.appendChild(linkElement);
+                await new Promise((resolve, reject) => {
+                    linkElement.onload = resolve;
+                    linkElement.onerror = reject;
+                });
+            }
         },
 
         // --- UI Rendering ---
