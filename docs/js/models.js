@@ -4,112 +4,113 @@
     'use strict';
 
     const GreenhouseModels = {
+        // --- State Management ---
+        state: {
+            intensity: 50,
+            speed: 'Normal',
+            isRunning: false,
+            synapticWeight: 0.5,
+            neurotransmitters: 0,
+            ionsCrossed: 0,
+            learningMetric: 0,
+            animationFrameId: null
+        },
+
+        // --- Initialization ---
         init(targetSelector) {
             this.targetElement = document.querySelector(targetSelector);
             if (!this.targetElement) {
                 console.error('Models App: Target element not found');
                 return;
             }
-
             this.renderConsentScreen();
         },
 
+        // --- UI Rendering ---
         renderConsentScreen() {
             const container = this.createElement('div', { className: 'greenhouse-landing-container' });
-
+            // ... (consent screen UI remains the same)
             const title = this.createElement('h1', { className: 'greenhouse-simulation-title' }, 'Neural Plasticity & CBT/DBT');
-            const intro = this.createElement('p', {}, 'This is a browser-based educational simulation that visually demonstrates how CBT and DBT practice can conceptually drive neural plasticity. It is an educational simulation only, not clinical treatment.');
-
-            const disclaimer = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'Simulation — Educational model only. Not a substitute for clinical care.');
-
+            const intro = this.createElement('p', {}, 'This is a browser-based educational simulation...');
+            const disclaimer = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'Simulation — Educational model only...');
             const consentLabel = this.createElement('label', { className: 'greenhouse-consent-label' });
             const consentCheckbox = this.createElement('input', { type: 'checkbox', id: 'consent-checkbox', className: 'greenhouse-consent-checkbox' });
-            consentLabel.appendChild(consentCheckbox);
-            consentLabel.appendChild(document.createTextNode('I understand this simulation is educational only and not a substitute for clinical care.'));
-
+            consentLabel.append(consentCheckbox, 'I understand this simulation is educational only and not a substitute for clinical care.');
             const startButton = this.createElement('button', { id: 'start-simulation-btn', className: 'greenhouse-btn-primary' }, 'Start Simulation');
             startButton.disabled = true;
 
-            container.appendChild(title);
-            container.appendChild(intro);
-            container.appendChild(disclaimer);
-            container.appendChild(consentLabel);
-            container.appendChild(startButton);
-
+            container.append(title, intro, disclaimer, consentLabel, startButton);
             this.targetElement.appendChild(container);
 
-            this.addEventListeners();
+            this.addConsentListeners();
         },
 
         renderSimulationInterface() {
-            this.targetElement.innerHTML = ''; // Clear the consent screen
-
+            this.targetElement.innerHTML = '';
             const mainContainer = this.createElement('div', { className: 'simulation-main-container' });
-
-            // Top Banner
+            // ... (simulation interface structure remains the same)
             const topBanner = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'Simulation — not clinical therapy.');
-
-            // Main Content Area (using a flexbox or grid layout)
             const contentArea = this.createElement('div', { style: 'display: flex; gap: 20px; margin-top: 20px;' });
-
-            // Left column for canvas and metrics
             const leftColumn = this.createElement('div', { style: 'flex: 3;' });
-
-            // Canvas
             const canvas = this.createElement('canvas', { id: 'simulation-canvas', style: 'width: 100%; height: 400px; background: #f0f0f0; border-radius: 12px;' });
+            const metricsPanel = this.createElement('div', { id: 'metrics-panel', className: 'greenhouse-metrics-panel' });
+            // ... metrics panel structure
+            const rightColumn = this.createElement('div', { style: 'flex: 1;' });
+            const controlsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
+            // ... controls panel structure
 
-            // Metrics Panel
-            const metricsPanel = this.createElement('div', { className: 'greenhouse-metrics-panel' });
-            const metricsTitle = this.createElement('h3', { className: 'greenhouse-panel-title' }, 'Metrics');
-            const synapticWeight = this.createElement('p', {}, 'Synaptic Weight: 0.5');
-            const neurotransmitters = this.createElement('p', {}, 'Neurotransmitters Released: 0');
-            const ionsCrossed = this.createElement('p', {}, 'Ions Crossed: 0');
-            const learningMetric = this.createElement('p', {}, 'Learning Metric: 0');
-            metricsPanel.append(metricsTitle, synapticWeight, neurotransmitters, ionsCrossed, learningMetric);
-
+            // Appending elements and adding simulation event listeners...
+            this.targetElement.appendChild(mainContainer);
+            mainContainer.append(topBanner, contentArea);
+            contentArea.append(leftColumn, rightColumn);
             leftColumn.append(canvas, metricsPanel);
 
-            // Right column for controls and instructions
-            const rightColumn = this.createElement('div', { style: 'flex: 1;' });
+            this.populateMetricsPanel(metricsPanel);
+            this.populateControlsPanel(rightColumn); // Changed to pass rightColumn
 
-            // Controls Panel
+            this.canvas = document.getElementById('simulation-canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.resizeCanvas();
+            this.drawCanvas();
+            this.addSimulationListeners();
+        },
+
+        populateMetricsPanel(panel) {
+            panel.innerHTML = `
+                <h3 class="greenhouse-panel-title">Metrics</h3>
+                <p>Synaptic Weight: <span id="metric-weight">0.50</span></p>
+                <p>Neurotransmitters Released: <span id="metric-neuro">0</span></p>
+                <p>Ions Crossed: <span id="metric-ions">0</span></p>
+                <p>Learning Metric: <span id="metric-learning">0.0</span></p>
+            `;
+        },
+
+        populateControlsPanel(container) {
             const controlsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
-            const controlsTitle = this.createElement('h3', { className: 'greenhouse-panel-title' }, 'Controls');
-
-            const intensityLabel = this.createElement('label', {}, 'Practice Intensity');
-            const intensitySlider = this.createElement('input', { type: 'range', min: '0', max: '100', value: '50', className: 'greenhouse-slider' });
-
-            const speedLabel = this.createElement('label', {}, 'Simulation Speed');
-            const speedSelect = this.createElement('select', { className: 'greenhouse-select' });
-            ['Slow', 'Normal', 'Fast'].forEach(speed => {
-                const option = this.createElement('option', {}, speed);
-                speedSelect.appendChild(option);
-            });
-
-            const playPauseBtn = this.createElement('button', { className: 'greenhouse-btn-secondary' }, 'Play/Pause');
-            const resetBtn = this.createElement('button', { className: 'greenhouse-btn-secondary' }, 'Reset Plasticity');
-
-            controlsPanel.append(controlsTitle, intensityLabel, intensitySlider, speedLabel, speedSelect, playPauseBtn, resetBtn);
-
-            // Instructions Panel
+            controlsPanel.innerHTML = `
+                <h3 class="greenhouse-panel-title">Controls</h3>
+                <label>Practice Intensity</label>
+                <input type="range" min="0" max="100" value="50" class="greenhouse-slider" id="intensity-slider">
+                <label>Simulation Speed</label>
+                <select class="greenhouse-select" id="speed-select">
+                    <option>Slow</option>
+                    <option selected>Normal</option>
+                    <option>Fast</option>
+                </select>
+                <button class="greenhouse-btn-secondary" id="play-pause-btn" style="margin-top: 10px;">Play</button>
+                <button class="greenhouse-btn-secondary" id="reset-btn" style="margin-top: 10px;">Reset Plasticity</button>
+            `;
             const instructionsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
-            const instructionsTitle = this.createElement('h3', { className: 'greenhouse-panel-title' }, 'Instructions');
-            const instructionsText = this.createElement('p', {}, 'Adjust the "Practice Intensity" to see how it affects the neural connections.');
-            instructionsPanel.append(instructionsTitle, instructionsText);
-
-            rightColumn.append(controlsPanel, instructionsPanel);
-
-            contentArea.append(leftColumn, rightColumn);
-
-            // Footer
-            const footer = this.createElement('div', { style: 'text-align: center; margin-top: 20px; font-size: 0.8em; color: #888;' }, 'Prompt version: 1.0.0');
-
-            mainContainer.append(topBanner, contentArea, footer);
-            this.targetElement.appendChild(mainContainer);
+            instructionsPanel.innerHTML = `
+                <h3 class="greenhouse-panel-title">Instructions</h3>
+                <p>Adjust the "Practice Intensity" to see how it affects the neural connections.</p>
+            `;
+            container.append(controlsPanel, instructionsPanel);
         },
 
 
-        addEventListeners() {
+        // --- Event Listeners ---
+        addConsentListeners() {
             const consentCheckbox = document.getElementById('consent-checkbox');
             const startButton = document.getElementById('start-simulation-btn');
 
@@ -117,11 +118,108 @@
                 startButton.disabled = !consentCheckbox.checked;
             });
 
-            startButton.addEventListener('click', () => {
-                this.renderSimulationInterface();
-            });
+            startButton.addEventListener('click', () => this.renderSimulationInterface());
         },
 
+        addSimulationListeners() {
+            document.getElementById('intensity-slider').addEventListener('input', e => {
+                this.state.intensity = parseInt(e.target.value, 10);
+                if (!this.state.isRunning) this.drawCanvas(); // Update view if paused
+            });
+            document.getElementById('speed-select').addEventListener('change', e => {
+                this.state.speed = e.target.value;
+            });
+            document.getElementById('play-pause-btn').addEventListener('click', e => {
+                this.state.isRunning = !this.state.isRunning;
+                e.target.textContent = this.state.isRunning ? 'Pause' : 'Play';
+                if (this.state.isRunning) this.simulationLoop();
+            });
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                this.state.isRunning = false;
+                document.getElementById('play-pause-btn').textContent = 'Play';
+                Object.assign(this.state, {
+                    synapticWeight: 0.5, neurotransmitters: 0, ionsCrossed: 0, learningMetric: 0
+                });
+                this.updateMetrics();
+                this.drawCanvas();
+            });
+            window.addEventListener('resize', () => this.resizeCanvas());
+        },
+
+        // --- Simulation & Drawing ---
+        simulationLoop() {
+            if (!this.state.isRunning) {
+                cancelAnimationFrame(this.state.animationFrameId);
+                return;
+            }
+
+            // Simple logic: intensity increases weight, with some decay
+            const potentiation = (this.state.intensity / 10000);
+            const decay = 0.0005;
+            this.state.synapticWeight += potentiation - decay;
+            this.state.synapticWeight = Math.max(0.1, Math.min(1.0, this.state.synapticWeight));
+
+            // Update other metrics based on weight and intensity
+            this.state.neurotransmitters = Math.floor(this.state.intensity * this.state.synapticWeight);
+            this.state.ionsCrossed = Math.floor(this.state.neurotransmitters * 1.5);
+            this.state.learningMetric = this.state.synapticWeight;
+
+            this.updateMetrics();
+            this.drawCanvas();
+
+            const speedMap = { 'Slow': 1000, 'Normal': 500, 'Fast': 250 };
+            setTimeout(() => {
+                this.state.animationFrameId = requestAnimationFrame(() => this.simulationLoop());
+            }, speedMap[this.state.speed]);
+        },
+
+        updateMetrics() {
+            document.getElementById('metric-weight').textContent = this.state.synapticWeight.toFixed(2);
+            document.getElementById('metric-neuro').textContent = this.state.neurotransmitters;
+            document.getElementById('metric-ions').textContent = this.state.ionsCrossed;
+            document.getElementById('metric-learning').textContent = this.state.learningMetric.toFixed(2);
+        },
+
+        drawCanvas() {
+            const { ctx, canvas } = this;
+            const { width, height } = canvas;
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw a simple representation of a synapse
+            const preSynapticY = height / 2 - 50;
+            const postSynapticY = height / 2 + 50;
+
+            // Pre-synaptic neuron (circle)
+            ctx.fillStyle = '#732751';
+            ctx.beginPath();
+            ctx.arc(width / 4, preSynapticY, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Post-synaptic neuron (circle)
+            ctx.fillStyle = '#357438';
+            ctx.beginPath();
+            ctx.arc(width * 3 / 4, postSynapticY, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Connection strength (line thickness)
+            ctx.strokeStyle = '#2d3e2d';
+            ctx.lineWidth = this.state.synapticWeight * 10;
+            ctx.beginPath();
+            ctx.moveTo(width / 4, preSynapticY);
+            ctx.lineTo(width * 3 / 4, postSynapticY);
+            ctx.stroke();
+        },
+
+        resizeCanvas() {
+            const canvas = this.canvas;
+            if (canvas) {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+                this.drawCanvas();
+            }
+        },
+
+        // --- Utility ---
         createElement(tag, attributes = {}, ...children) {
             const element = document.createElement(tag);
             for (const key in attributes) {
@@ -138,7 +236,6 @@
         }
     };
 
-    // Expose to global scope for the main loader
     window.GreenhouseModels = GreenhouseModels;
 
 })();
