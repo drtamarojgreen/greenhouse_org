@@ -1,5 +1,7 @@
 // docs/js/models.js
 
+// docs/js/models.js
+
 (function() {
     'use strict';
 
@@ -19,19 +21,42 @@
             networkLayout: [
                 { x: 100, y: 100 }, { x: 250, y: 150 }, { x: 150, y: 250 },
                 { x: 400, y: 100 }, { x: 550, y: 150 }, { x: 450, y: 250 }
-            ]
+            ],
+            compatibilityLayer: null,
+            mainAppContainer: null
         },
 
         // --- Initialization ---
-        init(targetSelector, baseUrl) {
+        async init(targetSelector, baseUrl) {
             this.targetElement = document.querySelector(targetSelector);
             if (!this.targetElement) {
                 console.error('Models App: Target element not found');
                 return;
             }
             this.state.baseUrl = baseUrl;
-            this.loadCSS();
-            this.renderConsentScreen();
+
+            await this.loadDependencies();
+            this.state.compatibilityLayer = window.GreenhouseReactCompatibility;
+
+            await this.loadCSS();
+            await this.renderConsentScreen();
+        },
+
+        async loadDependencies() {
+            const utils = window.GreenhouseUtils;
+            if (!utils) {
+                console.error("Models App: GreenhouseUtils.js is required but not found.");
+                return;
+            }
+
+            const compatibilityScriptUrl = `${this.state.baseUrl}js/GreenhouseReactCompatibility.js`;
+            if (!window.GreenhouseReactCompatibility) {
+                try {
+                    await utils.loadScript(compatibilityScriptUrl, 'GreenhouseReactCompatibility');
+                } catch (error) {
+                    console.error('Models App: Failed to load GreenhouseReactCompatibility.js', error);
+                }
+            }
         },
 
         async loadCSS() {
@@ -50,46 +75,54 @@
         },
 
         // --- UI Rendering ---
-        renderConsentScreen() {
-            const container = this.createElement('div', { className: 'greenhouse-landing-container' });
-            // ... (consent screen UI remains the same)
-            const title = this.createElement('h1', { className: 'greenhouse-simulation-title' }, 'Neural Plasticity & CBT/DBT');
-            const intro = this.createElement('p', {}, 'This is a browser-based educational simulation...');
-            const disclaimer = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'Simulation — Educational model only...');
-            const consentLabel = this.createElement('label', { className: 'greenhouse-consent-label' });
-            const consentCheckbox = this.createElement('input', { type: 'checkbox', id: 'consent-checkbox', className: 'greenhouse-consent-checkbox', 'data-testid': 'consent-checkbox' });
-            consentLabel.append(consentCheckbox, 'I understand this simulation is educational only and not a substitute for clinical care.');
-            const startButton = this.createElement('button', { id: 'start-simulation-btn', className: 'greenhouse-btn-primary' }, 'Start Simulation');
+        async renderConsentScreen() {
+            const comp = this.state.compatibilityLayer;
+            const container = comp.createElementSafely('div', { className: 'greenhouse-landing-container' });
+
+            const title = comp.createElementSafely('h1', { className: 'greenhouse-simulation-title' }, 'Neural Plasticity & CBT/DBT');
+            const intro = comp.createElementSafely('p', {}, 'This is a browser-based educational simulation...');
+            const disclaimer = comp.createElementSafely('div', { className: 'greenhouse-disclaimer-banner' }, 'Simulation — Educational model only...');
+            const consentLabel = comp.createElementSafely('label', { className: 'greenhouse-consent-label' });
+            const consentCheckbox = comp.createElementSafely('input', { type: 'checkbox', id: 'consent-checkbox', className: 'greenhouse-consent-checkbox', 'data-testid': 'consent-checkbox' });
+
+            consentLabel.appendChild(consentCheckbox);
+            consentLabel.appendChild(document.createTextNode(' I understand this simulation is educational only and not a substitute for clinical care.'));
+
+            const startButton = comp.createElementSafely('button', { id: 'start-simulation-btn', className: 'greenhouse-btn-primary' }, 'Start Simulation');
             startButton.disabled = true;
 
-            container.append(title, intro, disclaimer, consentLabel, startButton);
-            this.targetElement.appendChild(container);
+            await comp.insertElementSafely(container, title);
+            await comp.insertElementSafely(container, intro);
+            await comp.insertElementSafely(container, disclaimer);
+            await comp.insertElementSafely(container, consentLabel);
+            await comp.insertElementSafely(container, startButton);
 
+            await this.replaceMainContainer(container);
             this.addConsentListeners();
         },
 
-        renderSimulationInterface() {
-            this.targetElement.innerHTML = '';
-            const mainContainer = this.createElement('div', { className: 'simulation-main-container' });
-            // ... (simulation interface structure remains the same)
-            const topBanner = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'Educational Model: Simulating conceptual brain activity for research.');
-            const contentArea = this.createElement('div', { style: 'display: flex; gap: 20px; margin-top: 20px;' });
-            const leftColumn = this.createElement('div', { style: 'flex: 3;' });
-            const canvas = this.createElement('canvas', { id: 'simulation-canvas', style: 'width: 100%; height: 400px; background: #f0f0f0; border-radius: 12px;' });
-            const metricsPanel = this.createElement('div', { id: 'metrics-panel', className: 'greenhouse-metrics-panel' });
-            // ... metrics panel structure
-            const rightColumn = this.createElement('div', { style: 'flex: 1;' });
-            const controlsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
-            // ... controls panel structure
+        async renderSimulationInterface() {
+            const comp = this.state.compatibilityLayer;
+            const mainContainer = comp.createElementSafely('div', { className: 'simulation-main-container' });
 
-            // Appending elements and adding simulation event listeners...
-            this.targetElement.appendChild(mainContainer);
-            mainContainer.append(topBanner, contentArea);
-            contentArea.append(leftColumn, rightColumn);
-            leftColumn.append(canvas, metricsPanel);
+            const topBanner = comp.createElementSafely('div', { className: 'greenhouse-disclaimer-banner' }, 'Educational Model: Simulating conceptual brain activity for research.');
+            const contentArea = comp.createElementSafely('div', { style: 'display: flex; gap: 20px; margin-top: 20px;' });
+            const leftColumn = comp.createElementSafely('div', { style: 'flex: 3;' });
+            const canvas = comp.createElementSafely('canvas', { id: 'simulation-canvas', style: 'width: 100%; height: 400px; background: #f0f0f0; border-radius: 12px;' });
+            const metricsPanel = comp.createElementSafely('div', { id: 'metrics-panel', className: 'greenhouse-metrics-panel' });
+            const rightColumn = comp.createElementSafely('div', { style: 'flex: 1;' });
+
+            await comp.insertElementSafely(mainContainer, topBanner);
+            await comp.insertElementSafely(mainContainer, contentArea);
+            await comp.insertElementSafely(contentArea, leftColumn);
+            await comp.insertElementSafely(contentArea, rightColumn);
+            await comp.insertElementSafely(leftColumn, canvas);
+            await comp.insertElementSafely(leftColumn, metricsPanel);
 
             this.populateMetricsPanel(metricsPanel);
-            this.populateControlsPanel(rightColumn); // Changed to pass rightColumn
+            await this.populateControlsPanel(rightColumn);
+
+            await this.replaceMainContainer(mainContainer);
 
             this.canvas = document.getElementById('simulation-canvas');
             this.ctx = this.canvas.getContext('2d');
@@ -98,7 +131,19 @@
             this.addSimulationListeners();
         },
 
+        async replaceMainContainer(newContainer) {
+            const comp = this.state.compatibilityLayer;
+            if (this.state.mainAppContainer && this.state.mainAppContainer.parentNode) {
+                await comp.removeElementSafely(this.state.mainAppContainer);
+            }
+            await comp.insertElementSafely(this.targetElement, newContainer);
+            this.state.mainAppContainer = newContainer;
+        },
+
         populateMetricsPanel(panel) {
+            // DANGEROUS: The use of innerHTML here can still cause issues, but is less
+            // likely to cause the main application crash than clearing the root container.
+            // This should be refactored in the future to use safe DOM manipulation methods.
             panel.innerHTML = `
                 <h3 class="greenhouse-panel-title">Metrics</h3>
                 <p>Synaptic Weight: <span id="metric-weight">0.50</span></p>
@@ -108,8 +153,9 @@
             `;
         },
 
-        populateControlsPanel(container) {
-            const controlsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
+        async populateControlsPanel(container) {
+            const comp = this.state.compatibilityLayer;
+            const controlsPanel = comp.createElementSafely('div', { className: 'greenhouse-controls-panel' });
             controlsPanel.innerHTML = `
                 <h3 class="greenhouse-panel-title">Controls</h3>
                 <label>Practice Intensity</label>
@@ -128,12 +174,13 @@
                 <button class="greenhouse-btn-secondary" id="play-pause-btn" style="margin-top: 10px;">Play</button>
                 <button class="greenhouse-btn-secondary" id="reset-btn" style="margin-top: 10px;">Reset Plasticity</button>
             `;
-            const instructionsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
+            const instructionsPanel = comp.createElementSafely('div', { className: 'greenhouse-controls-panel' });
             instructionsPanel.innerHTML = `
                 <h3 class="greenhouse-panel-title">Instructions</h3>
                 <p>Adjust the "Practice Intensity" to see how it affects the neural connections.</p>
             `;
-            container.append(controlsPanel, instructionsPanel);
+            await comp.insertElementSafely(container, controlsPanel);
+            await comp.insertElementSafely(container, instructionsPanel);
         },
 
 
@@ -361,24 +408,8 @@
         },
 
         // --- Utility ---
-        createElement(tag, attributes = {}, ...children) {
-            const element = document.createElement(tag);
-            for (const key in attributes) {
-                if (key.includes('-')) {
-                    element.setAttribute(key, attributes[key]);
-                } else {
-                    element[key] = attributes[key];
-                }
-            }
-            children.forEach(child => {
-                if (typeof child === 'string') {
-                    element.appendChild(document.createTextNode(child));
-                } else {
-                    element.appendChild(child);
-                }
-            });
-            return element;
-        }
+        // The custom createElement function has been removed in favor of
+        // GreenhouseReactCompatibility.createElementSafely to prevent DOM conflicts.
     };
 
     // --- Main Execution Logic ---
