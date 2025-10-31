@@ -1,7 +1,5 @@
 // docs/js/models.js
 
-// docs/js/models.js
-
 (function() {
     'use strict';
     console.log('Models App: Script execution started.');
@@ -135,8 +133,11 @@
                 if (wasRemoved) {
                     console.warn('Models App Resilience: Main container removed. Re-initializing.');
                     if (resilienceObserver) resilienceObserver.disconnect();
-                    this.state.isInitialized = false;
-                    this.init();
+                    setTimeout(() => {
+                        if (window.GreenhouseModels && typeof window.GreenhouseModels.reinitialize === 'function') {
+                            window.GreenhouseModels.reinitialize();
+                        }
+                    }, 5000);
                 }
             };
             resilienceObserver = new MutationObserver(observerCallback);
@@ -466,6 +467,7 @@
 
     window.GreenhouseModels = {
         reinitialize: () => {
+            console.log('Models App: Re-initializing from global scope.');
             GreenhouseModels.state.isInitialized = false;
             return GreenhouseModels.init();
         }
