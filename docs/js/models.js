@@ -150,14 +150,14 @@
             this.state.targetElement.innerHTML = '';
             const container = this.createElement('div', { className: 'greenhouse-landing-container' });
             container.innerHTML = `
-                <h1 class="greenhouse-simulation-title">Neural Plasticity & CBT/DBT</h1>
-                <p>This is a browser-based educational simulation...</p>
-                <div class="greenhouse-disclaimer-banner">Simulation — Educational model only...</div>
+                <h1 class="greenhouse-simulation-title">Exploring Neural Plasticity: A CBT & DBT Model</h1>
+                <p>An interactive simulation to help you visualize how therapeutic practices can change the brain.</p>
+                <div class="greenhouse-disclaimer-banner">Please Note: This is an educational simulation, not a medical tool.</div>
                 <label class="greenhouse-consent-label">
                     <input type="checkbox" id="consent-checkbox" class="greenhouse-consent-checkbox" data-testid="consent-checkbox">
-                    I understand this simulation is educational only and not a substitute for clinical care.
+                    I acknowledge that this is an educational tool and not a substitute for professional medical advice.
                 </label>
-                <button id="start-simulation-btn" class="greenhouse-btn-primary" disabled>Start Simulation</button>
+                <button id="start-simulation-btn" class="greenhouse-btn-primary" disabled>Launch Simulation</button>
             `;
             this.state.targetElement.appendChild(container);
             this.addConsentListeners();
@@ -166,12 +166,12 @@
         async renderSimulationInterface() {
             const mainContainer = this.createElement('div', { className: 'simulation-main-container' });
 
-            const topBanner = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'Educational Model: Simulating conceptual brain activity for research.');
-            const contentArea = this.createElement('div', { style: 'display: flex; gap: 20px; margin-top: 20px;' });
-            const leftColumn = this.createElement('div', { style: 'flex: 3;' });
+            const topBanner = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'For Educational Purposes: This model simulates conceptual brain activity.');
+            const contentArea = this.createElement('div', { className: 'simulation-content-area' });
+            const leftColumn = this.createElement('div', { className: 'simulation-left-column' });
             const canvas = this.createElement('canvas', { id: 'simulation-canvas', style: 'width: 100%; height: 400px; background: #f0f0f0; border-radius: 12px;' });
             const metricsPanel = this.createElement('div', { id: 'metrics-panel', className: 'greenhouse-metrics-panel' });
-            const rightColumn = this.createElement('div', { style: 'flex: 1;' });
+            const rightColumn = this.createElement('div', { className: 'simulation-right-column' });
 
             mainContainer.appendChild(topBanner);
             mainContainer.appendChild(contentArea);
@@ -202,7 +202,7 @@
 
         populateMetricsPanel(panel) {
             panel.innerHTML = `
-                <h3 class="greenhouse-panel-title">Metrics</h3>
+                <h3 class="greenhouse-panel-title">Real-Time Metrics</h3>
                 <p>Synaptic Weight: <span id="metric-weight">0.50</span></p>
                 <p>Neurotransmitters Released: <span id="metric-neuro">0</span></p>
                 <p>Ions Crossed: <span id="metric-ions">0</span></p>
@@ -213,27 +213,35 @@
         populateControlsPanel(container) {
             const controlsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
             controlsPanel.innerHTML = `
-                <h3 class="greenhouse-panel-title">Controls</h3>
-                <label>Practice Intensity</label>
-                <input type="range" min="0" max="100" value="50" class="greenhouse-slider" id="intensity-slider">
-                <label>Simulation Speed</label>
-                <select class="greenhouse-select" id="speed-select">
-                    <option>Slow</option>
-                    <option selected>Normal</option>
-                    <option>Fast</option>
-                </select>
-                <label style="margin-top: 10px;">Visualization Mode</label>
-                <select class="greenhouse-select" id="mode-select">
-                    <option value="synaptic" selected>Synaptic Close-up</option>
-                    <option value="network">Network Overview</option>
-                </select>
-                <button class="greenhouse-btn-secondary" id="play-pause-btn" style="margin-top: 10px;">Play</button>
-                <button class="greenhouse-btn-secondary" id="reset-btn" style="margin-top: 10px;">Reset Plasticity</button>
+                <h3 class="greenhouse-panel-title">Simulation Controls</h3>
+                <div class="control-group">
+                    <label>Practice Intensity</label>
+                    <input type="range" min="0" max="100" value="50" class="greenhouse-slider" id="intensity-slider">
+                </div>
+                <div class="control-group">
+                    <label>Simulation Speed</label>
+                    <select class="greenhouse-select" id="speed-select">
+                        <option>Slow</option>
+                        <option selected>Normal</option>
+                        <option>Fast</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Visualization Mode</label>
+                    <select class="greenhouse-select" id="mode-select">
+                        <option value="synaptic" selected>Synaptic Close-up</option>
+                        <option value="network">Network Overview</option>
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button class="greenhouse-btn greenhouse-btn-secondary" id="play-pause-btn">Play</button>
+                    <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn">Reset Plasticity</button>
+                </div>
             `;
             const instructionsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
             instructionsPanel.innerHTML = `
-                <h3 class="greenhouse-panel-title">Instructions</h3>
-                <p>Adjust the "Practice Intensity" to see how it affects the neural connections.</p>
+                <h3 class="greenhouse-panel-title">How to Use</h3>
+                <p>Use the controls to see how different parameters affect the strength of neural connections in real-time.</p>
             `;
             container.appendChild(controlsPanel);
             container.appendChild(instructionsPanel);
@@ -267,7 +275,9 @@
             document.getElementById('play-pause-btn').addEventListener('click', e => {
                 this.state.isRunning = !this.state.isRunning;
                 e.target.textContent = this.state.isRunning ? 'Pause' : 'Play';
-                if (this.state.isRunning) this.simulationLoop();
+                if (this.state.isRunning) {
+                    this.simulationLoop();
+                }
             });
             document.getElementById('reset-btn').addEventListener('click', () => {
                 this.state.isRunning = false;
