@@ -283,7 +283,7 @@
 
 
         async renderSimulationInterface(simulationData) {
-            this.targetElement.innerHTML = ''; // Clear the consent screen
+            this.state.targetElement.innerHTML = ''; // Clear the consent screen
             this.state.processedSimulation = simulationData; // Store the processed data
             const mainContainer = this.createElement('div', { className: 'simulation-main-container' });
 
