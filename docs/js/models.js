@@ -381,6 +381,50 @@
         }
     };
 
+    // --- Main Execution Logic ---
+
+    /**
+     * Retrieves configuration from the script tag attributes.
+     * @returns {{targetSelector: string, baseUrl: string}|null}
+     */
+    function getConfiguration() {
+        const scriptElement = document.currentScript;
+        if (!scriptElement) {
+            console.error('Models App: Could not find the current script element.');
+            return null;
+        }
+
+        // Use the 'target-selector-left' attribute passed by greenhouse.js
+        const targetSelector = scriptElement.getAttribute('data-target-selector-left');
+        const baseUrl = scriptElement.getAttribute('data-base-url');
+
+        if (!targetSelector || !baseUrl) {
+            console.error('Models App: Missing required data attributes (data-target-selector-left or data-base-url) on the script tag.');
+            return null;
+        }
+
+        return { targetSelector, baseUrl };
+    }
+
+    /**
+     * Main function to initialize the application.
+     */
+    function main() {
+        const config = getConfiguration();
+        if (config) {
+            // The init function expects the DOM to be ready to find the targetSelector
+            if (document.readyState === 'loading') {
+                 document.addEventListener('DOMContentLoaded', () => GreenhouseModels.init(config.targetSelector, config.baseUrl));
+            } else {
+                 GreenhouseModels.init(config.targetSelector, config.baseUrl);
+            }
+        }
+    }
+
+    // Execute the main function to start the application
+    main();
+
+    // Expose the main object for debugging purposes
     window.GreenhouseModels = GreenhouseModels;
 
 })();
