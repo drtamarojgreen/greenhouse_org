@@ -93,6 +93,7 @@
                 console.log('Models App: Target element found.');
                 await this.loadCSS();
                 console.log('Models App: CSS loaded.');
+                await new Promise(resolve => setTimeout(resolve, GreenhouseUtils.config.dom.insertionDelay));
                 this.renderConsentScreen();
                 this.state.isInitialized = true;
                 this.observeAndReinitializeApp(this.state.targetElement);
