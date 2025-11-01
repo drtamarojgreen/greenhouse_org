@@ -66,19 +66,29 @@
             simulationData: null,
             lexicon: null,
             consentGiven: false,
-            simulationRunning: false,
             isInitialized: false,
             isLoading: false,
-            intensity: 50,
-            speed: 'Normal',
-            isRunning: false,
-            synapticWeight: 0.5,
-            neurotransmitters: 0,
-            ionsCrossed: 0,
-            learningMetric: 0,
-            animationFrameId: null,
-            mode: 'synaptic', // 'synaptic' or 'network'
-            particles: [],
+
+            synaptic: {
+                isRunning: false,
+                intensity: 50,
+                speed: 'Normal',
+                synapticWeight: 0.5,
+                neurotransmitters: 0,
+                ionsCrossed: 0,
+                learningMetric: 0,
+                animationFrameId: null,
+                particles: []
+            },
+
+            network: {
+                isRunning: false,
+                intensity: 50,
+                speed: 'Normal',
+                synapticWeight: 0.5,
+                animationFrameId: null
+            },
+
             networkLayout: [
                 { x: 100, y: 100 }, { x: 250, y: 150 }, { x: 150, y: 250 },
                 { x: 400, y: 100 }, { x: 550, y: 150 }, { x: 450, y: 250 }
@@ -288,40 +298,56 @@
             const mainContainer = this.createElement('div', { className: 'simulation-main-container' });
 
             const topBanner = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'For Educational Purposes: This model simulates conceptual brain activity.');
-            const contentArea = this.createElement('div', { className: 'simulation-content-area' });
-            const leftColumn = this.createElement('div', { className: 'simulation-left-column' });
-            const canvas = this.createElement('canvas', { id: 'simulation-canvas', style: 'width: 100%; height: 400px; background: #f0f0f0; border-radius: 12px;' });
-            const metricsPanel = this.createElement('div', { id: 'metrics-panel', className: 'greenhouse-metrics-panel' });
-            const rightColumn = this.createElement('div', { className: 'simulation-right-column' });
 
-            // Metrics Panel - Now data-driven
-            const metricsTitle = this.createElement('h3', { className: 'greenhouse-panel-title' }, 'Metrics');
+            // Create three canvases
+            const canvasSynaptic = this.createElement('canvas', { id: 'canvas-synaptic', style: 'width: 100%; height: 250px; background: #f0f0f0; border-radius: 12px; margin-bottom: 15px;' });
+            const canvasNetwork = this.createElement('canvas', { id: 'canvas-network', style: 'width: 100%; height: 250px; background: #f0f0f0; border-radius: 12px; margin-bottom: 15px;' });
+            const canvasEnvironment = this.createElement('canvas', { id: 'canvas-environment', style: 'width: 100%; height: 250px; background: #e9e9e9; border-radius: 12px;' });
 
-            // Get initial weight from the first synapse, or default to 0
-            const initialWeight = simulationData.synapses.length > 0 ? simulationData.synapses[0].weight.toFixed(2) : 'N/A';
+            // Create container for simulation sections
+            const simulationSections = this.createElement('div', { className: 'simulation-sections' });
 
-            const synapticWeight = this.createElement('p', { id: 'metric-synaptic-weight' }, `Synaptic Weight: ${initialWeight}`);
-            const neurotransmitters = this.createElement('p', { id: 'metric-neurotransmitters' }, 'Neurotransmitters Released: 0');
-            const ionsCrossed = this.createElement('p', { id: 'metric-ions-crossed' }, 'Ions Crossed: 0');
-            const nodeCount = this.createElement('p', {}, `Node Count: ${simulationData.nodes.length}`);
-            metricsPanel.append(metricsTitle, synapticWeight, neurotransmitters, ionsCrossed, nodeCount);
-            mainContainer.appendChild(topBanner);
-            mainContainer.appendChild(contentArea);
-            contentArea.appendChild(leftColumn);
-            contentArea.appendChild(rightColumn);
-            leftColumn.appendChild(canvas);
-            leftColumn.appendChild(metricsPanel);
+            // Section 1: Synaptic
+            const synapticSection = this.createElement('div', { className: 'simulation-section' });
+            const synapticControls = this.createElement('div', { id: 'controls-synaptic' });
+            const synapticMetrics = this.createElement('div', { id: 'metrics-synaptic' });
+            synapticSection.append(canvasSynaptic, synapticControls, synapticMetrics);
 
-            this.populateMetricsPanel(metricsPanel);
-            this.populateControlsPanel(rightColumn);
+            // Section 2: Network
+            const networkSection = this.createElement('div', { className: 'simulation-section' });
+            const networkControls = this.createElement('div', { id: 'controls-network' });
+            const networkMetrics = this.createElement('div', { id: 'metrics-network' });
+            networkSection.append(canvasNetwork, networkControls, networkMetrics);
+
+            simulationSections.append(synapticSection, networkSection, canvasEnvironment);
+            mainContainer.append(topBanner, simulationSections);
 
             this.replaceMainContainer(mainContainer);
 
-            this.canvas = document.getElementById('simulation-canvas');
-            this.ctx = this.canvas.getContext('2d');
-            this.resizeCanvas();
+            // Populate controls and metrics for each simulation
+            this.populateControlsPanel(synapticControls, 'synaptic');
+            this.populateControlsPanel(networkControls, 'network');
+            this.populateMetricsPanel(synapticMetrics, 'synaptic');
+            this.populateMetricsPanel(networkMetrics, 'network');
+
+
+            // Store references to all canvases and their contexts
+            this.canvases = {
+                synaptic: document.getElementById('canvas-synaptic'),
+                network: document.getElementById('canvas-network'),
+                environment: document.getElementById('canvas-environment')
+            };
+            this.contexts = {
+                synaptic: this.canvases.synaptic.getContext('2d'),
+                network: this.canvases.network.getContext('2d'),
+                environment: this.canvases.environment.getContext('2d')
+            };
+
+            this.resizeAllCanvases();
             this.drawSynapticView();
+            this.drawNetworkView();
             this.addSimulationListeners();
+            this.bindSimulationControls();
         },
 
         replaceMainContainer(newContainer) {
@@ -332,13 +358,13 @@
             this.state.mainAppContainer = newContainer;
         },
 
-        populateMetricsPanel(panel) {
+        populateMetricsPanel(panel, type) {
             panel.innerHTML = `
-                <h3 class="greenhouse-panel-title">Real-Time Metrics</h3>
-                <p>Synaptic Weight: <span id="metric-weight">0.50</span></p>
-                <p>Neurotransmitters Released: <span id="metric-neuro">0</span></p>
-                <p>Ions Crossed: <span id="metric-ions">0</span></p>
-                <p>Learning Metric: <span id="metric-learning">0.0</span></p>
+                <h3 class="greenhouse-panel-title">Real-Time Metrics (${type})</h3>
+                <p>Synaptic Weight: <span id="metric-weight-${type}">0.50</span></p>
+                <p>Neurotransmitters Released: <span id="metric-neuro-${type}">0</span></p>
+                <p>Ions Crossed: <span id="metric-ions-${type}">0</span></p>
+                <p>Learning Metric: <span id="metric-learning-${type}">0.0</span></p>
             `;
         },
 
@@ -367,11 +393,15 @@
         },
 
         bindSimulationControls() {
-            const playPauseBtn = document.querySelector('.greenhouse-btn-secondary'); // Simple selector for demo
-            if(playPauseBtn) {
+            const playPauseBtn = document.getElementById('play-pause-btn-network');
+            const intensitySlider = document.getElementById('intensity-slider-network');
+            const speedSelect = document.getElementById('speed-select-network');
+            const resetBtn = document.getElementById('reset-btn-network');
+
+            if (playPauseBtn) {
                 playPauseBtn.addEventListener('click', () => {
-                    this.state.simulationRunning = !this.state.simulationRunning;
-                    if (this.state.simulationRunning) {
+                    this.state.network.isRunning = !this.state.network.isRunning;
+                    if (this.state.network.isRunning) {
                         this.runSimulation();
                         playPauseBtn.textContent = 'Pause';
                     } else {
@@ -379,14 +409,37 @@
                     }
                 });
             }
+
+            if (intensitySlider) {
+                intensitySlider.addEventListener('input', e => {
+                    this.state.network.intensity = parseInt(e.target.value, 10);
+                    if (!this.state.network.isRunning) this.drawNetworkView();
+                });
+            }
+
+            if (speedSelect) {
+                speedSelect.addEventListener('change', e => {
+                    this.state.network.speed = e.target.value;
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    this.state.network.isRunning = false;
+                    playPauseBtn.textContent = 'Play';
+                    this.state.network.synapticWeight = 0.5;
+                    this.update(); // Recalculate weight based on reset value
+                    this.drawNetworkView();
+                });
+            }
         },
 
         // ** SIMULATION & RENDERING LOGIC **
         runSimulation() {
-            if (!this.state.simulationRunning) return;
+            if (!this.state.network.isRunning) return;
 
             this.update();
-            this.draw();
+            this.drawNetworkView();
 
             requestAnimationFrame(() => this.runSimulation());
         },
@@ -398,87 +451,43 @@
 
             const synapse = synapses[0]; // Operate on the first synapse for this demo
             const η = synapse.plasticity_rate;
-            const p = document.querySelector('.greenhouse-slider').value / 100; // Intensity from slider
+            const p = this.state.network.intensity / 100; // Intensity from slider
             const λ = 0.0001; // Decay constant
 
             // LTP-like potentiation
-            const delta_w = η * p * (1 - synapse.weight);
-            synapse.weight += delta_w;
+            const delta_w = η * p * (1 - this.state.network.synapticWeight);
+            this.state.network.synapticWeight += delta_w;
 
             // Decay
-            synapse.weight *= Math.exp(-λ);
+            this.state.network.synapticWeight *= Math.exp(-λ);
 
             // Clamp weight
-            synapse.weight = Math.max(0.05, Math.min(synapse.weight, 1.2));
+            this.state.network.synapticWeight = Math.max(0.05, Math.min(this.state.network.synapticWeight, 1.2));
 
             // Update metrics UI
-            document.getElementById('metric-synaptic-weight').textContent = `Synaptic Weight: ${synapse.weight.toFixed(4)}`;
+            document.getElementById('metric-weight-network').textContent = this.state.network.synapticWeight.toFixed(4);
         },
 
-        draw() {
-            const canvas = document.getElementById('simulation-canvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            const { nodes, synapses } = this.state.processedSimulation;
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Simple visualization: draw nodes as circles and synapses as lines
-            const nodePositions = new Map();
-            nodes.forEach((node, i) => {
-                const x = 50 + i * 150;
-                const y = canvas.height / 2;
-                nodePositions.set(node.id, { x, y });
-
-                ctx.beginPath();
-                ctx.arc(x, y, 20, 0, 2 * Math.PI);
-                ctx.fillStyle = '#357438';
-                ctx.fill();
-                ctx.fillStyle = 'white';
-                ctx.textAlign = 'center';
-                ctx.fillText(node.label, x, y + 30);
-            });
-
-            if (synapses.length > 0) {
-                const synapse = synapses[0];
-                const prePos = nodePositions.get(synapse.pre);
-                const postPos = nodePositions.get(synapse.post);
-
-                ctx.beginPath();
-                ctx.moveTo(prePos.x, prePos.y);
-                ctx.lineTo(postPos.x, postPos.y);
-                ctx.lineWidth = synapse.weight * 10; // Visual weight
-                ctx.strokeStyle = '#1d7a1d';
-                ctx.stroke();
-            }
-        },
-
-        populateControlsPanel(container) {
+        populateControlsPanel(container, type) {
             const controlsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
             controlsPanel.innerHTML = `
-                <h3 class="greenhouse-panel-title">Simulation Controls</h3>
+                <h3 class="greenhouse-panel-title">Simulation Controls (${type})</h3>
                 <div class="control-group">
                     <label>Practice Intensity</label>
-                    <input type="range" min="0" max="100" value="50" class="greenhouse-slider" id="intensity-slider">
+                    <input type="range" min="0" max="100" value="50" class="greenhouse-slider" id="intensity-slider-${type}">
                 </div>
                 <div class="control-group">
                     <label>Simulation Speed</label>
-                    <select class="greenhouse-select" id="speed-select">
+                    <select class="greenhouse-select" id="speed-select-${type}">
                         <option>Slow</option>
                         <option selected>Normal</option>
                         <option>Fast</option>
                     </select>
                 </div>
-                <div class="control-group">
-                    <label>Visualization Mode</label>
-                    <select class="greenhouse-select" id="mode-select">
-                        <option value="synaptic" selected>Synaptic Close-up</option>
-                        <option value="network">Network Overview</option>
-                    </select>
-                </div>
                 <div class="button-group">
-                    <button class="greenhouse-btn greenhouse-btn-secondary" id="play-pause-btn">Play</button>
-                    <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn">Reset Plasticity</button>
+                    <button class="greenhouse-btn greenhouse-btn-secondary" id="play-pause-btn-${type}">Play</button>
+                    <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-${type}">Reset Plasticity</button>
                 </div>
             `;
             const instructionsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
@@ -491,87 +500,74 @@
         },
 
         addSimulationListeners() {
-            document.getElementById('intensity-slider').addEventListener('input', e => {
-                this.state.intensity = parseInt(e.target.value, 10);
-                if (!this.state.isRunning) this.drawSynapticView(); // Update view if paused
+            document.getElementById('intensity-slider-synaptic').addEventListener('input', e => {
+                this.state.synaptic.intensity = parseInt(e.target.value, 10);
+                if (!this.state.synaptic.isRunning) this.drawSynapticView(); // Update view if paused
             });
-            document.getElementById('speed-select').addEventListener('change', e => {
-                this.state.speed = e.target.value;
+            document.getElementById('speed-select-synaptic').addEventListener('change', e => {
+                this.state.synaptic.speed = e.target.value;
             });
-            document.getElementById('mode-select').addEventListener('change', e => {
-                this.state.mode = e.target.value;
-                if (!this.state.isRunning) {
-                    if (this.state.mode === 'synaptic') {
-                        this.drawSynapticView();
-                    } else {
-                        this.drawNetworkView();
-                    }
-                }
-            });
-            document.getElementById('play-pause-btn').addEventListener('click', e => {
-                this.state.isRunning = !this.state.isRunning;
-                e.target.textContent = this.state.isRunning ? 'Pause' : 'Play';
-                if (this.state.isRunning) {
+            document.getElementById('play-pause-btn-synaptic').addEventListener('click', e => {
+                this.state.synaptic.isRunning = !this.state.synaptic.isRunning;
+                e.target.textContent = this.state.synaptic.isRunning ? 'Pause' : 'Play';
+                if (this.state.synaptic.isRunning) {
                     this.simulationLoop();
                 }
             });
-            document.getElementById('reset-btn').addEventListener('click', () => {
-                this.state.isRunning = false;
-                document.getElementById('play-pause-btn').textContent = 'Play';
-                Object.assign(this.state, {
+            document.getElementById('reset-btn-synaptic').addEventListener('click', () => {
+                this.state.synaptic.isRunning = false;
+                document.getElementById('play-pause-btn-synaptic').textContent = 'Play';
+                Object.assign(this.state.synaptic, {
                     synapticWeight: 0.5, neurotransmitters: 0, ionsCrossed: 0, learningMetric: 0
                 });
                 this.updateMetrics();
                 this.drawSynapticView();
             });
-            window.addEventListener('resize', () => this.resizeCanvas());
+            window.addEventListener('resize', () => this.resizeAllCanvases());
         },
 
         simulationLoop() {
-            if (!this.state.isRunning) {
-                cancelAnimationFrame(this.state.animationFrameId);
+            if (!this.state.synaptic.isRunning) {
+                cancelAnimationFrame(this.state.synaptic.animationFrameId);
                 return;
             }
 
-            const potentiation = (this.state.intensity / 10000);
+            const potentiation = (this.state.synaptic.intensity / 10000);
             const decay = 0.0005;
-            this.state.synapticWeight += potentiation - decay;
-            this.state.synapticWeight = Math.max(0.1, Math.min(1.0, this.state.synapticWeight));
+            this.state.synaptic.synapticWeight += potentiation - decay;
+            this.state.synaptic.synapticWeight = Math.max(0.1, Math.min(1.0, this.state.synaptic.synapticWeight));
 
-            this.state.neurotransmitters = Math.floor(this.state.intensity * this.state.synapticWeight);
-            this.state.ionsCrossed = Math.floor(this.state.neurotransmitters * 1.5);
-            this.state.learningMetric = this.state.synapticWeight;
+            this.state.synaptic.neurotransmitters = Math.floor(this.state.synaptic.intensity * this.state.synaptic.synapticWeight);
+            this.state.synaptic.ionsCrossed = Math.floor(this.state.synaptic.neurotransmitters * 1.5);
+            this.state.synaptic.learningMetric = this.state.synaptic.synapticWeight;
 
             this.updateMetrics();
-            if (this.state.mode === 'synaptic') {
-                this.drawSynapticView();
-            } else {
-                this.drawNetworkView();
-            }
+            this.drawSynapticView();
 
             const speedMap = { 'Slow': 1000, 'Normal': 500, 'Fast': 250 };
             setTimeout(() => {
-                this.state.animationFrameId = requestAnimationFrame(() => this.simulationLoop());
-            }, speedMap[this.state.speed]);
+                this.state.synaptic.animationFrameId = requestAnimationFrame(() => this.simulationLoop());
+            }, speedMap[this.state.synaptic.speed]);
         },
 
         updateMetrics() {
-            document.getElementById('metric-weight').textContent = this.state.synapticWeight.toFixed(2);
-            document.getElementById('metric-neuro').textContent = this.state.neurotransmitters;
-            document.getElementById('metric-ions').textContent = this.state.ionsCrossed;
-            document.getElementById('metric-learning').textContent = this.state.learningMetric.toFixed(2);
+            document.getElementById('metric-weight-synaptic').textContent = this.state.synaptic.synapticWeight.toFixed(2);
+            document.getElementById('metric-neuro-synaptic').textContent = this.state.synaptic.neurotransmitters;
+            document.getElementById('metric-ions-synaptic').textContent = this.state.synaptic.ionsCrossed;
+            document.getElementById('metric-learning-synaptic').textContent = this.state.synaptic.learningMetric.toFixed(2);
         },
 
         updateParticles() {
-            const { ctx, canvas } = this;
+            const ctx = this.contexts.synaptic;
+            const canvas = this.canvases.synaptic;
             const { width, height } = canvas;
             const cleftTop = height / 2 - 10;
             const cleftBottom = height / 2 + 10;
 
-            this.state.particles.forEach((p, index) => {
+            this.state.synaptic.particles.forEach((p, index) => {
                 p.y += p.vy;
                 if (p.y > cleftBottom) {
-                    this.state.particles.splice(index, 1);
+                    this.state.synaptic.particles.splice(index, 1);
                     return;
                 }
                 ctx.fillStyle = p.color;
@@ -580,10 +576,10 @@
                 ctx.fill();
             });
 
-            if (this.state.isRunning) {
-                const newParticles = this.state.neurotransmitters / 20;
+            if (this.state.synaptic.isRunning) {
+                const newParticles = this.state.synaptic.neurotransmitters / 20;
                 for (let i = 0; i < newParticles; i++) {
-                    this.state.particles.push({
+                    this.state.synaptic.particles.push({
                         x: Math.random() * (width * 0.6) + (width * 0.2),
                         y: cleftTop - 5,
                         vy: 1 + Math.random(),
@@ -595,7 +591,8 @@
         },
 
         drawSynapticView() {
-            const { ctx, canvas } = this;
+            const ctx = this.contexts.synaptic;
+            const canvas = this.canvases.synaptic;
             if (!ctx) return;
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
@@ -618,7 +615,7 @@
 
             this.updateParticles();
 
-            ctx.fillStyle = `rgba(45, 62, 45, ${this.state.synapticWeight * 0.7})`;
+            ctx.fillStyle = `rgba(45, 62, 45, ${this.state.synaptic.synapticWeight * 0.7})`;
             ctx.fillRect(width * 0.2, height / 2 - 5, width * 0.6, 10);
         },
 
@@ -646,7 +643,9 @@
         },
 
         drawNetworkView() {
-            const { ctx, canvas } = this;
+            const ctx = this.contexts.network;
+            const canvas = this.canvases.network;
+            if (!ctx) return;
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
 
@@ -670,17 +669,25 @@
             });
         },
 
-        resizeCanvas() {
-            const canvas = this.canvas;
-            if (canvas) {
-                canvas.width = canvas.offsetWidth;
-                canvas.height = canvas.offsetHeight;
-                if (this.state.mode === 'synaptic') {
-                    this.drawSynapticView();
-                } else {
-                    this.drawNetworkView();
+        drawEnvironmentView() {
+            const ctx = this.contexts.environment;
+            const canvas = this.canvases.environment;
+            const { width, height } = canvas;
+            ctx.clearRect(0, 0, width, height);
+            // This canvas is intentionally left blank for now.
+        },
+
+        resizeAllCanvases() {
+            for (const key in this.canvases) {
+                const canvas = this.canvases[key];
+                if (canvas) {
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = canvas.offsetHeight;
                 }
             }
+            this.drawSynapticView();
+            this.drawNetworkView();
+            this.drawEnvironmentView();
         },
 
         createElement(tag, attributes = {}, ...children) {
