@@ -44,20 +44,27 @@
             targetElement.innerHTML = '';
             const mainContainer = this.createElement('div', { className: 'simulation-main-container' });
             const topBanner = this.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'For Educational Purposes: This model simulates conceptual brain activity.');
+
+            const contentArea = this.createElement('div', { className: 'simulation-content-area' });
+            const leftColumn = this.createElement('div', { className: 'simulation-left-column' });
+            const rightColumn = this.createElement('div', { className: 'simulation-right-column' });
+
             const canvasSynaptic = this.createElement('canvas', { id: 'canvas-synaptic', style: 'width: 100%; height: 250px; background: #f0f0f0; border-radius: 12px; margin-bottom: 15px;' });
             const canvasNetwork = this.createElement('canvas', { id: 'canvas-network', style: 'width: 100%; height: 250px; background: #f0f0f0; border-radius: 12px; margin-bottom: 15px;' });
             const canvasEnvironment = this.createElement('canvas', { id: 'canvas-environment', style: 'width: 100%; height: 250px; background: #e9e9e9; border-radius: 12px;' });
-            const simulationSections = this.createElement('div', { className: 'simulation-sections' });
-            const synapticSection = this.createElement('div', { className: 'simulation-section' });
+            
             const synapticControls = this.createElement('div', { id: 'controls-synaptic' });
-            const synapticMetrics = this.createElement('div', { id: 'metrics-synaptic' });
-            synapticSection.append(canvasSynaptic, synapticControls, synapticMetrics);
-            const networkSection = this.createElement('div', { className: 'simulation-section' });
             const networkControls = this.createElement('div', { id: 'controls-network' });
+
+            leftColumn.append(canvasSynaptic, synapticControls, canvasNetwork, networkControls, canvasEnvironment);
+
+            const synapticMetrics = this.createElement('div', { id: 'metrics-synaptic' });
             const networkMetrics = this.createElement('div', { id: 'metrics-network' });
-            networkSection.append(canvasNetwork, networkControls, networkMetrics);
-            simulationSections.append(synapticSection, networkSection, canvasEnvironment);
-            mainContainer.append(topBanner, simulationSections);
+
+            rightColumn.append(synapticMetrics, networkMetrics);
+
+            contentArea.append(leftColumn, rightColumn);
+            mainContainer.append(topBanner, contentArea);
 
             this.replaceMainContainer(targetElement, mainContainer);
 
