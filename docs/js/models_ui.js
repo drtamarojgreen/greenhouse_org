@@ -56,11 +56,16 @@
             const synapticControls = this.createElement('div', { id: 'controls-synaptic' });
             const networkControls = this.createElement('div', { id: 'controls-network' });
 
-            leftColumn.append(canvasSynaptic, synapticControls, canvasNetwork, networkControls, canvasEnvironment);
+            // The third canvas (Environment) goes on the left.
+            leftColumn.append(canvasEnvironment);
+
+            // The first two canvases (Synaptic, Network) and their controls go on the right.
+            rightColumn.append(canvasSynaptic, synapticControls, canvasNetwork, networkControls);
 
             const synapticMetrics = this.createElement('div', { id: 'metrics-synaptic' });
             const networkMetrics = this.createElement('div', { id: 'metrics-network' });
 
+            // The metrics also go on the right.
             rightColumn.append(synapticMetrics, networkMetrics);
 
             contentArea.append(leftColumn, rightColumn);
