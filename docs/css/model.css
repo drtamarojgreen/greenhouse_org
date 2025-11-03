@@ -142,6 +142,15 @@ a {
     gap: 1.5em;
 }
 
+#canvas-synaptic,
+#canvas-network,
+#canvas-environment {
+    height: auto !important; /* Override inline style */
+    flex-grow: 1; /* Allow canvas to grow and fill the column */
+    min-height: 250px; /* Maintain a minimum size */
+}
+
+
 /* --- Typography & Color --- */
 .greenhouse-simulation-title {
     font-size: 2.5rem; /* Larger and bolder */
