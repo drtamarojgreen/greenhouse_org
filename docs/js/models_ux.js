@@ -4,6 +4,12 @@
     'use strict';
     let resilienceObserver = null;
     const GreenhouseModelsUX = {
+        config: {
+            COMMUNITY_BOOST_THRESHOLD: 0.7,
+            COMMUNITY_BOOST_FACTOR: 1.5,
+            GENETICS_RISK_THRESHOLD: 0.8,
+            GENETICS_RISK_FACTOR: 0.999
+        },
         state: {
             consentGiven: false,
             isInitialized: false,
@@ -31,6 +37,15 @@
                 synapticWeight: 0.5,
                 animationFrameId: null,
                 actionPotentials: []
+            },
+
+            environment: {
+                isRunning: false,
+                community: 0.5,
+                society: 0.5,
+                genetics: 0.5,
+                environment: 0.5,
+                animationFrameId: null
             },
 
             networkLayout: [
@@ -115,6 +130,11 @@
         },
 
         bindSimulationControls() {
+            this.bindNetworkControls();
+            this.bindEnvironmentControls();
+        },
+
+        bindNetworkControls() {
             const playPauseBtn = document.getElementById('play-pause-btn-network');
             const intensitySlider = document.getElementById('intensity-slider-network');
             const speedSelect = document.getElementById('speed-select-network');
@@ -159,6 +179,36 @@
             }
         },
 
+        bindEnvironmentControls() {
+            const playPauseBtn = document.getElementById('play-pause-btn-environment');
+            const resetBtn = document.getElementById('reset-btn-environment');
+
+            if (playPauseBtn) {
+                playPauseBtn.addEventListener('click', () => {
+                    this.state.environment.isRunning = !this.state.environment.isRunning;
+                    if (this.state.environment.isRunning) {
+                        this.runEnvironmentSimulation();
+                        playPauseBtn.textContent = 'Pause';
+                    } else {
+                        cancelAnimationFrame(this.state.environment.animationFrameId);
+                        playPauseBtn.textContent = 'Play';
+                    }
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    this.state.environment.isRunning = false;
+                    cancelAnimationFrame(this.state.environment.animationFrameId);
+                    playPauseBtn.textContent = 'Play';
+                    Object.assign(this.state.environment, {
+                        community: 0.5, society: 0.5, genetics: 0.5, environment: 0.5
+                    });
+                    GreenhouseModelsUI.drawEnvironmentView();
+                });
+            }
+        },
+
         runSimulation() {
             if (!this.state.network.isRunning) {
                 cancelAnimationFrame(this.state.network.animationFrameId);
@@ -193,9 +243,33 @@
                 return true;
             });
 
+            // Genetics influence
+            if (this.state.environment.genetics > this.config.GENETICS_RISK_THRESHOLD) {
+                this.state.network.synapticWeight *= this.config.GENETICS_RISK_FACTOR;
+            }
+
             GreenhouseModelsUI.drawNetworkView();
 
             this.state.network.animationFrameId = requestAnimationFrame(() => this.runSimulation());
+        },
+
+        runEnvironmentSimulation() {
+            if (!this.state.environment.isRunning) {
+                cancelAnimationFrame(this.state.environment.animationFrameId);
+                return;
+            }
+
+            // Fluctuate the environment factors
+            const factors = ['community', 'society', 'genetics', 'environment'];
+            factors.forEach(factor => {
+                const currentValue = this.state.environment[factor];
+                const change = (Math.random() - 0.5) * 0.1; // Small random change
+                this.state.environment[factor] = Math.max(0, Math.min(1, currentValue + change));
+            });
+
+            GreenhouseModelsUI.drawEnvironmentView();
+
+            this.state.environment.animationFrameId = requestAnimationFrame(() => this.runEnvironmentSimulation());
         },
 
         addSimulationListeners() {
@@ -231,7 +305,8 @@
                 return;
             }
 
-            const potentiation = (this.state.synaptic.intensity / 10000);
+            const communityBoost = this.state.environment.community > this.config.COMMUNITY_BOOST_THRESHOLD ? this.config.COMMUNITY_BOOST_FACTOR : 1;
+            const potentiation = (this.state.synaptic.intensity / 10000) * communityBoost;
             const decay = 0.0005;
             this.state.synaptic.synapticWeight += potentiation - decay;
             this.state.synaptic.synapticWeight = Math.max(0.1, Math.min(1.0, this.state.synaptic.synapticWeight));

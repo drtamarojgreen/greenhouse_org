@@ -55,9 +55,10 @@
             
             const synapticControls = this.createElement('div', { id: 'controls-synaptic' });
             const networkControls = this.createElement('div', { id: 'controls-network' });
+            const environmentControls = this.createElement('div', { id: 'controls-environment' });
 
             // The third canvas (Environment) goes on the left.
-            leftColumn.append(canvasEnvironment);
+            leftColumn.append(canvasEnvironment, environmentControls);
 
             // The first two canvases (Synaptic, Network) and their controls go on the right.
             rightColumn.append(canvasSynaptic, synapticControls, canvasNetwork, networkControls);
@@ -75,6 +76,7 @@
 
             this.populateControlsPanel(synapticControls, 'synaptic');
             this.populateControlsPanel(networkControls, 'network');
+            this.populateControlsPanel(document.getElementById('controls-environment'), 'environment');
             this.populateMetricsPanel(synapticMetrics, 'synaptic');
             this.populateMetricsPanel(networkMetrics, 'network');
 
@@ -114,32 +116,44 @@
 
         populateControlsPanel(container, type) {
             const controlsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
-            controlsPanel.innerHTML = `
-                <h3 class="greenhouse-panel-title">Simulation Controls (${type})</h3>
-                <div class="control-group">
-                    <label>Practice Intensity</label>
-                    <input type="range" min="0" max="100" value="50" class="greenhouse-slider" id="intensity-slider-${type}">
-                </div>
-                <div class="control-group">
-                    <label>Simulation Speed</label>
-                    <select class="greenhouse-select" id="speed-select-${type}">
-                        <option>Slow</option>
-                        <option selected>Normal</option>
-                        <option>Fast</option>
-                    </select>
-                </div>
+            let controlsHtml = `<h3 class="greenhouse-panel-title">Simulation Controls (${type})</h3>`;
+
+            if (type === 'synaptic' || type === 'network') {
+                controlsHtml += `
+                    <div class="control-group">
+                        <label>Practice Intensity</label>
+                        <input type="range" min="0" max="100" value="50" class="greenhouse-slider" id="intensity-slider-${type}">
+                    </div>
+                    <div class="control-group">
+                        <label>Simulation Speed</label>
+                        <select class="greenhouse-select" id="speed-select-${type}">
+                            <option>Slow</option>
+                            <option selected>Normal</option>
+                            <option>Fast</option>
+                        </select>
+                    </div>
+                `;
+            }
+
+            controlsHtml += `
                 <div class="button-group">
                     <button class="greenhouse-btn greenhouse-btn-secondary" id="play-pause-btn-${type}">Play</button>
-                    <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-${type}">Reset Plasticity</button>
+                    <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-${type}">Reset</button>
                 </div>
             `;
-            const instructionsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
-            instructionsPanel.innerHTML = `
-                <h3 class="greenhouse-panel-title">How to Use</h3>
-                <p>Use the controls to see how different parameters affect the strength of neural connections in real-time.</p>
-            `;
+
+            controlsPanel.innerHTML = controlsHtml;
+
             container.appendChild(controlsPanel);
-            container.appendChild(instructionsPanel);
+
+            if (type === 'synaptic' || type === 'network') {
+                const instructionsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
+                instructionsPanel.innerHTML = `
+                    <h3 class="greenhouse-panel-title">How to Use</h3>
+                    <p>Use the controls to see how different parameters affect the strength of neural connections in real-time.</p>
+                `;
+                container.appendChild(instructionsPanel);
+            }
         },
 
         updateMetrics() {
@@ -382,9 +396,38 @@
 
         drawEnvironmentView() {
             const ctx = this.contexts.environment;
+            if (!ctx) return;
             const canvas = this.canvases.environment;
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
+
+            // Draw brain outline
+            ctx.strokeStyle = '#2d3e2d';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(width / 2, 50);
+            ctx.bezierCurveTo(width / 4, 50, width / 4, height / 2, width / 2, height - 50);
+            ctx.bezierCurveTo(width * 3 / 4, height / 2, width * 3 / 4, 50, width / 2, 50);
+            ctx.stroke();
+
+            // Draw icons
+            const factors = ['community', 'society', 'genetics', 'environment'];
+            factors.forEach((factor, index) => {
+                const angle = (index / factors.length) * 2 * Math.PI;
+                const x = width / 2 + Math.cos(angle) * 100;
+                const y = height / 2 + Math.sin(angle) * 100;
+                const value = this.state.environment[factor];
+
+                ctx.fillStyle = `rgba(53, 116, 56, ${value})`;
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, 2 * Math.PI);
+                ctx.fill();
+
+                ctx.fillStyle = '#2d3e2d';
+                ctx.font = '12px Quicksand, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(factor, x, y + 30);
+            });
         },
 
         resizeAllCanvases() {
