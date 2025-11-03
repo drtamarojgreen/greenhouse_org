@@ -29,12 +29,13 @@
                 intensity: 50,
                 speed: 'Normal',
                 synapticWeight: 0.5,
-                animationFrameId: null
+                animationFrameId: null,
+                actionPotentials: []
             },
 
             networkLayout: [
-                { x: 100, y: 100 }, { x: 250, y: 150 }, { x: 150, y: 250 },
-                { x: 400, y: 100 }, { x: 550, y: 150 }, { x: 450, y: 250 }
+                { x: 100, y: 100, activation: 0 }, { x: 250, y: 150, activation: 0 }, { x: 150, y: 250, activation: 0 },
+                { x: 400, y: 100, activation: 0 }, { x: 550, y: 150, activation: 0 }, { x: 450, y: 250, activation: 0 }
             ],
             mainAppContainer: null
         },
@@ -126,6 +127,7 @@
                         this.runSimulation();
                         playPauseBtn.textContent = 'Pause';
                     } else {
+                        cancelAnimationFrame(this.state.network.animationFrameId);
                         playPauseBtn.textContent = 'Play';
                     }
                 });
@@ -147,21 +149,53 @@
             if (resetBtn) {
                 resetBtn.addEventListener('click', () => {
                     this.state.network.isRunning = false;
+                    cancelAnimationFrame(this.state.network.animationFrameId);
                     playPauseBtn.textContent = 'Play';
                     this.state.network.synapticWeight = 0.5;
-                    this.state.network = GreenhouseModelsData.update(this.state.network); // Recalculate weight
+                    this.state.networkLayout.forEach(n => n.activation = 0);
+                    this.state.network.actionPotentials = [];
                     GreenhouseModelsUI.drawNetworkView();
                 });
             }
         },
 
         runSimulation() {
-            if (!this.state.network.isRunning) return;
+            if (!this.state.network.isRunning) {
+                cancelAnimationFrame(this.state.network.animationFrameId);
+                return;
+            }
 
-            this.state.network = GreenhouseModelsData.update(this.state.network);
+            // Fire new action potentials based on intensity
+            if (Math.random() < this.state.network.intensity / 200) {
+                const startNode = Math.floor(Math.random() * this.state.networkLayout.length);
+                const endNode = Math.floor(Math.random() * this.state.networkLayout.length);
+                if (startNode !== endNode) {
+                    this.state.network.actionPotentials.push({
+                        from: startNode,
+                        to: endNode,
+                        progress: 0
+                    });
+                }
+            }
+
+            // Update neuron activations and decay them
+            this.state.networkLayout.forEach(node => {
+                node.activation *= 0.9; // Decay activation
+            });
+
+            // Update and draw action potentials
+            this.state.network.actionPotentials = this.state.network.actionPotentials.filter(ap => {
+                ap.progress += 0.05; // Speed of signal
+                if (ap.progress >= 1) {
+                    this.state.networkLayout[ap.to].activation = 1; // Activate target neuron
+                    return false; // Remove finished potential
+                }
+                return true;
+            });
+
             GreenhouseModelsUI.drawNetworkView();
 
-            requestAnimationFrame(() => this.runSimulation());
+            this.state.network.animationFrameId = requestAnimationFrame(() => this.runSimulation());
         },
 
         addSimulationListeners() {

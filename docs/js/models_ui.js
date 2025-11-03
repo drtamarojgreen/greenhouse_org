@@ -149,30 +149,43 @@
             const ctx = this.contexts.synaptic;
             const canvas = this.canvases.synaptic;
             const { width, height } = canvas;
-            const cleftTop = height / 2 - 10;
-            const cleftBottom = height / 2 + 10;
+            const releaseZoneY = height / 2 - 55;
+            const receptorZoneY = height / 2 - 5;
+            const terminalWidth = width / 2.5;
 
             this.state.synaptic.particles.forEach((p, index) => {
                 p.y += p.vy;
-                if (p.y > cleftBottom) {
+                p.x += p.vx;
+                p.opacity -= 0.01; // Fade out
+
+                if (p.y > receptorZoneY || p.opacity <= 0) {
+                    // Create a binding flash effect
+                    if (p.y > receptorZoneY) {
+                        ctx.fillStyle = `rgba(255, 255, 100, ${p.opacity * 2})`;
+                        ctx.beginPath();
+                        ctx.arc(p.x, receptorZoneY, 8, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
                     this.state.synaptic.particles.splice(index, 1);
                     return;
                 }
-                ctx.fillStyle = p.color;
+
+                ctx.fillStyle = `rgba(0, 123, 255, ${p.opacity})`;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                 ctx.fill();
             });
 
             if (this.state.synaptic.isRunning) {
-                const newParticles = this.state.synaptic.neurotransmitters / 20;
+                const newParticles = this.state.synaptic.neurotransmitters / 25; // Adjusted density
                 for (let i = 0; i < newParticles; i++) {
                     this.state.synaptic.particles.push({
-                        x: Math.random() * (width * 0.6) + (width * 0.2),
-                        y: cleftTop - 5,
-                        vy: 1 + Math.random(),
-                        radius: 2 + Math.random() * 2,
-                        color: `rgba(0, 123, 255, ${Math.random() * 0.5 + 0.5})`
+                        x: width / 2 + (Math.random() - 0.5) * terminalWidth,
+                        y: releaseZoneY + (Math.random() * 20), // Release from a zone
+                        vx: (Math.random() - 0.5) * 0.5, // Slight horizontal drift
+                        vy: 0.8 + Math.random() * 0.5, // Slower, more deliberate speed
+                        radius: 2 + Math.random() * 1,
+                        opacity: 0.8 + Math.random() * 0.2 // Initial opacity
                     });
                 }
             }
@@ -185,44 +198,128 @@
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
 
-            const preSynapticY = height / 2 - 50;
-            const cleftHeight = 20;
+            const preSynapticY = height / 2 - 40;
+            const postSynapticY = height / 2 + 40;
+            const terminalWidth = width / 2.5;
 
-            ctx.fillStyle = 'rgba(115, 39, 81, 0.8)';
+            // Pre-synaptic terminal (more detailed)
+            ctx.fillStyle = 'rgba(115, 39, 81, 0.7)';
+            ctx.strokeStyle = 'rgba(85, 9, 51, 0.9)';
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(width / 2, preSynapticY, width / 3, 0.2 * Math.PI, 0.8 * Math.PI);
+            ctx.moveTo(width / 2 - terminalWidth, preSynapticY - 60);
+            ctx.quadraticCurveTo(width / 2, preSynapticY + 20, width / 2 + terminalWidth, preSynapticY - 60);
+            ctx.stroke();
             ctx.fill();
 
-            ctx.fillStyle = '#f0f0f0';
-            ctx.fillRect(0, preSynapticY + 30, width, cleftHeight);
+            // Synaptic vesicles
+            const vesicleCount = 15;
+            const releaseZoneY = preSynapticY - 15;
+            ctx.fillStyle = 'rgba(255, 220, 150, 0.8)';
+            for (let i = 0; i < vesicleCount; i++) {
+                const x = width / 2 + (Math.random() - 0.5) * terminalWidth * 1.5;
+                // Position vesicles closer to the bottom edge of the terminal
+                const y = releaseZoneY - 5 - Math.random() * 40;
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
 
-            ctx.fillStyle = 'rgba(53, 116, 56, 0.8)';
+            // Synaptic Cleft
+            const cleftTop = preSynapticY - 10;
+            const cleftBottom = postSynapticY - 70;
+            const gradient = ctx.createLinearGradient(0, cleftTop, 0, cleftBottom);
+            gradient.addColorStop(0, 'rgba(240, 240, 240, 0.1)');
+            gradient.addColorStop(0.5, 'rgba(220, 220, 255, 0.3)');
+            gradient.addColorStop(1, 'rgba(240, 240, 240, 0.1)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, cleftTop, width, cleftBottom - cleftTop);
+
+
+            // Post-synaptic terminal (more detailed) with receptors
+            ctx.fillStyle = 'rgba(53, 116, 56, 0.7)';
+            ctx.strokeStyle = 'rgba(23, 86, 26, 0.9)';
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(width / 2, height / 2 + 50, width / 3, 1.2 * Math.PI, 1.8 * Math.PI, true);
+            ctx.moveTo(width / 2 - terminalWidth, postSynapticY);
+            ctx.quadraticCurveTo(width / 2, postSynapticY - 120, width / 2 + terminalWidth, postSynapticY);
+            ctx.stroke();
             ctx.fill();
+
+            // Receptors
+            const receptorCount = 20;
+            ctx.fillStyle = 'rgba(70, 150, 255, 0.9)';
+            for (let i = 0; i < receptorCount; i++) {
+                const x = width / 2 + (i - receptorCount / 2) * (terminalWidth * 1.2 / receptorCount);
+                const y = postSynapticY - 75;
+                ctx.fillRect(x, y, 3, 8);
+            }
 
             this.updateParticles();
 
-            ctx.fillStyle = `rgba(45, 62, 45, ${this.state.synaptic.synapticWeight * 0.7})`;
-            ctx.fillRect(width * 0.2, height / 2 - 5, width * 0.6, 10);
+            // Synaptic strength indicator (more subtle)
+            ctx.fillStyle = `rgba(255, 255, 100, ${this.state.synaptic.synapticWeight * 0.5})`;
+            ctx.beginPath();
+            const strengthRadius = this.state.synaptic.synapticWeight * 15;
+            ctx.arc(width / 2, height / 2 - 25, strengthRadius, 0, Math.PI * 2);
+            ctx.fill();
         },
 
-        drawNeuron(ctx, x, y, radius) {
-            ctx.fillStyle = 'rgba(53, 116, 56, 0.9)';
+        drawNeuron(ctx, x, y, radius, activation = 0) {
+            // Soma (cell body)
+            const somaGradient = ctx.createRadialGradient(x - radius * 0.2, y - radius * 0.2, radius * 0.1, x, y, radius);
+            somaGradient.addColorStop(0, 'rgba(150, 255, 150, 0.9)'); // Lighter center for 3D effect
+            somaGradient.addColorStop(1, `rgba(53, 116, 56, ${0.8 + activation * 0.2})`); // Base color, brighter with activation
+
+            ctx.fillStyle = somaGradient;
+            ctx.shadowColor = `rgba(180, 255, 180, ${activation * 0.7})`;
+            ctx.shadowBlur = 15 * activation;
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fill();
+            ctx.shadowBlur = 0; // Reset shadow
 
-            const dendriteCount = 5 + Math.floor(Math.random() * 3);
-            ctx.strokeStyle = 'rgba(45, 62, 45, 0.7)';
+            // Axon
+            ctx.strokeStyle = `rgba(45, 62, 45, ${0.6 + activation * 0.3})`;
+            ctx.lineWidth = 2 + activation * 2;
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.bezierCurveTo(x + radius * 2, y, x + radius * 2.5, y + radius * 1.5, x + radius * 3, y + radius * 3);
+            ctx.stroke();
+
+            // Dendrites
+            const dendriteCount = 6;
+            ctx.strokeStyle = `rgba(45, 62, 45, ${0.5 + activation * 0.2})`;
             ctx.lineWidth = 1.5;
 
             for (let i = 0; i < dendriteCount; i++) {
-                const angle = (i / dendriteCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
-                const length = radius * (1.5 + Math.random());
+                const angle = (i / dendriteCount) * Math.PI * 1.5 - Math.PI * 0.75; // Only on one side
+                const startLength = radius * (1.1 + Math.random() * 0.2);
+                const endLength = radius * (1.5 + Math.random() * 0.5);
+
+                const startX = x + Math.cos(angle) * startLength;
+                const startY = y + Math.sin(angle) * startLength;
+                const endX = x + Math.cos(angle - 0.1 + Math.random() * 0.2) * endLength;
+                const endY = y + Math.sin(angle - 0.1 + Math.random() * 0.2) * endLength;
+
                 ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length);
+                ctx.moveTo(startX, startY);
+                ctx.quadraticCurveTo(
+                    (startX + endX) / 2 + (Math.random() - 0.5) * 20,
+                    (startY + endY) / 2 + (Math.random() - 0.5) * 20,
+                    endX, endY
+                );
+                ctx.stroke();
+
+                // Smaller branches
+                const branchAngle = angle + (Math.random() - 0.5) * 0.5;
+                const branchLength = endLength * 0.5;
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(
+                    endX + Math.cos(branchAngle) * branchLength,
+                    endY + Math.sin(branchAngle) * branchLength
+                );
                 ctx.stroke();
             }
         },
@@ -237,11 +334,11 @@
             const scaleX = width / 650;
             const scaleY = height / 350;
 
-            ctx.strokeStyle = '#2d3e2d';
+            // Draw base connections
+            ctx.strokeStyle = 'rgba(45, 62, 45, 0.3)'; // Dimmed base connections
+            ctx.lineWidth = 1;
             for (let i = 0; i < this.state.networkLayout.length; i++) {
                 for (let j = i + 1; j < this.state.networkLayout.length; j++) {
-                    const weight = (i + j) % 3 === 0 ? this.state.synaptic.synapticWeight : 0.2 + Math.random() * 0.2;
-                    ctx.lineWidth = weight * 5;
                     ctx.beginPath();
                     ctx.moveTo(this.state.networkLayout[i].x * scaleX, this.state.networkLayout[i].y * scaleY);
                     ctx.lineTo(this.state.networkLayout[j].x * scaleX, this.state.networkLayout[j].y * scaleY);
@@ -249,8 +346,32 @@
                 }
             }
 
+            // Draw action potentials
+            if (this.state.network.actionPotentials) {
+                this.state.network.actionPotentials.forEach(ap => {
+                    const fromNode = this.state.networkLayout[ap.from];
+                    const toNode = this.state.networkLayout[ap.to];
+                    const startX = fromNode.x * scaleX;
+                    const startY = fromNode.y * scaleY;
+                    const endX = toNode.x * scaleX;
+                    const endY = toNode.y * scaleY;
+
+                    const currentX = startX + (endX - startX) * ap.progress;
+                    const currentY = startY + (endY - startY) * ap.progress;
+
+                    ctx.fillStyle = 'rgba(255, 255, 150, 0.9)';
+                    ctx.shadowColor = 'rgba(255, 255, 0, 1)';
+                    ctx.shadowBlur = 15;
+                    ctx.beginPath();
+                    ctx.arc(currentX, currentY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                });
+            }
+
+            // Draw neurons
             this.state.networkLayout.forEach(node => {
-                this.drawNeuron(ctx, node.x * scaleX, node.y * scaleY, 12);
+                this.drawNeuron(ctx, node.x * scaleX, node.y * scaleY, 12, node.activation || 0);
             });
         },
 
