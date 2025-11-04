@@ -28,7 +28,8 @@
                 learningMetric: 0,
                 animationFrameId: null,
                 particles: [],
-                vesicles: []
+                vesicles: [],
+                receptors: []
             },
 
             network: {
@@ -50,8 +51,12 @@
             },
 
             networkLayout: [
-                { x: 100, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0 }, { x: 250, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0 }, { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0 },
-                { x: 400, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0 }, { x: 550, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0 }, { x: 450, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0 }
+                { x: 100, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL' },
+                { x: 250, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL' },
+                { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE' },
+                { x: 400, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL' },
+                { x: 550, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE' },
+                { x: 450, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL' }
             ],
 
             synapses: [],
@@ -135,7 +140,16 @@
                         this.state.synaptic.vesicles.push({
                             x: Math.random(), // Relative x position
                             y: Math.random(), // Relative y position
-                            state: 'IDLE' // IDLE, FUSING, RELEASED
+                            state: 'IDLE', // IDLE, FUSING
+                            fuseProgress: 0
+                        });
+                    }
+
+                    // Pre-populate receptors
+                    for (let i = 0; i < 30; i++) {
+                        this.state.synaptic.receptors.push({
+                            isBound: false,
+                            boundUntil: 0
                         });
                     }
 
@@ -291,7 +305,8 @@
                     this.state.network.actionPotentials.push({
                         from: startNodeIndex,
                         to: endNodeIndex,
-                        progress: 0
+                        progress: 0,
+                        currentSegment: 0
                     });
                     startNode.state = 'FIRING';
                     startNode.activation = 1;
