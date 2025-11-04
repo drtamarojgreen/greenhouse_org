@@ -132,28 +132,34 @@
                             <option>Fast</option>
                         </select>
                     </div>
+                    <div class="button-group">
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="play-pause-btn-${type}">Play</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-${type}">Reset Plasticity</button>
+                    </div>
+                `;
+            } else if (type === 'environment') {
+                controlsHtml += `
+                    <h3 class="greenhouse-panel-title">Environment Controls</h3>
+                    <div class="control-group">
+                        <label>External Influence</label>
+                        <select class="greenhouse-select" id="environment-type-select">
+                            <option value="NEUTRAL">Neutral</option>
+                            <option value="POSITIVE">Positive (e.g., CBT)</option>
+                            <option value="NEGATIVE">Negative (e.g., Stress)</option>
+                        </select>
+                    </div>
                 `;
             }
-
-            controlsHtml += `
-                <div class="button-group">
-                    <button class="greenhouse-btn greenhouse-btn-secondary" id="play-pause-btn-${type}">Play</button>
-                    <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-${type}">Reset</button>
-                </div>
-            `;
 
             controlsPanel.innerHTML = controlsHtml;
-
             container.appendChild(controlsPanel);
 
-            if (type === 'synaptic' || type === 'network') {
-                const instructionsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
-                instructionsPanel.innerHTML = `
-                    <h3 class="greenhouse-panel-title">How to Use</h3>
-                    <p>Use the controls to see how different parameters affect the strength of neural connections in real-time.</p>
-                `;
-                container.appendChild(instructionsPanel);
-            }
+            const instructionsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
+            instructionsPanel.innerHTML = `
+                <h3 class="greenhouse-panel-title">How to Use</h3>
+                <p>Use the controls to see how different parameters affect the strength of neural connections in real-time.</p>
+            `;
+            container.appendChild(instructionsPanel);
         },
 
         updateMetrics() {
@@ -232,17 +238,24 @@
             ctx.fill();
 
             // Synaptic vesicles
-            const vesicleCount = 15;
             const releaseZoneY = preSynapticY - 15;
-            ctx.fillStyle = 'rgba(255, 220, 150, 0.8)';
-            for (let i = 0; i < vesicleCount; i++) {
-                const x = width / 2 + (Math.random() - 0.5) * terminalWidth * 1.5;
-                // Position vesicles closer to the bottom edge of the terminal
-                const y = releaseZoneY - 5 - Math.random() * 40;
-                ctx.beginPath();
-                ctx.arc(x, y, 4, 0, Math.PI * 2);
-                ctx.fill();
-            }
+            this.state.synaptic.vesicles.forEach(v => {
+                const x = width / 2 + (v.x - 0.5) * terminalWidth * 1.5;
+                let y = releaseZoneY - 5 - v.y * 40;
+
+                let radius = 4;
+                if (v.state === 'FUSING') {
+                    y += 5; // Move closer to membrane
+                    radius = 5; // Swell before release
+                }
+
+                if (v.state !== 'RELEASED') {
+                    ctx.fillStyle = 'rgba(255, 220, 150, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
 
             // Synaptic Cleft
             const cleftTop = preSynapticY - 10;
@@ -284,23 +297,47 @@
             ctx.fill();
         },
 
-        drawNeuron(ctx, x, y, radius, activation = 0) {
+        drawNeuron(ctx, x, y, radius, node) {
+            const { activation, state } = node;
+            let baseColor, highlightColor, shadowColor;
+
+            switch (state) {
+                case 'FIRING':
+                    baseColor = `rgba(255, 255, 150, ${0.8 + activation * 0.2})`;
+                    highlightColor = 'rgba(255, 255, 200, 0.9)';
+                    shadowColor = `rgba(255, 255, 0, ${activation * 0.7})`;
+                    break;
+                case 'REFRACTORY':
+                    baseColor = `rgba(100, 120, 150, 0.6)`;
+                    highlightColor = 'rgba(150, 180, 200, 0.7)';
+                    shadowColor = 'rgba(0, 0, 0, 0)';
+                    break;
+                case 'RESTING':
+                default:
+                    baseColor = `rgba(53, 116, 56, 0.8)`;
+                    highlightColor = 'rgba(150, 255, 150, 0.9)';
+                    shadowColor = `rgba(180, 255, 180, ${activation * 0.7})`;
+                    break;
+            }
+
             // Soma (cell body)
             const somaGradient = ctx.createRadialGradient(x - radius * 0.2, y - radius * 0.2, radius * 0.1, x, y, radius);
-            somaGradient.addColorStop(0, 'rgba(150, 255, 150, 0.9)'); // Lighter center for 3D effect
-            somaGradient.addColorStop(1, `rgba(53, 116, 56, ${0.8 + activation * 0.2})`); // Base color, brighter with activation
+            somaGradient.addColorStop(0, highlightColor);
+            somaGradient.addColorStop(1, baseColor);
 
             ctx.fillStyle = somaGradient;
-            ctx.shadowColor = `rgba(180, 255, 180, ${activation * 0.7})`;
+            ctx.shadowColor = shadowColor;
             ctx.shadowBlur = 15 * activation;
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0; // Reset shadow
 
+            // Axon & Dendrites
+            ctx.strokeStyle = `rgba(45, 62, 45, ${0.5 + activation * 0.3})`;
+            ctx.lineWidth = 1.5 + activation * 1.5;
+
             // Axon
-            ctx.strokeStyle = `rgba(45, 62, 45, ${0.6 + activation * 0.3})`;
-            ctx.lineWidth = 2 + activation * 2;
             ctx.beginPath();
             ctx.moveTo(x + radius, y);
             ctx.bezierCurveTo(x + radius * 2, y, x + radius * 2.5, y + radius * 1.5, x + radius * 3, y + radius * 3);
@@ -308,37 +345,18 @@
 
             // Dendrites
             const dendriteCount = 6;
-            ctx.strokeStyle = `rgba(45, 62, 45, ${0.5 + activation * 0.2})`;
-            ctx.lineWidth = 1.5;
-
             for (let i = 0; i < dendriteCount; i++) {
-                const angle = (i / dendriteCount) * Math.PI * 1.5 - Math.PI * 0.75; // Only on one side
-                const startLength = radius * (1.1 + Math.random() * 0.2);
+                const angle = (i / dendriteCount) * Math.PI * 1.5 - Math.PI * 0.75;
+                const startLength = radius * 1.1;
                 const endLength = radius * (1.5 + Math.random() * 0.5);
-
                 const startX = x + Math.cos(angle) * startLength;
                 const startY = y + Math.sin(angle) * startLength;
-                const endX = x + Math.cos(angle - 0.1 + Math.random() * 0.2) * endLength;
-                const endY = y + Math.sin(angle - 0.1 + Math.random() * 0.2) * endLength;
+                const endX = x + Math.cos(angle) * endLength;
+                const endY = y + Math.sin(angle) * endLength;
 
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
-                ctx.quadraticCurveTo(
-                    (startX + endX) / 2 + (Math.random() - 0.5) * 20,
-                    (startY + endY) / 2 + (Math.random() - 0.5) * 20,
-                    endX, endY
-                );
-                ctx.stroke();
-
-                // Smaller branches
-                const branchAngle = angle + (Math.random() - 0.5) * 0.5;
-                const branchLength = endLength * 0.5;
-                ctx.beginPath();
-                ctx.moveTo(endX, endY);
-                ctx.lineTo(
-                    endX + Math.cos(branchAngle) * branchLength,
-                    endY + Math.sin(branchAngle) * branchLength
-                );
+                ctx.quadraticCurveTo((startX + endX) / 2, (startY + endY) / 2, endX, endY);
                 ctx.stroke();
             }
         },
@@ -353,17 +371,25 @@
             const scaleX = width / 650;
             const scaleY = height / 350;
 
-            // Draw base connections
-            ctx.strokeStyle = 'rgba(45, 62, 45, 0.3)'; // Dimmed base connections
-            ctx.lineWidth = 1;
-            for (let i = 0; i < this.state.networkLayout.length; i++) {
-                for (let j = i + 1; j < this.state.networkLayout.length; j++) {
-                    ctx.beginPath();
-                    ctx.moveTo(this.state.networkLayout[i].x * scaleX, this.state.networkLayout[i].y * scaleY);
-                    ctx.lineTo(this.state.networkLayout[j].x * scaleX, this.state.networkLayout[j].y * scaleY);
-                    ctx.stroke();
-                }
-            }
+            // Draw synapses
+            this.state.synapses.forEach(synapse => {
+                const fromNode = this.state.networkLayout[synapse.from];
+                const toNode = this.state.networkLayout[synapse.to];
+
+                const startX = fromNode.x * scaleX;
+                const startY = fromNode.y * scaleY;
+                const endX = toNode.x * scaleX;
+                const endY = toNode.y * scaleY;
+
+                const blueToWhite = `rgba(${128 + synapse.weight * 127}, ${128 + synapse.weight * 127}, 255, ${0.4 + synapse.weight * 0.6})`;
+
+                ctx.strokeStyle = blueToWhite;
+                ctx.lineWidth = 1 + synapse.weight * 4;
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            });
 
             // Draw action potentials
             if (this.state.network.actionPotentials) {
@@ -390,7 +416,7 @@
 
             // Draw neurons
             this.state.networkLayout.forEach(node => {
-                this.drawNeuron(ctx, node.x * scaleX, node.y * scaleY, 12, node.activation || 0);
+                this.drawNeuron(ctx, node.x * scaleX, node.y * scaleY, 12, node);
             });
         },
 
@@ -398,9 +424,19 @@
             const ctx = this.contexts.environment;
             if (!ctx) return;
             const canvas = this.canvases.environment;
+            if (!ctx) return;
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
 
+            const { type, auraOpacity } = this.state.environment;
+            if (type === 'NEUTRAL') return;
+
+            const color = type === 'POSITIVE' ? 'rgba(100, 200, 255, 0.5)' : 'rgba(255, 100, 100, 0.5)';
+
+            ctx.fillStyle = color;
+            ctx.globalAlpha = auraOpacity;
+            ctx.fillRect(0, 0, width, height);
+            ctx.globalAlpha = 1.0;
             // Draw brain outline
             ctx.strokeStyle = '#2d3e2d';
             ctx.lineWidth = 2;
