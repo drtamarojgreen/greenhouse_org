@@ -3,63 +3,72 @@
     'use strict';
 
     const GreenhouseModelsUIBrain = {
-        drawNeuron(ctx, x, y, radius, activation = 0) {
-            // Soma (cell body)
-            const somaGradient = ctx.createRadialGradient(x - radius * 0.2, y - radius * 0.2, radius * 0.1, x, y, radius);
-            somaGradient.addColorStop(0, 'rgba(150, 255, 150, 0.9)'); // Lighter center for 3D effect
-            somaGradient.addColorStop(1, `rgba(53, 116, 56, ${0.8 + activation * 0.2})`); // Base color, brighter with activation
+        _drawBranch(ctx, startX, startY, angle, length, depth) {
+            if (depth < 0) return;
+            const endX = startX + Math.cos(angle) * length;
+            const endY = startY + Math.sin(angle) * length;
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            this._drawBranch(ctx, endX, endY, angle - 0.5, length * 0.8, depth - 1);
+            this._drawBranch(ctx, endX, endY, angle + 0.5, length * 0.8, depth - 1);
+        },
 
-            ctx.fillStyle = somaGradient;
-            ctx.shadowColor = `rgba(180, 255, 180, ${activation * 0.7})`;
-            ctx.shadowBlur = 15 * activation;
+        _drawPyramidalNeuron(ctx, node) {
+            const { x, y, activation } = node;
+            const radius = 12;
+
+            // Soma
+            ctx.fillStyle = `rgba(53, 116, 56, ${0.8 + activation * 0.2})`;
+            ctx.beginPath();
+            ctx.moveTo(x - radius, y + radius);
+            ctx.lineTo(x + radius, y + radius);
+            ctx.lineTo(x, y - radius * 1.5);
+            ctx.closePath();
+            ctx.fill();
+
+            // Dendrites
+            ctx.strokeStyle = `rgba(45, 62, 45, ${0.5 + activation * 0.2})`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            this._drawBranch(ctx, x, y - radius * 1.5, -Math.PI / 2, 20, 2); // Apical
+            this._drawBranch(ctx, x - radius, y + radius, Math.PI * 1.2, 15, 2); // Basal
+            this._drawBranch(ctx, x + radius, y + radius, -Math.PI * 0.2, 15, 2); // Basal
+            ctx.stroke();
+        },
+
+        _drawOligodendrocyte(ctx, node, allNodes) {
+            const { x, y } = node;
+            const radius = 8;
+
+            // Soma
+            ctx.fillStyle = 'rgba(100, 100, 150, 0.7)';
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fill();
-            ctx.shadowBlur = 0; // Reset shadow
 
-            // Axon
-            ctx.strokeStyle = `rgba(45, 62, 45, ${0.6 + activation * 0.3})`;
-            ctx.lineWidth = 2 + activation * 2;
+            // Processes to nearby axons
+            ctx.strokeStyle = 'rgba(100, 100, 150, 0.5)';
+            ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(x + radius, y);
-            ctx.bezierCurveTo(x + radius * 2, y, x + radius * 2.5, y + radius * 1.5, x + radius * 3, y + radius * 3);
+            allNodes.forEach(targetNode => {
+                if (targetNode.type === 'PYRAMIDAL') {
+                    const dist = Math.hypot(x - targetNode.x, y - targetNode.y);
+                    if (dist > 0 && dist < 100) {
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(targetNode.x + 15, targetNode.y + 15);
+
+                        // Myelin sheath
+                        ctx.strokeStyle = 'rgba(100, 100, 150, 0.8)';
+                        ctx.lineWidth = 4;
+                        ctx.beginPath();
+                        ctx.arc(targetNode.x + 20, targetNode.y + 20, 5, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = 'rgba(100, 100, 150, 0.5)';
+                    }
+                }
+            });
             ctx.stroke();
-
-            // Dendrites
-            const dendriteCount = 6;
-            ctx.strokeStyle = `rgba(45, 62, 45, ${0.5 + activation * 0.2})`;
-            ctx.lineWidth = 1.5;
-
-            for (let i = 0; i < dendriteCount; i++) {
-                const angle = (i / dendriteCount) * Math.PI * 1.5 - Math.PI * 0.75; // Only on one side
-                const startLength = radius * (1.1 + Math.random() * 0.2);
-                const endLength = radius * (1.5 + Math.random() * 0.5);
-
-                const startX = x + Math.cos(angle) * startLength;
-                const startY = y + Math.sin(angle) * startLength;
-                const endX = x + Math.cos(angle - 0.1 + Math.random() * 0.2) * endLength;
-                const endY = y + Math.sin(angle - 0.1 + Math.random() * 0.2) * endLength;
-
-                ctx.beginPath();
-                ctx.moveTo(startX, startY);
-                ctx.quadraticCurveTo(
-                    (startX + endX) / 2 + (Math.random() - 0.5) * 20,
-                    (startY + endY) / 2 + (Math.random() - 0.5) * 20,
-                    endX, endY
-                );
-                ctx.stroke();
-
-                // Smaller branches
-                const branchAngle = angle + (Math.random() - 0.5) * 0.5;
-                const branchLength = endLength * 0.5;
-                ctx.beginPath();
-                ctx.moveTo(endX, endY);
-                ctx.lineTo(
-                    endX + Math.cos(branchAngle) * branchLength,
-                    endY + Math.sin(branchAngle) * branchLength
-                );
-                ctx.stroke();
-            }
         },
 
         drawNetworkView() {
@@ -72,44 +81,57 @@
             const scaleX = width / 650;
             const scaleY = height / 350;
 
-            // Draw base connections
-            ctx.strokeStyle = 'rgba(45, 62, 45, 0.3)'; // Dimmed base connections
+            // Draw connections
+            ctx.strokeStyle = 'rgba(45, 62, 45, 0.3)';
             ctx.lineWidth = 1;
-            for (let i = 0; i < this.state.networkLayout.length; i++) {
-                for (let j = i + 1; j < this.state.networkLayout.length; j++) {
-                    ctx.beginPath();
-                    ctx.moveTo(this.state.networkLayout[i].x * scaleX, this.state.networkLayout[i].y * scaleY);
-                    ctx.lineTo(this.state.networkLayout[j].x * scaleX, this.state.networkLayout[j].y * scaleY);
-                    ctx.stroke();
-                }
-            }
+            this.state.synapses.forEach(synapse => {
+                const fromNode = this.state.networkLayout[synapse.from];
+                const toNode = this.state.networkLayout[synapse.to];
+                ctx.beginPath();
+                ctx.moveTo(fromNode.x * scaleX, fromNode.y * scaleY);
+                ctx.lineTo(toNode.x * scaleX, toNode.y * scaleY);
+                ctx.stroke();
+            });
 
             // Draw action potentials
-            if (this.state.network.actionPotentials) {
-                this.state.network.actionPotentials.forEach(ap => {
-                    const fromNode = this.state.networkLayout[ap.from];
-                    const toNode = this.state.networkLayout[ap.to];
-                    const startX = fromNode.x * scaleX;
-                    const startY = fromNode.y * scaleY;
-                    const endX = toNode.x * scaleX;
-                    const endY = toNode.y * scaleY;
+            this.state.network.actionPotentials.forEach(ap => {
+                const fromNode = this.state.networkLayout[ap.from];
+                const toNode = this.state.networkLayout[ap.to];
+                const startX = fromNode.x * scaleX;
+                const startY = fromNode.y * scaleY;
+                const endX = toNode.x * scaleX;
+                const endY = toNode.y * scaleY;
 
-                    const currentX = startX + (endX - startX) * ap.progress;
-                    const currentY = startY + (endY - startY) * ap.progress;
+                const currentX = startX + (endX - startX) * ap.progress;
+                const currentY = startY + (endY - startY) * ap.progress;
 
-                    ctx.fillStyle = 'rgba(255, 255, 150, 0.9)';
-                    ctx.shadowColor = 'rgba(255, 255, 0, 1)';
-                    ctx.shadowBlur = 15;
-                    ctx.beginPath();
-                    ctx.arc(currentX, currentY, 4, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                });
-            }
+                ctx.fillStyle = 'rgba(255, 255, 150, 0.9)';
+                ctx.shadowColor = 'rgba(255, 255, 0, 1)';
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(currentX, currentY, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
 
             // Draw neurons
             this.state.networkLayout.forEach(node => {
-                this.drawNeuron(ctx, node.x * scaleX, node.y * scaleY, 12, node.activation || 0);
+                const scaledNode = { ...node, x: node.x * scaleX, y: node.y * scaleY };
+                switch (scaledNode.type) {
+                    case 'PYRAMIDAL':
+                        this._drawPyramidalNeuron(ctx, scaledNode);
+                        break;
+                    case 'OLIGODENDROCYTE':
+                        this._drawOligodendrocyte(ctx, scaledNode, this.state.networkLayout.map(n => ({...n, x: n.x * scaleX, y: n.y * scaleY})));
+                        break;
+                    default:
+                        // Default drawing for unknown types
+                        ctx.fillStyle = 'rgba(150, 150, 150, 0.7)';
+                        ctx.beginPath();
+                        ctx.arc(scaledNode.x, scaledNode.y, 10, 0, Math.PI * 2);
+                        ctx.fill();
+                        break;
+                }
             });
         }
     };

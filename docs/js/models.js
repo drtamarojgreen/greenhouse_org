@@ -36,6 +36,10 @@
     };
 
     const captureScriptAttributes = () => {
+        if (window._greenhouseModelsAttributes) {
+            console.log('Models App: Using pre-defined attributes.');
+            return true;
+        }
         const scriptElement = document.currentScript;
         if (!scriptElement) {
             console.error('Models App: Could not find current script element to capture attributes.');

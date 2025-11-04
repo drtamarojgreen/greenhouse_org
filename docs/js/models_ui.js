@@ -38,7 +38,7 @@
                     <input type="checkbox" id="consent-checkbox" class="greenhouse-consent-checkbox" data-testid="consent-checkbox">
                     I acknowledge that this is an educational tool and not a substitute for professional medical advice.
                 </label>
-                <button id="start-simulation-btn" class="greenhouse-btn-primary" disabled>Launch Simulation</button>
+                <button id="start-simulation-btn" class="greenhouse-btn-primary" disabled data-testid="start-simulation-btn">Launch Simulation</button>
             `;
             targetElement.appendChild(container);
         },
