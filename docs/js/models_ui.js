@@ -57,11 +57,16 @@
             const networkControls = this.createElement('div', { id: 'controls-network' });
             const environmentControls = this.createElement('div', { id: 'controls-environment' });
 
-            leftColumn.append(canvasSynaptic, synapticControls, canvasNetwork, networkControls, canvasEnvironment, environmentControls);
+            // The third canvas (Environment) goes on the left.
+            leftColumn.append(canvasEnvironment, environmentControls);
+
+            // The first two canvases (Synaptic, Network) and their controls go on the right.
+            rightColumn.append(canvasSynaptic, synapticControls, canvasNetwork, networkControls);
 
             const synapticMetrics = this.createElement('div', { id: 'metrics-synaptic' });
             const networkMetrics = this.createElement('div', { id: 'metrics-network' });
 
+            // The metrics also go on the right.
             rightColumn.append(synapticMetrics, networkMetrics);
 
             contentArea.append(leftColumn, rightColumn);
@@ -71,7 +76,7 @@
 
             this.populateControlsPanel(synapticControls, 'synaptic');
             this.populateControlsPanel(networkControls, 'network');
-            this.populateControlsPanel(environmentControls, 'environment');
+            this.populateControlsPanel(document.getElementById('controls-environment'), 'environment');
             this.populateMetricsPanel(synapticMetrics, 'synaptic');
             this.populateMetricsPanel(networkMetrics, 'network');
 
@@ -111,9 +116,10 @@
 
         populateControlsPanel(container, type) {
             const controlsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
+            let controlsHtml = `<h3 class="greenhouse-panel-title">Simulation Controls (${type})</h3>`;
+
             if (type === 'synaptic' || type === 'network') {
-                controlsPanel.innerHTML = `
-                    <h3 class="greenhouse-panel-title">Simulation Controls (${type})</h3>
+                controlsHtml += `
                     <div class="control-group">
                         <label>Practice Intensity</label>
                         <input type="range" min="0" max="100" value="50" class="greenhouse-slider" id="intensity-slider-${type}">
@@ -132,7 +138,7 @@
                     </div>
                 `;
             } else if (type === 'environment') {
-                controlsPanel.innerHTML = `
+                controlsHtml += `
                     <h3 class="greenhouse-panel-title">Environment Controls</h3>
                     <div class="control-group">
                         <label>External Influence</label>
@@ -145,12 +151,14 @@
                 `;
             }
 
+            controlsPanel.innerHTML = controlsHtml;
+            container.appendChild(controlsPanel);
+
             const instructionsPanel = this.createElement('div', { className: 'greenhouse-controls-panel' });
             instructionsPanel.innerHTML = `
                 <h3 class="greenhouse-panel-title">How to Use</h3>
                 <p>Use the controls to see how different parameters affect the strength of neural connections in real-time.</p>
             `;
-            container.appendChild(controlsPanel);
             container.appendChild(instructionsPanel);
         },
 
@@ -414,6 +422,7 @@
 
         drawEnvironmentView() {
             const ctx = this.contexts.environment;
+            if (!ctx) return;
             const canvas = this.canvases.environment;
             if (!ctx) return;
             const { width, height } = canvas;
@@ -428,6 +437,33 @@
             ctx.globalAlpha = auraOpacity;
             ctx.fillRect(0, 0, width, height);
             ctx.globalAlpha = 1.0;
+            // Draw brain outline
+            ctx.strokeStyle = '#2d3e2d';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(width / 2, 50);
+            ctx.bezierCurveTo(width / 4, 50, width / 4, height / 2, width / 2, height - 50);
+            ctx.bezierCurveTo(width * 3 / 4, height / 2, width * 3 / 4, 50, width / 2, 50);
+            ctx.stroke();
+
+            // Draw icons
+            const factors = ['community', 'society', 'genetics', 'environment'];
+            factors.forEach((factor, index) => {
+                const angle = (index / factors.length) * 2 * Math.PI;
+                const x = width / 2 + Math.cos(angle) * 100;
+                const y = height / 2 + Math.sin(angle) * 100;
+                const value = this.state.environment[factor];
+
+                ctx.fillStyle = `rgba(53, 116, 56, ${value})`;
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, 2 * Math.PI);
+                ctx.fill();
+
+                ctx.fillStyle = '#2d3e2d';
+                ctx.font = '12px Quicksand, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(factor, x, y + 30);
+            });
         },
 
         resizeAllCanvases() {
@@ -445,7 +481,13 @@
 
         createElement(tag, attributes = {}, ...children) {
             const el = document.createElement(tag);
-            Object.entries(attributes).forEach(([key, value]) => el.setAttribute(key, value));
+            Object.entries(attributes).forEach(([key, value]) => {
+                if (key === 'className') {
+                    el.setAttribute('class', value);
+                } else {
+                    el.setAttribute(key, value);
+                }
+            });
             children.forEach(child => {
                 if (typeof child === 'string') {
                     el.appendChild(document.createTextNode(child));
