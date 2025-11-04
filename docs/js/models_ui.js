@@ -136,18 +136,26 @@
                             <option>Fast</option>
                         </select>
                     </div>
+                    <div class="button-group">
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="play-pause-btn-${type}">Play</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-${type}">Reset Plasticity</button>
+                    </div>
+                `;
+            } else if (type === 'environment') {
+                controlsHtml += `
+                    <h3 class="greenhouse-panel-title">Environment Controls</h3>
+                    <div class="control-group">
+                        <label>External Influence</label>
+                        <select class="greenhouse-select" id="environment-type-select">
+                            <option value="NEUTRAL">Neutral</option>
+                            <option value="POSITIVE">Positive (e.g., CBT)</option>
+                            <option value="NEGATIVE">Negative (e.g., Stress)</option>
+                        </select>
+                    </div>
                 `;
             }
 
-            controlsHtml += `
-                <div class="button-group">
-                    <button class="greenhouse-btn greenhouse-btn-secondary" id="play-pause-btn-${type}">Play</button>
-                    <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-${type}">Reset</button>
-                </div>
-            `;
-
             controlsPanel.innerHTML = controlsHtml;
-
             container.appendChild(controlsPanel);
 
             if (type === 'synaptic' || type === 'network') {

@@ -27,7 +27,8 @@
                 ionsCrossed: 0,
                 learningMetric: 0,
                 animationFrameId: null,
-                particles: []
+                particles: [],
+                vesicles: []
             },
 
             network: {
@@ -49,9 +50,17 @@
             },
 
             networkLayout: [
-                { x: 100, y: 100, activation: 0 }, { x: 250, y: 150, activation: 0 }, { x: 150, y: 250, activation: 0 },
-                { x: 400, y: 100, activation: 0 }, { x: 550, y: 150, activation: 0 }, { x: 450, y: 250, activation: 0 }
+                { x: 100, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0 }, { x: 250, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0 }, { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0 },
+                { x: 400, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0 }, { x: 550, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0 }, { x: 450, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0 }
             ],
+
+            synapses: [],
+
+            environment: {
+                type: 'NEUTRAL', // NEUTRAL, POSITIVE, NEGATIVE
+                auraOpacity: 0
+            },
+
             mainAppContainer: null
         },
 
@@ -120,9 +129,31 @@
                         simulationData.notes,
                         lexicon
                     );
+
+                    // Pre-populate vesicles
+                    for (let i = 0; i < 20; i++) {
+                        this.state.synaptic.vesicles.push({
+                            x: Math.random(), // Relative x position
+                            y: Math.random(), // Relative y position
+                            state: 'IDLE' // IDLE, FUSING, RELEASED
+                        });
+                    }
+
+                    // Pre-populate synapses
+                    for (let i = 0; i < this.state.networkLayout.length; i++) {
+                        for (let j = i + 1; j < this.state.networkLayout.length; j++) {
+                            this.state.synapses.push({
+                                from: i,
+                                to: j,
+                                weight: Math.random()
+                            });
+                        }
+                    }
+
                     GreenhouseModelsUI.renderSimulationInterface(this.state.targetElement);
                     this.addSimulationListeners();
                     this.bindSimulationControls();
+                    this.addEnvironmentListeners();
                 } else {
                     console.error("Data not loaded, cannot start simulation.");
                 }
@@ -215,29 +246,67 @@
                 return;
             }
 
-            // Fire new action potentials based on intensity
-            if (Math.random() < this.state.network.intensity / 200) {
-                const startNode = Math.floor(Math.random() * this.state.networkLayout.length);
-                const endNode = Math.floor(Math.random() * this.state.networkLayout.length);
-                if (startNode !== endNode) {
-                    this.state.network.actionPotentials.push({
-                        from: startNode,
-                        to: endNode,
-                        progress: 0
-                    });
-                }
+            // Environment influence
+            let fireThreshold = this.state.network.intensity / 200;
+            if (this.state.environment.type === 'POSITIVE') {
+                fireThreshold *= 0.5; // Less random firing
+                this.state.environment.auraOpacity = Math.min(1, this.state.environment.auraOpacity + 0.01);
+            } else if (this.state.environment.type === 'NEGATIVE') {
+                fireThreshold *= 2.0; // More chaotic firing
+                this.state.environment.auraOpacity = Math.min(1, this.state.environment.auraOpacity + 0.01);
+            } else {
+                this.state.environment.auraOpacity = Math.max(0, this.state.environment.auraOpacity - 0.01);
             }
 
-            // Update neuron activations and decay them
-            this.state.networkLayout.forEach(node => {
-                node.activation *= 0.9; // Decay activation
+            // Update synapse weights based on environment
+            this.state.synapses.forEach(synapse => {
+                if (this.state.environment.type === 'POSITIVE') {
+                    synapse.weight = Math.min(1, synapse.weight + 0.0001);
+                } else if (this.state.environment.type === 'NEGATIVE') {
+                    synapse.weight = Math.max(0, synapse.weight - 0.0001);
+                }
             });
+
+            // Update neuron states and decay activations
+            this.state.networkLayout.forEach(node => {
+                node.activation *= 0.95; // Slower decay for a longer glow
+                if (node.state === 'FIRING') {
+                    node.state = 'REFRACTORY';
+                    node.refractoryPeriod = 50; // 50 frames refractory period
+                } else if (node.state === 'REFRACTORY') {
+                    node.refractoryPeriod--;
+                    if (node.refractoryPeriod <= 0) {
+                        node.state = 'RESTING';
+                    }
+                }
+            });
+
+            // Fire new action potentials based on intensity
+            if (Math.random() < fireThreshold) {
+                const startNodeIndex = Math.floor(Math.random() * this.state.networkLayout.length);
+                const endNodeIndex = Math.floor(Math.random() * this.state.networkLayout.length);
+                const startNode = this.state.networkLayout[startNodeIndex];
+
+                if (startNodeIndex !== endNodeIndex && startNode.state === 'RESTING') {
+                    this.state.network.actionPotentials.push({
+                        from: startNodeIndex,
+                        to: endNodeIndex,
+                        progress: 0
+                    });
+                    startNode.state = 'FIRING';
+                    startNode.activation = 1;
+                }
+            }
 
             // Update and draw action potentials
             this.state.network.actionPotentials = this.state.network.actionPotentials.filter(ap => {
                 ap.progress += 0.05; // Speed of signal
                 if (ap.progress >= 1) {
-                    this.state.networkLayout[ap.to].activation = 1; // Activate target neuron
+                    const targetNode = this.state.networkLayout[ap.to];
+                    if (targetNode.state === 'RESTING') {
+                        targetNode.state = 'FIRING';
+                        targetNode.activation = 1;
+                    }
                     return false; // Remove finished potential
                 }
                 return true;
@@ -249,6 +318,7 @@
             }
 
             GreenhouseModelsUI.drawNetworkView();
+            GreenhouseModelsUI.drawEnvironmentView();
 
             this.state.network.animationFrameId = requestAnimationFrame(() => this.runSimulation());
         },
@@ -270,6 +340,15 @@
             GreenhouseModelsUI.drawEnvironmentView();
 
             this.state.environment.animationFrameId = requestAnimationFrame(() => this.runEnvironmentSimulation());
+        },
+
+        addEnvironmentListeners() {
+            const environmentSelect = document.getElementById('environment-type-select');
+            if (environmentSelect) {
+                environmentSelect.addEventListener('change', e => {
+                    this.state.environment.type = e.target.value;
+                });
+            }
         },
 
         addSimulationListeners() {
@@ -303,6 +382,19 @@
             if (!this.state.synaptic.isRunning) {
                 cancelAnimationFrame(this.state.synaptic.animationFrameId);
                 return;
+            }
+
+            // Vesicle fusion simulation
+            if (Math.random() < this.state.synaptic.intensity / 500) {
+                const idleVesicles = this.state.synaptic.vesicles.filter(v => v.state === 'IDLE');
+                if (idleVesicles.length > 0) {
+                    const vesicleToFuse = idleVesicles[Math.floor(Math.random() * idleVesicles.length)];
+                    vesicleToFuse.state = 'FUSING';
+
+                    setTimeout(() => {
+                        vesicleToFuse.state = 'IDLE'; // Reset after a short time
+                    }, 500);
+                }
             }
 
             const communityBoost = this.state.environment.community > this.config.COMMUNITY_BOOST_THRESHOLD ? this.config.COMMUNITY_BOOST_FACTOR : 1;
