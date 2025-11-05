@@ -20,6 +20,17 @@
         },
 
         async loadData() {
+            // Prioritize Velo data if it exists
+            if (window._greenhouseModelsData) {
+                console.log('Models App: Using data provided from Velo script.');
+                this.state.simulationData = window._greenhouseModelsData;
+                // Assuming lexicon is part of this data or not strictly needed when Velo data is present
+                this.state.lexicon = window._greenhouseModelsData.lexicon || {};
+                return;
+            }
+
+            // Fallback to original data fetching if Velo data is not present
+            console.log('Models App: Velo data not found, falling back to default data fetch.');
             try {
                 const [simResponse, lexResponse] = await Promise.all([
                     fetch(this.config.dataUrl),
