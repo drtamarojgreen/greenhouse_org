@@ -46,8 +46,7 @@
                 community: 0.5,
                 society: 0.5,
                 genetics: 0.5,
-                type: 'NEUTRAL', // NEUTRAL, POSITIVE, NEGATIVE
-                auraOpacity: 0,
+                environment: 0.5,
                 animationFrameId: null
             },
 
@@ -61,6 +60,11 @@
             ],
 
             synapses: [],
+
+            environment: {
+                type: 'NEUTRAL', // NEUTRAL, POSITIVE, NEGATIVE
+                auraOpacity: 0
+            },
 
             mainAppContainer: null
         },
@@ -80,14 +84,13 @@
 
                 this.state.targetElement = await GreenhouseUtils.waitForElement(this.state.targetSelector, 15000);
 
-                await GreenhouseModelsData.loadData();
-                Object.assign(this.state, GreenhouseModelsData.state);
-
-                GreenhouseModelsUI.init(this.state, window.GreenhouseModelsUtil);
+                GreenhouseModelsUI.init(this.state); // Pass state to UI module
 
                 await GreenhouseModelsUI.loadCSS(this.state.baseUrl);
 
                 await new Promise(resolve => setTimeout(resolve, GreenhouseUtils.config.dom.insertionDelay));
+
+                await GreenhouseModelsData.loadData();
 
                 GreenhouseModelsUI.renderConsentScreen(this.state.targetElement);
                 this.addConsentListeners();
@@ -109,8 +112,6 @@
             }
             this.state.targetSelector = window._greenhouseModelsAttributes.targetSelector;
             this.state.baseUrl = window._greenhouseModelsAttributes.baseUrl;
-            // Clean up the global object after use
-            delete window._greenhouseModelsAttributes;
             return !!(this.state.targetSelector && this.state.baseUrl);
         },
 
@@ -165,9 +166,6 @@
                     this.addSimulationListeners();
                     this.bindSimulationControls();
                     this.addEnvironmentListeners();
-                    GreenhouseModelsUI.drawSynapticView();
-                    GreenhouseModelsUI.drawNetworkView();
-                    GreenhouseModelsUI.drawEnvironmentView();
                 } else {
                     console.error("Data not loaded, cannot start simulation.");
                 }

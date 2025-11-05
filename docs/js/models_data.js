@@ -16,7 +16,18 @@
 
         config: {
             dataUrl: 'https://drtamarojgreen.github.io/greenhouse_org/endpoints/qa_fixture.json',
-            lexiconUrl: 'https://drtamarojgreen.github.io/greenhouse_org/endpoints/domain_mapping.json',
+            lexiconUrl: 'https://drtamarojgreen.github.io/greenhouse_org/endpoints/domain_mapping.json'
+        },
+
+        initializeVisualizationData() {
+            if (window._greenhouseModelsData) {
+                this.state.visualizationData = window._greenhouseModelsData;
+                console.log('Visualization data initialized from global scope.');
+                return true;
+            } else {
+                console.error('Models App: Global visualization data (_greenhouseModelsData) not found on window.');
+                return false;
+            }
         },
 
         async loadData() {

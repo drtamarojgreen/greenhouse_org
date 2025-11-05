@@ -1,30 +1,25 @@
-// docs/js/models_util.js
 
 (function() {
     'use strict';
 
     const GreenhouseModelsUtil = {
-        createElement(tag, attributes, ...children) {
-            const element = document.createElement(tag);
-            for (const key in attributes) {
+        createElement(tag, attributes = {}, ...children) {
+            const el = document.createElement(tag);
+            Object.entries(attributes).forEach(([key, value]) => {
                 if (key === 'className') {
-                    element.className = attributes[key];
+                    el.setAttribute('class', value);
                 } else {
-                    element.setAttribute(key, attributes[key]);
-                }
-            }
-            children.forEach(child => {
-                if (typeof child === 'string') {
-                    element.appendChild(document.createTextNode(child));
-                } else {
-                    element.appendChild(child);
+                    el.setAttribute(key, value);
                 }
             });
-            return element;
-        },
-
-        parseDynamicPath(pathString, context) {
-            return pathString.replace(/\b(w|h|tw|psy)\b/g, match => context[match]);
+            children.forEach(child => {
+                if (typeof child === 'string') {
+                    el.appendChild(document.createTextNode(child));
+                } else {
+                    el.appendChild(child);
+                }
+            });
+            return el;
         }
     };
 

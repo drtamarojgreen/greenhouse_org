@@ -80,9 +80,27 @@
 
             // Check if all modules are loaded
             if (window.GreenhouseModelsData && window.GreenhouseModelsUI && window.GreenhouseModelsUX) {
-                console.log('Models App: All modules loaded successfully.');
-                // Kick off the application by initializing the UX module
-                GreenhouseModelsUX.init();
+                console.log('Models App: All modules loaded. Waiting for Velo data...');
+
+                // Poll for the global data object populated by the Velo script
+                const maxAttempts = 100; // Wait for 10 seconds
+                let attempts = 0;
+                const pollForData = setInterval(() => {
+                    if (window._greenhouseModelsData || attempts >= maxAttempts) {
+                        clearInterval(pollForData);
+                        if (window._greenhouseModelsData) {
+                            console.log('Models App: Velo data found. Initializing application.');
+                            // Initialize data from global scope and then start the UX
+                            GreenhouseModelsData.initializeVisualizationData();
+                            GreenhouseModelsUX.init();
+                        } else {
+                            console.error('Models App: Timed out waiting for Velo data.');
+                            GreenhouseUtils.displayError('Failed to load visualization data from the page.');
+                        }
+                    }
+                    attempts++;
+                }, 100);
+
             } else {
                 throw new Error("One or more application modules failed to load.");
             }

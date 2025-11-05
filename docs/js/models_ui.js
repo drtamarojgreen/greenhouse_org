@@ -8,9 +8,8 @@
         contexts: {},
         state: {}, // This will be a reference to the main app state
 
-        init(state, GreenhouseModelsUtil) {
+        init(state) {
             this.state = state;
-            this.util = GreenhouseModelsUtil;
             Object.assign(this, GreenhouseModelsUISynapse);
             Object.assign(this, GreenhouseModelsUIBrain);
             Object.assign(this, GreenhouseModelsUIEnvironment);
