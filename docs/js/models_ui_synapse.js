@@ -4,6 +4,7 @@
 
     const GreenhouseModelsUISynapse = {
         _renderElement(ctx, element, { w, h, tw, psy }) {
+            console.log('Rendering element:', element);
             if (!element) return;
 
             ctx.save();
@@ -23,9 +24,9 @@
                     break;
                 case 'ellipse':
                     ctx.beginPath();
-                    const cx = eval(GreenhouseModelsUtil.parseDynamicPath(element.cx, { w, h, tw, psy }));
-                    const cy = eval(GreenhouseModelsUtil.parseDynamicPath(element.cy, { w, h, tw, psy }));
-                    ctx.ellipse(cx, cy, element.rx, element.ry, 0, 0, Math.PI * 2);
+                    const cx = GreenhouseModelsUtil.parseDynamicPath(element.cx, { w, h, tw, psy });
+                    const cy = GreenhouseModelsUtil.parseDynamicPath(element.cy, { w, h, tw, psy });
+                    ctx.ellipse(Number(cx), Number(cy), element.rx, element.ry, 0, 0, Math.PI * 2);
                     if(ctx.fillStyle) ctx.fill();
                     if(ctx.strokeStyle) ctx.stroke();
                     break;
@@ -39,9 +40,13 @@
         },
 
         drawSynapticView() {
+            console.log('drawSynapticView called');
             const ctx = this.contexts.synaptic;
             const canvas = this.canvases.synaptic;
-            if (!ctx || !this.state.synapseData || !this.state.synapseData.elements) return;
+            if (!ctx || !this.state.synapseData || !this.state.synapseData.elements) {
+                console.log('drawSynapticView returned early');
+                return;
+            }
 
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);

@@ -4,6 +4,7 @@
 
     const GreenhouseModelsUIEnvironment = {
         _renderElement(ctx, element, { w, h }) {
+            console.log('Rendering element:', element);
             if (!element) return;
 
             ctx.save();
@@ -88,9 +89,13 @@
         },
 
         drawEnvironmentView() {
+            console.log('drawEnvironmentView called');
             const ctx = this.contexts.environment;
             const { width, height } = this.canvases.environment;
-            if (!ctx || !this.state.environmentData || !this.state.environmentData.elements) return;
+            if (!ctx || !this.state.environmentData || !this.state.environmentData.elements) {
+                console.log('drawEnvironmentView returned early');
+                return;
+            }
 
             ctx.clearRect(0, 0, width, height);
 
