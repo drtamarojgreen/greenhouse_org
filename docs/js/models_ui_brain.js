@@ -4,15 +4,12 @@
 
     const GreenhouseModelsUIBrain = {
         _renderElement(ctx, element, renderContext) {
-            console.log('Rendering element:', element);
             if (!element) return;
 
             const { x = 0, y = 0, activation = 0 } = renderContext;
 
             ctx.save();
             ctx.translate(x, y);
-
-            console.log('ctx:', ctx);
 
             if (element.style) {
                 for (const [key, value] of Object.entries(element.style)) {
@@ -74,13 +71,9 @@
         },
 
         drawNetworkView() {
-            console.log('drawNetworkView called');
             const ctx = this.contexts.network;
             const canvas = this.canvases.network;
-            if (!ctx || !this.state.brainData || !this.state.brainData.elements) {
-                console.log('drawNetworkView returned early');
-                return;
-            }
+            if (!ctx || !this.state.brainData || !this.state.brainData.elements) return;
 
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);

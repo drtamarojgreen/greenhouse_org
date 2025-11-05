@@ -12,37 +12,25 @@
             neurotransmitters: 0,
             ionsCrossed: 0,
             learningMetric: 0,
-            brainData: null,
-            synapseData: null,
-            environmentData: null,
         },
 
         config: {
-            dataUrl: './endpoints/qa_fixture.json',
-            lexiconUrl: './endpoints/domain_mapping.json',
-            brainUrl: './endpoints/models_brain.json',
-            synapsesUrl: './endpoints/models_synapses.json',
-            environmentUrl: './endpoints/models_environment.json',
+            dataUrl: 'https://drtamarojgreen.github.io/greenhouse_org/endpoints/qa_fixture.json',
+            lexiconUrl: 'https://drtamarojgreen.github.io/greenhouse_org/endpoints/domain_mapping.json',
         },
 
         async loadData() {
             try {
-                const [simResponse, lexResponse, brainResponse, synapsesResponse, environmentResponse] = await Promise.all([
+                const [simResponse, lexResponse] = await Promise.all([
                     fetch(this.config.dataUrl),
-                    fetch(this.config.lexiconUrl),
-                    fetch(this.config.brainUrl),
-                    fetch(this.config.synapsesUrl),
-                    fetch(this.config.environmentUrl)
+                    fetch(this.config.lexiconUrl)
                 ]);
-                if (!simResponse.ok || !lexResponse.ok || !brainResponse.ok || !synapsesResponse.ok || !environmentResponse.ok) {
+                if (!simResponse.ok || !lexResponse.ok) {
                     throw new Error('Failed to load simulation data.');
                 }
                 this.state.simulationData = await simResponse.json();
                 this.state.lexicon = await lexResponse.json();
-                this.state.brainData = await brainResponse.json();
-                this.state.synapseData = await synapsesResponse.json();
-                this.state.environmentData = await environmentResponse.json();
-                console.log('All data loaded:', this.state);
+                console.log('Simulation data and lexicon loaded:', this.state);
             } catch (error) {
                 console.error('Error loading data:', error);
                 // In a real app, you'd want to show this error to the user.

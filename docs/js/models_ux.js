@@ -109,6 +109,8 @@
             }
             this.state.targetSelector = window._greenhouseModelsAttributes.targetSelector;
             this.state.baseUrl = window._greenhouseModelsAttributes.baseUrl;
+            // Clean up the global object after use
+            delete window._greenhouseModelsAttributes;
             return !!(this.state.targetSelector && this.state.baseUrl);
         },
 
