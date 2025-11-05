@@ -3,58 +3,62 @@
     'use strict';
 
     const GreenhouseModelsUISynapse = {
-        _drawMitochondrion(ctx, x, y) {
-            ctx.fillStyle = 'rgba(255, 182, 193, 0.4)';
-            ctx.strokeStyle = 'rgba(255, 105, 180, 0.6)';
-            ctx.lineWidth = 1;
-            // Outer membrane
-            ctx.beginPath();
-            ctx.ellipse(x, y, 25, 12, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            // Inner membrane (cristae)
-            ctx.beginPath();
-            ctx.moveTo(x - 20, y);
-            ctx.bezierCurveTo(x - 10, y - 10, x, y + 10, x + 20, y);
-            ctx.stroke();
-        },
+        _renderElement(ctx, element, { w, h, tw, psy }) {
+            if (!element) return;
 
-        _drawAstrocyte(ctx, width, height) {
-            ctx.fillStyle = 'rgba(200, 200, 200, 0.2)';
-            ctx.strokeStyle = 'rgba(150, 150, 150, 0.4)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(-10, height);
-            ctx.bezierCurveTo(width * 0.2, height - 50, width * 0.8, height - 60, width + 10, height);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
+            ctx.save();
+
+            if (element.style) {
+                for (const [key, value] of Object.entries(element.style)) {
+                    ctx[key] = value;
+                }
+            }
+
+            let path;
+            switch (element.type) {
+                case 'path':
+                    path = new Path2D(GreenhouseModelsUtil.parseDynamicPath(element.path, { w, h, tw, psy }));
+                    if(ctx.fillStyle) ctx.fill(path);
+                    if(ctx.strokeStyle) ctx.stroke(path);
+                    break;
+                case 'ellipse':
+                    ctx.beginPath();
+                    const cx = eval(GreenhouseModelsUtil.parseDynamicPath(element.cx, { w, h, tw, psy }));
+                    const cy = eval(GreenhouseModelsUtil.parseDynamicPath(element.cy, { w, h, tw, psy }));
+                    ctx.ellipse(cx, cy, element.rx, element.ry, 0, 0, Math.PI * 2);
+                    if(ctx.fillStyle) ctx.fill();
+                    if(ctx.strokeStyle) ctx.stroke();
+                    break;
+            }
+
+            if (element.children) {
+                element.children.forEach(child => this._renderElement(ctx, child, { w, h, tw, psy }));
+            }
+
+            ctx.restore();
         },
 
         drawSynapticView() {
             const ctx = this.contexts.synaptic;
             const canvas = this.canvases.synaptic;
-            if (!ctx) return;
+            if (!ctx || !this.state.synapseData || !this.state.synapseData.elements) return;
+
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
 
-            this._drawAstrocyte(ctx, width, height);
+            const renderContext = {
+                w: width,
+                h: height,
+                tw: width / 2.5,
+                psy: height / 2 - 40
+            };
+
+            this.state.synapseData.elements.forEach(element => {
+                this._renderElement(ctx, element, renderContext);
+            });
 
             const preSynapticY = height / 2 - 40;
-            const postSynapticY = height / 2 + 40;
             const terminalWidth = width / 2.5;
-
-            // Pre-synaptic terminal
-            ctx.fillStyle = 'rgba(115, 39, 81, 0.7)';
-            ctx.strokeStyle = 'rgba(85, 9, 51, 0.9)';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(width / 2 - terminalWidth, preSynapticY - 60);
-            ctx.quadraticCurveTo(width / 2, preSynapticY + 20, width / 2 + terminalWidth, preSynapticY - 60);
-            ctx.stroke();
-            ctx.fill();
-
-            this._drawMitochondrion(ctx, width / 2 + terminalWidth - 50, preSynapticY - 40);
 
             // Synaptic vesicles
             this.state.synaptic.vesicles.forEach(vesicle => {
@@ -76,16 +80,7 @@
                 ctx.fill();
             });
 
-            // Post-synaptic terminal
-            ctx.fillStyle = 'rgba(53, 116, 56, 0.7)';
-            ctx.strokeStyle = 'rgba(23, 86, 26, 0.9)';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(width / 2 - terminalWidth, postSynapticY);
-            ctx.quadraticCurveTo(width / 2, postSynapticY - 120, width / 2 + terminalWidth, postSynapticY);
-            ctx.stroke();
-            ctx.fill();
-
+            const postSynapticY = height / 2 + 40;
             // Receptors
             this.state.synaptic.receptors.forEach((receptor, i) => {
                 const x = width / 2 + (i - this.state.synaptic.receptors.length / 2) * (terminalWidth * 1.2 / this.state.synaptic.receptors.length);

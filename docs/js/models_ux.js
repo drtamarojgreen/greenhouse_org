@@ -46,7 +46,8 @@
                 community: 0.5,
                 society: 0.5,
                 genetics: 0.5,
-                environment: 0.5,
+                type: 'NEUTRAL', // NEUTRAL, POSITIVE, NEGATIVE
+                auraOpacity: 0,
                 animationFrameId: null
             },
 
@@ -60,11 +61,6 @@
             ],
 
             synapses: [],
-
-            environment: {
-                type: 'NEUTRAL', // NEUTRAL, POSITIVE, NEGATIVE
-                auraOpacity: 0
-            },
 
             mainAppContainer: null
         },
@@ -84,13 +80,14 @@
 
                 this.state.targetElement = await GreenhouseUtils.waitForElement(this.state.targetSelector, 15000);
 
-                GreenhouseModelsUI.init(this.state); // Pass state to UI module
+                await GreenhouseModelsData.loadData();
+                Object.assign(this.state, GreenhouseModelsData.state);
+
+                GreenhouseModelsUI.init(this.state, window.GreenhouseModelsUtil);
 
                 await GreenhouseModelsUI.loadCSS(this.state.baseUrl);
 
                 await new Promise(resolve => setTimeout(resolve, GreenhouseUtils.config.dom.insertionDelay));
-
-                await GreenhouseModelsData.loadData();
 
                 GreenhouseModelsUI.renderConsentScreen(this.state.targetElement);
                 this.addConsentListeners();
@@ -168,6 +165,9 @@
                     this.addSimulationListeners();
                     this.bindSimulationControls();
                     this.addEnvironmentListeners();
+                    GreenhouseModelsUI.drawSynapticView();
+                    GreenhouseModelsUI.drawNetworkView();
+                    GreenhouseModelsUI.drawEnvironmentView();
                 } else {
                     console.error("Data not loaded, cannot start simulation.");
                 }
