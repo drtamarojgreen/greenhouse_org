@@ -19,9 +19,11 @@ brain: brainData,
 synapse: synapseData,
 environment: environmentData
 };
-// Expose the data on the window object for the static script to access
-window._greenhouseModelsData = visualizationData;
-console.log('Models visualization data loaded and exposed.');
+// Use the textbox as a data bridge to pass data to the browser script
+const dataElement = $w('#dataTextElement');
+dataElement.text = JSON.stringify(visualizationData);
+dataElement.hide(); // Ensure the element is not visible to the user
+console.log('Models visualization data loaded and passed to #dataTextElement.');
 })
 .catch(err => {
 console.error("Error fetching or parsing models visualization data:", err);
