@@ -14,28 +14,33 @@
             learningMetric: 0,
         },
 
-        config: {
-            dataUrl: 'https://drtamarojgreen.github.io/greenhouse_org/endpoints/qa_fixture.json',
-            lexiconUrl: 'https://drtamarojgreen.github.io/greenhouse_org/endpoints/domain_mapping.json',
-        },
 
         async loadData() {
-            try {
-                const [simResponse, lexResponse] = await Promise.all([
-                    fetch(this.config.dataUrl),
-                    fetch(this.config.lexiconUrl)
-                ]);
-                if (!simResponse.ok || !lexResponse.ok) {
-                    throw new Error('Failed to load simulation data.');
-                }
-                this.state.simulationData = await simResponse.json();
-                this.state.lexicon = await lexResponse.json();
-                console.log('Simulation data and lexicon loaded:', this.state);
-            } catch (error) {
-                console.error('Error loading data:', error);
-                // In a real app, you'd want to show this error to the user.
-                throw error; // Re-throw to be caught by the caller
-            }
+            const dataElement = await new Promise((resolve, reject) => {
+                let elapsedTime = 0;
+                const poll = setInterval(() => {
+                    const element = document.querySelector('#dataTextElement');
+                    console.log(`Poll attempt: ${elapsedTime / 50}ms. Element found: ${!!element}. Text content length: ${element ? element.textContent.length : 'N/A'}`);
+                    if (element && element.textContent && element.textContent.length > 2) {
+                        clearInterval(poll);
+                        resolve(element);
+                    } else {
+                        elapsedTime += 50;
+                        if (elapsedTime >= 60000) { // 60 second timeout
+                            clearInterval(poll);
+                            reject(new Error('Timed out waiting for #dataTextElement.'));
+                        }
+                    }
+                }, 50);
+            });
+
+            console.log('Models App: Using data provided from Velo via #dataTextElement.');
+            const veloData = JSON.parse(dataElement.textContent);
+            this.state.simulationData = veloData;
+            this.state.lexicon = veloData.lexicon || {};
+            this.state.synapseData = veloData.synapse; // Extract synapse data from Velo payload
+            this.state.brainData = veloData.brain;     // Extract brain data from Velo payload
+            this.state.environmentData = veloData.environment; // Extract environment data from Velo payload
         },
 
         transformNotesToSimulationInput(rawNotes, lexicon) {
