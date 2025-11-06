@@ -10,27 +10,50 @@ The `/tech/` page (`https://greenhousementalhealth.org/tech/`) will serve as a d
 *   **Stakeholder Demonstration:** To enable clear and effective demonstrations of new functionalities to project stakeholders. This allows for early feedback and ensures alignment with requirements in a live, yet fully isolated, Wix environment.
 *   **Adherence to Standards:** To ensure that all new integrations meet the project's stringent standards for functionality, performance, security, and cross-browser compatibility before wider release.
 
-## 2. Integration Strategy: Wix Velo-Native Approach
+## 2. Integration Strategy: Hybrid Approach
 
-Based on the comprehensive review of the project's existing architecture and documentation, the most appropriate, consistent, and modern strategy for integrating new features into the Wix environment is the **Wix Velo-native approach**. This strategy involves developing JavaScript code that runs directly within the Wix platform, leveraging its native capabilities.
+To achieve a flexible and powerful testing environment, the `/tech/` page will employ a **hybrid integration strategy**. This approach combines the strengths of the **Wix Velo-native environment** with the versatility of **externally injected JavaScript applications**, managed by the project's central loader script (`greenhouse.js`).
 
-Key aspects of this approach include:
+This dual strategy provides significant advantages:
 
-*   **Direct Velo API Utilization:** The frontend code will extensively use the `$w` API to interact with and manipulate UI elements present on the Wix page. This is the standard and most robust method for frontend development within the Wix ecosystem.
-*   **Seamless Backend Communication:** Integration with custom backend Velo functions (defined in `.web.js` files) will be achieved through direct imports and asynchronous calls, as demonstrated by existing modules.
-*   **Avoidance of DOM Manipulation Complexities:** This strategy explicitly avoids the challenges and potential instabilities associated with direct DOM manipulation by external JavaScript applications (as detailed in `docs/wix_dom_manipulation.md`). The Wix Velo environment provides a managed way to interact with the page's structure.
-*   **Consistency with Existing Applications:** This approach aligns with the successful implementation of the scheduler application (`apps/frontend/schedule/Schedule.js`), which is a complex Velo-native application. This ensures architectural consistency across new features.
+*   **Comprehensive Testing Capabilities:** By using both Velo and external scripts, we can test a wider range of integrations. Velo is ideal for interacting with Wix-specific elements and backend functions, while external scripts are better suited for complex DOM manipulation, leveraging third-party libraries, or implementing functionalities not easily achievable within the Velo sandbox.
+*   **Architectural Consistency:** The Velo-native components will follow the established patterns used by other complex applications like the scheduler (`apps/frontend/schedule/Schedule.js`). The external script injection will leverage the existing `greenhouse.js` loader, ensuring that the new page integrates seamlessly into the project's established asset loading pipeline.
+*   **Clear Separation of Concerns:** Velo code (`Tech.js`) will be responsible for page-level logic, event handling on Wix elements, and communication with the Velo backend. The injected script (`tech.js`) will handle fine-grained DOM manipulation within specific containers and execute test-specific logic that requires direct browser API access.
 
 ## 3. Implementation Details
+
+The implementation is divided into two primary components: the Velo-native code running within the Wix editor and the external JavaScript/CSS assets injected by the central loader.
 
 ### 3.1. Frontend Velo Code (`apps/frontend/tech/Tech.js`)
 
 A new Velo JavaScript file will be created to encapsulate the frontend logic specific to the `/tech/` testing page. This file will adhere to established project naming conventions, mirroring patterns seen in `Books.js`, `News.js`, etc.
 
 *   **File Path:** `/home/tamarojgreen/development/LLM/greenhouse_org/apps/frontend/tech/Tech.js`
-*   **Core Structure and Conventions:** The file will follow the standard Velo module pattern, utilizing the `$w.onReady` function to ensure the Document Object Model (DOM) is fully loaded and ready for interaction before any script execution. It will include necessary imports for Wix-provided modules (e.g., `wix-fetch` for making HTTP requests, `wix-location` for URL manipulation) and any custom backend Velo functions that the integrations will utilize.
-*   **UI Interaction:** All interactions with the page's user interface will be managed through the `$w` API. Elements on the Wix page will be selected and manipulated using their unique, semantically meaningful IDs, in strict accordance with the guidelines outlined in `docs/code_review_development_guidelines.md` to ensure maintainability and stability.
-*   **Integration Logic Placeholder:** The file will be structured with clear, descriptive comments. These comments will serve as explicit placeholders, guiding where specific integration logic, test scenarios, or UI components for testing should be implemented. This modular approach allows for easy expansion and modification of test cases.
+*   **Core Structure and Conventions:** The file will be structured as a standard Velo module, utilizing the `$w.onReady` function to ensure all page elements are loaded before any code execution. It will be responsible for managing the state of the `/tech/` page and interacting with Wix-specific APIs.
+
+    ```javascript
+    // apps/frontend/tech/Tech.js
+
+    /**
+     * @file Tech.js
+     * @description Velo frontend code for the /tech/ testing and integration page.
+     * This script handles interactions with Wix elements and coordinates with injected
+     * external scripts for advanced testing scenarios.
+     */
+
+    $w.onReady(function () {
+        console.log("Velo code for /tech/ page is ready.");
+
+        // --- Placeholder for Velo-based UI element event listeners ---
+        // Example: $w('#testButton').onClick(() => { ... });
+
+        // --- Placeholder for logic to communicate with backend Velo functions ---
+
+        // --- Placeholder for logic to interact with the externally injected tech.js script ---
+    });
+    ```
+
+*   **UI Interaction:** All interactions with native Wix UI elements will be managed exclusively through the `$w` API. Elements will be assigned unique, semantically meaningful IDs in the Wix editor, which will be referenced in this script.
 
 ### 3.2. Backend Velo Functions (`apps/wv/backend/*.web.js`)
 
@@ -40,6 +63,92 @@ Should the complex integrations require server-side processing, new Velo backend
 *   **Core Structure and Exposure:** These backend files will expose their functionalities using the `export function functionName()` or `export const functionName = webMethod(...)` syntax, making them callable from the frontend Velo code.
 *   **Security Mandates:** All backend functions will strictly adhere to the project's security guidelines, as detailed in `docs/scheduler_permissions_backend.md` and `docs/scheduler_security_implementation.md`. This includes rigorous input validation, proper authentication, and robust role-based access control (RBAC) for any sensitive operations, ensuring that data and functionality are protected.
 *   **Error Handling:** Each backend function will incorporate comprehensive `try...catch` blocks to gracefully handle potential errors. Meaningful and informative error messages will be returned to the frontend, aiding in debugging and providing clear feedback during testing.
+
+### 3.3. External Script Injection
+
+The central loader, `greenhouse.js`, will be updated to recognize the `/tech/` page and inject the necessary JavaScript and CSS files. This allows for advanced DOM manipulation and styling that is managed outside of the Wix Velo environment.
+
+#### 3.3.1. Central Loader Modifications (`docs/js/greenhouse.js`)
+
+The `greenhouse.js` script will be modified to support the new page.
+
+*   **Configuration Updates:**
+    1.  A new path constant, `techPagePath: '/tech/'`, will be added to the `config` object.
+    2.  A new selector, `tech: '#SOME_WIX_CONTAINER_ID'`, will be added to the `config.selectors` object. **Note:** The user will need to provide the actual ID of a container element on the `/tech/` page for this selector to function correctly.
+
+*   **New Loader Function:** A new asynchronous function, `loadTechApplication`, will be created. This function will be modeled on existing loaders like `loadBooksApplication` and will be responsible for calling the `loadApplication` utility.
+
+*   **Initialization Logic:** The main `initialize` function will be updated with a new `else if` condition to check for `techPagePath` in the URL and call `loadTechApplication` when it matches.
+
+#### 3.3.2. Page-Specific Script (`docs/js/tech.js`)
+
+This file will contain the client-side JavaScript for the `/tech/` page's testing functionalities.
+
+*   **File Path:** `docs/js/tech.js`
+*   **Purpose:** To execute test logic, manipulate the DOM within its designated container, and interact with non-Wix browser APIs.
+*   **Initial Structure:** The script will be initialized with a standard IIFE (Immediately Invoked Function Expression) to prevent global namespace pollution and will include logic to verify its successful execution.
+
+    ```javascript
+    // docs/js/tech.js
+
+    (function() {
+        /**
+         * @file tech.js
+         * @description Client-side script for the /tech/ integration page.
+         * This script is loaded by greenhouse.js and handles advanced test logic.
+         */
+        console.log("tech.js: Script loaded successfully.");
+
+        const GreenhouseUtils = window.GreenhouseUtils;
+        if (!GreenhouseUtils) {
+            console.error('tech.js: GreenhouseUtils not found.');
+            return;
+        }
+
+        const scriptTag = document.currentScript;
+        const targetSelector = scriptTag.getAttribute('target-selector-left');
+
+        if (!targetSelector) {
+            console.error('tech.js: Target selector not found. The application cannot be initialized.');
+            return;
+        }
+
+        console.log(`tech.js: Initializing application in target selector: ${targetSelector}`);
+
+        // --- Placeholder for test implementation logic ---
+        // This is where code to set up test scenarios, add UI elements dynamically,
+        // and report results will be implemented.
+    })();
+    ```
+
+#### 3.3.3. Page-Specific Stylesheet (`docs/css/tech.css`)
+
+This file will provide custom styles for the elements and components on the `/tech/` page.
+
+*   **File Path:** `docs/css/tech.css`
+*   **Purpose:** To ensure a consistent and clear visual presentation for test elements, which may be dynamically generated or require styling that is distinct from the main site theme.
+*   **Initial Structure:** The stylesheet will be initialized with a rule to define the primary test container.
+
+    ```css
+    /* docs/css/tech.css */
+
+    /**
+     * Styles for the /tech/ integration testing page.
+     */
+
+    .tech-container {
+        border: 2px dashed #00bfff; /* Deep sky blue */
+        padding: 20px;
+        background-color: #f0f8ff; /* Alice blue */
+        min-height: 300px;
+        font-family: 'Courier New', Courier, monospace;
+    }
+
+    .tech-log {
+        font-size: 14px;
+        color: #333;
+    }
+    ```
 
 ## 4. User Actions (Outside of Gemini's Control)
 
