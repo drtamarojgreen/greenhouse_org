@@ -110,7 +110,7 @@
             this.state.targetSelector = window._greenhouseModelsAttributes.targetSelector;
             this.state.baseUrl = window._greenhouseModelsAttributes.baseUrl;
             // Clean up the global object after use
-            delete window._greenhouseModelsAttributes;
+            // delete window._greenhouseModelsAttributes; // Do NOT delete, as it's needed for re-initialization.
             return !!(this.state.targetSelector && this.state.baseUrl);
         },
 

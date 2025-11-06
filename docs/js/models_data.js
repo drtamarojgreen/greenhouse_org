@@ -26,17 +26,17 @@
                     let elapsedTime = 0;
                     const poll = setInterval(() => {
                         const element = document.querySelector('#dataTextElement');
-                        if (element && element.textContent) {
+                        if (element && element.textContent && element.textContent.length > 2) {
                             clearInterval(poll);
                             resolve(element);
                         } else {
-                            elapsedTime += 100;
-                            if (elapsedTime >= 10000) { // 10 second timeout
+                            elapsedTime += 200;
+                            if (elapsedTime >= 30000) { // 30 second timeout
                                 clearInterval(poll);
                                 reject(new Error('Timed out waiting for #dataTextElement.'));
                             }
                         }
-                    }, 100);
+                    }, 200);
                 });
 
                 console.log('Models App: Using data provided from Velo via #dataTextElement.');
