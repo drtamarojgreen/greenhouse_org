@@ -80,6 +80,10 @@
 
                 this.state.targetElement = await GreenhouseUtils.waitForElement(this.state.targetSelector, 15000);
 
+                // Load data before rendering anything
+                await GreenhouseModelsData.loadData();
+                Object.assign(this.state, GreenhouseModelsData.state);
+
                 GreenhouseModelsUI.init(this.state, window.GreenhouseModelsUtil);
 
                 await GreenhouseModelsUI.loadCSS(this.state.baseUrl);
@@ -123,9 +127,6 @@
 
             startButton.addEventListener('click', async () => {
                 try {
-                    await GreenhouseModelsData.loadData();
-                    Object.assign(this.state, GreenhouseModelsData.state);
-
                     const { simulationData, lexicon } = this.state;
                     if (simulationData && lexicon) {
                         const processedData = GreenhouseModelsData.transformNotesToSimulationInput(
