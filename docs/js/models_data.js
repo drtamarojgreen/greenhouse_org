@@ -14,43 +14,35 @@
             learningMetric: 0,
         },
 
-        config: {
-            dataUrl: 'https://drtamarojgreen.github.io/greenhouse_org/endpoints/qa_fixture.json',
-            lexiconUrl: 'https://drtamarojgreen.github.io/greenhouse_org/endpoints/domain_mapping.json',
-        },
 
         async loadData() {
-            // Attempt a direct, one-time read of the Velo data from the DOM element bridge.
-            const dataElement = document.querySelector('#dataTextElement');
-            if (dataElement && dataElement.textContent && dataElement.textContent.length > 2) {
-                try {
-                    console.log('Models App: Found Velo data in #dataTextElement. Attempting to parse.');
-                    this.state.simulationData = JSON.parse(dataElement.textContent);
-                    this.state.lexicon = this.state.simulationData.lexicon || {};
-                    console.log('Models App: Successfully used data provided from Velo script.');
-                    return;
-                } catch (e) {
-                    console.error('Models App: Failed to parse Velo data from #dataTextElement. Falling back.', e);
-                }
-            }
+        async loadData() {
+            // Prioritize Velo data by polling a DOM element bridge
+            const dataElement = await new Promise((resolve, reject) => {
+                let elapsedTime = 0;
+                const poll = setInterval(() => {
+                    const element = document.querySelector('#dataTextElement');
+                    if (element && element.textContent && element.textContent.length > 2) {
+                        clearInterval(poll);
+                        resolve(element);
+                    } else {
+                        elapsedTime += 200;
+                        if (elapsedTime >= 30000) { // 30 second timeout
+                            clearInterval(poll);
+                            reject(new Error('Timed out waiting for #dataTextElement.'));
+                        }
+                    }
+                }, 200);
+            });
 
-            // Fallback to original data fetching if Velo data is not present or invalid.
-            console.log('Models App: Velo data not found or invalid. Falling back to default data fetch.');
-            try {
-                const [simResponse, lexResponse] = await Promise.all([
-                    fetch(this.config.dataUrl),
-                    fetch(this.config.lexiconUrl)
-                ]);
-                if (!simResponse.ok || !lexResponse.ok) {
-                    throw new Error('Failed to load simulation data.');
-                }
-                this.state.simulationData = await simResponse.json();
-                this.state.lexicon = await lexResponse.json();
-                console.log('Simulation data and lexicon loaded via fallback:', this.state);
-            } catch (error) {
-                console.error('Error loading fallback data:', error);
-                throw error; // Re-throw to be caught by the caller
-            }
+            console.log('Models App: Using data provided from Velo via #dataTextElement.');
+            const veloData = JSON.parse(dataElement.textContent);
+            this.state.simulationData = veloData;
+            this.state.lexicon = veloData.lexicon || {};
+            this.state.synapseData = veloData.synapse; // Extract synapse data from Velo payload
+            this.state.brainData = veloData.brain;     // Extract brain data from Velo payload
+            this.state.environmentData = veloData.environment; // Extract environment data from Velo payload
+        },
         },
 
         transformNotesToSimulationInput(rawNotes, lexicon) {
