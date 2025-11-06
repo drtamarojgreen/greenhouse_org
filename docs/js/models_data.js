@@ -27,8 +27,8 @@
                         clearInterval(poll);
                         resolve(element);
                     } else {
-                        elapsedTime += 50;
-                        if (elapsedTime >= 60000) { // 60 second timeout
+                        elapsedTime += 5000;
+                        if (elapsedTime >= 30000) { // 60 second timeout
                             clearInterval(poll);
                             reject(new Error('Timed out waiting for #dataTextElement.'));
                         }
