@@ -80,9 +80,6 @@
 
                 this.state.targetElement = await GreenhouseUtils.waitForElement(this.state.targetSelector, 15000);
 
-                await GreenhouseModelsData.loadData();
-                Object.assign(this.state, GreenhouseModelsData.state);
-
                 GreenhouseModelsUI.init(this.state, window.GreenhouseModelsUtil);
 
                 await GreenhouseModelsUI.loadCSS(this.state.baseUrl);
@@ -93,7 +90,7 @@
                 this.addConsentListeners();
 
                 this.state.isInitialized = true;
-                this.observeAndReinitializeApp(this.state.targetElement);
+                // this.observeAndReinitializeApp(this.state.targetElement); // Disabled due to buggy behavior
             } catch (error) {
                 console.error('Models App: Initialization failed:', error);
                 GreenhouseUtils.displayError(`Failed to load simulation: ${error.message}`);
@@ -110,7 +107,7 @@
             this.state.targetSelector = window._greenhouseModelsAttributes.targetSelector;
             this.state.baseUrl = window._greenhouseModelsAttributes.baseUrl;
             // Clean up the global object after use
-            // delete window._greenhouseModelsAttributes; // Do NOT delete, as it's needed for re-initialization.
+            delete window._greenhouseModelsAttributes;
             return !!(this.state.targetSelector && this.state.baseUrl);
         },
 
@@ -124,13 +121,17 @@
                 startButton.disabled = !consentCheckbox.checked;
             });
 
-            startButton.addEventListener('click', () => {
-                const { simulationData, lexicon } = GreenhouseModelsData.state;
-                if (simulationData && lexicon) {
-                    const processedData = GreenhouseModelsData.transformNotesToSimulationInput(
-                        simulationData.notes,
-                        lexicon
-                    );
+            startButton.addEventListener('click', async () => {
+                try {
+                    await GreenhouseModelsData.loadData();
+                    Object.assign(this.state, GreenhouseModelsData.state);
+
+                    const { simulationData, lexicon } = this.state;
+                    if (simulationData && lexicon) {
+                        const processedData = GreenhouseModelsData.transformNotesToSimulationInput(
+                            simulationData.notes,
+                            lexicon
+                        );
 
                     // Pre-populate vesicles
                     for (let i = 0; i < 20; i++) {

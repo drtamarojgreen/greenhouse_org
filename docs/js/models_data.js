@@ -20,22 +20,6 @@
         },
 
         async loadData() {
-            // Attempt a direct, one-time read of the Velo data from the DOM element bridge.
-            const dataElement = document.querySelector('#dataTextElement');
-            if (dataElement && dataElement.textContent && dataElement.textContent.length > 2) {
-                try {
-                    console.log('Models App: Found Velo data in #dataTextElement. Attempting to parse.');
-                    this.state.simulationData = JSON.parse(dataElement.textContent);
-                    this.state.lexicon = this.state.simulationData.lexicon || {};
-                    console.log('Models App: Successfully used data provided from Velo script.');
-                    return;
-                } catch (e) {
-                    console.error('Models App: Failed to parse Velo data from #dataTextElement. Falling back.', e);
-                }
-            }
-
-            // Fallback to original data fetching if Velo data is not present or invalid.
-            console.log('Models App: Velo data not found or invalid. Falling back to default data fetch.');
             try {
                 const [simResponse, lexResponse] = await Promise.all([
                     fetch(this.config.dataUrl),
@@ -46,9 +30,10 @@
                 }
                 this.state.simulationData = await simResponse.json();
                 this.state.lexicon = await lexResponse.json();
-                console.log('Simulation data and lexicon loaded via fallback:', this.state);
+                console.log('Simulation data and lexicon loaded:', this.state);
             } catch (error) {
-                console.error('Error loading fallback data:', error);
+                console.error('Error loading data:', error);
+                // In a real app, you'd want to show this error to the user.
                 throw error; // Re-throw to be caught by the caller
             }
         },
