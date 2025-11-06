@@ -16,6 +16,9 @@
 
 
         async loadData() {
+            console.log('Check: #dataSection found?', !!document.querySelector('#dataSection'));
+            console.log('Check: #testLabel found?', !!document.querySelector('#testLabel'));
+            console.log('Check: #dataTextElement found?', !!document.querySelector('#dataTextElement'));
             const dataElement = await new Promise((resolve, reject) => {
                 let elapsedTime = 0;
                 const poll = setInterval(() => {
