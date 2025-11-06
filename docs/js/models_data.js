@@ -16,24 +16,24 @@
 
 
         async loadData() {
-            console.log('Check: #dataSection found?', !!document.getElementById('dataSection'));
-            console.log('Check: #testLabel found?', !!document.getElementById('testLabel'));
-            console.log('Check: #dataTextElement found?', !!document.getElementById('dataTextElement'));
             const dataElement = await new Promise((resolve, reject) => {
                 let elapsedTime = 0;
                 const poll = setInterval(() => {
+                    console.log('Check: #dataSection found?', !!document.getElementById('dataSection'));
+                    console.log('Check: #testLabel found?', !!document.getElementById('testLabel'));
+                    console.log('Check: #dataTextElement found?', !!document.getElementById('dataTextElement'));
                     const element = document.querySelector('#dataTextElement');
                     if (element && element.textContent && element.textContent.length > 2) {
                         clearInterval(poll);
                         resolve(element);
                     } else {
-                        elapsedTime += 5000;
+                        elapsedTime += 1000;
                         if (elapsedTime >= 30000) { // 60 second timeout
                             clearInterval(poll);
                             reject(new Error('Timed out waiting for #dataTextElement.'));
                         }
                     }
-                }, 50);
+                }, 5000);
             });
 
             console.log('Models App: Using data provided from Velo via #dataTextElement.');
