@@ -16,7 +16,7 @@
 
 
         async loadData() {
-            console.log('Check: Data holder element found?', !!document.querySelector('section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h4:nth-child(1)'));
+            console.log('Check: Data holder element found?', !!document.querySelector('section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > span:nth-child(1)'));
             const dataElement = await new Promise((resolve, reject) => {
                 let elapsedTime = 0;
                 const poll = setInterval(() => {
