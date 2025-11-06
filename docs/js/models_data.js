@@ -20,7 +20,7 @@
             const dataElement = await new Promise((resolve, reject) => {
                 let elapsedTime = 0;
                 const poll = setInterval(() => {
-                    const element = document.querySelector('section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h4:nth-child(1)');
+                    const element = document.querySelector('section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > span:nth-child(1)');
                     console.log("Searching for data holder element ...", element);
                     if (element && element.dataset.customHolder && element.dataset.customHolder.length > 2) {
                         clearInterval(poll);
