@@ -28,7 +28,7 @@ const testLabel = $w('#testLabel');
 if (testLabel) {
     const jsonData = JSON.stringify(visualizationData);
     // Get current text content and wrap it in a span with the data-custom-holder attribute
-    testLabel.html = `<span data-custom-holder='${jsonData}'>${testLabel.text}</span>`;
+    testLabel.html = `<span data-custom-holder='${jsonData.replace(/"/g, '&quot;')}'>${testLabel.text}</span>`;
     testLabel.hide(); // Hide the testLabel as well
     console.log('Models visualization data passed to #testLabel data-custom-holder.');
 }
