@@ -16,28 +16,26 @@
 
 
         async loadData() {
+            console.log('Check: Data holder element found?', !!document.querySelector('section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h4:nth-child(1)'));
             const dataElement = await new Promise((resolve, reject) => {
                 let elapsedTime = 0;
                 const poll = setInterval(() => {
-                    console.log('Check: #dataSection found?', !!document.getElementById('dataSection'));
-                    console.log('Check: #testLabel found?', !!document.getElementById('testLabel'));
-                    console.log('Check: #dataTextElement found?', !!document.getElementById('dataTextElement'));
-                    const element = document.querySelector('#dataTextElement');
-                    if (element && element.textContent && element.textContent.length > 2) {
+                    const element = document.querySelector('section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h4:nth-child(1)');
+                    if (element && element.dataset.customHolder && element.dataset.customHolder.length > 2) {
                         clearInterval(poll);
                         resolve(element);
                     } else {
-                        elapsedTime += 1000;
-                        if (elapsedTime >= 30000) { // 60 second timeout
+                        elapsedTime += 5000;
+                        if (elapsedTime >= 30000) { // 30 second timeout
                             clearInterval(poll);
-                            reject(new Error('Timed out waiting for #dataTextElement.'));
+                            reject(new Error('Timed out waiting for data holder element.'));
                         }
                     }
                 }, 5000);
             });
 
-            console.log('Models App: Using data provided from Velo via #dataTextElement.');
-            const veloData = JSON.parse(dataElement.textContent);
+            console.log('Models App: Using data provided from Velo via data-custom-holder attribute.');
+            const veloData = JSON.parse(dataElement.dataset.customHolder);
             this.state.simulationData = veloData;
             this.state.lexicon = veloData.lexicon || {};
             this.state.synapseData = veloData.synapse; // Extract synapse data from Velo payload

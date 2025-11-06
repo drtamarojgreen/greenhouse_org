@@ -23,6 +23,15 @@ environment: environmentData
 const dataElement = $w('#dataTextElement');
 dataElement.text = JSON.stringify(visualizationData);
 dataElement.hide(); // Ensure the element is not visible to the user
+
+const testLabel = $w('#testLabel');
+if (testLabel) {
+    const jsonData = JSON.stringify(visualizationData);
+    // Get current text content and wrap it in a span with the data-custom-holder attribute
+    testLabel.html = `<span data-custom-holder='${jsonData}'>${testLabel.text}</span>`;
+    testLabel.hide(); // Hide the testLabel as well
+    console.log('Models visualization data passed to #testLabel data-custom-holder.');
+}
 console.log('Models visualization data loaded and passed to #dataTextElement.');
 })
 .catch(err => {
