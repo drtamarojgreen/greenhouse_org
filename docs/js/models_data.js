@@ -41,7 +41,6 @@
             this.state.brainData = veloData.brain;     // Extract brain data from Velo payload
             this.state.environmentData = veloData.environment; // Extract environment data from Velo payload
         },
-        },
 
         transformNotesToSimulationInput(rawNotes, lexicon) {
             console.log("Starting transformation pipeline...");
