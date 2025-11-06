@@ -20,7 +20,6 @@
                 let elapsedTime = 0;
                 const poll = setInterval(() => {
                     const element = document.querySelector('#dataTextElement');
-                    console.log(`Poll attempt: ${elapsedTime / 50}ms. Element found: ${!!element}. Text content length: ${element ? element.textContent.length : 'N/A'}`);
                     if (element && element.textContent && element.textContent.length > 2) {
                         clearInterval(poll);
                         resolve(element);
