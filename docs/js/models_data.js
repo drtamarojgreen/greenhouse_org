@@ -154,5 +154,9 @@
         }
     };
 
-    window.GreenhouseModelsData = GreenhouseModelsData;
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = GreenhouseModelsData;
+    } else {
+        window.GreenhouseModelsData = GreenhouseModelsData;
+    }
 })();
