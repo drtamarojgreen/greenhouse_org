@@ -72,7 +72,8 @@
                 return foundTags;
             };
 
-            rawNotes.forEach(note => {
+            if (rawNotes) {
+                rawNotes.forEach(note => {
                 const sanitizedContent = note.content;
                 const sourceType = note.type;
                 simulation.meta.source_counts[sourceType]++;
@@ -114,6 +115,8 @@
                     simulation.events.push(newEvent);
                 }
             });
+
+            }
 
             if (simulation.nodes.length >= 2) {
                 const synapse = {
