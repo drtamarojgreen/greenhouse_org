@@ -16,8 +16,6 @@
 
 
         async loadData() {
-        async loadData() {
-            // Prioritize Velo data by polling a DOM element bridge
             const dataElement = await new Promise((resolve, reject) => {
                 let elapsedTime = 0;
                 const poll = setInterval(() => {
