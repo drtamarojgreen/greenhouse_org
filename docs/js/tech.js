@@ -48,38 +48,28 @@
         }
 
         async init() {
-            console.log('TechApp: Initializing...');
-            // Wait for the data element to be populated by Velo code to avoid race conditions.
-            this.waitForDataAndInit();
-        }
+            console.log("TechApp: Initializing and waiting for 'veloDataReady' event...");
 
-        /**
-         * @function waitForDataAndInit
-         * @description Polls for the #dataTextElement and proceeds with initialization once it's ready.
-         */
-        waitForDataAndInit() {
             const maxWaitTime = 5000; // 5 seconds
-            const pollInterval = 100; // 100 ms
-            let elapsedTime = 0;
-            console.log(`%cTechApp-Debug: Starting to poll for #dataTextElement. Max wait: ${maxWaitTime}ms.`, 'color: blue; font-weight: bold;');
+            let initCalled = false;
 
-            const poll = setInterval(async () => {
-                elapsedTime += pollInterval;
-                const dataElement = document.getElementById('dataTextElement');
-                const content = dataElement ? dataElement.textContent : 'null';
+            const onVeloDataReady = () => {
+                if (initCalled) return;
+                initCalled = true;
+                clearTimeout(fallbackTimeout); // Clear the safety timeout
+                console.log("%cTechApp: 'veloDataReady' event received. Proceeding with initialization.", 'color: green; font-weight: bold;');
+                this.proceedWithInit();
+            };
 
-                console.log(`%cTechApp-Debug: Polling... (${elapsedTime}ms). #dataTextElement content: "${content}"`, 'color: gray;');
+            const fallbackTimeout = setTimeout(() => {
+                if (initCalled) return;
+                initCalled = true;
+                window.removeEventListener('veloDataReady', onVeloDataReady); // Clean up the listener
+                console.warn(`%cTechApp: Timed out after ${maxWaitTime}ms waiting for 'veloDataReady' event. Proceeding with initialization.`, 'color: orange; font-weight: bold;');
+                this.proceedWithInit();
+            }, maxWaitTime);
 
-                if (dataElement && content && content.trim() !== '{}' && content.trim() !== '') {
-                    clearInterval(poll);
-                    console.log('%cTechApp-Debug: #dataTextElement found and populated. Exiting poll.', 'color: green; font-weight: bold;');
-                    await this.proceedWithInit();
-                } else if (elapsedTime >= maxWaitTime) {
-                    clearInterval(poll);
-                    console.warn('%cTechApp-Debug: Timed out waiting for #dataTextElement. Exiting poll.', 'color: orange; font-weight: bold;');
-                    await this.proceedWithInit();
-                }
-            }, pollInterval);
+            window.addEventListener('veloDataReady', onVeloDataReady, { once: true });
         }
 
         /**
