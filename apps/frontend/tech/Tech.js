@@ -1,74 +1,71 @@
 /**
  * @file Velo page code for the /tech page (Frontend-Only).
- * @description This script runs on the /tech page in the Wix editor. It generates mock data
- * directly and passes it to the client-side application (docs/js/tech.js) via a hidden
- * text element. This version has no backend dependencies.
+ * @description This script runs on the /tech page. It populates the page with initial data
+ * for the client-side application and sets promotional text content.
  */
 
 $w.onReady(function () {
-    console.log("Tech Page Velo Code (Frontend-Only): Page is ready.");
+    console.log("Tech Page Velo Code: Page is ready.");
 
     try {
-        // 1. Define a function to generate mock data locally.
-        const getMockUserData = () => {
-            return {
-                userId: "test-frontend-123",
-                role: "admin",
-                preferences: { theme: "dark" },
-                source: "Generated directly in Velo Page Code"
-            };
-        };
-
-        const mockUserData = getMockUserData();
-        console.log("Tech Page Velo Code: Generated mock user data locally.", mockUserData);
-
-        // 2. Prepare the initial configuration object to be passed to the client-side script.
+        // --- 1. Prepare Initial Data for Client-Side App ---
         const initialData = {
-            source: "Velo Page Code (Frontend-Only)",
+            source: "Velo Page Code",
             timestamp: new Date().toISOString(),
-            configMessage: "This data was populated by the page's Velo code without a backend call.",
-            userData: mockUserData
+            configMessage: "This data was populated by the page's Velo code."
         };
 
-        // 3. Find the hidden text element and populate it with the stringified JSON data.
         const dataElement = $w('#dataTextElement');
         if (dataElement) {
-            dataElement.text = JSON.stringify(initialData, null, 2);
+            dataElement.text = JSON.stringify(initialData);
             console.log("Tech Page Velo Code: Successfully populated #dataTextElement.");
-
-            // 4. Signal to the client-side script that the data is ready using a custom event.
-            // We use $w.evaluate to run this standard browser API code.
-            $w.evaluate(() => {
-                window.dispatchEvent(new CustomEvent('veloDataReady'));
-            });
-            console.log("Tech Page Velo Code: Dispatched 'veloDataReady' event.");
-
         } else {
-            console.error("Tech Page Velo Code: Critical error - #dataTextElement not found on the page.");
+            console.error("Tech Page Velo Code: Critical error - #dataTextElement not found.");
         }
 
-        // 5. Apply tech-themed text to text boxes within the 'techAboutStrip'
-        const techAboutStrip = $w("#techAboutStrip");
-        if (techAboutStrip) {
-            const textElements = techAboutStrip.children.filter(child => child.type === '$w.Text');
-            textElements.forEach(textElement => {
-                textElement.text = "Our technology stack is built on a foundation of robust and scalable solutions. We leverage cutting-edge frameworks and cloud infrastructure to deliver a seamless user experience. Our team is passionate about innovation and dedicated to building the future of mental healthcare technology.";
-            });
-            console.log("Tech Page Velo Code: Applied tech-themed text to text boxes in #techAboutStrip.");
-        } else {
-            console.warn("Tech Page Velo Code: #techAboutStrip not found. Could not apply tech-themed text.");
+        // --- 2. Populate Promotional Text Fields ---
+        // NOTE: Replace #promoText1, #promoText2, etc., with the actual IDs of the text
+        // elements from the Wix Editor's properties panel.
+
+        const promoTexts = [
+            {
+                id: "#promoText1", // First text element ID
+                text: "**Component Testing Sandbox:** Interactively test client-side JavaScript modules, from utility functions to complex UI components, in a controlled and isolated environment."
+            },
+            {
+                id: "#promoText2", // Second text element ID
+                text: "**Velo Backend Simulation:** Develop and debug frontend logic with predictable mock data served directly from the page's Velo code, eliminating the need for a live backend."
+            },
+            {
+                id: "#promoText3", // Third text element ID
+                text: "**Dynamic Module Loading:** Verify the seamless integration of dynamically loaded applications, such as the Models Prototype, ensuring all dependencies are met and execution is flawless."
+            },
+            {
+                id: "#promoText4", // Fourth text element ID
+                text: "**Live DOM Interaction:** Safely manipulate and inspect the live page structure, perfect for developing DOM-sensitive utilities and ensuring compatibility with the Wix platform."
+            }
+        ];
+
+        let populatedCount = 0;
+        promoTexts.forEach(promo => {
+            const textEl = $w(promo.id);
+            if (textEl) {
+                textEl.html = `<p>${promo.text}</p>`; // Use .html to support Markdown-like bolding
+                populatedCount++;
+            } else {
+                console.warn(`Tech Page Velo Code: Could not find text element with ID: ${promo.id}`);
+            }
+        });
+
+        if (populatedCount > 0) {
+            console.log(`Tech Page Velo Code: Successfully populated ${populatedCount} promotional text fields.`);
         }
 
     } catch (error) {
-        console.error("Tech Page Velo Code: An error occurred while initializing the page.", error);
-
-        // Populate the data element with error information if something goes wrong
+        console.error("Tech Page Velo Code: An error occurred during page initialization.", error);
         const dataElement = $w('#dataTextElement');
         if (dataElement) {
-            dataElement.text = JSON.stringify({
-                error: "Failed to generate mock data in Velo page code.",
-                errorMessage: error.message
-            });
+            dataElement.text = JSON.stringify({ error: "Velo code initialization failed." });
         }
     }
 });
