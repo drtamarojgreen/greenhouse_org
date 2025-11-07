@@ -48,11 +48,47 @@
         }
 
         async init() {
-            try {
-                console.log('TechApp: Initializing...');
+            console.log('TechApp: Initializing...');
+            // Wait for the data element to be populated by Velo code to avoid race conditions.
+            this.waitForDataAndInit();
+        }
 
-                // Must read initial data first to get baseUrl
+        /**
+         * @function waitForDataAndInit
+         * @description Polls for the #dataTextElement and proceeds with initialization once it's ready.
+         */
+        waitForDataAndInit() {
+            const maxWaitTime = 5000; // 5 seconds
+            const pollInterval = 100; // 100 ms
+            let elapsedTime = 0;
+
+            const poll = setInterval(async () => {
+                const dataElement = document.getElementById('dataTextElement');
+
+                if (dataElement && dataElement.textContent && dataElement.textContent.trim() !== '{}' && dataElement.textContent.trim() !== '') {
+                    clearInterval(poll);
+                    console.log('TechApp: #dataTextElement found and populated.');
+                    await this.proceedWithInit();
+                } else {
+                    elapsedTime += pollInterval;
+                    if (elapsedTime >= maxWaitTime) {
+                        clearInterval(poll);
+                        console.warn('TechApp: Timed out waiting for #dataTextElement. Proceeding with default config.');
+                        await this.proceedWithInit();
+                    }
+                }
+            }, pollInterval);
+        }
+
+        /**
+         * @function proceedWithInit
+         * @description The main initialization logic, called after data is confirmed or timeout occurs.
+         */
+        async proceedWithInit() {
+            try {
+                // Now that we've waited, read the data.
                 this.readInitialData();
+
                 await this.loadCSS('tech.css');
 
                 const targetSelector = '#SITE_PAGES_TRANSITION_GROUP .wixui-section';
@@ -73,13 +109,14 @@
             }
         }
 
+
         /**
          * @function readInitialData
          * @description Reads initial data from the hidden data element populated by Velo page code.
          */
         readInitialData() {
             const dataElement = document.getElementById('dataTextElement');
-            if (dataElement && dataElement.textContent) {
+            if (dataElement && dataElement.textContent && dataElement.textContent.trim() !== '{}' && dataElement.textContent.trim() !== '') {
                 try {
                     this.config = JSON.parse(dataElement.textContent);
                     console.log('TechApp: Loaded initial data from Velo page code:', this.config);
@@ -88,7 +125,7 @@
                     this.config = { error: 'Failed to parse Velo data.' };
                 }
             } else {
-                console.warn('TechApp: #dataTextElement not found or empty. Using default config.');
+                console.warn('TechApp: #dataTextElement not found or empty after wait. Using default config.');
                 this.config = { message: 'Running in client-only test mode.' };
             }
         }
@@ -98,11 +135,18 @@
          * @description Renders the main testing dashboard UI.
          */
         renderDashboard() {
-            // Isolate the dashboard by clearing the container's existing content.
-            this.appContainer.innerHTML = '';
+            // DO NOT clear the container's innerHTML. This causes React hydration errors on Wix.
+            // Instead, create a dedicated element for the dashboard and append it.
+            let dashboardContainer = document.getElementById('tech-dashboard-wrapper');
+            if (dashboardContainer) {
+                dashboardContainer.innerHTML = ''; // Clear previous dashboard if re-rendering
+            } else {
+                dashboardContainer = document.createElement('div');
+                dashboardContainer.id = 'tech-dashboard-wrapper';
+                this.appContainer.appendChild(dashboardContainer);
+            }
 
-            const dashboardWrapper = document.createElement('div');
-            dashboardWrapper.innerHTML = `
+            const dashboardHTML = `
                 <div id="tech-dashboard" class="tech-dashboard-container">
                     <header class="tech-dashboard-header">
                         <h1>Client-Side Testing Dashboard</h1>
@@ -147,7 +191,7 @@
                     </div>
                 </div>
             `;
-            this.appContainer.appendChild(dashboardWrapper);
+            dashboardContainer.innerHTML = dashboardHTML;
         }
 
         /**
