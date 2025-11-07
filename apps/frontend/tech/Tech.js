@@ -39,6 +39,18 @@ $w.onReady(function () {
             console.error("Tech Page Velo Code: Critical error - #dataTextElement not found on the page.");
         }
 
+        // 4. Apply tech-themed text to text boxes within the 'techAboutStrip'
+        const techAboutStrip = $w("#techAboutStrip");
+        if (techAboutStrip) {
+            const textElements = techAboutStrip.children.filter(child => child.type === '$w.Text');
+            textElements.forEach(textElement => {
+                textElement.text = "Our technology stack is built on a foundation of robust and scalable solutions. We leverage cutting-edge frameworks and cloud infrastructure to deliver a seamless user experience. Our team is passionate about innovation and dedicated to building the future of mental healthcare technology.";
+            });
+            console.log("Tech Page Velo Code: Applied tech-themed text to text boxes in #techAboutStrip.");
+        } else {
+            console.warn("Tech Page Velo Code: #techAboutStrip not found. Could not apply tech-themed text.");
+        }
+
     } catch (error) {
         console.error("Tech Page Velo Code: An error occurred while initializing the page.", error);
 
