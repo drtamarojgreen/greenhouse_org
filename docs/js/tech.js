@@ -1,7 +1,7 @@
 /**
  * @file tech.js
  * @description Client-side application for the /tech page. This script waits for Velo code
- * to prepare the page, then creates a new section to render a testing dashboard.
+ * to prepare the page, populates promotional text, and then creates a new section to render a testing dashboard.
  */
 (function() {
     if (!window.GreenhouseUtils) {
@@ -18,7 +18,7 @@
         }
 
         /**
-         * Initializes the application by waiting for Velo data, creating a dashboard container,
+         * Initializes the application by waiting for Velo data, populating text, creating a dashboard container,
          * and rendering the UI.
          */
         async init() {
@@ -27,10 +27,10 @@
                 await this.waitForVeloData();
                 this.readInitialData();
 
-                // Dynamically get the base URL from the main loader's config.
                 const baseUrl = window.GreenhouseUtils.config.githubPagesBaseUrl;
                 await this.loadCSS(baseUrl);
 
+                this.populateAboutStripText(); // Populate the text fields as requested.
                 this.createDashboardContainer();
                 this.renderDashboard();
                 this.attachEventListeners();
@@ -93,6 +93,46 @@
         }
 
         /**
+         * Populates the four promotional text fields in the aboutStrip using the provided selectors.
+         */
+        populateAboutStripText() {
+            console.log('TechApp: Populating about strip promotional text...');
+            const promoTexts = [
+                {
+                    selector: 'section.wixui-column-strip:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > p:nth-child(1) > span:nth-child(1) > span:nth-child(1) > span:nth-child(1)',
+                    text: "Component Testing Sandbox: Interactively test client-side JavaScript modules, from utility functions to complex UI components, in a controlled and isolated environment."
+                },
+                {
+                    selector: 'section.wixui-column-strip:nth-child(3) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > p:nth-child(1) > span:nth-child(1) > span:nth-child(1) > span:nth-child(1)',
+                    text: "Velo Backend Simulation: Develop and debug frontend logic with predictable mock data served directly from the page's Velo code, eliminating the need for a live backend."
+                },
+                {
+                    selector: 'section.wixui-column-strip:nth-child(3) > div:nth-child(2) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > p:nth-child(1) > span:nth-child(1) > span:nth-child(1) > span:nth-child(1)',
+                    text: "Dynamic Module Loading: Verify the seamless integration of dynamically loaded applications, such as the Models Prototype, ensuring all dependencies are met and execution is flawless."
+                },
+                {
+                    selector: 'section.wixui-column-strip:nth-child(3) > div:nth-child(2) > div:nth-child(4) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > p:nth-child(1) > span:nth-child(1) > span:nth-child(1) > span:nth-child(1)',
+                    text: "Live DOM Interaction: Safely manipulate and inspect the live page structure, perfect for developing DOM-sensitive utilities and ensuring compatibility with the Wix platform."
+                }
+            ];
+
+            let populatedCount = 0;
+            promoTexts.forEach((promo, index) => {
+                const element = document.querySelector(promo.selector);
+                if (element) {
+                    element.textContent = promo.text;
+                    populatedCount++;
+                } else {
+                    console.warn(`TechApp: Could not find promotional text element with selector ${index + 1}: ${promo.selector}`);
+                }
+            });
+
+            if (populatedCount > 0) {
+                console.log(`TechApp: Successfully populated ${populatedCount} promotional text fields.`);
+            }
+        }
+
+        /**
          * Finds the specified 'aboutStrip' and inserts a new container for the dashboard right after it.
          */
         createDashboardContainer() {
@@ -107,7 +147,6 @@
             this.dashboardContainer.style.backgroundColor = '#f0f4f7';
             this.dashboardContainer.style.padding = '40px 0';
 
-            // Insert the new section immediately after the about strip.
             aboutStrip.parentNode.insertBefore(this.dashboardContainer, aboutStrip.nextSibling);
             console.log('TechApp: Dashboard container created and inserted into the DOM.');
         }
@@ -118,7 +157,7 @@
         renderDashboard() {
             this.dashboardContainer.innerHTML = `
                 <div id="tech-dashboard" class="tech-dashboard-container">
-                    <header class.="tech-dashboard-header">
+                    <header class="tech-dashboard-header">
                         <h1>Client-Side Testing Dashboard</h1>
                         <p>A controlled environment for testing frontend components and utilities.</p>
                     </header>
@@ -177,7 +216,7 @@
             button.disabled = true;
 
             try {
-                const baseUrl = window.GreenhouseUtils.config.githubPagesBaseUrl || 'https://drtamarojgreen.github.io/greenhouse_org/';
+                const baseUrl = window.GreenUtils.config.githubPagesBaseUrl || 'https://drtamarojgreen.github.io/greenhouse_org/';
                 window._greenhouseModelsAttributes = { baseUrl, targetSelector: '#models-prototype-container' };
 
                 await GreenhouseUtils.loadScript('models_util.js', baseUrl);
