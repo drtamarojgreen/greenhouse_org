@@ -35,11 +35,19 @@ $w.onReady(function () {
         if (dataElement) {
             dataElement.text = JSON.stringify(initialData, null, 2);
             console.log("Tech Page Velo Code: Successfully populated #dataTextElement.");
+
+            // 4. Signal to the client-side script that the data is ready using a custom event.
+            // We use $w.evaluate to run this standard browser API code.
+            $w.evaluate(() => {
+                window.dispatchEvent(new CustomEvent('veloDataReady'));
+            });
+            console.log("Tech Page Velo Code: Dispatched 'veloDataReady' event.");
+
         } else {
             console.error("Tech Page Velo Code: Critical error - #dataTextElement not found on the page.");
         }
 
-        // 4. Apply tech-themed text to text boxes within the 'techAboutStrip'
+        // 5. Apply tech-themed text to text boxes within the 'techAboutStrip'
         const techAboutStrip = $w("#techAboutStrip");
         if (techAboutStrip) {
             const textElements = techAboutStrip.children.filter(child => child.type === '$w.Text');
