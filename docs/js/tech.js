@@ -61,21 +61,23 @@
             const maxWaitTime = 5000; // 5 seconds
             const pollInterval = 100; // 100 ms
             let elapsedTime = 0;
+            console.log(`%cTechApp-Debug: Starting to poll for #dataTextElement. Max wait: ${maxWaitTime}ms.`, 'color: blue; font-weight: bold;');
 
             const poll = setInterval(async () => {
+                elapsedTime += pollInterval;
                 const dataElement = document.getElementById('dataTextElement');
+                const content = dataElement ? dataElement.textContent : 'null';
 
-                if (dataElement && dataElement.textContent && dataElement.textContent.trim() !== '{}' && dataElement.textContent.trim() !== '') {
+                console.log(`%cTechApp-Debug: Polling... (${elapsedTime}ms). #dataTextElement content: "${content}"`, 'color: gray;');
+
+                if (dataElement && content && content.trim() !== '{}' && content.trim() !== '') {
                     clearInterval(poll);
-                    console.log('TechApp: #dataTextElement found and populated.');
+                    console.log('%cTechApp-Debug: #dataTextElement found and populated. Exiting poll.', 'color: green; font-weight: bold;');
                     await this.proceedWithInit();
-                } else {
-                    elapsedTime += pollInterval;
-                    if (elapsedTime >= maxWaitTime) {
-                        clearInterval(poll);
-                        console.warn('TechApp: Timed out waiting for #dataTextElement. Proceeding with default config.');
-                        await this.proceedWithInit();
-                    }
+                } else if (elapsedTime >= maxWaitTime) {
+                    clearInterval(poll);
+                    console.warn('%cTechApp-Debug: Timed out waiting for #dataTextElement. Exiting poll.', 'color: orange; font-weight: bold;');
+                    await this.proceedWithInit();
                 }
             }, pollInterval);
         }
@@ -85,26 +87,39 @@
          * @description The main initialization logic, called after data is confirmed or timeout occurs.
          */
         async proceedWithInit() {
+            console.log('%cTechApp-Debug: ==> Entered proceedWithInit()', 'color: blue; font-weight: bold;');
             try {
-                // Now that we've waited, read the data.
+                console.log('%cTechApp-Debug: 1. Reading initial data...', 'color: blue;');
                 this.readInitialData();
+                console.log('%cTechApp-Debug:    ...Done reading data. Config is:', 'color: blue;', this.config);
 
+                console.log('%cTechApp-Debug: 2. Loading CSS...', 'color: blue;');
                 await this.loadCSS('tech.css');
+                console.log('%cTechApp-Debug:    ...CSS loaded.', 'color: blue;');
 
                 const targetSelector = '#SITE_PAGES_TRANSITION_GROUP .wixui-section';
+                console.log(`%cTechApp-Debug: 3. Waiting for app container with selector: "${targetSelector}"`, 'color: blue;');
                 this.appContainer = await GreenhouseUtils.waitForElement(targetSelector);
 
                 if (!this.appContainer) {
-                    throw new Error('TechApp: Application container not found.');
+                    // This is a critical failure, so we throw to be caught by the catch block.
+                    throw new Error('Application container not found after waiting.');
                 }
+                console.log('%cTechApp-Debug:    ...App container found:', 'color: green;', this.appContainer);
 
+                console.log('%cTechApp-Debug: 4. Rendering dashboard...', 'color: blue;');
                 this.renderDashboard();
+                console.log('%cTechApp-Debug:    ...Dashboard rendered.', 'color: blue;');
+
+                console.log('%cTechApp-Debug: 5. Attaching event listeners...', 'color: blue;');
                 this.attachEventListeners();
-                console.log('TechApp: Initialization complete.');
+                console.log('%cTechApp-Debug:    ...Event listeners attached.', 'color: blue;');
+
+                console.log('%cTechApp-Debug: ==> Initialization complete.', 'color: green; font-weight: bold;');
                 GreenhouseUtils.displaySuccess('Tech Test Dashboard Loaded Successfully.');
 
             } catch (error) {
-                console.error('TechApp: Initialization failed.', error);
+                console.error('%cTechApp-Debug: ==> CRITICAL FAILURE in proceedWithInit()', 'color: red; font-weight: bold;', error);
                 GreenhouseUtils.displayError('Failed to load Tech Test Dashboard.');
             }
         }
