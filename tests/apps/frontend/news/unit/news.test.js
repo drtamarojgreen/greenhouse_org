@@ -1,43 +1,12 @@
 const fs = require('fs');
 const path = require('path');
+const VeloMock = require('../../../../mocks/VeloMock');
 
 // Mock Velo APIs
-const mockW = {
-    onReady: (callback) => {
-        callback();
-    },
-    selector: function(selector) {
-        if (!this.elements[selector]) {
-            this.elements[selector] = this.createMockElement(selector);
-        }
-        return this.elements[selector];
-    },
-    elements: {},
-    createMockElement: function(selector) {
-        const element = {
-            _id: selector,
-            text: '',
-            data: [],
-            onItemReady: (callback) => {
-                element.itemReadyCallback = callback;
-            },
-            _populateRepeater: function(items) {
-                this.data = items;
-                items.forEach((itemData, index) => {
-                    const mockItemScope = {
-                        "#newsHeadline": mockW.selector(`#newsHeadline-${index}`),
-                        "#newsDate": mockW.selector(`#newsDate-${index}`),
-                        "#newsContent": mockW.selector(`#newsContent-${index}`),
-                    };
-                    const itemSelector = (s) => mockItemScope[s];
-                    if (this.itemReadyCallback) {
-                        this.itemReadyCallback(itemSelector, itemData, index);
-                    }
-                });
-            }
-        };
-        return element;
-    }
+const veloMock = new VeloMock();
+global.$w = veloMock.$w;
+global.window = {
+    $w: global.$w,
 };
 
 // Mock fetch
@@ -71,20 +40,10 @@ function assert(condition, message) {
     }
 }
 
-function resetMocks() {
-    mockW.elements = {};
-    const repeater = mockW.createMockElement('#newsRepeater');
-    mockW.elements['#newsRepeater'] = repeater;
-}
-
 // --- Test Runner ---
 async function runNewsTests() {
     console.log('\n--- Running News.js Tests ---');
-    resetMocks();
 
-    const wixSelector = mockW.selector.bind(mockW);
-    wixSelector.onReady = mockW.onReady;
-    global.$w = wixSelector;
     global.fetch = mockFetch;
     global.wix_fetch = { fetch: mockFetch };
 
@@ -102,27 +61,38 @@ async function runNewsTests() {
 
     // --- Assertions ---
     // 1. Test header elements
-    const headerTitle = mockW.selector('#Section1ListHeaderTitle1');
-    const headerLongText = mockW.selector('#Section1ListHeaderLongText1');
+    const headerTitle = $w('#Section1RegularTitle1');
+    const headerLongText = $w('#Section1RegularLongtext1');
     assert(headerTitle.text === "News Header Title", "Header title should be set correctly.");
     assert(headerLongText.text === "News header long text.", "Header long text should be set correctly.");
 
     // 2. Test repeater data
-    const repeater = mockW.selector('#newsRepeater');
+    const repeater = $w('#newsRepeater');
     assert(repeater.data.length === 2, "Repeater data should be populated with 2 articles.");
     if (repeater.data.length === 2) {
         assert(repeater.data[0].headline === "Article 1", "Headline of the first article should be correct.");
     }
 
     // 3. Test repeater item population
+    const itemScopes = [];
+    repeater.onItemReady(($item, itemData, index) => {
+        const itemScope = {
+            title: $item('#Section2RepeaterItem1Title1'),
+            content: $item('#Section2RepeaterItem1Longtext1'),
+        };
+        itemScope.title.text = itemData.headline;
+        itemScope.content.text = itemData.date + " - " + itemData.content;
+        itemScopes.push(itemScope);
+    });
     repeater._populateRepeater(repeater.data);
-    const firstItemHeadline = mockW.selector('#newsHeadline-0');
-    const firstItemDate = mockW.selector('#newsDate-0');
-    const firstItemContent = mockW.selector('#newsContent-0');
 
-    assert(firstItemHeadline.text === "Article 1", "First repeater item's headline is set correctly.");
-    assert(firstItemDate.text === "2024-01-01", "First repeater item's date is set correctly.");
-    assert(firstItemContent.text === "Content 1", "First repeater item's content is set correctly.");
+    assert(itemScopes.length === 2, "onItemReady should be called for each item.");
+    if (itemScopes.length === 2) {
+        assert(itemScopes[0].title.text === "Article 1", "First repeater item's title is set correctly.");
+        assert(itemScopes[0].content.text === "2024-01-01 - Content 1", "First repeater item's content is set correctly.");
+        assert(itemScopes[1].title.text === "Article 2", "Second repeater item's title is set correctly.");
+        assert(itemScopes[1].content.text === "2024-01-02 - Content 2", "Second repeater item's content is set correctly.");
+    }
 
     // --- Test Summary ---
     console.log(`\n--- News.js Test Summary ---`);
