@@ -99,6 +99,11 @@ async function runModelsDataTests() {
     await testLoadDataMock();
     testTransformNotes();
     testTransformNotesEmpty();
+    testStrengthPriorAssignment();
+    testNoMatchingTags();
+    testMultipleTagAndAffinityExtraction();
+    testUpdateFunction();
+    testUpdateFunctionNoSynapses();
 
     console.log(`\n--- models_data.js Test Summary ---`);
     console.log(`Passed: ${passed}`);
@@ -109,4 +114,63 @@ async function runModelsDataTests() {
     }
 }
 
+function testStrengthPriorAssignment() {
+    const rawNotes = [
+        { type: 'research', content: 'Research note' },
+        { type: 'patient', content: 'Patient note' },
+        { type: 'user', content: 'User note' }
+    ];
+    const result = GreenhouseModelsData.transformNotesToSimulationInput(rawNotes, {});
+    assert(result.nodes[0].strength_prior === 0.75, 'Research note should have strength_prior of 0.75');
+    assert(result.nodes[1].strength_prior === 0.4, 'Patient note should have strength_prior of 0.4');
+    assert(result.nodes[2].strength_prior === 0.2, 'User note should have strength_prior of 0.2');
+}
+
+function testNoMatchingTags() {
+    const rawNotes = [{ type: 'research', content: 'A note with no matching tags' }];
+    const lexicon = {
+        domain_tags: { 'some-tag': ['some-keyword'] },
+        neurotransmitter_affinity: { 'some-affinity': ['some-keyword'] }
+    };
+    const result = GreenhouseModelsData.transformNotesToSimulationInput(rawNotes, lexicon);
+    assert(result.nodes[0].domain_tags.length === 0, 'Node should have no domain tags');
+    assert(result.nodes[0].neuro_affinity.length === 0, 'Node should have no neuro affinity');
+}
+
+function testMultipleTagAndAffinityExtraction() {
+    const rawNotes = [{ type: 'patient', content: 'Patient feels anxious about social cbt sessions.' }];
+    const lexicon = {
+        domain_tags: {
+            'anxiety': ['anxious'],
+            'cognitive-restructuring': ['cbt']
+        },
+        neurotransmitter_affinity: {
+            'serotonin': ['cbt'],
+            'dopamine': ['social']
+        }
+    };
+    const result = GreenhouseModelsData.transformNotesToSimulationInput(rawNotes, lexicon);
+    assert(result.nodes[0].domain_tags.length === 2, 'Node should have two domain tags');
+    assert(result.nodes[0].domain_tags.includes('anxiety'), 'Node should include anxiety tag');
+    assert(result.nodes[0].domain_tags.includes('cognitive-restructuring'), 'Node should include cognitive-restructuring tag');
+    assert(result.nodes[0].neuro_affinity.length === 2, 'Node should have two neuro affinities');
+    assert(result.nodes[0].neuro_affinity.includes('serotonin'), 'Node should include serotonin affinity');
+    assert(result.nodes[0].neuro_affinity.includes('dopamine'), 'Node should include dopamine affinity');
+}
+
+function testUpdateFunction() {
+    GreenhouseModelsData.state.processedSimulation = {
+        synapses: [{ id: "syn-1", plasticity_rate: 0.01 }]
+    };
+    const initialState = { synapticWeight: 0.5, intensity: 50 };
+    const updatedState = GreenhouseModelsData.update(initialState);
+    assert(updatedState.synapticWeight > 0.5, 'Synaptic weight should increase after update');
+}
+
+function testUpdateFunctionNoSynapses() {
+    GreenhouseModelsData.state.processedSimulation = { synapses: [] };
+    const initialState = { synapticWeight: 0.5, intensity: 50 };
+    const updatedState = GreenhouseModelsData.update(initialState);
+    assert(updatedState.synapticWeight === 0.5, 'Synaptic weight should not change if there are no synapses');
+}
 module.exports = runModelsDataTests;
