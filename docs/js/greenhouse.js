@@ -53,6 +53,10 @@
          */
         modelsPagePath: '/models',
         /**
+         * The path segment that identifies the tech page.
+         */
+        techPagePath: '/tech',
+        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -70,6 +74,7 @@
             models: '#SITE_PAGES_TRANSITION_GROUP .wixui-section > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             videos: '.wixui-repeater', // Selector for the videos repeater
             news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
+            tech: '#SITE_PAGES_TRANSITION_GROUP .wixui-section',
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -86,7 +91,8 @@
             books: 'section.wixui-section', // Fallback to a more general section if the specific one isn't found
             models: 'section.wixui-section',
             videos: '.wixui-column-strip__column:first-child', // Fallback to a generic column selector
-            news: '.wixui-column-strip__column:first-child' // Reverting to a generic column selector
+            news: '.wixui-column-strip__column:first-child', // Reverting to a generic column selector
+            tech: 'section.wixui-section'
         }
     };
 
@@ -258,6 +264,19 @@
     }
 
     /**
+     * @function loadTechApplication
+     * @description Loads the tech application after ensuring the target element exists.
+     */
+    async function loadTechApplication() {
+        await loadApplication(
+            'tech',
+            'tech.js',
+            config.selectors.tech,
+            config.fallbackSelectors.tech
+        );
+    }
+
+    /**
      * @function initialize
      * @description Main initialization function that runs when the DOM is ready.
      */
@@ -281,6 +300,8 @@
             await loadNewsApplication();
         } else if (window.location.pathname.includes(config.modelsPagePath)) {
             await loadModelsApplication();
+        } else if (window.location.pathname.includes(config.techPagePath)) {
+            await loadTechApplication();
         }
     }
 
