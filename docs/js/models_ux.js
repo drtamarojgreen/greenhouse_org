@@ -66,11 +66,18 @@
         },
 
         init() {
-            console.log('Models App: UX init() called.');
-            if (this.state.isInitialized || this.state.isLoading) return;
-            this.state.isLoading = true;
+            const initializeLogic = () => {
+                console.log('Models App: UX init() called.');
+                if (this.state.isInitialized || this.state.isLoading) return;
+                this.state.isLoading = true;
+                this.initialize();
+            };
 
-            this.initialize();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeLogic);
+            } else {
+                initializeLogic();
+            }
         },
 
         async initialize() {
