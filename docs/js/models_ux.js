@@ -110,6 +110,8 @@
             }
         },
 
+        /*
+        this code appears to be LLM vomit, commenting for now
         getConfiguration() {
             if (!window._greenhouseModelsAttributes) {
                 console.error('Models App: Global attributes not found.');
@@ -120,7 +122,7 @@
             // Clean up the global object after use
             delete window._greenhouseModelsAttributes;
             return !!(this.state.targetSelector && this.state.baseUrl);
-        },
+        },*/
 
         addConsentListeners() {
             const consentCheckbox = document.getElementById('consent-checkbox');
