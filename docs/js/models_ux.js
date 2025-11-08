@@ -83,8 +83,7 @@
         async initialize() {
             try {
                 if (resilienceObserver) resilienceObserver.disconnect();
-                //More LLM vomit
-                //if (!this.getConfiguration()) throw new Error("Missing configuration from script tag.");
+                if (!this.getConfiguration()) throw new Error("Missing configuration from script tag.");
 
                 this.state.targetElement = await GreenhouseUtils.waitForElement(this.state.targetSelector, 15000);
 
@@ -111,8 +110,7 @@
             }
         },
 
-        /*
-        this code appears to be LLM vomit, commenting for now
+        
         getConfiguration() {
             if (!window._greenhouseModelsAttributes) {
                 console.error('Models App: Global attributes not found.');
@@ -121,9 +119,9 @@
             this.state.targetSelector = window._greenhouseModelsAttributes.targetSelector;
             this.state.baseUrl = window._greenhouseModelsAttributes.baseUrl;
             // Clean up the global object after use
-            delete window._greenhouseModelsAttributes;
+            //delete window._greenhouseModelsAttributes;
             return !!(this.state.targetSelector && this.state.baseUrl);
-        },*/
+        },
 
         addConsentListeners() {
             const consentCheckbox = document.getElementById('consent-checkbox');
