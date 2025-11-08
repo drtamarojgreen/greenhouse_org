@@ -1,6 +1,13 @@
+const fs = require('fs');
 const path = require('path');
 const VeloMock = require('../../../../mocks/VeloMock');
-const initInspirationApp = require('../../../../../apps/frontend/inspiration/Inspiration.js');
+
+// Mock Velo APIs
+const veloMock = new VeloMock();
+global.$w = veloMock.$w;
+global.window = {
+    $w: global.$w,
+};
 
 // Mock fetch
 const mockFetch = (url) => {
@@ -23,6 +30,14 @@ const mockFetch = (url) => {
     });
 };
 
+// Mock Math.random to be predictable
+let seed = 0;
+Math.random = () => {
+    seed = (seed + 1) % 3; // Cycle through 0, 1, 2
+    return seed / 3;
+};
+
+
 // --- Test Setup ---
 let passed = 0;
 let failed = 0;
@@ -40,52 +55,46 @@ function assert(condition, message) {
 // --- Test Runner ---
 async function runInspirationTests() {
     console.log('\n--- Running Inspiration.js Tests ---');
+    seed = 0; // Reset the seed for Math.random
 
-    const veloMock = new VeloMock();
-    const $w = veloMock.$w;
+    global.fetch = mockFetch;
+    global.wix_fetch = { fetch: mockFetch };
 
-    // Initialize the app with the mock objects
-    initInspirationApp($w, mockFetch);
+    const scriptPath = path.resolve(__dirname, '../../../../../apps/frontend/inspiration/Inspiration.js');
+    const scriptContent = fs.readFileSync(scriptPath, 'utf8');
+
+    try {
+        eval(scriptContent);
+    } catch (e) {
+        assert(false, `Failed to evaluate Inspiration.js: ${e.message}`);
+        return;
+    }
 
     await new Promise(resolve => setTimeout(resolve, 0));
 
     // --- Assertions ---
-    // 1. Test summary elements
-    assert($w('#pageTitle').text === "Inspiration", "Page title should be set correctly.");
-    assert($w('#pageTitleButton').label === "New Quote", "Page title button should be set correctly.");
-    assert($w('#titleRightPanelText').text === "Some text", "Title right panel text should be set correctly.");
-    assert($w('#Section2RegularTitle1').text === "Quotes", "Section 2 title should be set correctly.");
-    assert($w('#Section2RegularSubtitle1').text === "Some subtitle", "Section 2 subtitle should be set correctly.");
+    const quoteText = $w('#quote-text');
+    const quoteAuthor = $w('#quote-author');
 
-    // 2. Test repeater data
-    const repeater = $w('#inspirationRepeater');
-    assert(repeater.data.length === 3, "Repeater data should be populated with 3 quotes.");
-    if (repeater.data.length === 3) {
-        assert(repeater.data[0].text === "Quote 1", "Text of the first quote should be correct.");
-    }
+    // 1. Test initial quote display
+    // On load, seed is 0, Math.random() is called, seed becomes 1, returns 1/3. Math.floor(1/3 * 3) = 1. quotes[1] is displayed.
+    assert(quoteText.text.includes("Quote 2"), "The initial quote should be Quote 2.");
+    assert(quoteAuthor.text.includes("Author 2"), "The initial author should be Author 2.");
 
-    // 3. Test repeater item population
-    const itemScopes = [];
-    repeater.onItemReady(($item, itemData, index) => {
-        const itemScope = {
-            text: $item('#textQuote'),
-            author: $item('#textAuthor'),
-        };
-        itemScope.text.text = itemData.text;
-        itemScope.author.text = itemData.author;
-        itemScopes.push(itemScope);
-    });
-    repeater._populateRepeater(repeater.data);
 
-    assert(itemScopes.length === 3, "onItemReady should be called for each item.");
-    if (itemScopes.length === 3) {
-        assert(itemScopes[0].text.text === "Quote 1", "First repeater item's text is set correctly.");
-        assert(itemScopes[0].author.text === "Author 1", "First repeater item's author is set correctly.");
-        assert(itemScopes[1].text.text === "Quote 2", "Second repeater item's text is set correctly.");
-        assert(itemScopes[1].author.text === "Author 2", "Second repeater item's author is set correctly.");
-        assert(itemScopes[2].text.text === "Quote 3", "Third repeater item's text is set correctly.");
-        assert(itemScopes[2].author.text === "Author 3", "Third repeater item's author is set correctly.");
-    }
+    // 2. Test "new quote" button
+    const newQuoteButton = $w('#new-quote-btn');
+    newQuoteButton.onClick(); // Simulate a click
+    // On first click, seed is 1, Math.random() is called, seed becomes 2, returns 2/3. Math.floor(2/3 * 3) = 2. quotes[2] is displayed.
+    assert(quoteText.text.includes("Quote 3"), "The second quote should be displayed after the first click.");
+    assert(quoteAuthor.text.includes("Author 3"), "The second author should be displayed after the first click.");
+
+    // 3. Test another click to ensure it cycles
+    newQuoteButton.onClick();
+    // On second click, seed is 2, Math.random() is called, seed becomes 0, returns 0. Math.floor(0 * 3) = 0. quotes[0] is displayed.
+    assert(quoteText.text.includes("Quote 1"), "The third quote should be displayed after the second click.");
+    assert(quoteAuthor.text.includes("Author 1"), "The third author should be displayed after the second click.");
+
 
     // --- Test Summary ---
     console.log(`\n--- Inspiration.js Test Summary ---`);

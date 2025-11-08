@@ -16,7 +16,7 @@ const mockFetch = (url) => {
         json: () => Promise.resolve({
             summary: {
                 text1: "Summary text 1",
-                Section1RegularLongtext1: "Summary long text 1",
+                Section1RgularLongtext1: "Summary long text 1",
                 Section2RegularTitle1: "Summary title 2",
                 Section2RegularSubtitle1: "Summary subtitle 2",
                 Section2RegularLongtext1: "Summary long text 2"

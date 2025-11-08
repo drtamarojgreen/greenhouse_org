@@ -1,6 +1,8 @@
 // Velo API Reference: https://www.wix.com/velo/reference/api-overview/introduction
 
-function initInspirationApp($w, fetch) {
+import { fetch } from 'wix-fetch';
+
+$w.onReady(function () {
     const url = "https://drtamarojgreen.github.io/greenhouse_org/endpoints/inspiration.json";
 
     fetch(url, { method: 'get' })
@@ -38,16 +40,4 @@ function initInspirationApp($w, fetch) {
         .catch(err => {
             console.error("Error fetching or parsing data:", err);
         });
-}
-
-// Check if we are in a Velo environment and run the app
-if (typeof $w !== 'undefined' && typeof wixFetch !== 'undefined') {
-    $w.onReady(function () {
-        initInspirationApp($w, wixFetch);
-    });
-}
-
-// Export for testing purposes
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = initInspirationApp;
-}
+});
