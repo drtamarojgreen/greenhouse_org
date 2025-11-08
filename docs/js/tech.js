@@ -1,7 +1,8 @@
 /**
  * @file tech.js
- * @description Client-side application for the /tech page. This script waits for Velo code
- * to prepare the page, populates promotional text, and then creates a new section to render a testing dashboard.
+ * @description Self-sufficient client-side application for the /tech page. This script waits for the
+ * page structure to be ready, populates promotional text, and then creates a new section to render a testing dashboard.
+ * It has no dependency on Velo page code.
  */
 (function() {
     if (!window.GreenhouseUtils) {
@@ -13,19 +14,23 @@
     class TechApp {
         constructor() {
             this.dashboardContainer = null;
-            this.config = {};
-            this.veloFunctions = this.mockVeloFunctions();
+            this.aboutStrip = null;
         }
 
         /**
-         * Initializes the application by waiting for Velo data, populating text, creating a dashboard container,
-         * and rendering the UI.
+         * Initializes the application by waiting for a key page element, then populating text,
+         * creating a dashboard container, and rendering the UI.
          */
         async init() {
-            console.log('TechApp: Initializing...');
+            console.log('TechApp: Initializing.');
             try {
-                await this.waitForVeloData();
-                this.readInitialData();
+                // Wait for the main "about" strip to be present in the DOM. This is our signal the page is ready.
+                const aboutStripSelector = 'section.wixui-column-strip:nth-child(3)';
+                this.aboutStrip = await GreenhouseUtils.waitForElement(aboutStripSelector, 7000);
+                if (!this.aboutStrip) {
+                    throw new Error(`The main content strip did not appear in time. Selector: ${aboutStripSelector}`);
+                }
+                console.log('TechApp: Page content is ready.');
 
                 const baseUrl = window.GreenhouseUtils.config.githubPagesBaseUrl;
                 await this.loadCSS(baseUrl);
@@ -40,54 +45,6 @@
             } catch (error) {
                 console.error('TechApp: Initialization failed.', error);
                 GreenhouseUtils.displayError('Failed to load Tech Test Dashboard.');
-            }
-        }
-
-        /**
-         * Uses a MutationObserver to wait until the #dataTextElement is added to the DOM by Velo.
-         * This is a reliable method to resolve the race condition.
-         */
-        waitForVeloData() {
-            return new Promise((resolve, reject) => {
-                const elementId = 'dataTextElement';
-                console.log(`TechApp: Watching for #${elementId} to be added to the DOM...`);
-
-                const existingElement = document.getElementById(elementId);
-                if (existingElement) {
-                    console.log(`TechApp: #${elementId} already exists.`);
-                    return resolve(existingElement);
-                }
-
-                const timeout = 7000; // 7 seconds
-                const timer = setTimeout(() => {
-                    observer.disconnect();
-                    reject(new Error(`Timed out after ${timeout}ms waiting for #${elementId}.`));
-                }, timeout);
-
-                const observer = new MutationObserver((mutationsList, obs) => {
-                    if (document.getElementById(elementId)) {
-                        clearTimeout(timer);
-                        obs.disconnect();
-                        console.log(`TechApp: #${elementId} was added to the DOM.`);
-                        resolve(document.getElementById(elementId));
-                    }
-                });
-
-                observer.observe(document.body, { childList: true, subtree: true });
-            });
-        }
-
-        /**
-         * Reads and parses the initial configuration from the Velo data element.
-         */
-        readInitialData() {
-            const dataElement = document.getElementById('dataTextElement');
-            try {
-                this.config = JSON.parse(dataElement.textContent);
-                console.log('TechApp: Loaded initial data from Velo:', this.config);
-            } catch (e) {
-                console.error('TechApp: Failed to parse initial data from #dataTextElement.', e);
-                this.config = { error: 'Failed to parse Velo data.' };
             }
         }
 
@@ -118,7 +75,7 @@
          * Populates the four promotional text fields in the aboutStrip using the provided selectors.
          */
         populateAboutStripText() {
-            console.log('TechApp: Populating about strip promotional text...');
+            console.log('TechApp: Populating about strip promotional text.');
             const promoTexts = [
                 {
                     selector: 'section.wixui-column-strip:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > p:nth-child(1) > span:nth-child(1) > span:nth-child(1) > span:nth-child(1)',
@@ -145,7 +102,7 @@
                     element.textContent = promo.text;
                     populatedCount++;
                 } else {
-                    console.warn(`TechApp: Could not find promotional text element with selector ${index + 1}: ${promo.selector}`);
+                    console.warn(`TechApp: Could not find promotional text element with selector (index ${index + 1}).`);
                 }
             });
 
@@ -155,55 +112,65 @@
         }
 
         /**
-         * Finds the specified 'aboutStrip' and inserts a new container for the dashboard right after it.
+         * Inserts a new container for the dashboard right after the aboutStrip.
          */
         createDashboardContainer() {
-            const aboutStripSelector = 'section.wixui-column-strip:nth-child(3)';
-            const aboutStrip = document.querySelector(aboutStripSelector);
-            if (!aboutStrip) {
-                throw new Error(`Could not find the aboutStrip element with selector: ${aboutStripSelector}`);
-            }
-
             this.dashboardContainer = document.createElement('section');
             this.dashboardContainer.id = 'tech-dashboard-section';
             this.dashboardContainer.style.backgroundColor = '#f0f4f7';
             this.dashboardContainer.style.padding = '40px 0';
 
-            aboutStrip.parentNode.insertBefore(this.dashboardContainer, aboutStrip.nextSibling);
+            this.aboutStrip.parentNode.insertBefore(this.dashboardContainer, this.aboutStrip.nextSibling);
             console.log('TechApp: Dashboard container created and inserted into the DOM.');
         }
 
         /**
-         * Renders the dashboard UI inside the container.
+         * Renders the dashboard UI inside the container using createElement.
          */
         renderDashboard() {
-            this.dashboardContainer.innerHTML = `
-                <div id="tech-dashboard" class="tech-dashboard-container">
-                    <header class="tech-dashboard-header">
-                        <h1>Client-Side Testing Dashboard</h1>
-                        <p>A controlled environment for testing frontend components and utilities.</p>
-                    </header>
-                    <div class="test-case-grid">
-                        <div class="test-case">
-                            <h2>Initial Page Data</h2>
-                            <p>Data from #dataTextElement, populated by Velo.</p>
-                            <div class="output-box" id="velo-data-output">${JSON.stringify(this.config, null, 2)}</div>
-                        </div>
-                        <div class="test-case">
-                            <h2>Test Case 1: Client-Side Data Fetch</h2>
-                            <p>Simulates fetching mock data using a client-side function.</p>
-                            <button id="fetch-mock-user-btn" class="tech-button">Fetch Mock User (Client-Side)</button>
-                            <div class="output-box" id="mock-user-output"></div>
-                        </div>
-                        <div class="test-case full-width-case">
-                            <h2>Test Case 2: Load Models Prototype</h2>
-                            <p>Loads a functional prototype of the /models page simulation below.</p>
-                            <button id="load-models-prototype-btn" class="tech-button">Load Models Prototype</button>
-                            <div id="models-prototype-container" class="models-prototype-container"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            const createElement = (tag, classNames = [], textContent = '') => {
+                const el = document.createElement(tag);
+                if (classNames.length) el.classList.add(...classNames);
+                if (textContent) el.textContent = textContent;
+                return el;
+            };
+
+            const dashboard = createElement('div', ['tech-dashboard-container']);
+            dashboard.id = 'tech-dashboard';
+
+            const header = createElement('header', ['tech-dashboard-header']);
+            header.appendChild(createElement('h1', [], 'Client-Side Testing Dashboard'));
+            header.appendChild(createElement('p', [], 'A controlled environment for testing frontend components and utilities.'));
+            dashboard.appendChild(header);
+
+            const grid = createElement('div', ['test-case-grid']);
+
+            const testCase1 = createElement('div', ['test-case']);
+            testCase1.appendChild(createElement('h2', [], 'Test Case 1: Client-Side Data Fetch'));
+            testCase1.appendChild(createElement('p', [], 'Simulates fetching mock data using a client-side function.'));
+            const btn1 = createElement('button', ['tech-button'], 'Fetch Mock User');
+            btn1.id = 'fetch-mock-user-btn';
+            testCase1.appendChild(btn1);
+            const output1 = createElement('div', ['output-box']);
+            output1.id = 'mock-user-output';
+            testCase1.appendChild(output1);
+            grid.appendChild(testCase1);
+
+            const testCase2 = createElement('div', ['test-case', 'full-width-case']);
+            testCase2.appendChild(createElement('h2', [], 'Test Case 2: Load Models Prototype'));
+            testCase2.appendChild(createElement('p', [], 'Loads a functional prototype of the models page simulation below.'));
+            const btn2 = createElement('button', ['tech-button'], 'Load Models Prototype');
+            btn2.id = 'load-models-prototype-btn';
+            testCase2.appendChild(btn2);
+            const container2 = createElement('div', ['models-prototype-container']);
+            container2.id = 'models-prototype-container';
+            testCase2.appendChild(container2);
+            grid.appendChild(testCase2);
+
+            dashboard.appendChild(grid);
+
+            this.dashboardContainer.innerHTML = '';
+            this.dashboardContainer.appendChild(dashboard);
         }
 
         /**
@@ -220,12 +187,8 @@
         async runTestCase1() {
             const outputBox = document.getElementById('mock-user-output');
             outputBox.textContent = 'Fetching...';
-            try {
-                const user = await this.veloFunctions.getMockUserData();
-                outputBox.textContent = JSON.stringify(user, null, 2);
-            } catch (error) {
-                outputBox.textContent = `Error: ${error.message}`;
-            }
+            const mockData = { userId: "test-clientside-789", source: "Generated in tech.js" };
+            outputBox.textContent = JSON.stringify(mockData, null, 2);
         }
 
         /**
@@ -260,15 +223,6 @@
                 container.innerHTML = `<p style="color: red;">Failed to load prototype: ${error.message}</p>`;
                 button.disabled = false;
             }
-        }
-
-        mockVeloFunctions() {
-            return {
-                getMockUserData: () => Promise.resolve({
-                    userId: "test-clientside-456",
-                    source: "Generated in client-side tech.js"
-                })
-            };
         }
     }
 
