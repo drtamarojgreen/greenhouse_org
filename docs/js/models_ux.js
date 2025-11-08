@@ -101,7 +101,7 @@
                 this.addConsentListeners();
 
                 this.state.isInitialized = true;
-                this.observeAndReinitializeApp(this.state.targetElement); // Disabled due to buggy behavior
+                //this.observeAndReinitializeApp(this.state.targetElement); // Disabled due to buggy behavior
             } catch (error) {
                 console.error('Models App: Initialization failed:', error);
                 GreenhouseUtils.displayError(`Failed to load simulation: ${error.message}`);
