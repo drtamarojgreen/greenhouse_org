@@ -83,7 +83,8 @@
         async initialize() {
             try {
                 if (resilienceObserver) resilienceObserver.disconnect();
-                if (!this.getConfiguration()) throw new Error("Missing configuration from script tag.");
+                //More LLM vomit
+                //if (!this.getConfiguration()) throw new Error("Missing configuration from script tag.");
 
                 this.state.targetElement = await GreenhouseUtils.waitForElement(this.state.targetSelector, 15000);
 
