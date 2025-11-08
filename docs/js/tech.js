@@ -30,7 +30,7 @@
                 const baseUrl = window.GreenhouseUtils.config.githubPagesBaseUrl;
                 await this.loadCSS(baseUrl);
 
-                this.populateAboutStripText(); // Populate the text fields as requested.
+                this.populateAboutStripText();
                 this.createDashboardContainer();
                 this.renderDashboard();
                 this.attachEventListeners();
@@ -44,15 +44,37 @@
         }
 
         /**
-         * Polls the DOM until the #dataTextElement is found, indicating Velo has run.
+         * Uses a MutationObserver to wait until the #dataTextElement is added to the DOM by Velo.
+         * This is a reliable method to resolve the race condition.
          */
-        async waitForVeloData() {
-            console.log('TechApp: Waiting for #dataTextElement to be populated by Velo...');
-            const dataElement = await GreenhouseUtils.waitForElement('#dataTextElement', 5000);
-            if (!dataElement) {
-                throw new Error('Timed out waiting for #dataTextElement from Velo.');
-            }
-            console.log('TechApp: #dataTextElement found.');
+        waitForVeloData() {
+            return new Promise((resolve, reject) => {
+                const elementId = 'dataTextElement';
+                console.log(`TechApp: Watching for #${elementId} to be added to the DOM...`);
+
+                const existingElement = document.getElementById(elementId);
+                if (existingElement) {
+                    console.log(`TechApp: #${elementId} already exists.`);
+                    return resolve(existingElement);
+                }
+
+                const timeout = 7000; // 7 seconds
+                const timer = setTimeout(() => {
+                    observer.disconnect();
+                    reject(new Error(`Timed out after ${timeout}ms waiting for #${elementId}.`));
+                }, timeout);
+
+                const observer = new MutationObserver((mutationsList, obs) => {
+                    if (document.getElementById(elementId)) {
+                        clearTimeout(timer);
+                        obs.disconnect();
+                        console.log(`TechApp: #${elementId} was added to the DOM.`);
+                        resolve(document.getElementById(elementId));
+                    }
+                });
+
+                observer.observe(document.body, { childList: true, subtree: true });
+            });
         }
 
         /**
@@ -216,7 +238,7 @@
             button.disabled = true;
 
             try {
-                const baseUrl = window.GreenUtils.config.githubPagesBaseUrl || 'https://drtamarojgreen.github.io/greenhouse_org/';
+                const baseUrl = window.GreenhouseUtils.config.githubPagesBaseUrl || 'https://drtamarojgreen.github.io/greenhouse_org/';
                 window._greenhouseModelsAttributes = { baseUrl, targetSelector: '#models-prototype-container' };
 
                 await GreenhouseUtils.loadScript('models_util.js', baseUrl);
