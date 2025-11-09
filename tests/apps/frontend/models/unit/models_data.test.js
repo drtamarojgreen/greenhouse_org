@@ -1,25 +1,17 @@
-// Mocking the DOM for testing purposes
-const mockDocument = {
-    // The querySelector is no longer critical as we will mock loadData directly,
-    // but it's good practice to keep a basic mock.
-    querySelector: () => null
-};
+const VeloMock = require('../../../../mocks/VeloMock');
 
-// Mock window object
-const mockWindow = {
-    document: mockDocument,
-    console: {
-        log: () => {},
-        error: () => {},
-        warn: () => {},
-        debug: () => {}
-    }
+// Mock window object and Velo API
+const veloMock = new VeloMock();
+global.$w = veloMock.$w;
+global.window = {
+    $w: global.$w,
 };
-
-// Inject mocks into the global scope for testing
-global.document = mockWindow.document;
-global.window = mockWindow;
-global.console = mockWindow.console;
+global.console = {
+    log: () => {},
+    error: () => {},
+    warn: () => {},
+    debug: () => {}
+};
 
 // Load the actual models_data.js content
 const GreenhouseModelsData = require('../../../../../docs/js/models_data.js');
@@ -40,18 +32,15 @@ async function runModelsDataTests() {
 
     console.log('\n--- Running models_data.js Tests ---');
 
-    // Test 1: Directly mock loadData to resolve immediately
-    async function testLoadDataMock() {
-        // Override the original loadData with a mock
-        GreenhouseModelsData.loadData = () => {
-            GreenhouseModelsData.state.simulationData = {
-                notes: [
-                    { type: 'research', content: 'CBT helps reframe negative thoughts.' },
-                    { type: 'patient', content: 'I feel anxious about social situations.' },
-                    { type: 'user', content: 'Practiced deep breathing for 10 minutes.' }
-                ]
-            };
-            GreenhouseModelsData.state.lexicon = {
+    // Test 1: loadData successfully loads data from mock DOM
+    async function testLoadDataFromMockDOM() {
+        const mockVeloData = {
+            notes: [
+                { type: 'research', content: 'CBT helps reframe negative thoughts.' },
+                { type: 'patient', content: 'I feel anxious about social situations.' },
+                { type: 'user', content: 'Practiced deep breathing for 10 minutes.' }
+            ],
+            lexicon: {
                 domain_tags: {
                     'cognitive-restructuring': ['cbt', 'reframe'],
                     'anxiety': ['anxious', 'social situations']
@@ -59,14 +48,30 @@ async function runModelsDataTests() {
                 neurotransmitter_affinity: {
                     'serotonin': ['cbt', 'breathing']
                 }
-            };
-            return Promise.resolve();
+            }
+        };
+
+        // Create the mock element that the application code expects
+        veloMock.createElement('dataHolder', {
+            dataset: {
+                customHolder: JSON.stringify(mockVeloData)
+            }
+        });
+
+        // Mock the querySelector to return the element
+        global.document = {
+            querySelector: (selector) => {
+                if (selector === 'section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > span:nth-child(1)') {
+                    return veloMock.$w('#dataHolder');
+                }
+                return null;
+            }
         };
 
         await GreenhouseModelsData.loadData();
-        assert(GreenhouseModelsData.state.simulationData !== null, 'loadData mock should populate simulationData');
-        assert(GreenhouseModelsData.state.simulationData.notes.length === 3, 'simulationData should have 3 notes from mock');
-        assert(Object.keys(GreenhouseModelsData.state.lexicon.domain_tags).length === 2, 'lexicon should have 2 domain tags from mock');
+        assert(GreenhouseModelsData.state.simulationData !== null, 'loadData should populate simulationData from mock DOM');
+        assert(GreenhouseModelsData.state.simulationData.notes.length === 3, 'simulationData should have 3 notes from mock DOM');
+        assert(Object.keys(GreenhouseModelsData.state.lexicon.domain_tags).length === 2, 'lexicon should have 2 domain tags from mock DOM');
     }
 
     // Test 2: transformNotesToSimulationInput correctly processes raw notes
@@ -96,7 +101,7 @@ async function runModelsDataTests() {
     }
 
     // Run all tests
-    await testLoadDataMock();
+    await testLoadDataFromMockDOM();
     testTransformNotes();
     testTransformNotesEmpty();
     testStrengthPriorAssignment();
