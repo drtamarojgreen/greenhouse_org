@@ -24,18 +24,29 @@
         async init() {
             console.log('TechApp: Initializing.');
             try {
-                // Wait for the main "about" strip to be present in the DOM. This is our signal the page is ready.
+                // Wait for Velo's data element and the main content strip to ensure the page is fully loaded.
+                const dataElementSelector = '#dataTextElement';
                 const aboutStripSelector = 'section.wixui-column-strip:nth-child(3)';
-                this.aboutStrip = await GreenhouseUtils.waitForElement(aboutStripSelector, 7000);
-                if (!this.aboutStrip) {
+
+                const [dataElement, aboutStrip] = await Promise.all([
+                    GreenhouseUtils.waitForElement(dataElementSelector, 7000),
+                    GreenhouseUtils.waitForElement(aboutStripSelector, 7000)
+                ]);
+
+                if (!aboutStrip) {
                     throw new Error(`The main content strip did not appear in time. Selector: ${aboutStripSelector}`);
                 }
+                this.aboutStrip = aboutStrip;
                 console.log('TechApp: Page content is ready.');
 
-                const baseUrl = window.GreenhouseUtils.config.githubPagesBaseUrl;
-                await this.loadCSS(baseUrl);
+                if (dataElement) {
+                    this.handleVeloData(dataElement);
+                } else {
+                    console.warn('TechApp: Velo data element not found.');
+                }
 
                 this.populateAboutStripText();
+                this.createCanvasSection();
                 this.createDashboardContainer();
                 this.renderDashboard();
                 this.attachEventListeners();
@@ -49,26 +60,18 @@
         }
 
         /**
-         * Dynamically loads the stylesheet for the dashboard.
+         * Parses and logs the data passed from the Velo backend.
+         * @param {HTMLElement} dataElement The text element containing the JSON data.
          */
-        async loadCSS(baseUrl) {
-            if (!baseUrl) {
-                console.warn('TechApp: Base URL not found, cannot load CSS.');
-                return;
+        handleVeloData(dataElement) {
+            try {
+                const data = JSON.parse(dataElement.textContent);
+                console.log('TechApp: Received data from Velo backend.', data);
+                GreenhouseUtils.displaySuccess('Successfully received Velo backend data.');
+            } catch (error) {
+                console.error('TechApp: Failed to parse Velo data.', error);
+                GreenhouseUtils.displayError('Could not parse Velo backend data.');
             }
-            const cssUrl = `${baseUrl}css/tech.css`;
-            return new Promise((resolve, reject) => {
-                if (document.querySelector(`link[href="${cssUrl}"]`)) return resolve();
-                const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = cssUrl;
-                link.onload = () => {
-                    console.log('TechApp: Stylesheet loaded successfully.');
-                    resolve();
-                };
-                link.onerror = () => reject(new Error(`Failed to load CSS: ${cssUrl}`));
-                document.head.appendChild(link);
-            });
         }
 
         /**
@@ -109,6 +112,49 @@
             if (populatedCount > 0) {
                 console.log(`TechApp: Successfully populated ${populatedCount} promotional text fields.`);
             }
+        }
+
+        /**
+         * Creates and appends a new section with an HTML5 canvas to the aboutStrip.
+         */
+        createCanvasSection() {
+            if (!this.aboutStrip) {
+                console.warn('TechApp: aboutStrip element not found. Cannot create canvas section.');
+                return;
+            }
+            console.log('TechApp: Creating and appending canvas section.');
+
+            const canvasSection = document.createElement('section');
+            canvasSection.id = 'tech-canvas-section';
+            canvasSection.style.width = '100%';
+            canvasSection.style.padding = '20px 0';
+            canvasSection.style.backgroundColor = '#e0e0e0';
+            canvasSection.style.textAlign = 'center';
+            canvasSection.style.borderTop = '2px solid #cccccc';
+
+            const title = document.createElement('h2');
+            title.textContent = 'Canvas Test Area';
+            title.style.marginBottom = '10px';
+            canvasSection.appendChild(title);
+
+            const canvas = document.createElement('canvas');
+            canvas.id = 'tech-canvas';
+            canvas.width = 500;
+            canvas.height = 250;
+            canvas.style.border = '1px solid black';
+            canvas.style.backgroundColor = 'white';
+
+            // Simple drawing on canvas to show it works
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgb(200, 0, 0)';
+            ctx.fillRect(10, 10, 50, 50);
+            ctx.fillStyle = 'rgba(0, 0, 200, 0.5)';
+            ctx.fillRect(30, 30, 50, 50);
+
+            canvasSection.appendChild(canvas);
+
+            this.aboutStrip.appendChild(canvasSection);
+            console.log('TechApp: Canvas section appended as a child of aboutStrip.');
         }
 
         /**
@@ -197,7 +243,18 @@
         async runTestCase2() {
             const container = document.getElementById('models-prototype-container');
             const button = document.getElementById('load-models-prototype-btn');
-            container.innerHTML = '<p>Loading models prototype...</p>';
+
+            const updateStatus = (message, isError = false) => {
+                container.innerHTML = ''; // Clear previous content
+                const p = document.createElement('p');
+                p.textContent = message;
+                if (isError) {
+                    p.style.color = 'red';
+                }
+                container.appendChild(p);
+            };
+
+            updateStatus('Loading models prototype...');
             button.disabled = true;
 
             try {
@@ -213,14 +270,14 @@
                 await GreenhouseUtils.loadScript('models_ux.js', baseUrl);
 
                 if (window.GreenhouseModelsUX) {
-                    container.innerHTML = '<p>Scripts loaded. Initializing prototype...</p>';
+                    updateStatus('Scripts loaded. Initializing prototype...');
                     window.GreenhouseModelsUX.init();
                     GreenhouseUtils.displaySuccess('Models prototype loaded.');
                 } else {
                     throw new Error("GreenhouseModelsUX failed to load.");
                 }
             } catch (error) {
-                container.innerHTML = `<p style="color: red;">Failed to load prototype: ${error.message}</p>`;
+                updateStatus(`Failed to load prototype: ${error.message}`, true);
                 button.disabled = false;
             }
         }
