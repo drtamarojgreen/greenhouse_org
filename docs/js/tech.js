@@ -16,6 +16,7 @@
             this.dashboardContainer = null;
             this.aboutStrip = null;
             this.dashboardVisible = false; // Track visibility state
+            this.eventListenersAttached = false;
         }
 
         /**
@@ -50,9 +51,8 @@
                 this.createCanvasSection();
                 this.createDashboardContainer(); // This now sets up the interval
 
-                // Initial call to render and attach listeners
+                // Initial call to render
                 this.renderDashboard();
-                this.attachEventListeners();
 
                 console.log('TechApp: Initialization complete.');
                 GreenhouseUtils.displaySuccess('Tech Test Dashboard Loaded Successfully.');
@@ -233,6 +233,12 @@
             if (this.dashboardVisible) {
                 this.aboutStrip.appendChild(this.dashboardContainer);
                 console.log('TechApp: Dashboard is now VISIBLE.');
+
+                // Attach event listeners only once when the dashboard is first made visible.
+                if (!this.eventListenersAttached) {
+                    this.attachEventListeners();
+                    this.eventListenersAttached = true;
+                }
             } else {
                 if (this.aboutStrip.contains(this.dashboardContainer)) {
                     this.aboutStrip.removeChild(this.dashboardContainer);
