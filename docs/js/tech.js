@@ -25,7 +25,7 @@
             console.log('TechApp: Initializing.');
             try {
                 // Wait for Velo's data element and the main content strip to ensure the page is fully loaded.
-                const dataElementSelector = 'section.wizui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > p:nth-child(1) > span:nth-child(1) > span:nth-child(1);';
+                const dataElementSelector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > p:nth-child(1) > span:nth-child(1) > span:nth-child(1);';
                 const aboutStripSelector = 'section.wixui-column-strip:nth-child(3)';
 
                 const [dataElement, aboutStrip] = await Promise.all([
