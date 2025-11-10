@@ -31,9 +31,19 @@
             try {
                 const response = await fetch(this._brainSVGUrl);
                 const svgText = await response.text();
-                const pathData = svgText.match(/d="([^"]+)"/)[1];
-                this._brainPath = new Path2D(pathData);
-                callback();
+
+                // Use DOMParser for a more robust extraction
+                const parser = new DOMParser();
+                const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
+                const pathElement = svgDoc.querySelector('path');
+
+                if (pathElement) {
+                    const pathData = pathElement.getAttribute('d');
+                    this._brainPath = new Path2D(pathData);
+                    callback();
+                } else {
+                    throw new Error("No path element found in the SVG.");
+                }
             } catch (error) {
                 console.error('Error loading or parsing brain SVG:', error);
             }
