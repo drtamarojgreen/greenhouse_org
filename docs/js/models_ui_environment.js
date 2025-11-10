@@ -3,105 +3,151 @@
     'use strict';
 
     const GreenhouseModelsUIEnvironment = {
-        _renderElement(ctx, element, { w, h }) {
-            if (!element) return;
-
-            ctx.save();
-
-            if (element.style) {
-                for (const [key, value] of Object.entries(element.style)) {
-                    ctx[key] = value;
-                }
-            }
-
-            if (element.type === 'path') {
-                const path = new Path2D(GreenhouseModelsUtil.parseDynamicPath(element.path, { w, h }));
-                if(ctx.fillStyle) ctx.fill(path);
-                if(ctx.strokeStyle) ctx.stroke(path);
-            } else if (element.type === 'texture') {
-                for (let i = 0; i < 10; i++) {
-                    ctx.beginPath();
-                    const startY = h * 0.3 + i * 20;
-                    const startX = w * 0.4 + (i % 2) * 15;
-                    ctx.moveTo(startX, startY);
-                    const cp1x = startX + 30 + Math.sin(i) * 15;
-                    const cp1y = startY - 10;
-                    const cp2x = startX + 60 - Math.cos(i) * 20;
-                    const cp2y = startY + 15;
-                    const endX = startX + 90;
-                    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, startY);
-                    ctx.stroke();
-                }
-            }
-
-            if (element.children) {
-                element.children.forEach(child => this._renderElement(ctx, child, { w, h }));
-            }
-
-            ctx.restore();
-        },
-
-        _drawEnvironmentBackground(ctx, width, height) {
-            let color = 'rgba(240, 240, 240, 0.5)'; // Neutral
-            if (this.state.environment.type === 'POSITIVE') {
-                color = 'rgba(230, 245, 230, 0.5)'; // Positive state
-            } else if (this.state.environment.type === 'NEGATIVE') {
-                color = 'rgba(235, 232, 240, 0.5)'; // Negative state
-            }
-            ctx.fillStyle = color;
-            ctx.fillRect(0, 0, width, height);
-        },
-
-        _drawFactorVisuals(ctx, width, height) {
-            // --- Genetics (DNA Helix) ---
-            const geneticsVal = this.state.environment.genetics;
-            ctx.save();
-            ctx.translate(width * 0.48, height * 0.7); // Position at brainstem
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = `rgba(100, 180, 255, ${0.4 + geneticsVal * 0.6})`;
-
-            for (let i = 0; i < 20; i++) {
-                const angle = i * 0.5;
-                const x = Math.sin(angle) * 10;
-                const y = -i * 5;
-                const x2 = Math.sin(angle + Math.PI) * 10;
-
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.lineTo(x2, y);
-                ctx.stroke();
-            }
-            ctx.restore();
-
-            // --- Community/Society (Incoming Pulse) ---
-            const communityVal = this.state.environment.community;
-            if (communityVal > 0.1) {
-                const pulseProgress = (Date.now() % 2000) / 2000;
-                const radius = pulseProgress * 50;
-                const alpha = (1 - pulseProgress) * communityVal;
-                ctx.strokeStyle = `rgba(255, 255, 150, ${alpha})`;
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(width * 0.85, height * 0.35, radius, Math.PI * 0.5, Math.PI * 1.5);
-                ctx.stroke();
-            }
-        },
+        _brainSVGUrl: 'https://drtamarojgreen.github.io/greenhouse_org/images/brain.svg',
+        _brainPath: null,
 
         drawEnvironmentView() {
             const ctx = this.contexts.environment;
             const { width, height } = this.canvases.environment;
-            if (!ctx || !this.state.environmentData || !this.state.environmentData.elements) return;
+            if (!ctx) return;
 
             ctx.clearRect(0, 0, width, height);
 
             this._drawEnvironmentBackground(ctx, width, height);
+            this._drawSociety(ctx, width, height);
+            this._drawGenomes(ctx, width, height);
+            this._drawCommunity(ctx, width, height);
 
-            const renderContext = { w: width, h: height };
-            this.state.environmentData.elements.forEach(element => {
-                this._renderElement(ctx, element, renderContext);
-            });
+            if (this._brainPath) {
+                this._drawBrainPath(ctx, width, height);
+            } else {
+                this._loadBrainPath(() => {
+                    this._drawBrainPath(ctx, width, height);
+                });
+            }
+        },
 
-            this._drawFactorVisuals(ctx, width, height);
+        async _loadBrainPath(callback) {
+            try {
+                const response = await fetch(this._brainSVGUrl);
+                const svgText = await response.text();
+                const pathData = svgText.match(/d="([^"]+)"/)[1];
+                this._brainPath = new Path2D(pathData);
+                callback();
+            } catch (error) {
+                console.error('Error loading or parsing brain SVG:', error);
+            }
+        },
+
+        _drawBrainPath(ctx, width, height) {
+            const svgWidth = 1536;
+            const svgHeight = 1024;
+            const scale = Math.min(width / svgWidth, height / svgHeight) * 0.8;
+            const offsetX = (width - (svgWidth * scale)) / 2;
+            const offsetY = (height - (svgHeight * scale)) / 2;
+
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+
+            // Add drop shadow
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetX = 10;
+            ctx.shadowOffsetY = 10;
+
+            ctx.fillStyle = 'rgba(150, 130, 110, 0.9)';
+            ctx.fill(this._brainPath);
+            ctx.strokeStyle = 'rgba(40, 30, 20, 1.0)';
+            ctx.lineWidth = 6 / scale; // Keep stroke width consistent
+            ctx.stroke(this._brainPath);
+            ctx.restore();
+        },
+
+        _drawEnvironmentBackground(ctx, width, height) {
+            const environmentState = this.state.environment.type;
+            let gradient;
+            if (environmentState === 'POSITIVE') {
+                gradient = ctx.createLinearGradient(0, 0, width, height);
+                gradient.addColorStop(0, 'rgba(173, 216, 230, 0.7)');
+                gradient.addColorStop(1, 'rgba(144, 238, 144, 0.7)');
+            } else {
+                gradient = ctx.createLinearGradient(0, 0, width, height);
+                gradient.addColorStop(0, 'rgba(128, 128, 128, 0.8)');
+                gradient.addColorStop(1, 'rgba(255, 99, 71, 0.7)');
+            }
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+        },
+
+        _drawGenomes(ctx, width, height) {
+            const geneticsActivation = this.state.environment.genetics > 0.5;
+            const time = Date.now() / 1000;
+
+            for (let i = 0; i < 5; i++) {
+                ctx.save();
+                const x = width * (0.1 + i * 0.15);
+                const y = height * 0.1;
+                ctx.translate(x, y);
+                ctx.rotate(time * 0.5);
+
+                ctx.globalAlpha = 0.6;
+                ctx.fillStyle = geneticsActivation ? 'rgba(255, 255, 150, 0.9)' : 'rgba(200, 200, 255, 0.6)';
+
+                ctx.beginPath();
+                ctx.moveTo(-5, -15);
+                ctx.bezierCurveTo(15, -5, -15, 5, 5, 15);
+                ctx.moveTo(5, -15);
+                ctx.bezierCurveTo(-15, -5, 15, 5, -5, 15);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = ctx.fillStyle;
+                ctx.stroke();
+
+                ctx.restore();
+            }
+        },
+
+        _drawCommunity(ctx, width, height) {
+            const communitySupport = this.state.environment.community;
+            const strongSupport = communitySupport > 0.6;
+            ctx.save();
+            ctx.strokeStyle = strongSupport ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 0, 0, 0.7)';
+            ctx.lineWidth = strongSupport ? 2 : 0.5;
+
+            const radius = Math.min(width, height) * 0.45;
+            const nodes = 8;
+            for (let i = 0; i < nodes; i++) {
+                const angle1 = (i / nodes) * 2 * Math.PI;
+                const x1 = (width / 2) + radius * Math.cos(angle1);
+                const y1 = (height / 2) + radius * Math.sin(angle1);
+                for (let j = i + 1; j < nodes; j++) {
+                    const angle2 = (j / nodes) * 2 * Math.PI;
+                    const x2 = (width / 2) + radius * Math.cos(angle2);
+                    const y2 = (height / 2) + radius * Math.sin(angle2);
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        },
+
+        _drawSociety(ctx, width, height) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.lineWidth = 1;
+            const time = Date.now() / 1000;
+            const patternSpeed = 5;
+            const offset = (time * patternSpeed) % 40;
+
+            for (let i = -offset; i < width; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, height);
+                ctx.stroke();
+            }
+            ctx.restore();
         }
     };
 
