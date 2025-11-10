@@ -15,6 +15,7 @@
         constructor() {
             this.dashboardContainer = null;
             this.aboutStrip = null;
+            this.dashboardVisible = false; // Track visibility state
         }
 
         /**
@@ -47,7 +48,9 @@
 
                 this.populateAboutStripText();
                 this.createCanvasSection();
-                this.createDashboardContainer();
+                this.createDashboardContainer(); // This now sets up the interval
+
+                // Initial call to render and attach listeners
                 this.renderDashboard();
                 this.attachEventListeners();
 
@@ -161,13 +164,16 @@
          * Inserts a new container for the dashboard right after the aboutStrip.
          */
         createDashboardContainer() {
+            // Create the container, but don't append it yet.
             this.dashboardContainer = document.createElement('section');
             this.dashboardContainer.id = 'tech-dashboard-section';
             this.dashboardContainer.style.backgroundColor = '#f0f4f7';
             this.dashboardContainer.style.padding = '40px 0';
+            this.renderDashboard(); // Pre-render the content
 
-            this.aboutStrip.parentNode.insertBefore(this.dashboardContainer, this.aboutStrip.nextSibling);
-            console.log('TechApp: Dashboard container created and inserted into the DOM.');
+            // Set up the interval to toggle its visibility
+            setInterval(() => this.toggleDashboardVisibility(), 2000);
+            console.log('TechApp: Dashboard visibility interval initiated.');
         }
 
         /**
@@ -217,6 +223,22 @@
 
             this.dashboardContainer.innerHTML = '';
             this.dashboardContainer.appendChild(dashboard);
+        }
+
+        /**
+         * Toggles the dashboard's visibility by appending or removing it from the DOM.
+         */
+        toggleDashboardVisibility() {
+            this.dashboardVisible = !this.dashboardVisible;
+            if (this.dashboardVisible) {
+                this.aboutStrip.appendChild(this.dashboardContainer);
+                console.log('TechApp: Dashboard is now VISIBLE.');
+            } else {
+                if (this.aboutStrip.contains(this.dashboardContainer)) {
+                    this.aboutStrip.removeChild(this.dashboardContainer);
+                    console.log('TechApp: Dashboard is now HIDDEN.');
+                }
+            }
         }
 
         /**
