@@ -48,7 +48,14 @@
                 genetics: 0.5,
                 type: 'NEUTRAL', // NEUTRAL, POSITIVE, NEGATIVE
                 auraOpacity: 0,
-                animationFrameId: null
+                animationFrameId: null,
+                stress: 0.5,
+                support: 0.5,
+                regions: {
+                    pfc: { activation: 0 },
+                    amygdala: { activation: 0 },
+                    hippocampus: { activation: 0 }
+                }
             },
 
             networkLayout: [
@@ -242,31 +249,31 @@
         },
 
         bindEnvironmentControls() {
-            const playPauseBtn = document.getElementById('play-pause-btn-environment');
-            const resetBtn = document.getElementById('reset-btn-environment');
-
-            if (playPauseBtn) {
-                playPauseBtn.addEventListener('click', () => {
-                    this.state.environment.isRunning = !this.state.environment.isRunning;
-                    if (this.state.environment.isRunning) {
-                        this.runEnvironmentSimulation();
-                        playPauseBtn.textContent = 'Pause';
-                    } else {
-                        cancelAnimationFrame(this.state.environment.animationFrameId);
-                        playPauseBtn.textContent = 'Play';
-                    }
+            const stressSlider = document.getElementById('stress-slider');
+            if (stressSlider) {
+                stressSlider.addEventListener('input', e => {
+                    this.state.environment.stress = parseFloat(e.target.value);
                 });
             }
 
-            if (resetBtn) {
-                resetBtn.addEventListener('click', () => {
-                    this.state.environment.isRunning = false;
-                    cancelAnimationFrame(this.state.environment.animationFrameId);
-                    playPauseBtn.textContent = 'Play';
-                    Object.assign(this.state.environment, {
-                        community: 0.5, society: 0.5, genetics: 0.5, environment: 0.5
-                    });
-                    GreenhouseModelsUI.drawEnvironmentView();
+            const supportSlider = document.getElementById('support-slider');
+            if (supportSlider) {
+                supportSlider.addEventListener('input', e => {
+                    this.state.environment.support = parseFloat(e.target.value);
+                });
+            }
+
+            const geneBtn1 = document.getElementById('gene-btn-1');
+            if (geneBtn1) {
+                geneBtn1.addEventListener('click', () => {
+                    this.state.environment.genetics = Math.random();
+                });
+            }
+
+            const geneBtn2 = document.getElementById('gene-btn-2');
+            if (geneBtn2) {
+                geneBtn2.addEventListener('click', () => {
+                    this.state.environment.genetics = Math.random();
                 });
             }
         },
@@ -343,6 +350,19 @@
                 }
                 return true;
             });
+
+            // Update brain region activations based on environment
+            const regions = this.state.environment.regions;
+            if (this.state.environment.type === 'POSITIVE') {
+                regions.pfc.activation = Math.min(1, regions.pfc.activation + 0.01);
+                regions.amygdala.activation = Math.max(0, regions.amygdala.activation - 0.01);
+            } else if (this.state.environment.type === 'NEGATIVE') {
+                regions.pfc.activation = Math.max(0, regions.pfc.activation - 0.01);
+                regions.amygdala.activation = Math.min(1, regions.amygdala.activation + 0.01);
+            }
+            // Simple model for hippocampus activation based on overall network firing
+            const firingNodes = this.state.networkLayout.filter(n => n.state === 'FIRING').length;
+            regions.hippocampus.activation = Math.min(1, firingNodes / this.state.networkLayout.length);
 
             // Genetics influence
             if (this.state.environment.genetics > this.config.GENETICS_RISK_THRESHOLD) {

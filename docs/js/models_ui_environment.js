@@ -20,9 +20,11 @@
 
             if (this._brainPath) {
                 this._drawBrainPath(ctx, width, height);
+                this._drawHeatmaps(ctx, width, height);
             } else {
                 this._loadBrainPath(() => {
                     this._drawBrainPath(ctx, width, height);
+                    this._drawHeatmaps(ctx, width, height);
                 });
             }
         },
@@ -74,24 +76,48 @@
             ctx.restore();
         },
 
-        _drawEnvironmentBackground(ctx, width, height) {
-            const environmentState = this.state.environment.type;
-            let gradient;
-            if (environmentState === 'POSITIVE') {
-                gradient = ctx.createLinearGradient(0, 0, width, height);
-                gradient.addColorStop(0, 'rgba(173, 216, 230, 0.7)');
-                gradient.addColorStop(1, 'rgba(144, 238, 144, 0.7)');
-            } else {
-                gradient = ctx.createLinearGradient(0, 0, width, height);
-                gradient.addColorStop(0, 'rgba(128, 128, 128, 0.8)');
-                gradient.addColorStop(1, 'rgba(255, 99, 71, 0.7)');
+        _drawHeatmaps(ctx, width, height) {
+            const regions = {
+                pfc: { x: width * 0.65, y: height * 0.35, radius: 60, color: 'rgba(0, 100, 255, 0.7)' },
+                amygdala: { x: width * 0.5, y: height * 0.55, radius: 30, color: 'rgba(255, 0, 0, 0.7)' },
+                hippocampus: { x: width * 0.55, y: height * 0.5, radius: 40, color: 'rgba(0, 255, 100, 0.7)' }
+            };
+
+            for (const key in regions) {
+                if (this.state.environment.regions[key].activation > 0.1) {
+                    const region = regions[key];
+                    const activation = this.state.environment.regions[key].activation;
+
+                    ctx.save();
+                    ctx.globalAlpha = activation;
+                    ctx.fillStyle = region.color;
+                    ctx.beginPath();
+                    ctx.arc(region.x, region.y, region.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
             }
+        },
+
+        _drawEnvironmentBackground(ctx, width, height) {
+            const stress = this.state.environment.stress;
+            const calmColor = { r: 173, g: 216, b: 230 }; // Light Blue
+            const stressColor = { r: 255, g: 99, b: 71 }; // Tomato Red
+
+            const r = calmColor.r + (stressColor.r - calmColor.r) * stress;
+            const g = calmColor.g + (stressColor.g - calmColor.g) * stress;
+            const b = calmColor.b + (stressColor.b - calmColor.b) * stress;
+
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.7)`);
+            gradient.addColorStop(1, `rgba(${r - 50}, ${g - 50}, ${b - 50}, 0.8)`);
+
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, width, height);
         },
 
         _drawGenomes(ctx, width, height) {
-            const geneticsActivation = this.state.environment.genetics > 0.5;
+            const genetics = this.state.environment.genetics;
             const time = Date.now() / 1000;
 
             for (let i = 0; i < 5; i++) {
@@ -101,8 +127,11 @@
                 ctx.translate(x, y);
                 ctx.rotate(time * 0.5);
 
-                ctx.globalAlpha = 0.6;
-                ctx.fillStyle = geneticsActivation ? 'rgba(255, 255, 150, 0.9)' : 'rgba(200, 200, 255, 0.6)';
+                const activation = (genetics - 0.5) * 2; // -1 to 1
+                const color = activation > 0 ? `rgba(255, 255, 150, ${0.6 + activation * 0.3})` : `rgba(200, 200, 255, 0.6)`;
+
+                ctx.globalAlpha = 0.6 + Math.abs(activation) * 0.3;
+                ctx.fillStyle = color;
 
                 ctx.beginPath();
                 ctx.moveTo(-5, -15);
@@ -118,22 +147,27 @@
         },
 
         _drawCommunity(ctx, width, height) {
-            const communitySupport = this.state.environment.community;
-            const strongSupport = communitySupport > 0.6;
+            const support = this.state.environment.support;
+            const stableColor = 'rgba(255, 255, 255, 0.9)';
+            const unstableColor = 'rgba(255, 0, 0, 0.7)';
+            const color = support > 0.5 ? stableColor : unstableColor;
+
             ctx.save();
-            ctx.strokeStyle = strongSupport ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 0, 0, 0.7)';
-            ctx.lineWidth = strongSupport ? 2 : 0.5;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1 + support * 2; // Thicker lines for more support
 
             const radius = Math.min(width, height) * 0.45;
             const nodes = 8;
+            const distortion = (1 - support) * 10; // More distortion for less support
+
             for (let i = 0; i < nodes; i++) {
                 const angle1 = (i / nodes) * 2 * Math.PI;
-                const x1 = (width / 2) + radius * Math.cos(angle1);
-                const y1 = (height / 2) + radius * Math.sin(angle1);
+                const x1 = (width / 2) + radius * Math.cos(angle1) + (Math.random() - 0.5) * distortion;
+                const y1 = (height / 2) + radius * Math.sin(angle1) + (Math.random() - 0.5) * distortion;
                 for (let j = i + 1; j < nodes; j++) {
                     const angle2 = (j / nodes) * 2 * Math.PI;
-                    const x2 = (width / 2) + radius * Math.cos(angle2);
-                    const y2 = (height / 2) + radius * Math.sin(angle2);
+                    const x2 = (width / 2) + radius * Math.cos(angle2) + (Math.random() - 0.5) * distortion;
+                    const y2 = (height / 2) + radius * Math.sin(angle2) + (Math.random() - 0.5) * distortion;
                     ctx.beginPath();
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
