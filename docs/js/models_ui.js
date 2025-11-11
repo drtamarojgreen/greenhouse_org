@@ -146,12 +146,19 @@
                 controlsHtml += `
                     <h3 class="greenhouse-panel-title">Environment Controls</h3>
                     <div class="control-group">
-                        <label>External Influence</label>
-                        <select class="greenhouse-select" id="environment-type-select">
-                            <option value="NEUTRAL">Neutral</option>
-                            <option value="POSITIVE">Positive (e.g., CBT)</option>
-                            <option value="NEGATIVE">Negative (e.g., Stress)</option>
-                        </select>
+                        <label>Environmental Stress</label>
+                        <input type="range" min="0" max="1" step="0.01" value="0.5" class="greenhouse-slider" id="stress-slider">
+                    </div>
+                    <div class="control-group">
+                        <label>Social Support Level</label>
+                        <input type="range" min="0" max="1" step="0.01" value="0.5" class="greenhouse-slider" id="support-slider">
+                    </div>
+                    <div class="control-group">
+                        <label>Genetic Factors</label>
+                        <div class="button-group">
+                            <button class="greenhouse-btn greenhouse-btn-secondary" id="gene-btn-1">Gene A</button>
+                            <button class="greenhouse-btn greenhouse-btn-secondary" id="gene-btn-2">Gene B</button>
+                        </div>
                     </div>
                 `;
             }
@@ -164,6 +171,13 @@
                 instructionsPanel.innerHTML = `
                     <h3 class="greenhouse-panel-title">How to Use</h3>
                     <p>Use the controls to see how different parameters affect the strength of neural connections in real-time.</p>
+                `;
+                container.appendChild(instructionsPanel);
+            } else if (type === 'environment') {
+                const instructionsPanel = GreenhouseModelsUtil.createElement('div', { className: 'greenhouse-controls-panel' });
+                instructionsPanel.innerHTML = `
+                    <h3 class="greenhouse-panel-title">How to Use</h3>
+                    <p>Use the sliders to adjust environmental stress and social support. Click the gene buttons to simulate genetic predispositions.</p>
                 `;
                 container.appendChild(instructionsPanel);
             }
