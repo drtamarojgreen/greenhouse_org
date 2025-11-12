@@ -165,6 +165,7 @@
             const stableColor = 'rgba(255, 255, 255, 0.9)';
             const unstableColor = 'rgba(255, 0, 0, 0.7)';
             const color = support > 0.5 ? stableColor : unstableColor;
+            const time = Date.now() / 5000; // Time factor for smooth animation
 
             ctx.save();
             ctx.strokeStyle = color;
@@ -176,12 +177,12 @@
 
             for (let i = 0; i < nodes; i++) {
                 const angle1 = (i / nodes) * 2 * Math.PI;
-                const x1 = (width / 2) + radius * Math.cos(angle1) + (Math.random() - 0.5) * distortion;
-                const y1 = (height / 2) + radius * Math.sin(angle1) + (Math.random() - 0.5) * distortion;
+                const x1 = (width / 2) + radius * Math.cos(angle1) + Math.cos(time + i) * distortion;
+                const y1 = (height / 2) + radius * Math.sin(angle1) + Math.sin(time + i) * distortion;
                 for (let j = i + 1; j < nodes; j++) {
                     const angle2 = (j / nodes) * 2 * Math.PI;
-                    const x2 = (width / 2) + radius * Math.cos(angle2) + (Math.random() - 0.5) * distortion;
-                    const y2 = (height / 2) + radius * Math.sin(angle2) + (Math.random() - 0.5) * distortion;
+                    const x2 = (width / 2) + radius * Math.cos(angle2) + Math.cos(time + j) * distortion;
+                    const y2 = (height / 2) + radius * Math.sin(angle2) + Math.sin(time + j) * distortion;
                     ctx.beginPath();
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
