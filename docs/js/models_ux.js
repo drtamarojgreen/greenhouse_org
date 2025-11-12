@@ -55,6 +55,12 @@
                     pfc: { activation: 0 },
                     amygdala: { activation: 0 },
                     hippocampus: { activation: 0 }
+                },
+                tooltip: {
+                    visible: false,
+                    text: '',
+                    x: 0,
+                    y: 0
                 }
             },
 
@@ -399,6 +405,13 @@
             if (environmentSelect) {
                 environmentSelect.addEventListener('change', e => {
                     this.state.environment.type = e.target.value;
+                });
+            }
+
+            const canvas = GreenhouseModelsUI.canvases.environment;
+            if (canvas) {
+                canvas.addEventListener('mousemove', e => {
+                    GreenhouseModelsUI._handleMouseMove(e);
                 });
             }
         },
