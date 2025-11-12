@@ -161,7 +161,7 @@
         }
 
         /**
-         * Inserts a new container for the dashboard right after the aboutStrip after a 2-second delay.
+         * Inserts a new container for the dashboard right after the aboutStrip.
          */
         createDashboardContainer() {
             // Create the container, but don't append it yet.
@@ -171,27 +171,8 @@
             this.dashboardContainer.style.padding = '40px 0';
             this.renderDashboard(); // Pre-render the content
 
-            // Set up a one-time interval to render the dashboard after a delay.
-            const renderInterval = setInterval(() => {
-                if (!this.aboutStrip) {
-                    console.error('TechApp: Cannot render dashboard, aboutStrip is missing.');
-                    clearInterval(renderInterval);
-                    return;
-                }
-
-                // Use the safe compatibility function to append the element
-                GreenhouseReactCompatibility.insertElementSafely(this.aboutStrip, this.dashboardContainer, 'Tech Dashboard Insertion');
-                console.log('TechApp: Dashboard is now VISIBLE.');
-
-                // Attach event listeners now that the dashboard is in the DOM.
-                this.attachEventListeners();
-                this.eventListenersAttached = true;
-
-                // Clear the interval to ensure this only runs once.
-                clearInterval(renderInterval);
-                console.log('TechApp: Dashboard render interval cleared.');
-            }, 2000);
-
+            // Set up the interval to toggle its visibility
+            this.visibilityInterval = setInterval(() => this.toggleDashboardVisibility(), 5000);
             console.log('TechApp: Dashboard visibility interval initiated.');
         }
 
@@ -242,6 +223,29 @@
 
             this.dashboardContainer.innerHTML = '';
             this.dashboardContainer.appendChild(dashboard);
+        }
+
+        /**
+         * Toggles the dashboard's visibility by appending or removing it from the DOM.
+         */
+        toggleDashboardVisibility() {
+            this.dashboardVisible = !this.dashboardVisible;
+            if (this.dashboardVisible) {
+                this.aboutStrip.appendChild(this.dashboardContainer);
+                console.log('TechApp: Dashboard is now VISIBLE.');
+
+                // Attach event listeners only once when the dashboard is first made visible.
+                if (!this.eventListenersAttached) {
+                    this.attachEventListeners();
+                    this.eventListenersAttached = true;
+                    clearInterval(this.visibilityInterval);
+                }
+            } else {
+                if (this.aboutStrip.contains(this.dashboardContainer)) {
+                    this.aboutStrip.removeChild(this.dashboardContainer);
+                    console.log('TechApp: Dashboard is now HIDDEN.');
+                }
+            }
         }
 
         /**
