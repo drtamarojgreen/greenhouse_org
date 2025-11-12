@@ -32,6 +32,7 @@
                     this._drawHeatmaps(ctx, width, height);
                 });
             }
+            this._drawStatusReadout(ctx);
             this._drawTooltip(ctx);
         },
 
@@ -111,6 +112,12 @@
                 }
             }
             ctx.restore();
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.font = '16px Arial';
+            ctx.fillText('Community', width / 2 - 40, height / 2);
+            ctx.restore();
         },
 
         _drawEnvironmentBackground(ctx, width, height) {
@@ -128,6 +135,12 @@
 
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, width, height);
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.font = '16px Arial';
+            ctx.fillText('Environment', 10, height - 10);
+            ctx.restore();
         },
 
         _drawGenomes(ctx, width, height) {
@@ -158,15 +171,43 @@
 
                 ctx.restore();
             }
+
+            if (genetics > 0.8) {
+                const x = width * (0.1 + 2 * 0.15) + 20; // Position next to the 3rd icon
+                const y = height * 0.1;
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 100, 100, 1.0)'; // Bright solid color
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.font = '16px Arial';
+            ctx.fillText('Genomes', 10, 30);
+            ctx.restore();
         },
 
         _drawCommunity(ctx, width, height) {
             const support = this.state.environment.support;
             const stableColor = 'rgba(255, 255, 255, 0.9)';
             const unstableColor = 'rgba(255, 0, 0, 0.7)';
-            const color = support > 0.5 ? stableColor : unstableColor;
 
             ctx.save();
+
+            // "Unstable Connection" Effect
+            if (support < 0.5) {
+                ctx.setLineDash([5, 5]);
+            } else {
+                ctx.setLineDash([]);
+            }
+
+            // "Weak Connection" Effect
+            ctx.globalAlpha = support;
+
+            const color = support > 0.5 ? stableColor : unstableColor;
             ctx.strokeStyle = color;
             ctx.lineWidth = 1 + support * 2; // Thicker lines for more support
 
@@ -195,41 +236,79 @@
             ctx.save();
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
             ctx.lineWidth = 1;
+
+            const ses = this.state.environment.ses; // Assuming ses is a value between 0 and 1
+            const disorder = (1 - ses) * 10; // Max disorder of 10 pixels
+
             const time = Date.now() / 1000;
             const patternSpeed = 5;
             const offset = (time * patternSpeed) % 40;
 
             for (let i = -offset; i < width; i += 20) {
+                const randomOffset = (Math.random() - 0.5) * disorder;
                 ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, height);
+                ctx.moveTo(i + randomOffset, 0);
+                ctx.lineTo(i + randomOffset, height);
                 ctx.stroke();
             }
+            ctx.restore();
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.font = '16px Arial';
+            ctx.fillText('Society', width - 80, height - 10);
             ctx.restore();
         },
 
         _handleMouseMove(event) {
             const canvas = this.canvases.environment;
+            const { width, height } = this.canvases.environment;
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
 
             let hoveredRegion = null;
+            let hoveredRegionKey = null;
             for (const key in this._brainRegions) {
                 const region = this._brainRegions[key];
                 if (region.path && this.contexts.environment.isPointInPath(region.path, x, y)) {
                     hoveredRegion = region;
+                    hoveredRegionKey = key;
                     break;
                 }
             }
 
             if (hoveredRegion) {
+                const activation = this.state.environment.regions[hoveredRegionKey].activation;
                 this.state.environment.tooltip.visible = true;
-                this.state.environment.tooltip.text = hoveredRegion.name;
+                this.state.environment.tooltip.text = `${hoveredRegion.name} | Activation: ${activation.toFixed(2)}`;
                 this.state.environment.tooltip.x = x;
                 this.state.environment.tooltip.y = y;
             } else {
-                this.state.environment.tooltip.visible = false;
+                const ecosystemIcons = {
+                    genomes: { x: 10, y: 10, width: 80, height: 30, name: 'Genomes', value: this.state.environment.genetics },
+                    community: { x: width / 2 - 50, y: height / 2 - 20, width: 100, height: 40, name: 'Community Support', value: this.state.environment.support },
+                    society: { x: width - 90, y: height - 30, width: 80, height: 20, name: 'Socioeconomic Status', value: this.state.environment.ses },
+                    environment: { x: 10, y: height - 30, width: 120, height: 20, name: 'Stress Level', value: this.state.environment.stress }
+                };
+
+                let hoveredIcon = null;
+                for (const key in ecosystemIcons) {
+                    const icon = ecosystemIcons[key];
+                    if (x >= icon.x && x <= icon.x + icon.width && y >= icon.y && y <= icon.y + icon.height) {
+                        hoveredIcon = icon;
+                        break;
+                    }
+                }
+
+                if (hoveredIcon) {
+                    this.state.environment.tooltip.visible = true;
+                    this.state.environment.tooltip.text = `${hoveredIcon.name}: ${hoveredIcon.value.toFixed(2)}`;
+                    this.state.environment.tooltip.x = x;
+                    this.state.environment.tooltip.y = y;
+                } else {
+                    this.state.environment.tooltip.visible = false;
+                }
             }
         },
 
@@ -244,6 +323,22 @@
                 ctx.fillText(tooltip.text, tooltip.x + 20, tooltip.y + 30);
                 ctx.restore();
             }
+        },
+
+        _drawStatusReadout(ctx) {
+            const stress = this.state.environment.stress;
+            const support = this.state.environment.support;
+            const { width, height } = this.canvases.environment;
+
+            const stressText = `Stress Level: ${stress > 0.7 ? 'High' : 'Low'} (${stress.toFixed(2)})`;
+            const supportText = `Support Level: ${support < 0.5 ? 'Low' : 'High'} (${support.toFixed(2)})`;
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.font = '16px Arial';
+            ctx.fillText(stressText, width - 200, 30);
+            ctx.fillText(supportText, width - 200, 50);
+            ctx.restore();
         }
     };
 

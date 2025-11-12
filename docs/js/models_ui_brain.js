@@ -87,12 +87,12 @@
             });
 
             ctx.strokeStyle = 'rgba(45, 62, 45, 0.3)';
-            ctx.lineWidth = 1;
             this.state.synapses.forEach(synapse => {
                 const fromNode = this.state.networkLayout[synapse.from];
                 const toNode = this.state.networkLayout[synapse.to];
                 if (fromNode && toNode) {
                     ctx.beginPath();
+                    ctx.lineWidth = synapse.weight * 5;
                     ctx.moveTo(fromNode.x * scaleX, fromNode.y * scaleY);
                     ctx.lineTo(toNode.x * scaleX, toNode.y * scaleY);
                     ctx.stroke();
@@ -135,6 +135,35 @@
                     ctx.fill();
                 }
             });
+
+            this._drawPathLegend(ctx);
+        },
+
+        _drawPathLegend(ctx) {
+            const { width, height } = this.canvases.network;
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.font = '12px Arial';
+
+            // High Influence
+            ctx.beginPath();
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = 'rgba(45, 62, 45, 0.8)';
+            ctx.moveTo(10, 20);
+            ctx.lineTo(40, 20);
+            ctx.stroke();
+            ctx.fillText('High Influence', 50, 25);
+
+            // Low Influence
+            ctx.beginPath();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(45, 62, 45, 0.5)';
+            ctx.moveTo(10, 40);
+            ctx.lineTo(40, 40);
+            ctx.stroke();
+            ctx.fillText('Low Influence', 50, 45);
+
+            ctx.restore();
         }
     };
 
