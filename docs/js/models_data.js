@@ -47,7 +47,40 @@
                     this.state.simulationData = { notes: [] }; // Provide minimal valid data
                     this.state.lexicon = { domain_tags: {}, neurotransmitter_affinity: {} };
                     this.state.synapseData = {};
-                    this.state.brainData = { elements: [] };
+                    this.state.brainData = {
+                        elements: [
+                            {
+                                "type": "tree",
+                                "shape": "polygon",
+                                "style": {
+                                    "fillStyle": "rgba(34, 139, 34, 0.5)",
+                                    "strokeStyle": "rgba(0, 100, 0, 0.7)",
+                                    "lineWidth": 2
+                                },
+                                "points": [
+                                    { "x": 325, "y": 350 },
+                                    { "x": 325, "y": 300 },
+                                    { "x": 275, "y": 300 },
+                                    { "x": 275, "y": 250 },
+                                    { "x": 300, "y": 250 },
+                                    { "x": 250, "y": 200 },
+                                    { "x": 275, "y": 200 },
+                                    { "x": 225, "y": 150 },
+                                    { "x": 250, "y": 150 },
+                                    { "x": 200, "y": 100 },
+                                    { "x": 450, "y": 100 },
+                                    { "x": 400, "y": 150 },
+                                    { "x": 425, "y": 150 },
+                                    { "x": 375, "y": 200 },
+                                    { "x": 400, "y": 200 },
+                                    { "x": 350, "y": 250 },
+                                    { "x": 375, "y": 250 },
+                                    { "x": 375, "y": 300 },
+                                    { "x": 325, "y": 300 }
+                                ]
+                            }
+                        ]
+                    };
                     this.state.environmentData = {};
                 }
             } catch (error) {
