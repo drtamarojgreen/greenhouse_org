@@ -16,32 +16,48 @@
 
 
         async loadData() {
-            console.log('Check: Data holder element found?', !!document.querySelector('section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > span:nth-child(1)'));
-            const dataElement = await new Promise((resolve, reject) => {
-                let elapsedTime = 0;
-                const poll = setInterval(() => {
-                    const element = document.querySelector('section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > span:nth-child(1)');
-                    console.log("Searching for data holder element ...", element);
-                    if (element && element.dataset.customHolder && element.dataset.customHolder.length > 2) {
-                        clearInterval(poll);
-                        resolve(element);
-                    } else {
-                        elapsedTime += 5000;
-                        if (elapsedTime >= 30000) { // 30 second timeout
+            try {
+                const dataElement = await new Promise((resolve, reject) => {
+                    let elapsedTime = 0;
+                    const poll = setInterval(() => {
+                        const element = document.querySelector('section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > span:nth-child(1)');
+                        if (element && element.dataset.customHolder && element.dataset.customHolder.length > 2) {
                             clearInterval(poll);
-                            reject(new Error('Timed out waiting for data holder element.'));
+                            resolve(element);
+                        } else {
+                            elapsedTime += 100;
+                            if (elapsedTime >= 1000) { // 1 second timeout for local testing
+                                clearInterval(poll);
+                                resolve(null); // Resolve with null to indicate fallback
+                            }
                         }
-                    }
-                }, 5000);
-            });
+                    }, 100);
+                });
 
-            console.log('Models App: Using data provided from Velo via data-custom-holder attribute.');
-            const veloData = JSON.parse(dataElement.dataset.customHolder);
-            this.state.simulationData = veloData;
-            this.state.lexicon = veloData.lexicon || {};
-            this.state.synapseData = veloData.synapse; // Extract synapse data from Velo payload
-            this.state.brainData = veloData.brain;     // Extract brain data from Velo payload
-            this.state.environmentData = veloData.environment; // Extract environment data from Velo payload
+                if (dataElement) {
+                    console.log('Models App: Using data provided from Velo via data-custom-holder attribute.');
+                    const veloData = JSON.parse(dataElement.dataset.customHolder);
+                    this.state.simulationData = veloData;
+                    this.state.lexicon = veloData.lexicon || {};
+                    this.state.synapseData = veloData.synapse;
+                    this.state.brainData = veloData.brain;
+                    this.state.environmentData = veloData.environment;
+                } else {
+                    console.log('Models App: Data holder not found, using fallback data for local testing.');
+                    this.state.simulationData = { notes: [] }; // Provide minimal valid data
+                    this.state.lexicon = { domain_tags: {}, neurotransmitter_affinity: {} };
+                    this.state.synapseData = {};
+                    this.state.brainData = { elements: [] };
+                    this.state.environmentData = {};
+                }
+            } catch (error) {
+                console.error('Models App: Error in loadData, falling back to default data.', error);
+                this.state.simulationData = { notes: [] };
+                this.state.lexicon = { domain_tags: {}, neurotransmitter_affinity: {} };
+                this.state.synapseData = {};
+                this.state.brainData = { elements: [] };
+                this.state.environmentData = {};
+            }
         },
 
         transformNotesToSimulationInput(rawNotes, lexicon) {
