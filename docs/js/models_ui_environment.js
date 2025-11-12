@@ -5,6 +5,11 @@
     const GreenhouseModelsUIEnvironment = {
         _brainSVGUrl: 'https://drtamarojgreen.github.io/greenhouse_org/images/brain.svg',
         _brainPath: null,
+        _brainRegions: {
+            pfc: { path: null, name: 'Prefrontal Cortex', color: 'rgba(0, 100, 255, 0.7)' },
+            amygdala: { path: null, name: 'Amygdala', color: 'rgba(255, 0, 0, 0.7)' },
+            hippocampus: { path: null, name: 'Hippocampus', color: 'rgba(0, 255, 100, 0.7)' }
+        },
 
         drawEnvironmentView() {
             const ctx = this.contexts.environment;
@@ -27,6 +32,7 @@
                     this._drawHeatmaps(ctx, width, height);
                 });
             }
+            this._drawTooltip(ctx);
         },
 
         async _loadBrainPath(callback) {
@@ -42,6 +48,12 @@
                 if (pathElement) {
                     const pathData = pathElement.getAttribute('d');
                     this._brainPath = new Path2D(pathData);
+
+                    // Define and create Path2D objects for each brain region
+                    this._brainRegions.pfc.path = new Path2D("M 900,300 a 150,150 0 0 1 0,300 h -50 a 100,100 0 0 0 0,-200 Z");
+                    this._brainRegions.amygdala.path = new Path2D("M 700,500 a 50,30 0 0 1 0,60 a 50,30 0 0 1 0,-60 Z");
+                    this._brainRegions.hippocampus.path = new Path2D("M 750,450 a 80,40 0 0 1 0,80 q -20,-40 0,-80 Z");
+
                     callback();
                 } else {
                     throw new Error("No path element found in the SVG.");
@@ -77,26 +89,28 @@
         },
 
         _drawHeatmaps(ctx, width, height) {
-            const regions = {
-                pfc: { x: width * 0.65, y: height * 0.35, radius: 60, color: 'rgba(0, 100, 255, 0.7)' },
-                amygdala: { x: width * 0.5, y: height * 0.55, radius: 30, color: 'rgba(255, 0, 0, 0.7)' },
-                hippocampus: { x: width * 0.55, y: height * 0.5, radius: 40, color: 'rgba(0, 255, 100, 0.7)' }
-            };
+            const scale = Math.min(width / 1536, height / 1024) * 0.8;
+            const offsetX = (width - (1536 * scale)) / 2;
+            const offsetY = (height - (1024 * scale)) / 2;
 
-            for (const key in regions) {
-                if (this.state.environment.regions[key].activation > 0.1) {
-                    const region = regions[key];
-                    const activation = this.state.environment.regions[key].activation;
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
 
+            for (const key in this._brainRegions) {
+                const region = this._brainRegions[key];
+                const activation = this.state.environment.regions[key].activation;
+
+                if (activation > 0.1 && region.path) {
                     ctx.save();
-                    ctx.globalAlpha = activation;
-                    ctx.fillStyle = region.color;
-                    ctx.beginPath();
-                    ctx.arc(region.x, region.y, region.radius, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.shadowColor = region.color;
+                    ctx.shadowBlur = activation * 30;
+                    ctx.fillStyle = region.color.replace('0.7', '0.3');
+                    ctx.fill(region.path);
                     ctx.restore();
                 }
             }
+            ctx.restore();
         },
 
         _drawEnvironmentBackground(ctx, width, height) {
@@ -192,6 +206,44 @@
                 ctx.stroke();
             }
             ctx.restore();
+        },
+
+        _handleMouseMove(event) {
+            const canvas = this.canvases.environment;
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            let hoveredRegion = null;
+            for (const key in this._brainRegions) {
+                const region = this._brainRegions[key];
+                if (region.path && this.contexts.environment.isPointInPath(region.path, x, y)) {
+                    hoveredRegion = region;
+                    break;
+                }
+            }
+
+            if (hoveredRegion) {
+                this.state.environment.tooltip.visible = true;
+                this.state.environment.tooltip.text = hoveredRegion.name;
+                this.state.environment.tooltip.x = x;
+                this.state.environment.tooltip.y = y;
+            } else {
+                this.state.environment.tooltip.visible = false;
+            }
+        },
+
+        _drawTooltip(ctx) {
+            const tooltip = this.state.environment.tooltip;
+            if (tooltip.visible) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(tooltip.x + 10, tooltip.y + 10, 150, 30);
+                ctx.fillStyle = 'white';
+                ctx.font = '14px Arial';
+                ctx.fillText(tooltip.text, tooltip.x + 20, tooltip.y + 30);
+                ctx.restore();
+            }
         }
     };
 
