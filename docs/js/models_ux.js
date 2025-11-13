@@ -65,7 +65,6 @@
             },
 
             networkLayout: [
-                { x: 325, y: 175, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'tree' },
                 { x: 100, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL' },
                 { x: 250, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL' },
                 { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE' },

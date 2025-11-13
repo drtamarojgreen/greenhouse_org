@@ -7,20 +7,16 @@
 </head>
 <body>
     <div id="models-app-container"></div>
-    <script>
-        window._greenhouseModelsAttributes = {
-            targetSelector: '#models-app-container',
-            baseUrl: './'
-        };
+    <script src="js/GreenhouseDependencyManager.js"></script>
+    <script
+        src="js/GreenhouseUtils.js"
+        data-base-url="./"
+        data-target-selector-left="#models-app-container">
     </script>
-    <script src="js/GreenhouseUtils.js"></script>
-    <script src="js/models_util.js"></script>
-    <script src="js/models_data.js"></script>
-    <script src="js/models_ui_synapse.js"></script>
-    <script src="js/models_ui_brain.js"></script>
-    <script src="js/models_ui_environment.js"></script>
-    <script src="js/models_ui.js"></script>
-    <script src="js/models_ux.js"></script>
-    <script src="js/models.js"></script>
+    <script
+        src="js/models.js"
+        data-base-url="./"
+        data-target-selector-left="#models-app-container">
+    </script>
 </body>
 </html>
