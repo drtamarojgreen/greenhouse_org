@@ -23,6 +23,8 @@
             this._drawGenomes(ctx, width, height);
             this._drawCommunity(ctx, width, height);
 
+            this.drawTree(ctx, this.canvases.environment);
+
             if (this._brainPath) {
                 this._drawBrainPath(ctx, width, height);
                 this._drawHeatmaps(ctx, width, height);
@@ -244,7 +246,63 @@
                 ctx.fillText(tooltip.text, tooltip.x + 20, tooltip.y + 30);
                 ctx.restore();
             }
-        }
+        },
+
+        drawTree(ctx, canvas) {
+            const { width, height } = canvas;
+            ctx.save();
+            ctx.fillStyle = '#2e6b2e';
+            ctx.strokeStyle = '#2e6b2e';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+
+            const startX = width / 2;
+            const startY = height;
+            const trunkHeight = height * 0.3;
+            const trunkWidth = 10;
+
+            // Draw trunk
+            ctx.beginPath();
+            ctx.moveTo(startX - trunkWidth / 2, startY);
+            ctx.lineTo(startX - trunkWidth / 2, startY - trunkHeight);
+            ctx.lineTo(startX + trunkWidth / 2, startY - trunkHeight);
+            ctx.lineTo(startX + trunkWidth / 2, startY);
+            ctx.fill();
+
+
+            // Draw branches using bezier curves
+            const drawBranch = (x, y, width, length, angle) => {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+
+                const endX = x + length * Math.cos(angle);
+                const endY = y + length * Math.sin(angle);
+
+                const cp1x = x + (endX - x) * 0.25 + Math.random() * 20 - 10;
+                const cp1y = y + (endY - y) * 0.25 + Math.random() * 20 - 10;
+                const cp2x = x + (endX - x) * 0.75 + Math.random() * 20 - 10;
+                const cp2y = y + (endY - y) * 0.75 + Math.random() * 20 - 10;
+
+                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
+                ctx.lineWidth = width;
+                ctx.stroke();
+
+                if (width > 1.5) {
+                    drawBranch(endX, endY, width * 0.6, length * 0.8, angle + Math.random() * 0.5 - 0.25);
+                    drawBranch(endX, endY, width * 0.6, length * 0.8, angle - Math.random() * 0.5 - 0.25);
+                }
+            };
+
+            const branchStartY = startY - trunkHeight;
+            drawBranch(startX, branchStartY, 6, 60, -Math.PI / 2);
+            drawBranch(startX, branchStartY, 5, 50, -Math.PI / 2 - 0.6);
+            drawBranch(startX, branchStartY, 5, 50, -Math.PI / 2 + 0.6);
+            drawBranch(startX, branchStartY - 20, 4, 40, -Math.PI / 2 - 1.2);
+            drawBranch(startX, branchStartY - 20, 4, 40, -Math.PI / 2 + 1.2);
+
+
+            ctx.restore();
+        },
     };
 
     window.GreenhouseModelsUIEnvironment = GreenhouseModelsUIEnvironment;
