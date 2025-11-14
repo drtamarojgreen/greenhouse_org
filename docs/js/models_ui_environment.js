@@ -259,7 +259,7 @@
             const startX = width / 2;
             const startY = height;
             const trunkHeight = height * 0.3;
-            const trunkWidth = 10;
+            const trunkWidth = 20; // Increased trunk width
 
             // Draw trunk
             ctx.beginPath();
@@ -287,18 +287,19 @@
                 ctx.lineWidth = width;
                 ctx.stroke();
 
-                if (width > 1.5) {
-                    drawBranch(endX, endY, width * 0.6, length * 0.8, angle + Math.random() * 0.5 - 0.25);
-                    drawBranch(endX, endY, width * 0.6, length * 0.8, angle - Math.random() * 0.5 - 0.25);
+                if (width > 1.5) { // Adjusted condition for recursion
+                    drawBranch(endX, endY, width * 0.7, length * 0.85, angle + Math.random() * 0.6 - 0.3);
+                    drawBranch(endX, endY, width * 0.7, length * 0.85, angle - Math.random() * 0.6 - 0.3);
                 }
             };
 
             const branchStartY = startY - trunkHeight;
-            drawBranch(startX, branchStartY, 6, 60, -Math.PI / 2);
-            drawBranch(startX, branchStartY, 5, 50, -Math.PI / 2 - 0.6);
-            drawBranch(startX, branchStartY, 5, 50, -Math.PI / 2 + 0.6);
-            drawBranch(startX, branchStartY - 20, 4, 40, -Math.PI / 2 - 1.2);
-            drawBranch(startX, branchStartY - 20, 4, 40, -Math.PI / 2 + 1.2);
+            // Adjusted parameters for wider, more robust branches
+            drawBranch(startX, branchStartY, 10, 70, -Math.PI / 2);
+            drawBranch(startX, branchStartY, 7, 60, -Math.PI / 2 - 0.7);
+            drawBranch(startX, branchStartY, 7, 60, -Math.PI / 2 + 0.7);
+            drawBranch(startX, branchStartY - 20, 5, 50, -Math.PI / 2 - 1.2);
+            drawBranch(startX, branchStartY - 20, 5, 50, -Math.PI / 2 + 1.2);
 
 
             ctx.restore();
