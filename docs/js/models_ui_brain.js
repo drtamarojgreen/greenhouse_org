@@ -38,9 +38,6 @@
                     if (ctx.fillStyle) ctx.fill();
                     if (ctx.strokeStyle) ctx.stroke();
                     break;
-                case 'branch':
-                    this._renderBranch(ctx, element.startX, element.startY, element.angle, element.length, element.depth);
-                    break;
                 case 'circle':
                     ctx.beginPath();
                     ctx.arc(0, 0, element.radius, 0, Math.PI * 2);
@@ -60,16 +57,6 @@
             ctx.restore();
         },
 
-        _renderBranch(ctx, startX, startY, angle, length, depth) {
-            if (depth < 0) return;
-            const endX = startX + Math.cos(angle) * length;
-            const endY = startY + Math.sin(angle) * length;
-            ctx.moveTo(startX, startY);
-            ctx.lineTo(endX, endY);
-            this._renderBranch(ctx, endX, endY, angle - 0.5, length * 0.8, depth - 1);
-            this._renderBranch(ctx, endX, endY, angle + 0.5, length * 0.8, depth - 1);
-        },
-
         drawNetworkView() {
             const ctx = this.contexts.network;
             const canvas = this.canvases.network;
@@ -78,36 +65,15 @@
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
 
-            // --- Direct Rendering for Background Tree ---
-            const treeElement = this.state.brainData.elements.find(el => el.type === 'tree');
-            if (treeElement) {
-                ctx.save();
-                if (treeElement.style) {
-                    for (const [key, value] of Object.entries(treeElement.style)) {
-                        ctx[key] = value;
-                    }
-                }
-                ctx.beginPath();
-                // Use absolute coordinates, but scale them to fit the canvas dimensions
-                const treeScaleX = width / 1600; // Adjusted for larger coordinate space
-                const treeScaleY = height / 1000;
-                ctx.moveTo(treeElement.points[0].x * treeScaleX, treeElement.points[0].y * treeScaleY);
-                for (let i = 1; i < treeElement.points.length; i++) {
-                    ctx.lineTo(treeElement.points[i].x * treeScaleX, treeElement.points[i].y * treeScaleY);
-                }
-                ctx.closePath();
-                if (ctx.fillStyle) ctx.fill();
-                if (ctx.strokeStyle) ctx.stroke();
-                ctx.restore();
-            }
-            // --- End Direct Rendering ---
 
             const scaleX = width / 650;
             const scaleY = height / 350;
 
             const elementDefs = {};
             this.state.brainData.elements.forEach(el => {
-                elementDefs[el.type] = el;
+                if (el.type !== 'tree') {
+                    elementDefs[el.type] = el;
+                }
             });
 
             ctx.strokeStyle = 'rgba(45, 62, 45, 0.3)';
