@@ -79,6 +79,7 @@
             ctx.clearRect(0, 0, width, height);
 
             // --- Direct Rendering for Background Tree ---
+            /*
             const treeElement = this.state.brainData.elements.find(el => el.type === 'tree');
             if (treeElement) {
                 ctx.save();
@@ -100,6 +101,7 @@
                 if (ctx.strokeStyle) ctx.stroke();
                 ctx.restore();
             }
+            */
             // --- End Direct Rendering ---
 
             const scaleX = width / 650;
