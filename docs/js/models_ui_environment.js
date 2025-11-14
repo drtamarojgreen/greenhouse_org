@@ -259,7 +259,7 @@
             const startX = width / 2;
             const startY = height;
             const trunkHeight = height * 0.3;
-            const trunkWidth = 10;
+            const trunkWidth = 40;
 
             // Draw trunk
             ctx.beginPath();
@@ -294,11 +294,11 @@
             };
 
             const branchStartY = startY - trunkHeight;
-            drawBranch(startX, branchStartY, 6, 60, -Math.PI / 2);
-            drawBranch(startX, branchStartY, 5, 50, -Math.PI / 2 - 0.6);
-            drawBranch(startX, branchStartY, 5, 50, -Math.PI / 2 + 0.6);
-            drawBranch(startX, branchStartY - 20, 4, 40, -Math.PI / 2 - 1.2);
-            drawBranch(startX, branchStartY - 20, 4, 40, -Math.PI / 2 + 1.2);
+            drawBranch(startX, branchStartY, 24, 210, -Math.PI / 2);
+            drawBranch(startX, branchStartY, 20, 175, -Math.PI / 2 - 0.8);
+            drawBranch(startX, branchStartY, 20, 175, -Math.PI / 2 + 0.8);
+            drawBranch(startX, branchStartY - 70, 16, 140, -Math.PI / 2 - 1.5);
+            drawBranch(startX, branchStartY - 70, 16, 140, -Math.PI / 2 + 1.5);
 
 
             ctx.restore();
