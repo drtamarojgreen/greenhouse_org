@@ -34,7 +34,41 @@
                     this._drawHeatmaps(ctx, width, height);
                 });
             }
+            this._drawLabels(ctx, width, height);
             this._drawTooltip(ctx);
+        },
+
+        _drawLabels(ctx, width, height) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+
+            // Label for the environment background (stress)
+            ctx.fillText('Environmental Stress', width / 2, 20);
+
+            // Label for the society
+            ctx.fillText('Societal Patterns', width / 2, height - 20);
+
+            // Label for the genomes
+            ctx.fillText('Genetic Factors', width / 2, 60);
+
+            // Label for the community
+            ctx.textAlign = 'left';
+            ctx.fillText('Social Support Network', width / 4, height / 2);
+
+            // Label for the brain path
+            const svgHeight = 1024;
+            const scale = Math.min(width / 1536, height / 1024) * 0.8;
+            const offsetY = (height - (svgHeight * scale)) / 2;
+            ctx.textAlign = 'center';
+            ctx.fillText('Brain', width / 2, offsetY + 80);
+
+
+            // Label for the tree
+            ctx.fillText('Personal Growth', width / 2 + 60, height - 100);
+
+            ctx.restore();
         },
 
         async _loadBrainPath(callback) {
