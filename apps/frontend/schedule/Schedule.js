@@ -1238,6 +1238,48 @@ function initializeAdminApp() {
     }
 }
 
+// Function to add text labels to UI elements
+function addTextLabels() {
+    const labels = {
+        // Patient view labels
+        patientTitleInput: 'Appointment Title',
+        patientDateInput: 'Appointment Date',
+        patientTimeInput: 'Appointment Time',
+        patientPlatformInput: 'Platform (e.g., Zoom, Phone)',
+        serviceSelect: 'Select a Service',
+        therapistDropdown: 'Select a Therapist',
+        proposeAppointmentButton: 'Request Appointment',
+        // Dashboard view labels
+        dashboardFetchDataButton: 'Refresh Data',
+        // Admin view labels
+        adminTitleInput: 'Appointment Title',
+        adminStartInput: 'Start Time',
+        adminEndInput: 'End Time',
+        adminPlatformInput: 'Platform',
+        adminServiceSelect: 'Select a Service',
+        adminConfirmedCheckbox: 'Confirmed',
+        adminFirstNameInput: 'First Name',
+        adminLastNameInput: 'Last Name',
+        adminContactInfoInput: 'Contact Info',
+        adminAnonymousIdInput: 'Anonymous ID',
+        adminSaveButton: 'Save Changes',
+        adminDeleteButton: 'Delete Appointment',
+    };
+
+    for (const key in labels) {
+        if (Object.hasOwnProperty.call(labels, key)) {
+            const element = $w(schedulerState.uiElements[key]);
+            if (element.valid) {
+                if (element.placeholder !== undefined) {
+                    element.placeholder = labels[key];
+                } else if (element.label !== undefined) {
+                    element.label = labels[key];
+                }
+            }
+        }
+    }
+}
+
 // Main initialization function for the scheduler application
 let initSchedulerCallCount = 0;
 async function initScheduler() {
@@ -1276,6 +1318,8 @@ async function initScheduler() {
         initializeDashboardApp();
         initializeAdminApp();
         // --- END: View Management ---
+
+        addTextLabels();
 
         schedulerState.isInitialized = true;
         displaySuccess('Scheduling application loaded successfully', 3000);
