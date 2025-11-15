@@ -144,17 +144,17 @@
                 ctx.rotate(time * 0.5);
 
                 const activation = (genetics - 0.5) * 2; // -1 to 1
-                const color = activation > 0 ? `rgba(255, 255, 150, ${0.6 + activation * 0.3})` : `rgba(200, 200, 255, 0.6)`;
+                const color = activation > 0 ? `rgba(255, 255, 150, ${0.9 + activation * 0.1})` : `rgba(200, 200, 255, 0.9)`;
 
-                ctx.globalAlpha = 0.6 + Math.abs(activation) * 0.3;
+                ctx.globalAlpha = 0.8 + Math.abs(activation) * 0.2;
                 ctx.fillStyle = color;
 
                 ctx.beginPath();
-                ctx.moveTo(-5, -15);
-                ctx.bezierCurveTo(15, -5, -15, 5, 5, 15);
-                ctx.moveTo(5, -15);
-                ctx.bezierCurveTo(-15, -5, 15, 5, -5, 15);
-                ctx.lineWidth = 2;
+                ctx.moveTo(-10, -30);
+                ctx.bezierCurveTo(30, -10, -30, 10, 10, 30);
+                ctx.moveTo(10, -30);
+                ctx.bezierCurveTo(-30, -10, 30, 10, -10, 30);
+                ctx.lineWidth = 4;
                 ctx.strokeStyle = ctx.fillStyle;
                 ctx.stroke();
 
