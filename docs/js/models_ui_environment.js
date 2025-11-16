@@ -22,6 +22,7 @@
             this._drawSociety(ctx, width, height);
             this._drawGenomes(ctx, width, height);
             this._drawCommunity(ctx, width, height);
+            this._drawInfluencePaths(ctx, width, height); // Draw the new paths
 
             this.drawTree(ctx, this.canvases.environment);
 
@@ -40,35 +41,43 @@
 
         _drawLabels(ctx, width, height) {
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.font = '14px Arial';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.font = '16px "Helvetica Neue", Arial, sans-serif'; // Larger font
             ctx.textAlign = 'center';
 
-            // Label for the environment background (stress)
-            ctx.fillText('Environmental Stress', width / 2, 20);
+            // Environmental Stress & Genetic Factors
+            ctx.fillText('Environmental Stress', width / 2, 35);
+            ctx.fillText('Genetic Factors', width / 2, 85);
 
-            // Label for the society
-            ctx.fillText('Societal Patterns', width / 2, height - 20);
+            // Paths Labels
+            ctx.fillText('Family', width * 0.25, height * 0.3);
+            ctx.fillText('Society', width * 0.5, height * 0.4);
+            ctx.fillText('Community', width * 0.75, height * 0.3);
 
-            // Label for the genomes
-            ctx.fillText('Genetic Factors', width / 2, 60);
-
-            // Label for the community
-            ctx.textAlign = 'left';
-            ctx.fillText('Social Support Network', width / 4, height / 2);
-
-            // Label for the brain path
-            const svgHeight = 1024;
-            const scale = Math.min(width / 1536, height / 1024) * 0.8;
-            const offsetY = (height - (svgHeight * scale)) / 2;
-            ctx.textAlign = 'center';
-            ctx.fillText('Brain', width / 2, offsetY + 80);
-
-
-            // Label for the tree
-            ctx.fillText('Personal Growth', width / 2 + 60, height - 100);
+            // Personal Growth
+            ctx.fillText('Personal Growth', width / 2, height - 120);
 
             ctx.restore();
+        },
+
+        _drawInfluencePaths(ctx, width, height) {
+            const drawPath = (startX, startY, endX, endY, color, lineWidth) => {
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.bezierCurveTo(
+                    startX, startY + 50,
+                    endX, endY - 80,
+                    endX, endY
+                );
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+            };
+
+            // Paths from environment elements to the brain/tree area
+            drawPath(width * 0.25, height * 0.35, width / 2, height * 0.6, 'rgba(255, 159, 64, 0.8)', 3);
+            drawPath(width * 0.5, height * 0.45, width / 2, height * 0.6, 'rgba(54, 162, 235, 0.8)', 3);
+            drawPath(width * 0.75, height * 0.35, width / 2, height * 0.6, 'rgba(75, 192, 192, 0.8)', 3);
         },
 
         async _loadBrainPath(callback) {
@@ -170,8 +179,10 @@
             const genetics = this.state.environment.genetics;
             const time = Date.now() / 1000;
             const bases = ['A', 'U', 'C', 'G', 'C', 'G', 'A', 'U']; // Added DNA bases array
+            const numHelixes = 5;
+            const helixSpacing = width / (numHelixes + 1); // Dynamic spacing
 
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < numHelixes; i++) {
                 ctx.save();
                 // Centered the helices by adjusting x and y coordinates
                 const x = width * (0.2 + i * 0.15);
@@ -185,20 +196,20 @@
                 ctx.translate(x + shiftX, y);
                 ctx.scale(1, perspective); // Apply perspective scaling on y-axis for x-axis rotation
 
-                const activation = (genetics - 0.5) * 2; // -1 to 1
-                const color = activation > 0 ? `rgba(255, 255, 150, ${0.9 + activation * 0.1})` : `rgba(200, 200, 255, 0.9)`;
+                const activation = (genetics - 0.5) * 2;
+                const color = activation > 0 ? `rgba(255, 255, 180, ${0.9 + activation * 0.1})` : `rgba(210, 210, 255, 0.9)`;
 
-                ctx.globalAlpha = 0.8 + Math.abs(activation) * 0.2;
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 4;
+                ctx.globalAlpha = 0.85 + Math.abs(activation) * 0.15;
+                ctx.fillStyle = color;
 
-                // Lengthened the helices
-                const helixHeight = 50;
+                // Draw the helix structure
                 ctx.beginPath();
-                ctx.moveTo(-10, -helixHeight);
-                ctx.bezierCurveTo(30, -25, -30, 25, 10, helixHeight);
-                ctx.moveTo(10, -helixHeight);
-                ctx.bezierCurveTo(-30, -25, 30, 25, -10, helixHeight);
+                ctx.moveTo(-12, -35);
+                ctx.bezierCurveTo(35, -12, -35, 12, 12, 35);
+                ctx.moveTo(12, -35);
+                ctx.bezierCurveTo(-35, -12, 35, 12, -12, 35);
+                ctx.lineWidth = 5; // Thicker lines
+                ctx.strokeStyle = ctx.fillStyle;
                 ctx.stroke();
 
                 // Draw DNA bases and rungs
@@ -240,26 +251,90 @@
 
             ctx.save();
             ctx.strokeStyle = color;
-            ctx.lineWidth = 1 + support * 2; // Thicker lines for more support
+            ctx.lineWidth = 1 + support * 2;
 
-            const radius = Math.min(width, height) * 0.45;
+            const radius = Math.min(width, height) * 0.35; // a bit smaller to fit labels
             const nodes = 8;
-            const distortion = (1 - support) * 10; // More distortion for less support
+            const distortion = (1 - support) * 10;
+            const centerX = width / 2;
+            const centerY = height / 2;
 
+            const wellnessDimensions = [
+                { name: 'Emotional', icon: 'M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 6h3a1.5 1.5 0 010 3h-3a1.5 1.5 0 010-3zm1.5 10a5.5 5.5 0 110-11 5.5 5.5 0 010 11z' },
+                { name: 'Spiritual', icon: 'M12 2l2.245 4.545L19 7.727l-4.5 4.382L15.49 17 12 14.545 8.51 17l.99-4.891L5 7.727l4.755-1.182L12 2z' },
+                { name: 'Intellectual', icon: 'M12 2a5 5 0 00-5 5c0 2.08.847 3.963 2.209 5.291L7 14.582V17h10v-2.418l-2.209-2.291A4.992 4.992 0 0017 7a5 5 0 00-5-5zm-3 17v-2h6v2H9z' },
+                { name: 'Physical', icon: 'M12 5a3 3 0 110 6 3 3 0 010-6zm0 8c-3.314 0-6 2.686-6 6v1h12v-1c0-3.314-2.686-6-6-6z' },
+                { name: 'Environmental', icon: 'M12 2a10 10 0 00-10 10c0 5.523 4.477 10 10 10s10-4.477 10-10A10 10 0 0012 2zm3.5 12h-7a.5.5 0 01-.5-.5v-7a.5.5 0 01.5-.5h7a.5.5 0 01.5.5v7a.5.5 0 01-.5.5z' },
+                { name: 'Financial', icon: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 14a1 1 0 01-1-1v-1.5a.5.5 0 00-1 0V15a3 3 0 106 0v-1.5a.5.5 0 00-1 0V15a1 1 0 01-1 1zm-1-5.5a.5.5 0 00-1 0V10a1 1 0 112 0v-.5a.5.5 0 00-1 0z' },
+                { name: 'Occupational', icon: 'M10 2H4v16h16V8h-6V2zM8 8h8v2H8V8zm0 4h8v2H8v-2zm0 4h5v2H8v-2z' },
+                { name: 'Social', icon: 'M17 7a2 2 0 10-4 0 2 2 0 004 0zM7 7a2 2 0 10-4 0 2 2 0 004 0zM12 12a3 3 0 10-6 0 3 3 0 006 0zM17 12a3 3 0 10-6 0 3 3 0 006 0z' }
+            ];
+
+            const vertices = [];
             for (let i = 0; i < nodes; i++) {
-                const angle1 = (i / nodes) * 2 * Math.PI;
-                const x1 = (width / 2) + radius * Math.cos(angle1) + (Math.random() - 0.5) * distortion;
-                const y1 = (height / 2) + radius * Math.sin(angle1) + (Math.random() - 0.5) * distortion;
-                for (let j = i + 1; j < nodes; j++) {
-                    const angle2 = (j / nodes) * 2 * Math.PI;
-                    const x2 = (width / 2) + radius * Math.cos(angle2) + (Math.random() - 0.5) * distortion;
-                    const y2 = (height / 2) + radius * Math.sin(angle2) + (Math.random() - 0.5) * distortion;
-                    ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                    ctx.stroke();
-                }
+                const angle = (i / nodes) * 2 * Math.PI;
+                const x = centerX + radius * Math.cos(angle) + (Math.random() - 0.5) * distortion;
+                const y = centerY + radius * Math.sin(angle) + (Math.random() - 0.5) * distortion;
+                vertices.push({ x, y });
             }
+
+            // Draw the octagon
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            for (let i = 1; i < nodes; i++) {
+                ctx.lineTo(vertices[i].x, vertices[i].y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            // Draw labels and icons
+            ctx.fillStyle = color;
+            ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+            for (let i = 0; i < nodes; i++) {
+                const vertex = vertices[i];
+                const dimension = wellnessDimensions[i];
+                const angle = (i / nodes) * 2 * Math.PI;
+
+                // Adjust label position to be outside the octagon
+                const labelRadius = radius + 30;
+                const labelX = centerX + labelRadius * Math.cos(angle);
+                const labelY = centerY + labelRadius * Math.sin(angle);
+
+                // Adjust text alignment based on position
+                if (Math.abs(labelX - centerX) < radius * 0.3) {
+                    ctx.textAlign = 'center';
+                } else if (labelX < centerX) {
+                    ctx.textAlign = 'right';
+                } else {
+                    ctx.textAlign = 'left';
+                }
+
+                // Vertical alignment
+                if (Math.abs(labelY - centerY) < radius * 0.3) {
+                    ctx.textBaseline = 'middle';
+                } else if (labelY < centerY) {
+                    ctx.textBaseline = 'bottom';
+                } else {
+                    ctx.textBaseline = 'top';
+                }
+
+                ctx.fillText(dimension.name, labelX, labelY);
+
+                // Draw the icon
+                const iconPath = new Path2D(dimension.icon);
+                const iconSize = 24; // Icon viewport size
+                const scale = 0.75;
+                const scaledSize = iconSize * scale;
+                const iconX = vertex.x - scaledSize / 2;
+                const iconY = vertex.y - scaledSize / 2;
+
+                ctx.save();
+                ctx.translate(iconX, iconY);
+                ctx.scale(scale, scale);
+                ctx.fill(iconPath);
+                ctx.restore();
+            }
+
             ctx.restore();
         },
 
@@ -321,7 +396,7 @@
         drawTree(ctx, canvas) {
             const { width, height } = canvas;
             ctx.save();
-            ctx.fillStyle = '#2e6b2e';
+            ctx.fillStyle = '#2e6b2e'; // Dark green for the tree
             ctx.strokeStyle = '#2e6b2e';
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
@@ -329,9 +404,9 @@
             const startX = width / 2;
             const startY = height;
             const trunkHeight = height * 0.3;
-            const trunkWidth = 20; // Increased trunk width
+            const trunkWidth = 25; // A slightly thicker trunk
 
-            // Draw trunk
+            // Draw the main trunk of the tree
             ctx.beginPath();
             ctx.moveTo(startX - trunkWidth / 2, startY);
             ctx.lineTo(startX - trunkWidth / 2, startY - trunkHeight);
@@ -339,38 +414,40 @@
             ctx.lineTo(startX + trunkWidth / 2, startY);
             ctx.fill();
 
-
-            // Draw branches using bezier curves
+            // Recursive function to draw branches
             const drawBranch = (x, y, width, length, angle) => {
                 ctx.beginPath();
                 ctx.moveTo(x, y);
 
+                // Calculate the end point of the branch
                 const endX = x + length * Math.cos(angle);
                 const endY = y + length * Math.sin(angle);
 
-                const cp1x = x + (endX - x) * 0.25 + Math.random() * 20 - 10;
-                const cp1y = y + (endY - y) * 0.25 + Math.random() * 20 - 10;
-                const cp2x = x + (endX - x) * 0.75 + Math.random() * 20 - 10;
-                const cp2y = y + (endY - y) * 0.75 + Math.random() * 20 - 10;
+                // Add some randomness to the curve for a more organic look
+                const cp1x = x + (endX - x) * 0.25 + (Math.random() - 0.5) * 30;
+                const cp1y = y + (endY - y) * 0.25 + (Math.random() - 0.5) * 30;
+                const cp2x = x + (endX - x) * 0.75 + (Math.random() - 0.5) * 30;
+                const cp2y = y + (endY - y) * 0.75 + (Math.random() - 0.5) * 30;
 
                 ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
                 ctx.lineWidth = width;
                 ctx.stroke();
 
-                if (width > 1.5) { // Adjusted condition for recursion
-                    drawBranch(endX, endY, width * 0.7, length * 0.85, angle + Math.random() * 0.6 - 0.3);
-                    drawBranch(endX, endY, width * 0.7, length * 0.85, angle - Math.random() * 0.6 - 0.3);
+                // If the branch is thick enough, create more branches from it
+                if (width > 2) {
+                    // Create two new branches, spreading wider
+                    drawBranch(endX, endY, width * 0.75, length * 0.9, angle + Math.random() * 0.8 - 0.4);
+                    drawBranch(endX, endY, width * 0.75, length * 0.9, angle - Math.random() * 0.8 - 0.4);
                 }
             };
 
             const branchStartY = startY - trunkHeight;
-            // Adjusted parameters for wider, more robust branches
-            drawBranch(startX, branchStartY, 10, 70, -Math.PI / 2);
-            drawBranch(startX, branchStartY, 7, 60, -Math.PI / 2 - 0.7);
-            drawBranch(startX, branchStartY, 7, 60, -Math.PI / 2 + 0.7);
-            drawBranch(startX, branchStartY - 20, 5, 50, -Math.PI / 2 - 1.2);
-            drawBranch(startX, branchStartY - 20, 5, 50, -Math.PI / 2 + 1.2);
-
+            // Initial branches starting from the top of the trunk
+            drawBranch(startX, branchStartY, 12, 80, -Math.PI / 2); // Main upward branch
+            drawBranch(startX, branchStartY, 9, 70, -Math.PI / 2 - 0.9); // Wider left branch
+            drawBranch(startX, branchStartY, 9, 70, -Math.PI / 2 + 0.9); // Wider right branch
+            drawBranch(startX, branchStartY - 25, 6, 60, -Math.PI / 2 - 1.5); // Far left branch
+            drawBranch(startX, branchStartY - 25, 6, 60, -Math.PI / 2 + 1.5); // Far right branch
 
             ctx.restore();
         },
