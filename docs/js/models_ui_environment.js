@@ -169,29 +169,65 @@
         _drawGenomes(ctx, width, height) {
             const genetics = this.state.environment.genetics;
             const time = Date.now() / 1000;
+            const bases = ['A', 'U', 'C', 'G', 'C', 'G', 'A', 'U']; // Added DNA bases array
 
             for (let i = 0; i < 5; i++) {
                 ctx.save();
-                const x = width * (0.1 + i * 0.15);
-                const y = height * 0.1;
-                ctx.translate(x, y);
-                ctx.rotate(time * 0.5);
+                // Centered the helices by adjusting x and y coordinates
+                const x = width * (0.2 + i * 0.15);
+                const y = height * 0.3;
+
+                // Added 3D rotation effect on the x-axis
+                const rotationTime = time * 1.5 + i;
+                const perspective = Math.cos(rotationTime) * 0.4 + 0.6; // Scale for 3D effect
+                const shiftX = Math.sin(rotationTime) * 20;
+
+                ctx.translate(x + shiftX, y);
+                ctx.scale(1, perspective); // Apply perspective scaling on y-axis for x-axis rotation
 
                 const activation = (genetics - 0.5) * 2; // -1 to 1
                 const color = activation > 0 ? `rgba(255, 255, 150, ${0.9 + activation * 0.1})` : `rgba(200, 200, 255, 0.9)`;
 
                 ctx.globalAlpha = 0.8 + Math.abs(activation) * 0.2;
-                ctx.fillStyle = color;
-
-                ctx.beginPath();
-                ctx.moveTo(-10, -30);
-                ctx.bezierCurveTo(30, -10, -30, 10, 10, 30);
-                ctx.moveTo(10, -30);
-                ctx.bezierCurveTo(-30, -10, 30, 10, -10, 30);
+                ctx.strokeStyle = color;
                 ctx.lineWidth = 4;
-                ctx.strokeStyle = ctx.fillStyle;
+
+                // Lengthened the helices
+                const helixHeight = 50;
+                ctx.beginPath();
+                ctx.moveTo(-10, -helixHeight);
+                ctx.bezierCurveTo(30, -25, -30, 25, 10, helixHeight);
+                ctx.moveTo(10, -helixHeight);
+                ctx.bezierCurveTo(-30, -25, 30, 25, -10, helixHeight);
                 ctx.stroke();
 
+                // Draw DNA bases and rungs
+                if (perspective > 0.4) { // Only draw when not too flat
+                    ctx.font = '12px Arial';
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 1.5;
+
+                    const numRungs = 8;
+                    for (let j = 0; j < numRungs; j++) {
+                        const progress = (j + 0.5) / numRungs;
+                        const yPos = -helixHeight + (progress * helixHeight * 2);
+
+                        const curveX = Math.cos(progress * Math.PI - Math.PI / 2) * 10;
+
+                        ctx.beginPath();
+                        ctx.moveTo(-curveX, yPos);
+                        ctx.lineTo(curveX, yPos);
+                        ctx.stroke();
+
+                        const base = bases[(i + j) % bases.length];
+                        ctx.save();
+                        ctx.scale(1, 1 / perspective); // un-scale the text on the y-axis
+                        ctx.textAlign = 'center';
+                        ctx.fillText(base, 0, yPos);
+                        ctx.restore();
+                    }
+                }
                 ctx.restore();
             }
         },
