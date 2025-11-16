@@ -178,16 +178,23 @@
         _drawGenomes(ctx, width, height) {
             const genetics = this.state.environment.genetics;
             const time = Date.now() / 1000;
+            const bases = ['A', 'U', 'C', 'G', 'C', 'G', 'A', 'U']; // Added DNA bases array
             const numHelixes = 5;
             const helixSpacing = width / (numHelixes + 1); // Dynamic spacing
 
             for (let i = 0; i < numHelixes; i++) {
                 ctx.save();
-                // Center the helixes by adjusting the starting x-coordinate
-                const x = helixSpacing * (i + 1);
-                const y = height * 0.15; // Lowered for better positioning
-                ctx.translate(x, y);
-                ctx.rotate(time * 0.6); // Slightly faster rotation
+                // Centered the helices by adjusting x and y coordinates
+                const x = width * (0.2 + i * 0.15);
+                const y = height * 0.3;
+
+                // Added 3D rotation effect on the x-axis
+                const rotationTime = time * 1.5 + i;
+                const perspective = Math.cos(rotationTime) * 0.4 + 0.6; // Scale for 3D effect
+                const shiftX = Math.sin(rotationTime) * 20;
+
+                ctx.translate(x + shiftX, y);
+                ctx.scale(1, perspective); // Apply perspective scaling on y-axis for x-axis rotation
 
                 const activation = (genetics - 0.5) * 2;
                 const color = activation > 0 ? `rgba(255, 255, 180, ${0.9 + activation * 0.1})` : `rgba(210, 210, 255, 0.9)`;
@@ -205,6 +212,33 @@
                 ctx.strokeStyle = ctx.fillStyle;
                 ctx.stroke();
 
+                // Draw DNA bases and rungs
+                if (perspective > 0.4) { // Only draw when not too flat
+                    ctx.font = '12px Arial';
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 1.5;
+
+                    const numRungs = 8;
+                    for (let j = 0; j < numRungs; j++) {
+                        const progress = (j + 0.5) / numRungs;
+                        const yPos = -helixHeight + (progress * helixHeight * 2);
+
+                        const curveX = Math.cos(progress * Math.PI - Math.PI / 2) * 10;
+
+                        ctx.beginPath();
+                        ctx.moveTo(-curveX, yPos);
+                        ctx.lineTo(curveX, yPos);
+                        ctx.stroke();
+
+                        const base = bases[(i + j) % bases.length];
+                        ctx.save();
+                        ctx.scale(1, 1 / perspective); // un-scale the text on the y-axis
+                        ctx.textAlign = 'center';
+                        ctx.fillText(base, 0, yPos);
+                        ctx.restore();
+                    }
+                }
                 ctx.restore();
             }
         },
