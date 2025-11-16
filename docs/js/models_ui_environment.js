@@ -176,6 +176,7 @@
         },
 
         _drawGenomes(ctx, width, height) {
+            const helixHeight = 35;
             const genetics = this.state.environment.genetics;
             const time = Date.now() / 1000;
             const bases = ['A', 'U', 'C', 'G', 'C', 'G', 'A', 'U']; // Added DNA bases array
