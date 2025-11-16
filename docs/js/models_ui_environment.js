@@ -217,26 +217,90 @@
 
             ctx.save();
             ctx.strokeStyle = color;
-            ctx.lineWidth = 1 + support * 2; // Thicker lines for more support
+            ctx.lineWidth = 1 + support * 2;
 
-            const radius = Math.min(width, height) * 0.45;
+            const radius = Math.min(width, height) * 0.35; // a bit smaller to fit labels
             const nodes = 8;
-            const distortion = (1 - support) * 10; // More distortion for less support
+            const distortion = (1 - support) * 10;
+            const centerX = width / 2;
+            const centerY = height / 2;
 
+            const wellnessDimensions = [
+                { name: 'Emotional', icon: 'M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 6h3a1.5 1.5 0 010 3h-3a1.5 1.5 0 010-3zm1.5 10a5.5 5.5 0 110-11 5.5 5.5 0 010 11z' },
+                { name: 'Spiritual', icon: 'M12 2l2.245 4.545L19 7.727l-4.5 4.382L15.49 17 12 14.545 8.51 17l.99-4.891L5 7.727l4.755-1.182L12 2z' },
+                { name: 'Intellectual', icon: 'M12 2a5 5 0 00-5 5c0 2.08.847 3.963 2.209 5.291L7 14.582V17h10v-2.418l-2.209-2.291A4.992 4.992 0 0017 7a5 5 0 00-5-5zm-3 17v-2h6v2H9z' },
+                { name: 'Physical', icon: 'M12 5a3 3 0 110 6 3 3 0 010-6zm0 8c-3.314 0-6 2.686-6 6v1h12v-1c0-3.314-2.686-6-6-6z' },
+                { name: 'Environmental', icon: 'M12 2a10 10 0 00-10 10c0 5.523 4.477 10 10 10s10-4.477 10-10A10 10 0 0012 2zm3.5 12h-7a.5.5 0 01-.5-.5v-7a.5.5 0 01.5-.5h7a.5.5 0 01.5.5v7a.5.5 0 01-.5.5z' },
+                { name: 'Financial', icon: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 14a1 1 0 01-1-1v-1.5a.5.5 0 00-1 0V15a3 3 0 106 0v-1.5a.5.5 0 00-1 0V15a1 1 0 01-1 1zm-1-5.5a.5.5 0 00-1 0V10a1 1 0 112 0v-.5a.5.5 0 00-1 0z' },
+                { name: 'Occupational', icon: 'M10 2H4v16h16V8h-6V2zM8 8h8v2H8V8zm0 4h8v2H8v-2zm0 4h5v2H8v-2z' },
+                { name: 'Social', icon: 'M17 7a2 2 0 10-4 0 2 2 0 004 0zM7 7a2 2 0 10-4 0 2 2 0 004 0zM12 12a3 3 0 10-6 0 3 3 0 006 0zM17 12a3 3 0 10-6 0 3 3 0 006 0z' }
+            ];
+
+            const vertices = [];
             for (let i = 0; i < nodes; i++) {
-                const angle1 = (i / nodes) * 2 * Math.PI;
-                const x1 = (width / 2) + radius * Math.cos(angle1) + (Math.random() - 0.5) * distortion;
-                const y1 = (height / 2) + radius * Math.sin(angle1) + (Math.random() - 0.5) * distortion;
-                for (let j = i + 1; j < nodes; j++) {
-                    const angle2 = (j / nodes) * 2 * Math.PI;
-                    const x2 = (width / 2) + radius * Math.cos(angle2) + (Math.random() - 0.5) * distortion;
-                    const y2 = (height / 2) + radius * Math.sin(angle2) + (Math.random() - 0.5) * distortion;
-                    ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                    ctx.stroke();
-                }
+                const angle = (i / nodes) * 2 * Math.PI;
+                const x = centerX + radius * Math.cos(angle) + (Math.random() - 0.5) * distortion;
+                const y = centerY + radius * Math.sin(angle) + (Math.random() - 0.5) * distortion;
+                vertices.push({ x, y });
             }
+
+            // Draw the octagon
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            for (let i = 1; i < nodes; i++) {
+                ctx.lineTo(vertices[i].x, vertices[i].y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            // Draw labels and icons
+            ctx.fillStyle = color;
+            ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+            for (let i = 0; i < nodes; i++) {
+                const vertex = vertices[i];
+                const dimension = wellnessDimensions[i];
+                const angle = (i / nodes) * 2 * Math.PI;
+
+                // Adjust label position to be outside the octagon
+                const labelRadius = radius + 30;
+                const labelX = centerX + labelRadius * Math.cos(angle);
+                const labelY = centerY + labelRadius * Math.sin(angle);
+
+                // Adjust text alignment based on position
+                if (Math.abs(labelX - centerX) < radius * 0.3) {
+                    ctx.textAlign = 'center';
+                } else if (labelX < centerX) {
+                    ctx.textAlign = 'right';
+                } else {
+                    ctx.textAlign = 'left';
+                }
+
+                // Vertical alignment
+                if (Math.abs(labelY - centerY) < radius * 0.3) {
+                    ctx.textBaseline = 'middle';
+                } else if (labelY < centerY) {
+                    ctx.textBaseline = 'bottom';
+                } else {
+                    ctx.textBaseline = 'top';
+                }
+
+                ctx.fillText(dimension.name, labelX, labelY);
+
+                // Draw the icon
+                const iconPath = new Path2D(dimension.icon);
+                const iconSize = 24; // Icon viewport size
+                const scale = 0.75;
+                const scaledSize = iconSize * scale;
+                const iconX = vertex.x - scaledSize / 2;
+                const iconY = vertex.y - scaledSize / 2;
+
+                ctx.save();
+                ctx.translate(iconX, iconY);
+                ctx.scale(scale, scale);
+                ctx.fill(iconPath);
+                ctx.restore();
+            }
+
             ctx.restore();
         },
 
