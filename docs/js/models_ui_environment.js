@@ -22,6 +22,7 @@
             this._drawSociety(ctx, width, height);
             this._drawGenomes(ctx, width, height);
             this._drawCommunity(ctx, width, height);
+            this._drawInfluencePaths(ctx, width, height); // Draw the new paths
 
             this.drawTree(ctx, this.canvases.environment);
 
@@ -40,35 +41,43 @@
 
         _drawLabels(ctx, width, height) {
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.font = '14px Arial';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.font = '16px "Helvetica Neue", Arial, sans-serif'; // Larger font
             ctx.textAlign = 'center';
 
-            // Label for the environment background (stress)
-            ctx.fillText('Environmental Stress', width / 2, 20);
+            // Environmental Stress & Genetic Factors
+            ctx.fillText('Environmental Stress', width / 2, 35);
+            ctx.fillText('Genetic Factors', width / 2, 85);
 
-            // Label for the society
-            ctx.fillText('Societal Patterns', width / 2, height - 20);
+            // Paths Labels
+            ctx.fillText('Family', width * 0.25, height * 0.3);
+            ctx.fillText('Society', width * 0.5, height * 0.4);
+            ctx.fillText('Community', width * 0.75, height * 0.3);
 
-            // Label for the genomes
-            ctx.fillText('Genetic Factors', width / 2, 60);
-
-            // Label for the community
-            ctx.textAlign = 'left';
-            ctx.fillText('Social Support Network', width / 4, height / 2);
-
-            // Label for the brain path
-            const svgHeight = 1024;
-            const scale = Math.min(width / 1536, height / 1024) * 0.8;
-            const offsetY = (height - (svgHeight * scale)) / 2;
-            ctx.textAlign = 'center';
-            ctx.fillText('Brain', width / 2, offsetY + 80);
-
-
-            // Label for the tree
-            ctx.fillText('Personal Growth', width / 2 + 60, height - 100);
+            // Personal Growth
+            ctx.fillText('Personal Growth', width / 2, height - 120);
 
             ctx.restore();
+        },
+
+        _drawInfluencePaths(ctx, width, height) {
+            const drawPath = (startX, startY, endX, endY, color, lineWidth) => {
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.bezierCurveTo(
+                    startX, startY + 50,
+                    endX, endY - 80,
+                    endX, endY
+                );
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+            };
+
+            // Paths from environment elements to the brain/tree area
+            drawPath(width * 0.25, height * 0.35, width / 2, height * 0.6, 'rgba(255, 159, 64, 0.8)', 3);
+            drawPath(width * 0.5, height * 0.45, width / 2, height * 0.6, 'rgba(54, 162, 235, 0.8)', 3);
+            drawPath(width * 0.75, height * 0.35, width / 2, height * 0.6, 'rgba(75, 192, 192, 0.8)', 3);
         },
 
         async _loadBrainPath(callback) {
@@ -169,26 +178,30 @@
         _drawGenomes(ctx, width, height) {
             const genetics = this.state.environment.genetics;
             const time = Date.now() / 1000;
+            const numHelixes = 5;
+            const helixSpacing = width / (numHelixes + 1); // Dynamic spacing
 
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < numHelixes; i++) {
                 ctx.save();
-                const x = width * (0.1 + i * 0.15);
-                const y = height * 0.1;
+                // Center the helixes by adjusting the starting x-coordinate
+                const x = helixSpacing * (i + 1);
+                const y = height * 0.15; // Lowered for better positioning
                 ctx.translate(x, y);
-                ctx.rotate(time * 0.5);
+                ctx.rotate(time * 0.6); // Slightly faster rotation
 
-                const activation = (genetics - 0.5) * 2; // -1 to 1
-                const color = activation > 0 ? `rgba(255, 255, 150, ${0.9 + activation * 0.1})` : `rgba(200, 200, 255, 0.9)`;
+                const activation = (genetics - 0.5) * 2;
+                const color = activation > 0 ? `rgba(255, 255, 180, ${0.9 + activation * 0.1})` : `rgba(210, 210, 255, 0.9)`;
 
-                ctx.globalAlpha = 0.8 + Math.abs(activation) * 0.2;
+                ctx.globalAlpha = 0.85 + Math.abs(activation) * 0.15;
                 ctx.fillStyle = color;
 
+                // Draw the helix structure
                 ctx.beginPath();
-                ctx.moveTo(-10, -30);
-                ctx.bezierCurveTo(30, -10, -30, 10, 10, 30);
-                ctx.moveTo(10, -30);
-                ctx.bezierCurveTo(-30, -10, 30, 10, -10, 30);
-                ctx.lineWidth = 4;
+                ctx.moveTo(-12, -35);
+                ctx.bezierCurveTo(35, -12, -35, 12, 12, 35);
+                ctx.moveTo(12, -35);
+                ctx.bezierCurveTo(-35, -12, 35, 12, -12, 35);
+                ctx.lineWidth = 5; // Thicker lines
                 ctx.strokeStyle = ctx.fillStyle;
                 ctx.stroke();
 
@@ -285,7 +298,7 @@
         drawTree(ctx, canvas) {
             const { width, height } = canvas;
             ctx.save();
-            ctx.fillStyle = '#2e6b2e';
+            ctx.fillStyle = '#2e6b2e'; // Dark green for the tree
             ctx.strokeStyle = '#2e6b2e';
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
@@ -293,9 +306,9 @@
             const startX = width / 2;
             const startY = height;
             const trunkHeight = height * 0.3;
-            const trunkWidth = 20; // Increased trunk width
+            const trunkWidth = 25; // A slightly thicker trunk
 
-            // Draw trunk
+            // Draw the main trunk of the tree
             ctx.beginPath();
             ctx.moveTo(startX - trunkWidth / 2, startY);
             ctx.lineTo(startX - trunkWidth / 2, startY - trunkHeight);
@@ -303,38 +316,40 @@
             ctx.lineTo(startX + trunkWidth / 2, startY);
             ctx.fill();
 
-
-            // Draw branches using bezier curves
+            // Recursive function to draw branches
             const drawBranch = (x, y, width, length, angle) => {
                 ctx.beginPath();
                 ctx.moveTo(x, y);
 
+                // Calculate the end point of the branch
                 const endX = x + length * Math.cos(angle);
                 const endY = y + length * Math.sin(angle);
 
-                const cp1x = x + (endX - x) * 0.25 + Math.random() * 20 - 10;
-                const cp1y = y + (endY - y) * 0.25 + Math.random() * 20 - 10;
-                const cp2x = x + (endX - x) * 0.75 + Math.random() * 20 - 10;
-                const cp2y = y + (endY - y) * 0.75 + Math.random() * 20 - 10;
+                // Add some randomness to the curve for a more organic look
+                const cp1x = x + (endX - x) * 0.25 + (Math.random() - 0.5) * 30;
+                const cp1y = y + (endY - y) * 0.25 + (Math.random() - 0.5) * 30;
+                const cp2x = x + (endX - x) * 0.75 + (Math.random() - 0.5) * 30;
+                const cp2y = y + (endY - y) * 0.75 + (Math.random() - 0.5) * 30;
 
                 ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
                 ctx.lineWidth = width;
                 ctx.stroke();
 
-                if (width > 1.5) { // Adjusted condition for recursion
-                    drawBranch(endX, endY, width * 0.7, length * 0.85, angle + Math.random() * 0.6 - 0.3);
-                    drawBranch(endX, endY, width * 0.7, length * 0.85, angle - Math.random() * 0.6 - 0.3);
+                // If the branch is thick enough, create more branches from it
+                if (width > 2) {
+                    // Create two new branches, spreading wider
+                    drawBranch(endX, endY, width * 0.75, length * 0.9, angle + Math.random() * 0.8 - 0.4);
+                    drawBranch(endX, endY, width * 0.75, length * 0.9, angle - Math.random() * 0.8 - 0.4);
                 }
             };
 
             const branchStartY = startY - trunkHeight;
-            // Adjusted parameters for wider, more robust branches
-            drawBranch(startX, branchStartY, 10, 70, -Math.PI / 2);
-            drawBranch(startX, branchStartY, 7, 60, -Math.PI / 2 - 0.7);
-            drawBranch(startX, branchStartY, 7, 60, -Math.PI / 2 + 0.7);
-            drawBranch(startX, branchStartY - 20, 5, 50, -Math.PI / 2 - 1.2);
-            drawBranch(startX, branchStartY - 20, 5, 50, -Math.PI / 2 + 1.2);
-
+            // Initial branches starting from the top of the trunk
+            drawBranch(startX, branchStartY, 12, 80, -Math.PI / 2); // Main upward branch
+            drawBranch(startX, branchStartY, 9, 70, -Math.PI / 2 - 0.9); // Wider left branch
+            drawBranch(startX, branchStartY, 9, 70, -Math.PI / 2 + 0.9); // Wider right branch
+            drawBranch(startX, branchStartY - 25, 6, 60, -Math.PI / 2 - 1.5); // Far left branch
+            drawBranch(startX, branchStartY - 25, 6, 60, -Math.PI / 2 + 1.5); // Far right branch
 
             ctx.restore();
         },
