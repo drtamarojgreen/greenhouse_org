@@ -27,6 +27,12 @@
                 }
             }
 
+            // Increase marker size
+            if (element.shape === 'circle') {
+                element.radius = 12;
+            }
+
+
             switch (element.shape) {
                 case 'polygon':
                     ctx.beginPath();
@@ -78,32 +84,6 @@
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
 
-            // --- Direct Rendering for Background Tree ---
-            /*
-            const treeElement = this.state.brainData.elements.find(el => el.type === 'tree');
-            if (treeElement) {
-                ctx.save();
-                if (treeElement.style) {
-                    for (const [key, value] of Object.entries(treeElement.style)) {
-                        ctx[key] = value;
-                    }
-                }
-                ctx.beginPath();
-                // Use absolute coordinates, but scale them to fit the canvas dimensions
-                const treeScaleX = width / 1600; // Adjusted for larger coordinate space
-                const treeScaleY = height / 1000;
-                ctx.moveTo(treeElement.points[0].x * treeScaleX, treeElement.points[0].y * treeScaleY);
-                for (let i = 1; i < treeElement.points.length; i++) {
-                    ctx.lineTo(treeElement.points[i].x * treeScaleX, treeElement.points[i].y * treeScaleY);
-                }
-                ctx.closePath();
-                if (ctx.fillStyle) ctx.fill();
-                if (ctx.strokeStyle) ctx.stroke();
-                ctx.restore();
-            }
-            */
-            // --- End Direct Rendering ---
-
             const scaleX = width / 650;
             const scaleY = height / 350;
 
@@ -112,8 +92,8 @@
                 elementDefs[el.type] = el;
             });
 
-            ctx.strokeStyle = 'rgba(45, 62, 45, 0.3)';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(45, 62, 45, 0.4)'; // Darker lines
+            ctx.lineWidth = 2.5; // Thicker lines
             this.state.synapses.forEach(synapse => {
                 const fromNode = this.state.networkLayout[synapse.from];
                 const toNode = this.state.networkLayout[synapse.to];
@@ -136,11 +116,11 @@
                 const currentX = startX + (endX - startX) * ap.progress;
                 const currentY = startY + (endY - startY) * ap.progress;
 
-                ctx.fillStyle = 'rgba(255, 255, 150, 0.9)';
+                ctx.fillStyle = 'rgba(255, 255, 100, 1)'; // Brighter yellow
                 ctx.shadowColor = 'rgba(255, 255, 0, 1)';
-                ctx.shadowBlur = 15;
+                ctx.shadowBlur = 20; // Larger shadow
                 ctx.beginPath();
-                ctx.arc(currentX, currentY, 4, 0, Math.PI * 2);
+                ctx.arc(currentX, currentY, 6, 0, Math.PI * 2); // Larger action potentials
                 ctx.fill();
                 ctx.shadowBlur = 0;
             });
@@ -157,7 +137,7 @@
                 } else {
                     ctx.fillStyle = 'rgba(150, 150, 150, 0.7)';
                     ctx.beginPath();
-                    ctx.arc(node.x * scaleX, node.y * scaleY, 10, 0, Math.PI * 2);
+                    ctx.arc(node.x * scaleX, node.y * scaleY, 12, 0, Math.PI * 2); // Larger nodes
                     ctx.fill();
                 }
             });

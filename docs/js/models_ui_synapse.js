@@ -14,6 +14,12 @@
                 }
             }
 
+            // Increase line thickness for paths
+            if (element.type === 'path' && ctx.strokeStyle) {
+                ctx.lineWidth = 2.5;
+            }
+
+
             let path;
             switch (element.type) {
                 case 'path':
@@ -74,9 +80,9 @@
                     }
                 }
 
-                ctx.fillStyle = 'rgba(255, 220, 150, 0.8)';
+                ctx.fillStyle = 'rgba(255, 200, 100, 0.9)'; // Brighter color
                 ctx.beginPath();
-                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.arc(x, y, 6, 0, Math.PI * 2); // Larger vesicles
                 ctx.fill();
             });
 
@@ -85,8 +91,8 @@
             this.state.synaptic.receptors.forEach((receptor, i) => {
                 const x = width / 2 + (i - this.state.synaptic.receptors.length / 2) * (terminalWidth * 1.2 / this.state.synaptic.receptors.length);
                 const y = postSynapticY - 75;
-                ctx.fillStyle = receptor.isBound ? 'rgba(255, 255, 100, 0.9)' : 'rgba(70, 150, 255, 0.9)';
-                ctx.fillRect(x, y, 3, 8);
+                ctx.fillStyle = receptor.isBound ? 'rgba(255, 255, 0, 1)' : 'rgba(100, 180, 255, 1)'; // More vibrant colors
+                ctx.fillRect(x, y, 5, 10); // Larger receptors
             });
 
             this.updateParticles();
@@ -114,9 +120,9 @@
                         receptor.boundUntil = Date.now() + 200;
                     }
                 } else {
-                    ctx.fillStyle = `rgba(0, 123, 255, ${p.opacity})`;
+                    ctx.fillStyle = `rgba(0, 150, 255, ${p.opacity})`; // Brighter particle color
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.arc(p.x, p.y, p.radius + 1, 0, Math.PI * 2); // Larger particles
                     ctx.fill();
                 }
             });
@@ -137,7 +143,7 @@
                         y: releaseZoneY + (Math.random() * 20),
                         vx: (Math.random() - 0.5) * 0.5,
                         vy: 0.8 + Math.random() * 0.5,
-                        radius: 2 + Math.random() * 1,
+                        radius: 3 + Math.random() * 1.5, // Larger particles
                         opacity: 0.8 + Math.random() * 0.2
                     });
                 }

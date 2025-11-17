@@ -8,49 +8,62 @@
 
     const loadDependencies = async () => {
         console.log('Models App: loadDependencies started.');
-        if (window.GreenhouseDependencyManager) {
+        if (window.GreenhouseDependencyManager && typeof window.GreenhouseDependencyManager.waitFor === 'function') {
             try {
                 await window.GreenhouseDependencyManager.waitFor('utils', 12000);
                 console.log('Models App: GreenhouseUtils loaded via dependency manager');
             } catch (error) {
                 console.error('Models App: Failed to load GreenhouseUtils via dependency manager:', error.message);
+                // Fallback to polling if manager fails
+                await pollForGreenhouseUtils();
             }
         } else {
-            // Fallback to a polling mechanism if the dependency manager is not available
-            await new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 240; // 12 seconds
-                const interval = setInterval(() => {
-                    if (window.GreenhouseUtils) {
-                        clearInterval(interval);
-                        resolve();
-                    } else if (attempts++ >= maxAttempts) {
-                        clearInterval(interval);
-                        console.error('Models App: GreenhouseUtils not available after 12 second timeout');
-                        reject(new Error('GreenhouseUtils load timeout'));
-                    }
-                }, 50);
-            });
+            await pollForGreenhouseUtils();
         }
         GreenhouseUtils = window.GreenhouseUtils;
     };
 
+    const pollForGreenhouseUtils = () => {
+        return new Promise((resolve, reject) => {
+            let attempts = 0;
+            const maxAttempts = 240; // 12 seconds
+            const interval = 50; // 50ms
+            const checkInterval = setInterval(() => {
+                if (window.GreenhouseUtils) {
+                    clearInterval(checkInterval);
+                    console.log('Models App: GreenhouseUtils loaded via polling.');
+                    resolve();
+                } else if (attempts++ >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    console.error(`Models App: GreenhouseUtils not available after ${maxAttempts * interval / 1000} second timeout.`);
+                    reject(new Error('GreenhouseUtils load timeout'));
+                }
+            }, interval);
+        });
+    };
+
     const captureScriptAttributes = () => {
+        // First, try to use pre-defined attributes if they exist
         if (window._greenhouseModelsAttributes) {
             console.log('Models App: Using pre-defined attributes.');
             return true;
         }
-        const scriptElement = document.currentScript;
+
+        // Fallback to searching for the script tag
+        const scriptElement = document.querySelector('script[src*="models.js"]');
         if (!scriptElement) {
             console.error('Models App: Could not find current script element to capture attributes.');
             return false;
         }
+
         window._greenhouseModelsAttributes = {
             baseUrl: scriptElement.getAttribute('data-base-url'),
             targetSelector: scriptElement.getAttribute('data-target-selector-left')
         };
+        console.log('Models App: Captured attributes from script tag:', window._greenhouseModelsAttributes);
         return true;
     };
+
 
     async function main() {
         console.log('Models App: main() started.');

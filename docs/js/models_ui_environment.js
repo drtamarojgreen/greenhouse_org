@@ -6,9 +6,9 @@
         _brainSVGUrl: 'https://drtamarojgreen.github.io/greenhouse_org/images/brain.svg',
         _brainPath: null,
         _brainRegions: {
-            pfc: { path: null, name: 'Prefrontal Cortex', color: 'rgba(0, 100, 255, 0.7)' },
-            amygdala: { path: null, name: 'Amygdala', color: 'rgba(255, 0, 0, 0.7)' },
-            hippocampus: { path: null, name: 'Hippocampus', color: 'rgba(0, 255, 100, 0.7)' }
+            pfc: { path: null, name: 'Prefrontal Cortex', color: 'rgba(0, 123, 255, 0.7)' },
+            amygdala: { path: null, name: 'Amygdala', color: 'rgba(255, 99, 132, 0.7)' },
+            hippocampus: { path: null, name: 'Hippocampus', color: 'rgba(75, 192, 192, 0.7)' }
         },
 
         drawEnvironmentView() {
@@ -41,8 +41,8 @@
 
         _drawLabels(ctx, width, height) {
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            ctx.font = '16px "Helvetica Neue", Arial, sans-serif'; // Larger font
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 18px "Lato", sans-serif'; // Larger, bolder, modern font
             ctx.textAlign = 'center';
 
             // Environmental Stress & Genetic Factors
@@ -50,11 +50,13 @@
             ctx.fillText('Genetic Factors', width / 2, 85);
 
             // Paths Labels
+            ctx.font = '16px "Lato", sans-serif'; // Slightly smaller for path labels
             ctx.fillText('Family', width * 0.25, height * 0.3);
             ctx.fillText('Society', width * 0.5, height * 0.4);
             ctx.fillText('Community', width * 0.75, height * 0.3);
 
             // Personal Growth
+            ctx.font = 'bold 18px "Lato", sans-serif';
             ctx.fillText('Personal Growth', width / 2, height - 120);
 
             ctx.restore();
@@ -75,9 +77,9 @@
             };
 
             // Paths from environment elements to the brain/tree area
-            drawPath(width * 0.25, height * 0.35, width / 2, height * 0.6, 'rgba(255, 159, 64, 0.8)', 3);
-            drawPath(width * 0.5, height * 0.45, width / 2, height * 0.6, 'rgba(54, 162, 235, 0.8)', 3);
-            drawPath(width * 0.75, height * 0.35, width / 2, height * 0.6, 'rgba(75, 192, 192, 0.8)', 3);
+            drawPath(width * 0.25, height * 0.35, width / 2, height * 0.6, 'rgba(255, 159, 64, 0.8)', 4); // Thicker lines
+            drawPath(width * 0.5, height * 0.45, width / 2, height * 0.6, 'rgba(54, 162, 235, 0.8)', 4);
+            drawPath(width * 0.75, height * 0.35, width / 2, height * 0.6, 'rgba(75, 192, 192, 0.8)', 4);
         },
 
         async _loadBrainPath(callback) {
@@ -160,8 +162,8 @@
 
         _drawEnvironmentBackground(ctx, width, height) {
             const stress = this.state.environment.stress;
-            const calmColor = { r: 173, g: 216, b: 230 }; // Light Blue
-            const stressColor = { r: 255, g: 99, b: 71 }; // Tomato Red
+            const calmColor = { r: 200, g: 220, b: 255 }; // Lighter blue
+            const stressColor = { r: 255, g: 150, b: 130 }; // Softer red
 
             const r = calmColor.r + (stressColor.r - calmColor.r) * stress;
             const g = calmColor.g + (stressColor.g - calmColor.g) * stress;
@@ -215,8 +217,8 @@
 
                 // Draw DNA bases and rungs
                 if (perspective > 0.4) { // Only draw when not too flat
-                    ctx.font = '12px Arial';
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.font = '14px "Lato", sans-serif';
+                    ctx.fillStyle = '#333';
                     ctx.strokeStyle = color;
                     ctx.lineWidth = 1.5;
 
@@ -247,12 +249,12 @@
         _drawCommunity(ctx, width, height) {
             const support = this.state.environment.support;
             const stableColor = 'rgba(255, 255, 255, 0.9)';
-            const unstableColor = 'rgba(255, 0, 0, 0.7)';
+            const unstableColor = 'rgba(255, 99, 132, 0.7)';
             const color = support > 0.5 ? stableColor : unstableColor;
 
             ctx.save();
             ctx.strokeStyle = color;
-            ctx.lineWidth = 1 + support * 2;
+            ctx.lineWidth = 2 + support * 2; // Thicker lines
 
             const radius = Math.min(width, height) * 0.35; // a bit smaller to fit labels
             const nodes = 8;
@@ -290,7 +292,7 @@
 
             // Draw labels and icons
             ctx.fillStyle = color;
-            ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+            ctx.font = '14px "Lato", sans-serif';
             for (let i = 0; i < nodes; i++) {
                 const vertex = vertices[i];
                 const dimension = wellnessDimensions[i];
@@ -385,10 +387,10 @@
             const tooltip = this.state.environment.tooltip;
             if (tooltip.visible) {
                 ctx.save();
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                 ctx.fillRect(tooltip.x + 10, tooltip.y + 10, 150, 30);
                 ctx.fillStyle = 'white';
-                ctx.font = '14px Arial';
+                ctx.font = '14px "Lato", sans-serif';
                 ctx.fillText(tooltip.text, tooltip.x + 20, tooltip.y + 30);
                 ctx.restore();
             }

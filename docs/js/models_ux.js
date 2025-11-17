@@ -89,6 +89,7 @@
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initializeLogic);
             } else {
+                // DOMContentLoaded has already fired
                 initializeLogic();
             }
         },

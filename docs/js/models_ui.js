@@ -44,6 +44,34 @@
             targetElement.appendChild(container);
         },
 
+        renderLegend(targetElement) {
+            const legend = this.util.createElement('div', { className: 'legend' });
+            legend.innerHTML = `
+                <h3 class="legend-title">Legend</h3>
+                <div class="legend-item">
+                    <div class="legend-color-box" style="background-color: rgba(255, 200, 100, 0.9);"></div>
+                    <span>Synaptic Vesicle</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color-box" style="background-color: rgba(100, 180, 255, 1);"></div>
+                    <span>Receptor</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color-box" style="background-color: rgba(255, 255, 100, 1);"></div>
+                    <span>Action Potential</span>
+                </div>
+                 <div class="legend-item">
+                    <div class="legend-color-box" style="background-color: rgba(0, 150, 255, 0.7);"></div>
+                    <span>Neurotransmitter</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color-box" style="background-color: rgba(45, 62, 45, 0.4);"></div>
+                    <span>Synaptic Connection</span>
+                </div>
+            `;
+            targetElement.appendChild(legend);
+        },
+
         renderSimulationInterface(targetElement) {
             targetElement.innerHTML = '';
             const mainContainer = GreenhouseModelsUtil.createElement('div', { className: 'simulation-main-container' });
@@ -66,6 +94,10 @@
 
             // The first two canvases (Synaptic, Network) and their controls go on the right.
             rightColumn.append(canvasSynaptic, synapticControls, canvasNetwork, networkControls);
+
+             // Add the legend to the right column
+            this.renderLegend(rightColumn);
+
 
             const synapticMetrics = GreenhouseModelsUtil.createElement('div', { id: 'metrics-synaptic' });
             const networkMetrics = GreenhouseModelsUtil.createElement('div', { id: 'metrics-network' });

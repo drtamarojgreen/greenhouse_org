@@ -1,41 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Quicksand:wght@500;700&display=swap');
+
 /* docs/css/model.css */
 
 /* --- Core Design System from greenhousementalhealth.org --- */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #2d3e2d;
+    font-family: 'Lato', sans-serif;
+    color: #333; /* Darker text for better contrast */
     line-height: 1.6;
 }
 
 h1, h2, h3 {
     font-family: 'Quicksand', sans-serif;
-    color: #357438;
+    color: #2c5b2e; /* A slightly softer green */
 }
 
 a {
-    color: #357438;
+    color: #2c5b2e;
 }
 
 /* --- Component-Specific Styles --- */
 
 .greenhouse-landing-container {
     padding: 2em;
-    border: 1px solid #e8f5e8;
+    border: 1px solid #e0f2e0; /* Softer border color */
     border-radius: 20px;
-    background-color: #f8fdf9;
+    background-color: #fafffa; /* Lighter background */
     max-width: 800px;
     margin: 2em auto;
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
 
 .greenhouse-disclaimer-banner {
-    border: 2px solid #357438;
-    background-color: #e8f5e8;
+    border: 2px solid #2c5b2e;
+    background-color: #e0f2e0;
     padding: 1em;
     border-radius: 15px;
     font-weight: bold;
     margin-bottom: 1.5em;
-    color: #357438;
+    color: #2c5b2e;
 }
 
 .greenhouse-btn {
@@ -49,13 +51,13 @@ a {
 }
 
 .greenhouse-btn-primary {
-    background-color: #357438;
+    background-color: #2c5b2e;
 }
 
 .greenhouse-btn-primary:hover {
-    background-color: #2d602f;
+    background-color: #234825;
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+    box-shadow: 0 8px 20px rgba(44, 91, 46, 0.3);
 }
 
 .greenhouse-btn-primary:disabled {
@@ -67,17 +69,17 @@ a {
 
 .greenhouse-btn-primary:active {
     transform: translateY(1px);
-    box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+    box-shadow: 0 4px 10px rgba(44, 91, 46, 0.3);
 }
 
 .greenhouse-btn-secondary {
-    background-color: #732751;
+    background-color: #6a204a; /* A more accessible purple */
 }
 
 .greenhouse-btn-secondary:hover {
-    background-color: #5f1f41;
+    background-color: #521838;
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(115, 39, 81, 0.3);
+    box-shadow: 0 6px 15px rgba(106, 32, 74, 0.3);
 }
 
 .control-group {
@@ -93,7 +95,7 @@ a {
 .greenhouse-controls-panel,
 .greenhouse-metrics-panel {
     background: white;
-    border: 2px solid #e8f5e8;
+    border: 2px solid #e0f2e0;
     border-radius: 18px;
     padding: 1.5em;
     box-shadow: 0 15px 35px rgba(0,0,0,0.1);
@@ -102,8 +104,8 @@ a {
 
 .greenhouse-simulation-title {
     font-family: 'Quicksand', sans-serif;
-    color: #357438;
-    font-weight: 600;
+    color: #2c5b2e;
+    font-weight: 700; /* Bolder */
     text-align: center;
 }
 
@@ -111,8 +113,8 @@ a {
 .greenhouse-controls-panel h3,
 .greenhouse-metrics-panel h3 {
     font-family: 'Quicksand', sans-serif;
-    color: #732751;
-    border-bottom: 2px solid #e8f5e8;
+    color: #6a204a;
+    border-bottom: 2px solid #e0f2e0;
     padding-bottom: 0.5em;
     margin-top: 0;
 }
@@ -153,12 +155,12 @@ a {
 
 /* --- Typography & Color --- */
 .greenhouse-simulation-title {
-    font-size: 2.5rem; /* Larger and bolder */
+    font-size: 2.8rem; /* Larger and bolder */
     font-weight: 700;
 }
 
 .greenhouse-panel-title {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
 }
 
 /* --- Form Elements --- */
@@ -166,23 +168,23 @@ a {
     display: flex;
     align-items: center;
     margin-bottom: 1.5em;
-    color: #732751;
+    color: #6a204a;
 }
 
 .greenhouse-consent-checkbox {
     margin-right: 0.5em;
-    accent-color: #357438;
+    accent-color: #2c5b2e;
 }
 
 .greenhouse-slider {
     width: 100%;
-    accent-color: #357438;
+    accent-color: #2c5b2e;
 }
 
 .greenhouse-select {
     padding: 0.5em;
     border-radius: 15px;
-    border: 2px solid #e8f5e8;
+    border: 2px solid #e0f2e0;
 }
 
 /* --- Interactive Elements --- */
@@ -191,13 +193,41 @@ a {
 }
 
 .greenhouse-select:hover {
-    border-color: #357438;
+    border-color: #2c5b2e;
 }
 
 .greenhouse-btn-secondary:active {
     transform: translateY(1px);
-    box-shadow: 0 4px 10px rgba(115, 39, 81, 0.3);
+    box-shadow: 0 4px 10px rgba(106, 32, 74, 0.3);
 }
+
+/* --- Legend --- */
+.legend {
+    padding: 1em;
+    background-color: #fafffa;
+    border: 1px solid #e0f2e0;
+    border-radius: 15px;
+    margin-top: 1.5em;
+}
+
+.legend-title {
+    font-weight: 700;
+    margin-bottom: 0.5em;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5em;
+}
+
+.legend-color-box {
+    width: 20px;
+    height: 20px;
+    margin-right: 0.5em;
+    border: 1px solid #ccc;
+}
+
 
 /* --- Responsive Design --- */
 @media (max-width: 768px) {
