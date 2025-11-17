@@ -324,7 +324,7 @@
                 // Draw the icon
                 const iconPath = new Path2D(dimension.icon);
                 const iconSize = 24; // Icon viewport size
-                const scale = 0.75;
+                const scale = 3.0;
                 const scaledSize = iconSize * scale;
                 const iconX = vertex.x - scaledSize / 2;
                 const iconY = vertex.y - scaledSize / 2;
