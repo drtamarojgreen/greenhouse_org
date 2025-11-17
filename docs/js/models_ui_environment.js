@@ -394,6 +394,17 @@
             }
         },
 
+        const TREE_BRANCH_DATA = [
+            { cp1x: -7.5, cp1y: -2.5, cp2x: -22.5, cp2y: -7.5, angle: 0.35, length: 0.9 },
+            { cp1x: 7.5, cp1y: -2.5, cp2x: 22.5, cp2y: -7.5, angle: -0.35, length: 0.9 },
+            { cp1x: -6, cp1y: -2, cp2x: -18, cp2y: -6, angle: 0.3, length: 0.9 },
+            { cp1x: 6, cp1y: -2, cp2x: 18, cp2y: -6, angle: -0.3, length: 0.9 },
+            { cp1x: -4.5, cp1y: -1.5, cp2x: -13.5, cp2y: -4.5, angle: 0.25, length: 0.9 },
+            { cp1x: 4.5, cp1y: -1.5, cp2x: 13.5, cp2y: -4.5, angle: -0.25, length: 0.9 },
+            { cp1x: -3, cp1y: -1, cp2x: -9, cp2y: -3, angle: 0.2, length: 0.9 },
+            { cp1x: 3, cp1y: -1, cp2x: 9, cp2y: -3, angle: -0.2, length: 0.9 }
+        ];
+
         drawTree(ctx, canvas) {
             const { width, height } = canvas;
             ctx.save();
@@ -415,6 +426,7 @@
             ctx.lineTo(startX + trunkWidth / 2, startY);
             ctx.fill();
 
+            let branchDataIndex = 0;
             // Recursive function to draw branches
             const drawBranch = (x, y, width, length, angle) => {
                 ctx.beginPath();
@@ -424,11 +436,14 @@
                 const endX = x + length * Math.cos(angle);
                 const endY = y + length * Math.sin(angle);
 
-                // Add some randomness to the curve for a more organic look
-                const cp1x = x + (endX - x) * 0.25 + (Math.random() - 0.5) * 30;
-                const cp1y = y + (endY - y) * 0.25 + (Math.random() - 0.5) * 30;
-                const cp2x = x + (endX - x) * 0.75 + (Math.random() - 0.5) * 30;
-                const cp2y = y + (endY - y) * 0.75 + (Math.random() - 0.5) * 30;
+                const data = TREE_BRANCH_DATA[branchDataIndex % TREE_BRANCH_DATA.length];
+                branchDataIndex++;
+
+                // Use static data for the curve for a consistent look
+                const cp1x = x + (endX - x) * 0.25 + data.cp1x;
+                const cp1y = y + (endY - y) * 0.25 + data.cp1y;
+                const cp2x = x + (endX - x) * 0.75 + data.cp2x;
+                const cp2y = y + (endY - y) * 0.75 + data.cp2y;
 
                 ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
                 ctx.lineWidth = width;
@@ -436,9 +451,13 @@
 
                 // If the branch is thick enough, create more branches from it
                 if (width > 2) {
+                    const data1 = TREE_BRANCH_DATA[branchDataIndex % TREE_BRANCH_DATA.length];
+                    branchDataIndex++;
+                    const data2 = TREE_BRANCH_DATA[branchDataIndex % TREE_BRANCH_DATA.length];
+                    branchDataIndex++;
                     // Create two new branches, spreading wider
-                    drawBranch(endX, endY, width * 0.75, length * 0.9, angle + Math.random() * 0.8 - 0.4);
-                    drawBranch(endX, endY, width * 0.75, length * 0.9, angle - Math.random() * 0.8 - 0.4);
+                    drawBranch(endX, endY, width * 0.75, length * data1.length, angle + data1.angle);
+                    drawBranch(endX, endY, width * 0.75, length * data2.length, angle - data2.angle);
                 }
             };
 
