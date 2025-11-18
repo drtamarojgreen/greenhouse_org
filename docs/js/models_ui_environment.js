@@ -19,6 +19,7 @@
             ctx.clearRect(0, 0, width, height);
 
             this._drawEnvironmentBackground(ctx, width, height);
+            this._drawGrid(ctx, width, height);
             this._drawSociety(ctx, width, height);
             this._drawGenomes(ctx, width, height);
             this._drawCommunity(ctx, width, height);
@@ -36,6 +37,8 @@
                 });
             }
             this._drawLabels(ctx, width, height);
+            this._drawLegend(ctx, width, height);
+            this._drawTitle(ctx, width, height);
             this._drawTooltip(ctx);
         },
 
@@ -45,17 +48,90 @@
             ctx.font = '16px "Helvetica Neue", Arial, sans-serif'; // Larger font
             ctx.textAlign = 'center';
 
+            const gridX = width / 12;
+            const gridY = height / 10;
+
             // Environmental Stress & Genetic Factors
-            ctx.fillText('Environmental Stress', width / 2, 35);
-            ctx.fillText('Genetic Factors', width / 2, 85);
+            ctx.fillText('Environmental Stress', gridX * 6, gridY * 0.5);
+            ctx.fillText('Genetic Factors', gridX * 6, gridY * 1);
 
             // Paths Labels
-            ctx.fillText('Family', width * 0.25, height * 0.3);
-            ctx.fillText('Society', width * 0.5, height * 0.4);
-            ctx.fillText('Community', width * 0.75, height * 0.3);
+            const familyIcon = new Path2D('M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z');
+            ctx.save();
+            ctx.translate(gridX * 3 - 12, gridY * 3 - 12);
+            ctx.fill(familyIcon);
+            ctx.restore();
+
+            const societyIcon = new Path2D('M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V18h14v-1.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V18h6v-1.5c0-2.33-4.67-3.5-7-3.5z');
+            ctx.save();
+            ctx.translate(gridX * 6 - 12, gridY * 4 - 12);
+            ctx.fill(societyIcon);
+            ctx.restore();
+
+            ctx.fillText('Community', gridX * 9, gridY * 3);
 
             // Personal Growth
-            ctx.fillText('Personal Growth', width / 2, height - 120);
+            ctx.fillText('Personal Growth', gridX * 6, gridY * 9);
+
+            ctx.restore();
+        },
+
+        _drawTitle(ctx, width, height) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.textAlign = 'center';
+
+            ctx.font = '24px "Helvetica Neue", Arial, sans-serif';
+            ctx.fillText('Mental Health Environment', width / 2, 30);
+
+            ctx.font = '14px "Helvetica Neue", Arial, sans-serif';
+            ctx.fillText('An interactive model of influencing factors', width / 2, 50);
+
+            ctx.restore();
+        },
+
+        _drawLegend(ctx, width, height) {
+            const legendItems = [
+                { color: 'rgba(255, 159, 64, 0.8)', text: 'Family Influence' },
+                { color: 'rgba(54, 162, 235, 0.8)', text: 'Societal Influence' },
+                { color: 'rgba(75, 192, 192, 0.8)', text: 'Community Influence' }
+            ];
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(10, height - 80, 200, 70);
+
+            ctx.fillStyle = 'white';
+            ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+
+            legendItems.forEach((item, index) => {
+                ctx.fillStyle = item.color;
+                ctx.fillRect(20, height - 70 + index * 20, 15, 15);
+                ctx.fillStyle = 'white';
+                ctx.fillText(item.text, 45, height - 58 + index * 20);
+            });
+
+            ctx.restore();
+        },
+
+        _drawGrid(ctx, width, height) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0, 0, 255, 0.1)';
+            ctx.lineWidth = 1;
+
+            for (let x = 0; x < width; x += 20) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y < height; y += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
 
             ctx.restore();
         },
@@ -75,9 +151,9 @@
             };
 
             // Paths from environment elements to the brain/tree area
-            drawPath(width * 0.25, height * 0.35, width / 2, height * 0.6, 'rgba(255, 159, 64, 0.8)', 3);
-            drawPath(width * 0.5, height * 0.45, width / 2, height * 0.6, 'rgba(54, 162, 235, 0.8)', 3);
-            drawPath(width * 0.75, height * 0.35, width / 2, height * 0.6, 'rgba(75, 192, 192, 0.8)', 3);
+            drawPath(width * 0.25, height * 0.35, width / 2, height * 0.6, 'rgba(255, 159, 64, 0.8)', 4);
+            drawPath(width * 0.5, height * 0.45, width / 2, height * 0.6, 'rgba(54, 162, 235, 0.8)', 4);
+            drawPath(width * 0.75, height * 0.35, width / 2, height * 0.6, 'rgba(75, 192, 192, 0.8)', 4);
         },
 
         async _loadBrainPath(callback) {
@@ -435,7 +511,7 @@
             }
         },
 
-        const TREE_BRANCH_DATA = [
+        TREE_BRANCH_DATA: [
             { cp1x: -7.5, cp1y: -2.5, cp2x: -22.5, cp2y: -7.5, angle: 0.35, length: 0.9 },
             { cp1x: 7.5, cp1y: -2.5, cp2x: 22.5, cp2y: -7.5, angle: -0.35, length: 0.9 },
             { cp1x: -6, cp1y: -2, cp2x: -18, cp2y: -6, angle: 0.3, length: 0.9 },
@@ -444,7 +520,7 @@
             { cp1x: 4.5, cp1y: -1.5, cp2x: 13.5, cp2y: -4.5, angle: -0.25, length: 0.9 },
             { cp1x: -3, cp1y: -1, cp2x: -9, cp2y: -3, angle: 0.2, length: 0.9 },
             { cp1x: 3, cp1y: -1, cp2x: 9, cp2y: -3, angle: -0.2, length: 0.9 }
-        ];
+        ],
 
         drawTree(ctx, canvas) {
             const { width, height } = canvas;
@@ -477,7 +553,7 @@
                 const endX = x + length * Math.cos(angle);
                 const endY = y + length * Math.sin(angle);
 
-                const data = TREE_BRANCH_DATA[branchDataIndex % TREE_BRANCH_DATA.length];
+                const data = this.TREE_BRANCH_DATA[branchDataIndex % this.TREE_BRANCH_DATA.length];
                 branchDataIndex++;
 
                 // Use static data for the curve for a consistent look
@@ -492,9 +568,9 @@
 
                 // If the branch is thick enough, create more branches from it
                 if (width > 2) {
-                    const data1 = TREE_BRANCH_DATA[branchDataIndex % TREE_BRANCH_DATA.length];
+                    const data1 = this.TREE_BRANCH_DATA[branchDataIndex % this.TREE_BRANCH_DATA.length];
                     branchDataIndex++;
-                    const data2 = TREE_BRANCH_DATA[branchDataIndex % TREE_BRANCH_DATA.length];
+                    const data2 = this.TREE_BRANCH_DATA[branchDataIndex % this.TREE_BRANCH_DATA.length];
                     branchDataIndex++;
                     // Create two new branches, spreading wider
                     drawBranch(endX, endY, width * 0.75, length * data1.length, angle + data1.angle);

@@ -80,7 +80,7 @@
 
                 ctx.fillStyle = 'rgba(255, 220, 150, 0.8)';
                 ctx.beginPath();
-                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
                 ctx.fill();
             });
 
@@ -90,7 +90,7 @@
                 const x = width / 2 + (i - this.state.synaptic.receptors.length / 2) * (terminalWidth * 1.2 / this.state.synaptic.receptors.length);
                 const y = postSynapticY - 75;
                 ctx.fillStyle = receptor.isBound ? 'rgba(255, 255, 100, 0.9)' : 'rgba(70, 150, 255, 0.9)';
-                ctx.fillRect(x, y, 3, 8);
+                ctx.fillRect(x, y, 5, 10);
             });
 
             this.updateParticles();
