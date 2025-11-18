@@ -113,7 +113,7 @@
             });
 
             ctx.strokeStyle = 'rgba(45, 62, 45, 0.3)';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 2.5;
             this.state.synapses.forEach(synapse => {
                 const fromNode = this.state.networkLayout[synapse.from];
                 const toNode = this.state.networkLayout[synapse.to];
@@ -140,7 +140,7 @@
                 ctx.shadowColor = 'rgba(255, 255, 0, 1)';
                 ctx.shadowBlur = 15;
                 ctx.beginPath();
-                ctx.arc(currentX, currentY, 4, 0, Math.PI * 2);
+                ctx.arc(currentX, currentY, 6, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.shadowBlur = 0;
             });
@@ -157,7 +157,7 @@
                 } else {
                     ctx.fillStyle = 'rgba(150, 150, 150, 0.7)';
                     ctx.beginPath();
-                    ctx.arc(node.x * scaleX, node.y * scaleY, 10, 0, Math.PI * 2);
+                    ctx.arc(node.x * scaleX, node.y * scaleY, 12, 0, Math.PI * 2);
                     ctx.fill();
                 }
             });
