@@ -39,7 +39,50 @@
             this._drawLabels(ctx, width, height);
             this._drawLegend(ctx, width, height);
             this._drawTitle(ctx, width, height);
+            this._drawMedication(ctx, width, height);
+            this._drawTherapy(ctx, width, height);
             this._drawTooltip(ctx);
+
+            // Signal to automated testing frameworks that the canvas has been rendered.
+            window.renderingComplete = true;
+        },
+
+        _drawTherapy(ctx, width, height) {
+            ctx.save();
+            const therapyIcon = {
+                x: width / 2 + 150,
+                y: height / 2 + 100,
+                radius: 20
+            };
+
+            // Two stylized figures in conversation
+            const person1 = { x: therapyIcon.x - 10, y: therapyIcon.y };
+            const person2 = { x: therapyIcon.x + 10, y: therapyIcon.y };
+
+            ctx.fillStyle = 'rgba(150, 220, 150, 0.9)';
+            ctx.strokeStyle = 'rgba(0, 100, 0, 1.0)';
+            ctx.lineWidth = 2;
+
+            // Person 1
+            ctx.beginPath();
+            ctx.arc(person1.x, person1.y - 5, 5, 0, Math.PI * 2); // Head
+            ctx.moveTo(person1.x, person1.y);
+            ctx.lineTo(person1.x, person1.y + 15); // Body
+            ctx.stroke();
+
+            // Person 2
+            ctx.beginPath();
+            ctx.arc(person2.x, person2.y - 5, 5, 0, Math.PI * 2); // Head
+            ctx.moveTo(person2.x, person2.y);
+            ctx.lineTo(person2.x, person2.y + 15); // Body
+            ctx.stroke();
+
+            ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+            ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Therapy', therapyIcon.x, therapyIcon.y + 35);
+
+            ctx.restore();
         },
 
         _drawLabels(ctx, width, height) {
@@ -156,6 +199,46 @@
             drawPath(width * 0.75, height * 0.35, width / 2, height * 0.6, 'rgba(75, 192, 192, 0.8)', 4);
         },
 
+        _drawMedication(ctx, width, height) {
+            ctx.save();
+            const capsule = {
+                x: width / 2 - 150,
+                y: height / 2 + 100,
+                width: 40,
+                height: 20,
+                radius: 10
+            };
+
+            ctx.beginPath();
+            ctx.moveTo(capsule.x + capsule.radius, capsule.y);
+            ctx.lineTo(capsule.x + capsule.width - capsule.radius, capsule.y);
+            ctx.arc(capsule.x + capsule.width - capsule.radius, capsule.y + capsule.radius, capsule.radius, Math.PI * 1.5, Math.PI * 0.5, false);
+            ctx.lineTo(capsule.x + capsule.radius, capsule.y + capsule.height);
+            ctx.arc(capsule.x + capsule.radius, capsule.y + capsule.radius, capsule.radius, Math.PI * 0.5, Math.PI * 1.5, false);
+            ctx.closePath();
+
+            ctx.fillStyle = 'rgba(200, 200, 255, 0.9)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0, 0, 100, 1.0)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Add a highlight
+            ctx.beginPath();
+            ctx.moveTo(capsule.x + capsule.radius, capsule.y + 5);
+            ctx.lineTo(capsule.x + capsule.width - capsule.radius, capsule.y + 5);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+            ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Medication', capsule.x + capsule.width / 2, capsule.y + capsule.height + 15);
+
+            ctx.restore();
+        },
+
         async _loadBrainPath(callback) {
             try {
                 const response = await fetch(this._brainSVGUrl);
@@ -201,7 +284,7 @@
             ctx.shadowOffsetX = 10;
             ctx.shadowOffsetY = 10;
 
-            ctx.fillStyle = 'rgba(150, 130, 110, 0.9)';
+            ctx.fillStyle = 'rgba(150, 130, 110, 0.5)';
             ctx.fill(this._brainPath);
             ctx.strokeStyle = 'rgba(40, 30, 20, 1.0)';
             ctx.lineWidth = 6 / scale; // Keep stroke width consistent
@@ -348,7 +431,7 @@
                 { name: 'Spiritual', icon: 'M12 2l2.245 4.545L19 7.727l-4.5 4.382L15.49 17 12 14.545 8.51 17l.99-4.891L5 7.727l4.755-1.182L12 2z' },
                 { name: 'Intellectual', icon: 'M12 2a5 5 0 00-5 5c0 2.08.847 3.963 2.209 5.291L7 14.582V17h10v-2.418l-2.209-2.291A4.992 4.992 0 0017 7a5 5 0 00-5-5zm-3 17v-2h6v2H9z' },
                 { name: 'Physical', icon: 'M12 5a3 3 0 110 6 3 3 0 010-6zm0 8c-3.314 0-6 2.686-6 6v1h12v-1c0-3.314-2.686-6-6-6z' },
-                { name: 'Environmental', icon: 'M12 2a10 10 0 00-10 10c0 5.523 4.477 10 10 10s10-4.477 10-10A10 10 0 0012 2zm3.5 12h-7a.5.5 0 01-.5-.5v-7a.5.5 0 01.5-.5h7a.5.5 0 01.5.5v7a.5.5 0 01-.5.5z' },
+                { name: 'Environmental', icon: 'M12 2a10 10 0 00-10 10c0 5.523 4.477 10 10 10s10-4.477 10-10A10 10 0 0012 2zm3.5 12h-7a.5.5 0 01-.5-.5v-7a.5.5 0 01.5-.5h7a.5.5 0 01.5.5v7a.5.5 0 01-.5-.5z' },
                 { name: 'Financial', icon: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 14a1 1 0 01-1-1v-1.5a.5.5 0 00-1 0V15a3 3 0 106 0v-1.5a.5.5 0 00-1 0V15a1 1 0 01-1 1zm-1-5.5a.5.5 0 00-1 0V10a1 1 0 112 0v-.5a.5.5 0 00-1 0z' },
                 { name: 'Occupational', icon: 'M10 2H4v16h16V8h-6V2zM8 8h8v2H8V8zm0 4h8v2H8v-2zm0 4h5v2H8v-2z' },
                 { name: 'Social', icon: 'M17 7a2 2 0 10-4 0 2 2 0 004 0zM7 7a2 2 0 10-4 0 2 2 0 004 0zM12 12a3 3 0 10-6 0 3 3 0 006 0zM17 12a3 3 0 10-6 0 3 3 0 006 0z' }
