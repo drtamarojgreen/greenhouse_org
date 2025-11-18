@@ -436,7 +436,7 @@
                 const endX = x + length * Math.cos(angle);
                 const endY = y + length * Math.sin(angle);
 
-                const data = TREE_BRANCH_DATA[branchDataIndex % TREE_BRANCH_DATA.length];
+                const data = this.TREE_BRANCH_DATA[branchDataIndex % this.TREE_BRANCH_DATA.length];
                 branchDataIndex++;
 
                 // Use static data for the curve for a consistent look
