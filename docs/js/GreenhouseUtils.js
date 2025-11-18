@@ -245,10 +245,12 @@ window.GreenhouseUtils = (function() {
                     // Use a small timeout to ensure the script's execution context is established
                     // before resolving the promise. This helps prevent race conditions where
                     // a subsequent script depends on globals defined in this script.
-                    appState.loadedScripts.add(scriptName);
-                    console.log(`GreenhouseUtils: Successfully loaded and executed script ${scriptName}`);
-                    URL.revokeObjectURL(objectUrl);
-                    resolve();
+                    setTimeout(() => {
+                        appState.loadedScripts.add(scriptName);
+                        console.log(`GreenhouseUtils: Successfully loaded and executed script ${scriptName}`);
+                        URL.revokeObjectURL(objectUrl);
+                        resolve();
+                    }, 100);
                 };
 
                 scriptElement.onerror = () => {
