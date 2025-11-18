@@ -77,6 +77,10 @@
 
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
+            if (this.state.darkMode) {
+                ctx.fillStyle = '#1A1A1A';
+                ctx.fillRect(0, 0, width, height);
+            }
 
             // --- Direct Rendering for Background Tree ---
             /*
@@ -112,7 +116,7 @@
                 elementDefs[el.type] = el;
             });
 
-            ctx.strokeStyle = 'rgba(45, 62, 45, 0.3)';
+            ctx.strokeStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(45, 62, 45, 0.3)';
             ctx.lineWidth = 1;
             this.state.synapses.forEach(synapse => {
                 const fromNode = this.state.networkLayout[synapse.from];
@@ -136,8 +140,8 @@
                 const currentX = startX + (endX - startX) * ap.progress;
                 const currentY = startY + (endY - startY) * ap.progress;
 
-                ctx.fillStyle = 'rgba(255, 255, 150, 0.9)';
-                ctx.shadowColor = 'rgba(255, 255, 0, 1)';
+                ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 204, 0.9)' : 'rgba(255, 255, 150, 0.9)';
+                ctx.shadowColor = this.state.darkMode ? 'rgba(255, 255, 204, 1)' : 'rgba(255, 255, 0, 1)';
                 ctx.shadowBlur = 15;
                 ctx.beginPath();
                 ctx.arc(currentX, currentY, 4, 0, Math.PI * 2);
