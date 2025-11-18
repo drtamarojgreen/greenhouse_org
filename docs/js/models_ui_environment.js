@@ -394,7 +394,7 @@
             }
         },
 
-        const TREE_BRANCH_DATA = [
+        TREE_BRANCH_DATA: [
             { cp1x: -7.5, cp1y: -2.5, cp2x: -22.5, cp2y: -7.5, angle: 0.35, length: 0.9 },
             { cp1x: 7.5, cp1y: -2.5, cp2x: 22.5, cp2y: -7.5, angle: -0.35, length: 0.9 },
             { cp1x: -6, cp1y: -2, cp2x: -18, cp2y: -6, angle: 0.3, length: 0.9 },
@@ -403,7 +403,7 @@
             { cp1x: 4.5, cp1y: -1.5, cp2x: 13.5, cp2y: -4.5, angle: -0.25, length: 0.9 },
             { cp1x: -3, cp1y: -1, cp2x: -9, cp2y: -3, angle: 0.2, length: 0.9 },
             { cp1x: 3, cp1y: -1, cp2x: 9, cp2y: -3, angle: -0.2, length: 0.9 }
-        ];
+        ],
 
         drawTree(ctx, canvas) {
             const { width, height } = canvas;
