@@ -45,6 +45,10 @@
 
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
+            if (this.state.darkMode) {
+                ctx.fillStyle = '#1A1A1A';
+                ctx.fillRect(0, 0, width, height);
+            }
 
             const renderContext = {
                 w: width,

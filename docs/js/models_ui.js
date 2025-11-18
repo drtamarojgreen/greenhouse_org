@@ -61,8 +61,10 @@
             const networkControls = GreenhouseModelsUtil.createElement('div', { id: 'controls-network' });
             const environmentControls = GreenhouseModelsUtil.createElement('div', { id: 'controls-environment' });
 
+            const generalControls = GreenhouseModelsUtil.createElement('div', { id: 'controls-general' });
+
             // The third canvas (Environment) goes on the left.
-            leftColumn.append(canvasEnvironment, environmentControls);
+            leftColumn.append(canvasEnvironment, environmentControls, generalControls);
 
             // The first two canvases (Synaptic, Network) and their controls go on the right.
             rightColumn.append(canvasSynaptic, synapticControls, canvasNetwork, networkControls);
@@ -81,6 +83,7 @@
             this.populateControlsPanel(synapticControls, 'synaptic');
             this.populateControlsPanel(networkControls, 'network');
             this.populateControlsPanel(document.getElementById('controls-environment'), 'environment');
+            this.populateControlsPanel(document.getElementById('controls-general'), 'general');
             this.populateMetricsPanel(synapticMetrics, 'synaptic');
             this.populateMetricsPanel(networkMetrics, 'network');
 
@@ -96,9 +99,19 @@
             };
 
             this.resizeAllCanvases();
-            this.drawSynapticView();
-            this.drawNetworkView();
-            this.drawEnvironmentView();
+            this._drawLoadingState(this.contexts.environment, this.canvases.environment);
+        },
+
+        _drawLoadingState(ctx, canvas) {
+            if (!ctx) return;
+            const { width, height } = canvas;
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = this.state.darkMode ? '#1A1A1A' : '#E9E9E9';
+            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = this.state.darkMode ? '#FFFFFF' : '#000000';
+            ctx.font = '20px "Helvetica Neue", Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading Simulation...', width / 2, height / 2);
         },
 
         replaceMainContainer(targetElement, newContainer) {
@@ -159,6 +172,17 @@
                             <button class="greenhouse-btn greenhouse-btn-secondary" id="gene-btn-1">Gene A</button>
                             <button class="greenhouse-btn greenhouse-btn-secondary" id="gene-btn-2">Gene B</button>
                         </div>
+                    </div>
+                `;
+            } else if (type === 'general') {
+                controlsHtml += `
+                    <h3 class="greenhouse-panel-title">General Controls</h3>
+                    <div class="button-group">
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-general">Reset Simulation</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="share-btn-general">Share View</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="download-btn-general">Download Image</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="dark-mode-toggle">Toggle Dark Mode</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="fullscreen-btn-general">Full Screen</button>
                     </div>
                 `;
             }

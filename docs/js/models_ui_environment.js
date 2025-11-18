@@ -44,8 +44,8 @@
 
         _drawLabels(ctx, width, height) {
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            ctx.font = '16px "Helvetica Neue", Arial, sans-serif';
+            ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+            ctx.font = '16px "Helvetica Neue", Arial, sans-serif'; // Larger font
             ctx.textAlign = 'center';
 
             const gridX = width / 12;
@@ -236,8 +236,15 @@
 
         _drawEnvironmentBackground(ctx, width, height) {
             const stress = this.state.environment.stress;
-            const calmColor = { r: 230, g: 245, b: 230 }; // Light Green
-            const stressColor = { r: 255, g: 99, b: 71 }; // Tomato Red
+            let calmColor, stressColor;
+
+            if (this.state.darkMode) {
+                calmColor = { r: 25, g: 25, b: 112 }; // Midnight Blue
+                stressColor = { r: 139, g: 0, b: 0 }; // Dark Red
+            } else {
+                calmColor = { r: 173, g: 216, b: 230 }; // Light Blue
+                stressColor = { r: 255, g: 99, b: 71 }; // Tomato Red
+            }
 
             const r = calmColor.r + (stressColor.r - calmColor.r) * stress;
             const g = calmColor.g + (stressColor.g - calmColor.g) * stress;
@@ -438,18 +445,30 @@
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
 
-            let hoveredRegion = null;
+            let hoveredRegionKey = null;
             for (const key in this._brainRegions) {
                 const region = this._brainRegions[key];
-                if (region.path && this.contexts.environment.isPointInPath(region.path, x, y)) {
-                    hoveredRegion = region;
+
+                const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 0.8;
+                const offsetX = (canvas.width - (1536 * scale)) / 2;
+                const offsetY = (canvas.height - (1024 * scale)) / 2;
+
+                const transformedX = (x - offsetX) / scale;
+                const transformedY = (y - offsetY) / scale;
+
+                if (region.path && this.contexts.environment.isPointInPath(region.path, transformedX, transformedY)) {
+                    hoveredRegionKey = key;
                     break;
                 }
             }
 
-            if (hoveredRegion) {
+            if (hoveredRegionKey) {
+                const region = this._brainRegions[hoveredRegionKey];
+                const activation = this.state.environment.regions[hoveredRegionKey].activation;
                 this.state.environment.tooltip.visible = true;
-                this.state.environment.tooltip.text = hoveredRegion.name;
+                this.state.environment.tooltip.title = region.name;
+                this.state.environment.tooltip.activation = `Activation: ${(activation * 100).toFixed(0)}%`;
+                this.state.environment.tooltip.description = this.util.getRegionDescription(hoveredRegionKey);
                 this.state.environment.tooltip.x = x;
                 this.state.environment.tooltip.y = y;
             } else {
@@ -460,12 +479,34 @@
         _drawTooltip(ctx) {
             const tooltip = this.state.environment.tooltip;
             if (tooltip.visible) {
+                const { x, y, title, activation, description } = tooltip;
+                const width = 220;
+                const height = 100;
+                const padding = 12;
+
                 ctx.save();
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                ctx.fillRect(tooltip.x + 10, tooltip.y + 10, 150, 30);
-                ctx.fillStyle = 'white';
-                ctx.font = '14px Arial';
-                ctx.fillText(tooltip.text, tooltip.x + 20, tooltip.y + 30);
+                ctx.fillStyle = 'rgba(25, 25, 25, 0.85)';
+                ctx.strokeStyle = 'rgba(200, 200, 200, 1)';
+                ctx.lineWidth = 1;
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                ctx.shadowBlur = 8;
+                ctx.shadowOffsetY = 4;
+
+                ctx.beginPath();
+                ctx.roundRect(x + 15, y + 15, width, height, 8);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 16px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillText(title, x + 15 + padding, y + 15 + padding + 8);
+
+                ctx.font = '14px "Helvetica Neue", Arial, sans-serif';
+                ctx.fillStyle = '#B0B0B0';
+                ctx.fillText(activation, x + 15 + padding, y + 15 + padding + 32);
+
+                ctx.fillStyle = '#E0E0E0';
+                this.util.wrapText(ctx, description, x + 15 + padding, y + 15 + padding + 56, 196, 18);
                 ctx.restore();
             }
         },

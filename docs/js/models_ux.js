@@ -11,6 +11,7 @@
             GENETICS_RISK_FACTOR: 0.999
         },
         state: {
+            darkMode: false,
             consentGiven: false,
             isInitialized: false,
             isLoading: false,
@@ -29,7 +30,8 @@
                 animationFrameId: null,
                 particles: [],
                 vesicles: [],
-                receptors: []
+                receptors: [],
+                lastUpdateTime: 0
             },
 
             network: {
@@ -114,6 +116,7 @@
                 this.addConsentListeners();
 
                 this.state.isInitialized = true;
+                this._applySharedParameters();
                 //this.observeAndReinitializeApp(this.state.targetElement); // Disabled due to buggy behavior
             } catch (error) {
                 console.error('Models App: Initialization failed:', error);
@@ -188,6 +191,8 @@
                     this.addSimulationListeners();
                     this.bindSimulationControls();
                     this.addEnvironmentListeners();
+
+                    // Clear loading state and draw final views
                     GreenhouseModelsUI.drawSynapticView();
                     GreenhouseModelsUI.drawNetworkView();
                     GreenhouseModelsUI.drawEnvironmentView();
@@ -207,6 +212,175 @@
         bindSimulationControls() {
             this.bindNetworkControls();
             this.bindEnvironmentControls();
+            this.bindGeneralControls();
+        },
+
+        bindGeneralControls() {
+            const resetButton = document.getElementById('reset-btn-general');
+            if (resetButton) {
+                resetButton.addEventListener('click', () => this.resetSimulation());
+            }
+            const shareButton = document.getElementById('share-btn-general');
+            if (shareButton) {
+                shareButton.addEventListener('click', () => this.shareSimulation());
+            }
+            const downloadButton = document.getElementById('download-btn-general');
+            if (downloadButton) {
+                downloadButton.addEventListener('click', () => this.downloadSimulation());
+            }
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            if (darkModeToggle) {
+                darkModeToggle.addEventListener('click', () => this.toggleDarkMode());
+            }
+            const fullscreenButton = document.getElementById('fullscreen-btn-general');
+            if (fullscreenButton) {
+                fullscreenButton.addEventListener('click', () => this.toggleFullScreen());
+            }
+        },
+
+        toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                this.state.mainAppContainer.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        },
+
+        toggleDarkMode() {
+            this.state.darkMode = !this.state.darkMode;
+            const container = this.state.mainAppContainer;
+            if (this.state.darkMode) {
+                container.classList.add('dark-mode');
+            } else {
+                container.classList.remove('dark-mode');
+            }
+            // Redraw canvases to apply new theme
+            GreenhouseModelsUI.drawSynapticView();
+            GreenhouseModelsUI.drawNetworkView();
+            GreenhouseModelsUI.drawEnvironmentView();
+        },
+
+        downloadSimulation() {
+            const tempCanvas = document.createElement('canvas');
+            const synapseCanvas = GreenhouseModelsUI.canvases.synaptic;
+            const networkCanvas = GreenhouseModelsUI.canvases.network;
+            const environmentCanvas = GreenhouseModelsUI.canvases.environment;
+
+            const totalWidth = environmentCanvas.width + synapseCanvas.width;
+            const totalHeight = Math.max(environmentCanvas.height, synapseCanvas.height + networkCanvas.height);
+
+            tempCanvas.width = totalWidth;
+            tempCanvas.height = totalHeight;
+            const ctx = tempCanvas.getContext('2d');
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+            ctx.drawImage(environmentCanvas, 0, 0);
+            ctx.drawImage(synapseCanvas, environmentCanvas.width, 0);
+            ctx.drawImage(networkCanvas, environmentCanvas.width, synapseCanvas.height);
+
+            const link = document.createElement('a');
+            link.download = 'greenhouse-simulation.png';
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
+        },
+
+        shareSimulation() {
+            const params = {
+                synapticIntensity: this.state.synaptic.intensity,
+                synapticSpeed: this.state.synaptic.speed,
+                networkIntensity: this.state.network.intensity,
+                networkSpeed: this.state.network.speed,
+                stress: this.state.environment.stress,
+                support: this.state.environment.support,
+                genetics: this.state.environment.genetics,
+                environmentType: this.state.environment.type
+            };
+            const queryString = new URLSearchParams(params).toString();
+            const url = `${window.location.origin}${window.location.pathname}?${queryString}`;
+
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Simulation URL copied to clipboard!');
+            }, () => {
+                alert('Failed to copy URL. Please copy it manually:\n' + url);
+            });
+        },
+
+        resetSimulation() {
+            // Stop all animations
+            this.state.synaptic.isRunning = false;
+            this.state.network.isRunning = false;
+            this.state.environment.isRunning = false;
+            cancelAnimationFrame(this.state.synaptic.animationFrameId);
+            cancelAnimationFrame(this.state.network.animationFrameId);
+            cancelAnimationFrame(this.state.environment.animationFrameId);
+
+            // Reset synaptic state
+            Object.assign(this.state.synaptic, {
+                isRunning: false,
+                intensity: 50,
+                speed: 'Normal',
+                synapticWeight: 0.5,
+                neurotransmitters: 0,
+                ionsCrossed: 0,
+                learningMetric: 0,
+                lastUpdateTime: 0
+            });
+
+            // Reset network state
+            Object.assign(this.state.network, {
+                isRunning: false,
+                intensity: 50,
+                speed: 'Normal',
+                synapticWeight: 0.5,
+                actionPotentials: []
+            });
+            this.state.networkLayout.forEach(node => {
+                node.activation = 0;
+                node.state = 'RESTING';
+                node.refractoryPeriod = 0;
+            });
+
+            // Reset environment state
+            Object.assign(this.state.environment, {
+                isRunning: false,
+                community: 0.5,
+                society: 0.5,
+                genetics: 0.5,
+                type: 'NEUTRAL',
+                auraOpacity: 0,
+                stress: 0.5,
+                support: 0.5,
+                regions: {
+                    pfc: { activation: 0 },
+                    amygdala: { activation: 0 },
+                    hippocampus: { activation: 0 }
+                }
+            });
+
+            // Redraw all canvases
+            GreenhouseModelsUI.drawSynapticView();
+            GreenhouseModelsUI.drawNetworkView();
+            GreenhouseModelsUI.drawEnvironmentView();
+            GreenhouseModelsUI.updateMetrics();
+
+            // Reset UI elements to their default values
+            document.getElementById('intensity-slider-synaptic').value = 50;
+            document.getElementById('speed-select-synaptic').value = 'Normal';
+            document.getElementById('play-pause-btn-synaptic').textContent = 'Play';
+
+            document.getElementById('intensity-slider-network').value = 50;
+            document.getElementById('speed-select-network').value = 'Normal';
+            document.getElementById('play-pause-btn-network').textContent = 'Play';
+
+            document.getElementById('stress-slider').value = 0.5;
+            document.getElementById('support-slider').value = 0.5;
+            document.getElementById('environment-type-select').value = 'NEUTRAL';
         },
 
         bindNetworkControls() {
@@ -414,6 +588,7 @@
                     GreenhouseModelsUI._handleMouseMove(e);
                 });
             }
+            window.addEventListener('resize', () => GreenhouseModelsUI.resizeAllCanvases());
         },
 
         addSimulationListeners() {
@@ -428,7 +603,8 @@
                 this.state.synaptic.isRunning = !this.state.synaptic.isRunning;
                 e.target.textContent = this.state.synaptic.isRunning ? 'Pause' : 'Play';
                 if (this.state.synaptic.isRunning) {
-                    this.simulationLoop();
+                    this.state.synaptic.lastUpdateTime = performance.now();
+                    this.simulationLoop(this.state.synaptic.lastUpdateTime);
                 }
             });
             document.getElementById('reset-btn-synaptic').addEventListener('click', () => {
@@ -443,42 +619,48 @@
             window.addEventListener('resize', () => GreenhouseModelsUI.resizeAllCanvases());
         },
 
-        simulationLoop() {
+        simulationLoop(timestamp) {
             if (!this.state.synaptic.isRunning) {
                 cancelAnimationFrame(this.state.synaptic.animationFrameId);
                 return;
             }
 
-            // Vesicle fusion simulation
-            if (Math.random() < this.state.synaptic.intensity / 500) {
-                const idleVesicles = this.state.synaptic.vesicles.filter(v => v.state === 'IDLE');
-                if (idleVesicles.length > 0) {
-                    const vesicleToFuse = idleVesicles[Math.floor(Math.random() * idleVesicles.length)];
-                    vesicleToFuse.state = 'FUSING';
+            const speedMap = { 'Slow': 1000, 'Normal': 500, 'Fast': 250 };
+            const currentTime = timestamp || 0;
+            const elapsed = currentTime - (this.state.synaptic.lastUpdateTime || 0);
+            const interval = speedMap[this.state.synaptic.speed];
 
-                    setTimeout(() => {
-                        vesicleToFuse.state = 'IDLE'; // Reset after a short time
-                    }, 500);
+            if (elapsed > interval) {
+                this.state.synaptic.lastUpdateTime = currentTime;
+
+                // Vesicle fusion simulation
+                if (Math.random() < this.state.synaptic.intensity / 500) {
+                    const idleVesicles = this.state.synaptic.vesicles.filter(v => v.state === 'IDLE');
+                    if (idleVesicles.length > 0) {
+                        const vesicleToFuse = idleVesicles[Math.floor(Math.random() * idleVesicles.length)];
+                        vesicleToFuse.state = 'FUSING';
+
+                        setTimeout(() => {
+                            vesicleToFuse.state = 'IDLE'; // Reset after a short time
+                        }, 500);
+                    }
                 }
+
+                const communityBoost = this.state.environment.community > this.config.COMMUNITY_BOOST_THRESHOLD ? this.config.COMMUNITY_BOOST_FACTOR : 1;
+                const potentiation = (this.state.synaptic.intensity / 10000) * communityBoost;
+                const decay = 0.0005;
+                this.state.synaptic.synapticWeight += potentiation - decay;
+                this.state.synaptic.synapticWeight = Math.max(0.1, Math.min(1.0, this.state.synaptic.synapticWeight));
+
+                this.state.synaptic.neurotransmitters = Math.floor(this.state.synaptic.intensity * this.state.synaptic.synapticWeight);
+                this.state.synaptic.ionsCrossed = Math.floor(this.state.synaptic.neurotransmitters * 1.5);
+                this.state.synaptic.learningMetric = this.state.synaptic.synapticWeight;
+
+                GreenhouseModelsUI.updateMetrics();
+                GreenhouseModelsUI.drawSynapticView();
             }
 
-            const communityBoost = this.state.environment.community > this.config.COMMUNITY_BOOST_THRESHOLD ? this.config.COMMUNITY_BOOST_FACTOR : 1;
-            const potentiation = (this.state.synaptic.intensity / 10000) * communityBoost;
-            const decay = 0.0005;
-            this.state.synaptic.synapticWeight += potentiation - decay;
-            this.state.synaptic.synapticWeight = Math.max(0.1, Math.min(1.0, this.state.synaptic.synapticWeight));
-
-            this.state.synaptic.neurotransmitters = Math.floor(this.state.synaptic.intensity * this.state.synaptic.synapticWeight);
-            this.state.synaptic.ionsCrossed = Math.floor(this.state.synaptic.neurotransmitters * 1.5);
-            this.state.synaptic.learningMetric = this.state.synaptic.synapticWeight;
-
-            GreenhouseModelsUI.updateMetrics();
-            GreenhouseModelsUI.drawSynapticView();
-
-            const speedMap = { 'Slow': 1000, 'Normal': 500, 'Fast': 250 };
-            setTimeout(() => {
-                this.state.synaptic.animationFrameId = requestAnimationFrame(() => this.simulationLoop());
-            }, speedMap[this.state.synaptic.speed]);
+            this.state.synaptic.animationFrameId = requestAnimationFrame((t) => this.simulationLoop(t));
         },
 
         observeAndReinitializeApp(container) {
@@ -502,6 +684,34 @@
             console.log('Models App: Re-initializing from global scope.');
             this.state.isInitialized = false;
             return this.init();
+        },
+
+        _applySharedParameters() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('synapticIntensity')) {
+                this.state.synaptic.intensity = parseInt(params.get('synapticIntensity'), 10);
+            }
+            if (params.has('synapticSpeed')) {
+                this.state.synaptic.speed = params.get('synapticSpeed');
+            }
+            if (params.has('networkIntensity')) {
+                this.state.network.intensity = parseInt(params.get('networkIntensity'), 10);
+            }
+            if (params.has('networkSpeed')) {
+                this.state.network.speed = params.get('networkSpeed');
+            }
+            if (params.has('stress')) {
+                this.state.environment.stress = parseFloat(params.get('stress'));
+            }
+            if (params.has('support')) {
+                this.state.environment.support = parseFloat(params.get('support'));
+            }
+            if (params.has('genetics')) {
+                this.state.environment.genetics = parseFloat(params.get('genetics'));
+            }
+            if (params.has('environmentType')) {
+                this.state.environment.type = params.get('environmentType');
+            }
         }
     };
 
