@@ -451,9 +451,9 @@
 
                 // If the branch is thick enough, create more branches from it
                 if (width > 2) {
-                    const data1 = TREE_BRANCH_DATA[branchDataIndex % TREE_BRANCH_DATA.length];
+                    const data1 = this.TREE_BRANCH_DATA[branchDataIndex % this.TREE_BRANCH_DATA.length];
                     branchDataIndex++;
-                    const data2 = TREE_BRANCH_DATA[branchDataIndex % TREE_BRANCH_DATA.length];
+                    const data2 = this.TREE_BRANCH_DATA[branchDataIndex % this.TREE_BRANCH_DATA.length];
                     branchDataIndex++;
                     // Create two new branches, spreading wider
                     drawBranch(endX, endY, width * 0.75, length * data1.length, angle + data1.angle);
