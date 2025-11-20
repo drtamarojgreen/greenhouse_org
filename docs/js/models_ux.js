@@ -106,7 +106,7 @@
                 await GreenhouseModelsData.loadData();
                 Object.assign(this.state, GreenhouseModelsData.state);
 
-                GreenhouseModelsUI.init(this.state, window.GreenhouseModelsUtil);
+                GreenhouseModelsUI.init(this.state, window.GreenhouseUtil);
 
                 await GreenhouseModelsUI.loadCSS(this.state.baseUrl);
 

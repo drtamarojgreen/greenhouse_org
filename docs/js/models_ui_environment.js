@@ -25,8 +25,6 @@
             this._drawCommunity(ctx, width, height);
             this._drawInfluencePaths(ctx, width, height); // Draw the new paths
 
-            this.drawTree(ctx, this.canvases.environment);
-
             if (this._brainPath) {
                 this._drawBrainPath(ctx, width, height);
                 this._drawHeatmaps(ctx, width, height);
@@ -36,6 +34,8 @@
                     this._drawHeatmaps(ctx, width, height);
                 });
             }
+
+            this.drawTree(ctx, this.canvases.environment);
             this._drawLabels(ctx, width, height);
             this._drawLegend(ctx, width, height);
             this._drawTitle(ctx, width, height);
@@ -87,7 +87,8 @@
 
         _drawLabels(ctx, width, height) {
             ctx.save();
-            ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+            const bgColor = this._currentBackgroundColor || (this.state.darkMode ? 'rgba(25, 25, 112, 1)' : 'rgba(173, 216, 230, 1)');
+            ctx.fillStyle = GreenhouseUtil.getContrastingTextColor(bgColor);
             ctx.font = '16px "Helvetica Neue", Arial, sans-serif'; // Larger font
             ctx.textAlign = 'center';
 
@@ -121,14 +122,17 @@
 
         _drawTitle(ctx, width, height) {
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            const bgColor = this._currentBackgroundColor || (this.state.darkMode ? 'rgba(25, 25, 112, 1)' : 'rgba(173, 216, 230, 1)');
+            ctx.fillStyle = GreenhouseUtil.getContrastingTextColor(bgColor);
             ctx.textAlign = 'center';
 
             ctx.font = '24px "Helvetica Neue", Arial, sans-serif';
             ctx.fillText('Mental Health Environment', width / 2, 30);
 
             ctx.font = '14px "Helvetica Neue", Arial, sans-serif';
-            ctx.fillText('An interactive model of influencing factors', width / 2, 50);
+            const subtitle = 'An interactive model of influencing factors';
+            const maxWidth = width * 0.9;
+            GreenhouseUtil.wrapText(ctx, subtitle, width / 2, 50, maxWidth, 18);
 
             ctx.restore();
         },
@@ -333,8 +337,10 @@
             const g = calmColor.g + (stressColor.g - calmColor.g) * stress;
             const b = calmColor.b + (stressColor.b - calmColor.b) * stress;
 
+            this._currentBackgroundColor = `rgba(${r}, ${g}, ${b}, 0.7)`;
+
             const gradient = ctx.createLinearGradient(0, 0, width, height);
-            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.7)`);
+            gradient.addColorStop(0, this._currentBackgroundColor);
             gradient.addColorStop(1, `rgba(${r - 50}, ${g - 50}, ${b - 50}, 0.8)`);
 
             ctx.fillStyle = gradient;
@@ -342,70 +348,81 @@
         },
 
         _drawGenomes(ctx, width, height) {
-            const helixHeight = 35;
-            const genetics = this.state.environment.genetics;
-            const time = Date.now() / 1000;
-            const bases = ['A', 'U', 'C', 'G', 'C', 'G', 'A', 'U']; // Added DNA bases array
             const numHelixes = 5;
-            const helixSpacing = width / (numHelixes + 1); // Dynamic spacing
+            const helixSpacing = width / (numHelixes + 1);
+            const genetics = this.state.environment.genetics;
+            const time = Date.now() / 2000;
 
             for (let i = 0; i < numHelixes; i++) {
                 ctx.save();
-                // Centered the helices by adjusting x and y coordinates
-                const x = width * (0.2 + i * 0.15);
-                const y = height * 0.3;
-
-                // Added 3D rotation effect on the x-axis
-                const rotationTime = time * 1.5 + i;
-                const perspective = Math.cos(rotationTime) * 0.4 + 0.6; // Scale for 3D effect
-                const shiftX = Math.sin(rotationTime) * 20;
-
-                ctx.translate(x + shiftX, y);
-                ctx.scale(1, perspective); // Apply perspective scaling on y-axis for x-axis rotation
+                const x = helixSpacing * (i + 1);
+                const y = height * 0.25;
+                ctx.translate(x, y);
 
                 const activation = (genetics - 0.5) * 2;
-                const color = activation > 0 ? `rgba(255, 255, 180, ${0.9 + activation * 0.1})` : `rgba(210, 210, 255, 0.9)`;
-
-                ctx.globalAlpha = 0.85 + Math.abs(activation) * 0.15;
+                const color = activation > 0 ? `rgba(255, 255, 180, ${0.8 + activation * 0.2})` : `rgba(210, 210, 255, 0.8)`;
+                ctx.strokeStyle = color;
                 ctx.fillStyle = color;
+                ctx.lineWidth = 3;
 
-                // Draw the helix structure
+                const amplitude = 15;
+                const frequency = 0.1;
+                const helixHeight = 100;
+                const points = 50;
+
+                // Draw the first strand
                 ctx.beginPath();
-                ctx.moveTo(-12, -35);
-                ctx.bezierCurveTo(35, -12, -35, 12, 12, 35);
-                ctx.moveTo(12, -35);
-                ctx.bezierCurveTo(-35, -12, 35, 12, -12, 35);
-                ctx.lineWidth = 5; // Thicker lines
-                ctx.strokeStyle = ctx.fillStyle;
-                ctx.stroke();
-
-                // Draw DNA bases and rungs
-                if (perspective > 0.4) { // Only draw when not too flat
-                    ctx.font = '12px Arial';
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = 1.5;
-
-                    const numRungs = 8;
-                    for (let j = 0; j < numRungs; j++) {
-                        const progress = (j + 0.5) / numRungs;
-                        const yPos = -helixHeight + (progress * helixHeight * 2);
-
-                        const curveX = Math.cos(progress * Math.PI - Math.PI / 2) * 10;
-
-                        ctx.beginPath();
-                        ctx.moveTo(-curveX, yPos);
-                        ctx.lineTo(curveX, yPos);
-                        ctx.stroke();
-
-                        const base = bases[(i + j) % bases.length];
-                        ctx.save();
-                        ctx.scale(1, 1 / perspective); // un-scale the text on the y-axis
-                        ctx.textAlign = 'center';
-                        ctx.fillText(base, 0, yPos);
-                        ctx.restore();
+                for (let j = 0; j <= points; j++) {
+                    const yPos = (j / points) * helixHeight;
+                    const xPos = amplitude * Math.sin(yPos * frequency + time);
+                    if (j === 0) {
+                        ctx.moveTo(xPos, yPos);
+                    } else {
+                        ctx.lineTo(xPos, yPos);
                     }
                 }
+                ctx.stroke();
+
+                // Draw the second strand (phase shifted)
+                ctx.beginPath();
+                for (let j = 0; j <= points; j++) {
+                    const yPos = (j / points) * helixHeight;
+                    const xPos = amplitude * Math.sin(yPos * frequency + time + Math.PI);
+                    if (j === 0) {
+                        ctx.moveTo(xPos, yPos);
+                    } else {
+                        ctx.lineTo(xPos, yPos);
+                    }
+                }
+                ctx.stroke();
+
+                // Draw the rungs and bases
+                const bases = ['A', 'U', 'C', 'G'];
+                const numRungs = 10;
+                ctx.lineWidth = 1.5;
+                ctx.font = '10px Arial';
+                const textColor = this.state.darkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)';
+
+
+                for (let j = 0; j < numRungs; j++) {
+                    const yPos = (j / (numRungs - 1)) * helixHeight;
+                    const x1 = amplitude * Math.sin(yPos * frequency + time);
+                    const x2 = amplitude * Math.sin(yPos * frequency + time + Math.PI);
+
+                    ctx.beginPath();
+                    ctx.moveTo(x1, yPos);
+                    ctx.lineTo(x2, yPos);
+                    ctx.stroke();
+
+                    // Add base letters, alternating pairs
+                    ctx.fillStyle = textColor;
+                    const base1 = bases[(i + j) % 4];
+                    const base2 = bases[(i + j + 2) % 4]; // Complementary-ish
+                    ctx.fillText(base1, x1 > 0 ? x1 + 2 : x1 - 10, yPos + 4);
+                    ctx.fillText(base2, x2 > 0 ? x2 + 2 : x2 - 10, yPos + 4);
+                    ctx.fillStyle = color; // Reset fillStyle
+                }
+
                 ctx.restore();
             }
         },
@@ -427,14 +444,15 @@
             const centerY = height / 2;
 
             const wellnessDimensions = [
-                { name: 'Emotional', icon: 'M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 6h3a1.5 1.5 0 010 3h-3a1.5 1.5 0 010-3zm1.5 10a5.5 5.5 0 110-11 5.5 5.5 0 010 11z' },
-                { name: 'Spiritual', icon: 'M12 2l2.245 4.545L19 7.727l-4.5 4.382L15.49 17 12 14.545 8.51 17l.99-4.891L5 7.727l4.755-1.182L12 2z' },
-                { name: 'Intellectual', icon: 'M12 2a5 5 0 00-5 5c0 2.08.847 3.963 2.209 5.291L7 14.582V17h10v-2.418l-2.209-2.291A4.992 4.992 0 0017 7a5 5 0 00-5-5zm-3 17v-2h6v2H9z' },
-                { name: 'Physical', icon: 'M12 5a3 3 0 110 6 3 3 0 010-6zm0 8c-3.314 0-6 2.686-6 6v1h12v-1c0-3.314-2.686-6-6-6z' },
-                { name: 'Environmental', icon: 'M12 2a10 10 0 00-10 10c0 5.523 4.477 10 10 10s10-4.477 10-10A10 10 0 0012 2zm3.5 12h-7a.5.5 0 01-.5-.5v-7a.5.5 0 01.5-.5h7a.5.5 0 01.5.5v7a.5.5 0 01-.5-.5z' },
-                { name: 'Financial', icon: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 14a1 1 0 01-1-1v-1.5a.5.5 0 00-1 0V15a3 3 0 106 0v-1.5a.5.5 0 00-1 0V15a1 1 0 01-1 1zm-1-5.5a.5.5 0 00-1 0V10a1 1 0 112 0v-.5a.5.5 0 00-1 0z' },
-                { name: 'Occupational', icon: 'M10 2H4v16h16V8h-6V2zM8 8h8v2H8V8zm0 4h8v2H8v-2zm0 4h5v2H8v-2z' },
-                { name: 'Social', icon: 'M17 7a2 2 0 10-4 0 2 2 0 004 0zM7 7a2 2 0 10-4 0 2 2 0 004 0zM12 12a3 3 0 10-6 0 3 3 0 006 0zM17 12a3 3 0 10-6 0 3 3 0 006 0z' }
+                // Refined icons with a more consistent, slightly 3D style
+                { name: 'Emotional', icon: 'M12 4.4C8.9 4.4 6.4 6.9 6.4 10s2.5 5.6 5.6 5.6 5.6-2.5 5.6-5.6S15.1 4.4 12 4.4zm0 9.2c-2 0-3.6-1.6-3.6-3.6s1.6-3.6 3.6-3.6 3.6 1.6 3.6 3.6-1.6 3.6-3.6 3.6z' },
+                { name: 'Spiritual', icon: 'M12 3l2.5 5 5.5 0.8-4 3.9 0.9 5.5-4.9-2.6-4.9 2.6 0.9-5.5-4-3.9 5.5-0.8z' },
+                { name: 'Intellectual', icon: 'M12 5c-3.9 0-7 3.1-7 7s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7zm0 12.2c-2.9 0-5.2-2.3-5.2-5.2s2.3-5.2 5.2-5.2 5.2 2.3 5.2 5.2-2.3 5.2-5.2 5.2zM11 8h2v6h-2z' },
+                { name: 'Physical', icon: 'M15.5 6.5c-1.1 0-2-0.9-2-2s0.9-2 2-2 2 0.9 2 2-0.9 2-2 2zm-7 0c-1.1 0-2-0.9-2-2s0.9-2 2-2 2 0.9 2 2-0.9 2-2 2zm3.5 2c-2.2 0-4 1.8-4 4v1h8v-1c0-2.2-1.8-4-4-4z' },
+                { name: 'Environmental', icon: 'M12 3C7 3 3 7 3 12s4 9 9 9 9-4 9-9-4-9-9-9zm4.5 10.5L12 15l-4.5-1.5 1.5-4.5 3 1.5 3-1.5z' },
+                { name: 'Financial', icon: 'M12 4c-4.4 0-8 3.6-8 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm-0.5 12h-1V8.5a0.5 0.5 0 011 0V16zm2-4.5a0.5 0.5 0 01-1 0V9a2 2 0 00-4 0v2.5a0.5 0.5 0 01-1 0V9a3 3 0 016 0v2.5z' },
+                { name: 'Occupational', icon: 'M14 6V4h-4v2h4zm-4-4h4c1.1 0 2 0.9 2 2v2h-8V4c0-1.1 0.9-2 2-2zm6 8H4v8h12v-8z' },
+                { name: 'Social', icon: 'M16 9c0 1.1-0.9 2-2 2s-2-0.9-2-2 0.9-2 2-2 2 0.9 2 2zm-8 0c0 1.1-0.9 2-2 2s-2-0.9-2-2 0.9-2 2-2 2 0.9 2 2zm4 4c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z' }
             ];
 
             const vertices = [];
