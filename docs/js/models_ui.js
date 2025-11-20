@@ -8,9 +8,9 @@
         contexts: {},
         state: {}, // This will be a reference to the main app state
 
-        init(state, GreenhouseModelsUtil) {
+        init(state, GreenhouseUtil) {
             this.state = state;
-            this.util = GreenhouseModelsUtil;
+            this.util = GreenhouseUtil;
             Object.assign(this, GreenhouseModelsUISynapse);
             Object.assign(this, GreenhouseModelsUIBrain);
             Object.assign(this, GreenhouseModelsUIEnvironment);
@@ -19,7 +19,7 @@
         async loadCSS(baseUrl) {
             const cssUrl = `${baseUrl}css/model.css`;
             if (!document.querySelector(`link[href="${cssUrl}"]`)) {
-                const link = GreenhouseModelsUtil.createElement('link', { rel: 'stylesheet', href: cssUrl });
+                const link = this.util.createElement('link', { rel: 'stylesheet', href: cssUrl });
                 document.head.appendChild(link);
                 await new Promise((resolve, reject) => {
                     link.onload = resolve;
