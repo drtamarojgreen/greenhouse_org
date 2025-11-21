@@ -702,7 +702,7 @@
             ctx.fill();
 
             let branchDataIndex = 0;
-            // Recursive function to draw branches with natural curves
+            // Recursive function to draw branches
             const drawBranch = (x, y, width, length, angle) => {
                 ctx.beginPath();
                 ctx.moveTo(x, y);
@@ -711,14 +711,15 @@
                 const endX = x + length * Math.cos(angle);
                 const endY = y + length * Math.sin(angle);
 
-                // Get control points for bezier curve to create natural branch curvature
                 const data = this.TREE_BRANCH_DATA[branchDataIndex % this.TREE_BRANCH_DATA.length];
-                const cp1x = x + (data.cp1x * Math.cos(angle) - data.cp1y * Math.sin(angle));
-                const cp1y = y + (data.cp1x * Math.sin(angle) + data.cp1y * Math.cos(angle));
-                const cp2x = x + (data.cp2x * Math.cos(angle) - data.cp2y * Math.sin(angle));
-                const cp2y = y + (data.cp2x * Math.sin(angle) + data.cp2y * Math.cos(angle));
+                branchDataIndex++;
 
-                // Draw curved branch using bezier curve
+                // Use static data for the curve for a consistent look
+                const cp1x = x + (endX - x) * 0.25 + data.cp1x;
+                const cp1y = y + (endY - y) * 0.25 + data.cp1y;
+                const cp2x = x + (endX - x) * 0.75 + data.cp2x;
+                const cp2y = y + (endY - y) * 0.75 + data.cp2y;
+
                 ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
                 ctx.lineWidth = width;
                 ctx.stroke();
