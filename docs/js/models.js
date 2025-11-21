@@ -70,7 +70,7 @@
             }
 
             // Load the new modules sequentially
-            await GreenhouseUtils.loadScript('models_utils.js', baseUrl);
+            await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('models_data.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ui_synapse.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ui_brain.js', baseUrl);
