@@ -87,19 +87,42 @@
 
         _drawLabels(ctx, width, height) {
             ctx.save();
-            ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
-            ctx.font = '16px "Helvetica Neue", Arial, sans-serif'; // Larger font
-            ctx.textAlign = 'center';
-
+            
             const gridX = width / 12;
             const gridY = height / 10;
-
-            // Environmental Stress & Genetic Factors
-            ctx.fillText('Environmental Stress', gridX * 6, gridY * 0.5);
-            ctx.fillText('Genetic Factors', gridX * 6, gridY * 1);
-
-            // Paths Labels
+            
+            // Helper function to draw text with background
+            const drawLabelWithBackground = (text, x, y, fontSize = 16) => {
+                ctx.font = `${fontSize}px "Helvetica Neue", Arial, sans-serif`;
+                ctx.textAlign = 'center';
+                
+                // Measure text for background
+                const metrics = ctx.measureText(text);
+                const padding = 8;
+                const bgWidth = metrics.width + padding * 2;
+                const bgHeight = fontSize + padding;
+                
+                // Draw semi-transparent background
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                ctx.fillRect(
+                    x - bgWidth / 2,
+                    y - bgHeight / 2 - fontSize / 2,
+                    bgWidth,
+                    bgHeight
+                );
+                
+                // Draw text
+                ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)';
+                ctx.fillText(text, x, y);
+            };
+            
+            // Environmental Stress & Genetic Factors - moved higher to avoid overlap
+            drawLabelWithBackground('Environmental Stress', gridX * 6, gridY * 0.3, 18);
+            drawLabelWithBackground('Genetic Factors', gridX * 6, gridY * 0.8, 16);
+            
+            // Paths Labels with icons
             const familyIcon = new Path2D('M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z');
+            ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
             ctx.save();
             ctx.translate(gridX * 3 - 12, gridY * 3 - 12);
             ctx.fill(familyIcon);
@@ -111,72 +134,101 @@
             ctx.fill(societyIcon);
             ctx.restore();
 
-            ctx.fillText('Community', gridX * 9, gridY * 3);
-
-            // Personal Growth
-            ctx.fillText('Personal Growth', gridX * 6, gridY * 9);
+            // Community - repositioned to avoid brain overlap
+            drawLabelWithBackground('Community', gridX * 9.5, gridY * 3, 16);
+            
+            // Personal Growth - moved lower
+            drawLabelWithBackground('Personal Growth', gridX * 6, gridY * 9.5, 16);
 
             ctx.restore();
         },
 
         _drawTitle(ctx, width, height) {
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            
+            // Draw background panel for title
+            const panelHeight = 70;
+            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+            gradient.addColorStop(1, 'rgba(245, 250, 255, 0.95)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, panelHeight);
+            
+            // Add subtle border
+            ctx.strokeStyle = 'rgba(53, 116, 56, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, panelHeight);
+            ctx.lineTo(width, panelHeight);
+            ctx.stroke();
+            
+            // Draw title
+            ctx.fillStyle = '#357438'; // Brand color
             ctx.textAlign = 'center';
-
-            ctx.font = '24px "Helvetica Neue", Arial, sans-serif';
-            ctx.fillText('Mental Health Environment', width / 2, 30);
-
+            ctx.font = 'bold 28px "Quicksand", "Helvetica Neue", Arial, sans-serif';
+            ctx.fillText('Mental Health Environment', width / 2, 35);
+            
+            // Simplified subtitle
             ctx.font = '14px "Helvetica Neue", Arial, sans-serif';
-            ctx.fillText('An interactive model of influencing factors', width / 2, 50);
-
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillText('Interactive Model', width / 2, 55);
+            
             ctx.restore();
         },
 
         _drawLegend(ctx, width, height) {
             const legendItems = [
-                { color: 'rgba(255, 159, 64, 0.8)', text: 'Family Influence' },
-                { color: 'rgba(54, 162, 235, 0.8)', text: 'Societal Influence' },
-                { color: 'rgba(75, 192, 192, 0.8)', text: 'Community Influence' }
+                { color: 'rgba(255, 159, 64, 0.8)', text: 'Family' },
+                { color: 'rgba(54, 162, 235, 0.8)', text: 'Society' },
+                { color: 'rgba(75, 192, 192, 0.8)', text: 'Community' }
             ];
-
+            
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(10, height - 80, 200, 70);
-
-            ctx.fillStyle = 'white';
-            ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
-
+            
+            // Lighter, more transparent background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 1;
+            
+            const legendWidth = 180;
+            const legendHeight = 90;
+            const legendX = width - legendWidth - 20; // Right side
+            const legendY = height - legendHeight - 20; // Bottom
+            
+            // Draw rounded rectangle
+            ctx.beginPath();
+            ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 8);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Title
+            ctx.fillStyle = '#357438';
+            ctx.font = 'bold 12px "Helvetica Neue", Arial, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Influences', legendX + 10, legendY + 20);
+            
+            // Legend items
+            ctx.font = '11px "Helvetica Neue", Arial, sans-serif';
             legendItems.forEach((item, index) => {
+                const itemY = legendY + 40 + index * 20;
+                
+                // Color box
                 ctx.fillStyle = item.color;
-                ctx.fillRect(20, height - 70 + index * 20, 15, 15);
-                ctx.fillStyle = 'white';
-                ctx.fillText(item.text, 45, height - 58 + index * 20);
+                ctx.fillRect(legendX + 10, itemY - 8, 12, 12);
+                
+                // Text
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillText(item.text, legendX + 28, itemY);
             });
-
+            
             ctx.restore();
         },
 
         _drawGrid(ctx, width, height) {
-            ctx.save();
-            ctx.strokeStyle = 'rgba(0, 0, 255, 0.1)';
-            ctx.lineWidth = 1;
-
-            for (let x = 0; x < width; x += 20) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, height);
-                ctx.stroke();
-            }
-
-            for (let y = 0; y < height; y += 20) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(width, y);
-                ctx.stroke();
-            }
-
-            ctx.restore();
+            // Grid removed for cleaner visual presentation
+            // Can be re-enabled via debug flag if needed
+            return;
         },
 
         _drawInfluencePaths(ctx, width, height) {
@@ -278,15 +330,16 @@
             ctx.translate(offsetX, offsetY);
             ctx.scale(scale, scale);
 
-            // Add drop shadow
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-            ctx.shadowBlur = 20;
-            ctx.shadowOffsetX = 10;
-            ctx.shadowOffsetY = 10;
+            // NEW: Subtle, professional shadow
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.25)'; // Reduced from 0.7
+            ctx.shadowBlur = 12; // Reduced from 20
+            ctx.shadowOffsetX = 4; // Reduced from 10
+            ctx.shadowOffsetY = 4; // Reduced from 10
 
-            ctx.fillStyle = 'rgba(150, 130, 110, 0.5)';
+            // NEW: 30% transparent brain with softer stroke
+            ctx.fillStyle = 'rgba(150, 130, 110, 0.3)'; // Reduced from 0.5 to 0.3
             ctx.fill(this._brainPath);
-            ctx.strokeStyle = 'rgba(40, 30, 20, 1.0)';
+            ctx.strokeStyle = 'rgba(40, 30, 20, 0.6)'; // Reduced from 1.0 to 0.6
             ctx.lineWidth = 6 / scale; // Keep stroke width consistent
             ctx.stroke(this._brainPath);
             ctx.restore();
@@ -322,11 +375,12 @@
             let calmColor, stressColor;
 
             if (this.state.darkMode) {
-                calmColor = { r: 25, g: 25, b: 112 }; // Midnight Blue
-                stressColor = { r: 139, g: 0, b: 0 }; // Dark Red
+                calmColor = { r: 35, g: 45, b: 55 }; // Soft slate
+                stressColor = { r: 65, g: 45, b: 45 }; // Muted burgundy
             } else {
-                calmColor = { r: 173, g: 216, b: 230 }; // Light Blue
-                stressColor = { r: 255, g: 99, b: 71 }; // Tomato Red
+                // NEW: Much softer, more neutral palette
+                calmColor = { r: 240, g: 245, b: 248 }; // Soft blue-gray
+                stressColor = { r: 245, g: 235, b: 230 }; // Warm beige
             }
 
             const r = calmColor.r + (stressColor.r - calmColor.r) * stress;
@@ -334,8 +388,9 @@
             const b = calmColor.b + (stressColor.b - calmColor.b) * stress;
 
             const gradient = ctx.createLinearGradient(0, 0, width, height);
-            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.7)`);
-            gradient.addColorStop(1, `rgba(${r - 50}, ${g - 50}, ${b - 50}, 0.8)`);
+            // NEW: Reduced opacity from 0.7/0.8 to 0.3/0.4
+            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.3)`);
+            gradient.addColorStop(1, `rgba(${r - 20}, ${g - 20}, ${b - 20}, 0.4)`);
 
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, width, height);
