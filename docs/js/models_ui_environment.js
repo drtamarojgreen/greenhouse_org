@@ -20,6 +20,7 @@
 
             this._drawEnvironmentBackground(ctx, width, height);
             this._drawGrid(ctx, width, height);
+            this.drawTree(ctx, this.canvases.environment); // Draw tree FIRST (behind everything)
             this._drawSociety(ctx, width, height);
             this._drawGenomes(ctx, width, height);
             this._drawCommunity(ctx, width, height);
@@ -35,12 +36,11 @@
                 });
             }
 
-            this.drawTree(ctx, this.canvases.environment);
+            this._drawMedication(ctx, width, height);
+            this._drawTherapy(ctx, width, height); // Draw therapy AFTER brain (on top)
             this._drawLabels(ctx, width, height);
             this._drawLegend(ctx, width, height);
             this._drawTitle(ctx, width, height);
-            this._drawMedication(ctx, width, height);
-            this._drawTherapy(ctx, width, height);
             this._drawTooltip(ctx);
 
             // Signal to automated testing frameworks that the canvas has been rendered.
@@ -226,9 +226,29 @@
         },
 
         _drawGrid(ctx, width, height) {
-            // Grid removed for cleaner visual presentation
-            // Can be re-enabled via debug flag if needed
-            return;
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)'; // Very light grid lines
+            ctx.lineWidth = 1;
+
+            const gridSize = 100; // Bigger grid boxes
+
+            // Draw vertical lines
+            for (let x = 0; x <= width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+
+            // Draw horizontal lines
+            for (let y = 0; y <= height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            ctx.restore();
         },
 
         _drawInfluencePaths(ctx, width, height) {
@@ -336,10 +356,10 @@
             ctx.shadowOffsetX = 4; // Reduced from 10
             ctx.shadowOffsetY = 4; // Reduced from 10
 
-            // NEW: 30% transparent brain with softer stroke
-            ctx.fillStyle = 'rgba(150, 130, 110, 0.3)'; // Reduced from 0.5 to 0.3
+            // Grey brain with softer stroke
+            ctx.fillStyle = 'rgba(128, 128, 128, 0.3)'; // Grey color
             ctx.fill(this._brainPath);
-            ctx.strokeStyle = 'rgba(40, 30, 20, 0.6)'; // Reduced from 1.0 to 0.6
+            ctx.strokeStyle = 'rgba(80, 80, 80, 0.6)'; // Grey stroke
             ctx.lineWidth = 6 / scale; // Keep stroke width consistent
             ctx.stroke(this._brainPath);
             ctx.restore();
@@ -682,7 +702,7 @@
             ctx.fill();
 
             let branchDataIndex = 0;
-            // Recursive function to draw branches
+            // Recursive function to draw branches with straight lines
             const drawBranch = (x, y, width, length, angle) => {
                 ctx.beginPath();
                 ctx.moveTo(x, y);
@@ -691,16 +711,8 @@
                 const endX = x + length * Math.cos(angle);
                 const endY = y + length * Math.sin(angle);
 
-                const data = this.TREE_BRANCH_DATA[branchDataIndex % this.TREE_BRANCH_DATA.length];
-                branchDataIndex++;
-
-                // Use static data for the curve for a consistent look
-                const cp1x = x + (endX - x) * 0.25 + data.cp1x;
-                const cp1y = y + (endY - y) * 0.25 + data.cp1y;
-                const cp2x = x + (endX - x) * 0.75 + data.cp2x;
-                const cp2y = y + (endY - y) * 0.75 + data.cp2y;
-
-                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
+                // Draw straight line instead of curve
+                ctx.lineTo(endX, endY);
                 ctx.lineWidth = width;
                 ctx.stroke();
 
