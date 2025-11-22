@@ -74,6 +74,7 @@
             await GreenhouseUtils.loadScript('models_data.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ui_synapse.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ui_brain.js', baseUrl);
+            await GreenhouseUtils.loadScript('models_ui_environment_overlay.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ui_environment.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ui.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ux.js', baseUrl);
