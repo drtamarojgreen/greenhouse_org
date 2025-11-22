@@ -40,6 +40,17 @@
             this._drawTherapy(ctx, width, height); // Draw therapy AFTER brain (on top)
             this._drawLabels(ctx, width, height);
             this._drawLegend(ctx, width, height);
+
+            // Initialize overlays if not already done
+            if (window.GreenhouseModelsUIEnvironmentOverlay && !window.GreenhouseModelsUIEnvironmentOverlay.state) {
+                 window.GreenhouseModelsUIEnvironmentOverlay.init(this.state);
+            }
+
+            // Draw overlays
+            if (window.GreenhouseModelsUIEnvironmentOverlay) {
+                window.GreenhouseModelsUIEnvironmentOverlay.drawOverlays(ctx, width, height);
+            }
+
             this._drawTitle(ctx, width, height);
             this._drawTooltip(ctx);
 
