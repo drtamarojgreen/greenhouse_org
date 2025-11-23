@@ -1,4 +1,4 @@
-(function() {
+(function () {
     'use strict';
 
     const GreenhouseModelsUIEnvironmentOverlay = {
@@ -260,7 +260,7 @@
                     }
                 });
                 if (needsRedraw) {
-                     if (window.GreenhouseModelsUI && window.GreenhouseModelsUI.drawEnvironmentView) {
+                    if (window.GreenhouseModelsUI && window.GreenhouseModelsUI.drawEnvironmentView) {
                         window.GreenhouseModelsUI.drawEnvironmentView();
                     }
                     this.animationFrameId = requestAnimationFrame(animate);
@@ -331,8 +331,8 @@
 
             const boxX = item.x + 60;
             const boxY = item.y;
-            const boxWidth = 220;
-            const boxHeight = 120;
+            const boxWidth = 280;
+            const boxHeight = 140;
             const cornerRadius = 10;
 
             // 2. Draw Connecting Line
