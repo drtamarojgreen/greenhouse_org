@@ -1,5 +1,5 @@
 
-(function() {
+(function () {
     'use strict';
 
     const GreenhouseModelsUIEnvironment = {
@@ -28,11 +28,15 @@
 
             if (this._brainPath) {
                 this._drawBrainPath(ctx, width, height);
-                this._drawHeatmaps(ctx, width, height);
+                if (window.GreenhouseModelsUIEnvironmentHovers) {
+                    window.GreenhouseModelsUIEnvironmentHovers.drawHeatmaps(ctx, width, height, this._brainRegions);
+                }
             } else {
                 this._loadBrainPath(() => {
                     this._drawBrainPath(ctx, width, height);
-                    this._drawHeatmaps(ctx, width, height);
+                    if (window.GreenhouseModelsUIEnvironmentHovers) {
+                        window.GreenhouseModelsUIEnvironmentHovers.drawHeatmaps(ctx, width, height, this._brainRegions);
+                    }
                 });
             }
 
@@ -43,7 +47,7 @@
 
             // Initialize overlays if not already done
             if (window.GreenhouseModelsUIEnvironmentOverlay && !window.GreenhouseModelsUIEnvironmentOverlay.state) {
-                 window.GreenhouseModelsUIEnvironmentOverlay.init(this.state);
+                window.GreenhouseModelsUIEnvironmentOverlay.init(this.state);
             }
 
             // Draw overlays
@@ -51,8 +55,16 @@
                 window.GreenhouseModelsUIEnvironmentOverlay.drawOverlays(ctx, width, height);
             }
 
+            // Initialize hovers if not already done
+            if (window.GreenhouseModelsUIEnvironmentHovers && !window.GreenhouseModelsUIEnvironmentHovers.state) {
+                window.GreenhouseModelsUIEnvironmentHovers.init(this.state, this.util);
+            }
+
             this._drawTitle(ctx, width, height);
-            this._drawTooltip(ctx);
+
+            if (window.GreenhouseModelsUIEnvironmentHovers) {
+                window.GreenhouseModelsUIEnvironmentHovers.drawTooltip(ctx);
+            }
 
             // Signal to automated testing frameworks that the canvas has been rendered.
             window.renderingComplete = true;
@@ -98,21 +110,21 @@
 
         _drawLabels(ctx, width, height) {
             ctx.save();
-            
+
             const gridX = width / 12;
             const gridY = height / 10;
-            
+
             // Helper function to draw text with background
             const drawLabelWithBackground = (text, x, y, fontSize = 16) => {
                 ctx.font = `${fontSize}px "Helvetica Neue", Arial, sans-serif`;
                 ctx.textAlign = 'center';
-                
+
                 // Measure text for background
                 const metrics = ctx.measureText(text);
                 const padding = 8;
                 const bgWidth = metrics.width + padding * 2;
                 const bgHeight = fontSize + padding;
-                
+
                 // Draw semi-transparent background
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
                 ctx.fillRect(
@@ -121,16 +133,16 @@
                     bgWidth,
                     bgHeight
                 );
-                
+
                 // Draw text
                 ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)';
                 ctx.fillText(text, x, y);
             };
-            
+
             // Environmental Stress & Genetic Factors - moved higher to avoid overlap
             drawLabelWithBackground('Environmental Stress', gridX * 6, gridY * 0.3, 18);
             drawLabelWithBackground('Genetic Factors', gridX * 6, gridY * 0.8, 16);
-            
+
             // Paths Labels with icons
             const familyIcon = new Path2D('M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z');
             ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
@@ -147,7 +159,7 @@
 
             // Community - repositioned to avoid brain overlap
             drawLabelWithBackground('Community', gridX * 9.5, gridY * 3, 16);
-            
+
             // Personal Growth - moved lower
             drawLabelWithBackground('Personal Growth', gridX * 6, gridY * 9.5, 16);
 
@@ -156,16 +168,16 @@
 
         _drawTitle(ctx, width, height) {
             ctx.save();
-            
+
             // Draw background panel for title
             const panelHeight = 70;
             const gradient = ctx.createLinearGradient(0, 0, width, 0);
             gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
             gradient.addColorStop(1, 'rgba(245, 250, 255, 0.95)');
-            
+
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, width, panelHeight);
-            
+
             // Add subtle border
             ctx.strokeStyle = 'rgba(53, 116, 56, 0.3)';
             ctx.lineWidth = 2;
@@ -173,18 +185,18 @@
             ctx.moveTo(0, panelHeight);
             ctx.lineTo(width, panelHeight);
             ctx.stroke();
-            
+
             // Draw title
             ctx.fillStyle = '#357438'; // Brand color
             ctx.textAlign = 'center';
             ctx.font = 'bold 28px "Quicksand", "Helvetica Neue", Arial, sans-serif';
             ctx.fillText('Mental Health Environment', width / 2, 35);
-            
+
             // Simplified subtitle
             ctx.font = '14px "Helvetica Neue", Arial, sans-serif';
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             ctx.fillText('Interactive Model', width / 2, 55);
-            
+
             ctx.restore();
         },
 
@@ -194,45 +206,45 @@
                 { color: 'rgba(54, 162, 235, 0.8)', text: 'Society' },
                 { color: 'rgba(75, 192, 192, 0.8)', text: 'Community' }
             ];
-            
+
             ctx.save();
-            
+
             // Lighter, more transparent background
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.lineWidth = 1;
-            
+
             const legendWidth = 180;
             const legendHeight = 90;
             const legendX = width - legendWidth - 20; // Right side
             const legendY = height - legendHeight - 20; // Bottom
-            
+
             // Draw rounded rectangle
             ctx.beginPath();
             ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 8);
             ctx.fill();
             ctx.stroke();
-            
+
             // Title
             ctx.fillStyle = '#357438';
             ctx.font = 'bold 12px "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'left';
             ctx.fillText('Influences', legendX + 10, legendY + 20);
-            
+
             // Legend items
             ctx.font = '11px "Helvetica Neue", Arial, sans-serif';
             legendItems.forEach((item, index) => {
                 const itemY = legendY + 40 + index * 20;
-                
+
                 // Color box
                 ctx.fillStyle = item.color;
                 ctx.fillRect(legendX + 10, itemY - 8, 12, 12);
-                
+
                 // Text
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                 ctx.fillText(item.text, legendX + 28, itemY);
             });
-            
+
             ctx.restore();
         },
 
@@ -376,30 +388,7 @@
             ctx.restore();
         },
 
-        _drawHeatmaps(ctx, width, height) {
-            const scale = Math.min(width / 1536, height / 1024) * 0.8;
-            const offsetX = (width - (1536 * scale)) / 2;
-            const offsetY = (height - (1024 * scale)) / 2;
 
-            ctx.save();
-            ctx.translate(offsetX, offsetY);
-            ctx.scale(scale, scale);
-
-            for (const key in this._brainRegions) {
-                const region = this._brainRegions[key];
-                const activation = this.state.environment.regions[key].activation;
-
-                if (activation > 0.1 && region.path) {
-                    ctx.save();
-                    ctx.shadowColor = region.color;
-                    ctx.shadowBlur = activation * 30;
-                    ctx.fillStyle = region.color.replace('0.7', '0.3');
-                    ctx.fill(region.path);
-                    ctx.restore();
-                }
-            }
-            ctx.restore();
-        },
 
         _drawEnvironmentBackground(ctx, width, height) {
             const stress = this.state.environment.stress;
@@ -609,76 +598,17 @@
         },
 
         _handleMouseMove(event) {
-            const canvas = this.canvases.environment;
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-
-            let hoveredRegionKey = null;
-            for (const key in this._brainRegions) {
-                const region = this._brainRegions[key];
-
-                const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 0.8;
-                const offsetX = (canvas.width - (1536 * scale)) / 2;
-                const offsetY = (canvas.height - (1024 * scale)) / 2;
-
-                const transformedX = (x - offsetX) / scale;
-                const transformedY = (y - offsetY) / scale;
-
-                if (region.path && this.contexts.environment.isPointInPath(region.path, transformedX, transformedY)) {
-                    hoveredRegionKey = key;
-                    break;
-                }
-            }
-
-            if (hoveredRegionKey) {
-                const region = this._brainRegions[hoveredRegionKey];
-                const activation = this.state.environment.regions[hoveredRegionKey].activation;
-                this.state.environment.tooltip.visible = true;
-                this.state.environment.tooltip.title = region.name;
-                this.state.environment.tooltip.activation = `Activation: ${(activation * 100).toFixed(0)}%`;
-                this.state.environment.tooltip.description = this.util.getRegionDescription(hoveredRegionKey);
-                this.state.environment.tooltip.x = x;
-                this.state.environment.tooltip.y = y;
-            } else {
-                this.state.environment.tooltip.visible = false;
+            if (window.GreenhouseModelsUIEnvironmentHovers) {
+                window.GreenhouseModelsUIEnvironmentHovers.handleMouseMove(
+                    event,
+                    this.canvases.environment,
+                    this.contexts.environment,
+                    this._brainRegions
+                );
             }
         },
 
-        _drawTooltip(ctx) {
-            const tooltip = this.state.environment.tooltip;
-            if (tooltip.visible) {
-                const { x, y, title, activation, description } = tooltip;
-                const width = 220;
-                const height = 100;
-                const padding = 12;
 
-                ctx.save();
-                ctx.fillStyle = 'rgba(25, 25, 25, 0.85)';
-                ctx.strokeStyle = 'rgba(200, 200, 200, 1)';
-                ctx.lineWidth = 1;
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                ctx.shadowBlur = 8;
-                ctx.shadowOffsetY = 4;
-
-                ctx.beginPath();
-                ctx.roundRect(x + 15, y + 15, width, height, 8);
-                ctx.fill();
-                ctx.stroke();
-
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = 'bold 16px "Helvetica Neue", Arial, sans-serif';
-                ctx.fillText(title, x + 15 + padding, y + 15 + padding + 8);
-
-                ctx.font = '14px "Helvetica Neue", Arial, sans-serif';
-                ctx.fillStyle = '#B0B0B0';
-                ctx.fillText(activation, x + 15 + padding, y + 15 + padding + 32);
-
-                ctx.fillStyle = '#E0E0E0';
-                this.util.wrapText(ctx, description, x + 15 + padding, y + 15 + padding + 56, 196, 18);
-                ctx.restore();
-            }
-        },
 
         TREE_BRANCH_DATA: [
             { cp1x: -7.5, cp1y: -2.5, cp2x: -22.5, cp2y: -7.5, angle: 0.35, length: 0.9 },
