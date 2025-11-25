@@ -159,31 +159,25 @@
                 ctx.fillText(text, x, y);
             };
 
-            // Logical Coordinates (1536x1024)
+            const config = window.GreenhouseEnvironmentConfig;
+            if (config && config.labels) {
+                config.labels.forEach(label => {
+                    drawLabelWithBackground(label.text, label.x, label.y, label.fontSize);
+                });
+            }
 
-            // Environmental Stress & Genetic Factors
-            drawLabelWithBackground('Environmental Stress', 768, 100, 18);
-            drawLabelWithBackground('Genetic Factors', 768, 250, 16);
-
-            // Paths Labels with icons
-            const familyIcon = new Path2D('M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z');
-            ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
-            ctx.save();
-            ctx.translate(384 - 12, 300 - 12); // Left side
-            ctx.fill(familyIcon);
-            ctx.restore();
-
-            const societyIcon = new Path2D('M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V18h14v-1.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V18h6v-1.5c0-2.33-4.67-3.5-7-3.5z');
-            ctx.save();
-            ctx.translate(1152 - 12, 300 - 12); // Right side
-            ctx.fill(societyIcon);
-            ctx.restore();
-
-            // Community Label
-            drawLabelWithBackground('Community', 1200, 512, 16);
-
-            // Personal Growth
-            drawLabelWithBackground('Personal Growth', 768, 950, 16);
+            if (config && config.icons) {
+                config.icons.forEach(icon => {
+                    if (icon.type === 'path') {
+                        const path = new Path2D(icon.pathData);
+                        ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+                        ctx.save();
+                        ctx.translate(icon.x - 12, icon.y - 12); // Center adjustment
+                        ctx.fill(path);
+                        ctx.restore();
+                    }
+                });
+            }
 
             ctx.restore();
         },
@@ -292,11 +286,12 @@
                 ctx.stroke();
             };
 
-            // Paths from environment elements to the brain/tree area
-            // Using logical coordinates
-            drawPath(384, 350, 768, 600, 'rgba(255, 159, 64, 0.8)', 4); // Left
-            drawPath(768, 450, 768, 600, 'rgba(54, 162, 235, 0.8)', 4); // Center
-            drawPath(1152, 350, 768, 600, 'rgba(75, 192, 192, 0.8)', 4); // Right
+            const config = window.GreenhouseEnvironmentConfig;
+            if (config && config.influencePaths) {
+                config.influencePaths.forEach(path => {
+                    drawPath(path.startX, path.startY, path.endX, path.endY, path.color, path.width);
+                });
+            }
 
             ctx.restore();
         },
@@ -369,6 +364,15 @@
                     this.canvases.environment,
                     this.contexts.environment
                 );
+            }
+        },
+
+        handleClick(event, canvas, ctx) {
+            if (window.GreenhouseModelsUIEnvironmentMedication && window.GreenhouseModelsUIEnvironmentMedication.handleClick) {
+                window.GreenhouseModelsUIEnvironmentMedication.handleClick(event, canvas, ctx);
+            }
+            if (window.GreenhouseModelsUIEnvironmentTherapy && window.GreenhouseModelsUIEnvironmentTherapy.handleClick) {
+                window.GreenhouseModelsUIEnvironmentTherapy.handleClick(event, canvas, ctx);
             }
         },
     };

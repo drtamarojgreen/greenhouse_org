@@ -1,0 +1,45 @@
+{
+    "health": {
+        "active_medications": [
+            {
+                "name": "Sertraline",
+                "type": "SSRI",
+                "dosage": "50mg"
+            },
+            {
+                "name": "Bupropion",
+                "type": "NDRI",
+                "dosage": "150mg"
+            },
+            {
+                "name": "Buspirone",
+                "type": "Anxiolytic",
+                "dosage": "10mg"
+            }
+        ],
+        "therapy_sessions": [
+            {
+                "type": "CBT",
+                "date": "2023-10-01",
+                "notes": "Focus on cognitive restructuring and identifying automatic negative thoughts."
+            },
+            {
+                "type": "Mindfulness",
+                "date": "2023-10-15",
+                "notes": "Breathing exercises and body scan meditation."
+            },
+            {
+                "type": "DBT",
+                "date": "2023-10-22",
+                "notes": "Distress tolerance skills: TIPP skills practice."
+            }
+        ]
+    },
+    "genomics": {
+        "polygenic_scores": {
+            "depression": 0.75,
+            "anxiety": 0.60,
+            "resilience": 0.40
+        }
+    }
+}

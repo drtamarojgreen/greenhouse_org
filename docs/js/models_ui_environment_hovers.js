@@ -49,8 +49,10 @@
                 if (this.util && this.util.getRegionDescription) {
                     desc = this.util.getRegionDescription(hoveredRegionKey);
                 }
-                if (!desc) {
-                    desc = region.description || '';
+
+                // If util returns the default "No information" string, try to use the region's own description
+                if ((!desc || desc === 'No information available for this region.') && region.description) {
+                    desc = region.description;
                 }
                 this.state.environment.tooltip.description = desc;
 

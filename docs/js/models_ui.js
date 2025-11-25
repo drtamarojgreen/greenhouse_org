@@ -1,6 +1,6 @@
 // docs/js/models_ui.js
 
-(function() {
+(function () {
     'use strict';
 
     const GreenhouseModelsUI = {
@@ -56,7 +56,7 @@
             const canvasSynaptic = GreenhouseModelsUtil.createElement('canvas', { id: 'canvas-synaptic', style: 'width: 100%; height: 250px; background: #f0f0f0; border-radius: 12px; margin-bottom: 15px;' });
             const canvasNetwork = GreenhouseModelsUtil.createElement('canvas', { id: 'canvas-network', style: 'width: 100%; height: 250px; background: #f0f0f0; border-radius: 12px; margin-bottom: 15px;' });
             const canvasEnvironment = GreenhouseModelsUtil.createElement('canvas', { id: 'canvas-environment', style: 'width: 100%; height: 250px; background: #e9e9e9; border-radius: 12px;' });
-            
+
             const synapticControls = GreenhouseModelsUtil.createElement('div', { id: 'controls-synaptic' });
             const networkControls = GreenhouseModelsUtil.createElement('div', { id: 'controls-network' });
             const environmentControls = GreenhouseModelsUtil.createElement('div', { id: 'controls-environment' });

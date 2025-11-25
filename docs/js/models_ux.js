@@ -1,6 +1,6 @@
 // docs/js/models_ux.js
 
-(function() {
+(function () {
     'use strict';
     let resilienceObserver = null;
     const GreenhouseModelsUX = {
@@ -126,7 +126,7 @@
             }
         },
 
-        
+
         getConfiguration() {
             if (!window._greenhouseModelsAttributes) {
                 console.error('Models App: Global attributes not found.');
@@ -158,54 +158,54 @@
                             lexicon
                         );
 
-                    // Pre-populate vesicles
-                    for (let i = 0; i < 20; i++) {
-                        this.state.synaptic.vesicles.push({
-                            x: Math.random(), // Relative x position
-                            y: Math.random(), // Relative y position
-                            state: 'IDLE', // IDLE, FUSING
-                            fuseProgress: 0
-                        });
-                    }
-
-                    // Pre-populate receptors
-                    for (let i = 0; i < 30; i++) {
-                        this.state.synaptic.receptors.push({
-                            isBound: false,
-                            boundUntil: 0
-                        });
-                    }
-
-                    // Pre-populate synapses
-                    for (let i = 0; i < this.state.networkLayout.length; i++) {
-                        for (let j = i + 1; j < this.state.networkLayout.length; j++) {
-                            this.state.synapses.push({
-                                from: i,
-                                to: j,
-                                weight: Math.random()
+                        // Pre-populate vesicles
+                        for (let i = 0; i < 20; i++) {
+                            this.state.synaptic.vesicles.push({
+                                x: Math.random(), // Relative x position
+                                y: Math.random(), // Relative y position
+                                state: 'IDLE', // IDLE, FUSING
+                                fuseProgress: 0
                             });
                         }
+
+                        // Pre-populate receptors
+                        for (let i = 0; i < 30; i++) {
+                            this.state.synaptic.receptors.push({
+                                isBound: false,
+                                boundUntil: 0
+                            });
+                        }
+
+                        // Pre-populate synapses
+                        for (let i = 0; i < this.state.networkLayout.length; i++) {
+                            for (let j = i + 1; j < this.state.networkLayout.length; j++) {
+                                this.state.synapses.push({
+                                    from: i,
+                                    to: j,
+                                    weight: Math.random()
+                                });
+                            }
+                        }
+
+                        GreenhouseModelsUI.renderSimulationInterface(this.state.targetElement);
+                        this.addSimulationListeners();
+                        this.bindSimulationControls();
+                        this.addEnvironmentListeners();
+
+                        // Clear loading state and draw final views
+                        GreenhouseModelsUI.drawSynapticView();
+                        GreenhouseModelsUI.drawNetworkView();
+                        GreenhouseModelsUI.drawEnvironmentView();
                     }
-
-                    GreenhouseModelsUI.renderSimulationInterface(this.state.targetElement);
-                    this.addSimulationListeners();
-                    this.bindSimulationControls();
-                    this.addEnvironmentListeners();
-
-                    // Clear loading state and draw final views
-                    GreenhouseModelsUI.drawSynapticView();
-                    GreenhouseModelsUI.drawNetworkView();
-                    GreenhouseModelsUI.drawEnvironmentView();
+                    else {
+                        console.error("Data not loaded, cannot start simulation.");
+                    }
+                } catch (error) {
+                    console.error('Models App: Simulation start failed:', error);
+                    GreenhouseUtils.displayError(`Failed to start simulation: ${error.message}`);
+                } finally {
+                    this.state.isLoading = false;
                 }
-                else {
-                    console.error("Data not loaded, cannot start simulation.");
-                }
-            } catch (error) {
-                console.error('Models App: Simulation start failed:', error);
-                GreenhouseUtils.displayError(`Failed to start simulation: ${error.message}`);
-            } finally {
-                this.state.isLoading = false;
-            }
             });
         },
 
@@ -586,6 +586,11 @@
             if (canvas) {
                 canvas.addEventListener('mousemove', e => {
                     GreenhouseModelsUI._handleMouseMove(e);
+                });
+                canvas.addEventListener('click', e => {
+                    if (GreenhouseModelsUI._handleClick) {
+                        GreenhouseModelsUI._handleClick(e);
+                    }
                 });
             }
             window.addEventListener('resize', () => GreenhouseModelsUI.resizeAllCanvases());
