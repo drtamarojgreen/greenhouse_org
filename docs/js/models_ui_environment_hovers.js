@@ -36,11 +36,24 @@
 
             if (hoveredRegionKey) {
                 const region = regions[hoveredRegionKey];
-                const activation = this.state.environment.regions[hoveredRegionKey].activation;
+                let activation = 0;
+                if (this.state.environment.regions && this.state.environment.regions[hoveredRegionKey]) {
+                    activation = this.state.environment.regions[hoveredRegionKey].activation;
+                }
+
                 this.state.environment.tooltip.visible = true;
                 this.state.environment.tooltip.title = region.name;
-                this.state.environment.tooltip.activation = `Activation: ${(activation * 100).toFixed(0)}%`;
-                this.state.environment.tooltip.description = this.util.getRegionDescription(hoveredRegionKey);
+                this.state.environment.tooltip.activation = activation !== undefined ? `Activation: ${(activation * 100).toFixed(0)}%` : '';
+
+                let desc = '';
+                if (this.util && this.util.getRegionDescription) {
+                    desc = this.util.getRegionDescription(hoveredRegionKey);
+                }
+                if (!desc) {
+                    desc = region.description || '';
+                }
+                this.state.environment.tooltip.description = desc;
+
                 this.state.environment.tooltip.x = x;
                 this.state.environment.tooltip.y = y;
             } else {
@@ -76,7 +89,9 @@
 
             ctx.font = '14px "Helvetica Neue", Arial, sans-serif';
             ctx.fillStyle = '#B0B0B0';
-            ctx.fillText(activation, x + 15 + padding, y + 15 + padding + 32);
+            if (activation) {
+                ctx.fillText(activation, x + 15 + padding, y + 15 + padding + 32);
+            }
 
             ctx.fillStyle = '#E0E0E0';
             if (this.util && this.util.wrapText) {
@@ -101,7 +116,11 @@
 
             for (const key in brainRegions) {
                 const region = brainRegions[key];
-                const activation = this.state.environment.regions[key].activation;
+                let activation = 0;
+
+                if (this.state.environment.regions && this.state.environment.regions[key]) {
+                    activation = this.state.environment.regions[key].activation;
+                }
 
                 if (activation > 0.1 && region.path) {
                     ctx.save();
