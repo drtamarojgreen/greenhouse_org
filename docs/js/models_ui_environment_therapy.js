@@ -94,7 +94,7 @@
             ctx.beginPath();
             ctx.arc(person1.x, person1.y - 5, 5, 0, Math.PI * 2); // Head
             ctx.moveTo(person1.x, person1.y);
-            ctx.lineTo(person1.x, person1.y + 15); // Body
+            ctx.lineTo(pecrson1.x, person1.y + 15); // Body
             ctx.stroke();
 
             // Person 2
@@ -240,18 +240,14 @@
             });
 
             // Delegate to Hovers module
-            if (window.GreenhouseModelsUIEnvironmentHovers) {
-                if (hoveredRegion) {
-                    window.GreenhouseModelsUIEnvironmentHovers.setHoverState({
-                        active: true,
-                        x: mouseX,
-                        y: mouseY,
-                        content: hoveredRegion.description,
-                        title: hoveredRegion.name
-                    });
-                } else {
-                    window.GreenhouseModelsUIEnvironmentHovers.setHoverState({ active: false });
-                }
+            if (window.GreenhouseModelsUIEnvironmentHovers && hoveredRegion) {
+                window.GreenhouseModelsUIEnvironmentHovers.setHoverState({
+                    active: true,
+                    x: mouseX,
+                    y: mouseY,
+                    content: hoveredRegion.description,
+                    title: hoveredRegion.name
+                });
             }
         },
 
@@ -287,9 +283,7 @@
             }
         },
 
-        drawTooltip(ctx) {
-            // Delegated to GreenhouseModelsUIEnvironmentHovers
-        }
+
     };
 
     window.GreenhouseModelsUIEnvironmentTherapy = GreenhouseModelsUIEnvironmentTherapy;

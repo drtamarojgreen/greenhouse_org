@@ -63,6 +63,21 @@
             }
         },
 
+        setHoverState(params) {
+            if (!this.state) return;
+
+            if (params.active) {
+                this.state.environment.tooltip.visible = true;
+                this.state.environment.tooltip.title = params.title || '';
+                this.state.environment.tooltip.description = params.content || '';
+                this.state.environment.tooltip.activation = params.activation || ''; // Optional
+                this.state.environment.tooltip.x = params.x;
+                this.state.environment.tooltip.y = params.y;
+            } else {
+                this.state.environment.tooltip.visible = false;
+            }
+        },
+
         drawTooltip(ctx) {
             if (!this.state || !this.state.environment.tooltip.visible) return;
 
