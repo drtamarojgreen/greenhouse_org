@@ -28,20 +28,32 @@
         },
 
         draw(ctx, width, height) {
-            this._drawEnvironmentBackground(ctx, width, height);
-            this._drawGrid(ctx, width, height);
-            this._drawTree(ctx, width, height); // Draw tree FIRST (behind everything)
-            this._drawSociety(ctx, width, height);
-            this._drawGenomes(ctx, width, height);
-            this._drawCommunity(ctx, width, height);
+            this._drawEnvironmentBackground(ctx, width, height); // Background fills screen
+
+            // Apply shared transform for all logical elements
+            const scale = Math.min(width / 1536, height / 1024) * 0.8;
+            const offsetX = (width - (1536 * scale)) / 2;
+            const offsetY = (height - (1024 * scale)) / 2;
+
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+
+            this._drawGrid(ctx);
+            this._drawTree(ctx); // Draw tree FIRST (behind everything)
+            this._drawSociety(ctx);
+            this._drawGenomes(ctx);
+            this._drawCommunity(ctx);
 
             if (this._brainPath) {
-                this._drawBrainPath(ctx, width, height);
+                this._drawBrainPath(ctx);
             } else {
                 this._loadBrainPath(() => {
-                    this._drawBrainPath(ctx, width, height);
+                    this._drawBrainPath(ctx);
                 });
             }
+
+            ctx.restore();
         },
 
         getBrainRegions() {
@@ -74,12 +86,14 @@
             ctx.fillRect(0, 0, width, height);
         },
 
-        _drawGrid(ctx, width, height) {
+        _drawGrid(ctx) {
             ctx.save();
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)'; // Very light grid lines
             ctx.lineWidth = 1;
 
             const gridSize = 100; // Bigger grid boxes
+            const width = 1536;
+            const height = 1024;
 
             // Draw vertical lines
             for (let x = 0; x <= width; x += gridSize) {
@@ -100,16 +114,16 @@
             ctx.restore();
         },
 
-        _drawTree(ctx, width, height) {
+        _drawTree(ctx) {
             ctx.save();
             ctx.fillStyle = '#2e6b2e'; // Dark green for the tree
             ctx.strokeStyle = '#2e6b2e';
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
 
-            const startX = width / 2;
-            const startY = height;
-            const trunkHeight = height * 0.3;
+            const startX = 768; // Center of 1536
+            const startY = 1024; // Bottom of 1024
+            const trunkHeight = 300; // Fixed height
             const trunkWidth = 25; // A slightly thicker trunk
 
             // Draw the main trunk of the tree
@@ -166,13 +180,15 @@
             ctx.restore();
         },
 
-        _drawSociety(ctx, width, height) {
+        _drawSociety(ctx) {
             ctx.save();
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
             ctx.lineWidth = 1;
             const time = Date.now() / 1000;
             const patternSpeed = 5;
             const offset = (time * patternSpeed) % 40;
+            const width = 1536;
+            const height = 1024;
 
             for (let i = -offset; i < width; i += 20) {
                 ctx.beginPath();
@@ -183,13 +199,15 @@
             ctx.restore();
         },
 
-        _drawGenomes(ctx, width, height) {
+        _drawGenomes(ctx) {
             const helixHeight = 35;
             const genetics = this.state.environment.genetics;
             const time = Date.now() / 1000;
             const bases = ['A', 'U', 'C', 'G', 'C', 'G', 'A', 'U']; // Added DNA bases array
             const numHelixes = 5;
-            const helixSpacing = width / (numHelixes + 1); // Dynamic spacing
+            const width = 1536;
+            const height = 1024;
+            // const helixSpacing = width / (numHelixes + 1); // Dynamic spacing (unused)
 
             for (let i = 0; i < numHelixes; i++) {
                 ctx.save();
@@ -252,7 +270,7 @@
             }
         },
 
-        _drawCommunity(ctx, width, height) {
+        _drawCommunity(ctx) {
             const support = this.state.environment.support;
             const stableColor = 'rgba(255, 255, 255, 0.9)';
             const unstableColor = 'rgba(255, 0, 0, 0.7)';
@@ -262,11 +280,13 @@
             ctx.strokeStyle = color;
             ctx.lineWidth = 1 + support * 2;
 
-            const radius = Math.min(width, height) * 0.35; // a bit smaller to fit labels
+            const width = 1536;
+            const height = 1024;
+            const radius = 480; // Fixed radius
             const nodes = 8;
             const distortion = (1 - support) * 10;
-            const centerX = width / 2;
-            const centerY = height / 2;
+            const centerX = 768; // Fixed center
+            const centerY = 512; // Fixed center
 
             const wellnessDimensions = [
                 { name: 'Emotional', icon: 'M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1.5 6h3a1.5 1.5 0 010 3h-3a1.5 1.5 0 010-3zm1.5 10a5.5 5.5 0 110-11 5.5 5.5 0 010 11z' },
@@ -375,16 +395,8 @@
             }
         },
 
-        _drawBrainPath(ctx, width, height) {
-            const svgWidth = 1536;
-            const svgHeight = 1024;
-            const scale = Math.min(width / svgWidth, height / svgHeight) * 0.8;
-            const offsetX = (width - (svgWidth * scale)) / 2;
-            const offsetY = (height - (svgHeight * scale)) / 2;
-
+        _drawBrainPath(ctx) {
             ctx.save();
-            ctx.translate(offsetX, offsetY);
-            ctx.scale(scale, scale);
 
             // NEW: Subtle, professional shadow
             ctx.shadowColor = 'rgba(0, 0, 0, 0.25)'; // Reduced from 0.7
@@ -396,7 +408,7 @@
             ctx.fillStyle = 'rgba(128, 128, 128, 0.3)'; // Grey color
             ctx.fill(this._brainPath);
             ctx.strokeStyle = 'rgba(80, 80, 80, 0.6)'; // Grey stroke
-            ctx.lineWidth = 6 / scale; // Keep stroke width consistent
+            ctx.lineWidth = 6; // Keep stroke width consistent (scale is handled by parent)
             ctx.stroke(this._brainPath);
             ctx.restore();
         }

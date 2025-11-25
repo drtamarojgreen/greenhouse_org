@@ -4,7 +4,14 @@
     const GreenhouseModelsUIEnvironmentTherapy = {
         state: null,
         util: null,
-        regions: {},
+        regions: {
+            cbt: { path: null, name: 'Cognitive Behavioral Therapy (CBT)', description: 'Focuses on identifying and changing negative thought patterns.', x: 936, y: 850, radius: 25 },
+            dbt: { path: null, name: 'Dialectical Behavior Therapy (DBT)', description: 'Teaches skills to manage emotions and improve relationships.', x: 1016, y: 750, radius: 25 },
+            psychodynamic: { path: null, name: 'Psychodynamic Therapy', description: 'Explores unconscious influences on behavior.', x: 916, y: 680, radius: 25 },
+            mode_deactivation: { path: null, name: 'Mode Deactivation Therapy', description: 'Treats complex behavioral problems in adolescents.', x: 1000, y: 600, radius: 25 },
+            schema: { path: null, name: 'Schema Therapy', description: 'Targeting deep-seated patterns or themes.', x: 950, y: 550, radius: 25 },
+            act: { path: null, name: 'Acceptance and Commitment Therapy', description: 'Encourages accepting thoughts and feelings.', x: 1050, y: 650, radius: 25 }
+        },
 
         init(state, util) {
             this.state = state;
@@ -34,67 +41,30 @@
             ctx.textAlign = 'center';
             ctx.fillText('Therapy', centerX, centerY + 55);
 
-            // Define therapies
-            const therapies = [
-                { id: 'cbt', label: 'CBT', name: 'Cognitive Behavioral Therapy' },
-                { id: 'dbt', label: 'DBT', name: 'Dialectical Behavior Therapy' },
-                { id: 'psychodynamic', label: 'PDT', name: 'Psychodynamic Therapy' },
-                { id: 'mdt', label: 'MDT', name: 'Mode Deactivation Therapy' },
-                { id: 'schema', label: 'ST', name: 'Schema Therapy' },
-                { id: 'act', label: 'ACT', name: 'Acceptance and Commitment Therapy' }
-            ];
-
-            const radius = 35;
-
-            therapies.forEach((therapy, index) => {
-                const angle = (index / therapies.length) * Math.PI * 2 - Math.PI / 2;
-                const x = centerX + Math.cos(angle) * radius;
-                const y = centerY + Math.sin(angle) * radius;
-
-                this._drawTherapyNode(ctx, x, y, therapy);
-            });
+            for (const key in this.regions) {
+                const region = this.regions[key];
+                this._drawTherapyNode(ctx, region);
+            }
 
             ctx.restore();
         },
 
-        _drawTherapyNode(ctx, x, y, therapy) {
-            const size = 14;
+        _drawTherapyNode(ctx, region) {
+            const { x, y, radius } = region;
 
+            // Create path for hit detection
             const path = new Path2D();
-            path.arc(x, y, size, 0, Math.PI * 2);
+            path.arc(x, y, radius, 0, Math.PI * 2);
+            region.path = path;
 
-            // Store region
-            this.regions[therapy.id] = {
-                path: path,
-                name: therapy.name,
-                color: 'rgba(150, 220, 150, 0.9)',
-                description: this._getDescription(therapy.id)
-            };
+            ctx.save();
 
+            // Draw background circle
             ctx.fillStyle = 'rgba(150, 220, 150, 0.9)';
+            ctx.strokeStyle = 'rgba(0, 100, 0, 1.0)';
+            ctx.lineWidth = 2;
             ctx.fill(path);
-            ctx.strokeStyle = 'rgba(0, 100, 0, 0.8)';
-            ctx.lineWidth = 1.5;
-            ctx.stroke(path);
-
-            // Label inside node
-            ctx.fillStyle = 'rgba(0, 50, 0, 0.9)';
-            ctx.font = 'bold 9px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(therapy.label, x, y);
-        },
-
-        _getDescription(id) {
-            const descriptions = {
-                'cbt': 'Cognitive Behavioral Therapy: A psycho-social intervention that aims to improve mental health. CBT focuses on challenging and changing unhelpful cognitive distortions and behaviors, improving emotional regulation, and the development of personal coping strategies that target solving current problems.',
-                'dbt': 'Dialectical Behavior Therapy: A type of cognitive-behavioral therapy. Its main goals are to teach people how to live in the moment, develop healthy ways to cope with stress, regulate their emotions, and improve their relationships with others.',
-                'psychodynamic': 'Psychodynamic Therapy: A form of depth psychology, the primary focus of which is to reveal the unconscious content of a client\'s psyche in an effort to alleviate psychic tension.',
-                'mdt': 'Mode Deactivation Therapy: A theoretical and applied treatment methodology derived from cognitive behavioral therapy, incorporating elements of Acceptance and Commitment Therapy and Dialectical Behavior Therapy.',
-                'schema': 'Schema Therapy: An integrative approach to treatment that combines the best aspects of cognitive-behavioral, experiential, interpersonal, and psychoanalytic therapies into one unified model.',
-                'act': 'Acceptance and Commitment Therapy: A form of counseling and a branch of clinical behavior analysis. It is an empirically-based psychological intervention that uses acceptance and mindfulness strategies mixed in different ways with commitment and behavior-change strategies.'
-            };
-            return descriptions[id] || '';
+            ctx.restore();
         },
 
         handleMouseMove(event, canvas, context) {
