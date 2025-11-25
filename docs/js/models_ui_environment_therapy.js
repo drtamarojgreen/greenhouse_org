@@ -94,7 +94,7 @@
             ctx.beginPath();
             ctx.arc(person1.x, person1.y - 5, 5, 0, Math.PI * 2); // Head
             ctx.moveTo(person1.x, person1.y);
-            ctx.lineTo(pecrson1.x, person1.y + 15); // Body
+            ctx.lineTo(person1.x, person1.y + 15); // Body
             ctx.stroke();
 
             // Person 2
@@ -283,7 +283,9 @@
             }
         },
 
-
+        drawTooltip(ctx) {
+            // Delegated to GreenhouseModelsUIEnvironmentHovers
+        }
     };
 
     window.GreenhouseModelsUIEnvironmentTherapy = GreenhouseModelsUIEnvironmentTherapy;
