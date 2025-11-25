@@ -64,6 +64,37 @@
             ctx.strokeStyle = 'rgba(0, 100, 0, 1.0)';
             ctx.lineWidth = 2;
             ctx.fill(path);
+            ctx.stroke(path);
+
+            // Draw "Two Figures" Icon
+            // Scale the icon drawing to fit within the radius
+            const iconScale = radius / 20; // Base size was approx 20px radius equivalent
+
+            ctx.translate(x, y);
+            ctx.scale(iconScale, iconScale);
+
+            // Two stylized figures in conversation
+            // Centered at (0,0) after translate
+            const person1 = { x: -10, y: 0 };
+            const person2 = { x: 10, y: 0 };
+
+            ctx.strokeStyle = 'rgba(0, 50, 0, 1.0)'; // Darker green for the figures
+            ctx.lineWidth = 2 / iconScale; // Keep line width consistent visually
+
+            // Person 1
+            ctx.beginPath();
+            ctx.arc(person1.x, person1.y - 5, 5, 0, Math.PI * 2); // Head
+            ctx.moveTo(person1.x, person1.y);
+            ctx.lineTo(person1.x, person1.y + 15); // Body
+            ctx.stroke();
+
+            // Person 2
+            ctx.beginPath();
+            ctx.arc(person2.x, person2.y - 5, 5, 0, Math.PI * 2); // Head
+            ctx.moveTo(person2.x, person2.y);
+            ctx.lineTo(person2.x, person2.y + 15); // Body
+            ctx.stroke();
+
             ctx.restore();
         },
 

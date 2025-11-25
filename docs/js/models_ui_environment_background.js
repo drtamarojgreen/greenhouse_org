@@ -226,7 +226,7 @@
                 const activation = (genetics - 0.5) * 2;
                 const color = activation > 0 ? `rgba(255, 255, 180, ${0.9 + activation * 0.1})` : `rgba(210, 210, 255, 0.9)`;
 
-                ctx.globalAlpha = 0.85 + Math.abs(activation) * 0.15;
+                ctx.globalAlpha = 0.9 + Math.abs(activation) * 0.1; // More opaque
                 ctx.fillStyle = color;
 
                 // Draw the helix structure
@@ -235,7 +235,7 @@
                 ctx.bezierCurveTo(35, -12, -35, 12, 12, 35);
                 ctx.moveTo(12, -35);
                 ctx.bezierCurveTo(-35, -12, 35, 12, -12, 35);
-                ctx.lineWidth = 5; // Thicker lines
+                ctx.lineWidth = 8; // Thicker lines (was 5)
                 ctx.strokeStyle = ctx.fillStyle;
                 ctx.stroke();
 
@@ -318,7 +318,7 @@
 
             // Draw labels and icons
             ctx.fillStyle = color;
-            ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+            ctx.font = 'bold 16px "Helvetica Neue", Arial, sans-serif';
             for (let i = 0; i < nodes; i++) {
                 const vertex = vertices[i];
                 const dimension = wellnessDimensions[i];
