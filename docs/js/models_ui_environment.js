@@ -337,6 +337,26 @@
         },
 
         _handleMouseMove(event) {
+            // OPTIMIZATION: Calculate common values ONCE and share with all handlers
+            const canvas = this.canvases.environment;
+            const context = this.contexts.environment;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 0.8;
+            const offsetX = (canvas.width - (1536 * scale)) / 2;
+            const offsetY = (canvas.height - (1024 * scale)) / 2;
+            const logicalX = (mouseX - offsetX) / scale;
+            const logicalY = (mouseY - offsetY) / scale;
+
+            // Create shared hit test context with pre-calculated coordinates
+            const hitContext = {
+                mouseX, mouseY, logicalX, logicalY,
+                canvas, context, scale, offsetX, offsetY
+            };
+
+            // Pass pre-calculated values to all handlers (eliminates redundant calculations)
             if (window.GreenhouseModelsUIEnvironmentHovers) {
                 // Get brain regions from background module
                 let brainRegions = {};
@@ -344,26 +364,13 @@
                     brainRegions = window.GreenhouseModelsUIEnvironmentBackground.getBrainRegions();
                 }
 
-                window.GreenhouseModelsUIEnvironmentHovers.handleMouseMove(
-                    event,
-                    this.canvases.environment,
-                    this.contexts.environment,
-                    brainRegions
-                );
+                window.GreenhouseModelsUIEnvironmentHovers.handleMouseMove(hitContext, brainRegions);
             }
             if (window.GreenhouseModelsUIEnvironmentMedication) {
-                window.GreenhouseModelsUIEnvironmentMedication.handleMouseMove(
-                    event,
-                    this.canvases.environment,
-                    this.contexts.environment
-                );
+                window.GreenhouseModelsUIEnvironmentMedication.handleMouseMove(hitContext);
             }
             if (window.GreenhouseModelsUIEnvironmentTherapy) {
-                window.GreenhouseModelsUIEnvironmentTherapy.handleMouseMove(
-                    event,
-                    this.canvases.environment,
-                    this.contexts.environment
-                );
+                window.GreenhouseModelsUIEnvironmentTherapy.handleMouseMove(hitContext);
             }
         },
 

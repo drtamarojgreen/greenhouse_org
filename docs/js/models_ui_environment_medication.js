@@ -199,22 +199,35 @@
             ctx.restore();
         },
 
-        handleMouseMove(event, canvas, ctx) {
+        handleMouseMove(eventOrContext, canvas, ctx) {
             if (!this.state || !this.regions) return;
 
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = event.clientX - rect.left;
-            const mouseY = event.clientY - rect.top;
+            // Support both old signature and new optimized signature
+            let mouseX, mouseY, logicalX, logicalY;
 
-            // Shared transform logic to map mouse to logical coordinates
-            const width = canvas.width;
-            const height = canvas.height;
-            const scale = Math.min(width / 1536, height / 1024) * 0.8;
-            const offsetX = (width - (1536 * scale)) / 2;
-            const offsetY = (height - (1024 * scale)) / 2;
+            if (eventOrContext && eventOrContext.logicalX !== undefined) {
+                // New optimized signature: pre-calculated coordinates passed in
+                mouseX = eventOrContext.mouseX;
+                mouseY = eventOrContext.mouseY;
+                logicalX = eventOrContext.logicalX;
+                logicalY = eventOrContext.logicalY;
+            } else {
+                // Old signature: calculate coordinates here (backward compatibility)
+                const event = eventOrContext;
+                const rect = canvas.getBoundingClientRect();
+                mouseX = event.clientX - rect.left;
+                mouseY = event.clientY - rect.top;
 
-            const logicalX = (mouseX - offsetX) / scale;
-            const logicalY = (mouseY - offsetY) / scale;
+                // Shared transform logic to map mouse to logical coordinates
+                const width = canvas.width;
+                const height = canvas.height;
+                const scale = Math.min(width / 1536, height / 1024) * 0.8;
+                const offsetX = (width - (1536 * scale)) / 2;
+                const offsetY = (height - (1024 * scale)) / 2;
+
+                logicalX = (mouseX - offsetX) / scale;
+                logicalY = (mouseY - offsetY) / scale;
+            }
 
             Object.values(this.regions).forEach(region => {
                 // Simple bounding box check

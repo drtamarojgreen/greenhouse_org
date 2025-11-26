@@ -10,25 +10,44 @@
             this.util = util;
         },
 
-        handleMouseMove(event, canvas, context, regions) {
+        handleMouseMove(eventOrContext, canvasOrRegions, context, regions) {
             if (!this.state || !this.util) return;
 
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+            // Support both old signature and new optimized signature
+            let x, y, transformedX, transformedY, canvas, ctx;
+
+            if (eventOrContext && eventOrContext.logicalX !== undefined) {
+                // New optimized signature: pre-calculated coordinates passed in
+                x = eventOrContext.mouseX;
+                y = eventOrContext.mouseY;
+                transformedX = eventOrContext.logicalX;
+                transformedY = eventOrContext.logicalY;
+                canvas = eventOrContext.canvas;
+                ctx = eventOrContext.context;
+                regions = canvasOrRegions; // regions is second parameter in new signature
+            } else {
+                // Old signature: calculate coordinates here (backward compatibility)
+                const event = eventOrContext;
+                canvas = canvasOrRegions;
+                ctx = context;
+
+                const rect = canvas.getBoundingClientRect();
+                x = event.clientX - rect.left;
+                y = event.clientY - rect.top;
+
+                // Calculate coordinate transformation ONCE before the loop
+                const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 0.8;
+                const offsetX = (canvas.width - (1536 * scale)) / 2;
+                const offsetY = (canvas.height - (1024 * scale)) / 2;
+                transformedX = (x - offsetX) / scale;
+                transformedY = (y - offsetY) / scale;
+            }
 
             let hoveredRegionKey = null;
             for (const key in regions) {
                 const region = regions[key];
 
-                const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 0.8;
-                const offsetX = (canvas.width - (1536 * scale)) / 2;
-                const offsetY = (canvas.height - (1024 * scale)) / 2;
-
-                const transformedX = (x - offsetX) / scale;
-                const transformedY = (y - offsetY) / scale;
-
-                if (region.path && context.isPointInPath(region.path, transformedX, transformedY)) {
+                if (region.path && ctx.isPointInPath(region.path, transformedX, transformedY)) {
                     hoveredRegionKey = key;
                     break;
                 }

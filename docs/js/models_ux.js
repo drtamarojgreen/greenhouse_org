@@ -584,16 +584,41 @@
 
             const canvas = GreenhouseModelsUI.canvases.environment;
             if (canvas) {
-                canvas.addEventListener('mousemove', e => {
-                    GreenhouseModelsUI._handleMouseMove(e);
-                });
+                // OPTIMIZATION: Throttle mousemove events using requestAnimationFrame
+                // This reduces processing from 100-300 Hz to 60 Hz (matching RAF loop)
+                let mouseMoveScheduled = false;
+                let lastMouseEvent = null;
+
+                const throttledMouseMove = (event) => {
+                    lastMouseEvent = event;
+                    if (!mouseMoveScheduled) {
+                        mouseMoveScheduled = true;
+                        requestAnimationFrame(() => {
+                            if (lastMouseEvent) {
+                                GreenhouseModelsUI._handleMouseMove(lastMouseEvent);
+                                lastMouseEvent = null;
+                            }
+                            mouseMoveScheduled = false;
+                        });
+                    }
+                };
+
+                canvas.addEventListener('mousemove', throttledMouseMove);
                 canvas.addEventListener('click', e => {
                     if (GreenhouseModelsUI._handleClick) {
                         GreenhouseModelsUI._handleClick(e);
                     }
                 });
             }
-            window.addEventListener('resize', () => GreenhouseModelsUI.resizeAllCanvases());
+
+            // OPTIMIZATION: Debounce resize events to prevent excessive redraws
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    GreenhouseModelsUI.resizeAllCanvases();
+                }, 100); // Debounce 100ms
+            });
         },
 
         addSimulationListeners() {
@@ -621,7 +646,7 @@
                 GreenhouseModelsUI.updateMetrics();
                 GreenhouseModelsUI.drawSynapticView();
             });
-            window.addEventListener('resize', () => GreenhouseModelsUI.resizeAllCanvases());
+            // REMOVED: Duplicate resize listener (already added in addEnvironmentListeners)
         },
 
         simulationLoop(timestamp) {
