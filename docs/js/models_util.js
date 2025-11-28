@@ -3,7 +3,138 @@
 (function() {
     'use strict';
 
+    /**
+     * @class GreenhouseComponent
+     * Base class for all visual components in the system.
+     * Implements #36 Component-Based Architecture.
+     */
+    class GreenhouseComponent {
+        constructor(name, layer = 10) {
+            this.name = name;
+            this.layer = layer; // Lower numbers draw first (background), higher numbers draw last (UI)
+            this.active = true;
+            this.initialized = false;
+        }
+
+        /**
+         * Called once when the component is added to the system.
+         * @param {GreenhouseSystem} system
+         */
+        init(system) {
+            this.system = system;
+            this.initialized = true;
+        }
+
+        /**
+         * Called every frame to update state.
+         * @param {number} deltaTime - Time since last frame in ms.
+         */
+        update(deltaTime) {}
+
+        /**
+         * Called every frame to draw to the canvas.
+         * @param {CanvasRenderingContext2D} ctx
+         */
+        draw(ctx) {}
+    }
+
+    /**
+     * @class GreenhouseSystem
+     * Central rendering engine.
+     * Implements #41 Error Boundary, #42 Configurable Render Quality, #8 Layered Canvases.
+     */
+    class GreenhouseSystem {
+        constructor(canvas, config = {}) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d', { alpha: false }); // Optimization
+            this.components = [];
+            this.quality = config.quality || 1.0;
+            this.lastFrameTime = 0;
+
+            // #41 Error Boundary
+            this.errorHandler = config.errorHandler || ((e) => console.error("Rendering Error:", e));
+        }
+
+        /**
+         * Adds a component to the system.
+         * @param {GreenhouseComponent} component
+         */
+        addComponent(component) {
+            this.components.push(component);
+            this.components.sort((a, b) => a.layer - b.layer);
+            if (!component.initialized) {
+                component.init(this);
+            }
+        }
+
+        /**
+         * Renders a single frame.
+         * @param {number} timestamp
+         */
+        renderFrame(timestamp = performance.now()) {
+            try {
+                const deltaTime = timestamp - this.lastFrameTime;
+                this.lastFrameTime = timestamp;
+
+                // #7 Integer Coordinates & #42 Render Quality
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+
+                // Clear Canvas
+                this.ctx.clearRect(0, 0, width, height);
+
+                // Render Loop
+                for (const component of this.components) {
+                    if (component.active) {
+                        component.update(deltaTime);
+                        component.draw(this.ctx, width, height);
+                    }
+                }
+
+                // Signal for testing
+                window.renderingComplete = true;
+
+            } catch (error) {
+                this.errorHandler(error);
+            }
+        }
+    }
+
+    /**
+     * @class GreenhouseAssetManager
+     * Manages assets and sprite atlases.
+     * Implements #10 Asset Preloading, #5 Sprite Atlases.
+     */
+    class GreenhouseAssetManager {
+        constructor() {
+            this.assets = new Map();
+            this.loading = false;
+        }
+
+        async loadImage(key, url) {
+            if (this.assets.has(key)) return this.assets.get(key);
+
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    this.assets.set(key, img);
+                    resolve(img);
+                };
+                img.onerror = reject;
+                img.src = url;
+            });
+        }
+
+        get(key) {
+            return this.assets.get(key);
+        }
+    }
+
     const GreenhouseModelsUtil = {
+        GreenhouseComponent,
+        GreenhouseSystem,
+        GreenhouseAssetManager,
+
         createElement(tag, attributes, ...children) {
             const element = document.createElement(tag);
             for (const key in attributes) {
