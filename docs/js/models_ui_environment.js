@@ -8,6 +8,7 @@
             const ctx = this.contexts.environment;
             const { width, height } = this.canvases.environment;
             if (!ctx) return;
+            const t = (k) => this.util.t(k);
 
             ctx.clearRect(0, 0, width, height);
 
@@ -120,7 +121,7 @@
             ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
             ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('Therapy', therapyIcon.x, therapyIcon.y + 35);
+            ctx.fillText(this.util.t('label_therapy'), therapyIcon.x, therapyIcon.y + 35);
 
             ctx.restore();
         },
@@ -129,6 +130,7 @@
             const scale = Math.min(width / 1536, height / 1024) * 0.8;
             const offsetX = (width - (1536 * scale)) / 2;
             const offsetY = (height - (1024 * scale)) / 2;
+            const t = (k) => this.util.t(k);
 
             ctx.save();
             ctx.translate(offsetX, offsetY);
@@ -136,11 +138,12 @@
 
             // Helper function to draw text with background
             const drawLabelWithBackground = (text, x, y, fontSize = 16) => {
+                const translatedText = t(text);
                 ctx.font = `${fontSize}px "Helvetica Neue", Arial, sans-serif`;
                 ctx.textAlign = 'center';
 
                 // Measure text for background
-                const metrics = ctx.measureText(text);
+                const metrics = ctx.measureText(translatedText);
                 const padding = 8;
                 const bgWidth = metrics.width + padding * 2;
                 const bgHeight = fontSize + padding;
@@ -156,7 +159,7 @@
 
                 // Draw text
                 ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)';
-                ctx.fillText(text, x, y);
+                ctx.fillText(translatedText, x, y);
             };
 
             const config = window.GreenhouseEnvironmentConfig;
@@ -183,6 +186,7 @@
         },
 
         _drawTitle(ctx, width, height) {
+            const t = (k) => this.util.t(k);
             ctx.save();
 
             // Draw background panel for title
@@ -206,21 +210,22 @@
             ctx.fillStyle = '#357438'; // Brand color
             ctx.textAlign = 'center';
             ctx.font = 'bold 28px "Quicksand", "Helvetica Neue", Arial, sans-serif';
-            ctx.fillText('Mental Health Environment', width / 2, 35);
+            ctx.fillText(t('env_title'), width / 2, 35);
 
             // Simplified subtitle
             ctx.font = '14px "Helvetica Neue", Arial, sans-serif';
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            ctx.fillText('Interactive Model', width / 2, 55);
+            ctx.fillText(t('env_subtitle'), width / 2, 55);
 
             ctx.restore();
         },
 
         _drawLegend(ctx, width, height) {
+            const t = (k) => this.util.t(k);
             const legendItems = [
-                { color: 'rgba(255, 159, 64, 0.8)', text: 'Family' },
-                { color: 'rgba(54, 162, 235, 0.8)', text: 'Society' },
-                { color: 'rgba(75, 192, 192, 0.8)', text: 'Community' }
+                { color: 'rgba(255, 159, 64, 0.8)', text: t('legend_family') },
+                { color: 'rgba(54, 162, 235, 0.8)', text: t('legend_society') },
+                { color: 'rgba(75, 192, 192, 0.8)', text: t('legend_community') }
             ];
 
             ctx.save();
@@ -245,7 +250,7 @@
             ctx.fillStyle = '#357438';
             ctx.font = 'bold 12px "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText('Influences', legendX + 10, legendY + 20);
+            ctx.fillText(t('legend_title'), legendX + 10, legendY + 20);
 
             // Legend items
             ctx.font = '11px "Helvetica Neue", Arial, sans-serif';
@@ -331,7 +336,7 @@
             ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
             ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('Medication', capsule.x + capsule.width / 2, capsule.y + capsule.height + 15);
+            ctx.fillText(this.util.t('label_medication'), capsule.x + capsule.width / 2, capsule.y + capsule.height + 15);
 
             ctx.restore();
         },
@@ -386,4 +391,3 @@
 
     window.GreenhouseModelsUIEnvironment = GreenhouseModelsUIEnvironment;
 })();
-

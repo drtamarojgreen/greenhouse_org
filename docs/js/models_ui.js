@@ -30,24 +30,58 @@
 
         renderConsentScreen(targetElement) {
             targetElement.innerHTML = '';
+            const t = (k) => this.util.t(k);
+
             const container = GreenhouseModelsUtil.createElement('div', { className: 'greenhouse-landing-container' });
             container.innerHTML = `
-                <h1 class="greenhouse-simulation-title">Exploring Neural Plasticity: A CBT & DBT Model</h1>
-                <p>An interactive simulation to help you visualize how therapeutic practices can change the brain.</p>
-                <div class="greenhouse-disclaimer-banner">Please Note: This is an educational simulation, not a medical tool.</div>
+                <div style="position: absolute; top: 10px; right: 10px;">
+                    <button id="lang-toggle-consent" class="greenhouse-btn greenhouse-btn-secondary" style="padding: 5px 10px; font-size: 12px;">
+                        ${t('btn_language')}
+                    </button>
+                </div>
+                <h1 class="greenhouse-simulation-title">${t('consent_title')}</h1>
+                <p>${t('consent_desc')}</p>
+                <div class="greenhouse-disclaimer-banner">${t('disclaimer')}</div>
                 <label class="greenhouse-consent-label">
                     <input type="checkbox" id="consent-checkbox" class="greenhouse-consent-checkbox" data-testid="consent-checkbox">
-                    I acknowledge that this is an educational tool and not a substitute for professional medical advice.
+                    ${t('consent_check')}
                 </label>
-                <button id="start-simulation-btn" class="greenhouse-btn-primary" disabled data-testid="start-simulation-btn">Launch Simulation</button>
+                <button id="start-simulation-btn" class="greenhouse-btn-primary" disabled data-testid="start-simulation-btn">${t('launch_btn')}</button>
             `;
             targetElement.appendChild(container);
+
+            // Re-attach listeners for the new button
+            const langBtn = document.getElementById('lang-toggle-consent');
+            if (langBtn) {
+                langBtn.addEventListener('click', () => {
+                   this.util.toggleLanguage();
+                   this.renderConsentScreen(targetElement);
+                   // We need to re-bind consent listeners because we wiped the HTML
+                   // Note: 'addConsentListeners' in models_ux.js is responsible for binding consent logic.
+                   // Since we are inside UI rendering, we should probably trigger a re-bind event or handle it.
+                   // However, models_ux calls renderConsentScreen once.
+                   // A better approach is to let UX handle re-binding if we re-render.
+                   // Or, we can trigger a custom event.
+                   // Ideally, we should notify UX to re-bind.
+                   // But since I can't easily modify UX to listen to this without complex changes,
+                   // I will assume UX needs to be updated to handle dynamic re-rendering or I handle it here.
+
+                   // Actually, models_ux.js calls addConsentListeners right after renderConsentScreen.
+                   // If I re-render here, those listeners are lost.
+                   // I should trigger the UX to re-bind.
+                   if (window.GreenhouseModelsUX && window.GreenhouseModelsUX.addConsentListeners) {
+                       window.GreenhouseModelsUX.addConsentListeners();
+                   }
+                });
+            }
         },
 
         renderSimulationInterface(targetElement) {
             targetElement.innerHTML = '';
+            const t = (k) => this.util.t(k);
+
             const mainContainer = GreenhouseModelsUtil.createElement('div', { className: 'simulation-main-container' });
-            const topBanner = GreenhouseModelsUtil.createElement('div', { className: 'greenhouse-disclaimer-banner' }, 'For Educational Purposes: This model simulates conceptual brain activity.');
+            const topBanner = GreenhouseModelsUtil.createElement('div', { className: 'greenhouse-disclaimer-banner' }, t('edu_banner'));
 
             const contentArea = GreenhouseModelsUtil.createElement('div', { className: 'simulation-content-area' });
             const leftColumn = GreenhouseModelsUtil.createElement('div', { className: 'simulation-left-column' });
@@ -100,10 +134,19 @@
 
             this.resizeAllCanvases();
             this._drawLoadingState(this.contexts.environment, this.canvases.environment);
+
+            // Re-bind controls since we replaced the DOM
+            if (window.GreenhouseModelsUX && window.GreenhouseModelsUX.bindSimulationControls) {
+                window.GreenhouseModelsUX.bindSimulationControls();
+                window.GreenhouseModelsUX.addEnvironmentListeners();
+            }
+
+            // Re-bind language toggle in general controls (handled in populateControlsPanel)
         },
 
         _drawLoadingState(ctx, canvas) {
             if (!ctx) return;
+            const t = (k) => this.util.t(k);
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
             ctx.fillStyle = this.state.darkMode ? '#1A1A1A' : '#E9E9E9';
@@ -111,7 +154,7 @@
             ctx.fillStyle = this.state.darkMode ? '#FFFFFF' : '#000000';
             ctx.font = '20px "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('Loading Simulation...', width / 2, height / 2);
+            ctx.fillText(t('loading'), width / 2, height / 2);
         },
 
         replaceMainContainer(targetElement, newContainer) {
@@ -123,66 +166,78 @@
         },
 
         populateMetricsPanel(panel, type) {
+            const t = (k) => this.util.t(k);
+            const title = type === 'synaptic' ? t('metrics_title_synaptic') : t('metrics_title_network');
+
             panel.innerHTML = `
-                <h3 class="greenhouse-panel-title">Real-Time Metrics (${type})</h3>
-                <p>Synaptic Weight: <span id="metric-weight-${type}">0.50</span></p>
-                <p>Neurotransmitters Released: <span id="metric-neuro-${type}">0</span></p>
-                <p>Ions Crossed: <span id="metric-ions-${type}">0</span></p>
-                <p>Learning Metric: <span id="metric-learning-${type}">0.0</span></p>
+                <h3 class="greenhouse-panel-title">${title}</h3>
+                <p>${t('metric_weight')}: <span id="metric-weight-${type}">0.50</span></p>
+                <p>${t('metric_neuro')}: <span id="metric-neuro-${type}">0</span></p>
+                <p>${t('metric_ions')}: <span id="metric-ions-${type}">0</span></p>
+                <p>${t('metric_learning')}: <span id="metric-learning-${type}">0.0</span></p>
             `;
         },
 
         populateControlsPanel(container, type) {
+            const t = (k) => this.util.t(k);
             const controlsPanel = GreenhouseModelsUtil.createElement('div', { className: 'greenhouse-controls-panel' });
-            let controlsHtml = `<h3 class="greenhouse-panel-title">Simulation Controls (${type})</h3>`;
+            let title = '';
+            if (type === 'synaptic') title = t('controls_title_synaptic');
+            else if (type === 'network') title = t('controls_title_network');
+            else if (type === 'environment') title = t('controls_title_environment');
+            else if (type === 'general') title = t('controls_title_general');
+
+            let controlsHtml = `<h3 class="greenhouse-panel-title">${title}</h3>`;
 
             if (type === 'synaptic' || type === 'network') {
+                const isRunning = this.state[type].isRunning;
+                const playText = isRunning ? t('btn_pause') : t('btn_play');
+
                 controlsHtml += `
                     <div class="control-group">
-                        <label>Practice Intensity</label>
-                        <input type="range" min="0" max="100" value="50" class="greenhouse-slider" id="intensity-slider-${type}">
+                        <label>${t('label_intensity')}</label>
+                        <input type="range" min="0" max="100" value="${this.state[type].intensity || 50}" class="greenhouse-slider" id="intensity-slider-${type}">
                     </div>
                     <div class="control-group">
-                        <label>Simulation Speed</label>
+                        <label>${t('label_speed')}</label>
                         <select class="greenhouse-select" id="speed-select-${type}">
-                            <option>Slow</option>
-                            <option selected>Normal</option>
-                            <option>Fast</option>
+                            <option>${t('option_slow')}</option>
+                            <option selected>${t('option_normal')}</option>
+                            <option>${t('option_fast')}</option>
                         </select>
                     </div>
                     <div class="button-group">
-                        <button class="greenhouse-btn greenhouse-btn-secondary" id="play-pause-btn-${type}">Play</button>
-                        <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-${type}">Reset Plasticity</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="play-pause-btn-${type}">${playText}</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-${type}">${t('btn_reset_plasticity')}</button>
                     </div>
                 `;
             } else if (type === 'environment') {
                 controlsHtml += `
-                    <h3 class="greenhouse-panel-title">Environment Controls</h3>
                     <div class="control-group">
-                        <label>Environmental Stress</label>
-                        <input type="range" min="0" max="1" step="0.01" value="0.5" class="greenhouse-slider" id="stress-slider">
+                        <label>${t('label_stress')}</label>
+                        <input type="range" min="0" max="1" step="0.01" value="${this.state.environment.stress || 0.5}" class="greenhouse-slider" id="stress-slider">
                     </div>
                     <div class="control-group">
-                        <label>Social Support Level</label>
-                        <input type="range" min="0" max="1" step="0.01" value="0.5" class="greenhouse-slider" id="support-slider">
+                        <label>${t('label_support')}</label>
+                        <input type="range" min="0" max="1" step="0.01" value="${this.state.environment.support || 0.5}" class="greenhouse-slider" id="support-slider">
                     </div>
                     <div class="control-group">
-                        <label>Genetic Factors</label>
+                        <label>${t('label_genetic')}</label>
                         <div class="button-group">
-                            <button class="greenhouse-btn greenhouse-btn-secondary" id="gene-btn-1">Gene A</button>
-                            <button class="greenhouse-btn greenhouse-btn-secondary" id="gene-btn-2">Gene B</button>
+                            <button class="greenhouse-btn greenhouse-btn-secondary" id="gene-btn-1">${t('btn_gene_a')}</button>
+                            <button class="greenhouse-btn greenhouse-btn-secondary" id="gene-btn-2">${t('btn_gene_b')}</button>
                         </div>
                     </div>
                 `;
             } else if (type === 'general') {
                 controlsHtml += `
-                    <h3 class="greenhouse-panel-title">General Controls</h3>
                     <div class="button-group">
-                        <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-general">Reset Simulation</button>
-                        <button class="greenhouse-btn greenhouse-btn-secondary" id="share-btn-general">Share View</button>
-                        <button class="greenhouse-btn greenhouse-btn-secondary" id="download-btn-general">Download Image</button>
-                        <button class="greenhouse-btn greenhouse-btn-secondary" id="dark-mode-toggle">Toggle Dark Mode</button>
-                        <button class="greenhouse-btn greenhouse-btn-secondary" id="fullscreen-btn-general">Full Screen</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="reset-btn-general">${t('btn_reset_sim')}</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="share-btn-general">${t('btn_share')}</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="download-btn-general">${t('btn_download')}</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="dark-mode-toggle">${t('btn_dark_mode')}</button>
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="fullscreen-btn-general">${t('btn_fullscreen')}</button>
+                        <button class="greenhouse-btn greenhouse-btn-primary" id="language-btn-general">${t('btn_language')}</button>
                     </div>
                 `;
             }
@@ -190,18 +245,31 @@
             controlsPanel.innerHTML = controlsHtml;
             container.appendChild(controlsPanel);
 
+            if (type === 'general') {
+                const langBtn = controlsPanel.querySelector('#language-btn-general');
+                if (langBtn) {
+                    langBtn.addEventListener('click', () => {
+                        this.util.toggleLanguage();
+                        // Re-render the entire interface
+                        this.renderSimulationInterface(this.state.targetElement);
+                        // Update metrics to restore values
+                        this.updateMetrics();
+                    });
+                }
+            }
+
             if (type === 'synaptic' || type === 'network') {
                 const instructionsPanel = GreenhouseModelsUtil.createElement('div', { className: 'greenhouse-controls-panel' });
                 instructionsPanel.innerHTML = `
-                    <h3 class="greenhouse-panel-title">How to Use</h3>
-                    <p>Use the controls to see how different parameters affect the strength of neural connections in real-time.</p>
+                    <h3 class="greenhouse-panel-title">${t('how_to_title')}</h3>
+                    <p>${t('how_to_synaptic')}</p>
                 `;
                 container.appendChild(instructionsPanel);
             } else if (type === 'environment') {
                 const instructionsPanel = GreenhouseModelsUtil.createElement('div', { className: 'greenhouse-controls-panel' });
                 instructionsPanel.innerHTML = `
-                    <h3 class="greenhouse-panel-title">How to Use</h3>
-                    <p>Use the sliders to adjust environmental stress and social support. Click the gene buttons to simulate genetic predispositions.</p>
+                    <h3 class="greenhouse-panel-title">${t('how_to_title')}</h3>
+                    <p>${t('how_to_env')}</p>
                 `;
                 container.appendChild(instructionsPanel);
             }
