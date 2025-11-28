@@ -61,8 +61,13 @@
                 }
 
                 this.state.environment.tooltip.visible = true;
-                this.state.environment.tooltip.title = region.name;
-                this.state.environment.tooltip.activation = activation !== undefined ? `Activation: ${(activation * 100).toFixed(0)}%` : '';
+
+                // Translate title (region name)
+                this.state.environment.tooltip.title = this.util.t(region.name);
+
+                // Translate activation label
+                const activationLabel = this.util.t('activation_label');
+                this.state.environment.tooltip.activation = activation !== undefined ? `${activationLabel}: ${(activation * 100).toFixed(0)}%` : '';
 
                 let desc = '';
                 if (this.util && this.util.getRegionDescription) {
@@ -70,7 +75,7 @@
                 }
 
                 // If util returns the default "No information" string, try to use the region's own description
-                if ((!desc || desc === 'No information available for this region.') && region.description) {
+                if ((!desc || desc === this.util.t('no_info')) && region.description) {
                     desc = region.description;
                 }
                 this.state.environment.tooltip.description = desc;

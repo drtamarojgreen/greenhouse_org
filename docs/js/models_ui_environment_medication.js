@@ -98,7 +98,7 @@
             ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
             ctx.font = 'bold 12px "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(region.name, x + width / 2, y + height + 18);
+            ctx.fillText(this.util.t(region.name), x + width / 2, y + height + 18);
 
             ctx.restore();
 
@@ -241,7 +241,7 @@
                             x: mouseX,
                             y: mouseY,
                             content: region.description,
-                            title: region.name
+                            title: this.util.t(region.name)
                         });
                     }
                 }
