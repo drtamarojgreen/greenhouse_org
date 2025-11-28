@@ -119,9 +119,25 @@
                     }
                 } else {
                     ctx.fillStyle = `rgba(0, 123, 255, ${p.opacity})`;
+
+                    // Enhancement #7: Neurotransmitter Shapes
+                    // Render distinct shapes to mimic different molecular structures
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fill();
+                    if (p.shape === 'square') {
+                        // Represents larger peptide chains
+                        ctx.fillRect(p.x - p.radius, p.y - p.radius, p.radius * 2, p.radius * 2);
+                    } else if (p.shape === 'triangle') {
+                        // Represents complex monoamines
+                        ctx.moveTo(p.x, p.y - p.radius);
+                        ctx.lineTo(p.x + p.radius, p.y + p.radius);
+                        ctx.lineTo(p.x - p.radius, p.y + p.radius);
+                        ctx.closePath();
+                        ctx.fill();
+                    } else {
+                        // Default 'circle' represents small molecule neurotransmitters (e.g. Glutamate, GABA)
+                        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
                 }
             });
 
@@ -136,13 +152,20 @@
             if (this.state.synaptic.isRunning) {
                 const newParticles = this.state.synaptic.neurotransmitters / 25;
                 for (let i = 0; i < newParticles; i++) {
+                    // Enhancement #7: Neurotransmitter Shapes
+                    // Randomly assign shapes to represent different neurotransmitter types
+                    // 'circle' = Small molecule (e.g., Glutamate)
+                    // 'square' = Peptide (larger)
+                    // 'triangle' = Monoamine (e.g., Dopamine)
+                    const shapes = ['circle', 'square', 'triangle'];
                     this.state.synaptic.particles.push({
                         x: width / 2 + (Math.random() - 0.5) * terminalWidth,
                         y: releaseZoneY + (Math.random() * 20),
                         vx: (Math.random() - 0.5) * 0.5,
                         vy: 0.8 + Math.random() * 0.5,
                         radius: 2 + Math.random() * 1,
-                        opacity: 0.8 + Math.random() * 0.2
+                        opacity: 0.8 + Math.random() * 0.2,
+                        shape: shapes[Math.floor(Math.random() * shapes.length)]
                     });
                 }
             }
