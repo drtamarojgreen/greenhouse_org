@@ -1,4 +1,4 @@
-window.GreenhouseUtils = (function() {
+window.GreenhouseUtils = (function () {
     /**
      * @description Configuration for shared utilities and application state.
      */
@@ -96,7 +96,7 @@ window.GreenhouseUtils = (function() {
     function waitForElement(selectors, timeout = config.loadTimeout) { // Use config.loadTimeout
         return new Promise((resolve, reject) => {
             const selectorArray = Array.isArray(selectors) ? selectors : [selectors];
-            
+
             // Check if element already exists
             for (const selector of selectorArray) {
                 const element = document.querySelector(selector);
@@ -105,9 +105,9 @@ window.GreenhouseUtils = (function() {
                     return resolve(element);
                 }
             }
-            
+
             console.log(`GreenhouseUtils: Waiting for element with selectors: ${selectorArray.join(', ')}`);
-            
+
             const observer = new MutationObserver(() => {
                 for (const selector of selectorArray) {
                     const element = document.querySelector(selector);
@@ -118,14 +118,14 @@ window.GreenhouseUtils = (function() {
                     }
                 }
             });
-            
+
             // Observe changes to the entire document
             observer.observe(document.body, {
                 childList: true,
                 subtree: true,
                 attributes: false
             });
-            
+
             // Set timeout
             setTimeout(() => {
                 observer.disconnect();
@@ -184,7 +184,7 @@ window.GreenhouseUtils = (function() {
         console.log(`GreenhouseUtils: validateConfiguration - scriptAttributes:`, scriptAttributes);
         console.log(`GreenhouseUtils: validateConfiguration - globalAttributes:`, globalAttributes);
         console.log(`GreenhouseUtils: validateConfiguration - Determined View: ${view}, Target Left: ${appState.targetSelectorLeft}, Target Right: ${appState.targetSelectorRight}`);
-        
+
         console.log(`GreenhouseUtils: Configuration validated - View: ${appState.currentView}, Target Left: ${appState.targetSelectorLeft}, Target Right: ${appState.targetSelectorRight}`);
         return true;
     }
@@ -198,7 +198,8 @@ window.GreenhouseUtils = (function() {
      * @returns {Promise<void>} A promise that resolves when the script has been successfully loaded and executed.
      */
     async function loadScript(scriptName, baseUrl, attributes = {}) {
-        const scriptUrl = `${baseUrl}js/${scriptName}`;
+        const timestamp = new Date().getTime();
+        const scriptUrl = `${baseUrl}js/${scriptName}?t=${timestamp}`;
         if (appState.loadedScripts.has(scriptName)) {
             console.log(`GreenhouseUtils: Script ${scriptName} already loaded, skipping`);
             return Promise.resolve();
@@ -280,7 +281,7 @@ window.GreenhouseUtils = (function() {
      */
     async function retryOperation(operation, operationName, maxAttempts = config.retries.maxAttempts) {
         let lastError;
-        
+
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 console.log(`GreenhouseUtils: ${operationName} - Attempt ${attempt}/${maxAttempts}`);
@@ -288,7 +289,7 @@ window.GreenhouseUtils = (function() {
             } catch (error) {
                 lastError = error;
                 console.warn(`GreenhouseUtils: ${operationName} failed on attempt ${attempt}:`, error.message);
-                
+
                 if (attempt < maxAttempts) {
                     const delay = config.retries.delay * Math.pow(2, attempt - 1);
                     console.log(`GreenhouseUtils: Retrying ${operationName} in ${delay}ms...`);
@@ -296,7 +297,7 @@ window.GreenhouseUtils = (function() {
                 }
             }
         }
-        
+
         throw new Error(`${operationName} failed after ${maxAttempts} attempts. Last error: ${lastError.message}`);
     }
 

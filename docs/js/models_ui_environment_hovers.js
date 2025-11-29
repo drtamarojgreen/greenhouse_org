@@ -126,20 +126,22 @@
 
             ctx.fillStyle = '#FFFFFF';
             ctx.font = 'bold 16px "Helvetica Neue", Arial, sans-serif';
-            ctx.fillText(title, x + 15 + padding, y + 15 + padding + 8);
+            ctx.textAlign = 'center';
+            const centerX = x + 15 + width / 2;
+            ctx.fillText(title, centerX, y + 15 + padding + 8);
 
             ctx.font = '14px "Helvetica Neue", Arial, sans-serif';
             ctx.fillStyle = '#B0B0B0';
             if (activation) {
-                ctx.fillText(activation, x + 15 + padding, y + 15 + padding + 32);
+                ctx.fillText(activation, centerX, y + 15 + padding + 32);
             }
 
             ctx.fillStyle = '#E0E0E0';
             if (this.util && this.util.wrapText) {
-                this.util.wrapText(ctx, description, x + 15 + padding, y + 15 + padding + 56, 196, 18);
+                this.util.wrapText(ctx, description, centerX, y + 15 + padding + 56, 196, 18);
             } else {
                 // Fallback if util.wrapText is not available
-                ctx.fillText(description, x + 15 + padding, y + 15 + padding + 56);
+                ctx.fillText(description, centerX, y + 15 + padding + 56);
             }
             ctx.restore();
         },

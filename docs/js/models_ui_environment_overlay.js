@@ -17,59 +17,59 @@
         library: {
             dna_structure: {
                 id: 'dna_structure',
-                metaphor: 'Spaghetti Noodle',
-                concept: 'DNA Structure',
-                text: 'DNA is like a super long, tightly packed spaghetti noodle wrapping around histone "spools".',
+                metaphor: 'dna_structure_metaphor',
+                concept: 'dna_structure_concept',
+                text: 'dna_structure_text'
             },
             histones: {
                 id: 'histones',
-                metaphor: 'Spools',
-                concept: 'Histones',
-                text: 'Histones are spools that DNA wraps around. They determine if genes are accessible.',
+                metaphor: 'histones_metaphor',
+                concept: 'histones_concept',
+                text: 'histones_text'
             },
             acetylation: {
                 id: 'acetylation',
-                metaphor: 'Opening the Curtains',
-                concept: 'Acetylation',
-                text: 'Acetylation relaxes the chromatin, allowing genes to be read.',
+                metaphor: 'acetylation_metaphor',
+                concept: 'acetylation_concept',
+                text: 'acetylation_text'
             },
             methylation: {
                 id: 'methylation',
-                metaphor: 'Closing the Curtains',
-                concept: 'Methylation',
-                text: 'Methylation tightens the chromatin, silencing genes.',
+                metaphor: 'methylation_metaphor',
+                concept: 'methylation_concept',
+                text: 'methylation_text'
             },
             cityscape: {
                 id: 'cityscape',
-                metaphor: 'Bustling City',
-                concept: 'The Brain',
-                text: 'Your brain is a bustling city with billions of neuron workers.',
+                metaphor: 'cityscape_metaphor',
+                concept: 'cityscape_concept',
+                text: 'cityscape_text'
             },
             pfc: {
                 id: 'pfc',
-                metaphor: 'Chief Decision-Maker',
-                concept: 'Prefrontal Cortex',
-                text: 'The CEO of the brain city, handling big decisions and planning.',
+                metaphor: 'pfc_metaphor',
+                concept: 'pfc_concept',
+                text: 'pfc_text',
                 targetRegion: 'pfc'
             },
             amygdala: {
                 id: 'amygdala',
-                metaphor: 'Alarm System',
-                concept: 'Amygdala',
-                text: 'The city\'s alarm system, constantly scanning for danger.',
+                metaphor: 'amygdala_metaphor',
+                concept: 'amygdala_concept',
+                text: 'amygdala_text',
                 targetRegion: 'amygdala'
             },
             stress: {
                 id: 'stress',
-                metaphor: 'The Storm',
-                concept: 'Chronic Stress',
-                text: 'Stress is like a storm that weathers the city infrastructure.',
+                metaphor: 'stress_metaphor',
+                concept: 'stress_concept',
+                text: 'stress_text'
             },
             therapy: {
                 id: 'therapy',
-                metaphor: 'Rewiring',
-                concept: 'Psychotherapy',
-                text: 'Therapy helps rewire the brain\'s emotional circuits.',
+                metaphor: 'therapy_metaphor',
+                concept: 'therapy_concept',
+                text: 'therapy_text'
             }
         },
 
@@ -193,7 +193,7 @@
                 ctx.fill();
                 ctx.fillStyle = '#FFF';
                 ctx.font = 'bold 12px Arial';
-                ctx.fillText('CEO', x + 8, y + 25);
+                ctx.fillText(window.GreenhouseModelsUtil.t('label_ceo'), x + 8, y + 25);
             },
             amygdala: (ctx, x, y) => {
                 // Alarm bell
@@ -216,7 +216,8 @@
             this.lastSwitchTime = Date.now();
             this.currentIndex = 0;
             this._cycleOverlay();
-            // this.cycleTimer = setInterval(() => { this._updateCycle(); }, 1000); // Disabled per user request to prevent unnecessary redraws
+            this._cycleOverlay();
+            this.cycleTimer = setInterval(() => { this._updateCycle(); }, 1000);
         },
 
         destroy() {
@@ -289,12 +290,12 @@
 
         _getPositionForTarget(target, id) {
             const positions = {
-                dna_structure: { x: 100, y: 150 },
-                histones: { x: 200, y: 150 },
-                acetylation: { x: 300, y: 150 },
-                methylation: { x: 400, y: 150 },
-                cityscape: { x: 600, y: 150 },
-                stress: { x: 700, y: 150 },
+                dna_structure: { x: 100, y: 250 },
+                histones: { x: 200, y: 250 },
+                acetylation: { x: 300, y: 250 },
+                methylation: { x: 400, y: 250 },
+                cityscape: { x: 600, y: 250 },
+                stress: { x: 700, y: 250 },
                 therapy: { x: 500, y: 350 },
                 pfc: { x: 300, y: 300 },     // Approximate brain positions
                 amygdala: { x: 400, y: 400 }
@@ -311,14 +312,6 @@
                 const region = window.GreenhouseModelsUIEnvironment._brainRegions[item.targetRegion];
                 if (region && region.path) {
                     ctx.save();
-                    // Re-apply the brain transform logic (hardcoded to match models_ui_environment.js)
-                    // This is tricky because we need the exact transform state.
-                    // Instead of trying to replicate the transform, we will rely on the position map being
-                    // roughly correct and just draw a connecting line if possible, OR
-                    // we assume the transform is complex and just draw the overlay graphic.
-                    // Since we can't easily access the transform stack here, we'll skip the *exact* path highlight
-                    // inside this overlay loop and instead draw a "Target" indicator at the coordinate.
-
                     // Draw target circle indicator
                     ctx.beginPath();
                     ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
@@ -329,10 +322,39 @@
                 }
             }
 
+            const t = (k) => window.GreenhouseModelsUtil.t(k);
+            const metaphor = t(item.metaphor);
+            const concept = t(item.concept);
+            const text = t(item.text);
+            // console.log(`Drawing overlay ${item.id}: text=${text}`); // Debug log
+
             const boxX = item.x + 60;
             const boxY = item.y;
             const boxWidth = 280;
-            const boxHeight = 140;
+            const padding = 15;
+            const iconSpace = 60; // Space for the icon on the left
+            const textWidth = boxWidth - iconSpace - padding * 2;
+
+            // Calculate dynamic heights
+            ctx.font = 'bold 14px "Helvetica Neue", Arial, sans-serif';
+            const metaphorHeight = this._measureTextHeight(ctx, metaphor, textWidth, 18);
+
+            ctx.font = 'italic 12px "Helvetica Neue", Arial, sans-serif';
+            const conceptHeight = this._measureTextHeight(ctx, `(${concept})`, textWidth, 16);
+
+            ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
+            const bodyHeight = this._measureTextHeight(ctx, text, boxWidth - padding * 2, 16); // Body uses full width minus padding
+
+            // Total height calculation
+            // Top padding + Metaphor + Concept + Gap + Body + Bottom padding
+            // Note: Metaphor and Concept are indented by iconSpace
+            // Body is below the icon, so it can take full width? 
+            // Actually, let's keep the design simple: Icon is top-left. Metaphor/Concept are to its right.
+            // Body text starts BELOW the icon/header section.
+
+            const headerHeight = Math.max(60, padding + metaphorHeight + conceptHeight + padding); // Ensure enough height for icon (approx 50px)
+            const boxHeight = headerHeight + bodyHeight + padding;
+
             const cornerRadius = 10;
 
             // 2. Draw Connecting Line
@@ -351,20 +373,11 @@
             ctx.shadowBlur = 10;
 
             ctx.beginPath();
-            ctx.moveTo(boxX + cornerRadius, boxY);
-            ctx.lineTo(boxX + boxWidth - cornerRadius, boxY);
-            ctx.arcTo(boxX + boxWidth, boxY, boxX + boxWidth, boxY + cornerRadius, cornerRadius);
-            ctx.lineTo(boxX + boxWidth, boxY + boxHeight - cornerRadius);
-            ctx.arcTo(boxX + boxWidth, boxY + boxHeight, boxX + boxWidth - cornerRadius, boxY + boxHeight, cornerRadius);
-            ctx.lineTo(boxX + cornerRadius, boxY + boxHeight);
-            ctx.arcTo(boxX, boxY + boxHeight, boxX, boxY + boxHeight - cornerRadius, cornerRadius);
-            ctx.lineTo(boxX, boxY + cornerRadius);
-            ctx.arcTo(boxX, boxY, boxX + cornerRadius, boxY, cornerRadius);
-            ctx.closePath();
+            ctx.roundRect(boxX, boxY, boxWidth, boxHeight, cornerRadius);
             ctx.fill();
             ctx.stroke();
 
-            // 4. Render Custom Graphic
+            // 4. Render Custom Graphic (Icon)
             if (this.renderers[item.id]) {
                 ctx.save();
                 this.renderers[item.id](ctx, boxX + 20, boxY + 25);
@@ -372,24 +385,48 @@
             }
 
             // 5. Draw Text
-            const t = (k) => window.GreenhouseModelsUtil.t(k);
-            const metaphor = t(item.id + '_metaphor');
-            const concept = t(item.id + '_concept');
-            const text = t(item.id + '_text');
+            let currentY = boxY + padding + 10; // Start a bit down
 
+            // Metaphor (Title)
             ctx.fillStyle = '#357438';
             ctx.font = 'bold 14px "Helvetica Neue", Arial, sans-serif';
-            ctx.fillText(metaphor, boxX + 80, boxY + 25);
+            this._wrapText(ctx, metaphor, boxX + iconSpace + padding, currentY, textWidth, 18);
+            currentY += metaphorHeight;
 
+            // Concept (Subtitle)
             ctx.fillStyle = '#666';
             ctx.font = 'italic 12px "Helvetica Neue", Arial, sans-serif';
-            ctx.fillText(`(${concept})`, boxX + 80, boxY + 42);
+            this._wrapText(ctx, `(${concept})`, boxX + iconSpace + padding, currentY, textWidth, 16);
 
+            // Move Y past the header section
+            currentY = boxY + headerHeight;
+
+            // Body Text
             ctx.fillStyle = '#333';
             ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
-            this._wrapText(ctx, text, boxX + 15, boxY + 65, boxWidth - 30, 16);
+            this._wrapText(ctx, text, boxX + padding, currentY, boxWidth - padding * 2, 16);
 
             ctx.restore();
+        },
+
+        _measureTextHeight(ctx, text, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let height = lineHeight; // Start with one line
+            // If text is empty, return 0
+            if (!text) return 0;
+
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                if (metrics.width > maxWidth && n > 0) {
+                    line = words[n] + ' ';
+                    height += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            return height;
         },
 
         _wrapText(ctx, text, x, y, maxWidth, lineHeight) {

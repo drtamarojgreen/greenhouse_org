@@ -236,6 +236,16 @@
                 "medication_desc": "View active medications and their information.",
                 "therapy_desc": "View recent therapy sessions and notes.",
 
+                // Wellness Dimensions
+                label_wellness_emotional: "Emotional",
+                label_wellness_spiritual: "Spiritual",
+                label_wellness_intellectual: "Intellectual",
+                label_wellness_physical: "Physical",
+                label_wellness_environmental: "Environmental",
+                label_wellness_financial: "Financial",
+                label_wellness_occupational: "Occupational",
+                label_wellness_social: "Social",
+
                 // Overlays
                 dna_structure_metaphor: "Spaghetti Noodle",
                 dna_structure_concept: "DNA Structure",
@@ -263,7 +273,17 @@
                 stress_text: "Stress is like a storm that weathers the city infrastructure.",
                 therapy_metaphor: "Rewiring",
                 therapy_concept: "Psychotherapy",
-                therapy_text: "Therapy helps rewire the brain's emotional circuits."
+                therapy_text: "Therapy helps rewire the brain's emotional circuits.",
+                label_environmental_stress: 'Environmental Stress',
+                label_genetic_factors: 'Genetic Factors',
+                label_community: 'Community',
+                label_personal_growth: 'Personal Growth',
+                label_medication: 'Medication',
+                label_therapy: 'Therapy',
+                label_ceo: 'CEO',
+                alert_url_copied: 'Simulation URL copied to clipboard!',
+                alert_url_fail: 'Failed to copy URL. Please copy it manually:',
+                alert_fullscreen_error: 'Error attempting to enable full-screen mode'
             },
             es: {
                 // Consent Screen
@@ -367,6 +387,16 @@
                 "medication_desc": "Ver medicamentos activos y su información.",
                 "therapy_desc": "Ver sesiones de terapia recientes y notas.",
 
+                // Wellness Dimensions
+                label_wellness_emotional: "Emocional",
+                label_wellness_spiritual: "Espiritual",
+                label_wellness_intellectual: "Intelectual",
+                label_wellness_physical: "Físico",
+                label_wellness_environmental: "Ambiental",
+                label_wellness_financial: "Financiero",
+                label_wellness_occupational: "Ocupacional",
+                label_wellness_social: "Social",
+
                 // Overlays
                 dna_structure_metaphor: "Fideo de Espagueti",
                 dna_structure_concept: "Estructura del ADN",
@@ -394,7 +424,17 @@
                 stress_text: "El estrés es como una tormenta que desgasta la infraestructura de la ciudad.",
                 therapy_metaphor: "Recableado",
                 therapy_concept: "Psicoterapia",
-                therapy_text: "La terapia ayuda a recablear los circuitos emocionales del cerebro."
+                therapy_text: "La terapia ayuda a recablear los circuitos emocionales del cerebro.",
+                label_environmental_stress: "Estrés Ambiental",
+                label_genetic_factors: "Factores Genéticos",
+                label_community: "Comunidad",
+                label_personal_growth: "Crecimiento Personal",
+                label_medication: "Medicación",
+                label_therapy: "Terapia",
+                label_ceo: "CEO",
+                alert_url_copied: "¡URL de simulación copiada al portapapeles!",
+                alert_url_fail: "Error al copiar URL. Por favor cópielo manualmente:",
+                alert_fullscreen_error: "Error al intentar habilitar el modo de pantalla completa"
             }
         },
         GreenhouseComponent,
@@ -432,17 +472,11 @@
             }
             // 2. Try direct key lookup in English (fallback)
             if (this.translations['en'] && this.translations['en'][key]) {
-                // If the key IS the english text, we are good.
-                // But if we passed a code like 'consent_title' and it's missing in ES but present in EN, we return EN.
                 return this.translations['en'][key];
             }
 
             // 3. If key is an English phrase (e.g. from config), try to find it in ES
             if (lang !== 'en') {
-                // Check if the key exists as a value in the 'en' dictionary, or if we should just assume the key IS the english text.
-                // In our translations object, we added "Environmental Stress": "..." so direct lookup (step 1) should have handled it
-                // IF the key passed in was "Environmental Stress".
-                // So if we are here, the key is likely unknown or missing.
                 return key;
             }
 

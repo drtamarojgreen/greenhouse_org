@@ -109,7 +109,7 @@
             ctx.fillStyle = darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
             ctx.font = 'bold 12px "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(region.name, x, y + 35);
+            ctx.fillText(this.util.t(region.name), x, y + 35);
 
             ctx.restore();
 

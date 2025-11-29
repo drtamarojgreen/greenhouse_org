@@ -13,7 +13,7 @@
         init(system) {
             this.system = system; // Store the system reference when initialized
         }
-        update() {}
+        update() { }
         draw(ctx, width, height) {
             if (window.GreenhouseModelsUIEnvironmentBackground) {
                 if (!window.GreenhouseModelsUIEnvironmentBackground.state) {
@@ -31,8 +31,8 @@
             this.layer = 1;
             this.active = true;
         }
-        init(system) {}
-        update() {}
+        init(system) { }
+        update() { }
         draw(ctx, width, height) {
             const scale = Math.min(width / 1536, height / 1024) * 0.95;
             const offsetX = (width - (1536 * scale)) / 2;
@@ -68,8 +68,8 @@
             this.layer = 2;
             this.active = true;
         }
-        init(system) {}
-        update(deltaTime) {}
+        init(system) { }
+        update(deltaTime) { }
         draw(ctx, width, height) {
             if (window.GreenhouseModelsUIEnvironmentHovers) {
                 let allRegions = {};
@@ -99,7 +99,7 @@
                 window.GreenhouseModelsUIEnvironmentMedication.init(this.state, this.util);
             }
         }
-        update(deltaTime) {}
+        update(deltaTime) { }
         draw(ctx, width, height) {
             if (window.GreenhouseModelsUIEnvironmentMedication) {
                 if (!window.GreenhouseModelsUIEnvironmentMedication.state) {
@@ -153,7 +153,7 @@
                 window.GreenhouseModelsUIEnvironmentTherapy.init(this.state, this.util);
             }
         }
-        update(deltaTime) {}
+        update(deltaTime) { }
         draw(ctx, width, height) {
             if (window.GreenhouseModelsUIEnvironmentTherapy) {
                 if (!window.GreenhouseModelsUIEnvironmentTherapy.state) {
@@ -179,7 +179,7 @@
             ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
             ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('Therapy', therapyIcon.x, therapyIcon.y + 35);
+            ctx.fillText(this.util.t('label_therapy'), therapyIcon.x, therapyIcon.y + 35);
             ctx.restore();
         }
     }
@@ -191,8 +191,8 @@
             this.layer = 5;
             this.active = true;
         }
-        init(system) {}
-        update() {}
+        init(system) { }
+        update() { }
         draw(ctx, width, height) {
             const scale = Math.min(width / 1536, height / 1024) * 0.95;
             const offsetX = (width - (1536 * scale)) / 2;
@@ -226,9 +226,27 @@
                         const path = new Path2D(icon.pathData);
                         ctx.fillStyle = icon.color || (this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)');
                         ctx.save();
-                        ctx.translate(icon.x - 12, icon.y - 12);
+                        ctx.translate(icon.x, icon.y);
+                        const scale = icon.scale || 1;
+                        ctx.scale(scale, scale);
+                        ctx.translate(-12, -12); // Center the icon (assuming 24x24 viewbox)
                         ctx.fill(path);
                         ctx.restore();
+
+                        if (icon.label) {
+                            const text = this.util.t(icon.label);
+                            ctx.save();
+                            ctx.fillStyle = icon.color || (this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)');
+                            ctx.font = 'bold 24px "Helvetica Neue", Arial, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'top';
+                            // Position text below the scaled icon
+                            // Icon center is (icon.x, icon.y). Scaled size is approx 24 * scale.
+                            // Let's put it 20px below the bottom of the icon.
+                            const textY = icon.y + (12 * scale) + 10;
+                            ctx.fillText(text, icon.x, textY);
+                            ctx.restore();
+                        }
                     }
                 });
             }
@@ -242,8 +260,8 @@
             this.layer = 6;
             this.active = true;
         }
-        init(system) {}
-        update() {}
+        init(system) { }
+        update() { }
         draw(ctx, width, height) {
             const t = (k) => this.util.t(k);
             const legendItems = [
@@ -285,8 +303,8 @@
             this.layer = 7;
             this.active = true;
         }
-        init(system) {}
-        update(deltaTime) {}
+        init(system) { }
+        update(deltaTime) { }
         draw(ctx, width, height) {
             if (window.GreenhouseModelsUIEnvironmentOverlay && !window.GreenhouseModelsUIEnvironmentOverlay.state) {
                 window.GreenhouseModelsUIEnvironmentOverlay.init(this.state);
@@ -303,8 +321,8 @@
             this.layer = 9;
             this.active = true;
         }
-        init(system) {}
-        update() {}
+        init(system) { }
+        update() { }
         draw(ctx, width, height) {
             const t = (k) => this.util.t(k);
             ctx.save();
@@ -338,8 +356,8 @@
             this.layer = 10;
             this.active = true;
         }
-        init(system) {}
-        update(deltaTime) {}
+        init(system) { }
+        update(deltaTime) { }
         draw(ctx, width, height) {
             if (window.GreenhouseModelsUIEnvironmentHovers && !window.GreenhouseModelsUIEnvironmentHovers.state) {
                 window.GreenhouseModelsUIEnvironmentHovers.init(this.state, this.util);
@@ -357,7 +375,7 @@
             if (!this.environmentSystem) {
                 // Initialize the system and components
                 this.environmentSystem = new window.GreenhouseModelsUtil.GreenhouseSystem(this.canvases.environment);
-    
+
                 // #91 - Refactor component initialization to be data-driven
                 const components = [
                     { constructor: BackgroundComponent, args: [this.state, this.util, this.environmentSystem] },
@@ -371,7 +389,7 @@
                     { constructor: TitleComponent, args: [this.util] },
                     { constructor: TooltipComponent, args: [this.state, this.util] }
                 ];
-    
+
                 components.forEach(comp => {
                     this.environmentSystem.addComponent(new comp.constructor(...comp.args));
                 });

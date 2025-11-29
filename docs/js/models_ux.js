@@ -248,7 +248,7 @@
         toggleFullScreen() {
             if (!document.fullscreenElement) {
                 this.state.mainAppContainer.requestFullscreen().catch(err => {
-                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                    alert(`${window.GreenhouseModelsUtil.t('alert_fullscreen_error')}: ${err.message} (${err.name})`);
                 });
             } else {
                 if (document.exitFullscreen) {
@@ -312,9 +312,9 @@
             const url = `${window.location.origin}${window.location.pathname}?${queryString}`;
 
             navigator.clipboard.writeText(url).then(() => {
-                alert('Simulation URL copied to clipboard!');
+                alert(window.GreenhouseModelsUtil.t('alert_url_copied'));
             }, () => {
-                alert('Failed to copy URL. Please copy it manually:\n' + url);
+                alert(window.GreenhouseModelsUtil.t('alert_url_fail') + '\n' + url);
             });
         },
 
@@ -395,7 +395,10 @@
 
             document.getElementById('stress-slider').value = 0.5;
             document.getElementById('support-slider').value = 0.5;
-            document.getElementById('environment-type-select').value = 'NEUTRAL';
+            const envTypeSelect = document.getElementById('environment-type-select');
+            if (envTypeSelect) {
+                envTypeSelect.value = 'NEUTRAL';
+            }
         },
 
         bindNetworkControls() {
@@ -409,10 +412,10 @@
                     this.state.network.isRunning = !this.state.network.isRunning;
                     if (this.state.network.isRunning) {
                         this.runSimulation();
-                        playPauseBtn.textContent = 'Pause';
+                        playPauseBtn.textContent = window.GreenhouseModelsUtil.t('btn_pause');
                     } else {
                         cancelAnimationFrame(this.state.network.animationFrameId);
-                        playPauseBtn.textContent = 'Play';
+                        playPauseBtn.textContent = window.GreenhouseModelsUtil.t('btn_play');
                     }
                 });
             }
@@ -652,7 +655,7 @@
 
             document.getElementById('play-pause-btn-synaptic').addEventListener('click', e => {
                 this.state.synaptic.isRunning = !this.state.synaptic.isRunning;
-                e.target.textContent = this.state.synaptic.isRunning ? 'Pause' : 'Play';
+                e.target.textContent = this.state.synaptic.isRunning ? window.GreenhouseModelsUtil.t('btn_pause') : window.GreenhouseModelsUtil.t('btn_play');
                 if (this.state.synaptic.isRunning) {
                     this.simulationLoop(performance.now());
                 }
@@ -663,7 +666,7 @@
             if (playPauseBtnEnv) {
                 playPauseBtnEnv.addEventListener('click', () => {
                     this.state.environment.isRunning = !this.state.environment.isRunning;
-                    playPauseBtnEnv.textContent = this.state.environment.isRunning ? 'Pause' : 'Play';
+                    playPauseBtnEnv.textContent = this.state.environment.isRunning ? window.GreenhouseModelsUtil.t('btn_pause') : window.GreenhouseModelsUtil.t('btn_play');
                     if (this.state.environment.isRunning) {
                         this.runEnvironmentSimulation();
                     }
