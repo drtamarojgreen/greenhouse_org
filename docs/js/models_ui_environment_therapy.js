@@ -13,22 +13,22 @@
             if (window.GreenhouseEnvironmentConfig && window.GreenhouseEnvironmentConfig.interactiveElements) {
                 const config = window.GreenhouseEnvironmentConfig.interactiveElements.therapy;
                 if (config) {
-                    let description = config.description;
+                    let description = this.util.t(config.description); // Translate the base description first
 
                     // Data Binding
                     if (config.dataSource && window.GreenhouseDataAdapter) {
                         const data = window.GreenhouseDataAdapter.getValue(config.dataSource);
-                        if (data && Array.isArray(data)) {
+                        if (data && Array.isArray(data) && data.length > 0) {
                             // Format the array into a readable list
                             const items = data.map(t => `${t.type} (${t.date})`).join(', ');
-                            description = `Recent Sessions: ${items}`;
+                            description = `${this.util.t('Recent Sessions')}: ${items}`; // This was incorrect logic for the hover.
                         }
                     }
 
                     this.regions[config.id] = {
                         path: null,
                         name: config.name,
-                        description: description,
+                        description: description, // Assign the correctly built description
                         dataSource: config.dataSource, // Store dataSource for expanded view
                         x: config.x,
                         y: config.y,
@@ -160,7 +160,7 @@
             ctx.fillStyle = '#14532d'; // Dark green text
             ctx.font = 'bold 14px "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText('Recent Sessions', panelX + 15, panelY + 25);
+            ctx.fillText(this.util.t('Recent Sessions'), panelX + 15, panelY + 25);
 
             // Connecting Line
             ctx.beginPath();
@@ -174,7 +174,7 @@
             if (data.length === 0) {
                 ctx.fillStyle = '#666';
                 ctx.font = '13px "Helvetica Neue", Arial, sans-serif';
-                ctx.fillText('No recent sessions recorded.', panelX + 15, panelY + headerHeight + 20);
+                ctx.fillText(this.util.t('No recent sessions recorded.'), panelX + 15, panelY + headerHeight + 20);
             } else {
                 data.forEach((item, index) => {
                     const itemY = panelY + headerHeight + (index * itemHeight);

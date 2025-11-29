@@ -54,24 +54,24 @@
             const langBtn = document.getElementById('lang-toggle-consent');
             if (langBtn) {
                 langBtn.addEventListener('click', () => {
-                   this.util.toggleLanguage();
-                   this.renderConsentScreen(targetElement);
-                   // We need to re-bind consent listeners because we wiped the HTML
-                   // Note: 'addConsentListeners' in models_ux.js is responsible for binding consent logic.
-                   // Since we are inside UI rendering, we should probably trigger a re-bind event or handle it.
-                   // However, models_ux calls renderConsentScreen once.
-                   // A better approach is to let UX handle re-binding if we re-render.
-                   // Or, we can trigger a custom event.
-                   // Ideally, we should notify UX to re-bind.
-                   // But since I can't easily modify UX to listen to this without complex changes,
-                   // I will assume UX needs to be updated to handle dynamic re-rendering or I handle it here.
+                    this.util.toggleLanguage();
+                    this.renderConsentScreen(targetElement);
+                    // We need to re-bind consent listeners because we wiped the HTML
+                    // Note: 'addConsentListeners' in models_ux.js is responsible for binding consent logic.
+                    // Since we are inside UI rendering, we should probably trigger a re-bind event or handle it.
+                    // However, models_ux calls renderConsentScreen once.
+                    // A better approach is to let UX handle re-binding if we re-render.
+                    // Or, we can trigger a custom event.
+                    // Ideally, we should notify UX to re-bind.
+                    // But since I can't easily modify UX to listen to this without complex changes,
+                    // I will assume UX needs to be updated to handle dynamic re-rendering or I handle it here.
 
-                   // Actually, models_ux.js calls addConsentListeners right after renderConsentScreen.
-                   // If I re-render here, those listeners are lost.
-                   // I should trigger the UX to re-bind.
-                   if (window.GreenhouseModelsUX && window.GreenhouseModelsUX.addConsentListeners) {
-                       window.GreenhouseModelsUX.addConsentListeners();
-                   }
+                    // Actually, models_ux.js calls addConsentListeners right after renderConsentScreen.
+                    // If I re-render here, those listeners are lost.
+                    // I should trigger the UX to re-bind.
+                    if (window.GreenhouseModelsUX && window.GreenhouseModelsUX.addConsentListeners) {
+                        window.GreenhouseModelsUX.addConsentListeners();
+                    }
                 });
             }
         },
@@ -131,6 +131,10 @@
                 network: this.canvases.network.getContext('2d'),
                 environment: this.canvases.environment.getContext('2d')
             };
+
+            // Fix for Spanish button/Language Toggle:
+            // Force the environment system to re-initialize with the new canvas element.
+            this.environmentSystem = null;
 
             this.resizeAllCanvases();
             this._drawLoadingState(this.contexts.environment, this.canvases.environment);

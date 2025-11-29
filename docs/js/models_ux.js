@@ -118,7 +118,7 @@
 
                 this.state.isInitialized = true;
                 this._applySharedParameters();
-                //this.observeAndReinitializeApp(this.state.targetElement); // Disabled due to buggy behavior
+                this.observeAndReinitializeApp(this.state.targetElement); // Re-enabled to handle Wix DOM manipulation
             } catch (error) {
                 console.error('Models App: Initialization failed:', error);
                 GreenhouseUtils.displayError(`Failed to load simulation: ${error.message}`);
@@ -152,6 +152,12 @@
 
             startButton.addEventListener('click', async () => {
                 try {
+                    // Disconnect the resilience observer to prevent re-initialization during simulation
+                    if (resilienceObserver) {
+                        resilienceObserver.disconnect();
+                        resilienceObserver = null;
+                    }
+
                     const { simulationData, lexicon } = this.state;
                     if (simulationData && lexicon) {
                         const processedData = GreenhouseModelsData.transformNotesToSimulationInput(

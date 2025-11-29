@@ -39,7 +39,7 @@
             medication: {
                 id: 'medication_general',
                 name: 'Medication',
-                description: 'Loading...', // Will be replaced by data binding
+                description: 'medication_desc', // Use translation key
                 dataSource: 'health.active_medications',
                 x: 570,
                 y: 750,
@@ -50,7 +50,7 @@
             therapy: {
                 id: 'therapy_general',
                 name: 'Therapy',
-                description: 'Loading...', // Will be replaced by data binding
+                description: 'therapy_desc', // Use translation key
                 dataSource: 'health.therapy_sessions',
                 x: 966,
                 y: 750,

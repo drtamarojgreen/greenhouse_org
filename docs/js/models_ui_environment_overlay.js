@@ -216,7 +216,7 @@
             this.lastSwitchTime = Date.now();
             this.currentIndex = 0;
             this._cycleOverlay();
-            this.cycleTimer = setInterval(() => { this._updateCycle(); }, 1000);
+            // this.cycleTimer = setInterval(() => { this._updateCycle(); }, 1000); // Disabled per user request to prevent unnecessary redraws
         },
 
         destroy() {
@@ -372,17 +372,22 @@
             }
 
             // 5. Draw Text
+            const t = (k) => window.GreenhouseModelsUtil.t(k);
+            const metaphor = t(item.id + '_metaphor');
+            const concept = t(item.id + '_concept');
+            const text = t(item.id + '_text');
+
             ctx.fillStyle = '#357438';
             ctx.font = 'bold 14px "Helvetica Neue", Arial, sans-serif';
-            ctx.fillText(item.metaphor, boxX + 80, boxY + 25);
+            ctx.fillText(metaphor, boxX + 80, boxY + 25);
 
             ctx.fillStyle = '#666';
             ctx.font = 'italic 12px "Helvetica Neue", Arial, sans-serif';
-            ctx.fillText(`(${item.concept})`, boxX + 80, boxY + 42);
+            ctx.fillText(`(${concept})`, boxX + 80, boxY + 42);
 
             ctx.fillStyle = '#333';
             ctx.font = '12px "Helvetica Neue", Arial, sans-serif';
-            this._wrapText(ctx, item.text, boxX + 15, boxY + 65, boxWidth - 30, 16);
+            this._wrapText(ctx, text, boxX + 15, boxY + 65, boxWidth - 30, 16);
 
             ctx.restore();
         },

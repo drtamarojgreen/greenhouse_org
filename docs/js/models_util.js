@@ -1,6 +1,6 @@
 // docs/js/models_util.js
 
-(function() {
+(function () {
     'use strict';
 
     /**
@@ -29,13 +29,13 @@
          * Called every frame to update state.
          * @param {number} deltaTime - Time since last frame in ms.
          */
-        update(deltaTime) {}
+        update(deltaTime) { }
 
         /**
          * Called every frame to draw to the canvas.
          * @param {CanvasRenderingContext2D} ctx
          */
-        draw(ctx) {}
+        draw(ctx) { }
     }
 
     /**
@@ -216,7 +216,54 @@
                 // Regions Names
                 "Prefrontal Cortex": "Prefrontal Cortex",
                 "Amygdala": "Amygdala",
-                "Hippocampus": "Hippocampus"
+                "Hippocampus": "Hippocampus",
+
+                // Medication & Therapy Panels
+                "Active Prescriptions": "Recetas Activas",
+                "Recent Sessions": "Sesiones Recientes",
+                "No active medications.": "No hay medicamentos activos.",
+                "No recent sessions recorded.": "No hay sesiones recientes registradas.",
+                "Loading...": "Cargando...",
+
+                // Alerts & Prompts
+                "Simulation URL copied to clipboard!": "¡URL de la simulación copiada al portapapeles!",
+                "Failed to copy URL. Please copy it manually:\n": "No se pudo copiar la URL. Por favor, cópiela manualmente:\n",
+                "Error attempting to enable full-screen mode: ": "Error al intentar activar el modo de pantalla completa: ",
+
+                "Medication": "Medicación",
+
+                // Hover descriptions for interactive elements
+                "medication_desc": "View active medications and their information.",
+                "therapy_desc": "View recent therapy sessions and notes.",
+
+                // Overlays
+                dna_structure_metaphor: "Spaghetti Noodle",
+                dna_structure_concept: "DNA Structure",
+                dna_structure_text: "DNA is like a super long, tightly packed spaghetti noodle wrapping around histone \"spools\".",
+                histones_metaphor: "Spools",
+                histones_concept: "Histones",
+                histones_text: "Histones are spools that DNA wraps around. They determine if genes are accessible.",
+                acetylation_metaphor: "Opening the Curtains",
+                acetylation_concept: "Acetylation",
+                acetylation_text: "Acetylation relaxes the chromatin, allowing genes to be read.",
+                methylation_metaphor: "Closing the Curtains",
+                methylation_concept: "Methylation",
+                methylation_text: "Methylation tightens the chromatin, silencing genes.",
+                cityscape_metaphor: "Bustling City",
+                cityscape_concept: "The Brain",
+                cityscape_text: "Your brain is a bustling city with billions of neuron workers.",
+                pfc_metaphor: "Chief Decision-Maker",
+                pfc_concept: "Prefrontal Cortex",
+                pfc_text: "The CEO of the brain city, handling big decisions and planning.",
+                amygdala_metaphor: "Alarm System",
+                amygdala_concept: "Amygdala",
+                amygdala_text: "The city's alarm system, constantly scanning for danger.",
+                stress_metaphor: "The Storm",
+                stress_concept: "Chronic Stress",
+                stress_text: "Stress is like a storm that weathers the city infrastructure.",
+                therapy_metaphor: "Rewiring",
+                therapy_concept: "Psychotherapy",
+                therapy_text: "Therapy helps rewire the brain's emotional circuits."
             },
             es: {
                 // Consent Screen
@@ -300,7 +347,54 @@
                 // Regions Names
                 "Prefrontal Cortex": "Corteza Prefrontal",
                 "Amygdala": "Amígdala",
-                "Hippocampus": "Hipocampus"
+                "Hippocampus": "Hipocampo",
+
+                // Medication & Therapy Panels
+                "Active Prescriptions": "Recetas Activas",
+                "Recent Sessions": "Sesiones Recientes",
+                "No active medications.": "No hay medicamentos activos.",
+                "No recent sessions recorded.": "No hay sesiones recientes registradas.",
+                "Loading...": "Cargando...",
+
+                // Alerts & Prompts
+                "Simulation URL copied to clipboard!": "¡URL de la simulación copiada al portapapeles!",
+                "Failed to copy URL. Please copy it manually:\n": "No se pudo copiar la URL. Por favor, cópiela manualmente:\n",
+                "Error attempting to enable full-screen mode: ": "Error al intentar activar el modo de pantalla completa: ",
+
+                "Medication": "Medicación",
+
+                // Hover descriptions for interactive elements
+                "medication_desc": "Ver medicamentos activos y su información.",
+                "therapy_desc": "Ver sesiones de terapia recientes y notas.",
+
+                // Overlays
+                dna_structure_metaphor: "Fideo de Espagueti",
+                dna_structure_concept: "Estructura del ADN",
+                dna_structure_text: "El ADN es como un fideo de espagueti súper largo y apretado que se envuelve alrededor de carretes de histonas.",
+                histones_metaphor: "Carretes",
+                histones_concept: "Histonas",
+                histones_text: "Las histonas son carretes alrededor de los cuales se envuelve el ADN. Determinan si los genes son accesibles.",
+                acetylation_metaphor: "Abriendo las Cortinas",
+                acetylation_concept: "Acetilación",
+                acetylation_text: "La acetilación relaja la cromatina, permitiendo que los genes sean leídos.",
+                methylation_metaphor: "Cerrando las Cortinas",
+                methylation_concept: "Metilación",
+                methylation_text: "La metilación aprieta la cromatina, silenciando los genes.",
+                cityscape_metaphor: "Ciudad Bulliciosa",
+                cityscape_concept: "El Cerebro",
+                cityscape_text: "Tu cerebro es una ciudad bulliciosa con miles de millones de trabajadores neuronales.",
+                pfc_metaphor: "Jefe de Toma de Decisiones",
+                pfc_concept: "Corteza Prefrontal",
+                pfc_text: "El CEO de la ciudad cerebral, manejando grandes decisiones y planificación.",
+                amygdala_metaphor: "Sistema de Alarma",
+                amygdala_concept: "Amígdala",
+                amygdala_text: "El sistema de alarma de la ciudad, escaneando constantemente en busca de peligro.",
+                stress_metaphor: "La Tormenta",
+                stress_concept: "Estrés Crónico",
+                stress_text: "El estrés es como una tormenta que desgasta la infraestructura de la ciudad.",
+                therapy_metaphor: "Recableado",
+                therapy_concept: "Psicoterapia",
+                therapy_text: "La terapia ayuda a recablear los circuitos emocionales del cerebro."
             }
         },
         GreenhouseComponent,

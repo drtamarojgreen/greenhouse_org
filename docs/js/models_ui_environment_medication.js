@@ -13,7 +13,7 @@
             if (window.GreenhouseEnvironmentConfig && window.GreenhouseEnvironmentConfig.interactiveElements) {
                 const config = window.GreenhouseEnvironmentConfig.interactiveElements.medication;
                 if (config) {
-                    let description = config.description;
+                    let description = this.util.t(config.description); // Translate the base description first
 
                     // Data Binding
                     if (config.dataSource && window.GreenhouseDataAdapter) {
@@ -21,14 +21,14 @@
                         if (data && Array.isArray(data)) {
                             // Format the array into a readable list
                             const items = data.map(m => `${m.name} (${m.dosage})`).join(', ');
-                            description = `Active Prescriptions: ${items}`;
+                            description = `${this.util.t('Active Prescriptions')}: ${items}`; // This was incorrect logic for the hover.
                         }
                     }
 
                     this.regions[config.id] = {
                         path: null,
                         name: config.name,
-                        description: description,
+                        description: description, // Assign the correctly built description
                         dataSource: config.dataSource, // Store dataSource for expanded view
                         x: config.x,
                         y: config.y,
@@ -149,7 +149,7 @@
             ctx.fillStyle = '#2c3e50';
             ctx.font = 'bold 14px "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText('Active Prescriptions', panelX + 15, panelY + 25);
+            ctx.fillText(this.util.t('Active Prescriptions'), panelX + 15, panelY + 25);
 
             // Connecting Line
             ctx.beginPath();
@@ -164,7 +164,7 @@
 
             if (data.length === 0) {
                 ctx.fillStyle = '#666';
-                ctx.fillText('No active medications.', panelX + 15, panelY + headerHeight + 20);
+                ctx.fillText(this.util.t('No active medications.'), panelX + 15, panelY + headerHeight + 20);
             } else {
                 data.forEach((item, index) => {
                     const rowY = panelY + headerHeight + (index * rowHeight);
