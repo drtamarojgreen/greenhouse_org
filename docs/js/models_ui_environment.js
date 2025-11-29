@@ -34,7 +34,7 @@
         init(system) {}
         update() {}
         draw(ctx, width, height) {
-            const scale = Math.min(width / 1536, height / 1024) * 0.8;
+            const scale = Math.min(width / 1536, height / 1024) * 0.95;
             const offsetX = (width - (1536 * scale)) / 2;
             const offsetY = (height - (1024 * scale)) / 2;
 
@@ -194,7 +194,7 @@
         init(system) {}
         update() {}
         draw(ctx, width, height) {
-            const scale = Math.min(width / 1536, height / 1024) * 0.8;
+            const scale = Math.min(width / 1536, height / 1024) * 0.95;
             const offsetX = (width - (1536 * scale)) / 2;
             const offsetY = (height - (1024 * scale)) / 2;
 

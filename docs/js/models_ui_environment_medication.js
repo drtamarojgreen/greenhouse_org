@@ -42,7 +42,7 @@
 
         draw(ctx, width, height) {
             // Shared transform logic
-            const scale = Math.min(width / 1536, height / 1024) * 0.8;
+            const scale = Math.min(width / 1536, height / 1024) * 0.95;
             const offsetX = (width - (1536 * scale)) / 2;
             const offsetY = (height - (1024 * scale)) / 2;
 
@@ -221,7 +221,7 @@
                 // Shared transform logic to map mouse to logical coordinates
                 const width = canvas.width;
                 const height = canvas.height;
-                const scale = Math.min(width / 1536, height / 1024) * 0.8;
+                const scale = Math.min(width / 1536, height / 1024) * 0.95;
                 const offsetX = (width - (1536 * scale)) / 2;
                 const offsetY = (height - (1024 * scale)) / 2;
 
@@ -257,7 +257,7 @@
 
             const width = canvas.width;
             const height = canvas.height;
-            const scale = Math.min(width / 1536, height / 1024) * 0.8;
+            const scale = Math.min(width / 1536, height / 1024) * 0.95;
             const offsetX = (width - (1536 * scale)) / 2;
             const offsetY = (height - (1024 * scale)) / 2;
 

@@ -7,10 +7,10 @@
             logicalHeight: 1024
         },
         labels: [
-            { text: 'Environmental Stress', x: 768, y: 100, fontSize: 22, type: 'header' },
-            { text: 'Genetic Factors', x: 768, y: 250, fontSize: 18, type: 'subheader' },
-            { text: 'Community', x: 1200, y: 512, fontSize: 18, type: 'label' },
-            { text: 'Personal Growth', x: 768, y: 950, fontSize: 16, type: 'label' }
+            { text: 'Environmental Stress', x: 768, y: 100, fontSize: 26, type: 'header' },
+            { text: 'Genetic Factors', x: 768, y: 250, fontSize: 20, type: 'subheader' },
+            { text: 'Community', x: 1200, y: 512, fontSize: 20, type: 'label' },
+            { text: 'Personal Growth', x: 768, y: 950, fontSize: 18, type: 'label' }
         ],
         icons: [
             {

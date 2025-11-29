@@ -36,7 +36,7 @@
                 y = event.clientY - rect.top;
 
                 // Calculate coordinate transformation ONCE before the loop
-                const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 0.8;
+                const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 0.95;
                 const offsetX = (canvas.width - (1536 * scale)) / 2;
                 const offsetY = (canvas.height - (1024 * scale)) / 2;
                 transformedX = (x - offsetX) / scale;
@@ -147,7 +147,7 @@
         drawHeatmaps(ctx, width, height, brainRegions) {
             if (!this.state) return;
 
-            const scale = Math.min(width / 1536, height / 1024) * 0.8;
+            const scale = Math.min(width / 1536, height / 1024) * 0.95;
             const offsetX = (width - (1536 * scale)) / 2;
             const offsetY = (height - (1024 * scale)) / 2;
 
