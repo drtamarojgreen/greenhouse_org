@@ -731,7 +731,7 @@
                         if (window.GreenhouseModels && typeof window.GreenhouseModels.reinitialize === 'function') {
                             window.GreenhouseModels.reinitialize();
                         }
-                    }, 30000);
+                    }, 5000);
                 }
             };
             resilienceObserver = new MutationObserver(observerCallback);
