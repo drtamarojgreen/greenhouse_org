@@ -5,6 +5,8 @@
         state: null,
         util: null,
         _brainSVGUrl: 'https://drtamarojgreen.github.io/greenhouse_org/images/brain.svg',
+        // #99 - Hardcode the SVG path data to avoid async fetch during render
+        _brainPathData: "M 849.5,296.5 C 969.5,320.5 1029.5,428.5 979.5,536.5 C 929.5,644.5 809.5,692.5 719.5,676.5 C 629.5,660.5 589.5,568.5 609.5,486.5 C 629.5,404.5 729.5,272.5 849.5,296.5 Z",
         _brainPath: null,
         regions: {
             pfc: { path: null, name: 'Prefrontal Cortex', color: 'rgba(0, 100, 255, 0.7)' },
@@ -27,8 +29,8 @@
             this.util = util;
             this.system = system; // Accept the system parameter
 
-            // Load the brain path data immediately on initialization
-            this._loadBrainPathFromData();
+            // #99 - Load the brain path data synchronously on initialization
+            this._loadBrainPath();
         },
 
         draw(ctx, width, height) {
@@ -50,12 +52,7 @@
             this._drawCommunity(ctx);
 
             if (this._brainPath) {
-                this._drawBrainPath(ctx);
-            } else {
-                this._loadBrainPath(() => {
-                    this._drawBrainPath(ctx);
-                });
-                // Path is now loaded in init(), so this else block is for safety but should not be hit.
+                this._drawBrainPath(ctx); // #99 - This will now be called reliably
             }
 
             ctx.restore();
@@ -381,31 +378,17 @@
             ctx.restore();
         },
 
-        async _loadBrainPath(callback) {
-            try {
-                const response = await fetch(this._brainSVGUrl);
-                const svgText = await response.text();
+        _loadBrainPath() {
+            // #99 - Synchronously create Path2D objects from hardcoded data
+            if (this._brainPathData) {
+                this._brainPath = new Path2D(this._brainPathData);
 
-                // Use DOMParser for a more robust extraction
-                const parser = new DOMParser();
-                const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
-                const pathElement = svgDoc.querySelector('path');
-
-                if (pathElement) {
-                    const pathData = pathElement.getAttribute('d');
-                    this._brainPath = new Path2D(pathData);
-
-                    // Define and create Path2D objects for each brain region
-                    this.regions.pfc.path = new Path2D("M 900,300 a 150,150 0 0 1 0,300 h -50 a 100,100 0 0 0 0,-200 Z");
-                    this.regions.amygdala.path = new Path2D("M 700,500 a 50,30 0 0 1 0,60 a 50,30 0 0 1 0,-60 Z");
-                    this.regions.hippocampus.path = new Path2D("M 750,450 a 80,40 0 0 1 0,80 q -20,-40 0,-80 Z");
-
-                    if (callback) callback();
-                } else {
-                    throw new Error("No path element found in the SVG.");
-                }
-            } catch (error) {
-                console.error('Error loading or parsing brain SVG:', error);
+                // Define and create Path2D objects for each brain region
+                this.regions.pfc.path = new Path2D("M 900,300 a 150,150 0 0 1 0,300 h -50 a 100,100 0 0 0 0,-200 Z");
+                this.regions.amygdala.path = new Path2D("M 700,500 a 50,30 0 0 1 0,60 a 50,30 0 0 1 0,-60 Z");
+                this.regions.hippocampus.path = new Path2D("M 750,450 a 80,40 0 0 1 0,80 q -20,-40 0,-80 Z");
+            } else {
+                console.error('Brain path data is missing.');
             }
         },
 

@@ -155,22 +155,18 @@
             ctx.translate(offsetX, offsetY);
             ctx.scale(scale, scale);
 
-            for (const key in brainRegions) {
-                const region = brainRegions[key];
-                let activation = 0;
+            // #99 - Only draw the heatmap for the currently hovered region
+            const hoveredKey = this.state.environment.hoveredRegionKey;
+            if (hoveredKey && brainRegions[hoveredKey] && brainRegions[hoveredKey].path) {
+                const region = brainRegions[hoveredKey];
+                const activation = this.state.environment.regions[hoveredKey]?.activation || 0.5; // Use activation for intensity
 
-                if (this.state.environment.regions && this.state.environment.regions[key]) {
-                    activation = this.state.environment.regions[key].activation;
-                }
-
-                if (activation > 0.1 && region.path) {
-                    ctx.save();
-                    ctx.shadowColor = region.color;
-                    ctx.shadowBlur = activation * 30;
-                    ctx.fillStyle = region.color.replace('0.7', '0.3');
-                    ctx.fill(region.path);
-                    ctx.restore();
-                }
+                ctx.save();
+                ctx.shadowColor = region.color;
+                ctx.shadowBlur = activation * 40 + 10; // Make glow more prominent
+                ctx.fillStyle = region.color.replace('0.7', '0.4'); // Slightly more intense fill
+                ctx.fill(region.path);
+                ctx.restore();
             }
             ctx.restore();
         }

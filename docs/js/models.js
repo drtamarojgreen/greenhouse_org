@@ -88,6 +88,9 @@
             // Check if all modules are loaded
             if (window.GreenhouseModelsData && window.GreenhouseModelsUI && window.GreenhouseModelsUX) {
                 console.log('Models App: All modules loaded successfully.');
+                // #99 - Initialize the data adapter to fetch API data before starting the app
+                await window.GreenhouseDataAdapter.init();
+
                 // Kick off the application by initializing the UX module
                 GreenhouseModelsUX.init();
             } else {

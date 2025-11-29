@@ -54,10 +54,11 @@
                 stress: 0.5,
                 support: 0.5,
                 regions: {
-                    pfc: { activation: 0 },
-                    amygdala: { activation: 0 },
-                    hippocampus: { activation: 0 }
+                    pfc: { activation: 0.3 },
+                    amygdala: { activation: 0.4 },
+                    hippocampus: { activation: 0.2 }
                 },
+                hoveredRegionKey: null, // #99 - Track hovered region
                 tooltip: {
                     visible: false,
                     text: '',
@@ -373,10 +374,18 @@
             document.getElementById('intensity-slider-synaptic').value = 50;
             document.getElementById('speed-select-synaptic').value = 'Normal';
             document.getElementById('play-pause-btn-synaptic').textContent = 'Play';
+            document.getElementById('play-pause-btn-synaptic').disabled = true;
 
             document.getElementById('intensity-slider-network').value = 50;
             document.getElementById('speed-select-network').value = 'Normal';
             document.getElementById('play-pause-btn-network').textContent = 'Play';
+            document.getElementById('play-pause-btn-network').disabled = true;
+
+            const playPauseBtnEnv = document.getElementById('play-pause-btn-environment');
+            if (playPauseBtnEnv) {
+                playPauseBtnEnv.textContent = 'Play';
+                playPauseBtnEnv.disabled = true;
+            }
 
             document.getElementById('stress-slider').value = 0.5;
             document.getElementById('support-slider').value = 0.5;
@@ -562,12 +571,17 @@
             }
 
             // Fluctuate the environment factors
-            const factors = ['community', 'society', 'genetics', 'environment'];
-            factors.forEach(factor => {
-                const currentValue = this.state.environment[factor];
-                const change = (Math.random() - 0.5) * 0.1; // Small random change
-                this.state.environment[factor] = Math.max(0, Math.min(1, currentValue + change));
-            });
+            // #99 - Fluctuate brain region activations instead of general factors
+            const regions = this.state.environment.regions;
+            const stress = this.state.environment.stress;
+            const support = this.state.environment.support;
+
+            // Amygdala activation increases with stress, decreases with support
+            regions.amygdala.activation = Math.max(0, Math.min(1, regions.amygdala.activation + (stress - support) * 0.005 + (Math.random() - 0.5) * 0.01));
+            // PFC activation increases with support, decreases with stress
+            regions.pfc.activation = Math.max(0, Math.min(1, regions.pfc.activation + (support - stress) * 0.005 + (Math.random() - 0.5) * 0.01));
+            // Hippocampus activation fluctuates gently
+            regions.hippocampus.activation = Math.max(0, Math.min(1, regions.hippocampus.activation + (Math.random() - 0.5) * 0.01));
 
             GreenhouseModelsUI.drawEnvironmentView();
 
@@ -629,16 +643,30 @@
             document.getElementById('speed-select-synaptic').addEventListener('change', e => {
                 this.state.synaptic.speed = e.target.value;
             });
+
             document.getElementById('play-pause-btn-synaptic').addEventListener('click', e => {
                 this.state.synaptic.isRunning = !this.state.synaptic.isRunning;
                 e.target.textContent = this.state.synaptic.isRunning ? 'Pause' : 'Play';
                 if (this.state.synaptic.isRunning) {
-                    this.state.synaptic.lastUpdateTime = performance.now();
-                    this.simulationLoop(this.state.synaptic.lastUpdateTime);
+                    this.simulationLoop(performance.now());
                 }
+
             });
+
+            const playPauseBtnEnv = document.getElementById('play-pause-btn-environment');
+            if (playPauseBtnEnv) {
+                playPauseBtnEnv.addEventListener('click', () => {
+                    this.state.environment.isRunning = !this.state.environment.isRunning;
+                    playPauseBtnEnv.textContent = this.state.environment.isRunning ? 'Pause' : 'Play';
+                    if (this.state.environment.isRunning) {
+                        this.runEnvironmentSimulation();
+                    }
+                });
+            }
+
             document.getElementById('reset-btn-synaptic').addEventListener('click', () => {
                 this.state.synaptic.isRunning = false;
+                cancelAnimationFrame(this.state.synaptic.animationFrameId);
                 document.getElementById('play-pause-btn-synaptic').textContent = 'Play';
                 Object.assign(this.state.synaptic, {
                     synapticWeight: 0.5, neurotransmitters: 0, ionsCrossed: 0, learningMetric: 0
@@ -703,7 +731,7 @@
                         if (window.GreenhouseModels && typeof window.GreenhouseModels.reinitialize === 'function') {
                             window.GreenhouseModels.reinitialize();
                         }
-                    }, 5000);
+                    }, 30000);
                 }
             };
             resilienceObserver = new MutationObserver(observerCallback);
