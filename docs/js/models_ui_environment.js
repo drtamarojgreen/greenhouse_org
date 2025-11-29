@@ -8,13 +8,17 @@
             this.util = util;
             this.layer = 0;
             this.active = true;
+            this.system = null; // To store the reference to the GreenhouseSystem
         }
-        init(system) {}
+        init(system) {
+            this.system = system; // Store the system reference when initialized
+        }
         update() {}
         draw(ctx, width, height) {
             if (window.GreenhouseModelsUIEnvironmentBackground) {
                 if (!window.GreenhouseModelsUIEnvironmentBackground.state) {
-                    window.GreenhouseModelsUIEnvironmentBackground.init(this.state, this.util, system);
+                    // Pass the stored system reference
+                    window.GreenhouseModelsUIEnvironmentBackground.init(this.state, this.util, this.system);
                 }
                 window.GreenhouseModelsUIEnvironmentBackground.draw(ctx, width, height);
             }
@@ -90,7 +94,11 @@
             this.layer = 3;
             this.active = true;
         }
-        init(system) {}
+        init(system) {
+            if (window.GreenhouseModelsUIEnvironmentMedication) {
+                window.GreenhouseModelsUIEnvironmentMedication.init(this.state, this.util);
+            }
+        }
         update(deltaTime) {}
         draw(ctx, width, height) {
             if (window.GreenhouseModelsUIEnvironmentMedication) {
@@ -140,7 +148,11 @@
             this.layer = 4;
             this.active = true;
         }
-        init(system) {}
+        init(system) {
+            if (window.GreenhouseModelsUIEnvironmentTherapy) {
+                window.GreenhouseModelsUIEnvironmentTherapy.init(this.state, this.util);
+            }
+        }
         update(deltaTime) {}
         draw(ctx, width, height) {
             if (window.GreenhouseModelsUIEnvironmentTherapy) {
@@ -197,7 +209,7 @@
                 const metrics = ctx.measureText(text);
                 const padding = 8;
                 const bgWidth = metrics.width + padding * 2;
-                const bgHeight = fontSize + padding;
+                const bgHeight = fontSize + padding * 1.5; // Increased vertical padding
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
                 ctx.fillRect(x - bgWidth / 2, y - bgHeight / 2 - fontSize / 2, bgWidth, bgHeight);
                 ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)';
@@ -206,13 +218,13 @@
 
             const config = window.GreenhouseEnvironmentConfig;
             if (config && config.labels) {
-                config.labels.forEach(label => drawLabelWithBackground(label.text, label.x, label.y, label.fontSize));
+                config.labels.forEach(label => drawLabelWithBackground(label.text, label.x, label.y, label.fontSize || 20)); // #27 - Increased default font size
             }
             if (config && config.icons) {
                 config.icons.forEach(icon => {
                     if (icon.type === 'path') {
                         const path = new Path2D(icon.pathData);
-                        ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+                        ctx.fillStyle = icon.color || (this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)');
                         ctx.save();
                         ctx.translate(icon.x - 12, icon.y - 12);
                         ctx.fill(path);
@@ -244,22 +256,22 @@
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.lineWidth = 1;
             const legendWidth = 180;
-            const legendHeight = 90;
-            const legendX = width - legendWidth - 20;
-            const legendY = height - legendHeight - 20;
+            const legendHeight = 100; // #8, #86 - Increased height
+            const legendX = width - legendWidth - 20; // Positioned to the right
+            const legendY = height - legendHeight - 20; // Reverted to bottom right
             ctx.beginPath();
             ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 8);
             ctx.fill();
             ctx.stroke();
             ctx.fillStyle = '#357438';
-            ctx.font = 'bold 12px "Helvetica Neue", Arial, sans-serif';
+            ctx.font = 'bold 14px "Helvetica Neue", Arial, sans-serif'; // #57 - Increased font size
             ctx.textAlign = 'left';
             ctx.fillText(t('legend_title'), legendX + 10, legendY + 20);
-            ctx.font = '11px "Helvetica Neue", Arial, sans-serif';
+            ctx.font = '12px "Helvetica Neue", Arial, sans-serif'; // #55 - Increased font size
             legendItems.forEach((item, index) => {
-                const itemY = legendY + 40 + index * 20;
+                const itemY = legendY + 45 + index * 22; // Adjusted spacing
                 ctx.fillStyle = item.color;
-                ctx.fillRect(legendX + 10, itemY - 8, 12, 12);
+                ctx.fillRect(legendX + 10, itemY - 10, 14, 14); // #29, #55 - Larger color swatches
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                 ctx.fillText(item.text, legendX + 28, itemY);
             });
@@ -296,7 +308,7 @@
         draw(ctx, width, height) {
             const t = (k) => this.util.t(k);
             ctx.save();
-            const panelHeight = 70;
+            const panelHeight = 60; // #34 - Reduced header bar height
             const gradient = ctx.createLinearGradient(0, 0, width, 0);
             gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
             gradient.addColorStop(1, 'rgba(245, 250, 255, 0.95)');
@@ -309,12 +321,12 @@
             ctx.lineTo(width, panelHeight);
             ctx.stroke();
             ctx.fillStyle = '#357438';
-            ctx.textAlign = 'center';
-            ctx.font = 'bold 28px "Quicksand", "Helvetica Neue", Arial, sans-serif';
-            ctx.fillText(t('env_title'), width / 2, 35);
-            ctx.font = '14px "Helvetica Neue", Arial, sans-serif';
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            ctx.fillText(t('env_subtitle'), width / 2, 55);
+            ctx.textAlign = 'left'; // Align left for better balance
+            ctx.font = 'bold 24px "Quicksand", "Helvetica Neue", Arial, sans-serif'; // #4 - Reduced font size
+            ctx.fillText(t('env_title'), 20, 30);
+            ctx.font = '13px "Helvetica Neue", Arial, sans-serif'; // #5, #93 - Reduced font size
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillText(t('env_subtitle'), 22, 48);
             ctx.restore();
         }
     }
@@ -345,17 +357,24 @@
             if (!this.environmentSystem) {
                 // Initialize the system and components
                 this.environmentSystem = new window.GreenhouseModelsUtil.GreenhouseSystem(this.canvases.environment);
-
-                this.environmentSystem.addComponent(new BackgroundComponent(this.state, this.util, this.environmentSystem));
-                this.environmentSystem.addComponent(new InfluencePathsComponent());
-                this.environmentSystem.addComponent(new HeatmapComponent(this.state, this.util));
-                this.environmentSystem.addComponent(new MedicationComponent(this.state, this.util));
-                this.environmentSystem.addComponent(new TherapyComponent(this.state, this.util));
-                this.environmentSystem.addComponent(new LabelsComponent(this.state, this.util));
-                this.environmentSystem.addComponent(new LegendComponent(this.util));
-                this.environmentSystem.addComponent(new OverlayComponent(this.state));
-                this.environmentSystem.addComponent(new TitleComponent(this.util));
-                this.environmentSystem.addComponent(new TooltipComponent(this.state, this.util));
+    
+                // #91 - Refactor component initialization to be data-driven
+                const components = [
+                    { constructor: BackgroundComponent, args: [this.state, this.util, this.environmentSystem] },
+                    { constructor: InfluencePathsComponent, args: [] },
+                    { constructor: HeatmapComponent, args: [this.state, this.util] },
+                    { constructor: MedicationComponent, args: [this.state, this.util] },
+                    { constructor: TherapyComponent, args: [this.state, this.util] },
+                    { constructor: LabelsComponent, args: [this.state, this.util] },
+                    { constructor: LegendComponent, args: [this.util] },
+                    { constructor: OverlayComponent, args: [this.state] },
+                    { constructor: TitleComponent, args: [this.util] },
+                    { constructor: TooltipComponent, args: [this.state, this.util] }
+                ];
+    
+                components.forEach(comp => {
+                    this.environmentSystem.addComponent(new comp.constructor(...comp.args));
+                });
             }
 
             // Render the frame using the system

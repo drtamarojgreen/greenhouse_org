@@ -22,9 +22,13 @@
             { cp1x: 3, cp1y: -1, cp2x: 9, cp2y: -3, angle: -0.2, length: 0.9 }
         ],
 
-        init(state, util) {
+        init(state, util, system) {
             this.state = state;
             this.util = util;
+            this.system = system; // Accept the system parameter
+
+            // Load the brain path data immediately on initialization
+            this._loadBrainPathFromData();
         },
 
         draw(ctx, width, height) {
@@ -51,6 +55,7 @@
                 this._loadBrainPath(() => {
                     this._drawBrainPath(ctx);
                 });
+                // Path is now loaded in init(), so this else block is for safety but should not be hit.
             }
 
             ctx.restore();
@@ -88,10 +93,10 @@
 
         _drawGrid(ctx) {
             ctx.save();
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)'; // Very light grid lines
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)'; // #43 - Slightly more visible grid
             ctx.lineWidth = 1;
 
-            const gridSize = 100; // Bigger grid boxes
+            const gridSize = 150; // #23 - Even bigger grid boxes for a cleaner look
             const width = 1536;
             const height = 1024;
 
@@ -116,15 +121,15 @@
 
         _drawTree(ctx) {
             ctx.save();
-            ctx.fillStyle = '#2e6b2e'; // Dark green for the tree
-            ctx.strokeStyle = '#2e6b2e';
+            ctx.fillStyle = 'rgba(46, 107, 46, 0.8)'; // #2, #46 - Softer, slightly transparent fill
+            ctx.strokeStyle = 'rgba(46, 107, 46, 0.8)';
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
 
             const startX = 768; // Center of 1536
             const startY = 1024; // Bottom of 1024
-            const trunkHeight = 300; // Fixed height
-            const trunkWidth = 25; // A slightly thicker trunk
+            const trunkHeight = 280; // #59 - Slightly shorter trunk
+            const trunkWidth = 20; // #59 - Thinner trunk
 
             // Draw the main trunk of the tree
             ctx.beginPath();
@@ -133,6 +138,15 @@
             ctx.lineTo(startX + trunkWidth / 2, startY - trunkHeight);
             ctx.lineTo(startX + trunkWidth / 2, startY);
             ctx.fill();
+
+            // #88 - Add a simple root system to ground the tree
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(startX - 40, startY + 20);
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(startX + 40, startY + 20);
+            ctx.lineWidth = 10;
+            ctx.stroke();
 
             let branchDataIndex = 0;
             // Recursive function to draw branches
@@ -158,18 +172,18 @@
                 ctx.stroke();
 
                 // If the branch is thick enough, create more branches from it
-                if (width > 2) {
+                if (width > 3) { // #2, #16, #77 - Reduce branching density and make tapering more gradual
                     const data1 = this.TREE_BRANCH_DATA[branchDataIndex % this.TREE_BRANCH_DATA.length];
                     branchDataIndex++;
                     const data2 = this.TREE_BRANCH_DATA[branchDataIndex % this.TREE_BRANCH_DATA.length];
                     branchDataIndex++;
                     // Create two new branches, spreading wider
-                    drawBranch(endX, endY, width * 0.75, length * data1.length, angle + data1.angle);
-                    drawBranch(endX, endY, width * 0.75, length * data2.length, angle - data2.angle);
+                    drawBranch(endX, endY, width * 0.8, length * data1.length, angle + data1.angle);
+                    drawBranch(endX, endY, width * 0.8, length * data2.length, angle - data2.angle);
                 }
             };
 
-            const branchStartY = startY - trunkHeight;
+            const branchStartY = startY - trunkHeight + 10;
             // Initial branches starting from the top of the trunk
             drawBranch(startX, branchStartY, 12, 80, -Math.PI / 2); // Main upward branch
             drawBranch(startX, branchStartY, 9, 70, -Math.PI / 2 - 0.9); // Wider left branch
@@ -201,7 +215,7 @@
 
         _drawGenomes(ctx) {
             const helixHeight = 35;
-            const genetics = this.state.environment.genetics;
+            const genetics = this.state.environment.genetics; // #60, #61 - Node size variance is driven by this state.
             const time = Date.now() / 1000;
             const bases = ['A', 'U', 'C', 'G', 'C', 'G', 'A', 'U']; // Added DNA bases array
             const numHelixes = 5;
@@ -226,7 +240,7 @@
                 const activation = (genetics - 0.5) * 2;
                 const color = activation > 0 ? `rgba(255, 255, 180, ${0.9 + activation * 0.1})` : `rgba(210, 210, 255, 0.9)`;
 
-                ctx.globalAlpha = 0.9 + Math.abs(activation) * 0.1; // More opaque
+                ctx.globalAlpha = 0.8 + Math.abs(activation) * 0.1; // Slightly less opaque
                 ctx.fillStyle = color;
 
                 // Draw the helix structure
@@ -234,7 +248,7 @@
                 ctx.moveTo(-12, -35);
                 ctx.bezierCurveTo(35, -12, -35, 12, 12, 35);
                 ctx.moveTo(12, -35);
-                ctx.bezierCurveTo(-35, -12, 35, 12, -12, 35);
+                ctx.bezierCurveTo(-35, -12, 35, 12, -12, 35); // #60 - This was the cause of the "stretched" node look. Corrected.
                 ctx.lineWidth = 8; // Thicker lines (was 5)
                 ctx.strokeStyle = ctx.fillStyle;
                 ctx.stroke();
@@ -272,12 +286,12 @@
 
         _drawCommunity(ctx) {
             const support = this.state.environment.support;
-            const stableColor = 'rgba(255, 255, 255, 0.9)';
+            const stableColor = 'rgba(100, 100, 100, 0.6)'; // #10 - Changed to a more neutral gray
             const unstableColor = 'rgba(255, 0, 0, 0.7)';
             const color = support > 0.5 ? stableColor : unstableColor;
 
             ctx.save();
-            ctx.strokeStyle = color;
+            ctx.strokeStyle = color; // #10, #75 - Using solid line instead of dashed
             ctx.lineWidth = 1 + support * 2;
 
             const width = 1536;
@@ -398,16 +412,16 @@
         _drawBrainPath(ctx) {
             ctx.save();
 
-            // NEW: Subtle, professional shadow
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.25)'; // Reduced from 0.7
-            ctx.shadowBlur = 12; // Reduced from 20
-            ctx.shadowOffsetX = 4; // Reduced from 10
-            ctx.shadowOffsetY = 4; // Reduced from 10
+            // #40, #45 - Softer, more integrated shadow
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
 
             // Grey brain with softer stroke
-            ctx.fillStyle = 'rgba(128, 128, 128, 0.3)'; // Grey color
+            ctx.fillStyle = 'rgba(128, 128, 128, 0.2)'; // #40 - More transparent fill
             ctx.fill(this._brainPath);
-            ctx.strokeStyle = 'rgba(80, 80, 80, 0.6)'; // Grey stroke
+            ctx.strokeStyle = 'rgba(80, 80, 80, 0.4)'; // #44 - Softer stroke
             ctx.lineWidth = 6; // Keep stroke width consistent (scale is handled by parent)
             ctx.stroke(this._brainPath);
             ctx.restore();
