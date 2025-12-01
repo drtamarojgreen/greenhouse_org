@@ -7,7 +7,7 @@ import os
 # Assumes we run from repo root
 sys.path.append(os.path.join(os.getcwd(), 'tools'))
 
-from canvas_ml.cnn_layer import convolve_2d, max_pool, to_grayscale
+from canvas_ml.cnn_layer import convolve_2d, max_pool, to_grayscale, apply_padding
 from canvas_ml.scorers import calculate_contrast
 from canvas_ml.model import KMeans
 
@@ -24,11 +24,14 @@ class TestCanvasMLIntegration(unittest.TestCase):
             [1, 1, 1],
             [1, 1, 1]
         ]
-        # convolve_2d implementation returns valid convolution (no padding)
-        # 3x3 - 3x3 + 1 = 1x1
-        result = convolve_2d(image, kernel)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(len(result[0]), 1)
+        # Convolve
+        # Input 3x3, Kernel 3x3, Padding 1 -> Input becomes 5x5 -> Output 3x3
+        # Padding is manually applied first
+        padded_image = apply_padding(image, padding=1)
+        result = convolve_2d(padded_image, kernel)
+
+        self.assertEqual(len(result), 3)
+        self.assertEqual(len(result[0]), 3)
 
     def test_max_pooling(self):
         map = [
