@@ -1,100 +1,92 @@
-"""
-Scoring metrics for visual analysis in pure Python.
-"""
 
 import math
 
-def calculate_contrast(rgba_data, width, height):
+def calculate_contrast(pixels_rgba):
     """
-    Calculates the root mean square (RMS) contrast of the image.
-    RMS contrast is the standard deviation of the pixel intensities.
+    Calculates average contrast of the image.
+    Input: flattened list of RGBA values [r, g, b, a, r, g, b, a, ...]
+    Returns a float score.
+
+    Simplified approach: Calculate standard deviation of luminance.
+    Luminance = 0.2126*R + 0.7152*G + 0.0722*B
     """
-    pixel_count = width * height
-    if pixel_count == 0:
-        return 0
+    if not pixels_rgba:
+        return 0.0
 
-    intensities = []
-    total_intensity = 0
+    luminances = []
+    for i in range(0, len(pixels_rgba), 4):
+        r = pixels_rgba[i]
+        g = pixels_rgba[i+1]
+        b = pixels_rgba[i+2]
+        # a = pixels_rgba[i+3] # Ignored for luminance calculation for now
 
-    for i in range(0, len(rgba_data), 4):
-        r = rgba_data[i]
-        g = rgba_data[i+1]
-        b = rgba_data[i+2]
-        # Normalize to 0-1
-        luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
-        intensities.append(luminance)
-        total_intensity += luminance
+        lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        luminances.append(lum)
 
-    mean_intensity = total_intensity / pixel_count
+    if not luminances:
+        return 0.0
 
-    variance = 0
-    for val in intensities:
-        variance += (val - mean_intensity) ** 2
+    mean_lum = sum(luminances) / len(luminances)
+    variance = sum((l - mean_lum) ** 2 for l in luminances) / len(luminances)
+    std_dev = math.sqrt(variance)
 
-    rms_contrast = math.sqrt(variance / pixel_count)
-    return rms_contrast
+    return std_dev
 
-def calculate_white_space(rgba_data, width, height, threshold=250):
+def calculate_whitespace_ratio(pixels_rgba, threshold=240):
     """
-    Calculates the ratio of "white" (or very light) space to total space.
+    Calculates the ratio of 'white' or light pixels to total pixels.
+    Input: flattened list of RGBA values.
+    Returns a float (0.0 to 1.0).
     """
-    pixel_count = width * height
-    if pixel_count == 0:
-        return 0
+    if not pixels_rgba:
+        return 0.0
 
-    white_pixels = 0
+    pixel_count = len(pixels_rgba) // 4
+    white_pixel_count = 0
 
-    for i in range(0, len(rgba_data), 4):
-        r = rgba_data[i]
-        g = rgba_data[i+1]
-        b = rgba_data[i+2]
+    for i in range(0, len(pixels_rgba), 4):
+        r = pixels_rgba[i]
+        g = pixels_rgba[i+1]
+        b = pixels_rgba[i+2]
 
         # Check if pixel is close to white
         if r > threshold and g > threshold and b > threshold:
-            white_pixels += 1
+            white_pixel_count += 1
 
-    return white_pixels / pixel_count
+    return white_pixel_count / pixel_count if pixel_count > 0 else 0.0
 
-def calculate_color_themes(rgba_data, width, height, num_bins=8):
+def get_color_histogram(pixels_rgba, bins=8):
     """
-    Generates a simplified color histogram to detect palette consistency.
-    Returns a normalized distribution of hues.
+    Generates a color histogram.
+    Input: flattened list of RGBA values.
+    Returns a 1D list representing the histogram.
     """
-    pixel_count = width * height
-    if pixel_count == 0:
-        return []
+    # Quantize R, G, B into bins
+    hist_size = bins * bins * bins
+    histogram = [0] * hist_size
 
-    # We will compute a simple 3D histogram (R, G, B bins) flattened
-    bin_size = 256 // num_bins
-    histogram = {}
+    bin_size = 256 / bins
 
-    for i in range(0, len(rgba_data), 4):
-        r = rgba_data[i]
-        g = rgba_data[i+1]
-        b = rgba_data[i+2]
+    for i in range(0, len(pixels_rgba), 4):
+        r = pixels_rgba[i]
+        g = pixels_rgba[i+1]
+        b = pixels_rgba[i+2]
 
-        r_bin = r // bin_size
-        g_bin = g // bin_size
-        b_bin = b // bin_size
+        r_bin = int(r / bin_size)
+        g_bin = int(g / bin_size)
+        b_bin = int(b / bin_size)
 
-        key = (r_bin, g_bin, b_bin)
-        histogram[key] = histogram.get(key, 0) + 1
+        # Ensure we don't go out of bounds (e.g. 256/32 = 8, index 8 is out of 0-7)
+        if r_bin >= bins: r_bin = bins - 1
+        if g_bin >= bins: g_bin = bins - 1
+        if b_bin >= bins: b_bin = bins - 1
 
-    # Flatten and normalize top N dominant colors?
-    # Or just return a vector of the bins?
-    # For simplicity/vectors, we can return the count of top 5 dominant bins as a "consistency score"
-    # or just the entropy.
+        index = (r_bin * bins * bins) + (g_bin * bins) + b_bin
+        histogram[index] += 1
 
-    # Let's return the entropy of the color distribution (lower entropy = more consistent theme)
-    probs = [count / pixel_count for count in histogram.values()]
-    entropy = -sum(p * math.log(p, 2) for p in probs if p > 0)
+    # Normalize
+    total_pixels = len(pixels_rgba) // 4
+    if total_pixels > 0:
+        histogram = [h / total_pixels for h in histogram]
 
-    return entropy
-
-def calculate_text_density(text_content, area):
-    """
-    Estimates text density given the text content string and the area of the container.
-    """
-    if area == 0:
-        return 0
-    return len(text_content) / area
+    return histogram

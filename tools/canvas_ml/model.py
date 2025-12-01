@@ -1,6 +1,3 @@
-"""
-Manual implementation of Unsupervised Learning (K-Means) in pure Python.
-"""
 
 import math
 import random
@@ -11,89 +8,78 @@ class KMeans:
         self.max_iters = max_iters
         self.tol = tol
         self.centroids = []
-        self.labels = []
 
     def fit(self, data):
         """
-        Trains the K-Means model on the data.
-        Data is a list of vectors (lists of floats).
+        Fits the model to the data.
+        Data is a list of lists (vectors).
         """
         if not data:
             return
 
-        dims = len(data[0])
+        n_samples = len(data)
+        n_features = len(data[0])
+
         # Initialize centroids randomly from data points
-        self.centroids = random.sample(data, self.k)
+        # For reproducibility, we could seed, but for now we use random
+        random.seed(42)
+        self.centroids = [data[i] for i in random.sample(range(n_samples), min(self.k, n_samples))]
+
+        # If we asked for more clusters than data points, just take all data points
+        if len(self.centroids) < self.k:
+            self.k = len(self.centroids)
 
         for _ in range(self.max_iters):
-            # Assign clusters
-            self.labels = [self._closest_centroid(point) for point in data]
+            clusters = [[] for _ in range(self.k)]
+
+            # Assign each point to the nearest centroid
+            for point in data:
+                distances = [self._euclidean_distance(point, centroid) for centroid in self.centroids]
+                closest_index = distances.index(min(distances))
+                clusters[closest_index].append(point)
+
+            prev_centroids = list(self.centroids)
 
             # Update centroids
-            new_centroids = []
             for i in range(self.k):
-                # Get all points assigned to cluster i
-                points = [data[j] for j, label in enumerate(self.labels) if label == i]
-                if not points:
-                    # If a cluster is empty, keep the old centroid (or re-init)
-                    new_centroids.append(self.centroids[i])
+                if clusters[i]:
+                    self.centroids[i] = self._calculate_mean(clusters[i])
                 else:
-                    # Calculate mean
-                    mean_point = [sum(dim) / len(points) for dim in zip(*points)]
-                    new_centroids.append(mean_point)
+                    # Handle empty cluster? Keep old centroid or re-init.
+                    # Keeping old is simplest for stability.
+                    pass
 
-            # Check for convergence
-            shift = 0
+            # Check convergence
+            optimized = True
             for i in range(self.k):
-                dist = self._euclidean_distance(self.centroids[i], new_centroids[i])
-                shift += dist
+                dist = self._euclidean_distance(prev_centroids[i], self.centroids[i])
+                if dist > self.tol:
+                    optimized = False
+                    break
 
-            self.centroids = new_centroids
-            if shift < self.tol:
+            if optimized:
                 break
 
     def predict(self, point):
-        """Returns the index of the closest cluster for a new point."""
-        return self._closest_centroid(point)
-
-    def _closest_centroid(self, point):
-        min_dist = float('inf')
-        idx = -1
-        for i, centroid in enumerate(self.centroids):
-            dist = self._euclidean_distance(point, centroid)
-            if dist < min_dist:
-                min_dist = dist
-                idx = i
-        return idx
+        """
+        Predicts the closest cluster index for a single point.
+        """
+        if not self.centroids:
+            return -1
+        distances = [self._euclidean_distance(point, centroid) for centroid in self.centroids]
+        return distances.index(min(distances))
 
     def _euclidean_distance(self, p1, p2):
-        return math.sqrt(sum((a - b) ** 2 for a, b in zip(p1, p2)))
+        sum_sq = sum((a - b) ** 2 for a, b in zip(p1, p2))
+        return math.sqrt(sum_sq)
 
-def normalize_vectors(vectors):
-    """
-    Min-Max normalization for a list of vectors.
-    """
-    if not vectors:
-        return []
+    def _calculate_mean(self, points):
+        n_points = len(points)
+        n_features = len(points[0])
+        mean_point = [0.0] * n_features
 
-    dims = len(vectors[0])
-    min_vals = [float('inf')] * dims
-    max_vals = [-float('inf')] * dims
+        for point in points:
+            for i in range(n_features):
+                mean_point[i] += point[i]
 
-    for v in vectors:
-        for i in range(dims):
-            if v[i] < min_vals[i]: min_vals[i] = v[i]
-            if v[i] > max_vals[i]: max_vals[i] = v[i]
-
-    normalized = []
-    for v in vectors:
-        norm_v = []
-        for i in range(dims):
-            denom = max_vals[i] - min_vals[i]
-            if denom == 0:
-                norm_v.append(0)
-            else:
-                norm_v.append((v[i] - min_vals[i]) / denom)
-        normalized.append(norm_v)
-
-    return normalized
+        return [x / n_points for x in mean_point]

@@ -1,140 +1,131 @@
-"""
-Main orchestrator for the Vision ML Pipeline.
-"""
 
 import sys
 import os
+import time
+import threading
+import http.server
+import socketserver
 
-# Add current directory to path so we can import modules if run directly
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add the parent directory to sys.path to ensure imports work if run directly
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-try:
-    from .renderer import Renderer
-    from .cnn_layer import to_grayscale, convolve2d, max_pooling, flatten, KERNELS
-    from .scorers import calculate_contrast, calculate_white_space, calculate_color_themes
-    from .model import KMeans, normalize_vectors
-except ImportError:
-    # Fallback for direct execution
-    from renderer import Renderer
-    from cnn_layer import to_grayscale, convolve2d, max_pooling, flatten, KERNELS
-    from scorers import calculate_contrast, calculate_white_space, calculate_color_themes
-    from model import KMeans, normalize_vectors
+from canvas_ml import renderer, cnn_layer, scorers, model
 
-class Pipeline:
-    def __init__(self):
-        self.renderer = Renderer()
-        self.model = KMeans(k=3) # 3 archetypes: Good, Bad, Cluttered?
-        self.training_data = [] # Store vectors
+PORT = 8000
+Handler = http.server.SimpleHTTPRequestHandler
 
-    def analyze_url(self, url):
-        """
-        Runs the full pipeline on a single URL.
-        """
-        print(f"Analyzing {url}...")
+def start_server():
+    """Starts a simple HTTP server serving the repository root."""
+    # We want to serve from the root of the repo so /docs/models.html is accessible
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.chdir(repo_root)
 
-        # 1. Render & Capture
-        results = self.renderer.render_and_capture(url)
-        if results.get("error"):
-            print(f"Error rendering {url}: {results['error']}")
-            return None
+    try:
+        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+            print(f"Serving at port {PORT} from {repo_root}")
+            httpd.serve_forever()
+    except OSError:
+        print(f"Port {PORT} in use, assuming server is already running.")
 
-        pixel_data = results.get("pixel_data")
-        width = results.get("width")
-        height = results.get("height")
-        metrics = results.get("metrics")
+def run_pipeline(url=None, output_path="capture.png"):
+    server_thread = None
 
-        if not pixel_data or width == 0 or height == 0:
-            print("No pixel data captured.")
-            return None
+    if url is None:
+        # Start local server
+        print("No URL provided. Starting local server for docs/models.html...")
+        server_thread = threading.Thread(target=start_server, daemon=True)
+        server_thread.start()
+        # Give it a moment to start
+        time.sleep(1)
+        url = f"http://localhost:{PORT}/docs/models.html"
 
-        # 2. Extract Features (CNN)
-        print("Extracting features with CNN...")
-        # Convert to grayscale for CNN
-        gray_image = to_grayscale(pixel_data, width, height)
+    print(f"Starting pipeline for {url}...")
 
-        # Apply Edge Detection
-        edge_map = convolve2d(gray_image, KERNELS["edge_detection"])
+    # Stage 1: Rendering & Benchmarking
+    print("Stage 1: Rendering & Benchmarking...")
+    render_result = renderer.render_and_capture(url, output_path)
 
-        # Pooling (reduce size)
-        pooled_map = max_pooling(edge_map, pool_size=4, stride=4)
-        # Note: 4x4 pooling to be aggressive and keep vectors small for this prototype
+    pixels = render_result.get("pixel_data", [])
+    width = render_result.get("width", 0)
+    height = render_result.get("height", 0)
+    metrics = render_result.get("metrics", {})
 
-        cnn_vector = flatten(pooled_map)
-        # Truncate vector if it's too huge for our simple K-Means?
-        # Or maybe average it down to a few scalars (e.g., "edge density")
-        edge_density = sum(cnn_vector) / len(cnn_vector)
+    if not pixels:
+        print("Warning: No pixel data captured (no <canvas> found?). Pipeline will proceed with zeroed data.")
+        # Create dummy data 100x100
+        width = 100
+        height = 100
+        pixels = [0] * (width * height * 4)
 
-        # 3. Scoring Metrics
-        print("Calculating scoring metrics...")
-        contrast_score = calculate_contrast(pixel_data, width, height)
-        white_space_score = calculate_white_space(pixel_data, width, height)
-        color_entropy = calculate_color_themes(pixel_data, width, height)
+    print(f"Captured {width}x{height} image. Duration: {metrics.get('duration', 0):.2f}s")
 
-        # 4. Construct Feature Vector
-        # [EdgeDensity, Contrast, WhiteSpace, ColorEntropy, RenderTime, MemoryUsed]
-        vector = [
-            edge_density,
-            contrast_score,
-            white_space_score,
-            color_entropy,
-            metrics.get("render_time", 0),
-            metrics.get("memory_used", 0)
-        ]
+    # Stage 2: Advanced Feature Extraction (CNN Layer)
+    print("Stage 2: Advanced Feature Extraction (CNN)...")
 
-        return vector
+    # Convert flat pixels to 2D grid (using only R channel for grayscale features)
+    grayscale_grid = []
+    for y in range(height):
+        row = []
+        for x in range(width):
+            idx = (y * width + x) * 4
+            if idx + 2 < len(pixels):
+                r = pixels[idx]
+                g = pixels[idx+1]
+                b = pixels[idx+2]
+                lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+                row.append(lum)
+            else:
+                row.append(0)
+        grayscale_grid.append(row)
 
-    def train(self, urls):
-        """
-        Analyzes a list of URLs and trains the unsupervised model.
-        """
-        raw_vectors = []
-        valid_urls = []
+    # Apply Edge Detection Kernel
+    kernel = [
+        [-1, -1, -1],
+        [-1,  8, -1],
+        [-1, -1, -1]
+    ]
 
-        for url in urls:
-            vec = self.analyze_url(url)
-            if vec:
-                raw_vectors.append(vec)
-                valid_urls.append(url)
+    feature_map = cnn_layer.convolve_2d(grayscale_grid, kernel)
+    feature_map = cnn_layer.relu(feature_map)
+    pooled_map = cnn_layer.max_pool(feature_map, pool_size=2, stride=2)
+    flat_features = cnn_layer.flatten(pooled_map)
 
-        if not raw_vectors:
-            print("No data to train on.")
-            return
+    print(f"Extracted feature vector of size: {len(flat_features)}")
 
-        # Normalize
-        norm_vectors = normalize_vectors(raw_vectors)
-        self.training_data = norm_vectors
+    # Stage 3: Comprehensive Scoring Metrics
+    print("Stage 3: Scoring Metrics...")
+    contrast_score = scorers.calculate_contrast(pixels)
+    whitespace_score = scorers.calculate_whitespace_ratio(pixels)
 
-        # Fit K-Means
-        print("Training K-Means model...")
-        self.model.fit(norm_vectors)
+    print(f"Contrast: {contrast_score:.2f}, Whitespace: {whitespace_score:.2f}")
 
-        # Report
-        for i, url in enumerate(valid_urls):
-            cluster = self.model.predict(norm_vectors[i])
-            print(f"URL: {url} -> Cluster {cluster}")
+    # Stage 4: Unsupervised Machine Learning
+    print("Stage 4: Clustering...")
 
-    def predict_value(self, vector, cluster):
-        """
-        Heuristic to predict value based on vector and cluster.
-        This would be calibrated by human feedback in a real system.
-        """
-        # Example logic:
-        # High contrast + High white space = usually good?
-        # High edge density = cluttered?
+    input_vector = [contrast_score, whitespace_score, metrics.get('duration', 0)] + flat_features[:10]
 
-        # vector is normalized [Edge, Contrast, WhiteSpace, Color, Time, Mem]
-        edge, contrast, white, color, time, mem = vector
+    kmeans = model.KMeans(k=3)
+    # Mock training data
+    dummy_data = [[x * 0.9 for x in input_vector], [x * 1.1 for x in input_vector], input_vector]
+    kmeans.fit(dummy_data)
 
-        score = 0
-        score += contrast * 10
-        score += white * 5
-        score -= edge * 5 # Penalize clutter
+    cluster_id = kmeans.predict(input_vector)
+    print(f"Assigned to Cluster: {cluster_id}")
 
-        return score
+    # Stage 5: Value Prediction
+    print("Stage 5: Value Prediction...")
+    value_score = (contrast_score * 0.5) + (whitespace_score * 100) - (metrics.get('duration', 0) * 10)
+    prediction = "High Value" if value_score > 50 else "Low Value"
+
+    print(f"Predicted Implementation Value: {prediction} (Score: {value_score:.2f})")
+
+    return {
+        "cluster": cluster_id,
+        "prediction": prediction,
+        "score": value_score,
+        "metrics": metrics
+    }
 
 if __name__ == "__main__":
-    # Example usage
-    pipeline = Pipeline()
-    # In a real scenario, these would be internal dev URLs or local files
-    test_urls = ["https://example.com"]
-    pipeline.train(test_urls)
+    target = sys.argv[1] if len(sys.argv) > 1 else None
+    run_pipeline(target)
