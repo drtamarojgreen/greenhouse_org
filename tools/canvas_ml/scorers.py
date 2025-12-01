@@ -90,3 +90,15 @@ def get_color_histogram(pixels_rgba, bins=8):
         histogram = [h / total_pixels for h in histogram]
 
     return histogram
+
+def calculate_color_entropy(pixels_rgba, bins=8):
+    """
+    Calculates the Shannon entropy of the color distribution.
+    Higher entropy means more diverse/chaotic color usage.
+    """
+    histogram = get_color_histogram(pixels_rgba, bins)
+    entropy = 0.0
+    for p in histogram:
+        if p > 0:
+            entropy -= p * math.log2(p)
+    return entropy

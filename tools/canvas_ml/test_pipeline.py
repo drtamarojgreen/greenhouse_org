@@ -69,5 +69,20 @@ class TestCanvasML(unittest.TestCase):
 
         self.assertNotEqual(p1, p2)
 
+    def test_color_entropy(self):
+        # Single color -> 0 entropy
+        pixels = [255, 0, 0, 255] * 10
+        entropy = scorers.calculate_color_entropy(pixels)
+        self.assertAlmostEqual(entropy, 0.0)
+
+        # Uniform distribution of colors
+        # For simplicity, we can't easily create a perfectly uniform distribution in 8x8x8 bins with few pixels
+        # But we can try 2 distinct colors
+        # Red and Blue
+        pixels_mix = [255, 0, 0, 255, 0, 0, 255, 255]
+        entropy_mix = scorers.calculate_color_entropy(pixels_mix)
+        # 2 bins with p=0.5 -> entropy = -0.5*log2(0.5) * 2 = 0.5 + 0.5 = 1.0
+        self.assertAlmostEqual(entropy_mix, 1.0)
+
 if __name__ == '__main__':
     unittest.main()

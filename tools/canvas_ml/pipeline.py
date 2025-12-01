@@ -29,7 +29,7 @@ def start_server():
     except OSError:
         print(f"Port {PORT} in use, assuming server is already running.")
 
-def run_pipeline(url=None, output_path=None):
+def run_pipeline(url=None):
     server_thread = None
 
     if url is None:
@@ -45,7 +45,8 @@ def run_pipeline(url=None, output_path=None):
 
     # Stage 1: Rendering & Benchmarking
     print("Stage 1: Rendering & Benchmarking...")
-    render_result = renderer.render_and_capture(url, output_path)
+    # Explicitly force output_path to None to prevent saving screenshots
+    render_result = renderer.render_and_capture(url, output_path=None)
 
     pixels = render_result.get("pixel_data", [])
     width = render_result.get("width", 0)
@@ -98,13 +99,15 @@ def run_pipeline(url=None, output_path=None):
     print("Stage 3: Scoring Metrics...")
     contrast_score = scorers.calculate_contrast(pixels)
     whitespace_score = scorers.calculate_whitespace_ratio(pixels)
+    entropy_score = scorers.calculate_color_entropy(pixels)
 
-    print(f"Contrast: {contrast_score:.2f}, Whitespace: {whitespace_score:.2f}")
+    print(f"Contrast: {contrast_score:.2f}, Whitespace: {whitespace_score:.2f}, Color Entropy: {entropy_score:.2f}")
 
     # Stage 4: Unsupervised Machine Learning
     print("Stage 4: Clustering...")
 
-    input_vector = [contrast_score, whitespace_score, metrics.get('duration', 0)] + flat_features[:10]
+    # Include entropy in input vector
+    input_vector = [contrast_score, whitespace_score, entropy_score, metrics.get('duration', 0)] + flat_features[:10]
 
     kmeans = model.KMeans(k=3)
     # Mock training data
@@ -116,7 +119,9 @@ def run_pipeline(url=None, output_path=None):
 
     # Stage 5: Value Prediction
     print("Stage 5: Value Prediction...")
-    value_score = (contrast_score * 0.5) + (whitespace_score * 100) - (metrics.get('duration', 0) * 10)
+    # Update value score formula to include entropy (assuming higher entropy/diversity is good for visual interest, or bad if cluttered?
+    # Let's assume higher entropy is slightly positive for complexity/richness, but keep weight small)
+    value_score = (contrast_score * 0.5) + (whitespace_score * 100) + (entropy_score * 10) - (metrics.get('duration', 0) * 10)
     prediction = "High Value" if value_score > 50 else "Low Value"
 
     print(f"Predicted Implementation Value: {prediction} (Score: {value_score:.2f})")
