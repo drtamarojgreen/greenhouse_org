@@ -5,6 +5,8 @@ import time
 import threading
 import http.server
 import socketserver
+import csv
+import json
 
 # Add the parent directory to sys.path to ensure imports work if run directly
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,7 +29,7 @@ def start_server():
     except OSError:
         print(f"Port {PORT} in use, assuming server is already running.")
 
-def run_pipeline(url=None, output_path="capture.png"):
+def run_pipeline(url=None, output_path=None):
     server_thread = None
 
     if url is None:
@@ -118,6 +120,40 @@ def run_pipeline(url=None, output_path="capture.png"):
     prediction = "High Value" if value_score > 50 else "Low Value"
 
     print(f"Predicted Implementation Value: {prediction} (Score: {value_score:.2f})")
+
+    # Artifact Management
+    baseline_file = "baseline_metrics.json"
+    render_change = 0.0
+    current_duration = metrics.get('duration', 0)
+
+    if os.path.exists(baseline_file):
+        try:
+            with open(baseline_file, 'r') as f:
+                baseline = json.load(f)
+                last_duration = baseline.get('duration', 0)
+                # render_change is difference in duration.
+                # Positive means slower (regression), negative means faster (improvement).
+                render_change = current_duration - last_duration
+        except Exception as e:
+            print(f"Error reading baseline: {e}")
+
+    # Export CSV
+    csv_file = "vision_report.csv"
+    try:
+        with open(csv_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["render_change", "total_score"])
+            writer.writerow([render_change, value_score])
+        print(f"Exported report to {csv_file}")
+    except Exception as e:
+        print(f"Error writing CSV report: {e}")
+
+    # Save new baseline for future runs
+    try:
+        with open(baseline_file, 'w') as f:
+            json.dump({"duration": current_duration, "score": value_score}, f)
+    except Exception as e:
+        print(f"Error saving baseline: {e}")
 
     return {
         "cluster": cluster_id,
