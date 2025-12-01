@@ -48,7 +48,7 @@ def categorize_change(render_change, score_change):
     else:
         return "Neutral"
 
-def run_pipeline(url=None, output_path=None):
+def run_pipeline(url=None, output_path=None, setup_script=None, description=None):
     server_thread = None
 
     if url is None:
@@ -66,11 +66,14 @@ def run_pipeline(url=None, output_path=None):
         if not render_description:
             render_description = "custom_url"
 
+    if description:
+        render_description = description
+
     print(f"Starting pipeline for {url} ({render_description})...")
 
     # Stage 1: Rendering & Benchmarking
     print("Stage 1: Rendering & Benchmarking...")
-    render_result = renderer.render_and_capture(url, output_path)
+    render_result = renderer.render_and_capture(url, output_path, setup_script=setup_script)
 
     pixels = render_result.get("pixel_data", [])
     width = render_result.get("width", 0)
