@@ -3,14 +3,15 @@ import unittest
 import sys
 import os
 
-# Add tools to path
+# Add tools to path so we can import canvas_ml
+# Assumes we run from repo root
 sys.path.append(os.path.join(os.getcwd(), 'tools'))
 
 from canvas_ml.cnn_layer import convolve_2d, max_pool, to_grayscale, apply_padding
 from canvas_ml.scorers import calculate_contrast
 from canvas_ml.model import KMeans
 
-class TestCanvasML(unittest.TestCase):
+class TestCanvasMLIntegration(unittest.TestCase):
     def test_cnn_logic(self):
         # 3x3 image
         image = [
@@ -39,7 +40,7 @@ class TestCanvasML(unittest.TestCase):
             [1, 2, 3, 4],
             [5, 6, 7, 8]
         ]
-        # 2x2 pooling, stride 2 -> 2x2 output
+        # max_pool signature: (feature_map, pool_size, stride)
         pooled = max_pool(map, 2, 2)
         self.assertEqual(len(pooled), 2)
         self.assertEqual(len(pooled[0]), 2)
@@ -49,6 +50,7 @@ class TestCanvasML(unittest.TestCase):
         # 2x2 red image
         # RGBA: 255, 0, 0, 255
         pixels = [255, 0, 0, 255] * 4
+        # calculate_contrast takes only pixels
         contrast = calculate_contrast(pixels)
         self.assertEqual(contrast, 0.0) # No variation
 

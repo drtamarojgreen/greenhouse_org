@@ -1,8 +1,15 @@
 
 import unittest
-from tools.canvas_ml import cnn_layer, scorers, model
+import sys
+import os
 
-class TestCanvasML(unittest.TestCase):
+# Ensure we can import canvas_ml
+# If running from root, 'tools' is in CWD.
+sys.path.append(os.path.join(os.getcwd(), 'tools'))
+
+from canvas_ml import cnn_layer, scorers, model
+
+class TestCanvasMLPipeline(unittest.TestCase):
 
     def test_convolution_logic(self):
         # 3x3 image, 3x3 kernel -> 1x1 output
