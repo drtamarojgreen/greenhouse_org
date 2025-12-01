@@ -137,6 +137,7 @@ def run_pipeline(url=None, output_path=None):
     # Artifact Management
     baseline_file = "baseline_metrics.json"
     render_change = 0.0
+    score_change = 0.0
     current_duration = metrics.get('duration', 0)
 
     if os.path.exists(baseline_file):
@@ -144,9 +145,28 @@ def run_pipeline(url=None, output_path=None):
             with open(baseline_file, 'r') as f:
                 baseline = json.load(f)
                 last_duration = baseline.get('duration', 0)
+                last_score = baseline.get('score', 0)
                 render_change = current_duration - last_duration
+                score_change = value_score - last_score
         except Exception as e:
             print(f"Error reading baseline: {e}")
+
+    # Categorization
+    RENDER_CHANGE_THRESHOLD = 0.05
+    SCORE_CHANGE_THRESHOLD = 5.0
+
+    category = "Neutral"
+    # Check for combined improvement first (Optimization)
+    if render_change < -RENDER_CHANGE_THRESHOLD and score_change > SCORE_CHANGE_THRESHOLD:
+        category = "Optimization"
+    elif render_change < -RENDER_CHANGE_THRESHOLD and score_change > -SCORE_CHANGE_THRESHOLD:
+        category = "Performance Win"
+    elif score_change > SCORE_CHANGE_THRESHOLD and render_change < RENDER_CHANGE_THRESHOLD:
+        category = "Visual Polish"
+    elif render_change > RENDER_CHANGE_THRESHOLD or score_change < -SCORE_CHANGE_THRESHOLD:
+        category = "Regression"
+
+    print(f"Improvement Category: {category} (Render Change: {render_change:.4f}s, Score Change: {score_change:.2f})")
 
     # Export CSV
     csv_file = "vision_report.csv"
@@ -195,7 +215,8 @@ def run_pipeline(url=None, output_path=None):
         "cluster": cluster_id,
         "prediction": prediction,
         "score": value_score,
-        "metrics": metrics
+        "metrics": metrics,
+        "category": category
     }
 
 if __name__ == "__main__":
