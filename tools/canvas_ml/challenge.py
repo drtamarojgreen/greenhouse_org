@@ -16,13 +16,16 @@ from canvas_ml import renderer, scorers, task_registry
 PORT = 8001
 Handler = http.server.SimpleHTTPRequestHandler
 
+class ReusableTCPServer(socketserver.TCPServer):
+    allow_reuse_address = True
+
 def start_server():
     """Starts a simple HTTP server serving the repository root."""
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     os.chdir(repo_root)
 
     try:
-        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        with ReusableTCPServer(("", PORT), Handler) as httpd:
             # print(f"Serving at port {PORT} from {repo_root}")
             httpd.serve_forever()
     except OSError:
