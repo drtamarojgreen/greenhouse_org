@@ -29,6 +29,25 @@ def start_server():
     except OSError:
         print(f"Port {PORT} in use, assuming server is already running.")
 
+def categorize_change(render_change, score_change):
+    """
+    Categorizes the improvement based on changes in rendering duration and score.
+
+    Thresholds:
+    - Regression: Score decreased by > 2.0 OR Render time increased by > 0.05s
+    - Performance Win: Render time decreased by > 0.05s (and no regression)
+    - Visual Polish: Score increased by > 2.0
+    - Neutral: Minor fluctuations
+    """
+    if score_change < -2.0 or render_change > 0.05:
+        return "Regression"
+    elif render_change < -0.05:
+        return "Performance Win"
+    elif score_change > 2.0:
+        return "Visual Polish"
+    else:
+        return "Neutral"
+
 def run_pipeline(url=None, output_path=None):
     server_thread = None
 
@@ -138,6 +157,7 @@ def run_pipeline(url=None, output_path=None):
     baseline_file = "baseline_metrics.json"
     render_change = 0.0
     score_change = 0.0
+    improvement_category = "Neutral"
     current_duration = metrics.get('duration', 0)
 
     if os.path.exists(baseline_file):
@@ -151,6 +171,11 @@ def run_pipeline(url=None, output_path=None):
         except Exception as e:
             print(f"Error reading baseline: {e}")
 
+    # Benchmarking & Categorization
+    improvement_category = categorize_change(render_change, score_change)
+
+    print(f"Change Analysis: Duration Delta: {render_change:.4f}s, Score Delta: {score_change:.2f}")
+    print(f"Improvement Category: {improvement_category}")
     # Categorization
     RENDER_CHANGE_THRESHOLD = 0.05
     SCORE_CHANGE_THRESHOLD = 5.0
@@ -180,6 +205,8 @@ def run_pipeline(url=None, output_path=None):
                 writer.writerow([
                     "render_description",
                     "render_change",
+                    "score_change",
+                    "improvement_category",
                     "total_score",
                     "contrast",
                     "whitespace",
@@ -192,6 +219,8 @@ def run_pipeline(url=None, output_path=None):
             writer.writerow([
                 render_description,
                 render_change,
+                score_change,
+                improvement_category,
                 value_score,
                 contrast_score,
                 whitespace_score,
