@@ -46,7 +46,22 @@
                     console.log('Models App: Data holder not found, using fallback data for local testing.');
                     this.state.simulationData = { notes: [] }; // Provide minimal valid data
                     this.state.lexicon = { domain_tags: {}, neurotransmitter_affinity: {} };
-                    this.state.synapseData = {};
+                    this.state.synapseData = {
+                        elements: [
+                            {
+                                "type": "ellipse",
+                                "cx": "w/2",
+                                "cy": "psy",
+                                "rx": 100,
+                                "ry": 40,
+                                "style": {
+                                    "fillStyle": "rgba(100, 100, 100, 0.5)",
+                                    "strokeStyle": "rgba(200, 200, 200, 0.8)",
+                                    "lineWidth": 2
+                                }
+                            }
+                        ]
+                    };
                     this.state.brainData = {
                         elements: [
                             {

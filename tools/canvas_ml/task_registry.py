@@ -123,7 +123,7 @@ TASK_REGISTRY = {
         "criteria": {
             # High activity = lots of bright spots (action potentials) + edges
             "min_contrast": 30.0,
-            "min_whitespace": 0.01,
+            # "min_whitespace": 0.01, # Removed as background is dark and colors are not pure white
             "min_feature_density": 0.05
         }
     },
