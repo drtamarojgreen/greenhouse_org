@@ -5,6 +5,7 @@ import time
 import threading
 import http.server
 import socketserver
+import csv
 
 # Add the parent directory to sys.path to ensure imports work if run directly
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,7 +28,7 @@ def start_server():
     except OSError:
         print(f"Port {PORT} in use, assuming server is already running.")
 
-def run_pipeline(url=None, output_path="capture.png"):
+def run_pipeline(url=None, save_artifacts=False, csv_output="vision_metrics.csv"):
     server_thread = None
 
     if url is None:
@@ -40,6 +41,9 @@ def run_pipeline(url=None, output_path="capture.png"):
         url = f"http://localhost:{PORT}/docs/models.html"
 
     print(f"Starting pipeline for {url}...")
+
+    # Determine output path for screenshot
+    output_path = "capture.png" if save_artifacts else None
 
     # Stage 1: Rendering & Benchmarking
     print("Stage 1: Rendering & Benchmarking...")
@@ -119,6 +123,18 @@ def run_pipeline(url=None, output_path="capture.png"):
 
     print(f"Predicted Implementation Value: {prediction} (Score: {value_score:.2f})")
 
+    # Artifact Management: Export CSV
+    # Columns: render_change, total_score
+    # render_change: Placeholder 0.0 for now as we don't have baseline comparison
+    render_change = 0.0
+    total_score = value_score
+
+    print(f"Exporting metrics to {csv_output}...")
+    with open(csv_output, mode='w', newline='') as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(["render_change", "total_score"])
+        writer.writerow([render_change, total_score])
+
     return {
         "cluster": cluster_id,
         "prediction": prediction,
@@ -128,4 +144,5 @@ def run_pipeline(url=None, output_path="capture.png"):
 
 if __name__ == "__main__":
     target = sys.argv[1] if len(sys.argv) > 1 else None
+    # Defaults to no artifacts (save_artifacts=False)
     run_pipeline(target)

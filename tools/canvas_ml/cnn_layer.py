@@ -1,7 +1,5 @@
-<<<<<<< HEAD
-"""
-Manual implementation of Convolutional Neural Network layers in pure Python.
-"""
+
+import math
 
 def to_grayscale(rgba_data, width, height):
     """
@@ -35,49 +33,6 @@ def apply_padding(image, padding=1):
     padded.extend([[0] * new_width for _ in range(padding)])
     return padded
 
-def convolve2d(image, kernel):
-    """
-    Applies a 2D convolution with the given kernel.
-    Assumes kernel is a square matrix of odd size (e.g., 3x3).
-    Returns the feature map (same dimensions as input if padded appropriately,
-    but here we do valid convolution or padded? Let's do valid with padding to keep size).
-    Actually, let's just do valid convolution for simplicity, or with padding.
-    Standard CNNs often preserve size. Let's assume input is padded or handle edges.
-    """
-    kernel_size = len(kernel)
-    padding = kernel_size // 2
-    padded_image = apply_padding(image, padding)
-
-    output_height = len(image)
-    output_width = len(image[0])
-
-    feature_map = []
-
-    for y in range(output_height):
-        row = []
-        for x in range(output_width):
-            sum_val = 0
-            for ky in range(kernel_size):
-                for kx in range(kernel_size):
-                    pixel = padded_image[y + ky][x + kx]
-                    weight = kernel[ky][kx]
-                    sum_val += pixel * weight
-            row.append(max(0, sum_val)) # ReLU activation
-        feature_map.append(row)
-
-    return feature_map
-
-def max_pooling(feature_map, pool_size=2, stride=2):
-    """
-    Applies max pooling to the feature map.
-    """
-    height = len(feature_map)
-    width = len(feature_map[0])
-
-=======
-
-import math
-
 def convolve_2d(image, kernel):
     """
     Applies a 2D convolution to a 2D list (image) using a 2D kernel.
@@ -95,12 +50,6 @@ def convolve_2d(image, kernel):
     kernel_radius = kernel_size // 2
 
     # Output dimensions (assuming valid padding, i.e., shrinking output)
-    # To keep same size, we'd need padding. Let's do valid convolution (no padding) for simplicity
-    # unless otherwise specified.
-    # Actually, usually for feature extraction we might want to capture everything,
-    # but valid is easiest to implement without extra logic.
-    # Let's do 'valid' (no padding).
-
     out_height = img_height - kernel_size + 1
     out_width = img_width - kernel_size + 1
 
@@ -150,21 +99,11 @@ def max_pool(feature_map, pool_size=2, stride=2):
     if out_height <= 0 or out_width <= 0:
         return []
 
->>>>>>> origin/feature-pipeline-ml1
     output = []
 
     for y in range(0, height - pool_size + 1, stride):
         row = []
         for x in range(0, width - pool_size + 1, stride):
-<<<<<<< HEAD
-            max_val = -float('inf')
-            for py in range(pool_size):
-                for px in range(pool_size):
-                    val = feature_map[y + py][x + px]
-                    if val > max_val:
-                        max_val = val
-            row.append(max_val)
-=======
             # Find max in the window
             window_max = float('-inf')
             for py in range(pool_size):
@@ -173,20 +112,19 @@ def max_pool(feature_map, pool_size=2, stride=2):
                     if val > window_max:
                         window_max = val
             row.append(window_max)
->>>>>>> origin/feature-pipeline-ml1
         output.append(row)
 
     return output
 
 def flatten(feature_map):
-<<<<<<< HEAD
-    """Flattens a 2D feature map into a 1D vector."""
-    vector = []
+    """
+    Flattens a 2D list into a 1D list.
+    """
+    flat = []
     for row in feature_map:
-        vector.extend(row)
-    return vector
+        flat.extend(row)
+    return flat
 
-# Predefined kernels
 KERNELS = {
     "edge_detection": [
         [-1, -1, -1],
@@ -199,12 +137,3 @@ KERNELS = {
         [ 0, -1,  0]
     ]
 }
-=======
-    """
-    Flattens a 2D list into a 1D list.
-    """
-    flat = []
-    for row in feature_map:
-        flat.extend(row)
-    return flat
->>>>>>> origin/feature-pipeline-ml1
