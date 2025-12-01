@@ -21,8 +21,11 @@ def start_server():
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     os.chdir(repo_root)
 
+    class ReusableTCPServer(socketserver.TCPServer):
+        allow_reuse_address = True
+
     try:
-        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        with ReusableTCPServer(("", PORT), Handler) as httpd:
             # print(f"Serving at port {PORT} from {repo_root}")
             httpd.serve_forever()
     except OSError:
