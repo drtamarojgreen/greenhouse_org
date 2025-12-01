@@ -4,15 +4,19 @@ import time
 import json
 from playwright.sync_api import sync_playwright
 
-def render_and_capture(url, output_path=None):
+def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_script=None):
     """
     Renders the given URL using Playwright, captures performance metrics,
     and extracts pixel data from the full page or specific canvas if identifiable.
 
-    Returns a dictionary containing:
-    - metrics: { duration, memory_used }
-    - pixel_data: Flattened list of RGBA values (sample) or Screenshot bytes
-    - screenshot_path: Path to saved screenshot
+    Args:
+        url (str): The URL or file path to render.
+        output_path (str, optional): Path to save the screenshot.
+        canvas_selector (str): CSS selector for the canvas to extract pixels from.
+        setup_script (str, optional): JavaScript code to execute before capturing.
+
+    Returns:
+        dict: Contains metrics, pixel_data, screenshot_path, etc.
     """
 
     start_time = time.time()
@@ -40,22 +44,34 @@ def render_and_capture(url, output_path=None):
             # Allow some time for animations or 3D renders to settle
             page.wait_for_timeout(2000)
 
+            # Execute setup script if provided (e.g., to set state)
+            if setup_script:
+                print("Executing setup script...")
+                try:
+                    page.evaluate(setup_script)
+                    # Give it time to re-render after state change
+                    page.wait_for_timeout(1000)
+                except Exception as e:
+                    print(f"Error executing setup script: {e}")
+
             # Capture screenshot
+            # If a selector is specific, we might want to screenshot just that element?
+            # But usually we want the whole context for "Visual Polish".
+            # For "Task-to-Pixel", maybe we want just the element.
+            # Let's stick to full page screenshot for the file, but crop for the pixels.
             if output_path:
                 page.screenshot(path=output_path)
                 result["screenshot_path"] = output_path
                 print(f"Screenshot saved to {output_path}")
 
             # Extract raw pixel data via browser JS
-            # We target 'canvas' tags. If models.html creates one.
-
-            pixel_data_script = """
-            () => {
+            pixel_data_script = f"""
+            () => {{
                 const width = 100;
                 const height = 100;
 
-                // Try to find a canvas
-                const existingCanvas = document.querySelector('canvas');
+                // Try to find the target canvas
+                const targetCanvas = document.querySelector('{canvas_selector}');
 
                 // Create a temporary canvas to draw into
                 const canvas = document.createElement('canvas');
@@ -63,36 +79,37 @@ def render_and_capture(url, output_path=None):
                 canvas.width = width;
                 canvas.height = height;
 
-                if (existingCanvas) {
-                    try {
-                        // Draw existing canvas to our smaller canvas
-                        ctx.drawImage(existingCanvas, 0, 0, width, height);
+                if (targetCanvas) {{
+                    try {{
+                        // Draw target canvas to our smaller canvas
+                        ctx.drawImage(targetCanvas, 0, 0, width, height);
                         const imgData = ctx.getImageData(0, 0, width, height);
-                        return {
+                        return {{
                             data: Array.from(imgData.data),
                             width: width,
-                            height: height
-                        };
-                    } catch(e) {
-                         // Tainted canvas or other issue
-                         return null;
-                    }
-                }
-                return null;
-            }
+                            height: height,
+                            found: true
+                        }};
+                    }} catch(e) {{
+                         return {{ error: e.toString(), found: true }};
+                    }}
+                }}
+                return {{ found: false }};
+            }}
             """
 
             js_result = page.evaluate(pixel_data_script)
 
-            if js_result:
-                result["pixel_data"] = js_result["data"]
-                result["width"] = js_result["width"]
-                result["height"] = js_result["height"]
+            if js_result and js_result.get("found"):
+                if "error" in js_result:
+                    print(f"Error extracting pixels: {js_result['error']}")
+                else:
+                    result["pixel_data"] = js_result["data"]
+                    result["width"] = js_result["width"]
+                    result["height"] = js_result["height"]
             else:
-                print("No accessible <canvas> found to extract pixel data from. Attempting to parse screenshot...")
+                print(f"No accessible canvas found for selector '{canvas_selector}'.")
                 # Fallback: We can't use PIL.
-                # But since the user insists on 'docs/models.html', let's assume valid visualization will eventually be there.
-                # For now, if no canvas, we return empty list, handled by pipeline.
                 pass
 
         except Exception as e:

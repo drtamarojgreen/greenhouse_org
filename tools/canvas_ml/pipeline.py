@@ -176,6 +176,22 @@ def run_pipeline(url=None, output_path=None):
 
     print(f"Change Analysis: Duration Delta: {render_change:.4f}s, Score Delta: {score_change:.2f}")
     print(f"Improvement Category: {improvement_category}")
+    # Categorization
+    RENDER_CHANGE_THRESHOLD = 0.05
+    SCORE_CHANGE_THRESHOLD = 5.0
+
+    category = "Neutral"
+    # Check for combined improvement first (Optimization)
+    if render_change < -RENDER_CHANGE_THRESHOLD and score_change > SCORE_CHANGE_THRESHOLD:
+        category = "Optimization"
+    elif render_change < -RENDER_CHANGE_THRESHOLD and score_change > -SCORE_CHANGE_THRESHOLD:
+        category = "Performance Win"
+    elif score_change > SCORE_CHANGE_THRESHOLD and render_change < RENDER_CHANGE_THRESHOLD:
+        category = "Visual Polish"
+    elif render_change > RENDER_CHANGE_THRESHOLD or score_change < -SCORE_CHANGE_THRESHOLD:
+        category = "Regression"
+
+    print(f"Improvement Category: {category} (Render Change: {render_change:.4f}s, Score Change: {score_change:.2f})")
 
     # Export CSV
     csv_file = "vision_report.csv"
@@ -228,7 +244,8 @@ def run_pipeline(url=None, output_path=None):
         "cluster": cluster_id,
         "prediction": prediction,
         "score": value_score,
-        "metrics": metrics
+        "metrics": metrics,
+        "category": category
     }
 
 if __name__ == "__main__":
