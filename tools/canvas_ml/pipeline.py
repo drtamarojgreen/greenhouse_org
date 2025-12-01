@@ -40,8 +40,14 @@ def run_pipeline(url=None, output_path=None):
         # Give it a moment to start
         time.sleep(1)
         url = f"http://localhost:{PORT}/docs/models.html"
+        render_description = "local_docs_model"
+    else:
+        # Create a simple description from the URL (e.g. filename or domain)
+        render_description = url.split('/')[-1]
+        if not render_description:
+            render_description = "custom_url"
 
-    print(f"Starting pipeline for {url}...")
+    print(f"Starting pipeline for {url} ({render_description})...")
 
     # Stage 1: Rendering & Benchmarking
     print("Stage 1: Rendering & Benchmarking...")
@@ -64,21 +70,8 @@ def run_pipeline(url=None, output_path=None):
     # Stage 2: Advanced Feature Extraction (CNN Layer)
     print("Stage 2: Advanced Feature Extraction (CNN)...")
 
-    # Convert flat pixels to 2D grid (using only R channel for grayscale features)
-    grayscale_grid = []
-    for y in range(height):
-        row = []
-        for x in range(width):
-            idx = (y * width + x) * 4
-            if idx + 2 < len(pixels):
-                r = pixels[idx]
-                g = pixels[idx+1]
-                b = pixels[idx+2]
-                lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
-                row.append(lum)
-            else:
-                row.append(0)
-        grayscale_grid.append(row)
+    # Use the new helper in scorers to get grayscale grid
+    grayscale_grid = scorers.to_grayscale_grid(pixels, width, height)
 
     # Apply Edge Detection Kernel
     kernel = [
@@ -98,13 +91,25 @@ def run_pipeline(url=None, output_path=None):
     print("Stage 3: Scoring Metrics...")
     contrast_score = scorers.calculate_contrast(pixels)
     whitespace_score = scorers.calculate_whitespace_ratio(pixels)
+    edge_density_score = scorers.calculate_edge_density(grayscale_grid)
+    color_entropy_score = scorers.calculate_color_entropy(pixels)
+    feature_density_score = scorers.calculate_feature_density(grayscale_grid)
 
     print(f"Contrast: {contrast_score:.2f}, Whitespace: {whitespace_score:.2f}")
+    print(f"Edge Density: {edge_density_score:.2f}, Color Entropy: {color_entropy_score:.2f}, Feature Density: {feature_density_score:.2f}")
 
     # Stage 4: Unsupervised Machine Learning
     print("Stage 4: Clustering...")
 
-    input_vector = [contrast_score, whitespace_score, metrics.get('duration', 0)] + flat_features[:10]
+    # Expanded input vector
+    input_vector = [
+        contrast_score,
+        whitespace_score,
+        edge_density_score,
+        color_entropy_score,
+        feature_density_score,
+        metrics.get('duration', 0)
+    ] + flat_features[:10]
 
     kmeans = model.KMeans(k=3)
     # Mock training data
@@ -116,7 +121,15 @@ def run_pipeline(url=None, output_path=None):
 
     # Stage 5: Value Prediction
     print("Stage 5: Value Prediction...")
-    value_score = (contrast_score * 0.5) + (whitespace_score * 100) - (metrics.get('duration', 0) * 10)
+    # Updated heuristic formula to include new scores
+    # Higher entropy/edge density usually means more info, but too much is clutter.
+    # We penalize extremely high edge density if whitespace is low (clutter).
+    value_score = (contrast_score * 0.5) + (whitespace_score * 50) + (color_entropy_score * 5) - (metrics.get('duration', 0) * 10)
+
+    # Bonus for balanced edge density (0.1 - 0.5 range)
+    if 0.1 <= edge_density_score <= 0.5:
+        value_score += 20
+
     prediction = "High Value" if value_score > 50 else "Low Value"
 
     print(f"Predicted Implementation Value: {prediction} (Score: {value_score:.2f})")
@@ -131,8 +144,6 @@ def run_pipeline(url=None, output_path=None):
             with open(baseline_file, 'r') as f:
                 baseline = json.load(f)
                 last_duration = baseline.get('duration', 0)
-                # render_change is difference in duration.
-                # Positive means slower (regression), negative means faster (improvement).
                 render_change = current_duration - last_duration
         except Exception as e:
             print(f"Error reading baseline: {e}")
@@ -140,10 +151,35 @@ def run_pipeline(url=None, output_path=None):
     # Export CSV
     csv_file = "vision_report.csv"
     try:
-        with open(csv_file, 'w', newline='') as f:
+        # Check if file exists to determine if we need to write header
+        file_exists = os.path.isfile(csv_file)
+
+        with open(csv_file, 'a', newline='') as f: # Append mode
             writer = csv.writer(f)
-            writer.writerow(["render_change", "total_score"])
-            writer.writerow([render_change, value_score])
+            if not file_exists:
+                writer.writerow([
+                    "render_description",
+                    "render_change",
+                    "total_score",
+                    "contrast",
+                    "whitespace",
+                    "edge_density",
+                    "color_entropy",
+                    "feature_density",
+                    "duration"
+                ])
+
+            writer.writerow([
+                render_description,
+                render_change,
+                value_score,
+                contrast_score,
+                whitespace_score,
+                edge_density_score,
+                color_entropy_score,
+                feature_density_score,
+                current_duration
+            ])
         print(f"Exported report to {csv_file}")
     except Exception as e:
         print(f"Error writing CSV report: {e}")

@@ -1,14 +1,39 @@
 
 import math
 
+def to_grayscale_grid(pixels_rgba, width, height):
+    """
+    Converts flattened RGBA pixels to a 2D grid of luminance values.
+    Returns: List of Lists (height x width) containing float luminance (0-255).
+    """
+    grid = []
+    if not pixels_rgba:
+        return grid
+
+    # Verify dimensions
+    expected_len = width * height * 4
+    if len(pixels_rgba) < expected_len:
+        # Pad with zeros if necessary (though usually this shouldn't happen)
+        pixels_rgba = pixels_rgba + [0] * (expected_len - len(pixels_rgba))
+
+    for y in range(height):
+        row = []
+        for x in range(width):
+            idx = (y * width + x) * 4
+            r = pixels_rgba[idx]
+            g = pixels_rgba[idx+1]
+            b = pixels_rgba[idx+2]
+            # Standard luminance formula
+            lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+            row.append(lum)
+        grid.append(row)
+    return grid
+
 def calculate_contrast(pixels_rgba):
     """
-    Calculates average contrast of the image.
+    Calculates average contrast of the image using Standard Deviation of Luminance.
     Input: flattened list of RGBA values [r, g, b, a, r, g, b, a, ...]
     Returns a float score.
-
-    Simplified approach: Calculate standard deviation of luminance.
-    Luminance = 0.2126*R + 0.7152*G + 0.0722*B
     """
     if not pixels_rgba:
         return 0.0
@@ -18,7 +43,6 @@ def calculate_contrast(pixels_rgba):
         r = pixels_rgba[i]
         g = pixels_rgba[i+1]
         b = pixels_rgba[i+2]
-        # a = pixels_rgba[i+3] # Ignored for luminance calculation for now
 
         lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
         luminances.append(lum)
@@ -76,7 +100,7 @@ def get_color_histogram(pixels_rgba, bins=8):
         g_bin = int(g / bin_size)
         b_bin = int(b / bin_size)
 
-        # Ensure we don't go out of bounds (e.g. 256/32 = 8, index 8 is out of 0-7)
+        # Ensure we don't go out of bounds
         if r_bin >= bins: r_bin = bins - 1
         if g_bin >= bins: g_bin = bins - 1
         if b_bin >= bins: b_bin = bins - 1
@@ -90,3 +114,84 @@ def get_color_histogram(pixels_rgba, bins=8):
         histogram = [h / total_pixels for h in histogram]
 
     return histogram
+
+def calculate_color_entropy(pixels_rgba, bins=8):
+    """
+    Calculates the Shannon Entropy of the color distribution.
+    Higher entropy = more diverse/complex color palette.
+    Input: flattened list of RGBA values.
+    Returns: float
+    """
+    histogram = get_color_histogram(pixels_rgba, bins)
+    entropy = 0.0
+    for p in histogram:
+        if p > 0:
+            entropy -= p * math.log2(p)
+    return entropy
+
+def calculate_edge_density(grayscale_grid, threshold=30):
+    """
+    Calculates the ratio of pixels that are part of an 'edge'.
+    Uses a simple neighbor difference (approximation of gradient).
+    Input: 2D list of luminance values.
+    Returns: float (0.0 to 1.0)
+    """
+    if not grayscale_grid:
+        return 0.0
+
+    height = len(grayscale_grid)
+    width = len(grayscale_grid[0])
+    if width < 2 or height < 2:
+        return 0.0
+
+    edge_pixels = 0
+    total_pixels = (width - 1) * (height - 1) # Accounting for border ignore
+
+    # Iterate excluding the last row/col to avoid boundary checks for +1 neighbors
+    for y in range(height - 1):
+        for x in range(width - 1):
+            val = grayscale_grid[y][x]
+            right = grayscale_grid[y][x+1]
+            down = grayscale_grid[y+1][x]
+
+            diff_x = abs(val - right)
+            diff_y = abs(val - down)
+
+            if diff_x > threshold or diff_y > threshold:
+                edge_pixels += 1
+
+    return edge_pixels / total_pixels if total_pixels > 0 else 0.0
+
+def calculate_feature_density(grayscale_grid):
+    """
+    Heuristic to detect high-frequency areas (like text or detailed icons).
+    Scans horizontal lines for rapid light/dark transitions.
+    Returns: float (average transitions per pixel)
+    """
+    if not grayscale_grid:
+        return 0.0
+
+    height = len(grayscale_grid)
+    width = len(grayscale_grid[0])
+
+    total_transitions = 0
+
+    # Check every other line to speed up
+    rows_checked = 0
+    for y in range(0, height, 2):
+        rows_checked += 1
+        row = grayscale_grid[y]
+        transitions = 0
+        last_val = row[0] if width > 0 else 0
+
+        for x in range(1, width):
+            curr_val = row[x]
+            # Transition defined as crossing a luminance threshold relative to previous
+            if abs(curr_val - last_val) > 20:
+                transitions += 1
+                last_val = curr_val # Update "plateau"
+
+        total_transitions += transitions
+
+    total_possible = rows_checked * width
+    return total_transitions / total_possible if total_possible > 0 else 0.0
