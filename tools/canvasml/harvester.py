@@ -41,6 +41,7 @@ def harvest():
             page.on("pageerror", lambda exc: print(f"Browser Error: {exc}"))
 
             # Route interception with Regex
+            # Route interception
             page.route(re.compile(r".*/js/environment_config\.js.*"), handle_route)
 
             try:
@@ -49,11 +50,13 @@ def harvest():
 
                 # Wait for potential consent screen
                 try:
-                    page.wait_for_selector('#consent-checkbox', state='visible', timeout=5000)
-                    page.check('#consent-checkbox')
-                    page.click('#start-simulation-btn')
+                    consent_checkbox = page.wait_for_selector('#consent-checkbox', state='visible', timeout=5000)
+                    if consent_checkbox:
+                        page.check('#consent-checkbox')
+                        page.click('#start-simulation-btn')
                 except:
                     # Consent might not appear or already handled
+                    # print("No consent screen found or failed to click.")
                     pass
 
                 # Wait for canvas
@@ -72,6 +75,7 @@ def harvest():
                         page.wait_for_selector('canvas', timeout=5000)
                     except:
                         print(f"Still no canvas for {i}. Skipping.")
+                        # print(f"Still no canvas for {i}. Skipping.")
                         page.close()
                         continue
 
