@@ -16,18 +16,19 @@ from canvas_ml import renderer, cnn_layer, scorers, model
 PORT = 8000
 Handler = http.server.SimpleHTTPRequestHandler
 
-def start_server():
+def start_server(port=8000):
     """Starts a simple HTTP server serving the repository root."""
     # We want to serve from the root of the repo so /docs/models.html is accessible
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     os.chdir(repo_root)
 
     try:
-        with socketserver.TCPServer(("", PORT), Handler) as httpd:
-            print(f"Serving at port {PORT} from {repo_root}")
+        with socketserver.TCPServer(("", port), Handler) as httpd:
+            print(f"Serving at port {port} from {repo_root}")
             httpd.serve_forever()
     except OSError:
-        print(f"Port {PORT} in use, assuming server is already running.")
+        print(f"Port {port} in use.")
+        raise
 
 def categorize_change(render_change, score_change):
     """
@@ -48,17 +49,26 @@ def categorize_change(render_change, score_change):
     else:
         return "Neutral"
 
-def run_pipeline(url=None, output_path=None, setup_script=None, description=None, patch_file=None):
+def run_pipeline(url=None, output_path=None, setup_script=None, description=None):
     server_thread = None
+    port = 8000
 
     if url is None:
-        # Start local server
+        # Start local server with port retry
         print("No URL provided. Starting local server for docs/models.html...")
-        server_thread = threading.Thread(target=start_server, daemon=True)
-        server_thread.start()
-        # Give it a moment to start
-        time.sleep(1)
-        url = f"http://localhost:{PORT}/docs/models.html"
+        for p in range(8000, 8010):
+            try:
+                server_thread = threading.Thread(target=start_server, args=(p,), daemon=True)
+                server_thread.start()
+                # Give it a moment to check if it crashes
+                time.sleep(1)
+                if server_thread.is_alive():
+                    port = p
+                    break
+            except Exception as e:
+                print(f"Port {p} failed: {e}")
+
+        url = f"http://localhost:{port}/docs/models.html"
         render_description = "local_docs_model"
     else:
         # Create a simple description from the URL (e.g. filename or domain)
@@ -68,29 +78,6 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
 
     if description:
         render_description = description
-
-    # Handle Patch Injection
-    if patch_file:
-        try:
-            with open(patch_file, 'r') as f:
-                patch_data = json.load(f)
-                # Construct a setup script that merges this patch into the config
-                # Assuming window.GreenhouseEnvironmentConfig is the target
-                json_str = json.dumps(patch_data)
-                patch_script = f"""
-                console.log("Applying Runtime JSON Patch...");
-                if (!window.GreenhouseEnvironmentConfig) window.GreenhouseEnvironmentConfig = {{}};
-                const patch = {json_str};
-                Object.assign(window.GreenhouseEnvironmentConfig, patch);
-                console.log("Patch applied:", window.GreenhouseEnvironmentConfig);
-                """
-                if setup_script:
-                    setup_script += "\n" + patch_script
-                else:
-                    setup_script = patch_script
-                print(f"Loaded patch from {patch_file}")
-        except Exception as e:
-            print(f"Error loading patch file: {e}")
 
     print(f"Starting pipeline for {url} ({render_description})...")
 
@@ -142,6 +129,9 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
     symmetry_score = scorers.calculate_symmetry(grayscale_grid)
 
     print(f"Contrast: {contrast_score:.2f}, Whitespace: {whitespace_score:.2f}")
+    if contrast_score < 0.01:
+        print("WARNING: Low contrast detected. The captured image may be blank or solid color.")
+
     print(f"Edge Density: {edge_density_score:.2f}, Color Entropy: {color_entropy_score:.2f}, Feature Density: {feature_density_score:.2f}")
     print(f"Symmetry: {symmetry_score:.2f}")
 
@@ -287,12 +277,5 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
     }
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description='CanvasML Pipeline')
-    parser.add_argument('url', nargs='?', help='Target URL or file path')
-    parser.add_argument('--patch', help='Path to JSON patch file for config injection')
-    parser.add_argument('--output', help='Path to save screenshot')
-
-    args = parser.parse_args()
-
-    run_pipeline(args.url, output_path=args.output, patch_file=args.patch)
+    target = sys.argv[1] if len(sys.argv) > 1 else None
+    run_pipeline(target)

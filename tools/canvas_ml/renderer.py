@@ -42,18 +42,13 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
             print(f"Navigating to {url}")
             page.goto(url, wait_until="networkidle")
 
-            # Smart wait for content
+            # Attempt to wait for the canvas selector to appear
             try:
-                print("Waiting for application container to populate...")
-                # Wait for the container to have at least one child (indicating React/JS has mounted)
-                # Or wait for a canvas if we expect one
-                page.wait_for_function(
-                    "document.getElementById('models-app-container') && document.getElementById('models-app-container').children.length > 0",
-                    timeout=5000
-                )
-                print("Application container populated.")
+                print(f"Waiting for selector '{canvas_selector}'...")
+                page.wait_for_selector(canvas_selector, state="visible", timeout=5000)
+                print(f"Selector '{canvas_selector}' found.")
             except Exception as e:
-                print(f"Warning: Timeout waiting for app container population: {e}")
+                print(f"Warning: Selector '{canvas_selector}' not found within timeout. Proceeding...")
 
             # Allow some time for animations or 3D renders to settle
             page.wait_for_timeout(2000)
@@ -69,17 +64,11 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
                     print(f"Error executing setup script: {e}")
 
             # Capture screenshot
-            # Always save a debug screenshot if no output path provided
-            final_output_path = output_path if output_path else "last_run_capture.png"
-
-            # For "Task-to-Pixel", maybe we want just the element.
-            # Let's stick to full page screenshot for the file, but crop for the pixels.
-            try:
-                page.screenshot(path=final_output_path)
-                result["screenshot_path"] = final_output_path
-                print(f"Screenshot saved to {final_output_path}")
-            except Exception as e:
-                print(f"Failed to save screenshot: {e}")
+            # Always capture a debug screenshot for verification
+            debug_path = output_path if output_path else "debug_capture.png"
+            page.screenshot(path=debug_path)
+            result["screenshot_path"] = debug_path
+            print(f"Screenshot saved to {debug_path}")
 
             # Extract raw pixel data via browser JS
             pixel_data_script = f"""
