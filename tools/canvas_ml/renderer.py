@@ -2,6 +2,7 @@
 import os
 import time
 import json
+import base64
 from playwright.sync_api import sync_playwright
 
 def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_script=None):
@@ -100,6 +101,43 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
 
             js_result = page.evaluate(pixel_data_script)
 
+            # Universal Capture Fallback:
+            # If no canvas found, we screenshot the page, feed it back, and extract pixels.
+            if not js_result or not js_result.get("found"):
+                print("Canvas not found. Attempting Universal Capture via Screenshot...")
+                try:
+                    png_bytes = page.screenshot()
+                    b64_str = base64.b64encode(png_bytes).decode('utf-8')
+
+                    universal_capture_script = f"""
+                    (b64) => new Promise((resolve) => {{
+                        const img = new Image();
+                        img.onload = () => {{
+                            const width = 100;
+                            const height = 100;
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = width;
+                            canvas.height = height;
+
+                            // Draw full image scaled down
+                            ctx.drawImage(img, 0, 0, width, height);
+                            const imgData = ctx.getImageData(0, 0, width, height);
+                            resolve({{
+                                data: Array.from(imgData.data),
+                                width: width,
+                                height: height,
+                                found: true
+                            }});
+                        }};
+                        img.onerror = (e) => resolve({{ error: "Image load failed", found: true }});
+                        img.src = 'data:image/png;base64,' + b64;
+                    }})
+                    """
+                    js_result = page.evaluate(universal_capture_script, b64_str)
+                except Exception as e:
+                    print(f"Universal Capture failed: {e}")
+
             if js_result and js_result.get("found"):
                 if "error" in js_result:
                     print(f"Error extracting pixels: {js_result['error']}")
@@ -108,7 +146,7 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
                     result["width"] = js_result["width"]
                     result["height"] = js_result["height"]
             else:
-                print(f"No accessible canvas found for selector '{canvas_selector}'.")
+                print(f"No accessible canvas found for selector '{canvas_selector}' and Universal Capture failed.")
                 # Fallback: We can't use PIL.
                 pass
 
