@@ -30,7 +30,8 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
     }
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        # Headless Chromium execution in this project requires the --use-gl=egl argument
+        browser = p.chromium.launch(headless=True, args=['--use-gl=egl'])
         page = browser.new_page()
 
         try:
@@ -115,6 +116,10 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
 
                 if (targetCanvas) {{
                     try {{
+                        // Fill white background first (for transparency support)
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, width, height);
+
                         // Draw target canvas to our smaller canvas
                         ctx.drawImage(targetCanvas, 0, 0, width, height);
                         const imgData = ctx.getImageData(0, 0, width, height);
@@ -152,6 +157,10 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
                             const ctx = canvas.getContext('2d');
                             canvas.width = width;
                             canvas.height = height;
+
+                            // Fill white background first
+                            ctx.fillStyle = 'white';
+                            ctx.fillRect(0, 0, width, height);
 
                             // Draw full image scaled down
                             ctx.drawImage(img, 0, 0, width, height);

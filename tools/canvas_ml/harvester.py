@@ -9,7 +9,8 @@ DOCS_URL = "http://localhost:8000/docs/models.html"
 
 def harvest():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        # Headless Chromium execution in this project requires the --use-gl=egl argument
+        browser = p.chromium.launch(headless=True, args=['--use-gl=egl'])
         context = browser.new_context()
 
         # Define route handler factory
@@ -99,6 +100,11 @@ def harvest():
                         temp.width = 64;
                         temp.height = 64;
                         const ctx = temp.getContext('2d');
+
+                        // Fill white background first (for transparency support)
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, 64, 64);
+
                         ctx.drawImage(target, 0, 0, 64, 64);
                         const data = Array.from(ctx.getImageData(0,0,64,64).data);
 
