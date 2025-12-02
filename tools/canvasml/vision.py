@@ -115,5 +115,29 @@ def main():
         count = len(clusters[c_idx])
         print(f"Cluster '{labels[i]}' (Centroid: {c_val:.2f}): {count} images")
 
+    # Generate analysis map
+    results = {}
+    for i, energy in enumerate(features):
+        dists = [abs(energy - c) for c in centroids]
+        cluster_idx = dists.index(min(dists))
+
+        # Find label for this cluster index
+        label = "Unknown"
+        for rank, (c_idx, c_val) in enumerate(sorted_centroids):
+            if c_idx == cluster_idx:
+                label = labels[rank]
+                break
+
+        results[valid_ids[i]] = {
+            "energy": energy,
+            "cluster_index": cluster_idx,
+            "classification": label
+        }
+
+    out_path = os.path.join(DATA_DIR, "analysis_results.json")
+    with open(out_path, 'w') as f:
+        json.dump(results, f, indent=2)
+    print(f"\nAnalysis results saved to {out_path}")
+
 if __name__ == "__main__":
     main()
