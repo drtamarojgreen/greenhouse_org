@@ -8,7 +8,11 @@ DATA_DIR = "tools/canvasml/data"
 DOCS_URL = "http://localhost:8000/docs/models.html"
 
 def harvest():
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
+
     with sync_playwright() as p:
+        print("Launching browser...")
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
 
@@ -16,7 +20,7 @@ def harvest():
         current_config = {}
 
         def handle_route(route):
-            print("Intercepting config request...")
+            # print("Intercepting config request...")
             js_payload = f"window.GreenhouseEnvironmentConfig = {json.dumps(current_config)};"
             route.fulfill(
                 status=200,
@@ -28,6 +32,7 @@ def harvest():
         for i in range(50):
             var_path = os.path.join(DATA_DIR, f"variation_{i}.json")
             if not os.path.exists(var_path):
+                # print(f"Variation {i} not found at {var_path}")
                 continue
 
             with open(var_path, 'r') as f:
@@ -93,6 +98,12 @@ def harvest():
                         temp.width = 64;
                         temp.height = 64;
                         const ctx = temp.getContext('2d');
+
+                        // Fill white first to handle transparency if needed,
+                        // though we usually want the actual background.
+                        // ctx.fillStyle = '#FFFFFF';
+                        // ctx.fillRect(0, 0, 64, 64);
+
                         ctx.drawImage(target, 0, 0, 64, 64);
                         const data = Array.from(ctx.getImageData(0,0,64,64).data);
 
@@ -103,16 +114,6 @@ def harvest():
                         return data;
                     }}""")
 
-                # Capture
-                pixel_data = page.evaluate("""() => {
-                    let target = document.querySelector('#canvas-environment');
-                    if (!target) {
-                        const canvases = document.querySelectorAll('canvas');
-                        if (canvases.length > 0) {
-                             target = canvases[canvases.length - 1];
-                        }
-                    }
-                    if (!target) return null;
                     if pixel_data:
                         break
 
@@ -125,7 +126,9 @@ def harvest():
                         json.dump(pixel_data, f)
 
                     if i < 5:
-                        page.screenshot(path=os.path.join(DATA_DIR, f"screenshot_{i}.png"))
+                        screenshot_path = os.path.join(DATA_DIR, f"screenshot_{i}.png")
+                        page.screenshot(path=screenshot_path)
+                        print(f"Screenshot saved to {screenshot_path}")
 
                     if i % 10 == 0:
                         print(f"Harvested {i}")
