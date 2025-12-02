@@ -1,0 +1,302 @@
+[
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "colorBase = this.state.darkMode \\? '255, 255, 204' : '255, 200, 50'",
+        "replace": "colorBase = this.state.darkMode ? '200, 200, 255' : '255, 200, 50'",
+        "desc": "Brain: Cool white base color in dark mode"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "colorBase = this.state.darkMode \\? '255, 255, 204' : '255, 200, 50'",
+        "replace": "colorBase = this.state.darkMode ? '255, 255, 204' : '255, 50, 50'",
+        "desc": "Brain: Red base color in light mode"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "gradient.addColorStop\\(0, `rgba\\(\\$\\{colorBase\\}, \\$\\{0.5 \\+ activation \\* 0.5\\}\\)`\\);",
+        "replace": "gradient.addColorStop(0, `rgba(${colorBase}, ${0.1 + activation * 0.9})`);",
+        "desc": "Brain: Higher dynamic range for activation gradient"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "ctx.fillStyle = '#1A1A1A';",
+        "replace": "ctx.fillStyle = '#000000';",
+        "desc": "Brain: Pitch black background in dark mode"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "ctx.lineWidth = 0.5;",
+        "replace": "ctx.lineWidth = 2.0;",
+        "desc": "Brain: Thicker background grid lines"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "const gridSize = 40;",
+        "replace": "const gridSize = 80;",
+        "desc": "Brain: Larger grid size"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "ctx.lineWidth = 1 \\+ weight \\* 2;",
+        "replace": "ctx.lineWidth = 0.5 + weight * 5;",
+        "desc": "Brain: More dramatic synapse thickness"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "ctx.strokeStyle = this.state.darkMode \\? 'rgba\\(255, 255, 255, 0.2\\)' : 'rgba\\(45, 62, 45, 0.3\\)';",
+        "replace": "ctx.strokeStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 0, 0, 0.5)';",
+        "desc": "Brain: Red synapses in light mode"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "ctx.fillStyle = this.state.darkMode \\? 'rgba\\(255, 255, 204, 0.9\\)' : 'rgba\\(255, 255, 150, 0.9\\)';",
+        "replace": "ctx.fillStyle = this.state.darkMode ? 'rgba(0, 255, 255, 0.9)' : 'rgba(255, 255, 150, 0.9)';",
+        "desc": "Brain: Cyan action potentials in dark mode"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "ctx.shadowBlur = 15;",
+        "replace": "ctx.shadowBlur = 30;",
+        "desc": "Brain: Larger glow for action potentials"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "ctx.arc\\(currentX, currentY, 6, 0, Math.PI \\* 2\\);",
+        "replace": "ctx.arc(currentX, currentY, 10, 0, Math.PI * 2);",
+        "desc": "Brain: Larger action potentials"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "ctx.fillStyle = this.state.darkMode \\? 'rgba\\(0,0,0,0.3\\)' : 'rgba\\(0,0,0,0.1\\)';",
+        "replace": "ctx.fillStyle = this.state.darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.5)';",
+        "desc": "Brain: Inverted ambient occlusion colors"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "ctx.shadowBlur = 5;",
+        "replace": "ctx.shadowBlur = 0;",
+        "desc": "Brain: Remove node depth shadows"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "ctx.strokeStyle = `rgba\\(255, 200, 50, \\$\\{node.activation \\* 0.5\\}\\)`;",
+        "replace": "ctx.strokeStyle = `rgba(50, 200, 255, ${node.activation * 0.8})`;",
+        "desc": "Brain: Blue membrane ripples"
+    },
+    {
+        "file": "docs/js/models_ui_brain.js",
+        "search": "ctx.lineWidth = 2;",
+        "replace": "ctx.lineWidth = 5;",
+        "desc": "Brain: Thicker membrane ripples"
+    },
+    {
+        "file": "docs/js/models_ui_synapse.js",
+        "search": "vesicle.fuseProgress \\+= 0.05;",
+        "replace": "vesicle.fuseProgress += 0.2;",
+        "desc": "Synapse: Faster vesicle fusion"
+    },
+    {
+        "file": "docs/js/models_ui_synapse.js",
+        "search": "ctx.fillStyle = 'rgba\\(255, 220, 150, 0.8\\)';",
+        "replace": "ctx.fillStyle = 'rgba(100, 255, 100, 0.8)';",
+        "desc": "Synapse: Green vesicles"
+    },
+    {
+        "file": "docs/js/models_ui_synapse.js",
+        "search": "ctx.fillStyle = receptor.isBound \\? 'rgba\\(255, 255, 100, 0.9\\)' : 'rgba\\(70, 150, 255, 0.9\\)';",
+        "replace": "ctx.fillStyle = receptor.isBound ? 'rgba(255, 0, 0, 0.9)' : 'rgba(70, 150, 255, 0.9)';",
+        "desc": "Synapse: Red bound receptors"
+    },
+    {
+        "file": "docs/js/models_ui_synapse.js",
+        "search": "ctx.fillStyle = receptor.isBound \\? 'rgba\\(255, 255, 100, 0.9\\)' : 'rgba\\(70, 150, 255, 0.9\\)';",
+        "replace": "ctx.fillStyle = receptor.isBound ? 'rgba(255, 255, 100, 0.9)' : 'rgba(200, 200, 200, 0.9)';",
+        "desc": "Synapse: Grey unbound receptors"
+    },
+    {
+        "file": "docs/js/models_ui_synapse.js",
+        "search": "p.opacity -= 0.01;",
+        "replace": "p.opacity -= 0.05;",
+        "desc": "Synapse: Faster particle fade"
+    },
+    {
+        "file": "docs/js/models_ui_synapse.js",
+        "search": "ctx.fillStyle = `rgba\\(0, 123, 255, \\$\\{p.opacity\\}\\)`;",
+        "replace": "ctx.fillStyle = `rgba(255, 0, 255, ${p.opacity})`;",
+        "desc": "Synapse: Magenta neurotransmitters"
+    },
+    {
+        "file": "docs/js/models_ui_synapse.js",
+        "search": "vy: 0.8 \\+ Math.random\\(\\) \\* 0.5,",
+        "replace": "vy: 2.0 + Math.random() * 1.0,",
+        "desc": "Synapse: Faster falling particles"
+    },
+    {
+        "file": "docs/js/models_ui_synapse.js",
+        "search": "radius: 2 \\+ Math.random\\(\\) \\* 1,",
+        "replace": "radius: 5 + Math.random() * 2,",
+        "desc": "Synapse: Larger particles"
+    },
+    {
+        "file": "docs/js/models_ui_synapse.js",
+        "search": "ctx.fillRect\\(x, y, 5, 10\\);",
+        "replace": "ctx.fillRect(x, y, 10, 10);",
+        "desc": "Synapse: Wider receptors"
+    },
+    {
+        "file": "docs/js/models_ui_synapse.js",
+        "search": "ctx.fillStyle = '#1A1A1A';",
+        "replace": "ctx.fillStyle = '#220022';",
+        "desc": "Synapse: Purple dark mode background"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.lineWidth = lineWidth;",
+        "replace": "ctx.lineWidth = lineWidth * 3;",
+        "desc": "Env: Thicker influence paths"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.fillStyle = 'rgba\\(200, 200, 255, 0.9\\)';",
+        "replace": "ctx.fillStyle = 'rgba(255, 200, 200, 0.9)';",
+        "desc": "Env: Pink medication capsule"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.strokeStyle = 'rgba\\(0, 0, 100, 1.0\\)';",
+        "replace": "ctx.strokeStyle = 'rgba(0, 0, 0, 1.0)';",
+        "desc": "Env: Black medication outline"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.fillStyle = this.state.darkMode \\? 'rgba\\(255, 255, 255, 0.9\\)' : 'rgba\\(0, 0, 0, 0.8\\)';",
+        "replace": "ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 255, 1.0)';",
+        "desc": "Env: Blue medication text in light mode"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.fillStyle = 'rgba\\(150, 220, 150, 0.9\\)';",
+        "replace": "ctx.fillStyle = 'rgba(150, 150, 220, 0.9)';",
+        "desc": "Env: Blue therapy icon"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.strokeStyle = 'rgba\\(0, 100, 0, 1.0\\)';",
+        "replace": "ctx.strokeStyle = 'rgba(0, 0, 100, 1.0)';",
+        "desc": "Env: Blue therapy outline"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.fillStyle = 'rgba\\(255, 255, 255, 0.85\\)';",
+        "replace": "ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';",
+        "desc": "Env: Yellow semi-transparent label background"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "label.fontSize \\|\\| 20",
+        "replace": "label.fontSize || 30",
+        "desc": "Env: Larger default label font"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.font = 'bold 24px \"Helvetica Neue\", Arial, sans-serif';",
+        "replace": "ctx.font = 'italic 20px \"Times New Roman\", serif';",
+        "desc": "Env: Serif font for icon labels"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.fillStyle = 'rgba\\(255, 255, 255, 0.9\\)';",
+        "replace": "ctx.fillStyle = 'rgba(240, 240, 240, 1.0)';",
+        "desc": "Env: Opaque grey legend background"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.fillStyle = '#357438';",
+        "replace": "ctx.fillStyle = '#FF0000';",
+        "desc": "Env: Red legend title"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.fillRect\\(legendX \\+ 10, itemY - 10, 14, 14\\);",
+        "replace": "ctx.fillRect(legendX + 10, itemY - 10, 20, 20);",
+        "desc": "Env: Larger legend swatches"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "gradient.addColorStop\\(0, 'rgba\\(255, 255, 255, 0.95\\)'\\);",
+        "replace": "gradient.addColorStop(0, 'rgba(200, 255, 200, 0.95)');",
+        "desc": "Env: Green tint title bar gradient"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "const panelHeight = 60;",
+        "replace": "const panelHeight = 80;",
+        "desc": "Env: Taller title bar"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.font = 'bold 24px \"Quicksand\", \"Helvetica Neue\", Arial, sans-serif';",
+        "replace": "ctx.font = 'bold 32px \"Courier New\", monospace';",
+        "desc": "Env: Monospace title font"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.fillStyle = 'rgba\\(0, 0, 0, 0.7\\)';",
+        "replace": "ctx.fillStyle = 'rgba(100, 100, 100, 0.9)';",
+        "desc": "Env: Lighter subtitle color"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "color: 'rgba\\(255, 159, 64, 0.8\\)'",
+        "replace": "color: 'rgba(255, 0, 0, 0.8)'",
+        "desc": "Env: Red 'Family' legend color"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "color: 'rgba\\(54, 162, 235, 0.8\\)'",
+        "replace": "color: 'rgba(0, 0, 255, 0.8)'",
+        "desc": "Env: Blue 'Society' legend color"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.lineWidth = 2;",
+        "replace": "ctx.lineWidth = 5;",
+        "desc": "Env: Thicker title bar separator"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "radius: 10 \\};",
+        "replace": "radius: 5 };",
+        "desc": "Env: Sharper medication capsule"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.arc\\(person1.x, person1.y - 5, 5, 0, Math.PI \\* 2\\);",
+        "replace": "ctx.arc(person1.x, person1.y - 5, 8, 0, Math.PI * 2);",
+        "desc": "Env: Larger head for therapy icon person"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "const scale = Math.min\\(width / 1536, height / 1024\\) \\* 0.95;",
+        "replace": "const scale = Math.min(width / 1536, height / 1024) * 0.5;",
+        "desc": "Env: Shrink labels layer to half size"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.roundRect\\(legendX, legendY, legendWidth, legendHeight, 8\\);",
+        "replace": "ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 0);",
+        "desc": "Env: Square legend corners"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "ctx.strokeStyle = 'rgba\\(0, 0, 0, 0.2\\)';",
+        "replace": "ctx.strokeStyle = 'rgba(0, 0, 0, 1.0)';",
+        "desc": "Env: Solid black legend border"
+    },
+    {
+        "file": "docs/js/models_ui_environment.js",
+        "search": "const scale = Math.min\\(canvas.width / 1536, canvas.height / 1024\\) \\* 0.8;",
+        "replace": "const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 1.0;",
+        "desc": "Env: Mouse interaction scale mismatch (Visual glitch simulation)"
+    }
+]
