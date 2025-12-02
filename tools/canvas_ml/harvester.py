@@ -4,7 +4,7 @@ import time
 import re
 from playwright.sync_api import sync_playwright
 
-DATA_DIR = "tools/canvasml/data"
+DATA_DIR = "tools/canvas_ml/data"
 DOCS_URL = "http://localhost:8000/docs/models.html"
 
 def harvest():
@@ -86,7 +86,13 @@ def harvest():
                 pixel_data = None
                 for attempt in range(3):
                     pixel_data = page.evaluate(f"""() => {{
-                        const target = document.querySelector('{target_selector}');
+                        let target = document.querySelector('{target_selector}');
+                        if (!target) {{
+                            const canvases = document.querySelectorAll('canvas');
+                            if (canvases.length > 0) {{
+                                 target = canvases[canvases.length - 1];
+                            }}
+                        }}
                         if (!target) return null;
 
                         const temp = document.createElement('canvas');
@@ -103,19 +109,9 @@ def harvest():
                         return data;
                     }}""")
 
-                # Capture
-                pixel_data = page.evaluate("""() => {
-                    let target = document.querySelector('#canvas-environment');
-                    if (!target) {
-                        const canvases = document.querySelectorAll('canvas');
-                        if (canvases.length > 0) {
-                             target = canvases[canvases.length - 1];
-                        }
-                    }
-                    if (!target) return null;
                     if pixel_data:
                         break
-
+                    
                     print(f"Attempt {attempt+1}: Empty capture for {i}. Waiting...")
                     page.wait_for_timeout(1000)
 

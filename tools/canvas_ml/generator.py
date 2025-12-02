@@ -2,7 +2,7 @@ import json
 import random
 import os
 
-OUTPUT_DIR = "tools/canvasml/data"
+OUTPUT_DIR = "tools/canvas_ml/data"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 BASE_CONFIG = {
@@ -67,10 +67,14 @@ def mutate_config(seed):
 
     return config
 
-print(f"Generating 50 variations in {OUTPUT_DIR}...")
-for i in range(50):
-    variation = mutate_config(i)
-    filepath = os.path.join(OUTPUT_DIR, f"variation_{i}.json")
-    with open(filepath, 'w') as f:
-        json.dump(variation, f, indent=2)
-print("Done.")
+def generate():
+    print(f"Generating 50 variations in {OUTPUT_DIR}...")
+    for i in range(50):
+        variation = mutate_config(i)
+        filepath = os.path.join(OUTPUT_DIR, f"variation_{i}.json")
+        with open(filepath, 'w') as f:
+            json.dump(variation, f, indent=2)
+    print("Done.")
+
+if __name__ == "__main__":
+    generate()

@@ -2,8 +2,11 @@ import json
 import os
 import math
 import sys
+# Add parent directory to path to find canvas_ml package if run directly
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from canvas_ml import model
 
-DATA_DIR = "tools/canvasml/data"
+DATA_DIR = "tools/canvas_ml/data"
 WIDTH = 64
 HEIGHT = 64
 
@@ -63,33 +66,7 @@ def analyze_features(edges):
     total_energy = sum(edges)
     return total_energy
 
-def simple_kmeans(values, k=3):
-    # 1D K-Means
-    # Check if we have enough distinct values
-    if len(set(values)) < k:
-        return [0]*k, [[] for _ in range(k)]
 
-    centroids = [min(values), (min(values)+max(values))/2, max(values)]
-    for _ in range(10): # 10 iterations
-        clusters = [[] for _ in range(k)]
-        # Store indices as well to map back to original images if needed,
-        # but here we just store values for centroid calculation.
-        # To map back, we'd need (value, index) tuples.
-
-        # Actually, let's just cluster the values to get centroids
-        for v in values:
-            dists = [abs(v - c) for c in centroids]
-            min_dist_idx = dists.index(min(dists))
-            clusters[min_dist_idx].append(v)
-
-        # Recompute centroids
-        for i in range(k):
-            if clusters[i]:
-                centroids[i] = sum(clusters[i]) / len(clusters[i])
-            # If a cluster is empty, re-initialize it?
-            # For this simple script, we'll leave it as is.
-
-    return centroids, clusters
 
 def save_results(analysis_data, centroids, clusters, sorted_centroids):
     results = {
@@ -139,7 +116,7 @@ def save_results(analysis_data, centroids, clusters, sorted_centroids):
     return results
 
 def generate_report(results):
-    report_path = os.path.join("tools/canvasml", "report.md")
+    report_path = os.path.join("tools/canvas_ml", "report.md")
 
     stats = results["cluster_stats"]
     analysis = results["analysis"]
@@ -182,7 +159,7 @@ def generate_report(results):
 
     print(f"Report generated at {report_path}")
 
-def main():
+def analyze():
     print("Starting CanvasML Vision Analysis...")
     analysis_data = [] # List of dicts {id, energy}
     features = [] # List of energy values for kmeans
@@ -197,7 +174,7 @@ def main():
         energy = analyze_features(edges)
 
         analysis_data.append({"id": i, "energy": energy})
-        features.append(energy)
+        features.append([energy]) # KMeans expects vectors
 
         if i % 10 == 0:
             print(f"Processed image {i}, Energy: {energy:.2f}")
@@ -207,7 +184,20 @@ def main():
         return
 
     print("\nClustering Visual States (Clutter Analysis)...")
-    centroids, clusters = simple_kmeans(features)
+    
+    # Use shared KMeans model
+    kmeans = model.KMeans(k=3)
+    kmeans.fit(features)
+    
+    # Extract centroids (they are 1D vectors [energy])
+    centroids = [c[0] for c in kmeans.centroids]
+    
+    # Reconstruct clusters for stats
+    clusters = [[] for _ in range(3)]
+    for f in features:
+        val = f[0]
+        c_idx = kmeans.predict([val])
+        clusters[c_idx].append(val)
 
     # Sort centroids to determine Low/Med/High
     # sorted_centroids is list of (index, value)
@@ -226,4 +216,4 @@ def main():
     generate_report(results)
 
 if __name__ == "__main__":
-    main()
+    analyze()
