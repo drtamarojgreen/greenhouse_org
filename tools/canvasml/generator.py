@@ -36,34 +36,8 @@ BASE_CONFIG = {
             "color": "rgba(54, 162, 235, 0.8)"
         }
     ],
-    "influencePaths": [
-        { "startX": 150, "startY": 350, "endX": 768, "endY": 600, "color": "rgba(255, 159, 64, 0.7)", "width": 6, "label": "legend_family" },
-        { "startX": 768, "startY": 30, "endX": 768, "endY": 600, "color": "rgba(54, 162, 235, 0.7)", "width": 6, "label": "legend_society" },
-        { "startX": 1386, "startY": 350, "endX": 768, "endY": 600, "color": "rgba(75, 192, 192, 0.7)", "width": 6, "label": "legend_community" }
-    ],
-    "interactiveElements": {
-        "medication": {
-            "id": "medication_general",
-            "name": "label_medication",
-            "description": "medication_desc",
-            "dataSource": "health.active_medications",
-            "x": 570,
-            "y": 750,
-            "width": 60,
-            "height": 30,
-            "type": "pill"
-        },
-        "therapy": {
-            "id": "therapy_general",
-            "name": "label_therapy",
-            "description": "therapy_desc",
-            "dataSource": "health.therapy_sessions",
-            "x": 966,
-            "y": 750,
-            "radius": 25,
-            "type": "node"
-        }
-    }
+    "influencePaths": [],
+    "interactiveElements": []
 }
 
 def random_color():
