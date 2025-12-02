@@ -48,7 +48,7 @@ def categorize_change(render_change, score_change):
     else:
         return "Neutral"
 
-def run_pipeline(url=None, output_path=None, setup_script=None, description=None, patch_file=None):
+def run_pipeline(url=None, output_path=None, setup_script=None, description=None, patch_file=None, agent_id="10-999"):
     server_thread = None
 
     if url is None:
@@ -228,7 +228,10 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
     print(f"Improvement Category: {category} (Render Change: {render_change:.4f}s, Score Change: {score_change:.2f})")
 
     # Export CSV
-    csv_file = "vision_report10999.csv"
+    # Sanitize agent_id for filename
+    safe_agent_id = agent_id.replace("-", "") if agent_id else "unknown"
+    csv_file = f"vision_report{safe_agent_id}.csv"
+
     try:
         # Check if file exists to determine if we need to write header
         file_exists = os.path.isfile(csv_file)
@@ -265,7 +268,7 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
                 feature_density_score,
                 symmetry_score,
                 current_duration,
-                "10-999"
+                agent_id
             ])
         print(f"Exported report to {csv_file}")
     except Exception as e:
@@ -292,7 +295,8 @@ if __name__ == "__main__":
     parser.add_argument('url', nargs='?', help='Target URL or file path')
     parser.add_argument('--patch', help='Path to JSON patch file for config injection')
     parser.add_argument('--output', help='Path to save screenshot')
+    parser.add_argument('--agent-id', default="10-999", help='Agent ID for reporting')
 
     args = parser.parse_args()
 
-    run_pipeline(args.url, output_path=args.output, patch_file=args.patch)
+    run_pipeline(args.url, output_path=args.output, patch_file=args.patch, agent_id=args.agent_id)
