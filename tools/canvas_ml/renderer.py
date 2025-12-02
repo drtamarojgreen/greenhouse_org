@@ -42,6 +42,39 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
             print(f"Navigating to {url}")
             page.goto(url, wait_until="networkidle")
 
+            # Handling for "Launch Simulation" consent screen (Greenhouse specific)
+            try:
+                print("Checking for consent screen...")
+                # Wait up to 5 seconds for the consent checkbox to appear
+                try:
+                    page.wait_for_selector("#consent-checkbox", timeout=5000)
+                except Exception:
+                    pass # Proceed to check count, avoiding crash if not found
+
+                # Check if the consent checkbox exists
+                if page.locator("#consent-checkbox").count() > 0:
+                    print("Found consent screen. Attempting to bypass...")
+
+                    # Check the checkbox
+                    checkbox = page.locator("#consent-checkbox")
+                    if not checkbox.is_checked():
+                        checkbox.check()
+                        print("Checked consent checkbox.")
+
+                    # Wait for start button to be enabled and click
+                    start_btn = page.locator("#start-simulation-btn")
+                    start_btn.click()
+                    print("Clicked 'Launch Simulation' button.")
+
+                    # Wait for the simulation interface to load
+                    # We expect canvases to appear.
+                    # Specifically #canvas-synaptic is a good indicator of the simulation view
+                    page.wait_for_selector("#canvas-synaptic", timeout=10000)
+                    print("Simulation interface loaded.")
+
+            except Exception as e:
+                print(f"Note: Automatic consent bypass attempt failed or was not needed: {e}")
+
             # Allow some time for animations or 3D renders to settle
             page.wait_for_timeout(2000)
 
