@@ -16,7 +16,7 @@ def harvest():
         current_config = {}
 
         def handle_route(route):
-            # print("Intercepting config...")
+            print("Intercepting config request...")
             js_payload = f"window.GreenhouseEnvironmentConfig = {json.dumps(current_config)};"
             route.fulfill(
                 status=200,
@@ -52,11 +52,18 @@ def harvest():
                     # print("No consent screen found or failed to click.")
                     pass
 
-                # Wait for canvas
+                # Wait for app initialization
                 try:
-                    page.wait_for_selector('canvas', timeout=5000)
+                    page.wait_for_function("() => window.GreenhouseModelsUX && window.GreenhouseModelsUX.state && window.GreenhouseModelsUX.state.isInitialized", timeout=10000)
+                except Exception as e:
+                    print(f"Error waiting for initialization: {e}")
+
+                # Wait for canvas
+                target_selector = '#canvas-environment'
+                try:
+                    page.wait_for_selector(target_selector, timeout=5000)
                 except:
-                    # print(f"Canvas missing for {i}. Force-starting...")
+                    print(f"Canvas {target_selector} missing for {i}. Force-starting...")
                     # Try to force start via console
                     page.evaluate("""() => {
                          if (window.GreenhouseModelsUX && !window.GreenhouseModelsUX.state.isInitialized) {
@@ -66,14 +73,35 @@ def harvest():
                     }""")
                     # Wait again
                     try:
-                        page.wait_for_selector('canvas', timeout=3000)
+                        page.wait_for_selector(target_selector, timeout=3000)
                     except:
                         # print(f"Still no canvas for {i}. Skipping.")
                         page.close()
                         continue
 
-                # Wait for render
-                page.wait_for_timeout(1000)
+                # Wait for render to settle
+                page.wait_for_timeout(2000)
+
+                # Capture with retry
+                pixel_data = None
+                for attempt in range(3):
+                    pixel_data = page.evaluate(f"""() => {{
+                        const target = document.querySelector('{target_selector}');
+                        if (!target) return null;
+
+                        const temp = document.createElement('canvas');
+                        temp.width = 64;
+                        temp.height = 64;
+                        const ctx = temp.getContext('2d');
+                        ctx.drawImage(target, 0, 0, 64, 64);
+                        const data = Array.from(ctx.getImageData(0,0,64,64).data);
+
+                        // Check if empty (all zeros)
+                        const sum = data.reduce((a, b) => a + b, 0);
+                        if (sum === 0) return null;
+
+                        return data;
+                    }}""")
 
                 # Capture
                 pixel_data = page.evaluate("""() => {
@@ -85,14 +113,11 @@ def harvest():
                         }
                     }
                     if (!target) return null;
+                    if pixel_data:
+                        break
 
-                    const temp = document.createElement('canvas');
-                    temp.width = 64;
-                    temp.height = 64;
-                    const ctx = temp.getContext('2d');
-                    ctx.drawImage(target, 0, 0, 64, 64);
-                    return Array.from(ctx.getImageData(0,0,64,64).data);
-                }""")
+                    print(f"Attempt {attempt+1}: Empty capture for {i}. Waiting...")
+                    page.wait_for_timeout(1000)
 
                 if pixel_data:
                     out_path = os.path.join(DATA_DIR, f"capture_{i}.json")
@@ -104,6 +129,8 @@ def harvest():
 
                     if i % 10 == 0:
                         print(f"Harvested {i}")
+                else:
+                    print(f"Failed to capture data for {i} (all zeros)")
 
             except Exception as e:
                 print(f"Error {i}: {e}")
