@@ -195,3 +195,40 @@ def calculate_feature_density(grayscale_grid):
 
     total_possible = rows_checked * width
     return total_transitions / total_possible if total_possible > 0 else 0.0
+
+def calculate_palette_compliance(pixels_rgba, palette, tolerance=30):
+    """
+    Calculates the percentage of pixels that match a given palette.
+    Input: flattened list of RGBA values, list of RGB tuples [(r,g,b), ...], int tolerance.
+    Returns: float (0.0 to 1.0)
+    """
+    if not pixels_rgba or not palette:
+        return 0.0
+
+    pixel_count = len(pixels_rgba) // 4
+    matching_pixels = 0
+
+    for i in range(0, len(pixels_rgba), 4):
+        r = pixels_rgba[i]
+        g = pixels_rgba[i+1]
+        b = pixels_rgba[i+2]
+        # Skip fully transparent pixels (assume they are background/irrelevant)
+        if pixels_rgba[i+3] < 10:
+             # If we don't count transparent pixels, we reduce the total count?
+             # Or count them as matching? Let's count them as matching "nothing" or skip.
+             # For a "Style Cop", transparent usually means "background", which is fine.
+             # Let's count them as matching to avoid penalizing whitespace.
+             matching_pixels += 1
+             continue
+
+        is_match = False
+        for pr, pg, pb in palette:
+            dist = math.sqrt((r - pr)**2 + (g - pg)**2 + (b - pb)**2)
+            if dist <= tolerance:
+                is_match = True
+                break
+
+        if is_match:
+            matching_pixels += 1
+
+    return matching_pixels / pixel_count if pixel_count > 0 else 0.0
