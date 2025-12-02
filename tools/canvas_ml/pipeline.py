@@ -48,7 +48,7 @@ def categorize_change(render_change, score_change):
     else:
         return "Neutral"
 
-def run_pipeline(url=None, output_path=None, setup_script=None, description=None, patch_file=None, agent_id="10-999"):
+def run_pipeline(url=None, output_path=None, setup_script=None, description=None, patch_file=None, agent_id="10-888"):
     server_thread = None
 
     if url is None:
@@ -295,7 +295,7 @@ if __name__ == "__main__":
     parser.add_argument('url', nargs='?', help='Target URL or file path')
     parser.add_argument('--patch', help='Path to JSON patch file for config injection')
     parser.add_argument('--output', help='Path to save screenshot')
-    parser.add_argument('--agent-id', default="10-999", help='Agent ID for reporting')
+    parser.add_argument('--agent-id', default="10-888", help='Agent ID for reporting')
 
     args = parser.parse_args()
 
