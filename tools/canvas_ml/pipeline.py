@@ -116,6 +116,7 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
     edge_density_score = scorers.calculate_edge_density(grayscale_grid)
     color_entropy_score = scorers.calculate_color_entropy(pixels)
     feature_density_score = scorers.calculate_feature_density(grayscale_grid)
+    symmetry_score = scorers.calculate_symmetry(grayscale_grid)
 
     # Palette Compliance (Bonus Idea #9: The Style Cop)
     # Greenhouse Palette: #357438, #732751, #e8f5e8, #ffffff, #2d3e2d, #666666
@@ -133,6 +134,7 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
     print(f"Contrast: {contrast_score:.2f}, Whitespace: {whitespace_score:.2f}")
     print(f"Edge Density: {edge_density_score:.2f}, Color Entropy: {color_entropy_score:.2f}, Feature Density: {feature_density_score:.2f}")
     print(f"Style Cop (Palette Compliance): {palette_score*100:.1f}%")
+    print(f"Symmetry: {symmetry_score:.2f}")
 
     # Stage 4: Unsupervised Machine Learning
     print("Stage 4: Clustering...")
@@ -145,6 +147,7 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
         color_entropy_score,
         feature_density_score,
         palette_score,
+        symmetry_score,
         metrics.get('duration', 0)
     ] + flat_features[:10]
 
@@ -164,9 +167,15 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
     # Palette score boost:
     value_score = (contrast_score * 0.5) + (whitespace_score * 50) + (color_entropy_score * 5) + (palette_score * 30) - (metrics.get('duration', 0) * 10)
 
+    value_score = (contrast_score * 0.5) + (whitespace_score * 50) + (color_entropy_score * 5) - (metrics.get('duration', 0) * 10)
+
     # Bonus for balanced edge density (0.1 - 0.5 range)
     if 0.1 <= edge_density_score <= 0.5:
         value_score += 20
+
+    # Bonus for symmetry (Golden Ratio / Harmony check)
+    if symmetry_score > 0.8:
+        value_score += 10
 
     prediction = "High Value" if value_score > 50 else "Low Value"
 
@@ -233,6 +242,7 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
                     "color_entropy",
                     "feature_density",
                     "palette_compliance",
+                    "symmetry",
                     "duration",
                     "agent_id"
                 ])
@@ -249,6 +259,7 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
                 color_entropy_score,
                 feature_density_score,
                 palette_score,
+                symmetry_score,
                 current_duration,
                 "10-999"
             ])

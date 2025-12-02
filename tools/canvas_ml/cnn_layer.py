@@ -1,24 +1,13 @@
 
 import math
+from . import scorers
 
 def to_grayscale(rgba_data, width, height):
     """
-    Converts a flat RGBA list into a 2D grayscale grid (list of lists).
-    Formula: 0.299*R + 0.587*G + 0.114*B
+    DEPRECATED: Use scorers.to_grayscale_grid instead.
+    Kept for backward compatibility if imported directly.
     """
-    grayscale = []
-    for y in range(height):
-        row = []
-        for x in range(width):
-            idx = (y * width + x) * 4
-            r = rgba_data[idx]
-            g = rgba_data[idx + 1]
-            b = rgba_data[idx + 2]
-            # Alpha is ignored for grayscale features
-            gray = 0.299 * r + 0.587 * g + 0.114 * b
-            row.append(gray)
-        grayscale.append(row)
-    return grayscale
+    return scorers.to_grayscale_grid(rgba_data, width, height)
 
 def apply_padding(image, padding=1):
     """Adds zero padding to the 2D image."""
