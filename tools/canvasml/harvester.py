@@ -103,6 +103,16 @@ def harvest():
                         return data;
                     }}""")
 
+                # Capture
+                pixel_data = page.evaluate("""() => {
+                    let target = document.querySelector('#canvas-environment');
+                    if (!target) {
+                        const canvases = document.querySelectorAll('canvas');
+                        if (canvases.length > 0) {
+                             target = canvases[canvases.length - 1];
+                        }
+                    }
+                    if (!target) return null;
                     if pixel_data:
                         break
 

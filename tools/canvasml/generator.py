@@ -35,7 +35,9 @@ BASE_CONFIG = {
             "x": 768, "y": 30, "scale": 4.0, "label": "legend_society",
             "color": "rgba(54, 162, 235, 0.8)"
         }
-    ]
+    ],
+    "influencePaths": [],
+    "interactiveElements": []
 }
 
 def random_color():
