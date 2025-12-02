@@ -5,7 +5,7 @@ Each task defines the target canvas, the desired state (simulated user input),
 and the success criteria (expected visual metrics).
 """
 
-def _create_setup_script(target_canvas_selector, custom_logic):
+def generate_setup_script(target_canvas_selector, custom_logic):
     """
     Helper to create a robust setup script that handles the consent screen
     and waits for the application to be ready before applying custom logic.
@@ -86,7 +86,7 @@ TASK_REGISTRY = {
     "environment_stress": {
         "description": "High Stress Environment",
         "canvas_selector": "#canvas-environment",
-        "setup_script": _create_setup_script("#canvas-environment", """
+        "default_logic": """
             if (window.GreenhouseModelsUX) {
                 // Set High Stress
                 window.GreenhouseModelsUX.state.environment.stress = 1.0;
@@ -97,9 +97,8 @@ TASK_REGISTRY = {
                 // Force Redraw
                 window.GreenhouseModelsUI.drawEnvironmentView();
             }
-        """),
+        """,
         "criteria": {
-            # Stress usually implies darker or more chaotic visuals.
             "min_contrast": 20.0,
             "min_edge_density": 0.001
         }
@@ -107,7 +106,7 @@ TASK_REGISTRY = {
     "brain_storm": {
         "description": "High Intensity Network Activity",
         "canvas_selector": "#canvas-network",
-        "setup_script": _create_setup_script("#canvas-network", """
+        "default_logic": """
             if (window.GreenhouseModelsUX) {
                 // Max Intensity
                 window.GreenhouseModelsUX.state.network.intensity = 100;
@@ -119,18 +118,16 @@ TASK_REGISTRY = {
                 // Force Redraw
                 window.GreenhouseModelsUI.drawNetworkView();
             }
-        """),
+        """,
         "criteria": {
-            # High activity = lots of bright spots (action potentials) + edges
             "min_contrast": 30.0,
-            # "min_whitespace": 0.01, # Removed as background is dark and colors are not pure white
             "min_feature_density": 0.05
         }
     },
     "synapse_learning": {
         "description": "High Synaptic Plasticity",
         "canvas_selector": "#canvas-synaptic",
-        "setup_script": _create_setup_script("#canvas-synaptic", """
+        "default_logic": """
             if (window.GreenhouseModelsUX) {
                 // High Intensity
                 window.GreenhouseModelsUX.state.synaptic.intensity = 100;
@@ -140,10 +137,28 @@ TASK_REGISTRY = {
 
                 window.GreenhouseModelsUI.drawSynapticView();
             }
-        """),
+        """,
         "criteria": {
             "min_contrast": 10.0,
             "min_edge_density": 0.01
         }
+    },
+    "space_race": {
+        "description": "Win the Space Race (Maximize Negative Space)",
+        "canvas_selector": "#canvas-environment",
+        "default_logic": """
+            if (window.GreenhouseModelsUX) {
+                // Start with a very cluttered environment to make the challenge harder
+                window.GreenhouseModelsUX.state.environment.stress = 1.0;
+                window.GreenhouseModelsUX.state.environment.support = 1.0;
+                window.GreenhouseModelsUX.state.environment.isRunning = true;
+                window.GreenhouseModelsUI.drawEnvironmentView();
+            }
+        """,
+        "criteria": {
+            "min_whitespace": 0.90,
+            "max_edge_density": 0.02
+        }
     }
 }
+# Final check

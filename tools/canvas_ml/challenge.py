@@ -47,15 +47,21 @@ def run_challenge(task_name, solution_file=None):
 
     url = f"http://localhost:{PORT}/docs/models.html"
 
-    # Determine setup script
-    setup_script = task.get("setup_script", "")
+    # Determine logic to apply
+    logic_to_run = task.get("default_logic", "")
     if solution_file:
         if os.path.exists(solution_file):
             with open(solution_file, 'r') as f:
                 print(f"Applying custom solution from {solution_file}...")
-                setup_script = f.read()
+                logic_to_run = f.read()
         else:
-            print(f"Warning: Solution file {solution_file} not found. Using default.")
+            print(f"Warning: Solution file {solution_file} not found. Using default logic.")
+
+    # Wrap the logic in the setup harness
+    setup_script = task_registry.generate_setup_script(
+        task["canvas_selector"],
+        logic_to_run
+    )
 
     # Render
     print("Capturing state...")
