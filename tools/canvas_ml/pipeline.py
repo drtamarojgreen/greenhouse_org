@@ -48,7 +48,7 @@ def categorize_change(render_change, score_change):
     else:
         return "Neutral"
 
-def run_pipeline(url=None, output_path=None, setup_script=None, description=None):
+def run_pipeline(url=None, output_path=None, setup_script=None, description=None, patch_file=None):
     server_thread = None
 
     if url is None:
@@ -68,6 +68,29 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
 
     if description:
         render_description = description
+
+    # Handle Patch Injection
+    if patch_file:
+        try:
+            with open(patch_file, 'r') as f:
+                patch_data = json.load(f)
+                # Construct a setup script that merges this patch into the config
+                # Assuming window.GreenhouseEnvironmentConfig is the target
+                json_str = json.dumps(patch_data)
+                patch_script = f"""
+                console.log("Applying Runtime JSON Patch...");
+                if (!window.GreenhouseEnvironmentConfig) window.GreenhouseEnvironmentConfig = {{}};
+                const patch = {json_str};
+                Object.assign(window.GreenhouseEnvironmentConfig, patch);
+                console.log("Patch applied:", window.GreenhouseEnvironmentConfig);
+                """
+                if setup_script:
+                    setup_script += "\n" + patch_script
+                else:
+                    setup_script = patch_script
+                print(f"Loaded patch from {patch_file}")
+        except Exception as e:
+            print(f"Error loading patch file: {e}")
 
     print(f"Starting pipeline for {url} ({render_description})...")
 
@@ -264,5 +287,12 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
     }
 
 if __name__ == "__main__":
-    target = sys.argv[1] if len(sys.argv) > 1 else None
-    run_pipeline(target)
+    import argparse
+    parser = argparse.ArgumentParser(description='CanvasML Pipeline')
+    parser.add_argument('url', nargs='?', help='Target URL or file path')
+    parser.add_argument('--patch', help='Path to JSON patch file for config injection')
+    parser.add_argument('--output', help='Path to save screenshot')
+
+    args = parser.parse_args()
+
+    run_pipeline(args.url, output_path=args.output, patch_file=args.patch)
