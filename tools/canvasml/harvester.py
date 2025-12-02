@@ -53,7 +53,7 @@ def harvest():
 
                 # Wait for canvas
                 try:
-                    page.wait_for_selector('canvas', timeout=5000)
+                    page.wait_for_selector('#canvas-environment', timeout=5000)
                 except:
                     # print(f"Canvas missing for {i}. Force-starting...")
                     # Try to force start via console
@@ -65,7 +65,7 @@ def harvest():
                     }""")
                     # Wait again
                     try:
-                        page.wait_for_selector('canvas', timeout=3000)
+                        page.wait_for_selector('#canvas-environment', timeout=3000)
                     except:
                         # print(f"Still no canvas for {i}. Skipping.")
                         # print("Body:", page.inner_html('body')[:200])
@@ -77,10 +77,8 @@ def harvest():
 
                 # Capture
                 pixel_data = page.evaluate("""() => {
-                    const canvases = document.querySelectorAll('canvas');
-                    if (canvases.length === 0) return null;
-                    // Grab the 3rd one (Environment) or just the biggest
-                    const target = canvases[canvases.length - 1];
+                    const target = document.getElementById('canvas-environment');
+                    if (!target) return null;
 
                     const temp = document.createElement('canvas');
                     temp.width = 64;
