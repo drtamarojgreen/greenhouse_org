@@ -26,12 +26,16 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
         "pixel_data": [],
         "screenshot_path": None,
         "width": 0,
-        "height": 0
+        "height": 0,
+        "console_logs": []
     }
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
+
+        # Capture console logs
+        page.on("console", lambda msg: result["console_logs"].append(f"{msg.type}: {msg.text}"))
 
         try:
             # If it's a local file path but missing scheme, fix it
@@ -41,6 +45,13 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
 
             print(f"Navigating to {url}")
             page.goto(url, wait_until="networkidle")
+
+            # Wait for potential dynamic loading
+            try:
+                # Wait for *something* to appear in the container if possible
+                page.wait_for_selector("#models-app-container > *", timeout=5000)
+            except Exception:
+                print("Warning: Timed out waiting for content in #models-app-container")
 
             # Allow some time for animations or 3D renders to settle
             page.wait_for_timeout(2000)
@@ -56,14 +67,12 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
                     print(f"Error executing setup script: {e}")
 
             # Capture screenshot
-            # If a selector is specific, we might want to screenshot just that element?
-            # But usually we want the whole context for "Visual Polish".
-            # For "Task-to-Pixel", maybe we want just the element.
-            # Let's stick to full page screenshot for the file, but crop for the pixels.
-            if output_path:
-                page.screenshot(path=output_path)
-                result["screenshot_path"] = output_path
-                print(f"Screenshot saved to {output_path}")
+            # Default to a debug screenshot if none provided, to help diagnosis
+            final_output_path = output_path if output_path else f"debug_capture_{int(time.time())}.png"
+
+            page.screenshot(path=final_output_path)
+            result["screenshot_path"] = final_output_path
+            print(f"Screenshot saved to {final_output_path}")
 
             # Extract raw pixel data via browser JS
             pixel_data_script = f"""
@@ -147,7 +156,6 @@ def render_and_capture(url, output_path=None, canvas_selector="canvas", setup_sc
                     result["height"] = js_result["height"]
             else:
                 print(f"No accessible canvas found for selector '{canvas_selector}' and Universal Capture failed.")
-                # Fallback: We can't use PIL.
                 pass
 
         except Exception as e:

@@ -49,4 +49,19 @@ Every plan and commit must bear the Mark: `PP-TTT`.
 3.  **Be Resourceful:** You have a sandbox. You have Python. You have Playwright. You don't need a compiler to move mountains.
 4.  **CanvasML is Watching:** Our machine vision tools see what you cannot. Respect the pixel.
 
-Go forth and code with purpose.
+## V. Recommendations for Future Agents (CanvasML Pipeline)
+
+1.  **Automate State Injection via `setup_script`:**
+    The `renderer.py` module supports a `setup_script` parameter. Do not rely on the default state of the page, which often includes loading screens or modals (like the "Acknowledgment" checkbox in `models.html`). Always write a custom JavaScript snippet to click buttons, wait for elements, or directly modify `window.state` variables to force the application into the desired visual state before capturing.
+
+2.  **Isolate Artifacts from the Source Tree:**
+    The pipeline generates screenshots (`.png`) and CSV reports (`.csv`). By default, these might land in the root directory or `tools/canvas_ml/`. To maintain a clean working directory and prevent accidental commits, always direct these outputs to a dedicated, ignored directory (e.g., `tools/canvas_ml/output_artifacts/`). This ensures you can run the pipeline repeatedly without cluttering `git status`.
+
+3.  **Leverage Universal Capture for Debugging:**
+    If `pixel_data` comes back empty or all zeros, the `renderer.py` logic often falls back to "Universal Capture" (screenshot-to-canvas). Use this feature to diagnose selector issues. If the screenshot shows a loading spinner or an overlay, your `setup_script` (Recommendation #1) is likely failing or incomplete. The screenshot is the truth; trust it over the logs.
+
+4.  **Monitor the `networkidle` Wait Condition:**
+    The `page.goto(url, wait_until="networkidle")` in `renderer.py` is a robust default, but for single-page applications (SPAs) like The Greenhouse, animations often continue long after the network is idle. If you see blurred or half-rendered states, increase the explicit `page.wait_for_timeout()` value in the renderer or add a `page.wait_for_selector()` in your `setup_script` to ensure the specific visual component is fully drawn.
+
+5.  **Use `console` Logs from the Browser:**
+    The improved `renderer.py` captures browser console logs. If a render fails or behaves unexpectedly, checking these captured logs is often more revealing than Python traceback. They can show if a JS error prevented the canvas from initializing or if a required asset (like a JSON model) failed to load due to pathing issues in the local server environment.

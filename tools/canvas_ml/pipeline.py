@@ -7,6 +7,7 @@ import http.server
 import socketserver
 import csv
 import json
+import shutil
 
 # Add the parent directory to sys.path to ensure imports work if run directly
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -51,6 +52,11 @@ def categorize_change(render_change, score_change):
 def run_pipeline(url=None, output_path=None, setup_script=None, description=None):
     server_thread = None
 
+    # Determine artifact directory (ignored by git)
+    artifact_dir = "tools/canvas_ml/output_artifacts"
+    if not os.path.exists(artifact_dir):
+        os.makedirs(artifact_dir)
+
     if url is None:
         # Start local server
         print("No URL provided. Starting local server for docs/models.html...")
@@ -60,6 +66,20 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
         time.sleep(1)
         url = f"http://localhost:{PORT}/docs/models.html"
         render_description = "local_docs_model"
+
+        # Specific setup script for models.html to bypass consent screen
+        setup_script = """
+        () => {
+            const consentCheckbox = document.getElementById('consent-checkbox');
+            const startButton = document.getElementById('start-simulation-btn');
+            if (consentCheckbox && startButton) {
+                consentCheckbox.click();
+                startButton.click();
+                return "Clicked consent and start";
+            }
+            return "Consent elements not found";
+        }
+        """
     else:
         # Create a simple description from the URL (e.g. filename or domain)
         render_description = url.split('/')[-1]
@@ -68,6 +88,11 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
 
     if description:
         render_description = description
+
+    # Define output path for screenshot in the artifact directory
+    if not output_path:
+        timestamp = int(time.time())
+        output_path = os.path.join(artifact_dir, f"capture_{render_description}_{timestamp}.png")
 
     print(f"Starting pipeline for {url} ({render_description})...")
 
@@ -165,7 +190,7 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
     print(f"Predicted Implementation Value: {prediction} (Score: {value_score:.2f})")
 
     # Artifact Management
-    baseline_file = "baseline_metrics.json"
+    baseline_file = os.path.join(artifact_dir, "baseline_metrics.json")
     render_change = 0.0
     score_change = 0.0
     improvement_category = "Neutral"
@@ -205,7 +230,7 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
     print(f"Improvement Category: {category} (Render Change: {render_change:.4f}s, Score Change: {score_change:.2f})")
 
     # Export CSV
-    csv_file = "vision_report10999.csv"
+    csv_file = os.path.join(artifact_dir, "vision_report10999.csv")
     try:
         # Check if file exists to determine if we need to write header
         file_exists = os.path.isfile(csv_file)
