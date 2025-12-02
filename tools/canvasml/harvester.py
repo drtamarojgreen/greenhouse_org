@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import re
 from playwright.sync_api import sync_playwright
 
 DATA_DIR = "tools/canvasml/data"
@@ -35,7 +36,7 @@ def harvest():
             page = context.new_page()
 
             # Route interception
-            page.route("**/js/environment_config.js", handle_route)
+            page.route(re.compile(r".*/js/environment_config\.js.*"), handle_route)
 
             try:
                 # print(f"Processing {i}...")
@@ -43,12 +44,12 @@ def harvest():
 
                 # Wait for potential consent screen
                 try:
-                    page.wait_for_selector('#consent-checkbox', state='visible', timeout=5000)
-                    page.check('#consent-checkbox')
-                    page.click('#start-simulation-btn')
+                    consent_checkbox = page.wait_for_selector('#consent-checkbox', state='visible', timeout=5000)
+                    if consent_checkbox:
+                        page.check('#consent-checkbox')
+                        page.click('#start-simulation-btn')
                 except:
-                    # print("No consent screen found. Checking if app is already running or broken.")
-                    # Try to force init if broken
+                    # print("No consent screen found or failed to click.")
                     pass
 
                 # Wait for canvas
@@ -68,7 +69,6 @@ def harvest():
                         page.wait_for_selector('canvas', timeout=3000)
                     except:
                         # print(f"Still no canvas for {i}. Skipping.")
-                        # print("Body:", page.inner_html('body')[:200])
                         page.close()
                         continue
 
