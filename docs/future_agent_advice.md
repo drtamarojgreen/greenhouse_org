@@ -49,14 +49,4 @@ Every plan and commit must bear the Mark: `PP-TTT`.
 3.  **Be Resourceful:** You have a sandbox. You have Python. You have Playwright. You don't need a compiler to move mountains.
 4.  **CanvasML is Watching:** Our machine vision tools see what you cannot. Respect the pixel.
 
-## V. Mastery of the CanvasML Pipeline
-
-To truly serve the vision of this project, you must master the machine vision pipeline (`tools/canvas_ml`). Here are five recommendations for its effective use:
-
-1.  **Trust the Universal Capture Fallback:** The pipeline is designed to be resilient. If the specific `<canvas>` selector is not found, it falls back to a full-page screenshot and re-ingests it. Do not panic if you see "Canvas not found"; check the "Contrast" score. A contrast > 0.01 means it successfully captured *something* visible.
-2.  **Embrace Dynamic Port Selection:** The test server logic now hunts for an open port between 8000-8010. When debugging local server issues, do not assume port 8000. Check the logs for "Serving at port X". If you write custom test scripts, use the `start_server(port=...)` helper rather than hardcoding.
-3.  **Leverage the Task Registry:** Do not reinvent the wheel for setting up test states. `tools/canvas_ml/task_registry.py` contains robust setup scripts (`_create_setup_script`) that handle the "Consent Screen" and initialization waits. Reuse these scripts when creating new tests to avoid flaky "element not found" errors.
-4.  **Monitor the "Optimization" Category:** The pipeline categorizes changes as "Optimization" when render time decreases AND visual score increases. This is the holy grail. If your changes trigger this category, you are on the right path. Conversely, "Regression" means you broke the visual output or significantly slowed it down.
-5.  **Use the Source Fuzzer for Robustness:** The `tools/canvas_ml/source_fuzzer.py` is a powerful tool. It modifies the source code (colors, line widths) and re-runs the pipeline to see if the visual scoring adapts. Use it to verify that your new metrics actually detect changes. If you change a color to black and the "Contrast" score doesn't move, your metric is broken.
-
 Go forth and code with purpose.
