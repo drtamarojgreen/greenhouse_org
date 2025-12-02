@@ -116,9 +116,11 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
     edge_density_score = scorers.calculate_edge_density(grayscale_grid)
     color_entropy_score = scorers.calculate_color_entropy(pixels)
     feature_density_score = scorers.calculate_feature_density(grayscale_grid)
+    symmetry_score = scorers.calculate_symmetry(grayscale_grid)
 
     print(f"Contrast: {contrast_score:.2f}, Whitespace: {whitespace_score:.2f}")
     print(f"Edge Density: {edge_density_score:.2f}, Color Entropy: {color_entropy_score:.2f}, Feature Density: {feature_density_score:.2f}")
+    print(f"Symmetry: {symmetry_score:.2f}")
 
     # Stage 4: Unsupervised Machine Learning
     print("Stage 4: Clustering...")
@@ -130,6 +132,7 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
         edge_density_score,
         color_entropy_score,
         feature_density_score,
+        symmetry_score,
         metrics.get('duration', 0)
     ] + flat_features[:10]
 
@@ -146,11 +149,16 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
     # Updated heuristic formula to include new scores
     # Higher entropy/edge density usually means more info, but too much is clutter.
     # We penalize extremely high edge density if whitespace is low (clutter).
+
     value_score = (contrast_score * 0.5) + (whitespace_score * 50) + (color_entropy_score * 5) - (metrics.get('duration', 0) * 10)
 
     # Bonus for balanced edge density (0.1 - 0.5 range)
     if 0.1 <= edge_density_score <= 0.5:
         value_score += 20
+
+    # Bonus for symmetry (Golden Ratio / Harmony check)
+    if symmetry_score > 0.8:
+        value_score += 10
 
     prediction = "High Value" if value_score > 50 else "Low Value"
 
@@ -216,6 +224,7 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
                     "edge_density",
                     "color_entropy",
                     "feature_density",
+                    "symmetry",
                     "duration",
                     "agent_id"
                 ])
@@ -231,6 +240,7 @@ def run_pipeline(url=None, output_path=None, setup_script=None, description=None
                 edge_density_score,
                 color_entropy_score,
                 feature_density_score,
+                symmetry_score,
                 current_duration,
                 "10-999"
             ])

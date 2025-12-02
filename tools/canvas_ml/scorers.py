@@ -5,6 +5,7 @@ def to_grayscale_grid(pixels_rgba, width, height):
     """
     Converts flattened RGBA pixels to a 2D grid of luminance values.
     Returns: List of Lists (height x width) containing float luminance (0-255).
+    Using Rec. 709 (HDTV) coefficients: 0.2126 R + 0.7152 G + 0.0722 B
     """
     grid = []
     if not pixels_rgba:
@@ -13,7 +14,7 @@ def to_grayscale_grid(pixels_rgba, width, height):
     # Verify dimensions
     expected_len = width * height * 4
     if len(pixels_rgba) < expected_len:
-        # Pad with zeros if necessary (though usually this shouldn't happen)
+        # Pad with zeros if necessary
         pixels_rgba = pixels_rgba + [0] * (expected_len - len(pixels_rgba))
 
     for y in range(height):
@@ -195,3 +196,40 @@ def calculate_feature_density(grayscale_grid):
 
     total_possible = rows_checked * width
     return total_transitions / total_possible if total_possible > 0 else 0.0
+
+def calculate_symmetry(grayscale_grid):
+    """
+    Calculates the horizontal symmetry of the image.
+    Compares the left half to the mirrored right half.
+    Returns: float (0.0 to 1.0, where 1.0 is perfect symmetry)
+    """
+    if not grayscale_grid:
+        return 0.0
+
+    height = len(grayscale_grid)
+    width = len(grayscale_grid[0])
+
+    if width < 2:
+        return 1.0
+
+    mid_x = width // 2
+    total_diff = 0.0
+    pixels_compared = 0
+
+    for y in range(height):
+        for x in range(mid_x):
+            left_val = grayscale_grid[y][x]
+            # Mirror index: width - 1 - x
+            right_val = grayscale_grid[y][width - 1 - x]
+
+            # Normalize difference (0-255) to 0-1 range
+            diff = abs(left_val - right_val) / 255.0
+            total_diff += diff
+            pixels_compared += 1
+
+    if pixels_compared == 0:
+        return 1.0
+
+    avg_diff = total_diff / pixels_compared
+    # Symmetry is inverse of difference
+    return 1.0 - avg_diff
