@@ -48,7 +48,7 @@ def categorize_change(render_change, score_change):
     else:
         return "Neutral"
 
-def run_pipeline(url=None, output_path=None):
+def run_pipeline(url=None, output_path=None, setup_script=None, description=None):
     server_thread = None
 
     if url is None:
@@ -66,11 +66,14 @@ def run_pipeline(url=None, output_path=None):
         if not render_description:
             render_description = "custom_url"
 
+    if description:
+        render_description = description
+
     print(f"Starting pipeline for {url} ({render_description})...")
 
     # Stage 1: Rendering & Benchmarking
     print("Stage 1: Rendering & Benchmarking...")
-    render_result = renderer.render_and_capture(url, output_path)
+    render_result = renderer.render_and_capture(url, output_path, setup_script=setup_script)
 
     pixels = render_result.get("pixel_data", [])
     width = render_result.get("width", 0)
@@ -194,7 +197,7 @@ def run_pipeline(url=None, output_path=None):
     print(f"Improvement Category: {category} (Render Change: {render_change:.4f}s, Score Change: {score_change:.2f})")
 
     # Export CSV
-    csv_file = "vision_report.csv"
+    csv_file = "vision_report10999.csv"
     try:
         # Check if file exists to determine if we need to write header
         file_exists = os.path.isfile(csv_file)
@@ -213,7 +216,8 @@ def run_pipeline(url=None, output_path=None):
                     "edge_density",
                     "color_entropy",
                     "feature_density",
-                    "duration"
+                    "duration",
+                    "agent_id"
                 ])
 
             writer.writerow([
@@ -227,7 +231,8 @@ def run_pipeline(url=None, output_path=None):
                 edge_density_score,
                 color_entropy_score,
                 feature_density_score,
-                current_duration
+                current_duration,
+                "10-999"
             ])
         print(f"Exported report to {csv_file}")
     except Exception as e:
