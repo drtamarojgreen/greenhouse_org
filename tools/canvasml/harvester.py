@@ -9,20 +9,25 @@ DOCS_URL = "http://localhost:8000/docs/models.html"
 
 def harvest():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        # Launch options
+        browser = p.chromium.launch(headless=True, args=['--use-gl=egl'])
         context = browser.new_context()
 
         # Define route handler factory
         current_config = {}
 
         def handle_route(route):
-            print("Intercepting config request...")
+            # print("Intercepting config request...")
             js_payload = f"window.GreenhouseEnvironmentConfig = {json.dumps(current_config)};"
             route.fulfill(
                 status=200,
                 content_type="application/javascript",
                 body=js_payload
             )
+
+        # Ensure output dir exists
+        if not os.path.exists(DATA_DIR):
+            os.makedirs(DATA_DIR)
 
         # Iterate
         for i in range(50):
@@ -58,26 +63,23 @@ def harvest():
                 except Exception as e:
                     print(f"Error waiting for initialization: {e}")
 
-                # Wait for canvas
                 target_selector = '#canvas-environment'
-                try:
-                    page.wait_for_selector(target_selector, timeout=5000)
-                except:
+                # Check if canvas exists, if not try to force init
+                if not page.query_selector(target_selector):
                     print(f"Canvas {target_selector} missing for {i}. Force-starting...")
-                    # Try to force start via console
                     page.evaluate("""() => {
                          if (window.GreenhouseModelsUX && !window.GreenhouseModelsUX.state.isInitialized) {
                              console.log("Force initializing...");
                              window.GreenhouseModelsUX.initialize();
                          }
                     }""")
-                    # Wait again
-                    try:
-                        page.wait_for_selector(target_selector, timeout=3000)
-                    except:
-                        # print(f"Still no canvas for {i}. Skipping.")
-                        page.close()
-                        continue
+
+                try:
+                    page.wait_for_selector(target_selector, timeout=5000)
+                except:
+                    print(f"Still no canvas for {i}. Skipping.")
+                    page.close()
+                    continue
 
                 # Wait for render to settle
                 page.wait_for_timeout(2000)
@@ -93,26 +95,21 @@ def harvest():
                         temp.width = 64;
                         temp.height = 64;
                         const ctx = temp.getContext('2d');
+
+                        // Fill white background first to avoid transparent zeros
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, 64, 64);
+
                         ctx.drawImage(target, 0, 0, 64, 64);
                         const data = Array.from(ctx.getImageData(0,0,64,64).data);
 
-                        // Check if empty (all zeros)
+                        // Check if empty (sum of all bytes)
                         const sum = data.reduce((a, b) => a + b, 0);
                         if (sum === 0) return null;
 
                         return data;
                     }}""")
 
-                # Capture
-                pixel_data = page.evaluate("""() => {
-                    let target = document.querySelector('#canvas-environment');
-                    if (!target) {
-                        const canvases = document.querySelectorAll('canvas');
-                        if (canvases.length > 0) {
-                             target = canvases[canvases.length - 1];
-                        }
-                    }
-                    if (!target) return null;
                     if pixel_data:
                         break
 
@@ -130,7 +127,7 @@ def harvest():
                     if i % 10 == 0:
                         print(f"Harvested {i}")
                 else:
-                    print(f"Failed to capture data for {i} (all zeros)")
+                    print(f"Failed to capture data for {i} (all zeros or null)")
 
             except Exception as e:
                 print(f"Error {i}: {e}")
