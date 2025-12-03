@@ -1,6 +1,17 @@
 {
 "elements": [
 {
+"id": "cytoplasm_marker",
+"type": "ellipse",
+"cx": "w/2",
+"cy": "h/2",
+"rx": "w/2",
+"ry": "h/2",
+"style": {
+"fillStyle": "rgba(240, 240, 250, 0.05)"
+}
+},
+{
 "id": "presynaptic_terminal",
 "type": "path",
 "path": "M(w/2-tw, psy-60) Q(w/2, psy+20, w/2+tw, psy-60)",
@@ -24,6 +35,16 @@
 }
 },
 {
+"id": "voltage_gated_channel",
+"type": "path",
+"path": "M(w/2-tw+40, psy-30) L(w/2-tw+50, psy-30) L(w/2-tw+50, psy-20) L(w/2-tw+40, psy-20) Z",
+"style": {
+"fillStyle": "rgba(255, 165, 0, 0.8)",
+"strokeStyle": "rgba(200, 100, 0, 0.9)",
+"lineWidth": 1
+}
+},
+{
 "id": "postsynaptic_terminal",
 "type": "path",
 "path": "M(w/2-tw, psy+80) Q(w/2, psy-40, w/2+tw, psy+80)",
@@ -31,6 +52,92 @@
 "fillStyle": "rgba(53, 116, 56, 0.7)",
 "strokeStyle": "rgba(23, 86, 26, 0.9)",
 "lineWidth": 3
+}
+},
+{
+"id": "nucleus",
+"type": "ellipse",
+"cx": "w/2",
+"cy": "psy+180",
+"rx": 60,
+"ry": 40,
+"style": {
+"fillStyle": "rgba(100, 100, 150, 0.3)",
+"strokeStyle": "rgba(80, 80, 120, 0.5)",
+"lineWidth": 2
+},
+"children": [
+{
+"id": "dna",
+"type": "path",
+"path": "M(w/2-40, psy+180) Q(w/2-20, psy+160, w/2, psy+180) T(w/2+40, psy+180)",
+"style": {
+"strokeStyle": "rgba(255, 255, 255, 0.6)",
+"lineWidth": 2
+}
+},
+{
+"id": "rna",
+"type": "path",
+"path": "M(w/2-20, psy+190) Q(w/2, psy+200, w/2+20, psy+190)",
+"style": {
+"strokeStyle": "rgba(255, 255, 0, 0.6)",
+"lineWidth": 1
+}
+},
+{
+"id": "transcription_factor",
+"type": "ellipse",
+"cx": "w/2+10",
+"cy": "psy+170",
+"rx": 3,
+"ry": 3,
+"style": {
+"fillStyle": "rgba(0, 255, 255, 0.8)"
+}
+}
+]
+},
+{
+"id": "protein_kinase",
+"type": "ellipse",
+"cx": "w/2-50",
+"cy": "psy+100",
+"rx": 6,
+"ry": 6,
+"style": {
+"fillStyle": "rgba(255, 0, 0, 0.6)",
+"strokeStyle": "rgba(200, 0, 0, 0.8)",
+"lineWidth": 1
+}
+},
+{
+"id": "ion_channel",
+"type": "path",
+"path": "M(w/2+tw-60, psy+30) L(w/2+tw-50, psy+30) L(w/2+tw-50, psy+40) L(w/2+tw-60, psy+40) Z",
+"style": {
+"fillStyle": "rgba(100, 255, 100, 0.8)",
+"strokeStyle": "rgba(50, 200, 50, 0.9)",
+"lineWidth": 1
+}
+},
+{
+"id": "extra_receptor",
+"type": "path",
+"path": "M(w/2+40, psy+35) L(w/2+50, psy+35) L(w/2+50, psy+45) L(w/2+40, psy+45) Z",
+"style": {
+"fillStyle": "rgba(0, 0, 255, 0.6)"
+}
+},
+{
+"id": "static_ligand",
+"type": "ellipse",
+"cx": "w/2+45",
+"cy": "psy+25",
+"rx": 2,
+"ry": 2,
+"style": {
+"fillStyle": "gold"
 }
 },
 {
