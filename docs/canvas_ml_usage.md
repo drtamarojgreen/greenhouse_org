@@ -77,3 +77,22 @@ If no URL is provided, it attempts to start a local server and test `docs/models
 ## Verification Status
 
 Verified that the pipeline functions correctly with standard `headless=True` configuration (no extra flags required) as of the latest run.
+
+## Interpreting Results
+
+The `tools/canvas_ml/vision.py` script generates a report (`tools/canvas_ml/report.md`) and potentially updates a CSV log (`vision_report10999.csv`). Here is how to interpret the key metrics:
+
+### Visual Metrics
+- **Visual Energy**: A measure of edge density calculated using Sobel filters.
+    - **High Energy**: Indicates high visual complexity or potential clutter (many edges, detailed textures).
+    - **Low Energy**: Indicates a minimalist or sparse design.
+- **Clustering**: The pipeline groups variations into "Low", "Medium", and "High" complexity clusters using K-Means. This helps identify outliers in visual style.
+
+### Performance Metrics
+- **Duration**: The time taken (in seconds) to render the page and capture the screenshot.
+    - **Regression**: Significant increase in render time (> 0.05s).
+    - **Performance Win**: Significant decrease in render time (> 0.05s).
+
+### Actionable Insights
+- **High Energy + Low Whitespace**: This combination often signals a cluttered UI. Consider increasing spacing or simplifying visual elements.
+- **High Duration**: Investigate the rendering loop or WebGL initialization. A duration > 10s for a simple scene is a critical performance issue.
