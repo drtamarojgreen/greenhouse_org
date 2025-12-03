@@ -96,3 +96,10 @@ The `tools/canvas_ml/vision.py` script generates a report (`tools/canvas_ml/repo
 ### Actionable Insights
 - **High Energy + Low Whitespace**: This combination often signals a cluttered UI. Consider increasing spacing or simplifying visual elements.
 - **High Duration**: Investigate the rendering loop or WebGL initialization. A duration > 10s for a simple scene is a critical performance issue.
+
+## Artifacts and Tracking
+
+The pipeline maintains state to track performance over time:
+
+- **`baseline_metrics.json`**: Stores the duration and value score of the *most recent* single-shot run. This file is used to calculate "Regression" or "Performance Win" by comparing the current run against this baseline.
+- **`vision_report10999.csv`**: A historical log of all runs, containing detailed metrics for each execution. This allows for long-term trend analysis.
