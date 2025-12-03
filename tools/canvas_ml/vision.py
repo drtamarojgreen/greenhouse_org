@@ -66,7 +66,84 @@ def analyze_features(edges):
     total_energy = sum(edges)
     return total_energy
 
+def calculate_symmetry(gray_pixels, width, height):
+    """
+    Calculates bilateral symmetry score (0.0 to 1.0).
+    Compares left half to mirrored right half.
+    """
+    diff = 0
+    total = 0
+    mid_x = width // 2
 
+    for y in range(height):
+        for x in range(mid_x):
+            left_idx = y * width + x
+            right_idx = y * width + (width - 1 - x)
+
+            p_left = gray_pixels[left_idx]
+            p_right = gray_pixels[right_idx]
+
+            diff += abs(p_left - p_right)
+            total += max(p_left, p_right) # Normalize by max potential difference (approx)
+
+    if total == 0:
+        return 1.0 # Blank image is symmetrical
+
+    # Similarity = 1 - (diff / (max_diff))
+    # Heuristic normalization
+    # If perfect symmetry, diff is 0 -> score 1.
+
+    score = 1.0 - (diff / (total + 1)) # +1 to avoid div zero
+    return score
+
+def calculate_balance(gray_pixels, width, height):
+    """
+    Calculates visual balance (0.0 to 1.0).
+    Distance of Center of Mass (lightness) from geometric center.
+    """
+    total_mass = 0
+    mom_x = 0
+    mom_y = 0
+
+    center_x = width / 2
+    center_y = height / 2
+
+    for y in range(height):
+        for x in range(width):
+            val = 255 - gray_pixels[y * width + x] # Invert so dark (ink) is mass
+            if val < 0: val = 0 # Safety
+
+            total_mass += val
+            mom_x += x * val
+            mom_y += y * val
+
+    if total_mass == 0:
+        return 1.0 # Empty is balanced
+
+    com_x = mom_x / total_mass
+    com_y = mom_y / total_mass
+
+    # Distance from center
+    dist = math.sqrt((com_x - center_x)**2 + (com_y - center_y)**2)
+    max_dist = math.sqrt(center_x**2 + center_y**2)
+
+    balance_score = 1.0 - (dist / max_dist)
+    return max(0.0, balance_score)
+
+def calculate_calm_score(energy, symmetry, balance):
+    """
+    Combines metrics into a 'Calm Score' (0-100).
+    High Symmetry + High Balance + Low Energy = High Calm.
+    """
+    # Normalize Energy (Assuming typical max around 300k based on previous reports)
+    # Energy is 'Clutter', so we want inverse.
+    norm_energy = min(energy / 350000.0, 1.0)
+    energy_score = 1.0 - norm_energy
+
+    # Weighted sum
+    # Symmetry: 30%, Balance: 20%, Low Energy: 50%
+    calm = (0.3 * symmetry) + (0.2 * balance) + (0.5 * energy_score)
+    return calm * 100
 
 def save_results(analysis_data, centroids, clusters, sorted_centroids):
     results = {
@@ -78,19 +155,11 @@ def save_results(analysis_data, centroids, clusters, sorted_centroids):
     labels = ["Low Complexity", "Medium Complexity", "High Complexity"]
 
     # Map cluster index to label based on sorted centroid value
-    # sorted_centroids is list of (original_index, value)
-    # We want to know: Cluster 0 is "Low" or "High"?
-    # If sorted_centroids[0] is (1, val), it means Cluster 1 has the lowest value.
-
-    # Let's rebuild the mapping to be clearer
-    # We want to save which image belongs to which "Label"
-
-    # 1. Assign a label to each centroid index
     centroid_label_map = {} # index -> label
     for rank, (c_idx, c_val) in enumerate(sorted_centroids):
         centroid_label_map[c_idx] = labels[rank]
 
-    # 2. Assign each image to a label
+    # Assign each image to a label
     for item in analysis_data:
         val = item["energy"]
         # Find closest centroid
@@ -99,7 +168,7 @@ def save_results(analysis_data, centroids, clusters, sorted_centroids):
         item["cluster_index"] = min_dist_idx
         item["label"] = centroid_label_map[min_dist_idx]
 
-    # 3. Stats
+    # Stats
     for rank, (c_idx, c_val) in enumerate(sorted_centroids):
         count = len(clusters[c_idx])
         results["cluster_stats"].append({
@@ -124,14 +193,18 @@ def generate_report(results):
     # Sort analysis by energy descending (most complex first)
     sorted_analysis = sorted(analysis, key=lambda x: x["energy"], reverse=True)
 
+    # Sort by Calm Score (descending)
+    sorted_calm = sorted(analysis, key=lambda x: x["calm_score"], reverse=True)
+
     with open(report_path, 'w') as f:
         f.write("# CanvasML Vision Analysis Report\n\n")
         f.write("## Overview\n\n")
         f.write("The **CanvasML Vision** pipeline has processed the captured variations. ")
         f.write("Using a custom Convolutional Neural Network (Sobel filters) and K-Means clustering, ")
-        f.write("we have categorized the visual states based on their 'Edge Energy' (Complexity).\n\n")
+        f.write("we have categorized the visual states based on their 'Edge Energy' (Complexity).\n")
+        f.write("We have also introduced a **Calm Score** based on Symmetry, Balance, and low Visual Clutter.\n\n")
 
-        f.write("## Cluster Analysis\n\n")
+        f.write("## Cluster Analysis (Complexity)\n\n")
         f.write("| Complexity Label | Centroid Energy | Image Count |\n")
         f.write("| :--- | :--- | :--- |\n")
         for stat in stats:
@@ -143,19 +216,33 @@ def generate_report(results):
         most_complex = sorted_analysis[0]
         least_complex = sorted_analysis[-1]
 
+        most_calm = sorted_calm[0]
+        least_calm = sorted_calm[-1]
+
         f.write(f"**Most Chaotic Visualization:** Variation #{most_complex['id']} ")
         f.write(f"(Energy: {most_complex['energy']:.2f})\n")
-        f.write(f"- *Verdict:* Potential clutter. Verify if elements are overlapping.\n\n")
+        f.write(f"- *Verdict:* Potential clutter.\n\n")
 
         f.write(f"**Most Minimalist Visualization:** Variation #{least_complex['id']} ")
         f.write(f"(Energy: {least_complex['energy']:.2f})\n")
-        f.write(f"- *Verdict:* Clean, potentially sparse. Ensure all required elements are present.\n\n")
+        f.write(f"- *Verdict:* Clean, potentially sparse.\n\n")
+
+        f.write(f"**Calmest Visualization:** Variation #{most_calm['id']} ")
+        f.write(f"(Calm Score: {most_calm['calm_score']:.1f}/100)\n")
+        f.write(f"- *Metrics:* Symmetry: {most_calm['symmetry']:.2f}, Balance: {most_calm['balance']:.2f}\n\n")
 
         f.write("## Detailed Data (Top 5 Highest Energy)\n\n")
-        f.write("| ID | Energy | Cluster |\n")
-        f.write("| :--- | :--- | :--- |\n")
+        f.write("| ID | Energy | Cluster | Calm Score |\n")
+        f.write("| :--- | :--- | :--- | :--- |\n")
         for item in sorted_analysis[:5]:
-            f.write(f"| {item['id']} | {item['energy']:.2f} | {item['label']} |\n")
+            f.write(f"| {item['id']} | {item['energy']:.2f} | {item['label']} | {item['calm_score']:.1f} |\n")
+
+        f.write("\n## Detailed Data (Top 5 Calmest)\n\n")
+        f.write("| ID | Calm Score | Symmetry | Balance | Energy |\n")
+        f.write("| :--- | :--- | :--- | :--- | :--- |\n")
+        for item in sorted_calm[:5]:
+            f.write(f"| {item['id']} | {item['calm_score']:.1f} | {item['symmetry']:.2f} | {item['balance']:.2f} | {item['energy']:.2f} |\n")
+
 
     print(f"Report generated at {report_path}")
 
@@ -171,13 +258,24 @@ def analyze():
 
         gray = to_grayscale(pixels)
         edges = convolve_sobel(gray, WIDTH, HEIGHT)
-        energy = analyze_features(edges)
 
-        analysis_data.append({"id": i, "energy": energy})
+        # Metrics
+        energy = analyze_features(edges)
+        symmetry = calculate_symmetry(gray, WIDTH, HEIGHT)
+        balance = calculate_balance(gray, WIDTH, HEIGHT)
+        calm = calculate_calm_score(energy, symmetry, balance)
+
+        analysis_data.append({
+            "id": i,
+            "energy": energy,
+            "symmetry": symmetry,
+            "balance": balance,
+            "calm_score": calm
+        })
         features.append([energy]) # KMeans expects vectors
 
         if i % 10 == 0:
-            print(f"Processed image {i}, Energy: {energy:.2f}")
+            print(f"Processed image {i}, Energy: {energy:.2f}, Calm: {calm:.1f}")
 
     if not features:
         print("No data found.")
