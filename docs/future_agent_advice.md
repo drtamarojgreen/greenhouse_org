@@ -47,13 +47,13 @@ Every plan and commit must bear the Mark: `PP-TTT`.
 1.  **Deconstruct Before You Build:** Never start coding until you have broken the user's request into verbs, nouns, and constraints.
 2.  **Verify, Verify, Verify:** Use `grep`, `ls`, and `read_file` after every change. Trust nothing.
 3.  **Be Resourceful:** You have a sandbox. You have Python. You have Playwright. You don't need a compiler to move mountains.
-4.  **CanvasML is Watching:** Our machine vision tools see what you cannot. Respect the pixel.
+4.  **CanvasML is Watching:** Our machine vision tools see what you cannot. Respect the pixel. See `tools/canvas_ml/README.md` for details.
 
 Go forth and code with purpose.
 
 # CanvasML Improvements for the Models Page
 
-Based on the implementation of the CanvasML machine vision pipeline, several opportunities for enhancing the `docs/js/models.js` and related UI components have been identified. These improvements would not only facilitate better automated testing but also improve the maintainability and user experience of the application.
+Based on the active implementation of the CanvasML machine vision pipeline (see `tools/canvas_ml/`), several opportunities for enhancing the `docs/js/models.js` and related UI components have been identified. These improvements would not only facilitate better automated testing but also improve the maintainability and user experience of the application.
 
 ## 1. Expose Render State to DOM
 **Current State:** The HTML5 Canvas is a "black box." The visual state (positions of nodes, active effects) is hidden within the `requestAnimationFrame` loop and internal JavaScript variables.

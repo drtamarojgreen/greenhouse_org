@@ -112,3 +112,15 @@ This approach makes our website more flexible and easier to maintain. It also en
 
 *   **The Analogy:** The Videos page is our own curated on-demand video channel. It's a library of helpful video content that visitors can browse at their leisure.
 *   **In Simple Terms:** This page provides a collection of educational and supportive videos. The list of videos is fetched from a JSON file and displayed in a repeater. Each video has a title, a description, and an embedded video player, so visitors can watch the videos directly on the page.
+
+---
+
+## Internal Development Tools: The Quality Control Room
+
+Behind the scenes, we use specialized tools to ensure our applications are robust and user-friendly.
+
+### CanvasML: The Automated Art Critic
+
+*   **The Analogy:** Imagine you have an art critic who can look at thousands of paintings in seconds. This critic doesn't just say "I like it" or "I hate it"; they meticulously measure the balance of colors, the amount of empty space, and the complexity of the brushstrokes. They then group the paintings into categories like "Minimalist" or "Chaotic."
+*   **In Simple Terms:** CanvasML is a custom computer vision tool located in `tools/canvas_ml`. It automatically generates thousands of variations of our web interfaces, takes screenshots of them, and uses machine learning to analyze their visual complexity. This helps us ensure that our designs strike the right balance between being informative and being overwhelming.
+*   **For Developers:** Detailed technical documentation is available in `tools/canvas_ml/README.md`.
