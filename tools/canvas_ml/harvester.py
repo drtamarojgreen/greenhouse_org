@@ -9,7 +9,7 @@ DOCS_URL = "http://localhost:8000/docs/models.html"
 
 def harvest():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=True, args=["--use-gl=egl"])
         context = browser.new_context()
 
         # Define route handler factory
