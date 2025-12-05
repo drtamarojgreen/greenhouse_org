@@ -29,6 +29,12 @@
                     if(ctx.fillStyle) ctx.fill();
                     if(ctx.strokeStyle) ctx.stroke();
                     break;
+                case 'text':
+                    const tx = eval(GreenhouseModelsUtil.parseDynamicPath(element.x, { w, h, tw, psy }));
+                    const ty = eval(GreenhouseModelsUtil.parseDynamicPath(element.y, { w, h, tw, psy }));
+                    if (ctx.fillStyle) ctx.fillText(element.text, tx, ty);
+                    if (ctx.strokeStyle) ctx.strokeText(element.text, tx, ty);
+                    break;
             }
 
             if (element.children) {
