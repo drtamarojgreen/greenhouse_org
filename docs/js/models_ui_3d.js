@@ -29,6 +29,7 @@
         neurons3D: [],
         connections3D: [],
         animationFrame: null,
+        brainShell: null,
 
         /**
          * Initializes the 3D canvas system
@@ -293,6 +294,9 @@
             this.neurons3D = [];
             this.connections3D = [];
 
+            // Initialize brain shell structure
+            this.initializeBrainShell();
+
             // Convert 2D network layout to 3D positions
             if (this.state.networkLayout && this.state.networkLayout.length > 0) {
                 this.state.networkLayout.forEach((node, index) => {
@@ -328,6 +332,123 @@
                     });
                 }
             }
+        },
+
+        /**
+         * Initializes the 3D brain shell structure
+         * Creates a topographical representation of the brain
+         */
+        initializeBrainShell() {
+            // Create a simplified brain shell using parametric equations
+            // This creates an ellipsoid shape representing the brain
+            this.brainShell = {
+                vertices: [],
+                faces: []
+            };
+
+            const latitudeBands = 20;
+            const longitudeBands = 20;
+            const radiusX = 180; // Width
+            const radiusY = 200; // Height
+            const radiusZ = 160; // Depth
+
+            // Generate vertices
+            for (let lat = 0; lat <= latitudeBands; lat++) {
+                const theta = (lat * Math.PI) / latitudeBands;
+                const sinTheta = Math.sin(theta);
+                const cosTheta = Math.cos(theta);
+
+                for (let lon = 0; lon <= longitudeBands; lon++) {
+                    const phi = (lon * 2 * Math.PI) / longitudeBands;
+                    const sinPhi = Math.sin(phi);
+                    const cosPhi = Math.cos(phi);
+
+                    // Parametric sphere equations modified for brain shape
+                    let x = radiusX * cosPhi * sinTheta;
+                    let y = radiusY * cosTheta;
+                    let z = radiusZ * sinPhi * sinTheta;
+
+                    // Add asymmetry to make it more brain-like
+                    if (x > 0) {
+                        x *= 1.1; // Right hemisphere slightly larger
+                    }
+
+                    // Add frontal lobe bulge
+                    if (z > 0 && Math.abs(y) < radiusY * 0.5) {
+                        z *= 1.15;
+                    }
+
+                    // Add occipital lobe (back of head)
+                    if (z < 0 && y < 0) {
+                        z *= 0.9;
+                        y *= 0.95;
+                    }
+
+                    this.brainShell.vertices.push({ x, y, z });
+                }
+            }
+
+            // Generate faces (triangles)
+            for (let lat = 0; lat < latitudeBands; lat++) {
+                for (let lon = 0; lon < longitudeBands; lon++) {
+                    const first = lat * (longitudeBands + 1) + lon;
+                    const second = first + longitudeBands + 1;
+
+                    // Two triangles per quad
+                    this.brainShell.faces.push([first, second, first + 1]);
+                    this.brainShell.faces.push([second, second + 1, first + 1]);
+                }
+            }
+
+            // Add brain regions as colored areas
+            this.brainShell.regions = {
+                prefrontalCortex: {
+                    color: 'rgba(100, 150, 255, 0.6)',
+                    vertices: this.getRegionVertices('pfc')
+                },
+                amygdala: {
+                    color: 'rgba(255, 100, 100, 0.6)',
+                    vertices: this.getRegionVertices('amygdala')
+                },
+                hippocampus: {
+                    color: 'rgba(100, 255, 150, 0.6)',
+                    vertices: this.getRegionVertices('hippocampus')
+                }
+            };
+        },
+
+        /**
+         * Gets vertices for specific brain regions
+         */
+        getRegionVertices(region) {
+            const indices = [];
+            const vertices = this.brainShell.vertices;
+
+            vertices.forEach((vertex, index) => {
+                switch (region) {
+                    case 'pfc': // Prefrontal cortex - front upper area
+                        if (vertex.z > 100 && vertex.y > 0 && vertex.y < 150) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'amygdala': // Amygdala - deep temporal area
+                        if (Math.abs(vertex.x) > 80 && Math.abs(vertex.x) < 120 &&
+                            vertex.y > -50 && vertex.y < 50 &&
+                            vertex.z > -50 && vertex.z < 0) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'hippocampus': // Hippocampus - medial temporal area
+                        if (Math.abs(vertex.x) > 60 && Math.abs(vertex.x) < 100 &&
+                            vertex.y > -80 && vertex.y < 0 &&
+                            vertex.z > -80 && vertex.z < -20) {
+                            indices.push(index);
+                        }
+                        break;
+                }
+            });
+
+            return indices;
         },
 
         /**
@@ -392,6 +513,11 @@
             // Draw grid for depth reference
             this.draw3DGrid(ctx);
 
+            // Draw brain shell first (background)
+            if (this.brainShell) {
+                this.drawBrainShell(ctx);
+            }
+
             // Project and sort neurons by depth
             const projectedNeurons = this.neurons3D.map(neuron => {
                 const projected = GreenhouseModels3DMath.project3DTo2D(
@@ -419,6 +545,99 @@
 
             // Draw axis indicators
             this.draw3DAxisIndicators(ctx);
+        },
+
+        /**
+         * Draws the 3D brain shell
+         */
+        drawBrainShell(ctx) {
+            if (!this.brainShell) return;
+
+            // Project all vertices
+            const projectedVertices = this.brainShell.vertices.map(vertex => {
+                const projected = GreenhouseModels3DMath.project3DTo2D(
+                    vertex.x, vertex.y, vertex.z,
+                    this.camera,
+                    this.projection
+                );
+                return {
+                    ...projected,
+                    originalVertex: vertex
+                };
+            });
+
+            // Calculate face depths and sort
+            const facesWithDepth = this.brainShell.faces.map(face => {
+                const v1 = projectedVertices[face[0]];
+                const v2 = projectedVertices[face[1]];
+                const v3 = projectedVertices[face[2]];
+                const avgDepth = (v1.depth + v2.depth + v3.depth) / 3;
+                
+                return {
+                    face,
+                    depth: avgDepth,
+                    vertices: [v1, v2, v3]
+                };
+            });
+
+            // Sort faces by depth (painter's algorithm)
+            facesWithDepth.sort((a, b) => b.depth - a.depth);
+
+            // Draw each face
+            facesWithDepth.forEach(({ face, depth, vertices }) => {
+                const [v1, v2, v3] = vertices;
+
+                // Calculate face normal for backface culling
+                const dx1 = v2.x - v1.x;
+                const dy1 = v2.y - v1.y;
+                const dx2 = v3.x - v1.x;
+                const dy2 = v3.y - v1.y;
+                const cross = dx1 * dy2 - dy1 * dx2;
+
+                // Only draw front-facing polygons
+                if (cross > 0) {
+                    // Determine if this face is part of a colored region
+                    let faceColor = 'rgba(128, 128, 128, 0.15)'; // Default gray
+                    
+                    // Check if any vertex is in a brain region
+                    for (const regionName in this.brainShell.regions) {
+                        const region = this.brainShell.regions[regionName];
+                        if (region.vertices.includes(face[0]) || 
+                            region.vertices.includes(face[1]) || 
+                            region.vertices.includes(face[2])) {
+                            faceColor = region.color;
+                            break;
+                        }
+                    }
+
+                    // Apply depth fog
+                    const alpha = GreenhouseModels3DMath.applyDepthFog(0.3, depth);
+                    const colorMatch = faceColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                    if (colorMatch) {
+                        const r = colorMatch[1];
+                        const g = colorMatch[2];
+                        const b = colorMatch[3];
+                        const baseAlpha = colorMatch[4] ? parseFloat(colorMatch[4]) : 1;
+                        faceColor = `rgba(${r}, ${g}, ${b}, ${baseAlpha * alpha})`;
+                    }
+
+                    // Draw the face
+                    ctx.fillStyle = faceColor;
+                    ctx.beginPath();
+                    ctx.moveTo(v1.x, v1.y);
+                    ctx.lineTo(v2.x, v2.y);
+                    ctx.lineTo(v3.x, v3.y);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Draw wireframe edges for definition
+                    ctx.strokeStyle = this.state.darkMode ? 
+                        `rgba(200, 200, 200, ${alpha * 0.1})` : 
+                        `rgba(100, 100, 100, ${alpha * 0.1})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            });
         },
 
         /**
