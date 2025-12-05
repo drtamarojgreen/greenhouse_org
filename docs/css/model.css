@@ -120,6 +120,8 @@ a {
 /* --- Layout & Spacing --- */
 .simulation-main-container {
     padding: 2em;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 .simulation-content-area {
@@ -145,6 +147,7 @@ a {
 #canvas-synaptic,
 #canvas-network,
 #canvas-environment {
+    display: block;
     height: auto !important; /* Override inline style */
     flex-grow: 1; /* Allow canvas to grow and fill the column */
     min-height: 250px; /* Maintain a minimum size */
