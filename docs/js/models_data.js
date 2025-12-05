@@ -60,7 +60,14 @@
                                     "lineWidth": 2
                                 }
                             }
-                        ]
+                        ],
+                        ionChannels: [
+                            { id: 1, type: 'sodium', x: -50, state: 'closed' },
+                            { id: 2, type: 'calcium', x: 20, state: 'open' },
+                            { id: 3, type: 'sodium', x: 60, state: 'closed' }
+                        ],
+                        cytoplasmDensity: 0.5,
+                        localRNA: true
                     };
                     this.state.brainData = {
                         elements: [
