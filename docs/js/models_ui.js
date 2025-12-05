@@ -14,6 +14,11 @@
             Object.assign(this, GreenhouseModelsUISynapse);
             Object.assign(this, GreenhouseModelsUIBrain);
             Object.assign(this, GreenhouseModelsUIEnvironment);
+            
+            // Initialize 3D module if available
+            if (window.GreenhouseModelsUI3D) {
+                Object.assign(this, GreenhouseModelsUI3D);
+            }
         },
 
         async loadCSS(baseUrl) {
@@ -139,6 +144,11 @@
             this.resizeAllCanvases();
             this._drawLoadingState(this.contexts.environment, this.canvases.environment);
 
+            // Initialize 3D canvas if module is available
+            if (window.GreenhouseModelsUI3D && this.init3DCanvas) {
+                this.init3DCanvas();
+            }
+
             // Re-bind controls since we replaced the DOM
             if (window.GreenhouseModelsUX && window.GreenhouseModelsUX.bindSimulationControls) {
                 window.GreenhouseModelsUX.bindSimulationControls();
@@ -232,6 +242,9 @@
                             <button class="greenhouse-btn greenhouse-btn-secondary" id="gene-btn-2">${t('btn_gene_b')}</button>
                         </div>
                     </div>
+                    <div class="button-group" style="margin-top: 15px;">
+                        <button class="greenhouse-btn greenhouse-btn-primary" id="toggle-3d-btn">${t('launch_3d')}</button>
+                    </div>
                 `;
             } else if (type === 'general') {
                 controlsHtml += `
@@ -298,6 +311,11 @@
             this.drawSynapticView();
             this.drawNetworkView();
             this.drawEnvironmentView();
+            
+            // Resize 3D canvas if active
+            if (this.resize3DCanvas && this.isActive) {
+                this.resize3DCanvas();
+            }
         }
     };
 

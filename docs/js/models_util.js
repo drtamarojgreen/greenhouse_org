@@ -283,7 +283,19 @@
                 label_ceo: 'CEO',
                 alert_url_copied: 'Simulation URL copied to clipboard!',
                 alert_url_fail: 'Failed to copy URL. Please copy it manually:',
-                alert_fullscreen_error: 'Error attempting to enable full-screen mode'
+                alert_fullscreen_error: 'Error attempting to enable full-screen mode',
+
+                // 3D View
+                '3d_view_title': '3D Neural Network View',
+                'launch_3d': 'Launch 3D View',
+                'hide_3d': 'Hide 3D View',
+                'auto_rotate': 'Auto Rotate',
+                'stop_rotate': 'Stop Rotation',
+                'reset_camera': 'Reset Camera',
+                'camera_x': 'Camera X Rotation',
+                'camera_y': 'Camera Y Rotation',
+                'camera_z': 'Camera Z Position',
+                'fov': 'Field of View'
             },
             es: {
                 // Consent Screen
@@ -434,7 +446,19 @@
                 label_ceo: "CEO",
                 alert_url_copied: "¡URL de simulación copiada al portapapeles!",
                 alert_url_fail: "Error al copiar URL. Por favor cópielo manualmente:",
-                alert_fullscreen_error: "Error al intentar habilitar el modo de pantalla completa"
+                alert_fullscreen_error: "Error al intentar habilitar el modo de pantalla completa",
+
+                // 3D View
+                '3d_view_title': 'Vista de Red Neuronal 3D',
+                'launch_3d': 'Iniciar Vista 3D',
+                'hide_3d': 'Ocultar Vista 3D',
+                'auto_rotate': 'Rotación Automática',
+                'stop_rotate': 'Detener Rotación',
+                'reset_camera': 'Restablecer Cámara',
+                'camera_x': 'Rotación X de Cámara',
+                'camera_y': 'Rotación Y de Cámara',
+                'camera_z': 'Posición Z de Cámara',
+                'fov': 'Campo de Visión'
             }
         },
         GreenhouseComponent,
