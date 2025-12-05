@@ -29,12 +29,14 @@
         neurons3D: [],
         connections3D: [],
         particles: [],
+        shellContours: [], // 3D topological shell
+        shellBounds: { minX: 0, maxX: 0, minY: 0, maxY: 0, minZ: 0, maxZ: 0 }, // Detected bounds
         animationFrame: null,
 
         /**
          * Initializes the 3D canvas system
          */
-        init3DCanvas() {
+        async init3DCanvas() {
             if (!window.GreenhouseModels3DMath) {
                 console.error('3D Math module not loaded');
                 return;
@@ -88,11 +90,38 @@
             // Set up mouse interaction
             this.setup3DInteraction();
 
-            // Initialize 3D data structures
-            this.initialize3DData();
-            
+            // Initialize particles first
+            this.initializeParticles();
+
+            // Load brain SVG and initialize shell/neurons
+            await this.loadBrainData();
+
             // Bind the toggle button from environment controls
             this.bind3DToggleButton();
+        },
+
+        /**
+         * Loads the brain SVG data
+         */
+        async loadBrainData() {
+            try {
+                const response = await fetch('images/brain.svg');
+                if (response.ok) {
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, 'image/svg+xml');
+                    const path = doc.querySelector('path');
+                    if (path) {
+                        const d = path.getAttribute('d');
+                        this.generateTopologicalShell(d);
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load brain.svg for 3D shell:', e);
+            }
+
+            // Initialize neurons (using shell bounds if available)
+            this.initialize3DData();
         },
 
         /**
@@ -287,15 +316,9 @@
             this.render3DView();
         },
 
-        /**
-         * Initializes 3D data structures from 2D network
-         */
-        initialize3DData() {
-            this.neurons3D = [];
-            this.connections3D = [];
-            this.particles = [];
-
+        initializeParticles() {
             // Initialize background particles (stars/dust)
+            this.particles = [];
             for (let i = 0; i < 200; i++) {
                 this.particles.push({
                     x: (Math.random() - 0.5) * 3000,
@@ -305,25 +328,54 @@
                     opacity: Math.random() * 0.5 + 0.1
                 });
             }
+        },
 
-            // Convert 2D network layout to 3D positions (Brain/Ellipsoid Shape)
+        /**
+         * Initializes 3D data structures from 2D network
+         */
+        initialize3DData() {
+            this.neurons3D = [];
+            this.connections3D = [];
+
+            // Determine volume dimensions
+            let rx = 500, ry = 350, rz = 150;
+
+            // If shell exists, fit neurons inside it (roughly 80% of shell size)
+            if (this.shellBounds && this.shellBounds.maxX > 0) {
+                // Calculate dimensions from shell bounds
+                // Shell bounds are detected from centered coords
+                const shellWidth = this.shellBounds.maxX - this.shellBounds.minX;
+                const shellHeight = this.shellBounds.maxY - this.shellBounds.minY;
+                const shellDepth = this.shellBounds.maxZ - this.shellBounds.minZ;
+
+                // Use 80% to ensure they are "encased"
+                rx = (shellWidth / 2) * 0.8;
+                ry = (shellHeight / 2) * 0.8;
+                rz = (shellDepth / 2) * 0.8;
+            }
+
+            // Generate neurons in a simple ellipsoid volume
             if (this.state.networkLayout && this.state.networkLayout.length > 0) {
                 const count = this.state.networkLayout.length;
                 this.state.networkLayout.forEach((node, index) => {
-                    // Distribute neurons in a volumetric ellipsoid
-                    // Golden spiral on a sphere for uniform distribution, then scaled
-                    const phi = Math.acos(-1 + (2 * index) / count);
-                    const theta = Math.sqrt(count * Math.PI) * phi;
+                    // Distribute randomly within ellipsoid
+                    // Random point in sphere logic
+                    const u = Math.random();
+                    const v = Math.random();
+                    const theta = 2 * Math.PI * u;
+                    const phi = Math.acos(2 * v - 1);
+                    const r = Math.cbrt(Math.random()); // uniformity
                     
-                    // Vary radius slightly to create volume instead of just surface
-                    const r = 250 + (Math.random() - 0.5) * 100;
+                    const x = r * Math.sin(phi) * Math.cos(theta) * rx;
+                    const y = r * Math.sin(phi) * Math.sin(theta) * ry;
+                    const z = r * Math.cos(phi) * rz;
 
                     this.neurons3D.push({
                         id: node.id || index,
                         type: node.type,
-                        x: r * Math.sin(phi) * Math.cos(theta),
-                        y: r * 0.7 * Math.cos(phi), // Flattened Y (height)
-                        z: r * Math.sin(phi) * Math.sin(theta),
+                        x: x,
+                        y: y,
+                        z: z,
                         activation: node.activation || 0,
                         radius: 8 + Math.random() * 4
                     });
@@ -345,6 +397,93 @@
                     });
                 }
             }
+        },
+
+        /**
+         * Generates 3D topological shell from SVG path
+         */
+        generateTopologicalShell(svgPath) {
+            const width = 1536;
+            const height = 1024;
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = width;
+            offCanvas.height = height;
+            const ctx = offCanvas.getContext('2d');
+
+            const path = new Path2D(svgPath);
+
+            // Draw filled path
+            ctx.fillStyle = '#000000';
+            ctx.fill(path);
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const scale = 0.5;
+
+            // Create contours along Z-axis
+            const numSlices = 9; // More slices for better shape
+            const maxDepth = 150; // Matching the neuron Z range approx
+
+            this.shellContours = [];
+            this.shellBounds = {
+                minX: Infinity, maxX: -Infinity,
+                minY: Infinity, maxY: -Infinity,
+                minZ: -maxDepth, maxZ: maxDepth
+            };
+
+            for (let i = 0; i < numSlices; i++) {
+                const t = i / (numSlices - 1);
+                const z = (t - 0.5) * 2 * maxDepth;
+
+                // Scale contour based on depth to create volume
+                const depthRatio = Math.abs(z) / (maxDepth * 1.2);
+                const contourScale = Math.sqrt(Math.max(0, 1 - depthRatio * depthRatio)) * scale;
+
+                const slicePoints = [];
+                const numSegments = 80; // Higher detail
+
+                // Scan perimeter
+                for (let j = 0; j < numSegments; j++) {
+                    const theta = (j / numSegments) * Math.PI * 2;
+
+                    // Binary search for edge
+                    let rMin = 0;
+                    let rMax = 800;
+                    let rEdge = 0;
+
+                    for (let k = 0; k < 8; k++) {
+                        const mid = (rMin + rMax) / 2;
+                        const testX = centerX + Math.cos(theta) * mid;
+                        const testY = centerY + Math.sin(theta) * mid;
+                        if (ctx.isPointInPath(path, testX, testY)) {
+                            rMin = mid;
+                            rEdge = mid;
+                        } else {
+                            rMax = mid;
+                        }
+                    }
+
+                    if (rEdge > 0) {
+                         const px = (Math.cos(theta) * rEdge) * contourScale;
+                         const py = (Math.sin(theta) * rEdge) * contourScale;
+
+                         slicePoints.push({ x: px, y: py, z: z });
+
+                         // Update bounds
+                         if (px < this.shellBounds.minX) this.shellBounds.minX = px;
+                         if (px > this.shellBounds.maxX) this.shellBounds.maxX = px;
+                         if (py < this.shellBounds.minY) this.shellBounds.minY = py;
+                         if (py > this.shellBounds.maxY) this.shellBounds.maxY = py;
+                    }
+                }
+
+                if (slicePoints.length > 0) {
+                    this.shellContours.push(slicePoints);
+                }
+            }
+
+            // Re-initialize neurons now that we have shell bounds
+            this.initialize3DData();
         },
 
         /**
@@ -409,8 +548,11 @@
             // Draw background particles (stars/dust)
             this.draw3DParticles(ctx);
 
-            // Draw grid for depth reference
+            // Draw 3D Grid (Restored)
             this.draw3DGrid(ctx);
+
+            // Draw Topological Shell
+            this.drawTopologicalShell(ctx);
 
             // Project and sort neurons by depth
             const projectedNeurons = [];
@@ -442,8 +584,83 @@
             // Draw neurons
             this.draw3DNeurons(ctx, projectedNeurons);
 
-            // Draw axis indicators
+            // Draw axis indicators (Restored)
             this.draw3DAxisIndicators(ctx);
+        },
+
+        /**
+         * Draws the topological wireframe shell of the brain
+         */
+        drawTopologicalShell(ctx) {
+            if (!this.shellContours || this.shellContours.length === 0) return;
+
+            ctx.save();
+            ctx.lineWidth = 1;
+
+            // Draw each contour loop
+            this.shellContours.forEach((contour, index) => {
+                ctx.strokeStyle = this.state.darkMode ?
+                    `rgba(100, 255, 150, ${0.15 + index * 0.02})` :
+                    `rgba(50, 150, 100, ${0.2 + index * 0.02})`;
+
+                ctx.beginPath();
+                let firstPoint = null;
+
+                contour.forEach((pt, i) => {
+                    const proj = GreenhouseModels3DMath.project3DTo2D(
+                        pt.x, pt.y, pt.z,
+                        this.camera,
+                        this.projection
+                    );
+
+                    if (proj.scale > 0) {
+                        if (i === 0) {
+                            ctx.moveTo(proj.x, proj.y);
+                            firstPoint = proj;
+                        } else {
+                            ctx.lineTo(proj.x, proj.y);
+                        }
+                    }
+                });
+
+                if (firstPoint) {
+                    ctx.lineTo(firstPoint.x, firstPoint.y); // Close loop
+                }
+                ctx.stroke();
+            });
+
+            // Draw longitudinal lines (Ribs)
+            const segments = 20;
+            const pointsPerContour = this.shellContours[0].length;
+
+            ctx.strokeStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+            for (let i = 0; i < pointsPerContour; i += Math.floor(pointsPerContour / segments)) {
+                ctx.beginPath();
+                let penDown = false;
+
+                this.shellContours.forEach(contour => {
+                    const pt = contour[i];
+                    if (!pt) return;
+                     const proj = GreenhouseModels3DMath.project3DTo2D(
+                        pt.x, pt.y, pt.z,
+                        this.camera,
+                        this.projection
+                    );
+
+                    if (proj.scale > 0) {
+                        if (!penDown) {
+                            ctx.moveTo(proj.x, proj.y);
+                            penDown = true;
+                        } else {
+                            ctx.lineTo(proj.x, proj.y);
+                        }
+                    }
+                });
+                ctx.stroke();
+            }
+
+            ctx.restore();
         },
 
         /**
@@ -482,11 +699,11 @@
 
             for (let x = -gridExtent; x <= gridExtent; x += gridSize) {
                 const start = GreenhouseModels3DMath.project3DTo2D(
-                    x, -100, -gridExtent,
+                    x, 100, -gridExtent, // Moved to bottom
                     this.camera, this.projection
                 );
                 const end = GreenhouseModels3DMath.project3DTo2D(
-                    x, -100, gridExtent,
+                    x, 100, gridExtent,
                     this.camera, this.projection
                 );
 
@@ -498,11 +715,11 @@
 
             for (let z = -gridExtent; z <= gridExtent; z += gridSize) {
                 const start = GreenhouseModels3DMath.project3DTo2D(
-                    -gridExtent, -100, z,
+                    -gridExtent, 100, z,
                     this.camera, this.projection
                 );
                 const end = GreenhouseModels3DMath.project3DTo2D(
-                    gridExtent, -100, z,
+                    gridExtent, 100, z,
                     this.camera, this.projection
                 );
 
