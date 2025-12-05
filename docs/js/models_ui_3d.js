@@ -29,6 +29,7 @@
         neurons3D: [],
         connections3D: [],
         particles: [],
+        shellContours: [], // 3D topological shell
         animationFrame: null,
 
         /**
@@ -294,6 +295,7 @@
             this.neurons3D = [];
             this.connections3D = [];
             this.particles = [];
+            this.shellContours = [];
 
             // Initialize background particles (stars/dust)
             for (let i = 0; i < 200; i++) {
@@ -306,44 +308,217 @@
                 });
             }
 
-            // Convert 2D network layout to 3D positions (Brain/Ellipsoid Shape)
-            if (this.state.networkLayout && this.state.networkLayout.length > 0) {
+            // Check if Brain SVG data is available
+            if (window.GreenhouseModelsBrainSVG) {
+                this.generateTopologicalShellAndNeurons(window.GreenhouseModelsBrainSVG);
+            } else {
+                 console.warn('Brain SVG data not found, falling back to spherical distribution.');
+                 this.generateSphericalDistribution();
+            }
+        },
+
+        /**
+         * Generates spherical distribution (Fallback)
+         */
+        generateSphericalDistribution() {
+             if (this.state.networkLayout && this.state.networkLayout.length > 0) {
                 const count = this.state.networkLayout.length;
                 this.state.networkLayout.forEach((node, index) => {
-                    // Distribute neurons in a volumetric ellipsoid
-                    // Golden spiral on a sphere for uniform distribution, then scaled
                     const phi = Math.acos(-1 + (2 * index) / count);
                     const theta = Math.sqrt(count * Math.PI) * phi;
-                    
-                    // Vary radius slightly to create volume instead of just surface
                     const r = 250 + (Math.random() - 0.5) * 100;
 
                     this.neurons3D.push({
                         id: node.id || index,
                         type: node.type,
                         x: r * Math.sin(phi) * Math.cos(theta),
-                        y: r * 0.7 * Math.cos(phi), // Flattened Y (height)
+                        y: r * 0.7 * Math.cos(phi),
                         z: r * Math.sin(phi) * Math.sin(theta),
                         activation: node.activation || 0,
                         radius: 8 + Math.random() * 4
                     });
                 });
+                this.initializeConnections();
+            }
+        },
 
-                // Create 3D connections from synapses
-                if (this.state.synapses) {
-                    this.state.synapses.forEach(synapse => {
-                        const fromNeuron = this.neurons3D.find(n => n.id === synapse.from);
-                        const toNeuron = this.neurons3D.find(n => n.id === synapse.to);
-                        
-                        if (fromNeuron && toNeuron) {
-                            this.connections3D.push({
-                                from: fromNeuron,
-                                to: toNeuron,
-                                weight: synapse.weight || 1
-                            });
+        /**
+         * Generates 3D topological shell and places neurons inside based on 2D SVG
+         */
+        generateTopologicalShellAndNeurons(svgPath) {
+            // 1. Create offscreen canvas for path analysis
+            const width = 1536;
+            const height = 1024;
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = width;
+            offCanvas.height = height;
+            const ctx = offCanvas.getContext('2d');
+
+            const path = new Path2D(svgPath);
+
+            // Draw filled path to canvas for hit testing logic via pixel scanning
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height); // Clear with white
+            ctx.fillStyle = '#000000'; // Draw shape in black
+            ctx.fill(path);
+
+            // 2. Extract Perimeter Points (simplified)
+            // We scan horizontal lines to find the min/max X for each Y
+            // This creates a set of 'ribs' or slices
+            const perimeterPoints = [];
+            const stepY = 20; // Scan every 20 pixels vertically
+
+            // SVG dimensions are roughly centered around 768, 512
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const scale = 0.5; // Scale down for 3D view
+
+            // Scan to build contour map
+            // We will create contours along the Y axis for the shell
+            // NOTE: The user asked for a topological outline derived from the 2D image.
+            // A simple extrusion is boring. A tapered extrusion looks like a brain volume.
+
+            // Instead of full pixel scan (slow), we can use isPointInPath which is available on the Context
+            // This is lighter than getImageData for large canvases in some envs, but getPixelData is good for batch.
+            // Let's use isPointInPath for random sampling which is robust.
+
+            // --- Generate Shell Contours ---
+            // We create Z-slices. For each Z slice, we shrink the SVG path.
+            const numSlices = 7;
+            const maxDepth = 120;
+
+            for (let i = 0; i < numSlices; i++) {
+                // Z coordinates from -maxDepth to +maxDepth
+                const t = i / (numSlices - 1); // 0 to 1
+                const z = (t - 0.5) * 2 * maxDepth; // e.g. -100 to 100
+
+                // Scale factor determines the size of the slice at this depth
+                // Use a semi-circle or ellipsoid profile: sqrt(1 - z^2)
+                // At z=0, scale is 1. At z=max, scale is small (e.g. 0.3)
+                const depthRatio = Math.abs(z) / (maxDepth * 1.2); // slightly larger max to avoid zero size
+                const contourScale = Math.sqrt(Math.max(0, 1 - depthRatio * depthRatio)) * scale;
+
+                const slicePoints = [];
+                // Sample the perimeter of the SVG path
+                // Since we can't iterate path segments easily, we ray-cast
+                // Scan angles around the center
+                const numSegments = 60;
+                for (let j = 0; j < numSegments; j++) {
+                    const theta = (j / numSegments) * Math.PI * 2;
+
+                    // Ray cast from center to find edge
+                    // Binary search for the edge
+                    let rMin = 0;
+                    let rMax = 800; // Max radius covers screen
+                    let rEdge = 0;
+
+                    // Optimization: coarse search then fine
+                    for (let k = 0; k < 8; k++) {
+                        const mid = (rMin + rMax) / 2;
+                        const testX = centerX + Math.cos(theta) * mid;
+                        const testY = centerY + Math.sin(theta) * mid;
+                        if (ctx.isPointInPath(path, testX, testY)) {
+                            rMin = mid;
+                            rEdge = mid;
+                        } else {
+                            rMax = mid;
                         }
-                    });
+                    }
+
+                    if (rEdge > 0) {
+                         slicePoints.push({
+                            x: (Math.cos(theta) * rEdge) * contourScale,
+                            y: (Math.sin(theta) * rEdge) * contourScale, // Invert Y later? Canvas Y is down. 3D Y is up/down.
+                            z: z
+                        });
+                    }
                 }
+
+                if (slicePoints.length > 0) {
+                    this.shellContours.push(slicePoints);
+                }
+            }
+
+            // --- Generate Neurons inside the volume ---
+            // Use Rejection Sampling
+            if (this.state.networkLayout && this.state.networkLayout.length > 0) {
+                const targetCount = this.state.networkLayout.length;
+                let generatedCount = 0;
+                const maxAttempts = targetCount * 50;
+                let attempts = 0;
+
+                while (generatedCount < targetCount && attempts < maxAttempts) {
+                    attempts++;
+                    // Random point in SVG box
+                    const rx = Math.random() * width;
+                    const ry = Math.random() * height;
+
+                    if (ctx.isPointInPath(path, rx, ry)) {
+                         // Point is inside 2D shape. Now determine Z limits.
+                         // Calculate "distance from center" to taper Z
+                         // Approximate radius normalized
+                         const dx = rx - centerX;
+                         const dy = ry - centerY;
+                         const dist = Math.sqrt(dx*dx + dy*dy);
+                         const maxR = 500; // approx max radius of brain on screen
+                         const normDist = Math.min(1, dist / maxR);
+
+                         // Thickness curve
+                         const zLimit = maxDepth * Math.sqrt(1 - normDist * normDist) * 0.8;
+                         const rz = (Math.random() * 2 - 1) * zLimit;
+
+                         const node = this.state.networkLayout[generatedCount];
+
+                         this.neurons3D.push({
+                            id: node.id || generatedCount,
+                            type: node.type,
+                            x: (rx - centerX) * scale,
+                            y: (ry - centerY) * scale,
+                            z: rz,
+                            activation: node.activation || 0,
+                            radius: 8 + Math.random() * 4
+                        });
+
+                        generatedCount++;
+                    }
+                }
+
+                // Fallback if we couldn't place enough neurons (e.g. SVG path issues)
+                if (generatedCount < targetCount) {
+                     console.warn(`Could only place ${generatedCount}/${targetCount} neurons inside SVG. Filling rest randomly.`);
+                     for (let i = generatedCount; i < targetCount; i++) {
+                        const node = this.state.networkLayout[i];
+                        this.neurons3D.push({
+                            id: node.id || i,
+                            type: node.type,
+                            x: (Math.random() - 0.5) * 500,
+                            y: (Math.random() - 0.5) * 300,
+                            z: (Math.random() - 0.5) * 200,
+                            activation: node.activation || 0,
+                            radius: 8 + Math.random() * 4
+                        });
+                     }
+                }
+
+                this.initializeConnections();
+            }
+        },
+
+        initializeConnections() {
+            // Create 3D connections from synapses
+            if (this.state.synapses) {
+                this.state.synapses.forEach(synapse => {
+                    const fromNeuron = this.neurons3D.find(n => n.id === synapse.from);
+                    const toNeuron = this.neurons3D.find(n => n.id === synapse.to);
+
+                    if (fromNeuron && toNeuron) {
+                        this.connections3D.push({
+                            from: fromNeuron,
+                            to: toNeuron,
+                            weight: synapse.weight || 1
+                        });
+                    }
+                });
             }
         },
 
@@ -409,8 +584,8 @@
             // Draw background particles (stars/dust)
             this.draw3DParticles(ctx);
 
-            // Draw grid for depth reference
-            this.draw3DGrid(ctx);
+            // Draw Topological Shell
+            this.drawTopologicalShell(ctx);
 
             // Project and sort neurons by depth
             const projectedNeurons = [];
@@ -442,8 +617,86 @@
             // Draw neurons
             this.draw3DNeurons(ctx, projectedNeurons);
 
-            // Draw axis indicators
-            this.draw3DAxisIndicators(ctx);
+            // Draw axis indicators (optional, can be toggled)
+            // this.draw3DAxisIndicators(ctx);
+        },
+
+        /**
+         * Draws the topological wireframe shell of the brain
+         */
+        drawTopologicalShell(ctx) {
+            if (!this.shellContours || this.shellContours.length === 0) return;
+
+            ctx.save();
+            ctx.lineWidth = 1;
+
+            // Draw each contour loop
+            this.shellContours.forEach((contour, index) => {
+                // Vary opacity based on depth/index
+                // We want a holographic look
+                ctx.strokeStyle = this.state.darkMode ?
+                    `rgba(100, 255, 150, ${0.1 + index * 0.02})` : // Greenish for "Greenhouse"
+                    `rgba(50, 150, 100, ${0.15 + index * 0.02})`;
+
+                ctx.beginPath();
+                let firstPoint = null;
+
+                contour.forEach((pt, i) => {
+                    const proj = GreenhouseModels3DMath.project3DTo2D(
+                        pt.x, pt.y, pt.z,
+                        this.camera,
+                        this.projection
+                    );
+
+                    if (proj.scale > 0) {
+                        if (i === 0) {
+                            ctx.moveTo(proj.x, proj.y);
+                            firstPoint = proj;
+                        } else {
+                            ctx.lineTo(proj.x, proj.y);
+                        }
+                    }
+                });
+
+                if (firstPoint) {
+                    ctx.lineTo(firstPoint.x, firstPoint.y); // Close loop
+                }
+                ctx.stroke();
+            });
+
+            // Optional: Draw longitudinal lines connecting contours (Ribs)
+            // This adds more structure
+            const segments = 20; // Draw a line every N points
+            const pointsPerContour = this.shellContours[0].length;
+
+            ctx.strokeStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+
+            for (let i = 0; i < pointsPerContour; i += Math.floor(pointsPerContour / segments)) {
+                ctx.beginPath();
+                let penDown = false;
+
+                this.shellContours.forEach(contour => {
+                    const pt = contour[i];
+                    if (!pt) return;
+                     const proj = GreenhouseModels3DMath.project3DTo2D(
+                        pt.x, pt.y, pt.z,
+                        this.camera,
+                        this.projection
+                    );
+
+                    if (proj.scale > 0) {
+                        if (!penDown) {
+                            ctx.moveTo(proj.x, proj.y);
+                            penDown = true;
+                        } else {
+                            ctx.lineTo(proj.x, proj.y);
+                        }
+                    }
+                });
+                ctx.stroke();
+            }
+
+            ctx.restore();
         },
 
         /**

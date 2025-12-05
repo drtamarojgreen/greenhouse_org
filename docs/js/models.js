@@ -85,6 +85,7 @@
             
             // Load 3D modules
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+            await GreenhouseUtils.loadScript('models_data_brain_svg.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ui_3d.js', baseUrl);
             
             await GreenhouseUtils.loadScript('models_ui.js', baseUrl);
