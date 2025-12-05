@@ -36,9 +36,7 @@
             this._drawEnvironmentBackground(ctx, width, height); // Background fills screen
 
             // Apply shared transform for all logical elements
-            const scale = Math.min(width / 1536, height / 1024) * 0.95;
-            const offsetX = (width - (1536 * scale)) / 2;
-            const offsetY = (height - (1024 * scale)) / 2;
+            const { scale, offsetX, offsetY } = window.GreenhouseModelsUtil.calculateEnvironmentLayout(width, height);
 
             ctx.save();
             ctx.translate(offsetX, offsetY);
@@ -391,12 +389,26 @@
                 const pathElement = svgDoc.querySelector('path');
                 if (pathElement) {
                     this._brainPathData = pathElement.getAttribute('d');
-                    this._brainPath = new Path2D(this._brainPathData);
+                    const loadedPath = new Path2D(this._brainPathData);
 
-                    // Define and create Path2D objects for each brain region
-                    this.regions.pfc.path = new Path2D("M 900,300 a 150,150 0 0 1 0,300 h -50 a 100,100 0 0 0 0,-200 Z");
-                    this.regions.amygdala.path = new Path2D("M 700,500 a 50,30 0 0 1 0,60 a 50,30 0 0 1 0,-60 Z");
-                    this.regions.hippocampus.path = new Path2D("M 750,450 a 80,40 0 0 1 0,80 q -20,-40 0,-80 Z");
+                    // Shift the brain to center it (visually centered around x=842 in SVG, target is 768)
+                    const matrix = new DOMMatrix().translate(-74, 0);
+
+                    this._brainPath = new Path2D();
+                    this._brainPath.addPath(loadedPath, matrix);
+
+                    // Define and create Path2D objects for each brain region, applying the same shift
+                    const pfcSource = new Path2D("M 900,300 a 150,150 0 0 1 0,300 h -50 a 100,100 0 0 0 0,-200 Z");
+                    this.regions.pfc.path = new Path2D();
+                    this.regions.pfc.path.addPath(pfcSource, matrix);
+
+                    const amygdalaSource = new Path2D("M 700,500 a 50,30 0 0 1 0,60 a 50,30 0 0 1 0,-60 Z");
+                    this.regions.amygdala.path = new Path2D();
+                    this.regions.amygdala.path.addPath(amygdalaSource, matrix);
+
+                    const hippocampusSource = new Path2D("M 750,450 a 80,40 0 0 1 0,80 q -20,-40 0,-80 Z");
+                    this.regions.hippocampus.path = new Path2D();
+                    this.regions.hippocampus.path.addPath(hippocampusSource, matrix);
                 }
             } catch (error) {
                 console.error('Error loading or parsing brain SVG:', error);

@@ -34,9 +34,7 @@
         init(system) { }
         update() { }
         draw(ctx, width, height) {
-            const scale = Math.min(width / 1536, height / 1024) * 0.95;
-            const offsetX = (width - (1536 * scale)) / 2;
-            const offsetY = (height - (1024 * scale)) / 2;
+            const { scale, offsetX, offsetY } = window.GreenhouseModelsUtil.calculateEnvironmentLayout(width, height);
 
             ctx.save();
             ctx.translate(offsetX, offsetY);
@@ -194,9 +192,7 @@
         init(system) { }
         update() { }
         draw(ctx, width, height) {
-            const scale = Math.min(width / 1536, height / 1024) * 0.95;
-            const offsetX = (width - (1536 * scale)) / 2;
-            const offsetY = (height - (1024 * scale)) / 2;
+            const { scale, offsetX, offsetY } = window.GreenhouseModelsUtil.calculateEnvironmentLayout(width, height);
 
             ctx.save();
             ctx.translate(offsetX, offsetY);
@@ -407,9 +403,7 @@
             const mouseX = event.clientX - rect.left;
             const mouseY = event.clientY - rect.top;
 
-            const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 0.8;
-            const offsetX = (canvas.width - (1536 * scale)) / 2;
-            const offsetY = (canvas.height - (1024 * scale)) / 2;
+            const { scale, offsetX, offsetY } = window.GreenhouseModelsUtil.calculateEnvironmentLayout(canvas.width, canvas.height);
             const logicalX = (mouseX - offsetX) / scale;
             const logicalY = (mouseY - offsetY) / scale;
 
