@@ -407,7 +407,7 @@
             const mouseX = event.clientX - rect.left;
             const mouseY = event.clientY - rect.top;
 
-            const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 0.8;
+            const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 0.95;
             const offsetX = (canvas.width - (1536 * scale)) / 2;
             const offsetY = (canvas.height - (1024 * scale)) / 2;
             const logicalX = (mouseX - offsetX) / scale;
