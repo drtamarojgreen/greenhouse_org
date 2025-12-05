@@ -37,7 +37,10 @@ BASE_CONFIG = {
         }
     ],
     "influencePaths": [],
-    "interactiveElements": []
+    "interactiveElements": [],
+    "molecule_density": 0.5,
+    "channel_open_probability": 0.5,
+    "gene_expression_active": False
 }
 
 def random_color():
@@ -64,6 +67,11 @@ def mutate_config(seed):
         icon["x"] += random.randint(-50, 50)
         icon["y"] += random.randint(-50, 50)
         icon["scale"] = round(random.uniform(2.0, 6.0), 1)
+
+    # Mutation 3: Biological Parameters
+    config["molecule_density"] = round(random.uniform(0.1, 1.0), 2)
+    config["channel_open_probability"] = round(random.uniform(0.0, 1.0), 2)
+    config["gene_expression_active"] = random.choice([True, False])
 
     return config
 

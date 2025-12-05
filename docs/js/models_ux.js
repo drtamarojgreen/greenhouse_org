@@ -31,6 +31,10 @@
                 particles: [],
                 vesicles: [],
                 receptors: [],
+                ionChannels: [],
+                proteinKinases: [],
+                rna: [],
+                cytoplasmDensity: 0.5,
                 lastUpdateTime: 0
             },
 
@@ -68,12 +72,12 @@
             },
 
             networkLayout: [
-                { x: 100, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL' },
-                { x: 250, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL' },
-                { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE' },
-                { x: 400, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL' },
-                { x: 550, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE' },
-                { x: 450, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL' }
+                { x: 100, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0 },
+                { x: 250, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0 },
+                { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE', geneExpressionLevel: 0.0, transcriptionFactors: 0 },
+                { x: 400, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0 },
+                { x: 550, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE', geneExpressionLevel: 0.0, transcriptionFactors: 0 },
+                { x: 450, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0 }
             ],
 
             synapses: [],
@@ -181,6 +185,39 @@
                                 isBound: false,
                                 boundUntil: 0
                             });
+                        }
+
+                        // Pre-populate ion channels (from data or default)
+                        if (GreenhouseModelsData.state.synapseData && GreenhouseModelsData.state.synapseData.ionChannels) {
+                            this.state.synaptic.ionChannels = JSON.parse(JSON.stringify(GreenhouseModelsData.state.synapseData.ionChannels));
+                        } else {
+                            // Fallback
+                            this.state.synaptic.ionChannels = [
+                                { id: 1, type: 'sodium', x: -40, state: 'closed' },
+                                { id: 2, type: 'calcium', x: 30, state: 'open' }
+                            ];
+                        }
+
+                        // Pre-populate Protein Kinases
+                        for (let i = 0; i < 5; i++) {
+                            this.state.synaptic.proteinKinases.push({
+                                x: Math.random() * 200 - 100, // Relative to center
+                                y: Math.random() * 50 + 50,   // Below synapse
+                                active: false,
+                                vx: (Math.random() - 0.5) * 0.5,
+                                vy: (Math.random() - 0.5) * 0.5
+                            });
+                        }
+
+                        // Pre-populate RNA
+                        if (GreenhouseModelsData.state.synapseData && GreenhouseModelsData.state.synapseData.localRNA) {
+                             for (let i = 0; i < 8; i++) {
+                                this.state.synaptic.rna.push({
+                                    x: Math.random() * 250 - 125,
+                                    y: Math.random() * 60 + 80,
+                                    phase: Math.random() * Math.PI * 2
+                                });
+                            }
                         }
 
                         // Pre-populate synapses
