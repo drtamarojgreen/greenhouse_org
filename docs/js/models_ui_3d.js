@@ -28,6 +28,7 @@
         rotationSpeed: 0.005,
         neurons3D: [],
         connections3D: [],
+        particles: [],
         animationFrame: null,
 
         /**
@@ -125,7 +126,7 @@
                     <label>${t('camera_y') || 'Camera Y Rotation'}</label>
                     <input type="range" min="-180" max="180" value="0" class="greenhouse-slider" id="camera-y-slider">
                     <label>${t('camera_z') || 'Camera Z Position'}</label>
-                    <input type="range" min="-1000" max="-100" value="-500" class="greenhouse-slider" id="camera-z-slider">
+                    <input type="range" min="-2000" max="1000" value="-500" class="greenhouse-slider" id="camera-z-slider">
                     <label>${t('fov') || 'Field of View'}</label>
                     <input type="range" min="200" max="800" value="500" class="greenhouse-slider" id="fov-slider">
                 </div>
@@ -208,7 +209,7 @@
             this.canvas3D.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 this.camera.z += e.deltaY * 0.5;
-                this.camera.z = Math.max(-1000, Math.min(-100, this.camera.z));
+                this.camera.z = Math.max(-2000, Math.min(1000, this.camera.z));
                 document.getElementById('camera-z-slider').value = this.camera.z;
                 this.render3DView();
             });
@@ -292,23 +293,39 @@
         initialize3DData() {
             this.neurons3D = [];
             this.connections3D = [];
+            this.particles = [];
 
-            // Convert 2D network layout to 3D positions
+            // Initialize background particles (stars/dust)
+            for (let i = 0; i < 200; i++) {
+                this.particles.push({
+                    x: (Math.random() - 0.5) * 3000,
+                    y: (Math.random() - 0.5) * 3000,
+                    z: (Math.random() - 0.5) * 3000,
+                    size: Math.random() * 2 + 0.5,
+                    opacity: Math.random() * 0.5 + 0.1
+                });
+            }
+
+            // Convert 2D network layout to 3D positions (Brain/Ellipsoid Shape)
             if (this.state.networkLayout && this.state.networkLayout.length > 0) {
+                const count = this.state.networkLayout.length;
                 this.state.networkLayout.forEach((node, index) => {
-                    // Distribute neurons in 3D space
-                    const angle = (index / this.state.networkLayout.length) * Math.PI * 2;
-                    const radius = 150;
-                    const layer = Math.floor(index / 10);
+                    // Distribute neurons in a volumetric ellipsoid
+                    // Golden spiral on a sphere for uniform distribution, then scaled
+                    const phi = Math.acos(-1 + (2 * index) / count);
+                    const theta = Math.sqrt(count * Math.PI) * phi;
                     
+                    // Vary radius slightly to create volume instead of just surface
+                    const r = 250 + (Math.random() - 0.5) * 100;
+
                     this.neurons3D.push({
                         id: node.id || index,
                         type: node.type,
-                        x: Math.cos(angle) * radius,
-                        y: (layer - 2) * 80,
-                        z: Math.sin(angle) * radius,
+                        x: r * Math.sin(phi) * Math.cos(theta),
+                        y: r * 0.7 * Math.cos(phi), // Flattened Y (height)
+                        z: r * Math.sin(phi) * Math.sin(theta),
                         activation: node.activation || 0,
-                        radius: 8
+                        radius: 8 + Math.random() * 4
                     });
                 });
 
@@ -389,23 +406,31 @@
             ctx.fillStyle = this.state.darkMode ? '#1A1A1A' : '#0A0A0A';
             ctx.fillRect(0, 0, width, height);
 
+            // Draw background particles (stars/dust)
+            this.draw3DParticles(ctx);
+
             // Draw grid for depth reference
             this.draw3DGrid(ctx);
 
             // Project and sort neurons by depth
-            const projectedNeurons = this.neurons3D.map(neuron => {
+            const projectedNeurons = [];
+            this.neurons3D.forEach(neuron => {
                 const projected = GreenhouseModels3DMath.project3DTo2D(
                     neuron.x, neuron.y, neuron.z,
                     this.camera,
                     this.projection
                 );
-                return {
-                    ...neuron,
-                    screenX: projected.x,
-                    screenY: projected.y,
-                    depth: projected.depth,
-                    scale: projected.scale
-                };
+
+                // Check if projected point is behind camera (scale < 0)
+                if (projected.scale > 0) {
+                     projectedNeurons.push({
+                        ...neuron,
+                        screenX: projected.x,
+                        screenY: projected.y,
+                        depth: projected.depth,
+                        scale: projected.scale
+                    });
+                }
             });
 
             // Sort by depth (painter's algorithm)
@@ -419,6 +444,30 @@
 
             // Draw axis indicators
             this.draw3DAxisIndicators(ctx);
+        },
+
+        /**
+         * Draws background particles
+         */
+        draw3DParticles(ctx) {
+            if (!this.particles) return;
+
+            this.particles.forEach(p => {
+                 const projected = GreenhouseModels3DMath.project3DTo2D(
+                    p.x, p.y, p.z,
+                    this.camera,
+                    this.projection
+                );
+
+                if (projected.scale > 0) {
+                    const alpha = Math.min(1, p.opacity * projected.scale);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                    const size = p.size * projected.scale;
+                    ctx.beginPath();
+                    ctx.arc(projected.x, projected.y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
         },
 
         /**
