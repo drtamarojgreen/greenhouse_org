@@ -28,6 +28,7 @@
         rotationSpeed: 0.005,
         neurons3D: [],
         connections3D: [],
+        particles: [],
         animationFrame: null,
         brainShell: null,
 
@@ -126,7 +127,7 @@
                     <label>${t('camera_y') || 'Camera Y Rotation'}</label>
                     <input type="range" min="-180" max="180" value="0" class="greenhouse-slider" id="camera-y-slider">
                     <label>${t('camera_z') || 'Camera Z Position'}</label>
-                    <input type="range" min="-1000" max="-100" value="-500" class="greenhouse-slider" id="camera-z-slider">
+                    <input type="range" min="-2000" max="1000" value="-500" class="greenhouse-slider" id="camera-z-slider">
                     <label>${t('fov') || 'Field of View'}</label>
                     <input type="range" min="200" max="800" value="500" class="greenhouse-slider" id="fov-slider">
                 </div>
@@ -209,7 +210,7 @@
             this.canvas3D.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 this.camera.z += e.deltaY * 0.5;
-                this.camera.z = Math.max(-1000, Math.min(-100, this.camera.z));
+                this.camera.z = Math.max(-2000, Math.min(1000, this.camera.z));
                 document.getElementById('camera-z-slider').value = this.camera.z;
                 this.render3DView();
             });
@@ -293,26 +294,43 @@
         initialize3DData() {
             this.neurons3D = [];
             this.connections3D = [];
+            this.particles = [];
 
             // Initialize brain shell structure
             this.initializeBrainShell();
 
             // Convert 2D network layout to 3D positions
+            // Initialize background particles (stars/dust)
+            for (let i = 0; i < 200; i++) {
+                this.particles.push({
+                    x: (Math.random() - 0.5) * 3000,
+                    y: (Math.random() - 0.5) * 3000,
+                    z: (Math.random() - 0.5) * 3000,
+                    size: Math.random() * 2 + 0.5,
+                    opacity: Math.random() * 0.5 + 0.1
+                });
+            }
+
+            // Convert 2D network layout to 3D positions (Brain/Ellipsoid Shape)
             if (this.state.networkLayout && this.state.networkLayout.length > 0) {
+                const count = this.state.networkLayout.length;
                 this.state.networkLayout.forEach((node, index) => {
-                    // Distribute neurons in 3D space
-                    const angle = (index / this.state.networkLayout.length) * Math.PI * 2;
-                    const radius = 150;
-                    const layer = Math.floor(index / 10);
+                    // Distribute neurons in a volumetric ellipsoid
+                    // Golden spiral on a sphere for uniform distribution, then scaled
+                    const phi = Math.acos(-1 + (2 * index) / count);
+                    const theta = Math.sqrt(count * Math.PI) * phi;
                     
+                    // Vary radius slightly to create volume instead of just surface
+                    const r = 250 + (Math.random() - 0.5) * 100;
+
                     this.neurons3D.push({
                         id: node.id || index,
                         type: node.type,
-                        x: Math.cos(angle) * radius,
-                        y: (layer - 2) * 80,
-                        z: Math.sin(angle) * radius,
+                        x: r * Math.sin(phi) * Math.cos(theta),
+                        y: r * 0.7 * Math.cos(phi), // Flattened Y (height)
+                        z: r * Math.sin(phi) * Math.sin(theta),
                         activation: node.activation || 0,
-                        radius: 8
+                        radius: 8 + Math.random() * 4
                     });
                 });
 
@@ -339,20 +357,19 @@
          * Creates a topographical representation of the brain
          */
         initializeBrainShell() {
-            // Create a simplified brain shell using parametric equations
-            // This creates an ellipsoid shape representing the brain
+            // Create a realistic brain shell using parametric equations
             this.brainShell = {
                 vertices: [],
                 faces: []
             };
 
-            const latitudeBands = 20;
-            const longitudeBands = 20;
+            const latitudeBands = 30; // Increased for smoother surface
+            const longitudeBands = 30;
             const radiusX = 180; // Width
             const radiusY = 200; // Height
             const radiusZ = 160; // Depth
 
-            // Generate vertices
+            // Generate vertices with realistic brain topology
             for (let lat = 0; lat <= latitudeBands; lat++) {
                 const theta = (lat * Math.PI) / latitudeBands;
                 const sinTheta = Math.sin(theta);
@@ -363,25 +380,74 @@
                     const sinPhi = Math.sin(phi);
                     const cosPhi = Math.cos(phi);
 
-                    // Parametric sphere equations modified for brain shape
+                    // Base ellipsoid shape
                     let x = radiusX * cosPhi * sinTheta;
                     let y = radiusY * cosTheta;
                     let z = radiusZ * sinPhi * sinTheta;
 
-                    // Add asymmetry to make it more brain-like
+                    // Normalize position for calculations
+                    const normTheta = theta / Math.PI;
+                    const normPhi = phi / (2 * Math.PI);
+
+                    // Add realistic brain features
+                    
+                    // 1. Cerebral hemispheres - slight asymmetry
                     if (x > 0) {
-                        x *= 1.1; // Right hemisphere slightly larger
+                        x *= 1.08; // Right hemisphere slightly larger
                     }
 
-                    // Add frontal lobe bulge
-                    if (z > 0 && Math.abs(y) < radiusY * 0.5) {
-                        z *= 1.15;
+                    // 2. Frontal lobe - prominent bulge at front
+                    if (z > 50 && normTheta > 0.2 && normTheta < 0.7) {
+                        const frontBulge = 1 + 0.2 * Math.cos((normTheta - 0.45) * Math.PI * 2);
+                        z *= frontBulge;
+                        x *= (1 + 0.05 * Math.cos((normTheta - 0.45) * Math.PI * 2));
                     }
 
-                    // Add occipital lobe (back of head)
-                    if (z < 0 && y < 0) {
-                        z *= 0.9;
-                        y *= 0.95;
+                    // 3. Temporal lobes - bulges on sides
+                    if (Math.abs(x) > 100 && normTheta > 0.4 && normTheta < 0.7 && z < 50 && z > -50) {
+                        const temporalBulge = 1.15;
+                        x *= temporalBulge;
+                        z *= 0.95;
+                    }
+
+                    // 4. Occipital lobe - rounded back
+                    if (z < -50 && normTheta > 0.5) {
+                        const occipitalCurve = 1 - 0.15 * Math.pow((normTheta - 0.5) * 2, 2);
+                        z *= occipitalCurve;
+                        y *= (1 - 0.1 * Math.pow((normTheta - 0.5) * 2, 2));
+                    }
+
+                    // 5. Parietal lobe - top curve
+                    if (y > 100 && normTheta < 0.4) {
+                        const parietalCurve = 1 + 0.08 * Math.cos(normTheta * Math.PI * 2);
+                        y *= parietalCurve;
+                    }
+
+                    // 6. Longitudinal fissure - indent between hemispheres
+                    if (Math.abs(x) < 30 && y > 0) {
+                        const fissureDepth = 1 - 0.15 * (1 - Math.abs(x) / 30);
+                        y *= fissureDepth;
+                    }
+
+                    // 7. Sylvian fissure - lateral groove
+                    if (Math.abs(x) > 80 && Math.abs(x) < 140 && 
+                        z > -30 && z < 30 && y > -50 && y < 50) {
+                        const sylvianDepth = 0.92;
+                        const distFromCenter = Math.abs(y) / 50;
+                        y *= (1 - (1 - sylvianDepth) * (1 - distFromCenter));
+                    }
+
+                    // 8. Add subtle surface texture (gyri and sulci)
+                    const textureFreq = 8;
+                    const textureAmp = 3;
+                    const texture = Math.sin(normTheta * textureFreq * Math.PI) * 
+                                  Math.sin(normPhi * textureFreq * Math.PI * 2) * textureAmp;
+                    
+                    const normal = Math.sqrt(x*x + y*y + z*z);
+                    if (normal > 0) {
+                        x += (x / normal) * texture;
+                        y += (y / normal) * texture;
+                        z += (z / normal) * texture;
                     }
 
                     this.brainShell.vertices.push({ x, y, z });
@@ -510,6 +576,9 @@
             ctx.fillStyle = this.state.darkMode ? '#1A1A1A' : '#0A0A0A';
             ctx.fillRect(0, 0, width, height);
 
+            // Draw background particles (stars/dust)
+            this.draw3DParticles(ctx);
+
             // Draw grid for depth reference
             this.draw3DGrid(ctx);
 
@@ -519,19 +588,24 @@
             }
 
             // Project and sort neurons by depth
-            const projectedNeurons = this.neurons3D.map(neuron => {
+            const projectedNeurons = [];
+            this.neurons3D.forEach(neuron => {
                 const projected = GreenhouseModels3DMath.project3DTo2D(
                     neuron.x, neuron.y, neuron.z,
                     this.camera,
                     this.projection
                 );
-                return {
-                    ...neuron,
-                    screenX: projected.x,
-                    screenY: projected.y,
-                    depth: projected.depth,
-                    scale: projected.scale
-                };
+
+                // Check if projected point is behind camera (scale < 0)
+                if (projected.scale > 0) {
+                     projectedNeurons.push({
+                        ...neuron,
+                        screenX: projected.x,
+                        screenY: projected.y,
+                        depth: projected.depth,
+                        scale: projected.scale
+                    });
+                }
             });
 
             // Sort by depth (painter's algorithm)
@@ -636,6 +710,30 @@
                         `rgba(100, 100, 100, ${alpha * 0.1})`;
                     ctx.lineWidth = 0.5;
                     ctx.stroke();
+                }
+            });
+        },
+
+           /* 
+         * Draws background particles
+         */
+        draw3DParticles(ctx) {
+            if (!this.particles) return;
+
+            this.particles.forEach(p => {
+                 const projected = GreenhouseModels3DMath.project3DTo2D(
+                    p.x, p.y, p.z,
+                    this.camera,
+                    this.projection
+                );
+
+                if (projected.scale > 0) {
+                    const alpha = Math.min(1, p.opacity * projected.scale);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                    const size = p.size * projected.scale;
+                    ctx.beginPath();
+                    ctx.arc(projected.x, projected.y, size, 0, Math.PI * 2);
+                    ctx.fill();
                 }
             });
         },

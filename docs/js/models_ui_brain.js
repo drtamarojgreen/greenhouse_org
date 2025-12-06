@@ -80,6 +80,60 @@
             this._renderBranch(ctx, endX, endY, angle + 0.5, length * 0.8, depth - 1);
         },
 
+        _renderGeneExpression(ctx, node, x, y, scaleX, scaleY) {
+            // Phase 3: DNA/Gene Expression Glow
+            // Simulate gene expression (DNA) inside the soma
+            // We use a simple glow effect or icon in the center
+
+            // Only render if node has gene expression level > 0 (or we can simulate it based on activation history)
+            // For now, let's say it's linked to `node.activation` or a specific state property
+            // In the plan, we added `geneExpressionLevel` to node.
+
+            const expression = node.geneExpressionLevel || (node.activation > 0.8 ? 1.0 : 0.0);
+
+            if (expression > 0.1) {
+                ctx.save();
+                ctx.translate(x, y);
+
+                // Pulsing core
+                const pulse = Math.sin(Date.now() / 500) * 0.2 + 0.8;
+                ctx.fillStyle = `rgba(100, 255, 218, ${expression * 0.6 * pulse})`;
+                ctx.shadowColor = '#64ffda';
+                ctx.shadowBlur = 10 * expression;
+
+                // Draw a simple double helix representation (abstract: two intertwined sine waves or just a glowing nucleus)
+                // Let's draw a glowing nucleus circle for simplicity at this scale
+                ctx.beginPath();
+                ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        },
+
+        _renderTranscriptionFactors(ctx, node, x, y) {
+            // Phase 3: Transcription Factors
+            // Particles moving towards the soma (retrograde transport)
+
+            if (node.transcriptionFactors && node.transcriptionFactors > 0) {
+                 // We would need to track particle positions.
+                 // For now, let's just draw some static/jittering particles around the soma
+                 ctx.save();
+                 ctx.translate(x, y);
+                 ctx.fillStyle = '#ff4081'; // Pinkish
+
+                 for(let i=0; i < 3; i++) { // Arbitrary small number
+                     const angle = Date.now() / 1000 + i * (Math.PI * 2 / 3);
+                     const dist = 10 + Math.sin(Date.now() / 300 + i) * 2;
+
+                     ctx.beginPath();
+                     ctx.arc(Math.cos(angle) * dist, Math.sin(angle) * dist, 2, 0, Math.PI * 2);
+                     ctx.fill();
+                 }
+                 ctx.restore();
+            }
+        },
+
         drawNetworkView() {
             const ctx = this.contexts.network;
             const canvas = this.canvases.network;
@@ -110,32 +164,6 @@
             }
             ctx.stroke();
             ctx.restore();
-
-            // --- Direct Rendering for Background Tree ---
-            /*
-            const treeElement = this.state.brainData.elements.find(el => el.type === 'tree');
-            if (treeElement) {
-                ctx.save();
-                if (treeElement.style) {
-                    for (const [key, value] of Object.entries(treeElement.style)) {
-                        ctx[key] = value;
-                    }
-                }
-                ctx.beginPath();
-                // Use absolute coordinates, but scale them to fit the canvas dimensions
-                const treeScaleX = width / 1600; // Adjusted for larger coordinate space
-                const treeScaleY = height / 1000;
-                ctx.moveTo(treeElement.points[0].x * treeScaleX, treeElement.points[0].y * treeScaleY);
-                for (let i = 1; i < treeElement.points.length; i++) {
-                    ctx.lineTo(treeElement.points[i].x * treeScaleX, treeElement.points[i].y * treeScaleY);
-                }
-                ctx.closePath();
-                if (ctx.fillStyle) ctx.fill();
-                if (ctx.strokeStyle) ctx.stroke();
-                ctx.restore();
-            }
-            */
-            // --- End Direct Rendering ---
 
             const scaleX = width / 650;
             const scaleY = height / 350;
@@ -255,6 +283,19 @@
                     }
 
                     this._renderElement(ctx, elementDef, renderContext);
+
+                    // Phase 3: Render Gene Expression (DNA Glow)
+                    this._renderGeneExpression(ctx, node, node.x * scaleX, node.y * scaleY);
+
+                    // Phase 3: Render Transcription Factors
+                    // For demo, we just trigger it if activation is high
+                    if (node.activation > 0.5) {
+                        node.transcriptionFactors = 1;
+                    } else if (node.activation < 0.2) {
+                        node.transcriptionFactors = 0;
+                    }
+                    this._renderTranscriptionFactors(ctx, node, node.x * scaleX, node.y * scaleY);
+
 
                     // Reset shadow for future draws
                     ctx.shadowColor = 'transparent';

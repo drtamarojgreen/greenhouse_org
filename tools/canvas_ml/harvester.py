@@ -122,6 +122,12 @@ def harvest():
 
                     if i < 5:
                         page.screenshot(path=os.path.join(DATA_DIR, f"screenshot_{i}.png"))
+                        # Also capture individual canvases if possible
+                        try:
+                            page.locator('#canvas-synaptic').screenshot(path=os.path.join(DATA_DIR, f"screenshot_{i}_synapse.png"))
+                            page.locator('#canvas-network').screenshot(path=os.path.join(DATA_DIR, f"screenshot_{i}_network.png"))
+                        except Exception as e:
+                            print(f"Failed to capture partial screenshots: {e}")
 
                     if i % 10 == 0:
                         print(f"Harvested {i}")
