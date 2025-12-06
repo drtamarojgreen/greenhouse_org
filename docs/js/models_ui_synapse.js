@@ -176,12 +176,33 @@
 
             // Phase 2: Render Membrane Channels
             this._renderMembraneChannels(ctx, this.state.synaptic.ionChannels, width, height, terminalWidth);
+            // Label for Ion Channels
+            if (this.state.synaptic.ionChannels && this.state.synaptic.ionChannels.length > 0) {
+                 ctx.fillStyle = this.state.darkMode ? '#aaa' : '#555';
+                 ctx.font = '10px Arial';
+                 ctx.textAlign = 'right';
+                 ctx.fillText(this.util.t('label_ion_channel'), width/2 - terminalWidth/2 - 10, preSynapticY);
+            }
 
             // Phase 2: Render Kinases
             this._renderKinases(ctx, this.state.synaptic.proteinKinases, width, height);
+             // Label for Kinases
+            if (this.state.synaptic.proteinKinases && this.state.synaptic.proteinKinases.length > 0) {
+                 ctx.fillStyle = this.state.darkMode ? '#aaa' : '#555';
+                 ctx.font = '10px Arial';
+                 ctx.textAlign = 'left';
+                 ctx.fillText(this.util.t('label_kinase'), width/2 + 50, height/2 + 50);
+            }
 
             // Phase 2: Render RNA
             this._renderRNA(ctx, this.state.synaptic.rna, width, height);
+             // Label for RNA
+            if (this.state.synaptic.rna && this.state.synaptic.rna.length > 0) {
+                 ctx.fillStyle = this.state.darkMode ? '#aaa' : '#555';
+                 ctx.font = '10px Arial';
+                 ctx.textAlign = 'right';
+                 ctx.fillText(this.util.t('label_rna'), width/2 - 50, height/2 + 80);
+            }
 
             // Synaptic vesicles
             this.state.synaptic.vesicles.forEach(vesicle => {
@@ -202,6 +223,11 @@
                 ctx.arc(x, y, 6, 0, Math.PI * 2);
                 ctx.fill();
             });
+            // Label for Vesicles
+            ctx.fillStyle = this.state.darkMode ? '#aaa' : '#555';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(this.util.t('label_vesicle'), width/2 + terminalWidth/2 + 10, preSynapticY - 40);
 
             const postSynapticY = height / 2 + 40;
             // Receptors
@@ -211,6 +237,17 @@
                 ctx.fillStyle = receptor.isBound ? 'rgba(255, 255, 100, 0.9)' : 'rgba(70, 150, 255, 0.9)';
                 ctx.fillRect(x, y, 5, 10);
             });
+            // Label for Receptors
+            ctx.fillStyle = this.state.darkMode ? '#aaa' : '#555';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText(this.util.t('label_receptor'), width/2 - terminalWidth/2 - 10, postSynapticY - 70);
+
+            // Label for Neurotransmitters (if running)
+            if (this.state.synaptic.isRunning) {
+                 ctx.textAlign = 'left';
+                 ctx.fillText(this.util.t('label_neurotransmitter'), width/2 + 20, height/2);
+            }
 
             this.updateParticles();
         },
