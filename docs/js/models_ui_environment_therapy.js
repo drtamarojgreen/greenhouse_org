@@ -41,7 +41,9 @@
 
         draw(ctx, width, height) {
             // Shared transform logic
-            const { scale, offsetX, offsetY } = window.GreenhouseModelsUtil.calculateEnvironmentLayout(width, height);
+            const scale = Math.min(width / 1536, height / 1024) * 0.95;
+            const offsetX = (width - (1536 * scale)) / 2;
+            const offsetY = (height - (1024 * scale)) / 2;
 
             ctx.save();
             ctx.translate(offsetX, offsetY);
@@ -230,7 +232,11 @@
                 mouseY = event.clientY - rect.top;
 
                 // Shared transform logic to map mouse to logical coordinates
-                const { scale, offsetX, offsetY } = window.GreenhouseModelsUtil.calculateEnvironmentLayout(canvas.width, canvas.height);
+                const width = canvas.width;
+                const height = canvas.height;
+                const scale = Math.min(width / 1536, height / 1024) * 0.95;
+                const offsetX = (width - (1536 * scale)) / 2;
+                const offsetY = (height - (1024 * scale)) / 2;
 
                 logicalX = (mouseX - offsetX) / scale;
                 logicalY = (mouseY - offsetY) / scale;
@@ -265,7 +271,11 @@
             const mouseX = event.clientX - rect.left;
             const mouseY = event.clientY - rect.top;
 
-            const { scale, offsetX, offsetY } = window.GreenhouseModelsUtil.calculateEnvironmentLayout(canvas.width, canvas.height);
+            const width = canvas.width;
+            const height = canvas.height;
+            const scale = Math.min(width / 1536, height / 1024) * 0.95;
+            const offsetX = (width - (1536 * scale)) / 2;
+            const offsetY = (height - (1024 * scale)) / 2;
 
             const logicalX = (mouseX - offsetX) / scale;
             const logicalY = (mouseY - offsetY) / scale;
