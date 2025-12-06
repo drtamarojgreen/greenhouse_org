@@ -8,9 +8,14 @@
         _brainPathData: null, // This will be fetched from the SVG
         _brainPath: null,
         regions: {
-            pfc: { path: null, name: 'Prefrontal Cortex', color: 'rgba(0, 100, 255, 0.7)' }, // Key matches translation
-            amygdala: { path: null, name: 'Amygdala', color: 'rgba(255, 0, 0, 0.7)' }, // Key matches translation
-            hippocampus: { path: null, name: 'Hippocampus', color: 'rgba(0, 255, 100, 0.7)' } // Key matches translation
+            pfc: { path: null, name: 'Prefrontal Cortex', color: 'rgba(0, 100, 255, 0.7)' },
+            amygdala: { path: null, name: 'Amygdala', color: 'rgba(255, 0, 0, 0.7)' },
+            hippocampus: { path: null, name: 'Hippocampus', color: 'rgba(0, 255, 100, 0.7)' },
+            temporalLobe: { path: null, name: 'Temporal Lobe', color: 'rgba(255, 165, 0, 0.7)' },
+            parietalLobe: { path: null, name: 'Parietal Lobe', color: 'rgba(147, 112, 219, 0.7)' },
+            occipitalLobe: { path: null, name: 'Occipital Lobe', color: 'rgba(255, 192, 203, 0.7)' },
+            cerebellum: { path: null, name: 'Cerebellum', color: 'rgba(64, 224, 208, 0.7)' },
+            brainstem: { path: null, name: 'Brainstem', color: 'rgba(255, 215, 0, 0.7)' }
         },
         TREE_BRANCH_DATA: [
             { cp1x: -7.5, cp1y: -2.5, cp2x: -22.5, cp2y: -7.5, angle: 0.35, length: 0.9 },
@@ -394,9 +399,28 @@
                     this._brainPath = new Path2D(this._brainPathData);
 
                     // Define and create Path2D objects for each brain region
-                    this.regions.pfc.path = new Path2D("M 900,300 a 150,150 0 0 1 0,300 h -50 a 100,100 0 0 0 0,-200 Z");
-                    this.regions.amygdala.path = new Path2D("M 700,500 a 50,30 0 0 1 0,60 a 50,30 0 0 1 0,-60 Z");
-                    this.regions.hippocampus.path = new Path2D("M 750,450 a 80,40 0 0 1 0,80 q -20,-40 0,-80 Z");
+                    // Scaled up 2x for easier mouse targeting and repositioned for better alignment
+                    
+                    // Original 3 regions
+                    this.regions.pfc.path = new Path2D("M 950,250 a 200,200 0 0 1 0,400 h -80 a 150,150 0 0 0 0,-300 Z");
+                    this.regions.amygdala.path = new Path2D("M 650,480 a 80,50 0 0 1 0,100 a 80,50 0 0 1 0,-100 Z");
+                    this.regions.hippocampus.path = new Path2D("M 720,420 a 120,60 0 0 1 0,120 q -30,-60 0,-120 Z");
+                    
+                    // New regions
+                    // Temporal Lobe - sides of brain, lower area
+                    this.regions.temporalLobe.path = new Path2D("M 550,400 a 100,80 0 0 1 0,160 a 100,80 0 0 1 0,-160 Z");
+                    
+                    // Parietal Lobe - top middle-back area
+                    this.regions.parietalLobe.path = new Path2D("M 800,200 a 150,100 0 0 1 0,200 h -60 a 120,80 0 0 0 0,-160 Z");
+                    
+                    // Occipital Lobe - back of brain
+                    this.regions.occipitalLobe.path = new Path2D("M 600,300 a 80,120 0 0 1 0,240 a 80,120 0 0 1 0,-240 Z");
+                    
+                    // Cerebellum - lower back, below occipital
+                    this.regions.cerebellum.path = new Path2D("M 620,580 a 90,70 0 0 1 0,140 a 90,70 0 0 1 0,-140 Z");
+                    
+                    // Brainstem - center bottom, connecting to cerebellum
+                    this.regions.brainstem.path = new Path2D("M 730,650 l 0,80 a 40,40 0 0 1 -80,0 l 0,-80 Z");
                 }
             } catch (error) {
                 console.error('Error loading or parsing brain SVG:', error);

@@ -4,6 +4,8 @@
     const GreenhouseModelsUIEnvironmentHovers = {
         state: null,
         util: null,
+        hoverPersistenceTimer: null,
+        hoverPersistenceDelay: 150, // ms delay before clearing hover
 
         init(state, util) {
             this.state = state;
@@ -51,6 +53,24 @@
                     hoveredRegionKey = key;
                     break;
                 }
+            }
+
+            // Clear any existing persistence timer
+            if (this.hoverPersistenceTimer) {
+                clearTimeout(this.hoverPersistenceTimer);
+                this.hoverPersistenceTimer = null;
+            }
+
+            // Store the hovered region key in state
+            if (hoveredRegionKey) {
+                // Immediately update to the new hovered region
+                this.state.environment.hoveredRegionKey = hoveredRegionKey;
+            } else {
+                // Delay clearing the hover to prevent flickering
+                this.hoverPersistenceTimer = setTimeout(() => {
+                    this.state.environment.hoveredRegionKey = null;
+                    this.hoverPersistenceTimer = null;
+                }, this.hoverPersistenceDelay);
             }
 
             if (hoveredRegionKey) {

@@ -31,6 +31,7 @@
         particles: [],
         animationFrame: null,
         brainShell: null,
+        hoveredRegion: null,
 
         /**
          * Initializes the 3D canvas system
@@ -57,17 +58,19 @@
             canvas3DTitle.className = 'greenhouse-panel-title';
             canvas3DTitle.textContent = this.util.t('3d_view_title') || '3D Neural Network View';
 
+            const controls3D = document.createElement('div');
+            controls3D.id = 'controls-3d';
+            controls3D.className = 'greenhouse-controls-panel';
+            controls3D.style.cssText = 'margin-bottom: 15px;'; // Add spacing below controls
+
             this.canvas3D = document.createElement('canvas');
             this.canvas3D.id = 'canvas-3d';
             this.canvas3D.style.cssText = 'width: 100%; height: 400px; background: #1a1a1a; border-radius: 12px; cursor: grab;';
 
-            const controls3D = document.createElement('div');
-            controls3D.id = 'controls-3d';
-            controls3D.className = 'greenhouse-controls-panel';
-
+            // Append in new order: title, controls, then canvas
             canvas3DSection.appendChild(canvas3DTitle);
-            canvas3DSection.appendChild(this.canvas3D);
             canvas3DSection.appendChild(controls3D);
+            canvas3DSection.appendChild(this.canvas3D);
 
             // Insert before the environment canvas
             const envCanvas = document.getElementById('canvas-environment');
@@ -479,6 +482,26 @@
                 hippocampus: {
                     color: 'rgba(100, 255, 150, 0.6)',
                     vertices: this.getRegionVertices('hippocampus')
+                },
+                temporalLobe: {
+                    color: 'rgba(255, 165, 0, 0.6)',
+                    vertices: this.getRegionVertices('temporalLobe')
+                },
+                parietalLobe: {
+                    color: 'rgba(147, 112, 219, 0.6)',
+                    vertices: this.getRegionVertices('parietalLobe')
+                },
+                occipitalLobe: {
+                    color: 'rgba(255, 192, 203, 0.6)',
+                    vertices: this.getRegionVertices('occipitalLobe')
+                },
+                cerebellum: {
+                    color: 'rgba(64, 224, 208, 0.6)',
+                    vertices: this.getRegionVertices('cerebellum')
+                },
+                brainstem: {
+                    color: 'rgba(255, 215, 0, 0.6)',
+                    vertices: this.getRegionVertices('brainstem')
                 }
             };
         },
@@ -508,6 +531,38 @@
                         if (Math.abs(vertex.x) > 60 && Math.abs(vertex.x) < 100 &&
                             vertex.y > -80 && vertex.y < 0 &&
                             vertex.z > -80 && vertex.z < -20) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'temporalLobe': // Temporal lobe - sides, middle-lower
+                        if (Math.abs(vertex.x) > 120 && Math.abs(vertex.x) < 180 &&
+                            vertex.y > -50 && vertex.y < 80 &&
+                            vertex.z > -40 && vertex.z < 40) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'parietalLobe': // Parietal lobe - top middle-back
+                        if (vertex.y > 120 && vertex.y < 200 &&
+                            vertex.z > -50 && vertex.z < 80 &&
+                            Math.abs(vertex.x) < 150) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'occipitalLobe': // Occipital lobe - back
+                        if (vertex.z < -80 && vertex.z > -160 &&
+                            vertex.y > -50 && vertex.y < 120) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'cerebellum': // Cerebellum - lower back
+                        if (vertex.z < -60 && vertex.y < -80 && vertex.y > -150 &&
+                            Math.abs(vertex.x) < 120) {
+                            indices.push(index);
+                        }
+                        break;
+                    case 'brainstem': // Brainstem - center bottom
+                        if (Math.abs(vertex.x) < 40 && vertex.y < -120 &&
+                            vertex.z > -40 && vertex.z < 20) {
                             indices.push(index);
                         }
                         break;
@@ -672,6 +727,8 @@
                 if (cross > 0) {
                     // Determine if this face is part of a colored region
                     let faceColor = 'rgba(128, 128, 128, 0.15)'; // Default gray
+                    let isHovered = false;
+                    let matchedRegionKey = null;
                     
                     // Check if any vertex is in a brain region
                     for (const regionName in this.brainShell.regions) {
@@ -680,12 +737,36 @@
                             region.vertices.includes(face[1]) || 
                             region.vertices.includes(face[2])) {
                             faceColor = region.color;
+                            
+                            // Map region names to keys used in 2D
+                            const regionKeyMap = {
+                                'prefrontalCortex': 'pfc',
+                                'amygdala': 'amygdala',
+                                'hippocampus': 'hippocampus',
+                                'temporalLobe': 'temporalLobe',
+                                'parietalLobe': 'parietalLobe',
+                                'occipitalLobe': 'occipitalLobe',
+                                'cerebellum': 'cerebellum',
+                                'brainstem': 'brainstem'
+                            };
+                            matchedRegionKey = regionKeyMap[regionName];
+                            
+                            // Check if this region is hovered in 2D
+                            if (this.hoveredRegion === matchedRegionKey) {
+                                isHovered = true;
+                            }
                             break;
                         }
                     }
 
                     // Apply depth fog
-                    const alpha = GreenhouseModels3DMath.applyDepthFog(0.3, depth);
+                    let alpha = GreenhouseModels3DMath.applyDepthFog(0.3, depth);
+                    
+                    // Enhance alpha for hovered regions
+                    if (isHovered) {
+                        alpha = Math.min(1, alpha * 3); // Triple the alpha for visibility
+                    }
+                    
                     const colorMatch = faceColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
                     if (colorMatch) {
                         const r = colorMatch[1];
@@ -704,11 +785,20 @@
                     ctx.closePath();
                     ctx.fill();
 
+                    // Add glow effect for hovered regions
+                    if (isHovered) {
+                        ctx.save();
+                        ctx.shadowColor = faceColor;
+                        ctx.shadowBlur = 20;
+                        ctx.fill();
+                        ctx.restore();
+                    }
+
                     // Draw wireframe edges for definition
                     ctx.strokeStyle = this.state.darkMode ? 
                         `rgba(200, 200, 200, ${alpha * 0.1})` : 
                         `rgba(100, 100, 100, ${alpha * 0.1})`;
-                    ctx.lineWidth = 0.5;
+                    ctx.lineWidth = isHovered ? 1 : 0.5; // Thicker lines for hovered regions
                     ctx.stroke();
                 }
             });
@@ -880,6 +970,19 @@
             ctx.moveTo(origin.x, origin.y);
             ctx.lineTo(zAxis.x, zAxis.y);
             ctx.stroke();
+        },
+
+        /**
+         * Sets the hovered region from 2D environment canvas
+         * @param {string} regionKey - The key of the hovered region (pfc, amygdala, hippocampus)
+         */
+        setHoveredRegion(regionKey) {
+            this.hoveredRegion = regionKey;
+            
+            // Trigger a re-render if 3D view is active
+            if (this.isActive) {
+                this.render3DView();
+            }
         }
     };
 
