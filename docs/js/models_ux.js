@@ -72,12 +72,12 @@
             },
 
             networkLayout: [
-                { x: 100, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0 },
-                { x: 250, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0 },
-                { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE', geneExpressionLevel: 0.0, transcriptionFactors: 0 },
-                { x: 400, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0 },
-                { x: 550, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE', geneExpressionLevel: 0.0, transcriptionFactors: 0 },
-                { x: 450, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0 }
+                { x: 100, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'pfc_desc' },
+                { x: 250, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'amygdala_desc' },
+                { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'hippocampus_desc' },
+                { x: 400, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'pfc_desc' },
+                { x: 550, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'amygdala_desc' },
+                { x: 450, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'hippocampus_desc' }
             ],
 
             synapses: [],
