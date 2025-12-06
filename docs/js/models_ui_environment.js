@@ -34,9 +34,7 @@
         init(system) { }
         update() { }
         draw(ctx, width, height) {
-            const scale = Math.min(width / 1536, height / 1024) * 0.95;
-            const offsetX = (width - (1536 * scale)) / 2;
-            const offsetY = (height - (1024 * scale)) / 2;
+            const { scale, offsetX, offsetY } = window.GreenhouseModelsUtil.calculateEnvironmentLayout(width, height);
 
             ctx.save();
             ctx.translate(offsetX, offsetY);
@@ -194,9 +192,7 @@
         init(system) { }
         update() { }
         draw(ctx, width, height) {
-            const scale = Math.min(width / 1536, height / 1024) * 0.95;
-            const offsetX = (width - (1536 * scale)) / 2;
-            const offsetY = (height - (1024 * scale)) / 2;
+            const { scale, offsetX, offsetY } = window.GreenhouseModelsUtil.calculateEnvironmentLayout(width, height);
 
             ctx.save();
             ctx.translate(offsetX, offsetY);
@@ -339,12 +335,12 @@
             ctx.lineTo(width, panelHeight);
             ctx.stroke();
             ctx.fillStyle = '#357438';
-            ctx.textAlign = 'left'; // Align left for better balance
+            ctx.textAlign = 'center'; // Align center for better balance
             ctx.font = 'bold 24px "Quicksand", "Helvetica Neue", Arial, sans-serif'; // #4 - Reduced font size
-            ctx.fillText(t('env_title'), 20, 30);
+            ctx.fillText(t('env_title'), width / 2, 30);
             ctx.font = '13px "Helvetica Neue", Arial, sans-serif'; // #5, #93 - Reduced font size
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillText(t('env_subtitle'), 22, 48);
+            ctx.fillText(t('env_subtitle'), width / 2, 48);
             ctx.restore();
         }
     }
@@ -407,9 +403,7 @@
             const mouseX = event.clientX - rect.left;
             const mouseY = event.clientY - rect.top;
 
-            const scale = Math.min(canvas.width / 1536, canvas.height / 1024) * 0.8;
-            const offsetX = (canvas.width - (1536 * scale)) / 2;
-            const offsetY = (canvas.height - (1024 * scale)) / 2;
+            const { scale, offsetX, offsetY } = window.GreenhouseModelsUtil.calculateEnvironmentLayout(canvas.width, canvas.height);
             const logicalX = (mouseX - offsetX) / scale;
             const logicalY = (mouseY - offsetY) / scale;
 

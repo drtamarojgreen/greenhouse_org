@@ -547,6 +547,13 @@
                 }
             }
             context.fillText(line, x, y);
+        },
+
+        calculateEnvironmentLayout(width, height) {
+             const scale = Math.min(width / 1536, height / 1024) * 0.95;
+             const offsetX = (width - (1536 * scale)) / 2;
+             const offsetY = (height - (1024 * scale)) / 2;
+             return { scale, offsetX, offsetY };
         }
     };
 
