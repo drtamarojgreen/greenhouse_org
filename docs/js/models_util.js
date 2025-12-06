@@ -145,6 +145,14 @@
                 // Simulation Interface
                 edu_banner: "For Educational Purposes: This model simulates conceptual brain activity.",
 
+                // Synapse Items
+                label_vesicle: "Vesicle",
+                label_receptor: "Receptor",
+                label_neurotransmitter: "Neurotransmitter",
+                label_ion_channel: "Ion Channel",
+                label_kinase: "Protein Kinase",
+                label_rna: "mRNA",
+
                 // Metrics
                 metrics_title_synaptic: "Real-Time Metrics (synaptic)",
                 metrics_title_network: "Real-Time Metrics (network)",
@@ -307,6 +315,14 @@
 
                 // Simulation Interface
                 edu_banner: "Para Fines Educativos: Este modelo simula la actividad cerebral conceptual.",
+
+                // Synapse Items
+                label_vesicle: "Vesícula",
+                label_receptor: "Receptor",
+                label_neurotransmitter: "Neurotransmisor",
+                label_ion_channel: "Canal Iónico",
+                label_kinase: "Proteína Quinasa",
+                label_rna: "ARNm",
 
                 // Metrics
                 metrics_title_synaptic: "Métricas en Tiempo Real (sinápticas)",
