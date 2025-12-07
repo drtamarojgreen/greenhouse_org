@@ -47,12 +47,24 @@ Create a new page `/genetic/` (implemented as `docs/genetic.html`) to visualize 
     *   **Genome View**: Optionally visualize the "DNA" (parameters) alongside the brain.
     *   **Wix Compatibility**: Ensure canvas resizing observes the container dimensions, which may change in the Wix environment.
 
+### 5. Wix Velo Frontend Code (`apps/frontend/genetic/Genetic.js`)
+*   **Purpose**: Wix-side script to bridge backend data/configuration to the injected frontend code.
+*   **Directory**: Create `apps/frontend/genetic/` directory.
+*   **Implementation**: Create `Genetic.js` following the pattern of `apps/frontend/models/Models.js`.
+*   **Key Responsibilities**:
+    *   Use `$w.onReady` to initialize when the Wix page loads.
+    *   Define base URLs for any external data (if needed).
+    *   Fetch configuration or initial population data (optional, can start empty).
+    *   **Data Bridge**: Serialize any necessary configuration data into a hidden DOM element (e.g., `#dataTextElement` or `#geneticDataHolder`) so the injected `genetic.js` can read it.
+
 ## Implementation Steps
 
 1.  **Scaffold Files**:
     *   Create `docs/genetic.html` based on `docs/models.html`.
     *   Create empty JS files: `docs/js/genetic.js`, `docs/js/genetic_algo.js`.
     *   Create `docs/js/genetic_ui_3d.js` by copying `docs/js/models_ui_3d.js` (and then modifying the copy).
+    *   Create directory `apps/frontend/genetic/`.
+    *   Create `apps/frontend/genetic/Genetic.js`.
 
 2.  **Implement Genetic Logic (`docs/js/genetic_algo.js`)**:
     *   Define a `Network` class.
@@ -70,7 +82,10 @@ Create a new page `/genetic/` (implemented as `docs/genetic.html`) to visualize 
     *   Initialize the loop: Evolve -> Update 3D Model -> Render -> Repeat.
     *   Bind UI controls to simulation parameters.
 
-5.  **Testing & Verification**:
+5.  **Implement Wix Bridge (`apps/frontend/genetic/Genetic.js`)**:
+    *   Implement the Velo code to bridge data to the frontend, ensuring compatibility with the Wix page elements.
+
+6.  **Testing & Verification**:
     *   Verify page load and layout in `docs/genetic.html`.
     *   Verify 3D rendering works (using `GreenhouseModels3DMath` - **Read Only**).
     *   Verify evolution simulation runs and updates the display visually.
