@@ -287,14 +287,9 @@
      * @description Loads the neuro application.
      */
     async function loadNeuroApplication() {
-        // Load dependencies sequentially
-        await GreenhouseUtils.loadScript('models_3d_math.js', config.githubPagesBaseUrl);
-        await GreenhouseUtils.loadScript('neuro_ga.js', config.githubPagesBaseUrl);
-        await GreenhouseUtils.loadScript('neuro_ui_3d.js', config.githubPagesBaseUrl);
-
         await loadApplication(
             'neuro',
-            'neuro_app.js',
+            'neuro.js',
             config.selectors.neuro,
             config.fallbackSelectors.neuro
         );
