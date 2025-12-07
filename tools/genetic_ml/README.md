@@ -45,67 +45,68 @@ $$
 $$
 where $g2$ are growth allocations on turn 2 and $d1$ are outward distances moved on turn 1.
 
-**Minimal Requirements**:
-*   **Descendants**: Minimum 2 total (one from each lineage).
-*   **Turns**: Minimum 2 turns (parents reproduce outward, children reproduce inward).
-
-**Condition for 2-Turn Meeting**:
-Using Lemma 1, for a meeting to occur in 2 turns, the shared growth pool $G$ must satisfy:
-$$
-G > 2(g1_L + g1_R) + \frac{n}{2\alpha}
-$$
-Under minimal outward placement (siblings move just enough to clear parent cubes), the minimal pool is:
+**Lemma 2 (Minimal Pool Size)**:
+Assuming minimal outward placement ($d1 \approx 1.5n$), the minimum shared growth pool $G$ required for a meeting in 2 turns is derived from Lemma 1:
 $$
 G_{\min}^{(2)} = \frac{13n}{2\alpha}
 $$
+If $G < G_{\min}^{(2)}$, a 2-turn meeting is geometrically impossible under the constraint that descendants cannot reside in ancestor cubes.
 
-## Pipeline Proofs: Efficiency and Complexity
+### Pipeline Proofs: Efficiency and Complexity
 
-### 1. Convergence of Neurotransmitter Dynamics
+#### 1. Convergence of Neurotransmitter Dynamics
 
-**Lemma 2 (Contraction Condition)**:
+**Lemma 3 (Linearized Propagation)**:
+The dynamics of the neurotransmitter pool $G_t$ can be linearized around a fixed point $G^*$ as:
+$$
+\Delta G_{t+1} = A \Delta G_t
+$$
+where $A = I - C J_f$, $C$ is the consumption matrix, and $J_f$ is the Jacobian of the reproduction map.
+
+**Lemma 4 (Contraction Condition)**:
 Let $F(G)$ be the update map for the neurotransmitter pool. $F$ is a contraction mapping if the total sensitivity of consumption to pool changes is strictly bounded below 1. Formally:
 $$
 ||C+E|| \cdot L_f < 1
 $$
 where $||C+E||$ is the operator norm of the consumption matrices and $L_f$ is the Lipschitz constant of the reproduction response $f(G)$.
 
-**Theorem**: Under bounded influence assumptions (Lemma 2), the neurotransmitter pool dynamics converge to a unique fixed point, even as the number of neurotransmitters $m$ increases.
+**Theorem (Convergence)**:
+Under bounded influence assumptions (Lemma 4), the neurotransmitter pool dynamics converge to a unique fixed point, even as the number of neurotransmitters $m$ increases.
+*Proof*: By Lemma 4, $F$ is a contraction on a complete metric space. By the Banach Fixed-Point Theorem, a unique fixed point exists and iterates converge exponentially. Adding dimensions ($m \to m+1$) preserves convergence if the aggregate feedback gain remains $< 1$.
 
-**Proof**:
-The dynamics are modeled by the mapping $F(G) = G - (C+E)f(G) + b$.
-1.  **Contraction**: By Lemma 2, $F$ is a contraction mapping on the bounded domain $S$.
-2.  **Banach Fixed-Point Theorem**: A contraction on a complete metric space has a unique fixed point $G^*$ and iterates converge exponentially.
-3.  **Scaling $m$**: Increasing the number of neurotransmitters $m$ adds dimensions. Convergence is preserved if the aggregate feedback gain (operator norm of the extended $C+E$) remains $< 1$.
+#### 2. Matrix Formulation & Reliance
 
-### 2. Matrix Formulation & Reliance
-
-**Reliance Vector**: The sensitivity of long-run reproduction $R$ to sustained changes in neurotransmitter $i$.
+**Lemma 5 (Long-Run Reliance)**:
+The sensitivity of long-run reproduction $R$ to sustained changes in neurotransmitter $i$ (the reliance vector) is given by the resolvent of the linearized system:
 $$
 r^{(long)} = w^\top J_f (I - A)^{-1}
 $$
-Where:
-*   $J_f$: Jacobian of reproduction w.r.t. pool.
-*   $A = I - C J_f$: Linearized propagation matrix.
-*   $(I-A)^{-1}$: Resolvent capturing infinite feedback loops.
+This accounts for infinite feedback loops in the network.
 
 **Algorithm**:
 1.  Find fixed point $G^*$.
 2.  Compute Jacobian $J_f$ at $G^*$.
 3.  Compute $r^{(long)}$ via linear solve (avoiding explicit inversion for stability).
 
-### 3. PLS Surrogate & Allocation Bounds
+#### 3. PLS Surrogate & Allocation Bounds
 
-**Lemma 3 (Fractional Knapsack Optimality)**:
+**Lemma 6 (PLS Regression Coefficients)**:
+For a Partial Least Squares (PLS) regression with $K$ components, the regression coefficient matrix $B_{PLS}$ mapping centered predictors $X$ to response $Y$ has the closed form:
+$$
+B_{PLS} = W (P^\top W)^{-1} Q^\top
+$$
+where $W$ are weights, $P$ are loadings, and $Q$ are Y-loadings.
+
+**Lemma 7 (Fractional Knapsack Optimality)**:
 For a linear objective $b^\top x$ subject to a linear budget constraint $a^\top x \le B_{tot}$ and $x \ge 0$, the optimal solution is given by the greedy strategy: allocate budget to variables in descending order of the ratio $b_i/a_i$.
 
-**Proposition**: For a Partial Least Squares (PLS) surrogate model with $K$ components, the optimal resource allocation is solvable via a **Fractional Knapsack** approach.
-
-**Proof**:
-1.  **Predictor**: The PLS predictor is linear: $\hat{y} = x^\top B_{PLS}$.
-2.  **Optimization**: Maximizing $\hat{y}$ subject to budget $a^\top x \le B_{tot}$ is a linear program (LP).
-3.  **Solution**: By **Lemma 3**, the optimal solution to this continuous optimization problem is the greedy allocation.
-4.  **Bound**: The closed-form upper bound for unit costs is $B_{tot} \cdot \max_i \{ b_j(i), 0 \}$.
+**Proposition (Multi-Component PLS Bound)**:
+For a PLS surrogate model with $K$ components, the optimal resource allocation is solvable via a **Fractional Knapsack** approach.
+*Proof*:
+1.  The PLS predictor is linear: $\hat{y} = x^\top B_{PLS}$ (Lemma 6).
+2.  Maximizing $\hat{y}$ subject to budget is a linear program.
+3.  By Lemma 7, the solution is the greedy allocation.
+4.  The closed-form upper bound for unit costs is $B_{tot} \cdot \max_i \{ b_j(i), 0 \}$.
 
 ## Requirements
 
