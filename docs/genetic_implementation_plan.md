@@ -37,8 +37,10 @@ Create a new page `/genetic/` (implemented as `docs/genetic.html`) to visualize 
 *   **Output**: The "fittest" brain of the current generation to be visualized.
 
 ### 4. 3D Visualization (`docs/js/genetic_ui_3d.js`)
-*   **Base**: Adapted from `docs/js/models_ui_3d.js`.
-*   **Modifications**:
+*   **Base**: A fresh copy of the logic from `docs/js/models_ui_3d.js`.
+*   **Constraints**: **DO NOT MODIFY** the existing `docs/js/models_ui_3d.js` file, as it is used by the live `models` page.
+*   **Modifications (in new file only)**:
+    *   **Renaming**: Create `GreenhouseGeneticUI3D` (instead of `GreenhouseModelsUI3D`).
     *   **Visualizing Change**: Instead of a static brain, animations should show connections growing/shrinking/moving as evolution progresses.
     *   **Generation Indicator**: Display current generation number in 3D space or overlay.
     *   **Fitness Visualization**: Color-code neurons or connections based on fitness contributions.
@@ -49,7 +51,8 @@ Create a new page `/genetic/` (implemented as `docs/genetic.html`) to visualize 
 
 1.  **Scaffold Files**:
     *   Create `docs/genetic.html` based on `docs/models.html`.
-    *   Create empty JS files: `docs/js/genetic.js`, `docs/js/genetic_algo.js`, `docs/js/genetic_ui_3d.js`.
+    *   Create empty JS files: `docs/js/genetic.js`, `docs/js/genetic_algo.js`.
+    *   Create `docs/js/genetic_ui_3d.js` by copying `docs/js/models_ui_3d.js` (and then modifying the copy).
 
 2.  **Implement Genetic Logic (`docs/js/genetic_algo.js`)**:
     *   Define a `Network` class.
@@ -57,7 +60,7 @@ Create a new page `/genetic/` (implemented as `docs/genetic.html`) to visualize 
     *   Implement `calculateFitness()` method.
 
 3.  **Adapt 3D Visualization (`docs/js/genetic_ui_3d.js`)**:
-    *   Refactor `GreenhouseModelsUI3D` to `GreenhouseGeneticUI3D`.
+    *   Rename object to `GreenhouseGeneticUI3D`.
     *   Ensure it renders a `Network` object provided by the genetic algo.
     *   Add visual effects for mutation (e.g., flash on changed connections).
 
@@ -69,11 +72,11 @@ Create a new page `/genetic/` (implemented as `docs/genetic.html`) to visualize 
 
 5.  **Testing & Verification**:
     *   Verify page load and layout in `docs/genetic.html`.
-    *   Verify 3D rendering works (using `GreenhouseModels3DMath`).
+    *   Verify 3D rendering works (using `GreenhouseModels3DMath` - **Read Only**).
     *   Verify evolution simulation runs and updates the display visually.
     *   **Integration Test**: Verify that the script mimics the loading behavior expected by Wix (checking console logs for dependency loading and attribute capture).
 
 ## Dependencies
-*   `docs/js/models_3d_math.js` (Core 3D Math - Reuse)
-*   `docs/js/GreenhouseUtils.js` (Utils - Reuse)
-*   `docs/css/` (Existing styles - Reuse)
+*   `docs/js/models_3d_math.js` (Core 3D Math - **Read Only Reuse**)
+*   `docs/js/GreenhouseUtils.js` (Utils - **Read Only Reuse**)
+*   `docs/css/` (Existing styles - **Read Only Reuse**)
