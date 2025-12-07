@@ -61,6 +61,10 @@
          */
         neuroPagePath: '/neuro',
         /**
+         * The path segment that identifies the genetic page.
+         */
+        geneticPagePath: '/genetic',
+        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -78,6 +82,7 @@
             models: '#SITE_PAGES_TRANSITION_GROUP .wixui-section > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             videos: '.wixui-repeater', // Selector for the videos repeater
             news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
+            genetic: '#SITE_PAGES_TRANSITION_GROUP .wixui-section > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             tech: '#SITE_PAGES_TRANSITION_GROUP .wixui-section',
             neuro: '#neuro-app-container', // Assuming a dedicated container ID for now
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
@@ -294,6 +299,19 @@
             config.fallbackSelectors.neuro
         );
     }
+          
+     /**
+     * @function loadGeneticApplication
+     * @description Loads the genetic application after ensuring the target element exists.
+     */
+    async function loadGeneticApplication() {
+        await loadApplication(
+            'genetic',
+            'genetic.js',
+            config.selectors.genetic,
+            config.fallbackSelectors.models
+        );
+    }
 
     /**
      * @function initialize
@@ -319,6 +337,8 @@
             await loadNewsApplication();
         } else if (window.location.pathname.includes(config.modelsPagePath)) {
             await loadModelsApplication();
+        } else if (window.location.pathname.includes(config.geneticPagePath)) {
+            await loadGeneticApplication();
         } else if (window.location.pathname.includes(config.techPagePath)) {
             await loadTechApplication();
         } else if (window.location.pathname.includes(config.neuroPagePath)) {
