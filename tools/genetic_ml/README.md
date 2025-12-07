@@ -38,12 +38,19 @@ An advanced MCMC/Monte-Carlo simulation coupling a pooled-neurotransmitter model
 *   **Size Rule**: Generation $k$ has half-edge $r_k = n / 2^k$.
 *   **Meeting Criterion**: Descendants from L and R overlap.
 
+**Lemma 1 (Overlap Inequality)**:
+For descendants $L2$ and $R2$ (grandchildren) to overlap on Turn 2, their separation distance $\Delta x$ must be less than the sum of their half-edges ($2 r_2 = n/2$). This implies:
+$$
+\alpha(g2_L + g2_R) > \frac{n}{2} + d1_L + d1_R
+$$
+where $g2$ are growth allocations on turn 2 and $d1$ are outward distances moved on turn 1.
+
 **Minimal Requirements**:
 *   **Descendants**: Minimum 2 total (one from each lineage).
 *   **Turns**: Minimum 2 turns (parents reproduce outward, children reproduce inward).
 
 **Condition for 2-Turn Meeting**:
-For a meeting to occur in 2 turns, the shared growth pool $G$ must satisfy:
+Using Lemma 1, for a meeting to occur in 2 turns, the shared growth pool $G$ must satisfy:
 $$
 G > 2(g1_L + g1_R) + \frac{n}{2\alpha}
 $$
@@ -56,11 +63,18 @@ $$
 
 ### 1. Convergence of Neurotransmitter Dynamics
 
-**Theorem**: Under bounded influence assumptions, the neurotransmitter pool dynamics converge to a unique fixed point, even as the number of neurotransmitters $m$ increases.
+**Lemma 2 (Contraction Condition)**:
+Let $F(G)$ be the update map for the neurotransmitter pool. $F$ is a contraction mapping if the total sensitivity of consumption to pool changes is strictly bounded below 1. Formally:
+$$
+||C+E|| \cdot L_f < 1
+$$
+where $||C+E||$ is the operator norm of the consumption matrices and $L_f$ is the Lipschitz constant of the reproduction response $f(G)$.
+
+**Theorem**: Under bounded influence assumptions (Lemma 2), the neurotransmitter pool dynamics converge to a unique fixed point, even as the number of neurotransmitters $m$ increases.
 
 **Proof**:
-The dynamics are modeled by the mapping $F(G) = G - (C+E)f(G) + b$, where $C$ and $E$ are consumption matrices and $f(G)$ is the reproduction map.
-1.  **Contraction**: If the sensitivity of consumption to pool changes is bounded such that $||C+E|| \cdot L_f < 1$ (where $L_f$ is the Lipschitz constant of $f$), then $F$ is a contraction mapping.
+The dynamics are modeled by the mapping $F(G) = G - (C+E)f(G) + b$.
+1.  **Contraction**: By Lemma 2, $F$ is a contraction mapping on the bounded domain $S$.
 2.  **Banach Fixed-Point Theorem**: A contraction on a complete metric space has a unique fixed point $G^*$ and iterates converge exponentially.
 3.  **Scaling $m$**: Increasing the number of neurotransmitters $m$ adds dimensions. Convergence is preserved if the aggregate feedback gain (operator norm of the extended $C+E$) remains $< 1$.
 
@@ -82,12 +96,15 @@ Where:
 
 ### 3. PLS Surrogate & Allocation Bounds
 
+**Lemma 3 (Fractional Knapsack Optimality)**:
+For a linear objective $b^\top x$ subject to a linear budget constraint $a^\top x \le B_{tot}$ and $x \ge 0$, the optimal solution is given by the greedy strategy: allocate budget to variables in descending order of the ratio $b_i/a_i$.
+
 **Proposition**: For a Partial Least Squares (PLS) surrogate model with $K$ components, the optimal resource allocation is solvable via a **Fractional Knapsack** approach.
 
 **Proof**:
 1.  **Predictor**: The PLS predictor is linear: $\hat{y} = x^\top B_{PLS}$.
 2.  **Optimization**: Maximizing $\hat{y}$ subject to budget $a^\top x \le B_{tot}$ is a linear program (LP).
-3.  **Solution**: The optimal solution to this continuous knapsack problem is greedy: allocate budget to variables with the highest ratio of coefficient $b_j(i)$ to cost $a_i$.
+3.  **Solution**: By **Lemma 3**, the optimal solution to this continuous optimization problem is the greedy allocation.
 4.  **Bound**: The closed-form upper bound for unit costs is $B_{tot} \cdot \max_i \{ b_j(i), 0 \}$.
 
 ## Requirements
