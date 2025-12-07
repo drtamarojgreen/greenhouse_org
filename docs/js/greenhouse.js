@@ -57,6 +57,10 @@
          */
         techPagePath: '/tech',
         /**
+         * The path segment that identifies the neuro page.
+         */
+        neuroPagePath: '/neuro',
+        /**
          * The path segment that identifies the genetic page.
          */
         geneticPagePath: '/genetic',
@@ -80,6 +84,7 @@
             news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
             genetic: '#SITE_PAGES_TRANSITION_GROUP .wixui-section > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             tech: '#SITE_PAGES_TRANSITION_GROUP .wixui-section',
+            neuro: '#neuro-app-container', // Assuming a dedicated container ID for now
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -97,7 +102,8 @@
             models: 'section.wixui-section',
             videos: '.wixui-column-strip__column:first-child', // Fallback to a generic column selector
             news: '.wixui-column-strip__column:first-child', // Reverting to a generic column selector
-            tech: 'section.wixui-section'
+            tech: 'section.wixui-section',
+            neuro: 'section.wixui-section'
         }
     };
 
@@ -282,6 +288,19 @@
     }
 
     /**
+     * @function loadNeuroApplication
+     * @description Loads the neuro application.
+     */
+    async function loadNeuroApplication() {
+        await loadApplication(
+            'neuro',
+            'neuro.js',
+            config.selectors.neuro,
+            config.fallbackSelectors.neuro
+        );
+    }
+          
+     /**
      * @function loadGeneticApplication
      * @description Loads the genetic application after ensuring the target element exists.
      */
@@ -322,6 +341,8 @@
             await loadGeneticApplication();
         } else if (window.location.pathname.includes(config.techPagePath)) {
             await loadTechApplication();
+        } else if (window.location.pathname.includes(config.neuroPagePath)) {
+            await loadNeuroApplication();
         }
     }
 

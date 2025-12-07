@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greenhouse Neuro Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #eee;
+            font-family: sans-serif;
+        }
+        #neuro-app-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 600px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Neuro Simulation Development</h1>
+    <div id="neuro-app-container"></div>
+
+    <!-- Dependencies -->
+    <script src="js/models_3d_math.js"></script>
+    <script src="js/neuro_ga.js"></script>
+    <script src="js/neuro_ui_3d.js"></script>
+    <script src="js/neuro_app.js"></script>
+
+    <script>
+        // Simulate the environment where GreenhouseUtils might be available or not.
+        // For this local file, we manually init the app.
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.GreenhouseNeuroApp) {
+                window.GreenhouseNeuroApp.init('#neuro-app-container');
+            }
+        });
+    </script>
+</body>
+</html>
