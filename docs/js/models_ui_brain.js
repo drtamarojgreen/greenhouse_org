@@ -331,6 +331,30 @@
                     ctx.fill();
                 }
 
+                // Render label
+                if (node.label) {
+                    ctx.save();
+                    ctx.fillStyle = this.state.darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+                    ctx.font = '10px "Helvetica Neue", Arial, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    // Position text below the node
+                    let radius = 14;
+                    if (elementDef && elementDef.radius) {
+                        radius = elementDef.radius;
+                    } else if (!elementDef) {
+                         // Default radius for unknown elements
+                         radius = 12;
+                    }
+
+                    const textY = node.y * scaleY + radius + 12;
+                    const text = this.util.t(node.label);
+
+                    ctx.fillText(text, node.x * scaleX, textY);
+                    ctx.restore();
+                }
+
             });
         }
     };
