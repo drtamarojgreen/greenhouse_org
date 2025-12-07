@@ -23,14 +23,79 @@ An advanced MCMC/Monte-Carlo simulation coupling a pooled-neurotransmitter model
     - Organisms placed on Voronoi cells.
     - Topology-informed crossover/mutation.
     - Prism-cavity constraints separating OPDC and UEOPL regions.
-    - Visualizations of the Voronoi tessellation and influence maps.
+    - **No External Geometry Libs**: Uses custom NumPy implementations for polygon clipping and geometric calculations.
+
+## Theoretical Framework
+
+### Two Siblings Stochastic Game
+
+**Problem Statement**: In a stochastic game, two siblings (L and R) vie from a pool of neurotransmitters. They have dimension $n$ (half-edge). On each turn, they rest or reproduce. Reproduction spawns a child of half size ($n/2$) at a distance proportional to utilized growth factor $g$.
+
+**Notation**:
+*   **Siblings**: $L$ (left, $x=0$) and $R$ (right, $x=2n$). Half-edge $n$.
+*   **Constraining Cube**: Ancestor $i$ has cube $[c_i - r_i, c_i + r_i]$. Descendants cannot reside in ancestor cubes.
+*   **Movement**: Spending $g$ growth moves child $d = \alpha \cdot g$.
+*   **Size Rule**: Generation $k$ has half-edge $r_k = n / 2^k$.
+*   **Meeting Criterion**: Descendants from L and R overlap.
+
+**Minimal Requirements**:
+*   **Descendants**: Minimum 2 total (one from each lineage).
+*   **Turns**: Minimum 2 turns (parents reproduce outward, children reproduce inward).
+
+**Condition for 2-Turn Meeting**:
+For a meeting to occur in 2 turns, the shared growth pool $G$ must satisfy:
+$$
+G > 2(g1_L + g1_R) + \frac{n}{2\alpha}
+$$
+Under minimal outward placement (siblings move just enough to clear parent cubes), the minimal pool is:
+$$
+G_{\min}^{(2)} = \frac{13n}{2\alpha}
+$$
+
+## Pipeline Proofs: Efficiency and Complexity
+
+### 1. Convergence of Neurotransmitter Dynamics
+
+**Theorem**: Under bounded influence assumptions, the neurotransmitter pool dynamics converge to a unique fixed point, even as the number of neurotransmitters $m$ increases.
+
+**Proof**:
+The dynamics are modeled by the mapping $F(G) = G - (C+E)f(G) + b$, where $C$ and $E$ are consumption matrices and $f(G)$ is the reproduction map.
+1.  **Contraction**: If the sensitivity of consumption to pool changes is bounded such that $||C+E|| \cdot L_f < 1$ (where $L_f$ is the Lipschitz constant of $f$), then $F$ is a contraction mapping.
+2.  **Banach Fixed-Point Theorem**: A contraction on a complete metric space has a unique fixed point $G^*$ and iterates converge exponentially.
+3.  **Scaling $m$**: Increasing the number of neurotransmitters $m$ adds dimensions. Convergence is preserved if the aggregate feedback gain (operator norm of the extended $C+E$) remains $< 1$.
+
+### 2. Matrix Formulation & Reliance
+
+**Reliance Vector**: The sensitivity of long-run reproduction $R$ to sustained changes in neurotransmitter $i$.
+$$
+r^{(long)} = w^\top J_f (I - A)^{-1}
+$$
+Where:
+*   $J_f$: Jacobian of reproduction w.r.t. pool.
+*   $A = I - C J_f$: Linearized propagation matrix.
+*   $(I-A)^{-1}$: Resolvent capturing infinite feedback loops.
+
+**Algorithm**:
+1.  Find fixed point $G^*$.
+2.  Compute Jacobian $J_f$ at $G^*$.
+3.  Compute $r^{(long)}$ via linear solve (avoiding explicit inversion for stability).
+
+### 3. PLS Surrogate & Allocation Bounds
+
+**Proposition**: For a Partial Least Squares (PLS) surrogate model with $K$ components, the optimal resource allocation is solvable via a **Fractional Knapsack** approach.
+
+**Proof**:
+1.  **Predictor**: The PLS predictor is linear: $\hat{y} = x^\top B_{PLS}$.
+2.  **Optimization**: Maximizing $\hat{y}$ subject to budget $a^\top x \le B_{tot}$ is a linear program (LP).
+3.  **Solution**: The optimal solution to this continuous knapsack problem is greedy: allocate budget to variables with the highest ratio of coefficient $b_j(i)$ to cost $a_i$.
+4.  **Bound**: The closed-form upper bound for unit costs is $B_{tot} \cdot \max_i \{ b_j(i), 0 \}$.
 
 ## Requirements
 
-Install the necessary dependencies using pip:
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Dependencies include: `numpy`, `scipy`, `matplotlib`, `shapely`, `networkx`, `tqdm`, `scikit-learn`.
+Dependencies: `numpy`, `scipy`, `networkx`, `tqdm`, `scikit-learn`.
