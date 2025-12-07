@@ -57,6 +57,10 @@
          */
         techPagePath: '/tech',
         /**
+         * The path segment that identifies the neuro page.
+         */
+        neuroPagePath: '/neuro',
+        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -75,6 +79,7 @@
             videos: '.wixui-repeater', // Selector for the videos repeater
             news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
             tech: '#SITE_PAGES_TRANSITION_GROUP .wixui-section',
+            neuro: '#neuro-app-container', // Assuming a dedicated container ID for now
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -92,7 +97,8 @@
             models: 'section.wixui-section',
             videos: '.wixui-column-strip__column:first-child', // Fallback to a generic column selector
             news: '.wixui-column-strip__column:first-child', // Reverting to a generic column selector
-            tech: 'section.wixui-section'
+            tech: 'section.wixui-section',
+            neuro: 'section.wixui-section'
         }
     };
 
@@ -277,6 +283,24 @@
     }
 
     /**
+     * @function loadNeuroApplication
+     * @description Loads the neuro application.
+     */
+    async function loadNeuroApplication() {
+        // Load dependencies sequentially
+        await GreenhouseUtils.loadScript('models_3d_math.js', config.githubPagesBaseUrl);
+        await GreenhouseUtils.loadScript('neuro_ga.js', config.githubPagesBaseUrl);
+        await GreenhouseUtils.loadScript('neuro_ui_3d.js', config.githubPagesBaseUrl);
+
+        await loadApplication(
+            'neuro',
+            'neuro_app.js',
+            config.selectors.neuro,
+            config.fallbackSelectors.neuro
+        );
+    }
+
+    /**
      * @function initialize
      * @description Main initialization function that runs when the DOM is ready.
      */
@@ -302,6 +326,8 @@
             await loadModelsApplication();
         } else if (window.location.pathname.includes(config.techPagePath)) {
             await loadTechApplication();
+        } else if (window.location.pathname.includes(config.neuroPagePath)) {
+            await loadNeuroApplication();
         }
     }
 
