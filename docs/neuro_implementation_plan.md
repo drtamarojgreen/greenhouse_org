@@ -11,47 +11,41 @@ This document outlines the plan for creating a new page `/neuro` on the website.
 
 ## File Structure
 
-### New Files
-*   `docs/neuro.html`: **Local Development Mock.** A standalone HTML file to test the application outside of Wix. It will reside in the `docs/` root (consistent with `models.html`) and mimic the DOM structure expected by the app.
+### Frontend (GitHub Pages Assets)
+These files are hosted on GitHub Pages and injected into the Wix site.
+*   `docs/neuro.html`: **Local Development Mock.** A standalone HTML file to test the application outside of Wix. It will reside in the `docs/` root.
 *   `docs/js/neuro_app.js`: **Main Application Entry Point.** Handles initialization, dependency loading, and mounting the application into the target DOM element.
 *   `docs/js/neuro_ga.js`: **Simulation Logic.** Implements the Genetic Algorithm (population, fitness, evolution).
 *   `docs/js/neuro_ui_3d.js`: **Visualization.** Handles the 3D rendering of the network.
-
-### Existing Files to Reuse
 *   `docs/js/greenhouse.js`: **Loader.** Needs update to route `/neuro` requests to `neuro_app.js`.
-*   `docs/js/models_3d_math.js`: Core 3D projection and math utilities.
-*   `docs/js/GreenhouseUtils.js`: Utility functions for loading scripts and DOM manipulation.
+
+### Wix Application Structure (React/Velo)
+These files reside in the `apps/` directory and represent the components used within the Wix environment (or the source of truth for Velo scripts).
+*   `apps/frontend/neuro/Neuro.js`: **Wix/React Component.** This file serves as the interface or definition for the Neuro page component within the Wix application structure. It will likely handle the loading of the external `greenhouse.js` script or define the container where the app injects itself.
 
 ## Implementation Steps
 
 ### 1. Local Development Setup
 *   Create `docs/neuro.html` containing a mock container element (e.g., `<div id="neuro-app-container"></div>`).
 *   Create `docs/js/neuro_app.js` which:
-    *   Accepts a target selector (e.g., via data attributes or config).
+    *   Accepts a target selector.
     *   Loads dependencies (`neuro_ga.js`, `neuro_ui_3d.js`).
     *   Initializes the app within the target container.
 
 ### 2. Genetic Algorithm (GA) Logic (`neuro_ga.js`)
 *   Implement the "genome" (network weights/connections).
-*   Implement the simulation loop (propagate, evaluate, evolve).
+*   Implement the simulation loop.
 *   Expose a state object for the UI to consume.
 
 ### 3. 3D Visualization (`neuro_ui_3d.js`)
 *   Adapt `models_ui_3d.js` to read from the `neuro_ga.js` state.
-*   Implement visual cues for growth (synaptogenesis, neurogenesis).
+*   Implement visual cues for growth.
 
 ### 4. Wix Integration Strategy
 This is the critical path for production deployment.
 *   **Wix Page Creation**: A new page (slug `/neuro`) must be created in the Wix editor.
-*   **Greenhouse Loader Update**: Update `docs/js/greenhouse.js`:
-    *   Add a configuration entry for `neuroPagePath: '/neuro'`.
-    *   Define the `selectors.neuro` to target the specific Wix element where the app should inject itself (e.g., a specific Column Strip or Section).
-    *   Add a `loadNeuroApplication()` function that calls `loadApplication('neuro', 'neuro_app.js', config.selectors.neuro, ...)`.
-    *   Update the `initialize()` function to check `window.location.pathname.includes(config.neuroPagePath)`.
-
-### 5. Review & Refine
-*   Verify local development via `docs/neuro.html`.
-*   Verify the integration logic by reviewing the changes to `greenhouse.js`.
+*   **Greenhouse Loader Update**: Update `docs/js/greenhouse.js` to recognize the `/neuro` path and load `neuro_app.js`.
+*   **App Component**: Create `apps/frontend/neuro/Neuro.js` to formalize the component in the codebase.
 
 ## Pre-Commit Steps
 *   Complete pre commit steps (Ensuring no self-code review is performed and no text is saved to memory without consent).
