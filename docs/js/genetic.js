@@ -6,6 +6,7 @@
 
     let GreenhouseUtils;
     let isInitialized = false;
+    let resilienceObserver = null;
 
     const loadDependencies = async () => {
         console.log('Genetic App: loadDependencies started.');
@@ -46,7 +47,7 @@
         }
         window._greenhouseGeneticAttributes = {
             baseUrl: scriptElement.getAttribute('data-base-url'),
-            targetSelector: scriptElement.getAttribute('data-target-selector')
+            targetSelector: scriptElement.getAttribute('data-target-selector-left') || scriptElement.getAttribute('data-target-selector')
         };
         return true;
     };
@@ -123,6 +124,26 @@
 
         // Start Evolution Loop
         startEvolutionLoop();
+
+        // Resilience
+        observeAndReinitializeApp(container);
+    }
+
+    function observeAndReinitializeApp(container) {
+        if (!container) return;
+        const observerCallback = (mutations) => {
+            const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n.nodeType === 1 && n.classList.contains('simulation-container')));
+            if (wasRemoved) {
+                if (resilienceObserver) resilienceObserver.disconnect();
+                setTimeout(() => {
+                    if (window.GreenhouseGenetic && typeof window.GreenhouseGenetic.reinitialize === 'function') {
+                        window.GreenhouseGenetic.reinitialize();
+                    }
+                }, 5000);
+            }
+        };
+        resilienceObserver = new MutationObserver(observerCallback);
+        resilienceObserver.observe(container, { childList: true });
     }
 
     function startEvolutionLoop() {
@@ -154,6 +175,10 @@
     // Global Resilience
     window.GreenhouseGenetic = {
         reinitialize: () => {
+            if (resilienceObserver) {
+                resilienceObserver.disconnect();
+                resilienceObserver = null;
+            }
             isInitialized = false;
             main();
         }

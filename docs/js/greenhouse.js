@@ -16,7 +16,7 @@
  * on the site, which is known to be sensitive to global namespace pollution.
  */
 
-(function() {
+(function () {
     // Import GreenhouseUtils
     const GreenhouseUtils = window.GreenhouseUtils;
     if (!GreenhouseUtils) {
@@ -123,10 +123,10 @@
     async function loadApplication(appName, scriptName, mainSelector, fallbackSelector, uiScriptName = null, viewParam = 'default', rightPanelSelector = null, rightPanelFallbackSelector = null, extraAttributes = {}) {
         try {
             console.log(`Greenhouse: Initializing ${appName} application`);
-            
+
             const urlParams = new URLSearchParams(window.location.search);
             const view = urlParams.get('view') || viewParam;
-            
+
             console.log(`Greenhouse: Loading ${appName} for view: ${view}`);
 
             let selectorsToTryLeft = Array.isArray(mainSelector) ? [...mainSelector] : [mainSelector];
@@ -172,7 +172,7 @@
                 await GreenhouseUtils.loadScript(uiScriptName, config.githubPagesBaseUrl);
             }
             await GreenhouseUtils.loadScript(scriptName, config.githubPagesBaseUrl, appAttributes);
-            
+
         } catch (error) {
             console.error(`Greenhouse: Failed to load ${appName} application:`, error);
         }
@@ -299,11 +299,11 @@
             config.fallbackSelectors.neuro
         );
     }
-          
-     /**
-     * @function loadGeneticApplication
-     * @description Loads the genetic application after ensuring the target element exists.
-     */
+
+    /**
+    * @function loadGeneticApplication
+    * @description Loads the genetic application after ensuring the target element exists.
+    */
     async function loadGeneticApplication() {
         await loadApplication(
             'genetic',
@@ -319,7 +319,7 @@
      */
     async function initialize() {
         console.log('Greenhouse: Initializing application loader');
-        
+
         // Load the visual effects script on all pages (no need to wait for specific elements)
         GreenhouseUtils.loadScript('effects.js', config.githubPagesBaseUrl);
 
@@ -332,7 +332,7 @@
             //await loadVideosApplication();
 
 
-            
+
         } else if (window.location.pathname.includes(config.newsPagePath)) {
             await loadNewsApplication();
         } else if (window.location.pathname.includes(config.modelsPagePath)) {
@@ -347,7 +347,7 @@
     }
 
     // --- Main execution logic ---
-    
+
     // Wait for DOM to be ready, then initialize
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initialize);
