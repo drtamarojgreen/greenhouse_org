@@ -37,7 +37,8 @@
 
             console.log('NeuroUI3D: Canvas build delayed by 5 seconds.');
 
-            setTimeout(() => {
+            const intervalId = setInterval(() => {
+                clearInterval(intervalId);
                 this.canvas = document.createElement('canvas');
                 this.canvas.width = container.offsetWidth;
                 this.canvas.height = Math.max(container.offsetHeight, 600); // Default to 600 if 0
