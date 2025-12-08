@@ -35,28 +35,34 @@
                 return;
             }
 
-            this.canvas = document.createElement('canvas');
-            this.canvas.width = container.offsetWidth;
-            this.canvas.height = Math.max(container.offsetHeight, 600); // Default to 600 if 0
-            this.canvas.style.width = '100%';
-            this.canvas.style.height = '100%';
-            this.canvas.style.backgroundColor = '#111';
+            console.log('NeuroUI3D: Canvas build delayed by 5 seconds.');
 
-            container.appendChild(this.canvas);
-            this.ctx = this.canvas.getContext('2d');
-
-            this.projection.width = this.canvas.width;
-            this.projection.height = this.canvas.height;
-
-            // Handle Resize
-            window.addEventListener('resize', () => {
+            setTimeout(() => {
+                this.canvas = document.createElement('canvas');
                 this.canvas.width = container.offsetWidth;
-                this.canvas.height = container.offsetHeight;
+                this.canvas.height = Math.max(container.offsetHeight, 600); // Default to 600 if 0
+                this.canvas.style.width = '100%';
+                this.canvas.style.height = '100%';
+                this.canvas.style.backgroundColor = '#111';
+
+                container.appendChild(this.canvas);
+                this.ctx = this.canvas.getContext('2d');
+
                 this.projection.width = this.canvas.width;
                 this.projection.height = this.canvas.height;
-            });
 
-            this.startAnimation();
+                // Handle Resize
+                window.addEventListener('resize', () => {
+                    if (this.canvas) {
+                        this.canvas.width = container.offsetWidth;
+                        this.canvas.height = container.offsetHeight;
+                        this.projection.width = this.canvas.width;
+                        this.projection.height = this.canvas.height;
+                    }
+                });
+
+                this.startAnimation();
+            }, 5000);
         },
 
         updateData(genome) {
