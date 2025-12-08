@@ -128,8 +128,38 @@
             const tooltip = this.state.environment.tooltip;
             const { x, y, title, activation, description } = tooltip;
             const width = 220;
-            const height = 100;
             const padding = 12;
+            const lineHeight = 18;
+            const maxWidth = 196; // Matches draw text width
+
+            // Calculate dynamic height
+            let textHeight = 0;
+            if (description) {
+                const words = description.split(' ');
+                let line = '';
+                let lineCount = 1;
+                ctx.save();
+                ctx.font = '14px "Helvetica Neue", Arial, sans-serif'; // Must match drawing font
+                for (let n = 0; n < words.length; n++) {
+                    const testLine = line + words[n] + ' ';
+                    const metrics = ctx.measureText(testLine);
+                    if (metrics.width > maxWidth && n > 0) {
+                        line = words[n] + ' ';
+                        lineCount++;
+                    } else {
+                        line = testLine;
+                    }
+                }
+                ctx.restore();
+                textHeight = lineCount * lineHeight;
+            }
+
+            // Height = Top Padding (15) + Title (approx 24) + Activation (approx 24) + Text Gap (8) + Text Height + Bottom Padding (15)
+            // Using logic from draw: y+15+padding+8 (title) ... y+15+padding+56 (description starts)
+            // So header section is approx 56px + 15px top margin = 71px?
+            // Let's use the offset from draw: 15 + padding + 56 = 83px is where text starts.
+            // So height should be 83 + textHeight + padding.
+            const height = 83 + textHeight + padding;
 
             ctx.save();
             ctx.fillStyle = 'rgba(25, 25, 25, 0.85)';
