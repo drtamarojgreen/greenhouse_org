@@ -46,7 +46,7 @@
         }
         window._greenhouseGeneticAttributes = {
             baseUrl: scriptElement.getAttribute('data-base-url'),
-            targetSelector: scriptElement.getAttribute('data-target-selector')
+            targetSelector: scriptElement.getAttribute('data-target-selector') || scriptElement.getAttribute('data-target-selector-left')
         };
         return true;
     };
