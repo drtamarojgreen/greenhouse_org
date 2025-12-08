@@ -16,6 +16,13 @@
             console.log('NeuroApp: Initializing...');
             this.lastSelector = selector;
 
+            setTimeout(() => {
+                this._delayedInit(selector);
+            }, 5000);
+        },
+
+        _delayedInit(selector) {
+
             // Check dependencies
             if (!window.NeuroGA || !window.GreenhouseNeuroUI3D || !window.GreenhouseModels3DMath) {
                 console.error('NeuroApp: Missing dependencies. Ensure NeuroGA, GreenhouseNeuroUI3D, and GreenhouseModels3DMath are loaded.');

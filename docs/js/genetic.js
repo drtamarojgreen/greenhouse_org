@@ -82,8 +82,10 @@
                 console.log('Genetic App: All modules loaded.');
 
                 // Initialize Application
-                initApplication(targetSelector);
-                isInitialized = true;
+                setTimeout(() => {
+                    initApplication(targetSelector);
+                    isInitialized = true;
+                }, 5000);
             } else {
                 throw new Error("Genetic application modules failed to load.");
             }
