@@ -81,8 +81,11 @@
                 console.log('Genetic App: All modules loaded.');
 
                 // Initialize Application
-                initApplication(targetSelector);
-                isInitialized = true;
+                console.log('Genetic App: Waiting 5 seconds before building canvas...');
+                setTimeout(() => {
+                    initApplication(targetSelector);
+                    isInitialized = true;
+                }, 5000);
             } else {
                 throw new Error("Genetic application modules failed to load.");
             }
