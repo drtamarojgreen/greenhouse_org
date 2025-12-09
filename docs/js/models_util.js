@@ -303,7 +303,37 @@
                 'camera_x': 'Camera X Rotation',
                 'camera_y': 'Camera Y Rotation',
                 'camera_z': 'Camera Z Position',
-                'fov': 'Field of View'
+                'fov': 'Field of View',
+
+                // Neuro Animation
+                "Synaptogenesis": "Synaptogenesis",
+                "Neuron": "Neuron",
+                "Connection": "Connection",
+                "Fitness": "Fitness",
+                "Generation": "Generation",
+
+                // Genetic Animation
+                "Chromosome": "Chromosome",
+                "Gene": "Gene",
+                "Trait": "Trait",
+                "Neurotransmitter Response": "Neurotransmitter Response",
+                "Excitatory": "Excitatory",
+                "Inhibitory": "Inhibitory",
+
+                // Controls & Grid
+                "Start Simulation": "Start Simulation",
+                "Zoom": "Zoom",
+                "Pan": "Pan",
+                "Rotate": "Rotate",
+                "X-Axis": "X-Axis",
+                "Y-Axis": "Y-Axis",
+                "Z-Axis": "Z-Axis",
+
+                // Explanations
+                "neuro_explanation_title": "Neuroplasticity Simulation",
+                "neuro_explanation_text": "This simulation demonstrates how neurons form new connections (synaptogenesis) based on activity and efficiency. Red nodes represent neurons, and blue lines represent synaptic connections. The network evolves to optimize signal transmission.",
+                "genetic_explanation_title": "Genetic Neural Evolution",
+                "genetic_explanation_text": "This simulation visualizes how genetic traits influence neural network structure. 'Genes' determine connection weights, which dictate whether a neuron's response is excitatory (positive) or inhibitory (negative). The network evolves over generations to find the most effective configuration."
             },
             es: {
                 // Consent Screen
@@ -474,7 +504,37 @@
                 'camera_x': 'Rotación X de Cámara',
                 'camera_y': 'Rotación Y de Cámara',
                 'camera_z': 'Posición Z de Cámara',
-                'fov': 'Campo de Visión'
+                'fov': 'Campo de Visión',
+
+                // Neuro Animation
+                "Synaptogenesis": "Sinaptogénesis",
+                "Neuron": "Neurona",
+                "Connection": "Conexión",
+                "Fitness": "Aptitud",
+                "Generation": "Generación",
+
+                // Genetic Animation
+                "Chromosome": "Cromosoma",
+                "Gene": "Gen",
+                "Trait": "Rasgo",
+                "Neurotransmitter Response": "Respuesta de Neurotransmisor",
+                "Excitatory": "Excitatorio",
+                "Inhibitory": "Inhibitorio",
+
+                // Controls & Grid
+                "Start Simulation": "Iniciar Simulación",
+                "Zoom": "Zoom",
+                "Pan": "Pan",
+                "Rotate": "Rotar",
+                "X-Axis": "Eje X",
+                "Y-Axis": "Eje Y",
+                "Z-Axis": "Eje Z",
+
+                // Explanations
+                "neuro_explanation_title": "Simulación de Neuroplasticidad",
+                "neuro_explanation_text": "Esta simulación demuestra cómo las neuronas forman nuevas conexiones (sinaptogénesis) basadas en la actividad y la eficiencia. Los nodos rojos representan neuronas y las líneas azules representan conexiones sinápticas. La red evoluciona para optimizar la transmisión de señales.",
+                "genetic_explanation_title": "Evolución Neuronal Genética",
+                "genetic_explanation_text": "Esta simulación visualiza cómo los rasgos genéticos influyen en la estructura de la red neuronal. Los 'genes' determinan los pesos de conexión, que dictan si la respuesta de una neurona es excitatoria (positiva) o inhibitoria (negativa). La red evoluciona a lo largo de generaciones para encontrar la configuración más efectiva."
             }
         },
         GreenhouseComponent,

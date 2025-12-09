@@ -1,7 +1,7 @@
 // docs/js/genetic_ui_3d.js
 // 3D Visualization for Genetic Algorithm
 
-(function() {
+(function () {
     'use strict';
 
     const GreenhouseGeneticUI3D = {
@@ -20,7 +20,7 @@
             near: 10, far: 2000
         },
 
-        isEvolving: true,
+        isEvolving: false,
         animationFrame: null,
 
         neurons3D: [],
@@ -75,6 +75,74 @@
             this.container.appendChild(this.canvas);
 
             this.ctx = this.canvas.getContext('2d');
+
+            // Add Start Overlay
+            this.addStartOverlay(this.container);
+
+            // Add Explanations
+            this.addExplanation(this.container);
+        },
+
+        addExplanation(container) {
+            const util = window.GreenhouseModelsUtil;
+            if (!util) return;
+
+            const section = document.createElement('div');
+            section.style.padding = '20px';
+            section.style.background = '#f4f4f9';
+            section.style.marginTop = '10px';
+            section.style.borderRadius = '8px';
+            section.style.color = '#333';
+            section.innerHTML = `
+                <h3 style="margin-top:0;">${util.t('genetic_explanation_title')}</h3>
+                <p>${util.t('genetic_explanation_text')}</p>
+            `;
+            container.appendChild(section);
+        },
+
+        addStartOverlay(container) {
+            const util = window.GreenhouseModelsUtil;
+            const overlay = document.createElement('div');
+            overlay.id = 'genetic-start-overlay';
+            overlay.style.position = 'absolute';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '500px'; // Match canvas height
+            overlay.style.display = 'flex';
+            overlay.style.justifyContent = 'center';
+            overlay.style.alignItems = 'center';
+            overlay.style.background = 'rgba(0,0,0,0.6)';
+            overlay.style.zIndex = '10';
+            overlay.style.borderRadius = '12px'; // Match canvas border radius
+
+            const btn = document.createElement('button');
+            btn.textContent = util ? util.t('Start Simulation') : 'Start Simulation';
+            btn.style.padding = '15px 30px';
+            btn.style.fontSize = '18px';
+            btn.style.cursor = 'pointer';
+            btn.style.background = '#2ecc71';
+            btn.style.color = 'white';
+            btn.style.border = 'none';
+            btn.style.borderRadius = '5px';
+
+            btn.onclick = () => {
+                this.isEvolving = true;
+                overlay.style.display = 'none';
+                if (window.GreenhouseGenetic) window.GreenhouseGenetic.startSimulation();
+                // Update pause button text if needed
+                const pauseBtn = container.querySelector('#gen-pause-btn');
+                if (pauseBtn) {
+                    pauseBtn.textContent = "Pause Evolution";
+                    pauseBtn.style.background = "";
+                    pauseBtn.style.color = "";
+                }
+            };
+
+            overlay.appendChild(btn);
+            // Append to container, but make sure container is relative
+            container.style.position = 'relative';
+            container.appendChild(overlay);
         },
 
         resize() {
@@ -98,7 +166,7 @@
 
             window.addEventListener('mouseup', () => {
                 isDragging = false;
-                if(this.canvas) this.canvas.style.cursor = 'grab';
+                if (this.canvas) this.canvas.style.cursor = 'grab';
             });
 
             window.addEventListener('mousemove', e => {
@@ -180,6 +248,9 @@
 
             if (!window.GreenhouseModels3DMath) return;
 
+            // Draw Grid
+            this.drawGrid(ctx);
+
             // Project Points
             const projectedNeurons = this.neurons3D.map(n => {
                 const proj = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
@@ -231,6 +302,75 @@
                 ctx.fill();
                 ctx.shadowBlur = 0;
             });
+
+            // Draw Labels
+            this.drawLabels(ctx, projectedNeurons);
+        },
+
+        drawGrid(ctx) {
+            const util = window.GreenhouseModelsUtil;
+            if (!window.GreenhouseModels3DMath) return;
+
+            const size = 1000;
+            const step = 200;
+            const y = 400; // Floor level
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '12px Arial';
+
+            // Draw lines
+            for (let x = -size; x <= size; x += step) {
+                const p1 = GreenhouseModels3DMath.project3DTo2D(x, y, -size, this.camera, this.projection);
+                const p2 = GreenhouseModels3DMath.project3DTo2D(x, y, size, this.camera, this.projection);
+                if (p1.scale > 0 && p2.scale > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+            }
+            for (let z = -size; z <= size; z += step) {
+                const p1 = GreenhouseModels3DMath.project3DTo2D(-size, y, z, this.camera, this.projection);
+                const p2 = GreenhouseModels3DMath.project3DTo2D(size, y, z, this.camera, this.projection);
+                if (p1.scale > 0 && p2.scale > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+            }
+
+            // Axis Labels
+            const origin = GreenhouseModels3DMath.project3DTo2D(0, y, 0, this.camera, this.projection);
+            const xAxis = GreenhouseModels3DMath.project3DTo2D(size, y, 0, this.camera, this.projection);
+            const zAxis = GreenhouseModels3DMath.project3DTo2D(0, y, size, this.camera, this.projection);
+
+            if (origin.scale > 0) {
+                if (xAxis.scale > 0) ctx.fillText(util ? util.t('X-Axis') : 'X-Axis', xAxis.x, xAxis.y);
+                if (zAxis.scale > 0) ctx.fillText(util ? util.t('Z-Axis') : 'Z-Axis', zAxis.x, zAxis.y);
+            }
+        },
+
+        drawLabels(ctx, projectedNeurons) {
+            const util = window.GreenhouseModelsUtil;
+            if (!util || projectedNeurons.length === 0) return;
+
+            // Label one random neuron as "Gene" just for demo
+            const p = projectedNeurons[0];
+            if (p) {
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.fillText(util.t('Gene'), p.x + 15, p.y);
+
+                // Draw line to it
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.beginPath();
+                ctx.moveTo(p.x + 10, p.y);
+                ctx.lineTo(p.x, p.y);
+                ctx.stroke();
+            }
         }
     };
 

@@ -42,7 +42,8 @@
             });
 
             // Start loop
-            this.startSimulation();
+            // Start loop
+            // this.startSimulation(); // Started by UI overlay
 
             // Add control overlay
             this.createControls(selector);

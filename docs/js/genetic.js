@@ -125,7 +125,8 @@
         window.GreenhouseGeneticUI3D.init(simContainer, window.GreenhouseGeneticAlgo);
 
         // Start Evolution Loop
-        startEvolutionLoop();
+        // Start Evolution Loop
+        // startEvolutionLoop(); // Started by UI overlay
 
         // Resilience
         observeAndReinitializeApp(container);
@@ -183,6 +184,9 @@
             }
             isInitialized = false;
             main();
+        },
+        startSimulation: () => {
+            startEvolutionLoop();
         }
     };
 
