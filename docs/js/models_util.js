@@ -341,7 +341,24 @@
                 "Generation Complete": "Generation Complete",
                 "Best Fitness": "Best Fitness",
                 "New Traits Evolved": "New Traits Evolved",
-                "Elite Parents Preserved": "Elite Parents Preserved"
+                "Elite Parents Preserved": "Elite Parents Preserved",
+
+                // 3D Labels & Stats
+                "Neurons": "Neurons",
+                "Connections": "Connections",
+                "Synapse View": "Synapse View",
+                "Active Gene": "Active Gene",
+                "Protein Structure": "Protein Structure",
+                "Micro: Gene Structure": "Micro: Gene Structure",
+                "Target: Brain Region": "Target: Brain Region",
+                "Polypeptide Chain": "Polypeptide Chain",
+                "Pause Evolution": "Pause Evolution",
+                "Resume Evolution": "Resume Evolution",
+                "Previous": "Previous",
+                "Next": "Next",
+                "Unknown": "Unknown",
+                "Genotype (DNA)": "Genotype (DNA)",
+                "Phenotype (Brain)": "Phenotype (Brain)"
             },
             es: {
                 // Consent Screen
@@ -550,7 +567,24 @@
                 "Generation Complete": "Generación Completa",
                 "Best Fitness": "Mejor Aptitud",
                 "New Traits Evolved": "Nuevos Rasgos Evolucionados",
-                "Elite Parents Preserved": "Padres Élite Preservados"
+                "Elite Parents Preserved": "Padres Élite Preservados",
+
+                // 3D Labels & Stats
+                "Neurons": "Neuronas",
+                "Connections": "Conexiones",
+                "Synapse View": "Vista de Sinapsis",
+                "Active Gene": "Gen Activo",
+                "Protein Structure": "Estructura de Proteína",
+                "Micro: Gene Structure": "Micro: Estructura Génica",
+                "Target: Brain Region": "Objetivo: Región Cerebral",
+                "Polypeptide Chain": "Cadena Polipeptídica",
+                "Pause Evolution": "Pausar Evolución",
+                "Resume Evolution": "Reanudar Evolución",
+                "Previous": "Anterior",
+                "Next": "Siguiente",
+                "Unknown": "Desconocido",
+                "Genotype (DNA)": "Genotipo (ADN)",
+                "Phenotype (Brain)": "Fenotipo (Cerebro)"
             }
         },
         GreenhouseComponent,

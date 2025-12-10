@@ -32,13 +32,16 @@
         },
 
         drawStats(ctx, neuronCount, connectionCount) {
+            const util = window.GreenhouseModelsUtil;
+            const t = util ? util.t.bind(util) : (k) => k;
+
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.font = '14px monospace';
-            ctx.fillText(`Neurons: ${neuronCount}`, 20, 30);
-            ctx.fillText(`Connections: ${connectionCount}`, 20, 50);
+            ctx.fillText(`${t("Neurons")}: ${neuronCount}`, 20, 30);
+            ctx.fillText(`${t("Connections")}: ${connectionCount}`, 20, 50);
 
             ctx.fillStyle = '#00ffcc';
-            ctx.fillText("Click any connection to view Synapse", 20, 80);
+            ctx.fillText(t("Click any connection to view Synapse"), 20, 80);
         },
 
         drawLabels(ctx, projectedNeurons) {

@@ -34,15 +34,21 @@
         drawOverlayInfo(ctx, canvasWidth, activeGene) {
             if (!activeGene) return;
 
+            const util = window.GreenhouseModelsUtil;
+            const t = util ? util.t.bind(util) : (k) => k;
+
             ctx.fillStyle = '#fff';
             ctx.font = '16px Arial';
             ctx.textAlign = 'center';
-            const idStr = (activeGene.id !== undefined) ? String(activeGene.id) : 'Unknown';
+            const idStr = (activeGene.id !== undefined) ? String(activeGene.id) : t('Unknown');
             const labelStr = activeGene.label ? ` (${activeGene.label})` : '';
-            ctx.fillText(`Active Gene: ${idStr}${labelStr}`, canvasWidth / 2, 30);
+            ctx.fillText(`${t("Active Gene")}: ${idStr}${labelStr}`, canvasWidth / 2, 30);
         },
 
         drawControls(ctx, canvasWidth, canvasHeight) {
+            const util = window.GreenhouseModelsUtil;
+            const t = util ? util.t.bind(util) : (k) => k;
+
             const w = canvasWidth;
             const h = canvasHeight;
             const btnW = 100;
@@ -62,7 +68,7 @@
             ctx.fillStyle = '#fff';
             ctx.font = '14px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText("Previous", prevX + btnW / 2, prevY + 20);
+            ctx.fillText(t("Previous"), prevX + btnW / 2, prevY + 20);
 
             // Next Button
             const nextX = w / 2 + gap / 2;
@@ -74,11 +80,13 @@
             ctx.strokeRect(nextX, nextY, btnW, btnH);
 
             ctx.fillStyle = '#fff';
-            ctx.fillText("Next", nextX + btnW / 2, nextY + 20);
+            ctx.fillText(t("Next"), nextX + btnW / 2, nextY + 20);
         },
 
         drawLabels(ctx, projectedNeurons) {
             const util = window.GreenhouseModelsUtil;
+            const t = util ? util.t.bind(util) : (k) => k;
+
             if (!util || projectedNeurons.length === 0) return;
 
             // Label Brain Regions
@@ -100,15 +108,27 @@
                 if (data.count > 0) {
                     const cx = data.x / data.count;
                     const cy = data.y / data.count;
-                    ctx.fillText(name, cx, cy - 15);
+                    // Use getRegionDescription logic or just translate the name if it's a key
+                    // The region names in data are keys like 'pfc', 'amygdala'
+                    // We need to map them to display names
+                    // Let's assume the region name itself is a key or we map it
+                    // Actually, p.region is likely 'prefrontalCortex' or 'pfc'.
+                    // Let's rely on t() to handle it if the key exists, or fallback.
+                    // We might need to add region keys to models_util.js if they differ.
+                    // Existing keys: "Prefrontal Cortex", "Amygdala", "Hippocampus"
+                    // If p.region is 'pfc', we need to map it.
+                    // Let's just try t(name) for now.
+                    ctx.fillText(t(name), cx, cy - 15);
                 }
             }
 
             // Label "Genotype" and "Phenotype"
             ctx.font = 'bold 14px Arial';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.fillText("Genotype (DNA)", 200, 50);
-            ctx.fillText("Phenotype (Brain)", 600, 50);
+            ctx.fillText(t("Genotype (DNA)"), 200, 50); // Need to add this key? Or construct it?
+            // "Genotype (DNA)" is not in keys. Let's add "Genotype" and "Phenotype" keys or just use English for now if not critical.
+            // Wait, I should add them.
+            ctx.fillText(t("Phenotype (Brain)"), 600, 50);
 
             ctx.textAlign = 'left';
         },

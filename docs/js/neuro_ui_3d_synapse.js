@@ -324,8 +324,95 @@
             // Draw Post-synaptic (Bottom) - Orange/Gold (Dendritic)
             drawMesh(synapseMeshes.post, 60, '#F72585');
 
+            // Initialize Synapse Details (Vesicles, Mitochondria) if not present
+            if (!connection.synapseDetails) {
+                connection.synapseDetails = {
+                    vesicles: [],
+                    mitochondria: [],
+                    particles: []
+                };
+
+                // Generate Vesicles (Pre-synaptic only)
+                for (let i = 0; i < 30; i++) {
+                    connection.synapseDetails.vesicles.push({
+                        x: (Math.random() - 0.5) * 60,
+                        y: (Math.random() * -40) - 10, // Top half
+                        z: (Math.random() - 0.5) * 60
+                    });
+                }
+
+                // Generate Mitochondria
+                // Pre-synaptic
+                connection.synapseDetails.mitochondria.push({ x: -20, y: -50, z: 10, rot: Math.random() });
+                // Post-synaptic
+                connection.synapseDetails.mitochondria.push({ x: 20, y: 50, z: -10, rot: Math.random() });
+            }
+
+            // Draw Internal Structures (Projected)
+            const drawInternal = (obj, type) => {
+                const p = GreenhouseModels3DMath.project3DTo2D(obj.x, obj.y + (type === 'post' ? 60 : -60), obj.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                if (p.scale > 0) {
+                    if (type === 'vesicle') {
+                        const size = 3 * p.scale;
+                        ctx.fillStyle = 'rgba(255, 255, 200, 0.6)';
+                        ctx.beginPath();
+                        ctx.arc(p.x + x, p.y + y, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (type === 'mito') {
+                        const size = 8 * p.scale;
+                        ctx.save();
+                        ctx.translate(p.x + x, p.y + y);
+                        ctx.rotate(obj.rot);
+                        ctx.fillStyle = 'rgba(100, 200, 100, 0.5)';
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, size * 2, size, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        // Internal folds (cristae)
+                        ctx.strokeStyle = 'rgba(150, 255, 150, 0.7)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(-size, -size / 2); ctx.lineTo(-size / 2, size / 2);
+                        ctx.moveTo(-size / 4, -size / 2); ctx.lineTo(size / 4, size / 2);
+                        ctx.moveTo(size / 2, -size / 2); ctx.lineTo(size, size / 2);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            };
+
+            // Draw Vesicles
+            connection.synapseDetails.vesicles.forEach(v => drawInternal(v, 'vesicle'));
+
+            // Draw Mitochondria
+            connection.synapseDetails.mitochondria.forEach(m => drawInternal(m, 'mito'));
+
             // Draw Neurotransmitters (Particles)
-            // ... (Particle logic can be added here or passed in)
+            // Update Particles
+            if (connection.synapseDetails.particles.length < 20 && Math.random() < 0.1) {
+                connection.synapseDetails.particles.push({
+                    x: (Math.random() - 0.5) * 40,
+                    y: -20, // Start at cleft top
+                    z: (Math.random() - 0.5) * 40,
+                    life: 1.0
+                });
+            }
+
+            connection.synapseDetails.particles.forEach((p, i) => {
+                p.y += 1.0; // Move down
+                p.life -= 0.02;
+
+                const proj = GreenhouseModels3DMath.project3DTo2D(p.x, p.y, p.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                if (proj.scale > 0 && p.life > 0) {
+                    const alpha = p.life;
+                    ctx.fillStyle = `rgba(255, 255, 100, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(proj.x + x, proj.y + y, 2 * proj.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // Cleanup dead particles
+            connection.synapseDetails.particles = connection.synapseDetails.particles.filter(p => p.life > 0);
 
             ctx.restore();
         }
