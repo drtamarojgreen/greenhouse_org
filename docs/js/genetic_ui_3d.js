@@ -41,9 +41,24 @@
         eliteParents: [], // Snapshot of previous best network for transition effect
         transitionStartTime: 0,
 
+        mainCameraController: null,
+
         init(container, algo) {
             this.container = container;
             this.algo = algo;
+
+            // Initialize PiP Controls
+            if (window.GreenhouseGeneticPiPControls) {
+                window.GreenhouseGeneticPiPControls.init(window.GreenhouseGeneticConfig);
+            }
+
+            // Initialize Main Camera Controller
+            if (window.GreenhouseGeneticCameraController) {
+                this.mainCameraController = new window.GreenhouseGeneticCameraController(
+                    this.camera,
+                    window.GreenhouseGeneticConfig
+                );
+            }
 
             this.setupDOM();
             this.resize();
@@ -169,70 +184,100 @@
         },
 
         setupInteraction() {
-            let isDragging = false;
-            let isPanning = false;
-            let lastX = 0, lastY = 0;
-
             this.canvas.addEventListener('mousedown', e => {
-                // Right click or Shift+Click for Pan
-                if (e.button === 2 || e.shiftKey) {
-                    isPanning = true;
-                    e.preventDefault();
-                    this.autoFollow = false; // Disable auto-follow on manual pan
-                } else {
-                    isDragging = true;
+                // 1. Check PiP Controls first
+                if (window.GreenhouseGeneticPiPControls) {
+                    window.GreenhouseGeneticPiPControls.handleMouseDown(e, this.canvas);
+                    if (window.GreenhouseGeneticPiPControls.activePiP) return; // Handled by PiP
                 }
-                lastX = e.clientX;
-                lastY = e.clientY;
-                this.canvas.style.cursor = 'grabbing';
+
+                // 2. Main Camera Controls
+                if (this.mainCameraController) {
+                    this.mainCameraController.handleMouseDown(e);
+                    this.autoFollow = false; // Disable auto-follow on manual interaction
+                    this.canvas.style.cursor = 'grabbing';
+                }
             });
 
             this.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
             window.addEventListener('mouseup', () => {
-                isDragging = false;
-                isPanning = false;
+                // PiP Controls
+                if (window.GreenhouseGeneticPiPControls) {
+                    window.GreenhouseGeneticPiPControls.handleMouseUp();
+                }
+
+                // Main Camera Controls
+                if (this.mainCameraController) {
+                    this.mainCameraController.handleMouseUp();
+                }
+
                 if (this.canvas) this.canvas.style.cursor = 'grab';
             });
 
             window.addEventListener('mousemove', e => {
-                if (isPanning) {
-                    const dx = e.clientX - lastX;
-                    const dy = e.clientY - lastY;
+                // PiP Controls
+                if (window.GreenhouseGeneticPiPControls) {
+                    // Check if dragging a PiP
+                    if (window.GreenhouseGeneticPiPControls.activePiP) {
+                        window.GreenhouseGeneticPiPControls.handleMouseMove(e);
+                        return;
+                    }
+                }
 
-                    const panScale = Math.abs(this.camera.z) * 0.002;
-                    this.camera.x -= dx * panScale;
-                    this.camera.y -= dy * panScale;
-
-                    lastX = e.clientX;
-                    lastY = e.clientY;
-                } else if (isDragging) {
-                    const dx = e.clientX - lastX;
-                    const dy = e.clientY - lastY;
-
-                    this.camera.rotationY += dx * 0.005;
-                    this.camera.rotationX += dy * 0.005;
-
-                    lastX = e.clientX;
-                    lastY = e.clientY;
+                // Main Camera Controls
+                if (this.mainCameraController) {
+                    this.mainCameraController.handleMouseMove(e);
                 }
             });
 
             this.canvas.addEventListener('wheel', e => {
-                e.preventDefault();
-                const zoomSpeed = Math.abs(this.camera.z) * 0.001 + 5;
-                this.camera.z += e.deltaY * 0.1 * zoomSpeed;
+                // PiP Controls
+                if (window.GreenhouseGeneticPiPControls) {
+                    // Check if over PiP
+                    const rect = this.canvas.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    if (window.GreenhouseGeneticPiPControls.getPiPAtPosition(mouseX, mouseY, this.canvas.width, this.canvas.height)) {
+                        window.GreenhouseGeneticPiPControls.handleWheel(e, this.canvas);
+                        return;
+                    }
+                }
 
-                // Clamp
-                if (this.camera.z > -50) this.camera.z = -50;
-                if (this.camera.z < -3000) this.camera.z = -3000;
-            });
+                e.preventDefault();
+
+                // Main Camera Controls
+                if (this.mainCameraController) {
+                    this.mainCameraController.handleWheel(e);
+                }
+            }, { passive: false });
 
             // Handle Clicks
             this.canvas.addEventListener('click', (e) => {
-                if (!isDragging && !isPanning) {
+                // Check PiP Reset Button
+                if (window.GreenhouseGeneticPiPControls) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    const resetPiP = window.GreenhouseGeneticPiPControls.checkResetButton(mouseX, mouseY, this.canvas.width, this.canvas.height);
+                    if (resetPiP) {
+                        window.GreenhouseGeneticPiPControls.resetPiP(resetPiP);
+                        return;
+                    }
+                }
+
+                // Only handle click if not dragging
+                if (this.mainCameraController && !this.mainCameraController.isDragging && !this.mainCameraController.isPanning) {
                     this.handleMouseClick(e);
                 }
+            });
+
+            // Keyboard Controls (Optional, pass to main controller)
+            window.addEventListener('keydown', e => {
+                if (this.mainCameraController) this.mainCameraController.handleKeyDown(e);
+            });
+            window.addEventListener('keyup', e => {
+                if (this.mainCameraController) this.mainCameraController.handleKeyUp(e);
             });
         },
 
@@ -396,9 +441,18 @@
 
         animate() {
             this.render();
-            // Auto-rotate slightly
-            if (this.isEvolving) {
+
+            // Update Main Camera
+            if (this.mainCameraController) {
+                this.mainCameraController.update();
+            } else if (this.isEvolving) {
+                // Fallback auto-rotate
                 this.camera.rotationY += this.rotationSpeed;
+            }
+
+            // Update PiP Cameras
+            if (window.GreenhouseGeneticPiPControls) {
+                window.GreenhouseGeneticPiPControls.update();
             }
 
             // Camera Follow Active Gene (Vertical Scrolling)
@@ -406,13 +460,7 @@
             if (this.autoFollow !== false) {
                 const activeGene = this.neurons3D[this.activeGeneIndex];
                 if (activeGene) {
-                    // Target Y is negative of gene Y to center it (camera moves opposite to object)
-                    // But wait, camera Y moves the camera. If gene is at Y=100, camera needs to be at Y=100 to see it at center?
-                    // project3DTo2D: y = (v.y - camera.y) ...
-                    // So yes, camera.y should equal gene.y to center it.
-
                     const targetY = activeGene.y;
-                    // Smooth interpolation (Lerp)
                     this.camera.y += (targetY - this.camera.y) * 0.05;
                 }
             }
@@ -436,28 +484,50 @@
             const w = this.canvas.width;
             const h = this.canvas.height;
 
-            // 1. Macro View (Main Helix) - Top Left (Large)
-            // Occupies full width, but we render others on top or split?
-            // User asked for "system of picture in pictures".
-            // Let's do: Main BG is Helix. PiPs are overlays.
+            // 1. Main View: Brain (Target) - Center
+            // The user requested "Brain in the center".
+            // We use the main camera controller for this.
 
-            // Draw Main Helix (Full Screen Background)
-            this.drawMacroView(ctx, w, h);
+            // Draw Brain as Main Background
+            this.drawTargetView(ctx, 0, 0, w, h, activeGene, { camera: this.camera }); // Pass main camera
 
             // PiP Configuration
             const pipW = 200;
             const pipH = 150;
             const gap = 10;
-            const pipX = w - pipW - gap;
+            const pipX = gap; // Left Side
 
-            // 2. Micro View (Gene Zoom) - Top Right
-            this.drawMicroView(ctx, pipX, gap, pipW, pipH, activeGene);
+            // Get PiP States
+            let helixState = { zoom: 1.0, rotationY: 0, rotationX: 0, panX: 0, panY: 0 };
+            let proteinState = { zoom: 1.0, rotationY: 0, rotationX: 0, panX: 0, panY: 0 };
+            let microState = { zoom: 1.0, rotationY: 0, rotationX: 0, panX: 0, panY: 0 };
 
-            // 3. Protein View (Polypeptide Chain) - Middle Right
-            this.drawProteinView(ctx, pipX, gap + pipH + gap, pipW, pipH, activeGene);
+            if (window.GreenhouseGeneticPiPControls) {
+                helixState = window.GreenhouseGeneticPiPControls.getState('helix');
+                proteinState = window.GreenhouseGeneticPiPControls.getState('protein');
+                microState = window.GreenhouseGeneticPiPControls.getState('micro');
+            }
 
-            // 4. Target View (Brain Region) - Bottom Right
-            this.drawTargetView(ctx, pipX, gap + pipH + gap + pipH + gap, pipW, pipH, activeGene);
+            // 2. PiP 1: Helix (Macro View) - Top Left
+            // "Crayolas with label BDNF"
+            this.drawMacroView(ctx, pipX, gap, pipW, pipH, helixState);
+            if (window.GreenhouseGeneticPiPControls) {
+                window.GreenhouseGeneticPiPControls.drawControls(ctx, pipX, gap, pipW, pipH, 'helix');
+            }
+
+            // 3. PiP 2: Protein View - Middle Left
+            const proteinY = gap + pipH + gap;
+            this.drawProteinView(ctx, pipX, proteinY, pipW, pipH, activeGene, proteinState);
+            if (window.GreenhouseGeneticPiPControls) {
+                window.GreenhouseGeneticPiPControls.drawControls(ctx, pipX, proteinY, pipW, pipH, 'protein');
+            }
+
+            // 4. PiP 3: Micro View (Gene Structure) - Bottom Left
+            const microY = gap + pipH + gap + pipH + gap;
+            this.drawMicroView(ctx, pipX, microY, pipW, pipH, activeGene, microState);
+            if (window.GreenhouseGeneticPiPControls) {
+                window.GreenhouseGeneticPiPControls.drawControls(ctx, pipX, microY, pipW, pipH, 'micro');
+            }
 
             // Draw Stats / Labels
             if (window.GreenhouseGeneticStats) {
@@ -480,11 +550,11 @@
             }
         },
 
-        drawMicroView(ctx, x, y, w, h, activeGene) {
+        drawMicroView(ctx, x, y, w, h, activeGene, cameraState) {
             if (window.GreenhouseGeneticGene) {
                 window.GreenhouseGeneticGene.drawMicroView(
                     ctx, x, y, w, h, activeGene, this.activeGeneIndex, this.neuronMeshes,
-                    this.drawPiPFrame.bind(this)
+                    this.drawPiPFrame.bind(this), cameraState
                 );
             } else if (window.GreenhouseGeneticChromosome) {
                 // Fallback or alternative view
@@ -495,20 +565,20 @@
             }
         },
 
-        drawTargetView(ctx, x, y, w, h, activeGene) {
+        drawTargetView(ctx, x, y, w, h, activeGene, cameraState) {
             if (window.GreenhouseGeneticBrain) {
                 window.GreenhouseGeneticBrain.drawTargetView(
                     ctx, x, y, w, h, activeGene, this.activeGeneIndex, this.brainShell,
-                    this.drawPiPFrame.bind(this)
+                    this.drawPiPFrame.bind(this), cameraState
                 );
             }
         },
 
-        drawProteinView(ctx, x, y, w, h, activeGene) {
+        drawProteinView(ctx, x, y, w, h, activeGene, cameraState) {
             if (window.GreenhouseGeneticProtein) {
                 window.GreenhouseGeneticProtein.drawProteinView(
                     ctx, x, y, w, h, activeGene, this.proteinCache,
-                    this.drawPiPFrame.bind(this)
+                    this.drawPiPFrame.bind(this), cameraState
                 );
             }
         },
@@ -542,10 +612,6 @@
             ctx.clip();
         },
 
-
-
-
-
         hitTest(mouseX, mouseY) {
             // Check Genes
             for (let i = 0; i < this.neurons3D.length; i++) {
@@ -576,7 +642,20 @@
             const hit = this.hitTest(mouseX, mouseY);
             if (hit && hit.type === 'gene') {
                 this.activeGeneIndex = hit.index;
-                this.autoFollow = true; // Re-enable auto-follow on selection
+                this.autoFollow = false; // Disable old auto-follow
+
+                if (this.mainCameraController) {
+                    // Cinematic Transition to Gene
+                    this.mainCameraController.flyTo({
+                        x: this.camera.x, // Keep X
+                        y: hit.data.y,    // Center Y on gene
+                        z: -200,          // Zoom in slightly
+                        rotationX: this.camera.rotationX,
+                        rotationY: this.camera.rotationY
+                    }, 1500);
+                } else {
+                    this.autoFollow = true; // Fallback
+                }
                 return;
             }
 
@@ -638,10 +717,6 @@
             }
         },
 
-
-
-
-
         neuronMeshes: {}, // Cache for generated neuron meshes
         drawNeuron(ctx, p) {
             if (p.type === 'gene') {
@@ -654,7 +729,6 @@
                 }
             }
         },
-
 
         initializeBrainShell() {
             this.brainShell = { vertices: [], faces: [] };

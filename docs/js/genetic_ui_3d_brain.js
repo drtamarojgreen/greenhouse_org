@@ -2,7 +2,7 @@
     'use strict';
 
     const GreenhouseGeneticBrain = {
-        drawTargetView(ctx, x, y, w, h, activeGene, activeGeneIndex, brainShell, drawPiPFrameCallback) {
+        drawTargetView(ctx, x, y, w, h, activeGene, activeGeneIndex, brainShell, drawPiPFrameCallback, cameraState) {
             if (drawPiPFrameCallback) {
                 drawPiPFrameCallback(ctx, x, y, w, h, "Target: Brain Region");
             }
@@ -14,13 +14,21 @@
             const regionName = regions[activeGeneIndex % regions.length];
 
             // Camera for Target View
-            const targetCamera = {
-                x: 0, y: 0, z: -300,
-                rotationX: 0.2,
-                rotationY: Date.now() * 0.0005,
-                rotationZ: 0,
-                fov: 600
-            };
+            let targetCamera;
+
+            if (cameraState && cameraState.camera) {
+                targetCamera = cameraState.camera;
+            } else {
+                targetCamera = {
+                    x: cameraState ? cameraState.panX : 0,
+                    y: cameraState ? cameraState.panY : 0,
+                    z: -300 / (cameraState ? cameraState.zoom : 1.0),
+                    rotationX: 0.2 + (cameraState ? cameraState.rotationX : 0),
+                    rotationY: cameraState ? cameraState.rotationY : 0,
+                    rotationZ: 0,
+                    fov: 600
+                };
+            }
 
             // Get points for this region
             const regionData = brainShell.regions[regionName];
@@ -153,6 +161,21 @@
                 ctx.fill();
                 ctx.stroke();
             });
+
+            // Phase 13: Pulse Effects (Ripple)
+            // Simulate firing based on ID and time
+            const fireCycle = (Date.now() * 0.001 + (p.id || 0) * 0.1) % 3.0;
+            if (fireCycle < 1.0) {
+                const t = fireCycle; // 0 to 1
+                const radius = (10 + t * 30) * (p.scale || 1);
+                const alpha = (1.0 - t) * 0.8;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
         },
 
         generatePyramidalMesh() {

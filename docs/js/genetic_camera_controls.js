@@ -1,294 +1,289 @@
 // docs/js/genetic_camera_controls.js
-// Enhanced Camera Controls for Genetic Simulation (adapted from neuro_camera_controls.js)
+// Enhanced Camera Controls for Genetic Simulation
+// Refactored to Class for multiple instances (Main View + PiPs)
 
 (function () {
     'use strict';
 
-    const GreenhouseGeneticCameraControls = {
-        camera: null,
-        canvas: null,
-        config: null,
-        
-        // State
-        isDragging: false,
-        isPanning: false,
-        lastX: 0,
-        lastY: 0,
-        velocityX: 0,
-        velocityY: 0,
-        
-        // Touch support
-        touches: [],
-        lastTouchDistance: 0,
-        
-        // Keyboard state
-        keys: {},
-
-        /**
-         * Initialize camera controls
-         * @param {HTMLCanvasElement} canvas - Canvas element
-         * @param {Object} camera - Camera object to control
-         * @param {Object} config - Configuration object
-         */
-        init(canvas, camera, config) {
-            this.canvas = canvas;
+    class GeneticCameraController {
+        constructor(camera, config) {
             this.camera = camera;
             this.config = config || window.GreenhouseGeneticConfig;
-            
-            this.setupMouseControls();
-            this.setupTouchControls();
-            this.setupKeyboardControls();
-            this.setupWheelControls();
-            
-            console.log('GeneticCamera: Controls initialized');
-        },
+
+            // State
+            this.isDragging = false;
+            this.isPanning = false;
+            this.lastX = 0;
+            this.lastY = 0;
+            this.velocityX = 0;
+            this.velocityY = 0;
+
+            // Touch state
+            this.touches = [];
+            this.lastTouchDistance = 0;
+
+            // Keyboard state (moved from global to instance)
+            this.keys = {};
+
+            // Transition State
+            this.isTransitioning = false;
+            this.transitionStart = 0;
+            this.transitionDuration = 0;
+            this.startState = null;
+            this.targetState = null;
+            this.transitionCallback = null;
+
+            // Auto Rotate State
+            this.autoRotate = true; // Default to true, can be overridden
+        }
 
         /**
-         * Setup mouse controls for rotation and panning
+         * Handle Mouse Down
          */
-        setupMouseControls() {
-            this.canvas.addEventListener('mousedown', (e) => {
-                if (e.button === 2 || e.shiftKey) {
-                    // Right click or Shift+Click for Pan
-                    if (this.config.get('camera.controls.enablePan')) {
-                        this.isPanning = true;
-                        e.preventDefault();
-                    }
-                } else if (e.button === 0) {
-                    // Left click for Rotate
-                    if (this.config.get('camera.controls.enableRotate')) {
-                        this.isDragging = true;
-                    }
+        handleMouseDown(e) {
+            if (e.button === 2 || e.shiftKey) {
+                // Right click or Shift+Click for Pan
+                if (this.config.get('camera.controls.enablePan')) {
+                    this.isPanning = true;
+                }
+            } else if (e.button === 0) {
+                // Left click for Rotate
+                if (this.config.get('camera.controls.enableRotate')) {
+                    this.isDragging = true;
+                }
+            }
+
+            this.lastX = e.clientX;
+            this.lastY = e.clientY;
+            this.stopAutoRotate();
+            this.velocityX = 0;
+            this.velocityY = 0;
+
+            return true; // Consumed
+        }
+
+        /**
+         * Handle Mouse Move
+         */
+        handleMouseMove(e) {
+            if (!this.isDragging && !this.isPanning) return false;
+
+            const dx = e.clientX - this.lastX;
+            const dy = e.clientY - this.lastY;
+
+            if (this.isPanning) {
+                this.pan(dx, dy);
+            } else if (this.isDragging) {
+                this.rotate(dx, dy);
+            }
+
+            this.lastX = e.clientX;
+            this.lastY = e.clientY;
+            return true;
+        }
+
+        /**
+         * Handle Mouse Up
+         */
+        handleMouseUp() {
+            this.isDragging = false;
+            this.isPanning = false;
+        }
+
+        /**
+         * Handle Touch Start
+         */
+        handleTouchStart(e) {
+            this.touches = Array.from(e.touches);
+
+            if (this.touches.length === 1) {
+                // Single touch - rotate
+                this.isDragging = true;
+                this.lastX = this.touches[0].clientX;
+                this.lastY = this.touches[0].clientY;
+            } else if (this.touches.length === 2) {
+                // Two finger - pan and zoom
+                this.isPanning = true;
+                const dx = this.touches[1].clientX - this.touches[0].clientX;
+                const dy = this.touches[1].clientY - this.touches[0].clientY;
+                this.lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+            }
+
+            this.stopAutoRotate();
+            return true;
+        }
+
+        /**
+         * Handle Touch Move
+         */
+        handleTouchMove(e) {
+            const newTouches = Array.from(e.touches);
+
+            if (newTouches.length === 1 && this.isDragging) {
+                // Rotate
+                const dx = newTouches[0].clientX - this.lastX;
+                const dy = newTouches[0].clientY - this.lastY;
+                this.rotate(dx, dy);
+                this.lastX = newTouches[0].clientX;
+                this.lastY = newTouches[0].clientY;
+            } else if (newTouches.length === 2) {
+                // Pinch zoom
+                const dx = newTouches[1].clientX - newTouches[0].clientX;
+                const dy = newTouches[1].clientY - newTouches[0].clientY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (this.lastTouchDistance > 0) {
+                    const delta = distance - this.lastTouchDistance;
+                    this.zoom(-delta * 2);
                 }
 
-                this.lastX = e.clientX;
-                this.lastY = e.clientY;
-                this.stopAutoRotate();
-                this.velocityX = 0;
-                this.velocityY = 0;
-                
-                this.canvas.style.cursor = 'grabbing';
-            });
+                this.lastTouchDistance = distance;
 
-            this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+                // Pan with center point
+                const centerX = (newTouches[0].clientX + newTouches[1].clientX) / 2;
+                const centerY = (newTouches[0].clientY + newTouches[1].clientY) / 2;
 
-            window.addEventListener('mousemove', (e) => {
-                if (!this.isDragging && !this.isPanning) return;
-
-                const dx = e.clientX - this.lastX;
-                const dy = e.clientY - this.lastY;
-
-                if (this.isPanning) {
-                    this.pan(dx, dy);
-                } else if (this.isDragging) {
-                    this.rotate(dx, dy);
+                if (this.touches.length === 2) {
+                    const oldCenterX = (this.touches[0].clientX + this.touches[1].clientX) / 2;
+                    const oldCenterY = (this.touches[0].clientY + this.touches[1].clientY) / 2;
+                    this.pan(centerX - oldCenterX, centerY - oldCenterY);
                 }
+            }
 
-                this.lastX = e.clientX;
-                this.lastY = e.clientY;
-            });
+            this.touches = newTouches;
+            return true;
+        }
 
-            window.addEventListener('mouseup', () => {
+        /**
+         * Handle Touch End
+         */
+        handleTouchEnd(e) {
+            this.touches = Array.from(e.touches);
+
+            if (this.touches.length === 0) {
                 this.isDragging = false;
                 this.isPanning = false;
-                if (this.canvas) this.canvas.style.cursor = 'grab';
-            });
-        },
+                this.lastTouchDistance = 0;
+            }
+            return true;
+        }
 
         /**
-         * Setup touch controls for mobile devices
+         * Handle Keyboard Down
          */
-        setupTouchControls() {
-            this.canvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                this.touches = Array.from(e.touches);
-                
-                if (this.touches.length === 1) {
-                    // Single touch - rotate
-                    this.isDragging = true;
-                    this.lastX = this.touches[0].clientX;
-                    this.lastY = this.touches[0].clientY;
-                } else if (this.touches.length === 2) {
-                    // Two finger - pan and zoom
-                    this.isPanning = true;
-                    const dx = this.touches[1].clientX - this.touches[0].clientX;
-                    const dy = this.touches[1].clientY - this.touches[0].clientY;
-                    this.lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
-                }
-                
+        handleKeyDown(e) {
+            this.keys[e.key] = true;
+
+            // Arrow keys for rotation
+            if (e.key === 'ArrowLeft') {
+                this.rotate(-5, 0);
                 this.stopAutoRotate();
-            });
+            } else if (e.key === 'ArrowRight') {
+                this.rotate(5, 0);
+                this.stopAutoRotate();
+            } else if (e.key === 'ArrowUp') {
+                this.rotate(0, -5);
+                this.stopAutoRotate();
+            } else if (e.key === 'ArrowDown') {
+                this.rotate(0, 5);
+                this.stopAutoRotate();
+            }
 
-            this.canvas.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                const newTouches = Array.from(e.touches);
-                
-                if (newTouches.length === 1 && this.isDragging) {
-                    // Rotate
-                    const dx = newTouches[0].clientX - this.lastX;
-                    const dy = newTouches[0].clientY - this.lastY;
-                    this.rotate(dx, dy);
-                    this.lastX = newTouches[0].clientX;
-                    this.lastY = newTouches[0].clientY;
-                } else if (newTouches.length === 2) {
-                    // Pinch zoom
-                    const dx = newTouches[1].clientX - newTouches[0].clientX;
-                    const dy = newTouches[1].clientY - newTouches[0].clientY;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (this.lastTouchDistance > 0) {
-                        const delta = distance - this.lastTouchDistance;
-                        this.zoom(-delta * 2);
-                    }
-                    
-                    this.lastTouchDistance = distance;
-                    
-                    // Pan with center point
-                    const centerX = (newTouches[0].clientX + newTouches[1].clientX) / 2;
-                    const centerY = (newTouches[0].clientY + newTouches[1].clientY) / 2;
-                    
-                    if (this.touches.length === 2) {
-                        const oldCenterX = (this.touches[0].clientX + this.touches[1].clientX) / 2;
-                        const oldCenterY = (this.touches[0].clientY + this.touches[1].clientY) / 2;
-                        this.pan(centerX - oldCenterX, centerY - oldCenterY);
-                    }
-                }
-                
-                this.touches = newTouches;
-            });
+            // WASD for panning
+            const panAmount = 20;
+            if (e.key === 'w' || e.key === 'W') {
+                this.pan(0, panAmount);
+            } else if (e.key === 's' || e.key === 'S') {
+                this.pan(0, -panAmount);
+            } else if (e.key === 'a' || e.key === 'A') {
+                this.pan(panAmount, 0);
+            } else if (e.key === 'd' || e.key === 'D') {
+                this.pan(-panAmount, 0);
+            }
 
-            this.canvas.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                this.touches = Array.from(e.touches);
-                
-                if (this.touches.length === 0) {
-                    this.isDragging = false;
-                    this.isPanning = false;
-                    this.lastTouchDistance = 0;
-                }
-            });
-        },
+            // Q/E for zoom
+            if (e.key === 'q' || e.key === 'Q') {
+                this.zoom(50);
+            } else if (e.key === 'e' || e.key === 'E') {
+                this.zoom(-50);
+            }
+
+            // R to reset camera
+            if (e.key === 'r' || e.key === 'R') {
+                this.resetCamera();
+            }
+
+            // Space to toggle auto-rotate
+            if (e.key === ' ') {
+                this.toggleAutoRotate();
+                return true; // Prevent default spacebar action (scrolling)
+            }
+            return false;
+        }
 
         /**
-         * Setup keyboard controls
+         * Handle Keyboard Up
          */
-        setupKeyboardControls() {
-            window.addEventListener('keydown', (e) => {
-                this.keys[e.key] = true;
-                
-                // Arrow keys for rotation
-                if (e.key === 'ArrowLeft') {
-                    this.rotate(-5, 0);
-                    this.stopAutoRotate();
-                } else if (e.key === 'ArrowRight') {
-                    this.rotate(5, 0);
-                    this.stopAutoRotate();
-                } else if (e.key === 'ArrowUp') {
-                    this.rotate(0, -5);
-                    this.stopAutoRotate();
-                } else if (e.key === 'ArrowDown') {
-                    this.rotate(0, 5);
-                    this.stopAutoRotate();
-                }
-                
-                // WASD for panning
-                const panAmount = 20;
-                if (e.key === 'w' || e.key === 'W') {
-                    this.pan(0, panAmount);
-                } else if (e.key === 's' || e.key === 'S') {
-                    this.pan(0, -panAmount);
-                } else if (e.key === 'a' || e.key === 'A') {
-                    this.pan(panAmount, 0);
-                } else if (e.key === 'd' || e.key === 'D') {
-                    this.pan(-panAmount, 0);
-                }
-                
-                // Q/E for zoom
-                if (e.key === 'q' || e.key === 'Q') {
-                    this.zoom(50);
-                } else if (e.key === 'e' || e.key === 'E') {
-                    this.zoom(-50);
-                }
-                
-                // R to reset camera
-                if (e.key === 'r' || e.key === 'R') {
-                    this.resetCamera();
-                }
-                
-                // Space to toggle auto-rotate
-                if (e.key === ' ') {
-                    this.toggleAutoRotate();
-                    e.preventDefault();
-                }
-            });
-
-            window.addEventListener('keyup', (e) => {
-                this.keys[e.key] = false;
-            });
-        },
+        handleKeyUp(e) {
+            this.keys[e.key] = false;
+        }
 
         /**
-         * Setup mouse wheel controls for zooming
+         * Handle Wheel
          */
-        setupWheelControls() {
-            this.canvas.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                
-                if (this.config.get('camera.controls.enableZoom')) {
-                    const zoomSpeed = this.config.get('camera.controls.zoomSpeed') || 0.1;
-                    const dynamicSpeed = Math.abs(this.camera.z) * 0.001 + 5;
-                    this.zoom(e.deltaY * zoomSpeed * dynamicSpeed);
-                }
-            }, { passive: false });
-        },
+        handleWheel(e) {
+            if (this.config.get('camera.controls.enableZoom')) {
+                const zoomSpeed = this.config.get('camera.controls.zoomSpeed') || 0.1;
+                // Dynamic speed based on depth
+                const dynamicSpeed = Math.abs(this.camera.z) * 0.001 + 5;
+                this.zoom(e.deltaY * zoomSpeed * dynamicSpeed);
+                return true;
+            }
+            return false;
+        }
 
         /**
          * Rotate camera
-         * @param {number} dx - Delta X
-         * @param {number} dy - Delta Y
          */
         rotate(dx, dy) {
             const rotateSpeed = this.config.get('camera.controls.rotateSpeed') || 0.005;
-            
+
             this.camera.rotationY += dx * rotateSpeed;
             this.camera.rotationX += dy * rotateSpeed;
-            
+
             // Store velocity for inertia
             if (this.config.get('camera.controls.inertia')) {
                 this.velocityX = dx * rotateSpeed;
                 this.velocityY = dy * rotateSpeed;
             }
-            
-            // Clamp X rotation to prevent flipping
+
+            // Clamp X rotation
             this.camera.rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotationX));
-        },
+        }
 
         /**
          * Pan camera
-         * @param {number} dx - Delta X
-         * @param {number} dy - Delta Y
          */
         pan(dx, dy) {
             const panSpeed = this.config.get('camera.controls.panSpeed') || 0.002;
             const panScale = Math.abs(this.camera.z) * panSpeed;
-            
+
             this.camera.x -= dx * panScale;
             this.camera.y -= dy * panScale;
-        },
+        }
 
         /**
          * Zoom camera
-         * @param {number} delta - Zoom delta
          */
         zoom(delta) {
             this.camera.z += delta;
-            
+
             // Clamp zoom
             const minZoom = this.config.get('camera.controls.minZoom') || -50;
             const maxZoom = this.config.get('camera.controls.maxZoom') || -3000;
-            
+
             this.camera.z = Math.max(maxZoom, Math.min(minZoom, this.camera.z));
-        },
+        }
 
         /**
          * Reset camera to initial position
@@ -303,54 +298,108 @@
                 this.camera.rotationY = initial.rotationY;
                 this.camera.rotationZ = initial.rotationZ;
             }
-            
+
             this.velocityX = 0;
             this.velocityY = 0;
-            
+            this.autoRotate = true; // Re-enable auto-rotate on reset
+
             console.log('GeneticCamera: Reset to initial position');
-        },
+        }
 
         /**
-         * Update camera (apply inertia, auto-rotate)
+         * Fly camera to target
+         */
+        flyTo(target, duration = 1000, callback = null) {
+            this.isTransitioning = true;
+            this.transitionStart = Date.now();
+            this.transitionDuration = duration;
+            this.transitionCallback = callback;
+
+            this.startState = {
+                x: this.camera.x,
+                y: this.camera.y,
+                z: this.camera.z,
+                rotationX: this.camera.rotationX,
+                rotationY: this.camera.rotationY,
+                rotationZ: this.camera.rotationZ
+            };
+            this.targetState = {
+                x: target.x !== undefined ? target.x : this.camera.x,
+                y: target.y !== undefined ? target.y : this.camera.y,
+                z: target.z !== undefined ? target.z : this.camera.z,
+                rotationX: target.rotationX !== undefined ? target.rotationX : this.camera.rotationX,
+                rotationY: target.rotationY !== undefined ? target.rotationY : this.camera.rotationY,
+                rotationZ: target.rotationZ !== undefined ? target.rotationZ : this.camera.rotationZ
+            };
+
+            this.velocityX = 0;
+            this.velocityY = 0;
+            this.isDragging = false;
+            this.isPanning = false;
+            this.stopAutoRotate();
+        }
+
+        /**
+         * Update loop (Inertia, Auto-Rotate, Transitions)
          */
         update() {
+            // Handle Transition
+            if (this.isTransitioning) {
+                const now = Date.now();
+                const progress = Math.min(1.0, (now - this.transitionStart) / this.transitionDuration);
+
+                // Ease In Out Cubic
+                const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+                this.camera.x = this.startState.x + (this.targetState.x - this.startState.x) * ease;
+                this.camera.y = this.startState.y + (this.targetState.y - this.startState.y) * ease;
+                this.camera.z = this.startState.z + (this.targetState.z - this.startState.z) * ease;
+                this.camera.rotationX = this.startState.rotationX + (this.targetState.rotationX - this.startState.rotationX) * ease;
+                this.camera.rotationY = this.startState.rotationY + (this.targetState.rotationY - this.startState.rotationY) * ease;
+                this.camera.rotationZ = this.startState.rotationZ + (this.targetState.rotationZ - this.startState.rotationZ) * ease;
+
+                if (progress >= 1.0) {
+                    this.isTransitioning = false;
+                    if (this.transitionCallback) this.transitionCallback();
+                }
+                return;
+            }
+
             // Apply inertia
             if (this.config.get('camera.controls.inertia') && !this.isDragging) {
                 const damping = this.config.get('camera.controls.inertiaDamping') || 0.95;
-                
+
                 this.camera.rotationY += this.velocityX;
                 this.camera.rotationX += this.velocityY;
-                
+
                 this.velocityX *= damping;
                 this.velocityY *= damping;
-                
-                // Stop if very slow
+
                 if (Math.abs(this.velocityX) < 0.0001) this.velocityX = 0;
                 if (Math.abs(this.velocityY) < 0.0001) this.velocityY = 0;
             }
-            
+
             // Auto-rotate
-            if (this.config.get('camera.controls.autoRotate') && !this.isDragging && !this.isPanning) {
+            if (this.autoRotate && this.config.get('camera.controls.autoRotate') && !this.isDragging && !this.isPanning) {
                 const speed = this.config.get('camera.controls.autoRotateSpeed') || 0.0002;
                 this.camera.rotationY += speed;
             }
-        },
+        }
 
         /**
          * Stop auto-rotation
          */
         stopAutoRotate() {
-            this.config.set('camera.controls.autoRotate', false);
-        },
+            this.autoRotate = false;
+        }
 
         /**
          * Toggle auto-rotation
          */
         toggleAutoRotate() {
-            const current = this.config.get('camera.controls.autoRotate');
-            this.config.set('camera.controls.autoRotate', !current);
-            console.log('GeneticCamera: Auto-rotate', !current ? 'enabled' : 'disabled');
-        },
+            this.autoRotate = !this.autoRotate;
+            console.log('GeneticCamera: Auto-rotate', this.autoRotate ? 'enabled' : 'disabled');
+        }
 
         /**
          * Get camera info for debugging
@@ -358,17 +407,26 @@
         getInfo() {
             return {
                 position: { x: this.camera.x, y: this.camera.y, z: this.camera.z },
-                rotation: { 
-                    x: this.camera.rotationX, 
-                    y: this.camera.rotationY, 
-                    z: this.camera.rotationZ 
+                rotation: {
+                    x: this.camera.rotationX,
+                    y: this.camera.rotationY,
+                    z: this.camera.rotationZ
                 },
                 velocity: { x: this.velocityX, y: this.velocityY },
                 isDragging: this.isDragging,
-                isPanning: this.isPanning
+                isPanning: this.isPanning,
+                isTransitioning: this.isTransitioning,
+                autoRotate: this.autoRotate
             };
         }
-    };
+    }
 
-    window.GreenhouseGeneticCameraControls = GreenhouseGeneticCameraControls;
+    // Export Class
+    window.GreenhouseGeneticCameraController = GeneticCameraController;
+
+    // Backward compatibility singleton (optional, but good for safety)
+    window.GreenhouseGeneticCameraControls = {
+        // This is a placeholder or we can instantiate one if needed immediately
+        // But better to let the UI instantiate it.
+    };
 })();

@@ -2,7 +2,7 @@
     'use strict';
 
     const GreenhouseGeneticProtein = {
-        drawProteinView(ctx, x, y, w, h, activeGene, proteinCache, drawPiPFrameCallback) {
+        drawProteinView(ctx, x, y, w, h, activeGene, proteinCache, drawPiPFrameCallback, cameraState) {
             if (drawPiPFrameCallback) {
                 drawPiPFrameCallback(ctx, x, y, w, h, "Protein Structure");
             }
@@ -21,13 +21,21 @@
 
             if (!protein) return;
 
-            const proteinCamera = {
-                x: 0, y: 0, z: -100,
-                rotationX: Date.now() * 0.0005,
-                rotationY: Date.now() * 0.001,
-                rotationZ: 0,
-                fov: 400
-            };
+            let proteinCamera;
+
+            if (cameraState && cameraState.camera) {
+                proteinCamera = cameraState.camera;
+            } else {
+                proteinCamera = {
+                    x: cameraState ? cameraState.panX : 0,
+                    y: cameraState ? cameraState.panY : 0,
+                    z: -100 / (cameraState ? cameraState.zoom : 1.0),
+                    rotationX: cameraState ? cameraState.rotationX : 0,
+                    rotationY: cameraState ? cameraState.rotationY : 0,
+                    rotationZ: 0,
+                    fov: 400
+                };
+            }
 
             // Project Chain
             const projected = protein.vertices.map(v => {

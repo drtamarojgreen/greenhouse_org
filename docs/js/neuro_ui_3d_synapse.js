@@ -10,8 +10,8 @@
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
             // Batching Arrays for LOD Lines
-            const batchCyan = [];
-            const batchPink = [];
+            // Key: "color_alpha" -> Path2D
+            const batches = {};
 
             connections.forEach(conn => {
                 if (!conn.mesh) return;
@@ -25,40 +25,24 @@
                 const avgScale = (Math.max(0, p1.scale) + Math.max(0, p2.scale)) / 2;
 
                 if (avgScale < 0.5) {
-                    // Low Detail: Add to batch
-                    const alpha = GreenhouseModels3DMath.applyDepthFog(0.5, (p1.depth + p2.depth) / 2);
-                    // We can't batch alpha easily in 2D context without separate passes or just using average alpha?
-                    // Or we just use a fixed alpha for LOD lines to be fast.
-                    // Let's use the calculated alpha but we have to draw individually if alpha varies.
-                    // True batching (one path) requires same state.
-                    // If we want performance, we can group by alpha buckets? Or just draw individually but simple lines.
-                    // Actually, `ctx.beginPath` + `ctx.moveTo` + `ctx.lineTo` ... `ctx.stroke` IS batching if we do it for many lines.
-                    // But we need to change color/alpha.
+                    // Low Detail: Batching
+                    const alphaRaw = GreenhouseModels3DMath.applyDepthFog(0.5, (p1.depth + p2.depth) / 2);
+                    // Quantize alpha to 0.1 steps for batching
+                    const alpha = Math.round(alphaRaw * 10) / 10;
+                    if (alpha <= 0) return;
 
-                    // Optimization: Group by "High Alpha" (>0.5) and "Low Alpha" (<0.5)?
-                    // Or just draw them. The bottleneck is usually switching state.
-                    // Let's try to batch by color, and ignore per-line alpha (use distance fog on the batch?).
-                    // Or just use the average depth of the whole brain? No.
+                    const colorType = conn.weight > 0 ? 'gold' : 'silver';
+                    const key = `${colorType}_${alpha}`;
 
-                    // Let's stick to individual strokes for now but optimized (no save/restore if possible).
-                    // The previous code used save/restore. Let's remove that.
+                    if (!batches[key]) batches[key] = new Path2D();
 
-                    // Gold for Excitatory, Silver/Blue for Inhibitory
-                    ctx.strokeStyle = conn.weight > 0 ? `rgba(255, 215, 0, ${alpha})` : `rgba(176, 196, 222, ${alpha})`;
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.stroke();
+                    batches[key].moveTo(p1.x, p1.y);
+                    batches[key].lineTo(p2.x, p2.y);
                     return;
                 }
 
-                // Transform Vertices
-                // The tube mesh is already in World Space (generated between n1 and n2).
-                // We DO NOT need to rotate it again, unless we want the whole brain to spin.
-                // The brain spinning is handled by the Camera rotation in project3DTo2D.
-                // So we just pass the vertices as is!
-
+                // High Detail (Tube Mesh) - Draw Individually
+                // ... (Keep existing high detail logic)
                 const transformedVertices = conn.mesh.vertices; // Already in World Space
 
                 const projected = transformedVertices.map(v =>
@@ -181,9 +165,19 @@
                     }
                 }
             });
+
+            // Execute Batches
+            ctx.lineWidth = 1;
+            for (const key in batches) {
+                const [colorType, alpha] = key.split('_');
+                const color = colorType === 'gold' ? `rgba(255, 215, 0, ${alpha})` : `rgba(176, 196, 222, ${alpha})`;
+
+                ctx.strokeStyle = color;
+                ctx.stroke(batches[key]);
+            }
         },
 
-        drawSynapsePiP(ctx, x, y, w, h, connection, synapseMeshes, isMainView = false) {
+        drawSynapsePiP(ctx, x, y, w, h, connection, synapseMeshes, isMainView = false, externalCamera = null) {
             // Draw Frame (Only if PiP)
             if (!isMainView) {
                 ctx.save();
@@ -219,13 +213,11 @@
             // We render the pre-synaptic bulb (top) and post-synaptic cup (bottom)
             // Rotating slowly
 
-            const time = Date.now() * 0.001;
-            const rotationY = time * 0.5;
-
-            const synapseCamera = {
+            // Use external camera if provided (for transitions), otherwise default
+            const synapseCamera = externalCamera || {
                 x: 0, y: 0, z: -200,
                 rotationX: 0.2,
-                rotationY: rotationY,
+                rotationY: Date.now() * 0.001,
                 rotationZ: 0,
                 fov: 400
             };
@@ -244,10 +236,16 @@
                     // Transform & Project
                     const transform = (v) => {
                         let vx = v.x, vy = v.y + offsetY, vz = v.z;
+
                         // Rotate Y
-                        let tx = vx * Math.cos(rotationY) - vz * Math.sin(rotationY);
-                        let tz = vx * Math.sin(rotationY) + vz * Math.cos(rotationY);
+                        let tx = vx * Math.cos(synapseCamera.rotationY) - vz * Math.sin(synapseCamera.rotationY);
+                        let tz = vx * Math.sin(synapseCamera.rotationY) + vz * Math.cos(synapseCamera.rotationY);
                         vx = tx; vz = tz;
+
+                        // Rotate X
+                        let ty = vy * Math.cos(synapseCamera.rotationX) - vz * Math.sin(synapseCamera.rotationX);
+                        tz = vy * Math.sin(synapseCamera.rotationX) + vz * Math.cos(synapseCamera.rotationX);
+                        vy = ty; vz = tz;
 
                         return GreenhouseModels3DMath.project3DTo2D(vx, vy, vz, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                     };
@@ -263,9 +261,18 @@
                         // We need rotated vertices for normal calc
                         const rotate = (v) => {
                             let vx = v.x, vy = v.y + offsetY, vz = v.z;
-                            let tx = vx * Math.cos(rotationY) - vz * Math.sin(rotationY);
-                            let tz = vx * Math.sin(rotationY) + vz * Math.cos(rotationY);
-                            return { x: tx, y: vy, z: tz };
+
+                            // Rotate Y
+                            let tx = vx * Math.cos(synapseCamera.rotationY) - vz * Math.sin(synapseCamera.rotationY);
+                            let tz = vx * Math.sin(synapseCamera.rotationY) + vz * Math.cos(synapseCamera.rotationY);
+                            vx = tx; vz = tz;
+
+                            // Rotate X
+                            let ty = vy * Math.cos(synapseCamera.rotationX) - vz * Math.sin(synapseCamera.rotationX);
+                            tz = vy * Math.sin(synapseCamera.rotationX) + vz * Math.cos(synapseCamera.rotationX);
+                            vy = ty; vz = tz;
+
+                            return { x: vx, y: vy, z: vz };
                         };
                         const rv1 = rotate(v1);
                         const rv2 = rotate(v2);
@@ -419,33 +426,75 @@
                 }
             };
 
-            // Draw Vesicles
-            connection.synapseDetails.vesicles.forEach(v => drawInternal(v, 'vesicle'));
+            // Draw Vesicles (Phase 7: Vesicle Fusion)
+            connection.synapseDetails.vesicles.forEach(v => {
+                // Animate Vesicle moving towards cleft
+                v.y += 0.2;
+                if (v.y > -25) {
+                    // Fusion Event!
+                    // Reset vesicle to top
+                    v.y = -50 - Math.random() * 20;
+                    v.x = (Math.random() - 0.5) * 50;
+                    v.z = (Math.random() - 0.5) * 50;
+
+                    // Release Neurotransmitters (Spawn Particles)
+                    for (let k = 0; k < 3; k++) {
+                        connection.synapseDetails.particles.push({
+                            x: v.x + (Math.random() - 0.5) * 5,
+                            y: -25,
+                            z: v.z + (Math.random() - 0.5) * 5,
+                            life: 1.0,
+                            hasBound: false
+                        });
+                    }
+                }
+                drawInternal(v, 'vesicle');
+            });
 
             // Draw Mitochondria
             connection.synapseDetails.mitochondria.forEach(m => drawInternal(m, 'mito'));
 
             // Draw Neurotransmitters (Particles)
-            // Update Particles
-            if (connection.synapseDetails.particles.length < 20 && Math.random() < 0.1) {
+            // Phase 6: Liquid Cleft Dynamics (Brownian Motion)
+
+            // Ensure some particles exist if none (background activity)
+            if (connection.synapseDetails.particles.length < 5 && Math.random() < 0.05) {
                 connection.synapseDetails.particles.push({
                     x: (Math.random() - 0.5) * 40,
-                    y: -20, // Start at cleft top
+                    y: -25,
                     z: (Math.random() - 0.5) * 40,
-                    life: 1.0
+                    life: 1.0,
+                    hasBound: false
                 });
             }
 
             connection.synapseDetails.particles.forEach((p, i) => {
-                p.y += 1.0; // Move down
-                p.life -= 0.02;
+                // Brownian Motion + Viscous Drift
+                p.x += (Math.random() - 0.5) * 1.5; // Random jitter X
+                p.z += (Math.random() - 0.5) * 1.5; // Random jitter Z
+                p.y += 0.5 + (Math.random() - 0.5) * 0.2; // Drift down with variation
+
+                p.life -= 0.005; // Slower fade for longer life
 
                 const proj = GreenhouseModels3DMath.project3DTo2D(p.x, p.y, p.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                 if (proj.scale > 0 && p.life > 0) {
+                    // Phase 7: Receptor Binding
+                    if (p.y > 25 && !p.hasBound) {
+                        p.hasBound = true;
+                        p.life = 0.5; // Quick flash fade
+
+                        // Binding Flash Effect
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                        ctx.beginPath();
+                        ctx.arc(proj.x + x, proj.y + y, 8 * proj.scale, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
                     const alpha = p.life;
-                    ctx.fillStyle = `rgba(255, 255, 100, ${alpha})`;
+                    // Color change on binding (Yellow -> Green)
+                    ctx.fillStyle = p.hasBound ? `rgba(50, 255, 50, ${alpha})` : `rgba(255, 255, 100, ${alpha})`;
                     ctx.beginPath();
-                    ctx.arc(proj.x + x, proj.y + y, 2 * proj.scale, 0, Math.PI * 2);
+                    ctx.arc(proj.x + x, proj.y + y, 3 * proj.scale, 0, Math.PI * 2);
                     ctx.fill();
                 }
             });

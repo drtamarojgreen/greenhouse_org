@@ -7,15 +7,22 @@
     const GreenhouseNeuroUI3D = {
         canvas: null,
         ctx: null,
-        camera: {
-            x: 0,
-            y: 0,
-            z: -600,
-            rotationX: 0,
-            rotationY: 0,
-            rotationZ: 0,
+        // Camera Controllers
+        networkCameraController: null,
+        synapseCameraController: null,
+
+        // Cameras
+        camera: { // Network Camera
+            x: 0, y: 0, z: -600,
+            rotationX: 0, rotationY: 0, rotationZ: 0,
             fov: 600
         },
+        synapseCamera: { // Synapse Camera
+            x: 0, y: 0, z: -200,
+            rotationX: 0.2, rotationY: 0, rotationZ: 0,
+            fov: 400
+        },
+
         projection: {
             width: 800,
             height: 600,
@@ -23,22 +30,7 @@
             far: 5000
         },
         isActive: false,
-        autoRotate: true,
-        rotationSpeed: 0.0002, // Very slow, barely moving
-        neurons: [], // 3D neuron objects
-        connections: [], // 3D connection objects
-        particles: [],
-        brainShell: null, // Parametric shell data
-        neuronMeshes: {}, // Cache for base neuron meshes
-        newConnections: [], // List of {conn, timestamp} for pulsing effect
 
-        // Camera State
-        velocityX: 0,
-        velocityY: 0,
-        isDragging: false,
-
-        animationId: null,
-        isPlaying: false,
         // ... (rest of state)
 
         init(containerSelector) {
@@ -48,12 +40,29 @@
                 return;
             }
 
+            // Initialize Controllers
+            if (window.GreenhouseGeneticCameraController) {
+                // Network Controller
+                this.networkCameraController = new window.GreenhouseGeneticCameraController(
+                    this.camera,
+                    window.GreenhouseGeneticConfig // Reuse config or create mock if needed
+                );
+
+                // Synapse Controller
+                this.synapseCameraController = new window.GreenhouseGeneticCameraController(
+                    this.synapseCamera,
+                    window.GreenhouseGeneticConfig
+                );
+                // Synapse view usually rotates slowly by default
+                this.synapseCameraController.autoRotate = true;
+            }
+
             console.log('NeuroUI3D: Canvas build delayed by 5 seconds.');
 
             setTimeout(() => {
                 this.canvas = document.createElement('canvas');
                 this.canvas.width = container.offsetWidth;
-                this.canvas.height = Math.max(container.offsetHeight, 600); // Default to 600 if 0
+                this.canvas.height = Math.max(container.offsetHeight, 600);
                 this.canvas.style.width = '100%';
                 this.canvas.style.height = '100%';
                 this.canvas.style.backgroundColor = '#111';
@@ -83,7 +92,7 @@
                 // Add Start Overlay
                 this.addStartOverlay(container);
 
-                // Start Animation Loop (but logic depends on isPlaying)
+                // Start Animation Loop
                 this.startAnimation();
 
                 // Initialize Synapse Meshes
@@ -92,92 +101,107 @@
         },
 
         setupInteraction() {
-            let lastX = 0, lastY = 0;
-            let isPanning = false;
-
             this.canvas.addEventListener('mousedown', e => {
-                // Right click or Shift+Click for Pan
-                if (e.button === 2 || e.shiftKey) {
-                    isPanning = true;
-                    e.preventDefault(); // Prevent context menu
-                } else {
-                    this.isDragging = true;
-                }
+                // Calculate Scaled Coordinates
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
 
-                lastX = e.clientX;
-                lastY = e.clientY;
-                this.autoRotate = false; // Stop auto-rotate on interaction
-                this.velocityX = 0;
-                this.velocityY = 0;
+                // Check PiP Bounds (Network View is PiP when Synapse is active)
+                const isPiP = this.isMouseOverPiP(mouseX, mouseY);
+
+                if (this.selectedConnection) {
+                    // Synapse View is Main, Network is PiP
+                    if (isPiP) {
+                        if (this.networkCameraController) this.networkCameraController.handleMouseDown(e);
+                    } else {
+                        if (this.synapseCameraController) this.synapseCameraController.handleMouseDown(e);
+                    }
+                } else {
+                    // Network View is Main
+                    if (this.networkCameraController) this.networkCameraController.handleMouseDown(e);
+                }
             });
 
-            this.canvas.addEventListener('contextmenu', e => e.preventDefault()); // Block context menu
+            this.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
             window.addEventListener('mousemove', e => {
-                const rect = this.canvas.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
+                // Delegate to active controller(s)
+                if (this.networkCameraController && (this.networkCameraController.isDragging || this.networkCameraController.isPanning)) {
+                    this.networkCameraController.handleMouseMove(e);
+                }
+                if (this.synapseCameraController && (this.synapseCameraController.isDragging || this.synapseCameraController.isPanning)) {
+                    this.synapseCameraController.handleMouseMove(e);
+                }
 
-                if (isPanning) {
-                    const dx = e.clientX - lastX;
-                    const dy = e.clientY - lastY;
+                // Hover Logic
+                if (!this.isDragging) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const scaleX = this.canvas.width / rect.width;
+                    const scaleY = this.canvas.height / rect.height;
+                    const mouseX = (e.clientX - rect.left) * scaleX;
+                    const mouseY = (e.clientY - rect.top) * scaleY;
 
-                    // Pan Camera (Move X/Y opposite to drag)
-                    // Scale factor depends on Z depth roughly
-                    const panScale = Math.abs(this.camera.z) * 0.002;
-                    this.camera.x -= dx * panScale;
-                    this.camera.y -= dy * panScale;
-
-                    lastX = e.clientX;
-                    lastY = e.clientY;
-                } else if (this.isDragging) {
-                    const dx = e.clientX - lastX;
-                    const dy = e.clientY - lastY;
-
-                    this.camera.rotationY += dx * 0.005;
-                    this.camera.rotationX += dy * 0.005;
-
-                    this.velocityX = dx * 0.005;
-                    this.velocityY = dy * 0.005;
-
-                    lastX = e.clientX;
-                    lastY = e.clientY;
-                } else {
-                    // Hover Check
                     const hit = this.hitTest(mouseX, mouseY);
                     if (hit) {
-                        this.hoveredElement = hit;
                         this.canvas.style.cursor = 'pointer';
                     } else {
-                        this.hoveredElement = null;
                         this.canvas.style.cursor = 'default';
                     }
                 }
             });
 
             window.addEventListener('mouseup', () => {
-                this.isDragging = false;
-                isPanning = false;
+                if (this.networkCameraController) this.networkCameraController.handleMouseUp();
+                if (this.synapseCameraController) this.synapseCameraController.handleMouseUp();
             });
 
             this.canvas.addEventListener('wheel', e => {
-                e.preventDefault();
-                // Zoom towards mouse pointer? For now just simple Z zoom
-                const zoomSpeed = Math.abs(this.camera.z) * 0.001 + 5;
-                this.camera.z += e.deltaY * 0.1 * zoomSpeed;
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
 
-                // Clamp Zoom
-                if (this.camera.z > -50) this.camera.z = -50;
-                if (this.camera.z < -2000) this.camera.z = -2000;
-            });
+                const isPiP = this.isMouseOverPiP(mouseX, mouseY);
 
-            // Handle Clicks (for selection)
+                if (this.selectedConnection) {
+                    if (isPiP) {
+                        if (this.networkCameraController) this.networkCameraController.handleWheel(e);
+                    } else {
+                        if (this.synapseCameraController) this.synapseCameraController.handleWheel(e);
+                    }
+                } else {
+                    if (this.networkCameraController) this.networkCameraController.handleWheel(e);
+                }
+            }, { passive: false });
+
+            // Handle Clicks
             this.canvas.addEventListener('click', (e) => {
-                // Only handle click if not dragging/panning
-                if (!this.isDragging && !isPanning && Math.abs(this.velocityX) < 0.001) {
+                // Only handle click if not dragging
+                const isDragging = (this.networkCameraController && this.networkCameraController.isDragging) ||
+                    (this.synapseCameraController && this.synapseCameraController.isDragging);
+
+                if (!isDragging) {
                     this.handleMouseClick(e);
                 }
             });
+        },
+
+        isMouseOverPiP(mouseX, mouseY) {
+            if (!this.canvas) return false;
+
+            // PiP Bounds (Same as in render)
+            const pipW = 300;
+            const pipH = 250;
+            const padding = 20;
+            const pipX = this.canvas.width - pipW - padding;
+            const pipY = this.canvas.height - pipH - padding;
+
+            return (mouseX > pipX && mouseX < pipX + pipW &&
+                mouseY > pipY && mouseY < pipY + pipH);
         },
 
         addExplanation(container) {
@@ -388,28 +412,42 @@
             const ctx = this.ctx;
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-            // Auto Rotate or Inertia
-            if (this.autoRotate && this.isActive) {
-                this.camera.rotationY += this.rotationSpeed;
-            } else if (!this.isDragging) {
-                // Apply Inertia
-                this.camera.rotationY += this.velocityX;
-                this.camera.rotationX += this.velocityY;
+            // Update Controllers (Physics & Auto-Rotate)
+            if (this.networkCameraController) this.networkCameraController.update();
+            if (this.synapseCameraController) this.synapseCameraController.update();
 
-                // Friction
-                this.velocityX *= 0.95;
-                this.velocityY *= 0.95;
+            // Sync Camera State from Controllers
+            // The controllers mutate the camera objects directly, so we don't need to copy back manually
+            // unless we are doing something special.
 
-                // Stop if very slow
-                if (Math.abs(this.velocityX) < 0.0001) this.velocityX = 0;
-                if (Math.abs(this.velocityY) < 0.0001) this.velocityY = 0;
+            // Handle Transitions (FlyTo)
+            if (this.isTransitioning) {
+                const now = Date.now();
+                const progress = Math.min(1.0, (now - this.transitionStart) / this.transitionDuration);
+
+                // Ease In Out Cubic
+                const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+                this.camera.x = this.startState.x + (this.targetState.x - this.startState.x) * ease;
+                this.camera.y = this.startState.y + (this.targetState.y - this.startState.y) * ease;
+                this.camera.z = this.startState.z + (this.targetState.z - this.startState.z) * ease;
+                this.camera.rotationX = this.startState.rotationX + (this.targetState.rotationX - this.startState.rotationX) * ease;
+                this.camera.rotationY = this.startState.rotationY + (this.targetState.rotationY - this.startState.rotationY) * ease;
+
+                if (progress >= 1.0) {
+                    this.isTransitioning = false;
+                    if (this.transitionCallback) {
+                        this.transitionCallback();
+                        this.transitionCallback = null;
+                    }
+                }
             }
 
             // --- Draw Main View (Synapse) ---
             if (this.selectedConnection) {
                 // Draw Synapse as Main View (Full Screen)
                 if (window.GreenhouseNeuroSynapse) {
-                    window.GreenhouseNeuroSynapse.drawSynapsePiP(ctx, 0, 0, this.canvas.width, this.canvas.height, this.selectedConnection, this.synapseMeshes, true);
+                    window.GreenhouseNeuroSynapse.drawSynapsePiP(ctx, 0, 0, this.canvas.width, this.canvas.height, this.selectedConnection, this.synapseMeshes, true, this.synapseCamera);
                 }
             } else {
                 // Fallback if no connection selected (shouldn't happen with auto-select)
@@ -610,6 +648,30 @@
 
 
 
+        // Transition State
+        isTransitioning: false,
+        transitionStart: 0,
+        transitionDuration: 0,
+        startState: null,
+        targetState: null,
+        transitionCallback: null,
+
+        flyTo(target, duration = 1000, callback = null) {
+            this.isTransitioning = true;
+            this.transitionStart = Date.now();
+            this.transitionDuration = duration;
+            this.transitionCallback = callback;
+
+            this.startState = { ...this.camera };
+            this.targetState = { ...this.camera, ...target };
+
+            // Stop other movements
+            this.velocityX = 0;
+            this.velocityY = 0;
+            this.isDragging = false;
+            this.autoRotate = false;
+        },
+
         handleMouseClick(e) {
             const rect = this.canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
@@ -628,8 +690,19 @@
 
                 const hit = this.hitTest(mouseX, mouseY);
                 if (hit && hit.type === 'connection') {
-                    this.selectedConnection = hit.data;
-                    this.initSynapseParticles(); // Reset particles for new synapse
+                    // Cinematic Transition (Phase 5)
+                    // Fly to the connection
+                    const target = {
+                        x: hit.data.controlPoint.x,
+                        y: hit.data.controlPoint.y,
+                        z: hit.data.controlPoint.z - 200, // Zoom in
+                        // Keep rotation or align? Keep for now.
+                    };
+
+                    this.flyTo(target, 1500, () => {
+                        this.selectedConnection = hit.data;
+                        this.initSynapseParticles(); // Reset particles for new synapse
+                    });
                 }
             } else {
                 // Click is on Main View (Synapse) -> Stir Fluid
@@ -838,19 +911,81 @@
         },
 
         generateSynapseMeshes() {
-            if (window.GreenhouseNeuroGeometry) {
-                // Pre-synaptic: Bouton (Type 'pre')
-                const pre = window.GreenhouseNeuroGeometry.createSynapseGeometry(80, 20, 'pre');
-                // Post-synaptic: Spine (Type 'post')
-                const post = window.GreenhouseNeuroGeometry.createSynapseGeometry(80, 20, 'post');
+            // Manually generate organic bulbous shapes for synapse
+            // Pre-synaptic: Bulbous head with narrowing neck (Top)
+            // Post-synaptic: Matching receiving bulb (Bottom)
 
-                // Rotate post to face pre
-                post.vertices.forEach(v => {
-                    v.y *= -1; // Flip Y
-                });
-                return { pre, post };
-            }
-            return { pre: { vertices: [], faces: [] }, post: { vertices: [], faces: [] } };
+            const createBulb = (isPre) => {
+                const vertices = [];
+                const faces = [];
+                const rings = 12;
+                const segments = 16;
+                const radius = 40;
+
+                for (let i = 0; i <= rings; i++) {
+                    const v = i / rings;
+                    // Profile curve: Bulbous head tapering to neck
+                    // 0 = top of bulb (neck), 1 = bottom of bulb (face)
+                    // Use a sine curve for bulbous shape
+
+                    let r, y;
+                    if (isPre) {
+                        // Pre-synaptic (Top)
+                        // Neck at top (negative Y), Face at bottom (0)
+                        // v goes 0 (neck) to 1 (face)
+                        const angle = v * Math.PI * 0.8 + 0.1; // Partial sphere
+                        r = radius * Math.sin(angle);
+
+                        // Taper neck
+                        if (v < 0.3) r *= (v / 0.3) * 0.5 + 0.5;
+
+                        y = -60 + v * 60; // Height from -60 to 0
+                    } else {
+                        // Post-synaptic (Bottom)
+                        // Face at top (0), Neck at bottom (positive Y)
+                        const angle = v * Math.PI * 0.8 + 0.1;
+                        r = radius * Math.sin(angle);
+
+                        // Taper neck at bottom (end of loop)
+                        if (v > 0.7) r *= ((1 - v) / 0.3) * 0.5 + 0.5;
+
+                        y = 60 - v * 60; // Height from 60 to 0
+                    }
+
+                    for (let j = 0; j <= segments; j++) {
+                        const u = j / segments;
+                        const theta = u * Math.PI * 2;
+
+                        const px = r * Math.cos(theta);
+                        const pz = r * Math.sin(theta);
+
+                        vertices.push({ x: px, y: y, z: pz });
+                    }
+                }
+
+                // Generate Faces
+                for (let i = 0; i < rings; i++) {
+                    for (let j = 0; j < segments; j++) {
+                        const row1 = i * (segments + 1);
+                        const row2 = (i + 1) * (segments + 1);
+
+                        const v1 = row1 + j;
+                        const v2 = row1 + j + 1;
+                        const v3 = row2 + j;
+                        const v4 = row2 + j + 1;
+
+                        faces.push([v1, v2, v3]);
+                        faces.push([v2, v4, v3]);
+                    }
+                }
+
+                return { vertices, faces };
+            };
+
+            const pre = createBulb(true);
+            const post = createBulb(false);
+
+            return { pre, post };
         },
     };
 

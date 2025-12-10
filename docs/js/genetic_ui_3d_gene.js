@@ -2,7 +2,7 @@
     'use strict';
 
     const GreenhouseGeneticGene = {
-        drawMicroView(ctx, x, y, w, h, activeGene, activeGeneIndex, neuronMeshes, drawPiPFrameCallback) {
+        drawMicroView(ctx, x, y, w, h, activeGene, activeGeneIndex, neuronMeshes, drawPiPFrameCallback, cameraState) {
             if (drawPiPFrameCallback) {
                 drawPiPFrameCallback(ctx, x, y, w, h, "Micro: Gene Structure");
             }
@@ -10,11 +10,24 @@
             if (!activeGene) return;
 
             // Render a zoomed-in, rotating view of the specific gene geometry
-            const microCamera = {
-                x: 0, y: 0, z: -100,
-                rotationX: Date.now() * 0.001, rotationY: Date.now() * 0.002, rotationZ: 0,
-                fov: 300
-            };
+            // Use the camera state passed from the controller
+            let microCamera;
+
+            if (cameraState && cameraState.camera) {
+                // Use the full camera object if available (preferred)
+                microCamera = cameraState.camera;
+            } else {
+                // Fallback to constructing from individual properties (legacy support)
+                microCamera = {
+                    x: cameraState ? cameraState.panX : 0,
+                    y: cameraState ? cameraState.panY : 0,
+                    z: -100 / (cameraState ? cameraState.zoom : 1.0), // Approximate if no direct Z
+                    rotationX: cameraState ? cameraState.rotationX : 0,
+                    rotationY: cameraState ? cameraState.rotationY : 0,
+                    rotationZ: 0,
+                    fov: 300
+                };
+            }
 
             // Render High-Fidelity Chromatin Structure instead of abstract mesh
             if (window.GreenhouseGeneticChromosome) {
@@ -35,6 +48,44 @@
                     // drawMesh(mesh, activeGene.baseColor);
                 }
             }
+
+            // Phase 12: mRNA Synthesis (Static Visualization)
+            // Draw a static mRNA strand peeling off from the active gene
+
+            ctx.save();
+            // Center of PiP
+            const cx = x + w / 2;
+            const cy = y + h / 2;
+
+            // Draw mRNA strand (Static Wavy line)
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+
+            const length = 100; // Fixed length
+
+            for (let i = 0; i < 20; i++) {
+                const t = i / 20;
+                const dist = length * t;
+                // Static Wave
+                const wave = Math.sin(i * 0.8) * 5;
+                // Move generally up-right
+                const px = cx + dist;
+                const py = cy - dist * 0.5 + wave;
+
+                ctx.lineTo(px, py);
+            }
+
+            ctx.strokeStyle = '#FF1493'; // Deep Pink
+            ctx.lineWidth = 2;
+            ctx.setLineDash([2, 2]); // Dashed to look like "copy"
+            ctx.stroke();
+
+            // Label
+            ctx.fillStyle = '#FF1493';
+            ctx.font = '10px Arial';
+            ctx.fillText("mRNA", cx + length, cy - length * 0.5);
+
+            ctx.restore();
 
             ctx.restore(); // Restore context from drawPiPFrame
         },

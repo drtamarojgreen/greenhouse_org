@@ -2,15 +2,30 @@
     'use strict';
 
     const GreenhouseGeneticDNA = {
-        drawMacroView(ctx, w, h, camera, projection, neurons3D, activeGeneIndex, brainShell, drawNeuronCallback, drawBrainShellCallback) {
-            // Auto Rotate handled in main loop or here? Main loop updates camera, this just draws.
+        drawMacroView(ctx, w, h, camera, projection, neurons3D, activeGeneIndex, brainShell, drawNeuronCallback, drawBrainShellCallback, drawPiPFrameCallback, cameraState) {
+            if (drawPiPFrameCallback) {
+                drawPiPFrameCallback(ctx, 0, 0, w, h, "Gene View: DNA Helix");
+            }
 
-            // Draw Grid
-            // (Grid logic can be shared or duplicated, let's assume it's handled by main or we move it here if specific to DNA view)
-            // For now, let's focus on the DNA specific parts.
+            // Use camera state if provided (for PiP)
+            let viewCamera = camera;
+            if (cameraState && cameraState.camera) {
+                viewCamera = cameraState.camera;
+            } else if (cameraState) {
+                // Fallback construction
+                viewCamera = {
+                    x: cameraState.panX || 0,
+                    y: cameraState.panY || 0,
+                    z: -300 / (cameraState.zoom || 1.0),
+                    rotationX: cameraState.rotationX || 0,
+                    rotationY: cameraState.rotationY || 0,
+                    rotationZ: 0,
+                    fov: 500
+                };
+            }
 
             // Draw Helix Connections (Backbone)
-            this.drawConnections(ctx, neurons3D, camera, projection);
+            this.drawConnections(ctx, neurons3D, viewCamera, projection);
 
             // Project and Sort Genes (Filter out Brain Neurons for Main View)
             const projectedGenes = [];
@@ -18,7 +33,7 @@
                 // Only project genes (Genotype)
                 if (n.type !== 'gene') return;
 
-                const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, camera, projection);
+                const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, viewCamera, projection);
                 if (p.scale > 0) {
                     const isFocused = (i === activeGeneIndex);
                     projectedGenes.push({ ...n, ...p, isFocused });
@@ -50,7 +65,11 @@
             });
 
             // Draw Brain Shell (Wireframe) - Restored
-            if (brainShell && drawBrainShellCallback) {
+            // Only draw if NOT in PiP mode (or if desired)
+            // If in PiP, maybe hide brain shell to focus on DNA?
+            // The user wants "crayolas" (DNA) in PiP. Brain is main view.
+            // So we probably don't want to draw the brain shell inside the DNA PiP.
+            if (!drawPiPFrameCallback && brainShell && drawBrainShellCallback) {
                 drawBrainShellCallback(ctx, 200); // 200 offset for brain side
             }
 
@@ -77,7 +96,7 @@
 
                 if (p1.scale > 0 && p2.scale > 0) {
                     const avgScale = (p1.scale + p2.scale) / 2;
-                    const thickness = 10 * avgScale; // Thicker for better visibility
+                    const thickness = 14 * avgScale; // Significantly thicker for visibility
                     const midX = (p1.x + p2.x) / 2;
                     const midY = (p1.y + p2.y) / 2;
 
@@ -109,7 +128,7 @@
                             const material = config.get('materials.dna');
                             const normal = { x: nx, y: ny, z: 0 };
                             const position = { x: (x1 + x2) / 2, y: (y1 + y2) / 2, z: depth };
-                            
+
                             const lit = lighting.calculateLighting(normal, position, camera, {
                                 baseColor: baseColor,
                                 metallic: material.metallic,
@@ -118,7 +137,7 @@
                                 emissiveIntensity: material.emissiveIntensity,
                                 alpha: material.alpha
                             });
-                            
+
                             litColor = lighting.toRGBA(lit);
                         }
 
@@ -127,21 +146,21 @@
                             x1 - nx * thickness / 2, y1 - ny * thickness / 2,
                             x1 + nx * thickness / 2, y1 + ny * thickness / 2
                         );
-                        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.3)'); // Shadow edge
+                        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.5)'); // Darker Shadow edge
                         gradient.addColorStop(0.3, litColor); // Main color
                         gradient.addColorStop(0.7, litColor); // Main color
-                        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.4)'); // Highlight edge
+                        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.6)'); // Brighter Highlight edge
 
                         ctx.strokeStyle = gradient;
                         ctx.lineWidth = thickness;
-                        ctx.lineCap = 'round';
+                        ctx.lineCap = 'butt'; // Butt cap for clean join at middle
                         ctx.beginPath();
                         ctx.moveTo(x1, y1);
                         ctx.lineTo(x2, y2);
                         ctx.stroke();
 
                         // Add specular highlight
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
                         ctx.lineWidth = thickness * 0.2;
                         ctx.beginPath();
                         ctx.moveTo(x1 + nx * thickness * 0.15, y1 + ny * thickness * 0.15);
@@ -161,8 +180,8 @@
                 const strandNodes = helixNodes.filter(n => n.strand === s);
                 if (strandNodes.length < 2) continue;
 
-                const strandColor = s === 0 ? 
-                    config.get('materials.dna.strand1Color') : 
+                const strandColor = s === 0 ?
+                    config.get('materials.dna.strand1Color') :
                     config.get('materials.dna.strand2Color');
 
                 // Draw backbone segments with 3D effect
@@ -175,7 +194,7 @@
 
                     if (p1.scale > 0 && p2.scale > 0) {
                         const avgScale = (p1.scale + p2.scale) / 2;
-                        const thickness = 6 * avgScale;
+                        const thickness = 10 * avgScale; // Thicker backbone
 
                         // Calculate perpendicular for gradient
                         const dx = p2.x - p1.x;
@@ -189,11 +208,12 @@
                             p1.x - nx * thickness / 2, p1.y - ny * thickness / 2,
                             p1.x + nx * thickness / 2, p1.y + ny * thickness / 2
                         );
-                        
+
                         const baseColor = lighting ? lighting.parseColor(strandColor) : { r: 255, g: 255, b: 255, a: 1 };
-                        gradient.addColorStop(0, `rgba(${baseColor.r * 0.3}, ${baseColor.g * 0.3}, ${baseColor.b * 0.3}, 0.8)`);
-                        gradient.addColorStop(0.5, strandColor);
-                        gradient.addColorStop(1, `rgba(${Math.min(255, baseColor.r * 1.5)}, ${Math.min(255, baseColor.g * 1.5)}, ${Math.min(255, baseColor.b * 1.5)}, 0.9)`);
+                        gradient.addColorStop(0, `rgba(${baseColor.r * 0.2}, ${baseColor.g * 0.2}, ${baseColor.b * 0.2}, 0.9)`);
+                        gradient.addColorStop(0.4, strandColor);
+                        gradient.addColorStop(0.6, strandColor);
+                        gradient.addColorStop(1, `rgba(${Math.min(255, baseColor.r * 1.8)}, ${Math.min(255, baseColor.g * 1.8)}, ${Math.min(255, baseColor.b * 1.8)}, 0.95)`);
 
                         ctx.strokeStyle = gradient;
                         ctx.lineWidth = thickness;
@@ -205,8 +225,8 @@
                         ctx.stroke();
 
                         // Add specular highlight
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                        ctx.lineWidth = thickness * 0.25;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                        ctx.lineWidth = thickness * 0.3;
                         ctx.beginPath();
                         ctx.moveTo(p1.x + nx * thickness * 0.2, p1.y + ny * thickness * 0.2);
                         ctx.lineTo(p2.x + nx * thickness * 0.2, p2.y + ny * thickness * 0.2);
