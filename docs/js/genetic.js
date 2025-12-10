@@ -74,6 +74,12 @@
             // Load Core 3D Math Module (reused)
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
 
+            // Load Configuration and Enhancement Modules
+            await GreenhouseUtils.loadScript('genetic_config.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic_camera_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic_lighting.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic_pip_controls.js', baseUrl);
+
             // Load Genetic Modules
             await GreenhouseUtils.loadScript('genetic_algo.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);

@@ -90,13 +90,16 @@ You // docs/js/neuro.js
 
                 // Load the modules sequentially
                 await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+                await GreenhouseUtils.loadScript('neuro_config.js', baseUrl);
+                await GreenhouseUtils.loadScript('neuro_camera_controls.js', baseUrl);
+                await GreenhouseUtils.loadScript('neuro_lighting.js', baseUrl);
                 await GreenhouseUtils.loadScript('neuro_ga.js', baseUrl);
                 await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
                 await GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
                 await GreenhouseUtils.loadScript('neuro_ui_3d_neuron.js', baseUrl);
                 await GreenhouseUtils.loadScript('neuro_ui_3d_synapse.js', baseUrl);
                 await GreenhouseUtils.loadScript('neuro_ui_3d_stats.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_ui_3d.js', baseUrl);
+                await GreenhouseUtils.loadScript('neuro_ui_3d_enhanced.js', baseUrl);
                 await GreenhouseUtils.loadScript('neuro_app.js', baseUrl);
 
                 // Check if all modules are loaded
