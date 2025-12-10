@@ -69,11 +69,13 @@
                         ctx.moveTo(p1.x, p1.y);
                         ctx.lineTo(p2.x, p2.y);
 
-                        // Color gradient based on index
-                        const progress = i / projected.length;
-                        const r = Math.floor(100 + progress * 155);
-                        const g = Math.floor(100 + (1 - progress) * 155);
-                        const b = 200;
+                        // Color gradient based on Secondary Structure (Simulated)
+                        // Helix (Magenta), Sheet (Yellow), Coil (White)
+                        const structureType = Math.floor(i / 10) % 3;
+                        let r, g, b;
+                        if (structureType === 0) { r = 255; g = 0; b = 255; } // Helix
+                        else if (structureType === 1) { r = 255; g = 215; b = 0; } // Sheet
+                        else { r = 240; g = 240; b = 240; } // Coil
 
                         ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.lineWidth = width;
@@ -117,10 +119,13 @@
                         const alpha = Math.min(1, Math.max(0.2, 1 - p.depth / 1000));
                         const size = 6 * p.scale;
 
-                        const progress = p.index / projected.length;
-                        const r = Math.floor(100 + progress * 155);
-                        const g = Math.floor(100 + (1 - progress) * 155);
-                        const b = 200;
+                        // CPK Coloring (Simulated by index position in residue)
+                        // N (Blue), C (Grey), O (Red), S (Yellow)
+                        const atomType = p.index % 3; // 0: N, 1: C, 2: O (Simplified)
+                        let r, g, b;
+                        if (atomType === 0) { r = 50; g = 50; b = 255; } // N
+                        else if (atomType === 1) { r = 100; g = 100; b = 100; } // C
+                        else { r = 255; g = 50; b = 50; } // O
 
                         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.beginPath();
@@ -145,10 +150,12 @@
                         const alpha = Math.min(1, Math.max(0.2, 1 - p.depth / 1000));
                         const size = 12 * p.scale; // Larger size
 
-                        const progress = p.index / projected.length;
-                        const r = Math.floor(100 + progress * 155);
-                        const g = Math.floor(100 + (1 - progress) * 155);
-                        const b = 200;
+                        // CPK Coloring
+                        const atomType = p.index % 3; // 0: N, 1: C, 2: O
+                        let r, g, b;
+                        if (atomType === 0) { r = 50; g = 50; b = 255; } // N
+                        else if (atomType === 1) { r = 100; g = 100; b = 100; } // C
+                        else { r = 255; g = 50; b = 50; } // O
 
                         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.beginPath();

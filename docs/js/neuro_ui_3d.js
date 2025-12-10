@@ -283,15 +283,9 @@
                     z = vertex.z * jitter;
                 }
 
-                // Color mapping
-                const colors = {
-                    'pfc': '#E07A5F',
-                    'parietalLobe': '#F2CC8F',
-                    'occipitalLobe': '#81B29A',
-                    'temporalLobe': '#F4A261',
-                    'cerebellum': '#A8DADC',
-                    'brainstem': '#457B9D'
-                };
+                // Color mapping - "Cool Science" Palette (Blues/Teals/Purples)
+                const coolSciencePalette = ['#00FFFF', '#1E90FF', '#00CED1', '#4169E1', '#7B68EE'];
+                const baseColor = coolSciencePalette[Math.floor(Math.random() * coolSciencePalette.length)];
 
                 return {
                     ...n,
@@ -299,7 +293,7 @@
                     y: y,
                     z: z,
                     region: regionKey,
-                    baseColor: colors[regionKey] || '#ffffff',
+                    baseColor: baseColor,
                     radius: 6 + Math.random() * 4
                 };
             });
@@ -411,81 +405,80 @@
                 if (Math.abs(this.velocityY) < 0.0001) this.velocityY = 0;
             }
 
-            // --- Draw Main Network View ---
+            // --- Draw Main View (Synapse) ---
+            if (this.selectedConnection) {
+                // Draw Synapse as Main View (Full Screen)
+                if (window.GreenhouseNeuroSynapse) {
+                    window.GreenhouseNeuroSynapse.drawSynapsePiP(ctx, 0, 0, this.canvas.width, this.canvas.height, this.selectedConnection, this.synapseMeshes, true);
+                }
+            } else {
+                // Fallback if no connection selected (shouldn't happen with auto-select)
+                ctx.fillStyle = '#111';
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.textAlign = 'center';
+                ctx.fillText("Selecting Synapse...", this.canvas.width / 2, this.canvas.height / 2);
+            }
+
+            // --- Draw PiP View (Whole Brain Network) ---
+            const pipW = 300;
+            const pipH = 250;
+            const padding = 20;
+            const pipX = this.canvas.width - pipW - padding;
+            const pipY = this.canvas.height - pipH - padding;
+
+            this.drawNetworkView(ctx, pipX, pipY, pipW, pipH);
+        },
+
+        drawNetworkView(ctx, x, y, w, h) {
+            // Save original projection
+            const origW = this.projection.width;
+            const origH = this.projection.height;
+
+            // Set projection to PiP size
+            this.projection.width = w;
+            this.projection.height = h;
+
+            ctx.save();
+            ctx.translate(x, y);
+
+            // Draw Frame & Background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.strokeStyle = '#4ca1af';
+            ctx.lineWidth = 2;
+            ctx.fillRect(0, 0, w, h);
+            ctx.strokeRect(0, 0, w, h);
+
+            // Clip
+            ctx.beginPath();
+            ctx.rect(0, 0, w, h);
+            ctx.clip();
+
+            // Label
+            ctx.fillStyle = '#4ca1af';
+            ctx.font = '12px Arial';
+            ctx.fillText("Whole Brain", 10, 20);
+
             // Draw Grid
             this.drawGrid(ctx);
 
-            // Helper for projection (assuming GreenhouseModels3DMath is loaded)
+            // Helper for projection
             if (!window.GreenhouseModels3DMath) {
-                ctx.fillStyle = 'white';
-                ctx.fillText('GreenhouseModels3DMath library missing', 20, 30);
+                ctx.restore();
+                this.projection.width = origW;
+                this.projection.height = origH;
                 return;
             }
 
             // Draw Brain Shell (Wireframe)
             if (this.brainShell) {
-                this.drawBrainShell(ctx);
+                this.drawBrainShell(ctx, 0, w, h); // Pass w, h
             }
 
             // Draw Connections (True 3D Tubes)
-            this.drawConnections(ctx);
-
-            // Highlight Hovered Connection
-            if (this.hoveredElement && this.hoveredElement.type === 'connection') {
-                const conn = this.hoveredElement.data;
-                if (conn.controlPoint) {
-                    const p = GreenhouseModels3DMath.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, this.projection);
-                    if (p.scale > 0) {
-                        ctx.save();
-                        ctx.shadowBlur = 15;
-                        ctx.shadowColor = '#00ffcc';
-                        ctx.fillStyle = '#00ffcc';
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, 6 * p.scale, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.restore();
-
-                        // Tooltip
-                        const text = `Weight: ${conn.weight.toFixed(3)}`;
-                        const width = ctx.measureText(text).width + 10;
-
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                        ctx.fillRect(p.x + 10, p.y - 25, width, 20);
-                        ctx.strokeStyle = '#00ffcc';
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(p.x + 10, p.y - 25, width, 20);
-
-                        ctx.fillStyle = '#fff';
-                        ctx.font = '12px monospace';
-                        ctx.fillText(text, p.x + 15, p.y - 11);
-                    }
-                }
-            }
+            this.drawConnections(ctx, w, h); // Pass w, h
 
             // Project and Sort Neurons
-            // const projectedNeurons = [];
-            // this.neurons.forEach(n => {
-            //     const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
-            //     if (p.scale > 0) {
-            //         projectedNeurons.push({ ...n, ...p });
-            //     }
-            // });
-
-            // projectedNeurons.sort((a, b) => b.depth - a.depth);
-
-            // Draw Neurons (Tetrahedrons)
-            // We need to pass the original 3D neuron object, not the projected one, 
-            // because drawNeuron needs World Space coordinates to translate the mesh correctly.
-            // But we sorted by depth using the projected list.
-            // So 'projectedNeurons' contains { ...n, ...p }. 
-            // n.x is World X. p.x is Screen X.
-            // Wait, 'projectedNeurons' merged them. 
-            // If n.x and p.x collided, we have a problem.
-            // In updateData, we set n.x, n.y, n.z.
-            // project3DTo2D returns { x, y, z (depth), scale }.
-            // So p.x overwrites n.x!
-
-            // FIX: Don't overwrite World coordinates in projectedNeurons.
             const sortedNeurons = this.neurons.map(n => {
                 const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
                 return { neuron: n, projected: p };
@@ -496,33 +489,22 @@
                 this.drawNeuron(ctx, item.neuron, this.camera, this.projection);
             });
 
-            // Draw Labels
-            // this.drawLabels(ctx, sortedNeurons.map(i => ({...i.neuron, screenX: i.projected.x, screenY: i.projected.y})));
-
-            // Draw Labels
-            const projectedNeurons = sortedNeurons.map(item => ({
-                ...item.neuron,
-                x: item.projected.x,
-                y: item.projected.y
-            }));
+            // Draw Labels in PiP
             if (window.GreenhouseNeuroStats) {
-                window.GreenhouseNeuroStats.drawLabels(ctx, projectedNeurons);
+                const labeledNeurons = sortedNeurons.map(item => ({
+                    ...item.neuron,
+                    x: item.projected.x,
+                    y: item.projected.y,
+                    region: item.neuron.region
+                }));
+                window.GreenhouseNeuroStats.drawLabels(ctx, labeledNeurons);
             }
 
-            // Draw Stats
-            if (window.GreenhouseNeuroStats) {
-                window.GreenhouseNeuroStats.drawStats(ctx, this.neurons.length, this.connections.length);
-            }
+            ctx.restore();
 
-            // Draw Event Log
-            if (window.GreenhouseNeuroStats) {
-                window.GreenhouseNeuroStats.drawEventLog(ctx, this.canvas.height);
-            }
-
-            // --- Draw PiP Synapse View (if active) ---
-            if (this.viewMode === 'synapse' && this.selectedConnection) {
-                this.drawSynapsePiP(ctx);
-            }
+            // Restore projection
+            this.projection.width = origW;
+            this.projection.height = origH;
         },
 
 
@@ -551,11 +533,11 @@
             return [];
         },
 
-        drawBrainShell(ctx, offset) {
+        drawBrainShell(ctx, offset, w, h) {
             if (window.GreenhouseNeuroBrain) {
                 ctx.save();
                 ctx.translate(offset || 0, 0);
-                window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height);
+                window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w || this.canvas.width, h || this.canvas.height);
                 ctx.restore();
             }
         },
@@ -566,9 +548,9 @@
             }
         },
 
-        drawConnections(ctx) {
+        drawConnections(ctx, w, h) {
             if (window.GreenhouseNeuroSynapse) {
-                window.GreenhouseNeuroSynapse.drawConnections(ctx, this.connections, this.neurons, this.camera, this.projection, this.canvas.width, this.canvas.height);
+                window.GreenhouseNeuroSynapse.drawConnections(ctx, this.connections, this.neurons, this.camera, this.projection, w || this.canvas.width, h || this.canvas.height);
             }
         },
 
@@ -633,43 +615,63 @@
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            if (this.viewMode === 'synapse') {
-                // Check for PiP Close Button (Top Right of PiP)
-                const pipWidth = 300;
-                const pipHeight = 250;
-                const padding = 20;
-                const x = this.canvas.width - pipWidth - padding;
-                const y = this.canvas.height - pipHeight - padding;
+            // PiP Bounds
+            const pipW = 300;
+            const pipH = 250;
+            const padding = 20;
+            const pipX = this.canvas.width - pipW - padding;
+            const pipY = this.canvas.height - pipH - padding;
 
-                // Close Button Area
-                if (mouseX > x + pipWidth - 30 && mouseX < x + pipWidth &&
-                    mouseY > y && mouseY < y + 30) {
-                    this.viewMode = 'network';
-                    this.selectedConnection = null;
-                    return;
+            // Check if click is inside PiP (Network View)
+            if (mouseX > pipX && mouseX < pipX + pipW &&
+                mouseY > pipY && mouseY < pipY + pipH) {
+
+                const hit = this.hitTest(mouseX, mouseY);
+                if (hit && hit.type === 'connection') {
+                    this.selectedConnection = hit.data;
+                    this.initSynapseParticles(); // Reset particles for new synapse
                 }
-
-                // Stir Fluid (if click is inside PiP)
-                if (mouseX > x && mouseX < x + pipWidth &&
-                    mouseY > y && mouseY < y + pipHeight) {
-                    const cx = x + pipWidth / 2;
-                    const cy = y + pipHeight / 2;
+            } else {
+                // Click is on Main View (Synapse) -> Stir Fluid
+                // Stir Fluid
+                if (this.selectedConnection) {
+                    // Map mouse to fluid grid (centered)
+                    // Main view is full screen, centered at width/2, height/2
+                    const cx = this.canvas.width / 2;
+                    const cy = this.canvas.height / 2;
                     const localX = mouseX - cx;
                     const localY = mouseY - cy;
                     this.stirFluid(localX, localY, (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10);
-                    return; // Don't process network clicks if inside PiP
                 }
-            }
-
-            const hit = this.hitTest(mouseX, mouseY);
-            if (hit && hit.type === 'connection') {
-                this.selectedConnection = hit.data;
-                this.viewMode = 'synapse';
-                this.initSynapseParticles();
             }
         },
 
         hitTest(mouseX, mouseY) {
+            // PiP Bounds
+            const pipW = 300;
+            const pipH = 250;
+            const padding = 20;
+            const pipX = this.canvas.width - pipW - padding;
+            const pipY = this.canvas.height - pipH - padding;
+
+            // Only check hits if inside PiP
+            if (mouseX < pipX || mouseX > pipX + pipW ||
+                mouseY < pipY || mouseY > pipY + pipH) {
+                return null;
+            }
+
+            // Save original projection
+            const origW = this.projection.width;
+            const origH = this.projection.height;
+
+            // Set projection to PiP size
+            this.projection.width = pipW;
+            this.projection.height = pipH;
+
+            // Local Mouse Coords relative to PiP
+            const localMouseX = mouseX - pipX;
+            const localMouseY = mouseY - pipY;
+
             // Check Connections
             let closestConn = null;
             let minDist = 20; // Hit radius
@@ -680,8 +682,8 @@
                 const p = GreenhouseModels3DMath.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, this.projection);
 
                 if (p.scale > 0) {
-                    const dx = mouseX - p.x;
-                    const dy = mouseY - p.y;
+                    const dx = localMouseX - p.x;
+                    const dy = localMouseY - p.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
 
                     if (dist < minDist) {
@@ -691,11 +693,14 @@
                 }
             });
 
+            // Restore projection
+            this.projection.width = origW;
+            this.projection.height = origH;
+
             if (closestConn) {
-                this.selectedConnection = closestConn;
-                this.viewMode = 'synapse';
-                this.initSynapseParticles();
+                return { type: 'connection', data: closestConn };
             }
+            return null;
         },
 
         initSynapseParticles() {

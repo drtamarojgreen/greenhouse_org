@@ -12,9 +12,12 @@
             // Draw Helix Connections (Backbone)
             this.drawConnections(ctx, neurons3D, camera, projection);
 
-            // Project and Sort Genes
+            // Project and Sort Genes (Filter out Brain Neurons for Main View)
             const projectedGenes = [];
             neurons3D.forEach((n, i) => {
+                // Only project genes (Genotype)
+                if (n.type !== 'gene') return;
+
                 const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, camera, projection);
                 if (p.scale > 0) {
                     const isFocused = (i === activeGeneIndex);
@@ -46,10 +49,12 @@
                 }
             });
 
-            // Draw Brain Shell (Wireframe) - Offset to the right
+            // Draw Brain Shell (Wireframe) - Restored
             if (brainShell && drawBrainShellCallback) {
                 drawBrainShellCallback(ctx, 200); // 200 offset for brain side
             }
+
+            return projectedGenes;
         },
 
         drawConnections(ctx, neurons3D, camera, projection) {
@@ -80,15 +85,15 @@
 
                     // Assign Bases (Deterministic based on index)
                     // 0: A-T, 1: T-A, 2: C-G, 3: G-C
-                    // Colors: Adenine (Red), Thymine (Blue), Cytosine (Yellow), Guanine (Green)
+                    // Colors: Adenine (Blue), Thymine (Yellow), Cytosine (Red), Guanine (Green)
                     const type = (i / 2) % 4;
                     let color1, color2;
 
                     switch (type) {
-                        case 0: color1 = '#ff4d4d'; color2 = '#4da6ff'; break; // A (Red) - T (Blue)
-                        case 1: color1 = '#4da6ff'; color2 = '#ff4d4d'; break; // T - A
-                        case 2: color1 = '#ffd93d'; color2 = '#6bff6b'; break; // C (Yellow) - G (Green)
-                        case 3: color1 = '#6bff6b'; color2 = '#ffd93d'; break; // G - C
+                        case 0: color1 = '#5050FF'; color2 = '#E0E050'; break; // A (Blue) - T (Yellow)
+                        case 1: color1 = '#E0E050'; color2 = '#5050FF'; break; // T - A
+                        case 2: color1 = '#E05050'; color2 = '#50E050'; break; // C (Red) - G (Green)
+                        case 3: color1 = '#50E050'; color2 = '#E05050'; break; // G - C
                     }
 
                     // Helper to draw cylinder segment
@@ -128,7 +133,7 @@
                 const strandNodes = helixNodes.filter(n => n.strand === s);
                 if (strandNodes.length < 2) continue;
 
-                ctx.strokeStyle = s === 0 ? '#457b9d' : '#e63946'; // Different colors for strands
+                ctx.strokeStyle = s === 0 ? '#800080' : '#FF8C00'; // Phosphate Backbone (Purple/Orange)
                 ctx.beginPath();
 
                 // Draw as continuous curve

@@ -43,7 +43,8 @@
                     // Let's stick to individual strokes for now but optimized (no save/restore if possible).
                     // The previous code used save/restore. Let's remove that.
 
-                    ctx.strokeStyle = conn.weight > 0 ? `rgba(76, 201, 240, ${alpha})` : `rgba(247, 37, 133, ${alpha})`;
+                    // Gold for Excitatory, Silver/Blue for Inhibitory
+                    ctx.strokeStyle = conn.weight > 0 ? `rgba(255, 215, 0, ${alpha})` : `rgba(176, 196, 222, ${alpha})`;
                     ctx.lineWidth = 1;
                     ctx.beginPath();
                     ctx.moveTo(p1.x, p1.y);
@@ -115,8 +116,8 @@
                             intensity += diffuse * 0.5;
                         }
 
-                        // Color based on weight
-                        const baseColor = conn.weight > 0 ? { r: 100, g: 200, b: 255 } : { r: 255, g: 100, b: 100 };
+                        // Color based on weight: Gold (Excitatory) vs Silver (Inhibitory)
+                        const baseColor = conn.weight > 0 ? { r: 255, g: 215, b: 0 } : { r: 176, g: 196, b: 222 };
                         const litR = Math.min(255, baseColor.r * intensity);
                         const litG = Math.min(255, baseColor.g * intensity);
                         const litB = Math.min(255, baseColor.b * intensity);
@@ -304,8 +305,8 @@
                 projectedFaces.forEach(f => {
                     // Parse base color
                     let r = 100, g = 100, b = 100;
-                    if (color === '#FF6464') { r = 255; g = 100; b = 100; }
-                    else if (color === '#64FF96') { r = 100; g = 255; b = 150; }
+                    if (color === '#FFD700') { r = 255; g = 215; b = 0; } // Gold
+                    else if (color === '#B0C4DE') { r = 176; g = 196; b = 222; } // Silver
 
                     const ambient = 0.3;
                     const intensity = ambient + f.diffuse * 0.7 + f.specular * 0.6;
@@ -323,11 +324,44 @@
                 });
             };
 
-            // Draw Pre-synaptic (Top) - Cyan/Blue (Axonal)
-            drawMesh(synapseMeshes.pre, -60, '#4CC9F0');
+            // Draw Pre-synaptic (Top) - Gold (Axonal)
+            drawMesh(synapseMeshes.pre, -60, '#FFD700');
 
-            // Draw Post-synaptic (Bottom) - Orange/Gold (Dendritic)
-            drawMesh(synapseMeshes.post, 60, '#F72585');
+            // Draw Axon Shaft (Extending Upwards)
+            const drawShaft = (startY, endY, color) => {
+                const pStart = GreenhouseModels3DMath.project3DTo2D(0, startY, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                const pEnd = GreenhouseModels3DMath.project3DTo2D(0, endY, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+
+                if (pStart.scale > 0 && pEnd.scale > 0) {
+                    const radius = 15 * ((pStart.scale + pEnd.scale) / 2);
+
+                    // Draw Shaft as a thick line
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = radius * 2;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(pStart.x + x, pStart.y + y);
+                    ctx.lineTo(pEnd.x + x, pEnd.y + y);
+                    ctx.stroke();
+
+                    // Add a highlight for 3D effect
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = radius * 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(pStart.x + x - radius * 0.3, pStart.y + y);
+                    ctx.lineTo(pEnd.x + x - radius * 0.3, pEnd.y + y);
+                    ctx.stroke();
+                }
+            };
+
+            // Draw Axon (Gold) - Up
+            drawShaft(-60, -1000, '#FFD700'); // Extended to off-screen
+
+            // Draw Post-synaptic (Bottom) - Silver/Blue (Dendritic)
+            drawMesh(synapseMeshes.post, 60, '#B0C4DE');
+
+            // Draw Dendrite (Silver) - Down
+            drawShaft(60, 1000, '#B0C4DE'); // Extended to off-screen
 
             // Initialize Synapse Details (Vesicles, Mitochondria) if not present
             if (!connection.synapseDetails) {

@@ -299,16 +299,9 @@
                     }
 
                     // Color mapping
-                    const colors = {
-                        'pfc': '#E07A5F',
-                        'amygdala': '#FF6464',
-                        'hippocampus': '#64FF96',
-                        'temporalLobe': '#F4A261',
-                        'parietalLobe': '#9370DB',
-                        'occipitalLobe': '#FFC0CB',
-                        'cerebellum': '#40E0D0',
-                        'brainstem': '#FFD700'
-                    };
+                    // Color mapping - "Cool Science" Palette (Blues/Teals/Purples)
+                    const coolSciencePalette = ['#00FFFF', '#1E90FF', '#00CED1', '#4169E1', '#7B68EE'];
+                    const baseColor = coolSciencePalette[Math.floor(Math.random() * coolSciencePalette.length)];
 
                     return {
                         id: node.id,
@@ -317,7 +310,7 @@
                         z: z,
                         type: 'neuron',
                         region: regionKey,
-                        baseColor: colors[regionKey] || '#ffffff'
+                        baseColor: baseColor
                     };
                 }
             });
@@ -451,14 +444,20 @@
             // Draw Main Helix (Full Screen Background)
             this.drawMacroView(ctx, w, h);
 
+            // PiP Configuration
+            const pipW = 200;
+            const pipH = 150;
+            const gap = 10;
+            const pipX = w - pipW - gap;
+
             // 2. Micro View (Gene Zoom) - Top Right
-            this.drawMicroView(ctx, w - 220, 20, 200, 200, activeGene);
+            this.drawMicroView(ctx, pipX, gap, pipW, pipH, activeGene);
 
-            // 3. Target View (Brain Region) - Bottom Right
-            this.drawTargetView(ctx, w - 220, 240, 200, 200, activeGene);
+            // 3. Protein View (Polypeptide Chain) - Middle Right
+            this.drawProteinView(ctx, pipX, gap + pipH + gap, pipW, pipH, activeGene);
 
-            // 4. Protein View (Polypeptide Chain) - Bottom Left
-            this.drawProteinView(ctx, 20, h - 220, 200, 200, activeGene);
+            // 4. Target View (Brain Region) - Bottom Right
+            this.drawTargetView(ctx, pipX, gap + pipH + gap + pipH + gap, pipW, pipH, activeGene);
 
             // Draw Stats / Labels
             if (window.GreenhouseGeneticStats) {
@@ -473,7 +472,7 @@
 
         drawMacroView(ctx, w, h) {
             if (window.GreenhouseGeneticDNA) {
-                window.GreenhouseGeneticDNA.drawMacroView(
+                this.projectedGenes = window.GreenhouseGeneticDNA.drawMacroView(
                     ctx, w, h, this.camera, this.projection, this.neurons3D, this.activeGeneIndex, this.brainShell,
                     this.drawNeuron.bind(this), // Callback for drawing individual genes/neurons
                     this.drawBrainShell.bind(this) // Callback for drawing brain shell
@@ -523,7 +522,9 @@
 
         drawPiPFrame(ctx, x, y, w, h, title) {
             ctx.save();
-            ctx.fillStyle = 'rgba(10, 10, 20, 0.8)';
+
+            // Background
+            ctx.fillStyle = 'rgba(10, 10, 20, 0.9)'; // Slightly more opaque
             ctx.strokeStyle = '#444';
             ctx.lineWidth = 1;
             ctx.fillRect(x, y, w, h);
@@ -535,7 +536,7 @@
             ctx.textAlign = 'left';
             ctx.fillText(title, x + 5, y + 15);
 
-            // Clip
+            // Clip Content
             ctx.beginPath();
             ctx.rect(x, y, w, h);
             ctx.clip();
@@ -582,13 +583,18 @@
             const w = this.canvas.width;
             const h = this.canvas.height;
 
-            // Check for Protein Click
-            // Area: x=20, y=h-220, w=200, h=200
+            // PiP Configuration (Must match render)
+            const pipW = 200;
+            const pipH = 150;
+            const gap = 10;
+            const pipX = w - pipW - gap;
+
+            // Check for Protein Click (Middle Right)
             if (window.GreenhouseGeneticProtein) {
-                const protX = 20;
-                const protY = h - 220;
-                const protW = 200;
-                const protH = 200;
+                const protX = pipX;
+                const protY = gap + pipH + gap;
+                const protW = pipW;
+                const protH = pipH;
 
                 const protHit = window.GreenhouseGeneticProtein.hitTest(
                     mouseX, mouseY, protX, protY, protW, protH,
@@ -611,10 +617,10 @@
 
             const btnW = 100;
             const btnH = 30;
-            const gap = 20;
+            const btnGap = 20;
 
             // Previous Button
-            const prevX = w / 2 - btnW - gap / 2;
+            const prevX = w / 2 - btnW - btnGap / 2;
             const prevY = h - 50;
             if (mouseX >= prevX && mouseX <= prevX + btnW && mouseY >= prevY && mouseY <= prevY + btnH) {
                 this.activeGeneIndex = (this.activeGeneIndex - 1 + this.neurons3D.length) % this.neurons3D.length;
@@ -623,7 +629,7 @@
             }
 
             // Next Button
-            const nextX = w / 2 + gap / 2;
+            const nextX = w / 2 + btnGap / 2;
             const nextY = h - 50;
             if (mouseX >= nextX && mouseX <= nextX + btnW && mouseY >= nextY && mouseY <= nextY + btnH) {
                 this.activeGeneIndex = (this.activeGeneIndex + 1) % this.neurons3D.length;
@@ -727,7 +733,9 @@
 
         drawLabels(ctx, projectedNeurons) {
             if (window.GreenhouseGeneticStats) {
-                window.GreenhouseGeneticStats.drawLabels(ctx, projectedNeurons);
+                // Use captured projectedGenes if available, otherwise use passed arg (which might be empty)
+                const data = this.projectedGenes || projectedNeurons;
+                window.GreenhouseGeneticStats.drawLabels(ctx, data);
             }
         },
 

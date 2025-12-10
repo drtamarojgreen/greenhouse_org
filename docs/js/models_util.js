@@ -216,6 +216,11 @@
                 pfc_desc: "The Prefrontal Cortex is crucial for executive functions like planning, decision-making, and regulating social behavior.",
                 amygdala_desc: "The Amygdala is central to processing emotions, particularly fear, and is a key part of the brain’s threat-detection system.",
                 hippocampus_desc: "The Hippocampus plays a major role in learning and memory, converting short-term memories into more permanent ones.",
+                parietalLobe_desc: "The Parietal Lobe processes sensory information regarding the location of parts of the body as well as interpreting visual information and processing language and mathematics.",
+                occipitalLobe_desc: "The Occipital Lobe is the visual processing center of the mammalian brain containing most of the anatomical region of the visual cortex.",
+                temporalLobe_desc: "The Temporal Lobe is involved in processing sensory input into derived meanings for the appropriate retention of visual memory, language comprehension, and emotion association.",
+                cerebellum_desc: "The Cerebellum receives information from the sensory systems, the spinal cord, and other parts of the brain and then regulates motor movements.",
+                brainstem_desc: "The Brainstem controls the flow of messages between the brain and the rest of the body, and it also controls basic body functions such as breathing, swallowing, heart rate, blood pressure, consciousness, and whether one is awake or sleepy.",
                 no_info: "No information available for this region.",
 
                 // Hovers
@@ -358,7 +363,17 @@
                 "Next": "Next",
                 "Unknown": "Unknown",
                 "Genotype (DNA)": "Genotype (DNA)",
-                "Phenotype (Brain)": "Phenotype (Brain)"
+                "Phenotype (Brain)": "Phenotype (Brain)",
+
+                // Brain Regions
+                "pfc": "Prefrontal Cortex",
+                "parietalLobe": "Parietal Lobe",
+                "occipitalLobe": "Occipital Lobe",
+                "temporalLobe": "Temporal Lobe",
+                "cerebellum": "Cerebellum",
+                "brainstem": "Brainstem",
+                "hippocampus": "Hippocampus",
+                "amygdala": "Amygdala"
             },
             es: {
                 // Consent Screen
@@ -645,11 +660,15 @@
         },
 
         getRegionDescription(regionKey) {
-            // Map region keys to translation keys if necessary, or just use the keys directly if they match
             const map = {
                 pfc: 'pfc_desc',
                 amygdala: 'amygdala_desc',
-                hippocampus: 'hippocampus_desc'
+                hippocampus: 'hippocampus_desc',
+                parietalLobe: 'parietalLobe_desc',
+                occipitalLobe: 'occipitalLobe_desc',
+                temporalLobe: 'temporalLobe_desc',
+                cerebellum: 'cerebellum_desc',
+                brainstem: 'brainstem_desc'
             };
 
             const key = map[regionKey] || 'no_info';

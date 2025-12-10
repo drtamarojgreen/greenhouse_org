@@ -87,7 +87,7 @@
             const util = window.GreenhouseModelsUtil;
             const t = util ? util.t.bind(util) : (k) => k;
 
-            if (!util || projectedNeurons.length === 0) return;
+            if (projectedNeurons.length === 0) return;
 
             // Label Brain Regions
             const regions = {};
@@ -108,34 +108,38 @@
                 if (data.count > 0) {
                     const cx = data.x / data.count;
                     const cy = data.y / data.count;
-                    // Use getRegionDescription logic or just translate the name if it's a key
-                    // The region names in data are keys like 'pfc', 'amygdala'
-                    // We need to map them to display names
-                    // Let's assume the region name itself is a key or we map it
-                    // Actually, p.region is likely 'prefrontalCortex' or 'pfc'.
-                    // Let's rely on t() to handle it if the key exists, or fallback.
-                    // We might need to add region keys to models_util.js if they differ.
-                    // Existing keys: "Prefrontal Cortex", "Amygdala", "Hippocampus"
-                    // If p.region is 'pfc', we need to map it.
-                    // Let's just try t(name) for now.
-                    ctx.fillText(t(name), cx, cy - 15);
+
+                    // Draw Label Background
+                    const text = t(name);
+                    const textWidth = ctx.measureText(text).width;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                    ctx.fillRect(cx - textWidth / 2 - 4, cy - 25, textWidth + 8, 16);
+
+                    // Draw Label Text
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText(text, cx, cy - 12);
                 }
             }
 
             // Label "Genotype" and "Phenotype"
-            ctx.font = 'bold 14px Arial';
+            // Label "Genotype" and "Phenotype"
+            ctx.font = 'bold 16px Arial';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.fillText(t("Genotype (DNA)"), 200, 50); // Need to add this key? Or construct it?
-            // "Genotype (DNA)" is not in keys. Let's add "Genotype" and "Phenotype" keys or just use English for now if not critical.
-            // Wait, I should add them.
-            ctx.fillText(t("Phenotype (Brain)"), 600, 50);
+
+            // Helix is roughly centered, but let's place Genotype label on the left side
+            ctx.fillText(t("Genotype (DNA)"), canvasWidth * 0.25, 60);
+
+            // Brain Shell is drawn with offset 200. If canvas is 800 wide, center is 400. 
+            // Brain is likely around x=400+200=600? 
+            // Let's place Phenotype label on the right side, but to the left of the PiPs
+            ctx.fillText(t("Phenotype (Brain)"), canvasWidth * 0.6, 60);
 
             ctx.textAlign = 'left';
         },
 
         drawSignalFlow(ctx, isEvolving) {
-            // Visualize signals moving from Helix (left) to Brain (right)
-            // We can just draw random particles flowing rightward
+            // Signal flow disabled to remove "crayola" artifacts
+            /*
             const now = Date.now();
             const flowSpeed = 0.1;
 
@@ -158,6 +162,7 @@
                     ctx.fill();
                 }
             }
+            */
         }
     };
 

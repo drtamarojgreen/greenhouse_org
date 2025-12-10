@@ -41,12 +41,15 @@
             ctx.fillText(`${t("Connections")}: ${connectionCount}`, 20, 50);
 
             ctx.fillStyle = '#00ffcc';
-            ctx.fillText(t("Click any connection to view Synapse"), 20, 80);
+            ctx.fillText(t("Click PiP to select connection"), 20, 80);
         },
 
         drawLabels(ctx, projectedNeurons) {
             const util = window.GreenhouseModelsUtil;
-            if (!util || projectedNeurons.length === 0) return;
+            // if (!util || projectedNeurons.length === 0) return; // Don't fail if util is missing
+            if (projectedNeurons.length === 0) return;
+
+            const t = util ? util.t.bind(util) : (k) => k;
 
             // Label Regions instead of individual neurons
             const regions = {};
@@ -89,13 +92,14 @@
 
                 if (!collision) {
                     // Draw Label with background for readability
-                    const textWidth = ctx.measureText(label.name).width;
+                    const text = t(label.name);
+                    const textWidth = ctx.measureText(text).width;
 
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-                    ctx.fillRect(label.x - textWidth / 2 - 4, label.y - 10, textWidth + 8, 14);
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                    ctx.fillRect(label.x - textWidth / 2 - 4, label.y - 22, textWidth + 8, 16);
 
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                    ctx.fillText(label.name, label.x, label.y);
+                    ctx.fillText(text, label.x, label.y - 10);
 
                     drawnLabels.push(label);
                 }
