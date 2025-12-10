@@ -248,6 +248,20 @@
             }
 
             this.neurons = genome.neurons.map((n, i) => {
+                // Check if neuron already exists to preserve position
+                const existingNeuron = this.neurons.find(existing => existing.id === n.id);
+                if (existingNeuron) {
+                    return {
+                        ...n,
+                        x: existingNeuron.x,
+                        y: existingNeuron.y,
+                        z: existingNeuron.z,
+                        region: existingNeuron.region,
+                        baseColor: existingNeuron.baseColor,
+                        radius: existingNeuron.radius
+                    };
+                }
+
                 // Assign to a region based on index
                 const regionKeys = ['pfc', 'parietalLobe', 'occipitalLobe', 'temporalLobe', 'cerebellum', 'brainstem'];
                 const regionKey = regionKeys[i % regionKeys.length];
@@ -257,6 +271,8 @@
                 let x = 0, y = 0, z = 0;
 
                 if (regionVerticesIndices.length > 0) {
+                    // Use a deterministic seed based on ID if possible, or just random for new ones
+                    // For now, random is fine for NEW neurons
                     const rndIndex = regionVerticesIndices[Math.floor(Math.random() * regionVerticesIndices.length)];
                     const vertex = this.brainShell.vertices[rndIndex];
 

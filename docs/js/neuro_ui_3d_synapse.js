@@ -182,24 +182,29 @@
             });
         },
 
-        drawSynapsePiP(ctx, x, y, w, h, connection, synapseMeshes) {
-            // Draw Frame
-            ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            ctx.strokeStyle = '#4ca1af';
-            ctx.lineWidth = 2;
-            ctx.fillRect(x, y, w, h);
-            ctx.strokeRect(x, y, w, h);
+        drawSynapsePiP(ctx, x, y, w, h, connection, synapseMeshes, isMainView = false) {
+            // Draw Frame (Only if PiP)
+            if (!isMainView) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.strokeStyle = '#4ca1af';
+                ctx.lineWidth = 2;
+                ctx.fillRect(x, y, w, h);
+                ctx.strokeRect(x, y, w, h);
 
-            // Clip to frame
-            ctx.beginPath();
-            ctx.rect(x, y, w, h);
-            ctx.clip();
+                // Clip to frame
+                ctx.beginPath();
+                ctx.rect(x, y, w, h);
+                ctx.clip();
 
-            // Label
-            ctx.fillStyle = '#4ca1af';
-            ctx.font = '12px Arial';
-            ctx.fillText("Synapse View", x + 10, y + 20);
+                // Label
+                ctx.fillStyle = '#4ca1af';
+                ctx.font = '12px Arial';
+                ctx.fillText("Synapse View", x + 10, y + 20);
+            } else {
+                ctx.save(); // Save for restore later
+                // No frame, no clip, no label for main view (or maybe a floating label?)
+            }
 
             if (!connection || !synapseMeshes) {
                 ctx.fillStyle = '#666';
