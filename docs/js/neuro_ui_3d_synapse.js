@@ -332,7 +332,7 @@
             };
 
             // Draw Pre-synaptic (Top) - Gold (Axonal)
-            drawMesh(synapseMeshes.pre, -60, '#FFD700');
+            drawMesh(synapseMeshes.pre, 0, '#FFD700'); // Offset 0, mesh is already at -115 to -25
 
             // Draw Axon Shaft (Extending Upwards)
             const drawShaft = (startY, endY, color) => {
@@ -362,13 +362,15 @@
             };
 
             // Draw Axon (Gold) - Up
-            drawShaft(-60, -1000, '#FFD700'); // Extended to off-screen
+            // Connects to neck at -115
+            drawShaft(-115, -1000, '#FFD700');
 
             // Draw Post-synaptic (Bottom) - Silver/Blue (Dendritic)
-            drawMesh(synapseMeshes.post, 60, '#B0C4DE');
+            drawMesh(synapseMeshes.post, 0, '#B0C4DE'); // Offset 0, mesh is already at 25 to 115
 
             // Draw Dendrite (Silver) - Down
-            drawShaft(60, 1000, '#B0C4DE'); // Extended to off-screen
+            // Connects to neck at 115
+            drawShaft(115, 1000, '#B0C4DE');
 
             // Initialize Synapse Details (Vesicles, Mitochondria) if not present
             if (!connection.synapseDetails) {
@@ -425,6 +427,31 @@
                     }
                 }
             };
+
+            // Draw Labels
+            ctx.save();
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#FFD700'; // Gold for Pre
+
+            // Project label positions
+            const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -100, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            if (preLabelPos.scale > 0) {
+                ctx.fillText("Pre-Synaptic Terminal", preLabelPos.x, preLabelPos.y);
+            }
+
+            ctx.fillStyle = '#87CEEB'; // SkyBlue for Post
+            const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 100, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            if (postLabelPos.scale > 0) {
+                ctx.fillText("Post-Synaptic Terminal", postLabelPos.x, postLabelPos.y);
+            }
+
+            ctx.fillStyle = '#FFFFFF';
+            const cleftLabelPos = GreenhouseModels3DMath.project3DTo2D(50, 0, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            if (cleftLabelPos.scale > 0) {
+                ctx.fillText("Neurotransmitters", cleftLabelPos.x, cleftLabelPos.y);
+            }
+            ctx.restore();
 
             // Draw Vesicles (Phase 7: Vesicle Fusion)
             connection.synapseDetails.vesicles.forEach(v => {

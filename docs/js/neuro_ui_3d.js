@@ -918,48 +918,61 @@
             const createBulb = (isPre) => {
                 const vertices = [];
                 const faces = [];
-                const rings = 12;
-                const segments = 16;
-                const radius = 40;
+                const rings = 40; // High resolution
+                const segments = 40;
+                const length = 90; // 115 - 25
+                const neckRadius = 15;
+
+                // Surge Function Parameters (Log-Normal / Gamma approximation)
+                // r(x) = neck + A * x^k * e^(-bx)
+                // Peak at x=30, Amplitude adds ~30 to radius
+                const k = 2;
+                const b = 0.066;
+                const A = 0.25;
 
                 for (let i = 0; i <= rings; i++) {
-                    const v = i / rings;
-                    // Profile curve: Bulbous head tapering to neck
-                    // 0 = top of bulb (neck), 1 = bottom of bulb (face)
-                    // Use a sine curve for bulbous shape
+                    const u = i / rings; // 0 to 1
+                    const xVal = u * length; // Position along axis (0 to 90)
 
-                    let r, y;
-                    if (isPre) {
-                        // Pre-synaptic (Top)
-                        // Neck at top (negative Y), Face at bottom (0)
-                        // v goes 0 (neck) to 1 (face)
-                        const angle = v * Math.PI * 0.8 + 0.1; // Partial sphere
-                        r = radius * Math.sin(angle);
+                    // Radius Profile r(x)
+                    let r = neckRadius + A * Math.pow(xVal, k) * Math.exp(-b * xVal);
 
-                        // Taper neck
-                        if (v < 0.3) r *= (v / 0.3) * 0.5 + 0.5;
-
-                        y = -60 + v * 60; // Height from -60 to 0
-                    } else {
-                        // Post-synaptic (Bottom)
-                        // Face at top (0), Neck at bottom (positive Y)
-                        const angle = v * Math.PI * 0.8 + 0.1;
-                        r = radius * Math.sin(angle);
-
-                        // Taper neck at bottom (end of loop)
-                        if (v > 0.7) r *= ((1 - v) / 0.3) * 0.5 + 0.5;
-
-                        y = 60 - v * 60; // Height from 60 to 0
+                    // Face Rounding (Superellipse Taper at the end)
+                    if (u > 0.85) {
+                        const t = (u - 0.85) / 0.15;
+                        r *= Math.sqrt(1 - t * t); // Circular cap rounding
                     }
 
+                    // 3D Generation: Polar Rotation around X-axis (Model Space)
+                    // Then mapped to World Space (Y-axis aligned)
+
                     for (let j = 0; j <= segments; j++) {
-                        const u = j / segments;
-                        const theta = u * Math.PI * 2;
+                        const v = j / segments;
+                        const theta = v * Math.PI * 2;
 
-                        const px = r * Math.cos(theta);
-                        const pz = r * Math.sin(theta);
+                        // Model Space (Aligned along X+)
+                        // my, mz are radial. mx is axial.
+                        const my = r * Math.cos(theta);
+                        const mz = r * Math.sin(theta);
 
-                        vertices.push({ x: px, y: y, z: pz });
+                        // Transform to World Space
+                        let wx, wy, wz;
+
+                        if (isPre) {
+                            // Pre-synaptic: Neck at -115, Face at -25
+                            // Map Model X (0 to 90) to World Y (-115 to -25)
+                            wx = my;
+                            wy = -115 + xVal;
+                            wz = mz;
+                        } else {
+                            // Post-synaptic: Neck at 115, Face at 25
+                            // Map Model X (0 to 90) to World Y (115 to 25)
+                            wx = my;
+                            wy = 115 - xVal;
+                            wz = mz;
+                        }
+
+                        vertices.push({ x: wx, y: wy, z: wz });
                     }
                 }
 

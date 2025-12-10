@@ -7,15 +7,8 @@
                 drawPiPFrameCallback(ctx, x, y, w, h, "Target: Brain Region");
             }
 
-            if (!activeGene || !brainShell) return;
-
-            // Render the Brain Shell, highlighting the region corresponding to the gene
-            const regions = Object.keys(brainShell.regions);
-            const regionName = regions[activeGeneIndex % regions.length];
-
             // Camera for Target View
             let targetCamera;
-
             if (cameraState && cameraState.camera) {
                 targetCamera = cameraState.camera;
             } else {
@@ -30,58 +23,200 @@
                 };
             }
 
-            // Get points for this region
-            const regionData = brainShell.regions[regionName];
-            if (!regionData) return;
+            // Generate Composite Mesh if not cached
+            if (!this.compositeBrainMesh) {
+                this.compositeBrainMesh = this.generateCompositeBrainMesh();
+            }
 
-            // Let's draw the whole brain faint
-            const project = (v) => GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, targetCamera, { width: w, height: h, near: 10, far: 5000 });
+            const mesh = this.compositeBrainMesh;
 
-            // Draw all vertices as faint dots
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            brainShell.vertices.forEach(v => {
+            // Project and Sort Faces
+            const projectedVertices = mesh.vertices.map(v => {
                 // Rotate
                 let vx = v.x, vy = v.y, vz = v.z;
+
+                // Rotate Y
                 let tx = vx * Math.cos(targetCamera.rotationY) - vz * Math.sin(targetCamera.rotationY);
                 let tz = vx * Math.sin(targetCamera.rotationY) + vz * Math.cos(targetCamera.rotationY);
                 vx = tx; vz = tz;
 
-                const p = project({ x: vx, y: vy, z: vz });
-                if (p.scale > 0) {
-                    ctx.fillRect(p.x + x, p.y + y, 1, 1);
-                }
+                // Rotate X
+                let ty = vy * Math.cos(targetCamera.rotationX) - vz * Math.sin(targetCamera.rotationX);
+                tz = vy * Math.sin(targetCamera.rotationX) + vz * Math.cos(targetCamera.rotationX);
+                vy = ty; vz = tz;
+
+                return GreenhouseModels3DMath.project3DTo2D(vx, vy, vz, targetCamera, { width: w, height: h, near: 10, far: 5000 });
             });
 
-            // Highlight Target Region
-            if (regionData.vertices) {
-                ctx.fillStyle = activeGene.baseColor;
-                regionData.vertices.forEach(idx => {
-                    const v = brainShell.vertices[idx];
-                    if (!v) return;
+            // Sort Faces
+            const facesWithDepth = mesh.faces.map(face => {
+                const p0 = projectedVertices[face[0]];
+                const p1 = projectedVertices[face[1]];
+                const p2 = projectedVertices[face[2]];
 
-                    // Rotate
-                    let vx = v.x, vy = v.y, vz = v.z;
-                    let tx = vx * Math.cos(targetCamera.rotationY) - vz * Math.sin(targetCamera.rotationY);
-                    let tz = vx * Math.sin(targetCamera.rotationY) + vz * Math.cos(targetCamera.rotationY);
-                    vx = tx; vz = tz;
+                if (p0.scale <= 0 || p1.scale <= 0 || p2.scale <= 0) return null;
 
-                    const p = project({ x: vx, y: vy, z: vz });
-                    if (p.scale > 0) {
-                        const size = 2 * p.scale;
-                        ctx.beginPath();
-                        ctx.arc(p.x + x, p.y + y, size, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                });
-            }
+                const depth = (p0.depth + p1.depth + p2.depth) / 3;
+                return { face, p0, p1, p2, depth, color: face[3] }; // face[3] is color index/type
+            }).filter(f => f !== null).sort((a, b) => b.depth - a.depth);
 
-            // Label
+            // Draw Faces
+            facesWithDepth.forEach(f => {
+                // Backface Culling
+                const cp = (f.p1.x - f.p0.x) * (f.p2.y - f.p0.y) - (f.p1.y - f.p0.y) * (f.p2.x - f.p0.x);
+                if (cp < 0) return;
+
+                ctx.beginPath();
+                ctx.moveTo(f.p0.x + x, f.p0.y + y);
+                ctx.lineTo(f.p1.x + x, f.p1.y + y);
+                ctx.lineTo(f.p2.x + x, f.p2.y + y);
+                ctx.closePath();
+
+                // Color based on region type
+                // Cerebrum: Grey/White, Cerebellum: Darker
+                const baseColor = f.color === 'cerebellum' ? { r: 150, g: 100, b: 100 } : { r: 200, g: 200, b: 200 };
+
+                // Simple Lighting
+                // Normal is roughly perpendicular to screen for front faces? 
+                // We can use depth for fog
+                const alpha = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
+
+                ctx.fillStyle = `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${alpha})`;
+                ctx.strokeStyle = `rgba(${baseColor.r - 50}, ${baseColor.g - 50}, ${baseColor.b - 50}, ${alpha * 0.5})`;
+                ctx.lineWidth = 0.5;
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            // Highlight Active Region (if we can map it)
+            // For now, just draw the label
             ctx.fillStyle = '#fff';
             ctx.font = '14px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(regionName, x + w / 2, y + h - 10);
+            ctx.fillText("Composite Brain Model", x + w / 2, y + h - 10);
 
-            ctx.restore(); // Restore context from drawPiPFrame
+            ctx.restore();
+        },
+
+        generateCompositeBrainMesh() {
+            const vertices = [];
+            const faces = [];
+            let vIndex = 0;
+
+            // Helper to add mesh
+            const addMesh = (vs, fs, colorType) => {
+                const offset = vIndex;
+                vs.forEach(v => vertices.push(v));
+                fs.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset, colorType]));
+                vIndex += vs.length;
+            };
+
+            // 1. Cerebrum (Hemispheres) - Deformed Superellipsoid
+            // |x/a|^r + |y/b|^s + |z/c|^t = 1
+            // r=2.5 (flat medial), s=2, t=2
+            const createHemisphere = (sign) => {
+                const vs = [];
+                const fs = [];
+                const rings = 15;
+                const segments = 15;
+                const a = 40, b = 50, c = 60; // Dimensions
+
+                for (let i = 0; i <= rings; i++) {
+                    const u = (i / rings) * Math.PI; // 0 to PI (Latitude)
+                    for (let j = 0; j <= segments; j++) {
+                        const v = (j / segments) * Math.PI; // 0 to PI (Longitude - Half sphere)
+
+                        // Superellipsoid coords (simplified)
+                        // x = a * sign * cos(v)^r * sin(u)^r
+                        // We'll use standard sphere mapping and distort
+
+                        let x = Math.sin(u) * Math.cos(v);
+                        let y = Math.cos(u);
+                        let z = Math.sin(u) * Math.sin(v);
+
+                        // Apply Superellipsoid flattening for medial wall (x close to 0)
+                        // If x is small, flatten it?
+                        // Actually, let's just scale.
+
+                        x *= a * sign; // Separate hemispheres
+                        y *= b;
+                        z *= c;
+
+                        // Medial Flattening: If x is near 0 (medial), clamp or flatten
+                        if (Math.abs(x) < 10) x *= 0.5;
+
+                        // Offset
+                        x += sign * 5; // Gap
+
+                        vs.push({ x, y, z });
+                    }
+                }
+
+                // Faces
+                for (let i = 0; i < rings; i++) {
+                    for (let j = 0; j < segments; j++) {
+                        const row1 = i * (segments + 1);
+                        const row2 = (i + 1) * (segments + 1);
+                        fs.push([row1 + j, row1 + j + 1, row2 + j]);
+                        fs.push([row1 + j + 1, row2 + j + 1, row2 + j]);
+                    }
+                }
+                return { vs, fs };
+            };
+
+            const leftHemi = createHemisphere(-1);
+            addMesh(leftHemi.vs, leftHemi.fs, 'cerebrum');
+
+            const rightHemi = createHemisphere(1);
+            addMesh(rightHemi.vs, rightHemi.fs, 'cerebrum');
+
+            // 2. Cerebellum - Flattened Ellipsoid
+            // Located below posterior cerebrum
+            const createCerebellum = () => {
+                const vs = [];
+                const fs = [];
+                const rings = 10;
+                const segments = 20;
+                const rx = 30, ry = 15, rz = 20;
+
+                for (let i = 0; i <= rings; i++) {
+                    const u = (i / rings) * Math.PI;
+                    for (let j = 0; j <= segments; j++) {
+                        const v = (j / segments) * 2 * Math.PI;
+
+                        let x = rx * Math.sin(u) * Math.cos(v);
+                        let y = ry * Math.cos(u);
+                        let z = rz * Math.sin(u) * Math.sin(v);
+
+                        // Position: Posterior (Z+) and Inferior (Y+)
+                        y += 40;
+                        z += 40;
+
+                        // Folia Texture (Ridges)
+                        // Displace along normal based on Y
+                        const disp = Math.sin(y * 0.5) * 1.5;
+                        x += x / rx * disp;
+                        z += z / rz * disp;
+
+                        vs.push({ x, y, z });
+                    }
+                }
+                // Faces
+                for (let i = 0; i < rings; i++) {
+                    for (let j = 0; j < segments; j++) {
+                        const row1 = i * (segments + 1);
+                        const row2 = (i + 1) * (segments + 1);
+                        fs.push([row1 + j, row1 + j + 1, row2 + j]);
+                        fs.push([row1 + j + 1, row2 + j + 1, row2 + j]);
+                    }
+                }
+                return { vs, fs };
+            };
+
+            const cerebellum = createCerebellum();
+            addMesh(cerebellum.vs, cerebellum.fs, 'cerebellum');
+
+            return { vertices, faces };
         },
 
         drawNeuron(ctx, p, neuronMeshes, camera, projection) {

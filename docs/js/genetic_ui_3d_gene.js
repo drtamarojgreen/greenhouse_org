@@ -21,11 +21,11 @@
                 microCamera = {
                     x: cameraState ? cameraState.panX : 0,
                     y: cameraState ? cameraState.panY : 0,
-                    z: -100 / (cameraState ? cameraState.zoom : 1.0), // Approximate if no direct Z
+                    z: -300 / (cameraState ? cameraState.zoom : 1.0), // Zoomed out more (was -100)
                     rotationX: cameraState ? cameraState.rotationX : 0,
                     rotationY: cameraState ? cameraState.rotationY : 0,
                     rotationZ: 0,
-                    fov: 300
+                    fov: 400
                 };
             }
 

@@ -491,42 +491,72 @@
             // Draw Brain as Main Background
             this.drawTargetView(ctx, 0, 0, w, h, activeGene, { camera: this.camera }); // Pass main camera
 
+            // Helper to draw PiP Frame & Label
+            const drawPiPFrame = (ctx, x, y, w, h, title) => {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, w, h);
+
+                // Background for Title
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(x, y, w, 20);
+
+                // Title
+                ctx.fillStyle = '#00ffff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(title, x + 5, y + 10);
+                ctx.restore();
+            };
+
             // PiP Configuration
             const pipW = 200;
             const pipH = 150;
             const gap = 10;
-            const pipX = gap; // Left Side
+
+            const leftPipX = gap;
+            const rightPipX = w - pipW - gap;
 
             // Get PiP States
             let helixState = { zoom: 1.0, rotationY: 0, rotationX: 0, panX: 0, panY: 0 };
-            let proteinState = { zoom: 1.0, rotationY: 0, rotationX: 0, panX: 0, panY: 0 };
             let microState = { zoom: 1.0, rotationY: 0, rotationX: 0, panX: 0, panY: 0 };
+            let proteinState = { zoom: 1.0, rotationY: 0, rotationX: 0, panX: 0, panY: 0 };
+            let targetState = { zoom: 1.0, rotationY: 0, rotationX: 0, panX: 0, panY: 0 };
 
             if (window.GreenhouseGeneticPiPControls) {
                 helixState = window.GreenhouseGeneticPiPControls.getState('helix');
-                proteinState = window.GreenhouseGeneticPiPControls.getState('protein');
                 microState = window.GreenhouseGeneticPiPControls.getState('micro');
+                proteinState = window.GreenhouseGeneticPiPControls.getState('protein');
+                targetState = window.GreenhouseGeneticPiPControls.getState('target');
             }
 
             // 2. PiP 1: Helix (Macro View) - Top Left
             // "Crayolas with label BDNF"
-            this.drawMacroView(ctx, pipX, gap, pipW, pipH, helixState);
+            this.drawMacroView(ctx, leftPipX, gap, pipW, pipH, helixState, drawPiPFrame);
             if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.drawControls(ctx, pipX, gap, pipW, pipH, 'helix');
+                window.GreenhouseGeneticPiPControls.drawControls(ctx, leftPipX, gap, pipW, pipH, 'helix');
             }
 
-            // 3. PiP 2: Protein View - Middle Left
+            // 3. PiP 2: Micro View (Gene Structure) - Top Right
+            this.drawMicroView(ctx, rightPipX, gap, pipW, pipH, activeGene, microState, drawPiPFrame);
+            if (window.GreenhouseGeneticPiPControls) {
+                window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, gap, pipW, pipH, 'micro');
+            }
+
+            // 4. PiP 3: Protein View - Middle Right
             const proteinY = gap + pipH + gap;
-            this.drawProteinView(ctx, pipX, proteinY, pipW, pipH, activeGene, proteinState);
+            this.drawProteinView(ctx, rightPipX, proteinY, pipW, pipH, activeGene, proteinState, drawPiPFrame);
             if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.drawControls(ctx, pipX, proteinY, pipW, pipH, 'protein');
+                window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, proteinY, pipW, pipH, 'protein');
             }
 
-            // 4. PiP 3: Micro View (Gene Structure) - Bottom Left
-            const microY = gap + pipH + gap + pipH + gap;
-            this.drawMicroView(ctx, pipX, microY, pipW, pipH, activeGene, microState);
+            // 5. PiP 4: Target View (Brain Region) - Bottom Right
+            const targetY = gap + pipH + gap + pipH + gap;
+            this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene, targetState, drawPiPFrame);
             if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.drawControls(ctx, pipX, microY, pipW, pipH, 'micro');
+                window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, targetY, pipW, pipH, 'target');
             }
 
             // Draw Stats / Labels

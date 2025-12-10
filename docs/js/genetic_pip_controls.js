@@ -20,9 +20,10 @@
             this.config = config || window.GreenhouseGeneticConfig;
 
             // Initialize Cameras and Controllers for each PiP
-            // New Layout: Helix (Macro), Protein, Micro (Gene Structure)
-            // Target (Brain) is now Main View
-            ['helix', 'protein', 'micro'].forEach(name => {
+            // Layout: 
+            // Left: Helix (Macro)
+            // Right: Micro (Gene), Protein, Target (Brain)
+            ['helix', 'micro', 'protein', 'target'].forEach(name => {
                 // Default Camera State
                 this.cameras[name] = {
                     x: 0, y: 0, z: -200,
@@ -51,17 +52,23 @@
             const pipH = pipConfig.height;
             const gap = pipConfig.gap;
 
-            // PiPs are now on the LEFT
-            const pipX = gap;
+            // Right Side PiPs
+            const rightPipX = canvasWidth - pipW - gap;
+
+            // Left Side PiP
+            const leftPipX = gap;
 
             const pips = [
-                { name: 'helix', y: gap },
-                { name: 'protein', y: gap + pipH + gap },
-                { name: 'micro', y: gap + pipH + gap + pipH + gap }
+                // Left
+                { name: 'helix', x: leftPipX, y: gap },
+                // Right
+                { name: 'micro', x: rightPipX, y: gap },
+                { name: 'protein', x: rightPipX, y: gap + pipH + gap },
+                { name: 'target', x: rightPipX, y: gap + pipH + gap + pipH + gap }
             ];
 
             for (const pip of pips) {
-                if (mouseX >= pipX && mouseX <= pipX + pipW &&
+                if (mouseX >= pip.x && mouseX <= pip.x + pipW &&
                     mouseY >= pip.y && mouseY <= pip.y + pipH) {
                     return pip.name;
                 }
@@ -209,20 +216,21 @@
             const pipH = pipConfig.height;
             const gap = pipConfig.gap;
 
-            // PiPs are on LEFT
-            const pipX = gap;
+            const rightPipX = canvasWidth - pipW - gap;
+            const leftPipX = gap;
 
             const iconSize = 16;
             const iconGap = 4;
-            const iconX = pipX + pipW - iconSize - iconGap;
 
             const pips = [
-                { name: 'helix', y: gap },
-                { name: 'protein', y: gap + pipH + gap },
-                { name: 'micro', y: gap + pipH + gap + pipH + gap }
+                { name: 'helix', x: leftPipX, y: gap },
+                { name: 'micro', x: rightPipX, y: gap },
+                { name: 'protein', x: rightPipX, y: gap + pipH + gap },
+                { name: 'target', x: rightPipX, y: gap + pipH + gap + pipH + gap }
             ];
 
             for (const pip of pips) {
+                const iconX = pip.x + pipW - iconSize - iconGap;
                 const iconY = pip.y + iconGap;
                 if (mouseX >= iconX && mouseX <= iconX + iconSize &&
                     mouseY >= iconY && mouseY <= iconY + iconSize) {
