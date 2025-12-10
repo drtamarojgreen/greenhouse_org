@@ -333,7 +333,15 @@
                 "neuro_explanation_title": "Neuroplasticity Simulation",
                 "neuro_explanation_text": "This simulation demonstrates how neurons form new connections (synaptogenesis) based on activity and efficiency. Red nodes represent neurons, and blue lines represent synaptic connections. The network evolves to optimize signal transmission.",
                 "genetic_explanation_title": "Genetic Neural Evolution",
-                "genetic_explanation_text": "This simulation visualizes how genetic traits influence neural network structure. 'Genes' determine connection weights, which dictate whether a neuron's response is excitatory (positive) or inhibitory (negative). The network evolves over generations to find the most effective configuration."
+                "genetic_explanation_text": "This simulation visualizes how genetic traits influence neural network structure. 'Genes' determine connection weights, which dictate whether a neuron's response is excitatory (positive) or inhibitory (negative). The network evolves over generations to find the most effective configuration.",
+
+                // Event Log
+                "Synapse Created": "Synapse Created",
+                "Weak Connection Pruned": "Weak Connection Pruned",
+                "Generation Complete": "Generation Complete",
+                "Best Fitness": "Best Fitness",
+                "New Traits Evolved": "New Traits Evolved",
+                "Elite Parents Preserved": "Elite Parents Preserved"
             },
             es: {
                 // Consent Screen
@@ -534,7 +542,15 @@
                 "neuro_explanation_title": "Simulación de Neuroplasticidad",
                 "neuro_explanation_text": "Esta simulación demuestra cómo las neuronas forman nuevas conexiones (sinaptogénesis) basadas en la actividad y la eficiencia. Los nodos rojos representan neuronas y las líneas azules representan conexiones sinápticas. La red evoluciona para optimizar la transmisión de señales.",
                 "genetic_explanation_title": "Evolución Neuronal Genética",
-                "genetic_explanation_text": "Esta simulación visualiza cómo los rasgos genéticos influyen en la estructura de la red neuronal. Los 'genes' determinan los pesos de conexión, que dictan si la respuesta de una neurona es excitatoria (positiva) o inhibitoria (negativa). La red evoluciona a lo largo de generaciones para encontrar la configuración más efectiva."
+                "genetic_explanation_text": "Esta simulación visualiza cómo los rasgos genéticos influyen en la estructura de la red neuronal. Los 'genes' determinan los pesos de conexión, que dictan si la respuesta de una neurona es excitatoria (positiva) o inhibitoria (negativa). La red evoluciona a lo largo de generaciones para encontrar la configuración más efectiva.",
+
+                // Event Log
+                "Synapse Created": "Sinapsis Creada",
+                "Weak Connection Pruned": "Conexión Débil Podada",
+                "Generation Complete": "Generación Completa",
+                "Best Fitness": "Mejor Aptitud",
+                "New Traits Evolved": "Nuevos Rasgos Evolucionados",
+                "Elite Parents Preserved": "Padres Élite Preservados"
             }
         },
         GreenhouseComponent,

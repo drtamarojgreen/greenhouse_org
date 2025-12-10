@@ -11,7 +11,7 @@
         algo: null,
 
         camera: {
-            x: 0, y: 0, z: -400,
+            x: 0, y: 0, z: -300,
             rotationX: 0, rotationY: 0, rotationZ: 0,
             fov: 500
         },
@@ -20,11 +20,26 @@
             near: 10, far: 2000
         },
 
-        isEvolving: false,
-        animationFrame: null,
-
+        isActive: false,
+        rotationSpeed: 0.0002, // Very slow, barely moving
         neurons3D: [],
         connections3D: [],
+        particles: [],
+        brainShell: null, // Parametric shell data
+        neuronMeshes: null, // Cache for neuron 3D models
+
+        // Automatic PiP State
+        activeGeneIndex: 0,
+        lastFocusChangeTime: 0,
+        focusDuration: 5000, // 5 seconds per gene
+
+        // Protein View State
+        proteinCache: null, // Cache for generated protein chains
+        // Dynamic Visualization State
+
+        lastGeneration: 0,
+        eliteParents: [], // Snapshot of previous best network for transition effect
+        transitionStartTime: 0,
 
         init(container, algo) {
             this.container = container;
@@ -155,35 +170,69 @@
 
         setupInteraction() {
             let isDragging = false;
+            let isPanning = false;
             let lastX = 0, lastY = 0;
 
             this.canvas.addEventListener('mousedown', e => {
-                isDragging = true;
+                // Right click or Shift+Click for Pan
+                if (e.button === 2 || e.shiftKey) {
+                    isPanning = true;
+                    e.preventDefault();
+                    this.autoFollow = false; // Disable auto-follow on manual pan
+                } else {
+                    isDragging = true;
+                }
                 lastX = e.clientX;
                 lastY = e.clientY;
                 this.canvas.style.cursor = 'grabbing';
             });
 
+            this.canvas.addEventListener('contextmenu', e => e.preventDefault());
+
             window.addEventListener('mouseup', () => {
                 isDragging = false;
+                isPanning = false;
                 if (this.canvas) this.canvas.style.cursor = 'grab';
             });
 
             window.addEventListener('mousemove', e => {
-                if (!isDragging) return;
-                const dx = e.clientX - lastX;
-                const dy = e.clientY - lastY;
+                if (isPanning) {
+                    const dx = e.clientX - lastX;
+                    const dy = e.clientY - lastY;
 
-                this.camera.rotationY += dx * 0.005;
-                this.camera.rotationX += dy * 0.005;
+                    const panScale = Math.abs(this.camera.z) * 0.002;
+                    this.camera.x -= dx * panScale;
+                    this.camera.y -= dy * panScale;
 
-                lastX = e.clientX;
-                lastY = e.clientY;
+                    lastX = e.clientX;
+                    lastY = e.clientY;
+                } else if (isDragging) {
+                    const dx = e.clientX - lastX;
+                    const dy = e.clientY - lastY;
+
+                    this.camera.rotationY += dx * 0.005;
+                    this.camera.rotationX += dy * 0.005;
+
+                    lastX = e.clientX;
+                    lastY = e.clientY;
+                }
             });
 
             this.canvas.addEventListener('wheel', e => {
                 e.preventDefault();
-                this.camera.z += e.deltaY * 0.5;
+                const zoomSpeed = Math.abs(this.camera.z) * 0.001 + 5;
+                this.camera.z += e.deltaY * 0.1 * zoomSpeed;
+
+                // Clamp
+                if (this.camera.z > -50) this.camera.z = -50;
+                if (this.camera.z < -3000) this.camera.z = -3000;
+            });
+
+            // Handle Clicks
+            this.canvas.addEventListener('click', (e) => {
+                if (!isDragging && !isPanning) {
+                    this.handleMouseClick(e);
+                }
             });
         },
 
@@ -200,28 +249,152 @@
 
             // Map Neurons to 3D Space (if not already mapped or if topology changes)
             // For this demo, we re-map every time to be safe, though optimization would cache positions
-            this.neurons3D = net.nodes.map((node, i) => {
-                // Spherical Distribution based on layer
-                const layerOffset = (node.layer - 1) * 100; // -100, 0, 100
-                const angle = (i * Math.PI * 2) / (net.nodes.length / 3) + (node.layer * 0.5);
-                const radius = 100;
+            // Generate Integrated Topology: Double Helix (Left) + Whole Brain (Right)
 
-                return {
-                    id: node.id,
-                    x: Math.cos(angle) * radius,
-                    y: Math.sin(angle) * radius,
-                    z: layerOffset,
-                    activation: node.activation,
-                    type: node.type
-                };
+            const helixOffset = -200; // Left side
+            const brainOffset = 200;  // Right side
+
+            // Initialize Brain Shell if not exists
+            if (!this.brainShell) {
+                this.initializeBrainShell();
+            }
+
+            this.neurons3D = net.nodes.map((node, i) => {
+                // Split nodes: First half = Genotype (Helix), Second half = Phenotype (Brain)
+                const isGenotype = i < net.nodes.length / 2;
+
+                if (isGenotype) {
+                    if (window.GreenhouseGeneticGeometry) {
+                        const helixData = window.GreenhouseGeneticGeometry.generateHelixPoints(i, net.nodes.length, helixOffset);
+                        return {
+                            id: node.id,
+                            x: helixData.x,
+                            y: helixData.y,
+                            z: helixData.z,
+                            type: 'gene',
+                            strand: helixData.strandIndex,
+                            label: i % 10 === 0 ? (i % 20 === 0 ? 'BDNF' : '5-HTTLPR') : null,
+                            baseColor: helixData.strandIndex === 0 ? '#A8DADC' : '#F4A261'
+                        };
+                    }
+                    return { id: node.id, x: 0, y: 0, z: 0, type: 'gene', baseColor: '#fff' };
+                } else {
+                    // Volumetric Brain Topology (Inside Shell)
+                    const regionKeys = ['pfc', 'amygdala', 'hippocampus', 'temporalLobe', 'parietalLobe', 'occipitalLobe', 'cerebellum', 'brainstem'];
+                    const regionKey = regionKeys[i % regionKeys.length];
+
+                    // Get random vertex from the region to place neuron
+                    const regionVerticesIndices = this.getRegionVertices(regionKey);
+                    let x = brainOffset, y = 0, z = 0;
+
+                    if (regionVerticesIndices.length > 0) {
+                        const rndIndex = regionVerticesIndices[Math.floor(Math.random() * regionVerticesIndices.length)];
+                        const vertex = this.brainShell.vertices[rndIndex];
+
+                        // Add some internal volume jitter
+                        const jitter = 0.8 + Math.random() * 0.2;
+                        x = brainOffset + vertex.x * jitter;
+                        y = vertex.y * jitter;
+                        z = vertex.z * jitter;
+                    }
+
+                    // Color mapping
+                    const colors = {
+                        'pfc': '#E07A5F',
+                        'amygdala': '#FF6464',
+                        'hippocampus': '#64FF96',
+                        'temporalLobe': '#F4A261',
+                        'parietalLobe': '#9370DB',
+                        'occipitalLobe': '#FFC0CB',
+                        'cerebellum': '#40E0D0',
+                        'brainstem': '#FFD700'
+                    };
+
+                    return {
+                        id: node.id,
+                        x: x,
+                        y: y,
+                        z: z,
+                        type: 'neuron',
+                        region: regionKey,
+                        baseColor: colors[regionKey] || '#ffffff'
+                    };
+                }
             });
 
-            // Map Connections
-            this.connections3D = net.connections.map(conn => {
-                const n1 = this.neurons3D.find(n => n.id === conn.from);
-                const n2 = this.neurons3D.find(n => n.id === conn.to);
-                return { from: n1, to: n2, weight: conn.weight };
-            }).filter(c => c.from && c.to);
+            this.initializeConnections(net.connections);
+
+            // Detect Generation Change
+            if (this.algo.generation > this.lastGeneration) {
+                this.logEvent("Generation Complete");
+                this.logEvent("New Traits Evolved");
+
+                // Keep a snapshot of the previous "best" as "elite parents" for a brief transition
+                this.eliteParents = [...this.neurons3D];
+                this.transitionStartTime = Date.now();
+
+                this.lastGeneration = this.algo.generation;
+            }
+
+            // Generate Protein Cache for the active gene (or all genes if needed, but let's do active for now)
+            // Actually, we should cache it when activeGeneIndex changes or when data updates.
+            // For simplicity, let's just generate it here if it's null or if we want to update it.
+            // But wait, updateData is called on every evolution step.
+            // We should probably just ensure it's an object.
+            if (!this.proteinCache) {
+                this.proteinCache = {};
+            }
+            // We can populate it on demand in drawProteinView, or pre-populate here.
+            // Let's pre-populate for the current active gene to be safe.
+            const activeGene = this.neurons3D[this.activeGeneIndex];
+            if (activeGene && !this.proteinCache[activeGene.id]) {
+                this.proteinCache[activeGene.id] = this.generateProteinChain(activeGene.id); // Use ID as seed
+            }
+        },
+
+        initializeConnections(connections) {
+            this.connections3D = connections.map(conn => {
+                const fromNeuron = this.neurons3D.find(n => n.id === conn.from);
+                const toNeuron = this.neurons3D.find(n => n.id === conn.to);
+
+                if (!fromNeuron || !toNeuron) return null;
+
+                // Calculate Control Point (Midpoint + Offset towards center)
+                const midX = (fromNeuron.x + toNeuron.x) / 2;
+                const midY = (fromNeuron.y + toNeuron.y) / 2;
+                const midZ = (fromNeuron.z + toNeuron.z) / 2;
+
+                const cp = {
+                    x: midX * 0.8,
+                    y: midY * 0.8,
+                    z: midZ * 0.8
+                };
+
+                // Generate Tube Mesh
+                const radius = Math.max(0.5, Math.abs(conn.weight) * 1.5);
+                const mesh = this.generateTubeMesh(fromNeuron, toNeuron, cp, radius, 8);
+
+                return {
+                    ...conn,
+                    from: fromNeuron,
+                    to: toNeuron,
+                    controlPoint: cp,
+                    mesh: mesh
+                };
+            }).filter(c => c !== null);
+        },
+
+        generateTubeMesh(p1, p2, cp, radius, segments) {
+            if (window.GreenhouseGeneticGeometry) {
+                return window.GreenhouseGeneticGeometry.generateTubeMesh(p1, p2, cp, radius, segments);
+            }
+            return { vertices: [], faces: [] };
+        },
+
+        logEvent(messageKey) {
+            if (window.GreenhouseGeneticStats) {
+                window.GreenhouseGeneticStats.logEvent(messageKey);
+            }
         },
 
         shouldEvolve() {
@@ -232,79 +405,278 @@
             this.render();
             // Auto-rotate slightly
             if (this.isEvolving) {
-                this.camera.rotationY += 0.002;
+                this.camera.rotationY += this.rotationSpeed;
             }
+
+            // Camera Follow Active Gene (Vertical Scrolling)
+            // Only if auto-follow is active (disabled by manual panning)
+            if (this.autoFollow !== false) {
+                const activeGene = this.neurons3D[this.activeGeneIndex];
+                if (activeGene) {
+                    // Target Y is negative of gene Y to center it (camera moves opposite to object)
+                    // But wait, camera Y moves the camera. If gene is at Y=100, camera needs to be at Y=100 to see it at center?
+                    // project3DTo2D: y = (v.y - camera.y) ...
+                    // So yes, camera.y should equal gene.y to center it.
+
+                    const targetY = activeGene.y;
+                    // Smooth interpolation (Lerp)
+                    this.camera.y += (targetY - this.camera.y) * 0.05;
+                }
+            }
+
             this.animationFrame = requestAnimationFrame(() => this.animate());
         },
 
         render() {
-            if (!this.ctx) return;
+            if (!this.ctx || !this.canvas) return;
+
             const ctx = this.ctx;
-            const { width, height } = this.canvas;
+            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-            // Clear
-            ctx.fillStyle = '#0f172a';
-            ctx.fillRect(0, 0, width, height);
+            // Update Automatic Focus - REMOVED for Manual Control
+            // const now = Date.now();
+            // if (now - this.lastFocusChangeTime > this.focusDuration) { ... }
 
-            if (!window.GreenhouseModels3DMath) return;
+            const activeGene = this.neurons3D[this.activeGeneIndex];
 
-            // Draw Grid
-            this.drawGrid(ctx);
+            // --- Viewport Layout ---
+            const w = this.canvas.width;
+            const h = this.canvas.height;
 
-            // Project Points
-            const projectedNeurons = this.neurons3D.map(n => {
-                const proj = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
-                return { ...n, ...proj };
-            }).filter(p => p.scale > 0);
+            // 1. Macro View (Main Helix) - Top Left (Large)
+            // Occupies full width, but we render others on top or split?
+            // User asked for "system of picture in pictures".
+            // Let's do: Main BG is Helix. PiPs are overlays.
 
-            // Draw Connections
-            this.connections3D.forEach(conn => {
-                const p1 = projectedNeurons.find(p => p.id === conn.from.id);
-                const p2 = projectedNeurons.find(p => p.id === conn.to.id);
+            // Draw Main Helix (Full Screen Background)
+            this.drawMacroView(ctx, w, h);
 
-                if (p1 && p2) {
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
+            // 2. Micro View (Gene Zoom) - Top Right
+            this.drawMicroView(ctx, w - 220, 20, 200, 200, activeGene);
 
-                    const alpha = Math.abs(conn.weight);
-                    const color = conn.weight > 0 ? `rgba(100, 200, 255, ${alpha})` : `rgba(255, 100, 100, ${alpha})`;
+            // 3. Target View (Brain Region) - Bottom Right
+            this.drawTargetView(ctx, w - 220, 240, 200, 200, activeGene);
 
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = Math.max(1, Math.abs(conn.weight) * 3);
-                    ctx.stroke();
+            // 4. Protein View (Polypeptide Chain) - Bottom Left
+            this.drawProteinView(ctx, 20, h - 220, 200, 200, activeGene);
+
+            // Draw Stats / Labels
+            if (window.GreenhouseGeneticStats) {
+                window.GreenhouseGeneticStats.drawOverlayInfo(ctx, w, activeGene);
+            }
+
+            // Draw Manual Controls
+            if (window.GreenhouseGeneticStats) {
+                window.GreenhouseGeneticStats.drawControls(ctx, w, h);
+            }
+        },
+
+        drawMacroView(ctx, w, h) {
+            if (window.GreenhouseGeneticDNA) {
+                window.GreenhouseGeneticDNA.drawMacroView(
+                    ctx, w, h, this.camera, this.projection, this.neurons3D, this.activeGeneIndex, this.brainShell,
+                    this.drawNeuron.bind(this), // Callback for drawing individual genes/neurons
+                    this.drawBrainShell.bind(this) // Callback for drawing brain shell
+                );
+            }
+        },
+
+        drawMicroView(ctx, x, y, w, h, activeGene) {
+            if (window.GreenhouseGeneticGene) {
+                window.GreenhouseGeneticGene.drawMicroView(
+                    ctx, x, y, w, h, activeGene, this.activeGeneIndex, this.neuronMeshes,
+                    this.drawPiPFrame.bind(this)
+                );
+            } else if (window.GreenhouseGeneticChromosome) {
+                // Fallback or alternative view
+                window.GreenhouseGeneticChromosome.drawChromosome(
+                    ctx, x, y, w, h, activeGene,
+                    this.drawPiPFrame.bind(this)
+                );
+            }
+        },
+
+        drawTargetView(ctx, x, y, w, h, activeGene) {
+            if (window.GreenhouseGeneticBrain) {
+                window.GreenhouseGeneticBrain.drawTargetView(
+                    ctx, x, y, w, h, activeGene, this.activeGeneIndex, this.brainShell,
+                    this.drawPiPFrame.bind(this)
+                );
+            }
+        },
+
+        drawProteinView(ctx, x, y, w, h, activeGene) {
+            if (window.GreenhouseGeneticProtein) {
+                window.GreenhouseGeneticProtein.drawProteinView(
+                    ctx, x, y, w, h, activeGene, this.proteinCache,
+                    this.drawPiPFrame.bind(this)
+                );
+            }
+        },
+
+        generateProteinChain(seed) {
+            if (window.GreenhouseGeneticGeometry) {
+                return window.GreenhouseGeneticGeometry.generateProteinChain(seed);
+            }
+            return { vertices: [] };
+        },
+
+        drawPiPFrame(ctx, x, y, w, h, title) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(10, 10, 20, 0.8)';
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 1;
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeRect(x, y, w, h);
+
+            // Title
+            ctx.fillStyle = '#aaa';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(title, x + 5, y + 15);
+
+            // Clip
+            ctx.beginPath();
+            ctx.rect(x, y, w, h);
+            ctx.clip();
+        },
+
+
+
+
+
+        hitTest(mouseX, mouseY) {
+            // Check Genes
+            for (let i = 0; i < this.neurons3D.length; i++) {
+                const n = this.neurons3D[i];
+                if (n.type !== 'gene') continue;
+
+                const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                if (p.scale > 0) {
+                    const dx = mouseX - p.x;
+                    const dy = mouseY - p.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // Hit radius based on scale
+                    if (dist < 10 * p.scale) {
+                        return { type: 'gene', index: i, data: n };
+                    }
                 }
-            });
+            }
+            return null;
+        },
 
-            // Draw Neurons
-            projectedNeurons.sort((a, b) => b.depth - a.depth); // Sort by depth
-            projectedNeurons.forEach(p => {
-                const size = 5 * p.scale;
+        handleMouseClick(e) {
+            const rect = this.canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
 
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+            // Check for Gene Click
+            const hit = this.hitTest(mouseX, mouseY);
+            if (hit && hit.type === 'gene') {
+                this.activeGeneIndex = hit.index;
+                this.autoFollow = true; // Re-enable auto-follow on selection
+                return;
+            }
 
-                // Color based on type and activation
-                let color = '#ffffff';
-                if (p.type === 'input') color = '#3498db';
-                if (p.type === 'output') color = '#2ecc71';
-                if (p.type === 'hidden') color = '#9b59b6';
+            const w = this.canvas.width;
+            const h = this.canvas.height;
 
-                // Glow if active
-                if (Math.abs(p.activation) > 0.1) {
-                    ctx.shadowColor = color;
-                    ctx.shadowBlur = 10;
-                } else {
-                    ctx.shadowBlur = 0;
+            // Check for Protein Click
+            // Area: x=20, y=h-220, w=200, h=200
+            if (window.GreenhouseGeneticProtein) {
+                const protX = 20;
+                const protY = h - 220;
+                const protW = 200;
+                const protH = 200;
+
+                const protHit = window.GreenhouseGeneticProtein.hitTest(
+                    mouseX, mouseY, protX, protY, protW, protH,
+                    this.neurons3D[this.activeGeneIndex], this.proteinCache
+                );
+
+                if (protHit) {
+                    console.log("Selected Protein Atom:", protHit);
+
+                    // Toggle Mode
+                    const modes = ['ribbon', 'ball-and-stick', 'space-filling'];
+                    const currentMode = this.neurons3D[this.activeGeneIndex].proteinMode || 'ribbon';
+                    const nextMode = modes[(modes.indexOf(currentMode) + 1) % modes.length];
+
+                    this.neurons3D[this.activeGeneIndex].proteinMode = nextMode;
+                    console.log("Switched Protein Mode to:", nextMode);
+                    return;
                 }
+            }
 
-                ctx.fillStyle = color;
-                ctx.fill();
-                ctx.shadowBlur = 0;
-            });
+            const btnW = 100;
+            const btnH = 30;
+            const gap = 20;
 
-            // Draw Labels
-            this.drawLabels(ctx, projectedNeurons);
+            // Previous Button
+            const prevX = w / 2 - btnW - gap / 2;
+            const prevY = h - 50;
+            if (mouseX >= prevX && mouseX <= prevX + btnW && mouseY >= prevY && mouseY <= prevY + btnH) {
+                this.activeGeneIndex = (this.activeGeneIndex - 1 + this.neurons3D.length) % this.neurons3D.length;
+                this.autoFollow = true;
+                return;
+            }
+
+            // Next Button
+            const nextX = w / 2 + gap / 2;
+            const nextY = h - 50;
+            if (mouseX >= nextX && mouseX <= nextX + btnW && mouseY >= nextY && mouseY <= nextY + btnH) {
+                this.activeGeneIndex = (this.activeGeneIndex + 1) % this.neurons3D.length;
+                this.autoFollow = true;
+                return;
+            }
+        },
+
+
+
+
+
+        neuronMeshes: {}, // Cache for generated neuron meshes
+        drawNeuron(ctx, p) {
+            if (p.type === 'gene') {
+                if (window.GreenhouseGeneticGene) {
+                    window.GreenhouseGeneticGene.drawNeuron(ctx, p);
+                }
+            } else {
+                if (window.GreenhouseGeneticBrain) {
+                    window.GreenhouseGeneticBrain.drawNeuron(ctx, p, this.neuronMeshes, this.camera, this.projection);
+                }
+            }
+        },
+
+
+        initializeBrainShell() {
+            this.brainShell = { vertices: [], faces: [] };
+            if (window.GreenhouseNeuroGeometry) {
+                window.GreenhouseNeuroGeometry.initializeBrainShell(this.brainShell);
+            }
+        },
+
+        getRegionVertices(regionKey) {
+            if (window.GreenhouseNeuroGeometry) {
+                return window.GreenhouseNeuroGeometry.getRegionVertices(this.brainShell, regionKey);
+            }
+            return [];
+        },
+
+        drawBrainShell(ctx, offsetX = 0) {
+            if (window.GreenhouseNeuroBrain) {
+                ctx.save();
+                ctx.translate(offsetX, 0);
+                window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height);
+                ctx.restore();
+            }
+        },
+
+        drawSignalFlow(ctx, projectedNeurons) {
+            if (window.GreenhouseGeneticStats) {
+                window.GreenhouseGeneticStats.drawSignalFlow(ctx, this.isEvolving);
+            }
         },
 
         drawGrid(ctx) {
@@ -354,22 +726,14 @@
         },
 
         drawLabels(ctx, projectedNeurons) {
-            const util = window.GreenhouseModelsUtil;
-            if (!util || projectedNeurons.length === 0) return;
+            if (window.GreenhouseGeneticStats) {
+                window.GreenhouseGeneticStats.drawLabels(ctx, projectedNeurons);
+            }
+        },
 
-            // Label one random neuron as "Gene" just for demo
-            const p = projectedNeurons[0];
-            if (p) {
-                ctx.fillStyle = 'white';
-                ctx.font = '12px Arial';
-                ctx.fillText(util.t('Gene'), p.x + 15, p.y);
-
-                // Draw line to it
-                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-                ctx.beginPath();
-                ctx.moveTo(p.x + 10, p.y);
-                ctx.lineTo(p.x, p.y);
-                ctx.stroke();
+        drawEventLog(ctx) {
+            if (window.GreenhouseGeneticStats) {
+                window.GreenhouseGeneticStats.drawEventLog(ctx, this.canvas.height);
             }
         }
     };

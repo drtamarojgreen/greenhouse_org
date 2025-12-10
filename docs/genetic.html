@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Genetic Brain Development - 3D Visualization</title>
-    <meta name="description" content="Interactive 3D visualization of genetic algorithms applied to neural network evolution">
+    <meta name="description"
+        content="Interactive 3D visualization of genetic algorithms applied to neural network evolution">
     <style>
         * {
             margin: 0;
@@ -81,8 +83,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .info-panel {
@@ -143,6 +150,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Page Header -->
     <div class="page-header">
@@ -182,15 +190,68 @@
 
     <!-- Scripts -->
     <script src="js/GreenhouseDependencyManager.js"></script>
-    <script
-        src="js/GreenhouseUtils.js"
-        data-base-url="./"
-        data-target-selector="#genetic-app-container">
+    <script src="js/GreenhouseUtils.js" data-base-url="./" data-target-selector="#genetic-app-container">
     </script>
-    <script
-        src="js/genetic.js"
-        data-base-url="./"
-        data-target-selector="#genetic-app-container">
+    <script src="js/models_3d_math.js"></script>
+    <script src="js/genetic_algo.js" data-base-url="./" data-target-selector="#genetic-app-container">
+    </script>
+    <script src="js/neuro_ui_3d_geometry.js"></script>
+    <script src="js/neuro_ui_3d_brain.js"></script>
+    <script src="js/genetic_ui_3d_geometry.js" data-base-url="./" data-target-selector="#genetic-app-container">
+    </script>
+    <script src="js/genetic_ui_3d_dna.js" data-base-url="./" data-target-selector="#genetic-app-container">
+    </script>
+    <script src="js/genetic_ui_3d_gene.js" data-base-url="./" data-target-selector="#genetic-app-container">
+    </script>
+    <script src="js/genetic_ui_3d_chromosome.js"></script>
+    <script src="js/genetic_ui_3d_protein.js"></script>
+    <script src="js/genetic_ui_3d_brain.js"></script>
+    <script src="js/genetic_ui_3d_stats.js"></script>
+    <script src="js/genetic_ui_3d.js"></script>
+
+    <script>
+        // Manual Initialization for Standalone Page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait for scripts to load
+            setTimeout(() => {
+                if (window.GreenhouseGeneticAlgo && window.GreenhouseGeneticUI3D) {
+                    console.log("Initializing Genetic App...");
+
+                    // Hide loading screen
+                    const loadingScreen = document.querySelector('.loading-screen');
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+
+                    // Show simulation container
+                    let simContainer = document.querySelector('.simulation-container');
+                    if (simContainer) simContainer.style.display = 'block';
+
+                    // Initialize
+                    window.GreenhouseGeneticAlgo.init();
+                    window.GreenhouseGeneticUI3D.init(simContainer, window.GreenhouseGeneticAlgo);
+
+                    // Start Loop
+                    const startEvolutionLoop = () => {
+                        const loop = () => {
+                            if (window.GreenhouseGeneticUI3D.shouldEvolve()) {
+                                window.GreenhouseGeneticAlgo.evolve();
+                                window.GreenhouseGeneticUI3D.updateData();
+                            }
+                            setTimeout(() => requestAnimationFrame(loop), 100);
+                        };
+                        loop();
+                    };
+
+                    // Expose global controller
+                    window.GreenhouseGenetic = {
+                        startSimulation: startEvolutionLoop
+                    };
+
+                } else {
+                    console.error("Failed to load Genetic App modules.");
+                }
+            }, 1000);
+        });
     </script>
 </body>
+
 </html>
