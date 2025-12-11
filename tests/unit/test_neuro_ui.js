@@ -1,0 +1,184 @@
+/**
+ * Unit Tests for Neuro UI 3D and Components
+ */
+
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const { assert } = require('../utils/assertion_library.js');
+const TestFramework = require('../utils/test_framework.js');
+
+// --- Mock Browser Environment ---
+global.window = global;
+global.document = {
+    createElement: () => ({
+        getContext: () => ({
+            save: () => { },
+            restore: () => { },
+            translate: () => { },
+            rotate: () => { },
+            scale: () => { },
+            beginPath: () => { },
+            moveTo: () => { },
+            lineTo: () => { },
+            stroke: () => { },
+            fill: () => { },
+            rect: () => { },
+            clip: () => { },
+            fillText: () => { },
+            measureText: () => ({ width: 0 }),
+            createLinearGradient: () => ({ addColorStop: () => { } }),
+            createRadialGradient: () => ({ addColorStop: () => { } }),
+            clearRect: () => { },
+            fillRect: () => { },
+            strokeRect: () => { },
+            closePath: () => { },
+            arc: () => { }, // Added arc
+            set fillStyle(v) { },
+            set strokeStyle(v) { },
+            set lineWidth(v) { },
+            set globalAlpha(v) { },
+            set font(v) { },
+            set textAlign(v) { },
+            set textBaseline(v) { }
+        }),
+        width: 800,
+        height: 600,
+        style: {},
+        addEventListener: () => { },
+        appendChild: () => { } // Added appendChild
+    }),
+    getElementById: () => ({
+        textContent: '',
+        style: {},
+        addEventListener: () => { }
+    })
+};
+global.console = console;
+global.requestAnimationFrame = (cb) => { }; // No auto-loop
+global.addEventListener = () => { };
+
+// --- Helper to Load Scripts ---
+function loadScript(filename) {
+    const filePath = path.join(__dirname, '../../docs/js', filename);
+    const code = fs.readFileSync(filePath, 'utf8');
+    vm.runInThisContext(code);
+}
+
+// --- Mock Dependencies ---
+window.GreenhouseModels3DMath = {
+    project3DTo2D: (x, y, z) => ({ x: x + 400, y: y + 300, scale: 1, depth: z }),
+    applyDepthFog: (alpha, depth) => alpha // Simple pass-through
+};
+
+// Load Modules
+loadScript('neuro_config.js');
+loadScript('neuro_ui_3d_geometry.js');
+loadScript('neuro_ui_3d_brain.js');
+loadScript('neuro_ui_3d_neuron.js');
+loadScript('neuro_ui_3d_synapse.js');
+loadScript('neuro_ui_3d_stats.js');
+loadScript('neuro_ui_3d.js');
+
+// --- Test Suites ---
+
+TestFramework.describe('GreenhouseNeuroUI3D', () => {
+    const ui = window.GreenhouseNeuroUI3D;
+    const mockContainer = document.createElement('div');
+    const mockAlgo = {
+        bestNetwork: { // Changed from bestGenome to bestNetwork to match implementation
+            nodes: [{ id: 1, x: 0, y: 0, z: 0, type: 'input' }, { id: 2, x: 10, y: 10, z: 0, type: 'output' }], // Changed neurons to nodes
+            connections: [{ from: 1, to: 2, weight: 0.5 }],
+            fitness: 0.5
+        },
+        generation: 1
+    };
+
+    TestFramework.it('should initialize', () => {
+        // Mock querySelector
+        global.document.querySelector = () => mockContainer;
+
+        ui.init('div', mockAlgo); // Pass algo
+        assert.isDefined(ui.canvas);
+        assert.isDefined(ui.ctx);
+    });
+
+    TestFramework.it('should update data', () => {
+        ui.updateData();
+        assert.equal(ui.neurons3D.length, 2);
+        assert.equal(ui.connections3D.length, 1);
+    });
+
+    TestFramework.it('should render', () => {
+        // Mock context methods to avoid errors
+        ui.ctx = document.createElement('canvas').getContext('2d');
+        ui.render();
+        assert.isTrue(true); // Reached here without error
+    });
+});
+
+TestFramework.describe('GreenhouseNeuroBrain', () => {
+    const brain = window.GreenhouseNeuroBrain;
+    const ctx = document.createElement('canvas').getContext('2d');
+
+    TestFramework.it('should draw brain shell', () => {
+        const shell = { vertices: [], faces: [] };
+        brain.drawBrainShell(ctx, shell, {}, {}, 800, 600);
+        assert.isTrue(true);
+    });
+});
+
+TestFramework.describe('GreenhouseNeuroNeuron', () => {
+    const neuronModule = window.GreenhouseNeuroNeuron;
+    const ctx = document.createElement('canvas').getContext('2d');
+
+    TestFramework.it('should draw neuron', () => {
+        const neuron = { x: 0, y: 0, z: 0, type: 'input', baseColor: 'red' };
+        neuronModule.drawNeuron(ctx, neuron, {}, {}, {});
+        assert.isTrue(true);
+    });
+});
+
+TestFramework.describe('GreenhouseNeuroSynapse', () => {
+    const synapseModule = window.GreenhouseNeuroSynapse;
+    const ctx = document.createElement('canvas').getContext('2d');
+
+    TestFramework.it('should draw connections', () => {
+        const conn = {
+            from: { x: 0, y: 0, z: 0, id: 1 },
+            to: { x: 10, y: 10, z: 0, id: 2 },
+            weight: 0.5,
+            controlPoint: { x: 5, y: 5, z: 0 },
+            mesh: { vertices: [], faces: [] } // Required
+        };
+        // drawConnections(ctx, connections, neurons, camera, projection, width, height)
+        synapseModule.drawConnections(ctx, [conn], [], {}, {}, 800, 600);
+        assert.isTrue(true);
+    });
+});
+
+TestFramework.describe('GreenhouseNeuroGeometry', () => {
+    const geo = window.GreenhouseNeuroGeometry;
+
+    TestFramework.it('should initialize brain shell', () => {
+        const shell = { vertices: [], faces: [] };
+        geo.initializeBrainShell(shell);
+        assert.isTrue(shell.vertices.length > 0);
+    });
+
+    TestFramework.it('should get region vertices', () => {
+        // PFC: z > 0.4 (80), y > -0.2 (-40)
+        const shell = {
+            vertices: [
+                { x: 0, y: 0, z: 100 }, // Should match PFC
+                { x: 0, y: -100, z: -100 } // Should not match
+            ],
+            faces: []
+        };
+        const indices = geo.getRegionVertices(shell, 'pfc');
+        assert.equal(indices.length, 1);
+    });
+});
+
+// Run Tests
+TestFramework.run();
