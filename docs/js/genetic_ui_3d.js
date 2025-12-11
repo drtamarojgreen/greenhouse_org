@@ -449,8 +449,10 @@
             // Update Main Camera
             if (this.mainCameraController) {
                 this.mainCameraController.update();
-            } else if (this.isEvolving) {
-                // Fallback auto-rotate
+            }
+            
+            // Fallback auto-rotate if no controller or if isEvolving
+            if (!this.mainCameraController && this.isEvolving) {
                 this.camera.rotationY += this.rotationSpeed;
             }
 
@@ -493,7 +495,8 @@
             // We use the main camera controller for this.
 
             // Draw Brain as Main Background
-            this.drawTargetView(ctx, 0, 0, w, h, activeGene, { camera: this.camera }); // Pass main camera
+            this.drawTargetView(ctx, 0, 0, w, h, activeGene, 
+                this.activeGeneIndex, this.brainShell, null, { camera: this.camera }); // Pass main camera
 
             // Helper to draw PiP Frame & Label
             const drawPiPFrame = (ctx, x, y, w, h, title) => {
@@ -543,21 +546,24 @@
             }
 
             // 3. PiP 2: Micro View (Gene Structure) - Top Right
-            this.drawMicroView(ctx, rightPipX, gap, pipW, pipH, activeGene, microState, drawPiPFrame);
+            this.drawMicroView(ctx, rightPipX, gap, pipW, pipH, activeGene, 
+                this.activeGeneIndex, this.neuronMeshes, drawPiPFrame, microState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, gap, pipW, pipH, 'micro');
             }
 
             // 4. PiP 3: Protein View - Middle Right
             const proteinY = gap + pipH + gap;
-            this.drawProteinView(ctx, rightPipX, proteinY, pipW, pipH, activeGene, proteinState, drawPiPFrame);
+            this.drawProteinView(ctx, rightPipX, proteinY, pipW, pipH, activeGene, 
+                this.proteinCache, drawPiPFrame, proteinState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, proteinY, pipW, pipH, 'protein');
             }
 
             // 5. PiP 4: Target View (Brain Region) - Bottom Right
             const targetY = gap + pipH + gap + pipH + gap;
-            this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene, targetState, drawPiPFrame);
+            this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene, 
+                this.activeGeneIndex, this.brainShell, drawPiPFrame, targetState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, targetY, pipW, pipH, 'target');
             }
@@ -870,14 +876,13 @@
                 drawPiPFrame(ctx, x, y, w, h, "DNA Double Helix");
             }
 
-            // Setup PiP camera with state
-            const time = Date.now() * 0.001;
-            const pipCamera = {
+            // Setup PiP camera with state - use controller's camera directly
+            const pipCamera = cameraState.camera || {
                 x: cameraState.panX || 0,
                 y: cameraState.panY || 0,
-                z: -200 / (cameraState.zoom || 1.0), // Adjust zoom
+                z: -200 / (cameraState.zoom || 1.0),
                 rotationX: cameraState.rotationX || 0,
-                rotationY: (cameraState.rotationY || 0) + time * 0.3, // Auto-rotate
+                rotationY: cameraState.rotationY || 0,
                 rotationZ: 0,
                 fov: 500
             };
