@@ -75,13 +75,33 @@ def run():
         # PiP is at (10, 10) with size 200x150
         pip_x = canvas_bb['x'] + 10
         pip_y = canvas_bb['y'] + 10
+
+        print("\n[PiP Interaction] State BEFORE mousedown:")
+        print(get_camera_states())
+
         page.mouse.move(pip_x + 50, pip_y + 50)
         page.mouse.down()
+        time.sleep(0.1)
+
+        print("\n[PiP Interaction] State AFTER mousedown:")
+        print(get_camera_states())
+
         page.mouse.move(pip_x + 100, pip_y + 50, steps=5)
+        time.sleep(0.1)
+
+        print("\n[PiP Interaction] State AFTER mousemove (dragging):")
+        print(get_camera_states())
+
         page.mouse.up()
+        time.sleep(0.1)
+
+        print("\n[PiP Interaction] State IMMEDIATELY AFTER mouseup:")
+        print(get_camera_states())
+
         time.sleep(1)
 
         final_states = get_camera_states()
+        print("\n[PiP Interaction] FINAL state after 1s delay:")
         print("Final States:", final_states)
         page.screenshot(path='verification/debug_03_final_state.png')
         print("Saved screenshot: verification/debug_03_final_state.png")

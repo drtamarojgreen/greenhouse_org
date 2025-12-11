@@ -112,10 +112,12 @@
          * Handle mouse up
          */
         handleMouseUp() {
+            const wasActive = !!this.activePiP;
             if (this.activePiP && this.controllers[this.activePiP]) {
                 this.controllers[this.activePiP].handleMouseUp();
             }
             this.activePiP = null;
+            return wasActive;
         },
 
         /**

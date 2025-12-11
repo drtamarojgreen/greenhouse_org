@@ -185,18 +185,18 @@
 
         setupInteraction() {
             this.canvas.addEventListener('mousedown', e => {
-                // 1. Check PiP Controls first. If handled, stop processing.
-                if (window.GreenhouseGeneticPiPControls) {
-                    if (window.GreenhouseGeneticPiPControls.handleMouseDown(e, this.canvas)) {
-                        // Deactivate main controller while PiP is active
-                        if (this.mainCameraController) this.mainCameraController.isListening = false;
-                        return;
+                // 1. Check PiP Controls first.
+                if (window.GreenhouseGeneticPiPControls && window.GreenhouseGeneticPiPControls.handleMouseDown(e, this.canvas)) {
+                    // If PiP handled it, deactivate main controller and stop.
+                    if (this.mainCameraController) {
+                        this.mainCameraController.setIsListening(false);
                     }
+                    return;
                 }
 
-                // 2. Main Camera Controls
+                // 2. If not handled by PiP, activate and use main controller.
                 if (this.mainCameraController) {
-                    this.mainCameraController.isListening = true;
+                    this.mainCameraController.setIsListening(true);
                     this.mainCameraController.handleMouseDown(e);
                     this.autoFollow = false; // Disable auto-follow on manual interaction
                     this.canvas.style.cursor = 'grabbing';
@@ -206,7 +206,7 @@
             this.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
             window.addEventListener('mouseup', () => {
-                // PiP Controls
+                // Let PiP controls handle mouse up first
                 if (window.GreenhouseGeneticPiPControls) {
                     window.GreenhouseGeneticPiPControls.handleMouseUp();
                 }
@@ -214,8 +214,8 @@
                 // Main Camera Controls
                 if (this.mainCameraController) {
                     this.mainCameraController.handleMouseUp();
-                    // Re-enable main controller listening on mouse up
-                    this.mainCameraController.isListening = true;
+                    // Always re-enable main controller on mouse up to avoid getting stuck
+                    this.mainCameraController.setIsListening(true);
                 }
 
                 if (this.canvas) this.canvas.style.cursor = 'grab';
@@ -446,7 +446,8 @@
             this.render();
 
             // Update Main Camera
-            if (this.mainCameraController) {
+            // Only update (for inertia/auto-rotate) if the controller is active
+            if (this.mainCameraController && this.mainCameraController.isListening) {
                 this.mainCameraController.update();
             }
             

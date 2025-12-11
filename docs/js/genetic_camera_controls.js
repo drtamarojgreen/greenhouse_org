@@ -64,6 +64,20 @@
         }
 
         /**
+         * Set listening state
+         */
+        setIsListening(state) {
+            this.isListening = state;
+            if (!state) {
+                // Stop any movement when we stop listening
+                this.isDragging = false;
+                this.isPanning = false;
+                this.velocityX = 0;
+                this.velocityY = 0;
+            }
+        }
+
+        /**
          * Handle Mouse Move
          */
         handleMouseMove(e) {
