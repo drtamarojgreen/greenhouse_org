@@ -122,8 +122,9 @@
                 
                 // Delegate to controller
                 this.controllers[this.activePiP].handleMouseDown(e);
-                e.stopPropagation(); // Prevent main canvas controls
+                return true; // Event was handled
             }
+            return false; // Event was not handled
         },
 
         /**
@@ -163,6 +164,7 @@
                     });
                 }
             }
+            return false;
         },
 
         /**
@@ -203,7 +205,6 @@
                 const beforeZ = this.cameras[pipName].z;
                 
                 e.preventDefault();
-                e.stopPropagation();
                 this.controllers[pipName].handleWheel(e);
                 
                 const afterZ = this.cameras[pipName].z;
@@ -217,6 +218,7 @@
                     zoomLevel: (Math.abs(afterZ) / 200).toFixed(2)
                 });
             }
+            return false;
         },
 
         /**
