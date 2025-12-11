@@ -185,14 +185,18 @@
 
         setupInteraction() {
             this.canvas.addEventListener('mousedown', e => {
-                // 1. Check PiP Controls first
+                // 1. Check PiP Controls first. If handled, stop processing.
                 if (window.GreenhouseGeneticPiPControls) {
-                    window.GreenhouseGeneticPiPControls.handleMouseDown(e, this.canvas);
-                    if (window.GreenhouseGeneticPiPControls.activePiP) return; // Handled by PiP
+                    if (window.GreenhouseGeneticPiPControls.handleMouseDown(e, this.canvas)) {
+                        // Deactivate main controller while PiP is active
+                        if (this.mainCameraController) this.mainCameraController.isListening = false;
+                        return;
+                    }
                 }
 
                 // 2. Main Camera Controls
                 if (this.mainCameraController) {
+                    this.mainCameraController.isListening = true;
                     this.mainCameraController.handleMouseDown(e);
                     this.autoFollow = false; // Disable auto-follow on manual interaction
                     this.canvas.style.cursor = 'grabbing';
@@ -210,6 +214,8 @@
                 // Main Camera Controls
                 if (this.mainCameraController) {
                     this.mainCameraController.handleMouseUp();
+                    // Re-enable main controller listening on mouse up
+                    this.mainCameraController.isListening = true;
                 }
 
                 if (this.canvas) this.canvas.style.cursor = 'grab';
@@ -218,9 +224,8 @@
             window.addEventListener('mousemove', e => {
                 // PiP Controls
                 if (window.GreenhouseGeneticPiPControls) {
-                    // Check if dragging a PiP
-                    if (window.GreenhouseGeneticPiPControls.activePiP) {
-                        window.GreenhouseGeneticPiPControls.handleMouseMove(e);
+                    // If the PiP controls handled the event, do not proceed.
+                    if (window.GreenhouseGeneticPiPControls.handleMouseMove(e)) {
                         return;
                     }
                 }
@@ -234,14 +239,8 @@
             this.canvas.addEventListener('wheel', e => {
                 // PiP Controls
                 if (window.GreenhouseGeneticPiPControls) {
-                    // Check if over PiP - need to scale coordinates
-                    const rect = this.canvas.getBoundingClientRect();
-                    const scaleX = this.canvas.width / rect.width;
-                    const scaleY = this.canvas.height / rect.height;
-                    const mouseX = (e.clientX - rect.left) * scaleX;
-                    const mouseY = (e.clientY - rect.top) * scaleY;
-                    if (window.GreenhouseGeneticPiPControls.getPiPAtPosition(mouseX, mouseY, this.canvas.width, this.canvas.height)) {
-                        window.GreenhouseGeneticPiPControls.handleWheel(e, this.canvas);
+                    // If the PiP controls handled the event, do not proceed.
+                    if (window.GreenhouseGeneticPiPControls.handleWheel(e, this.canvas)) {
                         return;
                     }
                 }
