@@ -3,28 +3,43 @@
 
     const GreenhouseGeneticBrain = {
         drawTargetView(ctx, x, y, w, h, activeGene, activeGeneIndex, brainShell, drawPiPFrameCallback, cameraState) {
+            // Log every call
+            if (!this._drawTargetCallCount) this._drawTargetCallCount = 0;
+            this._drawTargetCallCount++;
+            
+            if (this._drawTargetCallCount % 60 === 0) {
+                console.log('[drawTargetView] Called:', {
+                    call: this._drawTargetCallCount,
+                    x, y, w, h,
+                    hasBrainShell: !!brainShell,
+                    hasCamera: !!(cameraState && cameraState.camera),
+                    cameraRotY: cameraState?.camera?.rotationY?.toFixed(3) || cameraState?.rotationY?.toFixed(3)
+                });
+            }
+            
             if (drawPiPFrameCallback) {
                 drawPiPFrameCallback(ctx, x, y, w, h, "Target: Brain Region");
             }
 
             // Use the same brain rendering as neuro page
-            if (!brainShell) return;
-
-            // Camera for Target View
-            let targetCamera;
-            if (cameraState && cameraState.camera) {
-                targetCamera = cameraState.camera;
-            } else {
-                targetCamera = {
-                    x: cameraState ? cameraState.panX : 0,
-                    y: cameraState ? cameraState.panY : 0,
-                    z: -300 / (cameraState ? cameraState.zoom : 1.0),
-                    rotationX: 0.2 + (cameraState ? cameraState.rotationX : 0),
-                    rotationY: cameraState ? cameraState.rotationY : 0,
-                    rotationZ: 0,
-                    fov: 600
-                };
+            if (!brainShell) {
+                // Draw placeholder
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.fillStyle = '#FF0000';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText("No Brain Shell", w / 2, h / 2);
+                ctx.restore();
+                return;
             }
+
+            // Use the specific camera for this view - no fallback
+            if (!cameraState || !cameraState.camera) {
+                console.error('[drawTargetView] No camera provided!');
+                return;
+            }
+            const targetCamera = cameraState.camera;
 
             const projection = { width: w, height: h, near: 10, far: 5000 };
 
@@ -40,10 +55,35 @@
                 
                 ctx.restore();
             } else {
-                // Fallback to simple rendering
-                ctx.fillStyle = '#666';
+                // Fallback to simple rendering - draw a rotating cube to test
+                ctx.save();
+                ctx.translate(x, y);
+                
+                // Draw a simple test shape that rotates
+                const centerX = w / 2;
+                const centerY = h / 2;
+                const size = 50;
+                const rot = targetCamera.rotationY;
+                
+                // Draw rotating square
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(rot);
+                ctx.fillStyle = '#00FF00';
+                ctx.fillRect(-size/2, -size/2, size, size);
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-size/2, -size/2, size, size);
+                ctx.restore();
+                
+                // Draw text
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = '12px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText("Brain Shell Not Available", x + w / 2, y + h / 2);
+                ctx.fillText("Brain Shell (Fallback)", centerX, 20);
+                ctx.fillText(`Rot: ${rot.toFixed(3)}`, centerX, h - 10);
+                
+                ctx.restore();
             }
         },
 

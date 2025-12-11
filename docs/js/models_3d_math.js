@@ -22,6 +22,8 @@
             const dz = z - camera.z;
 
             // Apply camera rotation if present
+            // IMPORTANT: We need to rotate the point in the OPPOSITE direction of camera rotation
+            // because we're rotating the world around the camera, not the camera itself
             let rotatedX = dx;
             let rotatedY = dy;
             let rotatedZ = dz;
@@ -29,9 +31,9 @@
             if (camera.rotationX || camera.rotationY || camera.rotationZ) {
                 const rotated = this.rotatePoint3D(
                     {x: dx, y: dy, z: dz},
-                    camera.rotationX || 0,
-                    camera.rotationY || 0,
-                    camera.rotationZ || 0
+                    -(camera.rotationX || 0),  // Negate rotation
+                    -(camera.rotationY || 0),  // Negate rotation
+                    -(camera.rotationZ || 0)   // Negate rotation
                 );
                 rotatedX = rotated.x;
                 rotatedY = rotated.y;

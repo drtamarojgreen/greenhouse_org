@@ -10,18 +10,22 @@
         ctx: null,
         algo: null,
 
-        camera: {
-            x: 0, y: 0, z: -300,
-            rotationX: 0, rotationY: 0, rotationZ: 0,
-            fov: 500
-        },
+        cameras: [
+            // Main camera
+            { x: 0, y: 0, z: -300, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 },
+            // PiP cameras: helix, micro, protein, target
+            { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 },
+            { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 400 },
+            { x: 0, y: 0, z: -100, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 400 },
+            { x: 0, y: 0, z: -300, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 600 }
+        ],
         projection: {
             width: 800, height: 600,
             near: 10, far: 2000
         },
 
         isActive: false,
-        rotationSpeed: 0.0002, // Very slow, barely moving
+        rotationSpeed: 0.05, // Very fast rotation: ~2 seconds per full rotation at 60 FPS
         neurons3D: [],
         connections3D: [],
         particles: [],
@@ -44,12 +48,21 @@
         mainCameraController: null,
 
         init(container, algo) {
+            console.log('[Init] Starting initialization...');
             this.container = container;
             this.algo = algo;
+            this.isEvolving = false; // Don't start until button pressed
 
-            // Initialize PiP Controls
+            // Set main camera to cameras[0]
+            this.camera = this.cameras[0];
+            console.log('[Init] Main camera set to cameras[0]:', this.camera);
+
+            // Initialize PiP Controls with cameras array FIRST
             if (window.GreenhouseGeneticPiPControls) {
-                window.GreenhouseGeneticPiPControls.init(window.GreenhouseGeneticConfig);
+                window.GreenhouseGeneticPiPControls.init(window.GreenhouseGeneticConfig, this.cameras);
+                console.log('[Init] PiP controls initialized');
+            } else {
+                console.error('[Init] GreenhouseGeneticPiPControls not found!');
             }
 
             // Initialize Main Camera Controller
@@ -58,6 +71,9 @@
                     this.camera,
                     window.GreenhouseGeneticConfig
                 );
+                console.log('[Init] Main camera controller created');
+            } else {
+                console.error('[Init] GreenhouseGeneticCameraController not found!');
             }
 
             this.setupDOM();
@@ -67,8 +83,15 @@
             // Initial Data Map
             this.updateData();
 
-            // Start Render Loop
-            this.animate();
+            // DON'T start animation loop yet - wait for Start button
+            console.log('[Init] Initialization complete - waiting for Start button');
+        },
+        
+        startAnimation() {
+            if (!this.animationFrame) {
+                console.log('[Start] Starting animation loop...');
+                this.animate();
+            }
         },
 
         setupDOM() {
@@ -139,7 +162,7 @@
             overlay.style.left = '0';
             overlay.style.width = '100%';
             overlay.style.height = '500px'; // Match canvas height
-            overlay.style.display = 'flex';
+            overlay.style.display = 'flex'; // SHOW BY DEFAULT - user must click to start
             overlay.style.justifyContent = 'center';
             overlay.style.alignItems = 'center';
             overlay.style.background = 'rgba(0,0,0,0.6)';
@@ -157,9 +180,17 @@
             btn.style.borderRadius = '5px';
 
             btn.onclick = () => {
+                console.log('[Start Button] Clicked - starting simulation');
                 this.isEvolving = true;
                 overlay.style.display = 'none';
-                if (window.GreenhouseGenetic) window.GreenhouseGenetic.startSimulation();
+                
+                console.log('[Start Button] Calling startSimulation()');
+                if (window.GreenhouseGenetic) {
+                    window.GreenhouseGenetic.startSimulation();
+                } else {
+                    console.error('[Start Button] GreenhouseGenetic not found!');
+                }
+                
                 // Update pause button text if needed
                 const pauseBtn = container.querySelector('#gen-pause-btn');
                 if (pauseBtn) {
@@ -167,6 +198,13 @@
                     pauseBtn.style.background = "";
                     pauseBtn.style.color = "";
                 }
+                
+                // Start animation loop
+                this.startAnimation();
+                
+                console.log('[Start Button] Animation started');
+                console.log('[Start Button] isEvolving:', this.isEvolving);
+                console.log('[Start Button] mainCameraController:', !!this.mainCameraController);
             };
 
             overlay.appendChild(btn);
@@ -216,6 +254,8 @@
             });
 
             window.addEventListener('mousemove', e => {
+                // Remove excessive mouse move logging
+                
                 // PiP Controls
                 if (window.GreenhouseGeneticPiPControls) {
                     // Check if dragging a PiP
@@ -444,11 +484,23 @@
         },
 
         animate() {
-            this.render();
-
-            // Update Main Camera
+            // Update Main Camera BEFORE rendering
             if (this.mainCameraController) {
                 this.mainCameraController.update();
+                
+                // Log update call every 60 frames
+                if (!this._updateFrameCount) this._updateFrameCount = 0;
+                this._updateFrameCount++;
+                
+                if (this._updateFrameCount % 60 === 0) {
+                    console.log('[Animate] Main camera update called:', {
+                        rotationY: this.camera.rotationY.toFixed(3),
+                        hasController: !!this.mainCameraController,
+                        frame: this._updateFrameCount
+                    });
+                }
+            } else {
+                console.log('[Animate] NO main camera controller!');
             }
             
             // Fallback auto-rotate if no controller or if isEvolving
@@ -471,14 +523,52 @@
                 }
             }
 
+            // Render AFTER all camera updates
+            this.render();
+            
             this.animationFrame = requestAnimationFrame(() => this.animate());
         },
 
         render() {
-            if (!this.ctx || !this.canvas) return;
+            if (!this.ctx || !this.canvas) {
+                console.error('[Render] Missing ctx or canvas!');
+                return;
+            }
 
             const ctx = this.ctx;
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            // Log render call every 60 frames
+            if (!this._renderFrameCount) this._renderFrameCount = 0;
+            this._renderFrameCount++;
+            
+            if (this._renderFrameCount % 60 === 0) {
+                console.log('[Render] Rendering frame:', {
+                    frame: this._renderFrameCount,
+                    canvasWidth: this.canvas.width,
+                    canvasHeight: this.canvas.height,
+                    cameraRotY: this.camera.rotationY.toFixed(3),
+                    neuronsCount: this.neurons3D.length,
+                    cameraX: this.camera.x.toFixed(2),
+                    cameraY: this.camera.y.toFixed(2),
+                    cameraZ: this.camera.z.toFixed(2),
+                    cameraRotX: this.camera.rotationX.toFixed(3)
+                });
+                
+                // Test: Draw a simple rotating rectangle to verify canvas is updating
+                const testRot = this.camera.rotationY;
+                ctx.save();
+                ctx.translate(100, 100);
+                ctx.rotate(testRot);
+                ctx.fillStyle = '#FF0000';
+                ctx.fillRect(-25, -25, 50, 50);
+                ctx.restore();
+                
+                // Draw rotation value as text
+                ctx.fillStyle = '#FFFF00';
+                ctx.font = '20px Arial';
+                ctx.fillText(`Rot: ${testRot.toFixed(3)}`, 10, 30);
+            }
 
             // Update Automatic Focus - REMOVED for Manual Control
             // const now = Date.now();
@@ -541,6 +631,7 @@
 
             // 2. PiP 1: DNA Double Helix - Top Left
             this.drawDNAHelixPiP(ctx, leftPipX, gap, pipW, pipH, helixState, drawPiPFrame);
+            this.drawRotatingCube(ctx, leftPipX, gap, pipW, pipH, helixState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, leftPipX, gap, pipW, pipH, 'helix');
             }
@@ -548,6 +639,7 @@
             // 3. PiP 2: Micro View (Gene Structure) - Top Right
             this.drawMicroView(ctx, rightPipX, gap, pipW, pipH, activeGene, 
                 this.activeGeneIndex, this.neuronMeshes, drawPiPFrame, microState);
+            this.drawRotatingCube(ctx, rightPipX, gap, pipW, pipH, microState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, gap, pipW, pipH, 'micro');
             }
@@ -556,6 +648,7 @@
             const proteinY = gap + pipH + gap;
             this.drawProteinView(ctx, rightPipX, proteinY, pipW, pipH, activeGene, 
                 this.proteinCache, drawPiPFrame, proteinState);
+            this.drawRotatingCube(ctx, rightPipX, proteinY, pipW, pipH, proteinState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, proteinY, pipW, pipH, 'protein');
             }
@@ -564,6 +657,7 @@
             const targetY = gap + pipH + gap + pipH + gap;
             this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene, 
                 this.activeGeneIndex, this.brainShell, drawPiPFrame, targetState);
+            this.drawRotatingCube(ctx, rightPipX, targetY, pipW, pipH, targetState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, targetY, pipW, pipH, 'target');
             }
@@ -589,35 +683,35 @@
             }
         },
 
-        drawMicroView(ctx, x, y, w, h, activeGene, cameraState) {
+        drawMicroView(ctx, x, y, w, h, activeGene, activeGeneIndex, neuronMeshes, drawPiPFrameCallback, cameraState) {
             if (window.GreenhouseGeneticGene) {
                 window.GreenhouseGeneticGene.drawMicroView(
-                    ctx, x, y, w, h, activeGene, this.activeGeneIndex, this.neuronMeshes,
-                    this.drawPiPFrame.bind(this), cameraState
+                    ctx, x, y, w, h, activeGene, activeGeneIndex, neuronMeshes,
+                    drawPiPFrameCallback, cameraState
                 );
             } else if (window.GreenhouseGeneticChromosome) {
                 // Fallback or alternative view
                 window.GreenhouseGeneticChromosome.drawChromosome(
                     ctx, x, y, w, h, activeGene,
-                    this.drawPiPFrame.bind(this)
+                    drawPiPFrameCallback
                 );
             }
         },
 
-        drawTargetView(ctx, x, y, w, h, activeGene, cameraState) {
+        drawTargetView(ctx, x, y, w, h, activeGene, activeGeneIndex, brainShell, drawPiPFrameCallback, cameraState) {
             if (window.GreenhouseGeneticBrain) {
                 window.GreenhouseGeneticBrain.drawTargetView(
-                    ctx, x, y, w, h, activeGene, this.activeGeneIndex, this.brainShell,
-                    this.drawPiPFrame.bind(this), cameraState
+                    ctx, x, y, w, h, activeGene, activeGeneIndex, brainShell,
+                    drawPiPFrameCallback, cameraState
                 );
             }
         },
 
-        drawProteinView(ctx, x, y, w, h, activeGene, cameraState) {
+        drawProteinView(ctx, x, y, w, h, activeGene, proteinCache, drawPiPFrameCallback, cameraState) {
             if (window.GreenhouseGeneticProtein) {
                 window.GreenhouseGeneticProtein.drawProteinView(
-                    ctx, x, y, w, h, activeGene, this.proteinCache,
-                    this.drawPiPFrame.bind(this), cameraState
+                    ctx, x, y, w, h, activeGene, proteinCache,
+                    drawPiPFrameCallback, cameraState
                 );
             }
         },
@@ -876,16 +970,27 @@
                 drawPiPFrame(ctx, x, y, w, h, "DNA Double Helix");
             }
 
-            // Setup PiP camera with state - use controller's camera directly
-            const pipCamera = cameraState.camera || {
-                x: cameraState.panX || 0,
-                y: cameraState.panY || 0,
-                z: -200 / (cameraState.zoom || 1.0),
-                rotationX: cameraState.rotationX || 0,
-                rotationY: cameraState.rotationY || 0,
-                rotationZ: 0,
-                fov: 500
-            };
+            // Log camera state every 60 frames to avoid spam
+            if (!this._helixDrawFrameCount) this._helixDrawFrameCount = 0;
+            this._helixDrawFrameCount++;
+            
+            if (this._helixDrawFrameCount % 60 === 0) {
+                console.log('[Draw] DNA Helix camera state:', {
+                    rotationX: cameraState.rotationX?.toFixed(3),
+                    rotationY: cameraState.rotationY?.toFixed(3),
+                    hasCamera: !!cameraState.camera,
+                    cameraRotX: cameraState.camera?.rotationX?.toFixed(3),
+                    cameraRotY: cameraState.camera?.rotationY?.toFixed(3),
+                    frame: this._helixDrawFrameCount
+                });
+            }
+
+            // Use the specific camera for this PiP - no fallback
+            if (!cameraState || !cameraState.camera) {
+                console.error('[drawDNAHelixPiP] No camera provided!');
+                return;
+            }
+            const pipCamera = cameraState.camera;
 
             const pipProjection = {
                 width: w,
@@ -1111,6 +1216,103 @@
                     }
                 }
             }
+        },
+
+        /**
+         * Draw a rotating 3D cube to test rotation
+         * @param {CanvasRenderingContext2D} ctx - Canvas context
+         * @param {number} x - PiP X position
+         * @param {number} y - PiP Y position
+         * @param {number} w - PiP width
+         * @param {number} h - PiP height
+         * @param {Object} cameraState - Camera state for this PiP
+         */
+        drawRotatingCube(ctx, x, y, w, h, cameraState) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            // Get rotation from camera state
+            const rotY = cameraState.camera?.rotationY || cameraState.rotationY || 0;
+            const rotX = cameraState.camera?.rotationX || cameraState.rotationX || 0;
+            
+            // Define cube vertices in 3D space
+            const size = 20;
+            const cubeVertices = [
+                {x: -size, y: -size, z: -size},
+                {x:  size, y: -size, z: -size},
+                {x:  size, y:  size, z: -size},
+                {x: -size, y:  size, z: -size},
+                {x: -size, y: -size, z:  size},
+                {x:  size, y: -size, z:  size},
+                {x:  size, y:  size, z:  size},
+                {x: -size, y:  size, z:  size}
+            ];
+            
+            // Simple camera for the cube
+            const cubeCamera = {
+                x: 0,
+                y: 0,
+                z: -100,
+                rotationX: rotX,
+                rotationY: rotY,
+                rotationZ: 0,
+                fov: 200
+            };
+            
+            const cubeProjection = {
+                width: w,
+                height: h,
+                near: 10,
+                far: 500
+            };
+            
+            // Project vertices
+            const projected = cubeVertices.map(v => 
+                GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, cubeCamera, cubeProjection)
+            );
+            
+            // Draw cube edges
+            const edges = [
+                [0,1], [1,2], [2,3], [3,0], // Front face
+                [4,5], [5,6], [6,7], [7,4], // Back face
+                [0,4], [1,5], [2,6], [3,7]  // Connecting edges
+            ];
+            
+            ctx.strokeStyle = '#FF00FF';
+            ctx.lineWidth = 2;
+            
+            edges.forEach(([i, j]) => {
+                const p1 = projected[i];
+                const p2 = projected[j];
+                
+                if (p1.scale > 0 && p2.scale > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+            });
+            
+            // Draw rotation value inside the cube (center of PiP)
+            const rotDegrees = Math.round((rotY * 180 / Math.PI) % 360);
+            
+            // Draw background box for text
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(w / 2 - 30, h / 2 - 15, 60, 30);
+            
+            // Draw border
+            ctx.strokeStyle = '#FF00FF';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(w / 2 - 30, h / 2 - 15, 60, 30);
+            
+            // Draw rotation value as whole number
+            ctx.fillStyle = '#FF00FF';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${rotDegrees}°`, w / 2, h / 2);
+            
+            ctx.restore();
         }
     };
 

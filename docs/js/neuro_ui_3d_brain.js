@@ -4,6 +4,20 @@
     const GreenhouseNeuroBrain = {
         drawBrainShell(ctx, brainShell, camera, projection, width, height) {
             if (!brainShell) return;
+            
+            // Log camera rotation every 60 calls
+            if (!this._drawBrainCallCount) this._drawBrainCallCount = 0;
+            this._drawBrainCallCount++;
+            
+            if (this._drawBrainCallCount % 60 === 0) {
+                console.log('[drawBrainShell] Camera rotation:', {
+                    call: this._drawBrainCallCount,
+                    rotationX: camera.rotationX?.toFixed(3),
+                    rotationY: camera.rotationY?.toFixed(3),
+                    rotationZ: camera.rotationZ?.toFixed(3),
+                    hasRotation: !!(camera.rotationX || camera.rotationY || camera.rotationZ)
+                });
+            }
 
             const vertices = brainShell.vertices;
             const faces = brainShell.faces;

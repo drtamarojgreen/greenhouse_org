@@ -21,7 +21,7 @@
                 enableZoom: true,
                 enableRotate: true,
                 autoRotate: true,
-                autoRotateSpeed: 0.0002,
+                autoRotateSpeed: 0.05, // Very fast rotation: ~2 seconds per full rotation at 60 FPS
                 panSpeed: 0.002,
                 zoomSpeed: 0.1,
                 rotateSpeed: 0.005,

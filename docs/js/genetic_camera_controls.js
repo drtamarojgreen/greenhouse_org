@@ -382,7 +382,36 @@
             // Auto-rotate
             if (this.autoRotate && this.config.get('camera.controls.autoRotate') && !this.isDragging && !this.isPanning) {
                 const speed = this.config.get('camera.controls.autoRotateSpeed') || 0.0002;
+                const oldRotY = this.camera.rotationY;
                 this.camera.rotationY += speed;
+                
+                // Log auto-rotate animation every 60 frames (~1 second at 60fps)
+                if (!this._autoRotateFrameCount) this._autoRotateFrameCount = 0;
+                this._autoRotateFrameCount++;
+                
+                if (this._autoRotateFrameCount % 60 === 0) {
+                    console.log('[Camera Animation] Auto-rotate:', {
+                        rotationY: this.camera.rotationY.toFixed(3),
+                        speed: speed,
+                        autoRotate: this.autoRotate,
+                        configAutoRotate: this.config.get('camera.controls.autoRotate'),
+                        isDragging: this.isDragging,
+                        isPanning: this.isPanning,
+                        frame: this._autoRotateFrameCount
+                    });
+                }
+            } else {
+                // Log why auto-rotate is not running (only first time)
+                if (!this._autoRotateDebugLogged) {
+                    console.log('[Camera Debug] Auto-rotate NOT running:', {
+                        autoRotate: this.autoRotate,
+                        configAutoRotate: this.config.get('camera.controls.autoRotate'),
+                        isDragging: this.isDragging,
+                        isPanning: this.isPanning,
+                        hasConfig: !!this.config
+                    });
+                    this._autoRotateDebugLogged = true;
+                }
             }
         }
 

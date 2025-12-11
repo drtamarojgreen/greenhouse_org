@@ -9,25 +9,12 @@
 
             if (!activeGene) return;
 
-            // Render a zoomed-in, rotating view of the specific gene geometry
-            // Use the camera state passed from the controller
-            let microCamera;
-
-            if (cameraState && cameraState.camera) {
-                // Use the full camera object if available (preferred)
-                microCamera = cameraState.camera;
-            } else {
-                // Fallback to constructing from individual properties (legacy support)
-                microCamera = {
-                    x: cameraState ? cameraState.panX : 0,
-                    y: cameraState ? cameraState.panY : 0,
-                    z: -300 / (cameraState ? cameraState.zoom : 1.0), // Zoomed out more (was -100)
-                    rotationX: cameraState ? cameraState.rotationX : 0,
-                    rotationY: cameraState ? cameraState.rotationY : 0,
-                    rotationZ: 0,
-                    fov: 400
-                };
+            // Use the specific camera for this PiP - no fallback
+            if (!cameraState || !cameraState.camera) {
+                console.error('[drawMicroView] No camera provided!');
+                return;
             }
+            const microCamera = cameraState.camera;
 
             // Render High-Fidelity Chromatin Structure instead of abstract mesh
             if (window.GreenhouseGeneticChromosome) {

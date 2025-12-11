@@ -21,21 +21,12 @@
 
             if (!protein) return;
 
-            let proteinCamera;
-
-            if (cameraState && cameraState.camera) {
-                proteinCamera = cameraState.camera;
-            } else {
-                proteinCamera = {
-                    x: cameraState ? cameraState.panX : 0,
-                    y: cameraState ? cameraState.panY : 0,
-                    z: -100 / (cameraState ? cameraState.zoom : 1.0),
-                    rotationX: cameraState ? cameraState.rotationX : 0,
-                    rotationY: cameraState ? cameraState.rotationY : 0,
-                    rotationZ: 0,
-                    fov: 400
-                };
+            // Use the specific camera for this PiP - no fallback
+            if (!cameraState || !cameraState.camera) {
+                console.error('[drawProteinView] No camera provided!');
+                return;
             }
+            const proteinCamera = cameraState.camera;
 
             // Project Chain
             const projected = protein.vertices.map(v => {
