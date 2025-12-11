@@ -85,28 +85,45 @@ TestFramework.describe('GreenhouseGeneticPiPControls', () => {
         assert.isNull(pip.getPiPAtPosition(400, 400, W, H));
     });
 
-    TestFramework.it('should handle mouse interaction', () => {
+    TestFramework.it('should handle mouse interaction for all PiP views', () => {
         const canvas = {
             width: 1000,
             height: 800,
             getBoundingClientRect: () => ({ left: 0, top: 0, width: 1000, height: 800 })
         };
+        const W = canvas.width;
 
-        // Mouse Down on Helix
-        const event = { clientX: 20, clientY: 20, stopPropagation: () => { } };
-        pip.handleMouseDown(event, canvas);
+        const testCases = [
+            { view: 'helix', x: 20, y: 20 },
+            { view: 'micro', x: W - 100, y: 20 },
+            { view: 'protein', x: W - 100, y: 180 },
+            { view: 'target', x: W - 100, y: 340 }
+        ];
 
-        assert.equal(pip.activePiP, 'helix');
-        assert.isTrue(pip.controllers.helix.mouseDown);
+        testCases.forEach(tc => {
+            // Reset mock states before each test case
+            Object.values(pip.controllers).forEach(c => {
+                c.mouseDown = false;
+                c.mouseMove = false;
+            });
+            pip.activePiP = null;
 
-        // Mouse Move
-        pip.handleMouseMove({});
-        assert.isTrue(pip.controllers.helix.mouseMove);
+            // Mouse Down on the view
+            let event = { clientX: tc.x, clientY: tc.y, stopPropagation: () => {} };
+            pip.handleMouseDown(event, canvas);
 
-        // Mouse Up
-        pip.handleMouseUp();
-        assert.isNull(pip.activePiP);
-        assert.isFalse(pip.controllers.helix.mouseDown);
+            assert.equal(pip.activePiP, tc.view, `Active PiP should be ${tc.view}`);
+            assert.isTrue(pip.controllers[tc.view].mouseDown, `Mouse down should be true for ${tc.view}`);
+
+            // Mouse Move
+            pip.handleMouseMove({});
+            assert.isTrue(pip.controllers[tc.view].mouseMove, `Mouse move should be true for ${tc.view}`);
+
+            // Mouse Up
+            pip.handleMouseUp();
+            assert.isNull(pip.activePiP, `Active PiP should be null after mouse up for ${tc.view}`);
+            assert.isFalse(pip.controllers[tc.view].mouseDown, `Mouse down should be false after mouse up for ${tc.view}`);
+        });
     });
 
     TestFramework.it('should update all controllers', () => {
@@ -119,7 +136,8 @@ TestFramework.describe('GreenhouseGeneticPiPControls', () => {
         const state = pip.getState('helix');
         assert.isDefined(state);
         assert.isDefined(state.camera);
-        assert.equal(state.camera.x, -200);
+        assert.equal(state.camera.x, 0);
+        assert.equal(state.camera.z, -200);
     });
 });
 
