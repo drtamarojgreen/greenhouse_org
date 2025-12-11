@@ -487,20 +487,6 @@
             // Update Main Camera BEFORE rendering
             if (this.mainCameraController) {
                 this.mainCameraController.update();
-                
-                // Log update call every 60 frames
-                if (!this._updateFrameCount) this._updateFrameCount = 0;
-                this._updateFrameCount++;
-                
-                if (this._updateFrameCount % 60 === 0) {
-                    console.log('[Animate] Main camera update called:', {
-                        rotationY: this.camera.rotationY.toFixed(3),
-                        hasController: !!this.mainCameraController,
-                        frame: this._updateFrameCount
-                    });
-                }
-            } else {
-                console.log('[Animate] NO main camera controller!');
             }
             
             // Fallback auto-rotate if no controller or if isEvolving
@@ -530,49 +516,10 @@
         },
 
         render() {
-            if (!this.ctx || !this.canvas) {
-                console.error('[Render] Missing ctx or canvas!');
-                return;
-            }
+            if (!this.ctx || !this.canvas) return;
 
             const ctx = this.ctx;
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            
-            // Log render call every 60 frames
-            if (!this._renderFrameCount) this._renderFrameCount = 0;
-            this._renderFrameCount++;
-            
-            if (this._renderFrameCount % 60 === 0) {
-                console.log('[Render] Rendering frame:', {
-                    frame: this._renderFrameCount,
-                    canvasWidth: this.canvas.width,
-                    canvasHeight: this.canvas.height,
-                    cameraRotY: this.camera.rotationY.toFixed(3),
-                    neuronsCount: this.neurons3D.length,
-                    cameraX: this.camera.x.toFixed(2),
-                    cameraY: this.camera.y.toFixed(2),
-                    cameraZ: this.camera.z.toFixed(2),
-                    cameraRotX: this.camera.rotationX.toFixed(3)
-                });
-                
-                // Test: Draw a simple rotating rectangle to verify canvas is updating
-                const testRot = this.camera.rotationY;
-                ctx.save();
-                ctx.translate(100, 100);
-                ctx.rotate(testRot);
-                ctx.fillStyle = '#FF0000';
-                ctx.fillRect(-25, -25, 50, 50);
-                ctx.restore();
-                
-                // Draw rotation value as text
-                ctx.fillStyle = '#FFFF00';
-                ctx.font = '20px Arial';
-                ctx.fillText(`Rot: ${testRot.toFixed(3)}`, 10, 30);
-            }
-
-            // Update Automatic Focus - REMOVED for Manual Control
-            // const now = Date.now();
-            // if (now - this.lastFocusChangeTime > this.focusDuration) { ... }
 
             const activeGene = this.neurons3D[this.activeGeneIndex];
 
@@ -631,7 +578,6 @@
 
             // 2. PiP 1: DNA Double Helix - Top Left
             this.drawDNAHelixPiP(ctx, leftPipX, gap, pipW, pipH, helixState, drawPiPFrame);
-            this.drawRotatingCube(ctx, leftPipX, gap, pipW, pipH, helixState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, leftPipX, gap, pipW, pipH, 'helix');
             }
@@ -639,7 +585,6 @@
             // 3. PiP 2: Micro View (Gene Structure) - Top Right
             this.drawMicroView(ctx, rightPipX, gap, pipW, pipH, activeGene, 
                 this.activeGeneIndex, this.neuronMeshes, drawPiPFrame, microState);
-            this.drawRotatingCube(ctx, rightPipX, gap, pipW, pipH, microState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, gap, pipW, pipH, 'micro');
             }
@@ -648,7 +593,6 @@
             const proteinY = gap + pipH + gap;
             this.drawProteinView(ctx, rightPipX, proteinY, pipW, pipH, activeGene, 
                 this.proteinCache, drawPiPFrame, proteinState);
-            this.drawRotatingCube(ctx, rightPipX, proteinY, pipW, pipH, proteinState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, proteinY, pipW, pipH, 'protein');
             }
@@ -657,7 +601,6 @@
             const targetY = gap + pipH + gap + pipH + gap;
             this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene, 
                 this.activeGeneIndex, this.brainShell, drawPiPFrame, targetState);
-            this.drawRotatingCube(ctx, rightPipX, targetY, pipW, pipH, targetState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, targetY, pipW, pipH, 'target');
             }
