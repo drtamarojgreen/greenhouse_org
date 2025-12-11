@@ -42,6 +42,7 @@
         transitionStartTime: 0,
 
         mainCameraController: null,
+        autoFollow: false, // Start with auto-follow disabled
 
         init(container, algo) {
             this.container = container;
@@ -185,18 +186,20 @@
 
         setupInteraction() {
             this.canvas.addEventListener('mousedown', e => {
-                // 1. Check PiP Controls first.
-                if (window.GreenhouseGeneticPiPControls && window.GreenhouseGeneticPiPControls.handleMouseDown(e, this.canvas)) {
-                    // If PiP handled it, deactivate main controller and stop.
-                    if (this.mainCameraController) {
-                        this.mainCameraController.setIsListening(false);
+                // 1. Check PiP Controls first
+                if (window.GreenhouseGeneticPiPControls) {
+                    window.GreenhouseGeneticPiPControls.handleMouseDown(e, this.canvas);
+                    if (window.GreenhouseGeneticPiPControls.activePiP) {
+                        this.autoFollow = false; // Disable auto-follow on PiP interaction
+                        if (this.mainCameraController) {
+                            this.mainCameraController.stopAutoRotate(); // Also stop auto-rotation
+                        }
+                        return; // Handled by PiP
                     }
-                    return;
                 }
 
-                // 2. If not handled by PiP, activate and use main controller.
+                // 2. Main Camera Controls
                 if (this.mainCameraController) {
-                    this.mainCameraController.setIsListening(true);
                     this.mainCameraController.handleMouseDown(e);
                     this.autoFollow = false; // Disable auto-follow on manual interaction
                     this.canvas.style.cursor = 'grabbing';
@@ -206,7 +209,7 @@
             this.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
             window.addEventListener('mouseup', () => {
-                // Let PiP controls handle mouse up first
+                // PiP Controls
                 if (window.GreenhouseGeneticPiPControls) {
                     window.GreenhouseGeneticPiPControls.handleMouseUp();
                 }
@@ -214,8 +217,6 @@
                 // Main Camera Controls
                 if (this.mainCameraController) {
                     this.mainCameraController.handleMouseUp();
-                    // Always re-enable main controller on mouse up to avoid getting stuck
-                    this.mainCameraController.setIsListening(true);
                 }
 
                 if (this.canvas) this.canvas.style.cursor = 'grab';
@@ -224,8 +225,9 @@
             window.addEventListener('mousemove', e => {
                 // PiP Controls
                 if (window.GreenhouseGeneticPiPControls) {
-                    // If the PiP controls handled the event, do not proceed.
-                    if (window.GreenhouseGeneticPiPControls.handleMouseMove(e)) {
+                    // Check if dragging a PiP
+                    if (window.GreenhouseGeneticPiPControls.activePiP) {
+                        window.GreenhouseGeneticPiPControls.handleMouseMove(e);
                         return;
                     }
                 }
@@ -239,8 +241,14 @@
             this.canvas.addEventListener('wheel', e => {
                 // PiP Controls
                 if (window.GreenhouseGeneticPiPControls) {
-                    // If the PiP controls handled the event, do not proceed.
-                    if (window.GreenhouseGeneticPiPControls.handleWheel(e, this.canvas)) {
+                    // Check if over PiP - need to scale coordinates
+                    const rect = this.canvas.getBoundingClientRect();
+                    const scaleX = this.canvas.width / rect.width;
+                    const scaleY = this.canvas.height / rect.height;
+                    const mouseX = (e.clientX - rect.left) * scaleX;
+                    const mouseY = (e.clientY - rect.top) * scaleY;
+                    if (window.GreenhouseGeneticPiPControls.getPiPAtPosition(mouseX, mouseY, this.canvas.width, this.canvas.height)) {
+                        window.GreenhouseGeneticPiPControls.handleWheel(e, this.canvas);
                         return;
                     }
                 }
@@ -446,8 +454,7 @@
             this.render();
 
             // Update Main Camera
-            // Only update (for inertia/auto-rotate) if the controller is active
-            if (this.mainCameraController && this.mainCameraController.isListening) {
+            if (this.mainCameraController) {
                 this.mainCameraController.update();
             }
             

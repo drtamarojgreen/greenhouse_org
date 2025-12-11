@@ -92,9 +92,8 @@
             if (this.activePiP && this.controllers[this.activePiP]) {
                 // Delegate to controller
                 this.controllers[this.activePiP].handleMouseDown(e);
-                return true; // Event was handled
+                e.stopPropagation(); // Prevent main canvas controls
             }
-            return false; // Event was not handled
         },
 
         /**
@@ -103,21 +102,17 @@
         handleMouseMove(e) {
             if (this.activePiP && this.controllers[this.activePiP]) {
                 this.controllers[this.activePiP].handleMouseMove(e);
-                return true; // Event was handled
             }
-            return false;
         },
 
         /**
          * Handle mouse up
          */
         handleMouseUp() {
-            const wasActive = !!this.activePiP;
             if (this.activePiP && this.controllers[this.activePiP]) {
                 this.controllers[this.activePiP].handleMouseUp();
             }
             this.activePiP = null;
-            return wasActive;
         },
 
         /**
@@ -134,10 +129,9 @@
 
             if (pipName && this.controllers[pipName]) {
                 e.preventDefault();
+                e.stopPropagation();
                 this.controllers[pipName].handleWheel(e);
-                return true; // Event was handled
             }
-            return false;
         },
 
         /**
