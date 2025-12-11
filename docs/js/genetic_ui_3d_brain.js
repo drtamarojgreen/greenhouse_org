@@ -7,6 +7,9 @@
                 drawPiPFrameCallback(ctx, x, y, w, h, "Target: Brain Region");
             }
 
+            // Use the same brain rendering as neuro page
+            if (!brainShell) return;
+
             // Camera for Target View
             let targetCamera;
             if (cameraState && cameraState.camera) {
@@ -23,79 +26,25 @@
                 };
             }
 
-            // Generate Composite Mesh if not cached
-            if (!this.compositeBrainMesh) {
-                this.compositeBrainMesh = this.generateCompositeBrainMesh();
-            }
+            const projection = { width: w, height: h, near: 10, far: 5000 };
 
-            const mesh = this.compositeBrainMesh;
-
-            // Project and Sort Faces
-            const projectedVertices = mesh.vertices.map(v => {
-                // Rotate
-                let vx = v.x, vy = v.y, vz = v.z;
-
-                // Rotate Y
-                let tx = vx * Math.cos(targetCamera.rotationY) - vz * Math.sin(targetCamera.rotationY);
-                let tz = vx * Math.sin(targetCamera.rotationY) + vz * Math.cos(targetCamera.rotationY);
-                vx = tx; vz = tz;
-
-                // Rotate X
-                let ty = vy * Math.cos(targetCamera.rotationX) - vz * Math.sin(targetCamera.rotationX);
-                tz = vy * Math.sin(targetCamera.rotationX) + vz * Math.cos(targetCamera.rotationX);
-                vy = ty; vz = tz;
-
-                return GreenhouseModels3DMath.project3DTo2D(vx, vy, vz, targetCamera, { width: w, height: h, near: 10, far: 5000 });
-            });
-
-            // Sort Faces
-            const facesWithDepth = mesh.faces.map(face => {
-                const p0 = projectedVertices[face[0]];
-                const p1 = projectedVertices[face[1]];
-                const p2 = projectedVertices[face[2]];
-
-                if (p0.scale <= 0 || p1.scale <= 0 || p2.scale <= 0) return null;
-
-                const depth = (p0.depth + p1.depth + p2.depth) / 3;
-                return { face, p0, p1, p2, depth, color: face[3] }; // face[3] is color index/type
-            }).filter(f => f !== null).sort((a, b) => b.depth - a.depth);
-
-            // Draw Faces
-            facesWithDepth.forEach(f => {
-                // Backface Culling
-                const cp = (f.p1.x - f.p0.x) * (f.p2.y - f.p0.y) - (f.p1.y - f.p0.y) * (f.p2.x - f.p0.x);
-                if (cp < 0) return;
-
+            // Use GreenhouseNeuroBrain rendering if available
+            if (window.GreenhouseNeuroBrain) {
+                ctx.save();
+                ctx.translate(x, y);
                 ctx.beginPath();
-                ctx.moveTo(f.p0.x + x, f.p0.y + y);
-                ctx.lineTo(f.p1.x + x, f.p1.y + y);
-                ctx.lineTo(f.p2.x + x, f.p2.y + y);
-                ctx.closePath();
-
-                // Color based on region type
-                // Cerebrum: Grey/White, Cerebellum: Darker
-                const baseColor = f.color === 'cerebellum' ? { r: 150, g: 100, b: 100 } : { r: 200, g: 200, b: 200 };
-
-                // Simple Lighting
-                // Normal is roughly perpendicular to screen for front faces? 
-                // We can use depth for fog
-                const alpha = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
-
-                ctx.fillStyle = `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${alpha})`;
-                ctx.strokeStyle = `rgba(${baseColor.r - 50}, ${baseColor.g - 50}, ${baseColor.b - 50}, ${alpha * 0.5})`;
-                ctx.lineWidth = 0.5;
-                ctx.fill();
-                ctx.stroke();
-            });
-
-            // Highlight Active Region (if we can map it)
-            // For now, just draw the label
-            ctx.fillStyle = '#fff';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText("Composite Brain Model", x + w / 2, y + h - 10);
-
-            ctx.restore();
+                ctx.rect(0, 0, w, h);
+                ctx.clip();
+                
+                window.GreenhouseNeuroBrain.drawBrainShell(ctx, brainShell, targetCamera, projection, w, h);
+                
+                ctx.restore();
+            } else {
+                // Fallback to simple rendering
+                ctx.fillStyle = '#666';
+                ctx.textAlign = 'center';
+                ctx.fillText("Brain Shell Not Available", x + w / 2, y + h / 2);
+            }
         },
 
         generateCompositeBrainMesh() {

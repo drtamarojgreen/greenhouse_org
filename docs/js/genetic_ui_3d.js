@@ -532,9 +532,8 @@
                 targetState = window.GreenhouseGeneticPiPControls.getState('target');
             }
 
-            // 2. PiP 1: Helix (Macro View) - Top Left
-            // "Crayolas with label BDNF"
-            this.drawMacroView(ctx, leftPipX, gap, pipW, pipH, helixState, drawPiPFrame);
+            // 2. PiP 1: DNA Double Helix - Top Left
+            this.drawDNAHelixPiP(ctx, leftPipX, gap, pipW, pipH, helixState, drawPiPFrame);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, leftPipX, gap, pipW, pipH, 'helix');
             }
@@ -846,6 +845,260 @@
         drawEventLog(ctx) {
             if (window.GreenhouseGeneticStats) {
                 window.GreenhouseGeneticStats.drawEventLog(ctx, this.canvas.height);
+            }
+        },
+
+        /**
+         * Draw DNA Double Helix in PiP
+         * @param {CanvasRenderingContext2D} ctx - Canvas context
+         * @param {number} x - PiP X position
+         * @param {number} y - PiP Y position
+         * @param {number} w - PiP width
+         * @param {number} h - PiP height
+         * @param {Object} cameraState - Camera state for this PiP
+         * @param {Function} drawPiPFrame - Callback to draw PiP frame
+         */
+        drawDNAHelixPiP(ctx, x, y, w, h, cameraState, drawPiPFrame) {
+            // Draw PiP frame with title
+            if (drawPiPFrame) {
+                drawPiPFrame(ctx, x, y, w, h, "DNA Double Helix");
+            }
+
+            // Setup PiP camera with state
+            const time = Date.now() * 0.001;
+            const pipCamera = {
+                x: cameraState.panX || 0,
+                y: cameraState.panY || 0,
+                z: -200 / (cameraState.zoom || 1.0), // Adjust zoom
+                rotationX: cameraState.rotationX || 0,
+                rotationY: (cameraState.rotationY || 0) + time * 0.3, // Auto-rotate
+                rotationZ: 0,
+                fov: 500
+            };
+
+            const pipProjection = {
+                width: w,
+                height: h,
+                near: 10,
+                far: 2000
+            };
+
+            // Get DNA genes (first half of neurons)
+            const dnaGenes = this.neurons3D.filter(n => n.type === 'gene');
+
+            if (dnaGenes.length === 0) {
+                // Debug: Show message if no genes
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.fillStyle = '#FF0000';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText("No DNA genes found", w / 2, h / 2);
+                ctx.fillText(`Total neurons: ${this.neurons3D.length}`, w / 2, h / 2 + 20);
+                ctx.restore();
+                return;
+            }
+
+            // Draw DNA using genetic_ui_3d_dna module
+            if (window.GreenhouseGeneticDNA) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.beginPath();
+                ctx.rect(0, 0, w, h);
+                ctx.clip();
+
+                // Draw helix connections (backbone and base pairs)
+                this.drawDNAConnections(ctx, dnaGenes, pipCamera, pipProjection, w, h);
+
+                // Draw gene nodes
+                const projectedGenes = [];
+                dnaGenes.forEach((n, i) => {
+                    const p = GreenhouseModels3DMath.project3DTo2D(
+                        n.x, // Don't offset - genes are already positioned
+                        n.y,
+                        n.z,
+                        pipCamera,
+                        pipProjection
+                    );
+
+                    if (p.scale > 0) {
+                        projectedGenes.push({ ...n, ...p });
+                    }
+                });
+
+                // Sort by depth
+                projectedGenes.sort((a, b) => b.depth - a.depth);
+
+                // Draw genes
+                projectedGenes.forEach(p => {
+                    const config = window.GreenhouseGeneticConfig;
+                    const baseColors = config ? config.get('materials.dna.baseColors') : null;
+                    
+                    // Determine base pair type
+                    const geneIndex = dnaGenes.findIndex(g => g.id === p.id);
+                    const pairIndex = Math.floor(geneIndex / 2);
+                    const type = pairIndex % 4;
+                    
+                    let color;
+                    if (baseColors) {
+                        switch (type) {
+                            case 0: color = p.strand === 0 ? baseColors.A : baseColors.T; break;
+                            case 1: color = p.strand === 0 ? baseColors.T : baseColors.A; break;
+                            case 2: color = p.strand === 0 ? baseColors.C : baseColors.G; break;
+                            case 3: color = p.strand === 0 ? baseColors.G : baseColors.C; break;
+                        }
+                    } else {
+                        color = p.baseColor;
+                    }
+
+                    // Draw gene sphere
+                    const radius = 4 * p.scale;
+                    const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
+                    gradient.addColorStop(0, color);
+                    gradient.addColorStop(0.7, color);
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Add glow
+                    ctx.fillStyle = color;
+                    ctx.globalAlpha = 0.3;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, radius * 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1.0;
+                });
+
+                // Draw label
+                if (dnaGenes[0] && dnaGenes[0].label) {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(dnaGenes[0].label, w / 2, h - 20);
+                }
+
+                ctx.restore();
+            }
+        },
+
+        /**
+         * Draw DNA connections (backbone and base pairs) in PiP
+         * @param {CanvasRenderingContext2D} ctx - Canvas context
+         * @param {Array} dnaGenes - DNA gene nodes
+         * @param {Object} camera - Camera object
+         * @param {Object} projection - Projection object
+         * @param {number} w - Width
+         * @param {number} h - Height
+         */
+        drawDNAConnections(ctx, dnaGenes, camera, projection, w, h) {
+            if (dnaGenes.length < 2) return;
+
+            const config = window.GreenhouseGeneticConfig;
+            const lighting = window.GreenhouseGeneticLighting;
+
+            // Draw base pairs (rungs)
+            for (let i = 0; i < dnaGenes.length; i += 2) {
+                if (i + 1 >= dnaGenes.length) break;
+
+                const n1 = dnaGenes[i];
+                const n2 = dnaGenes[i + 1];
+
+                const p1 = GreenhouseModels3DMath.project3DTo2D(
+                    n1.x, n1.y, n1.z, camera, projection
+                );
+                const p2 = GreenhouseModels3DMath.project3DTo2D(
+                    n2.x, n2.y, n2.z, camera, projection
+                );
+
+                if (p1.scale > 0 && p2.scale > 0) {
+                    const avgScale = (p1.scale + p2.scale) / 2;
+                    const thickness = 6 * avgScale;
+
+                    // Get colors from config
+                    const baseColors = config ? config.get('materials.dna.baseColors') : null;
+                    const pairIndex = i / 2;
+                    const type = pairIndex % 4;
+                    
+                    let color1, color2;
+                    if (baseColors) {
+                        switch (type) {
+                            case 0: color1 = baseColors.A; color2 = baseColors.T; break;
+                            case 1: color1 = baseColors.T; color2 = baseColors.A; break;
+                            case 2: color1 = baseColors.C; color2 = baseColors.G; break;
+                            case 3: color1 = baseColors.G; color2 = baseColors.C; break;
+                        }
+                    } else {
+                        color1 = n1.baseColor;
+                        color2 = n2.baseColor;
+                    }
+
+                    const midX = (p1.x + p2.x) / 2;
+                    const midY = (p1.y + p2.y) / 2;
+
+                    // Draw with gradient
+                    const drawSegment = (x1, y1, x2, y2, color) => {
+                        const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+                        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.3)');
+                        gradient.addColorStop(0.5, color);
+                        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
+
+                        ctx.strokeStyle = gradient;
+                        ctx.lineWidth = thickness;
+                        ctx.lineCap = 'round';
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    };
+
+                    drawSegment(p1.x, p1.y, midX, midY, color1);
+                    drawSegment(midX, midY, p2.x, p2.y, color2);
+                }
+            }
+
+            // Draw backbone (two strands)
+            for (let s = 0; s < 2; s++) {
+                const strandNodes = dnaGenes.filter(n => n.strand === s);
+                if (strandNodes.length < 2) continue;
+
+                const strandColor = config ? 
+                    (s === 0 ? config.get('materials.dna.strand1Color') : config.get('materials.dna.strand2Color')) :
+                    (s === 0 ? '#00D9FF' : '#FF6B9D');
+
+                for (let i = 0; i < strandNodes.length - 1; i++) {
+                    const n1 = strandNodes[i];
+                    const n2 = strandNodes[i + 1];
+
+                    const p1 = GreenhouseModels3DMath.project3DTo2D(
+                        n1.x, n1.y, n1.z, camera, projection
+                    );
+                    const p2 = GreenhouseModels3DMath.project3DTo2D(
+                        n2.x, n2.y, n2.z, camera, projection
+                    );
+
+                    if (p1.scale > 0 && p2.scale > 0) {
+                        const avgScale = (p1.scale + p2.scale) / 2;
+                        const thickness = 4 * avgScale;
+
+                        // Gradient for 3D effect
+                        const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
+                        gradient.addColorStop(0, strandColor);
+                        gradient.addColorStop(0.5, strandColor);
+                        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.5)');
+
+                        ctx.strokeStyle = gradient;
+                        ctx.lineWidth = thickness;
+                        ctx.lineCap = 'round';
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
             }
         }
     };

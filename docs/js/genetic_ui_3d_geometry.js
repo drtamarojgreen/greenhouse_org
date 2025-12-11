@@ -136,17 +136,18 @@
 
         generateChromosomeMesh() {
             // X-Shaped Chromosome (Two crossed, slightly bent capsules)
+            // VERTICAL ORIENTATION for PiP display
             const vertices = [];
             const faces = [];
-            const radius = 20;
-            const length = 120;
+            const radius = 15; // Slightly smaller for PiP
+            const length = 100; // Adjusted length
             const segments = 10;
             const rings = 20;
 
             // Helper to generate a bent capsule (arm)
-            // angleOffset: rotation around Y axis
+            // angleOffset: rotation around Z axis (for vertical X)
             // bendFactor: how much it curves
-            const generateArm = (angleOffset, bendFactor, yOffset) => {
+            const generateArm = (angleOffset, bendFactor, zOffset) => {
                 for (let i = 0; i <= rings; i++) {
                     const t = i / rings; // 0 to 1
                     // t=0.5 is the center (centromere)
@@ -155,47 +156,46 @@
                     const profile = 1.0 + Math.pow(Math.abs(t - 0.5) * 2, 2) * 0.5;
                     const r = radius * profile;
 
-                    // Position along the arm length
+                    // Position along the arm length (VERTICAL - Y axis)
                     // Centered at 0
                     const lPos = (t - 0.5) * length * 2;
 
-                    // Bend logic: x = lPos, z = bend based on x
-                    let x = lPos;
-                    let y = yOffset;
-                    let z = Math.pow(lPos / length, 2) * bendFactor;
+                    // Bend logic: y = lPos (vertical), x = bend based on y
+                    let y = lPos; // VERTICAL
+                    let x = Math.pow(lPos / length, 2) * bendFactor;
+                    let z = zOffset;
 
-                    // Rotate around Y
+                    // Rotate around Z axis for X-shape
                     const cos = Math.cos(angleOffset);
                     const sin = Math.sin(angleOffset);
-                    const rx = x * cos - z * sin;
-                    const rz = x * sin + z * cos;
+                    const rx = x * cos - y * sin;
+                    const ry = x * sin + y * cos;
 
                     x = rx;
-                    z = rz;
+                    y = ry;
 
                     // Generate Ring
                     for (let j = 0; j < segments; j++) {
                         const theta = (j / segments) * Math.PI * 2;
                         // Normal to the tube direction (approximate)
-                        // Ideally we calculate Frenet frame, but for simple bend, simple normal works
                         const nx = Math.cos(theta);
-                        const ny = Math.sin(theta);
+                        const nz = Math.sin(theta);
 
                         // Add vertex
                         vertices.push({
                             x: x + nx * r,
-                            y: y + ny * r,
-                            z: z
+                            y: y, // Vertical axis
+                            z: z + nz * r
                         });
                     }
                 }
             };
 
-            // Generate two chromatids
-            // Chromatid 1
-            generateArm(Math.PI / 6, 20, 0);
-            // Chromatid 2 (Crossed)
-            generateArm(-Math.PI / 6, 20, 0);
+            // Generate two chromatids forming vertical X
+            // Chromatid 1 (upper left to lower right)
+            generateArm(Math.PI / 6, 15, 0);
+            // Chromatid 2 (upper right to lower left)
+            generateArm(-Math.PI / 6, 15, 0);
 
             // Generate Faces (Grid)
             // We have 2 arms. Each arm has (rings+1) * segments vertices.

@@ -178,6 +178,11 @@
         },
 
         drawSynapsePiP(ctx, x, y, w, h, connection, synapseMeshes, isMainView = false, externalCamera = null) {
+            // Initialize camera controller if not exists
+            if (!this.synapseCameraController && window.NeuroSynapseCameraController) {
+                this.synapseCameraController = new window.NeuroSynapseCameraController();
+            }
+
             // Draw Frame (Only if PiP)
             if (!isMainView) {
                 ctx.save();
@@ -195,7 +200,15 @@
                 // Label
                 ctx.fillStyle = '#4ca1af';
                 ctx.font = '12px Arial';
-                ctx.fillText("Synapse View", x + 10, y + 20);
+                ctx.fillText("Synapse View (Drag: Rotate, Shift+Drag: Pan, Wheel: Zoom)", x + 10, y + 20);
+                
+                // Reset button
+                ctx.fillStyle = 'rgba(76, 161, 175, 0.8)';
+                ctx.fillRect(x + w - 60, y + 5, 50, 20);
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText("Reset", x + w - 35, y + 17);
             } else {
                 ctx.save(); // Save for restore later
                 // No frame, no clip, no label for main view (or maybe a floating label?)
@@ -211,16 +224,22 @@
 
             // 3D Synapse Rendering
             // We render the pre-synaptic bulb (top) and post-synaptic cup (bottom)
-            // Rotating slowly
-
-            // Use external camera if provided (for transitions), otherwise default
-            const synapseCamera = externalCamera || {
-                x: 0, y: 0, z: -200,
-                rotationX: 0.2,
-                rotationY: Date.now() * 0.001,
-                rotationZ: 0,
-                fov: 400
-            };
+            // Use camera controller if available, otherwise use external camera or default
+            let synapseCamera;
+            if (externalCamera) {
+                synapseCamera = externalCamera;
+            } else if (this.synapseCameraController) {
+                this.synapseCameraController.update();
+                synapseCamera = this.synapseCameraController.getCamera();
+            } else {
+                synapseCamera = {
+                    x: 0, y: 0, z: -200,
+                    rotationX: 0.2,
+                    rotationY: Date.now() * 0.001,
+                    rotationZ: 0,
+                    fov: 400
+                };
+            }
 
             const drawMesh = (mesh, offsetY, color) => {
                 const projectedFaces = [];
@@ -333,6 +352,9 @@
 
             // Draw Pre-synaptic (Top) - Gold (Axonal)
             drawMesh(synapseMeshes.pre, 0, '#FFD700'); // Offset 0, mesh is already at -115 to -25
+
+            // Draw Synaptic Cleft (Blue rectangular box between synapses)
+            this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
 
             // Draw Axon Shaft (Extending Upwards)
             const drawShaft = (startY, endY, color) => {
@@ -530,6 +552,137 @@
             connection.synapseDetails.particles = connection.synapseDetails.particles.filter(p => p.life > 0);
 
             ctx.restore();
+        },
+
+        /**
+         * Draw synaptic cleft - blue rectangular box between pre and post-synaptic terminals
+         * @param {CanvasRenderingContext2D} ctx - Canvas context
+         * @param {number} x - X offset
+         * @param {number} y - Y offset
+         * @param {number} w - Width
+         * @param {number} h - Height
+         * @param {Object} synapseCamera - Camera object
+         */
+        drawSynapticCleft(ctx, x, y, w, h, synapseCamera) {
+            // Cleft dimensions
+            const cleftWidth = 120;
+            const cleftHeight = 2; // Very thin
+            const cleftDepth = 120;
+            const cleftY = 0; // Position at Y=0 (between pre at -25 and post at +25)
+
+            // Define 8 vertices of the rectangular box
+            const halfW = cleftWidth / 2;
+            const halfH = cleftHeight / 2;
+            const halfD = cleftDepth / 2;
+
+            const vertices = [
+                { x: -halfW, y: cleftY - halfH, z: -halfD }, // 0: back-bottom-left
+                { x: halfW, y: cleftY - halfH, z: -halfD },  // 1: back-bottom-right
+                { x: halfW, y: cleftY + halfH, z: -halfD },  // 2: back-top-right
+                { x: -halfW, y: cleftY + halfH, z: -halfD }, // 3: back-top-left
+                { x: -halfW, y: cleftY - halfH, z: halfD },  // 4: front-bottom-left
+                { x: halfW, y: cleftY - halfH, z: halfD },   // 5: front-bottom-right
+                { x: halfW, y: cleftY + halfH, z: halfD },   // 6: front-top-right
+                { x: -halfW, y: cleftY + halfH, z: halfD }   // 7: front-top-left
+            ];
+
+            // Define 6 faces (each face is 2 triangles)
+            const faces = [
+                // Front face
+                [[4, 5, 6], [4, 6, 7]],
+                // Back face
+                [[1, 0, 3], [1, 3, 2]],
+                // Top face
+                [[7, 6, 2], [7, 2, 3]],
+                // Bottom face
+                [[0, 1, 5], [0, 5, 4]],
+                // Right face
+                [[5, 1, 2], [5, 2, 6]],
+                // Left face
+                [[0, 4, 7], [0, 7, 3]]
+            ];
+
+            // Transform and project vertices
+            const projectedVertices = vertices.map(v => {
+                let vx = v.x, vy = v.y, vz = v.z;
+
+                // Rotate Y
+                let tx = vx * Math.cos(synapseCamera.rotationY) - vz * Math.sin(synapseCamera.rotationY);
+                let tz = vx * Math.sin(synapseCamera.rotationY) + vz * Math.cos(synapseCamera.rotationY);
+                vx = tx; vz = tz;
+
+                // Rotate X
+                let ty = vy * Math.cos(synapseCamera.rotationX) - vz * Math.sin(synapseCamera.rotationX);
+                tz = vy * Math.sin(synapseCamera.rotationX) + vz * Math.cos(synapseCamera.rotationX);
+                vy = ty; vz = tz;
+
+                return {
+                    projected: GreenhouseModels3DMath.project3DTo2D(vx, vy, vz, synapseCamera, { width: w, height: h, near: 10, far: 1000 }),
+                    world: { x: vx, y: vy, z: vz }
+                };
+            });
+
+            // Draw each face
+            const cleftColor = { r: 0, g: 136, b: 255 }; // Blue #0088FF
+            const alpha = 0.7;
+
+            faces.forEach(face => {
+                face.forEach(triangle => {
+                    const v0 = projectedVertices[triangle[0]];
+                    const v1 = projectedVertices[triangle[1]];
+                    const v2 = projectedVertices[triangle[2]];
+
+                    if (v0.projected.scale > 0 && v1.projected.scale > 0 && v2.projected.scale > 0) {
+                        // Backface culling
+                        const dx1 = v1.projected.x - v0.projected.x;
+                        const dy1 = v1.projected.y - v0.projected.y;
+                        const dx2 = v2.projected.x - v0.projected.x;
+                        const dy2 = v2.projected.y - v0.projected.y;
+                        const cross = dx1 * dy2 - dy1 * dx2;
+
+                        if (cross > 0) {
+                            // Calculate normal for lighting
+                            const ux = v1.world.x - v0.world.x;
+                            const uy = v1.world.y - v0.world.y;
+                            const uz = v1.world.z - v0.world.z;
+                            const vx = v2.world.x - v0.world.x;
+                            const vy = v2.world.y - v0.world.y;
+                            const vz = v2.world.z - v0.world.z;
+
+                            let nx = uy * vz - uz * vy;
+                            let ny = uz * vx - ux * vz;
+                            let nz = ux * vy - uy * vx;
+                            const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
+
+                            let intensity = 0.5;
+                            if (nLen > 0) {
+                                nx /= nLen; ny /= nLen; nz /= nLen;
+                                const lightDir = { x: 0.5, y: -0.5, z: 1 };
+                                const lLen = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
+                                const diffuse = Math.max(0, (nx * lightDir.x + ny * lightDir.y + nz * lightDir.z) / lLen);
+                                intensity = 0.3 + diffuse * 0.7;
+                            }
+
+                            const litR = Math.min(255, cleftColor.r * intensity);
+                            const litG = Math.min(255, cleftColor.g * intensity);
+                            const litB = Math.min(255, cleftColor.b * intensity);
+
+                            ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${alpha})`;
+                            ctx.beginPath();
+                            ctx.moveTo(v0.projected.x + x, v0.projected.y + y);
+                            ctx.lineTo(v1.projected.x + x, v1.projected.y + y);
+                            ctx.lineTo(v2.projected.x + x, v2.projected.y + y);
+                            ctx.closePath();
+                            ctx.fill();
+
+                            // Add subtle edge highlight
+                            ctx.strokeStyle = `rgba(${Math.min(255, litR + 50)}, ${Math.min(255, litG + 50)}, ${Math.min(255, litB + 50)}, ${alpha * 0.5})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                });
+            });
         }
     };
 

@@ -4,7 +4,19 @@
     const GreenhouseNeuroGeometry = {
 
         initializeBrainShell(brainShell) {
-            // Sphere generation (Latitude/Longitude)
+            // Use realistic brain mesh if available
+            if (window.GreenhouseBrainMeshRealistic) {
+                const realisticBrain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+                brainShell.vertices = realisticBrain.vertices;
+                brainShell.faces = realisticBrain.faces;
+                brainShell.regions = realisticBrain.regions;
+                
+                // Compute boundaries
+                this.computeRegionsAndBoundaries(brainShell);
+                return;
+            }
+
+            // Fallback to original sphere generation
             const radius = 200;
             const latitudeBands = 40;
             const longitudeBands = 40;

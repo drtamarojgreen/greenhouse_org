@@ -47,10 +47,10 @@
          * Check if mouse is over a PiP
          */
         getPiPAtPosition(mouseX, mouseY, canvasWidth, canvasHeight) {
-            const pipConfig = this.config.get('pip');
-            const pipW = pipConfig.width;
-            const pipH = pipConfig.height;
-            const gap = pipConfig.gap;
+            // Use hardcoded values matching genetic_ui_3d.js render() method
+            const pipW = 200;
+            const pipH = 150;
+            const gap = 10;
 
             // Right Side PiPs
             const rightPipX = canvasWidth - pipW - gap;
@@ -211,10 +211,10 @@
          * Check if click is on reset button
          */
         checkResetButton(mouseX, mouseY, canvasWidth, canvasHeight) {
-            const pipConfig = this.config.get('pip');
-            const pipW = pipConfig.width;
-            const pipH = pipConfig.height;
-            const gap = pipConfig.gap;
+            // Use hardcoded values matching genetic_ui_3d.js render() method
+            const pipW = 200;
+            const pipH = 150;
+            const gap = 10;
 
             const rightPipX = canvasWidth - pipW - gap;
             const leftPipX = gap;

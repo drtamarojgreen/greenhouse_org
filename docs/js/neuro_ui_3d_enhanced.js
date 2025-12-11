@@ -96,6 +96,9 @@
                     console.log('NeuroUI3D: Lighting system initialized');
                 }
 
+                // Setup mouse event handlers for synapse camera
+                this.setupSynapseMouseHandlers();
+
                 // Handle Resize
                 window.addEventListener('resize', () => {
                     if (this.canvas) {
@@ -656,6 +659,86 @@
                     }
                 }
             }
+        },
+
+        setupSynapseMouseHandlers() {
+            if (!this.canvas) return;
+
+            // Mouse down handler
+            this.canvas.addEventListener('mousedown', (e) => {
+                // Check if synapse camera controller exists and if click is in main view
+                if (window.GreenhouseNeuroSynapse && window.GreenhouseNeuroSynapse.synapseCameraController) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+
+                    // Check if in main synapse view (not in PiP)
+                    const pipConfig = this.config.get('pip');
+                    const pipW = pipConfig.width;
+                    const pipH = pipConfig.height;
+                    const padding = pipConfig.padding;
+                    const pipX = this.canvas.width - pipW - padding;
+                    const pipY = this.canvas.height - pipH - padding;
+
+                    // If NOT in PiP area, handle synapse camera
+                    if (mouseX < pipX || mouseX > pipX + pipW || mouseY < pipY || mouseY > pipY + pipH) {
+                        // Check reset button
+                        const resetBtnX = this.canvas.width - 60;
+                        const resetBtnY = 5;
+                        const resetBtnW = 50;
+                        const resetBtnH = 20;
+
+                        if (mouseX >= resetBtnX && mouseX <= resetBtnX + resetBtnW &&
+                            mouseY >= resetBtnY && mouseY <= resetBtnY + resetBtnH) {
+                            window.GreenhouseNeuroSynapse.synapseCameraController.reset();
+                            return;
+                        }
+
+                        // Handle camera interaction
+                        const bounds = { x: 0, y: 0, w: this.canvas.width, h: this.canvas.height };
+                        window.GreenhouseNeuroSynapse.synapseCameraController.handleMouseDown(e, this.canvas, bounds);
+                    }
+                }
+            });
+
+            // Mouse move handler
+            window.addEventListener('mousemove', (e) => {
+                if (window.GreenhouseNeuroSynapse && window.GreenhouseNeuroSynapse.synapseCameraController) {
+                    window.GreenhouseNeuroSynapse.synapseCameraController.handleMouseMove(e, this.canvas);
+                }
+            });
+
+            // Mouse up handler
+            window.addEventListener('mouseup', () => {
+                if (window.GreenhouseNeuroSynapse && window.GreenhouseNeuroSynapse.synapseCameraController) {
+                    window.GreenhouseNeuroSynapse.synapseCameraController.handleMouseUp();
+                }
+            });
+
+            // Wheel handler
+            this.canvas.addEventListener('wheel', (e) => {
+                if (window.GreenhouseNeuroSynapse && window.GreenhouseNeuroSynapse.synapseCameraController) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+
+                    // Check if in main synapse view (not in PiP)
+                    const pipConfig = this.config.get('pip');
+                    const pipW = pipConfig.width;
+                    const pipH = pipConfig.height;
+                    const padding = pipConfig.padding;
+                    const pipX = this.canvas.width - pipW - padding;
+                    const pipY = this.canvas.height - pipH - padding;
+
+                    // If NOT in PiP area, handle synapse camera zoom
+                    if (mouseX < pipX || mouseX > pipX + pipW || mouseY < pipY || mouseY > pipY + pipH) {
+                        const bounds = { x: 0, y: 0, w: this.canvas.width, h: this.canvas.height };
+                        window.GreenhouseNeuroSynapse.synapseCameraController.handleWheel(e, this.canvas, bounds);
+                    }
+                }
+            }, { passive: false });
+
+            console.log('NeuroUI3D: Synapse mouse handlers initialized');
         },
 
         generateSynapseMeshes() {

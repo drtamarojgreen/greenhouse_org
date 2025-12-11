@@ -12,9 +12,10 @@
             const time = Date.now() * 0.001;
             const rotationY = time * 0.2;
 
+            // Adjusted camera for vertical chromosome
             const camera = {
-                x: 0, y: 0, z: -300,
-                rotationX: 0.3,
+                x: 0, y: 0, z: -250, // Closer for better view
+                rotationX: 0, // No X rotation for vertical view
                 rotationY: rotationY,
                 rotationZ: 0,
                 fov: 500
