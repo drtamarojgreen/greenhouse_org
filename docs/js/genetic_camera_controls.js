@@ -17,6 +17,7 @@
             this.lastY = 0;
             this.velocityX = 0;
             this.velocityY = 0;
+            this.isListening = true; // Flag to enable/disable listening
 
             // Touch state
             this.touches = [];
@@ -66,7 +67,7 @@
          * Handle Mouse Move
          */
         handleMouseMove(e) {
-            if (!this.isDragging && !this.isPanning) return false;
+            if (!this.isListening || (!this.isDragging && !this.isPanning)) return false;
 
             const dx = e.clientX - this.lastX;
             const dy = e.clientY - this.lastY;
@@ -366,7 +367,7 @@
             }
 
             // Apply inertia
-            if (this.config.get('camera.controls.inertia') && !this.isDragging) {
+            if (this.isListening && this.config.get('camera.controls.inertia') && !this.isDragging) {
                 const damping = this.config.get('camera.controls.inertiaDamping') || 0.95;
 
                 this.camera.rotationY += this.velocityX;
@@ -380,7 +381,7 @@
             }
 
             // Auto-rotate
-            if (this.autoRotate && this.config.get('camera.controls.autoRotate') && !this.isDragging && !this.isPanning) {
+            if (this.isListening && this.autoRotate && this.config.get('camera.controls.autoRotate') && !this.isDragging && !this.isPanning) {
                 const speed = this.config.get('camera.controls.autoRotateSpeed') || 0.0002;
                 this.camera.rotationY += speed;
             }
