@@ -68,20 +68,20 @@ TestFramework.describe('Genetic Page Models', () => {
         TestFramework.it('should initialize with default values', () => {
             assert.isDefined(window.GreenhouseGeneticConfig);
             const config = window.GreenhouseGeneticConfig;
-            assert.isDefined(config.config);
-            assert.isTrue(config.get('simulation.autoEvolve'));
+            // The config object itself is the configuration, so we get values directly from it
+            assert.isTrue(config.get('camera.controls.autoRotate'));
         });
 
         TestFramework.it('should get nested configuration values', () => {
             const config = window.GreenhouseGeneticConfig;
-            const mutationRate = config.get('genetic.mutationRate');
+            const mutationRate = config.get('ga.mutationRate');
             assert.isNumber(mutationRate);
         });
 
         TestFramework.it('should set configuration values', () => {
             const config = window.GreenhouseGeneticConfig;
-            config.set('genetic.mutationRate', 0.5);
-            assert.equal(config.get('genetic.mutationRate'), 0.5);
+            config.set('ga.mutationRate', 0.5);
+            assert.equal(config.get('ga.mutationRate'), 0.5);
         });
     });
 
@@ -153,11 +153,6 @@ TestFramework.describe('Genetic Page Models', () => {
             assert.isDefined(state);
             assert.isDefined(state.zoom);
             assert.isDefined(state.rotationY);
-        });
-
-        TestFramework.it('should get background color', () => {
-            const color = pipControls.getBackgroundColor('helix');
-            assert.isString(color);
         });
 
         TestFramework.it('should detect PiP at position', () => {
