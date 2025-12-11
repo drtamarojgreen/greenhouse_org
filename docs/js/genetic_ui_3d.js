@@ -48,21 +48,16 @@
         mainCameraController: null,
 
         init(container, algo) {
-            console.log('[Init] Starting initialization...');
             this.container = container;
             this.algo = algo;
             this.isEvolving = false; // Don't start until button pressed
 
             // Set main camera to cameras[0]
             this.camera = this.cameras[0];
-            console.log('[Init] Main camera set to cameras[0]:', this.camera);
 
             // Initialize PiP Controls with cameras array FIRST
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.init(window.GreenhouseGeneticConfig, this.cameras);
-                console.log('[Init] PiP controls initialized');
-            } else {
-                console.error('[Init] GreenhouseGeneticPiPControls not found!');
             }
 
             // Initialize Main Camera Controller
@@ -71,9 +66,6 @@
                     this.camera,
                     window.GreenhouseGeneticConfig
                 );
-                console.log('[Init] Main camera controller created');
-            } else {
-                console.error('[Init] GreenhouseGeneticCameraController not found!');
             }
 
             this.setupDOM();
@@ -82,14 +74,10 @@
 
             // Initial Data Map
             this.updateData();
-
-            // DON'T start animation loop yet - wait for Start button
-            console.log('[Init] Initialization complete - waiting for Start button');
         },
         
         startAnimation() {
             if (!this.animationFrame) {
-                console.log('[Start] Starting animation loop...');
                 this.animate();
             }
         },
@@ -180,15 +168,11 @@
             btn.style.borderRadius = '5px';
 
             btn.onclick = () => {
-                console.log('[Start Button] Clicked - starting simulation');
                 this.isEvolving = true;
                 overlay.style.display = 'none';
                 
-                console.log('[Start Button] Calling startSimulation()');
                 if (window.GreenhouseGenetic) {
                     window.GreenhouseGenetic.startSimulation();
-                } else {
-                    console.error('[Start Button] GreenhouseGenetic not found!');
                 }
                 
                 // Update pause button text if needed
@@ -201,10 +185,6 @@
                 
                 // Start animation loop
                 this.startAnimation();
-                
-                console.log('[Start Button] Animation started');
-                console.log('[Start Button] isEvolving:', this.isEvolving);
-                console.log('[Start Button] mainCameraController:', !!this.mainCameraController);
             };
 
             overlay.appendChild(btn);
@@ -912,24 +892,8 @@
                 drawPiPFrame(ctx, x, y, w, h, "DNA Double Helix");
             }
 
-            // Log camera state every 60 frames to avoid spam
-            if (!this._helixDrawFrameCount) this._helixDrawFrameCount = 0;
-            this._helixDrawFrameCount++;
-            
-            if (this._helixDrawFrameCount % 60 === 0) {
-                console.log('[Draw] DNA Helix camera state:', {
-                    rotationX: cameraState.rotationX?.toFixed(3),
-                    rotationY: cameraState.rotationY?.toFixed(3),
-                    hasCamera: !!cameraState.camera,
-                    cameraRotX: cameraState.camera?.rotationX?.toFixed(3),
-                    cameraRotY: cameraState.camera?.rotationY?.toFixed(3),
-                    frame: this._helixDrawFrameCount
-                });
-            }
-
             // Use the specific camera for this PiP - no fallback
             if (!cameraState || !cameraState.camera) {
-                console.error('[drawDNAHelixPiP] No camera provided!');
                 return;
             }
             const pipCamera = cameraState.camera;
