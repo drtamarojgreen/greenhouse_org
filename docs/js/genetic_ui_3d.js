@@ -234,10 +234,12 @@
             this.canvas.addEventListener('wheel', e => {
                 // PiP Controls
                 if (window.GreenhouseGeneticPiPControls) {
-                    // Check if over PiP
+                    // Check if over PiP - need to scale coordinates
                     const rect = this.canvas.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left;
-                    const mouseY = e.clientY - rect.top;
+                    const scaleX = this.canvas.width / rect.width;
+                    const scaleY = this.canvas.height / rect.height;
+                    const mouseX = (e.clientX - rect.left) * scaleX;
+                    const mouseY = (e.clientY - rect.top) * scaleY;
                     if (window.GreenhouseGeneticPiPControls.getPiPAtPosition(mouseX, mouseY, this.canvas.width, this.canvas.height)) {
                         window.GreenhouseGeneticPiPControls.handleWheel(e, this.canvas);
                         return;
@@ -254,11 +256,13 @@
 
             // Handle Clicks
             this.canvas.addEventListener('click', (e) => {
-                // Check PiP Reset Button
+                // Check PiP Reset Button - need to scale coordinates
                 if (window.GreenhouseGeneticPiPControls) {
                     const rect = this.canvas.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left;
-                    const mouseY = e.clientY - rect.top;
+                    const scaleX = this.canvas.width / rect.width;
+                    const scaleY = this.canvas.height / rect.height;
+                    const mouseX = (e.clientX - rect.left) * scaleX;
+                    const mouseY = (e.clientY - rect.top) * scaleY;
                     const resetPiP = window.GreenhouseGeneticPiPControls.checkResetButton(mouseX, mouseY, this.canvas.width, this.canvas.height);
                     if (resetPiP) {
                         window.GreenhouseGeneticPiPControls.resetPiP(resetPiP);
@@ -664,8 +668,10 @@
 
         handleMouseClick(e) {
             const rect = this.canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            const scaleX = this.canvas.width / rect.width;
+            const scaleY = this.canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
 
             // Check for Gene Click
             const hit = this.hitTest(mouseX, mouseY);
