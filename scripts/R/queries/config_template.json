@@ -1,0 +1,187 @@
+# config_template.json
+# Configuration template for Research Pioneers LLC ML Pipeline
+
+{
+  "_comment": "Research Pioneers LLC - ML Pipeline Configuration",
+  
+  "project": {
+    "name": "healthcare_ml_project",
+    "description": "Automated supervised learning for clinical trial data analysis",
+    "version": "1.0.0"
+  },
+  
+  "paths": {
+    "data_dir": "data",
+    "output_dir": "outputs",
+    "model_dir": "models",
+    "log_dir": "logs"
+  },
+  
+  "data": {
+    "source": "brfss",
+    "_source_options": ["brfss", "pubmed", "clinicaltrials", "kegg", "reactome", "custom"],
+    
+    "brfss": {
+      "url": "https://www.cdc.gov/brfss/annual_data/2022/files/LLCP2022XPT.zip",
+      "columns": ["ADDEPEV3", "MENTHLTH", "SEXVAR", "_AGEG5YR"]
+    },
+    
+    "pubmed": {
+      "email": "your.email@example.com",
+      "search_term": "depression AND mental health",
+      "retmax": 100
+    },
+    
+    "clinicaltrials": {
+      "search_term": "depression",
+      "max_studies": 20
+    },
+    
+    "custom": {
+      "file": "path/to/your/data.csv",
+      "_supported_formats": ["csv", "xlsx", "parquet", "json", "pkl"]
+    }
+  },
+  
+  "features": {
+    "label_column": "DEPRESSION_STATUS",
+    "categorical_columns": ["AGE_GROUP", "SEX_LABEL", "FMD_INDICATOR"],
+    "numeric_columns": ["MENTHLTH"],
+    "text_columns": [],
+    
+    "preprocessing": {
+      "handle_missing": "median",
+      "_handle_missing_options": ["median", "mean", "mode", "drop"],
+      "scaling": "standard",
+      "_scaling_options": ["standard", "minmax", "robust", "none"]
+    }
+  },
+  
+  "data_splitting": {
+    "test_size": 0.2,
+    "val_size": 0.2,
+    "random_state": 42,
+    "stratify": true,
+    "k_folds": null,
+    "_k_folds_comment": "Set to integer (e.g., 5) for k-fold cross-validation"
+  },
+  
+  "model": {
+    "type": "ffnn",
+    "_type_options": ["ffnn", "cnn1d", "rnn", "lstm", "gru", "autoencoder"],
+    
+    "ffnn": {
+      "hidden_units": [128, 64],
+      "dropout": 0.3,
+      "l2_reg": 0.0001,
+      "batch_norm": true
+    },
+    
+    "cnn1d": {
+      "conv_filters": [32, 64],
+      "kernel_size": 3,
+      "pool_size": 2,
+      "dropout": 0.3,
+      "sequence_length": null,
+      "_sequence_length_comment": "Auto-detected if null"
+    },
+    
+    "rnn": {
+      "rnn_type": "lstm",
+      "_rnn_type_options": ["lstm", "gru", "simple"],
+      "rnn_units": [64, 32],
+      "dropout": 0.3,
+      "sequence_length": null
+    },
+    
+    "autoencoder": {
+      "latent_dim": 32,
+      "dropout": 0.3
+    },
+    
+    "advanced": {
+      "use_attention": false,
+      "ensemble_models": [],
+      "_ensemble_comment": "List of model paths for ensemble prediction"
+    }
+  },
+  
+  "training": {
+    "learning_mode": "full",
+    "_learning_mode_options": ["full", "feature_extraction", "lora"],
+    
+    "full": {
+      "epochs": 50,
+      "batch_size": 64,
+      "learning_rate": 0.001,
+      "optimizer": "adam",
+      "_optimizer_options": ["adam", "adamw", "sgd", "rmsprop"]
+    },
+    
+    "lora": {
+      "rank": 8,
+      "alpha": 16,
+      "epochs": 30,
+      "learning_rate": 0.0001
+    },
+    
+    "loss": "binary_crossentropy",
+    "_loss_options": ["binary_crossentropy", "categorical_crossentropy", "mse"],
+    
+    "class_weights": "auto",
+    "_class_weights_comment": "Set to 'auto' for automatic balancing, or provide dict like {0: 1.0, 1: 2.0}"
+  },
+  
+  "callbacks": {
+    "early_stopping": {
+      "enabled": true,
+      "patience": 10,
+      "monitor": "val_auc",
+      "mode": "max"
+    },
+    
+    "reduce_lr": {
+      "enabled": true,
+      "patience": 5,
+      "factor": 0.5,
+      "min_lr": 1e-7
+    },
+    
+    "model_checkpoint": {
+      "monitor": "val_auc",
+      "mode": "max",
+      "save_best_only": true
+    }
+  },
+  
+  "hardware": {
+    "gpu_memory_limit": 15000,
+    "_gpu_memory_limit_comment": "GPU memory limit in MB (null for unlimited)",
+    "mixed_precision": true,
+    "xla_optimization": true,
+    "_hardware_comment": "Optimized for NVIDIA GPU with 16GB VRAM"
+  },
+  
+  "evaluation": {
+    "metrics": ["accuracy", "auc", "precision", "recall", "f1"],
+    "plot_roc": true,
+    "plot_confusion_matrix": true,
+    "save_predictions": true
+  },
+  
+  "advanced_features": {
+    "pseudo_labeling": false,
+    "_pseudo_labeling_comment": "Enable for semi-supervised learning",
+    "augmentation": false,
+    "_augmentation_comment": "Enable data augmentation (implementation needed)"
+  },
+  
+  "_migration_notes": {
+    "from_01_data_access": "Set data.source='brfss' and data.brfss.url",
+    "from_02_data_cleaning": "Automatic via DataPreprocessor.clean_data()",
+    "from_03_data_processing": "Automatic via DataPreprocessor.engineer_features()",
+    "from_09_model_utils": "Integrated into DataPreprocessor and Trainer",
+    "from_10_train_ffnn": "Set model.type='ffnn' and training parameters",
+    "from_11_train_cnn1d": "Set model.type='cnn1d' and model.cnn1d parameters"
+  }
+}

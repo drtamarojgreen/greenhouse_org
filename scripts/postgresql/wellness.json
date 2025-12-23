@@ -1,0 +1,996 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Wellness Healthcare System – PostgreSQL Schema",
+    "type": "object",
+    "tables": {
+        "roles": {
+            "primaryKey": [
+                "id"
+            ],
+            "uniqueConstraints": [
+                [
+                    "role_name"
+                ]
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "role_name": {
+                    "type": "string",
+                    "minLength": 3
+                },
+                "description": {
+                    "type": "string"
+                }
+            }
+        },
+        "users": {
+            "primaryKey": [
+                "id"
+            ],
+            "uniqueConstraints": [
+                [
+                    "email"
+                ]
+            ],
+            "foreignKeys": [
+                {
+                    "column": "role_id",
+                    "references": "roles.id"
+                },
+                {
+                    "column": "manager_id",
+                    "references": "users.id"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "role_id": {
+                    "type": "integer"
+                },
+                "manager_id": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "patients": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "user_id",
+                    "references": "users.id"
+                }
+            ],
+            "checks": [
+                "date_of_birth <= CURRENT_DATE"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "date_of_birth": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "gender": {
+                    "type": "string",
+                    "enum": [
+                        "male",
+                        "female",
+                        "other"
+                    ]
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "clinicians": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "user_id",
+                    "references": "users.id"
+                },
+                {
+                    "column": "supervisor_id",
+                    "references": "clinicians.id"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "specialty": {
+                    "type": "string"
+                },
+                "supervisor_id": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "active": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "appointments": {
+            "primaryKey": [
+                "id"
+            ],
+            "uniqueConstraints": [
+                [
+                    "clinician_id",
+                    "appointment_time"
+                ]
+            ],
+            "foreignKeys": [
+                {
+                    "column": "patient_id",
+                    "references": "patients.id"
+                },
+                {
+                    "column": "clinician_id",
+                    "references": "clinicians.id"
+                }
+            ],
+            "checks": [
+                "appointment_time > CURRENT_TIMESTAMP"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "patient_id": {
+                    "type": "integer"
+                },
+                "clinician_id": {
+                    "type": "integer"
+                },
+                "appointment_time": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "scheduled",
+                        "completed",
+                        "cancelled"
+                    ]
+                }
+            }
+        },
+        "patient_clinician": {
+            "primaryKey": [
+                "patient_id",
+                "clinician_id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "patient_id",
+                    "references": "patients.id"
+                },
+                {
+                    "column": "clinician_id",
+                    "references": "clinicians.id"
+                }
+            ],
+            "properties": {
+                "patient_id": {
+                    "type": "integer"
+                },
+                "clinician_id": {
+                    "type": "integer"
+                },
+                "assigned_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "billing_accounts": {
+            "primaryKey": [
+                "id"
+            ],
+            "uniqueConstraints": [
+                [
+                    "patient_id"
+                ]
+            ],
+            "foreignKeys": [
+                {
+                    "column": "patient_id",
+                    "references": "patients.id"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "patient_id": {
+                    "type": "integer"
+                },
+                "insurance_provider": {
+                    "type": "string"
+                },
+                "policy_number": {
+                    "type": "string"
+                }
+            }
+        },
+        "invoices": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "billing_account_id",
+                    "references": "billing_accounts.id"
+                }
+            ],
+            "checks": [
+                "amount_due >= 0"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "billing_account_id": {
+                    "type": "integer"
+                },
+                "amount_due": {
+                    "type": "number"
+                },
+                "due_date": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "paid": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "medications": {
+            "primaryKey": [
+                "id"
+            ],
+            "uniqueConstraints": [
+                [
+                    "name"
+                ]
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "dosage_form": {
+                    "type": "string"
+                }
+            }
+        },
+        "medication_adherence": {
+            "primaryKey": [
+                "patient_id",
+                "medication_id",
+                "taken_at"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "patient_id",
+                    "references": "patients.id"
+                },
+                {
+                    "column": "medication_id",
+                    "references": "medications.id"
+                }
+            ],
+            "properties": {
+                "patient_id": {
+                    "type": "integer"
+                },
+                "medication_id": {
+                    "type": "integer"
+                },
+                "taken_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "dose_taken": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "clinics": {
+            "primaryKey": [
+                "clinic_id"
+            ],
+            "properties": {
+                "clinic_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "address1": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "address2": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "maxLength": 255
+                },
+                "city": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "zip": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "clinic_id",
+                "name",
+                "created_at"
+            ]
+        },
+        "therapy_sessions": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "appointment_id",
+                    "references": "appointments.id"
+                },
+                {
+                    "column": "clinic_id",
+                    "references": "clinics.clinic_id"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "appointment_id": {
+                    "type": "integer"
+                },
+                "clinic_id": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "duration_minutes": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            },
+            "required": [
+                "id",
+                "appointment_id",
+                "clinic_id"
+            ]
+        },
+        "vitals": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "patient_id",
+                    "references": "patients.id"
+                }
+            ],
+            "checks": [
+                "heart_rate > 0"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "patient_id": {
+                    "type": "integer"
+                },
+                "heart_rate": {
+                    "type": "integer"
+                },
+                "blood_pressure": {
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "recorded_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "id",
+                "patient_id",
+                "recorded_at"
+            ]
+        },
+        "messages": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "sender_id",
+                    "references": "users.id"
+                },
+                {
+                    "column": "receiver_id",
+                    "references": "users.id"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "sender_id": {
+                    "type": "integer"
+                },
+                "receiver_id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "sent_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "id",
+                "sender_id",
+                "receiver_id",
+                "message",
+                "sent_at"
+            ]
+        },
+        "welltrack": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "patient_id",
+                    "references": "patients.id"
+                }
+            ],
+            "checks": [
+                "mood_score BETWEEN 0 AND 10",
+                "stress_level BETWEEN 0 AND 10"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "patient_id": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "mood_score": {
+                    "type": "integer"
+                },
+                "stress_level": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "id",
+                "mood_score",
+                "stress_level",
+                "created_at"
+            ]
+        },
+        "patient_link": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "patient_id",
+                    "references": "patients.id"
+                },
+                {
+                    "column": "provider_id",
+                    "references": "clinicians.id"
+                }
+            ],
+            "uniqueConstraints": [
+                [
+                    "patient_id",
+                    "provider_id"
+                ]
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "patient_id": {
+                    "type": "integer"
+                },
+                "provider_id": {
+                    "type": "integer"
+                },
+                "linked_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "id",
+                "patient_id",
+                "provider_id",
+                "linked_at"
+            ]
+        },
+        "clinic_flow": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "patient_id",
+                    "references": "patients.id"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "event_type": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "patient_id": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "event_time": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "id",
+                "event_type",
+                "event_time"
+            ]
+        },
+        "therapy_metadata": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "therapist_id",
+                    "references": "clinicians.id"
+                },
+                {
+                    "column": "patient_id",
+                    "references": "patients.id"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "therapist_id": {
+                    "type": "integer"
+                },
+                "patient_id": {
+                    "type": "integer"
+                },
+                "session_date": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "session_notes": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "maxLength": 255
+                }
+            },
+            "required": [
+                "id",
+                "therapist_id",
+                "patient_id",
+                "session_date"
+            ]
+        },
+        "care_sphere": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "lead_provider_id",
+                    "references": "clinicians.id"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "team_name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "lead_provider_id": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "team_name"
+            ]
+        },
+        "care_sync": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "patient_id",
+                    "references": "patients.id"
+                }
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "patient_id": {
+                    "type": "integer"
+                },
+                "sync_type": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "sync_time": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "id",
+                "patient_id",
+                "sync_type",
+                "sync_time"
+            ]
+        },
+        "psy_connect": {
+            "primaryKey": [
+                "id"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "patient_id",
+                    "references": "patients.id"
+                }
+            ],
+            "checks": [
+                "score >= 0"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "patient_id": {
+                    "type": "integer"
+                },
+                "assessment_type": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "assessed_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "id",
+                "patient_id",
+                "assessment_type",
+                "score",
+                "assessed_at"
+            ]
+        }
+    },
+    "views": {
+        "v_active_patients": {
+            "definition": "SELECT p.id, u.full_name, p.created_at FROM patients p JOIN users u ON u.id = p.user_id"
+        },
+        "v_active_clinicians": {
+            "definition": "SELECT c.id, u.full_name, c.specialty FROM clinicians c JOIN users u ON u.id = c.user_id WHERE c.active = true"
+        },
+        "v_upcoming_appointments": {
+            "definition": "SELECT * FROM appointments WHERE appointment_time > CURRENT_TIMESTAMP"
+        },
+        "v_completed_appointments": {
+            "definition": "SELECT * FROM appointments WHERE status = 'completed'"
+        },
+        "v_patient_vitals_latest": {
+            "definition": "SELECT DISTINCT ON (patient_id) * FROM vitals ORDER BY patient_id, recorded_at DESC"
+        },
+        "v_outstanding_invoices": {
+            "definition": "SELECT * FROM invoices WHERE paid = false"
+        },
+        "v_patient_balance": {
+            "definition": "SELECT ba.patient_id, SUM(i.amount_due) AS balance FROM invoices i JOIN billing_accounts ba ON ba.id = i.billing_account_id WHERE i.paid = false GROUP BY ba.patient_id"
+        },
+        "v_medication_adherence_rate": {
+            "definition": "SELECT patient_id, medication_id, COUNT(*) FILTER (WHERE dose_taken = true)::float / COUNT(*) AS adherence_rate FROM medication_adherence GROUP BY patient_id, medication_id"
+        },
+        "v_patient_messages": {
+            "definition": "SELECT * FROM messages ORDER BY sent_at DESC"
+        },
+        "v_audit_activity": {
+            "definition": "SELECT user_id, action, accessed_at FROM access_log ORDER BY accessed_at DESC"
+        }
+    },
+    "functions": {
+        "fn_calculate_patient_balance": {
+            "returns": "numeric",
+            "parameters": [
+                "patient_id integer"
+            ],
+            "definition": "SELECT COALESCE(SUM(i.amount_due),0) FROM invoices i JOIN billing_accounts ba ON ba.id = i.billing_account_id WHERE ba.patient_id = patient_id AND i.paid = false"
+        },
+        "fn_is_clinician_available": {
+            "returns": "boolean",
+            "parameters": [
+                "clinician_id integer",
+                "appt_time timestamp"
+            ],
+            "definition": "NOT EXISTS (SELECT 1 FROM appointments WHERE clinician_id = clinician_id AND appointment_time = appt_time)"
+        },
+        "fn_patient_age": {
+            "returns": "integer",
+            "parameters": [
+                "patient_id integer"
+            ],
+            "definition": "EXTRACT(YEAR FROM AGE(CURRENT_DATE, (SELECT date_of_birth FROM patients WHERE id = patient_id)))"
+        },
+        "fn_adherence_percentage": {
+            "returns": "numeric",
+            "parameters": [
+                "patient_id integer",
+                "medication_id integer"
+            ],
+            "definition": "SELECT COUNT(*) FILTER (WHERE dose_taken = true)::numeric / COUNT(*) FROM medication_adherence WHERE patient_id = patient_id AND medication_id = medication_id"
+        },
+        "fn_total_sessions": {
+            "returns": "integer",
+            "parameters": [
+                "patient_id integer"
+            ],
+            "definition": "SELECT COUNT(*) FROM therapy_sessions ts JOIN appointments a ON a.id = ts.appointment_id WHERE a.patient_id = patient_id"
+        },
+        "fn_last_vital_time": {
+            "returns": "timestamp",
+            "parameters": [
+                "patient_id integer"
+            ],
+            "definition": "SELECT MAX(recorded_at) FROM vitals WHERE patient_id = patient_id"
+        },
+        "fn_unpaid_invoice_count": {
+            "returns": "integer",
+            "parameters": [
+                "patient_id integer"
+            ],
+            "definition": "SELECT COUNT(*) FROM invoices i JOIN billing_accounts ba ON ba.id = i.billing_account_id WHERE ba.patient_id = patient_id AND i.paid = false"
+        },
+        "fn_has_overdue_invoice": {
+            "returns": "boolean",
+            "parameters": [
+                "patient_id integer"
+            ],
+            "definition": "EXISTS (SELECT 1 FROM invoices i JOIN billing_accounts ba ON ba.id = i.billing_account_id WHERE ba.patient_id = patient_id AND i.due_date < CURRENT_DATE AND i.paid = false)"
+        },
+        "fn_clinician_patient_count": {
+            "returns": "integer",
+            "parameters": [
+                "clinician_id integer"
+            ],
+            "definition": "SELECT COUNT(*) FROM patient_clinician WHERE clinician_id = clinician_id"
+        },
+        "fn_message_count": {
+            "returns": "integer",
+            "parameters": [
+                "user_id integer"
+            ],
+            "definition": "SELECT COUNT(*) FROM messages WHERE sender_id = user_id OR receiver_id = user_id"
+        }
+    },
+    "procedures": {
+        "sp_mark_invoice_paid": {
+            "parameters": [
+                "invoice_id integer"
+            ],
+            "definition": "UPDATE invoices SET paid = true WHERE id = invoice_id"
+        },
+        "sp_schedule_appointment": {
+            "parameters": [
+                "patient_id integer",
+                "clinician_id integer",
+                "appt_time timestamp"
+            ],
+            "definition": "INSERT INTO appointments (patient_id, clinician_id, appointment_time, status) VALUES (patient_id, clinician_id, appt_time, 'scheduled')"
+        },
+        "sp_cancel_appointment": {
+            "parameters": [
+                "appointment_id integer"
+            ],
+            "definition": "UPDATE appointments SET status = 'cancelled' WHERE id = appointment_id"
+        },
+        "sp_record_vital": {
+            "parameters": [
+                "patient_id integer",
+                "hr integer",
+                "bp text"
+            ],
+            "definition": "INSERT INTO vitals (patient_id, heart_rate, blood_pressure, recorded_at) VALUES (patient_id, hr, bp, CURRENT_TIMESTAMP)"
+        },
+        "sp_assign_clinician": {
+            "parameters": [
+                "patient_id integer",
+                "clinician_id integer"
+            ],
+            "definition": "INSERT INTO patient_clinician (patient_id, clinician_id, assigned_at) VALUES (patient_id, clinician_id, CURRENT_TIMESTAMP)"
+        },
+        "sp_log_access": {
+            "parameters": [
+                "user_id integer",
+                "action text",
+                "ip text"
+            ],
+            "definition": "INSERT INTO access_log (user_id, action, ip_address, accessed_at) VALUES (user_id, action, ip, CURRENT_TIMESTAMP)"
+        },
+        "sp_add_medication": {
+            "parameters": [
+                "name text",
+                "form text"
+            ],
+            "definition": "INSERT INTO medications (name, dosage_form) VALUES (name, form)"
+        },
+        "sp_record_adherence": {
+            "parameters": [
+                "patient_id integer",
+                "medication_id integer",
+                "taken boolean"
+            ],
+            "definition": "INSERT INTO medication_adherence (patient_id, medication_id, taken_at, dose_taken) VALUES (patient_id, medication_id, CURRENT_TIMESTAMP, taken)"
+        },
+        "sp_complete_session": {
+            "parameters": [
+                "appointment_id integer",
+                "notes text",
+                "duration integer"
+            ],
+            "definition": "INSERT INTO therapy_sessions (appointment_id, notes, duration_minutes) VALUES (appointment_id, notes, duration)"
+        },
+        "sp_deactivate_clinician": {
+            "parameters": [
+                "clinician_id integer"
+            ],
+            "definition": "UPDATE clinicians SET active = false WHERE id = clinician_id"
+        }
+    },
+    "triggers": {
+        "tr_log_user_update": {
+            "table": "users",
+            "event": "UPDATE",
+            "function": "log_user_update"
+        },
+        "tr_log_user_delete": {
+            "table": "users",
+            "event": "DELETE",
+            "function": "log_user_delete"
+        },
+        "tr_prevent_double_booking": {
+            "table": "appointments",
+            "event": "BEFORE INSERT",
+            "function": "check_clinician_availability"
+        },
+        "tr_auto_close_invoice": {
+            "table": "invoices",
+            "event": "AFTER UPDATE",
+            "function": "close_invoice_when_paid"
+        },
+        "tr_update_patient_modified": {
+            "table": "patients",
+            "event": "UPDATE",
+            "function": "update_modified_timestamp"
+        },
+        "tr_validate_vital_ranges": {
+            "table": "vitals",
+            "event": "BEFORE INSERT",
+            "function": "validate_vital_signs"
+        },
+        "tr_audit_message_send": {
+            "table": "messages",
+            "event": "AFTER INSERT",
+            "function": "audit_message_event"
+        },
+        "tr_enforce_adherence_time": {
+            "table": "medication_adherence",
+            "event": "BEFORE INSERT",
+            "function": "validate_adherence_time"
+        },
+        "tr_prevent_future_dob": {
+            "table": "patients",
+            "event": "BEFORE INSERT",
+            "function": "validate_dob"
+        },
+        "tr_auto_assign_billing_account": {
+            "table": "patients",
+            "event": "AFTER INSERT",
+            "function": "create_billing_account"
+        }
+    }
+}

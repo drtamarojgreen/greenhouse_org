@@ -1,0 +1,76 @@
+{
+  "mode": "train",
+  "log_level": "INFO",
+  "output_dir": "outputs",
+  "seed": 42,
+  "use_gpu": true,
+  "gpu_memory_limit": 15000,
+  
+  "data": {
+    "source_type": "brfss",
+    "data_url": "https://www.cdc.gov/brfss/annual_data/2022/files/LLCP2022XPT.zip",
+    "data_dir": "data",
+    "raw_file": null,
+    "processed_file": "processed_data.pkl",
+    
+    "label_col": "DEPRESSION_STATUS",
+    "categorical_cols": ["AGE_GROUP", "SEX_LABEL", "FMD_INDICATOR_LABEL"],
+    "numeric_cols": ["MENTHLTH"],
+    
+    "missing_value_codes": {
+      "MENTHLTH": [77, 99],
+      "ADDEPEV3": [7, 9]
+    },
+    
+    "test_size": 0.2,
+    "val_size": 0.2,
+    "random_state": 42,
+    "stratify": true
+  },
+  
+  "model": {
+    "model_type": "ffnn",
+    
+    "hidden_units": [128, 64],
+    "dropout": 0.3,
+    "batch_norm": true,
+    
+    "conv_filters": [32, 64],
+    "kernel_size": 3,
+    "pool_size": 2,
+    "seq_length": null,
+    
+    "rnn_type": "lstm",
+    "rnn_units": [64, 32],
+    "bidirectional": false,
+    
+    "encoding_dim": 32,
+    "decoder_units": [64, 128],
+    
+    "learning_rate": 0.001,
+    "batch_size": 64,
+    "epochs": 50,
+    "early_stopping_patience": 8,
+    
+    "use_class_weights": false,
+    "optimizer": "adam",
+    "loss": "binary_crossentropy",
+    
+    "model_save_path": "model_best.h5",
+    "history_save_path": "training_history.pkl",
+    "encoders_save_path": "encoders.pkl"
+  },
+  
+  "external": {
+    "pubmed_email": "your.email@example.com",
+    "pubmed_search_term": null,
+    "pubmed_max_results": 100,
+    
+    "clinicaltrials_search_term": null,
+    "clinicaltrials_max_studies": 20,
+    
+    "gene_symbols": [],
+    "organism": "Human",
+    "kegg_pathway_id": null
+  }
+}
