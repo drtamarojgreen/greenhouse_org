@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meditation Fields</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+        <!-- Login/Signup Page -->
+        <section id="auth-page">
+            <div id="login-form">
+                <h2>Login</h2>
+                <input type="email" placeholder="Email" id="login-email">
+                <input type="password" placeholder="Password" id="login-password">
+                <button id="login-button">Login</button>
+                <p>Don't have an account? <a href="#" id="show-signup">Sign up</a></p>
+            </div>
+            <div id="signup-form" style="display: none;">
+                <h2>Sign Up</h2>
+                <input type="text" placeholder="Full Name" id="signup-name">
+                <input type="email" placeholder="Email" id="signup-email">
+                <input type="password" placeholder="Password" id="signup-password">
+                <div class="consent-container">
+                    <input type="checkbox" id="privacy-consent">
+                    <label for="privacy-consent">I agree to the data privacy policy.</label>
+                </div>
+                <button id="signup-button">Sign Up</button>
+                <p>Already have an account? <a href="#" id="show-login">Login</a></p>
+            </div>
+        </section>
+
+        <!-- Main Meditation Page -->
+        <section id="meditation-page" style="display: none;">
+            <header>
+                <button class="back-button" style="visibility: hidden;">&larr;</button>
+                <h1>Meditation Fields</h1>
+                <div id="notification-bell">🔔<span id="notification-count">0</span></div>
+            </header>
+            <main>
+                <div class="feature-grid">
+                    <div class="feature" id="breathing-rate">
+                        <h3>Breathing Rate</h3>
+                        <div class="circle-container">
+                            <div id="breathing-circle"></div>
+                        </div>
+                        <p>Tap in rhythm with your breath.</p>
+                        <p>Pre-Run: <span id="pre-run-breathing-value">--</span></p>
+                        <p>Post-Run: <span id="post-run-breathing-value">--</span></p>
+                    </div>
+                    <div class="feature" id="pulse-rate">
+                        <h3>Pulse Rate</h3>
+                        <p>Connect smartwatch to track pulse.</p>
+                        <button id="connect-smartwatch">Sync Watch</button>
+                        <p>Pre-Run: <span id="pre-run-pulse-value">--</span></p>
+                        <p>Post-Run: <span id="post-run-pulse-value">--</span></p>
+                    </div>
+                    <div class="feature" id="mood-score">
+                        <h3>Mood Score</h3>
+                        <div class="dial-container">
+                            <input type="range" min="1" max="10" value="5" class="mood-dial" id="mood-dial-input">
+                        </div>
+                        <p>Score: <span id="mood-score-value">5</span></p>
+                    </div>
+                    <div class="feature" id="reminders">
+                        <h3>Reminders</h3>
+                        <p>Set a reminder for your next session.</p>
+                        <input type="datetime-local" id="reminder-datetime">
+                        <button id="set-reminder">Set</button>
+                    </div>
+                    <div class="feature" id="schedule-design">
+                        <h3>Schedule</h3>
+                        <p>Design your weekly schedule.</p>
+                        <button class="nav-button" data-target="schedule-page">Scheduler</button>
+                    </div>
+                    <div class="feature" id="meditation-scene">
+                        <h3>Meditation Scene</h3>
+                        <p>Start a guided meditation.</p>
+                        <button class="nav-button" data-target="scene-page">Start Scene</button>
+                    </div>
+                    <div class="feature" id="running-routes">
+                        <h3>Running Routes</h3>
+                        <p>View running routes on a map.</p>
+                        <button class="nav-button" data-target="map-page">View Map</button>
+                    </div>
+                    <div class="feature" id="history">
+                        <h3>History</h3>
+                        <p>Review your past data.</p>
+                        <button class="nav-button" data-target="history-page">View History</button>
+                    </div>
+                </div>
+            </main>
+            <footer>
+                <div id="ad-container">
+                    <p>Advertisement</p>
+                </div>
+                <a href="http://greenhousementalhealth.org" target="_blank">Visit Our Website</a>
+            </footer>
+        </section>
+
+        <!-- Schedule Page -->
+        <section id="schedule-page" class="sub-page" style="display: none;">
+            <header>
+                <button class="back-button">&larr;</button>
+                <h1>Scheduler</h1>
+            </header>
+            <main class="sub-page-main">
+                <div id="schedule-form">
+                    <h3>Add New Event</h3>
+                    <select id="event-type">
+                        <option value="meditation">Meditation</option>
+                        <option value="running">Running</option>
+                    </select>
+                    <input type="date" id="event-date">
+                    <input type="time" id="event-time">
+                    <button id="add-event-button">Add Event</button>
+                </div>
+                <div id="schedule-calendar">
+                    <h3>This Week</h3>
+                    <ul id="event-list"></ul>
+                </div>
+            </main>
+        </section>
+
+        <!-- Meditation Scene Page -->
+        <section id="scene-page" class="sub-page" style="display: none;">
+            <header>
+                <button class="back-button">&larr;</button>
+                <h1>Meditation Scene</h1>
+            </header>
+            <main class="sub-page-main">
+                <div id="scene-visual-placeholder"></div>
+                <div id="scene-timer">15:00</div>
+                <div id="scene-controls">
+                    <button id="play-pause-button">Play</button>
+                    <input type="range" id="volume-control" min="0" max="100" value="50">
+                </div>
+            </main>
+        </section>
+
+        <!-- Map Page -->
+        <section id="map-page" class="sub-page" style="display: none;">
+            <header>
+                <button class="back-button">&larr;</button>
+                <h1>Running Routes</h1>
+            </header>
+            <main class="sub-page-main">
+                <div id="map-filters">
+                    <label><input type="radio" name="route-filter" value="5k" checked> 5k</label>
+                    <label><input type="radio" name="route-filter" value="10k"> 10k</label>
+                    <label><input type="radio" name="route-filter" value="all"> All</label>
+                </div>
+                <div id="map-placeholder"></div>
+            </main>
+        </section>
+
+        <!-- History Page -->
+        <section id="history-page" class="sub-page" style="display: none;">
+            <header>
+                <button class="back-button">&larr;</button>
+                <h1>Data History</h1>
+            </header>
+            <main class="sub-page-main">
+                <ul id="history-list"></ul>
+            </main>
+        </section>
+
+        <!-- Notification Modal -->
+        <div id="notification-modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Notifications</h2>
+                <ul id="notification-list">
+                    <li>Reminder: Evening Meditation at 7:00 PM!</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
