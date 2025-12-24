@@ -1,0 +1,260 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f4f8;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#app-container {
+    width: 100%;
+    max-width: 400px;
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    position: relative;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+section {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Auth Page */
+#auth-page {
+    padding: 30px;
+    text-align: center;
+}
+
+#auth-page h2 {
+    color: #4a90e2;
+    margin-bottom: 20px;
+}
+
+#auth-page input[type="text"],
+#auth-page input[type="email"],
+#auth-page input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+#auth-page button {
+    width: 100%;
+    padding: 12px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color: 0.3s;
+}
+
+#auth-page button:hover {
+    background-color: #357abd;
+}
+
+.consent-container {
+    margin-bottom: 15px;
+}
+
+/* Main Page & Sub-pages */
+header {
+    background-color: #4a90e2;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+main {
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.sub-page-main {
+    padding: 20px;
+}
+
+.back-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5em;
+    cursor: pointer;
+}
+
+#notification-bell {
+    font-size: 1.5em;
+    position: relative;
+    cursor: pointer;
+}
+
+#notification-count {
+    position: absolute;
+    top: -5px;
+    right: -10px;
+    background: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.6em;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px;
+}
+
+.feature {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.feature h3 {
+    margin-top: 0;
+    font-size: 1em;
+}
+
+.feature p {
+    font-size: 0.8em;
+    color: #666;
+}
+
+.feature button {
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.sub-page {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Scheduler */
+#schedule-form {
+    margin-bottom: 20px;
+}
+#event-list {
+    list-style: none;
+    padding: 0;
+}
+#event-list li {
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+/* Meditation Scene */
+#scene-visual-placeholder {
+    width: 100%;
+    height: 200px;
+    background: #d0e0f0;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+#scene-timer {
+    font-size: 2em;
+    text-align: center;
+    margin-bottom: 20px;
+}
+#scene-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Map */
+#map-placeholder {
+    width: 100%;
+    height: 300px;
+    background: #e0e0e0;
+    border-radius: 10px;
+}
+#map-filters {
+    margin-bottom: 15px;
+}
+
+/* History */
+#history-list {
+    list-style: none;
+    padding: 0;
+}
+#history-list li {
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+/* Modal */
+#notification-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+}
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    position: relative;
+}
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.5em;
+    cursor: pointer;
+}
+
+/* Footer */
+footer {
+    padding: 10px;
+    background-color: #eee;
+    text-align: center;
+    flex-shrink: 0;
+}
+#ad-container {
+    border: 1px dashed #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+}
