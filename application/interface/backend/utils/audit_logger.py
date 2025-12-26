@@ -3,7 +3,7 @@ Audit logging utilities for HIPAA compliance
 Logs all access to PHI and critical system operations
 """
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from flask import request, g
 from functools import wraps
 from ..database import get_db
@@ -43,7 +43,7 @@ class AuditLogger:
             details: Additional details about the operation
         """
         log_entry = {
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(UTC).isoformat(),
             'user_id': user_id,
             'action': action,
             'resource_type': resource_type,
@@ -65,7 +65,7 @@ class AuditLogger:
                 INSERT INTO access_log (user_id, action, ip_address, user_agent, accessed_at)
                 VALUES (%s, %s, %s, %s, %s)
                 """,
-                (user_id, f"{action}_{resource_type}_{resource_id}", ip_address, user_agent, datetime.utcnow())
+                (user_id, f"{action}_{resource_type}_{resource_id}", ip_address, user_agent, datetime.now(UTC))
             )
             db.commit()
             cur.close()
@@ -85,7 +85,7 @@ class AuditLogger:
             details: Additional details
         """
         log_entry = {
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(UTC).isoformat(),
             'user_id': user_id,
             'email': email,
             'action': action,
@@ -108,7 +108,7 @@ class AuditLogger:
             purpose: Purpose of export
         """
         log_entry = {
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(UTC).isoformat(),
             'user_id': user_id,
             'action': 'DATA_EXPORT',
             'export_type': export_type,
@@ -131,7 +131,7 @@ class AuditLogger:
             ip_address: IP address of request
         """
         log_entry = {
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(UTC).isoformat(),
             'patient_id': patient_id,
             'consent_type': consent_type,
             'granted': granted,
@@ -152,7 +152,7 @@ class AuditLogger:
             details: Details about the event
         """
         log_entry = {
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(UTC).isoformat(),
             'event_type': event_type,
             'user_id': user_id,
             'ip_address': ip_address,
