@@ -606,6 +606,11 @@
         },
 
         drawMicroView(ctx, x, y, w, h, activeGene, activeGeneIndex, neuronMeshes, drawPiPFrameCallback, cameraState) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, y, w, h);
+            ctx.clip();
+
             if (window.GreenhouseGeneticGene) {
                 window.GreenhouseGeneticGene.drawMicroView(
                     ctx, x, y, w, h, activeGene, activeGeneIndex, neuronMeshes,
@@ -618,24 +623,35 @@
                     drawPiPFrameCallback
                 );
             }
+            ctx.restore();
         },
 
         drawTargetView(ctx, x, y, w, h, activeGene, activeGeneIndex, brainShell, drawPiPFrameCallback, cameraState) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, y, w, h);
+            ctx.clip();
             if (window.GreenhouseGeneticBrain) {
                 window.GreenhouseGeneticBrain.drawTargetView(
                     ctx, x, y, w, h, activeGene, activeGeneIndex, brainShell,
                     drawPiPFrameCallback, cameraState
                 );
             }
+            ctx.restore();
         },
 
         drawProteinView(ctx, x, y, w, h, activeGene, proteinCache, drawPiPFrameCallback, cameraState) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, y, w, h);
+            ctx.clip();
             if (window.GreenhouseGeneticProtein) {
                 window.GreenhouseGeneticProtein.drawProteinView(
                     ctx, x, y, w, h, activeGene, proteinCache,
                     drawPiPFrameCallback, cameraState
                 );
             }
+            ctx.restore();
         },
 
         generateProteinChain(seed) {
@@ -887,6 +903,10 @@
          * @param {Function} drawPiPFrame - Callback to draw PiP frame
          */
         drawDNAHelixPiP(ctx, x, y, w, h, cameraState, drawPiPFrame) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, y, w, h);
+            ctx.clip();
             // Draw PiP frame with title
             if (drawPiPFrame) {
                 drawPiPFrame(ctx, x, y, w, h, "DNA Double Helix");
@@ -894,6 +914,7 @@
 
             // Use the specific camera for this PiP - no fallback
             if (!cameraState || !cameraState.camera) {
+                ctx.restore();
                 return;
             }
             const pipCamera = cameraState.camera;
@@ -1005,6 +1026,7 @@
 
                 ctx.restore();
             }
+            ctx.restore();
         },
 
         /**
