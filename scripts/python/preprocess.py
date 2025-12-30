@@ -4,6 +4,8 @@ Preprocesses the brain.fbx file to generate graph data for the GNN.
 import os
 import trimesh
 import numpy as np
+import pyassimp
+from trimesh.curvature import vertex_defects
 
 def preprocess_fbx(fbx_path, output_dir):
     """
@@ -15,7 +17,16 @@ def preprocess_fbx(fbx_path, output_dir):
     """
     print(f"Loading mesh from {fbx_path}...")
     try:
-        mesh = trimesh.load(fbx_path, force='mesh')
+        with pyassimp.load(fbx_path) as scene:
+            if not scene.meshes:
+                print("No meshes found in the FBX file.")
+                return
+            # Assuming the first mesh is the one we want
+            mesh_data = scene.meshes[0]
+            mesh = trimesh.Trimesh(vertices=mesh_data.vertices,
+                                  faces=mesh_data.faces,
+                                  vertex_normals=mesh_data.normals)
+            mesh.process()
     except Exception as e:
         print(f"Error loading mesh: {e}")
         return
@@ -34,8 +45,7 @@ def preprocess_fbx(fbx_path, output_dir):
     try:
         # For some meshes, principal_curvature_vectors might fail.
         # We'll use the simpler curvature for now.
-        mesh.add_attribute('curvature', mesh.curvature)
-        curvature = mesh.vertex_attributes['curvature']
+        curvature = vertex_defects(mesh)
         if curvature.ndim == 1:
             curvature = curvature.reshape(-1, 1)
 
