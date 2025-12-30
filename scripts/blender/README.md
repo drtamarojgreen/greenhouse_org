@@ -32,11 +32,58 @@ The output files will be saved in a new directory created at `scripts/blender/re
 
 ## 4. How to Run the Animation Suite
 
-To generate the animations, follow these steps:
+This suite is designed to be run from the command line, which allows for automation and batch rendering without opening the Blender user interface.
 
-1.  **Open Blender**: Launch Blender (version 2.80 or higher is recommended).
-2.  **Navigate to Scripting Workspace**: At the top of the Blender window, click on the **Scripting** tab to change to the scripting layout.
-3.  **Open the Master Script**: In the Text Editor panel (usually on the left), click the **Open** button. Navigate to this directory (`scripts/blender/`) and select the `render_suite.py` file.
-4.  **Run the Script**: With the `render_suite.py` script loaded, click the **Run Script** button (it looks like a play icon) in the header of the Text Editor.
-5.  **Monitor Progress**: You can monitor the rendering progress in the Blender Render window that appears. The console (which can be opened via `Window > Toggle System Console`) will print status messages for each job.
-6.  **Find the Output**: Once the script finishes, navigate to the `scripts/blender/render_outputs/` directory to find the rendered MP4 video files.
+### Prerequisites
+
+-   **Blender**: Blender (version 2.80 or newer) must be installed.
+-   **Command Line Access**: The `blender` command must be available in your system's PATH. If it's not, you can edit the `BLENDER_CMD` variable in `run_blender_job.sh` to point to the full path of the Blender executable.
+
+### Using the Render Scripts
+
+A suite of bash scripts is provided for convenience. Open your terminal, navigate to the `scripts/blender/` directory, and execute your desired script.
+
+**1. To Run a Specific Animation Job:**
+
+Use the individual scripts for each job. They are the simplest way to get started.
+
+-   Render the turntable animation with a procedural texture:
+    ```bash
+    ./render_turntable_procedural.sh
+    ```
+-   Render the dolly zoom animation with a glowing material:
+    ```bash
+    ./render_zoom_glow.sh
+    ```
+-   Render the wireframe flyover animation:
+    ```bash
+    ./render_wireframe_flyover.sh
+    ```
+
+**2. To Run All Jobs Sequentially:**
+
+A script is provided to render every animation, one after another.
+
+-   Render all available jobs:
+    ```bash
+    ./render_all.sh
+    ```
+
+**3. Advanced Usage (Master Script):**
+
+The individual scripts are wrappers around the master `run_blender_job.sh` script. You can use it directly to run any available job by passing the job name as an argument.
+
+-   General usage:
+    ```bash
+    ./run_blender_job.sh <job_name>
+    ```
+-   Example (running the zoom_glow job):
+    ```bash
+    ./run_blender_job.sh zoom_glow
+    ```
+-   Available job names: `turntable_procedural`, `zoom_glow`, `wireframe_flyover`, `all`.
+
+### Monitoring and Output
+
+-   **Progress**: Render progress will be printed directly to your terminal window.
+-   **Output Files**: The rendered MP4 video files will be saved in subdirectories within `scripts/blender/render_outputs/`. For example, the turntable animation will be located in `render_outputs/turntable_procedural/`.

@@ -115,16 +115,9 @@ def render_scene(job_name):
     bpy.ops.render.render(animation=True)
     print(f"--- Finished Render Job: {job_name} ---")
 
-def run_all_jobs():
-    """
-    Executes a sequence of predefined render jobs.
-    """
+def run_job_turntable_procedural():
+    """Configures and runs the 'Turntable Procedural' job."""
     base_fbx_path = os.path.join(script_dir, "brain.fbx")
-    if not os.path.exists(base_fbx_path):
-        print(f"CRITICAL ERROR: brain.fbx not found at {base_fbx_path}")
-        return
-
-    # JOB 1: Turntable with Procedural Texture
     clean_scene()
     model, camera = setup_scene(base_fbx_path)
     vfx.apply_procedural_texture(model)
@@ -133,7 +126,9 @@ def run_all_jobs():
     configure_render_settings("turntable_procedural", duration, file_format='FFMPEG')
     render_scene("Turntable Procedural")
 
-    # JOB 2: Dolly Zoom with Glowing Material
+def run_job_zoom_glow():
+    """Configures and runs the 'Dolly Zoom Glow' job."""
+    base_fbx_path = os.path.join(script_dir, "brain.fbx")
     clean_scene()
     model, camera = setup_scene(base_fbx_path)
     vfx.apply_glowing_material(model, color=(0.1, 0.5, 1.0), strength=15)
@@ -142,26 +137,66 @@ def run_all_jobs():
     configure_render_settings("zoom_glow", duration, file_format='FFMPEG')
     render_scene("Dolly Zoom Glow")
 
-    # JOB 3: Wireframe Flyover
+def run_job_wireframe_flyover():
+    """Configures and runs the 'Wireframe Flyover' job."""
+    base_fbx_path = os.path.join(script_dir, "brain.fbx")
     clean_scene()
     model, camera = setup_scene(base_fbx_path)
-    vfx.apply_procedural_texture(model, material_name="BaseGrey") # Add a base material
+    vfx.apply_procedural_texture(model, material_name="BaseGrey")
     vfx.create_wireframe_overlay(model, thickness=0.015)
     duration = 150
     cam_anim.create_pitch_animation(camera, duration, angle_degrees=15)
     configure_render_settings("wireframe_flyover", duration, file_format='FFMPEG')
     render_scene("Wireframe Flyover")
 
+def run_all_jobs():
+    """Executes all defined render jobs sequentially."""
+    run_job_turntable_procedural()
+    run_job_zoom_glow()
+    run_job_wireframe_flyover()
     print("\n--- All Render Jobs Complete ---")
 
 # --- EXECUTION ---
 
+def main():
+    """
+    Parses command-line arguments to run specific render jobs.
+    """
+    # Blender command-line arguments for scripts are passed after '--'
+    # Example: blender -b -P render_suite.py -- turntable_procedural
+    try:
+        args = sys.argv[sys.argv.index("--") + 1:]
+    except ValueError:
+        # If '--' is not present, no arguments were passed, or script is run from Blender UI
+        args = []
+
+    # Default to running all jobs if no specific job is requested
+    job_name = args[0] if args else 'all'
+
+    # Centralized check for the existence of the model file
+    base_fbx_path = os.path.join(script_dir, "brain.fbx")
+    if not os.path.exists(base_fbx_path):
+        print(f"CRITICAL ERROR: brain.fbx not found at {base_fbx_path}")
+        bpy.ops.wm.quit_blender()
+        return # Exit if the model is missing
+
+    # A dictionary mapping job names to the functions that run them
+    jobs = {
+        'turntable_procedural': run_job_turntable_procedural,
+        'zoom_glow': run_job_zoom_glow,
+        'wireframe_flyover': run_job_wireframe_flyover,
+    }
+
+    if job_name == 'all':
+        print("Executing all render jobs...")
+        run_all_jobs()
+    elif job_name in jobs:
+        jobs[job_name]()
+    else:
+        print(f"Error: Unknown job name '{job_name}'")
+        print("Available jobs: all, " + ", ".join(jobs.keys()))
+        # In background mode, this will cause Blender to exit with an error status
+        bpy.ops.wm.quit_blender()
+
 if __name__ == "__main__":
-    # This line executes the entire suite of rendering jobs.
-    # To run this script:
-    # 1. Open Blender.
-    # 2. Go to the "Scripting" workspace.
-    # 3. Click "Open" and load this 'render_suite.py' file.
-    # 4. Ensure 'brain.fbx', 'camera_animations.py', and 'visual_effects.py' are in the same directory.
-    # 5. Click the "Run Script" button (play icon).
-    run_all_jobs()
+    main()
