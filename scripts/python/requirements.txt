@@ -2,3 +2,4 @@ fbxloader
 numpy
 trimesh
 rtree
+pyassimp
