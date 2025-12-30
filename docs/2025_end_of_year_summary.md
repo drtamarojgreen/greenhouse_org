@@ -76,39 +76,35 @@ A data processing pipeline for a Graph Neural Network (GNN) that analyzes a 3D b
 
 ### 6. Content Pages
 
-Several new content pages were added to the website, all of which are built on the decoupled frontend architecture, fetching their content from external JSON files hosted on GitHub Pages. This makes them lightweight and easy to update.
+Several new content pages were added to the website, all built on the decoupled frontend architecture.
 
-*   **Videos Page:** Displays a list of videos from a static JSON file.
-*   **Projects Page:** A "living portfolio" of community and development initiatives, with all project information fetched directly from GitHub Pages.
-*   **Books Page:** Displays a list of recommended books from a static JSON file.
+#### Videos Page
+*   **Function and Intent:** This page showcases educational and informational video content for visitors. The Velo frontend code fetches a list of videos—including titles, descriptions, and URLs—and displays them in a dynamic, user-friendly repeater.
+*   **Architecture:** It utilizes the decoupled architecture by fetching its content from a static JSON file hosted on GitHub Pages. This makes the page lightweight and easy to update, as new videos can be added simply by modifying the external JSON file without requiring any changes to the Wix website itself.
+
+#### Projects Page
+*   **Function and Intent:** This page serves as a "living portfolio" of community and development initiatives, providing transparency into the work being done at Greenhouse for Mental Health.
+*   **Architecture:** As a prime example of the decoupled architecture, this page is completely independent of the main website's backend. It fetches all its content directly from static data files hosted on GitHub, ensuring transparency, providing version control for the content, and allowing for rapid updates without needing to go through the Wix editor.
+
+#### Books Page
+*   **Function and Intent:** This page provides a curated list of recommended books related to mental health, serving as a resource for visitors.
+*   **Architecture:** Similar to the other content pages, the book list is fetched from a dedicated JSON file hosted on GitHub Pages. The Velo frontend code dynamically renders the list, including titles, authors, and descriptions, in a repeater element. This architecture allows for easy maintenance of the book list.
 
 ### 7. Interactive Simulation Pages
 
 The website now includes several interactive simulation pages, which are loaded as external applications.
 
 #### Models Page
-
-This page serves as the foundational 3D visualization framework for the other simulation pages. It uses the HTML5 Canvas 2D API and a custom 3D math library to render neural networks. This innovative approach allows for the creation of complex 3D scenes without relying on WebGL, ensuring broad browser compatibility.
+*   **Function and Intent:** This page serves as the foundational 3D visualization framework for the other simulation pages. Its purpose is to provide a reusable, high-performance engine for rendering complex 3D scenes without relying on WebGL, which ensures broad browser compatibility.
+*   **Architecture:** It uses the HTML5 Canvas 2D API and a custom 3D math library to render neural networks. This innovative approach is the basis for the more specialized "Neuro" and "Genetic" simulations.
 
 #### Neuro Page
-
-The Neuro page is a sophisticated 3D visualization of a neural network, built on the "Models" framework. Its goal is to provide a research-grade, "Scientific Digital" interface for exploring the brain's structure and function.
-
-**Key Features:**
-
-*   **Detailed Visuals:** Renders neurons, synapses, and neurotransmitters with a high degree of detail.
-*   **Dynamic Lighting:** Uses lighting effects, such as glows and depth fog, to enhance the 3D perception.
-*   **Interactive Exploration:** Allows users to explore the neural network with camera controls and zoom into specific connections.
+*   **Function and Intent:** The Neuro page is a sophisticated 3D visualization of a neural network, built on the "Models" framework. Its goal is to provide a research-grade, "Scientific Digital" interface for exploring the brain's structure and function, allowing users to visualize concepts like synaptic plasticity and neurogenesis.
+*   **Key Features:** It renders neurons, synapses, and neurotransmitters with a high degree of detail, uses dynamic lighting effects to enhance the 3D perception, and allows users to explore the neural network with interactive camera controls.
 
 #### Genetic Page
-
-The Genetic page is a 3D visualization of a genetic algorithm, also built on the "Models" framework. It demonstrates how genetic traits influence the structure and function of neural networks.
-
-**Key Features:**
-
-*   **Multi-Scale View:** A Picture-in-Picture (PiP) system allows for simultaneous views of the DNA double helix, a specific gene, the affected brain region, and the resulting protein structure.
-*   **Gene Expression Visualization:** Shows how genes are expressed, with a "reading frame" box highlighting the active gene and an animation of a new mRNA strand being synthesized.
-*   **Interactive Simulation:** Users can observe the genetic algorithm in action as it evolves a neural network over generations.
+*   **Function and Intent:** The Genetic page is a 3D visualization of a genetic algorithm, also built on the "Models" framework. It is designed to demonstrate how genetic traits influence the structure and function of neural networks, providing an interactive educational tool.
+*   **Key Features:** It includes a multi-scale Picture-in-Picture (PiP) system for simultaneous views of the DNA double helix, a specific gene, the affected brain region, and the resulting protein structure. It also visualizes the process of gene expression and allows users to observe the genetic algorithm in action as it evolves a neural network over generations.
 
 ## Conclusion
 
