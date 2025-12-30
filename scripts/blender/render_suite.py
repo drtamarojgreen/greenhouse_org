@@ -3,6 +3,8 @@ import bpy
 import os
 import sys
 import math
+import time
+from datetime import datetime
 
 # --- SCRIPT SETUP ---
 # To allow Blender to find our custom modules (camera_animations.py, visual_effects.py),
@@ -100,7 +102,7 @@ def configure_render_settings(output_folder, duration_frames, file_format='PNG')
         scene.render.image_settings.color_mode = 'RGB'
     scene.render.ffmpeg.format = "MATROSKA"  # Changed to MKV container
     scene.render.ffmpeg.codec = "H264"      # Using H.264 codec
-        scene.render.ffmpeg.constant_rate_factor = 'MEDIUM'
+    scene.render.ffmpeg.constant_rate_factor = 'MEDIUM'
 
 # --- NEW HELPER FUNCTIONS for Region Highlighting ---
 
@@ -180,7 +182,26 @@ def create_3d_text_label(text_content, target_object):
     text_obj.data.materials.append(text_mat)
 
     print(f"Created 3D text: '{text_content}'")
+    print(f"Created 3D text: '{text_content}'")
     return text_obj
+
+def log_execution(job_name, start_time):
+    """
+    Logs the execution time of a job to a file.
+    """
+    duration = time.time() - start_time
+    log_dir = os.path.join(script_dir, "logs")
+    try:
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, "execution.log")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        with open(log_file, "a") as f:
+            f.write(f"[{timestamp}] Job: {job_name} | Duration: {duration:.2f} seconds\n")
+        print(f"Execution time logged: {duration:.2f}s")
+    except Exception as e:
+        print(f"Error writing to log file: {e}")
+
 
 # --- RENDER JOBS ---
 
@@ -198,6 +219,7 @@ def render_scene(job_name):
 
 def run_job_region_highlight(region_name, label_text, output_filename):
     """Configures and runs a render for a specific brain region."""
+    start_time = time.time()
     base_fbx_path = os.path.join(script_dir, "brain.fbx")
     clean_scene()
     # The setup_scene function returns a single model object.
@@ -233,9 +255,11 @@ def run_job_region_highlight(region_name, label_text, output_filename):
     bpy.context.scene.render.filepath = os.path.join(script_dir, "render_outputs", output_filename)
 
     render_scene(f"Region Highlight: {region_name}")
+    log_execution(f"Region Highlight: {region_name}", start_time)
 
 def run_job_turntable_procedural():
     """Configures and runs the 'Turntable Procedural' job."""
+    start_time = time.time()
     base_fbx_path = os.path.join(script_dir, "brain.fbx")
     clean_scene()
     model, camera = setup_scene(base_fbx_path)
@@ -244,9 +268,11 @@ def run_job_turntable_procedural():
     cam_anim.create_turntable_animation(camera, model, duration)
     configure_render_settings("turntable_procedural", duration, file_format='FFMPEG')
     render_scene("Turntable Procedural")
+    log_execution("turntable_procedural", start_time)
 
 def run_job_zoom_glow():
     """Configures and runs the 'Dolly Zoom Glow' job."""
+    start_time = time.time()
     base_fbx_path = os.path.join(script_dir, "brain.fbx")
     clean_scene()
     model, camera = setup_scene(base_fbx_path)
@@ -255,9 +281,11 @@ def run_job_zoom_glow():
     cam_anim.create_dolly_animation(camera, duration, start_distance=-15, end_distance=-6)
     configure_render_settings("zoom_glow", duration, file_format='FFMPEG')
     render_scene("Dolly Zoom Glow")
+    log_execution("zoom_glow", start_time)
 
 def run_job_wireframe_flyover():
     """Configures and runs the 'Wireframe Flyover' job."""
+    start_time = time.time()
     base_fbx_path = os.path.join(script_dir, "brain.fbx")
     clean_scene()
     model, camera = setup_scene(base_fbx_path)
@@ -267,13 +295,16 @@ def run_job_wireframe_flyover():
     cam_anim.create_pitch_animation(camera, duration, angle_degrees=15)
     configure_render_settings("wireframe_flyover", duration, file_format='FFMPEG')
     render_scene("Wireframe Flyover")
+    log_execution("wireframe_flyover", start_time)
 
 def run_all_jobs():
     """Executes all defined render jobs sequentially."""
+    start_time = time.time()
     run_job_turntable_procedural()
     run_job_zoom_glow()
     run_job_wireframe_flyover()
     print("\n--- All Render Jobs Complete ---")
+    log_execution("all_jobs", start_time)
 
 # --- EXECUTION ---
 

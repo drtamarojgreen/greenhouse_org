@@ -8,17 +8,51 @@ The suite is modular, allowing for easy extension and customization of camera mo
 
 ## 2. File Descriptions
 
--   `brain.fbx`
-    The core 3D model of the human brain used in all animations.
+### Python Modules
 
 -   `camera_animations.py`
-    A library of functions that define and apply various camera movements. This includes turntable rotations, dolly zooms, and flyovers. Each function is designed to create keyframes over a specified duration.
+    A library of functions that define and apply various camera movements.
+    - `setup_camera_focus`: Locks the camera to track a target object.
+    - `create_turntable_animation`: Orbits the camera around a target.
+    - `create_yaw_animation`: Pans the camera left/right.
+    - `create_pitch_animation`: Tilts the camera up/down.
+    - `create_dolly_animation`: Moves the camera physically closer/further.
+    - `create_zoom_animation`: Simulates a zoom by changing focal length.
 
 -   `visual_effects.py`
-    A library for applying materials and visual styles to the brain model. This includes functions for creating procedural textures (e.g., noise-based materials), glowing emission shaders, and wireframe overlays.
+    A library for applying materials and visual styles to the brain model.
+    - `apply_procedural_texture`: Applies a noise-based procedural material.
+    - `create_wireframe_overlay`: Adds a wireframe modifier and material.
+    - `apply_glowing_material`: applies an emissive, glowing shader.
 
 -   `render_suite.py`
-    This is the master script used to execute the rendering process. It imports the modules for camera and visual effects, sets up the scene, and runs a series of predefined "render jobs." Each job combines a specific animation with a specific visual effect and renders it out.
+    The master Python script used to execute the rendering process inside Blender. It imports the modules for camera and visual effects, sets up the scene, and defines specific "render jobs":
+    - `run_job_turntable_procedural`: Standard turntable with procedural texture.
+    - `run_job_zoom_glow`: Dolly zoom effect with glowing material.
+    - `run_job_wireframe_flyover`: Flyover camera move with wireframe style.
+    - `run_all_jobs`: Sequentially runs all defined jobs.
+
+### Shell Scripts
+
+-   `run_blender_job.sh`
+    The master execution script. It handles calling the Blender executable in background mode and passing the python script `render_suite.py` to it. It takes a job name as an argument (e.g., `turntable_procedural`, `all`).
+
+-   `render_turntable_procedural.sh`
+    A specific wrapper script that runs the `turntable_procedural` job.
+
+-   `render_zoom_glow.sh`
+    A specific wrapper script that runs the `zoom_glow` job.
+
+-   `render_wireframe_flyover.sh`
+    A specific wrapper script that runs the `wireframe_flyover` job.
+
+-   `render_all.sh`
+    A specific wrapper script that runs `all` jobs sequentially.
+
+### Assets
+
+-   `brain.fbx`
+    The core 3D model of the human brain used in all animations.
 
 ## 3. Output Format (MP4 Video)
 
@@ -87,3 +121,32 @@ The individual scripts are wrappers around the master `run_blender_job.sh` scrip
 
 -   **Progress**: Render progress will be printed directly to your terminal window.
 -   **Output Files**: The rendered MP4 video files will be saved in subdirectories within `scripts/blender/render_outputs/`. For example, the turntable animation will be located in `render_outputs/turntable_procedural/`.
+
+## 5. Related Python Processing Scripts
+
+The `brain.fbx` model is also used by a GNN (Graph Neural Network) pipeline located in `scripts/python/`. These scripts handle the conversion of the 3D model into graph data for analysis and inference.
+
+-   `../python/preprocess_mesh.py`
+    Loads `brain.fbx`, extracts vertices, faces, and computes features (normals, curvature). The data is saved as NumPy arrays (`.npy`) for training or further analysis.
+
+-   `../python/inference.py`
+    Loads `brain.fbx` to generate a graph structure and uses a trained GNN model to predict functional brain regions on the mesh, outputting the results as a JSON file.
+
+## 6. Performance & Resource Estimates
+
+### Data Requirements
+-   **Downloads**: None. All necessary 3D assets (`brain.fbx`) are included in the repository (~8 MB).
+-   **Generated Data**:
+    -   Render Output: ~10-50 MB per video file.
+    -   Intermediate Graph Data: ~10-20 MB (NumPy arrays).
+
+### Execution Time Estimates
+*(Estimates based on a standard CPU-based workstation. Times will vary significantly with hardware.)*
+
+-   **Python Preprocessing**: ~1-2 minutes
+    -   Parsing a ~8MB FBX file and computing curvature on a dense mesh is computationally intensive.
+-   **Blender Rendering (Eevee Engine, 720p 24fps)**:
+    -   `turntable_procedural` (120 frames): ~5-10 minutes
+    -   `zoom_glow` (90 frames): ~4-8 minutes
+    -   `wireframe_flyover` (150 frames): ~6-12 minutes
+    -   **Total Suite**: ~15-30 minutes
