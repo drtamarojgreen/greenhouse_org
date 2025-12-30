@@ -1,0 +1,9 @@
+{
+  "default_ratio": 0.5,
+  "apply_modifier": true,
+  "min_vertices": 1000,
+  "per_object": {
+    "Brain": { "ratio": 0.3 },
+    "Skull": { "ratio": 0.6 }
+  }
+}
