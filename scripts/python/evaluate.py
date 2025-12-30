@@ -19,10 +19,10 @@ def evaluate(data_dir, model_dir):
     """
     print("Loading data and model for evaluation...")
     try:
-        vertices = np.load(os.path.join(data_dir, "vertices.npy"))
-        faces = np.load(os.path.join(data_dir, "faces.npy"))
-        features = np.load(os.path.join(data_dir, "features.npy"))
-        labels = np.load(os.path.join(data_dir, "labels.npy"))
+        vertices = np.load(os.path.join(data_dir, "canonical_vertices.npy"))
+        faces = np.load(os.path.join(data_dir, "canonical_faces.npy"))
+        features = np.load(os.path.join(data_dir, "canonical_features.npy"))
+        labels = np.load(os.path.join(data_dir, "canonical_labels.npy"))
 
         W1 = np.load(os.path.join(model_dir, "gcn_w1.npy"))
         W2 = np.load(os.path.join(model_dir, "gcn_w2.npy"))
@@ -64,6 +64,6 @@ def evaluate(data_dir, model_dir):
     print("--------------------------")
 
 if __name__ == "__main__":
-    DATA_DIR = "scripts/python/"
-    MODEL_DIR = "scripts/python/"
+    DATA_DIR = "data/graphs/"
+    MODEL_DIR = "data/graphs/"
     evaluate(DATA_DIR, MODEL_DIR)

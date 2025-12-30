@@ -11,46 +11,28 @@ from config import get_region_config
 # We can reuse these functions from the training script
 from train import gcn_forward, relu
 
-def inference(fbx_path, model_dir, output_dir):
+def inference(data_dir, model_dir, output_dir):
     """
     Loads a mesh, preprocesses it, and runs the GNN model to predict regions.
 
     Args:
-        fbx_path (str): Path to the input FBX file.
+        data_dir (str): Path to the directory containing the preprocessed graph data.
         model_dir (str): Directory containing the trained model weights.
         output_dir (str): Directory to save the output JSON file.
     """
-    print("Loading model weights...")
+    print("Loading model weights and data for inference...")
     try:
         W1 = np.load(os.path.join(model_dir, "gcn_w1.npy"))
         W2 = np.load(os.path.join(model_dir, "gcn_w2.npy"))
         W3 = np.load(os.path.join(model_dir, "gcn_w3.npy"))
+
+        vertices = np.load(os.path.join(data_dir, "canonical_vertices.npy"))
+        faces = np.load(os.path.join(data_dir, "canonical_faces.npy"))
+        features = np.load(os.path.join(data_dir, "canonical_features.npy"))
+
     except FileNotFoundError as e:
-        print(f"Error: {e}. Make sure you have run train.py first.")
+        print(f"Error: {e}. Make sure you have run preprocess_mesh.py and train.py first.")
         return
-
-    print(f"Loading mesh from {fbx_path} for inference...")
-    try:
-        mesh = trimesh.load(fbx_path, force='mesh')
-    except Exception as e:
-        print(f"Error loading mesh: {e}")
-        return
-
-    print("Preprocessing mesh...")
-    vertices = np.array(mesh.vertices)
-    faces = np.array(mesh.faces)
-    vertex_normals = np.array(mesh.vertex_normals)
-
-    try:
-        mesh.add_attribute('curvature', mesh.curvature)
-        curvature = mesh.vertex_attributes['curvature']
-        if curvature.ndim == 1:
-            curvature = curvature.reshape(-1, 1)
-    except Exception as e:
-        print(f"Could not compute curvature, using zeros instead: {e}")
-        curvature = np.zeros((len(vertices), 1))
-
-    features = np.hstack([vertices, vertex_normals, curvature])
 
     print("Constructing graph for inference...")
     num_vertices = len(vertices)
@@ -94,7 +76,7 @@ def inference(fbx_path, model_dir, output_dir):
     print(f"Predicted regions saved to {output_path}")
 
 if __name__ == "__main__":
-    FBX_FILE = "scripts/blender/brain.fbx"
-    MODEL_DIR = "scripts/python/"
-    OUTPUT_DIR = "scripts/python/"
-    inference(FBX_FILE, MODEL_DIR, OUTPUT_DIR)
+    DATA_DIR = "data/graphs/"
+    MODEL_DIR = "data/graphs/"
+    OUTPUT_DIR = "data/graphs/"
+    inference(DATA_DIR, MODEL_DIR, OUTPUT_DIR)

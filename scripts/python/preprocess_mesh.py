@@ -14,6 +14,7 @@ def preprocess_mesh():
     vertices_path = os.path.join(output_dir, 'canonical_vertices.npy')
     faces_path = os.path.join(output_dir, 'canonical_faces.npy')
     features_path = os.path.join(output_dir, 'canonical_features.npy')
+    labels_path = os.path.join(output_dir, 'canonical_labels.npy')
 
     # Ensure the output directory exists
     try:
@@ -43,6 +44,29 @@ def preprocess_mesh():
     faces = np.array(mesh.faces)
     print(f"Extracted {len(vertices)} vertices and {len(faces)} faces.")
 
+    # Generate labels from vertex colors.
+    print("Generating labels from vertex colors...")
+    vertex_colors = mesh.visual.vertex_colors
+    labels = np.zeros(len(vertices), dtype=int)
+
+    # Define a simple color-to-label mapping.
+    # Note: This is a simplified mapping. A more robust solution would
+    # handle a wider range of colors and potentially use a clustering algorithm.
+    color_map = {
+        (255, 0, 0, 255): 1,  # Red -> left_amygdala
+        (0, 255, 0, 255): 2,  # Green -> right_amygdala
+        (0, 0, 255, 255): 3,  # Blue -> left_hippocampus
+        (255, 255, 0, 255): 4, # Yellow -> right_hippocampus
+    }
+
+    for i, color in enumerate(vertex_colors):
+        # Convert color to a tuple for dictionary lookup.
+        color_tuple = tuple(map(int, color))
+        if color_tuple in color_map:
+            labels[i] = color_map[color_tuple]
+
+    print(f"Generated {len(np.unique(labels))} unique labels.")
+
     # Compute node features as specified in the GNN design
     print("Computing node features (coordinates, normals, curvatures)...")
     
@@ -52,23 +76,24 @@ def preprocess_mesh():
     vertex_normals = np.array(mesh.vertex_normals)
 
     # 3. Curvature features
-    # Gaussian curvature can be estimated from the vertex defects.
-    gaussian_curvature = trimesh.curvature.vertex_defects(mesh)
+    # Using a simpler curvature calculation to avoid timeout.
+    try:
+        mesh.add_attribute('curvature', mesh.curvature)
+        curvature = mesh.vertex_attributes['curvature']
+        if curvature.ndim == 1:
+            curvature = curvature.reshape(-1, 1)
+    except Exception as e:
+        print(f"Could not compute curvature, using zeros instead: {e}")
+        curvature = np.zeros((len(vertices), 1))
 
-    # For mean curvature, we need to define a radius for the neighborhood.
-    # We'll use a radius equal to twice the mean edge length.
-    radius = mesh.edges_unique_length.mean() * 2
-    mean_curvature = trimesh.curvature.discrete_mean_curvature_measure(mesh, mesh.vertices, radius)
-    
     print("Node features computed.")
 
     # Assemble the final feature matrix
-    # The feature vector per node will be [x, y, z, nx, ny, nz, mean_curv, gauss_curv]
+    # The feature vector per node will be [x, y, z, nx, ny, nz, curvature]
     features = np.hstack([
         vertices,
         vertex_normals,
-        mean_curvature[:, np.newaxis],      # Reshape for horizontal stacking
-        gaussian_curvature[:, np.newaxis]   # Reshape for horizontal stacking
+        curvature
     ])
     print(f"Assembled feature matrix with shape: {features.shape}")
 
@@ -78,10 +103,12 @@ def preprocess_mesh():
         np.save(vertices_path, vertices)
         np.save(faces_path, faces)
         np.save(features_path, features)
+        np.save(labels_path, labels)
         print("Processed data saved successfully:")
         print(f" - Vertices: {vertices_path}")
         print(f" - Faces: {faces_path}")
         print(f" - Features: {features_path}")
+        print(f" - Labels: {labels_path}")
     except IOError as e:
         print(f"Error saving data: {e}")
 

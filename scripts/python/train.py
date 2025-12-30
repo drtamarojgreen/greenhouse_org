@@ -56,12 +56,12 @@ def train(data_dir, model_dir):
     """
     print("Loading training data...")
     try:
-        vertices = np.load(os.path.join(data_dir, "vertices.npy"))
-        faces = np.load(os.path.join(data_dir, "faces.npy"))
-        features = np.load(os.path.join(data_dir, "features.npy"))
-        labels = np.load(os.path.join(data_dir, "labels.npy"))
+        vertices = np.load(os.path.join(data_dir, "canonical_vertices.npy"))
+        faces = np.load(os.path.join(data_dir, "canonical_faces.npy"))
+        features = np.load(os.path.join(data_dir, "canonical_features.npy"))
+        labels = np.load(os.path.join(data_dir, "canonical_labels.npy"))
     except FileNotFoundError as e:
-        print(f"Error: {e}. Make sure you have run preprocess.py first.")
+        print(f"Error: {e}. Make sure you have run preprocess_mesh.py first.")
         return
 
     train_config = get_train_config()
@@ -156,6 +156,6 @@ def train(data_dir, model_dir):
 
 
 if __name__ == "__main__":
-    DATA_DIR = "scripts/python/"
-    MODEL_DIR = "scripts/python/"
+    DATA_DIR = "data/graphs/"
+    MODEL_DIR = "data/graphs/"
     train(DATA_DIR, MODEL_DIR)
