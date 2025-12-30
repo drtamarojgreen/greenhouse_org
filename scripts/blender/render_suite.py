@@ -98,8 +98,89 @@ def configure_render_settings(output_folder, duration_frames, file_format='PNG')
     scene.render.image_settings.file_format = file_format
     if file_format == 'FFMPEG':
         scene.render.image_settings.color_mode = 'RGB'
-        scene.render.ffmpeg.format = "MPEG4"
+    scene.render.ffmpeg.format = "MATROSKA"  # Changed to MKV container
+    scene.render.ffmpeg.codec = "H264"      # Using H.264 codec
         scene.render.ffmpeg.constant_rate_factor = 'MEDIUM'
+
+# --- NEW HELPER FUNCTIONS for Region Highlighting ---
+
+def find_object_by_name(name):
+    """
+    Finds an object in the scene by its exact name.
+
+    :param name: The name of the object to find.
+    :return: The Blender object or None if not found.
+    """
+    if name in bpy.data.objects:
+        return bpy.data.objects[name]
+    print(f"Warning: Object '{name}' not found in the scene.")
+    return None
+
+def apply_highlight_materials(target_object):
+    """
+    Applies a highlight material to the target object and a dim, transparent
+    material to all other mesh objects.
+    """
+    # Define the highlight material (emissive)
+    highlight_mat = bpy.data.materials.new(name="HighlightMaterial")
+    highlight_mat.use_nodes = True
+    bsdf = highlight_mat.node_tree.nodes.get('Principled BSDF')
+    if bsdf:
+        bsdf.inputs['Emission'].default_value = (0.8, 0.05, 0.05, 1) # Bright Red
+        bsdf.inputs['Emission Strength'].default_value = 10.0
+        bsdf.inputs['Base Color'].default_value = (1, 0, 0, 1)
+
+    # Define the base material (dim and transparent)
+    base_mat = bpy.data.materials.new(name="BaseMaterial")
+    base_mat.use_nodes = True
+    bsdf_base = base_mat.node_tree.nodes.get('Principled BSDF')
+    if bsdf_base:
+        bsdf_base.inputs['Base Color'].default_value = (0.2, 0.2, 0.2, 1)
+        bsdf_base.inputs['Alpha'].default_value = 0.2
+    # Enable transparency
+    base_mat.blend_method = 'BLEND'
+
+    # Apply materials to objects
+    for obj in bpy.data.objects:
+        if obj.type == 'MESH':
+            if obj == target_object:
+                obj.data.materials.append(highlight_mat)
+            else:
+                obj.data.materials.append(base_mat)
+
+def create_3d_text_label(text_content, target_object):
+    """
+    Creates and positions a 3D text label near the target object.
+    """
+    # Create the text object
+    bpy.ops.object.text_add(enter_editmode=False, align='WORLD', location=(0, 0, 0))
+    text_obj = bpy.context.active_object
+    text_obj.data.body = text_content
+
+    # Set text properties (geometry)
+    text_obj.data.extrude = 0.02
+    text_obj.data.size = 0.5
+
+    # Center the text origin
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+
+    # Position the text above the target object
+    if target_object:
+        target_location = target_object.location
+        target_dims = target_object.dimensions
+        # Position it slightly above and in front of the target
+        text_obj.location = (target_location.x, target_location.y - target_dims.y / 2 - 1, target_location.z + target_dims.z)
+
+    # Add a simple material to the text
+    text_mat = bpy.data.materials.new(name="TextMaterial")
+    text_mat.use_nodes = True
+    bsdf = text_mat.node_tree.nodes.get('Principled BSDF')
+    if bsdf:
+        bsdf.inputs['Base Color'].default_value = (0.9, 0.9, 0.9, 1)
+    text_obj.data.materials.append(text_mat)
+
+    print(f"Created 3D text: '{text_content}'")
+    return text_obj
 
 # --- RENDER JOBS ---
 
@@ -114,6 +195,44 @@ def render_scene(job_name):
     print(f"Outputting {bpy.context.scene.frame_end} frames to: {output_path}")
     bpy.ops.render.render(animation=True)
     print(f"--- Finished Render Job: {job_name} ---")
+
+def run_job_region_highlight(region_name, label_text, output_filename):
+    """Configures and runs a render for a specific brain region."""
+    base_fbx_path = os.path.join(script_dir, "brain.fbx")
+    clean_scene()
+    # The setup_scene function returns a single model object.
+    # To highlight sub-regions, we rely on finding the named objects *after* import.
+    _, camera = setup_scene(base_fbx_path)
+
+    # Find the target region object within the imported hierarchy
+    target_region_obj = find_object_by_name(region_name)
+    if not target_region_obj:
+        print(f"CRITICAL: Could not find region '{region_name}'. Aborting job.")
+        # Quit blender with an error code if the region isn't found
+        bpy.ops.wm.quit_blender()
+        return
+
+    # Apply materials and create text
+    apply_highlight_materials(target_region_obj)
+    create_3d_text_label(label_text, target_region_obj)
+
+    # Set up animation and render settings
+    duration = 120 # A standard 5-second turntable
+    # We need a reference object for the camera to orbit. The main brain model is a good choice.
+    main_model_object = find_object_by_name("BrainModel")
+    if main_model_object:
+        cam_anim.create_turntable_animation(camera, main_model_object, duration)
+
+    # Configure render settings to output a single MKV file
+    output_folder_base = os.path.join(script_dir, "render_outputs")
+    os.makedirs(output_folder_base, exist_ok=True) # Ensure the base directory exists
+
+    configure_render_settings("render_outputs", duration, file_format='FFMPEG')
+
+    # Set the final filename for the render output
+    bpy.context.scene.render.filepath = os.path.join(script_dir, "render_outputs", output_filename)
+
+    render_scene(f"Region Highlight: {region_name}")
 
 def run_job_turntable_procedural():
     """Configures and runs the 'Turntable Procedural' job."""
@@ -187,14 +306,24 @@ def main():
         'wireframe_flyover': run_job_wireframe_flyover,
     }
 
-    if job_name == 'all':
+    # Handle the new region_highlight job, which has arguments
+    if job_name == 'region_highlight':
+        if len(args) == 4:
+            # Expected args: job_name, region_name, label_text, output_filename
+            _, region_name, label_text, output_filename = args
+            run_job_region_highlight(region_name, label_text, output_filename)
+        else:
+            print("Error: 'region_highlight' job requires 3 arguments: <region_name> <label_text> <output_filename>")
+            print(f"Received: {args[1:]}")
+            bpy.ops.wm.quit_blender()
+    elif job_name == 'all':
         print("Executing all render jobs...")
         run_all_jobs()
     elif job_name in jobs:
         jobs[job_name]()
     else:
         print(f"Error: Unknown job name '{job_name}'")
-        print("Available jobs: all, " + ", ".join(jobs.keys()))
+        print("Available jobs: all, region_highlight, " + ", ".join(jobs.keys()))
         # In background mode, this will cause Blender to exit with an error status
         bpy.ops.wm.quit_blender()
 
