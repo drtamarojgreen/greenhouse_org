@@ -1,0 +1,4 @@
+fbxloader
+numpy
+trimesh
+rtree
