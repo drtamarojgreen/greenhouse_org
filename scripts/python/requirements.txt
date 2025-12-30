@@ -1,4 +1,0 @@
-fbxloader
-numpy
-trimesh
-rtree
