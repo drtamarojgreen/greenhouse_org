@@ -86,9 +86,29 @@ Several new content pages were added to the website, all of which are built on t
 
 The website now includes several interactive simulation pages, which are loaded as external applications.
 
-*   **Neuro Page:** A simulation of neural activity, loaded as an external application.
-*   **Genetic Page:** A genetic simulation, loaded as an external application.
-*   **Models Page:** A 3D model visualization page that fetches its data from external JSON files.
+#### Models Page
+
+This page serves as the foundational 3D visualization framework for the other simulation pages. It uses the HTML5 Canvas 2D API and a custom 3D math library to render neural networks. This innovative approach allows for the creation of complex 3D scenes without relying on WebGL, ensuring broad browser compatibility.
+
+#### Neuro Page
+
+The Neuro page is a sophisticated 3D visualization of a neural network, built on the "Models" framework. Its goal is to provide a research-grade, "Scientific Digital" interface for exploring the brain's structure and function.
+
+**Key Features:**
+
+*   **Detailed Visuals:** Renders neurons, synapses, and neurotransmitters with a high degree of detail.
+*   **Dynamic Lighting:** Uses lighting effects, such as glows and depth fog, to enhance the 3D perception.
+*   **Interactive Exploration:** Allows users to explore the neural network with camera controls and zoom into specific connections.
+
+#### Genetic Page
+
+The Genetic page is a 3D visualization of a genetic algorithm, also built on the "Models" framework. It demonstrates how genetic traits influence the structure and function of neural networks.
+
+**Key Features:**
+
+*   **Multi-Scale View:** A Picture-in-Picture (PiP) system allows for simultaneous views of the DNA double helix, a specific gene, the affected brain region, and the resulting protein structure.
+*   **Gene Expression Visualization:** Shows how genes are expressed, with a "reading frame" box highlighting the active gene and an animation of a new mRNA strand being synthesized.
+*   **Interactive Simulation:** Users can observe the genetic algorithm in action as it evolves a neural network over generations.
 
 ## Conclusion
 
