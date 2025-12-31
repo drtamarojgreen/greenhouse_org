@@ -58,6 +58,7 @@ def setup_scene(fbx_path):
     bpy.ops.object.camera_add(location=(0, -12, 2))
     camera = bpy.context.active_object
     camera.name = "SceneCamera"
+    bpy.context.scene.camera = camera
 
     # Create and configure a light source
     bpy.ops.object.light_add(type='SUN', location=(5, 5, 10))
@@ -80,8 +81,11 @@ def configure_render_settings(output_folder, duration_frames, file_format='PNG')
     """
     scene = bpy.context.scene
 
-    # Use Eevee for faster rendering and effects like bloom
-    scene.render.engine = 'BLENDER_EEVEE'
+    # Use Cycles for better stability on CPU-only environments
+    scene.render.engine = 'CYCLES'
+    scene.cycles.device = 'CPU'
+    scene.cycles.samples = 32
+    scene.cycles.preview_samples = 16
 
     # Set output resolution and frame rate
     scene.render.resolution_x = 1280
@@ -100,7 +104,7 @@ def configure_render_settings(output_folder, duration_frames, file_format='PNG')
     scene.render.image_settings.file_format = file_format
     if file_format == 'FFMPEG':
         scene.render.image_settings.color_mode = 'RGB'
-    scene.render.ffmpeg.format = "MATROSKA"  # Changed to MKV container
+    scene.render.ffmpeg.format = "MKV"  # Changed to MKV container
     scene.render.ffmpeg.codec = "H264"      # Using H.264 codec
     scene.render.ffmpeg.constant_rate_factor = 'MEDIUM'
 

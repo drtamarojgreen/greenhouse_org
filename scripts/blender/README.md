@@ -25,6 +25,15 @@ The suite is modular, allowing for easy extension and customization of camera mo
     - `create_wireframe_overlay`: Adds a wireframe modifier and material.
     - `apply_glowing_material`: applies an emissive, glowing shader.
 
+-   `brain_model.py`
+    Fetches JSON data from the project's endpoints (`models_brain.json`, `models_synapses.json`) and constructs 3D Blender meshes for brain regions and synapses. It handles:
+    - Downloading data from the configured URLs.
+    - Creating polygon meshes from vertex data.
+    - creating and assigning materials based on fill styles.
+
+-   `environment_model.py`
+    Similar to `brain_model.py`, this script fetches `models_environment.json` to generate 3D representations of environmental elements associated with the brain model.
+
 -   `render_suite.py`
     The master Python script used to execute the rendering process inside Blender. It imports the modules for camera and visual effects, sets up the scene, and defines specific "render jobs":
     - `run_job_turntable_procedural`: Standard turntable with procedural texture.
@@ -48,6 +57,19 @@ The suite is modular, allowing for easy extension and customization of camera mo
 
 -   `render_all.sh`
     A specific wrapper script that runs `all` jobs sequentially.
+
+-   `render_disorder_highlight.sh`
+    A master orchestration script for rendering animations related to specific mental health disorders. It takes a configuration file (e.g., `disorder_configs/depression.conf`) as input, parses the regions to highlight, and iteratively runs Blender jobs for each region.
+
+-   `run_blender_region_job.sh`
+    A worker script used by `render_disorder_highlight.sh`. It executes a single Blender instance to render a specific "region highlight" job for a given region name and label text.
+
+### Configuration Files
+
+-   `disorder_configs/`
+    This directory contains `.conf` files that define which brain regions are relevant to specific disorders.
+    -   Format: Bash-sourceable files defining variables like `DISORDER_NAME` and `REGIONS` (a comma-separated list of `RegionName|LabelText` pairs).
+    -   Example (`depression.conf`): `REGIONS="Hippocampus|Memory Processing,Amygdala|Emotional Response"`
 
 ### Assets
 
@@ -116,6 +138,17 @@ The individual scripts are wrappers around the master `run_blender_job.sh` scrip
     ./run_blender_job.sh zoom_glow
     ```
 -   Available job names: `turntable_procedural`, `zoom_glow`, `wireframe_flyover`, `all`.
+
+**4. Rendering Disorder Highlights:**
+
+To render a batch of animations highlighting regions associated with a disorder:
+
+1.  Ensure a configuration file exists in `disorder_configs/` (e.g., `depression.conf`).
+2.  Run the master script with the config path:
+    ```bash
+    ./render_disorder_highlight.sh disorder_configs/depression.conf
+    ```
+3.  The script will generate individual video files for each region (e.g., `depression_hippocampus.mkv`, `depression_amygdala.mkv`) in the `render_outputs/` directory.
 
 ### Monitoring and Output
 

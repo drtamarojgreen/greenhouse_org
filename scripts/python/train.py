@@ -14,13 +14,6 @@ def softmax(x):
 def cross_entropy_loss(y_pred, y_true):
     """
     Computes the cross-entropy loss.
-
-    Args:
-        y_pred (np.ndarray): Predicted probabilities, shape (N, K).
-        y_true (np.ndarray): True labels, shape (N,).
-
-    Returns:
-        float: The cross-entropy loss.
     """
     m = y_true.shape[0]
     p = softmax(y_pred)
@@ -31,14 +24,6 @@ def cross_entropy_loss(y_pred, y_true):
 def gcn_forward(adj, features, weights):
     """
     Performs the forward pass for a single GCN layer.
-
-    Args:
-        adj (scipy.sparse.csr_matrix): Normalized adjacency matrix.
-        features (np.ndarray): Input features for the layer.
-        weights (np.ndarray): Weight matrix for the layer.
-
-    Returns:
-        np.ndarray: Output features of the layer.
     """
     return adj.dot(features).dot(weights)
 
@@ -46,13 +31,18 @@ def relu(x):
     """ReLU activation function."""
     return np.maximum(0, x)
 
+def dropout(x, drop_prob):
+    """
+    Inverted dropout.
+    """
+    if drop_prob == 0:
+        return x, None
+    mask = (np.random.rand(*x.shape) > drop_prob) / (1.0 - drop_prob)
+    return x * mask, mask
+
 def train(data_dir, model_dir):
     """
     Loads preprocessed data, builds and trains the GNN model.
-
-    Args:
-        data_dir (str): Directory containing the .npy files.
-        model_dir (str): Directory to save the trained model weights.
     """
     print("Loading training data...")
     try:
@@ -85,62 +75,138 @@ def train(data_dir, model_dir):
     adj_normalized = d_mat_inv_sqrt.dot(adj).dot(d_mat_inv_sqrt)
 
 
-    print("Initializing model and weights...")
+    print("Initializing model and weights (Dynamic)...")
     np.random.seed(train_config["random_seed"])
-    in_dim = features.shape[1]
+    
+    depth = train_config["gnn_depth"]
     hidden_dim = train_config["hidden_size"]
+    in_dim = features.shape[1]
     out_dim = len(region_config)
+    drop_prob = train_config.get("dropout", 0.0)
 
-    # Initialize weights
-    W1 = np.random.randn(in_dim, hidden_dim) * 0.01
-    W2 = np.random.randn(hidden_dim, hidden_dim) * 0.01
-    W3 = np.random.randn(hidden_dim, out_dim) * 0.01
+    # Xavier Initialization
+    def xavier_init(shape):
+        limit = np.sqrt(6.0 / (shape[0] + shape[1]))
+        return np.random.uniform(-limit, limit, size=shape)
 
-    print("Starting training...")
+    # Weights list: [W1, W2, ..., W_depth]
+    weights = []
+    
+    # First layer
+    weights.append(xavier_init((in_dim, hidden_dim)))
+    
+    # Hidden layers
+    for _ in range(depth - 2):
+        weights.append(xavier_init((hidden_dim, hidden_dim)))
+        
+    # Output layer
+    weights.append(xavier_init((hidden_dim, out_dim)))
+
+    print(f"Model Depth: {len(weights)} layers")
+
+    print("Starting training with Adam...")
+    # Adam parameters
+    beta1 = 0.9
+    beta2 = 0.999
+    eps = 1e-8
+    
+    # Adam states
+    m_weights = [np.zeros_like(w) for w in weights]
+    v_weights = [np.zeros_like(w) for w in weights]
+
     for epoch in range(train_config["epochs"]):
-        # Forward pass
-        H1 = relu(gcn_forward(adj_normalized, features, W1))
-        H2 = relu(gcn_forward(adj_normalized, H1, W2))
-        H3 = gcn_forward(adj_normalized, H2, W3) # Logits
+        t = epoch + 1
+        
+        # --- Forward Pass ---
+        activations = [features] # H0, H1, ...
+        dropout_masks = []
+        
+        # Hidden layers
+        curr_H = features
+        for i in range(len(weights) - 1):
+            W = weights[i]
+            # Z = A * H * W
+            Z = gcn_forward(adj_normalized, curr_H, W)
+            H = relu(Z)
+            
+            # Dropout
+            H, mask = dropout(H, drop_prob)
+            dropout_masks.append(mask)
+            
+            curr_H = H
+            activations.append(curr_H)
+            
+        # Output layer (No ReLU, No Dropout)
+        W_last = weights[-1]
+        logits = gcn_forward(adj_normalized, curr_H, W_last)
+        
+        # --- Loss ---
+        loss = cross_entropy_loss(logits, labels)
+        if epoch % 1 == 0:
+            print(f"Epoch {epoch+1:03d}/{train_config['epochs']}, Loss: {loss:.4f}")
 
-        # Compute loss
-        loss = cross_entropy_loss(H3, labels)
-        if (epoch + 1) % 10 == 0:
-            print(f"Epoch {epoch+1:03d}, Loss: {loss:.4f}")
-
-        # Backward pass (manual gradient computation)
-        # This is a simplified version and not a full backpropagation.
-        # For a real-world scenario, a more complete gradient calculation is needed.
-        # This is for demonstration purposes.
-
-        # Gradient of the loss with respect to the output H3
+        # --- Backward Pass ---
+        
         m = labels.shape[0]
-        p = softmax(H3)
+        p = softmax(logits)
         p[range(m), labels] -= 1
-        grad_H3 = p / m
+        grad_output = p / m # dL/dZ_last
+        
+        grads = [None] * len(weights)
+        
+        # Backprop Output Layer
+        # Z_last = A * H_last_hidden * W_last
+        # dL/dW_last = (A * H_last_hidden).T * dL/dZ_last
+        H_last_hidden = activations[-1]
+        AH_last = adj_normalized.dot(H_last_hidden)
+        grads[-1] = AH_last.T.dot(grad_output)
+        
+        # Error to propagate back
+        # dL/dH_last_hidden = A * (dL/dZ_last * W_last.T)
+        grad_H = adj_normalized.dot(grad_output.dot(W_last.T))
+        
+        # Backprop Hidden Layers (Reverse loop)
+        for i in range(len(weights) - 2, -1, -1):
+            # Apply dropout mask backwards
+            mask = dropout_masks[i]
+            if mask is not None:
+                grad_H = grad_H * mask #/ (1-drop_prob) is baked into forward mask
+            
+            # ReLU Derivative
+            H_prev = gcn_forward(adj_normalized, activations[i], weights[i]) # Recompute linear Z for simplicity or store it?
+            # Actually simpler: H_current = ReLU(Z), so grad is 0 where H_current <= 0
+            # activations[i+1] is the H output of this layer
+            grad_H[activations[i+1] <= 0] = 0
+            
+            # W gradient
+            # Z_i = A * H_in * W_i
+            H_in = activations[i]
+            AH_in = adj_normalized.dot(H_in)
+            grads[i] = AH_in.T.dot(grad_H)
+            
+            # Propagate to next lower H
+            # dL/dH_in = A * (grad_H * W_i.T)
+            if i > 0: # No need to calc grad for input features
+                grad_H = adj_normalized.dot(grad_H.dot(weights[i].T))
 
-        # Gradient for W3
-        grad_W3 = H2.T.dot(grad_H3)
-
-        # Backpropagate gradient to H2
-        grad_H2 = grad_H3.dot(W3.T)
-        grad_H2[H2 <= 0] = 0 # ReLU gradient
-
-        # Gradient for W2
-        grad_W2 = H1.T.dot(grad_H2)
-
-        # Backpropagate gradient to H1
-        grad_H1 = grad_H2.dot(W2.T)
-        grad_H1[H1 <= 0] = 0 # ReLU gradient
-
-        # Gradient for W1
-        grad_W1 = features.T.dot(grad_H1)
-
-        # Update weights
+        # --- Update Weights (Adam) ---
         lr = train_config["learning_rate"]
-        W1 -= lr * grad_W1
-        W2 -= lr * grad_W2
-        W3 -= lr * grad_W3
+        
+        for i in range(len(weights)):
+            g = grads[i]
+            mW = m_weights[i]
+            vW = v_weights[i]
+            
+            mW = beta1 * mW + (1 - beta1) * g
+            vW = beta2 * vW + (1 - beta2) * (g ** 2)
+            
+            m_hat = mW / (1 - beta1 ** t)
+            v_hat = vW / (1 - beta2 ** t)
+            
+            weights[i] -= lr * m_hat / (np.sqrt(v_hat) + eps)
+            
+            m_weights[i] = mW
+            v_weights[i] = vW
 
 
     print("Training complete.")
@@ -149,9 +215,15 @@ def train(data_dir, model_dir):
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
 
-    np.save(os.path.join(model_dir, "gcn_w1.npy"), W1)
-    np.save(os.path.join(model_dir, "gcn_w2.npy"), W2)
-    np.save(os.path.join(model_dir, "gcn_w3.npy"), W3)
+    # Save all layers: gcn_w1.npy, gcn_w2.npy, ...
+    for i, W in enumerate(weights):
+        np.save(os.path.join(model_dir, f"gcn_w{i+1}.npy"), W)
+        
+    # Save metadata about depth so inference knows what to load
+    with open(os.path.join(model_dir, "model_meta.json"), 'w') as f:
+        import json
+        json.dump({"depth": len(weights)}, f)
+        
     print(f"Model weights saved in {model_dir}")
 
 

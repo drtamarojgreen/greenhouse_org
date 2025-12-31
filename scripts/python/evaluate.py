@@ -24,9 +24,21 @@ def evaluate(data_dir, model_dir):
         features = np.load(os.path.join(data_dir, "features.npy"))
         labels = np.load(os.path.join(data_dir, "labels.npy"))
 
-        W1 = np.load(os.path.join(model_dir, "gcn_w1.npy"))
-        W2 = np.load(os.path.join(model_dir, "gcn_w2.npy"))
-        W3 = np.load(os.path.join(model_dir, "gcn_w3.npy"))
+        # Check for metadata
+        meta_path = os.path.join(model_dir, "model_meta.json")
+        if os.path.exists(meta_path):
+            with open(meta_path, 'r') as f:
+                meta = json.load(f)
+            depth = meta.get("depth", 3)
+        else:
+            print("Warning: model_meta.json not found, assuming depth=3")
+            depth = 3
+            
+        weights = []
+        for i in range(depth):
+            w_path = os.path.join(model_dir, f"gcn_w{i+1}.npy")
+            weights.append(np.load(w_path))
+
     except FileNotFoundError as e:
         print(f"Error: {e}. Make sure you have run preprocess.py and train.py first.")
         return
@@ -49,9 +61,15 @@ def evaluate(data_dir, model_dir):
     adj_normalized = d_mat_inv_sqrt.dot(adj).dot(d_mat_inv_sqrt)
 
     print("Performing forward pass...")
-    H1 = relu(gcn_forward(adj_normalized, features, W1))
-    H2 = relu(gcn_forward(adj_normalized, H1, W2))
-    logits = gcn_forward(adj_normalized, H2, W3)
+    curr_H = features
+    # Hidden layers
+    for i in range(len(weights) - 1):
+        W = weights[i]
+        curr_H = relu(gcn_forward(adj_normalized, curr_H, W))
+    
+    # Output layer
+    W_last = weights[-1]
+    logits = gcn_forward(adj_normalized, curr_H, W_last)
 
     # Get predictions
     predicted_labels = np.argmax(logits, axis=1)
