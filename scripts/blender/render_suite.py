@@ -85,7 +85,7 @@ def setup_scene(fbx_path):
 
     return model, camera
 
-def configure_render_settings(output_folder, duration_frames, file_format='PNG'):
+def configure_render_settings(output_folder, duration_frames, file_format='PNG', engine='WORKBENCH'):
     """
     Configures the global render settings for the scene.
 
@@ -94,18 +94,33 @@ def configure_render_settings(output_folder, duration_frames, file_format='PNG')
     :param file_format: The output file format ('PNG' for sequence, 'FFMPEG' for video).
     """
     scene = bpy.context.scene
-
-    # Use Workbench for maximum stability in headless/CPU-only mode
-    scene.render.engine = 'BLENDER_WORKBENCH'
     
-    # Enhancement for Workbench aesthetics
-    if hasattr(scene.display, "shading"):
-        scene.display.shading.light = 'MATCAP'
-        scene.display.shading.studio_light = 'clay_studio.exr' # Updated for Blender 4.x compatibility
-        scene.display.shading.show_cavity = True
-        scene.display.shading.cavity_type = 'BOTH'
-        scene.display.shading.cavity_ridge_factor = 2.0
-        scene.display.shading.cavity_valley_factor = 2.0
+    # Map engine names to internal identifiers
+    engine_map = {
+        'WORKBENCH': 'BLENDER_WORKBENCH',
+        'EEVEE': 'BLENDER_EEVEE_NEXT',
+        'EEVEE_NEXT': 'BLENDER_EEVEE_NEXT',
+        'CYCLES': 'CYCLES'
+    }
+    
+    target_engine = engine_map.get(engine.upper(), 'BLENDER_EEVEE_NEXT')
+    
+    try:
+        scene.render.engine = target_engine
+    except:
+        # Final fallback if EEVEE_NEXT fails
+        scene.render.engine = 'BLENDER_WORKBENCH'
+    
+    # If Workbench is specifically being used
+    if scene.render.engine == 'BLENDER_WORKBENCH':
+        scene.render.engine = 'BLENDER_WORKBENCH'
+        if hasattr(scene.display, "shading"):
+            scene.display.shading.light = 'STUDIO'
+            scene.display.shading.color_type = 'OBJECT'
+            scene.display.shading.show_cavity = True
+            scene.display.shading.cavity_type = 'BOTH'
+            scene.display.shading.cavity_ridge_factor = 2.0
+            scene.display.shading.cavity_valley_factor = 2.0
 
     # Set output resolution and frame rate
     scene.render.resolution_x = 1280
@@ -296,11 +311,14 @@ def run_job_brain_tour(label_names):
     # Load the brain model and set up camera/light
     model, camera = setup_scene(base_fbx_path)
 
-    # Add the Greenhouse Logo
+    # Create the Greenhouse logo
     create_greenhouse_logo()
     
-    # Add Neuron Physics Simulation
-    neuron_physics.create_neuron_cloud(count=150, radius=6.0)
+    # User requested removal of "golf balls" (neuron cloud)
+    # neuron_physics.create_neuron_cloud(count=150, radius=6.0)
+    
+    # Dim the main brain model so highlights pop
+    model.color = (0.05, 0.05, 0.05, 1) # Dark charcoal
     neuron_physics.setup_neuron_materials()
 
     # Define file paths for the custom_animation script
@@ -321,7 +339,7 @@ def run_job_brain_tour(label_names):
         # 1. Configure initial render path (temp)
         temp_output_dir = os.path.join(script_dir, "render_outputs", "temp")
         os.makedirs(temp_output_dir, exist_ok=True)
-        configure_render_settings("temp", duration, file_format='FFMPEG')
+        configure_render_settings("temp", duration, file_format='FFMPEG', engine='WORKBENCH')
         
         # 2. Render the animation
         render_scene(f"Brain Tour: {', '.join(label_names)}")
@@ -433,7 +451,7 @@ def run_job_region_highlight(region_name, label_text, output_filename):
     output_folder_base = os.path.join(script_dir, "render_outputs")
     os.makedirs(output_folder_base, exist_ok=True) # Ensure the base directory exists
 
-    configure_render_settings("render_outputs", duration, file_format='FFMPEG')
+    configure_render_settings("render_outputs", duration, file_format='FFMPEG', engine='WORKBENCH')
 
     # Set the final filename for the render output
     bpy.context.scene.render.filepath = os.path.join(script_dir, "render_outputs", output_filename)
@@ -450,7 +468,7 @@ def run_job_turntable_procedural():
     vfx.apply_procedural_texture(model)
     duration = 120
     cam_anim.create_turntable_animation(camera, model, duration)
-    configure_render_settings("turntable_procedural", duration, file_format='FFMPEG')
+    configure_render_settings("turntable_procedural", duration, file_format='FFMPEG', engine='WORKBENCH')
     render_scene("Turntable Procedural")
     log_execution("turntable_procedural", start_time)
 
@@ -463,7 +481,7 @@ def run_job_zoom_glow():
     vfx.apply_glowing_material(model, color=(0.1, 0.5, 1.0), strength=15)
     duration = 90
     cam_anim.create_dolly_animation(camera, duration, start_distance=-15, end_distance=-6)
-    configure_render_settings("zoom_glow", duration, file_format='FFMPEG')
+    configure_render_settings("zoom_glow", duration, file_format='FFMPEG', engine='WORKBENCH')
     render_scene("Dolly Zoom Glow")
     log_execution("zoom_glow", start_time)
 
@@ -477,7 +495,7 @@ def run_job_wireframe_flyover():
     vfx.create_wireframe_overlay(model, thickness=0.015)
     duration = 150
     cam_anim.create_pitch_animation(camera, duration, angle_degrees=15)
-    configure_render_settings("wireframe_flyover", duration, file_format='FFMPEG')
+    configure_render_settings("wireframe_flyover", duration, file_format='FFMPEG', engine='WORKBENCH')
     render_scene("Wireframe Flyover")
     log_execution("wireframe_flyover", start_time)
 

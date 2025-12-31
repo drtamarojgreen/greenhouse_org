@@ -157,6 +157,78 @@ def apply_neon_glow(obj, color=(0.1, 1.0, 1.0), strength=20.0, material_name="Ne
     # Setup Compositon for the 'Neon' look if not already done
     setup_neon_compositor()
 
+def setup_highlight_material(obj, region_names, base_color=(0.2, 0.2, 0.2), highlight_color=(1.0, 0.1, 0.1)):
+    """
+    Sets up a material that can highlight specific regions based on vertex groups.
+    Creates one emission node per region, masked by an attribute node.
+    """
+    mat_name = "BrainHighlightMaterial"
+    if mat_name in bpy.data.materials:
+        mat = bpy.data.materials[mat_name]
+    else:
+        mat = bpy.data.materials.new(name=mat_name)
+    
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    nodes.clear()
+    
+    # Base Shader (Principled BSDF)
+    output = nodes.new(type='ShaderNodeOutputMaterial')
+    bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    bsdf.inputs['Base Color'].default_value = (*base_color, 1)
+    bsdf.inputs['Roughness'].default_value = 0.3
+    
+    # Current "Mix" output
+    last_node = bsdf
+    
+    # Add Emission nodes for each region
+    for region in region_names:
+        safe_name = region.replace(" ", "_")
+        
+        # Emission node
+        emit = nodes.new(type='ShaderNodeEmission')
+        emit.name = f"Emit_{safe_name}"
+        emit.label = f"Highlight {region}"
+        
+        # Add a procedural texture to the emission to make it "textured"
+        noise = nodes.new(type='ShaderNodeTexNoise')
+        noise.inputs['Scale'].default_value = 50.0
+        noise.inputs['Detail'].default_value = 15.0
+        
+        mix_col = nodes.new(type='ShaderNodeMix')
+        mix_col.data_type = 'RGBA'
+        mix_col.blend_type = 'MULTIPLY'
+        mix_col.inputs[0].default_value = 0.5 # Mix factor
+        
+        links.new(noise.outputs['Color'], mix_col.inputs[6]) # A
+        mix_col.inputs[7].default_value = (*highlight_color, 1) # B
+        
+        links.new(mix_col.outputs[2], emit.inputs['Color'])
+        emit.inputs['Strength'].default_value = 0.0 # Start off
+        
+        # Mask Attribute (Vertex Group)
+        attr = nodes.new(type='ShaderNodeAttribute')
+        attr.attribute_name = f"VG_{safe_name}"
+        
+        # Mix Shader
+        mix = nodes.new(type='ShaderNodeMixShader')
+        links.new(attr.outputs['Fac'], mix.inputs['Fac'])
+        links.new(last_node.outputs[0], mix.inputs[1])
+        links.new(emit.outputs[0], mix.inputs[2])
+        
+        last_node = mix
+
+    links.new(last_node.outputs[0], output.inputs['Surface'])
+    
+    # Assign material
+    if obj.data.materials:
+        obj.data.materials[0] = mat
+    else:
+        obj.data.materials.append(mat)
+    
+    return mat
+
 def setup_neon_compositor():
     """
     Sets up the compositor nodes for a glare/bloom effect.
