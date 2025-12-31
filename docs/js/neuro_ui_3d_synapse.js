@@ -351,7 +351,7 @@
             };
 
             // Draw Pre-synaptic (Top) - Gold (Axonal)
-            drawMesh(synapseMeshes.pre, -20, '#FFD700');
+            drawMesh(synapseMeshes.pre, 0, '#FFD700'); // Offset 0, mesh is already at -115 to -25
 
             // Draw Synaptic Cleft (Blue rectangular box between synapses)
             this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
@@ -385,14 +385,14 @@
 
             // Draw Axon (Gold) - Up
             // Connects to neck at -115
-            drawShaft(-135, -1000, '#FFD700');
+            drawShaft(-115, -1000, '#FFD700');
 
             // Draw Post-synaptic (Bottom) - Silver/Blue (Dendritic)
-            drawMesh(synapseMeshes.post, 20, '#B0C4DE');
+            drawMesh(synapseMeshes.post, 0, '#B0C4DE'); // Offset 0, mesh is already at 25 to 115
 
             // Draw Dendrite (Silver) - Down
             // Connects to neck at 115
-            drawShaft(135, 1000, '#B0C4DE');
+            drawShaft(115, 1000, '#B0C4DE');
 
             // Initialize Synapse Details (Vesicles, Mitochondria) if not present
             if (!connection.synapseDetails) {
@@ -420,7 +420,7 @@
 
             // Draw Internal Structures (Projected)
             const drawInternal = (obj, type) => {
-                const p = GreenhouseModels3DMath.project3DTo2D(obj.x, obj.y + (type === 'post' ? 80 : -80), obj.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                const p = GreenhouseModels3DMath.project3DTo2D(obj.x, obj.y + (type === 'post' ? 60 : -60), obj.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                 if (p.scale > 0) {
                     if (type === 'vesicle') {
                         const size = 3 * p.scale;
@@ -457,13 +457,13 @@
             ctx.fillStyle = '#FFD700'; // Gold for Pre
 
             // Project label positions
-            const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -120, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -100, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (preLabelPos.scale > 0) {
                 ctx.fillText("Pre-Synaptic Terminal", preLabelPos.x, preLabelPos.y);
             }
 
             ctx.fillStyle = '#87CEEB'; // SkyBlue for Post
-            const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 120, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 100, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (postLabelPos.scale > 0) {
                 ctx.fillText("Post-Synaptic Terminal", postLabelPos.x, postLabelPos.y);
             }
@@ -566,7 +566,7 @@
         drawSynapticCleft(ctx, x, y, w, h, synapseCamera) {
             // Cleft dimensions
             const cleftWidth = 120;
-            const cleftHeight = 40; // Very thin
+            const cleftHeight = 2; // Very thin
             const cleftDepth = 120;
             const cleftY = 0; // Position at Y=0 (between pre at -25 and post at +25)
 
