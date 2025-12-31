@@ -334,8 +334,8 @@
                     if (color === '#FFD700') { r = 255; g = 215; b = 0; } // Gold
                     else if (color === '#B0C4DE') { r = 176; g = 196; b = 222; } // Silver
 
-                    const ambient = 0.3;
-                    const intensity = ambient + f.diffuse * 0.7 + f.specular * 0.6;
+                    const ambient = 0.4;
+                    const intensity = ambient + f.diffuse * 0.6 + f.specular * 0.4;
 
                     const litR = Math.min(255, r * intensity + f.specular * 255);
                     const litG = Math.min(255, g * intensity + f.specular * 255);
@@ -354,7 +354,8 @@
             drawMesh(synapseMeshes.pre, 0, '#FFD700'); // Offset 0, mesh is already at -115 to -25
 
             // Draw Synaptic Cleft (Blue rectangular box between synapses)
-            this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
+            // this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
+            this.drawSynapticCleftGradient(ctx, x, y, w, h, synapseCamera);
 
             // Draw Axon Shaft (Extending Upwards)
             const drawShaft = (startY, endY, color) => {
@@ -523,7 +524,7 @@
                 p.z += (Math.random() - 0.5) * 1.5; // Random jitter Z
                 p.y += 0.5 + (Math.random() - 0.5) * 0.2; // Drift down with variation
 
-                p.life -= 0.005; // Slower fade for longer life
+                p.life -= 0.003;
 
                 const proj = GreenhouseModels3DMath.project3DTo2D(p.x, p.y, p.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                 if (proj.scale > 0 && p.life > 0) {
@@ -543,7 +544,7 @@
                     // Color change on binding (Yellow -> Green)
                     ctx.fillStyle = p.hasBound ? `rgba(50, 255, 50, ${alpha})` : `rgba(255, 255, 100, ${alpha})`;
                     ctx.beginPath();
-                    ctx.arc(proj.x + x, proj.y + y, 3 * proj.scale, 0, Math.PI * 2);
+                    ctx.arc(proj.x + x, proj.y + y, 2.5 * proj.scale, 0, Math.PI * 2);
                     ctx.fill();
                 }
             });
@@ -683,6 +684,41 @@
                     }
                 });
             });
+        },
+
+        drawSynapticCleftGradient(ctx, x, y, w, h, synapseCamera) {
+            // Define the top and bottom of the cleft in 3D space
+            const cleftTopY = -25;
+            const cleftBottomY = 25;
+
+            // Project the center points of the top and bottom planes of the cleft
+            const pTop = GreenhouseModels3DMath.project3DTo2D(0, cleftTopY, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            const pBottom = GreenhouseModels3DMath.project3DTo2D(0, cleftBottomY, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+
+            if (pTop.scale > 0 && pBottom.scale > 0) {
+                // Create a vertical gradient across the entire PiP view, centered on the cleft
+                const gradient = ctx.createLinearGradient(x + w / 2, y, x + w / 2, y + h);
+
+                // Calculate the screen positions of the cleft top and bottom
+                const screenTop = (pTop.y / h);
+                const screenBottom = (pBottom.y / h);
+                const screenMid = (screenTop + screenBottom) / 2;
+
+                // Define gradient stops
+                const hazeColor = "rgba(173, 216, 230, 0.15)"; // Light blue haze
+
+                gradient.addColorStop(0, "rgba(0,0,0,0)");
+                gradient.addColorStop(Math.max(0, screenTop - 0.05), "rgba(0,0,0,0)");
+                gradient.addColorStop(screenTop, hazeColor);
+                gradient.addColorStop(screenBottom, hazeColor);
+                gradient.addColorStop(Math.min(1, screenBottom + 0.05), "rgba(0,0,0,0)");
+                gradient.addColorStop(1, "rgba(0,0,0,0)");
+
+                ctx.save();
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x, y, w, h);
+                ctx.restore();
+            }
         }
     };
 
