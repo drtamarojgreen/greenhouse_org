@@ -923,25 +923,16 @@
                 const length = 90; // 115 - 25
                 const neckRadius = 15;
 
-                // Surge Function Parameters (Log-Normal / Gamma approximation)
-                // r(x) = neck + A * x^k * e^(-bx)
-                // Peak at x=30, Amplitude adds ~30 to radius
-                const k = 2;
-                const b = 0.066;
-                const A = 0.25;
-
                 for (let i = 0; i <= rings; i++) {
-                    const u = i / rings; // 0 to 1
-                    const xVal = u * length; // Position along axis (0 to 90)
+                    const u = i / rings; // 0 (neck) to 1 (face)
+                    const xVal = u * length; // Position along axis for mapping
 
-                    // Radius Profile r(x)
-                    let r = neckRadius + A * Math.pow(xVal, k) * Math.exp(-b * xVal);
-
-                    // Face Rounding (Superellipse Taper at the end)
-                    if (u > 0.85) {
-                        const t = (u - 0.85) / 0.15;
-                        r *= Math.sqrt(1 - t * t); // Circular cap rounding
-                    }
+                    // Vase profile function for a more realistic shape
+                    const faceRadius = 40;
+                    const bulgeAmplitude = 25;
+                    const parabolicFlare = (faceRadius - neckRadius) * Math.pow(u, 1.5);
+                    const centralBulge = bulgeAmplitude * Math.sin(u * Math.PI);
+                    let r = neckRadius + parabolicFlare + centralBulge;
 
                     // 3D Generation: Polar Rotation around X-axis (Model Space)
                     // Then mapped to World Space (Y-axis aligned)
