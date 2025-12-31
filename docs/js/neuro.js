@@ -1,4 +1,4 @@
-You // docs/js/neuro.js
+    // docs/js/neuro.js
     // Loader for Neuro Simulation Application
     // Modeled after models.js
 
