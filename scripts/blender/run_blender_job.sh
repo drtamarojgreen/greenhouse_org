@@ -45,10 +45,10 @@ echo "Starting Blender job: $JOB_NAME"
 echo "Using script: $RENDER_SUITE_PATH"
 echo "----------------------------------------"
 
-# Run Blender in the background, passing the Python script and the job name.
+# Run Blender in the background, passing the Python script and all arguments.
 # The '--' separator is crucial: it tells Blender to pass the subsequent arguments
 # to the Python script instead of interpreting them itself.
-$BLENDER_CMD -b -P "$RENDER_SUITE_PATH" -- "$JOB_NAME"
+$BLENDER_CMD -b -P "$RENDER_SUITE_PATH" -- "$JOB_NAME" "${@:2}"
 
 # Check the exit code of the Blender command.
 EXIT_CODE=$?

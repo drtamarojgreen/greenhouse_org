@@ -4,6 +4,7 @@ Evaluates the trained GNN model.
 import os
 import numpy as np
 from scipy import sparse
+import json
 from config import get_region_config
 
 # We can reuse these functions from the training script

@@ -96,9 +96,11 @@ def apply_glowing_material(obj, material_name="GlowingBrain", color=(1, 0.5, 0),
     :param color: The RGB color of the emission.
     :param strength: The strength of the emission.
     """
-    # Enable Bloom for the Eevee render engine
-    if bpy.context.scene.render.engine == 'BLENDER_EEVEE':
-        bpy.context.scene.eevee.use_bloom = True
+    # Enable Bloom for the Eevee render engine (Eevee Next in 4.2+)
+    if bpy.context.scene.render.engine in ['BLENDER_EEVEE', 'BLENDER_EEVEE_NEXT']:
+        # In 4.2+, bloom is part of the Raytracing/Post Process settings or just automatic
+        if hasattr(bpy.context.scene, "eevee"):
+            bpy.context.scene.eevee.use_bloom = True
 
     # Create a new material
     mat = bpy.data.materials.new(name=material_name)
@@ -122,3 +124,59 @@ def apply_glowing_material(obj, material_name="GlowingBrain", color=(1, 0.5, 0),
         obj.data.materials[0] = mat
     else:
         obj.data.materials.append(mat)
+
+def apply_neon_glow(obj, color=(0.1, 1.0, 1.0), strength=20.0, material_name="NeonGlow"):
+    """
+    Applies a neon-like glowing material to an object.
+    
+    :param obj: The object to apply the material to.
+    :param color: The RGB color for the glow.
+    :param strength: The emission strength.
+    :param material_name: The name for the material.
+    """
+    # Create the material
+    mat = bpy.data.materials.new(name=material_name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    nodes.clear()
+    
+    output = nodes.new(type='ShaderNodeOutputMaterial')
+    emission = nodes.new(type='ShaderNodeEmission')
+    
+    emission.inputs['Color'].default_value = (*color, 1)
+    emission.inputs['Strength'].default_value = strength
+    
+    mat.node_tree.links.new(emission.outputs['Emission'], output.inputs['Surface'])
+    
+    # Assign material
+    if obj.data.materials:
+        obj.data.materials[0] = mat
+    else:
+        obj.data.materials.append(mat)
+    
+    # Setup Compositon for the 'Neon' look if not already done
+    setup_neon_compositor()
+
+def setup_neon_compositor():
+    """
+    Sets up the compositor nodes for a glare/bloom effect.
+    """
+    bpy.context.scene.use_nodes = True
+    tree = bpy.context.scene.node_tree
+    nodes = tree.nodes
+    
+    # Clear nodes
+    for node in nodes:
+        nodes.remove(node)
+        
+    render_layers = nodes.new(type='CompositorNodeRLayers')
+    composite = nodes.new(type='CompositorNodeComposite')
+    glare = nodes.new(type='CompositorNodeGlare')
+    
+    glare.glare_type = 'FOG_GLOW'
+    glare.quality = 'HIGH'
+    glare.size = 8
+    glare.threshold = 0.5
+    
+    tree.links.new(render_layers.outputs['Image'], glare.inputs['Image'])
+    tree.links.new(glare.outputs['Image'], composite.inputs['Image'])

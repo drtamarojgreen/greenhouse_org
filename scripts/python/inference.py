@@ -41,28 +41,14 @@ def inference(fbx_path, model_dir, output_dir):
         print(f"Error: {e}. Make sure you have run train.py first.")
         return
 
-    print(f"Loading mesh from {fbx_path} for inference...")
+    print(f"Loading preprocessed data from {model_dir} for inference...")
     try:
-        mesh = trimesh.load(fbx_path, force='mesh')
+        vertices = np.load(os.path.join(model_dir, "vertices.npy"))
+        faces = np.load(os.path.join(model_dir, "faces.npy"))
+        features = np.load(os.path.join(model_dir, "features.npy"))
     except Exception as e:
-        print(f"Error loading mesh: {e}")
+        print(f"Error loading preprocessed data: {e}")
         return
-
-    print("Preprocessing mesh...")
-    vertices = np.array(mesh.vertices)
-    faces = np.array(mesh.faces)
-    vertex_normals = np.array(mesh.vertex_normals)
-
-    try:
-        mesh.add_attribute('curvature', mesh.curvature)
-        curvature = mesh.vertex_attributes['curvature']
-        if curvature.ndim == 1:
-            curvature = curvature.reshape(-1, 1)
-    except Exception as e:
-        print(f"Could not compute curvature, using zeros instead: {e}")
-        curvature = np.zeros((len(vertices), 1))
-
-    features = np.hstack([vertices, vertex_normals, curvature])
 
     print("Constructing graph for inference...")
     num_vertices = len(vertices)
@@ -111,6 +97,11 @@ def inference(fbx_path, model_dir, output_dir):
         json.dump(predictions, f, indent=2)
 
     print(f"Predicted regions saved to {output_path}")
+
+    # Save raw labels for Blender
+    labels_pred_path = os.path.join(output_dir, "labels_pred.npy")
+    np.save(labels_pred_path, predicted_labels)
+    print(f"Predicted raw labels saved to {labels_pred_path}")
 
 if __name__ == "__main__":
     FBX_FILE = "scripts/blender/brain.fbx"

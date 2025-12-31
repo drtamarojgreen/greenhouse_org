@@ -17,6 +17,9 @@ if script_dir not in sys.path:
 try:
     import camera_animations as cam_anim
     import visual_effects as vfx
+    import custom_animation
+    import neuron_physics
+    import shutil
     print("Successfully imported custom modules.")
 except ImportError as e:
     print(f"Error: Could not import custom modules: {e}")
@@ -43,9 +46,15 @@ def setup_scene(fbx_path):
     :param fbx_path: Path to the .fbx model file.
     :return: The imported model object and the camera object.
     """
+    print("--- In setup_scene ---")
     # Import the FBX model, deselecting everything first
     bpy.ops.object.select_all(action='DESELECT')
+    print("Deselected all objects.")
+    
+    print(f"Attempting to import FBX: {fbx_path}")
     bpy.ops.import_scene.fbx(filepath=fbx_path)
+    print("FBX import call completed.")
+
     model = bpy.context.selected_objects[0]
     model.name = "BrainModel"
     print(f"Loaded model: {model.name}")
@@ -53,21 +62,26 @@ def setup_scene(fbx_path):
     # Center the model's geometry and position at the world origin
     bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
     model.location = (0, 0, 0)
+    print("Model centered and positioned.")
 
     # Create and configure the camera
     bpy.ops.object.camera_add(location=(0, -12, 2))
     camera = bpy.context.active_object
     camera.name = "SceneCamera"
     bpy.context.scene.camera = camera
+    print("Camera created.")
 
     # Create and configure a light source
     bpy.ops.object.light_add(type='SUN', location=(5, 5, 10))
     light = bpy.context.active_object
     light.name = "SceneLight"
     light.data.energy = 3.0
+    print("Light created.")
 
     # Make the camera track the model
     cam_anim.setup_camera_focus(camera, model)
+    print("Camera focus set.")
+    print("--- Exiting setup_scene ---")
 
     return model, camera
 
@@ -81,11 +95,17 @@ def configure_render_settings(output_folder, duration_frames, file_format='PNG')
     """
     scene = bpy.context.scene
 
-    # Use Cycles for better stability on CPU-only environments
-    scene.render.engine = 'CYCLES'
-    scene.cycles.device = 'CPU'
-    scene.cycles.samples = 32
-    scene.cycles.preview_samples = 16
+    # Use Workbench for maximum stability in headless/CPU-only mode
+    scene.render.engine = 'BLENDER_WORKBENCH'
+    
+    # Enhancement for Workbench aesthetics
+    if hasattr(scene.display, "shading"):
+        scene.display.shading.light = 'MATCAP'
+        scene.display.shading.studio_light = 'clay_studio.exr' # Updated for Blender 4.x compatibility
+        scene.display.shading.show_cavity = True
+        scene.display.shading.cavity_type = 'BOTH'
+        scene.display.shading.cavity_ridge_factor = 2.0
+        scene.display.shading.cavity_valley_factor = 2.0
 
     # Set output resolution and frame rate
     scene.render.resolution_x = 1280
@@ -97,8 +117,11 @@ def configure_render_settings(output_folder, duration_frames, file_format='PNG')
     scene.frame_end = duration_frames
 
     # Set output path
-    output_dir = os.path.join(script_dir, "render_outputs", output_folder)
-    scene.render.filepath = output_dir
+    output_temp_dir = os.path.join(script_dir, "render_outputs", output_folder)
+    os.makedirs(output_temp_dir, exist_ok=True)
+    # Use a fixed name 'render' to avoid frame number padding in multi-frame MKV if possible,
+    # though Blender often appends frame ranges (e.g., render0001-0250.mkv).
+    scene.render.filepath = os.path.join(output_temp_dir, "render") 
 
     # Set output format
     scene.render.image_settings.file_format = file_format
@@ -132,9 +155,20 @@ def apply_highlight_materials(target_object):
     highlight_mat.use_nodes = True
     bsdf = highlight_mat.node_tree.nodes.get('Principled BSDF')
     if bsdf:
-        bsdf.inputs['Emission'].default_value = (0.8, 0.05, 0.05, 1) # Bright Red
-        bsdf.inputs['Emission Strength'].default_value = 10.0
-        bsdf.inputs['Base Color'].default_value = (1, 0, 0, 1)
+        if 'Emission Color' in bsdf.inputs:
+            bsdf.inputs['Emission Color'].default_value = (0.8, 0.05, 0.05, 1)
+        elif 'Emission' in bsdf.inputs:
+            # Check if it's a color socket
+            socket = bsdf.inputs['Emission']
+            if hasattr(socket, "default_value"):
+                try: socket.default_value = (0.8, 0.05, 0.05, 1)
+                except: pass
+            
+        if 'Emission Strength' in bsdf.inputs:
+            bsdf.inputs['Emission Strength'].default_value = 10.0
+        
+        if 'Base Color' in bsdf.inputs:
+            bsdf.inputs['Base Color'].default_value = (1, 0, 0, 1)
 
     # Define the base material (dim and transparent)
     base_mat = bpy.data.materials.new(name="BaseMaterial")
@@ -189,6 +223,148 @@ def create_3d_text_label(text_content, target_object):
     print(f"Created 3D text: '{text_content}'")
     return text_obj
 
+def create_greenhouse_logo():
+    """
+    Creates a stylized 3D 'Greenhouse' logo in the scene.
+    """
+    print("Creating Greenhouse logo...")
+    # Create the text
+    bpy.ops.object.text_add(location=(8, 0, 8))
+    logo = bpy.context.active_object
+    logo.name = "GreenhouseLogo"
+    logo.data.body = "GREENHOUSE"
+    logo.data.extrude = 0.1
+    logo.data.bevel_depth = 0.02
+    
+    # Add a glowing green material
+    mat = bpy.data.materials.new(name="LogoMat")
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    nodes.clear()
+    output = nodes.new(type='ShaderNodeOutputMaterial')
+    emission = nodes.new(type='ShaderNodeEmission')
+    emission.inputs['Color'].default_value = (0.1, 0.8, 0.1, 1) # Greenhouse Green
+    emission.inputs['Strength'].default_value = 10.0
+    mat.node_tree.links.new(emission.outputs['Emission'], output.inputs['Surface'])
+    logo.data.materials.append(mat)
+    
+    # Position it nicely in the top-right corner of the view relative to the brain center
+    logo.rotation_euler[0] = math.radians(90)
+    logo.rotation_euler[2] = math.radians(180) # Face the camera
+    
+    return logo
+
+def run_custom_zoom_animation(label_name):
+    """
+    Configures and runs a custom zoom animation to a specified brain region.
+    """
+    start_time = time.time()
+    base_fbx_path = os.path.join(script_dir, "brain.fbx")
+    clean_scene()
+    
+    # Load the brain model and set up camera/light
+    model, camera = setup_scene(base_fbx_path)
+
+    # Define file paths for the custom_animation script
+    DATA_DIR = os.path.join(script_dir, '..', 'python')
+    REGION_MAP_FILE = os.path.join(DATA_DIR, "region_map.json")
+    LABELS_FILE = os.path.join(DATA_DIR, "labels.npy")
+    VERTICES_FILE = os.path.join(DATA_DIR, "vertices.npy")
+
+    # Call the custom animation creation function
+    custom_animation.create_zoom_to_label_animation(
+        label_name, DATA_DIR, REGION_MAP_FILE, LABELS_FILE, VERTICES_FILE
+    )
+    
+    # Configure render settings
+    duration = 300 # Hardcoded duration for now
+    output_folder = f"custom_zoom_{label_name.replace(' ', '_')}"
+    configure_render_settings(output_folder, duration, file_format='FFMPEG')
+    
+    # Render the animation
+    render_scene(f"Custom Zoom Animation to {label_name}")
+    log_execution(f"Custom Zoom Animation to {label_name}", start_time)
+
+def run_job_brain_tour(label_names):
+    """
+    Configures and runs a brain tour animation through multiple regions.
+    """
+    start_time = time.time()
+    base_fbx_path = os.path.join(script_dir, "brain.fbx")
+    clean_scene()
+    
+    # Load the brain model and set up camera/light
+    model, camera = setup_scene(base_fbx_path)
+
+    # Add the Greenhouse Logo
+    create_greenhouse_logo()
+    
+    # Add Neuron Physics Simulation
+    neuron_physics.create_neuron_cloud(count=150, radius=6.0)
+    neuron_physics.setup_neuron_materials()
+
+    # Define file paths for the custom_animation script
+    DATA_DIR = os.path.join(script_dir, '..', 'python')
+    REGION_MAP_FILE = os.path.join(DATA_DIR, "region_map.json")
+    VERTICES_FILE = os.path.join(DATA_DIR, "vertices.npy")
+    
+    # Use predicted labels if they exist
+    LABELS_PRED = os.path.join(DATA_DIR, "labels_pred.npy")
+    LABELS_FILE = LABELS_PRED if os.path.exists(LABELS_PRED) else os.path.join(DATA_DIR, "labels.npy")
+
+    # Call the custom animation creation function with default modifiers
+    duration = custom_animation.create_brain_tour_animation(
+        label_names, DATA_DIR, REGION_MAP_FILE, LABELS_FILE, VERTICES_FILE
+    )
+    
+    if duration > 0:
+        # 1. Configure initial render path (temp)
+        temp_output_dir = os.path.join(script_dir, "render_outputs", "temp")
+        os.makedirs(temp_output_dir, exist_ok=True)
+        configure_render_settings("temp", duration, file_format='FFMPEG')
+        
+        # 2. Render the animation
+        render_scene(f"Brain Tour: {', '.join(label_names)}")
+        
+        # 3. Rename and move to completed directory
+        now = datetime.now()
+        timestamp = now.strftime("%Y%m%d_%H%M")
+        region_pref = "_".join([n.replace(" ", "_") for n in label_names[:3]])
+        final_filename = f"{region_pref}_{timestamp}.mkv"
+        
+        # Use an absolute path for the completed directory
+        completed_dir = os.path.abspath(os.path.join(script_dir, "completed"))
+        os.makedirs(completed_dir, exist_ok=True)
+        print(f"Ensuring completed directory exists at: {completed_dir}")
+        
+        # Robust check: look ONLY in temp_output_dir first
+        print(f"Post-render: Searching for animations in {temp_output_dir}")
+        mkv_files = [f for f in os.listdir(temp_output_dir) if f.endswith(".mkv")]
+        
+        if mkv_files:
+            # Sort by creation time to find the newest in this specific folder
+            mkv_files.sort(key=lambda x: os.path.getctime(os.path.join(temp_output_dir, x)), reverse=True)
+            source_path = os.path.join(temp_output_dir, mkv_files[0])
+            dest_path = os.path.join(completed_dir, final_filename)
+            print(f"Moving found render: {source_path} -> {dest_path}")
+            shutil.move(source_path, dest_path)
+            print(f"Move successful. Final video: {dest_path}")
+        else:
+            print(f"Warning: No valid MKV found in {temp_output_dir}.")
+            # Fallback search in all render_outputs just in case
+            all_render_outputs = os.path.abspath(os.path.join(script_dir, "render_outputs"))
+            for root, dirs, files in os.walk(all_render_outputs):
+                if root == temp_output_dir: continue # Already checked
+                for f in files:
+                    if f.endswith(".mkv") and os.path.getsize(os.path.join(root, f)) > 0:
+                        print(f"Found fallback in {root}: {f}")
+
+        log_execution(f"Brain Tour", start_time)
+        # Skip rmtree for now to allow manual debugging if it fails
+        # try: shutil.rmtree(temp_output_dir)
+        # except: pass
+
+
 def log_execution(job_name, start_time):
     """
     Logs the execution time of a job to a file.
@@ -218,7 +394,11 @@ def render_scene(job_name):
     output_path = bpy.context.scene.render.filepath
     print(f"--- Starting Render Job: {job_name} ---")
     print(f"Outputting {bpy.context.scene.frame_end} frames to: {output_path}")
+    
+    print("Calling bpy.ops.render.render(animation=True)...")
     bpy.ops.render.render(animation=True)
+    print("bpy.ops.render.render(animation=True) call completed.")
+
     print(f"--- Finished Render Job: {job_name} ---")
 
 def run_job_region_highlight(region_name, label_text, output_filename):
@@ -339,6 +519,7 @@ def main():
         'turntable_procedural': run_job_turntable_procedural,
         'zoom_glow': run_job_zoom_glow,
         'wireframe_flyover': run_job_wireframe_flyover,
+        'custom_zoom_animation': run_custom_zoom_animation,
     }
 
     # Handle the new region_highlight job, which has arguments
@@ -351,6 +532,22 @@ def main():
             print("Error: 'region_highlight' job requires 3 arguments: <region_name> <label_text> <output_filename>")
             print(f"Received: {args[1:]}")
             bpy.ops.wm.quit_blender()
+    elif job_name == 'custom_zoom_animation':
+        if len(args) == 2:
+            _, label_name = args
+            run_custom_zoom_animation(label_name)
+        else:
+            print("Error: 'custom_zoom_animation' job requires 1 argument: <label_name>")
+            print(f"Received: {args[1:]}")
+            bpy.ops.wm.quit_blender()
+    elif job_name == 'brain_tour':
+        if len(args) >= 2:
+            # Expected args: job_name, label1, label2, ...
+            label_names = args[1:]
+            run_job_brain_tour(label_names)
+        else:
+            print("Error: 'brain_tour' job requires at least 1 region name.")
+            bpy.ops.wm.quit_blender()
     elif job_name == 'all':
         print("Executing all render jobs...")
         run_all_jobs()
@@ -358,7 +555,7 @@ def main():
         jobs[job_name]()
     else:
         print(f"Error: Unknown job name '{job_name}'")
-        print("Available jobs: all, region_highlight, " + ", ".join(jobs.keys()))
+        print("Available jobs: all, region_highlight, custom_zoom_animation, " + ", ".join(jobs.keys()))
         # In background mode, this will cause Blender to exit with an error status
         bpy.ops.wm.quit_blender()
 
