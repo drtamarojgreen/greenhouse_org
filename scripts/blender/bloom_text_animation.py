@@ -156,6 +156,6 @@ if __name__ == "__main__":
         print(f"Saved .blend file to: {args.save_blend}")
 
     # Optional: Render Animation (can be triggered from a test or another script)
-    # print("Starting animation render...")
-    # bpy.ops.render.render(animation=True)
-    # print("Render complete.")
+    print("Starting animation render...")
+    bpy.ops.render.render(animation=True)
+    print("Render complete.")

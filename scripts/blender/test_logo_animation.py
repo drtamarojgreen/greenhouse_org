@@ -1,56 +1,114 @@
-
-import unittest
-import subprocess
+import bpy
 import os
-import tempfile
+import sys
+import math
+import argparse
 
-class TestLogoAnimation(unittest.TestCase):
+def create_logo_test_animation(output_path, frame_count=5):
+    """
+    Creates and renders a short test animation with the Greenhouse logo
+    on a plane and a camera moving on a path.
+    """
+    try:
+        # --- 1. Scene Setup ---
+        bpy.ops.object.select_all(action='SELECT')
+        bpy.ops.object.delete(use_global=False)
+        scene = bpy.context.scene
 
-    def setUp(self):
-        """Set up the test environment using a temporary directory."""
-        self.base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-        # Create a temporary directory that will be automatically cleaned up
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp_dir.cleanup)
+        # --- 2. Render Settings ---
+        scene.render.engine = 'CYCLES'
+        scene.cycles.samples = 128
+        scene.render.resolution_x = 1280
+        scene.render.resolution_y = 720
+        scene.frame_start = 1
+        scene.frame_end = frame_count
+        scene.render.filepath = output_path
+        scene.render.image_settings.file_format = 'FFMPEG'
+        scene.render.ffmpeg.format = 'MPEG4'
+        scene.render.ffmpeg.codec = 'H264'
 
-        # Define temporary file paths within the secure temporary directory
-        self.temp_svg_file = os.path.join(self.temp_dir.name, 'test_logo.svg')
-        self.temp_output_video = os.path.join(self.temp_dir.name, 'test_animation.mkv')
+        # --- 3. Add Background Plane with Logo ---
+        bpy.ops.mesh.primitive_plane_add(size=20, location=(0, 0, 0))
+        plane = bpy.context.active_object
+        plane.name = "LogoPlane"
 
-        # Create a simple dummy SVG for the test
-        dummy_svg_content = """<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="40" stroke="blue" stroke-width="4" fill="red" />
-</svg>"""
-        with open(self.temp_svg_file, 'w') as f:
-            f.write(dummy_svg_content)
+        mat = bpy.data.materials.new(name="LogoMaterial")
+        plane.data.materials.append(mat)
+        mat.use_nodes = True
+        nodes = mat.node_tree.nodes
+        links = mat.node_tree.links
+        nodes.clear()
 
-    def test_logo_animation_rendering(self):
-        """
-        Tests the rendering pipeline using a temporary SVG and command-line arguments.
-        """
-        render_script = os.path.join(self.base_dir, 'scripts', 'blender', 'render_logo_animation.py')
+        output = nodes.new(type='ShaderNodeOutputMaterial')
+        emission = nodes.new(type='ShaderNodeEmission')
+        tex_image = nodes.new(type='ShaderNodeTexImage')
+        
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        logo_path = os.path.join(script_dir, "..", "..", "docs", "images", "Greenhouse_Logo.png")
+        if os.path.exists(logo_path):
+            tex_image.image = bpy.data.images.load(logo_path)
 
-        command = [
-            'blender', '--background', '--python', render_script, '--',
-            '--input-svg', self.temp_svg_file,
-            '--output-mkv', self.temp_output_video
-        ]
+        links.new(tex_image.outputs['Color'], emission.inputs['Color'])
+        links.new(emission.outputs['Emission'], output.inputs['Surface'])
 
-        try:
-            result = subprocess.run(
-                command,
-                capture_output=True, text=True, timeout=300
-            )
-        except FileNotFoundError:
-            self.fail("Blender is not installed or not in the system's PATH.")
-        except subprocess.TimeoutExpired:
-            self.fail("Blender rendering process timed out.")
+        # UV unwrap the plane
+        bpy.context.view_layer.objects.active = plane
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.uv.unwrap()
+        bpy.ops.object.mode_set(mode='OBJECT')
 
-        self.assertEqual(result.returncode, 0, f"Blender rendering script failed with stderr:\n{result.stderr}")
+        # --- 4. Camera on a Path ---
+        bpy.ops.curve.primitive_bezier_circle_add(radius=15, location=(0, 0, 5))
+        path = bpy.context.active_object
 
-        # Verify the output
-        self.assertTrue(os.path.exists(self.temp_output_video), "Temporary MKV video file was not created.")
-        self.assertTrue(os.path.getsize(self.temp_output_video) > 0, "Temporary MKV video file is empty.")
+        bpy.ops.object.camera_add(location=(15, 0, 5))
+        camera = bpy.context.active_object
+        scene.camera = camera
+        
+        follow_path = camera.constraints.new(type='FOLLOW_PATH')
+        follow_path.target = path
+        
+        track_to = camera.constraints.new(type='TRACK_TO')
+        track_to.target = plane
+        track_to.track_axis = 'TRACK_NEGATIVE_Z'
+        track_to.up_axis = 'UP_Y'
 
-if __name__ == '__main__':
-    unittest.main()
+        path.data.path_duration = frame_count
+        
+        # --- 5. Lighting ---
+        bpy.ops.object.light_add(type='SUN', location=(5, 5, 10))
+        light = bpy.context.active_object
+        light.data.energy = 5.0
+
+        # --- 6. Render ---
+        print(f"Starting {frame_count}-frame test animation render...")
+        bpy.ops.render.render(animation=True)
+        print("Render complete.")
+        return (True, f"Successfully rendered to {output_path}")
+
+    except Exception as e:
+        return (False, f"An error occurred: {e}")
+
+
+if __name__ == "__main__":
+    argv = sys.argv
+    if "--" in argv:
+        argv = argv[argv.index("--") + 1:]
+    else:
+        argv = []
+
+    parser = argparse.ArgumentParser(description="Render a short test animation of a logo on a plane.")
+    parser.add_argument("--output-mp4", required=True, help="Path for the output MP4 file.")
+    args = parser.parse_args(argv)
+
+    output_dir = os.path.dirname(args.output_mp4)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    success, message = create_logo_test_animation(args.output_mp4)
+    if success:
+        print(message)
+    else:
+        print(message)
+        sys.exit(1)

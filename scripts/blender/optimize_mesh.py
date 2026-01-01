@@ -17,27 +17,34 @@ class MeshOptimizer(BaseOptimizer):
         if obj.type != 'MESH':
             return
 
-        print(f"Optimizing mesh: {obj.name}")
+        print(f"Optimizing mesh: {obj.name.encode('utf-8', errors='replace').decode('utf-8')}")
         
         # Ensure object is active and selected for operators
-        bpy.context.view_layer.objects.active = obj
+        context.view_layer.objects.active = obj
         obj.select_set(True)
 
-        # 1. Decimate
+        # 1. Add Modifiers
         ratio = self.config.get('decimate_ratio', 0.5)
         if ratio < 1.0:
-            mod = obj.modifiers.new(name="AutoDecimate", type='DECIMATE')
-            mod.ratio = ratio
-            # Apply the modifier
-            try:
-                bpy.ops.object.modifier_apply(modifier=mod.name)
-                print(f" - Decimated with ratio: {ratio}")
-            except Exception as e:
-                print(f" - Warning: Could not apply decimate to {obj.name}: {e}")
+            obj.modifiers.new(name="AutoDecimate", type='DECIMATE')
+            obj.modifiers["AutoDecimate"].ratio = ratio
 
-        # 2. Cleanup & Normalization
+        if self.config.get('triangulate', True):
+            obj.modifiers.new(name="Triangulate", type='TRIANGULATE')
+            
+        # 2. Apply all modifiers in order
+        for mod in list(obj.modifiers):
+            try:
+                context.view_layer.objects.active = obj
+                bpy.ops.object.modifier_apply(modifier=mod.name)
+                print(f" - Applied a modifier")
+            except Exception as e:
+                print(f" - Warning: Could not apply a modifier to {obj.name.encode('utf-8', errors='replace').decode('utf-8')}: {e}")
+                obj.modifiers.remove(mod) # Clean up failed modifier
+
+        # 3. Cleanup & Normalization
         try:
-            # Fix normals
+            context.view_layer.objects.active = obj
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.normals_make_consistent(inside=False)
@@ -45,17 +52,8 @@ class MeshOptimizer(BaseOptimizer):
             print(" - Normals recalculated.")
         except Exception as e:
             print(f" - Warning: Normals/Mode manipulation failed for {obj.name}: {e}")
-            if obj.mode != 'OBJECT':
+            if context.object.mode != 'OBJECT':
                 bpy.ops.object.mode_set(mode='OBJECT')
-        
-        # Triangulate
-        if self.config.get('triangulate', True):
-            try:
-                tri_mod = obj.modifiers.new(name="Triangulate", type='TRIANGULATE')
-                bpy.ops.object.modifier_apply(modifier=tri_mod.name)
-                print(" - Mesh triangulated.")
-            except Exception as e:
-                print(f" - Warning: Triangulation failed for {obj.name}: {e}")
 
     def post_process(self, context):
         # Remove unused mesh data

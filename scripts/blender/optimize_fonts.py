@@ -22,14 +22,28 @@ class FontOptimizer(BaseOptimizer):
         ]
         self.available_fallbacks = [f for f in self.fallback_fonts if os.path.exists(f)]
         self.replacement_font = None
+
+    def _ensure_fallback_font_loaded(self):
+        """
+        Loads the fallback font if it hasn't been loaded or has been cleared.
+        """
+        # Check if the font is already loaded and valid
+        if self.replacement_font and self.replacement_font.name in bpy.data.fonts:
+            return
+
         if self.available_fallbacks:
             try:
                 self.replacement_font = bpy.data.fonts.load(self.available_fallbacks[0])
                 print(f" - Loaded master fallback font: {self.replacement_font.name}")
             except Exception as e:
                 print(f" - Error loading fallback font: {e}")
+                self.replacement_font = None
+        else:
+            self.replacement_font = None
 
     def process(self, context, obj):
+        self._ensure_fallback_font_loaded()
+        
         if not self.replacement_font:
             return
 
@@ -64,9 +78,6 @@ class FontOptimizer(BaseOptimizer):
             if vfont.users == 0 and vfont.name != "Bfont":
                 bpy.data.fonts.remove(vfont)
         
-        if self.config.get('pack_fonts', True):
-            try:
-                bpy.ops.file.pack_all()
-                print(" - All assets packed.")
-            except:
-                pass
+        if self.config.get('pack_assets', True):
+            bpy.ops.file.pack_all()
+            print(" - All assets packed.")

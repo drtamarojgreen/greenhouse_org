@@ -26,19 +26,18 @@ def run_pipeline(source_dir, target_dir, config):
         os.makedirs(target_dir)
         print(f"Created target directory: {target_dir}")
 
-    # Initialize optimizers
-    optimizers = [
-        MeshOptimizer(config),
-        TextureOptimizer(config),
-        FontOptimizer(config)
-    ]
-
     # Find all .blend and .fbx files
     files = [f for f in os.listdir(source_dir) if f.lower().endswith(('.blend', '.fbx'))]
     
     print(f"Found {len(files)} files to optimize in {source_dir}")
 
     for filename in files:
+        # Initialize optimizers for each file to ensure a clean state
+        optimizers = [
+            MeshOptimizer(config),
+            TextureOptimizer(config),
+            FontOptimizer(config)
+        ]
         start_time = time.time()
         source_path = os.path.join(source_dir, filename)
         target_path = os.path.join(target_dir, filename)
@@ -89,7 +88,8 @@ def main():
     config = {
         'decimate_ratio': parsed_args.decimate,
         'max_texture_res': parsed_args.res,
-        'triangulate': True
+        'triangulate': True,
+        'pack_assets': False
     }
 
     run_pipeline(parsed_args.source, parsed_args.target, config)

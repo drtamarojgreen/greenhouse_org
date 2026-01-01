@@ -95,11 +95,11 @@ def setup_scene(fbx_path):
 
 def configure_render_settings(output_folder, duration_frames):
     scene = bpy.context.scene
-    scene.render.engine = 'BLENDER_WORKBENCH'
-    if hasattr(scene.display, "shading"):
-        scene.display.shading.light = 'STUDIO'
-        scene.display.shading.color_type = 'OBJECT'
-        scene.display.shading.show_cavity = True
+    scene.render.engine = 'CYCLES'
+    scene.cycles.samples = 128
+    scene.cycles.diffuse_bounces = 3
+    scene.cycles.glossy_bounces = 3
+    scene.cycles.transparent_max_bounces = 8
     scene.render.resolution_x = 1280
     scene.render.resolution_y = 720
     scene.frame_start = 1
