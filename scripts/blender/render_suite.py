@@ -103,15 +103,13 @@ def configure_render_settings(output_folder, duration_frames):
     scene.render.resolution_x = 1280
     scene.render.resolution_y = 720
     scene.frame_start = 1
-    scene.frame_end = duration_frames
+    scene.frame_end = 1
     
     out_dir = os.path.join(script_dir, "render_outputs", output_folder)
     os.makedirs(out_dir, exist_ok=True)
-    scene.render.filepath = os.path.join(out_dir, "render")
+    scene.render.filepath = os.path.join(out_dir, "sample_frame.png")
     
-    scene.render.image_settings.file_format = 'FFMPEG'
-    scene.render.ffmpeg.format = "MKV"
-    scene.render.ffmpeg.codec = "H264"
+    scene.render.image_settings.file_format = 'PNG'
 
 def run_job_brain_tour(label_names):
     start_time = time.time()
