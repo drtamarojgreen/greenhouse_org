@@ -41,6 +41,7 @@ if ! command -v $BLENDER_CMD &> /dev/null; then
 fi
 
 # --- EXECUTION ---
+export PYTHONPATH="/home/jules/.pyenv/versions/3.12.12/lib/python3.12/site-packages:$PYTHONPATH"
 echo "Starting Blender job: $JOB_NAME"
 echo "Using script: $RENDER_SUITE_PATH"
 echo "----------------------------------------"

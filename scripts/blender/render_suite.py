@@ -54,6 +54,42 @@ def setup_scene(fbx_path):
     light2 = bpy.context.active_object
     light2.data.energy = 1000.0
 
+    # Add background plane with logo
+    bpy.ops.mesh.primitive_plane_add(size=20, location=(0, 10, 0), rotation=(1.5708, 0, 0)) # Rotate 90 degrees on X-axis
+    plane = bpy.context.active_object
+    plane.name = "BackgroundPlane"
+
+    # Create a material for the plane
+    mat = bpy.data.materials.new(name="LogoMaterial")
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    nodes.clear()
+
+    # Add nodes
+    output = nodes.new(type='ShaderNodeOutputMaterial')
+    emission = nodes.new(type='ShaderNodeEmission')
+    tex_image = nodes.new(type='ShaderNodeTexImage')
+
+    # Load the logo image
+    logo_path = os.path.join(script_dir, "..", "..", "docs", "images", "Greenhouse_Logo.png")
+    if os.path.exists(logo_path):
+        tex_image.image = bpy.data.images.load(logo_path)
+
+    # Link nodes
+    links.new(tex_image.outputs['Color'], emission.inputs['Color'])
+    links.new(emission.outputs['Emission'], output.inputs['Surface'])
+
+    # Assign material to plane
+    plane.data.materials.append(mat)
+
+    # UV unwrap the plane
+    bpy.context.view_layer.objects.active = plane
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.uv.unwrap()
+    bpy.ops.object.mode_set(mode='OBJECT')
+
     cam_anim.setup_camera_track(camera, model, name="Initial")
     return model, camera
 
