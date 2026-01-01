@@ -127,6 +127,8 @@ scene.frame_start = 1
 scene.frame_end = 20
 scene.render.engine = 'CYCLES'
 bpy.context.scene.cycles.use_denoising = False
+bpy.context.scene.cycles.transparent_max_bounces = 8
+bpy.context.scene.render.film_transparent = True
 
 # --- RENDER OUTPUT ---
 output_folder = "greenhouse_render"
