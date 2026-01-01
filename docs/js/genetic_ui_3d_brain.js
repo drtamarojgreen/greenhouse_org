@@ -52,6 +52,32 @@
 
             this.drawBrainShell(ctx, brainShell, targetCamera, projection, w, h);
 
+            // Draw connections
+            if (window.GreenhouseGeneticUI3D && window.GreenhouseGeneticUI3D.connections3D) {
+                window.GreenhouseGeneticUI3D.connections3D.forEach(conn => {
+                    if (!conn.from || !conn.to) return;
+
+                    const p1 = GreenhouseModels3DMath.project3DTo2D(conn.from.x, conn.from.y, conn.from.z, targetCamera, projection);
+                    const p2 = GreenhouseModels3DMath.project3DTo2D(conn.to.x, conn.to.y, conn.to.z, targetCamera, projection);
+
+                    if (p1.scale > 0 && p2.scale > 0) {
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+
+                        if (conn.isHighlighted) {
+                            ctx.strokeStyle = 'rgba(255, 255, 0, 0.9)'; // Bright yellow for highlight
+                            ctx.lineWidth = 3;
+                        } else {
+                            const alpha = Math.max(0.1, Math.abs(conn.weight));
+                            ctx.strokeStyle = conn.weight > 0 ? `rgba(173, 216, 230, ${alpha})` : `rgba(255, 182, 193, ${alpha})`;
+                            ctx.lineWidth = Math.max(0.5, Math.abs(conn.weight) * 1.5);
+                        }
+                        ctx.stroke();
+                    }
+                });
+            }
+
             ctx.restore();
         },
 

@@ -175,6 +175,15 @@
     <!-- Information Panel -->
     <div class="info-panel">
         <h3>🧪 Simulation Controls</h3>
+        <div id="selection-controls">
+            <label for="network-selector">Select Protein (Network):</label>
+            <select id="network-selector"></select>
+            <label for="gene-selector">Select Gene (Connection):</label>
+            <select id="gene-selector"></select>
+        </div>
+        <div id="selection-info-panel">
+            <p>Select a network or gene to see details.</p>
+        </div>
         <ul>
             <li>Observe generations evolving over time</li>
             <li>Watch neural connections adapt and optimize</li>
@@ -214,6 +223,7 @@
     <script src="js/genetic_ui_3d_protein.js"></script>
     <script src="js/genetic_ui_3d_brain.js"></script>
     <script src="js/genetic_ui_3d_stats.js"></script>
+    <script src="js/genetic_ui_controls.js"></script>
     <script src="js/genetic_ui_3d.js"></script>
 
     <script>
@@ -221,7 +231,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Wait for scripts to load
             setTimeout(() => {
-                if (window.GreenhouseGeneticAlgo && window.GreenhouseGeneticUI3D) {
+                if (window.GreenhouseGeneticAlgo && window.GreenhouseGeneticUI3D && window.GreenhouseGeneticUIControls) {
                     console.log("Initializing Genetic App...");
 
                     // Hide loading screen
@@ -235,6 +245,7 @@
                     // Initialize
                     window.GreenhouseGeneticAlgo.init();
                     window.GreenhouseGeneticUI3D.init(simContainer, window.GreenhouseGeneticAlgo);
+                    window.GreenhouseGeneticUIControls.init(window.GreenhouseGeneticAlgo, window.GreenhouseGeneticUI3D);
 
                     // Start Loop
                     const startEvolutionLoop = () => {

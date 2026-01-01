@@ -47,6 +47,22 @@
 
         mainCameraController: null,
 
+        activeNetworkId: null,
+        highlightedConnectionId: null,
+
+        setActiveNetwork(networkId) {
+            this.activeNetworkId = networkId;
+            this.highlightedConnectionId = null; // Reset connection highlight
+            this.updateData(); // Re-map data for the new network
+            console.log(`Active network set to: ${networkId}`);
+        },
+
+        highlightConnection(connectionId) {
+            this.highlightedConnectionId = connectionId;
+            console.log(`Highlighting connection: ${connectionId}`);
+            // No need to call updateData, as the render loop will handle the highlight
+        },
+
         init(container, algo) {
             this.container = container;
             this.algo = algo;
@@ -305,9 +321,17 @@
         },
 
         updateData() {
-            if (!this.algo || !this.algo.bestNetwork) return;
+            if (!this.algo) return;
 
-            const net = this.algo.bestNetwork;
+            let net = this.algo.bestNetwork;
+            if (this.activeNetworkId) {
+                const selectedNet = this.algo.population.find(n => n.id === this.activeNetworkId);
+                if (selectedNet) {
+                    net = selectedNet;
+                }
+            }
+
+            if (!net) return;
 
             // Update UI Counters
             const genCounter = document.getElementById('gen-counter');
@@ -435,8 +459,11 @@
                 const radius = Math.max(0.5, Math.abs(conn.weight) * 1.5);
                 const mesh = this.generateTubeMesh(fromNeuron, toNeuron, cp, radius, 8);
 
+                const isHighlighted = this.highlightedConnectionId && conn.id === this.highlightedConnectionId;
+
                 return {
                     ...conn,
+                    isHighlighted,
                     from: fromNeuron,
                     to: toNeuron,
                     controlPoint: cp,

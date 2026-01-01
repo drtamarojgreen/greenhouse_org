@@ -91,6 +91,7 @@
             await GreenhouseUtils.loadScript('genetic_ui_3d_brain.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_ui_3d_stats.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_ui_3d.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic_ui_controls.js', baseUrl);
 
             if (window.GreenhouseGeneticAlgo && window.GreenhouseGeneticUI3D) {
                 console.log('Genetic App: All modules loaded.');
