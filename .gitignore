@@ -17,3 +17,4 @@ data/
 
 # Logs
 logs/
+scripts/blender/render_outputs/
