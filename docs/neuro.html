@@ -28,7 +28,7 @@
 
 <body>
     <h1>Neuro Simulation Development</h1>
-    <div id="neuro-app-container"></div>
+    <div id="neuro-canvas-container"></div>
 
     <!-- Dependencies -->
     <script src="js/models_util.js"></script>
@@ -53,7 +53,7 @@
         // For this local file, we manually init the app.
         document.addEventListener('DOMContentLoaded', () => {
             if (window.GreenhouseNeuroApp) {
-                window.GreenhouseNeuroApp.init('#neuro-app-container');
+                window.GreenhouseNeuroApp.init('#neuro-canvas-container');
             }
         });
     </script>

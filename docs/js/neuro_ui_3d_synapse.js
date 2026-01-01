@@ -31,8 +31,8 @@
                     const alpha = Math.round(alphaRaw * 10) / 10;
                     if (alpha <= 0) return;
 
-                    const colorType = conn.weight > 0 ? 'gold' : 'silver';
-                    const key = `${colorType}_${alpha}`;
+                    const colorHex = conn.weight > 0 ? GreenhouseNeuroConfig.materials.synapse.axon : GreenhouseNeuroConfig.materials.synapse.dendrite;
+                    const key = `${colorHex}_${alpha}`;
 
                     if (!batches[key]) batches[key] = new Path2D();
 
@@ -100,8 +100,9 @@
                             intensity += diffuse * 0.5;
                         }
 
-                        // Color based on weight: Gold (Excitatory) vs Silver (Inhibitory)
-                        const baseColor = conn.weight > 0 ? { r: 255, g: 215, b: 0 } : { r: 176, g: 196, b: 222 };
+                        // Color based on weight
+                        const colorHex = conn.weight > 0 ? GreenhouseNeuroConfig.materials.synapse.axon : GreenhouseNeuroConfig.materials.synapse.dendrite;
+                        const baseColor = GreenhouseUtils.hexToRgb(colorHex);
                         const litR = Math.min(255, baseColor.r * intensity);
                         const litG = Math.min(255, baseColor.g * intensity);
                         const litB = Math.min(255, baseColor.b * intensity);
@@ -169,10 +170,11 @@
             // Execute Batches
             ctx.lineWidth = 1;
             for (const key in batches) {
-                const [colorType, alpha] = key.split('_');
-                const color = colorType === 'gold' ? `rgba(255, 215, 0, ${alpha})` : `rgba(176, 196, 222, ${alpha})`;
-
-                ctx.strokeStyle = color;
+                const parts = key.split('_');
+                const colorHex = parts[0];
+                const alpha = parts[1];
+                const rgb = GreenhouseUtils.hexToRgb(colorHex);
+                ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
                 ctx.stroke(batches[key]);
             }
         },
@@ -232,13 +234,9 @@
                 this.synapseCameraController.update();
                 synapseCamera = this.synapseCameraController.getCamera();
             } else {
-                synapseCamera = {
-                    x: 0, y: 0, z: -200,
-                    rotationX: 0.2,
-                    rotationY: Date.now() * 0.001,
-                    rotationZ: 0,
-                    fov: 400
-                };
+                // Use default camera from config
+                synapseCamera = { ...GreenhouseNeuroConfig.camera.synapseCamera };
+                synapseCamera.rotationY = (synapseCamera.rotationY || 0) + Date.now() * 0.0005;
             }
 
             const drawMesh = (mesh, offsetY, color) => {
@@ -329,10 +327,8 @@
                 projectedFaces.sort((a, b) => b.depth - a.depth);
 
                 projectedFaces.forEach(f => {
-                    // Parse base color
-                    let r = 100, g = 100, b = 100;
-                    if (color === '#FFD700') { r = 255; g = 215; b = 0; } // Gold
-                    else if (color === '#B0C4DE') { r = 176; g = 196; b = 222; } // Silver
+                    const baseColor = GreenhouseUtils.hexToRgb(color);
+                    let r = baseColor.r, g = baseColor.g, b = baseColor.b;
 
                     const ambient = 0.3;
                     const intensity = ambient + f.diffuse * 0.7 + f.specular * 0.6;
@@ -350,23 +346,23 @@
                 });
             };
 
-            // Draw Pre-synaptic (Top) - Gold (Axonal)
-            drawMesh(synapseMeshes.pre, 0, '#FFD700'); // Offset 0, mesh is already at -115 to -25
+            // Draw Pre-synaptic (Top) - Axonal
+            drawMesh(synapseMeshes.pre, 0, GreenhouseNeuroConfig.materials.synapse.preSynapticTerminal);
 
             // Draw Synaptic Cleft (Blue rectangular box between synapses)
             this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
 
             // Draw Axon Shaft (Extending Upwards)
-            const drawShaft = (startY, endY, color) => {
+            const drawShaft = (startY, endY, radius, color) => {
                 const pStart = GreenhouseModels3DMath.project3DTo2D(0, startY, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                 const pEnd = GreenhouseModels3DMath.project3DTo2D(0, endY, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
 
                 if (pStart.scale > 0 && pEnd.scale > 0) {
-                    const radius = 15 * ((pStart.scale + pEnd.scale) / 2);
+                    const projectedRadius = radius * ((pStart.scale + pEnd.scale) / 2);
 
                     // Draw Shaft as a thick line
                     ctx.strokeStyle = color;
-                    ctx.lineWidth = radius * 2;
+                    ctx.lineWidth = projectedRadius * 2;
                     ctx.lineCap = 'round';
                     ctx.beginPath();
                     ctx.moveTo(pStart.x + x, pStart.y + y);
@@ -375,24 +371,24 @@
 
                     // Add a highlight for 3D effect
                     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                    ctx.lineWidth = radius * 0.5;
+                    ctx.lineWidth = projectedRadius * 0.5;
                     ctx.beginPath();
-                    ctx.moveTo(pStart.x + x - radius * 0.3, pStart.y + y);
-                    ctx.lineTo(pEnd.x + x - radius * 0.3, pEnd.y + y);
+                    ctx.moveTo(pStart.x + x - projectedRadius * 0.3, pStart.y + y);
+                    ctx.lineTo(pEnd.x + x - projectedRadius * 0.3, pEnd.y + y);
                     ctx.stroke();
                 }
             };
+            const scale = GreenhouseNeuroConfig.scale;
+            const baseSynapseY = scale.synapse.terminalRadius;
 
-            // Draw Axon (Gold) - Up
-            // Connects to neck at -115
-            drawShaft(-115, -1000, '#FFD700');
+            // Draw Axon - Up
+            drawShaft(baseSynapseY, baseSynapseY + scale.axon.length, scale.axon.radius, GreenhouseNeuroConfig.materials.synapse.axon);
 
-            // Draw Post-synaptic (Bottom) - Silver/Blue (Dendritic)
-            drawMesh(synapseMeshes.post, 0, '#B0C4DE'); // Offset 0, mesh is already at 25 to 115
+            // Draw Post-synaptic (Bottom) - Dendritic
+            drawMesh(synapseMeshes.post, 0, GreenhouseNeuroConfig.materials.synapse.postSynapticTerminal);
 
-            // Draw Dendrite (Silver) - Down
-            // Connects to neck at 115
-            drawShaft(115, 1000, '#B0C4DE');
+            // Draw Dendrite - Down
+            drawShaft(-baseSynapseY, -baseSynapseY - scale.dendrite.length, scale.dendrite.radius, GreenhouseNeuroConfig.materials.synapse.dendrite);
 
             // Initialize Synapse Details (Vesicles, Mitochondria) if not present
             if (!connection.synapseDetails) {
@@ -454,7 +450,7 @@
             ctx.save();
             ctx.font = '12px Arial';
             ctx.textAlign = 'center';
-            ctx.fillStyle = '#FFD700'; // Gold for Pre
+            ctx.fillStyle = GreenhouseNeuroConfig.materials.synapse.preSynapticTerminal;
 
             // Project label positions
             const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -100, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
@@ -462,7 +458,7 @@
                 ctx.fillText("Pre-Synaptic Terminal", preLabelPos.x, preLabelPos.y);
             }
 
-            ctx.fillStyle = '#87CEEB'; // SkyBlue for Post
+            ctx.fillStyle = GreenhouseNeuroConfig.materials.synapse.postSynapticTerminal;
             const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 100, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (postLabelPos.scale > 0) {
                 ctx.fillText("Post-Synaptic Terminal", postLabelPos.x, postLabelPos.y);
@@ -555,134 +551,146 @@
         },
 
         /**
-         * Draw synaptic cleft - blue rectangular box between pre and post-synaptic terminals
-         * @param {CanvasRenderingContext2D} ctx - Canvas context
-         * @param {number} x - X offset
-         * @param {number} y - Y offset
-         * @param {number} w - Width
-         * @param {number} h - Height
-         * @param {Object} synapseCamera - Camera object
+         * Generates the vertices for a surface of revolution from a Bezier curve profile.
+         * @param {object} p0 - Start point {x, y}
+         * @param {object} p1 - Control point 1 {x, y}
+         * @param {object} p2 - Control point 2 {x, y}
+         * @param {object} p3 - End point {x, y}
+         * @param {number} rings - Number of vertical segments.
+         * @param {number} segments - Number of radial segments.
+         * @returns {Array} - Array of vertex objects {x, y, z}.
+         */
+        _generateCleftVertices(p0, p1, p2, p3, rings, segments) {
+            const vertices = [];
+            for (let i = 0; i <= rings; i++) {
+                const t = i / rings;
+                const mt = 1 - t, mt2 = mt * mt, t2 = t * t;
+                const radius = mt2 * mt * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t2 * t * p3.x;
+                const y_pos = mt2 * mt * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t2 * t * p3.y;
+
+                for (let j = 0; j <= segments; j++) {
+                    const angle = (j / segments) * Math.PI * 2;
+                    vertices.push({ x: Math.cos(angle) * radius, y: y_pos, z: Math.sin(angle) * radius });
+                }
+            }
+            return vertices;
+        },
+
+        /**
+         * Generates faces (triangles) for a mesh created with _generateCleftVertices.
+         * @param {number} rings - Number of vertical segments.
+         * @param {number} segments - Number of radial segments.
+         * @returns {Array} - Array of faces, where each face is an array of 3 vertex indices.
+         */
+        _generateCleftFaces(rings, segments) {
+            const faces = [];
+            for (let i = 0; i < rings; i++) {
+                for (let j = 0; j < segments; j++) {
+                    const a = i * (segments + 1) + j, b = a + 1;
+                    const c = (i + 1) * (segments + 1) + j, d = c + 1;
+                    faces.push([a, b, d]);
+                    faces.push([a, d, c]);
+                }
+            }
+            return faces;
+        },
+        /**
+         * Calculates the color for the synaptic cleft, including a pulsing animation.
+         * @returns {object} - An object with {r, g, b, alpha} properties.
+         */
+        _calculateCleftColor() {
+            const anim = GreenhouseNeuroConfig.materials.synapse.animation;
+            const pulseFactor = (Math.sin(Date.now() * anim.cleftPulseSpeed) + 1) / 2;
+            const baseCleftColor = { r: 0, g: 100, b: 220 }; // Base color, could also be in config
+            return {
+                r: baseCleftColor.r + pulseFactor * 20,
+                g: baseCleftColor.g + pulseFactor * anim.cleftPulseMagnitude,
+                b: baseCleftColor.b,
+                alpha: 0.5
+            };
+        },
+        /**
+         * Renders the triangles of the synaptic cleft mesh.
+         */
+        _renderCleftTriangles(ctx, triangles, x, y, color) {
+            const lightDir = { x: 0.5, y: -0.5, z: 1 };
+            const lLen = Math.sqrt(lightDir.x ** 2 + lightDir.y ** 2 + lightDir.z ** 2);
+
+            triangles.forEach(({ v0, v1, v2 }) => {
+                const ux = v1.world.x - v0.world.x, uy = v1.world.y - v0.world.y, uz = v1.world.z - v0.world.z;
+                const vx = v2.world.x - v0.world.x, vy = v2.world.y - v0.world.y, vz = v2.world.z - v0.world.z;
+                let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+                const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
+
+                let intensity = 0.4; // Ambient
+                if (nLen > 0) {
+                    nx /= nLen; ny /= nLen; nz /= nLen;
+                    intensity += Math.max(0, (nx * lightDir.x + ny * lightDir.y + nz * lightDir.z) / lLen) * 0.6;
+                }
+
+                const litR = Math.min(255, color.r * intensity);
+                const litG = Math.min(255, color.g * intensity);
+                const litB = Math.min(255, color.b * intensity);
+
+                ctx.fillStyle = `rgba(${litR | 0}, ${litG | 0}, ${litB | 0}, ${color.alpha})`;
+                ctx.beginPath();
+                ctx.moveTo(v0.projected.x + x, v0.projected.y + y);
+                ctx.lineTo(v1.projected.x + x, v1.projected.y + y);
+                ctx.lineTo(v2.projected.x + x, v2.projected.y + y);
+                ctx.closePath();
+                ctx.fill();
+            });
+        },
+        /**
+         * Draw synaptic cleft - an organic, pulsing region between terminals.
          */
         drawSynapticCleft(ctx, x, y, w, h, synapseCamera) {
-            // Cleft dimensions
-            const cleftWidth = 120;
-            const cleftHeight = 2; // Very thin
-            const cleftDepth = 120;
-            const cleftY = 0; // Position at Y=0 (between pre at -25 and post at +25)
+            const scale = GreenhouseNeuroConfig.scale.synapse.cleft;
+            const baseUnit = GreenhouseNeuroConfig.scale.baseUnit;
 
-            // Define 8 vertices of the rectangular box
-            const halfW = cleftWidth / 2;
-            const halfH = cleftHeight / 2;
-            const halfD = cleftDepth / 2;
+            // 1. Define Profile using a Bezier curve from config values
+            const p0 = { x: scale.outerRadius * baseUnit, y: (scale.height / 2) * baseUnit };
+            const p1 = { x: scale.innerRadius * baseUnit, y: (scale.height / 4) * baseUnit };
+            const p2 = { x: scale.innerRadius * baseUnit, y: -(scale.height / 4) * baseUnit };
+            const p3 = { x: scale.outerRadius * baseUnit, y: -(scale.height / 2) * baseUnit };
 
-            const vertices = [
-                { x: -halfW, y: cleftY - halfH, z: -halfD }, // 0: back-bottom-left
-                { x: halfW, y: cleftY - halfH, z: -halfD },  // 1: back-bottom-right
-                { x: halfW, y: cleftY + halfH, z: -halfD },  // 2: back-top-right
-                { x: -halfW, y: cleftY + halfH, z: -halfD }, // 3: back-top-left
-                { x: -halfW, y: cleftY - halfH, z: halfD },  // 4: front-bottom-left
-                { x: halfW, y: cleftY - halfH, z: halfD },   // 5: front-bottom-right
-                { x: halfW, y: cleftY + halfH, z: halfD },   // 6: front-top-right
-                { x: -halfW, y: cleftY + halfH, z: halfD }   // 7: front-top-left
-            ];
+            // 2. Generate Mesh (Vertices and Faces)
+            const rings = 12, segments = 24;
+            const vertices = this._generateCleftVertices(p0, p1, p2, p3, rings, segments);
+            const faces = this._generateCleftFaces(rings, segments);
 
-            // Define 6 faces (each face is 2 triangles)
-            const faces = [
-                // Front face
-                [[4, 5, 6], [4, 6, 7]],
-                // Back face
-                [[1, 0, 3], [1, 3, 2]],
-                // Top face
-                [[7, 6, 2], [7, 2, 3]],
-                // Bottom face
-                [[0, 1, 5], [0, 5, 4]],
-                // Right face
-                [[5, 1, 2], [5, 2, 6]],
-                // Left face
-                [[0, 4, 7], [0, 7, 3]]
-            ];
-
-            // Transform and project vertices
+            // 3. Project Vertices to 2D space
             const projectedVertices = vertices.map(v => {
                 let vx = v.x, vy = v.y, vz = v.z;
-
-                // Rotate Y
                 let tx = vx * Math.cos(synapseCamera.rotationY) - vz * Math.sin(synapseCamera.rotationY);
                 let tz = vx * Math.sin(synapseCamera.rotationY) + vz * Math.cos(synapseCamera.rotationY);
                 vx = tx; vz = tz;
-
-                // Rotate X
                 let ty = vy * Math.cos(synapseCamera.rotationX) - vz * Math.sin(synapseCamera.rotationX);
                 tz = vy * Math.sin(synapseCamera.rotationX) + vz * Math.cos(synapseCamera.rotationX);
                 vy = ty; vz = tz;
-
                 return {
                     projected: GreenhouseModels3DMath.project3DTo2D(vx, vy, vz, synapseCamera, { width: w, height: h, near: 10, far: 1000 }),
                     world: { x: vx, y: vy, z: vz }
                 };
             });
 
-            // Draw each face
-            const cleftColor = { r: 0, g: 136, b: 255 }; // Blue #0088FF
-            const alpha = 0.7;
-
-            faces.forEach(face => {
-                face.forEach(triangle => {
-                    const v0 = projectedVertices[triangle[0]];
-                    const v1 = projectedVertices[triangle[1]];
-                    const v2 = projectedVertices[triangle[2]];
-
-                    if (v0.projected.scale > 0 && v1.projected.scale > 0 && v2.projected.scale > 0) {
-                        // Backface culling
-                        const dx1 = v1.projected.x - v0.projected.x;
-                        const dy1 = v1.projected.y - v0.projected.y;
-                        const dx2 = v2.projected.x - v0.projected.x;
-                        const dy2 = v2.projected.y - v0.projected.y;
-                        const cross = dx1 * dy2 - dy1 * dx2;
-
-                        if (cross > 0) {
-                            // Calculate normal for lighting
-                            const ux = v1.world.x - v0.world.x;
-                            const uy = v1.world.y - v0.world.y;
-                            const uz = v1.world.z - v0.world.z;
-                            const vx = v2.world.x - v0.world.x;
-                            const vy = v2.world.y - v0.world.y;
-                            const vz = v2.world.z - v0.world.z;
-
-                            let nx = uy * vz - uz * vy;
-                            let ny = uz * vx - ux * vz;
-                            let nz = ux * vy - uy * vx;
-                            const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
-
-                            let intensity = 0.5;
-                            if (nLen > 0) {
-                                nx /= nLen; ny /= nLen; nz /= nLen;
-                                const lightDir = { x: 0.5, y: -0.5, z: 1 };
-                                const lLen = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
-                                const diffuse = Math.max(0, (nx * lightDir.x + ny * lightDir.y + nz * lightDir.z) / lLen);
-                                intensity = 0.3 + diffuse * 0.7;
-                            }
-
-                            const litR = Math.min(255, cleftColor.r * intensity);
-                            const litG = Math.min(255, cleftColor.g * intensity);
-                            const litB = Math.min(255, cleftColor.b * intensity);
-
-                            ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${alpha})`;
-                            ctx.beginPath();
-                            ctx.moveTo(v0.projected.x + x, v0.projected.y + y);
-                            ctx.lineTo(v1.projected.x + x, v1.projected.y + y);
-                            ctx.lineTo(v2.projected.x + x, v2.projected.y + y);
-                            ctx.closePath();
-                            ctx.fill();
-
-                            // Add subtle edge highlight
-                            ctx.strokeStyle = `rgba(${Math.min(255, litR + 50)}, ${Math.min(255, litG + 50)}, ${Math.min(255, litB + 50)}, ${alpha * 0.5})`;
-                            ctx.lineWidth = 0.5;
-                            ctx.stroke();
-                        }
+            // 4. Prepare Triangles for Drawing (Culling and Sorting)
+            const trianglesToDraw = [];
+            faces.forEach(triangle => {
+                const v0 = projectedVertices[triangle[0]], v1 = projectedVertices[triangle[1]], v2 = projectedVertices[triangle[2]];
+                if (v0.projected.scale > 0 && v1.projected.scale > 0 && v2.projected.scale > 0) {
+                    const dx1 = v1.projected.x - v0.projected.x, dy1 = v1.projected.y - v0.projected.y;
+                    const dx2 = v2.projected.x - v0.projected.x, dy2 = v2.projected.y - v0.projected.y;
+                    if ((dx1 * dy2 - dy1 * dx2) > 0) {
+                        trianglesToDraw.push({ v0, v1, v2, depth: (v0.projected.depth + v1.projected.depth + v2.projected.depth) / 3 });
                     }
-                });
+                }
             });
+            trianglesToDraw.sort((a, b) => b.depth - a.depth);
+
+            // 5. Calculate Color and Render
+            const cleftColor = this._calculateCleftColor();
+            this._renderCleftTriangles(ctx, trianglesToDraw, x, y, cleftColor);
         }
     };
 

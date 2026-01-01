@@ -57,11 +57,8 @@
                 this.synapseCameraController.autoRotate = true;
             }
 
-            console.log('NeuroUI3D: Canvas build delayed by 5 seconds.');
-
-            setTimeout(() => {
-                this.canvas = document.createElement('canvas');
-                this.canvas.width = container.offsetWidth;
+            this.canvas = document.createElement('canvas');
+            this.canvas.width = container.offsetWidth;
                 this.canvas.height = Math.max(container.offsetHeight, 600);
                 this.canvas.style.width = '100%';
                 this.canvas.style.height = '100%';
@@ -97,7 +94,6 @@
 
                 // Initialize Synapse Meshes
                 this.synapseMeshes = this.generateSynapseMeshes();
-            }, 5000);
         },
 
         setupInteraction() {
@@ -270,6 +266,9 @@
             if (!this.brainShell) {
                 this.initializeBrainShell();
             }
+
+            this.connections = this.connections || [];
+            this.newConnections = [];
 
             this.neurons = genome.neurons.map((n, i) => {
                 // Check if neuron already exists to preserve position

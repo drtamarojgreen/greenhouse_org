@@ -5,8 +5,37 @@
     'use strict';
 
     const GreenhouseNeuroConfig = {
+        // Scale Configuration
+        scale: {
+            baseUnit: 1.0, // Global scaling factor
+            axon: {
+                radius: 10,
+                length: 800,
+            },
+            dendrite: {
+                radius: 10,
+                length: 800,
+            },
+            synapse: {
+                terminalRadius: 40,
+                neckRadius: 15,
+                cleft: {
+                    outerRadius: 60,
+                    innerRadius: 35,
+                    height: 20,
+                },
+            },
+        },
+
         // Camera Configuration
         camera: {
+            synapseCamera: {
+                x: 0, y: 0, z: -350, // Adjusted for new scale
+                rotationX: 0.2,
+                rotationY: 0,
+                rotationZ: 0,
+                fov: 400
+            },
             initial: {
                 x: 0,
                 y: 0,
@@ -86,12 +115,20 @@
                 emissiveIntensity: 0.2
             },
             synapse: {
+                axon: "#FFD700", // Gold
+                dendrite: "#C0C0C0", // Silver
+                preSynapticTerminal: "#FFD700",
+                postSynapticTerminal: "#C0C0C0",
                 baseColor: { r: 255, g: 100, b: 150 },
                 alpha: 0.7,
                 metallic: 0.3,
                 roughness: 0.4,
                 glow: true,
-                glowIntensity: 0.3
+                glowIntensity: 0.3,
+                animation: {
+                    cleftPulseSpeed: 0.005,
+                    cleftPulseMagnitude: 40,
+                }
             },
             connection: {
                 baseColor: { r: 100, g: 200, b: 255 },

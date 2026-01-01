@@ -380,6 +380,25 @@ window.GreenhouseUtils = (function () {
     }
 
 
+    /**
+     * @function hexToRgb
+     * @description Converts a hex color string to an RGB object.
+     * @param {string} hex - The hex color string (e.g., "#FFD700").
+     * @returns {{r: number, g: number, b: number}|null} An object with r, g, b properties, or null if invalid.
+     */
+    function hexToRgb(hex) {
+        if (!hex || typeof hex !== 'string') {
+            return { r: 128, g: 128, b: 128 }; // Return grey for invalid input
+        }
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : { r: 128, g: 128, b: 128 }; // Return grey for malformed hex
+    }
+
+
     // Public API
     return {
         displayError: (msg, duration) => displayMessage(msg, 'error', duration),
@@ -393,6 +412,7 @@ window.GreenhouseUtils = (function () {
         retryOperation: retryOperation, // Expose retryOperation
         validateField: validateField, // Expose form validation utility
         validateForm: validateForm,   // Expose form validation utility
+        hexToRgb: hexToRgb,
     };
 })();
 

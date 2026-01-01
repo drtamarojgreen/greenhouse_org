@@ -57,6 +57,7 @@ global.document = {
 global.console = console;
 global.requestAnimationFrame = (cb) => { }; // No auto-loop
 global.addEventListener = () => { };
+global.dispatchEvent = () => { };
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
@@ -72,6 +73,7 @@ window.GreenhouseModels3DMath = {
 };
 
 // Load Modules
+loadScript('GreenhouseUtils.js');
 loadScript('neuro_config.js');
 loadScript('neuro_ui_3d_geometry.js');
 loadScript('neuro_ui_3d_brain.js');
@@ -86,8 +88,8 @@ TestFramework.describe('GreenhouseNeuroUI3D', () => {
     const ui = window.GreenhouseNeuroUI3D;
     const mockContainer = document.createElement('div');
     const mockAlgo = {
-        bestNetwork: { // Changed from bestGenome to bestNetwork to match implementation
-            nodes: [{ id: 1, x: 0, y: 0, z: 0, type: 'input' }, { id: 2, x: 10, y: 10, z: 0, type: 'output' }], // Changed neurons to nodes
+        bestNetwork: {
+            neurons: [{ id: 1, x: 0, y: 0, z: 0, type: 'input' }, { id: 2, x: 10, y: 10, z: 0, type: 'output' }],
             connections: [{ from: 1, to: 2, weight: 0.5 }],
             fitness: 0.5
         },
@@ -98,15 +100,18 @@ TestFramework.describe('GreenhouseNeuroUI3D', () => {
         // Mock querySelector
         global.document.querySelector = () => mockContainer;
 
-        ui.init('div', mockAlgo); // Pass algo
+        ui.init('div'); // init doesn't take algo
         assert.isDefined(ui.canvas);
         assert.isDefined(ui.ctx);
     });
 
     TestFramework.it('should update data', () => {
-        ui.updateData();
-        assert.equal(ui.neurons3D.length, 2);
-        assert.equal(ui.connections3D.length, 1);
+        // Initialize connections and neurons arrays to avoid errors from other functions
+        ui.connections = [];
+        ui.neurons = [];
+        ui.updateData(mockAlgo.bestNetwork);
+        assert.equal(ui.neurons.length, 2);
+        assert.equal(ui.connections.length, 1);
     });
 
     TestFramework.it('should render', () => {
