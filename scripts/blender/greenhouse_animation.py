@@ -39,7 +39,29 @@ mat_text = make_material("PrimaryBrandGreen", PRIMARY_BRAND_GREEN)
 mat_accent = make_material("GrowthAccent", GROWTH_GREEN)
 
 # ------------------------------------------------------------
-# 5. CREATE TEXT OBJECTS
+# 5. CREATE LOGO PLANE
+# ------------------------------------------------------------
+def create_logo_plane():
+    bpy.ops.mesh.primitive_plane_add(size=4, location=(0, 0, -1))
+    plane = bpy.context.object
+    plane.name = "LogoPlane"
+
+    # Create material for the logo
+    mat_logo = make_material("LogoMaterial", (1, 1, 1, 1))
+    plane.data.materials.append(mat_logo)
+
+    # Set up material nodes to use the logo image
+    bsdf = mat_logo.node_tree.nodes["Principled BSDF"]
+    tex_image = mat_logo.node_tree.nodes.new('ShaderNodeTexImage')
+    tex_image.image = bpy.data.images.load("docs/images/Greenhouse_Logo.png")
+    mat_logo.node_tree.links.new(bsdf.inputs['Base Color'], tex_image.outputs['Color'])
+    return plane
+
+logo_plane = create_logo_plane()
+
+
+# ------------------------------------------------------------
+# 6. CREATE TEXT OBJECTS
 # ------------------------------------------------------------
 def create_text(name, content, location, scale=1.0):
     bpy.ops.object.text_add(location=location)
@@ -105,44 +127,33 @@ def animate_fade_in(obj, start, end):
     mat.blend_method = 'BLEND'
 
 # Apply animations
-animate_fade_in(text1, start=1, end=30)
-animate_growth_pulse(text1, start=40, end=70)
+# animate_fade_in(text1, start=1, end=30)
+# animate_growth_pulse(text1, start=40, end=70)
 
-animate_fade_in(text2, start=20, end=50)
-animate_growth_pulse(text2, start=60, end=90)
+# animate_fade_in(text2, start=20, end=50)
+# animate_growth_pulse(text2, start=60, end=90)
 
 # ------------------------------------------------------------
 # 7. CAMERA SETUP
 # ------------------------------------------------------------
-bpy.ops.object.camera_add(location=(0, -6, 0), rotation=(math.radians(90), 0, math.radians(180)))
+bpy.ops.object.camera_add(location=(0, -8, 0), rotation=(math.radians(90), 0, math.radians(180)))
 camera = bpy.context.object
 bpy.context.scene.camera = camera
 
 # ------------------------------------------------------------
-# 8. RENDER SETTINGS (30 FPS)
+# 8. RENDER SETTINGS (SINGLE FRAME)
 # ------------------------------------------------------------
 scene = bpy.context.scene
 scene.render.fps = 30
 scene.frame_start = 1
-scene.frame_end = 20
+scene.frame_end = 1
 scene.render.engine = 'CYCLES'
 bpy.context.scene.cycles.use_denoising = False
-bpy.context.scene.cycles.transparent_max_bounces = 8
-bpy.context.scene.render.film_transparent = True
-
-# --- RENDER OUTPUT ---
-output_folder = "greenhouse_render"
-script_dir = os.path.dirname(os.path.abspath(__file__))
-out_dir = os.path.join(script_dir, "render_outputs", output_folder)
-os.makedirs(out_dir, exist_ok=True)
-scene.render.filepath = os.path.join(out_dir, "greenhouse_animation")
-
-scene.render.image_settings.file_format = 'FFMPEG'
-scene.render.ffmpeg.format = "MKV"
-scene.render.ffmpeg.codec = "H264"
+scene.render.image_settings.file_format = 'PNG'
+scene.render.filepath = "//greenhouse_logo_render.png"
 
 # --- RENDER ---
-bpy.ops.render.render(animation=True)
+bpy.ops.render.render(write_still=True)
 
 
 print("GreenhouseMHD text animation setup complete.")
