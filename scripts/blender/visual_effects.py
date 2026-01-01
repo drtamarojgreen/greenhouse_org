@@ -1,6 +1,51 @@
 
 import bpy
 
+def setup_background(image_path):
+    """
+    Configures the scene to use an image as a background.
+    - Switches to Eevee.
+    - Sets transparent background.
+    - Uses compositor to overlay the image.
+    """
+    scene = bpy.context.scene
+    scene.render.engine = 'BLENDER_EEVEE'
+    scene.render.film_transparent = True
+
+    # Enable compositor
+    scene.use_nodes = True
+    tree = scene.node_tree
+
+    # --- NON-DESTRUCTIVE NODE SETUP ---
+    # Check for existing nodes to avoid duplication and errors.
+    render_layers = tree.nodes.get('Render Layers') or tree.nodes.new('CompositorNodeRLayers')
+    composite_node = tree.nodes.get('Composite') or tree.nodes.new('CompositorNodeComposite')
+
+    # Create our custom nodes if they don't exist
+    if "BackgroundImage" in tree.nodes:
+        image_node = tree.nodes["BackgroundImage"]
+    else:
+        image_node = tree.nodes.new('CompositorNodeImage')
+        image_node.name = "BackgroundImage"
+
+    if "AlphaOverBackground" in tree.nodes:
+        alpha_over = tree.nodes["AlphaOverBackground"]
+    else:
+        alpha_over = tree.nodes.new('CompositorNodeAlphaOver')
+        alpha_over.name = "AlphaOverBackground"
+
+    # Load image
+    try:
+        image_node.image = bpy.data.images.load(image_path)
+    except Exception as e:
+        print(f"Error loading background image: {e}")
+        return
+
+    # Link nodes
+    tree.links.new(image_node.outputs['Image'], alpha_over.inputs[1])
+    tree.links.new(render_layers.outputs['Image'], alpha_over.inputs[2])
+    tree.links.new(alpha_over.outputs['Image'], composite_node.inputs['Image'])
+
 def apply_textured_highlight(obj, color=(0.1, 1.0, 1.0)):
     """
     STABLE Implementation for Plan 01: High-Visibility Solid Neon.
