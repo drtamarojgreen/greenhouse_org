@@ -33,9 +33,9 @@ def create_brain_tour_animation(label_names, data_dir, region_map_file, labels_f
     """
     if modifiers is None:
         modifiers = {
-            'intro_duration': 150, 
-            'dwell_duration': 48, 
-            'transition_duration': 48, 
+            'intro_duration': 60,
+            'dwell_duration': 30,
+            'transition_duration': 30,
             'zoom_factor': 0.7, 
             'neon_color': (0.1, 1.0, 1.0)
         }
