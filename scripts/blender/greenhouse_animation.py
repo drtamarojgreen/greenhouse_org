@@ -124,7 +124,7 @@ bpy.context.scene.camera = camera
 scene = bpy.context.scene
 scene.render.fps = 30
 scene.frame_start = 1
-scene.frame_end = 120
+scene.frame_end = 20
 scene.render.engine = 'BLENDER_EEVEE'
 
 # --- RENDER OUTPUT ---
