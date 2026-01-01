@@ -125,7 +125,8 @@ scene = bpy.context.scene
 scene.render.fps = 30
 scene.frame_start = 1
 scene.frame_end = 20
-scene.render.engine = 'BLENDER_EEVEE'
+scene.render.engine = 'CYCLES'
+bpy.context.scene.cycles.use_denoising = False
 
 # --- RENDER OUTPUT ---
 output_folder = "greenhouse_render"
