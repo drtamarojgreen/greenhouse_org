@@ -55,7 +55,7 @@ def setup_scene(fbx_path):
     light2.data.energy = 1000.0
 
     # Add background plane with logo
-    bpy.ops.mesh.primitive_plane_add(size=20, location=(10, 10, 0))
+    bpy.ops.mesh.primitive_plane_add(size=20, location=(0, 10, 0), rotation=(1.5708, 0, 0)) # Rotate 90 degrees on X-axis
     plane = bpy.context.active_object
     plane.name = "BackgroundPlane"
 
@@ -68,7 +68,7 @@ def setup_scene(fbx_path):
 
     # Add nodes
     output = nodes.new(type='ShaderNodeOutputMaterial')
-    principled = nodes.new(type='ShaderNodeBsdfPrincipled')
+    emission = nodes.new(type='ShaderNodeEmission')
     tex_image = nodes.new(type='ShaderNodeTexImage')
 
     # Load the logo image
@@ -77,8 +77,8 @@ def setup_scene(fbx_path):
         tex_image.image = bpy.data.images.load(logo_path)
 
     # Link nodes
-    links.new(tex_image.outputs['Color'], principled.inputs['Base Color'])
-    links.new(principled.outputs['BSDF'], output.inputs['Surface'])
+    links.new(tex_image.outputs['Color'], emission.inputs['Color'])
+    links.new(emission.outputs['Emission'], output.inputs['Surface'])
 
     # Assign material to plane
     plane.data.materials.append(mat)
