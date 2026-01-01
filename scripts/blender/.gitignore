@@ -1,0 +1,4 @@
+*.mkv
+*.log
+completed/
+render_outputs/
