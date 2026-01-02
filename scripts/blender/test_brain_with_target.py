@@ -6,7 +6,7 @@ import math
 import mathutils
 import argparse
 
-def create_brain_logo_animation(output_path, frame_count=20):
+def create_brain_logo_animation(output_path, frame_count=5):
     """
     Creates and renders a short test animation with a textured brain
     in the foreground and the Greenhouse logo on a plane in the background.
@@ -89,6 +89,7 @@ def create_brain_logo_animation(output_path, frame_count=20):
             tex_image.image = bpy.data.images.load(logo_path)
 
         links.new(tex_image.outputs['Color'], emission.inputs['Color'])
+        emission.inputs['Strength'].default_value = 5.0
         links.new(emission.outputs['Emission'], output.inputs['Surface'])
 
         bpy.context.view_layer.objects.active = plane
@@ -96,6 +97,11 @@ def create_brain_logo_animation(output_path, frame_count=20):
         bpy.ops.mesh.select_all(action='SELECT')
         bpy.ops.uv.unwrap()
         bpy.ops.object.mode_set(mode='OBJECT')
+
+        # Add Point Axis behind the logo for tracking
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 25, 0))
+        target_axis = bpy.context.active_object
+        target_axis.name = "CameraTarget"
 
         # --- 5. Add 3D Text ---
         text_lines = ["Greenhouse", "for", "Mental Health", "Development"]
@@ -134,37 +140,28 @@ def create_brain_logo_animation(output_path, frame_count=20):
         bpy.ops.object.camera_add(location=(-10, -20, camera_z_pos))
         camera = bpy.context.active_object
         scene.camera = camera
+
+        # Add Track To constraint
+        tt_cam = camera.constraints.new(type='TRACK_TO')
+        tt_cam.target = target_axis
+        tt_cam.track_axis = 'TRACK_NEGATIVE_Z'
+        tt_cam.up_axis = 'UP_Y'
         
         # Animate camera position and rotation
         # Frame 1
         bpy.context.scene.frame_set(1)
         camera.location = (-10, -20, camera_z_pos)
-        look_at_point = (0, 10, camera_z_pos)
-        direction = mathutils.Vector(look_at_point) - camera.location
-        rot_quat = direction.to_track_quat('-Z', 'Y')
-        camera.rotation_euler = rot_quat.to_euler()
         camera.keyframe_insert(data_path="location", index=-1)
-        camera.keyframe_insert(data_path="rotation_euler", index=-1)
 
         # Frame Mid
         bpy.context.scene.frame_set(mid_frame)
         camera.location = (10, -20, camera_z_pos)
-        look_at_point = (0, 10, camera_z_pos)
-        direction = mathutils.Vector(look_at_point) - camera.location
-        rot_quat = direction.to_track_quat('-Z', 'Y')
-        camera.rotation_euler = rot_quat.to_euler()
         camera.keyframe_insert(data_path="location", index=-1)
-        camera.keyframe_insert(data_path="rotation_euler", index=-1)
 
         # Frame End
         bpy.context.scene.frame_set(frame_count)
         camera.location = (-10, -20, camera_z_pos)
-        look_at_point = (0, 10, camera_z_pos)
-        direction = mathutils.Vector(look_at_point) - camera.location
-        rot_quat = direction.to_track_quat('-Z', 'Y')
-        camera.rotation_euler = rot_quat.to_euler()
         camera.keyframe_insert(data_path="location", index=-1)
-        camera.keyframe_insert(data_path="rotation_euler", index=-1)
         
         # --- 7. Lighting ---
         bpy.ops.object.light_add(type='SUN', location=(5, -5, 10))

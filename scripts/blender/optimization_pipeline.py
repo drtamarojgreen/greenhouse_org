@@ -14,6 +14,7 @@ try:
     from optimize_mesh import MeshOptimizer
     from optimize_textures import TextureOptimizer
     from optimize_fonts import FontOptimizer
+    from optimize_animation import AnimationOptimizer
 except ImportError:
     print("Error: Could not import specialized optimizers.")
     sys.exit(1)
@@ -26,17 +27,22 @@ def run_pipeline(source_dir, target_dir, config):
         os.makedirs(target_dir)
         print(f"Created target directory: {target_dir}")
 
-    # Find all .blend and .fbx files
-    files = [f for f in os.listdir(source_dir) if f.lower().endswith(('.blend', '.fbx'))]
+    files = []
+    if os.path.isdir(source_dir):
+        files = [f for f in os.listdir(source_dir) if f.lower().endswith(('.blend', '.fbx'))]
+    elif os.path.isfile(source_dir) and source_dir.lower().endswith(('.blend', '.fbx')):
+        files = [os.path.basename(source_dir)]
+        source_dir = os.path.dirname(source_dir)
     
-    print(f"Found {len(files)} files to optimize in {source_dir}")
+    print(f"Found {len(files)} files to optimize.")
 
     for filename in files:
         # Initialize optimizers for each file to ensure a clean state
         optimizers = [
             MeshOptimizer(config),
             TextureOptimizer(config),
-            FontOptimizer(config)
+            FontOptimizer(config),
+            AnimationOptimizer(config)
         ]
         start_time = time.time()
         source_path = os.path.join(source_dir, filename)
@@ -54,6 +60,9 @@ def run_pipeline(source_dir, target_dir, config):
         # 2. Run Optimizers
         for obj in bpy.data.objects:
             for opt in optimizers:
+                # The AnimationOptimizer runs in post_process
+                if isinstance(opt, AnimationOptimizer):
+                    continue
                 opt.process(bpy.context, obj)
         
         # 3. Post-Process
@@ -82,6 +91,7 @@ def main():
     parser.add_argument("--target", default=os.path.join(script_dir, "target"), help="Target directory")
     parser.add_argument("--decimate", type=float, default=0.5, help="Decimation ratio (0.0 to 1.0)")
     parser.add_argument("--res", type=int, default=1024, help="Max texture resolution")
+    parser.add_argument("--simplify-fcurves", type=float, default=0.01, help="F-curve simplification threshold")
     
     parsed_args = parser.parse_args(args)
 
@@ -89,7 +99,8 @@ def main():
         'decimate_ratio': parsed_args.decimate,
         'max_texture_res': parsed_args.res,
         'triangulate': True,
-        'pack_assets': False
+        'pack_assets': False,
+        'simplify_fcurves_threshold': parsed_args.simplify_fcurves
     }
 
     run_pipeline(parsed_args.source, parsed_args.target, config)

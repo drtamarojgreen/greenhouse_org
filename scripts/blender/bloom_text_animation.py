@@ -9,8 +9,8 @@ bpy.ops.object.delete(use_global=False)
 
 scene = bpy.context.scene
 scene.frame_start = 1
-scene.frame_end = 180
-scene.render.fps = 30
+scene.frame_end = 10
+scene.render.fps = 2
 
 # -----------------------------
 # Render Settings
@@ -19,7 +19,7 @@ scene.render.engine = 'CYCLES'
 scene.cycles.samples = 128
 scene.render.resolution_x = 1920
 scene.render.resolution_y = 1080
-scene.render.filepath = "//bloom_into_your_better_self.mp4"
+scene.render.filepath = "//bloom_into_your_better_self2.mp4"
 scene.render.image_settings.file_format = 'FFMPEG'
 scene.render.ffmpeg.format = 'MPEG4'
 scene.render.ffmpeg.codec = 'H264'
@@ -27,7 +27,7 @@ scene.render.ffmpeg.codec = 'H264'
 # -----------------------------
 # Create Text Object
 # -----------------------------
-bpy.ops.object.text_add(location=(0, 0, 0))
+bpy.ops.object.text_add(location=(0, 0, 0), rotation=(math.radians(90), 0, 0))
 text_obj = bpy.context.object
 text_obj.data.body = "Bloom Into\nYour Better Self"
 
@@ -64,7 +64,7 @@ text_obj.scale = (0.01, 0.01, 0.01)
 text_obj.keyframe_insert(data_path="scale", frame=1)
 
 text_obj.scale = (1.0, 1.0, 1.0)
-text_obj.keyframe_insert(data_path="scale", frame=60)
+text_obj.keyframe_insert(data_path="scale", frame=10)
 
 # Ease-out motion
 for fcurve in text_obj.animation_data.action.fcurves:
@@ -75,10 +75,10 @@ for fcurve in text_obj.animation_data.action.fcurves:
 # Subtle Float Animation
 # -----------------------------
 text_obj.location = (0, 0, 0)
-text_obj.keyframe_insert(data_path="location", frame=60)
+text_obj.keyframe_insert(data_path="location", frame=1)
 
 text_obj.location = (0, 0, 0.2)
-text_obj.keyframe_insert(data_path="location", frame=180)
+text_obj.keyframe_insert(data_path="location", frame=10)
 
 # -----------------------------
 # Camera
