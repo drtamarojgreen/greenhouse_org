@@ -390,11 +390,11 @@
             // Draw Axon (Up) - Connection color
             drawShaft(-140, -1000, connectionColor);
 
-            // Draw Post-synaptic (Bottom) - Default color
-            drawMesh(synapseMeshes.post, 0, defaultColor);
+            // Draw Post-synaptic (Bottom) - Connection color
+            drawMesh(synapseMeshes.post, 0, connectionColor);
 
-            // Draw Dendrite (Down) - Default color
-            drawShaft(140, 1000, defaultColor);
+            // Draw Dendrite (Down) - Connection color
+            drawShaft(140, 1000, connectionColor);
 
             // Initialize Synapse Details (Vesicles, Mitochondria) if not present
             if (!connection.synapseDetails) {

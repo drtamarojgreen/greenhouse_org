@@ -921,7 +921,7 @@
                 const rings = 40; // High resolution
                 const segments = 40;
                 const length = 90; // 115 - 25
-                const neckRadius = 240;
+                const neckRadius = 480;
 
                 // Surge Function Parameters (Log-Normal / Gamma approximation)
                 // r(x) = neck + A * x^k * e^(-bx)
@@ -962,13 +962,13 @@
                             // Pre-synaptic: Neck at -115, Face at -25
                             // Map Model X (0 to 90) to World Y (-115 to -25)
                             wx = my;
-                            wy = -280 + xVal;
+                            wy = -140 + xVal;
                             wz = mz;
                         } else {
                             // Post-synaptic: Neck at 115, Face at 25
                             // Map Model X (0 to 90) to World Y (115 to 25)
                             wx = my;
-                            wy = 280 - xVal;
+                            wy = 140 - xVal;
                             wz = mz;
                         }
 
