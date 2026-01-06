@@ -351,11 +351,11 @@
             };
 
             // Determine colors based on connection weight
-            const preSynapticColor = connection.weight > 0 ? '#FFD700' : '#B0C4DE'; // Gold for Excitatory, Silver for Inhibitory
-            const postSynapticColor = '#B0C4DE'; // Dendritic side is consistently silver
+            const connectionColor = connection.weight > 0 ? '#FFD700' : '#B0C4DE'; // Gold for Excitatory, Silver for Inhibitory
+            const defaultColor = '#B0C4DE'; // Default color for parts not indicating weight
 
-            // Draw Pre-synaptic (Top)
-            drawMesh(synapseMeshes.pre, 0, preSynapticColor);
+            // Draw Pre-synaptic (Top) - Default color
+            drawMesh(synapseMeshes.pre, 0, defaultColor);
 
             // Draw Synaptic Cleft (Blue rectangular box between synapses)
             this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
@@ -387,14 +387,14 @@
                 }
             };
 
-            // Draw Axon (Up)
-            drawShaft(-140, -1000, preSynapticColor);
+            // Draw Axon (Up) - Connection color
+            drawShaft(-140, -1000, connectionColor);
 
-            // Draw Post-synaptic (Bottom)
-            drawMesh(synapseMeshes.post, 0, postSynapticColor);
+            // Draw Post-synaptic (Bottom) - Connection color
+            drawMesh(synapseMeshes.post, 0, connectionColor);
 
-            // Draw Dendrite (Down)
-            drawShaft(140, 1000, postSynapticColor);
+            // Draw Dendrite (Down) - Default color
+            drawShaft(140, 1000, defaultColor);
 
             // Initialize Synapse Details (Vesicles, Mitochondria) if not present
             if (!connection.synapseDetails) {
