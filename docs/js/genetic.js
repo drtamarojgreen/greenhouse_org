@@ -40,20 +40,31 @@
         if (window._greenhouseGeneticAttributes) {
             return true;
         }
-        const scriptElement = document.currentScript;
-        if (!scriptElement) {
-            console.error('Genetic App: Could not find current script element.');
-            return false;
+
+        // Immediately capture and then clean up the global attributes from the loader
+        const scriptAttributes = { ...window._greenhouseScriptAttributes };
+        if (window._greenhouseScriptAttributes) {
+            delete window._greenhouseScriptAttributes;
         }
 
-        const geneticSelectors = scriptElement.getAttribute('data-genetic-selectors');
+        const geneticSelectorsRaw = scriptAttributes['data-genetic-selectors'];
+        let selectors = {};
+        if (geneticSelectorsRaw) {
+            try {
+                // We are getting the raw string from the global var, so no decoding is needed
+                selectors = JSON.parse(geneticSelectorsRaw);
+            } catch (e) {
+                console.error('Genetic App: Failed to parse genetic selectors.', e);
+            }
+        }
+
         window._greenhouseGeneticAttributes = {
-            baseUrl: scriptElement.getAttribute('data-base-url'),
-            selectors: geneticSelectors ? JSON.parse(geneticSelectors) : {}
+            baseUrl: scriptAttributes['base-url'],
+            selectors: selectors
         };
 
         // For backwards compatibility, also keep targetSelector
-        window._greenhouseGeneticAttributes.targetSelector = window._greenhouseGeneticAttributes.selectors.genetic || scriptElement.getAttribute('data-target-selector-left') || scriptElement.getAttribute('data-target-selector');
+        window._greenhouseGeneticAttributes.targetSelector = window._greenhouseGeneticAttributes.selectors.genetic || scriptAttributes['target-selector-left'];
 
         return true;
     };
