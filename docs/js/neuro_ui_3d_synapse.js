@@ -354,8 +354,8 @@
             const connectionColor = connection.weight > 0 ? '#FFD700' : '#B0C4DE'; // Gold for Excitatory, Silver for Inhibitory
             const defaultColor = '#B0C4DE'; // Default color for parts not indicating weight
 
-            // Draw Pre-synaptic (Top) - Default color
-            drawMesh(synapseMeshes.pre, 0, defaultColor);
+            // Draw Pre-synaptic (Top) - Connection color
+            drawMesh(synapseMeshes.pre, 0, connectionColor);
 
             // Draw Synaptic Cleft (Blue rectangular box between synapses)
             this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
@@ -390,8 +390,8 @@
             // Draw Axon (Up) - Connection color
             drawShaft(-140, -1000, connectionColor);
 
-            // Draw Post-synaptic (Bottom) - Connection color
-            drawMesh(synapseMeshes.post, 0, connectionColor);
+            // Draw Post-synaptic (Bottom) - Default color
+            drawMesh(synapseMeshes.post, 0, defaultColor);
 
             // Draw Dendrite (Down) - Default color
             drawShaft(140, 1000, defaultColor);
