@@ -345,7 +345,7 @@
                 };
 
                 // Generate Tube Mesh
-                const radius = Math.max(1.2, Math.abs(conn.weight) * 12.0);
+                const radius = Math.max(0.8, Math.abs(conn.weight) * 12.0);
                 const mesh = this.generateTubeMesh(fromNeuron, toNeuron, cp, radius, 8);
 
                 const connectionId = `${conn.from}-${conn.to}`;
@@ -921,14 +921,14 @@
                 const rings = 40; // High resolution
                 const segments = 40;
                 const length = 90; // 115 - 25
-                const neckRadius = 40;
+                const neckRadius = 60;
 
                 // Surge Function Parameters (Log-Normal / Gamma approximation)
                 // r(x) = neck + A * x^k * e^(-bx)
                 // Peak at x=30, Amplitude adds ~30 to radius
                 const k = 2;
                 const b = 0.066;
-                const A = 0.25;
+                const A = 1.0;
 
                 for (let i = 0; i <= rings; i++) {
                     const u = i / rings; // 0 to 1
@@ -962,13 +962,13 @@
                             // Pre-synaptic: Neck at -115, Face at -25
                             // Map Model X (0 to 90) to World Y (-115 to -25)
                             wx = my;
-                            wy = -115 + xVal;
+                            wy = -140 + xVal;
                             wz = mz;
                         } else {
                             // Post-synaptic: Neck at 115, Face at 25
                             // Map Model X (0 to 90) to World Y (115 to 25)
                             wx = my;
-                            wy = 115 - xVal;
+                            wy = 140 - xVal;
                             wz = mz;
                         }
 
