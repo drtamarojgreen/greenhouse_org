@@ -17,3 +17,5 @@ data/
 
 # Logs
 logs/
+server.log
+*.log

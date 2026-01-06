@@ -327,9 +327,17 @@
                 this.initializeBrainShell();
             }
 
+            // Use canonical region names that match the geometry data from neuro_ui_3d_geometry.js
+            const regionKeys = ['pfc', 'amygdala', 'hippocampus', 'temporalLobe', 'parietalLobe', 'occipitalLobe', 'cerebellum', 'brainstem'];
             this.neurons3D = net.nodes.map((node, i) => {
                 // Split nodes: First half = Genotype (Helix), Second half = Phenotype (Brain)
                 const isGenotype = i < net.nodes.length / 2;
+
+                // Determine the corresponding brain region for this gene/neuron pair.
+                // The gene at index `i` corresponds to the neuron at index `i + half`,
+                // so they share the same region logic.
+                const correspondingIndex = isGenotype ? i + (net.nodes.length / 2) : i;
+                const regionKey = regionKeys[correspondingIndex % regionKeys.length];
 
                 if (isGenotype) {
                     if (window.GreenhouseGeneticGeometry) {
@@ -340,16 +348,16 @@
                             y: helixData.y,
                             z: helixData.z,
                             type: 'gene',
+                            region: regionKey, // Assign the target region to the gene
                             strand: helixData.strandIndex,
                             label: i % 10 === 0 ? (i % 20 === 0 ? 'BDNF' : '5-HTTLPR') : null,
                             baseColor: helixData.strandIndex === 0 ? '#A8DADC' : '#F4A261'
                         };
                     }
-                    return { id: node.id, x: 0, y: 0, z: 0, type: 'gene', baseColor: '#fff' };
+                    return { id: node.id, x: 0, y: 0, z: 0, type: 'gene', region: regionKey, baseColor: '#fff' };
                 } else {
                     // Volumetric Brain Topology (Inside Shell)
-                    const regionKeys = ['pfc', 'amygdala', 'hippocampus', 'temporalLobe', 'parietalLobe', 'occipitalLobe', 'cerebellum', 'brainstem'];
-                    const regionKey = regionKeys[i % regionKeys.length];
+                    // regionKey is already calculated above
 
                     // Get random vertex from the region to place neuron
                     const regionVerticesIndices = this.getRegionVertices(regionKey);
@@ -512,7 +520,7 @@
 
             // Draw Brain as Main Background
             this.drawTargetView(ctx, 0, 0, w, h, activeGene, 
-                this.activeGeneIndex, this.brainShell, null, { camera: this.camera }); // Pass main camera
+                this.activeGeneIndex, this.brainShell, null, { camera: this.camera, activeGene: activeGene }); // Pass main camera
 
             // Helper to draw PiP Frame & Label
             const drawPiPFrame = (ctx, x, y, w, h, title) => {
@@ -579,7 +587,7 @@
             // 5. PiP 4: Target View (Brain Region) - Bottom Right
             const targetY = gap + pipH + gap + pipH + gap;
             this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene, 
-                this.activeGeneIndex, this.brainShell, drawPiPFrame, targetState);
+                this.activeGeneIndex, this.brainShell, drawPiPFrame, { ...targetState, activeGene: activeGene });
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, targetY, pipW, pipH, 'target');
             }
@@ -819,9 +827,10 @@
 
         drawBrainShell(ctx, offsetX = 0) {
             if (window.GreenhouseNeuroBrain) {
+                const activeGene = this.neurons3D[this.activeGeneIndex];
                 ctx.save();
                 ctx.translate(offsetX, 0);
-                window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height);
+                window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height, activeGene);
                 ctx.restore();
             }
         },

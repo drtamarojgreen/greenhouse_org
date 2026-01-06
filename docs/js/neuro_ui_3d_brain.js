@@ -2,7 +2,8 @@
     'use strict';
 
     const GreenhouseNeuroBrain = {
-        drawBrainShell(ctx, brainShell, camera, projection, width, height) {
+        drawBrainShell(ctx, brainShell, camera, projection, width, height, activeGene = null) {
+            const targetRegion = activeGene ? activeGene.region : null;
             if (!brainShell) return;
             
             // Log camera rotation every 60 calls
@@ -36,9 +37,9 @@
             // Prepare Faces with Depth and Normals
             const facesToDraw = [];
             faces.forEach((face, index) => {
-                const p1 = projectedVertices[face[0]];
-                const p2 = projectedVertices[face[1]];
-                const p3 = projectedVertices[face[2]];
+                const p1 = projectedVertices[face.indices[0]];
+                const p2 = projectedVertices[face.indices[1]];
+                const p3 = projectedVertices[face.indices[2]];
 
                 if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     // Backface Culling
@@ -55,9 +56,9 @@
                         // But here the camera rotates around the object.
                         // So the object is static in World Space, camera moves.
                         // Normal is static in World Space.
-                        const v1 = vertices[face[0]];
-                        const v2 = vertices[face[1]];
-                        const v3 = vertices[face[2]];
+                        const v1 = vertices[face.indices[0]];
+                        const v2 = vertices[face.indices[1]];
+                        const v3 = vertices[face.indices[2]];
 
                         const ux = v2.x - v1.x;
                         const uy = v2.y - v1.y;
@@ -127,6 +128,10 @@
                         b = parseInt(match[3]);
                         a = parseFloat(match[4] || 1);
                     }
+                }
+
+                if (targetRegion && f.region === targetRegion) {
+                    r = 255; g = 255; b = 0; a = 0.8;
                 }
 
                 // Apply Lighting
