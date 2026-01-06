@@ -4,6 +4,35 @@
     'use strict';
     console.log('Genetic App: Loader execution started.');
 
+    // --- Attribute Capture ---
+    // Immediately capture and then clean up the global attributes to avoid race conditions.
+    // This pattern is adopted from the working implementation in scheduler.js.
+    const scriptAttributes = { ...window._greenhouseScriptAttributes };
+    if (window._greenhouseScriptAttributes) {
+        delete window._greenhouseScriptAttributes;
+    }
+
+    // --- Global Application State ---
+    // Store necessary attributes in a dedicated global for this app.
+    const geneticSelectorsRaw = scriptAttributes['data-genetic-selectors'];
+    let selectors = {};
+    if (geneticSelectorsRaw) {
+        try {
+            selectors = JSON.parse(geneticSelectorsRaw);
+        } catch (e) {
+            console.error('Genetic App: Failed to parse genetic selectors.', e);
+        }
+    }
+
+    window._greenhouseGeneticAttributes = {
+        baseUrl: scriptAttributes['base-url'],
+        selectors: selectors
+    };
+    // For backwards compatibility
+    window._greenhouseGeneticAttributes.targetSelector = window._greenhouseGeneticAttributes.selectors.genetic || scriptAttributes['target-selector-left'];
+
+
+    // --- Dependency Loading ---
     let GreenhouseUtils;
     let isInitialized = false;
     let resilienceObserver = null;
@@ -36,48 +65,13 @@
         GreenhouseUtils = window.GreenhouseUtils;
     };
 
-    const captureScriptAttributes = () => {
-        if (window._greenhouseGeneticAttributes) {
-            return true;
-        }
 
-        // Immediately capture and then clean up the global attributes from the loader
-        const scriptAttributes = { ...window._greenhouseScriptAttributes };
-        if (window._greenhouseScriptAttributes) {
-            delete window._greenhouseScriptAttributes;
-        }
-
-        const geneticSelectorsRaw = scriptAttributes['data-genetic-selectors'];
-        let selectors = {};
-        if (geneticSelectorsRaw) {
-            try {
-                // We are getting the raw string from the global var, so no decoding is needed
-                selectors = JSON.parse(geneticSelectorsRaw);
-            } catch (e) {
-                console.error('Genetic App: Failed to parse genetic selectors.', e);
-            }
-        }
-
-        window._greenhouseGeneticAttributes = {
-            baseUrl: scriptAttributes['base-url'],
-            selectors: selectors
-        };
-
-        // For backwards compatibility, also keep targetSelector
-        window._greenhouseGeneticAttributes.targetSelector = window._greenhouseGeneticAttributes.selectors.genetic || scriptAttributes['target-selector-left'];
-
-        return true;
-    };
-
+    // --- Main Application Logic ---
     async function main() {
         console.log('Genetic App: main() started.');
         if (isInitialized) return;
 
         try {
-            if (!captureScriptAttributes()) {
-                throw new Error("Could not capture script attributes.");
-            }
-
             await loadDependencies();
             if (!GreenhouseUtils) {
                 throw new Error("CRITICAL - Aborting main() due to missing GreenhouseUtils.");
@@ -85,7 +79,8 @@
 
             const { baseUrl, selectors } = window._greenhouseGeneticAttributes;
             if (!baseUrl) {
-                throw new Error("CRITICAL - Aborting main() due to missing data-base-url attribute.");
+                // This check is now a safeguard; the attribute capture at the top should prevent this.
+                throw new Error("CRITICAL - Aborting main() due to missing 'baseUrl' attribute. The script's configuration was not found.");
             }
 
             // Load Core 3D Math Module (reused)
@@ -178,10 +173,6 @@
         // Initialize 3D UI
         window.GreenhouseGeneticUI3D.init(simContainer, window.GreenhouseGeneticAlgo);
 
-        // Start Evolution Loop
-        // Start Evolution Loop
-        // startEvolutionLoop(); // Started by UI overlay
-
         // Resilience
         observeAndReinitializeApp(container);
     }
@@ -215,9 +206,7 @@
                 window.GreenhouseGeneticUI3D.updateData();
             }
 
-            // Render is handled by UI's internal loop or requestAnimationFrame
-
-            // Schedule next evolution step (slowed down for visualization)
+            // Schedule next evolution step
             setTimeout(() => {
                 requestAnimationFrame(loop);
             }, 100);
@@ -226,10 +215,9 @@
         loop();
     }
 
-    // Run Main
+    // --- Global API and Execution ---
     main();
 
-    // Global Resilience
     window.GreenhouseGenetic = {
         reinitialize: () => {
             if (resilienceObserver) {
@@ -237,6 +225,7 @@
                 resilienceObserver = null;
             }
             isInitialized = false;
+            // Re-run main, the attributes are already stored on _greenhouseGeneticAttributes
             main();
         },
         startSimulation: () => {
