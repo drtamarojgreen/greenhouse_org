@@ -45,10 +45,16 @@
             console.error('Genetic App: Could not find current script element.');
             return false;
         }
+
+        const geneticSelectors = scriptElement.getAttribute('data-genetic-selectors');
         window._greenhouseGeneticAttributes = {
             baseUrl: scriptElement.getAttribute('data-base-url'),
-            targetSelector: scriptElement.getAttribute('data-target-selector-left') || scriptElement.getAttribute('data-target-selector')
+            selectors: geneticSelectors ? JSON.parse(geneticSelectors) : {}
         };
+
+        // For backwards compatibility, also keep targetSelector
+        window._greenhouseGeneticAttributes.targetSelector = window._greenhouseGeneticAttributes.selectors.genetic || scriptElement.getAttribute('data-target-selector-left') || scriptElement.getAttribute('data-target-selector');
+
         return true;
     };
 
@@ -66,7 +72,7 @@
                 throw new Error("CRITICAL - Aborting main() due to missing GreenhouseUtils.");
             }
 
-            const { baseUrl, targetSelector } = window._greenhouseGeneticAttributes;
+            const { baseUrl, selectors } = window._greenhouseGeneticAttributes;
             if (!baseUrl) {
                 throw new Error("CRITICAL - Aborting main() due to missing data-base-url attribute.");
             }
@@ -97,7 +103,7 @@
 
                 // Initialize Application
                 setTimeout(() => {
-                    initApplication(targetSelector);
+                    initApplication(selectors);
                     isInitialized = true;
                 }, 5000);
             } else {
@@ -112,20 +118,33 @@
         }
     }
 
-    function initApplication(targetSelector) {
+    function initApplication(selectors) {
+        const targetSelector = selectors.genetic;
         const container = document.querySelector(targetSelector);
         if (!container) {
             console.error('Target container not found:', targetSelector);
             return;
         }
 
-        // Remove preceding sibling elements to clean up DOM layout
-        let prevSibling = container.previousElementSibling;
-        if (prevSibling) {
-            prevSibling.remove();
-            prevSibling = container.previousElementSibling; // Get the new previous sibling
-            if (prevSibling) {
-                prevSibling.remove();
+        // Handle Title and Paragraph
+        if (selectors.geneticTitle) {
+            const titleContainer = document.querySelector(selectors.geneticTitle);
+            if (titleContainer) {
+                const h2 = document.createElement('h2');
+                h2.textContent = 'Genetic Research Page';
+                titleContainer.innerHTML = ''; // Clear existing content
+                titleContainer.appendChild(h2);
+                Object.assign(titleContainer.style, { display: 'block', width: '20%', float: 'left' });
+            }
+        }
+        if (selectors.geneticParagraph) {
+            const paragraphContainer = document.querySelector(selectors.geneticParagraph);
+            if (paragraphContainer) {
+                const p = document.createElement('p');
+                p.textContent = 'in development...';
+                paragraphContainer.innerHTML = ''; // Clear existing content
+                paragraphContainer.appendChild(p);
+                Object.assign(paragraphContainer.style, { display: 'block', width: '20%', float: 'left' });
             }
         }
 
