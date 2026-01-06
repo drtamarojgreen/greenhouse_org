@@ -130,22 +130,23 @@
                     }
                 }
 
+                // If this is the target region, use a bright, glowing color and bypass lighting.
                 if (targetRegion && f.region === targetRegion) {
-                    r = 255; g = 255; b = 0; a = 0.8;
+                    const fog = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
+                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green for ROI with fog
+                } else {
+                    // Apply Lighting for all other regions
+                    const ambient = 0.2;
+                    const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
+
+                    const litR = Math.min(255, r * lightIntensity + specular * 255);
+                    const litG = Math.min(255, g * lightIntensity + specular * 255);
+                    const litB = Math.min(255, b * lightIntensity + specular * 255);
+
+                    // Depth Fog for Alpha
+                    const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
+                    ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
                 }
-
-                // Apply Lighting
-                const ambient = 0.2;
-                const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
-
-                const litR = Math.min(255, r * lightIntensity + specular * 255);
-                const litG = Math.min(255, g * lightIntensity + specular * 255);
-                const litB = Math.min(255, b * lightIntensity + specular * 255);
-
-                // Depth Fog for Alpha
-                const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
-
-                ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
                 ctx.beginPath();
                 ctx.moveTo(f.p1.x, f.p1.y);
                 ctx.lineTo(f.p2.x, f.p2.y);
