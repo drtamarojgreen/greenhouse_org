@@ -119,6 +119,16 @@
             return;
         }
 
+        // Remove preceding sibling elements to clean up DOM layout
+        let prevSibling = container.previousElementSibling;
+        if (prevSibling) {
+            prevSibling.remove();
+            prevSibling = container.previousElementSibling; // Get the new previous sibling
+            if (prevSibling) {
+                prevSibling.remove();
+            }
+        }
+
         // Hide loading screen
         const loadingScreen = container.querySelector('.loading-screen');
         if (loadingScreen) loadingScreen.style.display = 'none';
