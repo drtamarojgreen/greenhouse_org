@@ -12,7 +12,7 @@
 
         cameras: [
             // Main camera
-            { x: 0, y: 0, z: -300, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 },
+            { x: 0, y: -100, z: -300, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 },
             // PiP cameras: helix, micro, protein, target
             { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 },
             { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 400 },
@@ -513,7 +513,7 @@
             // Draw Brain as Main Background
             this.drawTargetView(ctx, 0, 0, w, h, activeGene, 
                 this.activeGeneIndex, this.brainShell, null, { camera: this.camera }); // Pass main camera
-
+            this.drawConnections(ctx);
             // Helper to draw PiP Frame & Label
             const drawPiPFrame = (ctx, x, y, w, h, title) => {
                 ctx.save();
@@ -1242,6 +1242,36 @@
             
             ctx.restore();
         }
+        drawConnections(ctx) {
+            if (!this.connections3D || this.connections3D.length === 0) {
+                return;
+            }
+
+            ctx.save();
+            ctx.lineWidth = 0.5;
+
+            this.connections3D.forEach(conn => {
+                if (conn.from.type === 'gene' || conn.to.type === 'gene') return;
+
+                const p1 = GreenhouseModels3DMath.project3DTo2D(conn.from.x, conn.from.y, conn.from.z, this.camera, this.projection);
+                const p2 = GreenhouseModels3DMath.project3DTo2D(conn.to.x, conn.to.y, conn.to.z, this.camera, this.projection);
+
+                if (p1.scale > 0 && p2.scale > 0) {
+                    const controlPoint = GreenhouseModels3DMath.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, this.projection);
+
+                    const alpha = Math.min(1, Math.abs(conn.weight));
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.5})`;
+                    ctx.lineWidth = Math.max(0.5, Math.abs(conn.weight) * 1.5);
+
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, p2.x, p2.y);
+                    ctx.stroke();
+                }
+            });
+
+            ctx.restore();
+        },
     };
 
     window.GreenhouseGeneticUI3D = GreenhouseGeneticUI3D;
