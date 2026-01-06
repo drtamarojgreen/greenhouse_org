@@ -167,7 +167,7 @@
             });
 
             // Execute Batches
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 4;
             for (const key in batches) {
                 const [colorType, alpha] = key.split('_');
                 const color = colorType === 'gold' ? `rgba(255, 215, 0, ${alpha})` : `rgba(176, 196, 222, ${alpha})`;
@@ -362,7 +362,7 @@
                 const pEnd = GreenhouseModels3DMath.project3DTo2D(0, endY, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
 
                 if (pStart.scale > 0 && pEnd.scale > 0) {
-                    const radius = 25 * ((pStart.scale + pEnd.scale) / 2);
+                    const radius = 50 * ((pStart.scale + pEnd.scale) / 2);
 
                     // Draw Shaft as a thick line
                     ctx.strokeStyle = color;
@@ -388,11 +388,11 @@
             drawShaft(-115, -1000, '#FFD700');
 
             // Draw Post-synaptic (Bottom) - Silver/Blue (Dendritic)
-            drawMesh(synapseMeshes.post, 30, '#B0C4DE'); // Offset 0, mesh is already at 25 to 115
+            drawMesh(synapseMeshes.post, 60, '#B0C4DE'); // Offset 0, mesh is already at 25 to 115
 
             // Draw Dendrite (Silver) - Down
             // Connects to neck at 115
-            drawShaft(145, 1000, '#B0C4DE');
+            drawShaft(175, 1000, '#B0C4DE');
 
             // Initialize Synapse Details (Vesicles, Mitochondria) if not present
             if (!connection.synapseDetails) {
