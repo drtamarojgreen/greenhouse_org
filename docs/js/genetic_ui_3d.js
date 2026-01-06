@@ -108,6 +108,7 @@
 
             // Canvas
             this.canvas = document.createElement('canvas');
+            this.canvas.id = 'main-canvas';
             this.canvas.style.width = '100%';
             this.canvas.style.height = '500px';
             this.canvas.style.background = '#0f172a';

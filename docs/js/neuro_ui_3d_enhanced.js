@@ -477,7 +477,7 @@
             if (window.GreenhouseNeuroBrain) {
                 ctx.save();
                 ctx.translate(offset || 0, 0);
-                window.GreenhouseNeuroBrain.drawBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w || this.canvas.width, h || this.canvas.height, null);
+                window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w || this.canvas.width, h || this.canvas.height, null);
                 ctx.restore();
             }
         },
