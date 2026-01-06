@@ -126,7 +126,7 @@
                 h2.textContent = 'Genetic Research Page';
                 titleContainer.innerHTML = '';
                 titleContainer.appendChild(h2);
-                Object.assign(titleContainer.style, { display: 'block', width: '20%', float: 'left' });
+                Object.assign(titleContainer.style, { display: 'none' });
             }
         }
         if (selectors.geneticParagraph) {
@@ -136,7 +136,7 @@
                 p.textContent = 'in development...';
                 paragraphContainer.innerHTML = '';
                 paragraphContainer.appendChild(p);
-                Object.assign(paragraphContainer.style, { display: 'block', width: '20%', float: 'left' });
+                Object.assign(paragraphContainer.style, { display: 'none' });
             }
         }
 
@@ -150,6 +150,7 @@
             container.appendChild(simContainer);
         }
         simContainer.style.display = 'block';
+        simContainer.style.width = '100%';
 
         window.GreenhouseGeneticAlgo.init();
         window.GreenhouseGeneticUI3D.init(simContainer, window.GreenhouseGeneticAlgo);
