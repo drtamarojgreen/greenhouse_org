@@ -345,7 +345,7 @@
                 };
 
                 // Generate Tube Mesh
-                const radius = Math.max(0.8, Math.abs(conn.weight) * 4.0);
+                const radius = Math.max(1.2, Math.abs(conn.weight) * 6.0);
                 const mesh = this.generateTubeMesh(fromNeuron, toNeuron, cp, radius, 8);
 
                 const connectionId = `${conn.from}-${conn.to}`;
@@ -921,7 +921,7 @@
                 const rings = 40; // High resolution
                 const segments = 40;
                 const length = 90; // 115 - 25
-                const neckRadius = 15;
+                const neckRadius = 25;
 
                 // Surge Function Parameters (Log-Normal / Gamma approximation)
                 // r(x) = neck + A * x^k * e^(-bx)
