@@ -7,16 +7,6 @@
             if (!this._drawTargetCallCount) this._drawTargetCallCount = 0;
             this._drawTargetCallCount++;
             
-            if (this._drawTargetCallCount % 60 === 0) {
-                console.log('[drawTargetView] Called:', {
-                    activeGene: JSON.stringify(activeGene, null, 2),
-                    call: this._drawTargetCallCount,
-                    x, y, w, h,
-                    hasBrainShell: !!brainShell,
-                    hasCamera: !!(cameraState && cameraState.camera),
-                    cameraRotY: cameraState?.camera?.rotationY?.toFixed(3) || cameraState?.rotationY?.toFixed(3)
-                });
-            }
             
             if (drawPiPFrameCallback) {
                 drawPiPFrameCallback(ctx, x, y, w, h, "Target: Brain Region");

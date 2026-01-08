@@ -22,7 +22,9 @@ async def main():
         await asyncio.sleep(5)  # Wait for evolution to run a bit
 
         # Take a screenshot
-        screenshot_path = '/home/jules/verification/verification.png'
+        output_dir = "tests/output"
+        os.makedirs(output_dir, exist_ok=True)
+        screenshot_path = os.path.join(output_dir, "verification.png")
         await page.screenshot(path=screenshot_path)
         print(f"Screenshot saved to {screenshot_path}")
 
