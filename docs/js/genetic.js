@@ -180,7 +180,7 @@
                 window.GreenhouseGeneticAlgo.evolve();
                 window.GreenhouseGeneticUI3D.updateData();
             }
-            setTimeout(() => requestAnimationFrame(loop), 100);
+            setTimeout(() => requestAnimationFrame(loop), 500);
         };
         loop();
     }
