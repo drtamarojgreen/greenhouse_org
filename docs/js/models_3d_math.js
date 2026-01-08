@@ -258,6 +258,35 @@
          */
         radToDeg(radians) {
             return radians * (180 / Math.PI);
+        },
+
+        /**
+         * Calculates normal vector for a triangle (alias for calculateNormal for compatibility).
+         * @param {Object} p1 - First point {x, y, z}
+         * @param {Object} p2 - Second point {x, y, z}
+         * @param {Object} p3 - Third point {x, y, z}
+         * @returns {Object} Normal vector {x, y, z}
+         */
+        calculateFaceNormal(p1, p2, p3) {
+            // This is an alias for the existing calculateNormal function.
+            return this.calculateNormal(p1, p2, p3);
+        },
+
+        /**
+         * Calculates simple diffuse lighting.
+         * @param {Object} normal - The surface normal vector {x, y, z}.
+         * @param {Object} lightDirection - The direction of the light source, normalized.
+         * @param {number} ambientLight - The minimum ambient light level (e.g., 0.1).
+         * @returns {number} The brightness value from ambientLight to 1.0.
+         */
+        calculateDiffuse(normal, lightDirection, ambientLight = 0.1) {
+            const dotProduct = normal.x * lightDirection.x + normal.y * lightDirection.y + normal.z * lightDirection.z;
+            // The light comes FROM the direction, so we need to negate the dot product
+            // if the light direction is pointing TO the source. Assuming it points FROM the source.
+            // Let's assume lightDirection is vector from surface to light.
+            // No, standard is light points from light source.
+            const diffuse = Math.max(0, -dotProduct);
+            return ambientLight + (1 - ambientLight) * diffuse;
         }
     };
 

@@ -1255,31 +1255,80 @@
             ctx.restore();
         },
         drawConnections(ctx) {
-            if (!this.connections3D || this.connections3D.length === 0) {
+            if (!this.connections3D || this.connections3D.length === 0 || !window.GreenhouseModels3DMath || !window.GreenhouseGeneticLighting) {
                 return;
             }
 
             ctx.save();
-            ctx.lineWidth = 0.5;
 
-            this.connections3D.forEach(conn => {
+            const lightDirection = window.GreenhouseGeneticLighting.getDirectionalLight();
+
+            // Sort connections by the average depth of their endpoints.
+            // This is an approximation for correct transparency, but much better than nothing.
+            const sortedConnections = this.connections3D
+                .map(conn => {
+                    const avgZ = (conn.from.z + conn.to.z) / 2;
+                    return { ...conn, avgZ };
+                })
+                .sort((a, b) => b.avgZ - a.avgZ);
+
+            sortedConnections.forEach(conn => {
+                // Skip drawing connections to or from the 'gene' type display
                 if (conn.from.type === 'gene' || conn.to.type === 'gene') return;
+                if (!conn.mesh || !conn.mesh.vertices || !conn.mesh.faces) return;
 
-                const p1 = GreenhouseModels3DMath.project3DTo2D(conn.from.x, conn.from.y, conn.from.z, this.camera, this.projection);
-                const p2 = GreenhouseModels3DMath.project3DTo2D(conn.to.x, conn.to.y, conn.to.z, this.camera, this.projection);
+                const mesh = conn.mesh;
 
-                if (p1.scale > 0 && p2.scale > 0) {
-                    const controlPoint = GreenhouseModels3DMath.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, this.projection);
+                // Determine base color from weight
+                const weight = conn.weight;
+                const positiveColor = [66, 135, 245]; // Blue for positive
+                const negativeColor = [245, 66, 66];  // Red for negative
+                const baseColor = weight > 0 ? positiveColor : negativeColor;
+                const alpha = Math.min(0.8, Math.abs(weight) * 0.7);
 
-                    const alpha = Math.min(1, Math.abs(conn.weight));
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.5})`;
-                    ctx.lineWidth = Math.max(0.5, Math.abs(conn.weight) * 1.5);
+                const projectedVertices = mesh.vertices.map(v =>
+                    GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, this.camera, this.projection)
+                );
 
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, p2.x, p2.y);
-                    ctx.stroke();
-                }
+                mesh.faces.forEach(faceIndices => {
+                    if (faceIndices.length < 3) return;
+
+                    const p1 = projectedVertices[faceIndices[0]];
+                    const p2 = projectedVertices[faceIndices[1]];
+                    const p3 = projectedVertices[faceIndices[2]];
+
+                    // Cull backfaces: if the projected triangle is wound clockwise, it's facing away.
+                    // Also check if any part is in front of the camera (scale > 0)
+                    const isVisible = p1.scale > 0 && p2.scale > 0 && p3.scale > 0;
+                    const isFrontFacing = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) > 0;
+
+                    if (isVisible && isFrontFacing) {
+                        // Get original 3D vertices for lighting calculation
+                        const v1 = mesh.vertices[faceIndices[0]];
+                        const v2 = mesh.vertices[faceIndices[1]];
+                        const v3 = mesh.vertices[faceIndices[2]];
+
+                        // Calculate face normal
+                        const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
+
+                        // Calculate diffuse lighting
+                        const brightness = GreenhouseModels3DMath.calculateDiffuse(normal, lightDirection, 0.2); // 0.2 ambient light
+
+                        const finalColor = `rgba(${Math.floor(baseColor[0] * brightness)}, ${Math.floor(baseColor[1] * brightness)}, ${Math.floor(baseColor[2] * brightness)}, ${alpha})`;
+
+                        ctx.fillStyle = finalColor;
+                        ctx.strokeStyle = finalColor; // Use same color for stroke to hide seams
+                        ctx.lineWidth = 0.5;
+
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.lineTo(p3.x, p3.y);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke(); // Add a thin stroke to fill gaps between triangles
+                    }
+                });
             });
 
             ctx.restore();

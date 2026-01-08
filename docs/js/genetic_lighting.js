@@ -285,6 +285,19 @@
             if (light) {
                 light.intensity = intensity;
             }
+        },
+
+        /**
+         * Returns the primary directional light direction vector.
+         * @returns {Object} Normalized direction vector {x, y, z}.
+         */
+        getDirectionalLight() {
+            const directionalLight = this.lights.find(l => l.type === 'directional' && l.intensity > 0);
+            if (directionalLight) {
+                return directionalLight.direction;
+            }
+            // Return a default light direction if none is configured
+            return { x: 0.5, y: 0.5, z: -1 };
         }
     };
 
