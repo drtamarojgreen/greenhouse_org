@@ -25,7 +25,7 @@
         },
 
         isActive: false,
-        rotationSpeed: 0.05, // Very fast rotation: ~2 seconds per full rotation at 60 FPS
+        rotationSpeed: 0.005, // Slower rotation
         neurons3D: [],
         connections3D: [],
         particles: [],
