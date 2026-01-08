@@ -70,24 +70,94 @@
             ctx.fillStyle = '#101018';
             ctx.fillRect(0, 0, w, h);
 
-            // --- Placeholder Content ---
-            // Display a message to confirm the app is working.
-            ctx.save();
-            ctx.font = 'bold 24px "Courier New", Courier, monospace';
-            ctx.fillStyle = '#4CAF50'; // A nice green color
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            this.drawPreSynapticTerminal(ctx, w, h);
+            this.drawPostSynapticTerminal(ctx, w, h);
+            this.drawVesicles(ctx, w, h);
+            this.drawIonChannels(ctx, w, h);
+            this.drawGPCRs(ctx, w, h);
 
-            const centerX = w / 2;
-            const centerY = h / 2;
-            
-            ctx.fillText("Synapse Visualization Page", centerX, centerY - 20);
-            
-            ctx.font = '16px "Courier New", Courier, monospace';
-            ctx.fillStyle = '#9E9E9E'; // A lighter gray
-            ctx.fillText("Module Loaded Successfully.", centerX, centerY + 20);
+            // Title
+            ctx.save();
+            ctx.font = 'bold 20px "Courier New", Courier, monospace';
+            ctx.fillStyle = '#9E9E9E';
+            ctx.textAlign = 'center';
+            ctx.fillText("Synaptic Cleft Visualization", w / 2, 30);
             ctx.restore();
-            // --- End Placeholder ---
+        },
+
+        drawPreSynapticTerminal(ctx, w, h) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.4);
+            ctx.bezierCurveTo(w * 0.25, h * 0.3, w * 0.75, h * 0.3, w, h * 0.4);
+            ctx.lineTo(w, 0);
+            ctx.lineTo(0, 0);
+            ctx.closePath();
+            ctx.fillStyle = '#2c3e50'; // Dark blue-gray
+            ctx.fill();
+            
+            ctx.strokeStyle = '#34495e';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.restore();
+        },
+
+        drawPostSynapticTerminal(ctx, w, h) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.6);
+            ctx.bezierCurveTo(w * 0.25, h * 0.7, w * 0.75, h * 0.7, w, h * 0.6);
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.closePath();
+            ctx.fillStyle = '#34495e'; // Slightly lighter blue-gray
+            ctx.fill();
+
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.restore();
+        },
+
+        drawVesicles(ctx, w, h) {
+            const vesicles = [
+                { x: w * 0.2, y: h * 0.2, r: 15 },
+                { x: w * 0.5, y: h * 0.15, r: 20 },
+                { x: w * 0.8, y: h * 0.25, r: 18 }
+            ];
+
+            ctx.save();
+            ctx.fillStyle = '#e67e22'; // Orange
+            vesicles.forEach(v => {
+                ctx.beginPath();
+                ctx.arc(v.x, v.y, v.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+        },
+
+        drawIonChannels(ctx, w, h) {
+            const channels = [w * 0.2, w * 0.6];
+            ctx.save();
+            ctx.fillStyle = '#3498db'; // Blue
+            channels.forEach(x => {
+                ctx.fillRect(x - 10, h * 0.6 - 15, 20, 15);
+            });
+            ctx.restore();
+        },
+
+        drawGPCRs(ctx, w, h) {
+            const receptors = [w * 0.4, w * 0.8];
+            ctx.save();
+            ctx.strokeStyle = '#9b59b6'; // Purple
+            ctx.lineWidth = 4;
+            receptors.forEach(x => {
+                ctx.beginPath();
+                ctx.moveTo(x - 15, h * 0.6);
+                ctx.bezierCurveTo(x - 5, h * 0.6 - 10, x + 5, h * 0.6 - 10, x + 15, h * 0.6);
+                ctx.stroke();
+            });
+            ctx.restore();
         }
     };
 
