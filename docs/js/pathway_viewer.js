@@ -101,7 +101,8 @@
 
             if (window.GreenhouseNeuroCameraControls) {
                 this.cameraControls = Object.create(window.GreenhouseNeuroCameraControls);
-                this.cameraControls.init(this.canvas, this.camera, { get: () => ({}) }); // Mock config
+                // FIX: Provide a complete mock config with a 'set' method
+                this.cameraControls.init(this.canvas, this.camera, { get: () => ({}), set: () => {} });
             }
 
             this.initializeBrainShell();
@@ -150,7 +151,8 @@
         },
 
         async loadPathwayData() {
-            const parsedData = await KeggParser.parse('../endpoints/kegg_dopaminergic_raw.xml');
+            // FIX: Corrected the path to the KEGG data file
+            const parsedData = await KeggParser.parse('endpoints/kegg_dopaminergic_raw.xml');
             this.pathwayData = PathwayLayout.generate3DLayout(parsedData.nodes);
             this.pathwayEdges = parsedData.edges;
 
@@ -177,7 +179,7 @@
             this.ctx.fillStyle = '#111';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-            if (this.brainShell) {
+            if (this.brainShell && window.GreenhouseNeuroBrain) {
                 window.GreenhouseNeuroBrain.drawBrainShell(this.ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height, { color: 'rgba(204, 204, 204, 0.1)' });
             }
 
