@@ -1,159 +1,233 @@
 // docs/js/pathway_viewer.js
-// Core viewer for the 3D pathway visualization.
+// Core viewer for the 3D pathway visualization, using the native 3D engine.
 
 (function() {
     'use strict';
 
+    // Internal helper for parsing KGML data
+    const KeggParser = {
+        async parse(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch KGML data: ${response.statusText}`);
+                }
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+                const nodes = this.extractEntries(xmlDoc);
+                const edges = this.extractRelations(xmlDoc);
+
+                return { nodes, edges };
+            } catch (error) {
+                console.error("Error parsing KGML data:", error);
+                return { nodes: [], edges: [] };
+            }
+        },
+
+        extractEntries(xmlDoc) {
+            const nodes = [];
+            const entries = xmlDoc.getElementsByTagName("entry");
+
+            for (let i = 0; i < entries.length; i++) {
+                const entry = entries[i];
+                const graphics = entry.getElementsByTagName("graphics")[0];
+
+                if (graphics) {
+                    nodes.push({
+                        id: entry.getAttribute("id"),
+                        name: entry.getAttribute("name"),
+                        type: entry.getAttribute("type"),
+                        x: parseInt(graphics.getAttribute("x"), 10),
+                        y: parseInt(graphics.getAttribute("y"), 10),
+                    });
+                }
+            }
+            return nodes;
+        },
+
+        extractRelations(xmlDoc) {
+            const edges = [];
+            const relations = xmlDoc.getElementsByTagName("relation");
+
+            for (let i = 0; i < relations.length; i++) {
+                const relation = relations[i];
+                edges.push({
+                    source: relation.getAttribute("entry1"),
+                    target: relation.getAttribute("entry2"),
+                });
+            }
+            return edges;
+        }
+    };
+
+    // Internal helper for 2D to 3D layout
+    const PathwayLayout = {
+        generate3DLayout(data, scaleFactor = 20, zLayerSeparation = 150) {
+            if (!data || !data.nodes || data.nodes.length === 0) return [];
+            const xCoords = data.nodes.map(n => n.x);
+            const yCoords = data.nodes.map(n => n.y);
+            const xCenter = (Math.min(...xCoords) + Math.max(...xCoords)) / 2;
+            const yCenter = (Math.min(...yCoords) + Math.max(...yCoords)) / 2;
+
+            return data.nodes.map(node => {
+                const x_3d = (node.x - xCenter) / scaleFactor;
+                const y_3d = (node.y - yCenter) / scaleFactor;
+                let z_3d = 0;
+                switch (node.type) {
+                    case 'compound': z_3d = zLayerSeparation; break;
+                    case 'gene': z_3d = 0; break;
+                    case 'map': z_3d = -zLayerSeparation; break;
+                }
+                return { ...node, position3D: { x: x_3d, y: -y_3d, z: z_3d } };
+            });
+        }
+    };
+
     const GreenhousePathwayViewer = {
-        scene: null,
-        camera: null,
-        renderer: null,
-        controls: null,
-        brainModel: null,
-        torsoModel: null,
-        pathwayData: null,
-        pathwayObjects: [],
-        parsedData: null, // Store parsed data
+        canvas: null, ctx: null, camera: null, projection: null, cameraControls: null,
+        pathwayData: null, pathwayEdges: null, brainShell: null, highlightedNodeId: null,
 
         async init(containerSelector) {
-            // Basic Three.js setup
-            this.scene = new THREE.Scene();
-            this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            this.renderer = new THREE.WebGLRenderer({ antialias: true });
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
-            document.querySelector(containerSelector).appendChild(this.renderer.domElement);
+            const container = document.querySelector(containerSelector);
+            if (!container) return;
 
-            // Controls
-            this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+            this.setupUI(container);
+            this.setupCanvas(container);
 
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            this.scene.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-            directionalLight.position.set(5, 5, 5);
-            this.scene.add(directionalLight);
+            this.camera = { x: 0, y: 0, z: 1000, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 45 };
+            this.projection = { width: this.canvas.width, height: this.canvas.height, near: 1, far: 2000 };
 
-            // Camera Position
-            this.camera.position.z = 150;
-
-            // Load and render models
-            this.renderAnatomicalContext();
-
-            // Load and render pathway
-            await this.loadAndRenderPathway();
-
-            // Start rendering loop
-            this.animate();
-        },
-
-        renderAnatomicalContext() {
-            // Brain
-            if (window.brain_mesh_realistic) {
-                const geometry = new THREE.BufferGeometry();
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(window.brain_mesh_realistic.vertices, 3));
-                geometry.setIndex(new THREE.Uint32BufferAttribute(window.brain_mesh_realistic.indices, 1));
-                geometry.computeVertexNormals();
-                const material = new THREE.MeshStandardMaterial({ color: 0xcccccc, transparent: true, opacity: 0.3 });
-                this.brainModel = new THREE.Mesh(geometry, material);
-                this.brainModel.scale.set(10, 10, 10);
-                this.scene.add(this.brainModel);
+            if (window.GreenhouseNeuroCameraControls) {
+                this.cameraControls = Object.create(window.GreenhouseNeuroCameraControls);
+                this.cameraControls.init(this.canvas, this.camera, { get: () => ({}) }); // Mock config
             }
 
-            // Torso (placeholder)
-            const torsoGeometry = new THREE.CylinderGeometry(20, 20, 80, 32);
-            const torsoMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc, transparent: true, opacity: 0.3 });
-            this.torsoModel = new THREE.Mesh(torsoGeometry, torsoMaterial);
-            this.torsoModel.position.y = -80;
-            this.scene.add(this.torsoModel);
+            this.initializeBrainShell();
+            await this.loadPathwayData();
+            this.startAnimation();
         },
 
-        async loadAndRenderPathway() {
-            this.parsedData = await window.KeggParser.parse('endpoints/kegg_dopaminergic_raw.xml');
-            this.pathwayData = window.PathwayLayout.generate3DLayout(this.parsedData);
-            this.renderPathwayGraph();
-            this.populateUI();
-        },
+        setupUI(container) {
+            const uiContainer = document.createElement('div');
+            uiContainer.style.cssText = `position: absolute; top: 10px; left: 10px; z-index: 10; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; color: white;`;
+            container.style.position = 'relative';
 
-        renderPathwayGraph() {
-            // Clear previous pathway objects
-            this.pathwayObjects.forEach(obj => this.scene.remove(obj));
-            this.pathwayObjects = [];
+            const label = document.createElement('label');
+            label.textContent = 'Highlight Gene:';
+            label.htmlFor = 'pathway-selector';
+            uiContainer.appendChild(label);
 
-            const nodeGeometry = new THREE.SphereGeometry(2, 32, 32);
-            const nodeMaterials = {
-                gene: new THREE.MeshStandardMaterial({ color: 0x00ff00 }),
-                compound: new THREE.MeshStandardMaterial({ color: 0x0000ff }),
-                map: new THREE.MeshStandardMaterial({ color: 0xffff00 }),
-                default: new THREE.MeshStandardMaterial({ color: 0xffffff })
-            };
+            const select = document.createElement('select');
+            select.id = 'pathway-selector';
+            uiContainer.appendChild(select);
 
-            // Render nodes
-            this.pathwayData.forEach(node => {
-                const material = nodeMaterials[node.type] || nodeMaterials.default;
-                const sphere = new THREE.Mesh(nodeGeometry, material);
-                sphere.position.set(node.position3D.x, node.position3D.y, node.position3D.z);
-                sphere.userData = node; // Store data for highlighting
-                this.scene.add(sphere);
-                this.pathwayObjects.push(sphere);
+            const button = document.createElement('button');
+            button.id = 'highlight-gene-btn';
+            button.textContent = 'Highlight';
+            button.addEventListener('click', () => {
+                this.highlightedNodeId = select.value;
             });
+            uiContainer.appendChild(button);
 
-            // Render edges
-            const edges = this.parsedData.edges;
-            edges.forEach(edge => {
-                const sourceNode = this.pathwayData.find(n => n.id === edge.source);
-                const targetNode = this.pathwayData.find(n => n.id === edge.target);
-
-                if (sourceNode && targetNode) {
-                    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.5 });
-                    const points = [
-                        new THREE.Vector3(sourceNode.position3D.x, sourceNode.position3D.y, sourceNode.position3D.z),
-                        new THREE.Vector3(targetNode.position3D.x, targetNode.position3D.y, targetNode.position3D.z)
-                    ];
-                    const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                    const line = new THREE.Line(lineGeometry, lineMaterial);
-                    this.scene.add(line);
-                    this.pathwayObjects.push(line);
-                }
-            });
+            container.appendChild(uiContainer);
         },
 
-        populateUI() {
+        setupCanvas(container) {
+            this.canvas = document.createElement('canvas');
+            this.canvas.width = container.offsetWidth;
+            this.canvas.height = Math.max(container.offsetHeight, 600);
+            this.ctx = this.canvas.getContext('2d');
+            container.appendChild(this.canvas);
+        },
+
+        initializeBrainShell() {
+            this.brainShell = { vertices: [], faces: [] };
+            if (window.GreenhouseNeuroGeometry) {
+                window.GreenhouseNeuroGeometry.initializeBrainShell(this.brainShell);
+            }
+        },
+
+        async loadPathwayData() {
+            const parsedData = await KeggParser.parse('../endpoints/kegg_dopaminergic_raw.xml');
+            this.pathwayData = PathwayLayout.generate3DLayout(parsedData.nodes);
+            this.pathwayEdges = parsedData.edges;
+
             const selector = document.getElementById('pathway-selector');
-            if (!selector) return;
-
             this.pathwayData.filter(node => node.type === 'gene').forEach(geneNode => {
                 const option = document.createElement('option');
                 option.value = geneNode.id;
                 option.textContent = geneNode.name;
                 selector.appendChild(option);
             });
-
-            document.getElementById('highlight-gene-btn').addEventListener('click', () => {
-                const selectedId = selector.value;
-                this.highlightNode(selectedId);
-            });
         },
 
-        highlightNode(nodeId) {
-            this.pathwayObjects.forEach(obj => {
-                if (obj.isMesh) { // Only highlight nodes (spheres)
-                    if (obj.userData.id === nodeId) {
-                        obj.material.emissive.setHex(0xff0000);
-                    } else {
-                        obj.material.emissive.setHex(0x000000);
-                    }
+        startAnimation() {
+            const animate = () => {
+                this.cameraControls.update();
+                this.render();
+                requestAnimationFrame(animate);
+            };
+            animate();
+        },
+
+        render() {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = '#111';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            if (this.brainShell) {
+                window.GreenhouseNeuroBrain.drawBrainShell(this.ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height, { color: 'rgba(204, 204, 204, 0.1)' });
+            }
+
+            this.drawPathwayGraph();
+        },
+
+        drawPathwayGraph() {
+            if (!this.pathwayData || !window.GreenhouseModels3DMath) return;
+
+            const projectedNodes = this.pathwayData.map(node => ({
+                ...node,
+                projected: GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection)
+            }));
+
+            // Draw edges
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            this.ctx.lineWidth = 1;
+            this.pathwayEdges.forEach(edge => {
+                const source = projectedNodes.find(n => n.id === edge.source);
+                const target = projectedNodes.find(n => n.id === edge.target);
+                if (source && target && source.projected.scale > 0 && target.projected.scale > 0) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(source.projected.x, source.projected.y);
+                    this.ctx.lineTo(target.projected.x, target.projected.y);
+                    this.ctx.stroke();
                 }
             });
-        },
 
-        animate() {
-            requestAnimationFrame(this.animate.bind(this));
-            this.controls.update();
-            this.renderer.render(this.scene, this.camera);
+            // Draw nodes
+            projectedNodes.forEach(node => {
+                if (node.projected.scale > 0) {
+                    let radius = 5 * node.projected.scale;
+                    let color = 'white';
+                    switch (node.type) {
+                        case 'gene': color = '#00ff00'; break;
+                        case 'compound': color = '#0000ff'; break;
+                        case 'map': color = '#ffff00'; radius = 10 * node.projected.scale; break;
+                    }
+                    if (node.id === this.highlightedNodeId) {
+                        color = '#ff0000';
+                        radius *= 2;
+                    }
+                    this.ctx.beginPath();
+                    this.ctx.arc(node.projected.x, node.projected.y, radius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = color;
+                    this.ctx.fill();
+                }
+            });
         }
     };
 
     window.GreenhousePathwayViewer = GreenhousePathwayViewer;
-    console.log('GreenhousePathwayViewer loaded.');
-
 })();

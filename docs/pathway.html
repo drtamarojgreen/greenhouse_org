@@ -1,56 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Greenhouse Pathway Viewer</title>
+    <title>Pathway Viewer Test Harness</title>
     <style>
-        body { margin: 0; }
-        #viewer-container {
-            width: 100vw;
-            height: 100vh;
-            position: relative; /* Establish stacking context */
-        }
-        #ui-container {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 5px;
-            color: white;
-            z-index: 10; /* Should work now */
-        }
+        body, html { margin: 0; padding: 0; overflow: hidden; }
+        #app-container { width: 100vw; height: 100vh; }
     </style>
 </head>
-
 <body>
-    <div id="ui-container">
-        <label for="pathway-selector">Highlight Gene:</label>
-        <select id="pathway-selector"></select>
-        <button id="highlight-gene-btn">Highlight</button>
-    </div>
-    <div id="viewer-container"></div>
+    <div id="app-container"></div>
 
-    <!-- Dependencies -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="js/brain_mesh_realistic.js"></script>
-    <script src="js/labeling_system.js"></script>
-    <script src="js/kegg_parser.js"></script>
-    <script src="js/pathway_layout.js"></script>
-    <script src="js/pathway_viewer.js"></script>
-
+    <script src="js/pathway.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            if (window.GreenhousePathwayViewer) {
-                window.GreenhousePathwayViewer.init('#viewer-container');
+            if (window.GreenhousePathwayApp) {
+                window.GreenhousePathwayApp.init('#app-container');
             } else {
-                console.error('Pathway Viewer not found.');
+                console.error('Test Harness: GreenhousePathwayApp not found.');
             }
         });
     </script>
 </body>
-
 </html>
