@@ -4,47 +4,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Greenhouse Pathway Visualization</title>
+    <title>Greenhouse Pathway Viewer</title>
     <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background-color: #1a1a1a;
-            color: #eee;
-            font-family: sans-serif;
+        body { margin: 0; }
+        #viewer-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative; /* Establish stacking context */
         }
-
-        #pathway-app-container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            background: #2a2a2a;
-            border-radius: 8px;
-            padding: 20px;
-            min-height: 600px;
+        #ui-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            z-index: 10; /* Should work now */
         }
     </style>
 </head>
 
 <body>
-    <h1>Pathway Visualization Development</h1>
-    <div id="pathway-app-container"></div>
+    <div id="ui-container">
+        <label for="pathway-selector">Highlight Gene:</label>
+        <select id="pathway-selector"></select>
+        <button id="highlight-gene-btn">Highlight</button>
+    </div>
+    <div id="viewer-container"></div>
 
     <!-- Dependencies -->
-    <script src="js/models_3d_math.js"></script>
-    <script src="js/pathway_app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="js/brain_mesh_realistic.js"></script>
+    <script src="js/labeling_system.js"></script>
+    <script src="js/kegg_parser.js"></script>
+    <script src="js/pathway_layout.js"></script>
+    <script src="js/pathway_viewer.js"></script>
 
     <script>
-        // For this local file, we manually initialize the application
         document.addEventListener('DOMContentLoaded', () => {
-            if (window.GreenhousePathwayApp) {
-                window.GreenhousePathwayApp.init('#pathway-app-container');
+            if (window.GreenhousePathwayViewer) {
+                window.GreenhousePathwayViewer.init('#viewer-container');
             } else {
-                console.error('Pathway Init Error: GreenhousePathwayApp not found on window object.');
-                const container = document.querySelector('#pathway-app-container');
-                if(container) {
-                    container.innerHTML = '<p style="color:red;">Error: Could not load Pathway application.</p>';
-                }
+                console.error('Pathway Viewer not found.');
             }
         });
     </script>
