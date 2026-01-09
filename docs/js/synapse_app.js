@@ -17,15 +17,18 @@
         titleColor: '#9E9E9E',
         labelFont: '12px "Courier New", Courier, monospace',
         labelColor: '#ecf0f1',
-        labels: {
-            preSynapticTerminal: { text: 'Pre-Synaptic Terminal', x: 0.5, y: 0.1 },
-            postSynapticTerminal: { text: 'Post-Synaptic Terminal', x: 0.5, y: 0.9 },
-            vesicle: { text: 'Vesicle', x: 0.2, y: 0.3 },
-            ionChannel: { text: 'Ion Channel', x: 0.2, y: 0.75 },
-            gpcr: { text: 'G-protein Coupled Receptor', x: 0.8, y: 0.75 }
+        tooltipBg: 'rgba(0, 0, 0, 0.7)',
+        tooltipColor: '#ffffff',
+        translations: {
+            preSynapticTerminal: { en: 'Pre-Synaptic Terminal', es: 'Terminal Presináptica' },
+            postSynapticTerminal: { en: 'Post-Synaptic Terminal', es: 'Terminal Postsináptica' },
+            vesicle: { en: 'Vesicle', es: 'Vesícula' },
+            ionChannel: { en: 'Ion Channel', es: 'Canal Iónico' },
+            gpcr: { en: 'G-protein Coupled Receptor', es: 'Receptor acoplado a proteína G' },
+            synapticCleft: { en: 'Synaptic Cleft Visualization', es: 'Visualización de la Hendidura Sináptica' }
         },
         vesicles: [
-            { x: 0.2, y: 0.2, r: 15 },
+            { id: 'vesicle', x: 0.2, y: 0.2, r: 15 },
             { x: 0.5, y: 0.15, r: 20 },
             { x: 0.8, y: 0.25, r: 18 }
         ],
@@ -38,6 +41,8 @@
         ctx: null,
         container: null,
         mouse: { x: 0, y: 0 },
+        currentLanguage: 'en',
+        hoveredItem: null,
 
         init(targetSelector, baseUrl) {
             console.log(`Synapse App: Initializing in container: ${targetSelector}`);
@@ -75,6 +80,7 @@
 
             // Add mouse move listener
             this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+            this.canvas.addEventListener('click', (e) => this.handleClick(e));
             
             // Set canvas resolution to match its display size
             this.resize();
@@ -131,15 +137,71 @@
             this.drawPreSynapticTerminal(ctx, w, h, midLayerX, midLayerY);
             this.drawVesicles(ctx, w, h, midLayerX, midLayerY, scaleFactor);
 
-            // Title is static
+            // Title is now translatable
             ctx.save();
             ctx.font = config.titleFont;
             ctx.fillStyle = config.titleColor;
             ctx.textAlign = 'center';
-            ctx.fillText("Synaptic Cleft Visualization", w / 2, 30);
+            const titleText = config.translations.synapticCleft[this.currentLanguage];
+            ctx.fillText(titleText, w / 2, 30);
             ctx.restore();
 
-            this.drawLabels(ctx, w, h, fgLayerX, fgLayerY, scaleFactor);
+            // Draw tooltip if an item is hovered
+            this.drawTooltip(ctx);
+
+            // Draw language switcher UI
+            this.drawLanguageSwitcher(ctx);
+        },
+
+        handleClick(e) {
+            const w = this.canvas.width;
+            // Check if EN button was clicked
+            if (this.mouse.x > w - 70 && this.mouse.x < w - 40 && this.mouse.y > 10 && this.mouse.y < 30) {
+                this.currentLanguage = 'en';
+            }
+            // Check if ES button was clicked
+            if (this.mouse.x > w - 35 && this.mouse.x < w - 5 && this.mouse.y > 10 && this.mouse.y < 30) {
+                this.currentLanguage = 'es';
+            }
+        },
+
+        drawLanguageSwitcher(ctx) {
+            const w = this.canvas.width;
+            ctx.save();
+            ctx.font = 'bold 14px "Courier New", Courier, monospace';
+
+            // EN button
+            ctx.fillStyle = this.currentLanguage === 'en' ? '#FFFFFF' : '#888888';
+            ctx.fillText('EN', w - 60, 25);
+
+            // Separator
+            ctx.fillStyle = '#555555';
+            ctx.fillText('|', w - 40, 25);
+
+            // ES button
+            ctx.fillStyle = this.currentLanguage === 'es' ? '#FFFFFF' : '#888888';
+            ctx.fillText('ES', w - 25, 25);
+
+            ctx.restore();
+        },
+
+        drawTooltip(ctx) {
+            if (!this.hoveredItem) return;
+
+            const text = config.translations[this.hoveredItem][this.currentLanguage];
+            if (!text) return;
+
+            const x = this.mouse.x + 15;
+            const y = this.mouse.y + 15;
+
+            ctx.font = config.labelFont;
+            const textWidth = ctx.measureText(text).width;
+
+            ctx.fillStyle = config.tooltipBg;
+            ctx.fillRect(x - 5, y - 15, textWidth + 10, 20);
+
+            ctx.fillStyle = config.tooltipColor;
+            ctx.fillText(text, x, y);
         },
 
         drawPreSynapticTerminal(ctx, w, h, offsetX, offsetY) {
