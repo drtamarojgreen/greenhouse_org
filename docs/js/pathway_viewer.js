@@ -6,13 +6,8 @@
 
     // Internal helper for parsing KGML data
     const KeggParser = {
-        async parse(url) {
+        parse(xmlText) { // Now synchronous
             try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch KGML data: ${response.statusText}`);
-                }
-                const xmlText = await response.text();
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
@@ -122,9 +117,17 @@
     const GreenhousePathwayViewer = {
         canvas: null, ctx: null, camera: null, projection: null, cameraControls: null,
         pathwayData: null, pathwayEdges: null, brainShell: null, highlightedNodeId: null,
+        rawXmlData: null,
         baseUrl: '',
 
         async init(containerSelector, baseUrl) {
+            const dataElement = document.getElementById('pathwayText');
+            if (dataElement && dataElement.textContent) {
+                this.rawXmlData = dataElement.textContent;
+            } else {
+                console.error('Pathway Viewer: Data element not found or is empty.');
+                return;
+            }
             this.baseUrl = baseUrl || '';
             const container = document.querySelector(containerSelector);
             if (!container) return;
@@ -141,7 +144,7 @@
             }
 
             this.initializeBrainShell();
-            await this.loadPathwayData();
+            this.loadPathwayData();
             this.startAnimation();
         },
 
@@ -186,9 +189,8 @@
         },
 
         loadPathwayData() { // Now synchronous
-            const dataElement = document.getElementById('pathwayText');
-            if (dataElement && dataElement.textContent) {
-                const parsedData = KeggParser.parse(dataElement.textContent);
+            if (this.rawXmlData) {
+                const parsedData = KeggParser.parse(this.rawXmlData);
                 this.pathwayData = PathwayLayout.generate3DLayout(parsedData.nodes);
                 this.pathwayEdges = parsedData.edges;
 
@@ -200,7 +202,7 @@
                     selector.appendChild(option);
                 });
             } else {
-                console.error('Pathway Viewer: Data element not found or is empty.');
+                console.error('Pathway Viewer: No raw XML data available to load.');
             }
         },
 
