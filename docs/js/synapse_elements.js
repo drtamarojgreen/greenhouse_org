@@ -23,7 +23,8 @@
             vesicle: { en: 'Vesicle', es: 'Vesícula' },
             ionChannel: { en: 'Ion Channel', es: 'Canal Iónico' },
             gpcr: { en: 'G-protein Coupled Receptor', es: 'Receptor acoplado a proteína G' },
-            synapticCleft: { en: 'Synaptic Cleft Visualization', es: 'Visualización de la Hendidura Sináptica' }
+            synapticCleft: { en: 'Synaptic Cleft Visualization', es: 'Visualización de la Hendidura Sináptica' },
+            calciumBlocker: { en: 'Calcium Channel Blocker', es: 'Bloqueador de Canal de Calcio' }
         },
         vesicles: [
             { id: 'vesicle', x: 0.2, y: 0.2, r: 15 },
@@ -31,22 +32,60 @@
             { x: 0.8, y: 0.25, r: 18 }
         ],
         ionChannels: [0.2, 0.6],
-        gpcrs: [0.4, 0.8]
+        gpcrs: [0.4, 0.8],
+        calciumBlockers: [0.2] // Positioned over the first ion channel
     };
 
     const SynapseElements = {
         config: config,
 
+        drawParticles(app, ctx, particles) {
+            ctx.save();
+            particles.forEach(p => {
+                const alpha = p.life > 0.5 ? 1 : p.life * 2;
+                ctx.fillStyle = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+        },
+
+        drawCalciumBlockers(ctx, w, h, offsetX, offsetY) {
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+            ctx.strokeStyle = '#FFC107';
+            ctx.lineWidth = 2;
+            config.calciumBlockers.forEach(x => {
+                const centerX = w * x;
+                const centerY = h * 0.6 - 15;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - 8);
+                ctx.lineTo(centerX + 8, centerY + 8);
+                ctx.lineTo(centerX - 8, centerY + 8);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            });
+            ctx.restore();
+        },
+
         drawPreSynapticTerminal(ctx, w, h, offsetX, offsetY) {
             ctx.save();
             ctx.translate(offsetX, offsetY);
+
+            const gradient = ctx.createRadialGradient(w / 2, h * 0.3, 50, w / 2, h * 0.3, 300);
+            gradient.addColorStop(0, '#556270');
+            gradient.addColorStop(1, config.preSynapticColor);
+
             ctx.beginPath();
             ctx.moveTo(0, h * 0.4);
             ctx.bezierCurveTo(w * 0.25, h * 0.3, w * 0.75, h * 0.3, w, h * 0.4);
             ctx.lineTo(w, 0);
             ctx.lineTo(0, 0);
             ctx.closePath();
-            ctx.fillStyle = config.preSynapticColor;
+            ctx.fillStyle = gradient;
             ctx.fill();
 
             ctx.strokeStyle = config.postSynapticColor;
@@ -58,13 +97,18 @@
         drawPostSynapticTerminal(ctx, w, h, offsetX, offsetY) {
             ctx.save();
             ctx.translate(offsetX, offsetY);
+
+            const gradient = ctx.createRadialGradient(w / 2, h * 0.7, 50, w / 2, h * 0.7, 300);
+            gradient.addColorStop(0, '#607D8B');
+            gradient.addColorStop(1, config.postSynapticColor);
+
             ctx.beginPath();
             ctx.moveTo(0, h * 0.6);
             ctx.bezierCurveTo(w * 0.25, h * 0.7, w * 0.75, h * 0.7, w, h * 0.6);
             ctx.lineTo(w, h);
             ctx.lineTo(0, h);
             ctx.closePath();
-            ctx.fillStyle = config.postSynapticColor;
+            ctx.fillStyle = gradient;
             ctx.fill();
 
             ctx.strokeStyle = config.preSynapticColor;

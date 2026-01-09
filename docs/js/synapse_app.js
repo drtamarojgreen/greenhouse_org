@@ -17,6 +17,7 @@
         mouse: { x: 0, y: 0 },
         currentLanguage: 'en',
         hoveredItem: null,
+        particles: [],
 
         // --- Core Application Flow ---
 
@@ -86,6 +87,9 @@
             const scaleIntensity = 0.1;
             const scaleFactor = 1.0 - (mouseOffsetY * scaleIntensity);
 
+            // --- Update State ---
+            SynapseActions.updateParticles(this, w, h);
+
             // --- Hit Detection ---
             SynapseActions.performHitDetection(this, ctx, w, h, { bgLayerX, bgLayerY, midLayerX, midLayerY }, scaleFactor);
 
@@ -97,7 +101,9 @@
             SynapseElements.drawIonChannels(ctx, w, h, bgLayerX, bgLayerY);
             SynapseElements.drawGPCRs(ctx, w, h, bgLayerX, bgLayerY);
             SynapseElements.drawPreSynapticTerminal(ctx, w, h, midLayerX, midLayerY);
+            SynapseElements.drawParticles(this, ctx, this.particles);
             SynapseElements.drawVesicles(ctx, w, h, midLayerX, midLayerY, scaleFactor);
+            SynapseElements.drawCalciumBlockers(ctx, w, h, bgLayerX, bgLayerY);
 
             ctx.save();
             ctx.font = config.titleFont;
