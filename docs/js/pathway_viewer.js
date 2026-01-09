@@ -6,8 +6,13 @@
 
     // Internal helper for parsing KGML data
     const KeggParser = {
-        parse(xmlText) { // Now synchronous
+        async parse(url) {
             try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch KGML data: ${response.statusText}`);
+                }
+                const xmlText = await response.text();
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
@@ -136,7 +141,7 @@
             }
 
             this.initializeBrainShell();
-            this.loadPathwayData();
+            await this.loadPathwayData();
             this.startAnimation();
         },
 
