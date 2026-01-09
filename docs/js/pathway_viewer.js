@@ -85,6 +85,40 @@
         }
     };
 
+    // High-fidelity mock config object
+    const mockConfig = {
+        camera: {
+            controls: {
+                autoRotate: false,
+                autoRotateSpeed: 0.0,
+            }
+        },
+        get(path) {
+            const keys = path.split('.');
+            let value = this;
+            for (const key of keys) {
+                if (value && typeof value === 'object' && key in value) {
+                    value = value[key];
+                } else {
+                    return undefined;
+                }
+            }
+            return value;
+        },
+        set(path, value) {
+            const keys = path.split('.');
+            let obj = this;
+            for (let i = 0; i < keys.length - 1; i++) {
+                const key = keys[i];
+                if (!(key in obj) || typeof obj[key] !== 'object') {
+                    obj[key] = {};
+                }
+                obj = obj[key];
+            }
+            obj[keys[keys.length - 1]] = value;
+        }
+    };
+
     const GreenhousePathwayViewer = {
         canvas: null, ctx: null, camera: null, projection: null, cameraControls: null,
         pathwayData: null, pathwayEdges: null, brainShell: null, highlightedNodeId: null,
@@ -101,8 +135,7 @@
 
             if (window.GreenhouseNeuroCameraControls) {
                 this.cameraControls = Object.create(window.GreenhouseNeuroCameraControls);
-                // FIX: Provide a complete mock config with a 'set' method
-                this.cameraControls.init(this.canvas, this.camera, { get: () => ({}), set: () => {} });
+                this.cameraControls.init(this.canvas, this.camera, mockConfig);
             }
 
             this.initializeBrainShell();
@@ -151,7 +184,6 @@
         },
 
         async loadPathwayData() {
-            // FIX: Corrected the path to the KEGG data file
             const parsedData = await KeggParser.parse('endpoints/kegg_dopaminergic_raw.xml');
             this.pathwayData = PathwayLayout.generate3DLayout(parsedData.nodes);
             this.pathwayEdges = parsedData.edges;
