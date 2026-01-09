@@ -74,10 +74,26 @@
 
             // Order matters: check foreground items first
             if (this.isMouseOverVesicles(app, ctx, w, h, offsets.midLayerX, offsets.midLayerY, scale)) return;
+            if (this.isMouseOverCalciumBlockers(app, ctx, w, h, offsets.bgLayerX, offsets.bgLayerY)) return;
             if (this.isMouseOverGPCRs(app, ctx, w, h, offsets.bgLayerX, offsets.bgLayerY)) return;
             if (this.isMouseOverIonChannels(app, ctx, w, h, offsets.bgLayerX, offsets.bgLayerY)) return;
             if (this.isMouseOverPreSynapticTerminal(app, ctx, w, h, offsets.midLayerX, offsets.midLayerY)) return;
             if (this.isMouseOverPostSynapticTerminal(app, ctx, w, h, offsets.bgLayerX, offsets.bgLayerY)) return;
+        },
+
+        isMouseOverCalciumBlockers(app, ctx, w, h, offsetX, offsetY) {
+            for (const x of SynapseElements.config.calciumBlockers) {
+                const path = this.getCalciumBlockerPath(x, w, h);
+                ctx.save();
+                ctx.translate(offsetX, offsetY);
+                if (ctx.isPointInPath(path, app.mouse.x, app.mouse.y)) {
+                    app.hoveredItem = 'calciumBlocker';
+                    ctx.restore();
+                    return true;
+                }
+                ctx.restore();
+            }
+            return false;
         },
 
         isMouseOverPreSynapticTerminal(app, ctx, w, h, offsetX, offsetY) {
@@ -189,6 +205,74 @@
             const path = new Path2D();
             path.rect(w * x - 10, h * 0.6 - 15, 20, 15);
             return path;
+        },
+
+        getCalciumBlockerPath(x, w, h) {
+            const path = new Path2D();
+            const centerX = w * x;
+            const centerY = h * 0.6 - 15;
+            path.moveTo(centerX, centerY - 8);
+            path.lineTo(centerX + 8, centerY + 8);
+            path.lineTo(centerX - 8, centerY + 8);
+            path.closePath();
+            return path;
+        },
+
+        // --- Particle Simulation ---
+
+        updateParticles(app, w, h) {
+            // 1. Spawn new particles periodically
+            if (Math.random() < 0.1) {
+                const isModulator = Math.random() < 0.2; // 20% chance of being a neuromodulator
+                app.particles.push({
+                    x: Math.random() * w,
+                    y: h * 0.4,
+                    r: isModulator ? 5 : 3,
+                    vx: (Math.random() - 0.5) * 1,
+                    vy: (Math.random() * 0.5) + 0.5,
+                    life: 1.0,
+                    isModulator: isModulator,
+                    color: isModulator ? {r: 255, g: 100, b: 255} : {r: 255, g: 255, b: 0} // Yellow for neurotransmitters, Pink for modulators
+                });
+            }
+
+            // 2. Update and draw existing particles
+            for (let i = app.particles.length - 1; i >= 0; i--) {
+                const p = app.particles[i];
+
+                // Update position
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.005;
+
+                // Remove dead particles
+                if (p.life <= 0) {
+                    app.particles.splice(i, 1);
+                    continue;
+                }
+
+                // 3. Check for binding or neuromodulation
+                if (!p.isModulator) {
+                    // Standard Neurotransmitter: Check for binding
+                    if (p.y > h * 0.6) {
+                         // Simple distance check for binding to any receptor
+                        const isBlocked = SynapseElements.config.calciumBlockers.includes(SynapseElements.config.ionChannels[0]) && Math.abs(p.x - w * SynapseElements.config.ionChannels[0]) < 20;
+                        if (!isBlocked) {
+                           app.particles.splice(i, 1); // Remove on binding
+                        }
+                    }
+                } else {
+                    // Neuromodulator: Check for background color change
+                    if (p.y > h * 0.8) {
+                        document.body.style.transition = 'background-color 0.5s';
+                        document.body.style.backgroundColor = 'rgba(100, 0, 100, 0.1)';
+                        setTimeout(() => {
+                           document.body.style.backgroundColor = '';
+                        }, 500);
+                        app.particles.splice(i, 1); // Fade out after effect
+                    }
+                }
+            }
         }
     };
 
