@@ -74,7 +74,10 @@
             if (window.GreenhouseSynapseApp) {
                 console.log('Synapse App: All modules loaded successfully.');
                 // Initialize the application
-                window.GreenhouseSynapseApp.init(targetSelector);
+                console.log('Synapse App: Initializing in 5 seconds...');
+                setTimeout(() => {
+                    window.GreenhouseSynapseApp.init(targetSelector);
+                }, 5000);
             } else {
                 throw new Error("Synapse application module failed to load.");
             }
