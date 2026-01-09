@@ -53,23 +53,61 @@
     window.GreenhousePathwayApp = GreenhousePathwayApp;
 
     // --- Main Execution Logic ---
+    function captureAttributes() {
+        // 1. Try global object (set by GreenhouseUtils)
+        if (window._greenhouseScriptAttributes) {
+            const attrs = window._greenhouseScriptAttributes;
+            return {
+                targetSelector: attrs['target-selector-left'],
+                baseUrl: attrs['base-url']
+            };
+        }
+
+        // 2. Try current script attributes
+        const script = document.currentScript;
+        if (script) {
+            return {
+                targetSelector: script.getAttribute('data-target-selector-left'),
+                baseUrl: script.getAttribute('data-base-url')
+            };
+        }
+
+        // 3. Fallback: Find script by src
+        const scripts = document.querySelectorAll('script[src*="pathway.js"]');
+        if (scripts.length > 0) {
+            const lastScript = scripts[scripts.length - 1];
+            return {
+                targetSelector: lastScript.getAttribute('data-target-selector-left'),
+                baseUrl: lastScript.getAttribute('data-base-url')
+            };
+        }
+
+        return { targetSelector: null, baseUrl: null };
+    }
+
     function main() {
-        // Capture attributes from the global object set by GreenhouseUtils
-        const attributes = window._greenhouseScriptAttributes || {};
-        const targetSelector = attributes['target-selector-left'];
-        const baseUrl = attributes['base-url'];
+        const { targetSelector, baseUrl } = captureAttributes();
 
         if (targetSelector && baseUrl) {
             console.log('Pathway App: Attributes captured. Starting init sequence.');
             GreenhousePathwayApp.init(targetSelector, baseUrl);
         } else {
-            console.error('Pathway App: Missing configuration attributes.', {
-                targetSelector,
-                baseUrl,
-                attributes
-            });
+            console.warn('Pathway App: Attributes not found immediately. Retrying in 100ms...');
+            setTimeout(() => {
+                const retry = captureAttributes();
+                if (retry.targetSelector && retry.baseUrl) {
+                    console.log('Pathway App: Attributes captured on retry.');
+                    GreenhousePathwayApp.init(retry.targetSelector, retry.baseUrl);
+                } else {
+                    console.error('Pathway App: Missing configuration attributes after retry.', retry);
+                }
+            }, 100);
         }
     }
 
-    main();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', main);
+    } else {
+        main();
+    }
 })();

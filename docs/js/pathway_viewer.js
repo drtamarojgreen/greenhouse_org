@@ -6,8 +6,13 @@
 
     // Internal helper for parsing KGML data
     const KeggParser = {
-        parse(xmlText) { // Now synchronous
+        async parse(url) {
             try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch KGML data: ${response.statusText}`);
+                }
+                const xmlText = await response.text();
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
@@ -117,17 +122,9 @@
     const GreenhousePathwayViewer = {
         canvas: null, ctx: null, camera: null, projection: null, cameraControls: null,
         pathwayData: null, pathwayEdges: null, brainShell: null, highlightedNodeId: null,
-        rawXmlData: null,
         baseUrl: '',
 
         async init(containerSelector, baseUrl) {
-            const dataElement = document.getElementById('pathwayText');
-            if (dataElement && dataElement.textContent) {
-                this.rawXmlData = dataElement.textContent;
-            } else {
-                console.error('Pathway Viewer: Data element not found or is empty.');
-                return;
-            }
             this.baseUrl = baseUrl || '';
             const container = document.querySelector(containerSelector);
             if (!container) return;
@@ -144,7 +141,7 @@
             }
 
             this.initializeBrainShell();
-            this.loadPathwayData();
+            await this.loadPathwayData();
             this.startAnimation();
         },
 
@@ -188,21 +185,46 @@
             }
         },
 
-        loadPathwayData() { // Now synchronous
-            if (this.rawXmlData) {
-                const parsedData = KeggParser.parse(this.rawXmlData);
-                this.pathwayData = PathwayLayout.generate3DLayout(parsedData.nodes);
-                this.pathwayEdges = parsedData.edges;
+        async loadPathwayData() {
+            // Try to find embedded XML data first using provided selectors
+            const pathwaySelector = 'section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > p:nth-child(1) > span:nth-child(1)';
 
-                const selector = document.getElementById('pathway-selector');
+            let xmlText = null;
+            const el = document.querySelector(pathwaySelector);
+            if (el && el.textContent && el.textContent.trim().startsWith('<')) {
+                xmlText = el.textContent.trim();
+                console.log(`Pathway Viewer: Found XML data in ${pathwaySelector}`);
+            }
+
+            if (xmlText) {
+                try {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+                    const nodes = KeggParser.extractEntries(xmlDoc);
+                    const edges = KeggParser.extractRelations(xmlDoc);
+                    
+                    this.pathwayData = PathwayLayout.generate3DLayout({ nodes });
+                    this.pathwayEdges = edges;
+                } catch (e) {
+                    console.error("Pathway Viewer: Error parsing embedded XML", e);
+                }
+            }
+
+            if (!this.pathwayData) {
+                const url = this.baseUrl + 'endpoints/kegg_dopaminergic_raw.xml';
+                const parsedData = await KeggParser.parse(url);
+                this.pathwayData = PathwayLayout.generate3DLayout({ nodes: parsedData.nodes });
+                this.pathwayEdges = parsedData.edges;
+            }
+
+            const selector = document.getElementById('pathway-selector');
+            if (selector && this.pathwayData) {
                 this.pathwayData.filter(node => node.type === 'gene').forEach(geneNode => {
                     const option = document.createElement('option');
                     option.value = geneNode.id;
                     option.textContent = geneNode.name;
                     selector.appendChild(option);
                 });
-            } else {
-                console.error('Pathway Viewer: No raw XML data available to load.');
             }
         },
 
