@@ -38,7 +38,7 @@
                 if (window.GreenhousePathwayViewer) {
                     console.log('Pathway App: All modules loaded. Initializing in 5 seconds...');
                     setTimeout(() => {
-                        window.GreenhousePathwayViewer.init(containerSelector);
+                        window.GreenhousePathwayViewer.init(containerSelector, base);
                     }, 5000);
                 } else {
                     console.error('Pathway App: GreenhousePathwayViewer failed to load.');

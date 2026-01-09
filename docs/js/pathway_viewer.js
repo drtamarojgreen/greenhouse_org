@@ -122,8 +122,10 @@
     const GreenhousePathwayViewer = {
         canvas: null, ctx: null, camera: null, projection: null, cameraControls: null,
         pathwayData: null, pathwayEdges: null, brainShell: null, highlightedNodeId: null,
+        baseUrl: '',
 
-        async init(containerSelector) {
+        async init(containerSelector, baseUrl) {
+            this.baseUrl = baseUrl || '';
             const container = document.querySelector(containerSelector);
             if (!container) return;
 
@@ -184,7 +186,8 @@
         },
 
         async loadPathwayData() {
-            const parsedData = await KeggParser.parse('endpoints/kegg_dopaminergic_raw.xml');
+            const url = this.baseUrl + 'endpoints/kegg_dopaminergic_raw.xml';
+            const parsedData = await KeggParser.parse(url);
             this.pathwayData = PathwayLayout.generate3DLayout(parsedData.nodes);
             this.pathwayEdges = parsedData.edges;
 

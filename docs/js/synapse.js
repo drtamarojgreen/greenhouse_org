@@ -30,8 +30,18 @@
 
     // Function to capture necessary attributes from the script tag.
     const captureScriptAttributes = () => {
-        // greenhouse.js passes attributes via loadScript, which adds them to the script tag.
-        // We find our own script tag to read them.
+        // Priority 1: Check global attributes object (set by GreenhouseUtils)
+        if (window._greenhouseScriptAttributes) {
+            console.log('Synapse App: Using global script attributes.');
+            window._greenhouseSynapseAttributes = {
+                baseUrl: window._greenhouseScriptAttributes['base-url'],
+                targetSelector: window._greenhouseScriptAttributes['target-selector-left']
+            };
+            delete window._greenhouseScriptAttributes; // Clean up
+            return true;
+        }
+
+        // Priority 2: Fallback to DOM inspection (e.g. for synapse.html testing)
         const scripts = document.querySelectorAll('script[src*="synapse.js"]');
         if (scripts.length > 0) {
             const script = scripts[scripts.length - 1];
@@ -76,7 +86,7 @@
                 // Initialize the application
                 console.log('Synapse App: Initializing in 5 seconds...');
                 setTimeout(() => {
-                    window.GreenhouseSynapseApp.init(targetSelector);
+                    window.GreenhouseSynapseApp.init(targetSelector, baseUrl);
                 }, 5000);
             } else {
                 throw new Error("Synapse application module failed to load.");

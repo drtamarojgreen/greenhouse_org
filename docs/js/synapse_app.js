@@ -38,8 +38,9 @@
         ctx: null,
         container: null,
 
-        init(targetSelector) {
+        init(targetSelector, baseUrl) {
             console.log(`Synapse App: Initializing in container: ${targetSelector}`);
+            this.baseUrl = baseUrl || '';
 
             this.container = document.querySelector(targetSelector);
             if (!this.container) {
