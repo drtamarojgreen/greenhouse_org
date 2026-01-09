@@ -227,7 +227,7 @@
     <entry id="45" name="ko:K04634" type="ortholog"
         link="https://www.kegg.jp/dbget-bin/www_bget?K04634">
         <graphics name="K04634" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="rectangle" x="863" a="1" name="b" v="2"/>
+             type="rectangle" x="863" y="650" width="46" height="17"/>
     </entry>
     <entry id="46" name="cpd:C00575" type="compound"
         link="https://www.kegg.jp/dbget-bin/www_bget?C00575">
