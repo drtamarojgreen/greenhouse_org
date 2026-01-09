@@ -112,15 +112,21 @@
 
     const ModelsTOC = {
         xmlPath: 'endpoints/model_descriptions.xml',
-        containerSelector: '#models-toc-container',
+        containerId: 'models-toc-container',
         container: null,
 
         init() {
-            this.container = document.querySelector(this.containerSelector);
-            if (!this.container) {
-                console.error('ModelsTOC: Container not found.');
+            const mainAppContainer = document.querySelector(window._greenhouseModelsAttributes.targetSelector);
+            if (!mainAppContainer) {
+                console.error('ModelsTOC: Main application container not found.');
                 return;
             }
+
+            const tocContainer = document.createElement('div');
+            tocContainer.id = this.containerId;
+            mainAppContainer.parentNode.insertBefore(tocContainer, mainAppContainer.nextSibling);
+            this.container = tocContainer;
+
             this.loadXML();
         },
 
