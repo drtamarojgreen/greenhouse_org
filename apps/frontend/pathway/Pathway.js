@@ -15,14 +15,14 @@ $w.onReady(function () {
             return res.json();
         })
         .then(pathwayData => {
-            const dataElement = $w('#pathwayDataElement');
+            const dataElement = $w('#pathwayText');
             if (dataElement) {
                 // Use the textbox as a data bridge to pass data to the browser script
                 dataElement.text = JSON.stringify(pathwayData);
                 dataElement.hide(); // Ensure the element is not visible to the user
-                console.log('Pathway: visualization data loaded and passed to #pathwayDataElement.');
+                console.log('Pathway: visualization data loaded and passed to #pathwayText.');
             } else {
-                console.error('Pathway: Critical error - #pathwayDataElement not found on the page.');
+                console.error('Pathway: Critical error - #pathwayText not found on the page.');
             }
         })
         .catch(err => {
