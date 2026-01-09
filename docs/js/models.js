@@ -89,9 +89,10 @@
             
             await GreenhouseUtils.loadScript('models_ui.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ux.js', baseUrl);
+            await GreenhouseUtils.loadScript('models_toc.js', baseUrl);
 
             // Check if all modules are loaded
-            if (window.GreenhouseModelsData && window.GreenhouseModelsUI && window.GreenhouseModelsUX) {
+            if (window.GreenhouseModelsData && window.GreenhouseModelsUI && window.GreenhouseModelsUX && window.GreenhouseModelsTOC) {
                 console.log('Models App: All modules loaded successfully.');
                 // Initialize the data adapter with the correct base URL
                 await window.GreenhouseDataAdapter.init(baseUrl);
@@ -110,89 +111,8 @@
         }
     }
 
-    const ModelsTOC = {
-        xmlPath: 'endpoints/model_descriptions.xml',
-        containerId: 'models-toc-container',
-        container: null,
-
-        init() {
-            const mainAppContainer = document.querySelector(window._greenhouseModelsAttributes.targetSelector);
-            if (!mainAppContainer) {
-                console.error('ModelsTOC: Main application container not found.');
-                return;
-            }
-
-            const tocContainer = document.createElement('div');
-            tocContainer.id = this.containerId;
-            mainAppContainer.parentNode.insertBefore(tocContainer, mainAppContainer.nextSibling);
-            this.container = tocContainer;
-
-            this.loadXML();
-        },
-
-        loadXML() {
-            fetch(this.xmlPath)
-                .then(response => response.text())
-                .then(str => new DOMParser().parseFromString(str, "text/xml"))
-                .then(data => this.render(data))
-                .catch(error => console.error('Error loading XML:', error));
-        },
-
-        render(xmlDoc) {
-            const introData = xmlDoc.querySelector('intro');
-            const modelsData = xmlDoc.querySelectorAll('model');
-            this.createIntroSection(introData);
-            this.createModelSections(modelsData);
-        },
-
-        createIntroSection(introData) {
-            const introSection = document.createElement('div');
-            introSection.className = 'models-toc-intro';
-            introData.querySelectorAll('paragraph').forEach(p => {
-                const pElement = document.createElement('p');
-                pElement.textContent = p.textContent;
-                introSection.appendChild(pElement);
-            });
-            this.container.appendChild(introSection);
-        },
-
-        createModelSections(modelsData) {
-            modelsData.forEach(model => {
-                const modelId = model.getAttribute('id');
-                const title = model.querySelector('title').textContent;
-                const button = document.createElement('button');
-                button.className = 'model-toc-button';
-                button.textContent = title;
-                button.setAttribute('aria-expanded', 'false');
-                button.setAttribute('aria-controls', `panel-${modelId}`);
-                button.addEventListener('click', this.togglePanel.bind(this));
-                this.container.appendChild(button);
-                const panel = document.createElement('div');
-                panel.className = 'model-toc-panel';
-                panel.id = `panel-${modelId}`;
-                model.querySelector('description').querySelectorAll('paragraph').forEach(p => {
-                    const pElement = document.createElement('p');
-                    pElement.textContent = p.textContent;
-                    panel.appendChild(pElement);
-                });
-                this.container.appendChild(panel);
-            });
-        },
-
-        togglePanel(event) {
-            const button = event.currentTarget;
-            const panelId = button.getAttribute('aria-controls');
-            const panel = document.getElementById(panelId);
-            const isExpanded = button.getAttribute('aria-expanded') === 'true';
-            button.setAttribute('aria-expanded', !isExpanded);
-            button.classList.toggle('active');
-            panel.classList.toggle('open');
-        },
-    };
-
     // --- Main Execution Logic ---
     main();
-    ModelsTOC.init();
 
     // Expose a reinitialization function on the global scope
     window.GreenhouseModels = {
