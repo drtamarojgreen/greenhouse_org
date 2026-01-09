@@ -89,9 +89,10 @@
             
             await GreenhouseUtils.loadScript('models_ui.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ux.js', baseUrl);
+            await GreenhouseUtils.loadScript('models_toc.js', baseUrl);
 
             // Check if all modules are loaded
-            if (window.GreenhouseModelsData && window.GreenhouseModelsUI && window.GreenhouseModelsUX) {
+            if (window.GreenhouseModelsData && window.GreenhouseModelsUI && window.GreenhouseModelsUX && window.GreenhouseModelsTOC) {
                 console.log('Models App: All modules loaded successfully.');
                 // Initialize the data adapter with the correct base URL
                 await window.GreenhouseDataAdapter.init(baseUrl);
