@@ -6,6 +6,33 @@
 
     console.log("Synapse App: Module loaded.");
 
+    const config = {
+        backgroundColor: '#101018',
+        preSynapticColor: '#2c3e50',
+        postSynapticColor: '#34495e',
+        vesicleColor: '#e67e22',
+        ionChannelColor: '#3498db',
+        gpcrColor: '#9b59b6',
+        titleFont: 'bold 20px "Courier New", Courier, monospace',
+        titleColor: '#9E9E9E',
+        labelFont: '12px "Courier New", Courier, monospace',
+        labelColor: '#ecf0f1',
+        labels: {
+            preSynapticTerminal: { text: 'Pre-Synaptic Terminal', x: 0.5, y: 0.1 },
+            postSynapticTerminal: { text: 'Post-Synaptic Terminal', x: 0.5, y: 0.9 },
+            vesicle: { text: 'Vesicle', x: 0.2, y: 0.3 },
+            ionChannel: { text: 'Ion Channel', x: 0.2, y: 0.75 },
+            gpcr: { text: 'G-protein Coupled Receptor', x: 0.8, y: 0.75 }
+        },
+        vesicles: [
+            { x: 0.2, y: 0.2, r: 15 },
+            { x: 0.5, y: 0.15, r: 20 },
+            { x: 0.8, y: 0.25, r: 18 }
+        ],
+        ionChannels: [0.2, 0.6],
+        gpcrs: [0.4, 0.8]
+    };
+
     const GreenhouseSynapseApp = {
         canvas: null,
         ctx: null,
@@ -67,27 +94,105 @@
             const h = this.canvas.height;
 
             // Clear background
-            ctx.fillStyle = '#101018';
+            ctx.fillStyle = config.backgroundColor;
             ctx.fillRect(0, 0, w, h);
 
-            // --- Placeholder Content ---
-            // Display a message to confirm the app is working.
-            ctx.save();
-            ctx.font = 'bold 24px "Courier New", Courier, monospace';
-            ctx.fillStyle = '#4CAF50'; // A nice green color
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            this.drawPreSynapticTerminal(ctx, w, h);
+            this.drawPostSynapticTerminal(ctx, w, h);
+            this.drawVesicles(ctx, w, h);
+            this.drawIonChannels(ctx, w, h);
+            this.drawGPCRs(ctx, w, h);
 
-            const centerX = w / 2;
-            const centerY = h / 2;
-            
-            ctx.fillText("Synapse Visualization Page", centerX, centerY - 20);
-            
-            ctx.font = '16px "Courier New", Courier, monospace';
-            ctx.fillStyle = '#9E9E9E'; // A lighter gray
-            ctx.fillText("Module Loaded Successfully.", centerX, centerY + 20);
+            // Title
+            ctx.save();
+            ctx.font = config.titleFont;
+            ctx.fillStyle = config.titleColor;
+            ctx.textAlign = 'center';
+            ctx.fillText("Synaptic Cleft Visualization", w / 2, 30);
             ctx.restore();
-            // --- End Placeholder ---
+
+            this.drawLabels(ctx, w, h);
+        },
+
+        drawPreSynapticTerminal(ctx, w, h) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.4);
+            ctx.bezierCurveTo(w * 0.25, h * 0.3, w * 0.75, h * 0.3, w, h * 0.4);
+            ctx.lineTo(w, 0);
+            ctx.lineTo(0, 0);
+            ctx.closePath();
+            ctx.fillStyle = config.preSynapticColor;
+            ctx.fill();
+            
+            ctx.strokeStyle = config.postSynapticColor;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.restore();
+        },
+
+        drawPostSynapticTerminal(ctx, w, h) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.6);
+            ctx.bezierCurveTo(w * 0.25, h * 0.7, w * 0.75, h * 0.7, w, h * 0.6);
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.closePath();
+            ctx.fillStyle = config.postSynapticColor;
+            ctx.fill();
+
+            ctx.strokeStyle = config.preSynapticColor;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.restore();
+        },
+
+        drawVesicles(ctx, w, h) {
+            ctx.save();
+            ctx.fillStyle = config.vesicleColor;
+            config.vesicles.forEach(v => {
+                ctx.beginPath();
+                ctx.arc(w * v.x, h * v.y, v.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+        },
+
+        drawIonChannels(ctx, w, h) {
+            ctx.save();
+            ctx.fillStyle = config.ionChannelColor;
+            config.ionChannels.forEach(x => {
+                ctx.fillRect(w * x - 10, h * 0.6 - 15, 20, 15);
+            });
+            ctx.restore();
+        },
+
+        drawGPCRs(ctx, w, h) {
+            ctx.save();
+            ctx.strokeStyle = config.gpcrColor;
+            ctx.lineWidth = 4;
+            config.gpcrs.forEach(x => {
+                ctx.beginPath();
+                ctx.moveTo(w * x - 15, h * 0.6);
+                ctx.bezierCurveTo(w * x - 5, h * 0.6 - 10, w * x + 5, h * 0.6 - 10, w * x + 15, h * 0.6);
+                ctx.stroke();
+            });
+            ctx.restore();
+        },
+
+        drawLabels(ctx, w, h) {
+            ctx.save();
+            ctx.font = config.labelFont;
+            ctx.fillStyle = config.labelColor;
+            ctx.textAlign = 'center';
+
+            for (const key in config.labels) {
+                const label = config.labels[key];
+                ctx.fillText(label.text, w * label.x, h * label.y);
+            }
+
+            ctx.restore();
         }
     };
 

@@ -1,90 +1,54 @@
 // docs/js/pathway.js
-// Loader for Pathway Simulation Application
+// Entry point and dependency loader for the Pathway Viewer application.
 
-(async function () {
+(function() {
     'use strict';
-    console.log('Pathway App: Loader execution started.');
 
-    let GreenhouseUtils;
+    const GreenhousePathwayApp = {
 
-    // Function to wait for GreenhouseUtils to be available on the window object.
-    const loadDependencies = async () => {
-        console.log('Pathway App: loadDependencies started.');
-        await new Promise((resolve, reject) => {
-            let attempts = 0;
-            const maxAttempts = 240; // 12 seconds timeout
-            const interval = setInterval(() => {
-                if (window.GreenhouseUtils) {
-                    clearInterval(interval);
-                    GreenhouseUtils = window.GreenhouseUtils;
-                    resolve();
-                } else if (attempts++ >= maxAttempts) {
-                    clearInterval(interval);
-                    console.error('Pathway App: GreenhouseUtils not available after 12 second timeout.');
-                    reject(new Error('GreenhouseUtils load timeout'));
+        loadScript(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        },
+
+        async init(containerSelector) {
+            try {
+                // Define the correct loading order for the native 3D engine and our application
+                const scriptsToLoad = [
+                    'js/models_util.js',
+                    'js/models_3d_math.js',
+                    'js/brain_mesh_realistic.js',
+                    'js/neuro_ui_3d_geometry.js',
+                    'js/neuro_camera_controls.js',
+                    'js/neuro_ui_3d_brain.js',
+                    'js/pathway_viewer.js'
+                ];
+
+                for (const script of scriptsToLoad) {
+                    await this.loadScript(script);
                 }
-            }, 50);
-        });
-        console.log('Pathway App: GreenhouseUtils loaded.');
-    };
 
-    // Function to capture necessary attributes from the script tag.
-    const captureScriptAttributes = () => {
-        const scripts = document.querySelectorAll('script[src*="pathway.js"]');
-        if (scripts.length > 0) {
-            const script = scripts[scripts.length - 1];
-            window._greenhousePathwayAttributes = {
-                baseUrl: script.getAttribute('data-base-url'),
-                targetSelector: script.getAttribute('data-target-selector-left')
-            };
-            return true;
-        }
-        console.error('Pathway App: Could not find current script element to capture attributes.');
-        return false;
-    };
+                // All scripts are loaded, now initialize the main viewer
+                if (window.GreenhousePathwayViewer) {
+                    console.log('Pathway App: All modules loaded. Initializing in 5 seconds...');
+                    setTimeout(() => {
+                        window.GreenhousePathwayViewer.init(containerSelector);
+                    }, 5000);
+                } else {
+                    console.error('Pathway App: GreenhousePathwayViewer failed to load.');
+                }
 
-    async function main() {
-        console.log('Pathway App: main() started.');
-        try {
-            if (!captureScriptAttributes()) {
-                throw new Error("Could not capture script attributes.");
-            }
-
-            await loadDependencies();
-            if (!GreenhouseUtils) {
-                throw new Error("CRITICAL - Aborting main() due to missing GreenhouseUtils.");
-            }
-
-            const { baseUrl, targetSelector } = window._greenhousePathwayAttributes;
-            if (!baseUrl) {
-                throw new Error("CRITICAL - Aborting main() due to missing data-base-url attribute.");
-            }
-            if (!targetSelector) {
-                throw new Error("CRITICAL - Aborting main() due to missing target selector.");
-            }
-
-            // Load the modules required for the pathway application
-            await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await GreenhouseUtils.loadScript('pathway_app.js', baseUrl);
-
-            // Check if all modules are loaded
-            if (window.GreenhousePathwayApp) {
-                console.log('Pathway App: All modules loaded successfully.');
-                // Initialize the application
-                window.GreenhousePathwayApp.init(targetSelector);
-            } else {
-                throw new Error("Pathway application module failed to load.");
-            }
-
-        } catch (error) {
-            console.error('Pathway App: Initialization failed:', error);
-            if (GreenhouseUtils) {
-                GreenhouseUtils.displayError(`Failed to load pathway components: ${error.message}`);
+            } catch (error) {
+                console.error('Pathway App: Failed to load critical dependencies.', error);
             }
         }
-    }
+    };
 
-    // --- Main Execution Logic ---
-    main();
+    window.GreenhousePathwayApp = GreenhousePathwayApp;
 
 })();
