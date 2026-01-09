@@ -12,22 +12,13 @@
 <body>
     <div id="app-container"></div>
 
-    <!-- Direct, stable script loading -->
-    <script src="js/models_util.js"></script>
-    <script src="js/models_3d_math.js"></script>
-    <script src="js/brain_mesh_realistic.js"></script>
-    <script src="js/neuro_ui_3d_geometry.js"></script>
-    <script src="js/neuro_camera_controls.js"></script>
-    <script src="js/neuro_ui_3d_brain.js"></script>
-    <script src="js/pathway_viewer.js"></script>
-
+    <script src="js/pathway.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            if (window.GreenhousePathwayViewer) {
-                window.GreenhousePathwayViewer.init('#app-container');
+            if (window.GreenhousePathwayApp) {
+                window.GreenhousePathwayApp.init('#app-container');
             } else {
-                console.error('Test Harness: GreenhousePathwayViewer not found.');
-                document.getElementById('app-container').innerHTML = '<p style="color:red;">Error: Could not load Pathway application.</p>';
+                console.error('Test Harness: GreenhousePathwayApp not found.');
             }
         });
     </script>
