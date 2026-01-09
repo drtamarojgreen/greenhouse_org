@@ -181,9 +181,9 @@
         },
 
         loadPathwayData() { // Now synchronous
-            const dataElement = document.getElementById('pathwayDataElement');
-            if (dataElement && dataElement.value) {
-                const parsedData = KeggParser.parse(dataElement.value);
+            const dataElement = document.getElementById('pathwayText');
+            if (dataElement && dataElement.textContent) {
+                const parsedData = KeggParser.parse(dataElement.textContent);
                 this.pathwayData = PathwayLayout.generate3DLayout(parsedData.nodes);
                 this.pathwayEdges = parsedData.edges;
 
