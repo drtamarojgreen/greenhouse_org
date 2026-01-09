@@ -16,8 +16,9 @@
             });
         },
 
-        async init(containerSelector) {
+        async init(containerSelector, baseUrl) {
             try {
+                const base = baseUrl && !baseUrl.endsWith('/') ? baseUrl + '/' : (baseUrl || '');
                 // Define the correct loading order for the native 3D engine and our application
                 const scriptsToLoad = [
                     'js/models_util.js',
@@ -30,7 +31,7 @@
                 ];
 
                 for (const script of scriptsToLoad) {
-                    await this.loadScript(script);
+                    await this.loadScript(base + script);
                 }
 
                 // All scripts are loaded, now initialize the main viewer
@@ -51,4 +52,24 @@
 
     window.GreenhousePathwayApp = GreenhousePathwayApp;
 
+    // --- Main Execution Logic ---
+    function main() {
+        // Capture attributes from the global object set by GreenhouseUtils
+        const attributes = window._greenhouseScriptAttributes || {};
+        const targetSelector = attributes['target-selector-left'];
+        const baseUrl = attributes['base-url'];
+
+        if (targetSelector && baseUrl) {
+            console.log('Pathway App: Attributes captured. Starting init sequence.');
+            GreenhousePathwayApp.init(targetSelector, baseUrl);
+        } else {
+            console.error('Pathway App: Missing configuration attributes.', {
+                targetSelector,
+                baseUrl,
+                attributes
+            });
+        }
+    }
+
+    main();
 })();
