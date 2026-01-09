@@ -6,8 +6,13 @@
 
     // Internal helper for parsing KGML data
     const KeggParser = {
-        parse(xmlText) { // Now synchronous
+        async parse(url) {
             try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch KGML data: ${response.statusText}`);
+                }
+                const xmlText = await response.text();
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
@@ -136,7 +141,7 @@
             }
 
             this.initializeBrainShell();
-            this.loadPathwayData();
+            await this.loadPathwayData();
             this.startAnimation();
         },
 
@@ -180,23 +185,19 @@
             }
         },
 
-        loadPathwayData() { // Now synchronous
-            const dataElement = document.getElementById('pathwayDataElement');
-            if (dataElement && dataElement.value) {
-                const parsedData = KeggParser.parse(dataElement.value);
-                this.pathwayData = PathwayLayout.generate3DLayout(parsedData.nodes);
-                this.pathwayEdges = parsedData.edges;
+        async loadPathwayData() {
+            const url = this.baseUrl + 'endpoints/kegg_dopaminergic_raw.xml';
+            const parsedData = await KeggParser.parse(url);
+            this.pathwayData = PathwayLayout.generate3DLayout(parsedData.nodes);
+            this.pathwayEdges = parsedData.edges;
 
-                const selector = document.getElementById('pathway-selector');
-                this.pathwayData.filter(node => node.type === 'gene').forEach(geneNode => {
-                    const option = document.createElement('option');
-                    option.value = geneNode.id;
-                    option.textContent = geneNode.name;
-                    selector.appendChild(option);
-                });
-            } else {
-                console.error('Pathway Viewer: Data element not found or is empty.');
-            }
+            const selector = document.getElementById('pathway-selector');
+            this.pathwayData.filter(node => node.type === 'gene').forEach(geneNode => {
+                const option = document.createElement('option');
+                option.value = geneNode.id;
+                option.textContent = geneNode.name;
+                selector.appendChild(option);
+            });
         },
 
         startAnimation() {
