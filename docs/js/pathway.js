@@ -6,44 +6,34 @@
 
     const GreenhousePathwayApp = {
 
-        loadScript(url) {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = url;
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-        },
-
         async init(containerSelector) {
-            try {
-                // Define the correct loading order for the native 3D engine and our application
-                const scriptsToLoad = [
-                    'js/models_util.js',
-                    'js/models_3d_math.js',
-                    'js/brain_mesh_realistic.js',
-                    'js/neuro_ui_3d_geometry.js',
-                    'js/neuro_camera_controls.js',
-                    'js/neuro_ui_3d_brain.js',
-                    'js/pathway_viewer.js'
-                ];
 
-                for (const script of scriptsToLoad) {
-                    // Prepend '../' to the path to make it relative to the docs directory
-                    await this.loadScript(script);
-                }
+            // Define the correct loading order for the native 3D engine and our application
+            const scriptsToLoad = [
+                'js/models_util.js',
+                'js/models_3d_math.js',
+                'js/brain_mesh_realistic.js',
+                'js/neuro_ui_3d_geometry.js',
+                'js/neuro_camera_controls.js',
+                'js/neuro_ui_3d_brain.js',
+                'js/pathway_viewer.js'
+            ];
 
-                // All scripts are loaded, now initialize the main viewer
-                if (window.GreenhousePathwayViewer) {
-                    window.GreenhousePathwayViewer.init(containerSelector);
-                } else {
-                    console.error('Pathway App: GreenhousePathwayViewer failed to load.');
-                }
-
-            } catch (error) {
-                console.error('Pathway App: Failed to load critical dependencies.', error);
+            // This is a simplified loader for the test harness.
+            // In a real environment, greenhouse.js would handle this.
+            for (const script of scriptsToLoad) {
+                const scriptTag = document.createElement('script');
+                scriptTag.src = script;
+                document.head.appendChild(scriptTag);
             }
+
+            // The scripts are loaded asynchronously, so we need to wait for the viewer to be ready.
+            const interval = setInterval(() => {
+                if (window.GreenhousePathwayViewer && window.GreenhousePathwayViewer.init) {
+                    clearInterval(interval);
+                    window.GreenhousePathwayViewer.init(containerSelector);
+                }
+            }, 100);
         }
     };
 
