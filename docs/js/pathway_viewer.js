@@ -125,6 +125,7 @@
         baseUrl: '',
 
         async init(containerSelector, baseUrl) {
+            console.log("pathway_testing: init started");
             this.baseUrl = baseUrl || '';
             const container = document.querySelector(containerSelector);
             if (!container) return;
@@ -186,6 +187,7 @@
         },
 
         async loadPathwayData() {
+            console.log("pathway_testing: loadPathwayData started");
             // Try to find embedded XML data first using provided selectors
             const pathwaySelector = 'section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > p:nth-child(1) > span:nth-child(1)';
 
@@ -238,6 +240,7 @@
         },
 
         render() {
+            console.log("pathway_testing: render started");
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.ctx.fillStyle = '#111';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -250,6 +253,7 @@
         },
 
         drawPathwayGraph() {
+            console.log("pathway_testing: drawPathwayGraph started");
             if (!this.pathwayData || !window.GreenhouseModels3DMath) return;
 
             const projectedNodes = this.pathwayData.map(node => ({
