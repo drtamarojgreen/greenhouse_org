@@ -34,6 +34,8 @@ class MeshOptimizer(BaseOptimizer):
             
         # 2. Apply all modifiers in order
         for mod in list(obj.modifiers):
+            if mod.type == 'ARMATURE':
+                continue
             try:
                 context.view_layer.objects.active = obj
                 bpy.ops.object.modifier_apply(modifier=mod.name)

@@ -17,8 +17,8 @@ def _create_and_render_animation(logo_image_path, output_path):
 
         scene = bpy.context.scene
         scene.frame_start = 1
-        scene.frame_end = 180
-        scene.render.fps = 30
+        scene.frame_end = 20
+        scene.render.fps = 2
 
         # --- 2. Render Settings ---
         scene.render.engine = 'CYCLES'
@@ -35,7 +35,7 @@ def _create_and_render_animation(logo_image_path, output_path):
 
         # --- 3. Background Logo Plane ---
         # Create a plane
-        bpy.ops.mesh.primitive_plane_add(size=20, enter_editmode=False, align='WORLD', location=(0, 0, -2))
+        bpy.ops.mesh.primitive_plane_add(size=20, enter_editmode=False, align='WORLD', location=(0, 5, 0), rotation=(math.radians(90), 0, 0))
         plane = bpy.context.active_object
         
         # Create material for the plane and load image as texture
@@ -66,8 +66,9 @@ def _create_and_render_animation(logo_image_path, output_path):
                 # Set blend mode for transparency
                 plane_mat.blend_method = 'BLEND'
                 # Optional: make it slightly emissive
-                bsdf.inputs['Emission Strength'].default_value = 0.5
-                bsdf.inputs['Emission Color'].default_value = (1.0, 1.0, 1.0, 1)
+                bsdf.inputs['Emission Strength'].default_value = 0.0
+                bsdf.inputs['Roughness'].default_value = 0.1
+                bsdf.inputs['Specular IOR Level'].default_value = 0.8
                 print(f"Loaded logo image from: {logo_image_path}")
             except Exception as e:
                 print(f"Warning: Could not load logo image from '{logo_image_path}': {e}. Plane will be a default color.")
@@ -76,14 +77,12 @@ def _create_and_render_animation(logo_image_path, output_path):
             print(f"Warning: Logo image file not found at '{logo_image_path}'. Plane will be a default color.")
             bsdf.inputs['Base Color'].default_value = (0.1, 0.1, 0.1, 1) # Default to dark gray
         
-        # Adjust plane position and scale for the logo
-        plane.location.y = 8 # Move it back along Y axis
-        plane.location.z = -2 # Lower it slightly
-        # You might need to adjust the plane scale and UV mapping depending on the logo's aspect ratio
-        # For a simple square image on a square plane, default UV is fine.
+        # --- Target Axis ---
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 1))
+        target_axis = bpy.context.active_object
 
         # --- 4. Foreground Text Animation (from bloom_text_animation.py) ---
-        bpy.ops.object.text_add(location=(0, 0, 0))
+        bpy.ops.object.text_add(location=(0, 0, 0), rotation=(math.radians(90), 0, 0))
         text_obj = bpy.context.object
         text_obj.data.body = "Bloom Into\nYour Better Self"
         text_obj.data.align_x = 'CENTER'
@@ -105,17 +104,17 @@ def _create_and_render_animation(logo_image_path, output_path):
         text_obj.scale = (0.01, 0.01, 0.01)
         text_obj.keyframe_insert(data_path="scale", frame=1)
         text_obj.scale = (1.0, 1.0, 1.0)
-        text_obj.keyframe_insert(data_path="scale", frame=60)
+        text_obj.keyframe_insert(data_path="scale", frame=20)
 
         # Subtle Float Animation
         text_obj.location = (0, 0, 0)
-        text_obj.keyframe_insert(data_path="location", frame=60)
-        text_obj.location = (0, 0, 0.2)
-        text_obj.keyframe_insert(data_path="location", frame=180)
+        text_obj.keyframe_insert(data_path="location", frame=1)
+        text_obj.location = (0, 0, 0.5)
+        text_obj.keyframe_insert(data_path="location", frame=20)
 
 
         # --- 5. Camera and Lighting ---
-        bpy.ops.object.camera_add(location=(0, -15, 5)) # Adjusted camera position
+        bpy.ops.object.camera_add(location=(0, -30, 5)) # Adjusted camera position
         camera = bpy.context.object
         camera.data.clip_start = 0.1
         camera.data.clip_end = 1000
@@ -125,27 +124,34 @@ def _create_and_render_animation(logo_image_path, output_path):
         # Look at location for text is (0,0,0), adjust if text position changes
         # Simple track to constraint to keep text centered
         track_to_constraint = camera.constraints.new(type='TRACK_TO')
-        track_to_constraint.target = text_obj
+        track_to_constraint.target = target_axis
         track_to_constraint.track_axis = 'TRACK_NEGATIVE_Z'
         track_to_constraint.up_axis = 'UP_Y'
         
-        # Lighting (from bloom_text_animation.py)
-        # Key Light
-        bpy.ops.object.light_add(type='AREA', location=(3, -3, 4))
-        key_light = bpy.context.object
-        key_light.data.energy = 800
-        key_light.data.size = 4
+        # --- Lighting ---
+        # Diagonal Light 1
+        bpy.ops.object.light_add(type='POINT', location=(-15, -15, 10))
+        light1 = bpy.context.object
+        light1.data.energy = 3000
+        tt1 = light1.constraints.new(type='TRACK_TO')
+        tt1.target = target_axis
+        tt1.track_axis = 'TRACK_NEGATIVE_Z'
+        tt1.up_axis = 'UP_Y'
+        light1.location = (-15, -15, 10)
+        light1.keyframe_insert(data_path="location", frame=1)
+        light1.location = (15, -5, -5)
+        light1.keyframe_insert(data_path="location", frame=20)
 
-        # Fill Light
-        bpy.ops.object.light_add(type='AREA', location=(-3, -4, 2))
-        fill_light = bpy.context.object
-        fill_light.data.energy = 300
-        fill_light.data.size = 3
-
-        # Back Light
-        bpy.ops.object.light_add(type='POINT', location=(0, 3, 3))
-        back_light = bpy.context.object
-        back_light.data.energy = 200
+        # Diagonal Light 2
+        bpy.ops.object.light_add(type='POINT', location=(15, -15, -5))
+        light2 = bpy.context.object
+        light2.data.energy = 3000
+        tt2 = light2.constraints.new(type='TRACK_TO')
+        tt2.target = target_axis
+        light2.location = (15, -15, -5)
+        light2.keyframe_insert(data_path="location", frame=1)
+        light2.location = (-15, -5, 10)
+        light2.keyframe_insert(data_path="location", frame=20)
 
         # --- 6. Render ---
         print("Starting animation render...")

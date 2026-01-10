@@ -13,7 +13,7 @@ if script_dir not in sys.path:
     sys.path.append(script_dir)
 
 import camera_animations
-import visual_effects
+import viscripts/blender/render_optimized.pysual_effects
 
 def get_region_data(label_name, region_map_file, labels_file, vertices_file):
     with open(region_map_file, 'r') as f:
@@ -26,23 +26,60 @@ def get_region_data(label_name, region_map_file, labels_file, vertices_file):
     indices = np.where(labels == label_id)[0]
     return label_id, indices
 
-def create_brain_tour_animation(label_names, data_dir, region_map_file, labels_file, vertices_file, modifiers=None):
+def add_background_logo(logo_path):
+    if not os.path.exists(logo_path):
+        return
+
+    if "LogoPlane" in bpy.data.objects:
+        return
+
+    bpy.ops.mesh.primitive_plane_add(size=30, location=(0, 20, 0), rotation=(math.radians(90), 0, math.radians(90)))
+    plane = bpy.context.active_object
+    plane.name = "LogoPlane"
+
+    mat = bpy.data.materials.new(name="LogoMaterial")
+    plane.data.materials.append(mat)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    nodes.clear()
+
+    output = nodes.new(scripts/blender/render_optimized.pytype='ShaderNodeOutputMaterial')
+    emission = nodes.new(type='ShaderNodeEmission')
+    tex_image = nodes.new(type='ShaderNodeTexImage')
+    
+    tex_image.image = bpy.data.images.load(logo_path)
+
+    links.new(tex_image.outputs['Color'], emission.inputs['Color'])
+    emission.inputs['Strength'].default_value = 5.0
+    links.new(emission.outputs['Emission'], output.inputs['Surface'])
+    
+    bpy.context.view_layer.objects.active = plane
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.uv.unwrap()
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+def create_bscripts/blender/render_optimized.pyrain_tour_animation(label_names, data_dir, region_map_file, labels_file, vertices_file, modifiers=None):
     """
     STABLE Implementation following Plan 01.
     Uses Data-Block duplication and explicit mesh validation to prevent engine segfaults.
     """
     if modifiers is None:
         modifiers = {
-            'intro_duration': 60,
-            'dwell_duration': 30,
-            'transition_duration': 30,
+            'intro_duration': 4,
+            'dwell_duration': 8,
+            'transition_duration': 4,
             'zoom_factor': 0.7, 
             'neon_color': (0.1, 1.0, 1.0)
         }
 
-    # --- Setup Background ---
-    logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'docs', 'images', 'Greenhouse_Logo.png')
-    visual_effects.setup_background(logo_path)
+    # Set FPS
+    bpy.context.scene.render.fps = 2
+    
+    # Add Logo
+    logo_path = os.path.join(script_dir, "..", "..", "docs", "images", "Greenhouse_Logo.png")
+    add_background_logo(logo_path)
 
     # --- Step 1: Hierarchy ---
     try:
@@ -84,14 +121,14 @@ def create_brain_tour_animation(label_names, data_dir, region_map_file, labels_f
     track_tour.keyframe_insert(data_path="influence", frame=1)
     
     fade_start = intro_duration
-    fade_end = intro_duration + 10
+    fade_end = intro_duration + 4
     
     track_brain.keyframe_insert(data_path="influence", frame=fade_start)
     track_tour.keyframe_insert(data_path="influence", frame=fade_start)
     track_brain.influence = 0.0
     track_brain.keyframe_insert(data_path="influence", frame=fade_end)
     track_tour.influence = 1.0
-    track_tour.keyframe_insert(data_path="influence", frame=fade_end)
+    track_tour.keyframescripts/blender/render_optimized.py_insert(data_path="influence", frame=fade_end)
     
     current_frame = fade_end
 
@@ -123,7 +160,7 @@ def create_brain_tour_animation(label_names, data_dir, region_map_file, labels_f
             # BMesh Isolation
             bm = bmesh.new()
             bm.from_mesh(h_obj.data)
-            bm.verts.ensure_lookup_table()
+            bm.verts.ensscripts/blender/render_optimized.pyure_lookup_table()
             valid_indices = set(indices)
             to_delete = [v for v in bm.verts if v.index not in valid_indices]
             bmesh.ops.delete(bm, geom=to_delete, context='VERTS')

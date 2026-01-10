@@ -5,8 +5,152 @@ import sys
 import math
 import mathutils
 import argparse
+import bmesh
+import numpy as np
 
-def create_brain_logo_animation(output_path, frame_count=5):
+# Ensure script directory is in sys.path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.append(script_dir)
+
+import neuron_physics
+import custom_animation
+import visual_effects
+
+def animate_neurons(frame_count):
+    """
+    Adds subtle random movement to neurons to demonstrate dynamic connections.
+    """
+    if "Neurons" not in bpy.data.collections:
+        return
+        
+    for neuron in bpy.data.collections["Neurons"].objects:
+        # Ensure we have animation data
+        if not neuron.animation_data:
+            neuron.animation_data_create()
+        
+        # Keyframe initial position to establish curves
+        neuron.keyframe_insert(data_path="location", frame=1)
+        
+        # Add noise to X, Y, Z
+        if neuron.animation_data.action:
+            for fcurve in neuron.animation_data.action.fcurves:
+                # Clear existing modifiers to be safe
+                for mod in fcurve.modifiers:
+                    fcurve.modifiers.remove(mod)
+                    
+                mod = fcurve.modifiers.new('NOISE')
+                mod.scale = 20.0
+                mod.strength = 0.2 # Subtle jitter
+                mod.phase = abs(hash(neuron.name)) % 100
+
+def create_axons(brain_obj, max_distance=2.5, max_connections=3):
+    """
+    Creates dynamic visual connections (axons) between neurons.
+    Uses hooks to ensure axons stay connected if neurons move.
+    """
+    if "Neurons" not in bpy.data.collections:
+        return
+
+    neurons = list(bpy.data.collections["Neurons"].objects)
+    if not neurons:
+        return
+
+    # Create a collection for axons
+    if "Axons" not in bpy.data.collections:
+        axon_col = bpy.data.collections.new("Axons")
+        bpy.context.scene.collection.children.link(axon_col)
+    else:
+        axon_col = bpy.data.collections["Axons"]
+
+    # Material for axons (Glowing Blue/Cyan)
+    mat = bpy.data.materials.new(name="AxonMaterial")
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    nodes.clear()
+    emission = nodes.new(type='ShaderNodeEmission')
+    emission.inputs['Color'].default_value = (0.4, 0.8, 1.0, 1.0) 
+    emission.inputs['Strength'].default_value = 5.0
+    output = nodes.new(type='ShaderNodeOutputMaterial')
+    links.new(emission.outputs[0], output.inputs[0])
+
+    created_pairs = set()
+
+    # Ensure Object Mode
+    if bpy.context.object and bpy.context.object.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+    for i, n1 in enumerate(neurons):
+        neighbors = []
+        for j, n2 in enumerate(neurons):
+            if i == j: continue
+            
+            # Avoid duplicate connections
+            pair_id = tuple(sorted((n1.name, n2.name)))
+            if pair_id in created_pairs: continue
+
+            dist = (n1.location - n2.location).length
+            if dist < max_distance:
+                neighbors.append((dist, n2, pair_id))
+        
+        # Connect to closest neighbors
+        neighbors.sort(key=lambda x: x[0])
+        
+        for dist, n2, pair_id in neighbors[:max_connections]:
+            # Create Curve Data
+            curve_data = bpy.data.curves.new('axondata', type='CURVE')
+            curve_data.dimensions = '3D'
+            curve_data.resolution_u = 4
+            curve_data.bevel_depth = 0.02
+            curve_data.bevel_resolution = 2
+            
+            # Create Spline (Bezier)
+            spline = curve_data.splines.new('BEZIER')
+            spline.bezier_points.add(1)
+            
+            p0 = spline.bezier_points[0]
+            p1 = spline.bezier_points[1]
+            
+            p0.co = n1.location
+            p1.co = n2.location
+            
+            p0.handle_left_type = 'AUTO'
+            p0.handle_right_type = 'AUTO'
+            p1.handle_left_type = 'AUTO'
+            p1.handle_right_type = 'AUTO'
+            
+            curve_obj = bpy.data.objects.new('Axon', curve_data)
+            curve_obj.data.materials.append(mat)
+            axon_col.objects.link(curve_obj)
+            
+            curve_obj.parent = brain_obj
+            
+            # Add Hooks
+            bpy.context.view_layer.objects.active = curve_obj
+            
+            mod1 = curve_obj.modifiers.new(name="Hook_N1", type='HOOK')
+            mod1.object = n1
+            mod2 = curve_obj.modifiers.new(name="Hook_N2", type='HOOK')
+            mod2.object = n2
+            
+            # Assign P0 to Hook_N1
+            p0.select_control_point = True
+            p1.select_control_point = False
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.object.hook_assign(modifier="Hook_N1")
+            bpy.ops.object.mode_set(mode='OBJECT')
+            
+            # Assign P1 to Hook_N2
+            p0.select_control_point = False
+            p1.select_control_point = True
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.object.hook_assign(modifier="Hook_N2")
+            bpy.ops.object.mode_set(mode='OBJECT')
+            
+            created_pairs.add(pair_id)
+
+def create_brain_logo_animation(output_path, frame_count=20):
     """
     Creates and renders a short test animation with a textured brain
     in the foreground and the Greenhouse logo on a plane in the background.
@@ -24,6 +168,7 @@ def create_brain_logo_animation(output_path, frame_count=5):
         scene.render.resolution_y = 720
         scene.frame_start = 1
         scene.frame_end = frame_count
+        scene.render.fps = 2
         scene.render.filepath = output_path
         scene.render.image_settings.file_format = 'FFMPEG'
         scene.render.ffmpeg.format = 'MPEG4'
@@ -35,6 +180,7 @@ def create_brain_logo_animation(output_path, frame_count=5):
         if os.path.exists(fbx_path):
             bpy.ops.import_scene.fbx(filepath=fbx_path)
             brain_obj = bpy.context.selected_objects[0]
+            brain_obj.name = "BrainModel"
             
             # Ensure origin is centered for proper scaling
             bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
@@ -54,6 +200,7 @@ def create_brain_logo_animation(output_path, frame_count=5):
             print(f"Warning: brain.fbx not found at {fbx_path}")
             bpy.ops.mesh.primitive_cube_add(size=2, location=(0,0,0))
             brain_obj = bpy.context.active_object
+            brain_obj.name = "BrainModel"
 
         # Position the brain centered between camera (Y=-20) and text (Y=10)
         # and vertically aligned with the text center (approx Z=5)
@@ -67,6 +214,54 @@ def create_brain_logo_animation(output_path, frame_count=5):
         brain_obj.keyframe_insert(data_path="scale", frame=mid_frame)
         brain_obj.scale = (2.0, 2.0, 2.0)
         brain_obj.keyframe_insert(data_path="scale", frame=frame_count)
+
+        # --- 3b. Add Neurons and Regions ---
+        # Neurons
+        neuron_physics.create_neuron_cloud(count=50, radius=2.0)
+        if "Neurons" in bpy.data.collections:
+            for n_obj in bpy.data.collections["Neurons"].objects:
+                n_obj.parent = brain_obj
+        
+        # Animate Neurons
+        animate_neurons(frame_count)
+        
+        # Create Axons connecting the neurons
+        create_axons(brain_obj)
+
+        # Regions
+        DATA_DIR = os.path.join(script_dir, '..', 'python')
+        REGION_MAP_FILE = os.path.join(DATA_DIR, "region_map.json")
+        VERTICES_FILE = os.path.join(DATA_DIR, "vertices.npy")
+        LABELS_FILE = os.path.join(DATA_DIR, "labels.npy")
+
+        # Highlight a region (e.g., Hippocampus)
+        label_name = "Hippocampus"
+        label_id, indices = custom_animation.get_region_data(label_name, REGION_MAP_FILE, LABELS_FILE, VERTICES_FILE)
+        
+        if label_id is not None and len(indices) > 0:
+            h_name = f"Highlight_{label_name}"
+            h_obj = brain_obj.copy()
+            h_obj.data = brain_obj.data.copy()
+            h_obj.name = h_name
+            scene.collection.objects.link(h_obj)
+            h_obj.modifiers.clear()
+            h_obj.animation_data_clear()
+            
+            # Isolate geometry
+            bm = bmesh.new()
+            bm.from_mesh(h_obj.data)
+            bm.verts.ensure_lookup_table()
+            valid_indices = set(indices)
+            to_delete = [v for v in bm.verts if v.index not in valid_indices]
+            bmesh.ops.delete(bm, geom=to_delete, context='VERTS')
+            bm.to_mesh(h_obj.data)
+            bm.free()
+            
+            visual_effects.apply_textured_highlight(h_obj, color=(1.0, 0.8, 0.2))
+            h_obj.parent = brain_obj
+            h_obj.location = (0,0,0)
+            h_obj.rotation_euler = (0,0,0)
+            h_obj.scale = (1,1,1)
 
         # --- 4. Add Background Plane with Logo (from test_logo_animation.py) ---
         bpy.ops.mesh.primitive_plane_add(size=30, location=(0, 20, 0), rotation=(math.radians(90), 0, 0))
@@ -137,7 +332,7 @@ def create_brain_logo_animation(output_path, frame_count=5):
 
         # --- 6. Camera Animation ---
         camera_z_pos = start_z + (len(text_lines) - 1) * line_height / 2
-        bpy.ops.object.camera_add(location=(-10, -20, camera_z_pos))
+        bpy.ops.object.camera_add(location=(-10, -35, camera_z_pos))
         camera = bpy.context.active_object
         scene.camera = camera
 
@@ -150,17 +345,17 @@ def create_brain_logo_animation(output_path, frame_count=5):
         # Animate camera position and rotation
         # Frame 1
         bpy.context.scene.frame_set(1)
-        camera.location = (-10, -20, camera_z_pos)
+        camera.location = (-10, -35, camera_z_pos)
         camera.keyframe_insert(data_path="location", index=-1)
 
         # Frame Mid
         bpy.context.scene.frame_set(mid_frame)
-        camera.location = (10, -20, camera_z_pos)
+        camera.location = (10, -35, camera_z_pos)
         camera.keyframe_insert(data_path="location", index=-1)
 
         # Frame End
         bpy.context.scene.frame_set(frame_count)
-        camera.location = (-10, -20, camera_z_pos)
+        camera.location = (-10, -35, camera_z_pos)
         camera.keyframe_insert(data_path="location", index=-1)
         
         # --- 7. Lighting ---

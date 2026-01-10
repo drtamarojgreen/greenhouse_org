@@ -35,6 +35,13 @@ class TextureOptimizer(BaseOptimizer):
                         img.scale(min(width, max_res), min(height, max_res))
     
     def post_process(self, context):
+        # Remove logo paths
+        print("Checking for logo paths to remove...")
+        for img in list(bpy.data.images):
+            if "logo" in img.name.lower() or (img.filepath and "logo" in img.filepath.lower()):
+                print(f" - Removing logo image: {img.name}")
+                bpy.data.images.remove(img)
+
         # Remove unused images
         for img in bpy.data.images:
             if img.users == 0:

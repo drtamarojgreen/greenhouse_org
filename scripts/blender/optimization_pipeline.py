@@ -100,7 +100,9 @@ def main():
         'max_texture_res': parsed_args.res,
         'triangulate': True,
         'pack_assets': False,
-        'simplify_fcurves_threshold': parsed_args.simplify_fcurves
+        'simplify_fcurves_threshold': parsed_args.simplify_fcurves,
+        'target_frames': 20,
+        'fps': 2
     }
 
     run_pipeline(parsed_args.source, parsed_args.target, config)

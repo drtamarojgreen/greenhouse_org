@@ -4,7 +4,7 @@ import sys
 import math
 import argparse
 
-def create_greenhousemhd_animation(output_path, frame_count=20):
+def create_greenhousemhd_animation(output_path, frame_count=40):
     """
     Creates and renders a short animation with 'GreenhouseMHD' text,
     three spotlights, and a camera panning left-right-left.
