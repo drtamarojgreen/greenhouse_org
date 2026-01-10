@@ -6,23 +6,34 @@
     const GreenhouseModelsTOC = {
         config: {
             xmlPath: 'endpoints/model_descriptions.xml',
-            // Default target, can be overridden by init options
+            // Default target selector, only used if no target is provided in init.
             target: '#models-toc-container'
         },
         state: {
             isInitialized: false,
             activePanel: null
         },
+        // The resolved DOM element where the TOC will be rendered.
+        container: null,
 
         init(options = {}) {
-            if (this.state.isInitialized) {
-                console.log('AGENT_DEBUG: TOC init() called, but already initialized. Clearing and re-rendering.');
-                // If called again (e.g., view change), we should re-render.
-                // Clear existing content to avoid duplication.
-                const container = document.querySelector(this.config.target);
-                if (container) container.innerHTML = '';
+            const target = options.target || this.config.target;
+            let container;
+
+            if (typeof target === 'string') {
+                container = document.querySelector(target);
+            } else if (target instanceof HTMLElement) {
+                container = target;
             }
-            this.config.target = options.target || this.config.target;
+
+            if (!container) {
+                console.error('AGENT_DEBUG: TOC target container could not be found in the DOM.');
+                return;
+            }
+
+            // Clear container for a clean render and store the reference.
+            container.innerHTML = '';
+            this.container = container;
 
             console.log('AGENT_DEBUG: TOC init() started.');
             this.fetchDataAndRender();
@@ -45,17 +56,17 @@
                 this.renderComponent(xmlDoc);
             } catch (error) {
                 console.error('AGENT_DEBUG: Error fetching or parsing XML for TOC:', error);
-                const container = document.querySelector(this.config.target);
-                if (container) {
-                    container.innerHTML = '<p>Error loading model descriptions. Please try again later.</p>';
+                if (this.container) {
+                    this.container.innerHTML = '<p>Error loading model descriptions. Please try again later.</p>';
                 }
             }
         },
 
         renderComponent(xmlDoc) {
-            const container = document.querySelector(this.config.target);
+            const container = this.container;
             if (!container) {
-                console.error(`AGENT_DEBUG: TOC container ('${this.config.target}') not found in the DOM.`);
+                // This check is redundant if init succeeded, but good for safety.
+                console.error(`AGENT_DEBUG: TOC container is not available.`);
                 return;
             }
 
@@ -108,7 +119,9 @@
         },
 
         addEventListeners() {
-            const container = document.querySelector(this.config.target);
+            const container = this.container;
+            if (!container) return; // Safety check
+
             container.addEventListener('click', (event) => {
                 if (event.target.classList.contains('model-toc-button')) {
                     this.togglePanel(event.target);
