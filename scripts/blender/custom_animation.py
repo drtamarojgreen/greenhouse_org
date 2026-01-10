@@ -40,6 +40,10 @@ def create_brain_tour_animation(label_names, data_dir, region_map_file, labels_f
             'neon_color': (0.1, 1.0, 1.0)
         }
 
+    # --- Setup Background ---
+    logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'docs', 'images', 'Greenhouse_Logo.png')
+    visual_effects.setup_background(logo_path)
+
     # --- Step 1: Hierarchy ---
     try:
         brain_model = bpy.data.objects['BrainModel']
