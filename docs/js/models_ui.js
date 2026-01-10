@@ -329,10 +329,10 @@
                     return;
                 }
 
-                // Use the main app container for consistent placement
-                const mainAppContainer = this.state.mainAppContainer;
-                if (!mainAppContainer || !mainAppContainer.parentNode) {
-                    console.error('AGENT_DEBUG: Main application container not found in DOM. Cannot render TOC.');
+                // Use the main targetElement for consistent placement, as it's always available.
+                const targetElement = this.state.targetElement;
+                if (!targetElement) {
+                    console.error('AGENT_DEBUG: Target element not found in state. Cannot render TOC.');
                     return;
                 }
 
@@ -343,8 +343,8 @@
                     console.log('AGENT_DEBUG: TOC container not found, creating and appending it.');
                     tocContainer = document.createElement('div');
                     tocContainer.id = 'models-toc-container';
-                    // Append after the main container to ensure it's at the bottom
-                    mainAppContainer.parentNode.insertBefore(tocContainer, mainAppContainer.nextSibling);
+                    // Append directly to the main target element to ensure it's always placed correctly.
+                    targetElement.appendChild(tocContainer);
                 }
 
                 console.log('AGENT_DEBUG: Loading models_toc.js...');
