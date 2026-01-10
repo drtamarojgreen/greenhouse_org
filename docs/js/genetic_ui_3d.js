@@ -12,7 +12,7 @@
 
         cameras: [
             // Main camera
-            { x: 0, y: 0, z: -300, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 },
+            { x: 0, y: -100, z: -300, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 },
             // PiP cameras: helix, micro, protein, target
             { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 },
             { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 400 },
@@ -25,7 +25,7 @@
         },
 
         isActive: false,
-        rotationSpeed: 0.05, // Very fast rotation: ~2 seconds per full rotation at 60 FPS
+        rotationSpeed: 0.005, // Slower rotation
         neurons3D: [],
         connections3D: [],
         particles: [],
@@ -108,6 +108,7 @@
 
             // Canvas
             this.canvas = document.createElement('canvas');
+            this.canvas.id = 'main-canvas';
             this.canvas.style.width = '100%';
             this.canvas.style.height = '500px';
             this.canvas.style.background = '#0f172a';
@@ -327,9 +328,17 @@
                 this.initializeBrainShell();
             }
 
+            // Use canonical region names that match the geometry data from neuro_ui_3d_geometry.js
+            const regionKeys = ['pfc', 'amygdala', 'hippocampus', 'temporalLobe', 'parietalLobe', 'occipitalLobe', 'cerebellum', 'brainstem'];
             this.neurons3D = net.nodes.map((node, i) => {
                 // Split nodes: First half = Genotype (Helix), Second half = Phenotype (Brain)
                 const isGenotype = i < net.nodes.length / 2;
+
+                // Determine the corresponding brain region for this gene/neuron pair.
+                // The gene at index `i` corresponds to the neuron at index `i + half`,
+                // so they share the same region logic.
+                const correspondingIndex = isGenotype ? i + (net.nodes.length / 2) : i;
+                const regionKey = regionKeys[correspondingIndex % regionKeys.length];
 
                 if (isGenotype) {
                     if (window.GreenhouseGeneticGeometry) {
@@ -340,16 +349,16 @@
                             y: helixData.y,
                             z: helixData.z,
                             type: 'gene',
+                            region: regionKey, // Assign the target region to the gene
                             strand: helixData.strandIndex,
                             label: i % 10 === 0 ? (i % 20 === 0 ? 'BDNF' : '5-HTTLPR') : null,
                             baseColor: helixData.strandIndex === 0 ? '#A8DADC' : '#F4A261'
                         };
                     }
-                    return { id: node.id, x: 0, y: 0, z: 0, type: 'gene', baseColor: '#fff' };
+                    return { id: node.id, x: 0, y: 0, z: 0, type: 'gene', region: regionKey, baseColor: '#fff' };
                 } else {
                     // Volumetric Brain Topology (Inside Shell)
-                    const regionKeys = ['pfc', 'amygdala', 'hippocampus', 'temporalLobe', 'parietalLobe', 'occipitalLobe', 'cerebellum', 'brainstem'];
-                    const regionKey = regionKeys[i % regionKeys.length];
+                    // regionKey is already calculated above
 
                     // Get random vertex from the region to place neuron
                     const regionVerticesIndices = this.getRegionVertices(regionKey);
@@ -512,8 +521,10 @@
 
             // Draw Brain as Main Background
             this.drawTargetView(ctx, 0, 0, w, h, activeGene, 
-                this.activeGeneIndex, this.brainShell, null, { camera: this.camera }); // Pass main camera
+                this.activeGeneIndex, this.brainShell, null, { camera: this.camera, activeGene: activeGene }); // Pass main camera
 
+                //this.activeGeneIndex, this.brainShell, null, { camera: this.camera }); // Pass main camera
+            this.drawConnections(ctx);
             // Helper to draw PiP Frame & Label
             const drawPiPFrame = (ctx, x, y, w, h, title) => {
                 ctx.save();
@@ -579,7 +590,7 @@
             // 5. PiP 4: Target View (Brain Region) - Bottom Right
             const targetY = gap + pipH + gap + pipH + gap;
             this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene, 
-                this.activeGeneIndex, this.brainShell, drawPiPFrame, targetState);
+                this.activeGeneIndex, this.brainShell, drawPiPFrame, { ...targetState, activeGene: activeGene });
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, targetY, pipW, pipH, 'target');
             }
@@ -819,9 +830,10 @@
 
         drawBrainShell(ctx, offsetX = 0) {
             if (window.GreenhouseNeuroBrain) {
+                const activeGene = this.neurons3D[this.activeGeneIndex];
                 ctx.save();
                 ctx.translate(offsetX, 0);
-                window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height);
+                window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height, activeGene);
                 ctx.restore();
             }
         },
@@ -1241,7 +1253,86 @@
             ctx.fillText(`${rotDegrees}°`, w / 2, h / 2);
             
             ctx.restore();
-        }
+        },
+        drawConnections(ctx) {
+            if (!this.connections3D || this.connections3D.length === 0 || !window.GreenhouseModels3DMath || !window.GreenhouseGeneticLighting) {
+                return;
+            }
+
+            ctx.save();
+
+            const lightDirection = window.GreenhouseGeneticLighting.getDirectionalLight();
+
+            // Sort connections by the average depth of their endpoints.
+            // This is an approximation for correct transparency, but much better than nothing.
+            const sortedConnections = this.connections3D
+                .map(conn => {
+                    const avgZ = (conn.from.z + conn.to.z) / 2;
+                    return { ...conn, avgZ };
+                })
+                .sort((a, b) => b.avgZ - a.avgZ);
+
+            sortedConnections.forEach(conn => {
+                // Skip drawing connections to or from the 'gene' type display
+                if (conn.from.type === 'gene' || conn.to.type === 'gene') return;
+                if (!conn.mesh || !conn.mesh.vertices || !conn.mesh.faces) return;
+
+                const mesh = conn.mesh;
+
+                // Determine base color from weight
+                const weight = conn.weight;
+                const positiveColor = [66, 135, 245]; // Blue for positive
+                const negativeColor = [245, 66, 66];  // Red for negative
+                const baseColor = weight > 0 ? positiveColor : negativeColor;
+                const alpha = Math.min(0.8, Math.abs(weight) * 0.7);
+
+                const projectedVertices = mesh.vertices.map(v =>
+                    GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, this.camera, this.projection)
+                );
+
+                mesh.faces.forEach(faceIndices => {
+                    if (faceIndices.length < 3) return;
+
+                    const p1 = projectedVertices[faceIndices[0]];
+                    const p2 = projectedVertices[faceIndices[1]];
+                    const p3 = projectedVertices[faceIndices[2]];
+
+                    // Cull backfaces: if the projected triangle is wound clockwise, it's facing away.
+                    // Also check if any part is in front of the camera (scale > 0)
+                    const isVisible = p1.scale > 0 && p2.scale > 0 && p3.scale > 0;
+                    const isFrontFacing = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) > 0;
+
+                    if (isVisible && isFrontFacing) {
+                        // Get original 3D vertices for lighting calculation
+                        const v1 = mesh.vertices[faceIndices[0]];
+                        const v2 = mesh.vertices[faceIndices[1]];
+                        const v3 = mesh.vertices[faceIndices[2]];
+
+                        // Calculate face normal
+                        const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
+
+                        // Calculate diffuse lighting
+                        const brightness = GreenhouseModels3DMath.calculateDiffuse(normal, lightDirection, 0.2); // 0.2 ambient light
+
+                        const finalColor = `rgba(${Math.floor(baseColor[0] * brightness)}, ${Math.floor(baseColor[1] * brightness)}, ${Math.floor(baseColor[2] * brightness)}, ${alpha})`;
+
+                        ctx.fillStyle = finalColor;
+                        ctx.strokeStyle = finalColor; // Use same color for stroke to hide seams
+                        ctx.lineWidth = 0.5;
+
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.lineTo(p3.x, p3.y);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke(); // Add a thin stroke to fill gaps between triangles
+                    }
+                });
+            });
+
+            ctx.restore();
+        },
     };
 
     window.GreenhouseGeneticUI3D = GreenhouseGeneticUI3D;

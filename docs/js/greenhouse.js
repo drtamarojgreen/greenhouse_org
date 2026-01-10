@@ -61,6 +61,18 @@
          */
         neuroPagePath: '/neuro',
         /**
+         * The path segment that identifies the synapse page.
+         */
+        synapsePagePath: '/synapse',
+        /**
+         * The path segment that identifies the pathway page.
+         */
+        pathwayPagePath: '/pathway',
+        /**
+         * The path segment that identifies the synapse page.
+         */
+        synapsePagePath: '/synapse',
+        /**
          * The path segment that identifies the genetic page.
          */
         geneticPagePath: '/genetic',
@@ -83,8 +95,13 @@
             videos: '.wixui-repeater', // Selector for the videos repeater
             news: '#SITE_PAGES_TRANSITION_GROUP > div > div:nth-child(2) > div > div > div:nth-child(1) > section:nth-child(1) > div:nth-child(2) > div > section > div > div.wixui-column-strip__column', // Reverting to a generic column selector
             genetic: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            geneticTitle: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(1)',
+            geneticParagraph: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(2)',
             tech: '#SITE_PAGES_TRANSITION_GROUP .wixui-section',
             neuro: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            synapse: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            pathway: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            synapse: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -103,7 +120,10 @@
             videos: '.wixui-column-strip__column:first-child', // Fallback to a generic column selector
             news: '.wixui-column-strip__column:first-child', // Reverting to a generic column selector
             tech: 'section.wixui-section',
-            neuro: 'section.wixui-section'
+            neuro: 'section.wixui-section',
+            synapse: 'section.wixui-section',
+            pathway: 'section.wixui-section',
+            synapse: 'section.wixui-section'
         }
     };
 
@@ -301,15 +321,56 @@
     }
 
     /**
+     * @function loadSynapseApplication
+     * @description Loads the synapse application.
+     */
+    async function loadSynapseApplication() {
+        await loadApplication(
+            'synapse',
+            'synapse.js',
+            config.selectors.synapse,
+            config.fallbackSelectors.synapse
+        );
+    }
+
+    /**
+     * @function loadPathwayApplication
+     * @description Loads the pathway application.
+     */
+    async function loadPathwayApplication() {
+        await loadApplication(
+            'pathway',
+            'pathway.js',
+            config.selectors.pathway,
+            config.fallbackSelectors.pathway
+        );
+    }
+
+    /**
     * @function loadGeneticApplication
     * @description Loads the genetic application after ensuring the target element exists.
     */
     async function loadGeneticApplication() {
+        const geneticSelectors = {
+            genetic: config.selectors.genetic,
+            geneticTitle: config.selectors.geneticTitle,
+            geneticParagraph: config.selectors.geneticParagraph
+        };
+
+        const extraAttributes = {
+            'data-genetic-selectors': JSON.stringify(geneticSelectors)
+        };
+
         await loadApplication(
             'genetic',
             'genetic.js',
             config.selectors.genetic,
-            config.fallbackSelectors.models
+            config.fallbackSelectors.models,
+            null, // uiScriptName
+            'default', // viewParam
+            null, // rightPanelSelector
+            null, // rightPanelFallbackSelector
+            extraAttributes
         );
     }
 
@@ -343,6 +404,10 @@
             await loadTechApplication();
         } else if (window.location.pathname.includes(config.neuroPagePath)) {
             await loadNeuroApplication();
+        } else if (window.location.pathname.includes(config.synapsePagePath)) {
+            await loadSynapseApplication();
+        } else if (window.location.pathname.includes(config.pathwayPagePath)) {
+            await loadPathwayApplication();
         }
     }
 

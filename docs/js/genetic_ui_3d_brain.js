@@ -9,6 +9,7 @@
             
             if (this._drawTargetCallCount % 60 === 0) {
                 console.log('[drawTargetView] Called:', {
+                    activeGene: JSON.stringify(activeGene, null, 2),
                     call: this._drawTargetCallCount,
                     x, y, w, h,
                     hasBrainShell: !!brainShell,
@@ -50,81 +51,13 @@
             ctx.rect(0, 0, w, h);
             ctx.clip();
 
-            this.drawBrainShell(ctx, brainShell, targetCamera, projection, w, h);
+            if (window.GreenhouseNeuroBrain) {
+                window.GreenhouseNeuroBrain.drawBrainShell(ctx, brainShell, targetCamera, projection, w, h, activeGene);
+            }
 
             ctx.restore();
         },
 
-        drawBrainShell(ctx, brainShell, camera, projection, width, height) {
-            if (!brainShell) return;
-
-            const vertices = brainShell.vertices;
-            const faces = brainShell.faces;
-
-            // Simplified lighting and color for the genetic brain
-            const lightDir = { x: 0.5, y: -0.5, z: 1 };
-            const len = Math.sqrt(lightDir.x**2 + lightDir.y**2 + lightDir.z**2);
-            lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
-
-            const projectedVertices = vertices.map(v =>
-                GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection)
-            );
-
-            const facesToDraw = [];
-            faces.forEach(face => {
-                const p1 = projectedVertices[face[0]];
-                const p2 = projectedVertices[face[1]];
-                const p3 = projectedVertices[face[2]];
-
-                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
-                    const dx1 = p2.x - p1.x, dy1 = p2.y - p1.y;
-                    const dx2 = p3.x - p1.x, dy2 = p3.y - p1.y;
-
-                    if ((dx1 * dy2 - dy1 * dx2) > 0) {
-                        const depth = (p1.depth + p2.depth + p3.depth) / 3;
-
-                        const v1 = vertices[face[0]], v2 = vertices[face[1]], v3 = vertices[face[2]];
-                        const ux = v2.x - v1.x, uy = v2.y - v1.y, uz = v2.z - v1.z;
-                        const vx = v3.x - v1.x, vy = v3.y - v1.y, vz = v3.z - v1.z;
-
-                        let nx = uy * vz - uz * vy;
-                        let ny = uz * vx - ux * vz;
-                        let nz = ux * vy - uy * vx;
-                        const nLen = Math.sqrt(nx**2 + ny**2 + nz**2);
-                        if (nLen > 0) {
-                            nx /= nLen; ny /= nLen; nz /= nLen;
-                        }
-
-                        facesToDraw.push({ p1, p2, p3, depth, nx, ny, nz });
-                    }
-                }
-            });
-
-            facesToDraw.sort((a, b) => b.depth - a.depth);
-
-            facesToDraw.forEach(f => {
-                const diffuse = Math.max(0, f.nx * lightDir.x + f.ny * lightDir.y + f.nz * lightDir.z);
-                const specular = Math.pow(diffuse, 30);
-                
-                // Default color for genetic brain parts
-                let r = 120, g = 140, b = 160, a = 0.6;
-                
-                const ambient = 0.2;
-                const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
-                const litR = Math.min(255, r * lightIntensity + specular * 255);
-                const litG = Math.min(255, g * lightIntensity + specular * 255);
-                const litB = Math.min(255, b * lightIntensity + specular * 255);
-                
-                const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
-
-                ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
-                ctx.beginPath();
-                ctx.moveTo(f.p1.x, f.p1.y);
-                ctx.lineTo(f.p2.x, f.p2.y);
-                ctx.lineTo(f.p3.x, f.p3.y);
-                ctx.fill();
-            });
-        },
 
         generateCompositeBrainMesh() {
             const vertices = [];

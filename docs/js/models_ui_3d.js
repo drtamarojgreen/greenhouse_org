@@ -697,13 +697,13 @@
 
             // Calculate face depths and sort
             const facesWithDepth = this.brainShell.faces.map(face => {
-                const v1 = projectedVertices[face[0]];
-                const v2 = projectedVertices[face[1]];
-                const v3 = projectedVertices[face[2]];
+                const v1 = projectedVertices[face.indices[0]];
+                const v2 = projectedVertices[face.indices[1]];
+                const v3 = projectedVertices[face.indices[2]];
                 const avgDepth = (v1.depth + v2.depth + v3.depth) / 3;
                 
                 return {
-                    face,
+                    face: face.indices,
                     depth: avgDepth,
                     vertices: [v1, v2, v3]
                 };

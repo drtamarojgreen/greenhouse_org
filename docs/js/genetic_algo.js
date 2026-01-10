@@ -102,7 +102,7 @@
             console.log('Genetic Algo: Initializing population...');
             this.population = [];
             for (let i = 0; i < this.popSize; i++) {
-                this.population.push(new Network(i, 5, 8, 3));
+                this.population.push(new Network(i, 10, 30, 10));
             }
             this.generation = 1;
             this.evaluate();
@@ -204,7 +204,7 @@
 
         crossover(parentA, parentB) {
             // Uniform Crossover
-            const child = new Network(-1, 5, 8, 3); // Structure assumed static for now
+            const child = new Network(-1, 10, 30, 10); // Structure assumed static for now
 
             // Inherit connections
             // Assuming simplified fixed topology for crossover simplicity in this demo
@@ -224,7 +224,7 @@
         },
 
         cloneNetwork(network) {
-            const clone = new Network(network.id, 5, 8, 3);
+            const clone = new Network(network.id, 10, 30, 10);
             clone.nodes = JSON.parse(JSON.stringify(network.nodes));
             clone.connections = JSON.parse(JSON.stringify(network.connections));
             clone.fitness = network.fitness;

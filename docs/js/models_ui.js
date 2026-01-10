@@ -79,6 +79,7 @@
                     }
                 });
             }
+            this.renderTOC(container);
         },
 
         renderSimulationInterface(targetElement) {
@@ -156,6 +157,7 @@
             }
 
             // Re-bind language toggle in general controls (handled in populateControlsPanel)
+            this.renderTOC(targetElement);
         },
 
         _drawLoadingState(ctx, canvas) {
@@ -315,6 +317,34 @@
             // Resize 3D canvas if active
             if (this.resize3DCanvas && this.isActive) {
                 this.resize3DCanvas();
+            }
+        },
+
+        async renderTOC(tocTargetElement) {
+            try {
+                console.log('AGENT_DEBUG: UI.renderTOC() called.');
+                if (!tocTargetElement) {
+                    console.error('AGENT_DEBUG: Target element was not provided to renderTOC.');
+                    return;
+                }
+
+                // Create a container for the TOC and append it to the provided target.
+                const tocContainer = document.createElement('div');
+                tocTargetElement.appendChild(tocContainer);
+
+                console.log('AGENT_DEBUG: Loading models_toc.js...');
+                const utils = window.GreenhouseUtils || this.util;
+                await utils.loadScript('models_toc.js', this.state.baseUrl);
+
+                if (window.GreenhouseModelsTOC && typeof window.GreenhouseModelsTOC.init === 'function') {
+                    console.log('AGENT_DEBUG: GreenhouseModelsTOC object found. Calling init().');
+                    // Pass the specific container element to init.
+                    window.GreenhouseModelsTOC.init({ target: tocContainer });
+                } else {
+                    console.error('AGENT_DEBUG: GreenhouseModelsTOC.init is not available after loading the script.');
+                }
+            } catch (error) {
+                console.error('AGENT_DEBUG: Failed to render Table of Contents:', error);
             }
         }
     };

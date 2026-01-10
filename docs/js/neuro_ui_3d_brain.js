@@ -2,7 +2,8 @@
     'use strict';
 
     const GreenhouseNeuroBrain = {
-        drawBrainShell(ctx, brainShell, camera, projection, width, height) {
+        drawBrainShell(ctx, brainShell, camera, projection, width, height, activeGene = null) {
+            const targetRegion = activeGene ? activeGene.region : null;
             if (!brainShell) return;
             
             // Log camera rotation every 60 calls
@@ -36,9 +37,9 @@
             // Prepare Faces with Depth and Normals
             const facesToDraw = [];
             faces.forEach((face, index) => {
-                const p1 = projectedVertices[face[0]];
-                const p2 = projectedVertices[face[1]];
-                const p3 = projectedVertices[face[2]];
+                const p1 = projectedVertices[face.indices[0]];
+                const p2 = projectedVertices[face.indices[1]];
+                const p3 = projectedVertices[face.indices[2]];
 
                 if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     // Backface Culling
@@ -55,9 +56,9 @@
                         // But here the camera rotates around the object.
                         // So the object is static in World Space, camera moves.
                         // Normal is static in World Space.
-                        const v1 = vertices[face[0]];
-                        const v2 = vertices[face[1]];
-                        const v3 = vertices[face[2]];
+                        const v1 = vertices[face.indices[0]];
+                        const v2 = vertices[face.indices[1]];
+                        const v3 = vertices[face.indices[2]];
 
                         const ux = v2.x - v1.x;
                         const uy = v2.y - v1.y;
@@ -129,18 +130,23 @@
                     }
                 }
 
-                // Apply Lighting
-                const ambient = 0.2;
-                const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
+                // If this is the target region, use a bright, glowing color and bypass lighting.
+                if (targetRegion && f.region === targetRegion) {
+                    const fog = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
+                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green for ROI with fog
+                } else {
+                    // Apply Lighting for all other regions
+                    const ambient = 0.2;
+                    const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
 
-                const litR = Math.min(255, r * lightIntensity + specular * 255);
-                const litG = Math.min(255, g * lightIntensity + specular * 255);
-                const litB = Math.min(255, b * lightIntensity + specular * 255);
+                    const litR = Math.min(255, r * lightIntensity + specular * 255);
+                    const litG = Math.min(255, g * lightIntensity + specular * 255);
+                    const litB = Math.min(255, b * lightIntensity + specular * 255);
 
-                // Depth Fog for Alpha
-                const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
-
-                ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
+                    // Depth Fog for Alpha
+                    const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
+                    ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
+                }
                 ctx.beginPath();
                 ctx.moveTo(f.p1.x, f.p1.y);
                 ctx.lineTo(f.p2.x, f.p2.y);

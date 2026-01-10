@@ -1,0 +1,33 @@
+Acoustic Analysis Report
+==============================
+
+Part 1: Key Musical Patterns Identified
+----------------------------------------
+The following musical features were found to be the most predictive of the simulated 'popularity score':
+
+- max_frequency (Importance: 0.3102)
+- key_G major (Importance: 0.3092)
+- min_frequency (Importance: 0.1461)
+- key_D major (Importance: 0.0696)
+- key_B minor (Importance: 0.0578)
+
+==============================
+
+Part 2: Cross-Reference with Academic Research
+------------------------------------------------
+The following academic papers and clinical trials mention concepts related to these key musical patterns:
+
+--- Papers mentioning 'max frequency' ---
+  - No direct mentions found in the downloaded research.
+
+--- Papers mentioning 'key g major' ---
+  - No direct mentions found in the downloaded research.
+
+--- Papers mentioning 'min frequency' ---
+  - No direct mentions found in the downloaded research.
+
+--- Papers mentioning 'key d major' ---
+  - No direct mentions found in the downloaded research.
+
+--- Papers mentioning 'key b minor' ---
+  - No direct mentions found in the downloaded research.

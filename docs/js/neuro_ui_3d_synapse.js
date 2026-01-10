@@ -350,8 +350,12 @@
                 });
             };
 
-            // Draw Pre-synaptic (Top) - Gold (Axonal)
-            drawMesh(synapseMeshes.pre, 0, '#FFD700'); // Offset 0, mesh is already at -115 to -25
+            // Determine colors based on connection weight
+            const connectionColor = connection.weight > 0 ? '#FFD700' : '#B0C4DE'; // Gold for Excitatory, Silver for Inhibitory
+            const defaultColor = '#B0C4DE'; // Default color for parts not indicating weight
+
+            // Draw Pre-synaptic (Top) - Connection color
+            drawMesh(synapseMeshes.pre, 0, connectionColor);
 
             // Draw Synaptic Cleft (Blue rectangular box between synapses)
             this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
@@ -362,7 +366,7 @@
                 const pEnd = GreenhouseModels3DMath.project3DTo2D(0, endY, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
 
                 if (pStart.scale > 0 && pEnd.scale > 0) {
-                    const radius = 15 * ((pStart.scale + pEnd.scale) / 2);
+                    const radius = 45 * ((pStart.scale + pEnd.scale) / 2);
 
                     // Draw Shaft as a thick line
                     ctx.strokeStyle = color;
@@ -383,16 +387,14 @@
                 }
             };
 
-            // Draw Axon (Gold) - Up
-            // Connects to neck at -115
-            drawShaft(-115, -1000, '#FFD700');
+            // Draw Axon (Up) - Connection color
+            drawShaft(-140, -1000, connectionColor);
 
-            // Draw Post-synaptic (Bottom) - Silver/Blue (Dendritic)
-            drawMesh(synapseMeshes.post, 0, '#B0C4DE'); // Offset 0, mesh is already at 25 to 115
+            // Draw Post-synaptic (Bottom) - Default color
+            drawMesh(synapseMeshes.post, 0, defaultColor);
 
-            // Draw Dendrite (Silver) - Down
-            // Connects to neck at 115
-            drawShaft(115, 1000, '#B0C4DE');
+            // Draw Dendrite (Down) - Default color
+            drawShaft(140, 1000, defaultColor);
 
             // Initialize Synapse Details (Vesicles, Mitochondria) if not present
             if (!connection.synapseDetails) {
@@ -566,7 +568,7 @@
         drawSynapticCleft(ctx, x, y, w, h, synapseCamera) {
             // Cleft dimensions
             const cleftWidth = 120;
-            const cleftHeight = 2; // Very thin
+            const cleftHeight = 25; // Very thin
             const cleftDepth = 120;
             const cleftY = 0; // Position at Y=0 (between pre at -25 and post at +25)
 

@@ -8,7 +8,8 @@
             if (window.GreenhouseBrainMeshRealistic) {
                 const realisticBrain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
                 brainShell.vertices = realisticBrain.vertices;
-                brainShell.faces = realisticBrain.faces;
+                // Convert faces to the new object structure to ensure compatibility
+                brainShell.faces = realisticBrain.faces.map(face => ({ indices: face, region: null }));
                 brainShell.regions = realisticBrain.regions;
                 
                 // Compute boundaries
@@ -118,14 +119,14 @@
                     const second = first + longitudeBands + 1;
 
                     // Two triangles per quad
-                    brainShell.faces.push([first, second, first + 1]);
-                    brainShell.faces.push([second, second + 1, first + 1]);
+                    brainShell.faces.push({ indices: [first, second, first + 1], region: null });
+                    brainShell.faces.push({ indices: [second, second + 1, first + 1], region: null });
                 }
             }
 
             // Define Regions
             brainShell.regions = {
-                prefrontalCortex: {
+                pfc: {
                     color: 'rgba(100, 150, 255, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'pfc')
                 },
@@ -219,18 +220,18 @@
             const edgeMap = new Map(); // "v1-v2" -> [faceIndex, faceIndex]
 
             brainShell.faces.forEach((face, faceIdx) => {
-                const v1 = brainShell.vertices[face[0]];
-                const v2 = brainShell.vertices[face[1]];
-                const v3 = brainShell.vertices[face[2]];
+                const v1 = brainShell.vertices[face.indices[0]];
+                const v2 = brainShell.vertices[face.indices[1]];
+                const v3 = brainShell.vertices[face.indices[2]];
 
                 const region = v1.region || v2.region || v3.region;
                 face.region = region;
 
                 // Register Edges
                 const edges = [
-                    [Math.min(face[0], face[1]), Math.max(face[0], face[1])],
-                    [Math.min(face[1], face[2]), Math.max(face[1], face[2])],
-                    [Math.min(face[2], face[0]), Math.max(face[2], face[0])]
+                    [Math.min(face.indices[0], face.indices[1]), Math.max(face.indices[0], face.indices[1])],
+                    [Math.min(face.indices[1], face.indices[2]), Math.max(face.indices[1], face.indices[2])],
+                    [Math.min(face.indices[2], face.indices[0]), Math.max(face.indices[2], face.indices[0])]
                 ];
 
                 edges.forEach(edge => {
