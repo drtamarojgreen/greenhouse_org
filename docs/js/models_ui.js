@@ -79,7 +79,7 @@
                     }
                 });
             }
-            this.renderTOC();
+            this.renderTOC(container);
         },
 
         renderSimulationInterface(targetElement) {
@@ -157,7 +157,7 @@
             }
 
             // Re-bind language toggle in general controls (handled in populateControlsPanel)
-            this.renderTOC();
+            this.renderTOC(targetElement);
         },
 
         _drawLoadingState(ctx, canvas) {
@@ -320,32 +320,17 @@
             }
         },
 
-        async renderTOC() {
+        async renderTOC(tocTargetElement) {
             try {
                 console.log('AGENT_DEBUG: UI.renderTOC() called.');
-                const targetElement = this.state.targetElement;
-                if (!targetElement) {
-                    console.error('AGENT_DEBUG: Target element not found in state. Cannot render TOC.');
+                if (!tocTargetElement) {
+                    console.error('AGENT_DEBUG: Target element was not provided to renderTOC.');
                     return;
                 }
 
-                // Use the main targetElement for consistent placement, as it's always available.
-                const targetElement = this.state.targetElement;
-                if (!targetElement) {
-                    console.error('AGENT_DEBUG: Target element not found in state. Cannot render TOC.');
-                    return;
-                }
-
-                let tocContainer = document.getElementById('models-toc-container');
-                if (tocContainer) {
-                    tocContainer.innerHTML = ''; // Clear existing content to prevent duplication
-                } else {
-                    console.log('AGENT_DEBUG: TOC container not found, creating and appending it.');
-                    tocContainer = document.createElement('div');
-                    tocContainer.id = 'models-toc-container';
-                    // Append directly to the main target element to ensure it's always placed correctly.
-                    targetElement.appendChild(tocContainer);
-                }
+                // Create a container for the TOC and append it to the provided target.
+                const tocContainer = document.createElement('div');
+                tocTargetElement.appendChild(tocContainer);
 
                 console.log('AGENT_DEBUG: Loading models_toc.js...');
                 const utils = window.GreenhouseUtils || this.util;
@@ -353,7 +338,8 @@
 
                 if (window.GreenhouseModelsTOC && typeof window.GreenhouseModelsTOC.init === 'function') {
                     console.log('AGENT_DEBUG: GreenhouseModelsTOC object found. Calling init().');
-                    window.GreenhouseModelsTOC.init({ target: '#models-toc-container' });
+                    // Pass the specific container element to init.
+                    window.GreenhouseModelsTOC.init({ target: tocContainer });
                 } else {
                     console.error('AGENT_DEBUG: GreenhouseModelsTOC.init is not available after loading the script.');
                 }
