@@ -1,0 +1,6 @@
+# scripts/acoustic/requirements.txt
+
+pandas
+numpy
+scikit-learn
+joblib
