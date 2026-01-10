@@ -8,3 +8,4 @@ biopython
 requests
 matplotlib
 seaborn
+music21

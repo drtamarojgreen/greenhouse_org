@@ -4,49 +4,43 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 import os
 
-def cap_outliers(series):
-    """Caps outliers in a pandas Series using the IQR method."""
-    q1 = series.quantile(0.25)
-    q3 = series.quantile(0.75)
-    iqr = q3 - q1
-    lower_bound = q1 - 1.5 * iqr
-    upper_bound = q3 + 1.5 * iqr
-    return series.clip(lower=lower_bound, upper=upper_bound)
-
-def preprocess_inhouse_data():
+def preprocess_inhouse_music_data():
     """
-    Preprocesses the in-house dataset by capping outliers and normalizing the data.
+    Preprocesses the in-house music dataset by encoding categorical features
+    and normalizing numerical features.
     """
-    print("Preprocessing in-house data with outlier handling and normalization...")
+    print("Preprocessing in-house music data...")
 
     # Define file paths
-    input_file = "scripts/acoustic/data/inhouse_data.csv"
-    output_file = "scripts/acoustic/data/inhouse_data_processed.csv"
+    input_file = "scripts/acoustic/data/inhouse_music_data.csv"
+    output_file = "scripts/acoustic/data/inhouse_music_data_processed.csv"
 
     # Load data
     try:
         df = pd.read_csv(input_file)
     except FileNotFoundError:
-        print("In-house data file not found. Please run the data acquisition scripts first.")
+        print("In-house music data file not found. Please run the data acquisition script first.")
         return
 
-    # Identify numerical columns for processing (excluding 'mode')
-    cols_to_process = [col for col in df.columns if col != 'mode']
+    # --- Preprocessing ---
 
-    # Apply outlier capping
-    for col in cols_to_process:
-        df[col] = cap_outliers(df[col])
+    # One-hot encode categorical features
+    df = pd.get_dummies(df, columns=['key', 'time_signature'], drop_first=True)
 
-    # Apply Min-Max normalization
+    # Normalize numerical features
+    numerical_cols = ['min_frequency', 'max_frequency']
     scaler = MinMaxScaler()
-    df[cols_to_process] = scaler.fit_transform(df[cols_to_process])
+    df[numerical_cols] = scaler.fit_transform(df[numerical_cols])
+
+    # Drop the title column as it's not a feature for the model
+    df = df.drop('piece_title', axis=1)
 
     # Save processed data
     output_dir = "scripts/acoustic/data"
     os.makedirs(output_dir, exist_ok=True)
     df.to_csv(output_file, index=False)
 
-    print(f"In-house data preprocessed and saved to {output_file}")
+    print(f"In-house music data preprocessed and saved to {output_file}")
 
 if __name__ == "__main__":
-    preprocess_inhouse_data()
+    preprocess_inhouse_music_data()

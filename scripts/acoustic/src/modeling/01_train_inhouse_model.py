@@ -5,58 +5,49 @@ import joblib
 import os
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, r2_score
 
 def train_inhouse_model():
     """
-    Trains a RandomForestRegressor model on the in-house dataset and evaluates it.
+    Trains a RandomForestRegressor model on the in-house music dataset
+    and evaluates its performance.
     """
-    print("Training in-house Random Forest model...")
+    print("Training in-house model on real music data...")
 
     # Load preprocessed data
     try:
-        data = pd.read_csv("scripts/acoustic/data/inhouse_data_processed.csv")
+        data = pd.read_csv("scripts/acoustic/data/inhouse_music_data_processed.csv")
     except FileNotFoundError:
-        print("Preprocessed data not found. Please run the preprocessing scripts first.")
+        print("Preprocessed music data not found. Please run the preprocessing script first.")
         return
 
     # Prepare data for training
-    # All columns except 'reaction_score' are features
-    X = data.drop('reaction_score', axis=1)
-    y = data['reaction_score']
-
-    # Ensure all feature columns are present
-    expected_features = ['tempo', 'mode', 'energy', 'valence', 'loudness']
-    if not all(feature in X.columns for feature in expected_features):
-        print(f"Error: Missing one or more expected features in the dataset. Found: {list(X.columns)}")
-        return
+    X = data.drop('popularity_score', axis=1)
+    y = data['popularity_score']
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # --- Train a Random Forest model ---
-    # Using more robust parameters than defaults for better performance.
+    # Train a Random Forest model
     model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1, oob_score=True)
     model.fit(X_train, y_train)
 
-    # --- Evaluate the model ---
+    # Evaluate the model
     y_pred = model.predict(X_test)
-
     mae = mean_absolute_error(y_test, y_pred)
-    mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
     oob = model.oob_score_
 
     print("\n--- Model Evaluation ---")
     print(f"Mean Absolute Error (MAE): {mae:.4f}")
-    print(f"Mean Squared Error (MSE): {mse:.4f}")
     print(f"R-squared (R²) Score: {r2:.4f}")
     print(f"Out-of-Bag (OOB) Score: {oob:.4f}")
     print("------------------------\n")
 
-    # --- Feature Importances ---
+    # Feature Importances
     importances = model.feature_importances_
+    feature_names = X.columns
     feature_importance_df = pd.DataFrame({
-        'feature': X.columns,
+        'feature': feature_names,
         'importance': importances
     }).sort_values(by='importance', ascending=False)
 

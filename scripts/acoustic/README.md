@@ -2,17 +2,16 @@
 
 ## Overview
 
-This project contains a fully implemented suite of Python and R scripts that demonstrate a machine learning pipeline. The pipeline assesses and searches research from PubMed and ClinicalTrials.gov and compares it to an in-house model. The in-house model is trained on a synthetic dataset of musical features to predict a simulated "reaction score."
+This project contains a sophisticated, fully implemented suite of Python scripts that demonstrate a machine learning pipeline for musical analysis. The pipeline analyzes the note content of classical music from the `music21` corpus, trains a model to predict a simulated "popularity score," and then cross-references the model's findings with academic research from PubMed and ClinicalTrials.gov.
 
-The pipeline is designed to be modular and run sequentially, with a `main.py` script to orchestrate the entire process.
+The final output is a text-based report (`analysis_summary.txt`) that details the key musical patterns identified by the model and lists the academic research that discusses similar concepts.
 
 ## Features
 
-- **Data Acquisition**: Fetches real data from PubMed and ClinicalTrials.gov APIs and generates a sophisticated synthetic dataset for the in-house model.
-- **Advanced Preprocessing**: Utilizes `nltk` for robust NLP preprocessing of text data and `dplyr` in R for normalization and outlier handling of the in-house data.
-- **Machine Learning Model**: Trains a Random Forest Regressor on the in-house data, evaluates its performance, and identifies key feature importances.
-- **Intelligent Search**: Uses the feature importances from the trained model to guide a search for relevant articles in the public research data.
-- **Comparative Analysis**: Generates a keyword frequency plot from the relevant PubMed abstracts to visualize key themes.
+- **Real Music Data Analysis**: Utilizes the `music21` library to download and analyze Bach chorales, extracting features like note frequencies, key signatures, and time signatures.
+- **Advanced Preprocessing**: Prepares the music data for modeling by one-hot encoding categorical features and normalizing numerical data.
+- **Machine Learning Model**: Trains a Random Forest Regressor to identify the most important musical features in predicting a simulated "popularity score."
+- **Text-Based Reporting**: Generates a detailed textual summary that connects the model's findings to real-world academic research.
 
 ## Directory Structure
 
@@ -27,15 +26,15 @@ scripts/acoustic/
 │   │   └── 03_generate_inhouse_data.py
 │   ├── preprocessing/
 │   │   ├── 01_preprocess_text.py
-│   │   └── 02_preprocess_inhouse_data.R
+│   │   └── 02_preprocess_inhouse_data.py
 │   ├── modeling/
 │   │   ├── 01_train_inhouse_model.py
 │   │   └── inhouse_model.pkl (saved model)
 │   └── analysis/
 │       ├── 01_search_public_research.py
-│       └── 02_comparative_analysis.R
+│       └── 02_comparative_analysis.py
 ├── analysis_results/
-│   └── keyword_frequency_plot.png (output plot)
+│   └── analysis_summary.txt (output report)
 ├── main.py
 ├── requirements.txt
 └── README.md
@@ -46,19 +45,14 @@ scripts/acoustic/
 ### 1. Prerequisites
 
 - Python 3.7+
-- R installed and `Rscript` command available in the system's PATH.
 
 ### 2. Installation
 
-First, install the required Python packages:
+Install the required Python packages:
 ```bash
 pip install -r requirements.txt
 ```
-
-Next, you'll need to install the R packages. Open an R console and run:
-```R
-install.packages(c("readr", "dplyr", "tidytext", "ggplot2", "stringr"))
-```
+*Note: The first time you run the pipeline, `music21` may need to download its corpus, which can take a few minutes.*
 
 ### 3. Running the Pipeline
 
@@ -66,4 +60,4 @@ To run the entire pipeline, execute the `main.py` script from within the `script
 ```bash
 python main.py
 ```
-The script will run each step of the pipeline in the correct order, from data acquisition to the final analysis. The output plot will be saved in the `analysis_results` directory.
+The script will run each step of the pipeline in the correct order. The final analysis report will be saved in the `analysis_results` directory.

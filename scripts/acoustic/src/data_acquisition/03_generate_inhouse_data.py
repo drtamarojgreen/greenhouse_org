@@ -1,79 +1,84 @@
 # scripts/acoustic/src/data_acquisition/03_generate_inhouse_data.py
 
-import os
 import pandas as pd
-import numpy as np
+import os
+from music21 import corpus, converter
 
-def generate_inhouse_data(num_samples=500):
+def get_note_features(score):
     """
-    Generates a sophisticated synthetic in-house dataset.
-
-    This function creates a dataset of musical features and simulates a "reaction score"
-    based on a defined formula. This is intended to simulate data that might be
-    collected from an experiment measuring human response to music.
-
-    Args:
-        num_samples (int): The number of data points to generate.
+    Analyzes a music21 score to extract note-based features.
     """
-    print(f"Generating {num_samples} samples of in-house data...")
+    notes = score.flat.notes
+    if not notes:
+        return None, None
 
-    # Seed for reproducibility
-    np.random.seed(42)
+    # Extract frequencies (in Hz) for all notes
+    frequencies = [note.pitch.frequency for note in notes if note.pitch]
+    if not frequencies:
+        return None, None
 
-    # --- Feature Generation ---
-    # Generate musical features within plausible ranges.
-    # tempo: Beats per minute (e.g., a range from slow to fast)
-    tempo = np.random.uniform(60, 180, num_samples)
-    # mode: 0 for minor, 1 for major
-    mode = np.random.randint(0, 2, num_samples)
-    # energy: A measure of intensity (0 to 1)
-    energy = np.random.rand(num_samples)
-    # valence: A measure of musical positiveness (0 to 1)
-    valence = np.random.rand(num_samples)
-    # loudness: In decibels (dB), typical range for music
-    loudness = np.random.uniform(-30, 0, num_samples)
+    return min(frequencies), max(frequencies)
 
-    # --- Reaction Score Calculation ---
-    # This formula is a simulation of how these features might combine to affect
-    # a listener's reaction. It is based on the following assumptions:
-    # - A baseline reaction score of 5.0.
-    # - Higher valence (positiveness) and energy increase the score.
-    # - Music in a major key has a more positive effect than minor.
-    # - Tempo has an optimal point around 120 bpm.
-    # - Loudness has an optimal point around -10 dB.
-    # - Some random noise is included to simulate natural variance.
+def analyze_music_corpus(num_pieces=20):
+    """
+    Analyzes pieces from the music21 corpus to create an in-house dataset.
+    This function processes a selection of Bach chorales to extract musical features.
+    """
+    print(f"Analyzing {num_pieces} pieces from the music21 corpus...")
 
-    base_score = 5.0
-    valence_effect = (valence - 0.5) * 4
-    energy_effect = (energy - 0.5) * 3
-    mode_effect = np.where(mode == 1, 1.0, -1.0)
-    tempo_effect = 1.5 * (1 - (np.abs(tempo - 120) / 60))
-    loudness_effect = 1.0 * (1 - (np.abs(loudness - (-10)) / 20))
-    noise = np.random.normal(0, 0.5, num_samples)
+    # Using Bach chorales as they are well-structured and readily available
+    bach_chorales = corpus.getComposer('bach')
+    music_data = []
 
-    # Combine effects to get the final score
-    reaction_score = (base_score + valence_effect + energy_effect + mode_effect +
-                      tempo_effect + loudness_effect + noise)
+    for i, piece_path in enumerate(bach_chorales[:num_pieces]):
+        try:
+            score = corpus.parse(piece_path)
 
-    # Clip the score to be within a 0-10 range
-    reaction_score = np.clip(reaction_score, 0, 10)
+            # --- Feature Extraction ---
+            key = score.analyze('key')
+            time_signature = score.getTimeSignatures()[0] if score.getTimeSignatures() else None
+            min_freq, max_freq = get_note_features(score)
+
+            if min_freq is None or time_signature is None:
+                continue
+
+            # --- Popularity Score Simulation ---
+            # This formula simulates a "popularity score" based on musical theory.
+            # Assumptions:
+            # - A baseline score of 5.0.
+            # - Major keys are generally more "popular" or accessible.
+            # - Common time (4/4) is the most standard and popular time signature.
+            # - A wider frequency range might be more engaging.
+            # - These are simplifications for the purpose of this pipeline.
+
+            popularity_score = 5.0
+            popularity_score += 1.0 if key.mode == 'major' else -1.0
+            popularity_score += 1.5 if time_signature.ratioString == '4/4' else 0
+            popularity_score += (max_freq - min_freq) / 500 # Normalize the range effect
+
+            music_data.append({
+                'piece_title': score.metadata.title if score.metadata else os.path.basename(piece_path),
+                'key': f"{key.tonic.name} {key.mode}",
+                'time_signature': time_signature.ratioString,
+                'min_frequency': min_freq,
+                'max_frequency': max_freq,
+                'popularity_score': min(10, max(0, popularity_score)) # Clip to 0-10
+            })
+        except Exception as e:
+            print(f"Could not process piece {i+1}/{num_pieces}: {e}")
 
     # --- Create and Save DataFrame ---
-    df = pd.DataFrame({
-        'tempo': tempo,
-        'mode': mode,
-        'energy': energy,
-        'valence': valence,
-        'loudness': loudness,
-        'reaction_score': reaction_score
-    })
+    if not music_data:
+        print("Could not extract any music data. Aborting.")
+        return
 
+    df = pd.DataFrame(music_data)
     output_dir = "scripts/acoustic/data"
     os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, "inhouse_data.csv")
+    output_path = os.path.join(output_dir, "inhouse_music_data.csv")
     df.to_csv(output_path, index=False)
 
-    print(f"In-house data generated and saved to {output_path}")
+    print(f"In-house music data extracted and saved to {output_path}")
 
 if __name__ == "__main__":
-    generate_inhouse_data()
+    analyze_music_corpus()
