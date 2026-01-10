@@ -77,8 +77,9 @@
 
             // Load the modules required for the synapse application
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await GreenhouseUtils.loadScript('synapse_elements.js', baseUrl);
-            await GreenhouseUtils.loadScript('synapse_actions.js', baseUrl);
+            await GreenhouseUtils.loadScript('models_data.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_synapse_camera_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_ui_3d_synapse.js', baseUrl);
             await GreenhouseUtils.loadScript('synapse_app.js', baseUrl);
 
             // Check if all modules are loaded
