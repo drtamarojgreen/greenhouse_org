@@ -6,10 +6,9 @@ import os
 
 def preprocess_text_data():
     """
-    Placeholder function to preprocess text data from PubMed and clinical trials.
-    In a real implementation, this would involve more sophisticated NLP techniques.
+    Preprocesses text data from PubMed and clinical trials using basic regex.
     """
-    print("Preprocessing text data...")
+    print("Preprocessing text data with basic regex...")
 
     # Load data
     try:
@@ -19,13 +18,18 @@ def preprocess_text_data():
         print("Data files not found. Please run the data acquisition scripts first.")
         return
 
-    # Simple text cleaning
     def clean_text(text):
+        if not isinstance(text, str):
+            return ""
+        # Lowercase
         text = text.lower()
-        text = re.sub(r'\[.*?\]', '', text)
-        text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+        # Remove non-alphanumeric characters
+        text = re.sub(r'[^a-zA-Z\s]', '', text)
+        # Remove extra whitespace
+        text = " ".join(text.split())
         return text
 
+    # Apply cleaning function
     pubmed_df['cleaned_abstract'] = pubmed_df['abstract'].apply(clean_text)
     trials_df['cleaned_summary'] = trials_df['summary'].apply(clean_text)
 
