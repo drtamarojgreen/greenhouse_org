@@ -54,8 +54,7 @@
 }
 
 #models-toc-container .model-toc-panel {
-  /* display: none is removed to allow animation */
-  padding: 0 20px; /* Vertical padding is 0 when closed */
+  padding: 0 20px;
   border: 1px solid var(--toc-border-color);
   border-top: none;
   border-radius: 0 0 8px 8px;
@@ -67,8 +66,7 @@
 }
 
 #models-toc-container .model-toc-panel.open {
-  /* display: block is removed */
-  padding: 20px; /* Restore padding when open */
+  padding: 20px;
   visibility: visible;
 }
 
@@ -84,7 +82,6 @@
       max-height var(--toc-animation-duration) ease-out,
       padding-top var(--toc-animation-duration) ease-out,
       padding-bottom var(--toc-animation-duration) ease-out,
-      /* Delay hiding visibility until after the collapse animation */
       visibility 0s linear var(--toc-animation-duration);
     max-height: 0;
   }
@@ -95,7 +92,6 @@
       max-height calc(var(--toc-animation-duration) * 2) ease-in,
       padding-top calc(var(--toc-animation-duration) * 2) ease-in,
       padding-bottom calc(var(--toc-animation-duration) * 2) ease-in,
-      /* Make visible immediately when opening */
       visibility 0s;
   }
 }

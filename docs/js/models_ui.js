@@ -79,6 +79,7 @@
                     }
                 });
             }
+            this.renderTOC();
         },
 
         renderSimulationInterface(targetElement) {
@@ -156,6 +157,7 @@
             }
 
             // Re-bind language toggle in general controls (handled in populateControlsPanel)
+            this.renderTOC();
         },
 
         _drawLoadingState(ctx, canvas) {
@@ -315,6 +317,48 @@
             // Resize 3D canvas if active
             if (this.resize3DCanvas && this.isActive) {
                 this.resize3DCanvas();
+            }
+        },
+
+        async renderTOC() {
+            try {
+                console.log('AGENT_DEBUG: UI.renderTOC() called.');
+                const targetElement = this.state.targetElement;
+                if (!targetElement) {
+                    console.error('AGENT_DEBUG: Target element not found in state. Cannot render TOC.');
+                    return;
+                }
+
+                // Use the main app container for consistent placement
+                const mainAppContainer = this.state.mainAppContainer;
+                if (!mainAppContainer || !mainAppContainer.parentNode) {
+                    console.error('AGENT_DEBUG: Main application container not found in DOM. Cannot render TOC.');
+                    return;
+                }
+
+                let tocContainer = document.getElementById('models-toc-container');
+                if (tocContainer) {
+                    tocContainer.innerHTML = ''; // Clear existing content to prevent duplication
+                } else {
+                    console.log('AGENT_DEBUG: TOC container not found, creating and appending it.');
+                    tocContainer = document.createElement('div');
+                    tocContainer.id = 'models-toc-container';
+                    // Append after the main container to ensure it's at the bottom
+                    mainAppContainer.parentNode.insertBefore(tocContainer, mainAppContainer.nextSibling);
+                }
+
+                console.log('AGENT_DEBUG: Loading models_toc.js...');
+                const utils = window.GreenhouseUtils || this.util;
+                await utils.loadScript('models_toc.js', this.state.baseUrl);
+
+                if (window.GreenhouseModelsTOC && typeof window.GreenhouseModelsTOC.init === 'function') {
+                    console.log('AGENT_DEBUG: GreenhouseModelsTOC object found. Calling init().');
+                    window.GreenhouseModelsTOC.init({ target: '#models-toc-container' });
+                } else {
+                    console.error('AGENT_DEBUG: GreenhouseModelsTOC.init is not available after loading the script.');
+                }
+            } catch (error) {
+                console.error('AGENT_DEBUG: Failed to render Table of Contents:', error);
             }
         }
     };

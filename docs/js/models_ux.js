@@ -131,6 +131,7 @@
             }
         },
 
+
         getConfiguration() {
             if (!window._greenhouseModelsAttributes) {
                 console.error('Models App: Global attributes not found.');
