@@ -261,7 +261,7 @@ window.GreenhouseUtils = (function () {
                 };
 
                 scriptElement.src = objectUrl;
-                document.body.appendChild(scriptElement);
+                document.head.appendChild(scriptElement);
 
             } catch (error) {
                 console.error(`GreenhouseUtils: Failed to load script ${scriptName}:`, error);
