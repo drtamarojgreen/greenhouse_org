@@ -123,12 +123,6 @@
                 this.state.isInitialized = true;
                 this._applySharedParameters();
                 this.observeAndReinitializeApp(this.state.targetElement); // Re-enabled to handle Wix DOM manipulation
-
-                // Initialize the Table of Contents component after the main UI is ready
-                if (window.GreenhouseModelsTOC) {
-                    window.GreenhouseModelsTOC.init();
-                }
-
             } catch (error) {
                 console.error('Models App: Initialization failed:', error);
                 GreenhouseUtils.displayError(`Failed to load simulation: ${error.message}`);

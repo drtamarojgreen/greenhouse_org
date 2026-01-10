@@ -16,17 +16,17 @@
   margin: 20px 0;
 }
 
-.models-toc-intro {
+#models-toc-container .models-toc-intro {
   margin-bottom: 20px;
 }
 
-.models-toc-intro p {
+#models-toc-container .models-toc-intro p {
   margin-bottom: 10px;
   line-height: 1.6;
   color: var(--toc-text-color);
 }
 
-.model-toc-button {
+#models-toc-container .model-toc-button {
   display: block;
   width: 100%;
   padding: 15px;
@@ -42,20 +42,19 @@
   transition: background-color var(--toc-animation-duration), color var(--toc-animation-duration);
 }
 
-.model-toc-button:hover,
-.model-toc-button:focus {
+#models-toc-container .model-toc-button:hover,
+#models-toc-container .model-toc-button:focus {
   background-color: var(--toc-primary-color);
   color: white;
 }
 
-.model-toc-button.active {
+#models-toc-container .model-toc-button.active {
   background-color: var(--toc-secondary-color);
   color: white;
 }
 
-.model-toc-panel {
-  /* display: none is removed to allow animation */
-  padding: 0 20px; /* Vertical padding is 0 when closed */
+#models-toc-container .model-toc-panel {
+  padding: 0 20px;
   border: 1px solid var(--toc-border-color);
   border-top: none;
   border-radius: 0 0 8px 8px;
@@ -66,36 +65,33 @@
   visibility: hidden;
 }
 
-.model-toc-panel.open {
-  /* display: block is removed */
-  padding: 20px; /* Restore padding when open */
+#models-toc-container .model-toc-panel.open {
+  padding: 20px;
   visibility: visible;
 }
 
-.model-toc-panel p {
+#models-toc-container .model-toc-panel p {
   margin-bottom: 10px;
   line-height: 1.6;
   color: var(--toc-text-color);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .model-toc-panel {
+  #models-toc-container .model-toc-panel {
     transition:
       max-height var(--toc-animation-duration) ease-out,
       padding-top var(--toc-animation-duration) ease-out,
       padding-bottom var(--toc-animation-duration) ease-out,
-      /* Delay hiding visibility until after the collapse animation */
       visibility 0s linear var(--toc-animation-duration);
     max-height: 0;
   }
 
-  .model-toc-panel.open {
-    max-height: 1000px; /* Large enough to not clip content */
+  #models-toc-container .model-toc-panel.open {
+    /* max-height is now set by JS, so it is removed from here */
     transition:
       max-height calc(var(--toc-animation-duration) * 2) ease-in,
       padding-top calc(var(--toc-animation-duration) * 2) ease-in,
       padding-bottom calc(var(--toc-animation-duration) * 2) ease-in,
-      /* Make visible immediately when opening */
       visibility 0s;
   }
 }
@@ -105,12 +101,12 @@
     padding: 15px;
   }
 
-  .model-toc-button {
+  #models-toc-container .model-toc-button {
     padding: 12px;
     font-size: 1em;
   }
 
-  .model-toc-panel {
+  #models-toc-container .model-toc-panel {
     padding: 15px;
   }
 }
