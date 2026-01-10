@@ -32,17 +32,17 @@
             preSynapticTerminal: { id: 'preSynapticTerminal', label: 'preSynapticTerminal' },
             postSynapticTerminal: { id: 'postSynapticTerminal', label: 'postSynapticTerminal' },
             vesicles: [
-                { id: 'vesicle1', label: 'vesicle', x: 0.2, y: 0.2, r: 15 },
+                { id: 'vesicle1', label: 'vesicle', x: 0.4, y: 0.2, r: 15 },
                 { id: 'vesicle2', label: 'vesicle', x: 0.5, y: 0.15, r: 20 },
-                { id: 'vesicle3', label: 'vesicle', x: 0.8, y: 0.25, r: 18 }
+                { id: 'vesicle3', label: 'vesicle', x: 0.6, y: 0.25, r: 18 }
             ],
             ionChannels: [
-                { id: 'ionChannel1', label: 'ionChannel', x: 0.2 },
-                { id: 'ionChannel2', label: 'ionChannel', x: 0.6 }
+                { id: 'ionChannel1', label: 'ionChannel', x: 0.45 },
+                { id: 'ionChannel2', label: 'ionChannel', x: 0.55 }
             ],
             gpcrs: [
                 { id: 'gpcr1', label: 'gpcr', x: 0.4 },
-                { id: 'gpcr2', label: 'gpcr', x: 0.8 }
+                { id: 'gpcr2', label: 'gpcr', x: 0.6 }
             ]
         }
     };
@@ -189,13 +189,17 @@
             this.hoveredId = null;
             const mx = this.mouse.x;
             const my = this.mouse.y;
+            const terminalWidth = w * 0.6;
+            const terminalHeight = h * 0.3;
+            const startX = (w - terminalWidth) / 2;
+            const spineTopY = h - (h * 0.15) - (h * 0.25);
 
             // Check Pre-Synaptic Terminal
-            if (my < h * 0.4) {
+            if (my < terminalHeight + 25) { // Simplified check for upper half
                 this.hoveredId = config.elements.preSynapticTerminal.id;
             }
             // Check Post-Synaptic Terminal
-            else if (my > h * 0.6) {
+            else if (my > spineTopY - 40) { // Simplified check for lower half
                 this.hoveredId = config.elements.postSynapticTerminal.id;
             }
 
@@ -211,7 +215,7 @@
             // Check Ion Channels
             config.elements.ionChannels.forEach(c => {
                 const cx = w * c.x - 10;
-                const cy = h * 0.6 - 15;
+                const cy = spineTopY - 15;
                 if (mx > cx && mx < cx + 20 && my > cy && my < cy + 15) {
                     this.hoveredId = c.id;
                 }
@@ -220,7 +224,7 @@
             // Check GPCRs
             config.elements.gpcrs.forEach(g => {
                 // Simplified hit-box for the curve
-                if (mx > w * g.x - 15 && mx < w * g.x + 15 && my > h * 0.6 - 15 && my < h * 0.6) {
+                if (mx > w * g.x - 15 && mx < w * g.x + 15 && my > spineTopY - 15 && my < spineTopY) {
                     this.hoveredId = g.id;
                 }
             });
@@ -264,9 +268,9 @@
             // Spawn new particles
             if (this.frame % 10 === 0) {
                 this.particles.push({
-                    x: w * (0.2 + Math.random() * 0.6),
-                    y: h * 0.4,
-                    r: Math.random() * 2 + 1,
+                    x: w * (0.4 + Math.random() * 0.2),
+                    y: h * 0.3 + 20,
+                    r: Math.random() * 3 + 2,
                     vy: Math.random() * 0.5 + 0.5,
                     life: 1.0
                 });
@@ -293,38 +297,52 @@
         },
 
         drawPreSynapticTerminal(ctx, w, h) {
-            const breath = Math.sin(this.frame * 0.02) * 2;
-            ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(0, h * 0.4);
-            ctx.bezierCurveTo(w * 0.25, h * 0.3 + breath, w * 0.75, h * 0.3 + breath, w, h * 0.4);
-            ctx.lineTo(w, 0);
-            ctx.lineTo(0, 0);
-            ctx.closePath();
-            ctx.fillStyle = config.preSynapticColor;
-            ctx.fill();
+            const terminalWidth = w * 0.6;
+            const terminalHeight = h * 0.3;
+            const axonWidth = w * 0.1;
+            const startX = (w - terminalWidth) / 2;
 
-            ctx.strokeStyle = config.postSynapticColor;
-            ctx.lineWidth = 4;
-            ctx.stroke();
+            ctx.save();
+            ctx.fillStyle = config.preSynapticColor;
+
+            // Draw Axon
+            ctx.fillRect(startX + (terminalWidth - axonWidth) / 2, 0, axonWidth, terminalHeight);
+
+            // Draw Terminal Bulb
+            ctx.beginPath();
+            ctx.moveTo(startX, terminalHeight);
+            ctx.bezierCurveTo(startX, terminalHeight + 50, startX + terminalWidth, terminalHeight + 50, startX + terminalWidth, terminalHeight);
+            ctx.fill();
             ctx.restore();
         },
 
         drawPostSynapticTerminal(ctx, w, h) {
-            const breath = Math.sin(this.frame * 0.02) * 2;
+            const spineHeight = h * 0.25;
+            const dendriteHeight = h * 0.15;
+            const spineNeckWidth = 15;
+            const spineHeadWidth = 80;
+            const dendriteWidth = w * 0.8;
+
+            const dendriteY = h - dendriteHeight;
+            const spineBaseY = dendriteY;
+            const spineTopY = spineBaseY - spineHeight;
+
+            const centerX = w / 2;
+
             ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(0, h * 0.6);
-            ctx.bezierCurveTo(w * 0.25, h * 0.7 - breath, w * 0.75, h * 0.7 - breath, w, h * 0.6);
-            ctx.lineTo(w, h);
-            ctx.lineTo(0, h);
-            ctx.closePath();
             ctx.fillStyle = config.postSynapticColor;
+
+            // Draw Dendrite
+            ctx.fillRect((w - dendriteWidth) / 2, dendriteY, dendriteWidth, dendriteHeight);
+
+            // Draw Spine Neck
+            ctx.fillRect(centerX - spineNeckWidth / 2, spineTopY, spineNeckWidth, spineHeight);
+
+            // Draw Spine Head
+            ctx.beginPath();
+            ctx.arc(centerX, spineTopY, spineHeadWidth / 2, Math.PI, 2 * Math.PI);
             ctx.fill();
 
-            ctx.strokeStyle = config.preSynapticColor;
-            ctx.lineWidth = 4;
-            ctx.stroke();
             ctx.restore();
         },
 
@@ -340,23 +358,35 @@
         },
 
         drawIonChannels(ctx, w, h) {
+            const spineTopY = h - (h * 0.15) - (h * 0.25);
             ctx.save();
             ctx.fillStyle = config.ionChannelColor;
-            config.elements.ionChannels.forEach(x => {
-                ctx.fillRect(w * x - 10, h * 0.6 - 15, 20, 15);
+            config.elements.ionChannels.forEach(c => {
+                ctx.fillRect(w * c.x - 10, spineTopY - 15, 20, 15);
             });
             ctx.restore();
         },
 
         drawGPCRs(ctx, w, h) {
+            const spineTopY = h - (h * 0.15) - (h * 0.25);
             ctx.save();
-            ctx.strokeStyle = config.gpcrColor;
-            ctx.lineWidth = 4;
-            config.elements.gpcrs.forEach(x => {
+
+            config.elements.gpcrs.forEach(g => {
+                const centerX = w * g.x;
+
+                // Draw Receptor
+                ctx.strokeStyle = config.gpcrColor;
+                ctx.lineWidth = 4;
                 ctx.beginPath();
-                ctx.moveTo(w * x - 15, h * 0.6);
-                ctx.bezierCurveTo(w * x - 5, h * 0.6 - 10, w * x + 5, h * 0.6 - 10, w * x + 15, h * 0.6);
+                ctx.moveTo(centerX - 15, spineTopY);
+                ctx.bezierCurveTo(centerX - 5, spineTopY - 10, centerX + 5, spineTopY - 10, centerX + 15, spineTopY);
                 ctx.stroke();
+
+                // Draw Coupled G-Protein
+                ctx.fillStyle = '#BDBDBD'; // A neutral grey for the G-protein
+                ctx.beginPath();
+                ctx.arc(centerX, spineTopY + 10, 8, 0, Math.PI * 2);
+                ctx.fill();
             });
             ctx.restore();
         },
