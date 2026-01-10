@@ -5,35 +5,65 @@
     'use strict';
 
     const config = {
-        backgroundColor: '#101018',
-        preSynapticColor: '#2c3e50',
-        postSynapticColor: '#34495e',
-        vesicleColor: '#e67e22',
-        ionChannelColor: '#3498db',
-        gpcrColor: '#9b59b6',
-        titleFont: 'bold 20px "Courier New", Courier, monospace',
-        titleColor: '#9E9E9E',
-        labelFont: '12px "Courier New", Courier, monospace',
-        labelColor: '#ecf0f1',
-        tooltipBg: 'rgba(0, 0, 0, 0.7)',
-        tooltipColor: '#ffffff',
+        // High-Contrast & Semantic Color System
+        backgroundColor: '#F8F9FA', // Light, clean background
+        // Structures (Warm, Organic)
+        preSynapticColor: '#A1887F', // Softer, earthy brown
+        postSynapticColor: '#795548', // Darker, grounded brown
+        // Vesicles (Action-oriented, but not harsh)
+        vesicleColor: '#FFAB91', // Soft coral
+        // Neurotransmitters & Signals (Clear & Informative)
+        neurotransmitterColor: { r: 255, g: 138, b: 101 }, // Coral color for particles
+        neuromodulatorColor: { r: 129, g: 212, b: 250 }, // Soft blue
+        // Receptors (Distinct & Functional)
+        ionChannelColor: '#4DB6AC', // Muted Teal
+        gpcrColor: '#7986CB', // Indigo
+        // Blockers (Warning, but accessible)
+        blockerColor: '#E57373', // Soft Red
+        // UI & Text
+        titleFont: 'bold 24px "Helvetica Neue", Arial, sans-serif',
+        titleColor: '#212529', // High-contrast black
+        labelFont: '14px "Helvetica Neue", Arial, sans-serif',
+        labelColor: '#495057',
+        tooltipBg: 'rgba(33, 37, 41, 0.85)',
+        tooltipColor: '#FFFFFF',
+
         translations: {
+            // Tooltips
             preSynapticTerminal: { en: 'Pre-Synaptic Terminal', es: 'Terminal Presináptica' },
             postSynapticTerminal: { en: 'Post-Synaptic Terminal', es: 'Terminal Postsináptica' },
             vesicle: { en: 'Vesicle', es: 'Vesícula' },
             ionChannel: { en: 'Ion Channel', es: 'Canal Iónico' },
             gpcr: { en: 'G-protein Coupled Receptor', es: 'Receptor acoplado a proteína G' },
+            calciumBlocker: { en: 'Calcium Channel Blocker', es: 'Bloqueador de Canal de Calcio' },
+            // Title
             synapticCleft: { en: 'Synaptic Cleft Visualization', es: 'Visualización de la Hendidura Sináptica' },
-            calciumBlocker: { en: 'Calcium Channel Blocker', es: 'Bloqueador de Canal de Calcio' }
+            // Legend
+            legendTitle: { en: 'Legend', es: 'Leyenda' },
+            legendNeurotransmitter: { en: 'Neurotransmitter', es: 'Neurotransmisor' },
+            legendNeuromodulator: { en: 'Neuromodulator', es: 'Neuromodulador' },
+            // Tour
+            tourStep1: { en: 'This is the Pre-Synaptic Terminal, where neurotransmitters are stored.', es: 'Esta es la Terminal Presináptica, donde se almacenan los neurotransmisores.' },
+            tourStep2: { en: 'Neurotransmitters travel across the Synaptic Cleft.', es: 'Los neurotransmisores viajan a través de la Hendidura Sináptica.' },
+            tourStep3: { en: 'They bind to receptors on the Post-Synaptic Terminal.', es: 'Se unen a los receptores en la Terminal Postsináptica.' },
+            tourEnd: { en: 'Exploration mode activated.', es: 'Modo de exploración activado.' }
         },
         vesicles: [
             { id: 'vesicle', x: 0.2, y: 0.2, r: 15 },
-            { x: 0.5, y: 0.15, r: 20 },
-            { x: 0.8, y: 0.25, r: 18 }
+            { id: 'vesicle', x: 0.5, y: 0.15, r: 20 },
+            { id: 'vesicle', x: 0.8, y: 0.25, r: 18 }
         ],
-        ionChannels: [0.2, 0.6],
-        gpcrs: [0.4, 0.8],
-        calciumBlockers: [0.2] // Positioned over the first ion channel
+        ionChannels: [
+            { id: 'ionChannel', x: 0.2 },
+            { id: 'ionChannel', x: 0.6 }
+        ],
+        gpcrs: [
+            { id: 'gpcr', x: 0.4 },
+            { id: 'gpcr', x: 0.8 }
+        ],
+        calciumBlockers: [
+            { id: 'calciumBlocker', x: 0.2 }
+        ]
     };
 
     const SynapseElements = {
@@ -144,12 +174,68 @@
             ctx.translate(offsetX, offsetY);
             ctx.strokeStyle = config.gpcrColor;
             ctx.lineWidth = 4;
-            config.gpcrs.forEach(x => {
+            config.gpcrs.forEach(g => {
                 ctx.beginPath();
-                ctx.moveTo(w * x - 15, h * 0.6);
-                ctx.bezierCurveTo(w * x - 5, h * 0.6 - 10, w * x + 5, h * 0.6 - 10, w * x + 15, h * 0.6);
+                ctx.moveTo(w * g.x - 15, h * 0.6);
+                ctx.bezierCurveTo(w * g.x - 5, h * 0.6 - 10, w * g.x + 5, h * 0.6 - 10, w * g.x + 15, h * 0.6);
                 ctx.stroke();
             });
+            ctx.restore();
+        },
+
+        drawNeuromodulationWave(app, ctx) {
+            if (!app.neuromodulationWave) return;
+
+            const wave = app.neuromodulationWave;
+            wave.radius += 5; // Expansion speed
+            const alpha = 1 - (wave.radius / 300); // Fade out as it expands
+
+            if (alpha <= 0) {
+                app.neuromodulationWave = null;
+                return;
+            }
+
+            ctx.save();
+            const gradient = ctx.createRadialGradient(wave.x, wave.y, 0, wave.x, wave.y, wave.radius);
+            gradient.addColorStop(0, `rgba(129, 212, 250, ${alpha * 0.5})`);
+            gradient.addColorStop(1, `rgba(129, 212, 250, 0)`);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx.restore();
+        },
+
+        drawLegend(app, ctx) {
+            const { config } = this;
+            const { translations, labelFont, labelColor } = config;
+            const lang = app.currentLanguage;
+
+            const legendX = 20;
+            const legendY = 400;
+            const itemHeight = 25;
+
+            ctx.save();
+            ctx.font = 'bold 16px "Helvetica Neue", Arial, sans-serif';
+            ctx.fillStyle = labelColor;
+            ctx.fillText(translations.legendTitle[lang], legendX, legendY);
+
+            ctx.font = labelFont;
+
+            // Neurotransmitter
+            ctx.fillStyle = `rgb(${config.neurotransmitterColor.r}, ${config.neurotransmitterColor.g}, ${config.neurotransmitterColor.b})`;
+            ctx.beginPath();
+            ctx.arc(legendX + 10, legendY + itemHeight, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = labelColor;
+            ctx.fillText(translations.legendNeurotransmitter[lang], legendX + 25, legendY + itemHeight + 5);
+
+            // Neuromodulator
+            ctx.fillStyle = `rgb(${config.neuromodulatorColor.r}, ${config.neuromodulatorColor.g}, ${config.neuromodulatorColor.b})`;
+            ctx.beginPath();
+            ctx.arc(legendX + 10, legendY + itemHeight * 2, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = labelColor;
+            ctx.fillText(translations.legendNeuromodulator[lang], legendX + 25, legendY + itemHeight * 2 + 5);
+
             ctx.restore();
         }
     };

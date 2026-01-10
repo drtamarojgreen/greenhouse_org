@@ -220,19 +220,81 @@
 
         // --- Particle Simulation ---
 
+        // --- Guided Tour ---
+
+        drawTour(app, ctx, w, h) {
+            if (!app.tour.active) return;
+
+            const tourStepDuration = 300; // frames per step
+            app.tour.progress++;
+
+            let text = '';
+            let highlightPath = null;
+            const config = SynapseElements.config;
+
+            if (app.tour.step === 0) {
+                text = config.translations.tourStep1[app.currentLanguage];
+                highlightPath = this.getPreSynapticTerminalPath(w, h);
+            } else if (app.tour.step === 1) {
+                text = config.translations.tourStep2[app.currentLanguage];
+                // No specific path for the cleft, we just show the text
+            } else if (app.tour.step === 2) {
+                text = config.translations.tourStep3[app.currentLanguage];
+                highlightPath = this.getPostSynapticTerminalPath(w, h);
+            } else {
+                text = config.translations.tourEnd[app.currentLanguage];
+            }
+
+            // --- Draw Highlight ---
+            if (highlightPath) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 235, 59, 0.3)'; // Yellow highlight
+                ctx.fill(highlightPath);
+                ctx.strokeStyle = '#FFEB3B';
+                ctx.lineWidth = 2;
+                ctx.stroke(highlightPath);
+                ctx.restore();
+            }
+
+            // --- Draw Text Box ---
+            const alpha = Math.min(1, app.tour.progress / 60, (tourStepDuration - app.tour.progress) / 60);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = config.tooltipBg;
+            ctx.fillRect(w / 2 - 200, h - 70, 400, 50);
+
+            ctx.font = '16px "Helvetica Neue", Arial, sans-serif';
+            ctx.fillStyle = config.tooltipColor;
+            ctx.textAlign = 'center';
+            ctx.fillText(text, w / 2, h - 40);
+            ctx.restore();
+
+            // --- Advance Tour ---
+            if (app.tour.progress >= tourStepDuration) {
+                app.tour.progress = 0;
+                app.tour.step++;
+                if (app.tour.step > 3) {
+                    app.tour.active = false;
+                }
+            }
+        },
+
         updateParticles(app, w, h) {
+            // Disable particle spawning during the tour
+            if (app.tour.active) return;
+
             // 1. Spawn new particles periodically
             if (Math.random() < 0.1) {
-                const isModulator = Math.random() < 0.2; // 20% chance of being a neuromodulator
+                const isModulator = Math.random() < 0.2;
                 app.particles.push({
-                    x: Math.random() * w,
+                    startX: Math.random() * w,
                     y: h * 0.4,
                     r: isModulator ? 5 : 3,
-                    vx: (Math.random() - 0.5) * 1,
+                    waveOffset: Math.random() * Math.PI * 2,
                     vy: (Math.random() * 0.5) + 0.5,
                     life: 1.0,
                     isModulator: isModulator,
-                    color: isModulator ? {r: 255, g: 100, b: 255} : {r: 255, g: 255, b: 0} // Yellow for neurotransmitters, Pink for modulators
+                    color: isModulator ? SynapseElements.config.neuromodulatorColor : SynapseElements.config.neurotransmitterColor
                 });
             }
 
@@ -240,9 +302,9 @@
             for (let i = app.particles.length - 1; i >= 0; i--) {
                 const p = app.particles[i];
 
-                // Update position
-                p.x += p.vx;
+                // Update position with organic sine wave motion
                 p.y += p.vy;
+                p.x = p.startX + Math.sin(p.y * 0.1 + p.waveOffset) * 10;
                 p.life -= 0.005;
 
                 // Remove dead particles
@@ -255,21 +317,23 @@
                 if (!p.isModulator) {
                     // Standard Neurotransmitter: Check for binding
                     if (p.y > h * 0.6) {
-                         // Simple distance check for binding to any receptor
-                        const isBlocked = SynapseElements.config.calciumBlockers.includes(SynapseElements.config.ionChannels[0]) && Math.abs(p.x - w * SynapseElements.config.ionChannels[0]) < 20;
-                        if (!isBlocked) {
-                           app.particles.splice(i, 1); // Remove on binding
+                        const isOverBlockedChannel = SynapseElements.config.calciumBlockers.some(b => Math.abs(p.x - w * b.x) < 20);
+                        if (isOverBlockedChannel) {
+                            // Particle bounces off if channel is blocked
+                            p.vy *= -0.5;
+                        } else {
+                            // Simple distance check for binding to any receptor
+                            const isOverReceptor = SynapseElements.config.ionChannels.some(c => Math.abs(p.x - w * c.x) < 20) || SynapseElements.config.gpcrs.some(g => Math.abs(p.x - w * g.x) < 20);
+                            if (isOverReceptor) {
+                                app.particles.splice(i, 1); // Remove on binding
+                            }
                         }
                     }
                 } else {
-                    // Neuromodulator: Check for background color change
-                    if (p.y > h * 0.8) {
-                        document.body.style.transition = 'background-color 0.5s';
-                        document.body.style.backgroundColor = 'rgba(100, 0, 100, 0.1)';
-                        setTimeout(() => {
-                           document.body.style.backgroundColor = '';
-                        }, 500);
-                        app.particles.splice(i, 1); // Fade out after effect
+                    // Neuromodulator: Triggers a wave effect
+                    if (p.y > h * 0.7 && !p.waveTriggered) {
+                        p.waveTriggered = true;
+                        app.neuromodulationWave = { x: p.x, y: p.y, radius: 0 };
                     }
                 }
             }
