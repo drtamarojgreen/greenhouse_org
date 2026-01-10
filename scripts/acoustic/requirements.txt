@@ -1,0 +1,11 @@
+# scripts/acoustic/requirements.txt
+
+pandas
+numpy
+scikit-learn
+joblib
+biopython
+requests
+matplotlib
+seaborn
+music21
