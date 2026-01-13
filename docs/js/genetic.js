@@ -1,115 +1,150 @@
 // docs/js/genetic.js
+// REFACTORED Loader for the Genetic Simulation Application
 
 (async function () {
     'use strict';
-    console.log('Genetic App: Loader execution started.');
 
-    // --- Attribute and Selector Parsing ---
-    // Per your instruction, my focus is on correctly parsing and using the JSON selectors.
-    // I apologize for my previous, overly complex and incorrect implementations.
+    // 1. Create a dedicated config object
+    const geneticConfig = {
+        baseUrl: './',
+        targetSelector: null,
+        utils: null
+    };
 
-    const scriptAttributes = { ...window._greenhouseScriptAttributes };
-    if (window._greenhouseScriptAttributes) {
-        delete window._greenhouseScriptAttributes;
-    }
-
-    const geneticSelectorsRaw = scriptAttributes['data-genetic-selectors'];
-    let geneticSelectors = {};
-
-    if (geneticSelectorsRaw && typeof geneticSelectorsRaw === 'string') {
-        try {
-            geneticSelectors = JSON.parse(geneticSelectorsRaw);
-            console.log('Genetic App: Successfully parsed genetic selectors from attribute.', geneticSelectors);
-        } catch (e) {
-            console.error('Genetic App: CRITICAL - Failed to parse JSON from data-genetic-selectors. Aborting.', e);
-            // If parsing fails, the application cannot run.
-            return;
+    /**
+     * Captures configuration from the script tag.
+     */
+    function captureAttributes() {
+        const script = document.currentScript || document.querySelector('script[src*="genetic.js"]');
+        if (script) {
+            geneticConfig.baseUrl = script.getAttribute('data-base-url') || geneticConfig.baseUrl;
+            geneticConfig.targetSelector = script.getAttribute('data-target-selector') || '#genetic-app-container';
         }
-    } else {
-        console.error('Genetic App: CRITICAL - data-genetic-selectors attribute is missing, empty, or not a string. Aborting.');
-        return;
+        console.log('Genetic App: Configured with', geneticConfig);
     }
 
-    // --- Global Application State ---
-    window._greenhouseGeneticAttributes = {
-        baseUrl: scriptAttributes['base-url'],
-        selectors: geneticSelectors
-    };
-    // For backwards compatibility, though the new selectors object is primary.
-    window._greenhouseGeneticAttributes.targetSelector = geneticSelectors.genetic || scriptAttributes['target-selector-left'];
+    /**
+     * Loads GreenhouseUtils using the dependency manager.
+     */
+    async function loadCoreDependencies() {
+        if (!window.GreenhouseDependencyManager) {
+            throw new Error('GreenhouseDependencyManager is required but not found.');
+        }
+        try {
+            await window.GreenhouseDependencyManager.waitFor('utils', 8000);
+            geneticConfig.utils = window.GreenhouseUtils;
+        } catch (error) {
+            console.error('Genetic App: Failed to load GreenhouseUtils.', error);
+            throw error;
+        }
+    }
 
-    // --- Dependency Loading ---
-    let GreenhouseUtils;
-    let isInitialized = false;
-    let resilienceObserver = null;
-
-    const loadDependencies = async () => {
-        // This function remains to ensure GreenhouseUtils is available for loading sub-modules.
-        await new Promise((resolve, reject) => {
-            let attempts = 0;
-            const maxAttempts = 240;
-            const interval = setInterval(() => {
-                if (window.GreenhouseUtils) {
-                    clearInterval(interval);
-                    GreenhouseUtils = window.GreenhouseUtils;
-                    resolve();
-                } else if (attempts++ >= maxAttempts) {
-                    clearInterval(interval);
-                    reject(new Error('GreenhouseUtils load timeout'));
-                }
-            }, 50);
-        });
-    };
-
-    // --- Main Application Logic ---
+    /**
+     * Main application logic.
+     */
     async function main() {
-        console.log('Genetic App: main() started.');
-        if (isInitialized) return;
+        console.log('Genetic App: Loader main() started.');
 
         try {
-            await loadDependencies();
+            captureAttributes();
 
-            const { baseUrl, selectors } = window._greenhouseGeneticAttributes;
-            if (!baseUrl) {
-                throw new Error("CRITICAL - Aborting main() due to missing 'baseUrl' attribute.");
+            if (!document.querySelector(geneticConfig.targetSelector)) {
+                throw new Error(`Target selector "${geneticConfig.targetSelector}" not found in the DOM.`);
             }
-            if (!selectors || !selectors.genetic) {
-                 throw new Error("CRITICAL - Aborting main() due to missing 'genetic' property in the selectors object.");
-            }
-            
-            await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_config.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_camera_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_lighting.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_pip_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_algo.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_geometry.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_dna.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_gene.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_chromosome.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_protein.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_brain.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_stats.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d.js', baseUrl);
 
-            if (window.GreenhouseGeneticAlgo && window.GreenhouseGeneticUI3D) {
-                console.log('Genetic App: All modules loaded.');
-                setTimeout(() => {
-                    initApplication(selectors);
-                    isInitialized = true;
-                }, 5000);
-            } else {
-                throw new Error("Genetic application modules failed to load.");
+            await loadCoreDependencies();
+            const { utils, baseUrl } = geneticConfig;
+
+            // Decoupled script list, using the new genetic_geometry.js
+            const scriptsToLoad = [
+                'js/models_3d_math.js',
+                'js/brain_mesh_realistic.js', // Dependency for geometry
+                'js/genetic_geometry.js',     // <-- USE THE NEW DECOUPLED GEOMETRY
+                'js/genetic_config.js',
+                'js/genetic_camera_controls.js',
+                'js/genetic_lighting.js',
+                'js/genetic_pip_controls.js',
+                'js/genetic_algo.js',
+                'js/genetic_ui_3d_dna.js',
+                'js/genetic_ui_3d_gene.js',
+                'js/genetic_ui_3d_chromosome.js',
+                'js/genetic_ui_3d_protein.js',
+                'js/genetic_ui_3d_brain.js',
+                'js/genetic_ui_3d_stats.js',
+                'js/genetic_ui_3d.js'
+            ];
+
+            for (const script of scriptsToLoad) {
+                await utils.loadScript(script, baseUrl);
             }
+
+            // Health Check
+            const requiredModules = ['GreenhouseGeneticAlgo', 'GreenhouseGeneticUI3D', 'GreenhouseGeneticGeometry'];
+            const missing = requiredModules.filter(m => !window[m]);
+            if (missing.length > 0) {
+                throw new Error(`Missing critical modules: ${missing.join(', ')}`);
+            }
+
+            console.log('Genetic App: All modules loaded successfully.');
+            // Directly initialize the application now that everything is loaded.
+            initApplication(geneticConfig.targetSelector);
 
         } catch (error) {
-            console.error('Genetic App: Initialization failed:', error);
-            if (GreenhouseUtils) {
-                GreenhouseUtils.displayError(`Failed to load genetic simulation: ${error.message}`);
+            console.error('Genetic App: CRITICAL FAILURE during initialization.', error);
+            const target = document.querySelector(geneticConfig.targetSelector || 'body');
+            if (target) {
+                target.innerHTML = `<div style="color: red; padding: 20px;">Error: ${error.message}</div>`;
             }
         }
     }
+
+    /**
+     * Initializes the UI components.
+     * @param {string} targetSelector - The CSS selector for the main container.
+     */
+    function initApplication(targetSelector) {
+        const container = document.querySelector(targetSelector);
+        if (!container) {
+            console.error(`Genetic App: Container ${targetSelector} not found for init.`);
+            return;
+        }
+
+        // Hide loading overlay and show the simulation container
+        const loadingOverlay = container.querySelector('.loading-overlay');
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
+
+        const simContainer = container.querySelector('.simulation-container');
+        if (simContainer) simContainer.style.display = 'block';
+
+        // Initialize the main application components
+        window.GreenhouseGeneticAlgo.init();
+        window.GreenhouseGeneticUI3D.init(simContainer || container, window.GreenhouseGeneticAlgo);
+
+        console.log('Genetic App: UI Initialized.');
+
+        // Expose a global controller for starting the simulation from the UI
+        window.GreenhouseGenetic = {
+            startSimulation: () => {
+                const loop = () => {
+                    if (window.GreenhouseGeneticUI3D.shouldEvolve()) {
+                        window.GreenhouseGeneticAlgo.evolve();
+                        window.GreenhouseGeneticUI3D.updateData();
+                    }
+                    requestAnimationFrame(loop);
+                };
+                loop();
+            }
+        };
+    }
+
+    // Defer execution until the DOM is ready.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', main);
+    } else {
+        main();
+    }
+
+})();
 
     function initApplication(selectors) {
         const targetSelector = selectors.genetic;

@@ -1,126 +1,89 @@
 // docs/js/models.js
+// REFACTORED Loader for the Models Table of Contents page.
 
-(async function () {
+(function () {
     'use strict';
-    console.log('Models App: Loader execution started.');
 
-    let GreenhouseUtils;
-
-    const loadDependencies = async () => {
-        console.log('Models App: loadDependencies started.');
-        if (window.GreenhouseDependencyManager) {
-            try {
-                await window.GreenhouseDependencyManager.waitFor('utils', 12000);
-                console.log('Models App: GreenhouseUtils loaded via dependency manager');
-            } catch (error) {
-                console.error('Models App: Failed to load GreenhouseUtils via dependency manager:', error.message);
-            }
-        } else {
-            // Fallback to a polling mechanism if the dependency manager is not available
-            await new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 240; // 12 seconds
-                const interval = setInterval(() => {
-                    if (window.GreenhouseUtils) {
-                        clearInterval(interval);
-                        resolve();
-                    } else if (attempts++ >= maxAttempts) {
-                        clearInterval(interval);
-                        console.error('Models App: GreenhouseUtils not available after 12 second timeout');
-                        reject(new Error('GreenhouseUtils load timeout'));
-                    }
-                }, 50);
-            });
-        }
-        GreenhouseUtils = window.GreenhouseUtils;
+    const tocConfig = {
+        containerSelector: '#models-app-container',
+        manifestUrl: 'js/models_toc.json' // Path to the JSON manifest
     };
 
-    const captureScriptAttributes = () => {
-        if (window._greenhouseModelsAttributes) {
-            console.log('Models App: Using pre-defined attributes.');
-            return true;
-        }
-        const scriptElement = document.currentScript;
-        if (!scriptElement) {
-            console.error('Models App: Could not find current script element to capture attributes.');
-            return false;
-        }
-        window._greenhouseModelsAttributes = {
-            baseUrl: scriptElement.getAttribute('data-base-url'),
-            targetSelector: scriptElement.getAttribute('data-target-selector-left')
-        };
-        return true;
-    };
-
-    async function main() {
-        console.log('Models App: main() started.');
+    /**
+     * Fetches the Table of Contents data from the JSON manifest.
+     * @returns {Promise<Array>} A promise that resolves with the TOC data array.
+     */
+    async function fetchTocData() {
         try {
-            if (!captureScriptAttributes()) {
-                throw new Error("Could not capture script attributes.");
+            const response = await fetch(tocConfig.manifestUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-
-            await loadDependencies();
-            if (!GreenhouseUtils) {
-                throw new Error("CRITICAL - Aborting main() due to missing GreenhouseUtils.");
-            }
-
-            const { baseUrl } = window._greenhouseModelsAttributes;
-            if (!baseUrl) {
-                throw new Error("CRITICAL - Aborting main() due to missing data-base-url attribute.");
-            }
-
-            // Load the new modules sequentially
-            await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_data.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_synapse.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_brain.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment_overlay.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment_hovers.js', baseUrl);
-            await GreenhouseUtils.loadScript('data_adapter.js', baseUrl);
-            await GreenhouseUtils.loadScript('environment_config.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment_background.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment_medication.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment_therapy.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_environment.js', baseUrl);
-            
-            // Load 3D modules
-            await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ui_3d.js', baseUrl);
-            
-            await GreenhouseUtils.loadScript('models_ui.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_ux.js', baseUrl);
-
-            // Check if all modules are loaded
-            if (window.GreenhouseModelsData && window.GreenhouseModelsUI && window.GreenhouseModelsUX) {
-                console.log('Models App: All modules loaded successfully.');
-                // Initialize the data adapter with the correct base URL
-                await window.GreenhouseDataAdapter.init(baseUrl);
-
-                // Kick off the application by initializing the UX module
-                GreenhouseModelsUX.init();
-            } else {
-                throw new Error("One or more application modules failed to load.");
-            }
-
+            return await response.json();
         } catch (error) {
-            console.error('Models App: Initialization failed:', error);
-            if (GreenhouseUtils) {
-                GreenhouseUtils.displayError(`Failed to load simulation components: ${error.message}`);
-            }
+            console.error('Models TOC: Failed to fetch or parse manifest.', error);
+            return null;
         }
     }
 
-    // --- Main Execution Logic ---
-    main();
-
-    // Expose a reinitialization function on the global scope
-    window.GreenhouseModels = {
-        reinitialize: () => {
-            if (window.GreenhouseModelsUX) {
-                console.log('Models App: Re-initializing from global scope.');
-                window.GreenhouseModelsUX.reinitialize();
-            }
+    /**
+     * Renders the list of model buttons into the container.
+     * @param {HTMLElement} container - The element to render the buttons into.
+     * @param {Array} tocData - The array of data from the manifest.
+     */
+    function renderToc(container, tocData) {
+        if (!tocData) {
+            container.innerHTML = '<p class="error-message">Failed to load model list. Please try again later.</p>';
+            return;
         }
-    };
+
+        container.innerHTML = ''; // Clear loading spinner
+        const list = document.createElement('div');
+        list.className = 'toc-button-list';
+
+        tocData.forEach(item => {
+            // 3. Style the buttons using the app's design system
+            const button = document.createElement('a');
+            button.href = item.url;
+            button.className = 'toc-button';
+            button.id = `toc-btn-${item.id}`;
+
+            // 4. Add ARIA attributes for screen-reader support
+            button.setAttribute('role', 'button');
+            button.setAttribute('aria-label', `Navigate to ${item.title}`);
+
+            button.innerHTML = `
+                <h3 class="toc-button-title">${item.title}</h3>
+                <p class="toc-button-description">${item.description}</p>
+            `;
+            
+            // 2. Add click handlers (handled by the 'href' attribute)
+            list.appendChild(button);
+        });
+
+        container.appendChild(list);
+    }
+
+    /**
+     * Main function to initialize the TOC page.
+     */
+    async function main() {
+        console.log('Models TOC: Initializing.');
+        const container = document.querySelector(tocConfig.containerSelector);
+        if (!container) {
+            console.error(`Models TOC: Container "${tocConfig.containerSelector}" not found.`);
+            return;
+        }
+
+        const tocData = await fetchTocData();
+        renderToc(container, tocData);
+    }
+
+    // --- Main Execution Logic ---
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', main);
+    } else {
+        main();
+    }
 
 })();

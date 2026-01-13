@@ -17,6 +17,14 @@
         },
 
         async init(containerSelector, baseUrl) {
+            if (!containerSelector) {
+                console.error('Pathway App: `containerSelector` is missing. Aborting initialization.');
+                return;
+            }
+            if (!baseUrl) {
+                console.warn('Pathway App: `baseUrl` is missing. Assuming scripts are in the same directory.');
+            }
+
             try {
                 const base = baseUrl && !baseUrl.endsWith('/') ? baseUrl + '/' : (baseUrl || '');
                 // Define the correct loading order for the native 3D engine and our application
@@ -24,7 +32,7 @@
                     'js/models_util.js',
                     'js/models_3d_math.js',
                     'js/brain_mesh_realistic.js',
-                    'js/neuro_ui_3d_geometry.js',
+                    'js/pathway_geometry.js', // <-- Correct, decoupled geometry
                     'js/neuro_camera_controls.js',
                     'js/neuro_ui_3d_brain.js',
                     'js/pathway_viewer.js'

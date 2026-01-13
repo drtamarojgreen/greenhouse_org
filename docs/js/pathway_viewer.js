@@ -181,8 +181,10 @@
 
         initializeBrainShell() {
             this.brainShell = { vertices: [], faces: [] };
-            if (window.GreenhouseNeuroGeometry) {
-                window.GreenhouseNeuroGeometry.initializeBrainShell(this.brainShell);
+            if (window.GreenhousePathwayGeometry) {
+                window.GreenhousePathwayGeometry.initializeBrainShell(this.brainShell);
+            } else {
+                console.error('Pathway Viewer: GreenhousePathwayGeometry module not found!');
             }
         },
 

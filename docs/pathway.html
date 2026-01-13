@@ -11,12 +11,123 @@
 </head>
 <body>
     <div id="app-container"></div>
+    <div id="test-results" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 8px; font-family: monospace; max-height: 90vh; overflow-y: auto;"></div>
 
     <script src="js/pathway.js"></script>
     <script>
+        // --- Test Runner ---
+        const TestRunner = {
+            run(tests) {
+                const resultsContainer = document.getElementById('test-results');
+                resultsContainer.innerHTML = '<h2>Unit Test Results</h2>';
+                let passed = 0;
+                let failed = 0;
+
+                Object.entries(tests).forEach(([name, testFn]) => {
+                    const resultEl = document.createElement('div');
+                    try {
+                        testFn();
+                        resultEl.textContent = `✅ PASS: ${name}`;
+                        resultEl.style.color = '#7CFC00';
+                        passed++;
+                    } catch (e) {
+                        resultEl.textContent = `❌ FAIL: ${name} - ${e.message}`;
+                        resultEl.style.color = '#FF4136';
+                        console.error(`Test failed: ${name}`, e);
+                        failed++;
+                    }
+                    resultsContainer.appendChild(resultEl);
+                });
+
+                const summaryEl = document.createElement('p');
+                summaryEl.textContent = `Summary: ${passed} passed, ${failed} failed.`;
+                resultsContainer.prepend(summaryEl);
+            }
+        };
+
+        // --- Mocks ---
+        const Mocks = {
+            originalLoadScript: null,
+            loadedScripts: [],
+            mockScriptLoader() {
+                this.originalLoadScript = window.GreenhousePathwayApp.loadScript;
+                window.GreenhousePathwayApp.loadScript = (url) => {
+                    this.loadedScripts.push(url);
+                    // Mock the existence of the final module to prevent errors
+                    if (url.includes('pathway_viewer.js')) {
+                        window.GreenhousePathwayViewer = { init: () => {} };
+                    }
+                    return Promise.resolve();
+                };
+            },
+            cleanup() {
+                if (this.originalLoadScript) {
+                    window.GreenhousePathwayApp.loadScript = this.originalLoadScript;
+                }
+                this.loadedScripts = [];
+                delete window.GreenhousePathwayViewer;
+            }
+        };
+
+        // --- Unit Tests ---
+        const unitTests = {
+            'Init calls loadScript with correct script order': () => {
+                Mocks.mockScriptLoader();
+                window.GreenhousePathwayApp.init('#app-container', 'http://localhost:8080/');
+                const expectedOrder = [
+                    'http://localhost:8080/js/models_util.js',
+                    'http://localhost:8080/js/models_3d_math.js',
+                    'http://localhost:8080/js/brain_mesh_realistic.js',
+                    'http://localhost:8080/js/pathway_geometry.js',
+                    'http://localhost:8080/js/neuro_camera_controls.js',
+                    'http://localhost:8080/js/neuro_ui_3d_brain.js',
+                    'http://localhost:8080/js/pathway_viewer.js',
+                ];
+                if (JSON.stringify(Mocks.loadedScripts) !== JSON.stringify(expectedOrder)) {
+                    throw new Error(`Order mismatch. Expected: ${JSON.stringify(expectedOrder)} | Actual: ${JSON.stringify(Mocks.loadedScripts)}`);
+                }
+                Mocks.cleanup();
+            },
+
+            'Init logs error if containerSelector is missing': () => {
+                const originalError = console.error;
+                let errorMessage = '';
+                console.error = (msg) => { errorMessage = msg; };
+
+                window.GreenhousePathwayApp.init(null, 'http://localhost:8080/');
+
+                console.error = originalError;
+                if (!errorMessage.includes('`containerSelector` is missing')) {
+                    throw new Error('Expected error for missing selector was not logged.');
+                }
+            },
+
+            'Init logs warning if baseUrl is missing': () => {
+                const originalWarn = console.warn;
+                let warnMessage = '';
+                console.warn = (msg) => { warnMessage = msg; };
+
+                Mocks.mockScriptLoader();
+                window.GreenhousePathwayApp.init('#app-container', null);
+
+                console.warn = originalWarn;
+                if (!warnMessage.includes('`baseUrl` is missing')) {
+                    throw new Error('Expected warning for missing baseUrl was not logged.');
+                }
+                Mocks.cleanup();
+            }
+        };
+
+        // --- Main Execution ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Run tests first
+            TestRunner.run(unitTests);
+
+            // Then run the actual app
             if (window.GreenhousePathwayApp) {
-                window.GreenhousePathwayApp.init('#app-container');
+                // We use a different container for the actual app to not interfere with tests
+                const appContainer = document.getElementById('app-container');
+                window.GreenhousePathwayApp.init('#app-container', './');
             } else {
                 console.error('Test Harness: GreenhousePathwayApp not found.');
             }

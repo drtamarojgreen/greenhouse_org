@@ -1,132 +1,157 @@
-    // docs/js/neuro.js
-    // Loader for Neuro Simulation Application
-    // Modeled after models.js
+// docs/js/neuro.js
+// REFACTORED Loader for Neuro Simulation Application
 
-    (async function () {
-        'use strict';
-        console.log('Neuro App: Loader execution started.');
+(function() {
+    'use strict';
 
-        let GreenhouseUtils;
+    // 1. Dedicated config object to manage state during loading
+    const neuroConfig = {
+        baseUrl: null,
+        targetSelector: null,
+        utils: null,
+    };
 
-        const loadDependencies = async () => {
-            console.log('Neuro App: loadDependencies started.');
-            if (window.GreenhouseDependencyManager) {
-                try {
-                    await window.GreenhouseDependencyManager.waitFor('utils', 12000);
-                    console.log('Neuro App: GreenhouseUtils loaded via dependency manager');
-                } catch (error) {
-                    console.error('Neuro App: Failed to load GreenhouseUtils via dependency manager:', error.message);
-                }
+    /**
+     * Captures configuration from the script tag's data attributes.
+     * Allows for a global override via `window._greenhouseNeuroAttributes` for testing.
+     */
+    function captureAttributes() {
+        let script;
+        if (document.currentScript) {
+            script = document.currentScript;
+        } else {
+            const scripts = document.querySelectorAll('script[src*="neuro.js"]');
+            script = scripts.length > 0 ? scripts[scripts.length - 1] : null;
+        }
+
+        if (script) {
+            neuroConfig.baseUrl = script.getAttribute('data-base-url');
+            neuroConfig.targetSelector = script.getAttribute('data-target-selector-left');
+        }
+
+        // Global override for test harnesses or special cases
+        if (window._greenhouseNeuroAttributes) {
+            neuroConfig.baseUrl = window._greenhouseNeuroAttributes.baseUrl || neuroConfig.baseUrl;
+            neuroConfig.targetSelector = window._greenhouseNeuroAttributes.targetSelector || neuroConfig.targetSelector;
+        }
+
+        console.log('Neuro App: Configured with', {
+            baseUrl: neuroConfig.baseUrl,
+            targetSelector: neuroConfig.targetSelector
+        });
+    }
+
+    /**
+     * Loads critical dependencies. Aborts if GreenhouseDependencyManager is not available.
+     */
+    async function loadCoreDependencies() {
+        if (!window.GreenhouseDependencyManager) {
+            throw new Error('CRITICAL: GreenhouseDependencyManager is required but not found.');
+        }
+        try {
+            console.log('Neuro App: Waiting for GreenhouseUtils...');
+            await window.GreenhouseDependencyManager.waitFor('utils', 10000); // 10-second timeout
+            neuroConfig.utils = window.GreenhouseUtils;
+            console.log('Neuro App: GreenhouseUtils loaded successfully.');
+        } catch (error) {
+            console.error('Neuro App: Failed to load GreenhouseUtils via dependency manager.', error);
+            throw error; // Re-throw to halt execution
+        }
+    }
+
+    /**
+     * Verifies that all required application modules are available on the window object.
+     */
+    function runHealthCheck() {
+        const requiredModules = [
+            'GreenhouseNeuroApp',
+            'NeuroGA',
+            'GreenhouseNeuroUI3D',
+            'GreenhouseNeuroGeometry',
+            'GreenhouseBrainMeshRealistic',
+            'GreenhouseModels3DMath'
+        ];
+
+        const missing = requiredModules.filter(m => !window[m]);
+
+        if (missing.length > 0) {
+            throw new Error(`Health check failed. Missing critical modules: ${missing.join(', ')}`);
+        }
+
+        console.log('Neuro App: Health check passed. All modules are present.');
+        return true;
+    }
+
+    /**
+     * Main execution flow for loading and initializing the Neuro application.
+     */
+    async function main() {
+        console.log('Neuro App: Loader main() sequence started.');
+        try {
+            captureAttributes();
+
+            if (!neuroConfig.targetSelector) {
+                throw new Error('Missing `data-target-selector-left` attribute. Cannot determine where to render the app.');
+            }
+            if (!neuroConfig.baseUrl) {
+                console.warn('Neuro App: Missing `data-base-url`. Assuming scripts are in the same directory.');
+                neuroConfig.baseUrl = ''; // Default to relative path
+            }
+
+            // Load GreenhouseUtils first, as it's needed for loading other scripts
+            await loadCoreDependencies();
+            const { utils, baseUrl } = neuroConfig;
+
+            // List of scripts for the Neuro application, ensuring no cross-dependencies with Genetic.
+            const scriptsToLoad = [
+                'js/models_3d_math.js',
+                'js/brain_mesh_realistic.js',
+                'js/labeling_system.js',
+                'js/neuro_config.js',
+                'js/neuro_camera_controls.js',
+                'js/neuro_synapse_camera_controls.js',
+                'js/neuro_lighting.js',
+                'js/neuro_ga.js',
+                'js/neuro_ui_3d_geometry.js', // Belongs to Neuro, as per plan
+                'js/neuro_ui_3d_brain.js',
+                'js/neuro_ui_3d_neuron.js',
+                'js/neuro_ui_3d_synapse.js',
+                'js/neuro_ui_3d_stats.js',
+                'js/neuro_ui_3d_enhanced.js',
+                'js/neuro_app.js',
+            ];
+
+            console.log('Neuro App: Loading application scripts...');
+            for (const script of scriptsToLoad) {
+                await utils.loadScript(script, baseUrl);
+            }
+
+            // Final verification before initializing
+            runHealthCheck();
+
+            console.log('Neuro App: All modules loaded. Initializing application.');
+            window.GreenhouseNeuroApp.init(neuroConfig.targetSelector, neuroConfig);
+
+        } catch (error) {
+            console.error('Neuro App: CRITICAL FAILURE during initialization.', error);
+            if (neuroConfig.utils && typeof neuroConfig.utils.displayError === 'function') {
+                neuroConfig.utils.displayError(`Failed to load Neuro components: ${error.message}`);
             } else {
-                // Fallback to a polling mechanism if the dependency manager is not available
-                await new Promise((resolve, reject) => {
-                    let attempts = 0;
-                    const maxAttempts = 240; // 12 seconds
-                    const interval = setInterval(() => {
-                        if (window.GreenhouseUtils) {
-                            clearInterval(interval);
-                            resolve();
-                        } else if (attempts++ >= maxAttempts) {
-                            clearInterval(interval);
-                            console.error('Neuro App: GreenhouseUtils not available after 12 second timeout');
-                            reject(new Error('GreenhouseUtils load timeout'));
-                        }
-                    }, 50);
-                });
-            }
-            GreenhouseUtils = window.GreenhouseUtils;
-        };
-
-        const captureScriptAttributes = () => {
-            if (window._greenhouseNeuroAttributes) {
-                console.log('Neuro App: Using pre-defined attributes.');
-                return true;
-            }
-            const scriptElement = document.currentScript;
-            if (!scriptElement) {
-                // Fallback for when currentScript is not available (e.g. async load in some browsers)
-                // But usually this script is injected by greenhouse.js with data attributes.
-                // If called via loadScript in greenhouse.js, we rely on how greenhouse.js passes data.
-                // greenhouse.js uses loadScript which creates a script tag.
-                // Let's assume the script tag is the last one or we use the global fallback if we were passed data differently.
-                // Actually, greenhouse.js loadScript sets attributes on the script tag.
-                // We can try to find the script tag by src if currentScript is null.
-                const scripts = document.querySelectorAll('script[src*="neuro.js"]');
-                if (scripts.length > 0) {
-                    const script = scripts[scripts.length - 1];
-                    window._greenhouseNeuroAttributes = {
-                        baseUrl: script.getAttribute('data-base-url'),
-                        targetSelector: script.getAttribute('data-target-selector-left')
-                    };
-                    return true;
-                }
-
-                console.error('Neuro App: Could not find current script element to capture attributes.');
-                return false;
-            }
-            window._greenhouseNeuroAttributes = {
-                baseUrl: scriptElement.getAttribute('data-base-url'),
-                targetSelector: scriptElement.getAttribute('data-target-selector-left')
-            };
-            return true;
-        };
-
-        async function main() {
-            console.log('Neuro App: main() started.');
-            try {
-                if (!captureScriptAttributes()) {
-                    throw new Error("Could not capture script attributes.");
-                }
-
-                await loadDependencies();
-                if (!GreenhouseUtils) {
-                    throw new Error("CRITICAL - Aborting main() due to missing GreenhouseUtils.");
-                }
-
-                const { baseUrl, targetSelector } = window._greenhouseNeuroAttributes;
-                if (!baseUrl) {
-                    throw new Error("CRITICAL - Aborting main() due to missing data-base-url attribute.");
-                }
-
-                // Load the modules sequentially
-                await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_config.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_camera_controls.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_lighting.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_ga.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_ui_3d_neuron.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_ui_3d_synapse.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_ui_3d_stats.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_ui_3d_enhanced.js', baseUrl);
-                await GreenhouseUtils.loadScript('neuro_app.js', baseUrl);
-
-                // Check if all modules are loaded
-                if (window.GreenhouseNeuroApp && window.NeuroGA && window.GreenhouseNeuroUI3D) {
-                    console.log('Neuro App: All modules loaded successfully.');
-
-                    // Initialize the application
-                    // Use the selector captured from attributes
-                    if (targetSelector) {
-                        window.GreenhouseNeuroApp.init(targetSelector);
-                    } else {
-                        console.warn('Neuro App: No target selector provided, skipping auto-init.');
-                    }
-
-                } else {
-                    throw new Error("One or more application modules failed to load.");
-                }
-
-            } catch (error) {
-                console.error('Neuro App: Initialization failed:', error);
-                if (GreenhouseUtils) {
-                    GreenhouseUtils.displayError(`Failed to load neuro components: ${error.message}`);
+                // Fallback error display if utils didn't even load
+                const target = document.querySelector(neuroConfig.targetSelector || 'body');
+                if (target) {
+                    target.innerHTML = `<div style="padding: 20px; color: red; background: #330000; border: 1px solid red;">
+                        <strong>Error:</strong> Failed to load Neuro application. ${error.message}
+                    </div>`;
                 }
             }
         }
+    }
 
-        // --- Main Execution Logic ---
+    // Delay start until DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', main);
+    } else {
         main();
-
-    })();
+    }
+})();

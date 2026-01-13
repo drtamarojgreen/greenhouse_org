@@ -455,9 +455,11 @@
         },
 
         generateTubeMesh(p1, p2, cp, radius, segments) {
+            // Now correctly calling its own geometry module
             if (window.GreenhouseGeneticGeometry) {
                 return window.GreenhouseGeneticGeometry.generateTubeMesh(p1, p2, cp, radius, segments);
             }
+            console.warn('Genetic UI: GreenhouseGeneticGeometry not found for generateTubeMesh.');
             return { vertices: [], faces: [] };
         },
 

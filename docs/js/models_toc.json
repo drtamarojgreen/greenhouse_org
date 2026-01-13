@@ -1,0 +1,26 @@
+[
+    {
+        "id": "pathway",
+        "title": "Pathway Viewer",
+        "description": "Explore biochemical pathways in a 3D interactive environment.",
+        "url": "pathway.html"
+    },
+    {
+        "id": "neuro",
+        "title": "Neuro Simulation",
+        "description": "Visualize neural activity and connectivity in a simulated brain.",
+        "url": "neuro.html"
+    },
+    {
+        "id": "genetic",
+        "title": "Genetic Visualization",
+        "description": "See how genetic algorithms evolve neural networks over generations.",
+        "url": "genetic.html"
+    },
+    {
+        "id": "synapse",
+        "title": "Synapse Explorer",
+        "description": "A detailed look at the mechanics of a single synaptic cleft.",
+        "url": "synapse.html"
+    }
+]
