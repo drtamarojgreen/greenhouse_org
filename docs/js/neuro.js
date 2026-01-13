@@ -18,21 +18,8 @@
                     console.error('Neuro App: Failed to load GreenhouseUtils via dependency manager:', error.message);
                 }
             } else {
-                // Fallback to a polling mechanism if the dependency manager is not available
-                await new Promise((resolve, reject) => {
-                    let attempts = 0;
-                    const maxAttempts = 240; // 12 seconds
-                    const interval = setInterval(() => {
-                        if (window.GreenhouseUtils) {
-                            clearInterval(interval);
-                            resolve();
-                        } else if (attempts++ >= maxAttempts) {
-                            clearInterval(interval);
-                            console.error('Neuro App: GreenhouseUtils not available after 12 second timeout');
-                            reject(new Error('GreenhouseUtils load timeout'));
-                        }
-                    }, 50);
-                });
+                console.error('Neuro App: GreenhouseDependencyManager not available. Aborting.');
+                return;
             }
             GreenhouseUtils = window.GreenhouseUtils;
         };
@@ -103,19 +90,22 @@
                 await GreenhouseUtils.loadScript('neuro_app.js', baseUrl);
 
                 // Check if all modules are loaded
-                if (window.GreenhouseNeuroApp && window.NeuroGA && window.GreenhouseNeuroUI3D) {
+                if (window.GreenhouseNeuroApp && window.NeuroGA && window.GreenhouseNeuroUI3D && window.GreenhouseNeuroApp.healthCheck()) {
                     console.log('Neuro App: All modules loaded successfully.');
 
                     // Initialize the application
                     // Use the selector captured from attributes
                     if (targetSelector) {
-                        window.GreenhouseNeuroApp.init(targetSelector);
+                        window.GreenhouseNeuroApp.init({
+                            baseUrl: baseUrl,
+                            targetSelector: targetSelector
+                        });
                     } else {
                         console.warn('Neuro App: No target selector provided, skipping auto-init.');
                     }
 
                 } else {
-                    throw new Error("One or more application modules failed to load.");
+                    throw new Error("One or more application modules failed to load or failed health check.");
                 }
 
             } catch (error) {

@@ -7,13 +7,13 @@
     console.log("Synapse App: Module loaded.");
 
     const config = {
-        backgroundColor: '#F8F9FA',
-        preSynapticColor: '#A1887F',
-        postSynapticColor: '#795548',
-        vesicleColor: '#FFAB91',
-        neurotransmitterColor: '#FF8A65',
-        ionChannelColor: '#4DB6AC',
-        gpcrColor: '#7986CB',
+        backgroundColor: 'var(--color-background)',
+        preSynapticColor: 'var(--color-pre-synaptic)',
+        postSynapticColor: 'var(--color-post-synaptic)',
+        vesicleColor: 'var(--color-vesicle)',
+        neurotransmitterColor: 'var(--color-neurotransmitter)',
+        ionChannelColor: 'var(--color-ion-channel)',
+        gpcrColor: 'var(--color-gpcr)',
         highlightColor: 'rgba(255, 235, 59, 0.5)',
         tooltipBg: 'rgba(33, 37, 41, 0.85)',
         tooltipColor: '#FFFFFF',
@@ -56,6 +56,11 @@
         mouse: { x: 0, y: 0 },
         currentLanguage: 'en',
         hoveredId: null,
+        visibility: {
+            vesicles: true,
+            ionChannels: true,
+            gpcrs: true,
+        },
 
         init(targetSelector, baseUrl) {
             console.log(`Synapse App: Initializing in container: ${targetSelector}`);
@@ -129,16 +134,15 @@
 
             const lang = this.currentLanguage || 'en';
             const legendItems = [
-                { label: config.translations.preSynapticTerminal[lang], color: config.preSynapticColor },
-                { label: config.translations.postSynapticTerminal[lang], color: config.postSynapticColor },
-                { label: config.translations.vesicle[lang], color: config.vesicleColor },
-                { label: config.translations.ionChannel[lang], color: config.ionChannelColor },
-                { label: config.translations.gpcr[lang], color: config.gpcrColor },
+                { id: 'vesicles', label: config.translations.vesicle[lang], color: config.vesicleColor },
+                { id: 'ionChannels', label: config.translations.ionChannel[lang], color: config.ionChannelColor },
+                { id: 'gpcrs', label: config.translations.gpcr[lang], color: config.gpcrColor },
             ];
 
             let html = `<h3 style="font-size: 20px; margin-top: 20px; margin-bottom: 10px;">${config.translations.legendTitle[lang]}</h3><ul style="list-style: none; padding: 0; margin: 0;">`;
             legendItems.forEach(item => {
                 html += `<li style="display: flex; align-items: center; margin-bottom: 8px;">
+                    <input type="checkbox" id="toggle-${item.id}" ${this.visibility[item.id] ? 'checked' : ''} style="margin-right: 10px;">
                     <span style="width: 20px; height: 20px; background-color: ${item.color}; border-radius: 4px; margin-right: 10px; border: 1px solid #CCC;"></span>
                     <span>${item.label}</span>
                 </li>`;
@@ -146,6 +150,13 @@
             html += `</ul>`;
 
             legendContainer.innerHTML = html;
+
+            legendItems.forEach(item => {
+                const checkbox = document.getElementById(`toggle-${item.id}`);
+                checkbox.addEventListener('change', (e) => {
+                    this.visibility[item.id] = e.target.checked;
+                });
+            });
         },
 
         resize() {
@@ -166,21 +177,47 @@
             const w = this.canvas.width;
             const h = this.canvas.height;
 
+            // Phase 1: Background & Cytoplasm
             ctx.fillStyle = config.backgroundColor;
             ctx.fillRect(0, 0, w, h);
-
-            this.drawLegend();
             this.drawPreSynapticTerminal(ctx, w, h);
             this.drawPostSynapticTerminal(ctx, w, h);
-            this.drawVesicles(ctx, w, h);
+
+            // Phase 2: Membrane Channels
             this.drawIonChannels(ctx, w, h);
             this.drawGPCRs(ctx, w, h);
 
+            // Phase 3: Kinases & RNA (not implemented)
+
+            // Phase 4: Vesicles & Receptors
+            this.drawVesicles(ctx, w, h);
+
+            // Labels
+            this.drawLabels(ctx, w, h);
+
+            // Interaction and Animation
             this.checkHover(w, h);
             this.drawHighlight(ctx, w, h);
             this.updateTooltip();
-
             this.updateAndDrawParticles(ctx, w, h);
+
+            // UI
+            this.drawLegend();
+        },
+
+        drawLabels(ctx, w, h) {
+            ctx.save();
+            ctx.fillStyle = '#333';
+            ctx.font = `bold ${14 * (w / 800)}px ${config.font}`;
+            ctx.textAlign = 'center';
+
+            // Pre-synaptic terminal label
+            ctx.fillText(config.translations.preSynapticTerminal[this.currentLanguage], w / 2, 20);
+
+            // Post-synaptic terminal label
+            ctx.fillText(config.translations.postSynapticTerminal[this.currentLanguage], w / 2, h - 20);
+
+            ctx.restore();
         },
 
         checkHover(w, h) {
@@ -253,15 +290,21 @@
         },
 
         updateAndDrawParticles(ctx, w, h) {
-            if (this.frame % 10 === 0) {
-                this.particles.push({
-                    x: w * (0.4 + Math.random() * 0.2),
-                    y: h * 0.4,
-                    r: Math.random() * 2 + 1,
-                    vy: Math.random() * 0.5 + 0.5,
-                    life: 1.0
-                });
-            }
+            // Release particles from vesicles near the terminal
+            config.elements.vesicles.forEach(v => {
+                if (v.y > 0.35 && Math.random() > 0.95) {
+                    for (let i = 0; i < 5; i++) {
+                        this.particles.push({
+                            x: w * v.x + (Math.random() - 0.5) * 10,
+                            y: h * v.y,
+                            r: Math.random() * 2 + 1,
+                            vy: Math.random() * 0.5 + 0.5,
+                            vx: (Math.random() - 0.5) * 0.2,
+                            life: 1.0
+                        });
+                    }
+                }
+            });
 
             ctx.save();
             ctx.fillStyle = config.neurotransmitterColor;
@@ -318,9 +361,14 @@
         },
 
         drawVesicles(ctx, w, h) {
+            if (!this.visibility.vesicles) return;
             ctx.save();
             ctx.fillStyle = config.vesicleColor;
             config.elements.vesicles.forEach(v => {
+                // Animate vesicle movement
+                v.y += 0.05 * (1 - v.y / 0.4); // Move towards the terminal
+                if (v.y > 0.4) v.y = 0.2; // Reset if it goes too far
+
                 ctx.beginPath();
                 ctx.arc(w * v.x, h * v.y, v.r, 0, Math.PI * 2);
                 ctx.fill();
@@ -329,6 +377,7 @@
         },
 
         drawIonChannels(ctx, w, h) {
+            if (!this.visibility.ionChannels) return;
             const spineY = h * 0.8 - h * 0.15 - (w * 0.08) + 10;
             ctx.save();
             ctx.fillStyle = config.ionChannelColor;
@@ -339,6 +388,7 @@
         },
 
         drawGPCRs(ctx, w, h) {
+            if (!this.visibility.gpcrs) return;
             const spineY = h * 0.8 - h * 0.15 - (w * 0.08) + 10;
             ctx.save();
             config.elements.gpcrs.forEach(g => {

@@ -83,7 +83,6 @@
             await GreenhouseUtils.loadScript('genetic_lighting.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_pip_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_algo.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_ui_3d_geometry.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_ui_3d_dna.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_ui_3d_gene.js', baseUrl);
@@ -113,9 +112,14 @@
 
     function initApplication(selectors) {
         const targetSelector = selectors.genetic;
+        if (!targetSelector) {
+            console.error('Genetic App: "genetic" selector not found in the configuration.');
+            return;
+        }
+
         const container = document.querySelector(targetSelector);
         if (!container) {
-            console.error('Target container not found via selector:', targetSelector);
+            console.error(`Genetic App: Target container with selector "${targetSelector}" not found.`);
             return;
         }
 

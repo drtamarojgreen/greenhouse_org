@@ -126,9 +126,19 @@
 
         async init(containerSelector, baseUrl) {
             console.log("pathway_testing: init started");
-            this.baseUrl = baseUrl || '';
+
+            if (!baseUrl) {
+                console.warn('Pathway Viewer: `baseUrl` is missing. Asset loading may fail.');
+                this.baseUrl = '';
+            } else {
+                this.baseUrl = baseUrl;
+            }
+
             const container = document.querySelector(containerSelector);
-            if (!container) return;
+            if (!container) {
+                console.error(`Pathway Viewer: Container element with selector "${containerSelector}" not found.`);
+                return;
+            }
 
             this.setupUI(container);
             this.setupCanvas(container);

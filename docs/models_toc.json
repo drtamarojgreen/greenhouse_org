@@ -1,0 +1,22 @@
+[
+    {
+        "id": "pathway",
+        "title": "Pathway",
+        "url": "pathway.html"
+    },
+    {
+        "id": "neuro",
+        "title": "Neuro",
+        "url": "neuro.html"
+    },
+    {
+        "id": "genetic",
+        "title": "Genetic",
+        "url": "genetic.html"
+    },
+    {
+        "id": "synapse",
+        "title": "Synapse",
+        "url": "synapse.html"
+    }
+]

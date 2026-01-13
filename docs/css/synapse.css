@@ -1,0 +1,14 @@
+/* docs/css/synapse.css */
+
+:root {
+    --color-primary: #667eea;
+    --color-accent: #764ba2;
+    --color-background: #f8f9fa;
+    --color-text: #212529;
+    --color-pre-synaptic: #a1887f;
+    --color-post-synaptic: #795548;
+    --color-vesicle: #ffab91;
+    --color-neurotransmitter: #ff8a65;
+    --color-ion-channel: #4db6ac;
+    --color-gpcr: #7986cb;
+}

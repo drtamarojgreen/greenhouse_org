@@ -1,34 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Greenhouse Neuro Simulation</title>
     <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background-color: #1a1a1a;
-            color: #eee;
-            font-family: sans-serif;
-        }
-
-        #neuro-app-container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            background: #2a2a2a;
-            border-radius: 8px;
-            padding: 20px;
-            min-height: 600px;
-        }
+        body { margin: 0; padding: 0; }
+        #neuro-app-container { width: 100vw; height: 100vh; }
+        #test-results { position: absolute; top: 0; right: 0; background: #eee; padding: 10px; font-family: monospace; }
+        .pass { color: green; }
+        .fail { color: red; }
     </style>
 </head>
-
 <body>
     <h1>Neuro Simulation Development</h1>
     <div id="neuro-app-container"></div>
+    <div id="test-results"></div>
 
     <!-- Dependencies -->
     <script src="js/models_util.js"></script>
@@ -49,14 +36,36 @@
     <script src="js/neuro_app.js"></script>
 
     <script>
-        // Simulate the environment where GreenhouseUtils might be available or not.
-        // For this local file, we manually init the app.
         document.addEventListener('DOMContentLoaded', () => {
-            if (window.GreenhouseNeuroApp) {
-                window.GreenhouseNeuroApp.init('#neuro-app-container');
+            const resultsContainer = document.getElementById('test-results');
+
+            function runTest(name, testFn) {
+                try {
+                    testFn();
+                    resultsContainer.innerHTML += `<div class="pass">PASS: ${name}</div>`;
+                } catch (e) {
+                    resultsContainer.innerHTML += `<div class="fail">FAIL: ${name} - ${e.message}</div>`;
+                }
             }
+
+            runTest('GreenhouseNeuroApp should exist on window', () => {
+                if (!window.GreenhouseNeuroApp) {
+                    throw new Error('GreenhouseNeuroApp not found.');
+                }
+            });
+
+            runTest('App should initialize without errors', () => {
+                try {
+                    const neuroConfig = {
+                        baseUrl: './js/',
+                        targetSelector: '#neuro-app-container'
+                    };
+                    window.GreenhouseNeuroApp.init(neuroConfig);
+                } catch (e) {
+                    throw new Error(`Initialization failed: ${e.message}`);
+                }
+            });
         });
     </script>
 </body>
-
 </html>

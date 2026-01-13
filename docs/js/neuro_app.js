@@ -12,23 +12,34 @@
         intervalId: null,
         resilienceObserver: null,
 
-        init(selector) {
-            console.log('NeuroApp: Initializing...');
-            this.lastSelector = selector;
+        init(config) {
+            console.log('NeuroApp: Initializing with config:', config);
 
-            setTimeout(() => {
-                this._delayedInit(selector);
-            }, 5000);
-        },
-
-        _delayedInit(selector) {
-
-            // Check dependencies
-            if (!window.NeuroGA || !window.GreenhouseNeuroUI3D || !window.GreenhouseModels3DMath) {
-                console.error('NeuroApp: Missing dependencies. Ensure NeuroGA, GreenhouseNeuroUI3D, and GreenhouseModels3DMath are loaded.');
+            if (!this.healthCheck()) {
+                console.error('NeuroApp: Health check failed. Aborting initialization.');
                 return;
             }
 
+            this.config = config;
+            this.lastSelector = config.targetSelector;
+
+            // No delay needed for direct initialization
+            this._delayedInit(config.targetSelector);
+        },
+
+        healthCheck() {
+            const dependencies = ['NeuroGA', 'GreenhouseNeuroUI3D', 'GreenhouseModels3DMath'];
+            for (const dep of dependencies) {
+                if (!window[dep]) {
+                    console.error(`NeuroApp: Missing dependency: ${dep}`);
+                    return false;
+                }
+            }
+            console.log('NeuroApp: Health check passed.');
+            return true;
+        },
+
+        _delayedInit(selector) {
             this.ga = new window.NeuroGA();
             this.ui = window.GreenhouseNeuroUI3D;
 

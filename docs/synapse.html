@@ -1,57 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Greenhouse Synapse Visualization</title>
+    <link rel="stylesheet" href="css/synapse.css">
     <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background-color: #1a1a1a;
-            color: #eee;
-            font-family: sans-serif;
-        }
-
-        #synapse-app-container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            background: #2a2a2a;
-            border-radius: 8px;
-            padding: 20px;
-            min-height: 600px;
-        }
+        body { margin: 0; padding: 0; }
+        #synapse-app-container { width: 100vw; height: 100vh; }
+        #test-results { position: absolute; top: 0; right: 0; background: #eee; padding: 10px; font-family: monospace; }
+        .pass { color: green; }
+        .fail { color: red; }
     </style>
 </head>
-
 <body>
-    <h1>Synapse Visualization Development</h1>
     <div id="synapse-app-container"></div>
+    <div id="test-results"></div>
 
-    <!-- Dependencies -->
-    <!-- In the future, we would add synapse-specific files here -->
     <script src="js/models_3d_math.js"></script>
     <script src="js/synapse_app.js"></script>
 
     <script>
-        // For this local file, we manually initialize the application
-        // after ensuring the DOM is fully loaded.
         document.addEventListener('DOMContentLoaded', () => {
-            if (window.GreenhouseSynapseApp) {
-                // The init function in synapse_app.js will handle creating the canvas 
-                // and rendering the placeholder content inside the container.
-                window.GreenhouseSynapseApp.init('#synapse-app-container');
-            } else {
-                console.error('Synapse Init Error: GreenhouseSynapseApp not found on window object.');
-                const container = document.querySelector('#synapse-app-container');
-                if(container) {
-                    container.innerHTML = '<p style="color:red;">Error: Could not load Synapse application.</p>';
+            const resultsContainer = document.getElementById('test-results');
+
+            function runTest(name, testFn) {
+                try {
+                    testFn();
+                    resultsContainer.innerHTML += `<div class="pass">PASS: ${name}</div>`;
+                } catch (e) {
+                    resultsContainer.innerHTML += `<div class="fail">FAIL: ${name} - ${e.message}</div>`;
                 }
             }
+
+            runTest('GreenhouseSynapseApp should exist on window', () => {
+                if (!window.GreenhouseSynapseApp) {
+                    throw new Error('GreenhouseSynapseApp not found.');
+                }
+            });
+
+            runTest('App should initialize without errors', () => {
+                try {
+                    window.GreenhouseSynapseApp.init('#synapse-app-container');
+                } catch (e) {
+                    throw new Error(`Initialization failed: ${e.message}`);
+                }
+            });
+
+            runTest('drawSynapticView function should run without errors', () => {
+                try {
+                    // This is a proxy for the render function
+                    window.GreenhouseSynapseApp.render();
+                } catch (e) {
+                    throw new Error(`drawSynapticView (render) failed: ${e.message}`);
+                }
+            });
         });
     </script>
 </body>
-
 </html>

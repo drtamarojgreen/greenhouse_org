@@ -24,7 +24,6 @@
                     'js/models_util.js',
                     'js/models_3d_math.js',
                     'js/brain_mesh_realistic.js',
-                    'js/neuro_ui_3d_geometry.js',
                     'js/neuro_camera_controls.js',
                     'js/neuro_ui_3d_brain.js',
                     'js/pathway_viewer.js'

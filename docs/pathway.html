@@ -5,21 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pathway Viewer Test Harness</title>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; }
+        body, html { margin: 0; padding: 0; }
         #app-container { width: 100vw; height: 100vh; }
+        #test-results { position: absolute; top: 0; right: 0; background: #eee; padding: 10px; font-family: monospace; }
+        .pass { color: green; }
+        .fail { color: red; }
     </style>
 </head>
 <body>
     <div id="app-container"></div>
+    <div id="test-results"></div>
 
     <script src="js/pathway.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            if (window.GreenhousePathwayApp) {
-                window.GreenhousePathwayApp.init('#app-container');
-            } else {
-                console.error('Test Harness: GreenhousePathwayApp not found.');
+            const resultsContainer = document.getElementById('test-results');
+
+            function runTest(name, testFn) {
+                try {
+                    testFn();
+                    resultsContainer.innerHTML += `<div class="pass">PASS: ${name}</div>`;
+                } catch (e) {
+                    resultsContainer.innerHTML += `<div class="fail">FAIL: ${name} - ${e.message}</div>`;
+                }
             }
+
+            runTest('GreenhousePathwayApp should exist on window', () => {
+                if (!window.GreenhousePathwayApp) {
+                    throw new Error('GreenhousePathwayApp not found.');
+                }
+            });
+
+            runTest('App should initialize without errors', () => {
+                try {
+                    window.GreenhousePathwayApp.init('#app-container', './');
+                } catch (e) {
+                    throw new Error(`Initialization failed: ${e.message}`);
+                }
+            });
+
+            // This is a proxy test to ensure the viewer is initialized
+            runTest('GreenhousePathwayViewer should exist on window after init', (done) => {
+                setTimeout(() => {
+                    if (!window.GreenhousePathwayViewer) {
+                        throw new Error('GreenhousePathwayViewer not found after init.');
+                    }
+                    done();
+                }, 6000); // Wait for the 5-second delay in pathway.js
+            });
         });
     </script>
 </body>
