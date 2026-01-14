@@ -74,16 +74,15 @@
                 throw new Error("CRITICAL - Aborting main() due to missing 'baseUrl' attribute.");
             }
             if (!selectors || !selectors.genetic) {
-                 throw new Error("CRITICAL - Aborting main() due to missing 'genetic' property in the selectors object.");
+                throw new Error("CRITICAL - Aborting main() due to missing 'genetic' property in the selectors object.");
             }
-            
+
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_config.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_camera_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_lighting.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_pip_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_algo.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_ui_3d_geometry.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_ui_3d_dna.js', baseUrl);
             await GreenhouseUtils.loadScript('genetic_ui_3d_gene.js', baseUrl);

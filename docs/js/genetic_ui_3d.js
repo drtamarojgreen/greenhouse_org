@@ -75,7 +75,7 @@
             // Initial Data Map
             this.updateData();
         },
-        
+
         startAnimation() {
             if (!this.animationFrame) {
                 this.animate();
@@ -171,11 +171,11 @@
             btn.onclick = () => {
                 this.isEvolving = true;
                 overlay.style.display = 'none';
-                
+
                 if (window.GreenhouseGenetic) {
                     window.GreenhouseGenetic.startSimulation();
                 }
-                
+
                 // Update pause button text if needed
                 const pauseBtn = container.querySelector('#gen-pause-btn');
                 if (pauseBtn) {
@@ -183,7 +183,7 @@
                     pauseBtn.style.background = "";
                     pauseBtn.style.color = "";
                 }
-                
+
                 // Start animation loop
                 this.startAnimation();
             };
@@ -242,7 +242,7 @@
 
             window.addEventListener('mousemove', e => {
                 // Remove excessive mouse move logging
-                
+
                 // PiP Controls
                 if (window.GreenhouseGeneticPiPControls) {
                     // If the PiP controls handled the event, do not proceed.
@@ -476,7 +476,7 @@
             if (this.mainCameraController) {
                 this.mainCameraController.update();
             }
-            
+
             // Fallback auto-rotate if no controller or if isEvolving
             if (!this.mainCameraController && this.isEvolving) {
                 this.camera.rotationY += this.rotationSpeed;
@@ -499,7 +499,7 @@
 
             // Render AFTER all camera updates
             this.render();
-            
+
             this.animationFrame = requestAnimationFrame(() => this.animate());
         },
 
@@ -520,10 +520,10 @@
             // We use the main camera controller for this.
 
             // Draw Brain as Main Background
-            this.drawTargetView(ctx, 0, 0, w, h, activeGene, 
+            this.drawTargetView(ctx, 0, 0, w, h, activeGene,
                 this.activeGeneIndex, this.brainShell, null, { camera: this.camera, activeGene: activeGene }); // Pass main camera
 
-                //this.activeGeneIndex, this.brainShell, null, { camera: this.camera }); // Pass main camera
+            //this.activeGeneIndex, this.brainShell, null, { camera: this.camera }); // Pass main camera
             this.drawConnections(ctx);
             // Helper to draw PiP Frame & Label
             const drawPiPFrame = (ctx, x, y, w, h, title) => {
@@ -573,7 +573,7 @@
             }
 
             // 3. PiP 2: Micro View (Gene Structure) - Top Right
-            this.drawMicroView(ctx, rightPipX, gap, pipW, pipH, activeGene, 
+            this.drawMicroView(ctx, rightPipX, gap, pipW, pipH, activeGene,
                 this.activeGeneIndex, this.neuronMeshes, drawPiPFrame, microState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, gap, pipW, pipH, 'micro');
@@ -581,7 +581,7 @@
 
             // 4. PiP 3: Protein View - Middle Right
             const proteinY = gap + pipH + gap;
-            this.drawProteinView(ctx, rightPipX, proteinY, pipW, pipH, activeGene, 
+            this.drawProteinView(ctx, rightPipX, proteinY, pipW, pipH, activeGene,
                 this.proteinCache, drawPiPFrame, proteinState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, proteinY, pipW, pipH, 'protein');
@@ -589,7 +589,7 @@
 
             // 5. PiP 4: Target View (Brain Region) - Bottom Right
             const targetY = gap + pipH + gap + pipH + gap;
-            this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene, 
+            this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene,
                 this.activeGeneIndex, this.brainShell, drawPiPFrame, { ...targetState, activeGene: activeGene });
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, targetY, pipW, pipH, 'target');
@@ -816,24 +816,24 @@
 
         initializeBrainShell() {
             this.brainShell = { vertices: [], faces: [] };
-            if (window.GreenhouseNeuroGeometry) {
-                window.GreenhouseNeuroGeometry.initializeBrainShell(this.brainShell);
+            if (window.GreenhouseGeneticGeometry) {
+                window.GreenhouseGeneticGeometry.initializeBrainShell(this.brainShell);
             }
         },
 
         getRegionVertices(regionKey) {
-            if (window.GreenhouseNeuroGeometry) {
-                return window.GreenhouseNeuroGeometry.getRegionVertices(this.brainShell, regionKey);
+            if (window.GreenhouseGeneticGeometry) {
+                return window.GreenhouseGeneticGeometry.getRegionVertices(this.brainShell, regionKey);
             }
             return [];
         },
 
         drawBrainShell(ctx, offsetX = 0) {
-            if (window.GreenhouseNeuroBrain) {
+            if (window.GreenhouseGeneticBrain) {
                 const activeGene = this.neurons3D[this.activeGeneIndex];
                 ctx.save();
                 ctx.translate(offsetX, 0);
-                window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height, activeGene);
+                window.GreenhouseGeneticBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, this.canvas.width, this.canvas.height, activeGene);
                 ctx.restore();
             }
         },
@@ -988,12 +988,12 @@
                 projectedGenes.forEach(p => {
                     const config = window.GreenhouseGeneticConfig;
                     const baseColors = config ? config.get('materials.dna.baseColors') : null;
-                    
+
                     // Determine base pair type
                     const geneIndex = dnaGenes.findIndex(g => g.id === p.id);
                     const pairIndex = Math.floor(geneIndex / 2);
                     const type = pairIndex % 4;
-                    
+
                     let color;
                     if (baseColors) {
                         switch (type) {
@@ -1078,7 +1078,7 @@
                     const baseColors = config ? config.get('materials.dna.baseColors') : null;
                     const pairIndex = i / 2;
                     const type = pairIndex % 4;
-                    
+
                     let color1, color2;
                     if (baseColors) {
                         switch (type) {
@@ -1121,7 +1121,7 @@
                 const strandNodes = dnaGenes.filter(n => n.strand === s);
                 if (strandNodes.length < 2) continue;
 
-                const strandColor = config ? 
+                const strandColor = config ?
                     (s === 0 ? config.get('materials.dna.strand1Color') : config.get('materials.dna.strand2Color')) :
                     (s === 0 ? '#00D9FF' : '#FF6B9D');
 
@@ -1170,24 +1170,24 @@
         drawRotatingCube(ctx, x, y, w, h, cameraState) {
             ctx.save();
             ctx.translate(x, y);
-            
+
             // Get rotation from camera state
             const rotY = cameraState.camera?.rotationY || cameraState.rotationY || 0;
             const rotX = cameraState.camera?.rotationX || cameraState.rotationX || 0;
-            
+
             // Define cube vertices in 3D space
             const size = 20;
             const cubeVertices = [
-                {x: -size, y: -size, z: -size},
-                {x:  size, y: -size, z: -size},
-                {x:  size, y:  size, z: -size},
-                {x: -size, y:  size, z: -size},
-                {x: -size, y: -size, z:  size},
-                {x:  size, y: -size, z:  size},
-                {x:  size, y:  size, z:  size},
-                {x: -size, y:  size, z:  size}
+                { x: -size, y: -size, z: -size },
+                { x: size, y: -size, z: -size },
+                { x: size, y: size, z: -size },
+                { x: -size, y: size, z: -size },
+                { x: -size, y: -size, z: size },
+                { x: size, y: -size, z: size },
+                { x: size, y: size, z: size },
+                { x: -size, y: size, z: size }
             ];
-            
+
             // Simple camera for the cube
             const cubeCamera = {
                 x: 0,
@@ -1198,33 +1198,33 @@
                 rotationZ: 0,
                 fov: 200
             };
-            
+
             const cubeProjection = {
                 width: w,
                 height: h,
                 near: 10,
                 far: 500
             };
-            
+
             // Project vertices
-            const projected = cubeVertices.map(v => 
+            const projected = cubeVertices.map(v =>
                 GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, cubeCamera, cubeProjection)
             );
-            
+
             // Draw cube edges
             const edges = [
-                [0,1], [1,2], [2,3], [3,0], // Front face
-                [4,5], [5,6], [6,7], [7,4], // Back face
-                [0,4], [1,5], [2,6], [3,7]  // Connecting edges
+                [0, 1], [1, 2], [2, 3], [3, 0], // Front face
+                [4, 5], [5, 6], [6, 7], [7, 4], // Back face
+                [0, 4], [1, 5], [2, 6], [3, 7]  // Connecting edges
             ];
-            
+
             ctx.strokeStyle = '#FF00FF';
             ctx.lineWidth = 2;
-            
+
             edges.forEach(([i, j]) => {
                 const p1 = projected[i];
                 const p2 = projected[j];
-                
+
                 if (p1.scale > 0 && p2.scale > 0) {
                     ctx.beginPath();
                     ctx.moveTo(p1.x, p1.y);
@@ -1232,26 +1232,26 @@
                     ctx.stroke();
                 }
             });
-            
+
             // Draw rotation value inside the cube (center of PiP)
             const rotDegrees = Math.round((rotY * 180 / Math.PI) % 360);
-            
+
             // Draw background box for text
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             ctx.fillRect(w / 2 - 30, h / 2 - 15, 60, 30);
-            
+
             // Draw border
             ctx.strokeStyle = '#FF00FF';
             ctx.lineWidth = 2;
             ctx.strokeRect(w / 2 - 30, h / 2 - 15, 60, 30);
-            
+
             // Draw rotation value as whole number
             ctx.fillStyle = '#FF00FF';
             ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(`${rotDegrees}°`, w / 2, h / 2);
-            
+
             ctx.restore();
         },
         drawConnections(ctx) {

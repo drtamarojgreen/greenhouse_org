@@ -6,7 +6,7 @@
             // Log every call
             if (!this._drawTargetCallCount) this._drawTargetCallCount = 0;
             this._drawTargetCallCount++;
-            
+
             if (this._drawTargetCallCount % 60 === 0) {
                 console.log('[drawTargetView] Called:', {
                     activeGene: JSON.stringify(activeGene, null, 2),
@@ -17,7 +17,7 @@
                     cameraRotY: cameraState?.camera?.rotationY?.toFixed(3) || cameraState?.rotationY?.toFixed(3)
                 });
             }
-            
+
             if (drawPiPFrameCallback) {
                 drawPiPFrameCallback(ctx, x, y, w, h, "Target: Brain Region");
             }
@@ -51,11 +51,65 @@
             ctx.rect(0, 0, w, h);
             ctx.clip();
 
-            if (window.GreenhouseNeuroBrain) {
-                window.GreenhouseNeuroBrain.drawBrainShell(ctx, brainShell, targetCamera, projection, w, h, activeGene);
+            if (window.GreenhouseModels3DMath) {
+                this.drawBrainShell(ctx, brainShell, targetCamera, projection, w, h, activeGene);
             }
 
             ctx.restore();
+        },
+
+        drawBrainShell(ctx, brainShell, camera, projection, width, height, activeGene = null) {
+            if (!brainShell || !window.GreenhouseModels3DMath) return;
+            const targetRegion = activeGene ? activeGene.region : null;
+            const regions = brainShell.regions;
+            const lightDir = { x: 0.5, y: -0.5, z: 1 };
+            const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
+            lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
+
+            const projectedVertices = brainShell.vertices.map(v =>
+                GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection)
+            );
+
+            const facesToDraw = [];
+            brainShell.faces.forEach(f => {
+                const p1 = projectedVertices[f.indices[0]], p2 = projectedVertices[f.indices[1]], p3 = projectedVertices[f.indices[2]];
+                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                    const isFront = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) > 0;
+                    const v1 = brainShell.vertices[f.indices[0]], v2 = brainShell.vertices[f.indices[1]], v3 = brainShell.vertices[f.indices[2]];
+                    const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
+                    facesToDraw.push({ p1, p2, p3, depth: (p1.depth + p2.depth + p3.depth) / 3, normal, region: f.region, isFront });
+                }
+            });
+
+            facesToDraw.sort((a, b) => b.depth - a.depth);
+
+            facesToDraw.forEach(f => {
+                let nx = f.normal.x, ny = f.normal.y, nz = f.normal.z;
+                if (!f.isFront) { nx = -nx; ny = -ny; nz = -nz; }
+                const diffuse = Math.max(0, nx * lightDir.x + ny * lightDir.y + nz * lightDir.z);
+                let r = 100, g = 100, b = 100, a = 0.1;
+                if (f.region && regions[f.region]) {
+                    const match = regions[f.region].color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                    if (match) { r = parseInt(match[1]); g = parseInt(match[2]); b = parseInt(match[3]); a = parseFloat(match[4] || 1); }
+                }
+                const isTarget = (targetRegion && (f.region === targetRegion || (targetRegion === 'pfc' && f.region === 'prefrontalCortex')));
+                if (isTarget) {
+                    ctx.fillStyle = `rgba(57, 255, 20, ${GreenhouseModels3DMath.applyDepthFog(0.9, f.depth)})`;
+                } else {
+                    const intensity = 0.3 + diffuse * 0.7;
+                    ctx.fillStyle = `rgba(${Math.min(255, r * intensity)}, ${Math.min(255, g * intensity)}, ${Math.min(255, b * intensity)}, ${GreenhouseModels3DMath.applyDepthFog(a, f.depth)})`;
+                }
+                ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.fill();
+            });
+
+            if (brainShell.boundaries) {
+                ctx.strokeStyle = 'rgba(200, 255, 255, 0.4)'; ctx.lineWidth = 1; ctx.beginPath();
+                brainShell.boundaries.forEach(e => {
+                    const p1 = projectedVertices[e.i1], p2 = projectedVertices[e.i2];
+                    if (p1.scale > 0 && p2.scale > 0) { ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); }
+                });
+                ctx.stroke();
+            }
         },
 
 

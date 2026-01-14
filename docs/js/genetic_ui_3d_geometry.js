@@ -145,62 +145,36 @@
             const rings = 20;
 
             // Helper to generate a bent capsule (arm)
-            // angleOffset: rotation around Z axis (for vertical X)
-            // bendFactor: how much it curves
             const generateArm = (angleOffset, bendFactor, zOffset) => {
                 for (let i = 0; i <= rings; i++) {
-                    const t = i / rings; // 0 to 1
-                    // t=0.5 is the center (centromere)
-
-                    // Shape profile: Thicker at ends, thinner at centromere
+                    const t = i / rings;
                     const profile = 1.0 + Math.pow(Math.abs(t - 0.5) * 2, 2) * 0.5;
                     const r = radius * profile;
-
-                    // Position along the arm length (VERTICAL - Y axis)
-                    // Centered at 0
                     const lPos = (t - 0.5) * length * 2;
-
-                    // Bend logic: y = lPos (vertical), x = bend based on y
-                    let y = lPos; // VERTICAL
+                    let y = lPos;
                     let x = Math.pow(lPos / length, 2) * bendFactor;
                     let z = zOffset;
 
-                    // Rotate around Z axis for X-shape
                     const cos = Math.cos(angleOffset);
                     const sin = Math.sin(angleOffset);
                     const rx = x * cos - y * sin;
                     const ry = x * sin + y * cos;
 
-                    x = rx;
-                    y = ry;
+                    x = rx; y = ry;
 
-                    // Generate Ring
                     for (let j = 0; j < segments; j++) {
                         const theta = (j / segments) * Math.PI * 2;
-                        // Normal to the tube direction (approximate)
                         const nx = Math.cos(theta);
                         const nz = Math.sin(theta);
-
-                        // Add vertex
-                        vertices.push({
-                            x: x + nx * r,
-                            y: y, // Vertical axis
-                            z: z + nz * r
-                        });
+                        vertices.push({ x: x + nx * r, y: y, z: z + nz * r });
                     }
                 }
             };
 
-            // Generate two chromatids forming vertical X
-            // Chromatid 1 (upper left to lower right)
             generateArm(Math.PI / 6, 15, 0);
-            // Chromatid 2 (upper right to lower left)
             generateArm(-Math.PI / 6, 15, 0);
 
-            // Generate Faces (Grid)
-            // We have 2 arms. Each arm has (rings+1) * segments vertices.
             const vertsPerArm = (rings + 1) * segments;
-
             for (let arm = 0; arm < 2; arm++) {
                 const offset = arm * vertsPerArm;
                 for (let i = 0; i < rings; i++) {
@@ -208,19 +182,109 @@
                         const current = offset + i * segments + j;
                         const next = offset + (i + 1) * segments + j;
                         const nextJ = (j + 1) % segments;
-
-                        const v1 = current;
-                        const v2 = offset + i * segments + nextJ;
-                        const v3 = offset + (i + 1) * segments + nextJ;
-                        const v4 = next;
-
-                        faces.push([v1, v2, v3]);
-                        faces.push([v1, v3, v4]);
+                        faces.push([current, offset + i * segments + nextJ, offset + (i + 1) * segments + nextJ]);
+                        faces.push([current, offset + (i + 1) * segments + nextJ, next]);
                     }
                 }
             }
-
             return { vertices, faces };
+        },
+
+        initializeBrainShell(brainShell) {
+            // Use realistic brain mesh if available
+            if (window.GreenhouseBrainMeshRealistic) {
+                const realisticBrain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+                brainShell.vertices = realisticBrain.vertices;
+                brainShell.faces = realisticBrain.faces.map(face => ({ indices: face, region: null }));
+                brainShell.regions = realisticBrain.regions;
+                this.computeRegionsAndBoundaries(brainShell);
+                return;
+            }
+
+            // Fallback parametric brain shell
+            const radius = 200;
+            const bands = 40;
+            for (let lat = 0; lat <= bands; lat++) {
+                const theta = (lat * Math.PI) / bands;
+                const sinT = Math.sin(theta); const cosT = Math.cos(theta);
+                for (let lon = 0; lon <= bands; lon++) {
+                    const phi = (lon * 2 * Math.PI) / bands;
+                    const sinP = Math.sin(phi); const cosP = Math.cos(phi);
+                    let x = cosP * sinT, y = cosT, z = sinP * sinT;
+                    // Generic brain shape deformations
+                    const fissure = 1 - Math.exp(-Math.abs(x) * 5) * 0.3;
+                    if (y > 0) y *= fissure;
+                    x *= radius; y *= radius; z *= radius;
+                    brainShell.vertices.push({ x, y, z });
+                }
+            }
+            for (let lat = 0; lat < bands; lat++) {
+                for (let lon = 0; lon < bands; lon++) {
+                    const first = lat * (bands + 1) + lon;
+                    const second = first + bands + 1;
+                    brainShell.faces.push({ indices: [first, second, first + 1], region: null });
+                    brainShell.faces.push({ indices: [second, second + 1, first + 1], region: null });
+                }
+            }
+            brainShell.regions = {
+                pfc: { color: 'rgba(100, 150, 255, 0.6)', vertices: this.getRegionVertices(brainShell, 'pfc') },
+                amygdala: { color: 'rgba(255, 100, 100, 0.6)', vertices: this.getRegionVertices(brainShell, 'amygdala') },
+                hippocampus: { color: 'rgba(100, 255, 150, 0.6)', vertices: this.getRegionVertices(brainShell, 'hippocampus') },
+                temporalLobe: { color: 'rgba(255, 165, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'temporalLobe') },
+                parietalLobe: { color: 'rgba(147, 112, 219, 0.6)', vertices: this.getRegionVertices(brainShell, 'parietalLobe') },
+                occipitalLobe: { color: 'rgba(255, 192, 203, 0.6)', vertices: this.getRegionVertices(brainShell, 'occipitalLobe') },
+                cerebellum: { color: 'rgba(64, 224, 208, 0.6)', vertices: this.getRegionVertices(brainShell, 'cerebellum') },
+                brainstem: { color: 'rgba(255, 215, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'brainstem') }
+            };
+            this.computeRegionsAndBoundaries(brainShell);
+        },
+
+        getRegionVertices(brainShell, regionKey) {
+            const indices = [];
+            brainShell.vertices.forEach((v, i) => {
+                let match = false;
+                const x = v.x / 200, y = v.y / 200, z = v.z / 200;
+                switch (regionKey) {
+                    case 'pfc': if (z > 0.4 && y > -0.2) match = true; break;
+                    case 'occipitalLobe': if (z < -0.5 && y > -0.2) match = true; break;
+                    case 'temporalLobe': if (Math.abs(x) > 0.4 && y < 0.1 && z > -0.4 && z < 0.4) match = true; break;
+                    case 'parietalLobe': if (y > 0.4 && z > -0.4 && z < 0.4) match = true; break;
+                    case 'cerebellum': if (y < -0.3 && z < -0.4) match = true; break;
+                    case 'brainstem': if (y < -0.5 && Math.abs(x) < 0.3 && Math.abs(z) < 0.3) match = true; break;
+                    case 'amygdala': if (Math.abs(x) < 0.3 && Math.abs(y) < 0.3 && Math.abs(z) < 0.3) match = true; break;
+                    case 'hippocampus': if (Math.abs(x) > 0.2 && Math.abs(x) < 0.5 && y < 0 && z > -0.2 && z < 0.2) match = true; break;
+                }
+                if (match) indices.push(i);
+            });
+            return indices;
+        },
+
+        computeRegionsAndBoundaries(brainShell) {
+            brainShell.vertices.forEach((v, i) => {
+                v.region = null;
+                for (const [name, data] of Object.entries(brainShell.regions)) {
+                    if (data.vertices.includes(i)) { v.region = name; break; }
+                }
+            });
+            const edgeMap = new Map();
+            brainShell.faces.forEach((face, idx) => {
+                face.region = brainShell.vertices[face.indices[0]].region || brainShell.vertices[face.indices[1]].region || brainShell.vertices[face.indices[2]].region;
+                [[face.indices[0], face.indices[1]], [face.indices[1], face.indices[2]], [face.indices[2], face.indices[0]]].forEach(e => {
+                    const key = `${Math.min(e[0], e[1])}-${Math.max(e[0], e[1])}`;
+                    if (!edgeMap.has(key)) edgeMap.set(key, []);
+                    edgeMap.get(key).push(idx);
+                });
+            });
+            brainShell.boundaries = [];
+            edgeMap.forEach((faces, key) => {
+                if (faces.length === 2) {
+                    const f1 = brainShell.faces[faces[0]], f2 = brainShell.faces[faces[1]];
+                    if (f1.region !== f2.region && f1.region && f2.region) {
+                        const [i1, i2] = key.split('-').map(Number);
+                        brainShell.boundaries.push({ i1, i2 });
+                    }
+                }
+            });
         }
     };
 

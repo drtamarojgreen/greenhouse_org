@@ -5,11 +5,11 @@
         drawBrainShell(ctx, brainShell, camera, projection, width, height, activeGene = null) {
             const targetRegion = activeGene ? activeGene.region : null;
             if (!brainShell) return;
-            
+
             // Log camera rotation every 60 calls
             if (!this._drawBrainCallCount) this._drawBrainCallCount = 0;
             this._drawBrainCallCount++;
-            
+
             if (this._drawBrainCallCount % 60 === 0) {
                 console.log('[drawBrainShell] Camera rotation:', {
                     call: this._drawBrainCallCount,
