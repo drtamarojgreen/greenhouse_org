@@ -188,10 +188,12 @@
             const mx = this.mouse.x;
             const my = this.mouse.y;
 
-            if (my < h * 0.4) {
+            // Pre-synaptic terminal hitbox
+            if (my < h * 0.4 && Math.abs(mx - w * 0.5) < w * 0.15) {
                 this.hoveredId = config.elements.preSynapticTerminal.id;
             }
-            else if (my > h * 0.65) {
+            // Post-synaptic terminal hitbox
+            else if (my > h * 0.4 && my < h * 0.9 && Math.abs(mx - w * 0.5) < w * 0.2) {
                 this.hoveredId = config.elements.postSynapticTerminal.id;
             }
 
@@ -203,18 +205,27 @@
                 }
             });
 
-             config.elements.ionChannels.forEach(c => {
+            // Re-calculate positions for channels and receptors to match rendering
+            const centerX = w * 0.5;
+            const cupRadius = w * 0.1;
+            const cupCenterY = h * 0.35;
+
+            config.elements.ionChannels.forEach(c => {
                 const cx = w * c.x;
-                const cy = h * 0.8 - h * 0.15 - (w * 0.08) + 10;
-                if (mx > cx - 5 && mx < cx + 5 && my > cy - 5 && my < cy + 5) {
+                const dx = cx - centerX;
+                const dy = Math.sqrt(Math.max(0, cupRadius * cupRadius - dx * dx));
+                const cy = cupCenterY + dy;
+                if (mx > cx - 10 && mx < cx + 10 && my > cy - 10 && my < cy + 10) {
                     this.hoveredId = c.id;
                 }
             });
 
             config.elements.gpcrs.forEach(g => {
                 const gx = w * g.x;
-                const gy = h * 0.8 - h * 0.15 - (w * 0.08) + 10;
-                if (mx > gx - 10 && mx < gx + 10 && my > gy - 10 && my < gy + 10) {
+                const dx = gx - centerX;
+                const dy = Math.sqrt(Math.max(0, cupRadius * cupRadius - dx * dx));
+                const gy = cupCenterY + dy;
+                if (mx > gx - 15 && mx < gx + 15 && my > gy - 15 && my < gy + 15) {
                     this.hoveredId = g.id;
                 }
             });
@@ -255,10 +266,10 @@
         updateAndDrawParticles(ctx, w, h) {
             if (this.frame % 10 === 0) {
                 this.particles.push({
-                    x: w * (0.4 + Math.random() * 0.2),
-                    y: h * 0.4,
+                    x: w * (0.45 + Math.random() * 0.1),
+                    y: h * 0.25, // Start from the bottom of the pre-synaptic bulb
                     r: Math.random() * 2 + 1,
-                    vy: Math.random() * 0.5 + 0.5,
+                    vy: Math.random() * 1.5 + 1.0,
                     life: 1.0
                 });
             }
@@ -286,10 +297,16 @@
             ctx.save();
             ctx.fillStyle = config.preSynapticColor;
 
-            ctx.fillRect(w * 0.4, 0, w * 0.2, h * 0.3);
+            const centerX = w * 0.5;
+            const bulbRadius = w * 0.12;
+            const stemWidth = w * 0.15;
 
+            // Pre-synaptic terminal (stem)
+            ctx.fillRect(centerX - stemWidth / 2, 0, stemWidth, h * 0.25);
+
+            // Pre-synaptic bulb
             ctx.beginPath();
-            ctx.arc(w * 0.5, h * 0.3, w * 0.15, 0, Math.PI, false);
+            ctx.arc(centerX, h * 0.25, bulbRadius, 0, Math.PI, false);
             ctx.fill();
 
             ctx.restore();
@@ -299,21 +316,28 @@
             ctx.save();
             ctx.fillStyle = config.postSynapticColor;
 
+            // Post-synaptic base
             ctx.fillRect(0, h * 0.8, w, h * 0.2);
 
-            const spineBaseX = w * 0.5;
+            const centerX = w * 0.5;
             const spineBaseY = h * 0.8;
-            const spineNeckHeight = h * 0.15;
-            const spineHeadRadius = w * 0.08;
+            const cupCenterY = h * 0.35;
+            const cupRadius = w * 0.1;
+            const neckWidth = 40;
 
+            // Draw the dendritic spine (neck and cup)
             ctx.beginPath();
-            ctx.moveTo(spineBaseX - 10, spineBaseY);
-            ctx.lineTo(spineBaseX - 5, spineBaseY - spineNeckHeight);
-            ctx.arc(spineBaseX, spineBaseY - spineNeckHeight - spineHeadRadius + 10, spineHeadRadius, 0.8 * Math.PI, 0.2 * Math.PI, true);
-            ctx.lineTo(spineBaseX + 10, spineBaseY);
+            // Neck base
+            ctx.moveTo(centerX - neckWidth / 2, spineBaseY);
+            // Up towards cup
+            ctx.lineTo(centerX - neckWidth / 2, cupCenterY + cupRadius * 0.5);
+            // The cup surface (concave)
+            ctx.arc(centerX, cupCenterY, cupRadius, 0.8 * Math.PI, 0.2 * Math.PI, true);
+            // Back down to base
+            ctx.lineTo(centerX + neckWidth / 2, cupCenterY + cupRadius * 0.5);
+            ctx.lineTo(centerX + neckWidth / 2, spineBaseY);
             ctx.closePath();
             ctx.fill();
-
             ctx.restore();
         },
 
@@ -329,25 +353,39 @@
         },
 
         drawIonChannels(ctx, w, h) {
-            const spineY = h * 0.8 - h * 0.15 - (w * 0.08) + 10;
+            const centerX = w * 0.5;
+            const cupCenterY = h * 0.35;
+            const cupRadius = w * 0.1;
+
             ctx.save();
             ctx.fillStyle = config.ionChannelColor;
             config.elements.ionChannels.forEach(c => {
-                ctx.fillRect(w * c.x - 5, spineY - 5, 10, 10);
+                const x = w * c.x;
+                const dx = x - centerX;
+                const dy = Math.sqrt(Math.max(0, cupRadius * cupRadius - dx * dx));
+                const y = cupCenterY + dy;
+                ctx.fillRect(x - 5, y - 5, 10, 10);
             });
             ctx.restore();
         },
 
         drawGPCRs(ctx, w, h) {
-            const spineY = h * 0.8 - h * 0.15 - (w * 0.08) + 10;
+            const centerX = w * 0.5;
+            const cupCenterY = h * 0.35;
+            const cupRadius = w * 0.1;
+
             ctx.save();
             config.elements.gpcrs.forEach(g => {
                 const x = w * g.x;
+                const dx = x - centerX;
+                const dy = Math.sqrt(Math.max(0, cupRadius * cupRadius - dx * dx));
+                const y = cupCenterY + dy;
+
                 ctx.strokeStyle = config.gpcrColor;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 3;
                 ctx.beginPath();
-                ctx.moveTo(x - 10, spineY);
-                ctx.bezierCurveTo(x - 5, spineY - 5, x + 5, spineY - 5, x + 10, spineY);
+                ctx.moveTo(x - 10, y);
+                ctx.bezierCurveTo(x - 5, y - 5, x + 5, y - 5, x + 10, y);
                 ctx.stroke();
             });
             ctx.restore();
