@@ -201,7 +201,7 @@
                 ctx.fillStyle = '#4ca1af';
                 ctx.font = '12px Arial';
                 ctx.fillText("Synapse View (Drag: Rotate, Shift+Drag: Pan, Wheel: Zoom)", x + 10, y + 20);
-                
+
                 // Reset button
                 ctx.fillStyle = 'rgba(76, 161, 175, 0.8)';
                 ctx.fillRect(x + w - 60, y + 5, 50, 20);
@@ -329,10 +329,17 @@
                 projectedFaces.sort((a, b) => b.depth - a.depth);
 
                 projectedFaces.forEach(f => {
-                    // Parse base color
-                    let r = 100, g = 100, b = 100;
-                    if (color === '#FFD700') { r = 255; g = 215; b = 0; } // Gold
-                    else if (color === '#B0C4DE') { r = 176; g = 196; b = 222; } // Silver
+                    // Dynamic Color Parsing
+                    let r = 150, g = 150, b = 150;
+                    if (color.startsWith('#')) {
+                        const hex = color.slice(1);
+                        r = parseInt(hex.slice(0, 2), 16);
+                        g = parseInt(hex.slice(2, 4), 16);
+                        b = parseInt(hex.slice(4, 6), 16);
+                    } else if (color.startsWith('rgb')) {
+                        const match = color.match(/(\d+),\s*(\d+),\s*(\d+)/);
+                        if (match) { r = parseInt(match[1]); g = parseInt(match[2]); b = parseInt(match[3]); }
+                    }
 
                     const ambient = 0.3;
                     const intensity = ambient + f.diffuse * 0.7 + f.specular * 0.6;
@@ -350,12 +357,14 @@
                 });
             };
 
-            // Determine colors based on connection weight
-            const connectionColor = connection.weight > 0 ? '#FFD700' : '#B0C4DE'; // Gold for Excitatory, Silver for Inhibitory
-            const defaultColor = '#B0C4DE'; // Default color for parts not indicating weight
+            // Determine colors
+            // Pre-synaptic matches signal weight (Gold/Silver)
+            const connectionColor = connection.weight > 0 ? '#FFD700' : '#E0E0E0';
+            // Post-synaptic is consistent Silver/Grey
+            const postColor = '#B0C4DE';
 
-            // Draw Pre-synaptic (Top) - Connection color
-            drawMesh(synapseMeshes.pre, 0, connectionColor);
+            // Draw Pre-synaptic (Top) - Offset upwards
+            drawMesh(synapseMeshes.pre, -100, connectionColor);
 
             // Draw Synaptic Cleft (Blue rectangular box between synapses)
             this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
@@ -368,33 +377,46 @@
                 if (pStart.scale > 0 && pEnd.scale > 0) {
                     const radius = 45 * ((pStart.scale + pEnd.scale) / 2);
 
-                    // Draw Shaft as a thick line
-                    ctx.strokeStyle = color;
+                    // Create Gradient for 3D Pipe Effect
+                    const grad = ctx.createLinearGradient(pStart.x + x - radius, pStart.y + y, pStart.x + x + radius, pStart.y + y);
+                    const match = color.match(/#([a-fA-F0-9]{6})/);
+                    let rgb = { r: 200, g: 200, b: 200 };
+                    if (color === '#FFD700') rgb = { r: 255, g: 215, b: 0 };
+                    else if (color === '#B0C4DE') rgb = { r: 176, g: 196, b: 222 };
+                    else if (color === '#E0E0E0') rgb = { r: 224, g: 224, b: 224 };
+
+                    const baseR = rgb.r, baseG = rgb.g, baseB = rgb.b;
+                    grad.addColorStop(0, `rgb(${Math.floor(baseR * 0.4)}, ${Math.floor(baseG * 0.4)}, ${Math.floor(baseB * 0.4)})`); // Shadow
+                    grad.addColorStop(0.3, color); // Main
+                    grad.addColorStop(0.7, color); // Main
+                    grad.addColorStop(1, `rgb(${Math.min(255, baseR + 50)}, ${Math.min(255, baseG + 50)}, ${Math.min(255, baseB + 50)})`); // Highlight
+
+                    ctx.strokeStyle = grad;
                     ctx.lineWidth = radius * 2;
-                    ctx.lineCap = 'round';
+                    ctx.lineCap = 'butt';
                     ctx.beginPath();
                     ctx.moveTo(pStart.x + x, pStart.y + y);
                     ctx.lineTo(pEnd.x + x, pEnd.y + y);
                     ctx.stroke();
 
-                    // Add a highlight for 3D effect
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                    ctx.lineWidth = radius * 0.5;
+                    // Specular Highlight
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.lineWidth = radius * 0.2;
                     ctx.beginPath();
-                    ctx.moveTo(pStart.x + x - radius * 0.3, pStart.y + y);
-                    ctx.lineTo(pEnd.x + x - radius * 0.3, pEnd.y + y);
+                    ctx.moveTo(pStart.x + x - radius * 0.4, pStart.y + y);
+                    ctx.lineTo(pEnd.x + x - radius * 0.4, pEnd.y + y);
                     ctx.stroke();
                 }
             };
 
-            // Draw Axon (Up) - Connection color
-            drawShaft(-140, -1000, connectionColor);
+            // Draw Axon (Up) - Matches Pre Terminal Color, starts at neck
+            drawShaft(-190, -1000, connectionColor);
 
-            // Draw Post-synaptic (Bottom) - Default color
-            drawMesh(synapseMeshes.post, 0, defaultColor);
+            // Draw Post-synaptic (Bottom) - Offset downwards
+            drawMesh(synapseMeshes.post, 100, postColor);
 
-            // Draw Dendrite (Down) - Default color
-            drawShaft(140, 1000, defaultColor);
+            // Draw Dendrite (Down) - Matches Post Terminal Color, starts at neck
+            drawShaft(190, 1000, postColor);
 
             // Initialize Synapse Details (Vesicles, Mitochondria) if not present
             if (!connection.synapseDetails) {
@@ -408,16 +430,16 @@
                 for (let i = 0; i < 30; i++) {
                     connection.synapseDetails.vesicles.push({
                         x: (Math.random() - 0.5) * 60,
-                        y: (Math.random() * -40) - 10, // Top half
+                        y: (Math.random() * -60) - 100, // Inside top terminal (-180 to -90 range)
                         z: (Math.random() - 0.5) * 60
                     });
                 }
 
                 // Generate Mitochondria
                 // Pre-synaptic
-                connection.synapseDetails.mitochondria.push({ x: -20, y: -50, z: 10, rot: Math.random() });
+                connection.synapseDetails.mitochondria.push({ x: -20, y: -160, z: 10, rot: Math.random() });
                 // Post-synaptic
-                connection.synapseDetails.mitochondria.push({ x: 20, y: 50, z: -10, rot: Math.random() });
+                connection.synapseDetails.mitochondria.push({ x: 20, y: 160, z: -10, rot: Math.random() });
             }
 
             // Draw Internal Structures (Projected)
@@ -459,13 +481,13 @@
             ctx.fillStyle = '#FFD700'; // Gold for Pre
 
             // Project label positions
-            const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -100, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -220, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (preLabelPos.scale > 0) {
                 ctx.fillText("Pre-Synaptic Terminal", preLabelPos.x, preLabelPos.y);
             }
 
             ctx.fillStyle = '#87CEEB'; // SkyBlue for Post
-            const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 100, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 220, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (postLabelPos.scale > 0) {
                 ctx.fillText("Post-Synaptic Terminal", postLabelPos.x, postLabelPos.y);
             }
@@ -480,19 +502,19 @@
             // Draw Vesicles (Phase 7: Vesicle Fusion)
             connection.synapseDetails.vesicles.forEach(v => {
                 // Animate Vesicle moving towards cleft
-                v.y += 0.2;
-                if (v.y > -25) {
+                v.y += 0.4;
+                if (v.y > -100) {
                     // Fusion Event!
-                    // Reset vesicle to top
-                    v.y = -50 - Math.random() * 20;
+                    // Reset vesicle to top terminal interior
+                    v.y = -190 - Math.random() * 30;
                     v.x = (Math.random() - 0.5) * 50;
                     v.z = (Math.random() - 0.5) * 50;
 
-                    // Release Neurotransmitters (Spawn Particles)
+                    // Release Neurotransmitters (Spawn Particles at pre-face)
                     for (let k = 0; k < 3; k++) {
                         connection.synapseDetails.particles.push({
                             x: v.x + (Math.random() - 0.5) * 5,
-                            y: -25,
+                            y: -100,
                             z: v.z + (Math.random() - 0.5) * 5,
                             life: 1.0,
                             hasBound: false
@@ -512,7 +534,7 @@
             if (connection.synapseDetails.particles.length < 5 && Math.random() < 0.05) {
                 connection.synapseDetails.particles.push({
                     x: (Math.random() - 0.5) * 40,
-                    y: -25,
+                    y: -100,
                     z: (Math.random() - 0.5) * 40,
                     life: 1.0,
                     hasBound: false
@@ -530,7 +552,7 @@
                 const proj = GreenhouseModels3DMath.project3DTo2D(p.x, p.y, p.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                 if (proj.scale > 0 && p.life > 0) {
                     // Phase 7: Receptor Binding
-                    if (p.y > 25 && !p.hasBound) {
+                    if (p.y > 100 && !p.hasBound) {
                         p.hasBound = true;
                         p.life = 0.5; // Quick flash fade
 
@@ -567,10 +589,10 @@
          */
         drawSynapticCleft(ctx, x, y, w, h, synapseCamera) {
             // Cleft dimensions
-            const cleftWidth = 120;
-            const cleftHeight = 25; // Very thin
-            const cleftDepth = 120;
-            const cleftY = 0; // Position at Y=0 (between pre at -25 and post at +25)
+            const cleftWidth = 160;
+            const cleftHeight = 200; // Matches terminal gap (-100 to 100)
+            const cleftDepth = 160;
+            const cleftY = 0;
 
             // Define 8 vertices of the rectangular box
             const halfW = cleftWidth / 2;
@@ -625,8 +647,8 @@
             });
 
             // Draw each face
-            const cleftColor = { r: 0, g: 136, b: 255 }; // Blue #0088FF
-            const alpha = 0.7;
+            const cleftColor = { r: 0, g: 136, b: 255 }; // Distinct Blue
+            const alpha = 0.4; // More transparent for "liquid" look
 
             faces.forEach(face => {
                 face.forEach(triangle => {

@@ -959,16 +959,14 @@
                         let wx, wy, wz;
 
                         if (isPre) {
-                            // Pre-synaptic: Neck at -115, Face at -25
-                            // Map Model X (0 to 90) to World Y (-115 to -25)
+                            // Pre-synaptic: Neck at -90, Face at 0
                             wx = my;
-                            wy = -140 + xVal;
+                            wy = -90 + xVal;
                             wz = mz;
                         } else {
-                            // Post-synaptic: Neck at 115, Face at 25
-                            // Map Model X (0 to 90) to World Y (115 to 25)
+                            // Post-synaptic: Neck at 90, Face at 0
                             wx = my;
-                            wy = 140 - xVal;
+                            wy = 90 - xVal;
                             wz = mz;
                         }
 
