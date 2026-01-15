@@ -320,8 +320,8 @@
             // For this demo, we re-map every time to be safe, though optimization would cache positions
             // Generate Integrated Topology: Double Helix (Left) + Whole Brain (Right)
 
-            const helixOffset = -200; // Left side
-            const brainOffset = 200;  // Right side
+            const helixOffset = -400; // Far Left
+            const brainOffset = 0;    // Center of World
 
             // Initialize Brain Shell if not exists
             if (!this.brainShell) {
@@ -365,14 +365,18 @@
                     let x = brainOffset, y = 0, z = 0;
 
                     if (regionVerticesIndices.length > 0) {
-                        const rndIndex = regionVerticesIndices[Math.floor(Math.random() * regionVerticesIndices.length)];
+                        // NEW: Stable Positioning based on Node ID instead of Math.random()
+                        const idNum = typeof node.id === 'string' ? node.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : node.id;
+                        const rndIndex = regionVerticesIndices[idNum % regionVerticesIndices.length];
                         const vertex = this.brainShell.vertices[rndIndex];
 
-                        // Add some internal volume jitter
-                        const jitter = 0.8 + Math.random() * 0.2;
-                        x = brainOffset + vertex.x * jitter;
-                        y = vertex.y * jitter;
-                        z = vertex.z * jitter;
+                        // Add some internal volume jitter - also stable based on ID
+                        const jitterX = 0.7 + ((idNum * 13) % 100) / 333;
+                        const jitterY = 0.7 + ((idNum * 17) % 100) / 333;
+                        const jitterZ = 0.7 + ((idNum * 19) % 100) / 333;
+                        x = brainOffset + vertex.x * jitterX;
+                        y = vertex.y * jitterY;
+                        z = vertex.z * jitterZ;
                     }
 
                     // Color mapping
@@ -435,9 +439,9 @@
                 const midZ = (fromNeuron.z + toNeuron.z) / 2;
 
                 const cp = {
-                    x: midX * 0.8,
-                    y: midY * 0.8,
-                    z: midZ * 0.8
+                    x: midX * 0.5, // Pull more aggressively towards center
+                    y: midY * 0.5,
+                    z: midZ * 0.5
                 };
 
                 // Generate Tube Mesh
@@ -1275,50 +1279,51 @@
             sortedConnections.forEach(conn => {
                 // Skip drawing connections to or from the 'gene' type display
                 if (conn.from.type === 'gene' || conn.to.type === 'gene') return;
-                if (!conn.mesh || !conn.mesh.vertices || !conn.mesh.faces) return;
-
                 const mesh = conn.mesh;
 
                 // Determine base color from weight
                 const weight = conn.weight;
-                const positiveColor = [66, 135, 245]; // Blue for positive
-                const negativeColor = [245, 66, 66];  // Red for negative
+                const positiveColor = [0, 242, 255]; // Electric Cyan
+                const negativeColor = [255, 48, 48]; // Pulse Red
                 const baseColor = weight > 0 ? positiveColor : negativeColor;
-                const alpha = Math.min(0.8, Math.abs(weight) * 0.7);
+
+                // Nerve Aesthetics: High transparency, glowing highlights
+                const alpha = Math.min(0.4, Math.abs(weight) * 0.3);
 
                 const projectedVertices = mesh.vertices.map(v =>
                     GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, this.camera, this.projection)
                 );
 
-                mesh.faces.forEach(faceIndices => {
-                    if (faceIndices.length < 3) return;
+                // Nerve Pulse Animation logic
+                const pulseT = (Date.now() * 0.001 + (conn.from.id % 10) * 0.1) % 1.0;
 
+                mesh.faces.forEach((faceIndices, fIdx) => {
                     const p1 = projectedVertices[faceIndices[0]];
                     const p2 = projectedVertices[faceIndices[1]];
                     const p3 = projectedVertices[faceIndices[2]];
 
-                    // Cull backfaces: if the projected triangle is wound clockwise, it's facing away.
-                    // Also check if any part is in front of the camera (scale > 0)
                     const isVisible = p1.scale > 0 && p2.scale > 0 && p3.scale > 0;
                     const isFrontFacing = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) > 0;
 
                     if (isVisible && isFrontFacing) {
-                        // Get original 3D vertices for lighting calculation
                         const v1 = mesh.vertices[faceIndices[0]];
                         const v2 = mesh.vertices[faceIndices[1]];
                         const v3 = mesh.vertices[faceIndices[2]];
 
-                        // Calculate face normal
                         const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
+                        const brightness = GreenhouseModels3DMath.calculateDiffuse(normal, lightDirection, 0.3);
 
-                        // Calculate diffuse lighting
-                        const brightness = GreenhouseModels3DMath.calculateDiffuse(normal, lightDirection, 0.2); // 0.2 ambient light
+                        // Pulse effect: certain longitudinal rings light up
+                        const segmentIndex = Math.floor(fIdx / (16)); // Assuming 8 segments * 2 faces
+                        const isPulse = Math.abs(segmentIndex / 10 - pulseT) < 0.1;
 
-                        const finalColor = `rgba(${Math.floor(baseColor[0] * brightness)}, ${Math.floor(baseColor[1] * brightness)}, ${Math.floor(baseColor[2] * brightness)}, ${alpha})`;
+                        const r = Math.floor(baseColor[0] * brightness);
+                        const g = Math.floor(baseColor[1] * brightness);
+                        const b = Math.floor(baseColor[2] * brightness);
 
-                        ctx.fillStyle = finalColor;
-                        ctx.strokeStyle = finalColor; // Use same color for stroke to hide seams
-                        ctx.lineWidth = 0.5;
+                        ctx.fillStyle = isPulse ? `rgba(255, 255, 255, ${alpha * 2})` : `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                        ctx.strokeStyle = ctx.fillStyle;
+                        ctx.lineWidth = 0.2;
 
                         ctx.beginPath();
                         ctx.moveTo(p1.x, p1.y);
@@ -1326,7 +1331,6 @@
                         ctx.lineTo(p3.x, p3.y);
                         ctx.closePath();
                         ctx.fill();
-                        ctx.stroke(); // Add a thin stroke to fill gaps between triangles
                     }
                 });
             });

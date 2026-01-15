@@ -2,7 +2,7 @@
     'use strict';
 
     const GreenhouseGeneticChromosome = {
-        drawChromatinStructure(ctx, x, y, w, h, activeGene, drawPiPFrameCallback) {
+        drawChromatinStructure(ctx, x, y, w, h, activeGene, drawPiPFrameCallback, cameraState) {
             if (drawPiPFrameCallback) {
                 drawPiPFrameCallback(ctx, x, y, w, h, "Chromatin Structure");
             }
@@ -12,14 +12,20 @@
             const time = Date.now() * 0.001;
             const rotationY = time * 0.2;
 
-            // Adjusted camera for vertical chromosome
-            const camera = {
-                x: 0, y: 0, z: -250, // Closer for better view
-                rotationX: 0, // No X rotation for vertical view
-                rotationY: rotationY,
-                rotationZ: 0,
-                fov: 500
-            };
+            // Use the specific camera for this PiP if provided
+            let camera;
+            if (cameraState && cameraState.camera) {
+                camera = cameraState.camera;
+            } else {
+                // Adjusted camera for vertical chromosome
+                camera = {
+                    x: 0, y: 0, z: -250, // Closer for better view
+                    rotationX: 0, // No X rotation for vertical view
+                    rotationY: rotationY,
+                    rotationZ: 0,
+                    fov: 500
+                };
+            }
 
             const config = window.GreenhouseGeneticConfig;
             const lighting = window.GreenhouseGeneticLighting;
@@ -56,12 +62,12 @@
                     const p2 = projected[face[1]];
                     const p3 = projected[face[2]];
                     const z = (p1.z + p2.z + p3.z) / 3;
-                    
+
                     // Calculate face normal for lighting
                     const v1 = projected[face[0]];
                     const v2 = projected[face[1]];
                     const v3 = projected[face[2]];
-                    
+
                     // Edge vectors
                     const e1x = v2.vx - v1.vx;
                     const e1y = v2.vy - v1.vy;
@@ -69,14 +75,14 @@
                     const e2x = v3.vx - v1.vx;
                     const e2y = v3.vy - v1.vy;
                     const e2z = v3.vz - v1.vz;
-                    
+
                     // Cross product for normal
                     const nx = e1y * e2z - e1z * e2y;
                     const ny = e1z * e2x - e1x * e2z;
                     const nz = e1x * e2y - e1y * e2x;
                     const nlen = Math.sqrt(nx * nx + ny * ny + nz * nz);
-                    
-                    return { 
+
+                    return {
                         face, z, p1, p2, p3,
                         normal: { x: nx / nlen, y: ny / nlen, z: nz / nlen },
                         center: { x: (v1.vx + v2.vx + v3.vx) / 3, y: (v1.vy + v2.vy + v3.vy) / 3, z: (v1.vz + v2.vz + v3.vz) / 3 }
@@ -88,7 +94,7 @@
                     if (f.p1.scale > 0 && f.p2.scale > 0 && f.p3.scale > 0) {
                         // Base chromosome color (purple/blue)
                         const baseColor = { r: 150, g: 100, b: 200 };
-                        
+
                         let finalColor;
                         if (lighting && config) {
                             // Apply realistic lighting
@@ -99,7 +105,7 @@
                                 emissive: false,
                                 alpha: 0.9
                             };
-                            
+
                             const lit = lighting.calculateLighting(f.normal, f.center, camera, material);
                             finalColor = lighting.toRGBA(lit);
                         } else {
@@ -117,14 +123,14 @@
                         ctx.lineTo(f.p3.x, f.p3.y);
                         ctx.closePath();
                         ctx.fill();
-                        
+
                         // Add subtle edge highlight for definition
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
                         ctx.lineWidth = 0.5;
                         ctx.stroke();
                     }
                 });
-                
+
                 // Add texture overlay for chromatin appearance
                 ctx.save();
                 ctx.globalAlpha = 0.1;
@@ -144,14 +150,14 @@
                 this.textureCanvas.width = 64;
                 this.textureCanvas.height = 64;
                 const ctx = this.textureCanvas.getContext('2d');
-                
+
                 // Create fibrous texture
                 for (let i = 0; i < 100; i++) {
                     const x = Math.random() * 64;
                     const y = Math.random() * 64;
                     const len = Math.random() * 10 + 5;
                     const angle = Math.random() * Math.PI * 2;
-                    
+
                     ctx.strokeStyle = `rgba(255, 255, 255, ${Math.random() * 0.3})`;
                     ctx.lineWidth = 1;
                     ctx.beginPath();

@@ -101,13 +101,13 @@
             const mouseY = (e.clientY - rect.top) * scaleY;
 
             const newPiP = this.getPiPAtPosition(mouseX, mouseY, canvas.width, canvas.height);
-            
+
             // Clear activePiP if clicking outside any PiP
             if (!newPiP && this.activePiP) {
                 console.log(`[PiP Controls] Clearing activePiP - clicked outside PiPs`);
                 this.activePiP = null;
             }
-            
+
             this.activePiP = newPiP;
 
             if (this.activePiP && this.controllers[this.activePiP]) {
@@ -119,7 +119,7 @@
                     rotationX: this.cameras[this.activePiP].rotationX.toFixed(3),
                     rotationY: this.cameras[this.activePiP].rotationY.toFixed(3)
                 });
-                
+
                 // Delegate to controller
                 this.controllers[this.activePiP].handleMouseDown(e);
                 return true; // Event was handled
@@ -137,15 +137,15 @@
                 const beforeRotY = cam.rotationY;
                 const beforeX = cam.x;
                 const beforeY = cam.y;
-                
+
                 this.controllers[this.activePiP].handleMouseMove(e);
-                
+
                 // Log changes
                 const deltaRotX = cam.rotationX - beforeRotX;
                 const deltaRotY = cam.rotationY - beforeRotY;
                 const deltaX = cam.x - beforeX;
                 const deltaY = cam.y - beforeY;
-                
+
                 if (Math.abs(deltaRotX) > 0.001 || Math.abs(deltaRotY) > 0.001) {
                     console.log(`[PiP Controls] ${this.activePiP} rotation changed:`, {
                         deltaRotX: deltaRotX.toFixed(4),
@@ -154,7 +154,7 @@
                         newRotY: cam.rotationY.toFixed(3)
                     });
                 }
-                
+
                 if (Math.abs(deltaX) > 0.01 || Math.abs(deltaY) > 0.01) {
                     console.log(`[PiP Controls] ${this.activePiP} position changed:`, {
                         deltaX: deltaX.toFixed(2),
@@ -180,9 +180,9 @@
                     rotationX: this.cameras[this.activePiP].rotationX.toFixed(3),
                     rotationY: this.cameras[this.activePiP].rotationY.toFixed(3)
                 });
-                
+
                 this.controllers[this.activePiP].handleMouseUp();
-                
+
                 // Don't clear activePiP here - it will be cleared on next mousedown
                 // This ensures the controller's isDragging flag is the source of truth
                 console.log(`[PiP Controls] Keeping activePiP set for next interaction`);
@@ -203,13 +203,13 @@
 
             if (pipName && this.controllers[pipName]) {
                 const beforeZ = this.cameras[pipName].z;
-                
+
                 e.preventDefault();
                 this.controllers[pipName].handleWheel(e);
-                
+
                 const afterZ = this.cameras[pipName].z;
                 const deltaZ = afterZ - beforeZ;
-                
+
                 console.log(`[PiP Controls] ${pipName} zoom changed:`, {
                     deltaY: e.deltaY,
                     deltaZ: deltaZ.toFixed(2),
@@ -217,6 +217,7 @@
                     afterZ: afterZ.toFixed(2),
                     zoomLevel: (Math.abs(afterZ) / 200).toFixed(2)
                 });
+                return true; // Event was handled, prevent propagation to main camera
             }
             return false;
         },
@@ -234,9 +235,9 @@
                     rotationX: this.cameras[pipName].rotationX.toFixed(3),
                     rotationY: this.cameras[pipName].rotationY.toFixed(3)
                 });
-                
+
                 this.controllers[pipName].resetCamera();
-                
+
                 console.log(`[PiP Controls] ${pipName} after reset:`, {
                     x: this.cameras[pipName].x.toFixed(2),
                     y: this.cameras[pipName].y.toFixed(2),
@@ -276,22 +277,22 @@
             Object.keys(this.controllers).forEach(pipName => {
                 const ctrl = this.controllers[pipName];
                 const cam = this.cameras[pipName];
-                
+
                 // Store previous rotation for animation detection
                 if (!cam._prevRotationY) cam._prevRotationY = cam.rotationY;
                 const prevRotY = cam._prevRotationY;
-                
+
                 // Update controller (applies auto-rotate, inertia, etc.)
                 ctrl.update();
-                
+
                 // Check if rotation changed (animation occurred)
                 const rotationChanged = Math.abs(cam.rotationY - prevRotY) > 0.0001;
-                
+
                 if (rotationChanged) {
                     // Log animation every 60 frames (~1 second at 60fps)
                     if (!cam._animFrameCount) cam._animFrameCount = 0;
                     cam._animFrameCount++;
-                    
+
                     if (cam._animFrameCount % 60 === 0) {
                         console.log(`[PiP Animation] ${pipName}:`, {
                             rotationY: cam.rotationY.toFixed(3),
@@ -301,7 +302,7 @@
                         });
                     }
                 }
-                
+
                 // Update previous rotation
                 cam._prevRotationY = cam.rotationY;
             });

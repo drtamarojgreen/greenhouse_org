@@ -19,7 +19,7 @@
             // Render High-Fidelity Chromatin Structure instead of abstract mesh
             if (window.GreenhouseGeneticChromosome) {
                 window.GreenhouseGeneticChromosome.drawChromatinStructure(
-                    ctx, x, y, w, h, activeGene, null // No internal frame callback needed here
+                    ctx, x, y, w, h, activeGene, null, cameraState // Pass cameraState
                 );
             } else {
                 // Fallback to simple mesh if Chromosome module missing

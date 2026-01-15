@@ -236,6 +236,18 @@
                 cerebellum: { color: 'rgba(64, 224, 208, 0.6)', vertices: this.getRegionVertices(brainShell, 'cerebellum') },
                 brainstem: { color: 'rgba(255, 215, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'brainstem') }
             };
+
+            // Define topological cut planes for smooth boundary rendering
+            brainShell.regionalPlanes = [
+                { axis: 'z', value: 0.4, label: 'Frontal' },
+                { axis: 'z', value: -0.5, label: 'Occipital' },
+                { axis: 'y', value: 0.4, label: 'Parietal' },
+                { axis: 'y', value: -0.3, label: 'Lower' },
+                { axis: 'y', value: -0.2, label: 'Base' },
+                { axis: 'y', value: 0.1, label: 'Temporal-Top' },
+                { axis: 'x', value: 0.4, label: 'Temporal R' },
+                { axis: 'x', value: -0.4, label: 'Temporal L' }
+            ];
             this.computeRegionsAndBoundaries(brainShell);
         },
 

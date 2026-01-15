@@ -11,7 +11,7 @@
                 // Convert faces to the new object structure to ensure compatibility
                 brainShell.faces = realisticBrain.faces.map(face => ({ indices: face, region: null }));
                 brainShell.regions = realisticBrain.regions;
-                
+
                 // Compute boundaries
                 this.computeRegionsAndBoundaries(brainShell);
                 return;
@@ -159,6 +159,18 @@
                     vertices: this.getRegionVertices(brainShell, 'brainstem')
                 }
             };
+
+            // Define topological cut planes for smooth boundary rendering
+            brainShell.regionalPlanes = [
+                { axis: 'z', value: 0.4, label: 'Frontal' },   // PFC
+                { axis: 'z', value: -0.5, label: 'Occipital' }, // Occipital
+                { axis: 'y', value: 0.4, label: 'Parietal' },  // Parietal
+                { axis: 'y', value: -0.3, label: 'Lower' },    // Cerebellum
+                { axis: 'y', value: -0.2, label: 'Base' },     // Middle split
+                { axis: 'y', value: 0.1, label: 'Temporal-Top' },
+                { axis: 'x', value: 0.4, label: 'Temporal R' },
+                { axis: 'x', value: -0.4, label: 'Temporal L' }
+            ];
 
             // Pre-calculate Regions and Boundaries
             this.computeRegionsAndBoundaries(brainShell);

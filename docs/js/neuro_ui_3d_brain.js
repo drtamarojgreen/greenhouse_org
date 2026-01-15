@@ -154,27 +154,97 @@
                 ctx.fill();
             });
 
-            // Draw Region Boundaries (Thicker, Brighter)
-            if (brainShell.boundaries) {
-                ctx.strokeStyle = 'rgba(200, 255, 255, 0.6)'; // Brighter Cyan
-                ctx.lineWidth = 2; // Thicker
-                ctx.beginPath();
-                brainShell.boundaries.forEach(edge => {
-                    const p1 = projectedVertices[edge.i1];
-                    const p2 = projectedVertices[edge.i2];
-                    if (p1.scale > 0 && p2.scale > 0) {
-                        // Check if visible (simple depth check or just draw all)
-                        // Drawing all might show back-facing boundaries.
-                        // We should check if the adjacent faces are visible.
-                        // But we don't have easy access to faces here without map.
-                        // Simple hack: check if Z is close to front?
-                        // Or just draw them. The brain is transparent-ish.
-                        ctx.moveTo(p1.x, p1.y);
-                        ctx.lineTo(p2.x, p2.y);
+            // NEW: Topological Projection - Smooth Surface Overlay
+            this.drawSurfaceGrid(ctx, projectedVertices, brainShell);
+            this.drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection);
+        },
+
+        // Draws a subtle Lat/Lon grid to give a 'generic' scientific look
+        drawSurfaceGrid(ctx, projectedVertices, brainShell) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+
+            // Assuming vertex ordering matches the latitude/longitude bands from generator
+            const latitudeBands = 40;
+            const longitudeBands = 40;
+
+            for (let lat = 0; lat <= latitudeBands; lat += 5) { // Draw every 5th band
+                for (let lon = 0; lon <= longitudeBands; lon++) {
+                    const i = lat * (longitudeBands + 1) + lon;
+                    const p = projectedVertices[i];
+                    if (p && p.scale > 0) {
+                        if (lon === 0) ctx.moveTo(p.x, p.y);
+                        else ctx.lineTo(p.x, p.y);
+                    }
+                }
+            }
+            ctx.stroke();
+            ctx.restore();
+        },
+
+        // Draws smooth, non-jagged boundaries using plane intersection
+        drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection) {
+            if (!brainShell.regionalPlanes) return;
+
+            ctx.save();
+            ctx.setLineDash([8, 4]); // Longer dash for premium HUD look
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(0, 242, 255, 0.4)'; // Subtle cyan glow
+
+            const radius = 200; // Expected radius for normalization
+
+            brainShell.regionalPlanes.forEach(plane => {
+                const axis = plane.axis;
+                const threshold = plane.value * radius;
+
+                faces.forEach(face => {
+                    const v1 = vertices[face.indices[0]];
+                    const v2 = vertices[face.indices[1]];
+                    const v3 = vertices[face.indices[2]];
+
+                    // Check which vertices are on which side of the plane
+                    const s1 = v1[axis] > threshold;
+                    const s2 = v2[axis] > threshold;
+                    const s3 = v3[axis] > threshold;
+
+                    // If triangle crosses the plane, find the intersection segment
+                    if ((s1 !== s2) || (s1 !== s3) || (s2 !== s3)) {
+                        const points = [];
+
+                        const checkEdge = (va, vb) => {
+                            if ((va[axis] > threshold) !== (vb[axis] > threshold)) {
+                                const t = (threshold - va[axis]) / (vb[axis] - va[axis]);
+                                const inter = {
+                                    x: va.x + t * (vb.x - va.x),
+                                    y: va.y + t * (vb.y - va.y),
+                                    z: va.z + t * (vb.z - va.z)
+                                };
+                                const proj = GreenhouseModels3DMath.project3DTo2D(inter.x, inter.y, inter.z, camera, projection);
+                                if (proj.scale > 0 && proj.depth < 0.8) { // Only draw front-facing boundaries
+                                    points.push(proj);
+                                }
+                            }
+                        };
+
+                        checkEdge(v1, v2);
+                        checkEdge(v2, v3);
+                        checkEdge(v3, v1);
+
+                        if (points.length === 2) {
+                            ctx.beginPath();
+                            ctx.moveTo(points[0].x, points[0].y);
+                            ctx.lineTo(points[1].x, points[1].y);
+                            ctx.globalAlpha = 0.6 * GreenhouseModels3DMath.applyDepthFog(1, points[0].depth, 0.3, 0.8);
+                            ctx.stroke();
+                        }
                     }
                 });
-                ctx.stroke();
-            }
+            });
+            ctx.restore();
         }
     };
 

@@ -102,14 +102,77 @@
                 ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.fill();
             });
 
-            if (brainShell.boundaries) {
-                ctx.strokeStyle = 'rgba(200, 255, 255, 0.4)'; ctx.lineWidth = 1; ctx.beginPath();
-                brainShell.boundaries.forEach(e => {
-                    const p1 = projectedVertices[e.i1], p2 = projectedVertices[e.i2];
-                    if (p1.scale > 0 && p2.scale > 0) { ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); }
-                });
-                ctx.stroke();
+            // NEW: Topological Projection - Smooth Surface Overlay
+            this.drawSurfaceGrid(ctx, projectedVertices, brainShell);
+            this.drawTopologicalBoundaries(ctx, projectedVertices, brainShell.vertices, brainShell.faces, brainShell, camera, projection);
+        },
+
+        drawSurfaceGrid(ctx, projectedVertices, brainShell) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            const bands = 40;
+            for (let lat = 0; lat <= bands; lat += 5) {
+                for (let lon = 0; lon <= bands; lon++) {
+                    const i = lat * (bands + 1) + lon;
+                    const p = projectedVertices[i];
+                    if (p && p.scale > 0) {
+                        if (lon === 0) ctx.moveTo(p.x, p.y);
+                        else ctx.lineTo(p.x, p.y);
+                    }
+                }
             }
+            ctx.stroke();
+            ctx.restore();
+        },
+
+        drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection) {
+            if (!brainShell.regionalPlanes) return;
+            ctx.save();
+            ctx.setLineDash([8, 4]);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(0, 242, 255, 0.4)';
+            const radius = 200;
+
+            brainShell.regionalPlanes.forEach(plane => {
+                const axis = plane.axis;
+                const threshold = plane.value * radius;
+                faces.forEach(face => {
+                    const idx = face.indices || face;
+                    const v1 = vertices[idx[0]], v2 = vertices[idx[1]], v3 = vertices[idx[2]];
+                    const s1 = v1[axis] > threshold, s2 = v2[axis] > threshold, s3 = v3[axis] > threshold;
+
+                    if ((s1 !== s2) || (s1 !== s3) || (s2 !== s3)) {
+                        const points = [];
+                        const checkEdge = (va, vb) => {
+                            if ((va[axis] > threshold) !== (vb[axis] > threshold)) {
+                                const t = (threshold - va[axis]) / (vb[axis] - va[axis]);
+                                const inter = {
+                                    x: va.x + t * (vb.x - va.x),
+                                    y: va.y + t * (vb.y - va.y),
+                                    z: va.z + t * (vb.z - va.z)
+                                };
+                                const proj = GreenhouseModels3DMath.project3DTo2D(inter.x, inter.y, inter.z, camera, projection);
+                                if (proj.scale > 0 && proj.depth < 0.8) points.push(proj);
+                            }
+                        };
+                        checkEdge(v1, v2); checkEdge(v2, v3); checkEdge(v3, v1);
+                        if (points.length === 2) {
+                            ctx.beginPath();
+                            ctx.moveTo(points[0].x, points[0].y);
+                            ctx.lineTo(points[1].x, points[1].y);
+                            // Sharper depth clipping to keep lines internal
+                            const opacity = GreenhouseModels3DMath.applyDepthFog(1, points[0].depth, 0.2, 0.7);
+                            ctx.globalAlpha = 0.5 * opacity;
+                            ctx.stroke();
+                        }
+                    }
+                });
+            });
+            ctx.restore();
         },
 
 
