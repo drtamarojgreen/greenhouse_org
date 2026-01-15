@@ -41,6 +41,14 @@ The suite is modular, allowing for easy extension and customization of camera mo
     - `run_job_wireframe_flyover`: Flyover camera move with wireframe style.
     - `run_all_jobs`: Sequentially runs all defined jobs.
 
+### Diagnostics and Optimization (`diagnostics/`)
+
+A dedicated directory for system checks, configuration verification, and scene optimization tools:
+- **System Checks**: `check_ffmpeg.py`, `check_opengl.py`, `diag_gpu_info.py`.
+- **Diagnostics**: `diagnose_scene.py`, `diagnose_material.py`, `diagnose_roi.py`.
+- **Optimizations**: `optimize_mesh.py`, `optimize_textures.py`, `optimize_animation.py`, `auto_decimate.py`.
+- **Feature Tests**: All `test_*.py` files for verifying specific animation components.
+
 ### Shell Scripts
 
 -   `run_blender_job.sh`
