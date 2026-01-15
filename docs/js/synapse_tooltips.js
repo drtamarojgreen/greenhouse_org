@@ -6,9 +6,21 @@
     const GreenhouseSynapseTooltips = {
         update(tooltipElem, hoveredId, mouseX, mouseY, config, currentLanguage) {
             if (hoveredId) {
-                const label = (config.translations[hoveredId] && config.translations[hoveredId][currentLanguage])
-                    || config.translations[hoveredId]
-                    || hoveredId;
+                const lang = currentLanguage || 'en';
+                const chem = window.GreenhouseSynapseChemistry;
+
+                let label = '';
+
+                // Intelligent label resolution
+                if (chem.neurotransmitters[hoveredId]) {
+                    label = chem.neurotransmitters[hoveredId].name[lang];
+                } else if (chem.receptors[hoveredId]) {
+                    label = chem.receptors[hoveredId].name[lang];
+                } else if (config.translations[hoveredId]) {
+                    label = config.translations[hoveredId][lang] || config.translations[hoveredId];
+                } else {
+                    label = hoveredId;
+                }
 
                 tooltipElem.style.display = 'block';
                 tooltipElem.innerHTML = label;
@@ -38,8 +50,12 @@
                 ctx.fillText(text.toUpperCase(), x, y);
             };
 
-            drawLabel(w * 0.5, h * 0.1, config.translations.preSynapticTerminal[lang], 'preSynapticTerminal');
-            drawLabel(w * 0.5, h * 0.82, config.translations.postSynapticTerminal[lang], 'postSynapticTerminal');
+            if (config.translations.preSynapticTerminal) {
+                drawLabel(w * 0.5, h * 0.1, config.translations.preSynapticTerminal[lang], 'preSynapticTerminal');
+            }
+            if (config.translations.postSynapticTerminal) {
+                drawLabel(w * 0.5, h * 0.82, config.translations.postSynapticTerminal[lang], 'postSynapticTerminal');
+            }
 
             ctx.restore();
         }

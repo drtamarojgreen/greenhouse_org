@@ -31,6 +31,7 @@
     <div id="synapse-app-container"></div>
 
     <!-- Dependencies -->
+    <script src="js/synapse_chemistry.js"></script>
     <script src="js/synapse_neurotransmitters.js"></script>
     <script src="js/synapse_sidebar.js"></script>
     <script src="js/synapse_tooltips.js"></script>
@@ -47,7 +48,7 @@
             } else {
                 console.error('Synapse Init Error: GreenhouseSynapseApp not found on window object.');
                 const container = document.querySelector('#synapse-app-container');
-                if(container) {
+                if (container) {
                     container.innerHTML = '<p style="color:red;">Error: Could not load Synapse application.</p>';
                 }
             }

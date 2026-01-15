@@ -76,6 +76,7 @@
             }
 
             // Load the modules required for the synapse application
+            await GreenhouseUtils.loadScript('synapse_chemistry.js', baseUrl);
             await GreenhouseUtils.loadScript('synapse_neurotransmitters.js', baseUrl);
             await GreenhouseUtils.loadScript('synapse_sidebar.js', baseUrl);
             await GreenhouseUtils.loadScript('synapse_tooltips.js', baseUrl);

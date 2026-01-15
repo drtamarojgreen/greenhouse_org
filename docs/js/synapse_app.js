@@ -1,5 +1,5 @@
 // docs/js/synapse_app.js
-// Optimized & Refactored Synapse Visualization Logic
+// Optimized & Refactored Synapse Visualization Logic - Chemistry Integrated
 
 (function () {
     'use strict';
@@ -10,6 +10,7 @@
         backgroundColor: '#050705',
         accentCyan: '#00F2FF',
         accentGold: '#FFD700',
+        activeNT: 'serotonin',
         font: "'Quicksand', 'Segoe UI', sans-serif",
         translations: {
             preSynapticTerminal: { en: 'Pre-Synaptic Terminal', es: 'Terminal Presináptica' },
@@ -25,6 +26,12 @@
                 { id: 'vesicle', x: 0.45, y: 0.15, r: 12, offset: 0 },
                 { id: 'vesicle', x: 0.55, y: 0.18, r: 14, offset: 2 },
                 { id: 'vesicle', x: 0.5, y: 0.22, r: 10, offset: 4 }
+            ],
+            receptors: [
+                { x: 0.38, type: 'ionotropic_receptor', state: 'closed' },
+                { x: 0.46, type: 'ionotropic_receptor', state: 'closed' },
+                { x: 0.54, type: 'gpcr', state: 'idle' },
+                { x: 0.62, type: 'ionotropic_receptor', state: 'closed' }
             ]
         }
     };
@@ -80,16 +87,25 @@
             canvasWrapper.appendChild(this.tooltip);
 
             // Initialize Sidebar Module
-            if (window.GreenhouseSynapseSidebar) {
-                window.GreenhouseSynapseSidebar.render(sidebar, config, this.currentLanguage, (id) => {
-                    this.sidebarHoveredId = id;
-                });
-            }
+            this.renderSidebar();
 
             this.resize();
             window.addEventListener('resize', () => this.resize());
             this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
             this.canvas.addEventListener('mousedown', () => this.handleMouseDown());
+        },
+
+        renderSidebar() {
+            const sidebar = document.getElementById('synapse-sidebar');
+            if (window.GreenhouseSynapseSidebar) {
+                window.GreenhouseSynapseSidebar.render(sidebar, config, this.currentLanguage, {
+                    onHover: (id) => this.sidebarHoveredId = id,
+                    onNTChange: (ntId) => {
+                        config.activeNT = ntId;
+                        this.renderSidebar(); // Re-render to update tech description
+                    }
+                });
+            }
         },
 
         handleMouseMove(e) {
@@ -103,7 +119,7 @@
             const h = this.canvas.height / (window.devicePixelRatio || 1);
             if (this.mouse.y < h * 0.45 && Math.abs(this.mouse.x - w * 0.5) < w * 0.15) {
                 if (window.GreenhouseSynapseParticles) {
-                    window.GreenhouseSynapseParticles.create(w, h, 40, true);
+                    window.GreenhouseSynapseParticles.create(w, h, 40, config, true);
                 }
             }
         },
@@ -113,13 +129,9 @@
             const dpr = window.devicePixelRatio || 1;
             const width = this.canvas.clientWidth;
             const height = this.canvas.clientHeight;
-
-            // Set internal resolution
             this.canvas.width = width * dpr;
             this.canvas.height = height * dpr;
-
             this.ctx = this.canvas.getContext('2d');
-            // FIX: Use setTransform to avoid accumulation and fix the "tiny corner" scaling issue
             this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         },
 
@@ -142,17 +154,50 @@
 
             // Particle System Module
             if (window.GreenhouseSynapseParticles) {
-                if (this.frame % 15 === 0) window.GreenhouseSynapseParticles.create(w, h, 1);
-                window.GreenhouseSynapseParticles.updateAndDraw(ctx, w, h, config.accentCyan);
+                if (this.frame % 15 === 0) window.GreenhouseSynapseParticles.create(w, h, 1, config);
+                this.handleReceptorInteractions(w, h);
+                window.GreenhouseSynapseParticles.updateAndDraw(ctx, w, h);
             }
 
             this.checkHover(w, h);
 
-            // Tooltip & Canvas Labels Module
             if (window.GreenhouseSynapseTooltips) {
                 window.GreenhouseSynapseTooltips.update(this.tooltip, this.hoveredId || this.sidebarHoveredId, this.mouse.x, this.mouse.y, config, this.currentLanguage);
                 window.GreenhouseSynapseTooltips.drawLabels(ctx, w, h, config, this.currentLanguage, this.hoveredId, this.sidebarHoveredId);
             }
+        },
+
+        handleReceptorInteractions(w, h) {
+            const particles = window.GreenhouseSynapseParticles.particles;
+            const chem = window.GreenhouseSynapseChemistry;
+            const surfaceY = h * 0.68;
+
+            config.elements.receptors.forEach(receptor => {
+                const rx = w * receptor.x;
+                const ry = surfaceY;
+
+                particles.forEach(p => {
+                    const dx = p.x - rx;
+                    const dy = p.y - ry;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 20 && p.life > 0.1) {
+                        const receptorType = chem.receptors[receptor.type];
+                        if (receptorType.binds.includes(p.chemistry.id)) {
+                            // Binding effect
+                            p.life = 0; // Consume NT
+                            if (receptor.type === 'ionotropic_receptor' && p.chemistry.ionEffect !== 'none') {
+                                window.GreenhouseSynapseParticles.createIon(rx, ry + 10, p.chemistry.ionEffect);
+                                receptor.state = 'open';
+                                setTimeout(() => receptor.state = 'closed', 200);
+                            } else if (receptor.type === 'gpcr') {
+                                receptor.state = 'active';
+                                setTimeout(() => receptor.state = 'idle', 500);
+                            }
+                        }
+                    }
+                });
+            });
         },
 
         checkHover(w, h) {
@@ -160,55 +205,34 @@
             const mx = this.mouse.x;
             const my = this.mouse.y;
 
-            if (my < h * 0.44 && Math.abs(mx - w * 0.5) < w * 0.16) {
-                this.hoveredId = 'preSynapticTerminal';
-            } else if (my > h * 0.6 && Math.abs(mx - w * 0.5) < w * 0.28) {
-                this.hoveredId = 'postSynapticTerminal';
-            }
+            if (my < h * 0.44 && Math.abs(mx - w * 0.5) < w * 0.16) this.hoveredId = 'preSynapticTerminal';
+            else if (my > h * 0.6 && Math.abs(mx - w * 0.5) < w * 0.28) this.hoveredId = 'postSynapticTerminal';
 
             config.elements.vesicles.forEach(v => {
-                const vx = w * v.x;
-                const vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
-                const dx = mx - vx;
-                const dy = my - vy;
-                if (dx * dx + dy * dy < v.r * v.r * 2) {
-                    this.hoveredId = 'vesicle';
-                }
+                const vx = w * v.x, vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
+                if ((mx - vx) ** 2 + (my - vy) ** 2 < v.r ** 2 * 2) this.hoveredId = 'vesicle';
             });
         },
 
         drawStructure(ctx, w, h) {
-            const centerX = w * 0.5;
-            const bulbY = h * 0.3;
-            const bW = w * 0.24;
-            const surfaceY = h * 0.68;
+            const centerX = w * 0.5, bulbY = h * 0.3, bW = w * 0.24, surfaceY = h * 0.68;
             const activeId = this.hoveredId || this.sidebarHoveredId;
 
-            // Pre-Synaptic
+            // Pre & Post Terminals
             ctx.save();
-            const preGrad = ctx.createLinearGradient(centerX - bW / 2, 0, centerX + bW / 2, h * 0.4);
-            preGrad.addColorStop(0, '#505850');
-            preGrad.addColorStop(1, '#1a1c1e');
-            ctx.fillStyle = activeId === 'preSynapticTerminal' ? '#357438' : preGrad;
-
+            const preColor = activeId === 'preSynapticTerminal' ? '#357438' : '#303830';
+            ctx.fillStyle = preColor;
             ctx.beginPath();
             ctx.moveTo(centerX - w * 0.06, 0);
             ctx.bezierCurveTo(centerX - w * 0.06, h * 0.2, centerX - bW / 2, h * 0.2, centerX - bW / 2, bulbY);
             ctx.bezierCurveTo(centerX - bW / 2, h * 0.45, centerX + bW / 2, h * 0.45, centerX + bW / 2, bulbY);
             ctx.bezierCurveTo(centerX + bW / 2, h * 0.2, centerX + w * 0.06, h * 0.2, centerX + w * 0.06, 0);
             ctx.fill();
-            ctx.restore();
 
-            // Post-Synaptic
-            ctx.save();
-            const postGrad = ctx.createLinearGradient(0, surfaceY, 0, h);
-            postGrad.addColorStop(0, '#2c3e50');
-            postGrad.addColorStop(1, '#050705');
-            ctx.fillStyle = activeId === 'postSynapticTerminal' ? '#732751' : postGrad;
-
+            const postColor = activeId === 'postSynapticTerminal' ? '#732751' : '#1a1c1e';
+            ctx.fillStyle = postColor;
             ctx.beginPath();
-            ctx.moveTo(0, h);
-            ctx.lineTo(0, h * 0.88);
+            ctx.moveTo(0, h); ctx.lineTo(0, h * 0.88);
             ctx.bezierCurveTo(w * 0.2, h * 0.88, centerX - w * 0.2, surfaceY + h * 0.12, centerX - w * 0.2, surfaceY);
             ctx.bezierCurveTo(centerX - w * 0.2, surfaceY - h * 0.06, centerX + w * 0.2, surfaceY - h * 0.06, centerX + w * 0.2, surfaceY);
             ctx.bezierCurveTo(centerX + w * 0.2, surfaceY + h * 0.12, w * 0.8, h * 0.88, w, h * 0.88);
@@ -216,12 +240,27 @@
             ctx.fill();
             ctx.restore();
 
-            // Vesicles
+            // Vesicles Use active NT color
+            const ntChem = window.GreenhouseSynapseChemistry.neurotransmitters[config.activeNT];
             config.elements.vesicles.forEach(v => {
-                const vx = w * v.x;
-                const vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
-                ctx.fillStyle = activeId === 'vesicle' ? '#FFFFFF' : config.accentGold;
+                const vx = w * v.x, vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
+                ctx.fillStyle = activeId === 'vesicle' ? '#fff' : ntChem.color;
                 ctx.beginPath(); ctx.arc(vx, vy, v.r, 0, Math.PI * 2); ctx.fill();
+            });
+
+            // Receptors
+            config.elements.receptors.forEach(r => {
+                const rx = w * r.x, ry = surfaceY - 5;
+                if (r.type === 'ionotropic_receptor') {
+                    ctx.fillStyle = r.state === 'open' ? '#fff' : '#4DB6AC';
+                    ctx.fillRect(rx - 6, ry, 4, 12); ctx.fillRect(rx + 2, ry, 4, 12);
+                } else {
+                    ctx.strokeStyle = r.state === 'active' ? '#fff' : '#D32F2F';
+                    ctx.lineWidth = 3; ctx.beginPath();
+                    ctx.moveTo(rx - 8, ry + 10);
+                    for (let i = 0; i < 5; i++) ctx.lineTo(rx - 8 + i * 4, ry + (i % 2 === 0 ? -6 : 6));
+                    ctx.stroke();
+                }
             });
         }
     };
