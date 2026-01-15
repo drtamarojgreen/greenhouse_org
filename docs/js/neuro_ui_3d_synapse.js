@@ -252,21 +252,9 @@
                     const v2 = mesh.vertices[face[1]];
                     const v3 = mesh.vertices[face[2]];
 
-                    // Transform & Project
+                    // Transform & Project using standard world coordinates
                     const transform = (v) => {
-                        let vx = v.x, vy = v.y + offsetY, vz = v.z;
-
-                        // Rotate Y
-                        let tx = vx * Math.cos(synapseCamera.rotationY) - vz * Math.sin(synapseCamera.rotationY);
-                        let tz = vx * Math.sin(synapseCamera.rotationY) + vz * Math.cos(synapseCamera.rotationY);
-                        vx = tx; vz = tz;
-
-                        // Rotate X
-                        let ty = vy * Math.cos(synapseCamera.rotationX) - vz * Math.sin(synapseCamera.rotationX);
-                        tz = vy * Math.sin(synapseCamera.rotationX) + vz * Math.cos(synapseCamera.rotationX);
-                        vy = ty; vz = tz;
-
-                        return GreenhouseModels3DMath.project3DTo2D(vx, vy, vz, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                        return GreenhouseModels3DMath.project3DTo2D(v.x, v.y + offsetY, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                     };
 
                     const p1 = transform(v1);
@@ -276,52 +264,17 @@
                     if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
 
-                        // Calculate Normal (World Space, rotated)
-                        // We need rotated vertices for normal calc
-                        const rotate = (v) => {
-                            let vx = v.x, vy = v.y + offsetY, vz = v.z;
+                        // Calculate Normal in World Space for consistent lighting
+                        const worldV1 = { x: v1.x, y: v1.y + offsetY, z: v1.z };
+                        const worldV2 = { x: v2.x, y: v2.y + offsetY, z: v2.z };
+                        const worldV3 = { x: v3.x, y: v3.y + offsetY, z: v3.z };
+                        const normal = GreenhouseModels3DMath.calculateFaceNormal(worldV1, worldV2, worldV3);
 
-                            // Rotate Y
-                            let tx = vx * Math.cos(synapseCamera.rotationY) - vz * Math.sin(synapseCamera.rotationY);
-                            let tz = vx * Math.sin(synapseCamera.rotationY) + vz * Math.cos(synapseCamera.rotationY);
-                            vx = tx; vz = tz;
-
-                            // Rotate X
-                            let ty = vy * Math.cos(synapseCamera.rotationX) - vz * Math.sin(synapseCamera.rotationX);
-                            tz = vy * Math.sin(synapseCamera.rotationX) + vz * Math.cos(synapseCamera.rotationX);
-                            vy = ty; vz = tz;
-
-                            return { x: vx, y: vy, z: vz };
-                        };
-                        const rv1 = rotate(v1);
-                        const rv2 = rotate(v2);
-                        const rv3 = rotate(v3);
-
-                        const ux = rv2.x - rv1.x;
-                        const uy = rv2.y - rv1.y;
-                        const uz = rv2.z - rv1.z;
-                        const vx = rv3.x - rv1.x;
-                        const vy = rv3.y - rv1.y;
-                        const vz = rv3.z - rv1.z;
-
-                        let nx = uy * vz - uz * vy;
-                        let ny = uz * vx - ux * vz;
-                        let nz = ux * vy - uy * vx;
-                        const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
-
-                        if (nLen > 0) {
-                            nx /= nLen; ny /= nLen; nz /= nLen;
-
-                            // Backface Culling
-                            // View vector is roughly 0,0,1 (towards camera)
-                            // If Normal.Z > 0, it faces camera
-                            if (nz > 0) {
-                                // Phong Shading
-                                const diffuse = Math.max(0, nx * lightDir.x + ny * lightDir.y + nz * lightDir.z);
-                                const specular = Math.pow(diffuse, 20); // Shininess
-
-                                projectedFaces.push({ p1, p2, p3, depth, diffuse, specular });
-                            }
+                        // Backface culling in view space (approximate)
+                        if (p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y) + p1.x * (p2.y - p3.y) < 0) {
+                            const diffuse = Math.max(0, normal.x * lightDir.x + normal.y * lightDir.y + normal.z * lightDir.z);
+                            const specular = Math.pow(diffuse, 20);
+                            projectedFaces.push({ p1, p2, p3, depth, diffuse, specular });
                         }
                     }
                 });
@@ -361,10 +314,10 @@
             // Pre-synaptic matches signal weight (Gold/Silver)
             const connectionColor = connection.weight > 0 ? '#FFD700' : '#E0E0E0';
             // Post-synaptic is consistent Silver/Grey
-            const postColor = '#B0C4DE';
+            const postColor = '#C0C0C0';
 
-            // Draw Pre-synaptic (Top) - Offset upwards
-            drawMesh(synapseMeshes.pre, -100, connectionColor);
+            // Draw Pre-synaptic (Top) - Offset upwards to +/- 150 gap
+            drawMesh(synapseMeshes.pre, -150, connectionColor);
 
             // Draw Synaptic Cleft (Blue rectangular box between synapses)
             this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
@@ -375,7 +328,7 @@
                 const pEnd = GreenhouseModels3DMath.project3DTo2D(0, endY, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
 
                 if (pStart.scale > 0 && pEnd.scale > 0) {
-                    const radius = 45 * ((pStart.scale + pEnd.scale) / 2);
+                    const radius = 60 * ((pStart.scale + pEnd.scale) / 2); // Match neckRadius
 
                     // Create Gradient for 3D Pipe Effect
                     const grad = ctx.createLinearGradient(pStart.x + x - radius, pStart.y + y, pStart.x + x + radius, pStart.y + y);
@@ -393,7 +346,7 @@
 
                     ctx.strokeStyle = grad;
                     ctx.lineWidth = radius * 2;
-                    ctx.lineCap = 'butt';
+                    ctx.lineCap = 'round'; // Seamless connection
                     ctx.beginPath();
                     ctx.moveTo(pStart.x + x, pStart.y + y);
                     ctx.lineTo(pEnd.x + x, pEnd.y + y);
@@ -409,14 +362,14 @@
                 }
             };
 
-            // Draw Axon (Up) - Matches Pre Terminal Color, starts at neck
-            drawShaft(-190, -1000, connectionColor);
+            // Draw Axon (Up) - Matches Pre Terminal Color, starts at neck (-150 offset - 90 neck = -240)
+            drawShaft(-240, -1000, connectionColor);
 
-            // Draw Post-synaptic (Bottom) - Offset downwards
-            drawMesh(synapseMeshes.post, 100, postColor);
+            // Draw Post-synaptic (Bottom) - Offset upwards to +/- 150 gap
+            drawMesh(synapseMeshes.post, 150, postColor);
 
-            // Draw Dendrite (Down) - Matches Post Terminal Color, starts at neck
-            drawShaft(190, 1000, postColor);
+            // Draw Dendrite (Down) - Matches Post Terminal Color, starts at neck (150 offset + 90 neck = 240)
+            drawShaft(240, 1000, postColor);
 
             // Initialize Synapse Details (Vesicles, Mitochondria) if not present
             if (!connection.synapseDetails) {
@@ -437,9 +390,9 @@
 
                 // Generate Mitochondria
                 // Pre-synaptic
-                connection.synapseDetails.mitochondria.push({ x: -20, y: -160, z: 10, rot: Math.random() });
+                connection.synapseDetails.mitochondria.push({ x: -20, y: -200, z: 10, rot: Math.random() });
                 // Post-synaptic
-                connection.synapseDetails.mitochondria.push({ x: 20, y: 160, z: -10, rot: Math.random() });
+                connection.synapseDetails.mitochondria.push({ x: 20, y: 200, z: -10, rot: Math.random() });
             }
 
             // Draw Internal Structures (Projected)
@@ -481,13 +434,13 @@
             ctx.fillStyle = '#FFD700'; // Gold for Pre
 
             // Project label positions
-            const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -220, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -280, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (preLabelPos.scale > 0) {
                 ctx.fillText("Pre-Synaptic Terminal", preLabelPos.x, preLabelPos.y);
             }
 
             ctx.fillStyle = '#87CEEB'; // SkyBlue for Post
-            const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 220, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 280, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (postLabelPos.scale > 0) {
                 ctx.fillText("Post-Synaptic Terminal", postLabelPos.x, postLabelPos.y);
             }
@@ -502,21 +455,21 @@
             // Draw Vesicles (Phase 7: Vesicle Fusion)
             connection.synapseDetails.vesicles.forEach(v => {
                 // Animate Vesicle moving towards cleft
-                v.y += 0.4;
-                if (v.y > -100) {
+                v.y += 0.5;
+                if (v.y > -150) {
                     // Fusion Event!
                     // Reset vesicle to top terminal interior
-                    v.y = -190 - Math.random() * 30;
+                    v.y = -240 - Math.random() * 30;
                     v.x = (Math.random() - 0.5) * 50;
                     v.z = (Math.random() - 0.5) * 50;
 
                     // Release Neurotransmitters (Spawn Particles at pre-face)
-                    for (let k = 0; k < 3; k++) {
+                    for (let k = 0; k < 5; k++) {
                         connection.synapseDetails.particles.push({
                             x: v.x + (Math.random() - 0.5) * 5,
-                            y: -100,
+                            y: -150,
                             z: v.z + (Math.random() - 0.5) * 5,
-                            life: 1.0,
+                            life: 1.2,
                             hasBound: false
                         });
                     }
@@ -534,9 +487,9 @@
             if (connection.synapseDetails.particles.length < 5 && Math.random() < 0.05) {
                 connection.synapseDetails.particles.push({
                     x: (Math.random() - 0.5) * 40,
-                    y: -100,
+                    y: -150,
                     z: (Math.random() - 0.5) * 40,
-                    life: 1.0,
+                    life: 1.2,
                     hasBound: false
                 });
             }
@@ -545,14 +498,13 @@
                 // Brownian Motion + Viscous Drift
                 p.x += (Math.random() - 0.5) * 1.5; // Random jitter X
                 p.z += (Math.random() - 0.5) * 1.5; // Random jitter Z
-                p.y += 0.5 + (Math.random() - 0.5) * 0.2; // Drift down with variation
-
-                p.life -= 0.005; // Slower fade for longer life
+                p.y += 1.8 + (Math.random() - 0.5) * 0.5; // Faster drift to reach post-synaptic terminal
+                p.life -= 0.003; // Slower fade for longer transit visibility
 
                 const proj = GreenhouseModels3DMath.project3DTo2D(p.x, p.y, p.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                 if (proj.scale > 0 && p.life > 0) {
                     // Phase 7: Receptor Binding
-                    if (p.y > 100 && !p.hasBound) {
+                    if (p.y > 150 && !p.hasBound) {
                         p.hasBound = true;
                         p.life = 0.5; // Quick flash fade
 
@@ -590,7 +542,7 @@
         drawSynapticCleft(ctx, x, y, w, h, synapseCamera) {
             // Cleft dimensions
             const cleftWidth = 160;
-            const cleftHeight = 200; // Matches terminal gap (-100 to 100)
+            const cleftHeight = 300; // Matches terminal gap (-150 to 150)
             const cleftDepth = 160;
             const cleftY = 0;
 
@@ -626,23 +578,11 @@
                 [[0, 4, 7], [0, 7, 3]]
             ];
 
-            // Transform and project vertices
+            // Transform and project vertices using standard world space
             const projectedVertices = vertices.map(v => {
-                let vx = v.x, vy = v.y, vz = v.z;
-
-                // Rotate Y
-                let tx = vx * Math.cos(synapseCamera.rotationY) - vz * Math.sin(synapseCamera.rotationY);
-                let tz = vx * Math.sin(synapseCamera.rotationY) + vz * Math.cos(synapseCamera.rotationY);
-                vx = tx; vz = tz;
-
-                // Rotate X
-                let ty = vy * Math.cos(synapseCamera.rotationX) - vz * Math.sin(synapseCamera.rotationX);
-                tz = vy * Math.sin(synapseCamera.rotationX) + vz * Math.cos(synapseCamera.rotationX);
-                vy = ty; vz = tz;
-
                 return {
-                    projected: GreenhouseModels3DMath.project3DTo2D(vx, vy, vz, synapseCamera, { width: w, height: h, near: 10, far: 1000 }),
-                    world: { x: vx, y: vy, z: vz }
+                    projected: GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 }),
+                    world: { x: v.x, y: v.y, z: v.z }
                 };
             });
 
