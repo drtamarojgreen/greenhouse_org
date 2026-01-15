@@ -10,8 +10,7 @@
             target: '#models-toc-container'
         },
         state: {
-            isInitialized: false,
-            activePanel: null
+            isInitialized: false
         },
         // The resolved DOM element where the TOC will be rendered.
         container: null,
@@ -31,6 +30,9 @@
                 return;
             }
 
+            // Automatic Class Attachment: Ensure the styles in models_toc.css are applied regardless of the ID.
+            container.classList.add('models-toc-container');
+
             // Clear container for a clean render and store the reference.
             container.innerHTML = '';
             this.container = container;
@@ -44,6 +46,7 @@
             try {
                 // Adjust the base URL based on the main app's state if available
                 const baseUrl = window.GreenhouseModelsUX ? window.GreenhouseModelsUX.state.baseUrl : './';
+
                 const response = await fetch(`${baseUrl}${this.config.xmlPath}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -64,17 +67,14 @@
 
         renderComponent(xmlDoc) {
             const container = this.container;
-            if (!container) {
-                // This check is redundant if init succeeded, but good for safety.
-                console.error(`AGENT_DEBUG: TOC container is not available.`);
-                return;
-            }
+            if (!container) return;
 
             // Render Intro
             const intro = xmlDoc.querySelector('intro');
             if (intro) {
                 const introDiv = document.createElement('div');
                 introDiv.className = 'models-toc-intro';
+
                 Array.from(intro.getElementsByTagName('paragraph')).forEach(p => {
                     const pElem = document.createElement('p');
                     pElem.textContent = p.textContent;
@@ -83,92 +83,66 @@
                 container.appendChild(introDiv);
             }
 
-            // Render Model Buttons and Panels
+            // Create Grid for Models
+            const grid = document.createElement('div');
+            grid.className = 'models-toc-grid';
+            container.appendChild(grid);
+
             const models = xmlDoc.querySelectorAll('model');
             models.forEach(model => {
                 const modelId = model.getAttribute('id');
                 const title = model.querySelector('title').textContent;
+                const url = model.querySelector('url') ? model.querySelector('url').textContent : `/${modelId}`;
 
-                // Create Button
-                const button = document.createElement('button');
-                button.className = 'model-toc-button';
-                button.textContent = title;
-                button.setAttribute('aria-expanded', 'false');
-                button.setAttribute('aria-controls', `panel-${modelId}`);
-                button.dataset.modelId = modelId;
+                // Create Card
+                const card = document.createElement('div');
+                card.className = 'model-toc-card';
 
-                // Create Panel
-                const panel = document.createElement('div');
-                panel.id = `panel-${modelId}`;
-                panel.className = 'model-toc-panel';
-                panel.setAttribute('role', 'region');
+                // Title Section
+                const titleElem = document.createElement('h3');
+                titleElem.textContent = title;
+                card.appendChild(titleElem);
+
+                // Description Container
+                const descContainer = document.createElement('div');
+                descContainer.className = 'description-container';
+                descContainer.style.flex = '1';
 
                 const description = model.querySelector('description');
-                Array.from(description.getElementsByTagName('paragraph')).forEach(p => {
+                const firstPara = description.getElementsByTagName('paragraph')[0];
+                if (firstPara) {
                     const pElem = document.createElement('p');
-                    pElem.textContent = p.textContent;
-                    panel.appendChild(pElem);
-                });
+                    pElem.textContent = firstPara.textContent;
+                    descContainer.appendChild(pElem);
+                }
+                card.appendChild(descContainer);
 
-                container.appendChild(button);
-                container.appendChild(panel);
+                // Actions Section (Buttons)
+                const actionGroup = document.createElement('div');
+                actionGroup.className = 'button-group';
+
+                // Launch Button
+                const launchLink = document.createElement('a');
+
+                // Smart Link Logic: Use .html for local files, but clean URLs for production
+                const isProduction = window.location.hostname.includes('greenhousementalhealth.org');
+                launchLink.href = isProduction ? url : url + '.html';
+
+                launchLink.className = 'greenhouse-btn greenhouse-btn-primary';
+                launchLink.textContent = 'Launch Simulation';
+
+                actionGroup.appendChild(launchLink);
+                card.appendChild(actionGroup);
+
+                grid.appendChild(card);
             });
-            console.log('AGENT_DEBUG: TOC component HTML has been rendered.');
-
+            console.log('AGENT_DEBUG: TOC rendered with card layout and class-based fix.');
             this.addEventListeners();
         },
 
         addEventListeners() {
-            const container = this.container;
-            if (!container) return; // Safety check
-
-            container.addEventListener('click', (event) => {
-                if (event.target.classList.contains('model-toc-button')) {
-                    this.togglePanel(event.target);
-                }
-            });
-            console.log('AGENT_DEBUG: TOC event listeners have been added.');
-        },
-
-        togglePanel(button) {
-            const modelId = button.dataset.modelId;
-            const panel = document.getElementById(`panel-${modelId}`);
-            const isExpanded = button.getAttribute('aria-expanded') === 'true';
-
-            // Close any currently active panel
-            if (this.state.activePanel && this.state.activePanel !== panel) {
-                const activeButton = document.querySelector(`[data-model-id="${this.state.activePanel.id.replace('panel-', '')}"]`);
-                this.closePanel(activeButton, this.state.activePanel);
-            }
-
-            if (isExpanded) {
-                this.closePanel(button, panel);
-                this.state.activePanel = null;
-            } else {
-                this.openPanel(button, panel);
-                this.state.activePanel = panel;
-            }
-        },
-
-        openPanel(button, panel) {
-            button.classList.add('active');
-            button.setAttribute('aria-expanded', 'true');
-            panel.classList.add('open');
-            // Set max-height for animation after a short delay to allow for CSS transition
-            requestAnimationFrame(() => {
-                panel.style.maxHeight = panel.scrollHeight + 'px';
-            });
-        },
-
-        closePanel(button, panel) {
-            button.classList.remove('active');
-            button.setAttribute('aria-expanded', 'false');
-            // Unset max-height to allow for CSS transition to 0
-            panel.style.maxHeight = '';
-            // The 'open' class is removed by the transitionend event listener below
-            // to ensure the animation completes smoothly. But for reliability, we can also just remove it.
-            // Let's rely on CSS transitions primarily.
-            panel.classList.remove('open');
+            // Placeholder for future interactions
+            console.log('AGENT_DEBUG: TOC dynamic interactions ready.');
         }
     };
 

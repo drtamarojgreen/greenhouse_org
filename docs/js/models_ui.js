@@ -14,7 +14,7 @@
             Object.assign(this, GreenhouseModelsUISynapse);
             Object.assign(this, GreenhouseModelsUIBrain);
             Object.assign(this, GreenhouseModelsUIEnvironment);
-            
+
             // Initialize 3D module if available
             if (window.GreenhouseModelsUI3D) {
                 Object.assign(this, GreenhouseModelsUI3D);
@@ -51,7 +51,7 @@
                     <input type="checkbox" id="consent-checkbox" class="greenhouse-consent-checkbox" data-testid="consent-checkbox">
                     ${t('consent_check')}
                 </label>
-                <button id="start-simulation-btn" class="greenhouse-btn-primary" disabled data-testid="start-simulation-btn">${t('launch_btn')}</button>
+                <button id="start-simulation-btn" class="greenhouse-btn greenhouse-btn-primary" disabled data-testid="start-simulation-btn">${t('launch_btn')}</button>
             `;
             targetElement.appendChild(container);
 
@@ -313,7 +313,7 @@
             this.drawSynapticView();
             this.drawNetworkView();
             this.drawEnvironmentView();
-            
+
             // Resize 3D canvas if active
             if (this.resize3DCanvas && this.isActive) {
                 this.resize3DCanvas();

@@ -1,112 +1,128 @@
 /* docs/css/models_toc.css */
 
 :root {
-  --toc-primary-color: #667eea;
-  --toc-secondary-color: #764ba2;
-  --toc-text-color: #2d3748;
-  --toc-background-color: #f7fafc;
-  --toc-border-color: #e2e8f0;
-  --toc-animation-duration: 0.3s;
+  --toc-primary-green: #357438;
+  --toc-hover-green: #2d602f;
+  --toc-bg-light: #f8fdf9;
+  --toc-border-light: #e8f5e8;
+  --toc-text-main: #2d3e2d;
+  --toc-text-muted: #4a5568;
+  --toc-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  --toc-shadow-hover: 0 15px 35px rgba(0, 0, 0, 0.1);
+  --toc-radius: 18px;
 }
 
-#models-toc-container {
-  padding: 20px;
-  background-color: var(--toc-background-color);
-  border-radius: 8px;
+/* Use a class for the container for better flexibility between local and live site */
+.models-toc-container {
+  padding: 0;
   margin: 20px 0;
-}
-
-#models-toc-container .models-toc-intro {
-  margin-bottom: 20px;
-}
-
-#models-toc-container .models-toc-intro p {
-  margin-bottom: 10px;
-  line-height: 1.6;
-  color: var(--toc-text-color);
-}
-
-#models-toc-container .model-toc-button {
-  display: block;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   width: 100%;
-  padding: 15px;
-  margin-bottom: 10px;
-  border: 1px solid var(--toc-border-color);
-  border-radius: 8px;
-  background-color: white;
-  color: var(--toc-text-color);
-  font-size: 1.1em;
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color var(--toc-animation-duration), color var(--toc-animation-duration);
 }
 
-#models-toc-container .model-toc-button:hover,
-#models-toc-container .model-toc-button:focus {
-  background-color: var(--toc-primary-color);
-  color: white;
+.models-toc-intro {
+  margin-bottom: 2em;
+  border-bottom: 2px solid var(--toc-border-light);
+  padding-bottom: 1.5em;
 }
 
-#models-toc-container .model-toc-button.active {
-  background-color: var(--toc-secondary-color);
-  color: white;
+.models-toc-intro p {
+  font-size: 1.1rem;
+  color: var(--toc-text-muted);
+  margin-bottom: 1.2em;
+  line-height: 1.7;
 }
 
-#models-toc-container .model-toc-panel {
-  padding: 0 20px;
-  border: 1px solid var(--toc-border-color);
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  margin-top: -10px;
-  margin-bottom: 10px;
-  background-color: white;
-  overflow: hidden;
-  visibility: hidden;
+.models-toc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 25px;
 }
 
-#models-toc-container .model-toc-panel.open {
-  padding: 20px;
-  visibility: visible;
+.model-toc-card {
+  background: #ffffff;
+  border: 1px solid var(--toc-border-light);
+  border-radius: var(--toc-radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--toc-shadow);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+  height: 100%;
 }
 
-#models-toc-container .model-toc-panel p {
-  margin-bottom: 10px;
+.model-toc-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--toc-shadow-hover);
+  border-color: var(--toc-primary-green);
+}
+
+.model-toc-card h3 {
+  margin: 0 0 18px 0;
+  font-family: 'Quicksand', sans-serif;
+  color: var(--toc-primary-green);
+  border-bottom: 2px solid #f0fdf4;
+  padding-bottom: 12px;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.model-toc-card .description-container {
+  flex-grow: 1;
+  margin-bottom: 24px;
+}
+
+.model-toc-card p {
+  font-size: 1rem;
+  color: var(--toc-text-muted);
   line-height: 1.6;
-  color: var(--toc-text-color);
+  margin: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  #models-toc-container .model-toc-panel {
-    transition:
-      max-height var(--toc-animation-duration) ease-out,
-      padding-top var(--toc-animation-duration) ease-out,
-      padding-bottom var(--toc-animation-duration) ease-out,
-      visibility 0s linear var(--toc-animation-duration);
-    max-height: 0;
-  }
+.model-toc-card .button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: auto;
+}
 
-  #models-toc-container .model-toc-panel.open {
-    /* max-height is now set by JS, so it is removed from here */
-    transition:
-      max-height calc(var(--toc-animation-duration) * 2) ease-in,
-      padding-top calc(var(--toc-animation-duration) * 2) ease-in,
-      padding-bottom calc(var(--toc-animation-duration) * 2) ease-in,
-      visibility 0s;
-  }
+/* Premium Button Styling */
+.model-toc-card .greenhouse-btn {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  border: none;
+  flex: 1;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+}
+
+.model-toc-card .greenhouse-btn-primary {
+  background: linear-gradient(135deg, var(--toc-primary-green) 0%, var(--toc-hover-green) 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(53, 116, 56, 0.2);
+}
+
+.model-toc-card .greenhouse-btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px rgba(53, 116, 56, 0.4);
+  transform: scale(1.02);
 }
 
 @media (max-width: 768px) {
-  #models-toc-container {
-    padding: 15px;
+  .models-toc-grid {
+    grid-template-columns: 1fr;
   }
 
-  #models-toc-container .model-toc-button {
-    padding: 12px;
-    font-size: 1em;
+  .model-toc-card {
+    padding: 20px;
   }
 
-  #models-toc-container .model-toc-panel {
-    padding: 15px;
+  .model-toc-card h3 {
+    font-size: 1.4rem;
   }
 }
