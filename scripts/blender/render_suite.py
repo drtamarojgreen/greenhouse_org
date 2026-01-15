@@ -102,8 +102,9 @@ def configure_render_settings(output_folder, duration_frames):
     scene.cycles.transparent_max_bounces = 8
     scene.render.resolution_x = 1280
     scene.render.resolution_y = 720
+    scene.render.fps = 2
     scene.frame_start = 1
-    scene.frame_end = 1
+    scene.frame_end = duration_frames
     
     out_dir = os.path.join(script_dir, "render_outputs", output_folder)
     os.makedirs(out_dir, exist_ok=True)
@@ -131,11 +132,11 @@ def run_job_brain_tour(label_names):
     VERTICES_FILE = os.path.join(DATA_DIR, "vertices.npy")
     LABELS_FILE = os.path.join(DATA_DIR, "labels.npy")
 
-    # Rapid Test Modifiers (Total ~60-70 frames)
+    # Optimized Modifiers (Total 30 frames at 2 FPS = 15 seconds)
     short_modifiers = {
-        'intro_duration': 30,
-        'dwell_duration': 15,
-        'transition_duration': 15,
+        'intro_duration': 10,
+        'dwell_duration': 10,
+        'transition_duration': 10,
         'zoom_factor': 0.7,
         'neon_color': (0.1, 1.0, 1.0)
     }

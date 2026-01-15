@@ -88,9 +88,11 @@ A dedicated directory for system checks, configuration verification, and scene o
 
 **No conversion is necessary.** The `render_suite.py` script is pre-configured to render all animations directly into video files using Blender's built-in FFMPEG encoder.
 
--   **Format**: MPEG-4 (`.mp4`)
+-   **Format**: MPEG-4 (`.mp4`) or Matroska (`.mkv`)
 -   **Resolution**: 1280x720
--   **Frame Rate**: 24 FPS
+-   **Frame Rate**: 2 FPS (Optimized for scientific "stop-motion" study)
+-   **Total Duration**: 30 frames (15 seconds per video)
+-   **Render Engine**: Cycles (CPU)
 
 The output files will be saved in a new directory created at `scripts/blender/render_outputs/`. Each render job will have its own subfolder (e.g., `turntable_procedural/`, `zoom_glow/`).
 
@@ -186,8 +188,7 @@ The `brain.fbx` model is also used by a GNN (Graph Neural Network) pipeline loca
 
 -   **Python Preprocessing**: ~1-2 minutes
     -   Parsing a ~8MB FBX file and computing curvature on a dense mesh is computationally intensive.
--   **Blender Rendering (Eevee Engine, 720p 24fps)**:
-    -   `turntable_procedural` (120 frames): ~5-10 minutes
-    -   `zoom_glow` (90 frames): ~4-8 minutes
-    -   `wireframe_flyover` (150 frames): ~6-12 minutes
-    -   **Total Suite**: ~15-30 minutes
+-   **Blender Rendering (Cycles Engine, CPU, 720p 2fps)**:
+    -   `brain_tour` (30 frames): ~45-90 minutes
+    -   `all` (Sequentially per region): ~10-15 hours total
+    -   *Note: Cycles rendering on CPU is high-fidelity but slow. Ensure samples are set to 128 or lower for balanced results.*
