@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RNA Repair Mechanisms - Interactive Simulation</title>
+    <meta name="description"
+        content="Interactive visualization of RNA repair mechanisms including ligation and demethylation">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e2e8f0;
+        }
+
+        #rna-app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #2d3748;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid #4a5568;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid #4a5568;
+        }
+
+        .page-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .page-header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .feature-badge {
+            display: inline-block;
+            background: rgba(102, 126, 234, 0.2);
+            color: #a3bffa;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+            font-weight: 500;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .simulation-section {
+            padding: 20px;
+            min-height: 500px;
+            position: relative;
+        }
+
+        .info-panel {
+            background: #1a202c;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+        }
+
+        .info-panel h3 {
+            color: #a3bffa;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .info-panel ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-panel li {
+            padding: 8px 0;
+            color: #cbd5e0;
+        }
+
+        .info-panel li:before {
+            content: "✦ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #718096;
+            font-size: 0.9em;
+            background: #1a202c;
+        }
+
+        /* This matches the Wix selector used in greenhouse.js */
+        .wixui-section {
+            width: 100%;
+        }
+
+        .simulation-target {
+            width: 100%;
+            height: 500px;
+            background: #111;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>🧬 RNA Repair Mechanisms</h1>
+        <p>Interactive Molecular Visualization</p>
+        <span class="feature-badge">Advanced Biological Simulation</span>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="rna-app-container">
+        <section class="wixui-section">
+            <div class="simulation-section">
+                <!-- Target element for the simulation as defined in greenhouse.js config -->
+                <div id="rna-simulation-target" class="simulation-target">
+                    <!-- Simulation canvas will be injected here -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Information Panel -->
+    <div class="info-panel">
+        <h3>🔬 Key RNA Repair Pathways</h3>
+        <ul>
+            <li><strong>RNA Ligation:</strong> Specialized ligases (like RtcB) repair broken RNA strands caused by environmental stress or toxins.</li>
+            <li><strong>Oxidative Demethylation:</strong> Enzymes such as AlkB identify and remove damaging methyl groups from RNA bases, restoring original function.</li>
+            <li><strong>End-healing:</strong> Preparation of broken RNA ends (3'-P to 3'-OH) to enable successful ligation.</li>
+        </ul>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Greenhouse for Mental Health Development | Molecular Biology Research</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/GreenhouseUtils.js"></script>
+    <script src="js/greenhouse.js"></script>
+
+    <script>
+        /**
+         * Manual initialization for the standalone RNA page.
+         * This mimics how greenhouse.js would load the app on the main site.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("RNA Standalone: Initializing...");
+
+            // The selector greenhouse.js expects for RNA is 'section.wixui-section:nth-child(1) > div:nth-child(2)'
+            // In our structure, we can make it work by adjusting the call or ensuring the structure matches.
+            // For the standalone page, we'll manually trigger the load to ensure it targets our specific element.
+
+            const targetSelector = '#rna-simulation-target';
+
+            // Load the RNA repair script manually if it's not handled by greenhouse.js
+            // greenhouse.js normally handles this based on pathname, but for local files it might differ.
+
+            if (window.Greenhouse && window.Greenhouse.initializeRNARepairSimulation) {
+                 window.Greenhouse.initializeRNARepairSimulation(targetSelector);
+            } else {
+                // Wait a bit for greenhouse.js to do its thing or load it manually
+                const script = document.createElement('script');
+                script.src = 'js/rna_repair.js';
+                script.onload = () => {
+                    if (window.Greenhouse && window.Greenhouse.initializeRNARepairSimulation) {
+                        window.Greenhouse.initializeRNARepairSimulation(targetSelector);
+                    }
+                };
+                document.body.appendChild(script);
+            }
+        });
+    </script>
+</body>
+
+</html>
