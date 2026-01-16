@@ -2,6 +2,7 @@
  * @file rna_repair.js
  * @description Interactive 2D simulation of various RNA repair mechanisms.
  * Supports visualization of RNA ligation and oxidative demethylation.
+ * Refactored for vertical orientation and external display controls.
  */
 
 (function() {
@@ -40,6 +41,11 @@
                 GLOW: '#667EEA'
             };
 
+            // Display state
+            this.scale = 1.0;
+            this.offsetX = 0;
+            this.offsetY = 0;
+
             this.isRunning = true;
             this.init();
         }
@@ -50,19 +56,19 @@
         }
 
         /**
-         * Creates an initial RNA strand with bases.
+         * Creates an initial RNA strand with bases arranged vertically.
          */
         createRnaStrand() {
-            const baseCount = 20;
-            const spacing = this.width / (baseCount + 1);
-            const centerY = this.height / 2;
+            const baseCount = 30; // Increased for vertical scrolling
+            const spacing = 40;
+            const centerX = this.width / 2;
             const baseTypes = ['A', 'U', 'G', 'C'];
 
             for (let i = 0; i < baseCount; i++) {
                 this.rnaStrand.push({
-                    x: spacing * (i + 1),
-                    y: centerY,
-                    targetY: centerY,
+                    x: centerX,
+                    targetX: centerX,
+                    y: spacing * (i + 1),
                     type: baseTypes[Math.floor(Math.random() * baseTypes.length)],
                     damaged: false,
                     damageType: null,
@@ -89,22 +95,19 @@
         }
 
         introduceDamage() {
-            // Only introduce damage if there isn't too much already
             const damagedCount = this.rnaStrand.filter(b => b.damaged || !b.connected).length;
-            if (damagedCount > 3) return;
+            if (damagedCount > 5) return;
 
             const damageType = Math.random() > 0.5 ? this.damageTypes.BREAK : this.damageTypes.METHYLATION;
             const index = Math.floor(Math.random() * (this.rnaStrand.length - 2)) + 1;
 
             if (damageType === this.damageTypes.BREAK) {
                 if (this.rnaStrand[index].connected) {
-                    console.log(`RNA Damage: Break at index ${index}`);
                     this.rnaStrand[index].connected = false;
                     this.spawnEnzyme('Ligase', index);
                 }
             } else {
                 if (!this.rnaStrand[index].damaged) {
-                    console.log(`RNA Damage: Methylation at index ${index}`);
                     this.rnaStrand[index].damaged = true;
                     this.rnaStrand[index].damageType = this.damageTypes.METHYLATION;
                     this.spawnEnzyme('Demethylase', index);
@@ -116,11 +119,11 @@
             const enzyme = {
                 name: name,
                 targetIndex: targetIndex,
-                x: Math.random() > 0.5 ? -50 : this.width + 50,
-                y: Math.random() * this.height,
+                x: Math.random() * this.width,
+                y: Math.random() > 0.5 ? -50 : this.height + 50,
                 size: 40,
                 speed: 2,
-                state: 'approaching', // approaching, repairing, leaving
+                state: 'approaching',
                 progress: 0
             };
             this.enzymes.push(enzyme);
@@ -129,16 +132,17 @@
         update() {
             const time = Date.now() * 0.002;
 
-            // Update RNA strand movement
+            // Update RNA strand movement (Wavy in X direction)
             this.rnaStrand.forEach((base, i) => {
-                base.y = base.targetY + Math.sin(time + base.offset) * 15;
+                base.x = base.targetX + Math.sin(time + base.offset) * 15;
 
-                // If disconnected, add a gap
+                // If disconnected vertically, add a gap
                 if (!base.connected && i < this.rnaStrand.length - 1) {
-                    this.rnaStrand[i+1].x += ( (base.x + (this.width / (this.rnaStrand.length + 1)) + 20) - this.rnaStrand[i+1].x ) * 0.1;
+                    const idealY = base.y + 60; // Increased gap for break
+                    this.rnaStrand[i+1].y += (idealY - this.rnaStrand[i+1].y) * 0.1;
                 } else if (i < this.rnaStrand.length - 1) {
-                    const idealX = base.x + (this.width / (this.rnaStrand.length + 1));
-                    this.rnaStrand[i+1].x += (idealX - this.rnaStrand[i+1].x) * 0.1;
+                    const idealY = base.y + 40;
+                    this.rnaStrand[i+1].y += (idealY - this.rnaStrand[i+1].y) * 0.1;
                 }
             });
 
@@ -163,7 +167,6 @@
                     enzyme.progress += 0.01;
 
                     if (enzyme.progress >= 1) {
-                        // Complete repair
                         if (enzyme.name === 'Ligase') {
                             targetBase.connected = true;
                         } else {
@@ -176,7 +179,7 @@
                 } else if (enzyme.state === 'leaving') {
                     enzyme.y -= enzyme.speed;
                     enzyme.size *= 0.98;
-                    if (enzyme.y < -50 || enzyme.size < 1) {
+                    if (enzyme.y < -100 || enzyme.size < 1) {
                         this.enzymes.splice(index, 1);
                     }
                 }
@@ -207,6 +210,11 @@
         draw() {
             this.ctx.clearRect(0, 0, this.width, this.height);
 
+            this.ctx.save();
+            // Apply zoom and pan
+            this.ctx.translate(this.offsetX, this.offsetY);
+            this.ctx.scale(this.scale, this.scale);
+
             // Draw Backbone
             this.ctx.beginPath();
             this.ctx.strokeStyle = this.colors.BACKBONE;
@@ -235,7 +243,6 @@
                 this.ctx.fillStyle = this.colors[base.type];
                 this.ctx.fill();
 
-                // Draw damage (Methylation)
                 if (base.damaged && base.damageType === this.damageTypes.METHYLATION) {
                     this.ctx.beginPath();
                     this.ctx.arc(base.x + 5, base.y - 5, 4, 0, Math.PI * 2);
@@ -246,7 +253,6 @@
                     this.ctx.stroke();
                 }
 
-                // Draw Text
                 this.ctx.fillStyle = 'white';
                 this.ctx.font = 'bold 10px Arial';
                 this.ctx.textAlign = 'center';
@@ -268,7 +274,6 @@
                 this.ctx.font = '12px Arial';
                 this.ctx.fillText(enzyme.name, enzyme.x, enzyme.y - enzyme.size - 5);
 
-                // Progress bar
                 if (enzyme.state === 'repairing') {
                     this.ctx.beginPath();
                     this.ctx.rect(enzyme.x - 20, enzyme.y + enzyme.size + 10, 40 * enzyme.progress, 4);
@@ -288,45 +293,19 @@
                 this.ctx.globalAlpha = 1;
             });
 
-            // UI Legend
-            this.drawLegend();
-        }
-
-        drawLegend() {
-            const startX = 20;
-            const startY = this.height - 100;
-            const itemHeight = 25;
-
-            this.ctx.fillStyle = 'white';
-            this.ctx.font = 'bold 14px Arial';
-            this.ctx.textAlign = 'left';
-            this.ctx.fillText('RNA Repair Mechanisms:', startX, startY - 10);
-
-            const items = [
-                { color: this.colors.METHYL, text: 'Methylation (Damage)' },
-                { color: this.colors.BACKBONE, text: 'Phosphodiester Backbone' },
-                { color: this.colors.ENZYME, text: 'Repair Enzymes (Ligase/AlkB)' }
-            ];
-
-            items.forEach((item, i) => {
-                this.ctx.beginPath();
-                this.ctx.arc(startX + 10, startY + i * itemHeight, 6, 0, Math.PI * 2);
-                this.ctx.fillStyle = item.color;
-                this.ctx.fill();
-                if (item.color === this.colors.ENZYME) {
-                    this.ctx.strokeStyle = this.colors.GLOW;
-                    this.ctx.stroke();
-                }
-                this.ctx.fillStyle = '#cbd5e0';
-                this.ctx.font = '12px Arial';
-                this.ctx.fillText(item.text, startX + 25, startY + i * itemHeight + 5);
-            });
+            this.ctx.restore();
         }
 
         animate() {
             if (!this.isRunning) return;
             this.update();
             this.draw();
+
+            // Notify legend if it exists
+            if (window.Greenhouse.RNALegend && window.Greenhouse.RNALegend.update) {
+                window.Greenhouse.RNALegend.update(this.ctx, this.width, this.height, this.colors);
+            }
+
             requestAnimationFrame(() => this.animate());
         }
 
@@ -346,41 +325,43 @@
             return;
         }
 
-        // Create a canvas element
         const canvas = document.createElement('canvas');
         canvas.id = 'rnaRepairCanvas';
 
-        // Match container dimensions
         const rect = targetElement.getBoundingClientRect();
         canvas.width = rect.width || 800;
-        canvas.height = 500;
-        
-        // Style the canvas
+        canvas.height = 600; // Increased height
+
         canvas.style.display = 'block';
-        canvas.style.cursor = 'crosshair';
+        canvas.style.cursor = 'grab';
         
-        // Append canvas to the target element
         targetElement.innerHTML = '';
         targetElement.appendChild(canvas);
 
         const simulation = new RNARepairSimulation(canvas);
+
+        // Expose simulation instance
+        window.Greenhouse = window.Greenhouse || {};
+        window.Greenhouse.rnaSimulation = simulation;
+
+        // Initialize Display Controls if available
+        if (window.Greenhouse.initializeRNADisplay) {
+            window.Greenhouse.initializeRNADisplay(simulation);
+        }
+
         simulation.animate();
 
-        // Handle resize
         window.addEventListener('resize', () => {
             const newRect = targetElement.getBoundingClientRect();
             canvas.width = newRect.width;
             simulation.width = canvas.width;
         });
 
-        console.log('RNA Repair simulation initialized.');
-
-        // Expose simulation instance if needed
-        window.Greenhouse.rnaSimulation = simulation;
+        console.log('RNA Repair simulation initialized (Vertical).');
     }
 
-    // Expose the initialization function to the global scope to be called by greenhouse.js
     window.Greenhouse = window.Greenhouse || {};
     window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
+    window.Greenhouse.RNARepairSimulation = RNARepairSimulation;
 
 })();
