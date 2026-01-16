@@ -354,7 +354,6 @@
             'pathway',
             'pathway.js',
             config.selectors.pathway,
-.
             config.fallbackSelectors.pathway
         );
     }
