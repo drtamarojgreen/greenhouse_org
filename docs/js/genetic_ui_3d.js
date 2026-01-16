@@ -1303,7 +1303,7 @@
                     const p3 = projectedVertices[faceIndices[2]];
 
                     const isVisible = p1.scale > 0 && p2.scale > 0 && p3.scale > 0;
-                    const isFrontFacing = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) > 0;
+                    const isFrontFacing = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) < 0;
 
                     if (isVisible && isFrontFacing) {
                         const v1 = mesh.vertices[faceIndices[0]];

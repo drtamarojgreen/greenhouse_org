@@ -33,7 +33,7 @@ def add_background_logo(logo_path):
     if "LogoPlane" in bpy.data.objects:
         return
 
-    bpy.ops.mesh.primitive_plane_add(size=30, location=(0, 20, 0), rotation=(math.radians(90), 0, math.radians(90)))
+    bpy.ops.mesh.primitive_plane_add(size=30, location=(0, 20, 0), rotation=(math.radians(90), 0, 0))
     plane = bpy.context.active_object
     plane.name = "LogoPlane"
 

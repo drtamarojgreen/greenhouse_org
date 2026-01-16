@@ -271,7 +271,7 @@
                         const normal = GreenhouseModels3DMath.calculateFaceNormal(worldV1, worldV2, worldV3);
 
                         // Backface culling in view space (approximate)
-                        if (p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y) + p1.x * (p2.y - p3.y) < 0) {
+                        if (p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y) + p1.x * (p2.y - p3.y) > 0) {
                             const diffuse = Math.max(0, normal.x * lightDir.x + normal.y * lightDir.y + normal.z * lightDir.z);
                             const specular = Math.pow(diffuse, 20);
                             projectedFaces.push({ p1, p2, p3, depth, diffuse, specular });

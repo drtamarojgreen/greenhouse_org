@@ -31,7 +31,7 @@
 
             // Project all vertices first
             const projectedVertices = vertices.map(v => {
-                return GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
+                return GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
             });
 
             // Prepare Faces with Depth and Normals

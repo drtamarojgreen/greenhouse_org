@@ -62,25 +62,131 @@
         }
     };
 
+    // Internal helper for generating organic mock data
+    const PathwayDataGenerator = {
+        generate(id, regions) {
+            const nodes = [];
+            const edges = [];
+
+            // Map region names to common anatomical labels/neurotransmitters
+            const regionLabels = {
+                'gut': ['Tryptophan', 'Gut Microbiota', 'Enteric Nerves'],
+                'blood_stream': ['Kynurenine', 'Albumin-bound Trp', 'Cytokines'],
+                'brain_stem': ['Raphe Nuclei', 'Locus Coeruleus', 'VTA'],
+                'pfc': ['Glutamate', 'GABA', 'Neuromodulation'],
+                'hypothalamus': ['CRH', 'Oxytocin', 'Homeostasis'],
+                'pituitary': ['ACTH', 'GH', 'Master Gland'],
+                'adrenals': ['Cortisol', 'Adrenaline', 'Stress Response'],
+                'scn': ['Melatonin', 'BMAL1', 'CLOCK'],
+                'pineal': ['Serotonin-to-Melatonin', 'Circadian Output'],
+                'liver': ['Metabolic Clock', 'IGF-1'],
+                'heart': ['Adrenergic Input', 'HRV'],
+                'vta': ['Dopamine Pulse', 'Reward Prediction'],
+                'sn': ['Motor Control', 'Basal Ganglia'],
+                'striatum': ['D1 Receptors', 'D2 Receptors'],
+                'raphe': ['5-HT', 'Mood Regulation'],
+                'amygdala': ['Fear Response', 'Emotional Salience'],
+                'hippocampus': ['Memory Consolidation', 'Neurogenesis'],
+                'locus_coeruleus': ['Norepinephrine', 'Vigilance'],
+                'thalamus': ['Sensory Gating', 'Relay Station'],
+                'spinal_cord': ['Autonomic Outflow', 'Reflexes'],
+                'synapse': ['Synaptic Vesicles', 'Ion Channels', 'Receptors'],
+                'cytosol': ['Kinase Cascade', 'ATP'],
+                'nucleus': ['Gene Expression', 'Epigenetics']
+            };
+
+            let globalNodeId = 1;
+
+            regions.forEach((region, rIdx) => {
+                const labels = regionLabels[region] || [region.toUpperCase()];
+                labels.forEach((label, lIdx) => {
+                    const nodeId = `n_${id}_${rIdx}_${lIdx}`;
+                    nodes.push({
+                        id: nodeId,
+                        name: label,
+                        type: this.determineType(label),
+                        region: region,
+                        // Pseudo-random but deterministic coordinates for KGML compatibility
+                        x: 100 + rIdx * 150 + lIdx * 30,
+                        y: 100 + lIdx * 80
+                    });
+
+                    // Auto-connect to previous node in chain
+                    if (nodes.length > 1) {
+                        edges.push({
+                            source: nodes[nodes.length - 2].id,
+                            target: nodeId
+                        });
+                    }
+                });
+            });
+
+            return { nodes, edges };
+        },
+
+        determineType(label) {
+            const keywords = ['Gene', 'Kinase', 'Receptor', 'D1', 'D2'];
+            if (keywords.some(k => label.includes(k))) return 'gene';
+            if (label.includes('Metabolic') || label.includes('Clock')) return 'map';
+            return 'compound';
+        }
+    };
+
     // Internal helper for 2D to 3D layout
     const PathwayLayout = {
-        generate3DLayout(data, scaleFactor = 20, zLayerSeparation = 150) {
+        generate3DLayout(data) {
             if (!data || !data.nodes || data.nodes.length === 0) return [];
-            const xCoords = data.nodes.map(n => n.x);
-            const yCoords = data.nodes.map(n => n.y);
-            const xCenter = (Math.min(...xCoords) + Math.max(...xCoords)) / 2;
-            const yCenter = (Math.min(...yCoords) + Math.max(...yCoords)) / 2;
 
-            return data.nodes.map(node => {
-                const x_3d = (node.x - xCenter) / scaleFactor;
-                const y_3d = (node.y - yCenter) / scaleFactor;
-                let z_3d = 0;
-                switch (node.type) {
-                    case 'compound': z_3d = zLayerSeparation; break;
-                    case 'gene': z_3d = 0; break;
-                    case 'map': z_3d = -zLayerSeparation; break;
+            // Anatomical Map (Coordinates in World Space)
+            const anatomicalMap = {
+                // Brain
+                'pfc': { x: 0, y: 80, z: 140 },
+                'striatum': { x: 80, y: 20, z: 40 },
+                'vta': { x: 0, y: -40, z: -20 },
+                'sn': { x: 30, y: -40, z: -10 },
+                'hypothalamus': { x: 0, y: -20, z: 20 },
+                'pituitary': { x: 0, y: -80, z: 60 },
+                'scn': { x: 0, y: -10, z: 50 },
+                'pineal': { x: 0, y: 40, z: -60 },
+                'raphe': { x: 0, y: -120, z: -20 },
+                'locus_coeruleus': { x: 20, y: -110, z: -40 },
+                'amygdala': { x: 70, y: -30, z: 20 },
+                'hippocampus': { x: 60, y: -50, z: -40 },
+                'thalamus': { x: 15, y: 40, z: 10 },
+                'brain_stem': { x: 0, y: -160, z: -40 },
+                // Torso
+                'spinal_cord': { x: 0, y: -250, z: -50 },
+                'heart': { x: -50, y: -450, z: 30 },
+                'liver': { x: 60, y: -550, z: 40 },
+                'adrenals': { x: 50, y: -650, z: -20 },
+                'gut': { x: 0, y: -800, z: 20 },
+                'blood_stream': { x: -100, y: -500, z: 0 },
+                // Cellular/Generic
+                'synapse': { x: 20, y: 150, z: 150 },
+                'cytosol': { x: 0, y: 160, z: 150 },
+                'nucleus': { x: -20, y: 170, z: 150 }
+            };
+
+            return data.nodes.map((node, i) => {
+                const targetBase = anatomicalMap[node.region] || { x: 0, y: 0, z: 0 };
+
+                // Add jitter to prevent exact overlap if multiple nodes in same region
+                const jitter = 25;
+                const pos = {
+                    x: targetBase.x + (Math.sin(i * 1.5) * jitter),
+                    y: targetBase.y + (Math.cos(i * 2.1) * jitter),
+                    z: targetBase.z + (Math.sin(i * 0.7) * jitter)
+                };
+
+                // Fallback for KEGG nodes without region assignment (legacy support)
+                if (!node.region) {
+                    const scaleFactor = 30;
+                    pos.x = (node.x - 400) / scaleFactor;
+                    pos.y = -(node.y - 400) / scaleFactor;
+                    pos.z = (node.type === 'gene') ? 0 : 100;
                 }
-                return { ...node, position3D: { x: x_3d, y: -y_3d, z: z_3d } };
+
+                return { ...node, position3D: pos };
             });
         }
     };
@@ -88,8 +194,8 @@
 
     const GreenhousePathwayViewer = {
         canvas: null, ctx: null, camera: null, projection: null, cameraControls: null,
-        pathwayData: null, pathwayEdges: null, brainShell: null, highlightedNodeId: null,
-        baseUrl: '', initialized: false,
+        pathwayData: null, pathwayEdges: null, brainShell: null, torsoShell: null, highlightedNodeId: null,
+        availablePathways: [], currentPathwayId: null, baseUrl: '', initialized: false,
 
         async init(containerSelector, baseUrl) {
             console.log("Pathway App: Initializing Viewer.");
@@ -107,7 +213,7 @@
             this.camera = {
                 x: 0,
                 y: 0,
-                z: -800, // Negative Z to look at origin
+                z: -1000, // Pulled back to see torso
                 rotationX: 0,
                 rotationY: 0,
                 rotationZ: 0,
@@ -137,7 +243,7 @@
                         inertia: true,
                         inertiaDamping: 0.95,
                         minZoom: -50,
-                        maxZoom: -5000
+                        maxZoom: -8000
                     }
                 },
                 get(path) {
@@ -161,15 +267,77 @@
                 }
             };
 
-            if (window.GreenhouseNeuroCameraControls) {
-                this.cameraControls = Object.create(window.GreenhouseNeuroCameraControls);
+            if (window.GreenhousePathwayCameraControls) {
+                this.cameraControls = Object.create(window.GreenhousePathwayCameraControls);
                 this.cameraControls.init(this.canvas, this.camera, fullConfig);
             }
 
-            this.initializeBrainShell();
-            await this.loadPathwayData();
+            this.initializeGeometry();
+            await this.loadPathwayMetadata();
             this.initialized = true;
             this.startAnimation();
+        },
+
+        async loadPathwayMetadata() {
+            try {
+                const response = await fetch(this.baseUrl + 'endpoints/models_pathways.json');
+                const data = await response.json();
+                this.availablePathways = data.pathways;
+                this.populatePathwaySelector();
+
+                // Load default (first) pathway
+                if (this.availablePathways.length > 0) {
+                    await this.switchPathway(this.availablePathways[0].id);
+                }
+            } catch (err) {
+                console.error("Pathway App: Failed to load metadata.", err);
+            }
+        },
+
+        populatePathwaySelector() {
+            const selector = document.getElementById('master-pathway-selector');
+            if (!selector) return;
+            selector.innerHTML = '';
+            this.availablePathways.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = p.name;
+                selector.appendChild(option);
+            });
+            selector.onchange = (e) => this.switchPathway(e.target.value);
+        },
+
+        async switchPathway(pathwayId) {
+            console.log(`Pathway App: Switching to ${pathwayId}`);
+            this.currentPathwayId = pathwayId;
+            const pathway = this.availablePathways.find(p => p.id === pathwayId);
+            if (!pathway) return;
+
+            // Show loading status
+            const geneSelector = document.getElementById('pathway-selector');
+            if (geneSelector) geneSelector.innerHTML = '<option>Connecting to KEGG...</option>';
+
+            let success = false;
+
+            // Priority 1: Local XML
+            if (pathway.source) {
+                success = await this.loadExternalPathway(pathway.source);
+            }
+
+            // Priority 2: KEGG Live API
+            if (!success && pathway.kegg_id) {
+                const liveUrl = `https://rest.kegg.jp/get/${pathway.kegg_id}/kgml`;
+                success = await this.loadExternalPathway(liveUrl, true);
+            }
+
+            // Priority 3: Internal Generator
+            if (!success) {
+                const generated = PathwayDataGenerator.generate(pathwayId, pathway.regions);
+                this.pathwayData = PathwayLayout.generate3DLayout(generated);
+                this.pathwayEdges = generated.edges;
+            }
+
+            this.updateGeneSelector();
         },
 
         setupUI(container) {
@@ -196,11 +364,26 @@
             header.textContent = 'Pathway Control';
             uiContainer.appendChild(header);
 
+            const pathwayGroup = document.createElement('div');
+            pathwayGroup.style.marginBottom = '15px';
+            const pLabel = document.createElement('label');
+            pLabel.textContent = 'Systemic Pathway:';
+            pLabel.style.cssText = 'display: block; font-size: 12px; margin-bottom: 5px; color: #aaa;';
+            pathwayGroup.appendChild(pLabel);
+            const pSelect = document.createElement('select');
+            pSelect.id = 'master-pathway-selector';
+            pSelect.style.cssText = `
+                width: 100%; background: #2a2a2a; color: #4ca1af; border: 1px solid #444; 
+                padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer;
+            `;
+            pathwayGroup.appendChild(pSelect);
+            uiContainer.appendChild(pathwayGroup);
+
             const selectGroup = document.createElement('div');
             selectGroup.style.marginBottom = '10px';
 
             const label = document.createElement('label');
-            label.textContent = 'Target Gene:';
+            label.textContent = 'Component / Gene:';
             label.style.cssText = 'display: block; font-size: 12px; margin-bottom: 5px; color: #aaa;';
             selectGroup.appendChild(label);
 
@@ -253,58 +436,71 @@
             container.appendChild(this.canvas);
         },
 
-        initializeBrainShell() {
+        initializeGeometry() {
             this.brainShell = { vertices: [], faces: [] };
-            if (window.GreenhouseNeuroGeometry) {
-                window.GreenhouseNeuroGeometry.initializeBrainShell(this.brainShell);
+            this.torsoShell = { vertices: [], faces: [] };
+
+            if (window.GreenhousePathwayGeometry) {
+                window.GreenhousePathwayGeometry.initializeBrainShell(this.brainShell);
+                window.GreenhousePathwayGeometry.initializeTorsoShell(this.torsoShell);
             }
         },
 
-        async loadPathwayData() {
-            const pathwaySelector = 'section.wixui-section:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > p:nth-child(1) > span:nth-child(1)';
+        async loadExternalPathway(url, isLive = false) {
+            try {
+                const fetchUrl = isLive ? url : (this.baseUrl + url);
+                const parsedData = await KeggParser.parse(fetchUrl);
 
-            let xmlText = null;
-            const el = document.querySelector(pathwaySelector);
-            if (el && el.textContent && el.textContent.trim().startsWith('<')) {
-                xmlText = el.textContent.trim();
-                console.log('Pathway App: Found embedded XML data.');
-            }
-
-            if (xmlText) {
-                try {
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlText, "application/xml");
-                    const nodes = KeggParser.extractEntries(xmlDoc);
-                    const edges = KeggParser.extractRelations(xmlDoc);
-
-                    this.pathwayData = PathwayLayout.generate3DLayout({ nodes });
-                    this.pathwayEdges = edges;
-                } catch (e) {
-                    console.error("Pathway App: Error parsing embedded XML", e);
+                if (parsedData.nodes.length > 0) {
+                    parsedData.nodes.forEach(node => {
+                        node.region = this.mapKeggNodeToRegion(node, this.currentPathwayId);
+                    });
+                    this.pathwayData = PathwayLayout.generate3DLayout({ nodes: parsedData.nodes });
+                    this.pathwayEdges = parsedData.edges;
+                    return true;
                 }
+            } catch (err) {
+                console.error('Pathway App: External load error.', err);
+            }
+            return false;
+        },
+
+        mapKeggNodeToRegion(node, pathwayId) {
+            const name = (node.name || '').toLowerCase();
+
+            if (pathwayId === 'tryptophan') {
+                if (name.includes('tryptophan')) return 'gut';
+                if (name.includes('kynurenine')) return 'blood_stream';
+                if (name.includes('ido') || name.includes('tdo')) return 'liver';
             }
 
-            if (!this.pathwayData) {
-                const url = this.baseUrl + 'endpoints/kegg_dopaminergic_raw.xml';
-                console.log(`Pathway App: Attempting to load pathway from ${url}`);
-                try {
-                    const parsedData = await KeggParser.parse(url);
-                    if (parsedData.nodes.length > 0) {
-                        this.pathwayData = PathwayLayout.generate3DLayout({ nodes: parsedData.nodes });
-                        this.pathwayEdges = parsedData.edges;
-                        console.log('Pathway App: External data loaded successfully.');
-                    }
-                } catch (err) {
-                    console.error('Pathway App: Failed to load external pathway data.', err);
-                }
+            if (pathwayId === 'circadian') {
+                if (name.includes('period') || name.includes('clock')) return 'scn';
+                if (name.includes('bmal') || name.includes('arntl')) return 'liver';
             }
 
+            if (pathwayId === 'hpa') {
+                if (name.includes('crh')) return 'hypothalamus';
+                if (name.includes('acth')) return 'pituitary';
+                if (name.includes('cortisol')) return 'adrenals';
+            }
+
+            const pathway = this.availablePathways.find(p => p.id === pathwayId);
+            if (pathway && pathway.regions.length > 0) {
+                const charCode = name.charCodeAt(0) || 0;
+                return pathway.regions[charCode % pathway.regions.length];
+            }
+            return 'pfc';
+        },
+
+        updateGeneSelector() {
             const selector = document.getElementById('pathway-selector');
             if (selector && this.pathwayData) {
-                this.pathwayData.filter(node => node.type === 'gene').forEach(geneNode => {
+                selector.innerHTML = '<option value="">-- Select focus --</option>';
+                this.pathwayData.forEach(node => {
                     const option = document.createElement('option');
-                    option.value = geneNode.id;
-                    option.textContent = geneNode.name;
+                    option.value = node.id;
+                    option.textContent = node.name;
                     selector.appendChild(option);
                 });
             }
@@ -333,8 +529,18 @@
             // Draw Subtle Grid for spatial orientation
             this.drawReferenceGrid(ctx, w, h);
 
-            if (this.brainShell && window.GreenhouseNeuroBrain) {
-                window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, this.camera, this.projection, w, h, { color: 'rgba(204, 204, 204, 0.05)' });
+            const highlightedNode = this.pathwayData ? this.pathwayData.find(n => n.id === this.highlightedNodeId) : null;
+            const activeRegion = highlightedNode ? highlightedNode.region : null;
+
+            // Draw Connection Pillar (Spinal Cord base)
+            this.drawCentralNervousSystemPillar(ctx, w, h);
+
+            if (this.brainShell && window.GreenhousePathwayBrain) {
+                window.GreenhousePathwayBrain.drawBrain(ctx, this.brainShell, this.camera, this.projection, w, h, { activeRegion });
+            }
+
+            if (this.torsoShell && window.GreenhousePathwayBrain) {
+                window.GreenhousePathwayBrain.drawTorso(ctx, this.torsoShell, this.camera, this.projection, w, h, { activeRegion });
             }
 
             if (this.pathwayData) {
@@ -343,7 +549,26 @@
                 ctx.fillStyle = '#555';
                 ctx.textAlign = 'center';
                 ctx.font = '14px Arial';
-                ctx.fillText("Loading pathway data...", w / 2, h / 2);
+                ctx.fillText("Connecting to KEGG / Loading data...", w / 2, h / 2);
+            }
+        },
+
+        drawCentralNervousSystemPillar(ctx, w, h) {
+            // Draws a glowing vertical pillar to suggest anatomical connection
+            const steps = 10;
+            const p1 = GreenhouseModels3DMath.project3DTo2D(0, -180, 0, this.camera, this.projection);
+            const p2 = GreenhouseModels3DMath.project3DTo2D(0, -380, 0, this.camera, this.projection);
+
+            if (p1.scale > 0 && p2.scale > 0) {
+                const grad = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
+                grad.addColorStop(0, 'rgba(0, 242, 255, 0.2)');
+                grad.addColorStop(1, 'rgba(0, 242, 255, 0.05)');
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 15 * p1.scale;
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
             }
         },
 
@@ -407,15 +632,22 @@
                     }
 
                     if (node.id === this.highlightedNodeId) {
-                        color = '#e74c3c';
-                        glow = 'rgba(231, 76, 60, 0.6)';
+                        color = '#39ff14'; // Neon Green
+                        glow = 'rgba(57, 255, 20, 0.8)';
                         radius *= 2.5;
 
-                        // Draw label for highlighted node
-                        this.ctx.fillStyle = 'white';
-                        this.ctx.font = 'bold 12px Arial';
+                        // Draw background box for label
+                        const label = node.name.toUpperCase();
+                        this.ctx.font = 'bold 11px "Courier New", Courier, monospace';
+                        const textWidth = this.ctx.measureText(label).width;
+                        this.ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                        this.ctx.fillRect(node.projected.x - textWidth / 2 - 5, node.projected.y - radius - 25, textWidth + 10, 20);
+                        this.ctx.strokeStyle = '#39ff14';
+                        this.ctx.strokeRect(node.projected.x - textWidth / 2 - 5, node.projected.y - radius - 25, textWidth + 10, 20);
+
+                        this.ctx.fillStyle = '#39ff14';
                         this.ctx.textAlign = 'center';
-                        this.ctx.fillText(node.name, node.projected.x, node.projected.y - radius - 10);
+                        this.ctx.fillText(label, node.projected.x, node.projected.y - radius - 11);
                     }
 
                     // Shadow / Glow

@@ -2,7 +2,7 @@
 // 3D Mathematics Foundation for Models Canvas
 // Implements perspective projection, transformations, and depth calculations
 
-(function() {
+(function () {
     'use strict';
 
     const GreenhouseModels3DMath = {
@@ -30,7 +30,7 @@
 
             if (camera.rotationX || camera.rotationY || camera.rotationZ) {
                 const rotated = this.rotatePoint3D(
-                    {x: dx, y: dy, z: dz},
+                    { x: dx, y: dy, z: dz },
                     -(camera.rotationX || 0),  // Negate rotation
                     -(camera.rotationY || 0),  // Negate rotation
                     -(camera.rotationZ || 0)   // Negate rotation
@@ -44,9 +44,9 @@
             const fov = camera.fov || 500;
             const scale = fov / (fov + rotatedZ);
 
-            // Project to screen space
+            // Project to screen space (Flipping Y so positive 3D Y is screen up)
             const screenX = (rotatedX * scale) + (projection.width / 2);
-            const screenY = (rotatedY * scale) + (projection.height / 2);
+            const screenY = (projection.height / 2) - (rotatedY * scale);
 
             // Calculate normalized depth (0 = near, 1 = far)
             const depth = (rotatedZ - projection.near) / (projection.far - projection.near);
@@ -68,7 +68,7 @@
          * @returns {Object} Rotated point {x, y, z}
          */
         rotatePoint3D(point, angleX, angleY, angleZ) {
-            let {x, y, z} = point;
+            let { x, y, z } = point;
 
             // Rotate around X axis
             if (angleX !== 0) {
@@ -100,7 +100,7 @@
                 y = newY;
             }
 
-            return {x, y, z};
+            return { x, y, z };
         },
 
         /**
@@ -114,9 +114,9 @@
             // Simplified matrix for basic transformations
             // In a full implementation, this would return a proper 4x4 matrix
             return {
-                translation: translation || {x: 0, y: 0, z: 0},
-                rotation: rotation || {x: 0, y: 0, z: 0},
-                scale: scale || {x: 1, y: 1, z: 1}
+                translation: translation || { x: 0, y: 0, z: 0 },
+                rotation: rotation || { x: 0, y: 0, z: 0 },
+                scale: scale || { x: 1, y: 1, z: 1 }
             };
         },
 
@@ -159,7 +159,7 @@
             const scale = settings.scale || 1;
             const screenX = (x - z) * Math.cos(Math.PI / 6) * scale + settings.offsetX;
             const screenY = (x + z) * Math.sin(Math.PI / 6) * scale - y * scale + settings.offsetY;
-            return {x: screenX, y: screenY};
+            return { x: screenX, y: screenY };
         },
 
         /**

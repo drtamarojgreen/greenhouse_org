@@ -1,7 +1,7 @@
 // docs/js/pathway.js
 // Entry point and dependency loader for the Pathway Viewer application.
 
-(function() {
+(function () {
     'use strict';
 
     const GreenhousePathwayApp = {
@@ -24,9 +24,9 @@
                     'js/models_util.js',
                     'js/models_3d_math.js',
                     'js/brain_mesh_realistic.js',
-                    'js/neuro_ui_3d_geometry.js',
-                    'js/neuro_camera_controls.js',
-                    'js/neuro_ui_3d_brain.js',
+                    'js/pathway_ui_3d_geometry.js',
+                    'js/pathway_camera_controls.js',
+                    'js/pathway_ui_3d_brain.js',
                     'js/pathway_viewer.js'
                 ];
 

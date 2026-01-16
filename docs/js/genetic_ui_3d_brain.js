@@ -74,7 +74,7 @@
             brainShell.faces.forEach(f => {
                 const p1 = projectedVertices[f.indices[0]], p2 = projectedVertices[f.indices[1]], p3 = projectedVertices[f.indices[2]];
                 if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
-                    const isFront = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) > 0;
+                    const isFront = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x) < 0;
                     const v1 = brainShell.vertices[f.indices[0]], v2 = brainShell.vertices[f.indices[1]], v3 = brainShell.vertices[f.indices[2]];
                     const normal = GreenhouseModels3DMath.calculateFaceNormal(v1, v2, v3);
                     facesToDraw.push({ p1, p2, p3, depth: (p1.depth + p2.depth + p3.depth) / 3, normal, region: f.region, isFront });

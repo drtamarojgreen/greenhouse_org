@@ -48,36 +48,41 @@ def setup_background(image_path):
 
 def apply_textured_highlight(obj, color=(0.1, 1.0, 1.0)):
     """
-    STABLE Implementation for Plan 01: High-Visibility Solid Neon.
-    Procedural textures caused segfaults in headless Workbench;
-    reverting to solid emission for guaranteed stability.
+    High-Fidelity Fresnel-based Glowing Highlight.
+    Utilizes a rim glow effect for a premium scientific look.
     """
-    mat_name = f"Mat_ROI_{obj.name}"
-    if mat_name in bpy.data.materials:
-        mat = bpy.data.materials[mat_name]
-    else:
-        mat = bpy.data.materials.new(name=mat_name)
-    
+    mat_name = f"Mat_Premium_ROI_{obj.name}"
+    mat = (bpy.data.materials.get(mat_name) or bpy.data.materials.new(name=mat_name))
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
     nodes.clear()
     
-    # 1. Emission (Solid)
+    # Emission for the core glow
     emit = nodes.new(type='ShaderNodeEmission')
     emit.inputs['Color'].default_value = (*color, 1)
-    emit.inputs['Strength'].default_value = 5.0
+    emit.inputs['Strength'].default_value = 15.0
     
-    # 2. Output
+    # Fresnel for the rim glow effect
+    fresnel = nodes.new(type='ShaderNodeFresnel')
+    fresnel.inputs['IOR'].default_value = 1.45
+    
+    # Mix based on fresnel for deeper aesthetic
+    mix = nodes.new(type='ShaderNodeMix')
+    mix.data_type = 'RGBA'
+    mix.inputs['A'].default_value = (*color, 0.4)
+    mix.inputs['B'].default_value = (*color, 1.0)
+    links.new(fresnel.outputs[0], mix.inputs['Factor'])
+    links.new(mix.outputs[2], emit.inputs['Color'])
+    
     output = nodes.new(type='ShaderNodeOutputMaterial')
     links.new(emit.outputs[0], output.inputs['Surface'])
     
-    # Application
     obj.data.materials.clear()
     obj.data.materials.append(mat)
     
     # Visibility Settings
-    obj.show_in_front = True # Essential for seeing through main brain
+    obj.show_in_front = True
     obj.display_type = 'SOLID'
 
 def setup_neuron_materials():

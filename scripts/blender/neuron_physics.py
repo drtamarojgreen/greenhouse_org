@@ -52,7 +52,7 @@ def create_neuron_cloud(count=30, radius=2.0):
         point = (x, y, z)
 
         if is_inside(point, bvh):
-            bpy.ops.mesh.primitive_uv_sphere_add(radius=0.1, location=point)
+            bpy.ops.mesh.primitive_uv_sphere_add(radius=0.03, location=point)
             neuron = bpy.context.active_object
             neuron.name = f"Neuron_{neurons_created}"
             vfx.apply_neuron_texture(neuron)
