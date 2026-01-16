@@ -77,6 +77,14 @@
          */
         geneticPagePath: '/genetic',
         /**
+         * The path segment that identifies the DNA repair page.
+         */
+        dnaPagePath: '/dna',
+        /**
+         * The path segment that identifies the RNA repair page.
+         */
+        rnaPagePath: '/rna',
+        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -102,6 +110,8 @@
             synapse: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             pathway: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             synapse: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            dna: 'section.wixui-section:nth-child(1) > div:nth-child(2)',
+            rna: 'section.wixui-section:nth-child(1) > div:nth-child(2)',
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -123,7 +133,9 @@
             neuro: 'section.wixui-section',
             synapse: 'section.wixui-section',
             pathway: 'section.wixui-section',
-            synapse: 'section.wixui-section'
+            synapse: 'section.wixui-section',
+            dna: 'section.wixui-section',
+            rna: 'section.wixui-section'
         }
     };
 
@@ -342,6 +354,7 @@
             'pathway',
             'pathway.js',
             config.selectors.pathway,
+.
             config.fallbackSelectors.pathway
         );
     }
@@ -372,6 +385,60 @@
             null, // rightPanelFallbackSelector
             extraAttributes
         );
+    }
+
+    /**
+     * @function loadDnaRepairApplication
+     * @description Loads the DNA repair simulation application.
+     */
+    async function loadDnaRepairApplication() {
+        await loadApplication(
+            'dnaRepair',
+            'dna_repair.js',
+            config.selectors.dna,
+            config.fallbackSelectors.dna,
+            null,
+            'default',
+            null,
+            null,
+            {}
+        );
+
+        // After the script is loaded, initialize the simulation
+        GreenhouseUtils.waitForElement(config.selectors.dna, config.elementWaitTimeout).then(targetElement => {
+            if (window.Greenhouse && window.Greenhouse.initializeDNARepairSimulation) {
+                window.Greenhouse.initializeDNARepairSimulation(config.selectors.dna);
+            }
+        }).catch(error => {
+            console.error('Greenhouse: DNA Repair simulation target element not found after loading script.', error);
+        });
+    }
+
+    /**
+     * @function loadRnaRepairApplication
+     * @description Loads the RNA repair simulation application.
+     */
+    async function loadRnaRepairApplication() {
+        await loadApplication(
+            'rnaRepair',
+            'rna_repair.js',
+            config.selectors.rna,
+            config.fallbackSelectors.rna,
+            null,
+            'default',
+            null,
+            null,
+            {}
+        );
+
+        // After the script is loaded, initialize the simulation
+        GreenhouseUtils.waitForElement(config.selectors.rna, config.elementWaitTimeout).then(targetElement => {
+            if (window.Greenhouse && window.Greenhouse.initializeRNARepairSimulation) {
+                window.Greenhouse.initializeRNARepairSimulation(config.selectors.rna);
+            }
+        }).catch(error => {
+            console.error('Greenhouse: RNA Repair simulation target element not found after loading script.', error);
+        });
     }
 
     /**
@@ -408,6 +475,10 @@
             await loadSynapseApplication();
         } else if (window.location.pathname.includes(config.pathwayPagePath)) {
             await loadPathwayApplication();
+        } else if (window.location.pathname.includes(config.dnaPagePath)) {
+            await loadDnaRepairApplication();
+        } else if (window.location.pathname.includes(config.rnaPagePath)) {
+            await loadRnaRepairApplication();
         }
     }
 
