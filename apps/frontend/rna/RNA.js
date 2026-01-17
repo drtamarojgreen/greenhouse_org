@@ -10,7 +10,7 @@ $w.onReady(function () {
 function initRNASimulation() {
     // Define the selector where the app will be injected
     // This ID should match the container ID in the Wix Editor
-    const targetSelector = "#rna-app-container";
+    const targetSelector = "#rnaSection";
 
     // In a real Wix environment, we might be passing data to a Custom Element or an iframe.
     // However, based on the provided architecture (script injection via Custom Code in Dashboard),
