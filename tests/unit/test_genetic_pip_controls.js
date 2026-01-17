@@ -51,7 +51,16 @@ TestFramework.describe('GreenhouseGeneticPiPControls', () => {
         pip.controllers = {};
         pip.cameras = {};
         pip.activePiP = null;
-        pip.init({});
+
+        const cameras = [
+            {}, // Main camera (mock)
+            { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 }, // helix
+            { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 }, // micro
+            { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 }, // protein
+            { x: 0, y: 0, z: -200, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500 }  // target
+        ];
+
+        pip.init({}, cameras);
     });
 
     TestFramework.it('should initialize controllers', () => {
