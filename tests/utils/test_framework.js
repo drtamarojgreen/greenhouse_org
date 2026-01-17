@@ -273,17 +273,24 @@ class TestFramework {
    * Run a function with timeout
    */
   runWithTimeout(fn, timeout) {
+    // Check if setTimeout is mocked to execute immediately (like in some of our tests)
+    // or if it's the real one.
     return new Promise((resolve, reject) => {
+      let isResolved = false;
       const timer = setTimeout(() => {
-        reject(new Error(`Test timeout after ${timeout}ms`));
+        if (!isResolved) {
+          reject(new Error(`Test timeout after ${timeout}ms`));
+        }
       }, timeout);
 
       Promise.resolve(fn())
         .then(() => {
+          isResolved = true;
           clearTimeout(timer);
           resolve();
         })
         .catch((error) => {
+          isResolved = true;
           clearTimeout(timer);
           reject(error);
         });
