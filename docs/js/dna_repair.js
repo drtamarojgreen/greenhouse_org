@@ -18,7 +18,7 @@
             camera: {
                 x: 0,
                 y: 0,
-                z: -400,
+                z: -250,
                 rotationX: 0,
                 rotationY: 0,
                 rotationZ: 0,
@@ -35,7 +35,7 @@
         // Configuration
         config: {
             helixLength: 60, // Longer for horizontal view
-            radius: 30,      // Slightly smaller radius
+            radius: 40,      // Larger radius
             rise: 14,        // Distance between base pairs
             rotationPerPair: 0.5, // Radians
             colors: {
@@ -145,17 +145,53 @@
             });
 
             window.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                const dx = e.clientX - lastX;
-                const dy = e.clientY - lastY;
+                // Dragging Logic
+                if (isDragging) {
+                    const dx = e.clientX - lastX;
+                    const dy = e.clientY - lastY;
+                    this.state.camera.rotationX += dy * 0.005;
+                    this.state.camera.x -= dx * 2;
+                    lastX = e.clientX;
+                    lastY = e.clientY;
+                    return;
+                }
 
-                // Rotate helix around X axis (spin) with Y drag
-                this.state.camera.rotationX += dy * 0.005;
-                // Pan horizontally with X drag
-                this.state.camera.x -= dx * 2;
+                // Hover / Tooltip Logic
+                if (window.GreenhouseDNATooltip) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left;
+                    const my = e.clientY - rect.top;
 
-                lastX = e.clientX;
-                lastY = e.clientY;
+                    // Simple Hit Test
+                    let hit = null;
+                    const cam = this.state.camera;
+                    const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
+                    const radius = this.config.radius;
+
+                    for (let i = 0; i < this.state.basePairs.length; i++) {
+                        const pair = this.state.basePairs[i];
+                        if (pair.isBroken) continue;
+
+                        // Approx hit positions (Strand 1 & 2)
+                        const s1Y = Math.cos(pair.angle) * radius + (pair.offsetY || 0);
+                        const s1Z = Math.sin(pair.angle) * radius;
+                        const p1 = project(pair.x, s1Y, s1Z, cam, { width: this.width, height: this.height, near: 10, far: 5000 });
+
+                        const s2Y = Math.cos(pair.angle + Math.PI) * radius + (pair.offsetY || 0);
+                        const s2Z = Math.sin(pair.angle + Math.PI) * radius;
+                        const p2 = project(pair.x, s2Y, s2Z, cam, { width: this.width, height: this.height, near: 10, far: 5000 });
+
+                        // Check dist
+                        const dist1 = Math.hypot(p1.x - mx, p1.y - my);
+                        if (dist1 < 10 * p1.scale) { hit = { key: pair.base1, x: e.clientX, y: e.clientY }; break; }
+
+                        const dist2 = Math.hypot(p2.x - mx, p2.y - my);
+                        if (dist2 < 10 * p2.scale) { hit = { key: pair.base2, x: e.clientX, y: e.clientY }; break; }
+                    }
+
+                    if (hit) GreenhouseDNATooltip.show(hit.x, hit.y, hit.key);
+                    else GreenhouseDNATooltip.hide();
+                }
             });
 
             window.addEventListener('mouseup', () => { isDragging = false; });
@@ -331,7 +367,7 @@
                 const midY = (p1.y + p2.y) / 2;
                 const thickness = 5 * p1.scale;
 
-                // Rungs
+                // Draw Rung
                 const drawBase = (startP, endP, baseType, damaged) => {
                     if (!baseType) return;
                     ctx.strokeStyle = damaged ? '#ff0000' : (this.config.colors[baseType] || '#fff');
@@ -345,21 +381,44 @@
                 drawBase(p1, { x: midX, y: midY }, pair.base1, pair.isDamaged);
                 drawBase({ x: midX, y: midY }, p2, pair.base2, pair.isDamaged);
 
-                // Draw Text Labels
-                // Only draw if scale is large enough to be readable
+                // Draw Pentagons for Sugars (Deoxyribose)
+                const drawPentagon = (x, y, radius) => {
+                    ctx.fillStyle = '#e2e8f0'; // Sugar color
+                    ctx.beginPath();
+                    for (let j = 0; j < 5; j++) {
+                        const angle = (j * 2 * Math.PI / 5) - Math.PI / 2;
+                        const px = x + Math.cos(angle) * radius;
+                        const py = y + Math.sin(angle) * radius;
+                        if (j === 0) ctx.moveTo(px, py);
+                        else ctx.lineTo(px, py);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                };
+
+                if (p1.scale > 0.3) drawPentagon(p1.x, p1.y, 6 * p1.scale);
+                if (p2.scale > 0.3) drawPentagon(p2.x, p2.y, 6 * p2.scale);
+
+                // Draw Text Labels (Centered on the Base Rung)
                 if (p1.scale > 0.4) {
-                    ctx.fillStyle = "#ffffff";
-                    ctx.font = `bold ${10 * p1.scale}px Arial`;
+                    ctx.fillStyle = "#000"; // Black text for contrast on color rungs
+                    ctx.font = `bold ${8 * p1.scale}px Arial`;
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                    if (pair.base1) ctx.fillText(pair.base1, p1.x, p1.y);
+
+                    const tx = (p1.x + midX) / 2;
+                    const ty = (p1.y + midY) / 2;
+                    if (pair.base1) ctx.fillText(pair.base1, tx, ty);
                 }
                 if (p2.scale > 0.4) {
-                    ctx.fillStyle = "#ffffff";
-                    ctx.font = `bold ${10 * p2.scale}px Arial`;
+                    ctx.fillStyle = "#000";
+                    ctx.font = `bold ${8 * p2.scale}px Arial`;
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                    if (pair.base2) ctx.fillText(pair.base2, p2.x, p2.y);
+
+                    const tx = (p2.x + midX) / 2;
+                    const ty = (p2.y + midY) / 2;
+                    if (pair.base2) ctx.fillText(pair.base2, tx, ty);
                 }
 
                 // Phosphodiester Backbone
@@ -377,9 +436,10 @@
 
                     const drawBone = (pStart, pEnd) => {
                         ctx.strokeStyle = this.config.colors.backbone;
-                        ctx.lineWidth = 3 * pStart.scale;
+                        ctx.lineWidth = 2 * pStart.scale; // Thinner backbone line
                         ctx.beginPath();
                         ctx.moveTo(pStart.x, pStart.y);
+                        // Connect centers of pentagons
                         ctx.lineTo(pEnd.x, pEnd.y);
                         ctx.stroke();
                     };
