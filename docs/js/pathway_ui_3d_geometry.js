@@ -118,6 +118,47 @@
                     torsoShell.faces.push({ indices: [second, second + 1, first + 1], region });
                 }
             }
+
+            // Generate Arms
+            const armLength = 500;
+            const armRadius = 45;
+            // Left Arm
+            this.initializeLimb(torsoShell, { x: -260, y: -260, z: 0 }, armLength, armRadius, -0.3, 'left_arm');
+            // Right Arm
+            this.initializeLimb(torsoShell, { x: 260, y: -260, z: 0 }, armLength, armRadius, 0.3, 'right_arm');
+        },
+
+        initializeLimb(shell, startPos, length, radius, angle, regionName) {
+            const segments = 20;
+            const radial = 15;
+            const startIdx = shell.vertices.length;
+
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                // Simple linear extrusion with slight angle
+                const y = startPos.y - t * length;
+                const xBase = startPos.x + (t * length * Math.sin(angle));
+                const zBase = startPos.z + (t * 50); // Slight forward curve
+
+                // Taper logic
+                const currentRadius = radius * (1 - t * 0.4);
+
+                for (let j = 0; j <= radial; j++) {
+                    const phi = (j / radial) * Math.PI * 2;
+                    const x = xBase + Math.cos(phi) * currentRadius;
+                    const z = zBase + Math.sin(phi) * currentRadius;
+                    shell.vertices.push({ x, y, z, region: regionName });
+                }
+            }
+
+            for (let i = 0; i < segments; i++) {
+                for (let j = 0; j < radial; j++) {
+                    const first = startIdx + i * (radial + 1) + j;
+                    const second = first + radial + 1;
+                    shell.faces.push({ indices: [first, second, first + 1], region: regionName });
+                    shell.faces.push({ indices: [second, second + 1, first + 1], region: regionName });
+                }
+            }
         },
 
         computeRegionsAndBoundaries(brainShell) {

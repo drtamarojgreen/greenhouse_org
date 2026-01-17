@@ -551,6 +551,24 @@
                 ctx.font = '14px Arial';
                 ctx.fillText("Connecting to KEGG / Loading data...", w / 2, h / 2);
             }
+
+            // Draw Interaction PiP if a node is selected
+            if (highlightedNode && window.GreenhousePathwayBrain) {
+                const pipW = 300;
+                const pipH = 250;
+                const pipX = w - pipW - 20;
+                const pipY = h - pipH - 20;
+
+                ctx.save();
+                ctx.translate(pipX, pipY);
+                ctx.beginPath();
+                ctx.rect(0, 0, pipW, pipH);
+                ctx.clip(); // Ensure PiP content stays inside bounds
+
+                window.GreenhousePathwayBrain.drawInteractionPiP(ctx, pipW, pipH, highlightedNode.name);
+
+                ctx.restore();
+            }
         },
 
         drawCentralNervousSystemPillar(ctx, w, h) {

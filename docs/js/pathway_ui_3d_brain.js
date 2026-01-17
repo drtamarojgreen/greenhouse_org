@@ -83,6 +83,67 @@
                 ctx.lineTo(f.p3.x, f.p3.y);
                 ctx.fill();
             });
+        },
+
+        drawInteractionPiP(ctx, w, h, moleculeName) {
+            // Simplified 3D stylized view of a receptor interaction
+            const mapName = (moleculeName || 'Dopamine').toLowerCase();
+            let color = { r: 0, g: 153, b: 255 }; // Default Blue (Dopamine)
+            if (mapName.includes('serotonin') || mapName.includes('5-ht')) color = { r: 255, g: 50, b: 50 };
+            if (mapName.includes('glutamate')) color = { r: 255, g: 153, b: 0 };
+            if (mapName.includes('gaba')) color = { r: 150, g: 0, b: 255 };
+            if (mapName.includes('cortisol')) color = { r: 255, g: 200, b: 0 };
+
+            // Draw Background and Frame
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(0, 0, w, h);
+            ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.5)`;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, w, h);
+
+            // Label
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText("Molecular Interaction: " + (moleculeName || 'None'), w / 2, 20);
+
+            if (!moleculeName) return;
+
+            // Draw Presynaptic Terminal (Top Bulb)
+            const centerX = w / 2;
+            const centerY = h / 2;
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY - 60, 40, 0, Math.PI, true); // Bulb shape
+            ctx.fill();
+            ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 1)`; // Highlight color
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // Draw Postsynaptic Terminal (Bottom Cup)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY + 60, 40, Math.PI, 0, true); // Cup shape
+            ctx.fill();
+            ctx.stroke();
+
+            // Draw Particles (Neurotransmitters)
+            const time = Date.now() * 0.002;
+            ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.8)`;
+            for (let i = 0; i < 8; i++) {
+                const offset = (i / 8) * Math.PI * 2;
+                const px = centerX + Math.cos(time + offset) * 15;
+                const py = centerY + Math.sin(time * 1.5 + offset) * 20; // Falling movement
+
+                ctx.beginPath();
+                ctx.arc(px, py, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw Receptors
+            ctx.fillStyle = '#555';
+            for (let i = -1; i <= 1; i++) {
+                ctx.fillRect(centerX + i * 20 - 5, centerY + 30, 10, 10);
+            }
         }
     };
 
