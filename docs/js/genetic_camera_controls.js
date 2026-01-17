@@ -269,15 +269,15 @@
             const panSpeed = this.config.get('camera.controls.panSpeed') || 0.002;
             const panScale = Math.abs(this.camera.z) * panSpeed;
 
-            this.camera.x -= dx * panScale;
-            this.camera.y -= dy * panScale;
+            this.camera.x += dx * panScale;
+            this.camera.y += dy * panScale;
         }
 
         /**
          * Zoom camera
          */
         zoom(delta) {
-            this.camera.z += delta;
+            this.camera.z -= delta;
 
             // Clamp zoom
             const minZoom = this.config.get('camera.controls.minZoom') || -50;

@@ -122,6 +122,7 @@
 
                 // Delegate to controller
                 this.controllers[this.activePiP].handleMouseDown(e);
+                e.stopPropagation(); // Prevent main controller from activating
                 return true; // Event was handled
             }
             return false; // Event was not handled
@@ -182,10 +183,7 @@
                 });
 
                 this.controllers[this.activePiP].handleMouseUp();
-
-                // Don't clear activePiP here - it will be cleared on next mousedown
-                // This ensures the controller's isDragging flag is the source of truth
-                console.log(`[PiP Controls] Keeping activePiP set for next interaction`);
+                this.activePiP = null;
             }
         },
 
