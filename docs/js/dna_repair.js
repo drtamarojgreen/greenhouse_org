@@ -76,6 +76,11 @@
             // Initialize DNA Data
             this.generateDNA();
 
+            // Initialize Tooltips
+            if (window.GreenhouseDNATooltip) {
+                window.GreenhouseDNATooltip.initialize();
+            }
+
             // Start Loop
             this.isRunning = true;
             this.startSimulation('ber'); // Default start
@@ -339,6 +344,23 @@
 
                 drawBase(p1, { x: midX, y: midY }, pair.base1, pair.isDamaged);
                 drawBase({ x: midX, y: midY }, p2, pair.base2, pair.isDamaged);
+
+                // Draw Text Labels
+                // Only draw if scale is large enough to be readable
+                if (p1.scale > 0.4) {
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = `bold ${10 * p1.scale}px Arial`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    if (pair.base1) ctx.fillText(pair.base1, p1.x, p1.y);
+                }
+                if (p2.scale > 0.4) {
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = `bold ${10 * p2.scale}px Arial`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    if (pair.base2) ctx.fillText(pair.base2, p2.x, p2.y);
+                }
 
                 // Phosphodiester Backbone
                 if (i > 0 && !this.state.basePairs[i - 1].isBroken) {
