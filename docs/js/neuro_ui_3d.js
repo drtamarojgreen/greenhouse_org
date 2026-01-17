@@ -259,6 +259,9 @@
         },
 
         updateData(genome) {
+            this.neurons = [];
+            this.connections = [];
+            this.newConnections = [];
             // Convert GA genome to visualization data
             // genome.neurons: {x,y,z, id}
             // genome.connections: {from, to, weight}

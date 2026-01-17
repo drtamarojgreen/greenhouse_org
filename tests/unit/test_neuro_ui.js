@@ -34,6 +34,8 @@ global.document = {
             strokeRect: () => { },
             closePath: () => { },
             arc: () => { }, // Added arc
+            ellipse: () => {}, // Added ellipse
+            setLineDash: () => {}, // Added setLineDash
             set fillStyle(v) { },
             set strokeStyle(v) { },
             set lineWidth(v) { },
@@ -68,7 +70,8 @@ function loadScript(filename) {
 // --- Mock Dependencies ---
 window.GreenhouseModels3DMath = {
     project3DTo2D: (x, y, z) => ({ x: x + 400, y: y + 300, scale: 1, depth: z }),
-    applyDepthFog: (alpha, depth) => alpha // Simple pass-through
+    applyDepthFog: (alpha, depth) => alpha, // Simple pass-through
+    calculateFaceNormal: (v1, v2, v3) => ({ x: 0, y: 0, z: -1 }) // Mock normal
 };
 
 // Load Modules
@@ -83,34 +86,41 @@ loadScript('neuro_ui_3d.js');
 // --- Test Suites ---
 
 TestFramework.describe('GreenhouseNeuroUI3D', () => {
-    const ui = window.GreenhouseNeuroUI3D;
-    const mockContainer = document.createElement('div');
-    const mockAlgo = {
-        bestNetwork: { // Changed from bestGenome to bestNetwork to match implementation
-            nodes: [{ id: 1, x: 0, y: 0, z: 0, type: 'input' }, { id: 2, x: 10, y: 10, z: 0, type: 'output' }], // Changed neurons to nodes
-            connections: [{ from: 1, to: 2, weight: 0.5 }],
-            fitness: 0.5
-        },
-        generation: 1
-    };
+    let ui;
+    let mockContainer;
+    let mockAlgo;
+
+    TestFramework.beforeEach(() => {
+        ui = window.GreenhouseNeuroUI3D;
+        mockContainer = document.createElement('div');
+        mockAlgo = {
+            bestNetwork: {
+                neurons: [{ id: 1, x: 0, y: 0, z: 0, type: 'input' }, { id: 2, x: 10, y: 10, z: 0, type: 'output' }],
+                connections: [{ from: 1, to: 2, weight: 0.5 }],
+                fitness: 0.5
+            },
+            generation: 1
+        };
+        global.document.querySelector = () => mockContainer;
+        ui.init('div'); // Corrected init signature
+        ui.updateData(mockAlgo.bestNetwork); // Pre-load data
+    });
 
     TestFramework.it('should initialize', () => {
-        // Mock querySelector
-        global.document.querySelector = () => mockContainer;
-
-        ui.init('div', mockAlgo); // Pass algo
         assert.isDefined(ui.canvas);
         assert.isDefined(ui.ctx);
     });
 
     TestFramework.it('should update data', () => {
-        ui.updateData();
-        assert.equal(ui.neurons3D.length, 2);
-        assert.equal(ui.connections3D.length, 1);
+        // Data is now loaded in beforeEach, this test just verifies it
+        assert.isDefined(ui.neurons, "ui.neurons should be defined after updateData");
+        assert.isDefined(ui.connections, "ui.connections should be defined after updateData");
+        assert.equal(ui.neurons.length, 2);
+        assert.equal(ui.connections.length, 1);
     });
 
     TestFramework.it('should render', () => {
-        // Mock context methods to avoid errors
+        // With data loaded, this should no longer crash
         ui.ctx = document.createElement('canvas').getContext('2d');
         ui.render();
         assert.isTrue(true); // Reached here without error

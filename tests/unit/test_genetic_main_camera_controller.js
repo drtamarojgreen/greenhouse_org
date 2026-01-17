@@ -1,5 +1,7 @@
 // tests/unit/test_genetic_main_camera_controller.js
 // Unit tests for main camera controller functionality
+const { describe, it, beforeEach, afterEach, assert } = require('../utils/test_framework.js');
+
 
 describe('Genetic Main Camera Controller', () => {
     let container;

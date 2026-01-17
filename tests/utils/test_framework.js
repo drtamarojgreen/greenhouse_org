@@ -390,6 +390,17 @@ class TestFramework {
 // Create singleton instance
 const testFramework = new TestFramework();
 
+// Bind methods to the instance to allow for destructuring in tests
+testFramework.describe = testFramework.describe.bind(testFramework);
+testFramework.it = testFramework.it.bind(testFramework);
+testFramework.xit = testFramework.xit.bind(testFramework);
+testFramework.fit = testFramework.fit.bind(testFramework);
+testFramework.beforeEach = testFramework.beforeEach.bind(testFramework);
+testFramework.afterEach = testFramework.afterEach.bind(testFramework);
+testFramework.beforeAll = testFramework.beforeAll.bind(testFramework);
+testFramework.afterAll = testFramework.afterAll.bind(testFramework);
+testFramework.run = testFramework.run.bind(testFramework);
+
 // Export for use in tests
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = testFramework;

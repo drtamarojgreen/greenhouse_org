@@ -1,5 +1,7 @@
 // tests/unit/test_genetic_3d_projection.js
 // Unit tests for 3D projection and rendering math
+const { describe, it, beforeEach, afterEach, assert } = require('../utils/test_framework.js');
+
 
 describe('Genetic 3D Projection', () => {
     let container;

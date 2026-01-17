@@ -1,5 +1,7 @@
 // tests/unit/test_genetic_camera_views.js
 // Unit tests for genetic page camera views and PiP controls
+const { describe, it, beforeEach, afterEach, assert } = require('../utils/test_framework.js');
+
 
 describe('Genetic Camera Views', () => {
     let container;
