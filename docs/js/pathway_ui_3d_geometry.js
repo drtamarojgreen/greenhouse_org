@@ -120,34 +120,73 @@
             }
 
             // Generate Arms
-            const armLength = 500;
-            const armRadius = 45;
+            // Generate Arms
+            const armLength = 520;
+            const armRadius = 40;
+
             // Left Arm
-            this.initializeLimb(torsoShell, { x: -260, y: -260, z: 0 }, armLength, armRadius, -0.3, 'left_arm');
+            const leftStart = { x: -180, y: -280, z: 0 };
+            const leftDir = { x: -1, y: 0, z: 0 };
+            // Shoulder
+            this.initializeSphere(torsoShell, leftStart, 75, 'left_shoulder');
+            // Arm
+            this.initializeLimb(torsoShell, leftStart, armLength, armRadius, leftDir, 'left_arm');
+            // Hand
+            const leftEnd = {
+                x: leftStart.x + leftDir.x * armLength,
+                y: leftStart.y + leftDir.y * armLength,
+                z: leftStart.z + leftDir.z * armLength
+            };
+            this.initializeSphere(torsoShell, leftEnd, 45, 'left_hand');
+
+
             // Right Arm
-            this.initializeLimb(torsoShell, { x: 260, y: -260, z: 0 }, armLength, armRadius, 0.3, 'right_arm');
+            const rightStart = { x: 180, y: -280, z: 0 };
+            const rightDir = { x: 1, y: 0, z: 0 };
+            // Shoulder
+            this.initializeSphere(torsoShell, rightStart, 75, 'right_shoulder');
+            // Arm
+            this.initializeLimb(torsoShell, rightStart, armLength, armRadius, rightDir, 'right_arm');
+            // Hand
+            const rightEnd = {
+                x: rightStart.x + rightDir.x * armLength,
+                y: rightStart.y + rightDir.y * armLength,
+                z: rightStart.z + rightDir.z * armLength
+            };
+            this.initializeSphere(torsoShell, rightEnd, 45, 'right_hand');
         },
 
-        initializeLimb(shell, startPos, length, radius, angle, regionName) {
+        initializeLimb(shell, startPos, length, radius, direction, regionName) {
             const segments = 20;
             const radial = 15;
             const startIdx = shell.vertices.length;
 
             for (let i = 0; i <= segments; i++) {
                 const t = i / segments;
-                // Simple linear extrusion with slight angle
-                const y = startPos.y - t * length;
-                const xBase = startPos.x + (t * length * Math.sin(angle));
-                const zBase = startPos.z + (t * 50); // Slight forward curve
+                // Extrude along direction vector
+                const xBase = startPos.x + direction.x * length * t;
+                const yBase = startPos.y + direction.y * length * t;
+                const zBase = startPos.z + direction.z * length * t;
 
                 // Taper logic
                 const currentRadius = radius * (1 - t * 0.4);
 
                 for (let j = 0; j <= radial; j++) {
                     const phi = (j / radial) * Math.PI * 2;
-                    const x = xBase + Math.cos(phi) * currentRadius;
-                    const z = zBase + Math.sin(phi) * currentRadius;
-                    shell.vertices.push({ x, y, z, region: regionName });
+                    let px, py, pz;
+
+                    // Orientation logic:
+                    if (Math.abs(direction.x) > Math.abs(direction.y)) {
+                        px = xBase;
+                        py = yBase + Math.cos(phi) * currentRadius;
+                        pz = zBase + Math.sin(phi) * currentRadius;
+                    } else {
+                        px = xBase + Math.cos(phi) * currentRadius;
+                        py = yBase;
+                        pz = zBase + Math.sin(phi) * currentRadius;
+                    }
+
+                    shell.vertices.push({ x: px, y: py, z: pz, region: regionName });
                 }
             }
 
@@ -155,6 +194,39 @@
                 for (let j = 0; j < radial; j++) {
                     const first = startIdx + i * (radial + 1) + j;
                     const second = first + radial + 1;
+                    shell.faces.push({ indices: [first, second, first + 1], region: regionName });
+                    shell.faces.push({ indices: [second, second + 1, first + 1], region: regionName });
+                }
+            }
+        },
+
+        initializeSphere(shell, center, radius, regionName) {
+            const latBands = 12;
+            const lonBands = 12;
+            const startIdx = shell.vertices.length;
+
+            for (let lat = 0; lat <= latBands; lat++) {
+                const theta = lat * Math.PI / latBands;
+                const sinTheta = Math.sin(theta);
+                const cosTheta = Math.cos(theta);
+
+                for (let lon = 0; lon <= lonBands; lon++) {
+                    const phi = lon * 2 * Math.PI / lonBands;
+                    const sinPhi = Math.sin(phi);
+                    const cosPhi = Math.cos(phi);
+
+                    const x = center.x + cosPhi * sinTheta * radius;
+                    const y = center.y + cosTheta * radius;
+                    const z = center.z + sinPhi * sinTheta * radius;
+
+                    shell.vertices.push({ x, y, z, region: regionName });
+                }
+            }
+
+            for (let lat = 0; lat < latBands; lat++) {
+                for (let lon = 0; lon < lonBands; lon++) {
+                    const first = startIdx + lat * (lonBands + 1) + lon;
+                    const second = first + lonBands + 1;
                     shell.faces.push({ indices: [first, second, first + 1], region: regionName });
                     shell.faces.push({ indices: [second, second + 1, first + 1], region: regionName });
                 }

@@ -1,62 +1,394 @@
 // docs/js/dna_repair.js
+// DNA Repair Simulation Module
+// Handles 3D rendering of DNA helix and repair animations
 
-(function() {
+(function () {
     'use strict';
 
-    console.log("DNA Repair simulation script loaded.");
+    const GreenhouseDNARepair = {
+        canvas: null,
+        ctx: null,
+        isRunning: false,
+        width: 800,
+        height: 600,
 
-    // Function to initialize the canvas and simulation
-    function initializeDNARepairSimulation(targetSelector) {
-        const targetElement = document.querySelector(targetSelector);
-        if (!targetElement) {
-            console.error('Target element for DNA repair simulation not found:', targetSelector);
-            return;
+        // Simulation State
+        // Initialize the simulation with horizontal orientation
+        state: {
+            camera: {
+                x: 0,
+                y: 0,
+                z: -400,
+                rotationX: 0,
+                rotationY: 0,
+                rotationZ: 0,
+                fov: 500,
+                zoom: 1.0
+            },
+            basePairs: [],
+            particles: [],
+            repairMode: 'ber', // ber, mmr, dsb
+            timer: 0,
+            simulating: false // Control when animation runs
+        },
+
+        // Configuration
+        config: {
+            helixLength: 60, // Longer for horizontal view
+            radius: 30,      // Slightly smaller radius
+            rise: 14,        // Distance between base pairs
+            rotationPerPair: 0.5, // Radians
+            colors: {
+                A: '#00D9FF', // Cyan
+                T: '#FF0055', // Red
+                C: '#FFD500', // Yellow
+                G: '#00FF66', // Green
+                backbone: '#EEEEEE',
+                enzyme: '#9d00ff',
+                damage: '#FF0000'
+            }
+        },
+
+        // Initialize the simulation
+        initializeDNARepairSimulation(targetSelector) {
+            const container = document.querySelector(targetSelector);
+            if (!container) {
+                console.error('GreenhouseDNARepair: Container not found', targetSelector);
+                return;
+            }
+
+            // Setup Canvas
+            this.canvas = document.createElement('canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.canvas.style.width = '100%';
+            this.canvas.style.height = '100%';
+            this.canvas.width = container.offsetWidth;
+            this.canvas.height = container.offsetHeight;
+            container.innerHTML = '';
+            container.appendChild(this.canvas);
+
+            this.width = this.canvas.width;
+            this.height = this.canvas.height;
+
+            // Initialize Interaction
+            this.setupInteraction();
+
+            // Initialize DNA Data
+            this.generateDNA();
+
+            // Start Loop
+            this.isRunning = true;
+            this.startSimulation('ber'); // Default start
+            this.animate();
+
+            console.log('GreenhouseDNARepair: Initialized');
+        },
+
+        startSimulation(mode) {
+            this.state.repairMode = mode;
+            this.state.timer = 0;
+            this.state.simulating = true;
+            this.state.particles = [];
+            this.generateDNA(); // Reset structure
+
+            const titles = {
+                'ber': "Base Excision Repair",
+                'mmr': "Mismatch Repair",
+                'dsb': "Double-Strand Break Repair"
+            };
+            this.currentModeText = titles[mode];
+        },
+
+        generateDNA() {
+            this.state.basePairs = [];
+            for (let i = 0; i < this.config.helixLength; i++) {
+                // Horizontal Layout: X is the long axis
+                const x = (i - this.config.helixLength / 2) * this.config.rise;
+                const angle = i * this.config.rotationPerPair;
+
+                const type = Math.floor(Math.random() * 4);
+                let base1, base2;
+                switch (type) {
+                    case 0: base1 = 'A'; base2 = 'T'; break;
+                    case 1: base1 = 'T'; base2 = 'A'; break;
+                    case 2: base1 = 'C'; base2 = 'G'; break;
+                    case 3: base1 = 'G'; base2 = 'C'; break;
+                }
+
+                this.state.basePairs.push({
+                    index: i,
+                    x: x, // Primary position is X now
+                    angle: angle,
+                    base1: base1,
+                    base2: base2,
+                    isDamaged: false,
+                    isBroken: false,
+                    offsetY: 0 // For DSB drift
+                });
+            }
+        },
+
+        setupInteraction() {
+            let isDragging = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            this.canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                lastX = e.clientX;
+                lastY = e.clientY;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - lastX;
+                const dy = e.clientY - lastY;
+
+                // Rotate helix around X axis (spin) with Y drag
+                this.state.camera.rotationX += dy * 0.005;
+                // Pan horizontally with X drag
+                this.state.camera.x -= dx * 2;
+
+                lastX = e.clientX;
+                lastY = e.clientY;
+            });
+
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            this.canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                this.state.camera.z += e.deltaY * 0.5;
+                this.state.camera.z = Math.min(-100, Math.max(-1500, this.state.camera.z));
+            });
+        },
+
+        animate() {
+            if (!this.isRunning) return;
+
+            this.update();
+            this.render();
+
+            requestAnimationFrame(() => this.animate());
+        },
+
+        update() {
+            const st = this.state;
+
+            // Auto-spin logic (can be toggled)
+            st.camera.rotationX += 0.005;
+
+            if (st.simulating) {
+                st.timer++;
+                // Delegate to specific repair logic based on mode selector
+                if (st.repairMode === 'ber') this.handleBER(st.timer);
+                else if (st.repairMode === 'mmr') this.handleMMR(st.timer);
+                else if (st.repairMode === 'dsb') this.handleDSB(st.timer);
+
+                // Stop active animation after cycle completes
+                if (st.timer > 600) {
+                    st.timer = 0;
+                    this.generateDNA(); // Reset for next loop
+                }
+            }
+
+            // Update Particles
+            st.particles.forEach((p, i) => {
+                p.x += (p.targetX - p.x) * 0.1;
+                p.y += (p.targetY - p.y) * 0.1;
+                p.z += (p.targetZ - p.z) * 0.1;
+                p.life--;
+                if (p.life <= 0) st.particles.splice(i, 1);
+            });
+        },
+
+        handleBER(t) {
+            const targetIdx = Math.floor(this.config.helixLength / 2);
+            const pair = this.state.basePairs[targetIdx];
+
+            if (t === 10) {
+                pair.isDamaged = true; // Sim damage
+            }
+            if (t === 100) {
+                this.spawnParticles(pair.x, 0, 0, 20, '#ff00ff');
+            }
+            if (t > 150 && t < 300) {
+                pair.base1 = '';
+            }
+            if (t === 300) {
+                this.spawnParticles(pair.x, 0, 0, 10, this.config.colors.A);
+            }
+            if (t === 350) {
+                pair.base1 = 'A';
+                pair.isDamaged = false;
+            }
+        },
+
+        handleMMR(t) {
+            const targetIdx = Math.floor(this.config.helixLength / 2) + 5;
+            const pair = this.state.basePairs[targetIdx];
+
+            if (t === 10) { pair.base1 = 'C'; pair.base2 = 'C'; pair.isDamaged = true; }
+            if (t > 150 && t < 400) {
+                for (let i = -2; i <= 2; i++) {
+                    if (this.state.basePairs[targetIdx + i])
+                        this.state.basePairs[targetIdx + i].base1 = '';
+                }
+            }
+            if (t === 450) {
+                for (let i = -2; i <= 2; i++) {
+                    const p = this.state.basePairs[targetIdx + i];
+                    if (p) { p.base1 = 'G'; p.base2 = 'C'; p.isDamaged = false; }
+                }
+            }
+        },
+
+        handleDSB(t) {
+            const targetIdx = Math.floor(this.config.helixLength / 2);
+
+            if (t === 50) this.state.basePairs[targetIdx].isBroken = true;
+
+            if (t > 50 && t < 300) {
+                // Horizontal drift: Left side goes left/up, Right side goes right/down
+                this.state.basePairs.forEach(p => {
+                    if (p.index < targetIdx) { p.x -= 0.2; p.offsetY -= 0.1; }
+                    if (p.index > targetIdx) { p.x += 0.2; p.offsetY += 0.1; }
+                });
+            }
+
+            if (t === 350) this.spawnParticles(this.state.basePairs[targetIdx].x, 0, 0, 50, '#ffff00');
+
+            if (t > 400) {
+                // Rejoin
+                this.state.basePairs.forEach((p, i) => {
+                    const targetX = (i - this.config.helixLength / 2) * this.config.rise;
+                    p.x += (targetX - p.x) * 0.05;
+                    p.offsetY += (0 - p.offsetY) * 0.05;
+                });
+                if (Math.abs(this.state.basePairs[targetIdx].x - ((targetIdx - this.config.helixLength / 2) * this.config.rise)) < 1) {
+                    this.state.basePairs[targetIdx].isBroken = false;
+                }
+            }
+        },
+
+
+        spawnParticles(x, y, z, count, color) {
+            for (let i = 0; i < count; i++) {
+                this.state.particles.push({
+                    x: x + (Math.random() - 0.5) * 100,
+                    y: y + (Math.random() - 0.5) * 100,
+                    z: z + (Math.random() - 0.5) * 100,
+                    targetX: x,
+                    targetY: y,
+                    targetZ: z,
+                    life: 60,
+                    color: color
+                });
+            }
+        },
+
+        render() {
+            const ctx = this.ctx;
+            const w = this.width;
+            const h = this.height;
+            const cam = this.state.camera;
+
+            // Clear
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = '#101015'; // Slightly lighter black
+            ctx.fillRect(0, 0, w, h);
+
+            // Helpers from common math
+            const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
+            const radius = this.config.radius;
+
+            // Draw DNA
+            for (let i = 0; i < this.state.basePairs.length; i++) {
+                const pair = this.state.basePairs[i];
+                if (pair.isBroken) continue;
+
+                // Horizontal Helix: Angle determines Y/Z position
+                const yOff = pair.offsetY || 0;
+
+                // Strand A
+                const s1Y = Math.cos(pair.angle) * radius + yOff;
+                const s1Z = Math.sin(pair.angle) * radius;
+
+                // Strand B
+                const s2Y = Math.cos(pair.angle + Math.PI) * radius + yOff;
+                const s2Z = Math.sin(pair.angle + Math.PI) * radius;
+
+                const p1 = project(pair.x, s1Y, s1Z, cam, { width: w, height: h, near: 10, far: 5000 });
+                const p2 = project(pair.x, s2Y, s2Z, cam, { width: w, height: h, near: 10, far: 5000 });
+
+                if (p1.scale <= 0 || p2.scale <= 0) continue;
+
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                const thickness = 5 * p1.scale;
+
+                // Rungs
+                const drawBase = (startP, endP, baseType, damaged) => {
+                    if (!baseType) return;
+                    ctx.strokeStyle = damaged ? '#ff0000' : (this.config.colors[baseType] || '#fff');
+                    ctx.lineWidth = thickness;
+                    ctx.beginPath();
+                    ctx.moveTo(startP.x, startP.y);
+                    ctx.lineTo(endP.x, endP.y);
+                    ctx.stroke();
+                };
+
+                drawBase(p1, { x: midX, y: midY }, pair.base1, pair.isDamaged);
+                drawBase({ x: midX, y: midY }, p2, pair.base2, pair.isDamaged);
+
+                // Phosphodiester Backbone
+                if (i > 0 && !this.state.basePairs[i - 1].isBroken) {
+                    const prev = this.state.basePairs[i - 1];
+                    const prevYOff = prev.offsetY || 0;
+
+                    const ps1Y = Math.cos(prev.angle) * radius + prevYOff;
+                    const ps1Z = Math.sin(prev.angle) * radius;
+                    const ps2Y = Math.cos(prev.angle + Math.PI) * radius + prevYOff;
+                    const ps2Z = Math.sin(prev.angle + Math.PI) * radius;
+
+                    const pp1 = project(prev.x, ps1Y, ps1Z, cam, { width: w, height: h, near: 10, far: 5000 });
+                    const pp2 = project(prev.x, ps2Y, ps2Z, cam, { width: w, height: h, near: 10, far: 5000 });
+
+                    const drawBone = (pStart, pEnd) => {
+                        ctx.strokeStyle = this.config.colors.backbone;
+                        ctx.lineWidth = 3 * pStart.scale;
+                        ctx.beginPath();
+                        ctx.moveTo(pStart.x, pStart.y);
+                        ctx.lineTo(pEnd.x, pEnd.y);
+                        ctx.stroke();
+                    };
+                    drawBone(pp1, p1);
+                    drawBone(pp2, p2);
+                }
+            }
+
+            // Draw Particles
+            this.state.particles.forEach(p => {
+                const proj = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (proj.scale > 0) {
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, 4 * proj.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
         }
+    };
 
-        // Create a canvas element
-        const canvas = document.createElement('canvas');
-        canvas.id = 'dnaRepairCanvas';
-        canvas.width = targetElement.offsetWidth;
-        canvas.height = 500; // or a height that suits the design
-        
-        // Style the canvas
-        canvas.style.backgroundColor = '#000';
-        canvas.style.display = 'block';
-        
-        // Append canvas to the target element
-        targetElement.innerHTML = ''; // Clear the target element first
-        targetElement.appendChild(canvas);
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-            console.error('Failed to get canvas 2D context.');
-            return;
-        }
-
-        console.log('Canvas initialized for DNA Repair simulation.');
-
-        // Start the simulation loop
-        animate(ctx);
-    }
-
-    // A simple animation loop for the simulation
-    function animate(ctx) {
-        // Clear the canvas
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-        // ** Placeholder for DNA rendering and animation **
-        // For now, let's draw a simple placeholder text
-        ctx.fillStyle = 'white';
-        ctx.font = '20px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('DNA Repair Simulation Placeholder', ctx.canvas.width / 2, ctx.canvas.height / 2);
-
-        // Request the next frame
-        requestAnimationFrame(() => animate(ctx));
-    }
-
-    // Expose the initialization function to the global scope to be called by greenhouse.js
+    // Expose to global scope
     window.Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.initializeDNARepairSimulation = initializeDNARepairSimulation;
+    window.Greenhouse.initializeDNARepairSimulation = function (selector) {
+        GreenhouseDNARepair.initializeDNARepairSimulation(selector);
+    };
+
+    window.Greenhouse.setDNASimulationMode = function (mode) {
+        GreenhouseDNARepair.startSimulation(mode);
+    };
+
+
 
 })();
