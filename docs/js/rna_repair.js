@@ -115,6 +115,18 @@
                     }
                 }
 
+                // Check Enzymes
+                if (!hit) {
+                    for (const enzyme of this.enzymes) {
+                        const dx = enzyme.x - worldX;
+                        const dy = enzyme.y - worldY;
+                        if (dx * dx + dy * dy < enzyme.size * enzyme.size) {
+                            hit = { x: e.clientX, y: e.clientY, key: enzyme.name };
+                            break;
+                        }
+                    }
+                }
+
                 if (hit) {
                     window.GreenhouseRNATooltip.show(hit.x, hit.y, hit.key);
                 } else {
@@ -156,9 +168,13 @@
             }
         }
 
+        /**
+         * Periodic introduction of damage.
+         */
         scheduleDamage() {
             const nextDamage = () => {
                 if (!this.isRunning) return;
+
                 const delay = 3000 + Math.random() * 5000;
                 setTimeout(() => {
                     this.introduceDamage();
@@ -407,7 +423,6 @@
                 this.ctx.fill();
                 this.ctx.strokeStyle = this.colors.GLOW;
                 this.ctx.setLineDash([5, 5]);
-                this.ctx.lineWidth = 2;
                 this.ctx.stroke();
 
                 this.ctx.fillStyle = 'white';
@@ -425,13 +440,12 @@
 
             // Draw Particles
             this.particles.forEach(p => {
-                this.ctx.save();
                 this.ctx.globalAlpha = p.life;
                 this.ctx.beginPath();
                 this.ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
                 this.ctx.fillStyle = p.color;
                 this.ctx.fill();
-                this.ctx.restore();
+                this.ctx.globalAlpha = 1;
             });
 
             this.ctx.restore();
@@ -585,11 +599,9 @@
             const { targetSelector, baseUrl } = captureAttributes();
 
             if (baseUrl) {
-                if (!window.GreenhouseRNATooltip) await GreenhouseUtils.loadScript('rna_tooltip.js', baseUrl);
-                if (!window.GreenhouseRNADisplay) await GreenhouseUtils.loadScript('rna_display.js', baseUrl);
-                if (!document.querySelector('script[data-script-name="rna_legend.js"]')) {
-                    await GreenhouseUtils.loadScript('rna_legend.js', baseUrl);
-                }
+                await GreenhouseUtils.loadScript('rna_tooltip.js', baseUrl);
+                await GreenhouseUtils.loadScript('rna_display.js', baseUrl);
+                await GreenhouseUtils.loadScript('rna_legend.js', baseUrl);
             }
             
             if (targetSelector) {
@@ -605,5 +617,6 @@
         }
     }
 
+    // Execute main function
     main();
 })();
