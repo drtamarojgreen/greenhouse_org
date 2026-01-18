@@ -90,6 +90,11 @@ global.document = {
         appendChild: () => { }
     }
 };
+global.MutationObserver = class {
+    constructor() { }
+    observe() { }
+    disconnect() { }
+};
 global.addEventListener = () => { };
 global.console = console;
 global.requestAnimationFrame = (cb) => { };
@@ -132,7 +137,13 @@ TestFramework.describe('DNA Page Models', () => {
             // Prevent animation loop in tests
             dnaRepair.animate = () => { };
             // Mock initialization
-            dnaRepair.initializeDNARepairSimulation('#dna-container');
+            const container = {
+                offsetWidth: 800,
+                offsetHeight: 600,
+                innerHTML: '',
+                appendChild: () => { }
+            };
+            dnaRepair.initializeDNARepairSimulation(container);
         });
 
         TestFramework.it('should initialize with default values', () => {
@@ -193,6 +204,31 @@ TestFramework.describe('DNA Page Models', () => {
             dnaRepair.handleDSB(401);
             // It uses lerp-like update, so it moves back
             assert.greaterThan(dnaRepair.state.basePairs[0].x, initialX - 10); // Check it's moving back
+        });
+
+        TestFramework.it('should handle NER repair cycle', () => {
+            dnaRepair.startSimulation('ner');
+            const targetIdx = Math.floor(dnaRepair.config.helixLength / 2) - 5;
+            const lesionSize = 4;
+
+            // Damage trigger at t=10
+            dnaRepair.handleNER(10);
+            for (let i = 0; i < lesionSize; i++) {
+                assert.isTrue(dnaRepair.state.basePairs[targetIdx + i].isDamaged);
+            }
+
+            // Excision at t=200
+            dnaRepair.handleNER(200);
+            for (let i = 0; i < lesionSize; i++) {
+                assert.equal(dnaRepair.state.basePairs[targetIdx + i].base1, '');
+            }
+
+            // Repair at t=450
+            dnaRepair.handleNER(450);
+            for (let i = 0; i < lesionSize; i++) {
+                assert.isFalse(dnaRepair.state.basePairs[targetIdx + i].isDamaged);
+                assert.notEqual(dnaRepair.state.basePairs[targetIdx + i].base1, '');
+            }
         });
 
         TestFramework.it('should update simulation state', () => {

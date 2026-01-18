@@ -159,7 +159,8 @@
             const titles = {
                 'ber': "Base Excision Repair",
                 'mmr': "Mismatch Repair",
-                'dsb': "Double-Strand Break Repair"
+                'dsb': "Double-Strand Break Repair",
+                'ner': "Nucleotide Excision Repair"
             };
             this.currentModeText = titles[mode];
         },
@@ -284,6 +285,7 @@
                 if (st.repairMode === 'ber') this.handleBER(st.timer);
                 else if (st.repairMode === 'mmr') this.handleMMR(st.timer);
                 else if (st.repairMode === 'dsb') this.handleDSB(st.timer);
+                else if (st.repairMode === 'ner') this.handleNER(st.timer);
 
                 // Stop active animation after cycle completes
                 if (st.timer > 600) {
@@ -339,6 +341,42 @@
                 for (let i = -2; i <= 2; i++) {
                     const p = this.state.basePairs[targetIdx + i];
                     if (p) { p.base1 = 'G'; p.base2 = 'C'; p.isDamaged = false; }
+                }
+            }
+        },
+
+        handleNER(t) {
+            const targetIdx = Math.floor(this.config.helixLength / 2) - 5;
+            const lesionSize = 4;
+
+            if (t === 10) {
+                // UV Damage (Thymine Dimers) - simulate multiple damaged bases
+                for (let i = 0; i < lesionSize; i++) {
+                    const p = this.state.basePairs[targetIdx + i];
+                    if (p) p.isDamaged = true;
+                }
+            }
+            if (t === 100) {
+                this.spawnParticles(this.state.basePairs[targetIdx + 2].x, 0, 0, 30, '#00ff00');
+            }
+            if (t > 150 && t < 350) {
+                // Excision of the segment
+                for (let i = 0; i < lesionSize; i++) {
+                    const p = this.state.basePairs[targetIdx + i];
+                    if (p) p.base1 = '';
+                }
+            }
+            if (t === 400) {
+                this.spawnParticles(this.state.basePairs[targetIdx + 2].x, 0, 0, 20, '#00D9FF');
+            }
+            if (t === 450) {
+                // Restoration
+                for (let i = 0; i < lesionSize; i++) {
+                    const p = this.state.basePairs[targetIdx + i];
+                    if (p) {
+                        p.base1 = (i % 2 === 0) ? 'T' : 'A';
+                        p.isDamaged = false;
+                    }
                 }
             }
         },
@@ -432,10 +470,20 @@
                     if (!baseType) return;
                     ctx.strokeStyle = damaged ? '#ff0000' : (this.config.colors[baseType] || '#fff');
                     ctx.lineWidth = thickness;
+
+                    if (damaged) {
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = '#ff0000';
+                    }
+
                     ctx.beginPath();
                     ctx.moveTo(startP.x, startP.y);
                     ctx.lineTo(endP.x, endP.y);
                     ctx.stroke();
+
+                    if (damaged) {
+                        ctx.shadowBlur = 0;
+                    }
                 };
 
                 drawBase(p1, { x: midX, y: midY }, pair.base1, pair.isDamaged);
@@ -512,10 +560,13 @@
             this.state.particles.forEach(p => {
                 const proj = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (proj.scale > 0) {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = p.color;
                     ctx.fillStyle = p.color;
                     ctx.beginPath();
                     ctx.arc(proj.x, proj.y, 4 * proj.scale, 0, Math.PI * 2);
                     ctx.fill();
+                    ctx.shadowBlur = 0;
                 }
             });
         }
