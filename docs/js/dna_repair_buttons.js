@@ -220,7 +220,14 @@
         cycle.style.fontSize = '12px';
         cycle.innerText = 'Cell Cycle: G1';
 
+        const metrics = document.createElement('div');
+        metrics.id = 'dna-metrics-stat';
+        metrics.style.color = '#cbd5e0';
+        metrics.style.fontSize = '11px';
+        metrics.innerText = 'Total BP: 60 | Length: 20.4nm | Revolutions: 5.7';
+
         stats.appendChild(atp);
+        stats.appendChild(metrics);
         stats.appendChild(integrity);
         stats.appendChild(analytics);
         stats.appendChild(cycle);

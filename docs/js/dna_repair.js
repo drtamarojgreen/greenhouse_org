@@ -59,9 +59,10 @@
 
         config: {
             helixLength: 60,
-            radius: 40,
-            rise: 14,
-            rotationPerPair: 0.5,
+            radius: 40, // 40px = 1nm
+            rise: 13.6, // 0.34nm * 40px/nm
+            rotationPerPair: 0.6, // ~10.5 bp/turn
+            pixelsPerNM: 40,
             colors: {
                 A: '#00D9FF', T: '#FF0055', C: '#FFD500', G: '#00FF66',
                 backbone: '#EEEEEE', enzyme: '#9d00ff', damage: '#FF0000'
@@ -102,6 +103,8 @@
             const style = document.createElement('style');
             style.id = 'dna-sim-styles';
             style.innerHTML = `
+                .dna-ruler-overlay { position: absolute; top: 80px; left: 20px; border-left: 2px solid #fff; padding-left: 5px; color: #fff; font-size: 10px; pointer-events: none; }
+                .dna-ruler-tick { border-top: 1px solid #fff; width: 10px; position: absolute; left: -5px; }
                 .dna-controls-bar { display: flex; justify-content: center; gap: 10px; padding: 10px; background: rgba(26, 32, 44, 0.8); position: absolute; top: 0; left: 0; right: 0; z-index: 10; flex-wrap: wrap; }
                 .dna-control-btn { background: #2d3748; color: #e2e8f0; border: 1px solid #4a5568; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: all 0.3s ease; font-size: 12px; font-weight: 500; }
                 .dna-control-btn:hover { background: #667eea; color: white; }
@@ -121,15 +124,69 @@
             const sos = document.getElementById('dna-sos-indicator');
             if (sos) sos.style.display = this.state.isSOSActive ? 'block' : 'none';
 
+            // Metrics Update
+            const metrics = document.getElementById('dna-metrics-stat');
+            if (metrics) {
+                const totalBP = this.state.basePairs.length;
+                const totalLength = (totalBP * 0.34).toFixed(1);
+                const turns = (totalBP / 10.5).toFixed(1);
+                metrics.innerText = `Total BP: ${totalBP} | Length: ${totalLength}nm | Revolutions: ${turns}`;
+            }
+
             const counter = document.getElementById('dna-atp-counter');
             if (counter) counter.innerText = `ATP Consumed: ${Math.floor(this.state.atpConsumed)}`;
             const integrity = document.getElementById('dna-integrity-stat');
             if (integrity) {
-                integrity.innerText = `Genomic Integrity: ${Math.round(this.state.genomicIntegrity)}% | Mutations: ${this.state.mutationCount}`;
-                integrity.style.color = this.state.genomicIntegrity < 100 ? '#f56565' : '#a0aec0';
+                const p53Text = this.state.p53Functional ? '' : ' [p53 MUTATED]';
+                integrity.innerText = `Genomic Integrity: ${Math.round(this.state.genomicIntegrity)}% | Mutations: ${this.state.mutationCount}${p53Text}`;
+                integrity.style.color = (this.state.genomicIntegrity < 100 || !this.state.p53Functional) ? '#f56565' : '#a0aec0';
             }
             const analytics = document.getElementById('dna-analytics-stat');
             if (analytics) analytics.innerText = `Successful Repairs: ${this.state.successfulRepairs} | Error-Prone: ${this.state.mutatedRepairs}`;
+
+            // ATP Sparkline Data
+            if (this.state.timer % 10 === 0) {
+                this.state.atpHistory.push(this.state.atpConsumed);
+                if (this.state.atpHistory.length > 50) this.state.atpHistory.shift();
+                this.drawATPGraph();
+            }
+        },
+
+        updateRuler(project, cam) {
+            const ruler = document.getElementById('dna-ruler-overlay');
+            if (!ruler) return;
+            const p0 = project(0, 0, 0, cam, { width: this.width, height: this.height, near: 10, far: 5000 });
+            const p1 = project(0, this.config.pixelsPerNM, 0, cam, { width: this.width, height: this.height, near: 10, far: 5000 });
+            const pxPerNM = Math.abs(p1.y - p0.y);
+            ruler.style.height = (pxPerNM * 10) + 'px';
+            ruler.innerHTML = `
+                <div class="dna-ruler-tick" style="top: 0;"></div><span style="position:absolute; top:-5px; left:10px;">0nm</span>
+                <div class="dna-ruler-tick" style="top: ${pxPerNM * 2}px;"></div><span style="position:absolute; top:${pxPerNM * 2 - 5}px; left:10px;">2nm (Diameter)</span>
+                <div class="dna-ruler-tick" style="top: ${pxPerNM * 10}px;"></div><span style="position:absolute; top:${pxPerNM * 10 - 5}px; left:10px;">10nm</span>
+            `;
+        },
+
+        drawATPGraph() {
+            const container = document.getElementById('dna-stats-container');
+            if (!container) return;
+            let canvas = document.getElementById('dna-atp-graph');
+            if (!canvas) {
+                canvas = document.createElement('canvas'); canvas.id = 'dna-atp-graph';
+                canvas.width = 150; canvas.height = 30; canvas.style.marginTop = '5px';
+                canvas.style.borderBottom = '1px solid #4a5568';
+                container.appendChild(canvas);
+            }
+            const gctx = canvas.getContext('2d');
+            gctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (this.state.atpHistory.length < 2) return;
+            gctx.strokeStyle = '#48bb78'; gctx.lineWidth = 2; gctx.beginPath();
+            const maxAtp = Math.max(...this.state.atpHistory, 1);
+            this.state.atpHistory.forEach((val, i) => {
+                const x = (i / 50) * canvas.width;
+                const y = canvas.height - (val / maxAtp) * canvas.height;
+                if (i === 0) gctx.moveTo(x, y); else gctx.lineTo(x, y);
+            });
+            gctx.stroke();
         },
 
         observeAndReinitializeApp(container) {
@@ -315,6 +372,7 @@
             ctx.fillStyle = this.state.isSOSActive ? '#2d1010' : '#101015';
             ctx.fillRect(0, 0, w, h);
             const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+            this.updateRuler(project, cam);
             const radius = this.config.radius * (1 + (this.state.globalHelixUnwind || 0) * 1.5);
             const rotS = 1 - (this.state.globalHelixUnwind || 0) * 0.8;
             for (let i = 0; i < this.state.basePairs.length; i++) {
