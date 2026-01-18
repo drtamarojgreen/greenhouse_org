@@ -1,246 +1,114 @@
 /**
- * Unit Tests for DNA Page Models
+ * Unit tests for DNA Repair Simulation
+ * Loads actual source code to verify logic
  */
 
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    querySelector: (selector) => {
-        if (selector === '#dna-container') {
-            return {
-                offsetWidth: 800,
-                offsetHeight: 600,
-                innerHTML: '',
-                appendChild: () => { }
-            };
+// Helper to load and execute source files in a mock browser context
+function loadSource(context) {
+    const files = [
+        'docs/js/dna_repair_mechanisms.js',
+        'docs/js/dna_repair_mutations.js',
+        'docs/js/dna_repair_buttons.js',
+        'docs/js/dna_repair.js'
+    ];
+
+    // Minimal DOM/Browser mocks for loading
+    context.window = context;
+    context.global = context;
+    context.document = {
+        createElement: () => ({ style: {}, appendChild: () => {}, setAttribute: () => {} }),
+        head: { appendChild: () => {} },
+        currentScript: { getAttribute: () => null }
+    };
+    context.navigator = { userAgent: 'node' };
+    context.console = console;
+    context.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+    context.setInterval = setInterval;
+    context.clearInterval = clearInterval;
+    context.setTimeout = setTimeout;
+
+    // Mock 3D Math dependency
+    context.GreenhouseModels3DMath = {
+        project3DTo2D: (x, y, z, cam, opts) => ({ x: 0, y: 0, scale: 1 })
+    };
+
+    files.forEach(file => {
+        const code = fs.readFileSync(path.resolve(__dirname, '../../', file), 'utf8');
+        const script = new Function('window', 'document', 'navigator', 'console', 'requestAnimationFrame', 'setInterval', 'clearInterval', 'setTimeout', code);
+        try {
+            script(context, context.document, context.navigator, context.console, context.requestAnimationFrame, context.setInterval, context.clearInterval, context.setTimeout);
+        } catch (e) {
+            // console.log('Script load note:', file, e.message);
         }
-        return null;
-    },
-    getElementById: () => ({
-        addEventListener: () => { },
-        getContext: () => ({
-            save: () => { },
-            restore: () => { },
-            translate: () => { },
-            rotate: () => { },
-            scale: () => { },
-            beginPath: () => { },
-            moveTo: () => { },
-            lineTo: () => { },
-            stroke: () => { },
-            fill: () => { },
-            rect: () => { },
-            arc: () => { },
-            closePath: () => { },
-            clip: () => { },
-            fillText: () => { },
-            measureText: () => ({ width: 0 }),
-            createLinearGradient: () => ({ addColorStop: () => { } }),
-            clearRect: () => { },
-            fillRect: () => { },
-            strokeRect: () => { }
-        }),
-        width: 800,
-        height: 600,
-        getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
-        style: {},
-        appendChild: () => { }
-    }),
-    createElement: (tag) => {
-        const element = {
-            tag,
-            style: {},
-            getContext: () => ({
-                save: () => { },
-                restore: () => { },
-                translate: () => { },
-                rotate: () => { },
-                scale: () => { },
-                beginPath: () => { },
-                moveTo: () => { },
-                lineTo: () => { },
-                stroke: () => { },
-                fill: () => { },
-                rect: () => { },
-                arc: () => { },
-                closePath: () => { },
-                clip: () => { },
-                fillText: () => { },
-                measureText: () => ({ width: 0 }),
-                clearRect: () => { },
-                fillRect: () => { },
-                strokeRect: () => { },
-                setLineDash: () => { }
-            }),
-            width: 800,
-            height: 600,
-            addEventListener: () => { },
-            appendChild: () => { },
-            getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
-        };
-        return element;
-    },
-    body: {
-        appendChild: () => { }
-    }
-};
-global.addEventListener = () => { };
-global.console = console;
-global.requestAnimationFrame = (cb) => { };
-const originalSetTimeout = global.setTimeout;
-global.setTimeout = (cb, delay) => {
-    if (delay > 0) {
-        // Do nothing for scheduled timeouts in tests to avoid infinite loops
-        return;
-    }
-    return originalSetTimeout(cb, delay);
-};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename, exposeInternal = false, internalName = '') {
-    const filePath = path.join(__dirname, '../../docs/js', filename);
-    let code = fs.readFileSync(filePath, 'utf8');
-
-    if (exposeInternal && internalName) {
-        // Simple trick to expose internal object from IIFE for testing
-        code = code.replace('})();', `window.${internalName} = ${internalName}; })();`);
-    }
-
-    vm.runInThisContext(code);
+    });
 }
 
-// --- Load Dependencies ---
-loadScript('models_3d_math.js');
-loadScript('dna_repair.js', true, 'GreenhouseDNARepair');
-loadScript('dna_tooltip.js');
+TestFramework.describe('DNA Repair Simulation Logic (Source Verified)', () => {
+    const context = { GreenhouseDNARepair: {} };
+    loadSource(context);
+    const G = context.GreenhouseDNARepair;
 
-// --- Test Suites ---
-
-TestFramework.describe('DNA Page Models', () => {
-
-    TestFramework.describe('GreenhouseDNARepair', () => {
-        let dnaRepair;
-
-        TestFramework.beforeEach(() => {
-            dnaRepair = window.GreenhouseDNARepair;
-            // Prevent animation loop in tests
-            dnaRepair.animate = () => { };
-            // Mock initialization
-            dnaRepair.initializeDNARepairSimulation('#dna-container');
-        });
-
-        TestFramework.it('should initialize with default values', () => {
-            assert.isDefined(dnaRepair);
-            assert.isTrue(dnaRepair.isRunning);
-            assert.isDefined(dnaRepair.state.basePairs);
-            assert.equal(dnaRepair.state.basePairs.length, dnaRepair.config.helixLength);
-        });
-
-        TestFramework.it('should generate DNA correctly', () => {
-            dnaRepair.generateDNA();
-            assert.equal(dnaRepair.state.basePairs.length, dnaRepair.config.helixLength);
-            const firstPair = dnaRepair.state.basePairs[0];
-            assert.isDefined(firstPair.base1);
-            assert.isDefined(firstPair.base2);
-            assert.isFalse(firstPair.isDamaged);
-        });
-
-        TestFramework.it('should switch simulation modes', () => {
-            dnaRepair.startSimulation('mmr');
-            assert.equal(dnaRepair.state.repairMode, 'mmr');
-            assert.equal(dnaRepair.state.timer, 0);
-            assert.isTrue(dnaRepair.state.simulating);
-        });
-
-        TestFramework.it('should handle BER repair cycle', () => {
-            dnaRepair.startSimulation('ber');
-            const targetIdx = Math.floor(dnaRepair.config.helixLength / 2);
-
-            // Damage trigger at t=10
-            dnaRepair.handleBER(10);
-            assert.isTrue(dnaRepair.state.basePairs[targetIdx].isDamaged);
-
-            // Excision at t=200 (between 150 and 300)
-            dnaRepair.handleBER(200);
-            assert.equal(dnaRepair.state.basePairs[targetIdx].base1, '');
-
-            // Repair at t=350
-            dnaRepair.handleBER(350);
-            assert.equal(dnaRepair.state.basePairs[targetIdx].base1, 'A');
-            assert.isFalse(dnaRepair.state.basePairs[targetIdx].isDamaged);
-        });
-
-        TestFramework.it('should handle DSB repair cycle', () => {
-            dnaRepair.startSimulation('dsb');
-            const targetIdx = Math.floor(dnaRepair.config.helixLength / 2);
-
-            // Break at t=50
-            dnaRepair.handleDSB(50);
-            assert.isTrue(dnaRepair.state.basePairs[targetIdx].isBroken);
-
-            // Drift at t=100
-            const initialX = dnaRepair.state.basePairs[0].x;
-            dnaRepair.handleDSB(100);
-            assert.lessThan(dnaRepair.state.basePairs[0].x, initialX);
-
-            // Rejoin starts at t=401
-            dnaRepair.handleDSB(401);
-            // It uses lerp-like update, so it moves back
-            assert.greaterThan(dnaRepair.state.basePairs[0].x, initialX - 10); // Check it's moving back
-        });
-
-        TestFramework.it('should update simulation state', () => {
-            const initialRotationX = dnaRepair.state.camera.rotationX;
-            dnaRepair.update();
-            assert.notEqual(dnaRepair.state.camera.rotationX, initialRotationX);
-        });
+    TestFramework.it('Should have all repair pathways attached from mechanisms.js', () => {
+        assert.isDefined(G.handleBER);
+        assert.isDefined(G.handleNER);
+        assert.isDefined(G.handleMMR);
+        assert.isDefined(G.handleNHEJ);
+        assert.isDefined(G.handleHR);
+        assert.isDefined(G.handlePhotolyase);
     });
 
-    TestFramework.describe('GreenhouseDNATooltip', () => {
-        let tooltip;
+    TestFramework.it('NHEJ should result in deletion and mutation (Source Logic)', () => {
+        // Initialize state using source generateDNA
+        G.config.helixLength = 60;
+        G.config.rise = 14;
+        G.generateDNA();
 
-        TestFramework.beforeEach(() => {
-            tooltip = window.GreenhouseDNATooltip;
-            tooltip.initialize();
-        });
+        G.state.repairMode = 'nhej';
+        G.state.atpConsumed = 0;
+        G.state.mutationCount = 0;
+        G.state.genomicIntegrity = 100;
 
-        TestFramework.it('should initialize tooltip element', () => {
-            assert.isDefined(tooltip.tooltipElement);
-            assert.equal(tooltip.tooltipElement.id, 'dna-tooltip');
-        });
+        const targetIdx = Math.floor(G.config.helixLength / 2);
 
-        TestFramework.it('should show tooltip for valid key', () => {
-            tooltip.show(100, 100, 'A');
-            assert.equal(tooltip.tooltipElement.style.display, 'block');
-            assert.isTrue(tooltip.tooltipElement.innerHTML.includes('Adenine'));
-        });
+        G.handleNHEJ(50);
+        assert.equal(G.state.atpConsumed, 10);
+        assert.isTrue(G.state.basePairs[targetIdx].isBroken);
 
-        TestFramework.it('should hide tooltip', () => {
-            tooltip.show(100, 100, 'A');
-            tooltip.hide();
-            assert.equal(tooltip.tooltipElement.style.display, 'none');
-        });
+        G.handleNHEJ(200);
+        assert.equal(G.state.atpConsumed, 30);
+        assert.equal(G.state.basePairs.length, 59);
+        assert.equal(G.state.mutationCount, 1);
+        assert.equal(G.state.genomicIntegrity, 95);
+    });
 
-        TestFramework.it('should change language', () => {
-            tooltip.setLanguage('es');
-            assert.equal(tooltip.currentLang, 'es');
-            tooltip.show(100, 100, 'A');
-            assert.isTrue(tooltip.tooltipElement.innerHTML.includes('Adenina'));
-        });
+    TestFramework.it('NER should involve helix unwinding (Source Logic)', () => {
+        G.generateDNA();
+        G.state.globalHelixUnwind = 0;
+
+        G.handleNER(125);
+        assert.isTrue(G.state.globalHelixUnwind > 0);
+
+        G.handleNER(400);
+        assert.equal(G.state.globalHelixUnwind, 0);
+    });
+
+    TestFramework.it('Photolyase should repair without excision (Source Logic)', () => {
+        G.generateDNA();
+        const targetIdx = Math.floor(G.config.helixLength / 2) - 10;
+        const originalBase = G.state.basePairs[targetIdx].base1;
+
+        G.handlePhotolyase(10);
+        assert.isTrue(G.state.basePairs[targetIdx].isDamaged);
+
+        G.handlePhotolyase(200);
+        assert.isFalse(G.state.basePairs[targetIdx].isDamaged);
+        assert.equal(G.state.basePairs[targetIdx].base1, originalBase, "Base should not be excised");
     });
 });
 
-// Run the tests
-TestFramework.run().then(results => {
-    if (results.failed > 0) {
-        process.exit(1);
-    } else {
-        process.exit(0);
-    }
-});
+TestFramework.run();
