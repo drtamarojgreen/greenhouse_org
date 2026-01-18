@@ -430,4 +430,30 @@
     window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
     window.Greenhouse.RNARepairSimulation = RNARepairSimulation;
 
+    // --- Auto-Initialization Logic ---
+    function captureAttributes() {
+        if (window._greenhouseScriptAttributes) {
+            return {
+                targetSelector: window._greenhouseScriptAttributes['target-selector-left']
+            };
+        }
+        const script = document.currentScript;
+        if (script) {
+            return {
+                targetSelector: script.getAttribute('data-target-selector-left')
+            };
+        }
+        return { targetSelector: null };
+    }
+
+    function main() {
+        const { targetSelector } = captureAttributes();
+        if (targetSelector) {
+            console.log('RNA Repair App: Auto-initializing with selector:', targetSelector);
+            initializeRNARepairSimulation(targetSelector);
+        }
+    }
+
+    // Execute main function
+    main();
 })();

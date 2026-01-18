@@ -400,15 +400,6 @@
             null,
             {}
         );
-
-        // After the script is loaded, initialize the simulation
-        GreenhouseUtils.waitForElement(config.selectors.dna, config.elementWaitTimeout).then(targetElement => {
-            if (window.Greenhouse && window.Greenhouse.initializeDNARepairSimulation) {
-                window.Greenhouse.initializeDNARepairSimulation(config.selectors.dna);
-            }
-        }).catch(error => {
-            console.error('Greenhouse: DNA Repair simulation target element not found after loading script.', error);
-        });
     }
 
     /**
@@ -427,15 +418,6 @@
             null,
             {}
         );
-
-        // After the script is loaded, initialize the simulation
-        GreenhouseUtils.waitForElement(config.selectors.rna, config.elementWaitTimeout).then(targetElement => {
-            if (window.Greenhouse && window.Greenhouse.initializeRNARepairSimulation) {
-                window.Greenhouse.initializeRNARepairSimulation(config.selectors.rna);
-            }
-        }).catch(error => {
-            console.error('Greenhouse: RNA Repair simulation target element not found after loading script.', error);
-        });
     }
 
     /**

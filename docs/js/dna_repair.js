@@ -479,6 +479,30 @@
         GreenhouseDNARepair.startSimulation(mode);
     };
 
+    // --- Auto-Initialization Logic ---
+    function captureAttributes() {
+        if (window._greenhouseScriptAttributes) {
+            return {
+                targetSelector: window._greenhouseScriptAttributes['target-selector-left']
+            };
+        }
+        const script = document.currentScript;
+        if (script) {
+            return {
+                targetSelector: script.getAttribute('data-target-selector-left')
+            };
+        }
+        return { targetSelector: null };
+    }
 
+    function main() {
+        const { targetSelector } = captureAttributes();
+        if (targetSelector) {
+            console.log('DNA Repair App: Auto-initializing with selector:', targetSelector);
+            GreenhouseDNARepair.initializeDNARepairSimulation(targetSelector);
+        }
+    }
 
+    // Execute main function
+    main();
 })();
