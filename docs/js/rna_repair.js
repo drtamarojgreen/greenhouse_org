@@ -49,6 +49,26 @@
             this.particles = [];
             this.proteins = []; // Enhancement 22: RNPs
 
+            // Enhancement 82: Simulation Logging
+            this.eventLog = [];
+            this.maxLogEntries = 5;
+
+            // Enhancement 57: Educational Factoids
+            this.factoids = [
+                "RNA is typically single-stranded but can fold into complex 3D shapes.",
+                "The 5' cap protects mRNA from exonuclease degradation.",
+                "Ribozymes are RNA molecules that have catalytic enzyme-like activity.",
+                "Poly-A tails act as a biological clock for mRNA lifespan.",
+                "RNA interference (RNAi) uses siRNA to silence gene expression.",
+                "Mg2+ ions are essential for stabilizing RNA structural folds."
+            ];
+            this.currentFactoid = "";
+            this.factoidTimer = 0;
+
+            // Enhancement 24: Poly-A Tail Dynamics
+            this.polyATailLength = 10;
+            this.tailShortenTimer = 0;
+
             // Enhancement 66: ATP Currency (Modular)
             if (window.Greenhouse && window.Greenhouse.RNAAtpManager) {
                 this.atpManager = new window.Greenhouse.RNAAtpManager();
@@ -214,11 +234,19 @@
                 // Enhancement 24: Poly-A Tail (last 10 bases)
                 if (i >= baseCount - 10) type = 'A';
 
+                // Enhancement 10: Ribozyme segments
+                let isRibozyme = false;
+                if (i > 10 && i < 15) {
+                    type = 'R';
+                    isRibozyme = true;
+                }
+
                 this.rnaStrand.push({
                     x: centerX,
                     targetX: centerX,
                     y: spacing * (i + 1),
                     type: type,
+                    isRibozyme: isRibozyme,
                     damaged: false,
                     damageType: null,
                     protected: false, // Enhancement 22
@@ -227,6 +255,57 @@
                     flash: 0 // Enhancement 35: Reaction flash
                 });
             }
+        }
+
+        /**
+         * Enhancement 82: Log an event to the simulation HUD
+         */
+        logEvent(msg) {
+            const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            this.eventLog.unshift(`[${time}] ${msg}`);
+            if (this.eventLog.length > this.maxLogEntries) this.eventLog.pop();
+        }
+
+        /**
+         * Enhancement 57: Show a biological factoid
+         */
+        showFactoid(index) {
+            this.currentFactoid = this.factoids[index % this.factoids.length];
+            this.factoidTimer = 10.0; // Show for 10s
+        }
+
+        /**
+         * Enhancement 11: Periodic RNAi RISC binding
+         */
+        scheduleRNAi() {
+            const nextRNAi = () => {
+                if (!this.isRunning) return;
+                const delay = 20000 + Math.random() * 30000;
+                setTimeout(() => {
+                    this.spawnRISC();
+                    nextRNAi();
+                }, delay);
+            };
+            nextRNAi();
+        }
+
+        spawnRISC() {
+            if (this.rnaStrand.length < 10) return;
+            const index = Math.floor(Math.random() * (this.rnaStrand.length - 1));
+            const enzyme = {
+                name: 'RISC (RNAi)',
+                targetIndex: index,
+                x: Math.random() * this.width,
+                y: Math.random() > 0.5 ? -50 : this.height + 50,
+                size: 50,
+                speed: 2,
+                state: 'approaching',
+                progress: 0,
+                type: 'interfering'
+            };
+            this.enzymes.push(enzyme);
+            this.logEvent("RNAi: RISC complex detected target sequence.");
+            this.showFactoid(4);
         }
 
         /**
@@ -384,6 +463,41 @@
             this.rnaStrand[index].flash = 2.0;
         }
 
+        /**
+         * Enhancement 24: Shorten Poly-A Tail
+         */
+        shortenPolyATail() {
+            if (this.polyATailLength > 0) {
+                this.polyATailLength--;
+                this.logEvent("Poly-A tail shortened.");
+
+                if (this.polyATailLength === 0) {
+                    this.logEvent("Poly-A tail lost! Triggering 3'-5' decay.");
+                    this.showFactoid(3);
+                    this.spawn3PrimeExonuclease();
+                }
+            }
+        }
+
+        /**
+         * Enhancement 15: 3'-5' Exosome-mediated Decay
+         */
+        spawn3PrimeExonuclease() {
+            if (this.rnaStrand.length === 0) return;
+            const index = this.rnaStrand.length - 1;
+            const enzyme = {
+                name: 'Exosome Complex',
+                targetIndex: index,
+                x: this.width / 2,
+                y: this.height + 50,
+                size: 60,
+                speed: 1,
+                state: 'decaying_3prime',
+                progress: 0
+            };
+            this.enzymes.push(enzyme);
+        }
+
         spawnExonuclease(index) {
             const enzyme = {
                 name: 'Xrn1',
@@ -401,6 +515,16 @@
         update(dt) {
             if (!dt) dt = 16; // Fallback for first frame
             this.simTime += dt * 0.002;
+
+            // Enhancement 57: Factoid decay
+            if (this.factoidTimer > 0) this.factoidTimer -= 0.01 * (dt / 16);
+
+            // Enhancement 24: Poly-A Tail Shortening
+            this.tailShortenTimer += dt;
+            if (this.tailShortenTimer > 30000) { // Every 30s
+                this.shortenPolyATail();
+                this.tailShortenTimer = 0;
+            }
 
             // Modular Physics Updates
             if (this.foldingEngine) this.foldingEngine.update(dt);
@@ -425,6 +549,14 @@
 
             // Update RNA strand movement
             this.rnaStrand.forEach((base, i) => {
+                // Enhancement 10: Ribozyme Self-Repair
+                if (base.isRibozyme && !base.connected && Math.random() < 0.001) {
+                    base.connected = true;
+                    base.flash = 1.0;
+                    this.logEvent("Ribozyme: Catalytic self-ligation complete.");
+                    this.showFactoid(2);
+                }
+
                 // Enhancement 32 & 33: Fluid Dynamics + Thermal Noise
                 const fluidMotion = Math.sin(this.simTime + base.offset) * 15;
 
@@ -544,16 +676,37 @@
                     if (enzyme.progress >= 1) {
                         if (enzyme.name === 'Ligase') {
                             targetBase.connected = true;
+                            this.logEvent("Ligation complete.");
                         } else if (enzyme.name === 'Dcp2') {
                             targetBase.flash = 1.0;
                             this.spawnExonuclease(0);
+                            this.logEvent("5' Cap lost. Xrn1 recruited.");
+                        } else if (enzyme.name === 'RISC (RNAi)') {
+                            targetBase.connected = false;
+                            targetBase.flash = 2.0;
+                            this.logEvent("RNAi: RISC cleaved target RNA.");
                         } else {
                             targetBase.damaged = false;
                             targetBase.damageType = null;
+                            this.logEvent(`${enzyme.name} repair complete.`);
                         }
                         targetBase.flash = 1.0;
                         enzyme.state = 'leaving';
                         this.spawnParticles(enzyme.x, enzyme.y);
+                    }
+                } else if (enzyme.state === 'decaying_3prime') {
+                    // Enhancement 15: 3'-5' digestion
+                    enzyme.x = targetBase.x;
+                    enzyme.y = targetBase.y;
+                    enzyme.progress += 0.005 * (dt / 16);
+
+                    if (enzyme.progress >= 1) {
+                        this.rnaStrand.pop();
+                        enzyme.progress = 0;
+                        enzyme.targetIndex = this.rnaStrand.length - 1;
+                        if (this.rnaStrand.length === 0) {
+                            enzyme.state = 'leaving';
+                        }
                     }
                 } else if (enzyme.state === 'leaving') {
                     enzyme.y -= enzyme.speed * (dt / 16);
@@ -830,11 +983,50 @@
                 this.ctx.fillText(`Temp: ${env.temp}°C`, this.width - 20, 95);
             }
 
+            // Enhancement 24: Poly-A Tail Status
+            this.ctx.fillText(`Poly-A: ${this.polyATailLength}`, this.width - 20, 115);
+
             this.ctx.beginPath();
             this.ctx.rect(this.width - 120, 15, 100 * (atpStatus.atp / 100), 10);
             this.ctx.fillStyle = this.colors.ATP;
             this.ctx.fill();
             this.ctx.restore();
+
+            // Enhancement 82: Event Log
+            this.ctx.save();
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            this.ctx.font = '10px monospace';
+            this.ctx.textAlign = 'left';
+            this.eventLog.forEach((entry, i) => {
+                this.ctx.fillText(entry, 20, this.height - 20 - i * 15);
+            });
+            this.ctx.restore();
+
+            // Enhancement 57: Factoid Pop-up
+            if (this.factoidTimer > 0) {
+                this.ctx.save();
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                this.ctx.fillRect(this.width / 2 - 150, 50, 300, 60);
+                this.ctx.strokeStyle = this.colors.GLOW;
+                this.ctx.strokeRect(this.width / 2 - 150, 50, 300, 60);
+
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = 'italic 12px Arial';
+                this.ctx.textAlign = 'center';
+                const words = this.currentFactoid.split(' ');
+                let line = '';
+                let y = 75;
+                words.forEach(word => {
+                    if ((line + word).length > 40) {
+                        this.ctx.fillText(line, this.width / 2, y);
+                        line = '';
+                        y += 15;
+                    }
+                    line += word + ' ';
+                });
+                this.ctx.fillText(line, this.width / 2, y);
+                this.ctx.restore();
+            }
 
             // Draw Particles
             this.particles.forEach(p => {

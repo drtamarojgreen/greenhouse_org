@@ -72,9 +72,7 @@ global.setTimeout = (cb, delay) => {
     }
     return originalSetTimeout(cb, delay);
 };
-global.Date = {
-    now: () => 1000000
-};
+// Use real Date to avoid "is not a constructor"
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
@@ -223,6 +221,50 @@ TestFramework.describe('RNA Page Models', () => {
 
             const hasUPF1 = simulation.enzymes.some(e => e.name === 'UPF1/Exosome');
             assert.isTrue(hasUPF1);
+        });
+
+        TestFramework.it('should perform ribozyme self-repair', () => {
+            // Find a ribozyme base
+            const rIndex = simulation.rnaStrand.findIndex(b => b.isRibozyme);
+            assert.isTrue(rIndex !== -1);
+
+            simulation.rnaStrand[rIndex].connected = false;
+
+            // Force random success
+            const originalRandom = Math.random;
+            Math.random = () => 0.0001; // Less than 0.001
+
+            simulation.update(16);
+
+            assert.isTrue(simulation.rnaStrand[rIndex].connected);
+            Math.random = originalRandom;
+        });
+
+        TestFramework.it('should shorten Poly-A tail and trigger 3\' decay', () => {
+            simulation.polyATailLength = 1;
+            simulation.tailShortenTimer = 30001;
+
+            simulation.update(1);
+
+            assert.equal(simulation.polyATailLength, 0);
+            const hasExosome = simulation.enzymes.some(e => e.name === 'Exosome Complex');
+            assert.isTrue(hasExosome);
+        });
+
+        TestFramework.it('should handle RNAi RISC cleavage', () => {
+            simulation.spawnRISC();
+            const risc = simulation.enzymes.find(e => e.name === 'RISC (RNAi)');
+            assert.isDefined(risc);
+
+            const target = simulation.rnaStrand[risc.targetIndex];
+            target.connected = true;
+
+            // Repairing state
+            risc.state = 'repairing';
+            risc.progress = 0.99;
+
+            simulation.update(16);
+            assert.isFalse(target.connected);
         });
 
         TestFramework.it('should spawn protective proteins', () => {
