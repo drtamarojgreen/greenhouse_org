@@ -14,11 +14,15 @@
     G.induceSpontaneousDamage = function() {
         const st = this.state;
         const rad = st.radiationLevel || 0;
+        const ao = st.antioxidantLevel || 0;
 
         if (rad <= 0) return;
 
         // Base probability scaled by radiation level
-        const prob = rad / 10000;
+        let prob = rad / 10000;
+
+        // SOS Response Effect: Increase damage rate (stress)
+        if (st.isSOSActive) prob *= 1.5;
 
         st.basePairs.forEach(pair => {
             if (pair.isDamaged || pair.isBroken) return;
@@ -32,7 +36,10 @@
                     this.applyUVDamage(pair, rad);
                 } else if (damageRoll < 0.7) {
                     // ROS (Reactive Oxygen Species) - Oxidative damage
-                    this.applyROSDamage(pair);
+                    // Reduced by antioxidant level
+                    if (Math.random() > (ao / 100)) {
+                        this.applyROSDamage(pair);
+                    }
                 } else if (damageRoll < 0.9) {
                     // Alkylation damage
                     this.applyAlkylationDamage(pair);

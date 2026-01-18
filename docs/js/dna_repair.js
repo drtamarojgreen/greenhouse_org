@@ -52,7 +52,9 @@
             radiationLevel: 10,
             successfulRepairs: 0,
             mutatedRepairs: 0,
-            cellCyclePhase: 'G1' // G1, S, G2
+            cellCyclePhase: 'G1', // G1, S, G2
+            p53Functional: true,
+            atpHistory: []
         },
 
         config: {
@@ -116,6 +118,9 @@
         },
 
         updateStats() {
+            const sos = document.getElementById('dna-sos-indicator');
+            if (sos) sos.style.display = this.state.isSOSActive ? 'block' : 'none';
+
             const counter = document.getElementById('dna-atp-counter');
             if (counter) counter.innerText = `ATP Consumed: ${Math.floor(this.state.atpConsumed)}`;
             const integrity = document.getElementById('dna-integrity-stat');
@@ -172,7 +177,17 @@
                 const type = Math.floor(Math.random() * 4);
                 let b1, b2;
                 switch (type) { case 0: b1 = 'A'; b2 = 'T'; break; case 1: b1 = 'T'; b2 = 'A'; break; case 2: b1 = 'C'; b2 = 'G'; break; case 3: b1 = 'G'; b2 = 'C'; break; }
-                this.state.basePairs.push({ index: i, x: x, angle: angle, base1: b1, base2: b2, isDamaged: false, isBroken: false, offsetY: 0 });
+
+                // Histone logic: Nucleosomes occur every ~147-200 bp.
+                // In our simulation scale, let's place one every 20 base pairs.
+                const hasHistone = (i % 30 === 15);
+
+                this.state.basePairs.push({
+                    index: i, x: x, angle: angle,
+                    base1: b1, base2: b2,
+                    isDamaged: false, isBroken: false, offsetY: 0,
+                    hasHistone: hasHistone
+                });
             }
         },
 
@@ -198,8 +213,40 @@
                     if (hit) GreenhouseDNATooltip.show(hit.x, hit.y, hit.key); else GreenhouseDNATooltip.hide();
                 }
             });
-            window.addEventListener('mouseup', () => { isDragging = false; });
+            window.addEventListener('mouseup', (e) => {
+                if (isDragging && Math.abs(e.clientX - lastX) < 5 && Math.abs(e.clientY - lastY) < 5) {
+                    this.handleCanvasClick(e);
+                }
+                isDragging = false;
+            });
             this.canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.state.camera.z += e.deltaY * 0.5; this.state.camera.z = Math.min(-100, Math.max(-1500, this.state.camera.z)); });
+        },
+
+        handleCanvasClick(e) {
+            if (this.state.repairMode !== 'sandbox') return;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+            const cam = this.state.camera;
+            const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+            const radius = this.config.radius;
+
+            for (let i = 0; i < this.state.basePairs.length; i++) {
+                const pair = this.state.basePairs[i];
+                const s1Y = Math.cos(pair.angle) * radius + pair.offsetY;
+                const s1Z = Math.sin(pair.angle) * radius;
+                const p1 = project(pair.x, s1Y, s1Z, cam, { width: this.width, height: this.height, near: 10, far: 5000 });
+
+                if (Math.hypot(p1.x - mx, p1.y - my) < 20 * p1.scale) {
+                    pair.isDamaged = !pair.isDamaged;
+                    if (pair.isDamaged) {
+                        pair.damageType = 'User-Induced';
+                        this.spawnParticles(pair.x, s1Y, s1Z, 10, '#ff0000');
+                    }
+                    return;
+                }
+            }
         },
 
         animate() { if (!this.isRunning) return; this.update(); this.render(); requestAnimationFrame(() => this.animate()); },
@@ -208,8 +255,27 @@
             const st = this.state; st.camera.rotationX += 0.005;
             if (st.simulating) {
                 st.timer++;
+
+                // SOS Response Trigger: Integrity below 60%
+                st.isSOSActive = st.genomicIntegrity < 60;
+
                 if (this.induceSpontaneousDamage) this.induceSpontaneousDamage();
                 const m = st.repairMode;
+
+                // PARP Signaling Logic: PARP binds to damaged/broken sites to recruit repair
+                st.basePairs.forEach(p => {
+                    if (p.isDamaged || p.isBroken) {
+                        if (!p.parpBound) {
+                            p.parpBound = true;
+                            p.parpTimer = 0;
+                        }
+                        p.parpTimer++;
+                    } else {
+                        p.parpBound = false;
+                        p.parpTimer = 0;
+                    }
+                });
+
                 if (m === 'ber' && this.handleBER) this.handleBER(st.timer);
                 else if (m === 'mmr' && this.handleMMR) this.handleMMR(st.timer);
                 else if (m === 'dsb' && this.handleDSB) this.handleDSB(st.timer);
@@ -226,6 +292,13 @@
                 else if (m === 'photo' && this.handlePhotolyase) this.handlePhotolyase(st.timer);
                 else if (m === 'mgmt' && this.handleMGMT) this.handleMGMT(st.timer);
                 else if (m === 'replicate' && this.handleReplication) this.handleReplication(st.timer);
+
+                // Oncology Effect: p53 Mutation
+                if (!st.p53Functional && st.timer % 2 !== 0) {
+                    // Slow down repair by skipping updates half the time
+                    st.timer--;
+                }
+
                 this.updateStats();
                 if (st.timer > 600) { st.timer = 0; this.generateDNA(); }
             }
@@ -236,12 +309,36 @@
 
         render() {
             const ctx = this.ctx; const w = this.width; const h = this.height; const cam = this.state.camera;
-            ctx.clearRect(0, 0, w, h); ctx.fillStyle = '#101015'; ctx.fillRect(0, 0, w, h);
+            ctx.clearRect(0, 0, w, h);
+
+            // SOS Background
+            ctx.fillStyle = this.state.isSOSActive ? '#2d1010' : '#101015';
+            ctx.fillRect(0, 0, w, h);
             const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
             const radius = this.config.radius * (1 + (this.state.globalHelixUnwind || 0) * 1.5);
             const rotS = 1 - (this.state.globalHelixUnwind || 0) * 0.8;
             for (let i = 0; i < this.state.basePairs.length; i++) {
                 const p = this.state.basePairs[i]; if (p.isBroken) continue;
+
+                // Draw Histone Octamer (Nucleosome core)
+                if (p.hasHistone) {
+                    const hProj = project(p.x, p.offsetY, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+                    if (hProj.scale > 0) {
+                        const hRadius = 50 * hProj.scale;
+                        const grad = ctx.createRadialGradient(hProj.x, hProj.y, 0, hProj.x, hProj.y, hRadius);
+                        grad.addColorStop(0, '#718096');
+                        grad.addColorStop(1, '#2d3748');
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.arc(hProj.x, hProj.y, hRadius, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Label Histone
+                        ctx.fillStyle = '#a0aec0';
+                        ctx.font = `${10 * hProj.scale}px Arial`;
+                        ctx.fillText('HISTONE', hProj.x, hProj.y - hRadius - 5);
+                    }
+                }
                 const dAngle = p.angle * rotS;
 
                 const s1O = p.s1Offset || {y:0, z:0};
@@ -255,6 +352,19 @@
                 const p1 = project(p.x, s1Y, s1Z, cam, { width: w, height: h, near: 10, far: 5000 });
                 const p2 = project(p.x, s2Y, s2Z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p1.scale <= 0 || p2.scale <= 0) continue;
+
+                // Render PARP Signal
+                if (p.parpBound) {
+                    const signalSize = (20 + Math.sin(p.parpTimer * 0.1) * 10) * p1.scale;
+                    ctx.shadowBlur = 15; ctx.shadowColor = '#FFD700';
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${0.5 + Math.sin(p.parpTimer * 0.1) * 0.3})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(p1.x, p1.y, signalSize, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+
                 const midX = (p1.x + p2.x) / 2; const midY = (p1.y + p2.y) / 2;
                 const drawB = (sp, ep, type, dam) => { if (!type) return; ctx.strokeStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff'); ctx.lineWidth = 5 * p1.scale; if (dam) { ctx.shadowBlur = 15; ctx.shadowColor = '#ff0000'; } ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke(); ctx.shadowBlur = 0; };
 

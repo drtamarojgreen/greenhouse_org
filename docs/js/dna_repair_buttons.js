@@ -17,6 +17,7 @@
             { id: 'mmr', label: 'Mismatch Repair' },
             { id: 'ner', label: 'Nucleotide Excision' },
             { id: 'replicate', label: 'Replication' },
+            { id: 'sandbox', label: 'Sandbox Mode' },
             { id: 'photo', label: 'Photolyase (Direct)' },
             { id: 'mgmt', label: 'MGMT Repair' },
             { id: 'dsb', label: 'Double-Strand Break' },
@@ -66,6 +67,32 @@
         sliderContainer.appendChild(slider);
         controls.appendChild(sliderContainer);
 
+        // Antioxidant Slider
+        const aoContainer = document.createElement('div');
+        aoContainer.style.display = 'flex';
+        aoContainer.style.alignItems = 'center';
+        aoContainer.style.gap = '5px';
+        aoContainer.style.marginLeft = '10px';
+        aoContainer.style.color = '#48bb78';
+        aoContainer.style.fontSize = '10px';
+
+        const aoLabel = document.createElement('label');
+        aoLabel.innerText = 'Antioxidants:';
+
+        const aoSlider = document.createElement('input');
+        aoSlider.type = 'range';
+        aoSlider.min = '0';
+        aoSlider.max = '100';
+        aoSlider.value = this.state.antioxidantLevel || 0;
+        aoSlider.style.width = '60px';
+        aoSlider.oninput = (e) => {
+            this.state.antioxidantLevel = parseInt(e.target.value);
+        };
+
+        aoContainer.appendChild(aoLabel);
+        aoContainer.appendChild(aoSlider);
+        controls.appendChild(aoContainer);
+
         // Cell Cycle Phase Selector
         const phaseContainer = document.createElement('div');
         phaseContainer.style.display = 'flex';
@@ -86,6 +113,21 @@
             phaseContainer.appendChild(pBtn);
         });
         controls.appendChild(phaseContainer);
+
+        // p53 Toggle
+        const p53Btn = document.createElement('button');
+        p53Btn.className = 'dna-control-btn' + (this.state.p53Functional ? ' active' : '');
+        p53Btn.innerText = 'p53: OK';
+        p53Btn.style.marginLeft = '15px';
+        p53Btn.style.borderColor = '#48bb78';
+        p53Btn.onclick = () => {
+            this.state.p53Functional = !this.state.p53Functional;
+            p53Btn.innerText = this.state.p53Functional ? 'p53: OK' : 'p53: MUTATED';
+            p53Btn.style.borderColor = this.state.p53Functional ? '#48bb78' : '#f56565';
+            p53Btn.classList.toggle('active', this.state.p53Functional);
+            this.updateInfoOverlay();
+        };
+        controls.appendChild(p53Btn);
 
         // Reset Button
         const resetBtn = document.createElement('button');
@@ -142,6 +184,15 @@
 
         const stats = document.createElement('div');
         stats.id = 'dna-stats-container';
+
+        const sos = document.createElement('div');
+        sos.id = 'dna-sos-indicator';
+        sos.style.color = '#ff0000';
+        sos.style.fontSize = '14px';
+        sos.style.fontWeight = 'bold';
+        sos.style.display = 'none';
+        sos.innerText = '⚠ SOS RESPONSE ACTIVE';
+        stats.appendChild(sos);
         stats.style.display = 'flex';
         stats.style.flexDirection = 'column';
         stats.style.gap = '5px';
@@ -190,6 +241,7 @@
             'photo': "<strong>Photolyase (Direct Reversal)</strong><br>A light-dependent enzyme that directly breaks the bonds of UV-induced thymine dimers without removing any DNA bases.",
             'mgmt': "<strong>MGMT (Direct Repair)</strong><br>Repairs O6-methylguanine by direct methyl group transfer to a cysteine residue in the protein, which is then degraded.",
             'replicate': "<strong>DNA Replication</strong><br>The process of producing two identical replicas from one original DNA molecule. Demonstration includes Helicase (unwinding), DNA Polymerase (synthesis), and Leading/Lagging strands.",
+            'sandbox': "<strong>Sandbox Mode</strong><br>Manual interference mode. Click on any DNA base to induce or remove damage. Use this to test specific scenarios.",
             'dsb': "<strong>Double-Strand Break (DSB)</strong><br>A dangerous break where both strands of the helix are severed. Repaired by re-joining the ends.",
             'nhej': "<strong>Non-Homologous End Joining (NHEJ)</strong><br>A fast, error-prone pathway for DSBs that ligates ends directly, often causing small deletions.",
             'hr': "<strong>Homologous Recombination (HR)</strong><br>High-fidelity DSB repair that uses a sister chromatid as a template to ensure accurate restoration. Only available in S and G2 phases when a sister chromatid is present."

@@ -47,7 +47,17 @@
                 // Leading strand synthesis (Strand 1)
                 // Polymerase follows helicase
                 if (i < forkIndex - 5) {
-                    p.newBase1 = G.getComplement(p.base1);
+                    // Translesion Synthesis (TLS) Logic
+                    if (p.isDamaged && p.damageType === 'UV') {
+                        // Specialized TLS Polymerase bypasses the dimer
+                        p.newBase1 = (Math.random() < 0.2) ? G.getWrongBase(p.base1) : G.getComplement(p.base1);
+                        if (p.newBase1 !== G.getComplement(p.base1)) {
+                            st.mutationCount++;
+                        }
+                        this.spawnParticles(p.x, p.s1Offset.y, p.s1Offset.z, 3, '#ff00ff'); // TLS Signal
+                    } else {
+                        p.newBase1 = G.getComplement(p.base1);
+                    }
                 }
 
                 // Lagging strand synthesis (Strand 2) - Okazaki fragments
@@ -102,6 +112,13 @@
             case 'G': return 'C';
             default: return '';
         }
+    };
+
+    G.getWrongBase = function(base) {
+        const bases = ['A', 'T', 'C', 'G'];
+        const comp = this.getComplement(base);
+        const wrongOnes = bases.filter(b => b !== comp && b !== base);
+        return wrongOnes[Math.floor(Math.random() * wrongOnes.length)];
     };
 
 })();
