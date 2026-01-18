@@ -46,7 +46,8 @@ global.document = {
                 fillRect: () => { },
                 strokeRect: () => { },
                 setLineDash: () => { },
-                setTransform: () => { }
+                setTransform: () => { },
+                quadraticCurveTo: () => { }
             }),
             width: 800,
             height: 600,
@@ -113,20 +114,25 @@ TestFramework.describe('RNA Page Models', () => {
         TestFramework.it('should initialize with default values', () => {
             assert.isDefined(simulation);
             assert.isTrue(simulation.isRunning);
-            assert.equal(simulation.rnaStrand.length, 30);
+            assert.equal(simulation.rnaStrand.length, 40);
             assert.equal(simulation.enzymes.length, 0);
         });
 
         TestFramework.it('should create RNA strand correctly', () => {
-            // simulation.createRnaStrand() is already called in constructor.
-            // If we call it again, it appends to the array.
-            // Let's clear it first if we want to test creation specifically.
             simulation.rnaStrand = [];
             simulation.createRnaStrand();
-            assert.equal(simulation.rnaStrand.length, 30);
+            assert.equal(simulation.rnaStrand.length, 40);
             const firstBase = simulation.rnaStrand[0];
             assert.isDefined(firstBase.type);
             assert.isTrue(['A', 'U', 'G', 'C'].includes(firstBase.type));
+        });
+
+        TestFramework.it('should have 5\' cap (G) and Poly-A tail', () => {
+            simulation.rnaStrand = [];
+            simulation.createRnaStrand();
+            assert.equal(simulation.rnaStrand[0].type, 'G', "First base should be G (5' Cap)");
+            const lastTen = simulation.rnaStrand.slice(-10);
+            assert.isTrue(lastTen.every(b => b.type === 'A'), "Last 10 bases should be A (Poly-A Tail)");
         });
 
         TestFramework.it('should introduce damage', () => {
