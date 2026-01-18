@@ -173,7 +173,7 @@
                     // Simple Hit Test
                     let hit = null;
                     const cam = this.state.camera;
-                    const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
+                    const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
                     const radius = this.config.radius;
 
                     for (let i = 0; i < this.state.basePairs.length; i++) {
@@ -347,7 +347,7 @@
             ctx.fillRect(0, 0, w, h);
 
             // Helpers from common math
-            const project = GreenhouseModels3DMath.project3DTo2D.bind(GreenhouseModels3DMath);
+            const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
             const radius = this.config.radius;
 
             // Draw DNA
