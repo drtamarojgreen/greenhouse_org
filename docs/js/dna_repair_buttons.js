@@ -16,7 +16,9 @@
             { id: 'ber', label: 'Base Excision' },
             { id: 'mmr', label: 'Mismatch Repair' },
             { id: 'ner', label: 'Nucleotide Excision' },
+            { id: 'replicate', label: 'Replication' },
             { id: 'photo', label: 'Photolyase (Direct)' },
+            { id: 'mgmt', label: 'MGMT Repair' },
             { id: 'dsb', label: 'Double-Strand Break' },
             { id: 'nhej', label: 'NHEJ (Error Prone)' },
             { id: 'hr', label: 'Homologous Recomb' }
@@ -64,6 +66,27 @@
         sliderContainer.appendChild(slider);
         controls.appendChild(sliderContainer);
 
+        // Cell Cycle Phase Selector
+        const phaseContainer = document.createElement('div');
+        phaseContainer.style.display = 'flex';
+        phaseContainer.style.gap = '5px';
+        phaseContainer.style.marginLeft = '15px';
+
+        ['G1', 'S', 'G2'].forEach(phase => {
+            const pBtn = document.createElement('button');
+            pBtn.className = 'dna-control-btn' + (this.state.cellCyclePhase === phase ? ' active' : '');
+            pBtn.innerText = phase;
+            pBtn.style.padding = '4px 8px';
+            pBtn.onclick = () => {
+                this.state.cellCyclePhase = phase;
+                phaseContainer.querySelectorAll('.dna-control-btn').forEach(b => b.classList.remove('active'));
+                pBtn.classList.add('active');
+                this.updateInfoOverlay();
+            };
+            phaseContainer.appendChild(pBtn);
+        });
+        controls.appendChild(phaseContainer);
+
         // Reset Button
         const resetBtn = document.createElement('button');
         resetBtn.className = 'dna-control-btn';
@@ -78,6 +101,33 @@
             this.updateStats();
         };
         controls.appendChild(resetBtn);
+
+        // Export Button
+        const exportBtn = document.createElement('button');
+        exportBtn.className = 'dna-control-btn';
+        exportBtn.innerText = 'Export Stats';
+        exportBtn.style.marginLeft = '10px';
+        exportBtn.onclick = () => {
+            const data = {
+                timestamp: new Date().toISOString(),
+                stats: {
+                    atpConsumed: this.state.atpConsumed,
+                    genomicIntegrity: this.state.genomicIntegrity,
+                    mutationCount: this.state.mutationCount,
+                    successfulRepairs: this.state.successfulRepairs,
+                    mutatedRepairs: this.state.mutatedRepairs
+                },
+                config: this.config
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dna_repair_stats_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+        controls.appendChild(exportBtn);
 
         wrapper.appendChild(controls);
 
@@ -113,9 +163,16 @@
         analytics.style.fontSize = '11px';
         analytics.innerText = 'Successes: 0 | Mutations: 0';
 
+        const cycle = document.createElement('div');
+        cycle.id = 'dna-cycle-info';
+        cycle.style.color = '#ecc94b';
+        cycle.style.fontSize = '12px';
+        cycle.innerText = 'Cell Cycle: G1';
+
         stats.appendChild(atp);
         stats.appendChild(integrity);
         stats.appendChild(analytics);
+        stats.appendChild(cycle);
 
         info.appendChild(content);
         info.appendChild(stats);
@@ -131,9 +188,11 @@
             'mmr': "<strong>Mismatch Repair (MMR)</strong><br>Corrects errors that escape proofreading during replication, such as mispaired bases.",
             'ner': "<strong>Nucleotide Excision Repair (NER)</strong><br>Repairs bulky, helix-distorting lesions (e.g. UV dimers) by removing a short single-stranded DNA segment.",
             'photo': "<strong>Photolyase (Direct Reversal)</strong><br>A light-dependent enzyme that directly breaks the bonds of UV-induced thymine dimers without removing any DNA bases.",
+            'mgmt': "<strong>MGMT (Direct Repair)</strong><br>Repairs O6-methylguanine by direct methyl group transfer to a cysteine residue in the protein, which is then degraded.",
+            'replicate': "<strong>DNA Replication</strong><br>The process of producing two identical replicas from one original DNA molecule. Demonstration includes Helicase (unwinding), DNA Polymerase (synthesis), and Leading/Lagging strands.",
             'dsb': "<strong>Double-Strand Break (DSB)</strong><br>A dangerous break where both strands of the helix are severed. Repaired by re-joining the ends.",
             'nhej': "<strong>Non-Homologous End Joining (NHEJ)</strong><br>A fast, error-prone pathway for DSBs that ligates ends directly, often causing small deletions.",
-            'hr': "<strong>Homologous Recombination (HR)</strong><br>High-fidelity DSB repair that uses a sister chromatid as a template to ensure accurate restoration."
+            'hr': "<strong>Homologous Recombination (HR)</strong><br>High-fidelity DSB repair that uses a sister chromatid as a template to ensure accurate restoration. Only available in S and G2 phases when a sister chromatid is present."
         };
 
         content.innerHTML = descriptions[this.state.repairMode] || '';

@@ -14,24 +14,42 @@
         if (!pair) return;
 
         if (t === 10) {
-            pair.isDamaged = true;
+            // Induce damage if none exists, or use existing deamination
+            if (!pair.isDamaged) {
+                pair.isDamaged = true;
+                pair.damageType = 'ROS';
+            }
             this.consumeATP(2, pair.x, 0, 0);
         }
+
+        // Recognition by Glycosylase
         if (t === 100) {
             this.spawnParticles(pair.x, 0, 0, 20, '#ff00ff');
             this.consumeATP(10, pair.x, 0, 0);
         }
+
+        // Removal of damaged base (creating AP site)
         if (t > 150 && t < 300) {
             pair.base1 = '';
             if (t % 10 === 0) this.consumeATP(1, pair.x, 0, 0);
         }
+
+        // Polymerase and Ligase restore the base
         if (t === 300) {
             this.spawnParticles(pair.x, 0, 0, 10, this.config.colors.A);
             this.consumeATP(20, pair.x, 0, 0);
         }
+
         if (t === 350) {
-            pair.base1 = 'A';
+            // Restore based on complementary base
+            if (pair.base2 === 'G') pair.base1 = 'C';
+            else if (pair.base2 === 'C') pair.base1 = 'G';
+            else if (pair.base2 === 'T') pair.base1 = 'A';
+            else if (pair.base2 === 'A') pair.base1 = 'T';
+            else pair.base1 = 'A';
+
             pair.isDamaged = false;
+            pair.damageType = null;
             this.state.successfulRepairs++;
         }
     };
@@ -43,9 +61,11 @@
 
         if (t === 10) {
             pair.base1 = 'C'; pair.base2 = 'C'; pair.isDamaged = true;
+            pair.damageType = 'Mismatch';
             this.consumeATP(5, pair.x, 0, 0);
         }
         if (t > 150 && t < 400) {
+            // Excision of a patch
             for (let i = -2; i <= 2; i++) {
                 if (this.state.basePairs[targetIdx + i])
                     this.state.basePairs[targetIdx + i].base1 = '';
@@ -55,7 +75,15 @@
         if (t === 450) {
             for (let i = -2; i <= 2; i++) {
                 const p = this.state.basePairs[targetIdx + i];
-                if (p) { p.base1 = 'G'; p.base2 = 'C'; p.isDamaged = false; }
+                if (p) {
+                    // Restoration
+                    if (p.base2 === 'G') p.base1 = 'C';
+                    else if (p.base2 === 'C') p.base1 = 'G';
+                    else if (p.base2 === 'T') p.base1 = 'A';
+                    else if (p.base2 === 'A') p.base1 = 'T';
+                    p.isDamaged = false;
+                    p.damageType = null;
+                }
             }
             this.consumeATP(40, pair.x, 0, 0);
             this.state.successfulRepairs++;
@@ -71,7 +99,7 @@
         if (t === 10) {
             for (let i = 0; i < lesionSize; i++) {
                 const p = this.state.basePairs[targetIdx + i];
-                if (p) p.isDamaged = true;
+                if (p) { p.isDamaged = true; p.damageType = 'UV'; }
             }
             this.consumeATP(8, anchor.x, 0, 0);
         }
@@ -100,7 +128,14 @@
         if (t === 450) {
             for (let i = 0; i < lesionSize; i++) {
                 const p = this.state.basePairs[targetIdx + i];
-                if (p) { p.base1 = (i % 2 === 0) ? 'T' : 'A'; p.isDamaged = false; }
+                if (p) {
+                    if (p.base2 === 'G') p.base1 = 'C';
+                    else if (p.base2 === 'C') p.base1 = 'G';
+                    else if (p.base2 === 'T') p.base1 = 'A';
+                    else if (p.base2 === 'A') p.base1 = 'T';
+                    p.isDamaged = false;
+                    p.damageType = null;
+                }
             }
             this.state.successfulRepairs++;
         }
@@ -191,6 +226,7 @@
             this.state.globalHelixUnwind = 0;
             this.generateDNA();
             pair.isBroken = false;
+            pair.damageType = null;
             this.state.successfulRepairs++;
         }
     };
@@ -202,6 +238,7 @@
 
         if (t === 10) {
             pair.isDamaged = true;
+            pair.damageType = 'UV';
             this.consumeATP(2, pair.x, 0, 0);
         }
         if (t === 100) {
@@ -211,8 +248,33 @@
         if (t === 200) {
             this.spawnParticles(pair.x, 0, 0, 60, '#00fbff');
             pair.isDamaged = false;
-            this.consumeATP(0);
+            pair.damageType = null;
             this.state.successfulRepairs++;
+        }
+    };
+
+    G.handleMGMT = function(t) {
+        const targetIdx = Math.floor(this.config.helixLength / 2) + 10;
+        const pair = this.state.basePairs[targetIdx];
+        if (!pair) return;
+
+        if (t === 10) {
+            pair.isDamaged = true;
+            pair.damageType = 'Alkylation';
+            this.consumeATP(2, pair.x, 0, 0);
+        }
+
+        if (t === 100) {
+            this.spawnParticles(pair.x, 0, 0, 25, '#ff00aa');
+            this.consumeATP(5, pair.x, 0, 0);
+        }
+
+        if (t === 200) {
+            this.spawnParticles(pair.x, 0, 0, 40, '#ffaa00');
+            pair.isDamaged = false;
+            pair.damageType = null;
+            this.state.successfulRepairs++;
+            this.spawnParticles(pair.x, -50, 0, 10, '#ffffff');
         }
     };
 })();
