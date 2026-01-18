@@ -565,8 +565,10 @@
             if (targetSelector) {
                 console.log('DNA Repair App: Waiting for container:', targetSelector);
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
-                console.log('DNA Repair App: Auto-initializing...');
-                GreenhouseDNARepair.initializeDNARepairSimulation(container);
+                setTimeout(() => {
+                    console.log('DNA Repair App: Auto-initializing...');
+                    GreenhouseDNARepair.initializeDNARepairSimulation(container);
+                }, 5000);
             }
         } catch (error) {
             console.error('DNA Repair App: Initialization failed', error);

@@ -515,8 +515,10 @@
             if (targetSelector) {
                 console.log('RNA Repair App: Waiting for container:', targetSelector);
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
-                console.log('RNA Repair App: Auto-initializing...');
-                initializeRNARepairSimulation(container);
+                setTimeout(() => {
+                    console.log('RNA Repair App: Auto-initializing...');
+                    initializeRNARepairSimulation(container);
+                }, 5000);
             }
         } catch (error) {
             console.error('RNA Repair App: Initialization failed', error);
