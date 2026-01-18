@@ -205,9 +205,16 @@
             console.log("DNA Standalone: Initializing...");
             const targetSelector = '#dna-simulation-target';
 
-            if (window.Greenhouse && window.Greenhouse.initializeDNARepairSimulation) {
-                window.Greenhouse.initializeDNARepairSimulation(targetSelector);
-            }
+            // Check if global simulation object exists (from dna_repair.js)
+            const checkInit = setInterval(() => {
+                if (window.Greenhouse && window.Greenhouse.initializeDNARepairSimulation) {
+                    window.Greenhouse.initializeDNARepairSimulation(targetSelector);
+                    clearInterval(checkInit);
+                }
+            }, 100);
+
+            // Timeout after 10 seconds
+            setTimeout(() => clearInterval(checkInit), 10000);
         });
 
         function setMode(mode, btn) {

@@ -1,6 +1,6 @@
-// docs/js/dna_repair.js
-// DNA Repair Simulation Module
-// Handles 3D rendering of DNA helix and repair animations
+// docs/js/dna_repair_global.js
+// DNA Repair Simulation Module - Core Engine
+// Handles 3D rendering of DNA helix and coordination of repair modules
 
 (async function () {
     'use strict';
@@ -26,106 +26,71 @@
         });
     };
 
-    const GreenhouseDNARepair = {
+    // Use existing object if defined (by mechanisms, mutations, or buttons scripts)
+    const G = window.GreenhouseDNARepair || {};
+    window.GreenhouseDNARepair = G;
+
+    // Define Core Properties and Methods
+    Object.assign(G, {
         canvas: null,
         ctx: null,
         isRunning: false,
         width: 800,
         height: 600,
 
-        // Simulation State
-        // Initialize the simulation with horizontal orientation
         state: {
-            camera: {
-                x: 0,
-                y: 0,
-                z: -250,
-                rotationX: 0,
-                rotationY: 0,
-                rotationZ: 0,
-                fov: 500,
-                zoom: 1.0
-            },
+            camera: { x: 0, y: 0, z: -250, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
             basePairs: [],
             particles: [],
-            repairMode: 'ber', // ber, mmr, dsb
+            repairMode: 'ber',
             atpConsumed: 0,
             timer: 0,
-            simulating: false // Control when animation runs
+            simulating: false,
+            genomicIntegrity: 100,
+            mutationCount: 0,
+            globalHelixUnwind: 0,
+            radiationLevel: 10,
+            successfulRepairs: 0,
+            mutatedRepairs: 0
         },
 
-        // Configuration
         config: {
-            helixLength: 60, // Longer for horizontal view
-            radius: 40,      // Larger radius
-            rise: 14,        // Distance between base pairs
-            rotationPerPair: 0.5, // Radians
+            helixLength: 60,
+            radius: 40,
+            rise: 14,
+            rotationPerPair: 0.5,
             colors: {
-                A: '#00D9FF', // Cyan
-                T: '#FF0055', // Red
-                C: '#FFD500', // Yellow
-                G: '#00FF66', // Green
-                backbone: '#EEEEEE',
-                enzyme: '#9d00ff',
-                damage: '#FF0000'
+                A: '#00D9FF', T: '#FF0055', C: '#FFD500', G: '#00FF66',
+                backbone: '#EEEEEE', enzyme: '#9d00ff', damage: '#FF0000'
             }
         },
 
-        // Initialize the simulation
         initializeDNARepairSimulation(container) {
-            if (!container) {
-                console.error('GreenhouseDNARepair: Container provided is null.');
-                return;
-            }
-
-            // Clear container safely
+            if (!container) return;
             container.innerHTML = '';
-            
-            // Inject Styles
             this.injectStyles();
-
-            // Create wrapper for resilience
             const wrapper = document.createElement('div');
             wrapper.className = 'dna-simulation-container';
-            wrapper.style.width = '100%';
-            wrapper.style.height = '100%';
-            wrapper.style.position = 'relative';
-            wrapper.style.backgroundColor = '#101015';
+            wrapper.style.width = '100%'; wrapper.style.height = '100%';
+            wrapper.style.position = 'relative'; wrapper.style.backgroundColor = '#101015';
             container.appendChild(wrapper);
 
-            // Create Control Bar
-            this.createUI(wrapper);
+            if (this.createUI) this.createUI(wrapper);
 
-            // Setup Canvas
             this.canvas = document.createElement('canvas');
             this.ctx = this.canvas.getContext('2d');
-            this.canvas.style.width = '100%';
             this.canvas.width = container.offsetWidth || 800;
             this.canvas.height = 600;
             wrapper.appendChild(this.canvas);
+            this.width = this.canvas.width; this.height = this.canvas.height;
 
-            this.width = this.canvas.width;
-            this.height = this.canvas.height;
-
-            // Initialize Interaction
             this.setupInteraction();
-
-            // Initialize DNA Data
             this.generateDNA();
+            if (window.GreenhouseDNATooltip) window.GreenhouseDNATooltip.initialize();
 
-            // Initialize Tooltips
-            if (window.GreenhouseDNATooltip) {
-                window.GreenhouseDNATooltip.initialize();
-            }
-
-            // Start Loop
             this.isRunning = true;
-            this.startSimulation('ber'); // Default start
+            this.startSimulation('ber');
             this.animate();
-
-            console.log('GreenhouseDNARepair: Initialized');
-            
-            // Start observing for DOM removal
             this.observeAndReinitializeApp(container);
         },
 
@@ -134,686 +99,164 @@
             const style = document.createElement('style');
             style.id = 'dna-sim-styles';
             style.innerHTML = `
-                .dna-controls-bar {
-                    display: flex;
-                    justify-content: center;
-                    gap: 10px;
-                    padding: 10px;
-                    background: rgba(26, 32, 44, 0.8);
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    z-index: 10;
-                    flex-wrap: wrap;
-                }
-                .dna-control-btn {
-                    background: #2d3748;
-                    color: #e2e8f0;
-                    border: 1px solid #4a5568;
-                    padding: 6px 12px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-                .dna-control-btn:hover {
-                    background: #667eea;
-                    color: white;
-                }
-                .dna-control-btn.active {
-                    background: #667eea;
-                    border-color: #5a67d8;
-                    color: white;
-                }
-                .dna-info-overlay {
-                    position: absolute;
-                    bottom: 20px;
-                    left: 20px;
-                    background: rgba(0, 0, 0, 0.7);
-                    padding: 15px;
-                    border-radius: 8px;
-                    color: #fff;
-                    max-width: 300px;
-                    font-size: 13px;
-                    pointer-events: none;
-                    border-left: 4px solid #667eea;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 10px;
-                }
-                .dna-atp-counter {
-                    font-weight: bold;
-                    color: #48bb78;
-                    font-size: 14px;
-                }
+                .dna-controls-bar { display: flex; justify-content: center; gap: 10px; padding: 10px; background: rgba(26, 32, 44, 0.8); position: absolute; top: 0; left: 0; right: 0; z-index: 10; flex-wrap: wrap; }
+                .dna-control-btn { background: #2d3748; color: #e2e8f0; border: 1px solid #4a5568; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: all 0.3s ease; font-size: 12px; font-weight: 500; }
+                .dna-control-btn:hover { background: #667eea; color: white; }
+                .dna-control-btn.active { background: #667eea; border-color: #5a67d8; color: white; }
+                .dna-info-overlay { position: absolute; bottom: 20px; left: 20px; background: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 8px; color: #fff; max-width: 300px; font-size: 13px; pointer-events: none; border-left: 4px solid #667eea; display: flex; flex-direction: column; gap: 10px; }
+                .dna-atp-counter { font-weight: bold; color: #48bb78; font-size: 14px; }
             `;
             document.head.appendChild(style);
         },
 
-        createUI(wrapper) {
-            const controls = document.createElement('div');
-            controls.className = 'dna-controls-bar';
-
-            const modes = [
-                { id: 'ber', label: 'Base Excision' },
-                { id: 'mmr', label: 'Mismatch Repair' },
-                { id: 'ner', label: 'Nucleotide Excision' },
-                { id: 'dsb', label: 'Double-Strand Break' },
-                { id: 'hr', label: 'Homologous Recomb' }
-            ];
-
-            modes.forEach(mode => {
-                const btn = document.createElement('button');
-                btn.className = 'dna-control-btn' + (this.state.repairMode === mode.id ? ' active' : '');
-                btn.innerText = mode.label;
-                btn.onclick = () => {
-                    document.querySelectorAll('.dna-control-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    this.startSimulation(mode.id);
-                };
-                controls.appendChild(btn);
-            });
-
-            wrapper.appendChild(controls);
-
-            // Info Overlay
-            const info = document.createElement('div');
-            info.className = 'dna-info-overlay';
-            info.id = 'dna-info-overlay';
-
-            const content = document.createElement('div');
-            content.id = 'dna-info-content';
-            content.innerHTML = '<strong>DNA Repair Simulation</strong><br>Select a mode above to observe molecular repair pathways.';
-
-            const atp = document.createElement('div');
-            atp.className = 'dna-atp-counter';
-            atp.id = 'dna-atp-counter';
-            atp.innerText = 'ATP Consumed: 0';
-
-            info.appendChild(content);
-            info.appendChild(atp);
-            wrapper.appendChild(info);
+        consumeATP(amount, x, y, z) {
+            this.state.atpConsumed += amount;
+            if (x !== undefined && amount > 0) this.spawnParticles(x, y || 0, z || 0, Math.min(amount * 2, 20), '#48bb78');
         },
 
-        updateInfoOverlay() {
-            const content = document.getElementById('dna-info-content');
-            if (!content) return;
-
-            const descriptions = {
-                'ber': "<strong>Base Excision Repair (BER)</strong><br>Corrects small, non-helix-distorting base lesions. A single damaged base is removed and replaced.",
-                'mmr': "<strong>Mismatch Repair (MMR)</strong><br>Corrects errors that escape proofreading during replication, such as mispaired bases.",
-                'ner': "<strong>Nucleotide Excision Repair (NER)</strong><br>Repairs bulky, helix-distorting lesions (e.g. UV dimers) by removing a short single-stranded DNA segment.",
-                'dsb': "<strong>Double-Strand Break (DSB)</strong><br>A dangerous break where both strands of the helix are severed. Repaired by re-joining the ends.",
-                'hr': "<strong>Homologous Recombination (HR)</strong><br>High-fidelity DSB repair that uses a sister chromatid as a template to ensure accurate restoration."
-            };
-
-            content.innerHTML = descriptions[this.state.repairMode] || '';
-            this.updateATPCounter();
-        },
-
-        updateATPCounter() {
+        updateStats() {
             const counter = document.getElementById('dna-atp-counter');
-            if (counter) {
-                counter.innerText = `ATP Consumed: ${this.state.atpConsumed}`;
+            if (counter) counter.innerText = `ATP Consumed: ${Math.floor(this.state.atpConsumed)}`;
+            const integrity = document.getElementById('dna-integrity-stat');
+            if (integrity) {
+                integrity.innerText = `Genomic Integrity: ${Math.round(this.state.genomicIntegrity)}% | Mutations: ${this.state.mutationCount}`;
+                integrity.style.color = this.state.genomicIntegrity < 100 ? '#f56565' : '#a0aec0';
             }
+            const analytics = document.getElementById('dna-analytics-stat');
+            if (analytics) analytics.innerText = `Successful Repairs: ${this.state.successfulRepairs} | Error-Prone: ${this.state.mutatedRepairs}`;
         },
 
         observeAndReinitializeApp(container) {
             if (!container) return;
-            
-            if (resilienceObserver) {
-                resilienceObserver.disconnect();
-            }
-
+            if (resilienceObserver) resilienceObserver.disconnect();
             const observerCallback = (mutations) => {
-                const wasRemoved = mutations.some(m => 
-                    Array.from(m.removedNodes).some(n => 
-                        n.nodeType === 1 && n.classList.contains('dna-simulation-container')
-                    )
-                );
-
+                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n.nodeType === 1 && n.classList.contains('dna-simulation-container')));
                 if (wasRemoved) {
-                    console.log('GreenhouseDNARepair: Simulation container removed. Re-initializing...');
                     this.isRunning = false;
                     if (resilienceObserver) resilienceObserver.disconnect();
-                    
-                    setTimeout(() => {
-                        this.initializeDNARepairSimulation(container);
-                    }, 1000);
+                    setTimeout(() => this.initializeDNARepairSimulation(container), 1000);
                 }
             };
-
             resilienceObserver = new MutationObserver(observerCallback);
             resilienceObserver.observe(container, { childList: true });
         },
 
         startSimulation(mode) {
             this.state.repairMode = mode;
-            this.state.timer = 0;
-            this.state.atpConsumed = 0;
-            this.state.simulating = true;
-            this.state.particles = [];
-            this.generateDNA(); // Reset structure
-            this.updateInfoOverlay();
-
-            const titles = {
-                'ber': "Base Excision Repair",
-                'mmr': "Mismatch Repair",
-                'dsb': "Double-Strand Break Repair",
-                'ner': "Nucleotide Excision Repair",
-                'hr': "Homologous Recombination"
-            };
+            this.state.timer = 0; this.state.atpConsumed = 0;
+            this.state.simulating = true; this.state.particles = [];
+            this.state.globalHelixUnwind = 0;
+            if (this.state.genomicIntegrity < 100 && mode === 'ber') { this.state.genomicIntegrity = 100; this.state.mutationCount = 0; }
+            this.generateDNA();
+            if (this.updateInfoOverlay) this.updateInfoOverlay();
+            const titles = { 'ber': "Base Excision Repair", 'mmr': "Mismatch Repair", 'dsb': "Double-Strand Break Repair", 'nhej': "Non-Homologous End Joining", 'ner': "Nucleotide Excision Repair", 'hr': "Homologous Recombination", 'photo': "Direct Reversal (Photolyase)" };
             this.currentModeText = titles[mode];
         },
 
         generateDNA() {
             this.state.basePairs = [];
             for (let i = 0; i < this.config.helixLength; i++) {
-                // Horizontal Layout: X is the long axis
                 const x = (i - this.config.helixLength / 2) * this.config.rise;
                 const angle = i * this.config.rotationPerPair;
-
                 const type = Math.floor(Math.random() * 4);
-                let base1, base2;
-                switch (type) {
-                    case 0: base1 = 'A'; base2 = 'T'; break;
-                    case 1: base1 = 'T'; base2 = 'A'; break;
-                    case 2: base1 = 'C'; base2 = 'G'; break;
-                    case 3: base1 = 'G'; base2 = 'C'; break;
-                }
-
-                this.state.basePairs.push({
-                    index: i,
-                    x: x, // Primary position is X now
-                    angle: angle,
-                    base1: base1,
-                    base2: base2,
-                    isDamaged: false,
-                    isBroken: false,
-                    offsetY: 0 // For DSB drift
-                });
+                let b1, b2;
+                switch (type) { case 0: b1 = 'A'; b2 = 'T'; break; case 1: b1 = 'T'; b2 = 'A'; break; case 2: b1 = 'C'; b2 = 'G'; break; case 3: b1 = 'G'; b2 = 'C'; break; }
+                this.state.basePairs.push({ index: i, x: x, angle: angle, base1: b1, base2: b2, isDamaged: false, isBroken: false, offsetY: 0 });
             }
         },
 
         setupInteraction() {
-            let isDragging = false;
-            let lastX = 0;
-            let lastY = 0;
-
-            this.canvas.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                lastX = e.clientX;
-                lastY = e.clientY;
-            });
-
+            let isDragging = false; let lastX = 0; let lastY = 0;
+            this.canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
             window.addEventListener('mousemove', (e) => {
-                // Dragging Logic
-                if (isDragging) {
-                    const dx = e.clientX - lastX;
-                    const dy = e.clientY - lastY;
-                    this.state.camera.rotationX += dy * 0.005;
-                    this.state.camera.x -= dx * 2;
-                    lastX = e.clientX;
-                    lastY = e.clientY;
-                    return;
-                }
-
-                // Hover / Tooltip Logic
+                if (isDragging) { const dx = e.clientX - lastX; const dy = e.clientY - lastY; this.state.camera.rotationX += dy * 0.005; this.state.camera.x -= dx * 2; lastX = e.clientX; lastY = e.clientY; return; }
                 if (window.GreenhouseDNATooltip) {
                     const rect = this.canvas.getBoundingClientRect();
-                    const mx = e.clientX - rect.left;
-                    const my = e.clientY - rect.top;
-
-                    // Simple Hit Test
-                    let hit = null;
-                    const cam = this.state.camera;
+                    const mx = e.clientX - rect.left; const my = e.clientY - rect.top;
+                    let hit = null; const cam = this.state.camera;
                     const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
-                    const radius = this.config.radius;
-
                     for (let i = 0; i < this.state.basePairs.length; i++) {
-                        const pair = this.state.basePairs[i];
-                        if (pair.isBroken) continue;
-
-                        // Approx hit positions (Strand 1 & 2)
-                        const s1Y = Math.cos(pair.angle) * radius + (pair.offsetY || 0);
-                        const s1Z = Math.sin(pair.angle) * radius;
+                        const pair = this.state.basePairs[i]; if (pair.isBroken) continue;
+                        const s1Y = Math.cos(pair.angle) * this.config.radius + pair.offsetY; const s1Z = Math.sin(pair.angle) * this.config.radius;
                         const p1 = project(pair.x, s1Y, s1Z, cam, { width: this.width, height: this.height, near: 10, far: 5000 });
-
-                        const s2Y = Math.cos(pair.angle + Math.PI) * radius + (pair.offsetY || 0);
-                        const s2Z = Math.sin(pair.angle + Math.PI) * radius;
+                        const s2Y = Math.cos(pair.angle + Math.PI) * this.config.radius + pair.offsetY; const s2Z = Math.sin(pair.angle + Math.PI) * this.config.radius;
                         const p2 = project(pair.x, s2Y, s2Z, cam, { width: this.width, height: this.height, near: 10, far: 5000 });
-
-                        // Check dist
-                        const dist1 = Math.hypot(p1.x - mx, p1.y - my);
-                        if (dist1 < 10 * p1.scale) { hit = { key: pair.base1, x: e.clientX, y: e.clientY }; break; }
-
-                        const dist2 = Math.hypot(p2.x - mx, p2.y - my);
-                        if (dist2 < 10 * p2.scale) { hit = { key: pair.base2, x: e.clientX, y: e.clientY }; break; }
+                        if (Math.hypot(p1.x - mx, p1.y - my) < 10 * p1.scale) { hit = { key: pair.base1, x: e.clientX, y: e.clientY }; break; }
+                        if (Math.hypot(p2.x - mx, p2.y - my) < 10 * p2.scale) { hit = { key: pair.base2, x: e.clientX, y: e.clientY }; break; }
                     }
-
-                    if (hit) GreenhouseDNATooltip.show(hit.x, hit.y, hit.key);
-                    else GreenhouseDNATooltip.hide();
+                    if (hit) GreenhouseDNATooltip.show(hit.x, hit.y, hit.key); else GreenhouseDNATooltip.hide();
                 }
             });
-
             window.addEventListener('mouseup', () => { isDragging = false; });
-
-            this.canvas.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                this.state.camera.z += e.deltaY * 0.5;
-                this.state.camera.z = Math.min(-100, Math.max(-1500, this.state.camera.z));
-            });
+            this.canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.state.camera.z += e.deltaY * 0.5; this.state.camera.z = Math.min(-100, Math.max(-1500, this.state.camera.z)); });
         },
 
-        animate() {
-            if (!this.isRunning) return;
-
-            this.update();
-            this.render();
-
-            requestAnimationFrame(() => this.animate());
-        },
+        animate() { if (!this.isRunning) return; this.update(); this.render(); requestAnimationFrame(() => this.animate()); },
 
         update() {
-            const st = this.state;
-
-            // Auto-spin logic (can be toggled)
-            st.camera.rotationX += 0.005;
-
+            const st = this.state; st.camera.rotationX += 0.005;
             if (st.simulating) {
                 st.timer++;
-                // Delegate to specific repair logic based on mode selector
-                if (st.repairMode === 'ber') this.handleBER(st.timer);
-                else if (st.repairMode === 'mmr') this.handleMMR(st.timer);
-                else if (st.repairMode === 'dsb') this.handleDSB(st.timer);
-                else if (st.repairMode === 'ner') this.handleNER(st.timer);
-                else if (st.repairMode === 'hr') this.handleHR(st.timer);
-
-                this.updateATPCounter();
-
-                // Stop active animation after cycle completes
-                if (st.timer > 600) {
-                    st.timer = 0;
-                    this.generateDNA(); // Reset for next loop
-                }
+                if (this.induceSpontaneousDamage) this.induceSpontaneousDamage();
+                const m = st.repairMode;
+                if (m === 'ber' && this.handleBER) this.handleBER(st.timer);
+                else if (m === 'mmr' && this.handleMMR) this.handleMMR(st.timer);
+                else if (m === 'dsb' && this.handleDSB) this.handleDSB(st.timer);
+                else if (m === 'nhej' && this.handleNHEJ) this.handleNHEJ(st.timer);
+                else if (m === 'ner' && this.handleNER) this.handleNER(st.timer);
+                else if (m === 'hr' && this.handleHR) this.handleHR(st.timer);
+                else if (m === 'photo' && this.handlePhotolyase) this.handlePhotolyase(st.timer);
+                this.updateStats();
+                if (st.timer > 600) { st.timer = 0; this.generateDNA(); }
             }
-
-            // Update Particles
-            st.particles.forEach((p, i) => {
-                p.x += (p.targetX - p.x) * 0.1;
-                p.y += (p.targetY - p.y) * 0.1;
-                p.z += (p.targetZ - p.z) * 0.1;
-                p.life--;
-                if (p.life <= 0) st.particles.splice(i, 1);
-            });
+            st.particles.forEach((p, i) => { p.x += (p.targetX - p.x) * 0.1; p.y += (p.targetY - p.y) * 0.1; p.z += (p.targetZ - p.z) * 0.1; p.life--; if (p.life <= 0) st.particles.splice(i, 1); });
         },
 
-        handleBER(t) {
-            const targetIdx = Math.floor(this.config.helixLength / 2);
-            const pair = this.state.basePairs[targetIdx];
-
-            if (t === 10) {
-                pair.isDamaged = true; // Sim damage
-                this.state.atpConsumed += 2;
-            }
-            if (t === 100) {
-                this.spawnParticles(pair.x, 0, 0, 20, '#ff00ff');
-                this.state.atpConsumed += 10;
-            }
-            if (t > 150 && t < 300) {
-                pair.base1 = '';
-                if (t % 10 === 0) this.state.atpConsumed += 1;
-            }
-            if (t === 300) {
-                this.spawnParticles(pair.x, 0, 0, 10, this.config.colors.A);
-                this.state.atpConsumed += 20;
-            }
-            if (t === 350) {
-                pair.base1 = 'A';
-                pair.isDamaged = false;
-            }
-        },
-
-        handleMMR(t) {
-            const targetIdx = Math.floor(this.config.helixLength / 2) + 5;
-            const pair = this.state.basePairs[targetIdx];
-
-            if (t === 10) {
-                pair.base1 = 'C'; pair.base2 = 'C'; pair.isDamaged = true;
-                this.state.atpConsumed += 5;
-            }
-            if (t > 150 && t < 400) {
-                for (let i = -2; i <= 2; i++) {
-                    if (this.state.basePairs[targetIdx + i])
-                        this.state.basePairs[targetIdx + i].base1 = '';
-                }
-                if (t % 10 === 0) this.state.atpConsumed += 2;
-            }
-            if (t === 450) {
-                for (let i = -2; i <= 2; i++) {
-                    const p = this.state.basePairs[targetIdx + i];
-                    if (p) { p.base1 = 'G'; p.base2 = 'C'; p.isDamaged = false; }
-                }
-                this.state.atpConsumed += 40;
-            }
-        },
-
-        handleNER(t) {
-            const targetIdx = Math.floor(this.config.helixLength / 2) - 5;
-            const lesionSize = 4;
-
-            if (t === 10) {
-                // UV Damage (Thymine Dimers) - simulate multiple damaged bases
-                for (let i = 0; i < lesionSize; i++) {
-                    const p = this.state.basePairs[targetIdx + i];
-                    if (p) p.isDamaged = true;
-                }
-                this.state.atpConsumed += 8;
-            }
-            if (t === 100) {
-                this.spawnParticles(this.state.basePairs[targetIdx + 2].x, 0, 0, 30, '#00ff00');
-                this.state.atpConsumed += 15;
-            }
-            if (t > 150 && t < 350) {
-                // Excision of the segment
-                for (let i = 0; i < lesionSize; i++) {
-                    const p = this.state.basePairs[targetIdx + i];
-                    if (p) p.base1 = '';
-                }
-                if (t % 10 === 0) this.state.atpConsumed += 3;
-            }
-            if (t === 400) {
-                this.spawnParticles(this.state.basePairs[targetIdx + 2].x, 0, 0, 20, '#00D9FF');
-                this.state.atpConsumed += 30;
-            }
-            if (t === 450) {
-                // Restoration
-                for (let i = 0; i < lesionSize; i++) {
-                    const p = this.state.basePairs[targetIdx + i];
-                    if (p) {
-                        p.base1 = (i % 2 === 0) ? 'T' : 'A';
-                        p.isDamaged = false;
-                    }
-                }
-            }
-        },
-
-        handleDSB(t) {
-            const targetIdx = Math.floor(this.config.helixLength / 2);
-
-            if (t === 50) {
-                this.state.basePairs[targetIdx].isBroken = true;
-                this.state.atpConsumed += 5;
-            }
-
-            if (t > 50 && t < 300) {
-                // Horizontal drift: Left side goes left/up, Right side goes right/down
-                this.state.basePairs.forEach(p => {
-                    if (p.index < targetIdx) { p.x -= 0.2; p.offsetY -= 0.1; }
-                    if (p.index > targetIdx) { p.x += 0.2; p.offsetY += 0.1; }
-                });
-            }
-
-            if (t === 350) {
-                this.spawnParticles(this.state.basePairs[targetIdx].x, 0, 0, 50, '#ffff00');
-                this.state.atpConsumed += 50;
-            }
-
-            if (t > 400) {
-                // Rejoin
-                this.state.basePairs.forEach((p, i) => {
-                    const targetX = (i - this.config.helixLength / 2) * this.config.rise;
-                    p.x += (targetX - p.x) * 0.05;
-                    p.offsetY += (0 - p.offsetY) * 0.05;
-                });
-                if (Math.abs(this.state.basePairs[targetIdx].x - ((targetIdx - this.config.helixLength / 2) * this.config.rise)) < 1) {
-                    this.state.basePairs[targetIdx].isBroken = false;
-                }
-            }
-        },
-
-        handleHR(t) {
-            const targetIdx = Math.floor(this.config.helixLength / 2);
-
-            if (t === 50) {
-                this.state.basePairs[targetIdx].isBroken = true;
-                this.state.atpConsumed += 10;
-            }
-
-            // Resection (t=60 to 150)
-            if (t > 60 && t < 150) {
-                const range = Math.floor((t - 60) / 10);
-                for (let i = -range; i <= range; i++) {
-                    const p = this.state.basePairs[targetIdx + i];
-                    if (p) {
-                        p.base1 = ''; // Chew back 5' ends
-                        if (t % 10 === 0) this.state.atpConsumed += 1;
-                    }
-                }
-            }
-
-            // Sister Chromatid Appearance (t=150 to 450)
-            if (t > 150 && t < 450) {
-                // Sister chromatid is represented by particles or a second line
-                if (t % 5 === 0) {
-                    this.spawnParticles(this.state.basePairs[targetIdx].x + (Math.random() - 0.5) * 200, 100, 0, 2, '#667eea');
-                }
-            }
-
-            // Strand Invasion and Synthesis (t=200 to 400)
-            if (t > 200 && t < 400) {
-                if (t % 20 === 0) {
-                    this.state.atpConsumed += 5;
-                    this.spawnParticles(this.state.basePairs[targetIdx].x, 50, 0, 10, '#00FF66');
-                }
-            }
-
-            // Rejoin and Resolution (t=450)
-            if (t === 450) {
-                this.state.atpConsumed += 30;
-                this.generateDNA(); // Reset to perfect state
-                this.state.basePairs[targetIdx].isBroken = false;
-            }
-        },
-
-
-        spawnParticles(x, y, z, count, color) {
-            for (let i = 0; i < count; i++) {
-                this.state.particles.push({
-                    x: x + (Math.random() - 0.5) * 100,
-                    y: y + (Math.random() - 0.5) * 100,
-                    z: z + (Math.random() - 0.5) * 100,
-                    targetX: x,
-                    targetY: y,
-                    targetZ: z,
-                    life: 60,
-                    color: color
-                });
-            }
-        },
+        spawnParticles(x, y, z, count, color) { for (let i = 0; i < count; i++) this.state.particles.push({ x: x + (Math.random() - 0.5) * 100, y: y + (Math.random() - 0.5) * 100, z: z + (Math.random() - 0.5) * 100, targetX: x, targetY: y, targetZ: z, life: 60, color: color }); },
 
         render() {
-            const ctx = this.ctx;
-            const w = this.width;
-            const h = this.height;
-            const cam = this.state.camera;
-
-            // Clear
-            ctx.clearRect(0, 0, w, h);
-            ctx.fillStyle = '#101015'; // Slightly lighter black
-            ctx.fillRect(0, 0, w, h);
-
-            // Helpers from common math
+            const ctx = this.ctx; const w = this.width; const h = this.height; const cam = this.state.camera;
+            ctx.clearRect(0, 0, w, h); ctx.fillStyle = '#101015'; ctx.fillRect(0, 0, w, h);
             const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
-            const radius = this.config.radius;
-
-            // Draw DNA
+            const radius = this.config.radius * (1 + (this.state.globalHelixUnwind || 0) * 1.5);
+            const rotS = 1 - (this.state.globalHelixUnwind || 0) * 0.8;
             for (let i = 0; i < this.state.basePairs.length; i++) {
-                const pair = this.state.basePairs[i];
-                if (pair.isBroken) continue;
-
-                // Horizontal Helix: Angle determines Y/Z position
-                const yOff = pair.offsetY || 0;
-
-                // Strand A
-                const s1Y = Math.cos(pair.angle) * radius + yOff;
-                const s1Z = Math.sin(pair.angle) * radius;
-
-                // Strand B
-                const s2Y = Math.cos(pair.angle + Math.PI) * radius + yOff;
-                const s2Z = Math.sin(pair.angle + Math.PI) * radius;
-
-                const p1 = project(pair.x, s1Y, s1Z, cam, { width: w, height: h, near: 10, far: 5000 });
-                const p2 = project(pair.x, s2Y, s2Z, cam, { width: w, height: h, near: 10, far: 5000 });
-
+                const p = this.state.basePairs[i]; if (p.isBroken) continue;
+                const dAngle = p.angle * rotS;
+                const s1Y = Math.cos(dAngle) * radius + p.offsetY; const s1Z = Math.sin(dAngle) * radius;
+                const s2Y = Math.cos(dAngle + Math.PI) * radius + p.offsetY; const s2Z = Math.sin(dAngle + Math.PI) * radius;
+                const p1 = project(p.x, s1Y, s1Z, cam, { width: w, height: h, near: 10, far: 5000 });
+                const p2 = project(p.x, s2Y, s2Z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p1.scale <= 0 || p2.scale <= 0) continue;
-
-                const midX = (p1.x + p2.x) / 2;
-                const midY = (p1.y + p2.y) / 2;
-                const thickness = 5 * p1.scale;
-
-                // Draw Rung
-                const drawBase = (startP, endP, baseType, damaged) => {
-                    if (!baseType) return;
-                    ctx.strokeStyle = damaged ? '#ff0000' : (this.config.colors[baseType] || '#fff');
-                    ctx.lineWidth = thickness;
-
-                    if (damaged) {
-                        ctx.shadowBlur = 15;
-                        ctx.shadowColor = '#ff0000';
-                    }
-
-                    ctx.beginPath();
-                    ctx.moveTo(startP.x, startP.y);
-                    ctx.lineTo(endP.x, endP.y);
-                    ctx.stroke();
-
-                    if (damaged) {
-                        ctx.shadowBlur = 0;
-                    }
-                };
-
-                drawBase(p1, { x: midX, y: midY }, pair.base1, pair.isDamaged);
-                drawBase({ x: midX, y: midY }, p2, pair.base2, pair.isDamaged);
-
-                // Draw Pentagons for Sugars (Deoxyribose)
-                const drawPentagon = (x, y, radius) => {
-                    ctx.fillStyle = '#e2e8f0'; // Sugar color
-                    ctx.beginPath();
-                    for (let j = 0; j < 5; j++) {
-                        const angle = (j * 2 * Math.PI / 5) - Math.PI / 2;
-                        const px = x + Math.cos(angle) * radius;
-                        const py = y + Math.sin(angle) * radius;
-                        if (j === 0) ctx.moveTo(px, py);
-                        else ctx.lineTo(px, py);
-                    }
-                    ctx.closePath();
-                    ctx.fill();
-                };
-
-                if (p1.scale > 0.3) drawPentagon(p1.x, p1.y, 6 * p1.scale);
-                if (p2.scale > 0.3) drawPentagon(p2.x, p2.y, 6 * p2.scale);
-
-                // Draw Text Labels (Centered on the Base Rung)
-                if (p1.scale > 0.4) {
-                    ctx.fillStyle = "#000"; // Black text for contrast on color rungs
-                    ctx.font = `bold ${8 * p1.scale}px Arial`;
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-
-                    const tx = (p1.x + midX) / 2;
-                    const ty = (p1.y + midY) / 2;
-                    if (pair.base1) ctx.fillText(pair.base1, tx, ty);
-                }
-                if (p2.scale > 0.4) {
-                    ctx.fillStyle = "#000";
-                    ctx.font = `bold ${8 * p2.scale}px Arial`;
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-
-                    const tx = (p2.x + midX) / 2;
-                    const ty = (p2.y + midY) / 2;
-                    if (pair.base2) ctx.fillText(pair.base2, tx, ty);
-                }
-
-                // Phosphodiester Backbone
+                const midX = (p1.x + p2.x) / 2; const midY = (p1.y + p2.y) / 2;
+                const drawB = (sp, ep, type, dam) => { if (!type) return; ctx.strokeStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff'); ctx.lineWidth = 5 * p1.scale; if (dam) { ctx.shadowBlur = 15; ctx.shadowColor = '#ff0000'; } ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke(); ctx.shadowBlur = 0; };
+                drawB(p1, { x: midX, y: midY }, p.base1, p.isDamaged); drawB({ x: midX, y: midY }, p2, p.base2, p.isDamaged);
+                const drawP = (x, y, r) => { ctx.fillStyle = '#e2e8f0'; ctx.beginPath(); for (let j = 0; j < 5; j++) { const a = (j * 2 * Math.PI / 5) - Math.PI / 2; ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } ctx.closePath(); ctx.fill(); };
+                if (p1.scale > 0.3) drawP(p1.x, p1.y, 6 * p1.scale); if (p2.scale > 0.3) drawP(p2.x, p2.y, 6 * p2.scale);
+                if (p1.scale > 0.4 && p.base1) { ctx.fillStyle = "#000"; ctx.font = `bold ${8 * p1.scale}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.base1, (p1.x + midX) / 2, (p1.y + midY) / 2); }
+                if (p2.scale > 0.4 && p.base2) { ctx.fillStyle = "#000"; ctx.font = `bold ${8 * p2.scale}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.base2, (p2.x + midX) / 2, (p2.y + midY) / 2); }
                 if (i > 0 && !this.state.basePairs[i - 1].isBroken) {
-                    const prev = this.state.basePairs[i - 1];
-                    const prevYOff = prev.offsetY || 0;
-
-                    const ps1Y = Math.cos(prev.angle) * radius + prevYOff;
-                    const ps1Z = Math.sin(prev.angle) * radius;
-                    const ps2Y = Math.cos(prev.angle + Math.PI) * radius + prevYOff;
-                    const ps2Z = Math.sin(prev.angle + Math.PI) * radius;
-
-                    const pp1 = project(prev.x, ps1Y, ps1Z, cam, { width: w, height: h, near: 10, far: 5000 });
-                    const pp2 = project(prev.x, ps2Y, ps2Z, cam, { width: w, height: h, near: 10, far: 5000 });
-
-                    const drawBone = (pStart, pEnd) => {
-                        ctx.strokeStyle = this.config.colors.backbone;
-                        ctx.lineWidth = 2 * pStart.scale; // Thinner backbone line
-                        ctx.beginPath();
-                        ctx.moveTo(pStart.x, pStart.y);
-                        // Connect centers of pentagons
-                        ctx.lineTo(pEnd.x, pEnd.y);
-                        ctx.stroke();
-                    };
-                    drawBone(pp1, p1);
-                    drawBone(pp2, p2);
+                    const prev = this.state.basePairs[i - 1]; const pdAngle = prev.angle * rotS;
+                    const pp1 = project(prev.x, Math.cos(pdAngle) * radius + prev.offsetY, Math.sin(pdAngle) * radius, cam, { width: w, height: h, near: 10, far: 5000 });
+                    const pp2 = project(prev.x, Math.cos(pdAngle + Math.PI) * radius + prev.offsetY, Math.sin(pdAngle + Math.PI) * radius, cam, { width: w, height: h, near: 10, far: 5000 });
+                    ctx.strokeStyle = this.config.colors.backbone; ctx.lineWidth = 2 * p1.scale;
+                    ctx.beginPath(); ctx.moveTo(pp1.x, pp1.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(pp2.x, pp2.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
                 }
             }
-
-            // Draw Particles
-            this.state.particles.forEach(p => {
-                const proj = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 });
-                if (proj.scale > 0) {
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = p.color;
-                    ctx.fillStyle = p.color;
-                    ctx.beginPath();
-                    ctx.arc(proj.x, proj.y, 4 * proj.scale, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                }
-            });
-
-            // Draw Current Mode Title on Canvas (Visual reinforcement)
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 16px Arial';
-            ctx.textAlign = 'right';
-            ctx.fillText(this.currentModeText || '', w - 20, 30);
+            this.state.particles.forEach(p => { const proj = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 }); if (proj.scale > 0) { ctx.shadowBlur = 10; ctx.shadowColor = p.color; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(proj.x, proj.y, 4 * proj.scale, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; } });
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'right'; ctx.fillText(this.currentModeText || '', w - 20, 30);
         }
-    };
+    });
 
-    // Expose to global scope
     window.Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.initializeDNARepairSimulation = function (selector) {
-        // Backward compatibility wrapper
-        const container = document.querySelector(selector);
-        if (container) GreenhouseDNARepair.initializeDNARepairSimulation(container);
-    };
+    window.Greenhouse.initializeDNARepairSimulation = function (selector) { const container = document.querySelector(selector); if (container) G.initializeDNARepairSimulation(container); };
+    window.Greenhouse.setDNASimulationMode = function (mode) { G.startSimulation(mode); };
 
-    window.Greenhouse.setDNASimulationMode = function (mode) {
-        GreenhouseDNARepair.startSimulation(mode);
-    };
-
-    // --- Auto-Initialization Logic ---
     function captureAttributes() {
-        if (window._greenhouseScriptAttributes) {
-            return {
-                targetSelector: window._greenhouseScriptAttributes['target-selector-left'],
-                baseUrl: window._greenhouseScriptAttributes['base-url']
-            };
-        }
+        if (window._greenhouseScriptAttributes) return { targetSelector: window._greenhouseScriptAttributes['target-selector-left'], baseUrl: window._greenhouseScriptAttributes['base-url'] };
         const script = document.currentScript;
-        if (script) {
-            return {
-                targetSelector: script.getAttribute('data-target-selector-left'),
-                baseUrl: script.getAttribute('data-base-url')
-            };
-        }
+        if (script) return { targetSelector: script.getAttribute('data-target-selector-left'), baseUrl: script.getAttribute('data-base-url') };
         return { targetSelector: null, baseUrl: null };
     }
 
@@ -821,25 +264,21 @@
         try {
             await loadDependencies();
             const { targetSelector, baseUrl } = captureAttributes();
-            
-            if (baseUrl) {
+            if (baseUrl !== null) {
+                // Load modular simulation components
+                await GreenhouseUtils.loadScript('dna_repair_mechanisms.js', baseUrl);
+                await GreenhouseUtils.loadScript('dna_repair_mutations.js', baseUrl);
+                await GreenhouseUtils.loadScript('dna_repair_buttons.js', baseUrl);
+
+                // Load core dependencies
                 await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
                 await GreenhouseUtils.loadScript('dna_tooltip.js', baseUrl);
             }
-            
             if (targetSelector) {
-                console.log('DNA Repair App: Waiting for container:', targetSelector);
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
-                setTimeout(() => {
-                    console.log('DNA Repair App: Auto-initializing...');
-                    GreenhouseDNARepair.initializeDNARepairSimulation(container);
-                }, 5000);
+                setTimeout(() => G.initializeDNARepairSimulation(container), 2000);
             }
-        } catch (error) {
-            console.error('DNA Repair App: Initialization failed', error);
-        }
+        } catch (error) { console.error('DNA Repair App: Initialization failed', error); }
     }
-
-    // Execute main function
     main();
 })();
