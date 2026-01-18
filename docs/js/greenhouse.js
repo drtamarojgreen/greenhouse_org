@@ -201,7 +201,10 @@
             };
 
             if (uiScriptName) {
-                await GreenhouseUtils.loadScript(uiScriptName, config.githubPagesBaseUrl);
+                const uiScripts = Array.isArray(uiScriptName) ? uiScriptName : [uiScriptName];
+                for (const script of uiScripts) {
+                    await GreenhouseUtils.loadScript(script, config.githubPagesBaseUrl);
+                }
             }
             await GreenhouseUtils.loadScript(scriptName, config.githubPagesBaseUrl, appAttributes);
 
@@ -396,7 +399,7 @@
             'dna_repair.js',
             config.selectors.dna,
             config.fallbackSelectors.dna,
-            null,
+            ['models_3d_math.js', 'dna_tooltip.js'],
             'default',
             null,
             null,
@@ -423,7 +426,7 @@
             'rna_repair.js',
             config.selectors.rna,
             config.fallbackSelectors.rna,
-            null,
+            ['rna_display.js', 'rna_tooltip.js'],
             'default',
             null,
             null,
