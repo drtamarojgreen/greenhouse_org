@@ -9,7 +9,7 @@ This repository serves as the central hub for the Information Technology (IT) in
 ## 📌 Purpose
 
 This repository comprehensively documents and supports the IT systems enabling:
-- Public-facing website and digital outreach initiatives (greenhousementalhealth.org)
+- Public-facing website and digital outreach initiatives (greenhousemd.org)
 - Online scheduling and appointment management for public services
 - Internal collaboration tools (email, secure messaging, file sharing)
 - Robust data privacy and security protocols for public interactions
