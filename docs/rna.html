@@ -178,6 +178,9 @@
     <script src="js/rna_legend.js"></script>
     <script src="js/rna_tooltip.js"></script>
     <script src="js/rna_display.js"></script>
+    <script src="js/rna_repair_atp.js"></script>
+    <script src="js/rna_repair_enzymes.js"></script>
+    <script src="js/rna_repair_physics.js"></script>
     <script src="js/rna_repair.js"></script>
 
     <script>
@@ -186,7 +189,7 @@
             const targetSelector = '#rna-simulation-target';
 
             if (window.Greenhouse && window.Greenhouse.initializeRNARepairSimulation) {
-                window.Greenhouse.initializeRNARepairSimulation(targetSelector);
+                window.Greenhouse.initializeRNARepairSimulation(document.querySelector(targetSelector));
             }
         });
     </script>

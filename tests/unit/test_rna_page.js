@@ -84,6 +84,9 @@ function loadScript(filename) {
 }
 
 // --- Load Dependencies ---
+loadScript('rna_repair_atp.js');
+loadScript('rna_repair_enzymes.js');
+loadScript('rna_repair_physics.js');
 loadScript('rna_repair.js');
 loadScript('rna_legend.js');
 loadScript('rna_display.js');
@@ -116,6 +119,11 @@ TestFramework.describe('RNA Page Models', () => {
             assert.isTrue(simulation.isRunning);
             assert.equal(simulation.rnaStrand.length, 40);
             assert.equal(simulation.enzymes.length, 0);
+            assert.isTrue(!!(simulation.atpManager || simulation.atp === 100));
+            assert.isDefined(simulation.ribosome);
+            assert.isDefined(simulation.foldingEngine);
+            assert.isDefined(simulation.environmentManager);
+            assert.equal(simulation.bgParticles.length, 20);
         });
 
         TestFramework.it('should create RNA strand correctly', () => {
@@ -144,9 +152,12 @@ TestFramework.describe('RNA Page Models', () => {
         });
 
         TestFramework.it('should spawn enzymes', () => {
+            // Clear enzymes and spawn one
+            simulation.enzymes = [];
             simulation.spawnEnzyme('Ligase', 5);
             assert.equal(simulation.enzymes.length, 1);
-            assert.equal(simulation.enzymes[0].name, 'Ligase');
+            // Name might be Ligase or RtcB (random upgrade)
+            assert.isTrue(['Ligase', 'RtcB'].includes(simulation.enzymes[0].name));
             assert.equal(simulation.enzymes[0].targetIndex, 5);
         });
 
@@ -156,10 +167,69 @@ TestFramework.describe('RNA Page Models', () => {
             const initialX = enzyme.x;
             const initialY = enzyme.y;
 
-            simulation.update();
+            simulation.update(16);
 
             assert.notEqual(enzyme.x, initialX);
             assert.notEqual(enzyme.y, initialY);
+        });
+
+        TestFramework.it('should move ribosome and stall at damage', () => {
+            simulation.ribosome.index = 0;
+            simulation.ribosome.progress = 0;
+
+            // Base 0 is connected and not damaged
+            simulation.update(16);
+            assert.greaterThan(simulation.ribosome.progress, 0);
+            assert.isFalse(simulation.ribosome.stalled);
+
+            // Break base 1
+            simulation.rnaStrand[1].connected = false;
+            simulation.ribosome.index = 1;
+            simulation.update(16);
+            assert.isTrue(simulation.ribosome.stalled);
+        });
+
+        TestFramework.it('should consume ATP during repair', () => {
+            const initialATP = simulation.atpManager ? simulation.atpManager.atp : simulation.atp;
+            simulation.spawnEnzyme('Ligase', 5);
+            const enzyme = simulation.enzymes[0];
+            enzyme.state = 'repairing';
+
+            simulation.update(16);
+            const currentATP = simulation.atpManager ? simulation.atpManager.atp : simulation.atp;
+            assert.isTrue(currentATP < initialATP);
+        });
+
+        TestFramework.it('should apply folding offsets', () => {
+            simulation.foldingEngine.targetStrength = 1.0;
+            simulation.foldingEngine.foldingStrength = 1.0;
+
+            const baseIndex = Math.floor(simulation.rnaStrand.length / 2);
+            const initialX = simulation.rnaStrand[baseIndex].x;
+
+            simulation.update(16);
+
+            const offset = simulation.foldingEngine.getFoldingOffset(baseIndex, simulation.rnaStrand.length);
+            assert.isTrue(Math.abs(simulation.rnaStrand[baseIndex].x - (simulation.rnaStrand[baseIndex].targetX + offset.x)) < 20);
+        });
+
+        TestFramework.it('should trigger surveillance decay on ribosome stall', () => {
+            simulation.ribosome.index = 5;
+            simulation.rnaStrand[5].connected = false;
+            simulation.enzymes = [];
+
+            // Stall for > 15s (simulate with dt)
+            simulation.update(16000);
+
+            const hasUPF1 = simulation.enzymes.some(e => e.name === 'UPF1/Exosome');
+            assert.isTrue(hasUPF1);
+        });
+
+        TestFramework.it('should spawn protective proteins', () => {
+            simulation.spawnProtein();
+            assert.equal(simulation.proteins.length, 1);
+            const protein = simulation.proteins[0];
+            assert.isTrue(simulation.rnaStrand[protein.startIndex].protected);
         });
 
         TestFramework.it('should finish repair', () => {
