@@ -2,7 +2,7 @@
 
 This directory contains the frontend code for the **Books** page of the main Greenhouse for Mental Health website:
 
-👉 [https://greenhousementalhealth.org/books/](https://greenhousementalhealth.org/books/)
+👉 [https://greenhousemd.org/books/](https://greenhousemd.org/books/)
 
 ---
 

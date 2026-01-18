@@ -1,8 +1,8 @@
-# Project Plan: greenhousementalhealth.org
+# Project Plan: greenhousemd.org
 
 ## Goal
 
-Establish greenhousementalhealth.org as the premier digital ecosystem for mental health development, seamlessly integrating diverse services and resources to empower both patients and professionals. Our platform will foster a trusted, supportive, and accessible environment, driving engagement and advancing mental well-being while upholding the highest standards of privacy and accessibility.
+Establish greenhousemd.org as the premier digital ecosystem for mental health development, seamlessly integrating diverse services and resources to empower both patients and professionals. Our platform will foster a trusted, supportive, and accessible environment, driving engagement and advancing mental well-being while upholding the highest standards of privacy and accessibility.
 
 ---
 

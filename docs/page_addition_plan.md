@@ -8,7 +8,7 @@ The platform utilizes a hybrid architecture that combines the Wix website builde
 
 ### Key Components:
 
-*   **Wix Website:** The primary website (`https://greenhousementalhealth.org`) is built and hosted on Wix. It serves as the main entry point for users and provides the overall page structure and design.
+*   **Wix Website:** The primary website (`https://greenhousemd.org`) is built and hosted on Wix. It serves as the main entry point for users and provides the overall page structure and design.
 *   **GitHub Pages:** Custom JavaScript and CSS assets are hosted on a separate GitHub Pages site. This allows for version control and a more flexible development workflow.
 *   **Loader Script (`greenhouse.js`):** A single loader script is included on all pages of the Wix site. This script is responsible for determining the current page and loading the appropriate application assets.
 *   **Application Core (`scheduler.js`):** This is the main script for the scheduling application. It is responsible for loading the correct view and injecting it into the Wix DOM.

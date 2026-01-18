@@ -2,7 +2,7 @@
 
 This directory contains the frontend code for the **Videos** page of the main Greenhouse for Mental Health website:
 
-👉 [https://greenhousementalhealth.org/videos/](https://greenhousementalhealth.org/videos/)
+👉 [https://greenhousemd.org/videos/](https://greenhousemd.org/videos/)
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-A/B testing (or split testing) is a powerful method for improving website performance by comparing two versions of a webpage to see which one better achieves a specific goal. For `greenhousementalhealth.org`, the primary goal is to increase patient inquiries and appointment bookings.
+A/B testing (or split testing) is a powerful method for improving website performance by comparing two versions of a webpage to see which one better achieves a specific goal. For `greenhousemd.org`, the primary goal is to increase patient inquiries and appointment bookings.
 
 This document outlines a comprehensive plan for implementing A/B testing on the Wix platform.
 
