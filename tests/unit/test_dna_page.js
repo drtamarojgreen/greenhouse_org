@@ -166,20 +166,24 @@ TestFramework.describe('DNA Page Models', () => {
             dnaRepair.startSimulation('mmr');
             assert.equal(dnaRepair.state.repairMode, 'mmr');
             assert.equal(dnaRepair.state.timer, 0);
+            assert.equal(dnaRepair.state.atpConsumed, 0);
             assert.isTrue(dnaRepair.state.simulating);
         });
 
-        TestFramework.it('should handle BER repair cycle', () => {
+        TestFramework.it('should handle BER repair cycle and ATP consumption', () => {
             dnaRepair.startSimulation('ber');
             const targetIdx = Math.floor(dnaRepair.config.helixLength / 2);
 
             // Damage trigger at t=10
             dnaRepair.handleBER(10);
             assert.isTrue(dnaRepair.state.basePairs[targetIdx].isDamaged);
+            assert.greaterThan(dnaRepair.state.atpConsumed, 0);
 
             // Excision at t=200 (between 150 and 300)
+            const atpBeforeExcision = dnaRepair.state.atpConsumed;
             dnaRepair.handleBER(200);
             assert.equal(dnaRepair.state.basePairs[targetIdx].base1, '');
+            assert.greaterThan(dnaRepair.state.atpConsumed, atpBeforeExcision);
 
             // Repair at t=350
             dnaRepair.handleBER(350);
@@ -204,6 +208,24 @@ TestFramework.describe('DNA Page Models', () => {
             dnaRepair.handleDSB(401);
             // It uses lerp-like update, so it moves back
             assert.greaterThan(dnaRepair.state.basePairs[0].x, initialX - 10); // Check it's moving back
+        });
+
+        TestFramework.it('should handle HR repair cycle', () => {
+            dnaRepair.startSimulation('hr');
+            const targetIdx = Math.floor(dnaRepair.config.helixLength / 2);
+
+            // Break at t=50
+            dnaRepair.handleHR(50);
+            assert.isTrue(dnaRepair.state.basePairs[targetIdx].isBroken);
+
+            // Resection at t=100
+            dnaRepair.handleHR(100);
+            assert.equal(dnaRepair.state.basePairs[targetIdx].base1, '');
+
+            // Completion at t=450
+            dnaRepair.handleHR(450);
+            assert.isFalse(dnaRepair.state.basePairs[targetIdx].isBroken);
+            assert.notEqual(dnaRepair.state.basePairs[targetIdx].base1, '');
         });
 
         TestFramework.it('should handle NER repair cycle', () => {

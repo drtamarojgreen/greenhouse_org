@@ -49,6 +49,7 @@
             basePairs: [],
             particles: [],
             repairMode: 'ber', // ber, mmr, dsb
+            atpConsumed: 0,
             timer: 0,
             simulating: false // Control when animation runs
         },
@@ -152,6 +153,7 @@
         startSimulation(mode) {
             this.state.repairMode = mode;
             this.state.timer = 0;
+            this.state.atpConsumed = 0;
             this.state.simulating = true;
             this.state.particles = [];
             this.generateDNA(); // Reset structure
@@ -160,7 +162,8 @@
                 'ber': "Base Excision Repair",
                 'mmr': "Mismatch Repair",
                 'dsb': "Double-Strand Break Repair",
-                'ner': "Nucleotide Excision Repair"
+                'ner': "Nucleotide Excision Repair",
+                'hr': "Homologous Recombination"
             };
             this.currentModeText = titles[mode];
         },
@@ -286,6 +289,7 @@
                 else if (st.repairMode === 'mmr') this.handleMMR(st.timer);
                 else if (st.repairMode === 'dsb') this.handleDSB(st.timer);
                 else if (st.repairMode === 'ner') this.handleNER(st.timer);
+                else if (st.repairMode === 'hr') this.handleHR(st.timer);
 
                 // Stop active animation after cycle completes
                 if (st.timer > 600) {
@@ -310,15 +314,19 @@
 
             if (t === 10) {
                 pair.isDamaged = true; // Sim damage
+                this.state.atpConsumed += 2;
             }
             if (t === 100) {
                 this.spawnParticles(pair.x, 0, 0, 20, '#ff00ff');
+                this.state.atpConsumed += 10;
             }
             if (t > 150 && t < 300) {
                 pair.base1 = '';
+                if (t % 10 === 0) this.state.atpConsumed += 1;
             }
             if (t === 300) {
                 this.spawnParticles(pair.x, 0, 0, 10, this.config.colors.A);
+                this.state.atpConsumed += 20;
             }
             if (t === 350) {
                 pair.base1 = 'A';
@@ -330,18 +338,23 @@
             const targetIdx = Math.floor(this.config.helixLength / 2) + 5;
             const pair = this.state.basePairs[targetIdx];
 
-            if (t === 10) { pair.base1 = 'C'; pair.base2 = 'C'; pair.isDamaged = true; }
+            if (t === 10) {
+                pair.base1 = 'C'; pair.base2 = 'C'; pair.isDamaged = true;
+                this.state.atpConsumed += 5;
+            }
             if (t > 150 && t < 400) {
                 for (let i = -2; i <= 2; i++) {
                     if (this.state.basePairs[targetIdx + i])
                         this.state.basePairs[targetIdx + i].base1 = '';
                 }
+                if (t % 10 === 0) this.state.atpConsumed += 2;
             }
             if (t === 450) {
                 for (let i = -2; i <= 2; i++) {
                     const p = this.state.basePairs[targetIdx + i];
                     if (p) { p.base1 = 'G'; p.base2 = 'C'; p.isDamaged = false; }
                 }
+                this.state.atpConsumed += 40;
             }
         },
 
@@ -355,9 +368,11 @@
                     const p = this.state.basePairs[targetIdx + i];
                     if (p) p.isDamaged = true;
                 }
+                this.state.atpConsumed += 8;
             }
             if (t === 100) {
                 this.spawnParticles(this.state.basePairs[targetIdx + 2].x, 0, 0, 30, '#00ff00');
+                this.state.atpConsumed += 15;
             }
             if (t > 150 && t < 350) {
                 // Excision of the segment
@@ -365,9 +380,11 @@
                     const p = this.state.basePairs[targetIdx + i];
                     if (p) p.base1 = '';
                 }
+                if (t % 10 === 0) this.state.atpConsumed += 3;
             }
             if (t === 400) {
                 this.spawnParticles(this.state.basePairs[targetIdx + 2].x, 0, 0, 20, '#00D9FF');
+                this.state.atpConsumed += 30;
             }
             if (t === 450) {
                 // Restoration
@@ -384,7 +401,10 @@
         handleDSB(t) {
             const targetIdx = Math.floor(this.config.helixLength / 2);
 
-            if (t === 50) this.state.basePairs[targetIdx].isBroken = true;
+            if (t === 50) {
+                this.state.basePairs[targetIdx].isBroken = true;
+                this.state.atpConsumed += 5;
+            }
 
             if (t > 50 && t < 300) {
                 // Horizontal drift: Left side goes left/up, Right side goes right/down
@@ -394,7 +414,10 @@
                 });
             }
 
-            if (t === 350) this.spawnParticles(this.state.basePairs[targetIdx].x, 0, 0, 50, '#ffff00');
+            if (t === 350) {
+                this.spawnParticles(this.state.basePairs[targetIdx].x, 0, 0, 50, '#ffff00');
+                this.state.atpConsumed += 50;
+            }
 
             if (t > 400) {
                 // Rejoin
@@ -406,6 +429,50 @@
                 if (Math.abs(this.state.basePairs[targetIdx].x - ((targetIdx - this.config.helixLength / 2) * this.config.rise)) < 1) {
                     this.state.basePairs[targetIdx].isBroken = false;
                 }
+            }
+        },
+
+        handleHR(t) {
+            const targetIdx = Math.floor(this.config.helixLength / 2);
+
+            if (t === 50) {
+                this.state.basePairs[targetIdx].isBroken = true;
+                this.state.atpConsumed += 10;
+            }
+
+            // Resection (t=60 to 150)
+            if (t > 60 && t < 150) {
+                const range = Math.floor((t - 60) / 10);
+                for (let i = -range; i <= range; i++) {
+                    const p = this.state.basePairs[targetIdx + i];
+                    if (p) {
+                        p.base1 = ''; // Chew back 5' ends
+                        if (t % 10 === 0) this.state.atpConsumed += 1;
+                    }
+                }
+            }
+
+            // Sister Chromatid Appearance (t=150 to 450)
+            if (t > 150 && t < 450) {
+                // Sister chromatid is represented by particles or a second line
+                if (t % 5 === 0) {
+                    this.spawnParticles(this.state.basePairs[targetIdx].x + (Math.random() - 0.5) * 200, 100, 0, 2, '#667eea');
+                }
+            }
+
+            // Strand Invasion and Synthesis (t=200 to 400)
+            if (t > 200 && t < 400) {
+                if (t % 20 === 0) {
+                    this.state.atpConsumed += 5;
+                    this.spawnParticles(this.state.basePairs[targetIdx].x, 50, 0, 10, '#00FF66');
+                }
+            }
+
+            // Rejoin and Resolution (t=450)
+            if (t === 450) {
+                this.state.atpConsumed += 30;
+                this.generateDNA(); // Reset to perfect state
+                this.state.basePairs[targetIdx].isBroken = false;
             }
         },
 
@@ -569,6 +636,16 @@
                     ctx.shadowBlur = 0;
                 }
             });
+
+            // Draw ATP Counter
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`ATP Consumed: ${this.state.atpConsumed}`, 20, 30);
+
+            // Draw Current Mode
+            ctx.textAlign = 'right';
+            ctx.fillText(this.currentModeText || '', w - 20, 30);
         }
     };
 
