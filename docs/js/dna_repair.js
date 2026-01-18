@@ -538,22 +538,29 @@
     function captureAttributes() {
         if (window._greenhouseScriptAttributes) {
             return {
-                targetSelector: window._greenhouseScriptAttributes['target-selector-left']
+                targetSelector: window._greenhouseScriptAttributes['target-selector-left'],
+                baseUrl: window._greenhouseScriptAttributes['base-url']
             };
         }
         const script = document.currentScript;
         if (script) {
             return {
-                targetSelector: script.getAttribute('data-target-selector-left')
+                targetSelector: script.getAttribute('data-target-selector-left'),
+                baseUrl: script.getAttribute('data-base-url')
             };
         }
-        return { targetSelector: null };
+        return { targetSelector: null, baseUrl: null };
     }
 
     async function main() {
         try {
             await loadDependencies();
-            const { targetSelector } = captureAttributes();
+            const { targetSelector, baseUrl } = captureAttributes();
+            
+            if (baseUrl) {
+                await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+                await GreenhouseUtils.loadScript('dna_tooltip.js', baseUrl);
+            }
             
             if (targetSelector) {
                 console.log('DNA Repair App: Waiting for container:', targetSelector);
