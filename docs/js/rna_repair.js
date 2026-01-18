@@ -42,7 +42,7 @@
 
             // Initialization with fallbacks to avoid NaN
             this.width = canvas.width || 800;
-            this.height = canvas.height || 800;
+            this.height = canvas.height || 600;
 
             this.rnaStrand = [];
             this.enzymes = [];
@@ -83,8 +83,8 @@
             this.scheduleDamage();
             this.setupInteraction();
 
-            // Initialize tooltip
-            if (window.GreenhouseRNATooltip) {
+            // Initialize tooltip if available
+            if (window.GreenhouseRNATooltip && window.GreenhouseRNATooltip.initialize) {
                 window.GreenhouseRNATooltip.initialize();
             }
         }
@@ -294,8 +294,7 @@
         draw() {
             if (!this.ctx) return;
 
-            this.ctx.fillStyle = '#1e293b';
-            this.ctx.fillRect(0, 0, this.width, this.height);
+            this.ctx.clearRect(0, 0, this.width, this.height);
 
             this.ctx.save();
             this.ctx.translate(this.offsetX, this.offsetY);
@@ -404,15 +403,23 @@
                 this.ctx.save();
                 this.ctx.beginPath();
                 this.ctx.arc(enzyme.x, enzyme.y, enzyme.size, 0, Math.PI * 2);
-                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                this.ctx.fillStyle = this.colors.ENZYME;
                 this.ctx.fill();
-                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                this.ctx.strokeStyle = this.colors.GLOW;
+                this.ctx.setLineDash([5, 5]);
                 this.ctx.lineWidth = 2;
                 this.ctx.stroke();
 
                 this.ctx.fillStyle = 'white';
                 this.ctx.font = '12px Arial';
                 this.ctx.fillText(enzyme.name, enzyme.x, enzyme.y - enzyme.size - 5);
+
+                if (enzyme.state === 'repairing') {
+                    this.ctx.beginPath();
+                    this.ctx.rect(enzyme.x - 20, enzyme.y + enzyme.size + 10, 40 * enzyme.progress, 4);
+                    this.ctx.fillStyle = this.colors.GLOW;
+                    this.ctx.fill();
+                }
                 this.ctx.restore();
             });
 
@@ -445,6 +452,11 @@
             this.update(dt);
             this.draw();
 
+            // Notify legend if it exists
+            if (window.Greenhouse && window.Greenhouse.RNALegend && window.Greenhouse.RNALegend.update) {
+                window.Greenhouse.RNALegend.update(this.ctx, this.width, this.height, this.colors);
+            }
+
             requestAnimationFrame((ts) => this.animate(ts));
         }
 
@@ -457,7 +469,10 @@
      * @function initializeRNARepairSimulation
      */
     function initializeRNARepairSimulation(targetElement) {
-        if (!targetElement) return;
+        if (!targetElement) {
+            console.error('Target element for RNA repair simulation not found.');
+            return;
+        }
 
         if (typeof targetElement === 'string') {
             const selector = targetElement;
@@ -479,9 +494,10 @@
         canvas.id = 'rnaRepairCanvas';
 
         const rect = targetElement.getBoundingClientRect();
-        canvas.width = Math.max(rect.width, 800);
-        canvas.height = Math.max(rect.height, 800);
+        canvas.width = rect.width || 800;
+        canvas.height = 600;
         canvas.style.display = 'block';
+        canvas.style.cursor = 'grab';
 
         wrapper.appendChild(canvas);
 
@@ -498,42 +514,86 @@
 
         window.addEventListener('resize', () => {
             const newRect = targetElement.getBoundingClientRect();
-            const newWidth = Math.max(newRect.width, 800);
-            const newHeight = Math.max(newRect.height, 800);
-            canvas.width = newWidth;
-            canvas.height = newHeight;
-            simulation.width = newWidth;
-            simulation.height = newHeight;
+            canvas.width = newRect.width;
+            simulation.width = canvas.width;
             simulation.rnaStrand.forEach(base => {
-                base.targetX = newWidth / 2;
+                base.targetX = canvas.width / 2;
             });
         });
 
         console.log('RNA Repair simulation initialized (Vertical).');
+
+        observeAndReinitializeApp(targetElement);
+    }
+
+    function observeAndReinitializeApp(container) {
+        if (!container) return;
+
+        if (resilienceObserver) {
+            resilienceObserver.disconnect();
+        }
+
+        const observerCallback = (mutations) => {
+            const wasRemoved = mutations.some(m =>
+                Array.from(m.removedNodes).some(n =>
+                    n.nodeType === 1 && n.classList.contains('rna-simulation-container')
+                )
+            );
+
+            if (wasRemoved) {
+                console.log('RNARepair: Simulation container removed. Re-initializing...');
+                if (window.Greenhouse.rnaSimulation) {
+                    window.Greenhouse.rnaSimulation.stop();
+                }
+                if (resilienceObserver) resilienceObserver.disconnect();
+
+                setTimeout(() => {
+                    initializeRNARepairSimulation(container);
+                }, 1000);
+            }
+        };
+
+        resilienceObserver = new MutationObserver(observerCallback);
+        resilienceObserver.observe(container, { childList: true });
     }
 
     window.Greenhouse = window.Greenhouse || {};
     window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
     window.Greenhouse.RNARepairSimulation = RNARepairSimulation;
 
+    // --- Auto-Initialization Logic ---
+    function captureAttributes() {
+        if (window._greenhouseScriptAttributes) {
+            return {
+                targetSelector: window._greenhouseScriptAttributes['target-selector-left'],
+                baseUrl: window._greenhouseScriptAttributes['base-url']
+            };
+        }
+        const script = document.currentScript;
+        if (script) {
+            return {
+                targetSelector: script.getAttribute('data-target-selector-left'),
+                baseUrl: script.getAttribute('data-base-url')
+            };
+        }
+        return { targetSelector: null, baseUrl: null };
+    }
+
     async function main() {
         try {
             await loadDependencies();
-            let targetSelector = null;
-            let baseUrl = null;
-
-            if (window._greenhouseScriptAttributes) {
-                targetSelector = window._greenhouseScriptAttributes['target-selector-left'];
-                baseUrl = window._greenhouseScriptAttributes['base-url'];
-            }
+            const { targetSelector, baseUrl } = captureAttributes();
 
             if (baseUrl) {
-                await GreenhouseUtils.loadScript('rna_tooltip.js', baseUrl);
-                await GreenhouseUtils.loadScript('rna_display.js', baseUrl);
-                await GreenhouseUtils.loadScript('rna_legend.js', baseUrl);
+                if (!window.GreenhouseRNATooltip) await GreenhouseUtils.loadScript('rna_tooltip.js', baseUrl);
+                if (!window.GreenhouseRNADisplay) await GreenhouseUtils.loadScript('rna_display.js', baseUrl);
+                if (!document.querySelector('script[data-script-name="rna_legend.js"]')) {
+                    await GreenhouseUtils.loadScript('rna_legend.js', baseUrl);
+                }
             }
             
             if (targetSelector) {
+                console.log('RNA Repair App: Waiting for container:', targetSelector);
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
                 setTimeout(() => {
                     console.log('RNA Repair App: Auto-initializing...');
