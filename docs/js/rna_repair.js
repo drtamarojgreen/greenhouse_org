@@ -5,10 +5,31 @@
  * Refactored for vertical orientation and external display controls.
  */
 
-(function () {
+(async function () {
     'use strict';
 
     console.log("RNA Repair simulation script loaded.");
+
+    let GreenhouseUtils;
+    let resilienceObserver = null;
+
+    // Ensure GreenhouseUtils is loaded before proceeding
+    const loadDependencies = async () => {
+        await new Promise((resolve, reject) => {
+            let attempts = 0;
+            const maxAttempts = 240;
+            const interval = setInterval(() => {
+                if (window.GreenhouseUtils) {
+                    clearInterval(interval);
+                    GreenhouseUtils = window.GreenhouseUtils;
+                    resolve();
+                } else if (attempts++ >= maxAttempts) {
+                    clearInterval(interval);
+                    reject(new Error('GreenhouseUtils load timeout'));
+                }
+            }, 50);
+        });
+    };
 
     /**
      * @class RNARepairSimulation
@@ -377,53 +398,85 @@
      * @function initializeRNARepairSimulation
      * @description Entry point for initializing the simulation on a target element.
      */
-    function initializeRNARepairSimulation(targetSelector) {
-        const targetElement = document.querySelector(targetSelector);
+    function initializeRNARepairSimulation(targetElement) {
         if (!targetElement) {
-            console.error('Target element for RNA repair simulation not found:', targetSelector);
+            console.error('Target element for RNA repair simulation not found.');
             return;
         }
 
-        // Show Loading/Delay Message
-        targetElement.innerHTML = '<div style="color:white;text-align:center;padding-top:250px;font-family:sans-serif;"><h3>Initializing RNA Repair Simulation...</h3><p>Loading biological models...</p></div>';
+        // Clear and setup wrapper
+        targetElement.innerHTML = '';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'rna-simulation-container';
+        wrapper.style.width = '100%';
+        wrapper.style.height = '100%';
+        targetElement.appendChild(wrapper);
 
-        // 5 Second Delay
-        setTimeout(() => {
-            targetElement.innerHTML = ''; // Clear loading message
+        const canvas = document.createElement('canvas');
+        canvas.id = 'rnaRepairCanvas';
 
-            const canvas = document.createElement('canvas');
-            canvas.id = 'rnaRepairCanvas';
+        const rect = targetElement.getBoundingClientRect();
+        canvas.width = rect.width || 800;
+        canvas.height = 600; // Increased height
 
-            const rect = targetElement.getBoundingClientRect();
-            canvas.width = rect.width || 800;
-            canvas.height = 600; // Increased height
+        canvas.style.display = 'block';
+        canvas.style.cursor = 'grab';
 
-            canvas.style.display = 'block';
-            canvas.style.cursor = 'grab';
+        wrapper.appendChild(canvas);
 
-            targetElement.appendChild(canvas);
+        const simulation = new RNARepairSimulation(canvas);
 
-            const simulation = new RNARepairSimulation(canvas);
+        // Expose simulation instance
+        window.Greenhouse = window.Greenhouse || {};
+        window.Greenhouse.rnaSimulation = simulation;
 
-            // Expose simulation instance
-            window.Greenhouse = window.Greenhouse || {};
-            window.Greenhouse.rnaSimulation = simulation;
+        // Initialize Display Controls if available
+        if (window.Greenhouse.initializeRNADisplay) {
+            window.Greenhouse.initializeRNADisplay(simulation);
+        }
 
-            // Initialize Display Controls if available
-            if (window.Greenhouse.initializeRNADisplay) {
-                window.Greenhouse.initializeRNADisplay(simulation);
+        simulation.animate();
+
+        window.addEventListener('resize', () => {
+            const newRect = targetElement.getBoundingClientRect();
+            canvas.width = newRect.width;
+            simulation.width = canvas.width;
+        });
+
+        console.log('RNA Repair simulation initialized (Vertical).');
+        
+        observeAndReinitializeApp(targetElement);
+    }
+
+    function observeAndReinitializeApp(container) {
+        if (!container) return;
+        
+        if (resilienceObserver) {
+            resilienceObserver.disconnect();
+        }
+
+        const observerCallback = (mutations) => {
+            const wasRemoved = mutations.some(m => 
+                Array.from(m.removedNodes).some(n => 
+                    n.nodeType === 1 && n.classList.contains('rna-simulation-container')
+                )
+            );
+
+            if (wasRemoved) {
+                console.log('RNARepair: Simulation container removed. Re-initializing...');
+                if (window.Greenhouse.rnaSimulation) {
+                    window.Greenhouse.rnaSimulation.stop();
+                }
+                if (resilienceObserver) resilienceObserver.disconnect();
+                
+                setTimeout(() => {
+                    initializeRNARepairSimulation(container);
+                }, 1000);
             }
+        };
 
-            simulation.animate();
-
-            window.addEventListener('resize', () => {
-                const newRect = targetElement.getBoundingClientRect();
-                canvas.width = newRect.width;
-                simulation.width = canvas.width;
-            });
-
-            console.log('RNA Repair simulation initialized (Vertical).');
-        }, 5000);
+        resilienceObserver = new MutationObserver(observerCallback);
+        resilienceObserver.observe(container, { childList: true });
     }
 
     window.Greenhouse = window.Greenhouse || {};
@@ -446,11 +499,19 @@
         return { targetSelector: null };
     }
 
-    function main() {
-        const { targetSelector } = captureAttributes();
-        if (targetSelector) {
-            console.log('RNA Repair App: Auto-initializing with selector:', targetSelector);
-            initializeRNARepairSimulation(targetSelector);
+    async function main() {
+        try {
+            await loadDependencies();
+            const { targetSelector } = captureAttributes();
+            
+            if (targetSelector) {
+                console.log('RNA Repair App: Waiting for container:', targetSelector);
+                const container = await GreenhouseUtils.waitForElement(targetSelector);
+                console.log('RNA Repair App: Auto-initializing...');
+                initializeRNARepairSimulation(container);
+            }
+        } catch (error) {
+            console.error('RNA Repair App: Initialization failed', error);
         }
     }
 

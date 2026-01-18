@@ -2,8 +2,29 @@
 // DNA Repair Simulation Module
 // Handles 3D rendering of DNA helix and repair animations
 
-(function () {
+(async function () {
     'use strict';
+
+    let GreenhouseUtils;
+    let resilienceObserver = null;
+
+    // Ensure GreenhouseUtils is loaded before proceeding
+    const loadDependencies = async () => {
+        await new Promise((resolve, reject) => {
+            let attempts = 0;
+            const maxAttempts = 240; // 12 seconds
+            const interval = setInterval(() => {
+                if (window.GreenhouseUtils) {
+                    clearInterval(interval);
+                    GreenhouseUtils = window.GreenhouseUtils;
+                    resolve();
+                } else if (attempts++ >= maxAttempts) {
+                    clearInterval(interval);
+                    reject(new Error('GreenhouseUtils load timeout'));
+                }
+            }, 50);
+        });
+    };
 
     const GreenhouseDNARepair = {
         canvas: null,
@@ -50,51 +71,83 @@
         },
 
         // Initialize the simulation
-        initializeDNARepairSimulation(targetSelector) {
-            const container = document.querySelector(targetSelector);
+        initializeDNARepairSimulation(container) {
             if (!container) {
-                console.error('GreenhouseDNARepair: Container not found', targetSelector);
+                console.error('GreenhouseDNARepair: Container provided is null.');
                 return;
             }
 
-            // Show Loading/Delay Message
-            container.innerHTML = '<div style="color:white;text-align:center;padding-top:250px;font-family:sans-serif;"><h3>Initializing DNA Repair Simulation...</h3><p>Loading biological models...</p></div>';
+            // Clear container safely
+            container.innerHTML = '';
+            
+            // Create wrapper for resilience
+            const wrapper = document.createElement('div');
+            wrapper.className = 'dna-simulation-container';
+            wrapper.style.width = '100%';
+            wrapper.style.height = '100%';
+            container.appendChild(wrapper);
 
-            // 5 Second Delay
-            setTimeout(() => {
-                container.innerHTML = ''; // Clear loading message
+            // Setup Canvas
+            this.canvas = document.createElement('canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.canvas.style.width = '100%';
+            this.canvas.style.height = '100%';
+            this.canvas.width = container.offsetWidth;
+            this.canvas.height = container.offsetHeight;
+            wrapper.appendChild(this.canvas);
 
-                // Setup Canvas
-                this.canvas = document.createElement('canvas');
-                this.ctx = this.canvas.getContext('2d');
-                this.canvas.style.width = '100%';
-                this.canvas.style.height = '100%';
-                this.canvas.width = container.offsetWidth;
-                this.canvas.height = container.offsetHeight;
-                container.innerHTML = '';
-                container.appendChild(this.canvas);
+            this.width = this.canvas.width;
+            this.height = this.canvas.height;
 
-                this.width = this.canvas.width;
-                this.height = this.canvas.height;
+            // Initialize Interaction
+            this.setupInteraction();
 
-                // Initialize Interaction
-                this.setupInteraction();
+            // Initialize DNA Data
+            this.generateDNA();
 
-                // Initialize DNA Data
-                this.generateDNA();
+            // Initialize Tooltips
+            if (window.GreenhouseDNATooltip) {
+                window.GreenhouseDNATooltip.initialize();
+            }
 
-                // Initialize Tooltips
-                if (window.GreenhouseDNATooltip) {
-                    window.GreenhouseDNATooltip.initialize();
+            // Start Loop
+            this.isRunning = true;
+            this.startSimulation('ber'); // Default start
+            this.animate();
+
+            console.log('GreenhouseDNARepair: Initialized');
+            
+            // Start observing for DOM removal
+            this.observeAndReinitializeApp(container);
+        },
+
+        observeAndReinitializeApp(container) {
+            if (!container) return;
+            
+            if (resilienceObserver) {
+                resilienceObserver.disconnect();
+            }
+
+            const observerCallback = (mutations) => {
+                const wasRemoved = mutations.some(m => 
+                    Array.from(m.removedNodes).some(n => 
+                        n.nodeType === 1 && n.classList.contains('dna-simulation-container')
+                    )
+                );
+
+                if (wasRemoved) {
+                    console.log('GreenhouseDNARepair: Simulation container removed. Re-initializing...');
+                    this.isRunning = false;
+                    if (resilienceObserver) resilienceObserver.disconnect();
+                    
+                    setTimeout(() => {
+                        this.initializeDNARepairSimulation(container);
+                    }, 1000);
                 }
+            };
 
-                // Start Loop
-                this.isRunning = true;
-                this.startSimulation('ber'); // Default start
-                this.animate();
-
-                console.log('GreenhouseDNARepair: Initialized');
-            }, 5000); // 5 Second Delay
+            resilienceObserver = new MutationObserver(observerCallback);
+            resilienceObserver.observe(container, { childList: true });
         },
 
         startSimulation(mode) {
@@ -472,7 +525,9 @@
     // Expose to global scope
     window.Greenhouse = window.Greenhouse || {};
     window.Greenhouse.initializeDNARepairSimulation = function (selector) {
-        GreenhouseDNARepair.initializeDNARepairSimulation(selector);
+        // Backward compatibility wrapper
+        const container = document.querySelector(selector);
+        if (container) GreenhouseDNARepair.initializeDNARepairSimulation(container);
     };
 
     window.Greenhouse.setDNASimulationMode = function (mode) {
@@ -495,11 +550,19 @@
         return { targetSelector: null };
     }
 
-    function main() {
-        const { targetSelector } = captureAttributes();
-        if (targetSelector) {
-            console.log('DNA Repair App: Auto-initializing with selector:', targetSelector);
-            GreenhouseDNARepair.initializeDNARepairSimulation(targetSelector);
+    async function main() {
+        try {
+            await loadDependencies();
+            const { targetSelector } = captureAttributes();
+            
+            if (targetSelector) {
+                console.log('DNA Repair App: Waiting for container:', targetSelector);
+                const container = await GreenhouseUtils.waitForElement(targetSelector);
+                console.log('DNA Repair App: Auto-initializing...');
+                GreenhouseDNARepair.initializeDNARepairSimulation(container);
+            }
+        } catch (error) {
+            console.error('DNA Repair App: Initialization failed', error);
         }
     }
 
