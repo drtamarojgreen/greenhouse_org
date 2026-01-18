@@ -384,43 +384,49 @@
             return;
         }
 
-        const canvas = document.createElement('canvas');
-        canvas.id = 'rnaRepairCanvas';
+        // Show Loading/Delay Message
+        targetElement.innerHTML = '<div style="color:white;text-align:center;padding-top:250px;font-family:sans-serif;"><h3>Initializing RNA Repair Simulation...</h3><p>Loading biological models...</p></div>';
 
-        const rect = targetElement.getBoundingClientRect();
-        canvas.width = rect.width || 800;
-        canvas.height = 600; // Increased height
+        // 5 Second Delay
+        setTimeout(() => {
+            targetElement.innerHTML = ''; // Clear loading message
 
-        canvas.style.display = 'block';
-        canvas.style.cursor = 'grab';
+            const canvas = document.createElement('canvas');
+            canvas.id = 'rnaRepairCanvas';
 
-        targetElement.innerHTML = '';
-        targetElement.appendChild(canvas);
+            const rect = targetElement.getBoundingClientRect();
+            canvas.width = rect.width || 800;
+            canvas.height = 600; // Increased height
 
-        const simulation = new RNARepairSimulation(canvas);
+            canvas.style.display = 'block';
+            canvas.style.cursor = 'grab';
 
-        // Expose simulation instance
-        window.Greenhouse = window.Greenhouse || {};
-        window.Greenhouse.rnaSimulation = simulation;
+            targetElement.appendChild(canvas);
 
-        // Initialize Display Controls if available
-        if (window.Greenhouse.initializeRNADisplay) {
-            window.Greenhouse.initializeRNADisplay(simulation);
+            const simulation = new RNARepairSimulation(canvas);
+
+            // Expose simulation instance
+            window.Greenhouse = window.Greenhouse || {};
+            window.Greenhouse.rnaSimulation = simulation;
+
+            // Initialize Display Controls if available
+            if (window.Greenhouse.initializeRNADisplay) {
+                window.Greenhouse.initializeRNADisplay(simulation);
+            }
+
+            simulation.animate();
+
+            window.addEventListener('resize', () => {
+                const newRect = targetElement.getBoundingClientRect();
+                canvas.width = newRect.width;
+                simulation.width = canvas.width;
+            });
+
+            console.log('RNA Repair simulation initialized (Vertical).');
         }
 
-        simulation.animate();
-
-        window.addEventListener('resize', () => {
-            const newRect = targetElement.getBoundingClientRect();
-            canvas.width = newRect.width;
-            simulation.width = canvas.width;
-        });
-
-        console.log('RNA Repair simulation initialized (Vertical).');
-    }
-
     window.Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
-    window.Greenhouse.RNARepairSimulation = RNARepairSimulation;
+        window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
+        window.Greenhouse.RNARepairSimulation = RNARepairSimulation;
 
-})();
+    }) ();

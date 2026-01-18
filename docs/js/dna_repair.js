@@ -57,56 +57,63 @@
                 return;
             }
 
-            // Setup Canvas
-            this.canvas = document.createElement('canvas');
-            this.ctx = this.canvas.getContext('2d');
-            this.canvas.style.width = '100%';
-            this.canvas.style.height = '100%';
-            this.canvas.width = container.offsetWidth;
-            this.canvas.height = container.offsetHeight;
-            container.innerHTML = '';
-            container.appendChild(this.canvas);
+            // Show Loading/Delay Message
+            container.innerHTML = '<div style="color:white;text-align:center;padding-top:250px;font-family:sans-serif;"><h3>Initializing DNA Repair Simulation...</h3><p>Loading biological models...</p></div>';
 
-            this.width = this.canvas.width;
-            this.height = this.canvas.height;
+            // 5 Second Delay
+            setTimeout(() => {
+                container.innerHTML = ''; // Clear loading message
 
-            // Initialize Interaction
-            this.setupInteraction();
+                // Setup Canvas
+                this.canvas = document.createElement('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.style.width = '100%';
+                this.canvas.style.height = '100%';
+                this.canvas.width = container.offsetWidth;
+                this.canvas.height = container.offsetHeight;
+                container.innerHTML = '';
+                container.appendChild(this.canvas);
 
-            // Initialize DNA Data
-            this.generateDNA();
+                this.width = this.canvas.width;
+                this.height = this.canvas.height;
 
-            // Initialize Tooltips
-            if (window.GreenhouseDNATooltip) {
-                window.GreenhouseDNATooltip.initialize();
-            }
+                // Initialize Interaction
+                this.setupInteraction();
 
-            // Start Loop
-            this.isRunning = true;
-            this.startSimulation('ber'); // Default start
-            this.animate();
+                // Initialize DNA Data
+                this.generateDNA();
 
-            console.log('GreenhouseDNARepair: Initialized');
-        },
+                // Initialize Tooltips
+                if (window.GreenhouseDNATooltip) {
+                    window.GreenhouseDNATooltip.initialize();
+                }
 
-        startSimulation(mode) {
-            this.state.repairMode = mode;
-            this.state.timer = 0;
-            this.state.simulating = true;
-            this.state.particles = [];
-            this.generateDNA(); // Reset structure
+                // Start Loop
+                this.isRunning = true;
+                this.startSimulation('ber'); // Default start
+                this.animate();
 
-            const titles = {
-                'ber': "Base Excision Repair",
-                'mmr': "Mismatch Repair",
-                'dsb': "Double-Strand Break Repair"
-            };
-            this.currentModeText = titles[mode];
-        },
+                console.log('GreenhouseDNARepair: Initialized');
+            },
 
-        generateDNA() {
-            this.state.basePairs = [];
-            for (let i = 0; i < this.config.helixLength; i++) {
+                startSimulation(mode) {
+                this.state.repairMode = mode;
+                this.state.timer = 0;
+                this.state.simulating = true;
+                this.state.particles = [];
+                this.generateDNA(); // Reset structure
+
+                const titles = {
+                    'ber': "Base Excision Repair",
+                    'mmr': "Mismatch Repair",
+                    'dsb': "Double-Strand Break Repair"
+                };
+                this.currentModeText = titles[mode];
+            },
+
+                generateDNA() {
+                    this.state.basePairs = [];
+                    for(let i = 0; i< this.config.helixLength; i++) {
                 // Horizontal Layout: X is the long axis
                 const x = (i - this.config.helixLength / 2) * this.config.rise;
                 const angle = i * this.config.rotationPerPair;
