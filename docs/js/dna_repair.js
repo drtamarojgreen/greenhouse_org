@@ -94,26 +94,27 @@
                 this.animate();
 
                 console.log('GreenhouseDNARepair: Initialized');
-            },
+            }, 5000); // 5 Second Delay
+        },
 
-                startSimulation(mode) {
-                this.state.repairMode = mode;
-                this.state.timer = 0;
-                this.state.simulating = true;
-                this.state.particles = [];
-                this.generateDNA(); // Reset structure
+        startSimulation(mode) {
+            this.state.repairMode = mode;
+            this.state.timer = 0;
+            this.state.simulating = true;
+            this.state.particles = [];
+            this.generateDNA(); // Reset structure
 
-                const titles = {
-                    'ber': "Base Excision Repair",
-                    'mmr': "Mismatch Repair",
-                    'dsb': "Double-Strand Break Repair"
-                };
-                this.currentModeText = titles[mode];
-            },
+            const titles = {
+                'ber': "Base Excision Repair",
+                'mmr': "Mismatch Repair",
+                'dsb': "Double-Strand Break Repair"
+            };
+            this.currentModeText = titles[mode];
+        },
 
-                generateDNA() {
-                    this.state.basePairs = [];
-                    for(let i = 0; i< this.config.helixLength; i++) {
+        generateDNA() {
+            this.state.basePairs = [];
+            for (let i = 0; i < this.config.helixLength; i++) {
                 // Horizontal Layout: X is the long axis
                 const x = (i - this.config.helixLength / 2) * this.config.rise;
                 const angle = i * this.config.rotationPerPair;
