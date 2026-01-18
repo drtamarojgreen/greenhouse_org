@@ -91,9 +91,8 @@
             this.canvas = document.createElement('canvas');
             this.ctx = this.canvas.getContext('2d');
             this.canvas.style.width = '100%';
-            this.canvas.style.height = '100%';
-            this.canvas.width = container.offsetWidth;
-            this.canvas.height = container.offsetHeight;
+            this.canvas.width = container.offsetWidth || 800;
+            this.canvas.height = 600;
             wrapper.appendChild(this.canvas);
 
             this.width = this.canvas.width;
