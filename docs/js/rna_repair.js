@@ -423,10 +423,11 @@
             });
 
             console.log('RNA Repair simulation initialized (Vertical).');
-        }
+        }, 5000);
+    }
 
     window.Greenhouse = window.Greenhouse || {};
-        window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
-        window.Greenhouse.RNARepairSimulation = RNARepairSimulation;
+    window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
+    window.Greenhouse.RNARepairSimulation = RNARepairSimulation;
 
-    }) ();
+})();
