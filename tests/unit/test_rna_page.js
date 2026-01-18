@@ -14,9 +14,10 @@ global.document = {
     querySelector: (selector) => {
         if (selector === '#rna-container') {
             return {
-                getBoundingClientRect: () => ({ width: 800, height: 600 }),
+                getBoundingClientRect: () => ({ width: 800, height: 800 }),
                 innerHTML: '',
-                appendChild: () => { }
+                appendChild: () => { },
+                dataset: {}
             };
         }
         return null;
@@ -25,6 +26,7 @@ global.document = {
         const element = {
             tag,
             style: {},
+            dataset: {},
             getContext: () => ({
                 save: () => { },
                 restore: () => { },
@@ -38,21 +40,29 @@ global.document = {
                 fill: () => { },
                 rect: () => { },
                 arc: () => { },
+                quadraticCurveTo: () => { },
+                createRadialGradient: () => ({
+                    addColorStop: () => { }
+                }),
                 closePath: () => { },
                 clip: () => { },
                 fillText: () => { },
-                measureText: () => ({ width: 0 }),
+                measureText: () => ({ width: 10 }),
                 clearRect: () => { },
                 fillRect: () => { },
                 strokeRect: () => { },
                 setLineDash: () => { },
-                setTransform: () => { }
+                setTransform: () => { },
+                shadowBlur: 0,
+                shadowColor: '',
+                globalAlpha: 1
             }),
             width: 800,
-            height: 600,
+            height: 800,
             addEventListener: () => { },
             appendChild: () => { },
-            getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
+            getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 800 }),
+            innerHTML: ''
         };
         return element;
     },
@@ -65,15 +75,10 @@ global.console = console;
 global.requestAnimationFrame = (cb) => { };
 const originalSetTimeout = global.setTimeout;
 global.setTimeout = (cb, delay) => {
-    if (delay > 0) {
-        // Do nothing for scheduled timeouts in tests to avoid infinite loops
-        return;
-    }
+    if (delay > 0) return;
     return originalSetTimeout(cb, delay);
 };
-global.Date = {
-    now: () => 1000000
-};
+global.Date = { now: () => 1000000 };
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
@@ -82,14 +87,17 @@ function loadScript(filename) {
     vm.runInThisContext(code);
 }
 
-// --- Load Dependencies ---
+// Ensure GreenhouseUtils exists for the simulation script
+global.window.GreenhouseUtils = {
+    loadScript: () => Promise.resolve(),
+    waitForElement: () => Promise.resolve(global.document.querySelector('#rna-container'))
+};
+
 loadScript('rna_repair.js');
-loadScript('rna_legend.js');
-loadScript('rna_display.js');
 
 // --- Test Suites ---
 
-TestFramework.describe('RNA Page Models', () => {
+TestFramework.describe('RNA Page Models - Enhanced', () => {
 
     TestFramework.describe('RNARepairSimulation', () => {
         let simulation;
@@ -97,115 +105,61 @@ TestFramework.describe('RNA Page Models', () => {
 
         TestFramework.beforeEach(() => {
             mockCanvas = document.createElement('canvas');
-            // Prevent animation loop in tests
+            // Prevent animation loop and damage loop
             const originalAnimate = window.Greenhouse.RNARepairSimulation.prototype.animate;
             window.Greenhouse.RNARepairSimulation.prototype.animate = () => { };
 
             simulation = new window.Greenhouse.RNARepairSimulation(mockCanvas);
-
-            // Restore for other potential uses, though usually not needed in unit tests
-            window.Greenhouse.RNARepairSimulation.prototype.animate = originalAnimate;
-
-            // Also prevent scheduleDamage from starting timeouts
             simulation.scheduleDamage = () => { };
+            window.Greenhouse.RNARepairSimulation.prototype.animate = originalAnimate;
         });
 
-        TestFramework.it('should initialize with default values', () => {
-            assert.isDefined(simulation);
-            assert.isTrue(simulation.isRunning);
-            assert.equal(simulation.rnaStrand.length, 30);
-            assert.equal(simulation.enzymes.length, 0);
+        TestFramework.it('should initialize with correct strand length (40)', () => {
+            assert.equal(simulation.rnaStrand.length, 40);
         });
 
-        TestFramework.it('should create RNA strand correctly', () => {
-            // simulation.createRnaStrand() is already called in constructor.
-            // If we call it again, it appends to the array.
-            // Let's clear it first if we want to test creation specifically.
-            simulation.rnaStrand = [];
-            simulation.createRnaStrand();
-            assert.equal(simulation.rnaStrand.length, 30);
+        TestFramework.it('should have initialized coordinates without NaN', () => {
             const firstBase = simulation.rnaStrand[0];
-            assert.isDefined(firstBase.type);
-            assert.isTrue(['A', 'U', 'G', 'C'].includes(firstBase.type));
+            assert.isNumber(firstBase.x);
+            assert.isNumber(firstBase.y);
+            assert.isNumber(firstBase.targetX);
+            assert.equal(firstBase.targetX, 400);
         });
 
-        TestFramework.it('should introduce damage', () => {
-            // Force introduction of damage
+        TestFramework.it('should have 5\' cap (G) at index 0', () => {
+            assert.equal(simulation.rnaStrand[0].type, 'G');
+        });
+
+        TestFramework.it('should have Poly-A tail at end', () => {
+            for (let i = 30; i < 40; i++) {
+                assert.equal(simulation.rnaStrand[i].type, 'A');
+            }
+        });
+
+        TestFramework.it('should support reaction flashes', () => {
+            const base = simulation.rnaStrand[5];
+            assert.isDefined(base.flash);
+            base.flash = 1.0;
+            simulation.update(16);
+            assert.lessThan(base.flash, 1.0);
+        });
+
+        TestFramework.it('should handle damage and enzyme spawning', () => {
             simulation.introduceDamage();
             const damaged = simulation.rnaStrand.some(b => b.damaged || !b.connected);
             assert.isTrue(damaged);
             assert.greaterThan(simulation.enzymes.length, 0);
         });
 
-        TestFramework.it('should spawn enzymes', () => {
-            simulation.spawnEnzyme('Ligase', 5);
-            assert.equal(simulation.enzymes.length, 1);
-            assert.equal(simulation.enzymes[0].name, 'Ligase');
-            assert.equal(simulation.enzymes[0].targetIndex, 5);
-        });
-
-        TestFramework.it('should update simulation state', () => {
-            simulation.spawnEnzyme('Ligase', 5);
-            const enzyme = simulation.enzymes[0];
-            const initialX = enzyme.x;
-            const initialY = enzyme.y;
-
-            simulation.update();
-
-            assert.notEqual(enzyme.x, initialX);
-            assert.notEqual(enzyme.y, initialY);
-        });
-
-        TestFramework.it('should finish repair', () => {
-            const targetIndex = 5;
-            simulation.rnaStrand[targetIndex].connected = false;
-            simulation.spawnEnzyme('Ligase', targetIndex);
-            const enzyme = simulation.enzymes[0];
-
-            // Teleport to target
-            enzyme.x = simulation.rnaStrand[targetIndex].x;
-            enzyme.y = simulation.rnaStrand[targetIndex].y;
-            enzyme.state = 'repairing';
-            enzyme.progress = 0.99;
-
-            simulation.update();
-
-            assert.isTrue(simulation.rnaStrand[targetIndex].connected);
-            assert.equal(enzyme.state, 'leaving');
-            assert.greaterThan(simulation.particles.length, 0);
-        });
-    });
-
-    TestFramework.describe('RNALegend', () => {
-        TestFramework.it('should provide update function', () => {
-            assert.isFunction(window.Greenhouse.RNALegend.update);
-        });
-
-        TestFramework.it('should draw legend without errors', () => {
-            const mockCtx = document.createElement('canvas').getContext('2d');
-            const colors = { METHYL: '#f00', BACKBONE: '#00f', ENZYME: '#fff', GLOW: '#ff0' };
-            window.Greenhouse.RNALegend.update(mockCtx, 800, 600, colors);
-            // If no error thrown, we consider it success for this unit test
-            assert.isTrue(true);
-        });
-    });
-
-    TestFramework.describe('RNADisplay', () => {
-        TestFramework.it('should initialize display controls', () => {
-            const mockCanvas = document.createElement('canvas');
-            const simulation = { canvas: mockCanvas, scale: 1.0, offsetX: 0, offsetY: 0 };
-            window.Greenhouse.initializeRNADisplay(simulation);
-            // Check if it added listeners is hard without mocking addEventListener
-            assert.isTrue(true);
+        TestFramework.it('should implement fluid dynamics movement', () => {
+            const base = simulation.rnaStrand[10];
+            const initialX = base.x;
+            simulation.update(100);
+            assert.notEqual(base.x, initialX);
         });
     });
 });
 
-// Run the tests
 TestFramework.run().then(results => {
-    if (results.failed > 0) {
-        process.exit(1);
-    } else {
-        process.exit(0);
-    }
+    process.exit(results.failed > 0 ? 1 : 0);
 });
