@@ -49,9 +49,14 @@
             this.particles = [];
             this.proteins = []; // Enhancement 22: RNPs
 
-            // Enhancement 66: ATP Currency
-            this.atp = 100;
-            this.atpConsumed = 0;
+            // Enhancement 66: ATP Currency (Modular)
+            if (window.Greenhouse && window.Greenhouse.RNAAtpManager) {
+                this.atpManager = new window.Greenhouse.RNAAtpManager();
+            } else {
+                // Fallback ATP
+                this.atp = 100;
+                this.atpConsumed = 0;
+            }
 
             // Enhancement 23: Ribosome
             this.ribosome = {
@@ -302,17 +307,31 @@
         }
 
         spawnEnzyme(name, targetIndex) {
-            const enzyme = {
-                name: name,
-                targetIndex: targetIndex,
-                x: Math.random() * this.width,
-                y: Math.random() > 0.5 ? -50 : this.height + 50,
-                size: 40,
-                speed: 3,
-                state: 'approaching',
-                progress: 0
-            };
-            this.enzymes.push(enzyme);
+            const startX = Math.random() * this.width;
+            const startY = Math.random() > 0.5 ? -50 : this.height + 50;
+
+            if (window.Greenhouse && window.Greenhouse.RNAEnzymeFactory) {
+                // Randomly upgrade to advanced enzymes if available
+                let finalName = name;
+                if (name === 'Ligase' && Math.random() > 0.7) finalName = 'RtcB';
+                if (name === 'Demethylase' && Math.random() > 0.7) finalName = 'AlkB';
+
+                const enzyme = window.Greenhouse.RNAEnzymeFactory.create(finalName, targetIndex, startX, startY);
+                this.enzymes.push(enzyme);
+            } else {
+                // Fallback Enzyme Object
+                const enzyme = {
+                    name: name,
+                    targetIndex: targetIndex,
+                    x: startX,
+                    y: startY,
+                    size: 40,
+                    speed: 3,
+                    state: 'approaching',
+                    progress: 0
+                };
+                this.enzymes.push(enzyme);
+            }
         }
 
         /**
@@ -337,7 +356,11 @@
             this.simTime += dt * 0.002;
 
             // Enhancement 66: ATP Regeneration
-            if (this.atp < 100) this.atp += 0.05;
+            if (this.atpManager) {
+                this.atpManager.update(dt);
+            } else if (this.atp < 100) {
+                this.atp += 0.05 * (dt / 16);
+            }
 
             // Update RNA strand movement
             this.rnaStrand.forEach((base, i) => {
@@ -384,6 +407,22 @@
                 const targetBase = this.rnaStrand[enzyme.targetIndex];
                 if (!targetBase) return;
 
+                // Modular Enzyme Update
+                if (enzyme.update && typeof enzyme.update === 'function') {
+                    enzyme.update(dt, targetBase, this.atpManager);
+                    if (enzyme.state === 'leaving') {
+                        if (enzyme.progress >= 1 && enzyme.progress < 1.01) {
+                            this.spawnParticles(enzyme.x, enzyme.y);
+                            enzyme.progress = 1.01; // Avoid multiple particle spawns
+                        }
+                        if (enzyme.y < -100 || enzyme.size < 1) {
+                            this.enzymes.splice(index, 1);
+                        }
+                    }
+                    return;
+                }
+
+                // Fallback Enzyme Logic
                 if (enzyme.state === 'approaching') {
                     const dx = targetBase.x - enzyme.x;
                     const dy = targetBase.y - enzyme.y;
@@ -392,17 +431,16 @@
                     if (dist < 5) {
                         enzyme.state = 'repairing';
                     } else {
-                        enzyme.x += (dx / dist) * enzyme.speed;
-                        enzyme.y += (dy / dist) * enzyme.speed;
+                        enzyme.x += (dx / dist) * enzyme.speed * (dt / 16);
+                        enzyme.y += (dy / dist) * enzyme.speed * (dt / 16);
                     }
                 } else if (enzyme.state === 'decaying') {
                     // Enhancement 25: Exonuclease digestion
                     enzyme.x = targetBase.x;
                     enzyme.y = targetBase.y;
-                    enzyme.progress += 0.005;
+                    enzyme.progress += 0.005 * (dt / 16);
 
                     if (enzyme.progress >= 1) {
-                        // Remove base from strand
                         this.rnaStrand.shift();
                         enzyme.progress = 0;
                         if (this.rnaStrand.length === 0) {
@@ -413,35 +451,34 @@
                     enzyme.x = targetBase.x;
                     enzyme.y = targetBase.y;
 
-                    // Enhancement 65: Reaction Kinetics (Km/Vmax simulation)
-                    // Speed is affected by available ATP (#66)
-                    const atpFactor = Math.max(0.2, this.atp / 100);
-                    const kinetics = 0.01 * atpFactor;
+                    const currentAtp = this.atpManager ? this.atpManager.atp : this.atp;
+                    const atpFactor = Math.max(0.2, currentAtp / 100);
+                    const kinetics = 0.01 * atpFactor * (dt / 16);
                     enzyme.progress += kinetics;
 
-                    // Consume ATP (#66)
-                    if (this.atp > 0) {
-                        this.atp -= 0.1;
-                        this.atpConsumed += 0.1;
+                    if (this.atpManager) {
+                        this.atpManager.consume(0.1 * (dt / 16));
+                    } else if (this.atp > 0) {
+                        this.atp -= 0.1 * (dt / 16);
+                        this.atpConsumed += 0.1 * (dt / 16);
                     }
 
                     if (enzyme.progress >= 1) {
                         if (enzyme.name === 'Ligase') {
                             targetBase.connected = true;
                         } else if (enzyme.name === 'Dcp2') {
-                            // Enhancement 25: Decapping is permanent damage that triggers decay
                             targetBase.flash = 1.0;
                             this.spawnExonuclease(0);
                         } else {
                             targetBase.damaged = false;
                             targetBase.damageType = null;
                         }
-                        targetBase.flash = 1.0; // Enhancement 35: Flash on repair
+                        targetBase.flash = 1.0;
                         enzyme.state = 'leaving';
                         this.spawnParticles(enzyme.x, enzyme.y);
                     }
                 } else if (enzyme.state === 'leaving') {
-                    enzyme.y -= enzyme.speed;
+                    enzyme.y -= enzyme.speed * (dt / 16);
                     enzyme.size *= 0.98;
                     if (enzyme.y < -100 || enzyme.size < 1) {
                         this.enzymes.splice(index, 1);
@@ -687,11 +724,17 @@
             this.ctx.fillStyle = 'white';
             this.ctx.font = 'bold 14px Arial';
             this.ctx.textAlign = 'right';
-            this.ctx.fillText(`ATP: ${Math.floor(this.atp)}%`, this.width - 20, 30);
-            this.ctx.fillText(`Used: ${this.atpConsumed.toFixed(1)}`, this.width - 20, 50);
+
+            const atpStatus = this.atpManager ? this.atpManager.getStatus() : {
+                atp: Math.floor(this.atp),
+                consumed: this.atpConsumed.toFixed(1)
+            };
+
+            this.ctx.fillText(`ATP: ${atpStatus.atp}%`, this.width - 20, 30);
+            this.ctx.fillText(`Used: ${atpStatus.consumed}`, this.width - 20, 50);
 
             this.ctx.beginPath();
-            this.ctx.rect(this.width - 120, 15, 100 * (this.atp / 100), 10);
+            this.ctx.rect(this.width - 120, 15, 100 * (atpStatus.atp / 100), 10);
             this.ctx.fillStyle = this.colors.ATP;
             this.ctx.fill();
             this.ctx.restore();
