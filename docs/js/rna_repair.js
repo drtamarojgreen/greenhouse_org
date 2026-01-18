@@ -63,9 +63,31 @@
                 index: 0,
                 progress: 0,
                 stalled: false,
+                stallTimer: 0, // Enhancement 14
                 x: 0,
                 y: 0
             };
+
+            // Modular Physics
+            if (window.Greenhouse && window.Greenhouse.RNAFoldingEngine) {
+                this.foldingEngine = new window.Greenhouse.RNAFoldingEngine();
+            }
+            if (window.Greenhouse && window.Greenhouse.RNAEnvironmentManager) {
+                this.environmentManager = new window.Greenhouse.RNAEnvironmentManager();
+            }
+
+            // Enhancement 36: Background particles
+            this.bgParticles = [];
+            for (let i = 0; i < 20; i++) {
+                this.bgParticles.push({
+                    x: Math.random() * this.width,
+                    y: Math.random() * this.height,
+                    size: 20 + Math.random() * 40,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    alpha: 0.05 + Math.random() * 0.1
+                });
+            }
 
             this.damageTypes = {
                 BREAK: 'break',
@@ -257,7 +279,10 @@
 
         introduceDamage() {
             const activeDamaged = this.rnaStrand.filter(b => b.damaged || !b.connected).length;
-            if (activeDamaged > 8) return;
+
+            // Enhancement 67: pH influence on damage rate
+            const dmgLimit = this.environmentManager ? 8 * this.environmentManager.getDamageMultiplier() : 8;
+            if (activeDamaged > dmgLimit) return;
 
             const roll = Math.random();
             let damageType;
@@ -337,6 +362,28 @@
         /**
          * Enhancement 25: 5'-3' Exonuclease Decay
          */
+        /**
+         * Enhancement 14: Trigger Surveillance-Mediated Decay
+         */
+        triggerSurveillanceDecay(index) {
+            console.log("NMD: Surveillance complex detected stall. Triggering decay.");
+            // Spawn a specialized decay enzyme at the stall site
+            const enzyme = {
+                name: 'UPF1/Exosome',
+                targetIndex: index,
+                x: this.rnaStrand[index].x + 50,
+                y: this.rnaStrand[index].y,
+                size: 60,
+                speed: 1,
+                state: 'decaying',
+                progress: 0
+            };
+            this.enzymes.push(enzyme);
+
+            // Visual feedback
+            this.rnaStrand[index].flash = 2.0;
+        }
+
         spawnExonuclease(index) {
             const enzyme = {
                 name: 'Xrn1',
@@ -355,6 +402,20 @@
             if (!dt) dt = 16; // Fallback for first frame
             this.simTime += dt * 0.002;
 
+            // Modular Physics Updates
+            if (this.foldingEngine) this.foldingEngine.update(dt);
+            if (this.environmentManager) this.environmentManager.update(dt);
+
+            // Enhancement 36: Update BG
+            this.bgParticles.forEach(p => {
+                p.x += p.vx * (dt / 16);
+                p.y += p.vy * (dt / 16);
+                if (p.x < -100) p.x = this.width + 100;
+                if (p.x > this.width + 100) p.x = -100;
+                if (p.y < -100) p.y = this.height + 100;
+                if (p.y > this.height + 100) p.y = -100;
+            });
+
             // Enhancement 66: ATP Regeneration
             if (this.atpManager) {
                 this.atpManager.update(dt);
@@ -366,9 +427,18 @@
             this.rnaStrand.forEach((base, i) => {
                 // Enhancement 32 & 33: Fluid Dynamics + Thermal Noise
                 const fluidMotion = Math.sin(this.simTime + base.offset) * 15;
-                const thermalNoise = (Math.random() - 0.5) * 1.5;
+
+                // Enhancement 68: Temperature influence on noise
+                const noiseScale = this.environmentManager ? this.environmentManager.getNoiseMultiplier() : 1.0;
+                const thermalNoise = (Math.random() - 0.5) * 1.5 * noiseScale;
 
                 base.x = base.targetX + fluidMotion + thermalNoise;
+
+                // Enhancement 16: Structural Folding offsets
+                if (this.foldingEngine) {
+                    const fold = this.foldingEngine.getFoldingOffset(i, this.rnaStrand.length);
+                    base.x += fold.x;
+                }
 
                 // Handle vertical spacing for breaks
                 if (!base.connected && i < this.rnaStrand.length - 1) {
@@ -383,7 +453,7 @@
                 if (base.flash > 0) base.flash -= 0.02;
             });
 
-            // Enhancement 23: Ribosome Movement
+            // Enhancement 23 & 14: Ribosome Movement + NMD logic
             const currentBase = this.rnaStrand[this.ribosome.index];
             if (currentBase) {
                 this.ribosome.x = currentBase.x;
@@ -392,9 +462,17 @@
                 // Stall at damage
                 if (!currentBase.connected || currentBase.damaged) {
                     this.ribosome.stalled = true;
+                    this.ribosome.stallTimer += dt;
+
+                    // Enhancement 14: Nonsense-Mediated Decay (Surveillance)
+                    if (this.ribosome.stallTimer > 15000) { // Stall for 15s
+                        this.triggerSurveillanceDecay(this.ribosome.index);
+                        this.ribosome.stallTimer = 0;
+                    }
                 } else {
                     this.ribosome.stalled = false;
-                    this.ribosome.progress += 0.01;
+                    this.ribosome.stallTimer = 0;
+                    this.ribosome.progress += 0.01 * (dt / 16);
                     if (this.ribosome.progress >= 1) {
                         this.ribosome.progress = 0;
                         this.ribosome.index = (this.ribosome.index + 1) % this.rnaStrand.length;
@@ -526,6 +604,17 @@
             if (!this.ctx) return;
 
             this.ctx.clearRect(0, 0, this.width, this.height);
+
+            // Enhancement 36: Draw Nucleoplasmic Background
+            this.bgParticles.forEach(p => {
+                this.ctx.save();
+                this.ctx.beginPath();
+                this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                this.ctx.fillStyle = this.colors.PROTEIN;
+                this.ctx.globalAlpha = p.alpha;
+                this.ctx.fill();
+                this.ctx.restore();
+            });
 
             this.ctx.save();
             this.ctx.translate(this.offsetX, this.offsetY);
@@ -732,6 +821,14 @@
 
             this.ctx.fillText(`ATP: ${atpStatus.atp}%`, this.width - 20, 30);
             this.ctx.fillText(`Used: ${atpStatus.consumed}`, this.width - 20, 50);
+
+            // Enhancement 67/68: Environment Display
+            if (this.environmentManager) {
+                const env = this.environmentManager.getStatus();
+                this.ctx.font = '12px Arial';
+                this.ctx.fillText(`pH: ${env.ph}`, this.width - 20, 75);
+                this.ctx.fillText(`Temp: ${env.temp}°C`, this.width - 20, 95);
+            }
 
             this.ctx.beginPath();
             this.ctx.rect(this.width - 120, 15, 100 * (atpStatus.atp / 100), 10);
