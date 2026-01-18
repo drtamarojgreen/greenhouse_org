@@ -5,7 +5,7 @@
  * Refactored for vertical orientation and external display controls.
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("RNA Repair simulation script loaded.");
@@ -53,6 +53,59 @@
         init() {
             this.createRnaStrand();
             this.scheduleDamage();
+            this.lastTime = 0;
+            this.simTime = 0;
+            this.setupInteraction();
+
+            // Initialize tooltip
+            if (window.GreenhouseRNATooltip) {
+                window.GreenhouseRNATooltip.initialize();
+            }
+        }
+
+        setupInteraction() {
+            this.canvas.addEventListener('mousemove', (e) => {
+                if (!window.GreenhouseRNATooltip) return;
+
+                const rect = this.canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+
+                // Adjust for zoom/pan
+                const worldX = (mx - this.offsetX) / this.scale;
+                const worldY = (my - this.offsetY) / this.scale;
+
+                let hit = null;
+
+                // Check Bases
+                for (const base of this.rnaStrand) {
+                    const dx = base.x - worldX;
+                    const dy = base.y - worldY;
+                    if (dx * dx + dy * dy < 100) { // 10px radius squared
+                        hit = { x: e.clientX, y: e.clientY, key: base.type };
+                        if (base.damageType) hit.key = 'Methylation'; // Override for damage
+                        break;
+                    }
+                }
+
+                // Check Enzymes
+                if (!hit) {
+                    for (const enzyme of this.enzymes) {
+                        const dx = enzyme.x - worldX;
+                        const dy = enzyme.y - worldY;
+                        if (dx * dx + dy * dy < enzyme.size * enzyme.size) {
+                            hit = { x: e.clientX, y: e.clientY, key: enzyme.name };
+                            break;
+                        }
+                    }
+                }
+
+                if (hit) {
+                    window.GreenhouseRNATooltip.show(hit.x, hit.y, hit.key);
+                } else {
+                    window.GreenhouseRNATooltip.hide();
+                }
+            });
         }
 
         /**
@@ -129,20 +182,21 @@
             this.enzymes.push(enzyme);
         }
 
-        update() {
-            const time = Date.now() * 0.002;
+        update(dt) {
+            // Smooth time accumulator
+            this.simTime += dt * 0.002;
 
             // Update RNA strand movement (Wavy in X direction)
             this.rnaStrand.forEach((base, i) => {
-                base.x = base.targetX + Math.sin(time + base.offset) * 15;
+                base.x = base.targetX + Math.sin(this.simTime + base.offset) * 15;
 
                 // If disconnected vertically, add a gap
                 if (!base.connected && i < this.rnaStrand.length - 1) {
                     const idealY = base.y + 60; // Increased gap for break
-                    this.rnaStrand[i+1].y += (idealY - this.rnaStrand[i+1].y) * 0.1;
+                    this.rnaStrand[i + 1].y += (idealY - this.rnaStrand[i + 1].y) * 0.1;
                 } else if (i < this.rnaStrand.length - 1) {
                     const idealY = base.y + 40;
-                    this.rnaStrand[i+1].y += (idealY - this.rnaStrand[i+1].y) * 0.1;
+                    this.rnaStrand[i + 1].y += (idealY - this.rnaStrand[i + 1].y) * 0.1;
                 }
             });
 
@@ -296,9 +350,14 @@
             this.ctx.restore();
         }
 
-        animate() {
+        animate(timestamp) {
             if (!this.isRunning) return;
-            this.update();
+
+            if (!this.lastTime) this.lastTime = timestamp;
+            const dt = timestamp - this.lastTime;
+            this.lastTime = timestamp;
+
+            this.update(dt);
             this.draw();
 
             // Notify legend if it exists
@@ -306,7 +365,7 @@
                 window.Greenhouse.RNALegend.update(this.ctx, this.width, this.height, this.colors);
             }
 
-            requestAnimationFrame(() => this.animate());
+            requestAnimationFrame((ts) => this.animate(ts));
         }
 
         stop() {
@@ -334,7 +393,7 @@
 
         canvas.style.display = 'block';
         canvas.style.cursor = 'grab';
-        
+
         targetElement.innerHTML = '';
         targetElement.appendChild(canvas);
 
