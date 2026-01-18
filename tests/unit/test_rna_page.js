@@ -116,6 +116,8 @@ TestFramework.describe('RNA Page Models', () => {
             assert.isTrue(simulation.isRunning);
             assert.equal(simulation.rnaStrand.length, 40);
             assert.equal(simulation.enzymes.length, 0);
+            assert.equal(simulation.atp, 100);
+            assert.isDefined(simulation.ribosome);
         });
 
         TestFramework.it('should create RNA strand correctly', () => {
@@ -156,10 +158,44 @@ TestFramework.describe('RNA Page Models', () => {
             const initialX = enzyme.x;
             const initialY = enzyme.y;
 
-            simulation.update();
+            simulation.update(16);
 
             assert.notEqual(enzyme.x, initialX);
             assert.notEqual(enzyme.y, initialY);
+        });
+
+        TestFramework.it('should move ribosome and stall at damage', () => {
+            simulation.ribosome.index = 0;
+            simulation.ribosome.progress = 0;
+
+            // Base 0 is connected and not damaged
+            simulation.update(16);
+            assert.greaterThan(simulation.ribosome.progress, 0);
+            assert.isFalse(simulation.ribosome.stalled);
+
+            // Break base 1
+            simulation.rnaStrand[1].connected = false;
+            simulation.ribosome.index = 1;
+            simulation.update(16);
+            assert.isTrue(simulation.ribosome.stalled);
+        });
+
+        TestFramework.it('should consume ATP during repair', () => {
+            const initialATP = simulation.atp;
+            simulation.spawnEnzyme('Ligase', 5);
+            const enzyme = simulation.enzymes[0];
+            enzyme.state = 'repairing';
+
+            simulation.update(16);
+            assert.lessThan(simulation.atp, initialATP);
+            assert.greaterThan(simulation.atpConsumed, 0);
+        });
+
+        TestFramework.it('should spawn protective proteins', () => {
+            simulation.spawnProtein();
+            assert.equal(simulation.proteins.length, 1);
+            const protein = simulation.proteins[0];
+            assert.isTrue(simulation.rnaStrand[protein.startIndex].protected);
         });
 
         TestFramework.it('should finish repair', () => {

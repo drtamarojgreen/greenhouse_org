@@ -47,10 +47,27 @@
             this.rnaStrand = [];
             this.enzymes = [];
             this.particles = [];
+            this.proteins = []; // Enhancement 22: RNPs
+
+            // Enhancement 66: ATP Currency
+            this.atp = 100;
+            this.atpConsumed = 0;
+
+            // Enhancement 23: Ribosome
+            this.ribosome = {
+                index: 0,
+                progress: 0,
+                stalled: false,
+                x: 0,
+                y: 0
+            };
 
             this.damageTypes = {
                 BREAK: 'break',
-                METHYLATION: 'methylation'
+                METHYLATION: 'methylation',
+                DECAPPING: 'decapping',
+                ABASIC: 'abasic',
+                PSEUDOURIDINE: 'pseudouridine'
             };
 
             this.colors = {
@@ -58,11 +75,16 @@
                 U: '#4ECDC4',
                 G: '#FFE66D',
                 C: '#1A535C',
+                PSI: '#818CF8', // Enhancement 7
                 BACKBONE: '#A3BFFA',
                 ENZYME: 'rgba(255, 255, 255, 0.2)',
                 METHYL: '#FF0000',
                 GLOW: '#667EEA',
-                METAL: '#A5F3FC'
+                METAL: '#A5F3FC',
+                PROTEIN: '#F472B6',
+                RIBOSOME: '#9333EA',
+                ATP: '#FBDF11',
+                DECAY: '#EF4444'
             };
 
             // Display state
@@ -81,6 +103,7 @@
         init() {
             this.createRnaStrand();
             this.scheduleDamage();
+            this.scheduleProteins(); // Enhancement 22
             this.setupInteraction();
 
             // Initialize tooltip if available
@@ -127,6 +150,16 @@
                     }
                 }
 
+                // Check Ribosome
+                if (!hit) {
+                    const rdx = this.ribosome.x - worldX;
+                    const rdy = this.ribosome.y - worldY;
+                    if (rdx * rdx + rdy * rdy < 1600) {
+                        hit = { x: e.clientX, y: e.clientY, key: 'Ribosome' };
+                        if (this.ribosome.stalled) hit.key = 'Ribosome (Stalled)';
+                    }
+                }
+
                 if (hit) {
                     window.GreenhouseRNATooltip.show(hit.x, hit.y, hit.key);
                 } else {
@@ -161,11 +194,44 @@
                     type: type,
                     damaged: false,
                     damageType: null,
+                    protected: false, // Enhancement 22
                     connected: i < baseCount - 1,
                     offset: Math.random() * Math.PI * 2,
                     flash: 0 // Enhancement 35: Reaction flash
                 });
             }
+        }
+
+        /**
+         * Periodic appearance of protective proteins.
+         */
+        scheduleProteins() {
+            const nextProtein = () => {
+                if (!this.isRunning) return;
+                const delay = 10000 + Math.random() * 15000;
+                setTimeout(() => {
+                    this.spawnProtein();
+                    nextProtein();
+                }, delay);
+            };
+            nextProtein();
+        }
+
+        spawnProtein() {
+            const index = Math.floor(Math.random() * (this.rnaStrand.length - 5));
+            const protein = {
+                startIndex: index,
+                length: 3 + Math.floor(Math.random() * 3),
+                life: 1,
+                state: 'binding'
+            };
+
+            // Apply protection
+            for (let i = 0; i < protein.length; i++) {
+                if (this.rnaStrand[index + i]) this.rnaStrand[index + i].protected = true;
+            }
+
+            this.proteins.push(protein);
         }
 
         /**
@@ -185,22 +251,52 @@
         }
 
         introduceDamage() {
-            const damagedCount = this.rnaStrand.filter(b => b.damaged || !b.connected).length;
-            if (damagedCount > 5) return;
+            const activeDamaged = this.rnaStrand.filter(b => b.damaged || !b.connected).length;
+            if (activeDamaged > 8) return;
 
-            const damageType = Math.random() > 0.5 ? this.damageTypes.BREAK : this.damageTypes.METHYLATION;
+            const roll = Math.random();
+            let damageType;
+            if (roll < 0.3) damageType = this.damageTypes.BREAK;
+            else if (roll < 0.6) damageType = this.damageTypes.METHYLATION;
+            else if (roll < 0.75) damageType = this.damageTypes.ABASIC; // Enhancement 9
+            else if (roll < 0.9) damageType = this.damageTypes.PSEUDOURIDINE; // Enhancement 7
+            else damageType = this.damageTypes.DECAPPING; // Enhancement 25
+
             const index = Math.floor(Math.random() * (this.rnaStrand.length - 2)) + 1;
+            const base = this.rnaStrand[index];
+
+            if (base.protected) return;
 
             if (damageType === this.damageTypes.BREAK) {
-                if (this.rnaStrand[index].connected) {
-                    this.rnaStrand[index].connected = false;
+                if (base.connected) {
+                    base.connected = false;
                     this.spawnEnzyme('Ligase', index);
                 }
-            } else {
-                if (!this.rnaStrand[index].damaged) {
-                    this.rnaStrand[index].damaged = true;
-                    this.rnaStrand[index].damageType = this.damageTypes.METHYLATION;
+            } else if (damageType === this.damageTypes.METHYLATION) {
+                if (!base.damaged) {
+                    base.damaged = true;
+                    base.damageType = this.damageTypes.METHYLATION;
                     this.spawnEnzyme('Demethylase', index);
+                }
+            } else if (damageType === this.damageTypes.ABASIC) {
+                if (!base.damaged) {
+                    base.damaged = true;
+                    base.damageType = this.damageTypes.ABASIC;
+                    this.spawnEnzyme('Polymerase', index);
+                }
+            } else if (damageType === this.damageTypes.PSEUDOURIDINE) {
+                if (!base.damaged && base.type === 'U') {
+                    base.damaged = true;
+                    base.damageType = this.damageTypes.PSEUDOURIDINE;
+                    this.spawnEnzyme('Pus1', index);
+                }
+            } else if (damageType === this.damageTypes.DECAPPING) {
+                // Decapping only happens at the 5' end (index 0)
+                const cap = this.rnaStrand[0];
+                if (cap && !cap.damaged) {
+                    cap.damaged = true;
+                    cap.damageType = this.damageTypes.DECAPPING;
+                    this.spawnEnzyme('Dcp2', 0);
                 }
             }
         }
@@ -219,9 +315,29 @@
             this.enzymes.push(enzyme);
         }
 
+        /**
+         * Enhancement 25: 5'-3' Exonuclease Decay
+         */
+        spawnExonuclease(index) {
+            const enzyme = {
+                name: 'Xrn1',
+                targetIndex: index,
+                x: this.width / 2,
+                y: -50,
+                size: 50,
+                speed: 1,
+                state: 'decaying',
+                progress: 0
+            };
+            this.enzymes.push(enzyme);
+        }
+
         update(dt) {
             if (!dt) dt = 16; // Fallback for first frame
             this.simTime += dt * 0.002;
+
+            // Enhancement 66: ATP Regeneration
+            if (this.atp < 100) this.atp += 0.05;
 
             // Update RNA strand movement
             this.rnaStrand.forEach((base, i) => {
@@ -244,6 +360,25 @@
                 if (base.flash > 0) base.flash -= 0.02;
             });
 
+            // Enhancement 23: Ribosome Movement
+            const currentBase = this.rnaStrand[this.ribosome.index];
+            if (currentBase) {
+                this.ribosome.x = currentBase.x;
+                this.ribosome.y = currentBase.y;
+
+                // Stall at damage
+                if (!currentBase.connected || currentBase.damaged) {
+                    this.ribosome.stalled = true;
+                } else {
+                    this.ribosome.stalled = false;
+                    this.ribosome.progress += 0.01;
+                    if (this.ribosome.progress >= 1) {
+                        this.ribosome.progress = 0;
+                        this.ribosome.index = (this.ribosome.index + 1) % this.rnaStrand.length;
+                    }
+                }
+            }
+
             // Update enzymes
             this.enzymes.forEach((enzyme, index) => {
                 const targetBase = this.rnaStrand[enzyme.targetIndex];
@@ -260,14 +395,43 @@
                         enzyme.x += (dx / dist) * enzyme.speed;
                         enzyme.y += (dy / dist) * enzyme.speed;
                     }
+                } else if (enzyme.state === 'decaying') {
+                    // Enhancement 25: Exonuclease digestion
+                    enzyme.x = targetBase.x;
+                    enzyme.y = targetBase.y;
+                    enzyme.progress += 0.005;
+
+                    if (enzyme.progress >= 1) {
+                        // Remove base from strand
+                        this.rnaStrand.shift();
+                        enzyme.progress = 0;
+                        if (this.rnaStrand.length === 0) {
+                            enzyme.state = 'leaving';
+                        }
+                    }
                 } else if (enzyme.state === 'repairing') {
                     enzyme.x = targetBase.x;
                     enzyme.y = targetBase.y;
-                    enzyme.progress += 0.01;
+
+                    // Enhancement 65: Reaction Kinetics (Km/Vmax simulation)
+                    // Speed is affected by available ATP (#66)
+                    const atpFactor = Math.max(0.2, this.atp / 100);
+                    const kinetics = 0.01 * atpFactor;
+                    enzyme.progress += kinetics;
+
+                    // Consume ATP (#66)
+                    if (this.atp > 0) {
+                        this.atp -= 0.1;
+                        this.atpConsumed += 0.1;
+                    }
 
                     if (enzyme.progress >= 1) {
                         if (enzyme.name === 'Ligase') {
                             targetBase.connected = true;
+                        } else if (enzyme.name === 'Dcp2') {
+                            // Enhancement 25: Decapping is permanent damage that triggers decay
+                            targetBase.flash = 1.0;
+                            this.spawnExonuclease(0);
                         } else {
                             targetBase.damaged = false;
                             targetBase.damageType = null;
@@ -282,6 +446,20 @@
                     if (enzyme.y < -100 || enzyme.size < 1) {
                         this.enzymes.splice(index, 1);
                     }
+                }
+            });
+
+            // Enhancement 22: Protective Proteins
+            this.proteins.forEach((protein, index) => {
+                protein.life -= 0.001;
+                if (protein.life <= 0) {
+                    // Remove protection
+                    for (let i = 0; i < protein.length; i++) {
+                        if (this.rnaStrand[protein.startIndex + i]) {
+                            this.rnaStrand[protein.startIndex + i].protected = false;
+                        }
+                    }
+                    this.proteins.splice(index, 1);
                 }
             });
 
@@ -400,43 +578,123 @@
                 }
                 this.ctx.restore();
 
+                // Enhancement 9: Abasic site (no letter)
+                if (base.damageType === this.damageTypes.ABASIC) {
+                    // Just draw backbone/glow, no letter
+                } else {
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = 'bold 11px Arial';
+                    this.ctx.textAlign = 'center';
+                    // Enhancement 7: Pseudouridine
+                    const label = base.damageType === this.damageTypes.PSEUDOURIDINE ? 'Ψ' : base.type;
+                    this.ctx.fillText(label, base.x, base.y + 4);
+                }
+
                 // Damage indicator
                 if (base.damaged) {
                     this.ctx.fillStyle = this.colors.METHYL;
+                    if (base.damageType === this.damageTypes.DECAPPING) this.ctx.fillStyle = this.colors.DECAY;
+                    if (base.damageType === this.damageTypes.ABASIC) this.ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                    if (base.damageType === this.damageTypes.PSEUDOURIDINE) this.ctx.fillStyle = this.colors.PSI;
+
                     this.ctx.beginPath();
                     this.ctx.arc(base.x + 6, base.y - 6, 5, 0, Math.PI * 2);
                     this.ctx.fill();
                 }
-
-                this.ctx.fillStyle = 'white';
-                this.ctx.font = 'bold 11px Arial';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText(base.type, base.x, base.y + 4);
             });
+
+            // Enhancement 22: Protective Proteins
+            this.proteins.forEach(protein => {
+                const startBase = this.rnaStrand[protein.startIndex];
+                const endBase = this.rnaStrand[protein.startIndex + protein.length - 1];
+                if (startBase && endBase) {
+                    this.ctx.save();
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startBase.x - 20, startBase.y);
+                    this.ctx.lineTo(endBase.x - 20, endBase.y);
+                    this.ctx.strokeStyle = this.colors.PROTEIN;
+                    this.ctx.lineWidth = 10;
+                    this.ctx.lineCap = 'round';
+                    this.ctx.globalAlpha = protein.life * 0.5;
+                    this.ctx.stroke();
+
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = 'bold 10px Arial';
+                    this.ctx.fillText("HnRNP", startBase.x - 45, (startBase.y + endBase.y) / 2);
+                    this.ctx.restore();
+                }
+            });
+
+            // Enhancement 23: Ribosome
+            this.ctx.save();
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = this.colors.RIBOSOME;
+            this.ctx.beginPath();
+            this.ctx.ellipse(this.ribosome.x, this.ribosome.y, 30, 20, 0, 0, Math.PI * 2);
+            this.ctx.fillStyle = this.colors.RIBOSOME;
+            this.ctx.globalAlpha = 0.6;
+            this.ctx.fill();
+            if (this.ribosome.stalled) {
+                this.ctx.strokeStyle = 'red';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+            }
+            this.ctx.fillStyle = 'white';
+            this.ctx.globalAlpha = 1;
+            this.ctx.font = 'bold 12px Arial';
+            this.ctx.fillText("RIBOSOME", this.ribosome.x, this.ribosome.y + 5);
+            this.ctx.restore();
 
             // Draw Enzymes
             this.enzymes.forEach(enzyme => {
                 this.ctx.save();
+
+                // Enhancement 34: Conformational Change (Squeeze)
+                let scaleX = 1;
+                let scaleY = 1;
+                if (enzyme.state === 'repairing') {
+                    scaleX = 1 + Math.sin(this.simTime * 10) * 0.1;
+                    scaleY = 1 - Math.sin(this.simTime * 10) * 0.1;
+                }
+
+                this.ctx.translate(enzyme.x, enzyme.y);
+                this.ctx.scale(scaleX, scaleY);
+
                 this.ctx.beginPath();
-                this.ctx.arc(enzyme.x, enzyme.y, enzyme.size, 0, Math.PI * 2);
+                this.ctx.arc(0, 0, enzyme.size, 0, Math.PI * 2);
                 this.ctx.fillStyle = this.colors.ENZYME;
                 this.ctx.fill();
                 this.ctx.strokeStyle = this.colors.GLOW;
                 this.ctx.setLineDash([5, 5]);
                 this.ctx.stroke();
 
+                this.ctx.restore();
+
                 this.ctx.fillStyle = 'white';
                 this.ctx.font = '12px Arial';
                 this.ctx.fillText(enzyme.name, enzyme.x, enzyme.y - enzyme.size - 5);
 
-                if (enzyme.state === 'repairing') {
+                if (enzyme.state === 'repairing' || enzyme.state === 'decaying') {
                     this.ctx.beginPath();
                     this.ctx.rect(enzyme.x - 20, enzyme.y + enzyme.size + 10, 40 * enzyme.progress, 4);
-                    this.ctx.fillStyle = this.colors.GLOW;
+                    this.ctx.fillStyle = enzyme.state === 'decaying' ? this.colors.DECAY : this.colors.GLOW;
                     this.ctx.fill();
                 }
-                this.ctx.restore();
             });
+
+            // Enhancement 66: ATP Display
+            this.ctx.save();
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = 'bold 14px Arial';
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(`ATP: ${Math.floor(this.atp)}%`, this.width - 20, 30);
+            this.ctx.fillText(`Used: ${this.atpConsumed.toFixed(1)}`, this.width - 20, 50);
+
+            this.ctx.beginPath();
+            this.ctx.rect(this.width - 120, 15, 100 * (this.atp / 100), 10);
+            this.ctx.fillStyle = this.colors.ATP;
+            this.ctx.fill();
+            this.ctx.restore();
 
             // Draw Particles
             this.particles.forEach(p => {
@@ -481,6 +739,7 @@
 
     /**
      * @function initializeRNARepairSimulation
+     * @description Entry point for initializing the simulation on a target element.
      */
     function initializeRNARepairSimulation(targetElement) {
         if (!targetElement) {

@@ -186,7 +186,7 @@
             const targetSelector = '#rna-simulation-target';
 
             if (window.Greenhouse && window.Greenhouse.initializeRNARepairSimulation) {
-                window.Greenhouse.initializeRNARepairSimulation(targetSelector);
+                window.Greenhouse.initializeRNARepairSimulation(document.querySelector(targetSelector));
             }
         });
     </script>
