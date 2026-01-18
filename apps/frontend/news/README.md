@@ -2,7 +2,7 @@
 
 This directory contains the frontend code for the **News** page of the main Greenhouse for Mental Health website:
 
-👉 [https://greenhousementalhealth.org/news/](https://greenhousementalhealth.org/news/)
+👉 [https://greenhousemd.org/news/](https://greenhousemd.org/news/)
 
 ---
 

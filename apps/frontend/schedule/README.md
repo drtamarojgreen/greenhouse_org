@@ -2,7 +2,7 @@
 
 This directory contains the frontend Velo code (`Schedule.js`) for the interactive appointment scheduler on the Greenhouse for Mental Health website:
 
-👉 [https://greenhousementalhealth.org/schedule/](https://greenhousementalhealth.org/schedule/)
+👉 [https://greenhousemd.org/schedule/](https://greenhousemd.org/schedule/)
 
 ---
 

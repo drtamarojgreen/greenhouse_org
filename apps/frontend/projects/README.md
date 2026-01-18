@@ -2,7 +2,7 @@
 
 This directory contains the frontend code for the **Projects** page of the main Greenhouse for Mental Health website:
 
-👉 [https://greenhousementalhealth.org/projects/](https://greenhousementalhealth.org/projects/)
+👉 [https://greenhousemd.org/projects/](https://greenhousemd.org/projects/)
 
 ---
 

@@ -1,6 +1,6 @@
 # Greenhouse Mental Health Applications
 
-This directory contains applications and services designed to be integrated with the main Greenhouse for Mental Health website (`greenhousementalhealth.org`), which is built on the Wix platform.
+This directory contains applications and services designed to be integrated with the main Greenhouse for Mental Health website (`greenhousemd.org`), which is built on the Wix platform.
 
 There are two main types of applications in this repository:
 

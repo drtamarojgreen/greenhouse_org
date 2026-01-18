@@ -1,6 +1,6 @@
-# Backend Testing Strategy for greenhousementalhealth.org
+# Backend Testing Strategy for greenhousemd.org
 
-This document outlines a black-box backend testing strategy for the Wix-based website [greenhousementalhealth.org](https://greenhousementalhealth.org). Since the backend source code is not available, this strategy focuses on testing the application from the outside by interacting with its publicly exposed endpoints and functionalities.
+This document outlines a black-box backend testing strategy for the Wix-based website [greenhousemd.org](https://greenhousemd.org). Since the backend source code is not available, this strategy focuses on testing the application from the outside by interacting with its publicly exposed endpoints and functionalities.
 
 The strategy is divided into five main areas of testing:
 

@@ -124,9 +124,15 @@
                 // Launch Button
                 const launchLink = document.createElement('a');
 
-                // Smart Link Logic: Use canonical URLs as requested
+                // Smart Link Logic: Use canonical URLs for production, .html for local
+                const isProduction = location.hostname === 'greenhousemd.org' || location.hostname.endsWith('.github.io');
                 const path = url.startsWith('/') ? url : '/' + url;
-                launchLink.href = `https://greenhousementalhealth.org${path}`;
+
+                if (isProduction) {
+                    launchLink.href = `https://greenhousemd.org${path}`;
+                } else {
+                    launchLink.href = path + '.html';
+                }
 
                 launchLink.className = 'greenhouse-btn greenhouse-btn-primary';
                 launchLink.textContent = 'Launch Simulation';

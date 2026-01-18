@@ -180,7 +180,7 @@ TestFramework.describe('Models Table of Contents (TOC)', () => {
     });
 
     TestFramework.it('should generate correct URLs for production', async () => {
-        global.location.hostname = 'greenhousementalhealth.org';
+        global.location.hostname = 'greenhousemd.org';
         window.GreenhouseModelsTOC.init({ target: '#models-toc-container' });
 
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -190,7 +190,7 @@ TestFramework.describe('Models Table of Contents (TOC)', () => {
         const buttonGroup = card.children.find(c => c.className === 'button-group');
         const launchLink = buttonGroup.children[0];
 
-        assert.equal(launchLink.href, 'https://greenhousementalhealth.org/genetic');
+        assert.equal(launchLink.href, 'https://greenhousemd.org/genetic');
     });
 
     TestFramework.it('should generate .html URLs for local development', async () => {

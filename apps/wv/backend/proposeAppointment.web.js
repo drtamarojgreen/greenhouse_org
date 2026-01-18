@@ -8,7 +8,7 @@ async function checkAppointmentConflict(newAppointment) {
     const newAppointmentEnd = new Date(newAppointment.end);
 
     // Call the new HTTP function for getAppointments
-    const apiResponse = await fetch('https://www.greenhousementalhealth.org/_functions/getAppointments'); // Use full URL for backend fetch
+    const apiResponse = await fetch('https://www.greenhousemd.org/_functions/getAppointments'); // Use full URL for backend fetch
     if (!apiResponse.ok) {
         throw new Error(`Failed to fetch all appointments for conflict check: ${apiResponse.statusText}`);
     }

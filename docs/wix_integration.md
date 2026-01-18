@@ -4,7 +4,7 @@ This document outlines the integration architecture between the main Wix website
 
 ## Overview
 
-- **Primary Website:** The main public-facing website, `https://greenhousementalhealth.org`, is built and hosted on Wix.
+- **Primary Website:** The main public-facing website, `https://greenhousemd.org`, is built and hosted on Wix.
 - **Custom Asset Host:** Custom JavaScript and CSS for interactive applications (e.g., the appointment scheduler) are hosted on a separate GitHub Pages site. The base URL for these assets is `https://drtamarojgreen.github.io/greenhouse_org/`.
 
 ## Integration Mechanism

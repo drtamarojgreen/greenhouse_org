@@ -2,7 +2,7 @@
 
 This directory contains the frontend code for the **Inspiration** page of the main Greenhouse for Mental Health website:
 
-👉 [https://greenhousementalhealth.org/inspiration/](https://greenhousementalhealth.org/inspiration/)
+👉 [https://greenhousemd.org/inspiration/](https://greenhousemd.org/inspiration/)
 
 ---
 
