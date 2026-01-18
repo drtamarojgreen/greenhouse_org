@@ -51,7 +51,8 @@
             globalHelixUnwind: 0,
             radiationLevel: 10,
             successfulRepairs: 0,
-            mutatedRepairs: 0
+            mutatedRepairs: 0,
+            cellCyclePhase: 'G1' // G1, S, G2
         },
 
         config: {
@@ -149,7 +150,17 @@
             if (this.state.genomicIntegrity < 100 && mode === 'ber') { this.state.genomicIntegrity = 100; this.state.mutationCount = 0; }
             this.generateDNA();
             if (this.updateInfoOverlay) this.updateInfoOverlay();
-            const titles = { 'ber': "Base Excision Repair", 'mmr': "Mismatch Repair", 'dsb': "Double-Strand Break Repair", 'nhej': "Non-Homologous End Joining", 'ner': "Nucleotide Excision Repair", 'hr': "Homologous Recombination", 'photo': "Direct Reversal (Photolyase)" };
+            const titles = {
+                'ber': "Base Excision Repair",
+                'mmr': "Mismatch Repair",
+                'dsb': "Double-Strand Break Repair",
+                'nhej': "Non-Homologous End Joining",
+                'ner': "Nucleotide Excision Repair",
+                'hr': "Homologous Recombination",
+                'photo': "Direct Reversal (Photolyase)",
+                'mgmt': "MGMT Repair",
+                'replicate': "DNA Replication"
+            };
             this.currentModeText = titles[mode];
         },
 
@@ -204,8 +215,17 @@
                 else if (m === 'dsb' && this.handleDSB) this.handleDSB(st.timer);
                 else if (m === 'nhej' && this.handleNHEJ) this.handleNHEJ(st.timer);
                 else if (m === 'ner' && this.handleNER) this.handleNER(st.timer);
-                else if (m === 'hr' && this.handleHR) this.handleHR(st.timer);
+                else if (m === 'hr' && this.handleHR) {
+                    if (st.cellCyclePhase === 'S' || st.cellCyclePhase === 'G2') {
+                        this.handleHR(st.timer);
+                    } else {
+                        // Biological constraint: HR requires a sister chromatid, only available in S/G2
+                        this.currentModeText = "HR Blocked (Requires S or G2)";
+                    }
+                }
                 else if (m === 'photo' && this.handlePhotolyase) this.handlePhotolyase(st.timer);
+                else if (m === 'mgmt' && this.handleMGMT) this.handleMGMT(st.timer);
+                else if (m === 'replicate' && this.handleReplication) this.handleReplication(st.timer);
                 this.updateStats();
                 if (st.timer > 600) { st.timer = 0; this.generateDNA(); }
             }
@@ -223,25 +243,64 @@
             for (let i = 0; i < this.state.basePairs.length; i++) {
                 const p = this.state.basePairs[i]; if (p.isBroken) continue;
                 const dAngle = p.angle * rotS;
-                const s1Y = Math.cos(dAngle) * radius + p.offsetY; const s1Z = Math.sin(dAngle) * radius;
-                const s2Y = Math.cos(dAngle + Math.PI) * radius + p.offsetY; const s2Z = Math.sin(dAngle + Math.PI) * radius;
+
+                const s1O = p.s1Offset || {y:0, z:0};
+                const s2O = p.s2Offset || {y:0, z:0};
+
+                const s1Y = Math.cos(dAngle) * radius + p.offsetY + s1O.y;
+                const s1Z = Math.sin(dAngle) * radius + s1O.z;
+                const s2Y = Math.cos(dAngle + Math.PI) * radius + p.offsetY + s2O.y;
+                const s2Z = Math.sin(dAngle + Math.PI) * radius + s2O.z;
+
                 const p1 = project(p.x, s1Y, s1Z, cam, { width: w, height: h, near: 10, far: 5000 });
                 const p2 = project(p.x, s2Y, s2Z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p1.scale <= 0 || p2.scale <= 0) continue;
                 const midX = (p1.x + p2.x) / 2; const midY = (p1.y + p2.y) / 2;
                 const drawB = (sp, ep, type, dam) => { if (!type) return; ctx.strokeStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff'); ctx.lineWidth = 5 * p1.scale; if (dam) { ctx.shadowBlur = 15; ctx.shadowColor = '#ff0000'; } ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke(); ctx.shadowBlur = 0; };
-                drawB(p1, { x: midX, y: midY }, p.base1, p.isDamaged); drawB({ x: midX, y: midY }, p2, p.base2, p.isDamaged);
+
+                if (!p.isReplicating) {
+                    drawB(p1, { x: midX, y: midY }, p.base1, p.isDamaged);
+                    drawB({ x: midX, y: midY }, p2, p.base2, p.isDamaged);
+                } else {
+                    const drawT = (sp, ep, type) => { ctx.strokeStyle = (this.config.colors[type] || '#fff'); ctx.lineWidth = 5 * p1.scale; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke(); ctx.globalAlpha = 1.0; };
+                    drawT(p1, {x: p1.x + (midX-p1.x)*0.4, y: p1.y + (midY-p1.y)*0.4}, p.base1);
+                    drawT(p2, {x: p2.x + (midX-p2.x)*0.4, y: p2.y + (midY-p2.y)*0.4}, p.base2);
+                    if (p.newBase1) {
+                         const np1 = project(p.x, s1Y - s1O.y*0.3, s1Z - s1O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                         drawB(np1, {x: np1.x + (midX-np1.x)*0.2, y: np1.y + (midY-np1.y)*0.2}, p.newBase1, false);
+                    }
+                    if (p.newBase2) {
+                         const np2 = project(p.x, s2Y - s2O.y*0.3, s2Z - s2O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                         drawB(np2, {x: np2.x + (midX-np2.x)*0.2, y: np2.y + (midY-np2.y)*0.2}, p.newBase2, false);
+                    }
+                }
+
                 const drawP = (x, y, r) => { ctx.fillStyle = '#e2e8f0'; ctx.beginPath(); for (let j = 0; j < 5; j++) { const a = (j * 2 * Math.PI / 5) - Math.PI / 2; ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } ctx.closePath(); ctx.fill(); };
                 if (p1.scale > 0.3) drawP(p1.x, p1.y, 6 * p1.scale); if (p2.scale > 0.3) drawP(p2.x, p2.y, 6 * p2.scale);
                 if (p1.scale > 0.4 && p.base1) { ctx.fillStyle = "#000"; ctx.font = `bold ${8 * p1.scale}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.base1, (p1.x + midX) / 2, (p1.y + midY) / 2); }
                 if (p2.scale > 0.4 && p.base2) { ctx.fillStyle = "#000"; ctx.font = `bold ${8 * p2.scale}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.base2, (p2.x + midX) / 2, (p2.y + midY) / 2); }
                 if (i > 0 && !this.state.basePairs[i - 1].isBroken) {
                     const prev = this.state.basePairs[i - 1]; const pdAngle = prev.angle * rotS;
-                    const pp1 = project(prev.x, Math.cos(pdAngle) * radius + prev.offsetY, Math.sin(pdAngle) * radius, cam, { width: w, height: h, near: 10, far: 5000 });
-                    const pp2 = project(prev.x, Math.cos(pdAngle + Math.PI) * radius + prev.offsetY, Math.sin(pdAngle + Math.PI) * radius, cam, { width: w, height: h, near: 10, far: 5000 });
+                    const ps1O = prev.s1Offset || {y:0,z:0}; const ps2O = prev.s2Offset || {y:0,z:0};
+                    const pp1 = project(prev.x, Math.cos(pdAngle) * radius + prev.offsetY + ps1O.y, Math.sin(pdAngle) * radius + ps1O.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                    const pp2 = project(prev.x, Math.cos(pdAngle + Math.PI) * radius + prev.offsetY + ps2O.y, Math.sin(pdAngle + Math.PI) * radius + ps2O.z, cam, { width: w, height: h, near: 10, far: 5000 });
                     ctx.strokeStyle = this.config.colors.backbone; ctx.lineWidth = 2 * p1.scale;
                     ctx.beginPath(); ctx.moveTo(pp1.x, pp1.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
                     ctx.beginPath(); ctx.moveTo(pp2.x, pp2.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+
+                    if (p.isReplicating && prev.isReplicating) {
+                        ctx.strokeStyle = '#00fbff';
+                        if (p.newBase1 && prev.newBase1) {
+                            const npp1 = project(prev.x, Math.cos(pdAngle) * radius + prev.offsetY + ps1O.y - ps1O.y*0.3, Math.sin(pdAngle) * radius + ps1O.z - ps1O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                            const np1 = project(p.x, s1Y - s1O.y*0.3, s1Z - s1O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                            ctx.beginPath(); ctx.moveTo(npp1.x, npp1.y); ctx.lineTo(np1.x, np1.y); ctx.stroke();
+                        }
+                        if (p.newBase2 && prev.newBase2) {
+                            const npp2 = project(prev.x, Math.cos(pdAngle + Math.PI) * radius + prev.offsetY + ps2O.y - ps2O.y*0.3, Math.sin(pdAngle + Math.PI) * radius + ps2O.z - ps2O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                            const np2 = project(p.x, s2Y - s2O.y*0.3, s2Z - s2O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                            ctx.beginPath(); ctx.moveTo(npp2.x, npp2.y); ctx.lineTo(np2.x, np2.y); ctx.stroke();
+                        }
+                    }
                 }
             }
             this.state.particles.forEach(p => { const proj = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 }); if (proj.scale > 0) { ctx.shadowBlur = 10; ctx.shadowColor = p.color; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(proj.x, proj.y, 4 * proj.scale, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; } });
@@ -269,6 +328,7 @@
                 await GreenhouseUtils.loadScript('dna_repair_mechanisms.js', baseUrl);
                 await GreenhouseUtils.loadScript('dna_repair_mutations.js', baseUrl);
                 await GreenhouseUtils.loadScript('dna_repair_buttons.js', baseUrl);
+                await GreenhouseUtils.loadScript('dna_replication.js', baseUrl);
 
                 // Load core dependencies
                 await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);

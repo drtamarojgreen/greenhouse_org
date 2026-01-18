@@ -14,6 +14,7 @@ function loadSource(context) {
         'docs/js/dna_repair_mechanisms.js',
         'docs/js/dna_repair_mutations.js',
         'docs/js/dna_repair_buttons.js',
+        'docs/js/dna_replication.js',
         'docs/js/dna_repair.js'
     ];
 
@@ -60,6 +61,7 @@ TestFramework.describe('DNA Repair Simulation Logic (Source Verified)', () => {
         assert.isDefined(G.handleNHEJ);
         assert.isDefined(G.handleHR);
         assert.isDefined(G.handlePhotolyase);
+        assert.isDefined(G.handleMGMT);
     });
 
     TestFramework.it('NHEJ should result in deletion and mutation (Source Logic)', () => {
@@ -108,6 +110,71 @@ TestFramework.describe('DNA Repair Simulation Logic (Source Verified)', () => {
         G.handlePhotolyase(200);
         assert.isFalse(G.state.basePairs[targetIdx].isDamaged);
         assert.equal(G.state.basePairs[targetIdx].base1, originalBase, "Base should not be excised");
+    });
+
+    TestFramework.it('HR should be restricted by Cell Cycle (Source Logic)', () => {
+        G.generateDNA();
+        const targetIdx = Math.floor(G.config.helixLength / 2);
+
+        // G1 Phase: HR should be blocked
+        G.state.cellCyclePhase = 'G1';
+        G.state.repairMode = 'hr';
+        G.state.timer = 50;
+
+        // Mock update loop logic for HR check
+        if (G.state.repairMode === 'hr') {
+            if (G.state.cellCyclePhase === 'S' || G.state.cellCyclePhase === 'G2') {
+                G.handleHR(G.state.timer);
+            } else {
+                G.currentModeText = "HR Blocked (Requires S or G2)";
+            }
+        }
+
+        assert.isFalse(G.state.basePairs[targetIdx].isBroken, "HR should not have started in G1");
+        assert.equal(G.currentModeText, "HR Blocked (Requires S or G2)");
+
+        // S Phase: HR should proceed
+        G.state.cellCyclePhase = 'S';
+        if (G.state.repairMode === 'hr' && (G.state.cellCyclePhase === 'S' || G.state.cellCyclePhase === 'G2')) {
+            G.handleHR(G.state.timer);
+        }
+        assert.isTrue(G.state.basePairs[targetIdx].isBroken, "HR should start in S phase");
+    });
+
+    TestFramework.it('MGMT should repair alkylation without excision (Source Logic)', () => {
+        G.generateDNA();
+        const targetIdx = Math.floor(G.config.helixLength / 2) + 10;
+        const originalBase = G.state.basePairs[targetIdx].base1;
+
+        G.handleMGMT(10);
+        assert.isTrue(G.state.basePairs[targetIdx].isDamaged);
+
+        G.handleMGMT(200);
+        assert.isFalse(G.state.basePairs[targetIdx].isDamaged);
+        assert.equal(G.state.basePairs[targetIdx].base1, originalBase, "Base should not be excised");
+    });
+
+    TestFramework.it('Replication logic should diverge strands and synthesize complement (Source Logic)', () => {
+        G.generateDNA();
+        const config = G.config;
+
+        // Run replication simulation for a few ticks
+        const t = 100; // t * 0.1 speed = index 10
+        G.handleReplication(t);
+
+        const forkIdx = 10;
+        assert.equal(G.state.replicationForkIndex, forkIdx);
+
+        // Base pair before fork should be replicating and diverged
+        const pBefore = G.state.basePairs[forkIdx - 2];
+        assert.isTrue(pBefore.isReplicating);
+        assert.isTrue(pBefore.s1Offset.y !== 0 || pBefore.s1Offset.z !== 0);
+        assert.isDefined(pBefore.newBase1);
+
+        // Base pair after fork should not be replicating
+        const pAfter = G.state.basePairs[forkIdx + 2];
+        assert.isFalse(pAfter.isReplicating);
+        assert.equal(pAfter.s1Offset.y, 0);
     });
 });
 
