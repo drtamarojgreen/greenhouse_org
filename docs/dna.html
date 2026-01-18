@@ -179,36 +179,13 @@
 
     <!-- Main Application Container -->
     <div id="dna-app-container">
-        <!-- Control Bar -->
-        <div class="controls-bar">
-            <button class="control-btn active" onclick="setMode('ber', this)">Base Excision Repair</button>
-            <button class="control-btn" onclick="setMode('mmr', this)">Mismatch Repair</button>
-            <button class="control-btn" onclick="setMode('ner', this)">Nucleotide Excision Repair</button>
-            <button class="control-btn" onclick="setMode('dsb', this)">Double-Strand Break</button>
-            <button class="control-btn" onclick="setMode('hr', this)">Homologous Recombination</button>
-        </div>
-
         <section class="wixui-section">
             <div class="simulation-section">
+                <!-- UI and Simulation are injected here by dna_repair.js -->
                 <div id="dna-simulation-target" class="simulation-target">
-                </div>
-                <div class="controls-hint">
-                    Scroll to Zoom | Drag to Pan
                 </div>
             </div>
         </section>
-    </div>
-
-    <!-- Information Panel -->
-    <div class="info-panel">
-        <h3>🔬 Key DNA Repair Pathways</h3>
-        <ul>
-            <li><strong>Base Excision Repair:</strong> Corrects small, non-helix-distorting base lesions.</li>
-            <li><strong>Nucleotide Excision Repair:</strong> Repairs bulky, helix-distorting lesions such as those caused by UV light.</li>
-            <li><strong>Mismatch Repair:</strong> Corrects mistakes that happen during DNA replication.</li>
-            <li><strong>Double-Strand Break Repair:</strong> Repairs dangerous breaks in the DNA backbone.</li>
-            <li><strong>Homologous Recombination:</strong> High-fidelity repair of double-strand breaks using a sister chromatid template.</li>
-        </ul>
     </div>
 
     <!-- Footer -->

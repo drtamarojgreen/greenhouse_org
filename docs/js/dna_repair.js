@@ -81,12 +81,20 @@
             // Clear container safely
             container.innerHTML = '';
             
+            // Inject Styles
+            this.injectStyles();
+
             // Create wrapper for resilience
             const wrapper = document.createElement('div');
             wrapper.className = 'dna-simulation-container';
             wrapper.style.width = '100%';
             wrapper.style.height = '100%';
+            wrapper.style.position = 'relative';
+            wrapper.style.backgroundColor = '#101015';
             container.appendChild(wrapper);
+
+            // Create Control Bar
+            this.createUI(wrapper);
 
             // Setup Canvas
             this.canvas = document.createElement('canvas');
@@ -119,6 +127,137 @@
             
             // Start observing for DOM removal
             this.observeAndReinitializeApp(container);
+        },
+
+        injectStyles() {
+            if (document.getElementById('dna-sim-styles')) return;
+            const style = document.createElement('style');
+            style.id = 'dna-sim-styles';
+            style.innerHTML = `
+                .dna-controls-bar {
+                    display: flex;
+                    justify-content: center;
+                    gap: 10px;
+                    padding: 10px;
+                    background: rgba(26, 32, 44, 0.8);
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    z-index: 10;
+                    flex-wrap: wrap;
+                }
+                .dna-control-btn {
+                    background: #2d3748;
+                    color: #e2e8f0;
+                    border: 1px solid #4a5568;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    font-size: 12px;
+                    font-weight: 500;
+                }
+                .dna-control-btn:hover {
+                    background: #667eea;
+                    color: white;
+                }
+                .dna-control-btn.active {
+                    background: #667eea;
+                    border-color: #5a67d8;
+                    color: white;
+                }
+                .dna-info-overlay {
+                    position: absolute;
+                    bottom: 20px;
+                    left: 20px;
+                    background: rgba(0, 0, 0, 0.7);
+                    padding: 15px;
+                    border-radius: 8px;
+                    color: #fff;
+                    max-width: 300px;
+                    font-size: 13px;
+                    pointer-events: none;
+                    border-left: 4px solid #667eea;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                }
+                .dna-atp-counter {
+                    font-weight: bold;
+                    color: #48bb78;
+                    font-size: 14px;
+                }
+            `;
+            document.head.appendChild(style);
+        },
+
+        createUI(wrapper) {
+            const controls = document.createElement('div');
+            controls.className = 'dna-controls-bar';
+
+            const modes = [
+                { id: 'ber', label: 'Base Excision' },
+                { id: 'mmr', label: 'Mismatch Repair' },
+                { id: 'ner', label: 'Nucleotide Excision' },
+                { id: 'dsb', label: 'Double-Strand Break' },
+                { id: 'hr', label: 'Homologous Recomb' }
+            ];
+
+            modes.forEach(mode => {
+                const btn = document.createElement('button');
+                btn.className = 'dna-control-btn' + (this.state.repairMode === mode.id ? ' active' : '');
+                btn.innerText = mode.label;
+                btn.onclick = () => {
+                    document.querySelectorAll('.dna-control-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    this.startSimulation(mode.id);
+                };
+                controls.appendChild(btn);
+            });
+
+            wrapper.appendChild(controls);
+
+            // Info Overlay
+            const info = document.createElement('div');
+            info.className = 'dna-info-overlay';
+            info.id = 'dna-info-overlay';
+
+            const content = document.createElement('div');
+            content.id = 'dna-info-content';
+            content.innerHTML = '<strong>DNA Repair Simulation</strong><br>Select a mode above to observe molecular repair pathways.';
+
+            const atp = document.createElement('div');
+            atp.className = 'dna-atp-counter';
+            atp.id = 'dna-atp-counter';
+            atp.innerText = 'ATP Consumed: 0';
+
+            info.appendChild(content);
+            info.appendChild(atp);
+            wrapper.appendChild(info);
+        },
+
+        updateInfoOverlay() {
+            const content = document.getElementById('dna-info-content');
+            if (!content) return;
+
+            const descriptions = {
+                'ber': "<strong>Base Excision Repair (BER)</strong><br>Corrects small, non-helix-distorting base lesions. A single damaged base is removed and replaced.",
+                'mmr': "<strong>Mismatch Repair (MMR)</strong><br>Corrects errors that escape proofreading during replication, such as mispaired bases.",
+                'ner': "<strong>Nucleotide Excision Repair (NER)</strong><br>Repairs bulky, helix-distorting lesions (e.g. UV dimers) by removing a short single-stranded DNA segment.",
+                'dsb': "<strong>Double-Strand Break (DSB)</strong><br>A dangerous break where both strands of the helix are severed. Repaired by re-joining the ends.",
+                'hr': "<strong>Homologous Recombination (HR)</strong><br>High-fidelity DSB repair that uses a sister chromatid as a template to ensure accurate restoration."
+            };
+
+            content.innerHTML = descriptions[this.state.repairMode] || '';
+            this.updateATPCounter();
+        },
+
+        updateATPCounter() {
+            const counter = document.getElementById('dna-atp-counter');
+            if (counter) {
+                counter.innerText = `ATP Consumed: ${this.state.atpConsumed}`;
+            }
         },
 
         observeAndReinitializeApp(container) {
@@ -157,6 +296,7 @@
             this.state.simulating = true;
             this.state.particles = [];
             this.generateDNA(); // Reset structure
+            this.updateInfoOverlay();
 
             const titles = {
                 'ber': "Base Excision Repair",
@@ -290,6 +430,8 @@
                 else if (st.repairMode === 'dsb') this.handleDSB(st.timer);
                 else if (st.repairMode === 'ner') this.handleNER(st.timer);
                 else if (st.repairMode === 'hr') this.handleHR(st.timer);
+
+                this.updateATPCounter();
 
                 // Stop active animation after cycle completes
                 if (st.timer > 600) {
@@ -637,13 +779,9 @@
                 }
             });
 
-            // Draw ATP Counter
+            // Draw Current Mode Title on Canvas (Visual reinforcement)
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 16px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText(`ATP Consumed: ${this.state.atpConsumed}`, 20, 30);
-
-            // Draw Current Mode
             ctx.textAlign = 'right';
             ctx.fillText(this.currentModeText || '', w - 20, 30);
         }
