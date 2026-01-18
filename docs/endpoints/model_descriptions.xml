@@ -48,4 +48,22 @@
       <paragraph>The Synapse Model provides insight into why emotional responses can feel automatic and difficult to override—and how intentional practices can slowly recalibrate those internal weights.</paragraph>
     </description>
   </model>
+
+  <model id="dna">
+    <title>DNA Repair Model</title>
+    <url>/dna</url>
+    <description>
+      <paragraph>The DNA Repair Model provides a horizontal molecular visualization of key biological pathways that maintain genomic integrity. This interactive simulation allows users to explore mechanisms such as Base Excision Repair (BER), Mismatch Repair (MMR), and Double-Strand Break (DSB) repair.</paragraph>
+      <paragraph>By visualizing these micro-level processes, the model emphasizes the fundamental biological resilience and constant adaptive maintenance required for life and mental health development.</paragraph>
+    </description>
+  </model>
+
+  <model id="rna">
+    <title>RNA Repair Model</title>
+    <url>/rna</url>
+    <description>
+      <paragraph>The RNA Repair Model features a vertical molecular visualization of the mechanisms that protect and repair RNA transcripts. It highlights specialized pathways like RNA Ligation and Oxidative Demethylation, which are crucial for maintaining the fidelity of protein synthesis.</paragraph>
+      <paragraph>This simulation helps users understand the linear nature of long RNA transcripts and the specialized enzymes, such as AlkB, that ensure cellular information remains accurate and functional.</paragraph>
+    </description>
+  </model>
 </models>
