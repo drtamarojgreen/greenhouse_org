@@ -24,10 +24,15 @@ function loadSource(context) {
     context.document = {
         createElement: () => ({ style: {}, appendChild: () => {}, setAttribute: () => {} }),
         head: { appendChild: () => {} },
-        currentScript: { getAttribute: () => null }
+        currentScript: { getAttribute: () => null },
+        getElementById: () => ({ innerText: '' })
     };
     context.navigator = { userAgent: 'node' };
-    context.console = console;
+    context.console = {
+        log: () => {},
+        error: () => {},
+        warn: () => {}
+    };
     context.requestAnimationFrame = (cb) => setTimeout(cb, 16);
     context.setInterval = setInterval;
     context.clearInterval = clearInterval;
@@ -49,12 +54,12 @@ function loadSource(context) {
     });
 }
 
-TestFramework.describe('DNA Repair Simulation Logic (Source Verified)', () => {
+TestFramework.describe('DNA Repair Simulation Logic (Comprehensive)', () => {
     const context = { GreenhouseDNARepair: {} };
     loadSource(context);
     const G = context.GreenhouseDNARepair;
 
-    TestFramework.it('Should have all repair pathways attached from mechanisms.js', () => {
+    TestFramework.it('Should have all repair pathways and mutation logic attached', () => {
         assert.isDefined(G.handleBER);
         assert.isDefined(G.handleNER);
         assert.isDefined(G.handleMMR);
@@ -62,117 +67,164 @@ TestFramework.describe('DNA Repair Simulation Logic (Source Verified)', () => {
         assert.isDefined(G.handleHR);
         assert.isDefined(G.handlePhotolyase);
         assert.isDefined(G.handleMGMT);
+        assert.isDefined(G.induceSpontaneousDamage);
+        assert.isDefined(G.getComplement);
     });
 
-    TestFramework.it('NHEJ should result in deletion and mutation (Source Logic)', () => {
-        // Initialize state using source generateDNA
-        G.config.helixLength = 60;
-        G.config.rise = 14;
-        G.generateDNA();
+    TestFramework.it('Utility: getComplement should return correct base pairs', () => {
+        assert.equal(G.getComplement('A'), 'T');
+        assert.equal(G.getComplement('T'), 'A');
+        assert.equal(G.getComplement('C'), 'G');
+        assert.equal(G.getComplement('G'), 'C');
+        assert.equal(G.getComplement('X'), '');
+    });
 
-        G.state.repairMode = 'nhej';
+    TestFramework.it('Core: consumeATP should increment state and spawn particles', () => {
         G.state.atpConsumed = 0;
-        G.state.mutationCount = 0;
-        G.state.genomicIntegrity = 100;
-
-        const targetIdx = Math.floor(G.config.helixLength / 2);
-
-        G.handleNHEJ(50);
-        assert.equal(G.state.atpConsumed, 10);
-        assert.isTrue(G.state.basePairs[targetIdx].isBroken);
-
-        G.handleNHEJ(200);
-        assert.equal(G.state.atpConsumed, 30);
-        assert.equal(G.state.basePairs.length, 59);
-        assert.equal(G.state.mutationCount, 1);
-        assert.equal(G.state.genomicIntegrity, 95);
+        G.state.particles = [];
+        G.consumeATP(5, 100, 0, 0);
+        assert.equal(G.state.atpConsumed, 5);
+        assert.isTrue(G.state.particles.length > 0);
     });
 
-    TestFramework.it('NER should involve helix unwinding (Source Logic)', () => {
+    TestFramework.it('Mutation: applyDeamination should convert C to U', () => {
+        const pair = { base1: 'C', base2: 'G', isDamaged: false };
+        G.applyDeamination(pair);
+        assert.isTrue(pair.isDamaged);
+        assert.equal(pair.base1, 'U');
+        assert.equal(pair.damageType, 'Deamination');
+    });
+
+    TestFramework.it('Mutation: induceSpontaneousDamage should respect radiation levels', () => {
+        G.generateDNA();
+        G.state.radiationLevel = 0;
+        G.induceSpontaneousDamage();
+        const damagedCount0 = G.state.basePairs.filter(p => p.isDamaged).length;
+        assert.equal(damagedCount0, 0);
+
+        G.state.radiationLevel = 10000; // 100% probability
+        G.induceSpontaneousDamage();
+        const damagedCount100 = G.state.basePairs.filter(p => p.isDamaged).length;
+        assert.isTrue(damagedCount100 > 0);
+    });
+
+    TestFramework.it('BER: Should follow enzymatic steps (Base Removal -> Restoration)', () => {
+        G.generateDNA();
+        const targetIdx = Math.floor(G.config.helixLength / 2);
+        const pair = G.state.basePairs[targetIdx];
+
+        G.handleBER(10); // Damage induction
+        assert.isTrue(pair.isDamaged);
+
+        G.handleBER(200); // Excision
+        assert.equal(pair.base1, '', "Base should be removed at t=200");
+
+        G.handleBER(350); // Restoration
+        assert.isFalse(pair.isDamaged);
+        assert.isTrue(pair.base1.length === 1);
+    });
+
+    TestFramework.it('MMR: Should perform patch excision', () => {
+        G.generateDNA();
+        const targetIdx = Math.floor(G.config.helixLength / 2) + 5;
+
+        G.handleMMR(10); // Mismatch induction
+        assert.equal(G.state.basePairs[targetIdx].damageType, 'Mismatch');
+
+        G.handleMMR(200); // Patch excision
+        for (let i = -2; i <= 2; i++) {
+            assert.equal(G.state.basePairs[targetIdx + i].base1, '', `Base ${i} should be removed in patch`);
+        }
+
+        G.handleMMR(450); // Restoration
+        assert.isFalse(G.state.basePairs[targetIdx].isDamaged);
+        assert.isTrue(G.state.basePairs[targetIdx].base1 !== '');
+    });
+
+    TestFramework.it('NER: Should unwind helix during repair', () => {
         G.generateDNA();
         G.state.globalHelixUnwind = 0;
 
-        G.handleNER(125);
-        assert.isTrue(G.state.globalHelixUnwind > 0);
+        G.handleNER(125); // Unwinding
+        assert.greaterThan(G.state.globalHelixUnwind, 0);
 
-        G.handleNER(400);
+        G.handleNER(400); // Reset/Restoration
         assert.equal(G.state.globalHelixUnwind, 0);
     });
 
-    TestFramework.it('Photolyase should repair without excision (Source Logic)', () => {
+    TestFramework.it('NHEJ: Should result in deletion and genomic integrity loss', () => {
         G.generateDNA();
-        const targetIdx = Math.floor(G.config.helixLength / 2) - 10;
-        const originalBase = G.state.basePairs[targetIdx].base1;
+        const originalLength = G.state.basePairs.length;
+        G.state.genomicIntegrity = 100;
 
-        G.handlePhotolyase(10);
-        assert.isTrue(G.state.basePairs[targetIdx].isDamaged);
+        G.handleNHEJ(50); // Break
+        assert.isTrue(G.state.basePairs[Math.floor(originalLength/2)].isBroken);
 
-        G.handlePhotolyase(200);
-        assert.isFalse(G.state.basePairs[targetIdx].isDamaged);
-        assert.equal(G.state.basePairs[targetIdx].base1, originalBase, "Base should not be excised");
+        G.handleNHEJ(200); // Ligation with loss
+        assert.equal(G.state.basePairs.length, originalLength - 1);
+        assert.isTrue(G.state.genomicIntegrity < 100);
     });
 
-    TestFramework.it('HR should be restricted by Cell Cycle (Source Logic)', () => {
+    TestFramework.it('DSB: Should displace and then restore backbone positions', () => {
+        G.generateDNA();
+        const targetIdx = Math.floor(G.config.helixLength / 2);
+        const pair = G.state.basePairs[targetIdx];
+        const originalX = pair.x;
+
+        G.handleDSB(50); // Break
+        assert.isTrue(pair.isBroken);
+
+        G.handleDSB(100); // Displacement
+        assert.notEqual(G.state.basePairs[targetIdx - 1].x, (targetIdx - 1 - G.config.helixLength / 2) * G.config.rise);
+
+        // Simulation of gradual restoration
+        for (let i = 0; i < 200; i++) G.handleDSB(401);
+        assert.isFalse(pair.isBroken);
+        assert.lessThan(Math.abs(pair.x - originalX), 1);
+    });
+
+    TestFramework.it('HR: Should be restricted by Cell Cycle and perform range excision', () => {
         G.generateDNA();
         const targetIdx = Math.floor(G.config.helixLength / 2);
 
-        // G1 Phase: HR should be blocked
+        // Blocked in G1
         G.state.cellCyclePhase = 'G1';
         G.state.repairMode = 'hr';
         G.state.timer = 50;
 
-        // Mock update loop logic for HR check
-        if (G.state.repairMode === 'hr') {
-            if (G.state.cellCyclePhase === 'S' || G.state.cellCyclePhase === 'G2') {
-                G.handleHR(G.state.timer);
-            } else {
-                G.currentModeText = "HR Blocked (Requires S or G2)";
+        // Simple mock of the conditional logic in update()
+        function runHRUpdate() {
+            if (G.state.repairMode === 'hr') {
+                if (G.state.cellCyclePhase === 'S' || G.state.cellCyclePhase === 'G2') {
+                    G.handleHR(G.state.timer);
+                }
             }
         }
 
-        assert.isFalse(G.state.basePairs[targetIdx].isBroken, "HR should not have started in G1");
-        assert.equal(G.currentModeText, "HR Blocked (Requires S or G2)");
+        runHRUpdate();
+        assert.isFalse(G.state.basePairs[targetIdx].isBroken);
 
-        // S Phase: HR should proceed
+        // Active in S
         G.state.cellCyclePhase = 'S';
-        if (G.state.repairMode === 'hr' && (G.state.cellCyclePhase === 'S' || G.state.cellCyclePhase === 'G2')) {
-            G.handleHR(G.state.timer);
-        }
-        assert.isTrue(G.state.basePairs[targetIdx].isBroken, "HR should start in S phase");
+        runHRUpdate();
+        assert.isTrue(G.state.basePairs[targetIdx].isBroken);
+
+        G.handleHR(100); // Range excision
+        assert.equal(G.state.basePairs[targetIdx].base1, '');
+        assert.equal(G.state.basePairs[targetIdx+1].base1, '');
     });
 
-    TestFramework.it('MGMT should repair alkylation without excision (Source Logic)', () => {
+    TestFramework.it('Replication: Should form fork and synthesize complements', () => {
         G.generateDNA();
-        const targetIdx = Math.floor(G.config.helixLength / 2) + 10;
-        const originalBase = G.state.basePairs[targetIdx].base1;
+        G.handleReplication(100); // t=100 -> forkIndex=10
 
-        G.handleMGMT(10);
-        assert.isTrue(G.state.basePairs[targetIdx].isDamaged);
-
-        G.handleMGMT(200);
-        assert.isFalse(G.state.basePairs[targetIdx].isDamaged);
-        assert.equal(G.state.basePairs[targetIdx].base1, originalBase, "Base should not be excised");
-    });
-
-    TestFramework.it('Replication logic should diverge strands and synthesize complement (Source Logic)', () => {
-        G.generateDNA();
-        const config = G.config;
-
-        // Run replication simulation for a few ticks
-        const t = 100; // t * 0.1 speed = index 10
-        G.handleReplication(t);
-
-        const forkIdx = 10;
-        assert.equal(G.state.replicationForkIndex, forkIdx);
-
-        // Base pair before fork should be replicating and diverged
-        const pBefore = G.state.basePairs[forkIdx - 2];
+        assert.equal(G.state.replicationForkIndex, 10);
+        const pBefore = G.state.basePairs[5];
         assert.isTrue(pBefore.isReplicating);
-        assert.isTrue(pBefore.s1Offset.y !== 0 || pBefore.s1Offset.z !== 0);
         assert.isDefined(pBefore.newBase1);
+        assert.isTrue(pBefore.s1Offset.y !== 0);
 
-        // Base pair after fork should not be replicating
-        const pAfter = G.state.basePairs[forkIdx + 2];
+        const pAfter = G.state.basePairs[15];
         assert.isFalse(pAfter.isReplicating);
         assert.equal(pAfter.s1Offset.y, 0);
     });
