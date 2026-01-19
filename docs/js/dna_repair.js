@@ -1,4 +1,4 @@
-// docs/js/dna_repair_global.js
+// docs/js/dna_repair.js
 // DNA Repair Simulation Module - Core Engine
 // Handles 3D rendering of DNA helix and coordination of repair modules
 

@@ -195,7 +195,10 @@
             };
 
             if (uiScriptName) {
-                await GreenhouseUtils.loadScript(uiScriptName, config.githubPagesBaseUrl);
+                const scripts = Array.isArray(uiScriptName) ? uiScriptName : [uiScriptName];
+                for (const script of scripts) {
+                    await GreenhouseUtils.loadScript(script, config.githubPagesBaseUrl);
+                }
             }
             await GreenhouseUtils.loadScript(scriptName, config.githubPagesBaseUrl, appAttributes);
 
