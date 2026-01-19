@@ -22,8 +22,13 @@
         maoActivity: 1.0,
 
         updateTransport() {
+            // TPH2 Activation by CaMKII/PKA
+            // High Calcium or cAMP increases TPH activity
+            const signalingBoost = G.Signaling ? (G.Signaling.calcium * 0.05 + G.Signaling.cAMP * 0.02) : 0;
+            const effectiveTPHActivity = this.tphActivity * (1.0 + signalingBoost);
+
             // TPH Synthesis: Tryptophan -> 5-HT
-            const synthesized = this.tryptophan * this.synthesisRate * this.tphActivity * 0.01;
+            const synthesized = this.tryptophan * this.synthesisRate * effectiveTPHActivity * 0.01;
             this.tryptophan -= synthesized;
             this.vesicle5HT += synthesized;
 
@@ -86,8 +91,13 @@
                 if (this.vesicle5HT > 0) this.vesicle5HT -= 0.1;
             }
 
-            // Replenish tryptophan
-            if (this.tryptophan < 100) this.tryptophan += 0.05;
+            // Replenish tryptophan (L-tryptophan transport across BBB)
+            const bbbTransportRate = 0.05 * (this.pinealMode ? 1.5 : 1.0);
+            if (this.tryptophan < 100) this.tryptophan += bbbTransportRate;
+
+            // Glutamate Co-release (VGLUT3) logic
+            // Release glutamate if vesicle 5-HT is high and not inhibited
+            this.glutamateCoRelease = (this.vesicle5HT > 20 && releaseInhibition > 0.5);
         },
 
         renderTransport(ctx, project, cam, w, h) {

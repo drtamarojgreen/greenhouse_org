@@ -45,6 +45,10 @@
 
         updateReceptorStates() {
             G.state.receptors.forEach(r => {
+                // Sodium Allosteric Site (Category 2, #17)
+                // Sodium levels modulate 5-HT1A affinity
+                r.sodiumModulation = 1.0 - (Math.sin(G.state.timer * 0.01) * 0.2);
+
                 // Constitutive activity
                 if (r.constitutiveActivity && Math.random() < r.constitutiveActivity * 0.01) {
                     r.state = 'Intermediate';
@@ -93,6 +97,18 @@
                             ctx.moveTo(hTop.x, hTop.y);
                             ctx.lineTo(hBottom.x, hBottom.y);
                             ctx.stroke();
+
+                            // Disulfide Bridges visualization (Category 2, #19)
+                            if (r.disulfideBridges && j === 0) {
+                                ctx.strokeStyle = '#ffff00';
+                                ctx.lineWidth = 2 * p.scale;
+                                ctx.beginPath();
+                                ctx.moveTo(hTop.x, hTop.y);
+                                ctx.bezierCurveTo(hTop.x + 20 * p.scale, hTop.y - 20 * p.scale, hTop.x + 40 * p.scale, hTop.y, hTop.x + 30 * p.scale, hTop.y + 10 * p.scale);
+                                ctx.stroke();
+                                ctx.strokeStyle = r.color;
+                                ctx.lineWidth = 10 * p.scale;
+                            }
                         }
                     }
                     ctx.globalAlpha = 1.0;
