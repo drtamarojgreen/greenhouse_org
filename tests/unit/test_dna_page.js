@@ -108,13 +108,28 @@ TestFramework.describe('DNA Repair Simulation Logic (Comprehensive)', () => {
         assert.isTrue(damagedCount100 > 0);
     });
 
+    TestFramework.it('Mutation: UV damage should have spectrum based on radiation', () => {
+        const pair = { isDamaged: false };
+        G.applyUVDamage(pair, 90);
+        assert.equal(pair.spectrum, 'UVC');
+        G.applyUVDamage(pair, 50);
+        assert.equal(pair.spectrum, 'UVB');
+        G.applyUVDamage(pair, 10);
+        assert.equal(pair.spectrum, 'UVA');
+    });
+
     TestFramework.it('BER: Should follow enzymatic steps (Base Removal -> Restoration)', () => {
         G.generateDNA();
         const targetIdx = Math.floor(G.config.helixLength / 2);
         const pair = G.state.basePairs[targetIdx];
 
-        G.handleBER(10); // Damage induction
+        G.state.atpConsumed = 0;
+        G.handleBER(10); // Damage induction + 2 ATP
         assert.isTrue(pair.isDamaged);
+        assert.equal(G.state.atpConsumed, 2);
+
+        G.handleBER(100); // Glycosylase + 10 ATP
+        assert.equal(G.state.atpConsumed, 12);
 
         G.handleBER(200); // Excision
         assert.equal(pair.base1, '', "Base should be removed at t=200");
