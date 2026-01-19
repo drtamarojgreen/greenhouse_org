@@ -179,32 +179,13 @@
 
     <!-- Main Application Container -->
     <div id="dna-app-container">
-        <!-- Control Bar -->
-        <div class="controls-bar">
-            <button class="control-btn active" onclick="setMode('ber', this)">Base Excision Repair</button>
-            <button class="control-btn" onclick="setMode('mmr', this)">Mismatch Repair</button>
-            <button class="control-btn" onclick="setMode('dsb', this)">Double-Strand Break</button>
-        </div>
-
         <section class="wixui-section">
             <div class="simulation-section">
+                <!-- UI and Simulation are injected here by dna_repair.js -->
                 <div id="dna-simulation-target" class="simulation-target">
-                </div>
-                <div class="controls-hint">
-                    Scroll to Zoom | Drag to Pan
                 </div>
             </div>
         </section>
-    </div>
-
-    <!-- Information Panel -->
-    <div class="info-panel">
-        <h3>🔬 Key DNA Repair Pathways</h3>
-        <ul>
-            <li><strong>Base Excision Repair:</strong> Corrects small, non-helix-distorting base lesions.</li>
-            <li><strong>Mismatch Repair:</strong> Corrects mistakes that happen during DNA replication.</li>
-            <li><strong>Double-Strand Break Repair:</strong> Repairs dangerous breaks in the DNA backbone.</li>
-        </ul>
     </div>
 
     <!-- Footer -->
@@ -224,9 +205,16 @@
             console.log("DNA Standalone: Initializing...");
             const targetSelector = '#dna-simulation-target';
 
-            if (window.Greenhouse && window.Greenhouse.initializeDNARepairSimulation) {
-                window.Greenhouse.initializeDNARepairSimulation(targetSelector);
-            }
+            // Check if global simulation object exists (from dna_repair.js)
+            const checkInit = setInterval(() => {
+                if (window.Greenhouse && window.Greenhouse.initializeDNARepairSimulation) {
+                    window.Greenhouse.initializeDNARepairSimulation(targetSelector);
+                    clearInterval(checkInit);
+                }
+            }, 100);
+
+            // Timeout after 10 seconds
+            setTimeout(() => clearInterval(checkInit), 10000);
         });
 
         function setMode(mode, btn) {

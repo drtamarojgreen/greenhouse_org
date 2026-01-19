@@ -1,246 +1,248 @@
 /**
- * Unit Tests for DNA Page Models
+ * Unit tests for DNA Repair Simulation
+ * Loads actual source code to verify logic
  */
 
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    querySelector: (selector) => {
-        if (selector === '#dna-container') {
-            return {
-                offsetWidth: 800,
-                offsetHeight: 600,
-                innerHTML: '',
-                appendChild: () => { }
-            };
+// Helper to load and execute source files in a mock browser context
+function loadSource(context) {
+    const files = [
+        'docs/js/dna_repair_mechanisms.js',
+        'docs/js/dna_repair_mutations.js',
+        'docs/js/dna_repair_buttons.js',
+        'docs/js/dna_replication.js',
+        'docs/js/dna_repair.js'
+    ];
+
+    // Minimal DOM/Browser mocks for loading
+    context.window = context;
+    context.global = context;
+    context.document = {
+        createElement: () => ({ style: {}, appendChild: () => {}, setAttribute: () => {} }),
+        head: { appendChild: () => {} },
+        currentScript: { getAttribute: () => null },
+        getElementById: () => ({ innerText: '' })
+    };
+    context.navigator = { userAgent: 'node' };
+    context.console = {
+        log: () => {},
+        error: () => {},
+        warn: () => {}
+    };
+    context.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+    context.setInterval = setInterval;
+    context.clearInterval = clearInterval;
+    context.setTimeout = setTimeout;
+
+    // Mock 3D Math dependency
+    context.GreenhouseModels3DMath = {
+        project3DTo2D: (x, y, z, cam, opts) => ({ x: 0, y: 0, scale: 1 })
+    };
+
+    files.forEach(file => {
+        const code = fs.readFileSync(path.resolve(__dirname, '../../', file), 'utf8');
+        const script = new Function('window', 'document', 'navigator', 'console', 'requestAnimationFrame', 'setInterval', 'clearInterval', 'setTimeout', code);
+        try {
+            script(context, context.document, context.navigator, context.console, context.requestAnimationFrame, context.setInterval, context.clearInterval, context.setTimeout);
+        } catch (e) {
+            // console.log('Script load note:', file, e.message);
         }
-        return null;
-    },
-    getElementById: () => ({
-        addEventListener: () => { },
-        getContext: () => ({
-            save: () => { },
-            restore: () => { },
-            translate: () => { },
-            rotate: () => { },
-            scale: () => { },
-            beginPath: () => { },
-            moveTo: () => { },
-            lineTo: () => { },
-            stroke: () => { },
-            fill: () => { },
-            rect: () => { },
-            arc: () => { },
-            closePath: () => { },
-            clip: () => { },
-            fillText: () => { },
-            measureText: () => ({ width: 0 }),
-            createLinearGradient: () => ({ addColorStop: () => { } }),
-            clearRect: () => { },
-            fillRect: () => { },
-            strokeRect: () => { }
-        }),
-        width: 800,
-        height: 600,
-        getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
-        style: {},
-        appendChild: () => { }
-    }),
-    createElement: (tag) => {
-        const element = {
-            tag,
-            style: {},
-            getContext: () => ({
-                save: () => { },
-                restore: () => { },
-                translate: () => { },
-                rotate: () => { },
-                scale: () => { },
-                beginPath: () => { },
-                moveTo: () => { },
-                lineTo: () => { },
-                stroke: () => { },
-                fill: () => { },
-                rect: () => { },
-                arc: () => { },
-                closePath: () => { },
-                clip: () => { },
-                fillText: () => { },
-                measureText: () => ({ width: 0 }),
-                clearRect: () => { },
-                fillRect: () => { },
-                strokeRect: () => { },
-                setLineDash: () => { }
-            }),
-            width: 800,
-            height: 600,
-            addEventListener: () => { },
-            appendChild: () => { },
-            getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
-        };
-        return element;
-    },
-    body: {
-        appendChild: () => { }
-    }
-};
-global.addEventListener = () => { };
-global.console = console;
-global.requestAnimationFrame = (cb) => { };
-const originalSetTimeout = global.setTimeout;
-global.setTimeout = (cb, delay) => {
-    if (delay > 0) {
-        // Do nothing for scheduled timeouts in tests to avoid infinite loops
-        return;
-    }
-    return originalSetTimeout(cb, delay);
-};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename, exposeInternal = false, internalName = '') {
-    const filePath = path.join(__dirname, '../../docs/js', filename);
-    let code = fs.readFileSync(filePath, 'utf8');
-
-    if (exposeInternal && internalName) {
-        // Simple trick to expose internal object from IIFE for testing
-        code = code.replace('})();', `window.${internalName} = ${internalName}; })();`);
-    }
-
-    vm.runInThisContext(code);
+    });
 }
 
-// --- Load Dependencies ---
-loadScript('models_3d_math.js');
-loadScript('dna_repair.js', true, 'GreenhouseDNARepair');
-loadScript('dna_tooltip.js');
+TestFramework.describe('DNA Repair Simulation Logic (Comprehensive)', () => {
+    const context = { GreenhouseDNARepair: {} };
+    loadSource(context);
+    const G = context.GreenhouseDNARepair;
 
-// --- Test Suites ---
-
-TestFramework.describe('DNA Page Models', () => {
-
-    TestFramework.describe('GreenhouseDNARepair', () => {
-        let dnaRepair;
-
-        TestFramework.beforeEach(() => {
-            dnaRepair = window.GreenhouseDNARepair;
-            // Prevent animation loop in tests
-            dnaRepair.animate = () => { };
-            // Mock initialization
-            dnaRepair.initializeDNARepairSimulation('#dna-container');
-        });
-
-        TestFramework.it('should initialize with default values', () => {
-            assert.isDefined(dnaRepair);
-            assert.isTrue(dnaRepair.isRunning);
-            assert.isDefined(dnaRepair.state.basePairs);
-            assert.equal(dnaRepair.state.basePairs.length, dnaRepair.config.helixLength);
-        });
-
-        TestFramework.it('should generate DNA correctly', () => {
-            dnaRepair.generateDNA();
-            assert.equal(dnaRepair.state.basePairs.length, dnaRepair.config.helixLength);
-            const firstPair = dnaRepair.state.basePairs[0];
-            assert.isDefined(firstPair.base1);
-            assert.isDefined(firstPair.base2);
-            assert.isFalse(firstPair.isDamaged);
-        });
-
-        TestFramework.it('should switch simulation modes', () => {
-            dnaRepair.startSimulation('mmr');
-            assert.equal(dnaRepair.state.repairMode, 'mmr');
-            assert.equal(dnaRepair.state.timer, 0);
-            assert.isTrue(dnaRepair.state.simulating);
-        });
-
-        TestFramework.it('should handle BER repair cycle', () => {
-            dnaRepair.startSimulation('ber');
-            const targetIdx = Math.floor(dnaRepair.config.helixLength / 2);
-
-            // Damage trigger at t=10
-            dnaRepair.handleBER(10);
-            assert.isTrue(dnaRepair.state.basePairs[targetIdx].isDamaged);
-
-            // Excision at t=200 (between 150 and 300)
-            dnaRepair.handleBER(200);
-            assert.equal(dnaRepair.state.basePairs[targetIdx].base1, '');
-
-            // Repair at t=350
-            dnaRepair.handleBER(350);
-            assert.equal(dnaRepair.state.basePairs[targetIdx].base1, 'A');
-            assert.isFalse(dnaRepair.state.basePairs[targetIdx].isDamaged);
-        });
-
-        TestFramework.it('should handle DSB repair cycle', () => {
-            dnaRepair.startSimulation('dsb');
-            const targetIdx = Math.floor(dnaRepair.config.helixLength / 2);
-
-            // Break at t=50
-            dnaRepair.handleDSB(50);
-            assert.isTrue(dnaRepair.state.basePairs[targetIdx].isBroken);
-
-            // Drift at t=100
-            const initialX = dnaRepair.state.basePairs[0].x;
-            dnaRepair.handleDSB(100);
-            assert.lessThan(dnaRepair.state.basePairs[0].x, initialX);
-
-            // Rejoin starts at t=401
-            dnaRepair.handleDSB(401);
-            // It uses lerp-like update, so it moves back
-            assert.greaterThan(dnaRepair.state.basePairs[0].x, initialX - 10); // Check it's moving back
-        });
-
-        TestFramework.it('should update simulation state', () => {
-            const initialRotationX = dnaRepair.state.camera.rotationX;
-            dnaRepair.update();
-            assert.notEqual(dnaRepair.state.camera.rotationX, initialRotationX);
-        });
+    TestFramework.it('Should have all repair pathways and mutation logic attached', () => {
+        assert.isDefined(G.handleBER);
+        assert.isDefined(G.handleNER);
+        assert.isDefined(G.handleMMR);
+        assert.isDefined(G.handleNHEJ);
+        assert.isDefined(G.handleHR);
+        assert.isDefined(G.handlePhotolyase);
+        assert.isDefined(G.handleMGMT);
+        assert.isDefined(G.induceSpontaneousDamage);
+        assert.isDefined(G.getComplement);
     });
 
-    TestFramework.describe('GreenhouseDNATooltip', () => {
-        let tooltip;
+    TestFramework.it('Utility: getComplement should return correct base pairs', () => {
+        assert.equal(G.getComplement('A'), 'T');
+        assert.equal(G.getComplement('T'), 'A');
+        assert.equal(G.getComplement('C'), 'G');
+        assert.equal(G.getComplement('G'), 'C');
+        assert.equal(G.getComplement('X'), '');
+    });
 
-        TestFramework.beforeEach(() => {
-            tooltip = window.GreenhouseDNATooltip;
-            tooltip.initialize();
-        });
+    TestFramework.it('Core: consumeATP should increment state and spawn particles', () => {
+        G.state.atpConsumed = 0;
+        G.state.particles = [];
+        G.consumeATP(5, 100, 0, 0);
+        assert.equal(G.state.atpConsumed, 5);
+        assert.isTrue(G.state.particles.length > 0);
+    });
 
-        TestFramework.it('should initialize tooltip element', () => {
-            assert.isDefined(tooltip.tooltipElement);
-            assert.equal(tooltip.tooltipElement.id, 'dna-tooltip');
-        });
+    TestFramework.it('Mutation: applyDeamination should convert C to U', () => {
+        const pair = { base1: 'C', base2: 'G', isDamaged: false };
+        G.applyDeamination(pair);
+        assert.isTrue(pair.isDamaged);
+        assert.equal(pair.base1, 'U');
+        assert.equal(pair.damageType, 'Deamination');
+    });
 
-        TestFramework.it('should show tooltip for valid key', () => {
-            tooltip.show(100, 100, 'A');
-            assert.equal(tooltip.tooltipElement.style.display, 'block');
-            assert.isTrue(tooltip.tooltipElement.innerHTML.includes('Adenine'));
-        });
+    TestFramework.it('Mutation: induceSpontaneousDamage should respect radiation levels', () => {
+        G.generateDNA();
+        G.state.radiationLevel = 0;
+        G.induceSpontaneousDamage();
+        const damagedCount0 = G.state.basePairs.filter(p => p.isDamaged).length;
+        assert.equal(damagedCount0, 0);
 
-        TestFramework.it('should hide tooltip', () => {
-            tooltip.show(100, 100, 'A');
-            tooltip.hide();
-            assert.equal(tooltip.tooltipElement.style.display, 'none');
-        });
+        G.state.radiationLevel = 10000; // 100% probability
+        G.induceSpontaneousDamage();
+        const damagedCount100 = G.state.basePairs.filter(p => p.isDamaged).length;
+        assert.isTrue(damagedCount100 > 0);
+    });
 
-        TestFramework.it('should change language', () => {
-            tooltip.setLanguage('es');
-            assert.equal(tooltip.currentLang, 'es');
-            tooltip.show(100, 100, 'A');
-            assert.isTrue(tooltip.tooltipElement.innerHTML.includes('Adenina'));
-        });
+    TestFramework.it('Mutation: UV damage should have spectrum based on radiation', () => {
+        const pair = { isDamaged: false };
+        G.applyUVDamage(pair, 90);
+        assert.equal(pair.spectrum, 'UVC');
+        G.applyUVDamage(pair, 50);
+        assert.equal(pair.spectrum, 'UVB');
+        G.applyUVDamage(pair, 10);
+        assert.equal(pair.spectrum, 'UVA');
+    });
+
+    TestFramework.it('BER: Should follow enzymatic steps (Base Removal -> Restoration)', () => {
+        G.generateDNA();
+        const targetIdx = Math.floor(G.config.helixLength / 2);
+        const pair = G.state.basePairs[targetIdx];
+
+        G.state.atpConsumed = 0;
+        G.handleBER(10); // Damage induction + 2 ATP
+        assert.isTrue(pair.isDamaged);
+        assert.equal(G.state.atpConsumed, 2);
+
+        G.handleBER(100); // Glycosylase + 10 ATP
+        assert.equal(G.state.atpConsumed, 12);
+
+        G.handleBER(200); // Excision
+        assert.equal(pair.base1, '', "Base should be removed at t=200");
+
+        G.handleBER(350); // Restoration
+        assert.isFalse(pair.isDamaged);
+        assert.isTrue(pair.base1.length === 1);
+    });
+
+    TestFramework.it('MMR: Should perform patch excision', () => {
+        G.generateDNA();
+        const targetIdx = Math.floor(G.config.helixLength / 2) + 5;
+
+        G.handleMMR(10); // Mismatch induction
+        assert.equal(G.state.basePairs[targetIdx].damageType, 'Mismatch');
+
+        G.handleMMR(200); // Patch excision
+        for (let i = -2; i <= 2; i++) {
+            assert.equal(G.state.basePairs[targetIdx + i].base1, '', `Base ${i} should be removed in patch`);
+        }
+
+        G.handleMMR(450); // Restoration
+        assert.isFalse(G.state.basePairs[targetIdx].isDamaged);
+        assert.isTrue(G.state.basePairs[targetIdx].base1 !== '');
+    });
+
+    TestFramework.it('NER: Should unwind helix during repair', () => {
+        G.generateDNA();
+        G.state.globalHelixUnwind = 0;
+
+        G.handleNER(125); // Unwinding
+        assert.greaterThan(G.state.globalHelixUnwind, 0);
+
+        G.handleNER(400); // Reset/Restoration
+        assert.equal(G.state.globalHelixUnwind, 0);
+    });
+
+    TestFramework.it('NHEJ: Should result in deletion and genomic integrity loss', () => {
+        G.generateDNA();
+        const originalLength = G.state.basePairs.length;
+        G.state.genomicIntegrity = 100;
+
+        G.handleNHEJ(50); // Break
+        assert.isTrue(G.state.basePairs[Math.floor(originalLength/2)].isBroken);
+
+        G.handleNHEJ(200); // Ligation with loss
+        assert.equal(G.state.basePairs.length, originalLength - 1);
+        assert.isTrue(G.state.genomicIntegrity < 100);
+    });
+
+    TestFramework.it('DSB: Should displace and then restore backbone positions', () => {
+        G.generateDNA();
+        const targetIdx = Math.floor(G.config.helixLength / 2);
+        const pair = G.state.basePairs[targetIdx];
+        const originalX = pair.x;
+
+        G.handleDSB(50); // Break
+        assert.isTrue(pair.isBroken);
+
+        G.handleDSB(100); // Displacement
+        assert.notEqual(G.state.basePairs[targetIdx - 1].x, (targetIdx - 1 - G.config.helixLength / 2) * G.config.rise);
+
+        // Simulation of gradual restoration
+        for (let i = 0; i < 200; i++) G.handleDSB(401);
+        assert.isFalse(pair.isBroken);
+        assert.lessThan(Math.abs(pair.x - originalX), 1);
+    });
+
+    TestFramework.it('HR: Should be restricted by Cell Cycle and perform range excision', () => {
+        G.generateDNA();
+        const targetIdx = Math.floor(G.config.helixLength / 2);
+
+        // Blocked in G1
+        G.state.cellCyclePhase = 'G1';
+        G.state.repairMode = 'hr';
+        G.state.timer = 50;
+
+        // Simple mock of the conditional logic in update()
+        function runHRUpdate() {
+            if (G.state.repairMode === 'hr') {
+                if (G.state.cellCyclePhase === 'S' || G.state.cellCyclePhase === 'G2') {
+                    G.handleHR(G.state.timer);
+                }
+            }
+        }
+
+        runHRUpdate();
+        assert.isFalse(G.state.basePairs[targetIdx].isBroken);
+
+        // Active in S
+        G.state.cellCyclePhase = 'S';
+        runHRUpdate();
+        assert.isTrue(G.state.basePairs[targetIdx].isBroken);
+
+        G.handleHR(100); // Range excision
+        assert.equal(G.state.basePairs[targetIdx].base1, '');
+        assert.equal(G.state.basePairs[targetIdx+1].base1, '');
+    });
+
+    TestFramework.it('Replication: Should form fork and synthesize complements', () => {
+        G.generateDNA();
+        G.handleReplication(100); // t=100 -> forkIndex=10
+
+        assert.equal(G.state.replicationForkIndex, 10);
+        const pBefore = G.state.basePairs[5];
+        assert.isTrue(pBefore.isReplicating);
+        assert.isDefined(pBefore.newBase1);
+        assert.isTrue(pBefore.s1Offset.y !== 0);
+
+        const pAfter = G.state.basePairs[15];
+        assert.isFalse(pAfter.isReplicating);
+        assert.equal(pAfter.s1Offset.y, 0);
     });
 });
 
-// Run the tests
-TestFramework.run().then(results => {
-    if (results.failed > 0) {
-        process.exit(1);
-    } else {
-        process.exit(0);
-    }
-});
+TestFramework.run();

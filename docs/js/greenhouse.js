@@ -85,6 +85,14 @@
          */
         rnaPagePath: '/rna',
         /**
+         * The path segment that identifies the Dopamine signaling page.
+         */
+        dopaminePagePath: '/dopamine',
+        /**
+         * The path segment that identifies the Serotonin structural model page.
+         */
+        serotoninPagePath: '/serotonin',
+        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -111,6 +119,8 @@
             synapse: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             dna: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             rna: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            dopamine: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            serotonin: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -133,7 +143,9 @@
             synapse: 'section.wixui-section',
             pathway: 'section.wixui-section',
             dna: 'section.wixui-section',
-            rna: 'section.wixui-section'
+            rna: 'section.wixui-section',
+            dopamine: 'section.wixui-section',
+            serotonin: 'section.wixui-section'
         }
     };
 
@@ -199,7 +211,10 @@
             };
 
             if (uiScriptName) {
-                await GreenhouseUtils.loadScript(uiScriptName, config.githubPagesBaseUrl);
+                const scripts = Array.isArray(uiScriptName) ? uiScriptName : [uiScriptName];
+                for (const script of scripts) {
+                    await GreenhouseUtils.loadScript(script, config.githubPagesBaseUrl);
+                }
             }
             await GreenhouseUtils.loadScript(scriptName, config.githubPagesBaseUrl, appAttributes);
 
@@ -421,6 +436,42 @@
     }
 
     /**
+     * @function loadDopamineApplication
+     * @description Loads the Dopamine signaling simulation application.
+     */
+    async function loadDopamineApplication() {
+        await loadApplication(
+            'dopamine',
+            'dopamine.js',
+            config.selectors.dopamine,
+            config.fallbackSelectors.dopamine,
+            null,
+            'default',
+            null,
+            null,
+            {}
+        );
+    }
+
+    /**
+     * @function loadSerotoninApplication
+     * @description Loads the Serotonin structural model application.
+     */
+    async function loadSerotoninApplication() {
+        await loadApplication(
+            'serotonin',
+            'serotonin.js',
+            config.selectors.serotonin,
+            config.fallbackSelectors.serotonin,
+            null,
+            'default',
+            null,
+            null,
+            {}
+        );
+    }
+
+    /**
      * @function initialize
      * @description Main initialization function that runs when the DOM is ready.
      */
@@ -458,6 +509,10 @@
             await loadDnaRepairApplication();
         } else if (window.location.pathname.includes(config.rnaPagePath)) {
             await loadRnaRepairApplication();
+        } else if (window.location.pathname.includes(config.dopaminePagePath)) {
+            await loadDopamineApplication();
+        } else if (window.location.pathname.includes(config.serotoninPagePath)) {
+            await loadSerotoninApplication();
         }
     }
 
