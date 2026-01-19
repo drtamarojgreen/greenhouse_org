@@ -154,6 +154,9 @@
             this.simTime = 0;
             this.lastTime = 0;
 
+            // Enhancement 46: Tweezers state
+            this.grabbedBase = null;
+
             this.init();
         }
 
@@ -173,9 +176,36 @@
 
         setupInteraction() {
             if (!this.canvas) return;
-            this.canvas.addEventListener('mousemove', (e) => {
-                if (!window.GreenhouseRNATooltip) return;
 
+            this.canvas.addEventListener('mousedown', (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const worldX = (e.clientX - rect.left - this.offsetX) / this.scale;
+                const worldY = (e.clientY - rect.top - this.offsetY) / this.scale;
+
+                // Check for Dashboard click (FASTA Export #81)
+                if (e.clientX - rect.left > this.width - 150 && e.clientY - rect.top < 200) {
+                    this.exportFasta();
+                    return;
+                }
+
+                // Grab a base (Tweezers #46)
+                for (let i = 0; i < this.rnaStrand.length; i++) {
+                    const base = this.rnaStrand[i];
+                    const dx = base.x - worldX;
+                    const dy = base.y - worldY;
+                    if (dx * dx + dy * dy < 400) { // 20px grab radius
+                        this.grabbedBase = i;
+                        this.logEvent(`Tweezers: Grabbed base ${i}.`);
+                        break;
+                    }
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                this.grabbedBase = null;
+            });
+
+            this.canvas.addEventListener('mousemove', (e) => {
                 const rect = this.canvas.getBoundingClientRect();
                 const mx = e.clientX - rect.left;
                 const my = e.clientY - rect.top;
@@ -183,6 +213,15 @@
                 // Adjust for zoom/pan
                 const worldX = (mx - this.offsetX) / this.scale;
                 const worldY = (my - this.offsetY) / this.scale;
+
+                // Move grabbed base
+                if (this.grabbedBase !== null && this.rnaStrand[this.grabbedBase]) {
+                    this.rnaStrand[this.grabbedBase].x = worldX;
+                    this.rnaStrand[this.grabbedBase].y = worldY;
+                    return;
+                }
+
+                if (!window.GreenhouseRNATooltip) return;
 
                 let hit = null;
 
@@ -267,6 +306,24 @@
                     flash: 0 // Enhancement 35: Reaction flash
                 });
             }
+        }
+
+        /**
+         * Enhancement 82: Log an event to the simulation HUD
+         */
+        /**
+         * Enhancement 81: FASTA Export
+         */
+        exportFasta() {
+            let fasta = ">RNA_SEQUENCE_EXPORT\n";
+            this.rnaStrand.forEach((b, i) => {
+                fasta += b.type;
+                if ((i + 1) % 60 === 0) fasta += "\n";
+            });
+            console.log("FASTA Export:\n", fasta);
+            this.logEvent("FASTA sequence exported to console.");
+            this.showFactoid(0);
+            return fasta;
         }
 
         /**
@@ -483,9 +540,13 @@
         /**
          * Enhancement 14: Trigger Surveillance-Mediated Decay
          */
+        /**
+         * Enhancement 14: Trigger Surveillance-Mediated Decay
+         */
         triggerSurveillanceDecay(index) {
             console.log("NMD: Surveillance complex detected stall. Triggering decay.");
             this.stats.decayEvents++;
+            this.logEvent("NMD: Surveillance complex recruited.");
             // Spawn a specialized decay enzyme at the stall site
             const enzyme = {
                 name: 'UPF1/Exosome',
@@ -501,6 +562,32 @@
 
             // Visual feedback
             this.rnaStrand[index].flash = 2.0;
+        }
+
+        /**
+         * Enhancement 12: Trigger No-Go Decay
+         */
+        triggerNoGoDecay(index) {
+            console.log("NGD: Ribosome stalled at roadblock. Recruiting Pelota/Hbs1.");
+            this.stats.decayEvents++;
+            this.logEvent("NGD: Pelota/Hbs1 complex recruited.");
+
+            if (window.Greenhouse && window.Greenhouse.RNAEnzymeFactory) {
+                const enzyme = window.Greenhouse.RNAEnzymeFactory.create('Pelota/Hbs1', index, this.width / 2, -50);
+                this.enzymes.push(enzyme);
+            } else {
+                const enzyme = {
+                    name: 'Pelota/Hbs1',
+                    targetIndex: index,
+                    x: this.width / 2,
+                    y: -50,
+                    size: 45,
+                    speed: 2,
+                    state: 'approaching',
+                    progress: 0
+                };
+                this.enzymes.push(enzyme);
+            }
         }
 
         /**
@@ -596,6 +683,9 @@
 
             // Update RNA strand movement
             this.rnaStrand.forEach((base, i) => {
+                // Enhancement 46: Skip physics for grabbed base
+                if (this.grabbedBase === i) return;
+
                 // Enhancement 10: Ribozyme Self-Repair
                 if (base.isRibozyme && !base.connected && Math.random() < 0.001) {
                     base.connected = true;
@@ -632,19 +722,27 @@
                 if (base.flash > 0) base.flash -= 0.02;
             });
 
-            // Enhancement 23 & 14: Ribosome Movement + NMD logic
+            // Enhancement 23, 14, & 12: Ribosome Movement + NMD/NGD logic
             const currentBase = this.rnaStrand[this.ribosome.index];
             if (currentBase) {
                 this.ribosome.x = currentBase.x;
                 this.ribosome.y = currentBase.y;
 
-                // Stall at damage
-                if (!currentBase.connected || currentBase.damaged) {
+                // Check for Roadblocks (Enhanced folding complexity #12)
+                const isRoadblock = this.foldingEngine && this.foldingEngine.foldingStrength > 0.8 && this.ribosome.index > 15 && this.ribosome.index < 25;
+
+                // Stall at damage or roadblocks
+                if (!currentBase.connected || currentBase.damaged || isRoadblock) {
                     this.ribosome.stalled = true;
                     this.ribosome.stallTimer += dt;
 
-                    // Enhancement 14: Nonsense-Mediated Decay (Surveillance)
-                    if (this.ribosome.stallTimer > 15000) { // Stall for 15s
+                    // Enhancement 12: No-Go Decay (NGD)
+                    if (isRoadblock && this.ribosome.stallTimer > 8000) {
+                        this.triggerNoGoDecay(this.ribosome.index);
+                        this.ribosome.stallTimer = 0;
+                    }
+                    // Enhancement 14: Nonsense-Mediated Decay (NMD)
+                    else if (this.ribosome.stallTimer > 15000) {
                         this.triggerSurveillanceDecay(this.ribosome.index);
                         this.ribosome.stallTimer = 0;
                     }
@@ -721,7 +819,8 @@
 
                     if (this.atpManager) {
                         if (this.atpManager.consume(0.1 * (dt / 16))) {
-                            this.stats.atpUsedTotal += 0.1 * (dt / 16);
+                            // Enhancement 88: Unify stats
+                            this.stats.atpUsedTotal = parseFloat(this.atpManager.atpConsumed);
                         }
                     } else if (this.atp > 0) {
                         this.atp -= 0.1 * (dt / 16);
@@ -869,11 +968,16 @@
             let moved = false;
             for (let i = 0; i < this.rnaStrand.length; i++) {
                 const base = this.rnaStrand[i];
+
+                // Enhancement 19: A-Form Helix Twist
+                const twist = Math.sin(i * 0.5) * 10;
+                const bx = base.x + twist;
+
                 if (!moved) {
-                    this.ctx.moveTo(base.x, base.y);
+                    this.ctx.moveTo(bx, base.y);
                     moved = true;
                 } else {
-                    this.ctx.lineTo(base.x, base.y);
+                    this.ctx.lineTo(bx, base.y);
                 }
                 if (!base.connected) {
                     this.ctx.stroke();
@@ -886,11 +990,36 @@
 
             // Draw Bases
             this.rnaStrand.forEach((base, index) => {
+                // Enhancement 19: Twist again for base positions
+                const twist = Math.sin(index * 0.5) * 10;
+                const bx = base.x + twist;
+
+                // Enhancement 17: Dynamic Base Pairing Visuals
+                if (this.foldingEngine && this.foldingEngine.foldingStrength > 0.5) {
+                    const mid = Math.floor(this.rnaStrand.length / 2);
+                    const range = 6;
+                    const dist = Math.abs(index - mid);
+                    if (dist < range && index < mid) {
+                        const partnerIdx = mid + (mid - index);
+                        const partner = this.rnaStrand[partnerIdx];
+                        if (partner) {
+                            this.ctx.save();
+                            this.ctx.beginPath();
+                            this.ctx.setLineDash([2, 2]);
+                            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                            this.ctx.moveTo(bx, base.y);
+                            this.ctx.lineTo(partner.x + Math.sin(partnerIdx * 0.5) * 10, partner.y);
+                            this.ctx.stroke();
+                            this.ctx.restore();
+                        }
+                    }
+                }
+
                 // Enhancement 30: Metal Ion Binding (Mg2+)
                 if (index % 5 === 0) {
                     this.ctx.save();
                     this.ctx.beginPath();
-                    this.ctx.arc(base.x - 15, base.y, 3, 0, Math.PI * 2);
+                    this.ctx.arc(bx - 15, base.y, 3, 0, Math.PI * 2);
                     this.ctx.fillStyle = this.colors.METAL;
                     this.ctx.shadowBlur = 5;
                     this.ctx.shadowColor = this.colors.METAL;
@@ -902,7 +1031,7 @@
                 if (index === 0) {
                     this.ctx.save();
                     this.ctx.beginPath();
-                    this.ctx.arc(base.x, base.y, 16, 0, Math.PI * 2);
+                    this.ctx.arc(bx, base.y, 16, 0, Math.PI * 2);
                     this.ctx.strokeStyle = '#FFD700';
                     this.ctx.lineWidth = 3;
                     this.ctx.shadowBlur = 15;
@@ -916,7 +1045,7 @@
                 if (base.type === 'U') {
                     this.ctx.save();
                     this.ctx.beginPath();
-                    this.ctx.arc(base.x, base.y, 13, 0, Math.PI * 2);
+                    this.ctx.arc(bx, base.y, 13, 0, Math.PI * 2);
                     this.ctx.strokeStyle = 'white';
                     this.ctx.lineWidth = 1;
                     this.ctx.globalAlpha = 0.4;
@@ -929,7 +1058,7 @@
                 this.ctx.shadowBlur = 15;
                 this.ctx.shadowColor = this.colors[base.type];
                 this.ctx.beginPath();
-                this.ctx.arc(base.x, base.y, 9, 0, Math.PI * 2);
+                this.ctx.arc(bx, base.y, 9, 0, Math.PI * 2);
                 this.ctx.fillStyle = this.colors[base.type];
                 this.ctx.fill();
 
@@ -938,7 +1067,7 @@
                     this.ctx.globalAlpha = base.flash;
                     this.ctx.fillStyle = 'white';
                     this.ctx.beginPath();
-                    this.ctx.arc(base.x, base.y, 15 * base.flash, 0, Math.PI * 2);
+                    this.ctx.arc(bx, base.y, 15 * base.flash, 0, Math.PI * 2);
                     this.ctx.fill();
                 }
                 this.ctx.restore();
@@ -952,7 +1081,7 @@
                     this.ctx.textAlign = 'center';
                     // Enhancement 7: Pseudouridine
                     const label = base.damageType === this.damageTypes.PSEUDOURIDINE ? 'Ψ' : base.type;
-                    this.ctx.fillText(label, base.x, base.y + 4);
+                    this.ctx.fillText(label, bx, base.y + 4);
                 }
 
                 // Damage indicator
@@ -963,7 +1092,7 @@
                     if (base.damageType === this.damageTypes.PSEUDOURIDINE) this.ctx.fillStyle = this.colors.PSI;
 
                     this.ctx.beginPath();
-                    this.ctx.arc(base.x + 6, base.y - 6, 5, 0, Math.PI * 2);
+                    this.ctx.arc(bx + 6, base.y - 6, 5, 0, Math.PI * 2);
                     this.ctx.fill();
                 }
             });
@@ -1058,29 +1187,34 @@
                 consumed: this.atpConsumed.toFixed(1)
             };
 
-            this.ctx.fillText(`ATP: ${atpStatus.atp}%`, this.width - 20, 30);
-            this.ctx.fillText(`Used: ${atpStatus.consumed}`, this.width - 20, 50);
+            // Enhancement 88: Unified Telemetry Display (Moved lower to avoid legend overlap)
+            const hudX = this.width - 20;
+            const hudY = 220; // Legend ends around 200
+
+            this.ctx.fillText(`ATP: ${atpStatus.atp}%`, hudX, hudY + 20);
+            this.ctx.fillText(`Used: ${atpStatus.consumed}`, hudX, hudY + 40);
 
             // Enhancement 67/68: Environment Display
             if (this.environmentManager) {
                 const env = this.environmentManager.getStatus();
                 this.ctx.font = '12px Arial';
-                this.ctx.fillText(`pH: ${env.ph}`, this.width - 20, 75);
-                this.ctx.fillText(`Temp: ${env.temp}°C`, this.width - 20, 95);
+                this.ctx.fillText(`pH: ${env.ph}`, hudX, hudY + 65);
+                this.ctx.fillText(`Temp: ${env.temp}°C`, hudX, hudY + 85);
             }
 
             // Enhancement 24: Poly-A Tail Status
-            this.ctx.fillText(`Poly-A: ${this.polyATailLength}`, this.width - 20, 115);
+            this.ctx.fillText(`Poly-A: ${this.polyATailLength}`, hudX, hudY + 105);
 
-            // Enhancement 88: Telemetry Display
+            // Enhancement 88: Additional Stats
             this.ctx.font = '12px Arial';
-            this.ctx.fillText(`Repaired: ${this.stats.repairedCount}`, this.width - 20, 135);
-            this.ctx.fillText(`Energy Used: ${Math.floor(this.stats.atpUsedTotal)}`, this.width - 20, 155);
+            this.ctx.fillText(`Repaired: ${this.stats.repairedCount}`, hudX, hudY + 125);
+            this.ctx.fillText(`Energy Used: ${Math.floor(this.stats.atpUsedTotal)}`, hudX, hudY + 145);
 
             this.ctx.beginPath();
-            this.ctx.rect(this.width - 120, 15, 100 * (atpStatus.atp / 100), 10);
+            this.ctx.rect(this.width - 120, hudY + 5, 100 * (atpStatus.atp / 100), 10);
             this.ctx.fillStyle = this.colors.ATP;
             this.ctx.fill();
+
             this.ctx.restore();
 
             // Enhancement 82: Event Log
@@ -1091,6 +1225,9 @@
             this.eventLog.forEach((entry, i) => {
                 this.ctx.fillText(entry, 20, this.height - 20 - i * 15);
             });
+
+            this.ctx.font = 'bold 10px Arial';
+            this.ctx.fillText("Click Dashboard to Export FASTA", 20, this.height - 20 - (this.eventLog.length + 1) * 15);
             this.ctx.restore();
 
             // Enhancement 57: Factoid Pop-up

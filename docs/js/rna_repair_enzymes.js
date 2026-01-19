@@ -124,6 +124,24 @@
     /**
      * @class RNAEnzymeFactory
      */
+    /**
+     * Enhancement 12: No-Go Decay (NGD) Complex
+     */
+    class PelotaHbs1 extends BaseEnzyme {
+        constructor(targetIndex, x, y) {
+            super('Pelota/Hbs1', targetIndex, x, y, 2.5);
+            this.costPerTick = 0.3; // High cost
+        }
+        complete(targetBase) {
+            // Cleaves RNA at the ribosome stall site
+            targetBase.connected = false;
+            targetBase.flash = 2.0;
+        }
+    }
+
+    /**
+     * @class RNAEnzymeFactory
+     */
     class RNAEnzymeFactory {
         static create(name, targetIndex, x, y) {
             switch (name) {
@@ -131,6 +149,7 @@
                 case 'Demethylase': return new Demethylase(targetIndex, x, y);
                 case 'AlkB': return new AlkB(targetIndex, x, y);
                 case 'RtcB': return new RtcB(targetIndex, x, y);
+                case 'Pelota/Hbs1': return new PelotaHbs1(targetIndex, x, y);
                 default: return new BaseEnzyme(name, targetIndex, x, y);
             }
         }
