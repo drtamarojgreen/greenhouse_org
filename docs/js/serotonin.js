@@ -194,21 +194,37 @@
     }
 
     async function main() {
+        console.log('Serotonin App: main() started.');
         try {
-            await loadDependencies();
-            const { targetSelector, baseUrl } = captureAttributes();
-            if (baseUrl !== null) {
-                await GreenhouseUtils.loadScript('serotonin_controls.js', baseUrl);
-                await GreenhouseUtils.loadScript('serotonin_legend.js', baseUrl);
-                await GreenhouseUtils.loadScript('serotonin_tooltips.js', baseUrl);
-                await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+            // Capture attributes immediately to avoid race conditions with window._greenhouseScriptAttributes
+            const attributes = captureAttributes();
+            const { targetSelector, baseUrl } = attributes;
+
+            if (!baseUrl) {
+                console.error('Serotonin App: Missing baseUrl, aborting initialization.');
+                return;
             }
+
+            await loadDependencies();
+
+            // Load modular simulation components
+            await GreenhouseUtils.loadScript('serotonin_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('serotonin_legend.js', baseUrl);
+            await GreenhouseUtils.loadScript('serotonin_tooltips.js', baseUrl);
+            await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+
             if (targetSelector) {
+                console.log('Serotonin App: Waiting for container:', targetSelector);
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
                 console.log('Serotonin App: Initializing in 5 seconds...');
-                setTimeout(() => G.initialize(container), 5000);
+                setTimeout(() => {
+                    console.log('Serotonin App: Auto-initializing...');
+                    G.initialize(container);
+                }, 5000);
             }
-        } catch (error) { console.error('Serotonin Simulation App: Initialization failed', error); }
+        } catch (error) {
+            console.error('Serotonin Simulation App: Initialization failed', error);
+        }
     }
     main();
 })();

@@ -170,21 +170,37 @@
     }
 
     async function main() {
+        console.log('Dopamine App: main() started.');
         try {
-            await loadDependencies();
-            const { targetSelector, baseUrl } = captureAttributes();
-            if (baseUrl !== null) {
-                await GreenhouseUtils.loadScript('dopamine_controls.js', baseUrl);
-                await GreenhouseUtils.loadScript('dopamine_legend.js', baseUrl);
-                await GreenhouseUtils.loadScript('dopamine_tooltips.js', baseUrl);
-                await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+            // Capture attributes immediately to avoid race conditions with window._greenhouseScriptAttributes
+            const attributes = captureAttributes();
+            const { targetSelector, baseUrl } = attributes;
+
+            if (!baseUrl) {
+                console.error('Dopamine App: Missing baseUrl, aborting initialization.');
+                return;
             }
+
+            await loadDependencies();
+
+            // Load modular simulation components
+            await GreenhouseUtils.loadScript('dopamine_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_legend.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_tooltips.js', baseUrl);
+            await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+
             if (targetSelector) {
+                console.log('Dopamine App: Waiting for container:', targetSelector);
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
                 console.log('Dopamine App: Initializing in 5 seconds...');
-                setTimeout(() => G.initialize(container), 5000);
+                setTimeout(() => {
+                    console.log('Dopamine App: Auto-initializing...');
+                    G.initialize(container);
+                }, 5000);
             }
-        } catch (error) { console.error('Dopamine Simulation App: Initialization failed', error); }
+        } catch (error) {
+            console.error('Dopamine Simulation App: Initialization failed', error);
+        }
     }
     main();
 })();
