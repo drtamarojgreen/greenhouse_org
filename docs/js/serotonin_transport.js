@@ -27,6 +27,17 @@
             this.tryptophan -= synthesized;
             this.vesicle5HT += synthesized;
 
+            // Kynurenine Pathway Competition (Depletes tryptophan under inflammation)
+            if (this.inflammationActive) {
+                this.tryptophan -= 0.1;
+            }
+
+            // Melatonin Conversion (Conversion of 5-HT in pineal-like conditions)
+            if (this.pinealMode && this.vesicle5HT > 0) {
+                this.melatonin = (this.melatonin || 0) + 0.05;
+                this.vesicle5HT -= 0.05;
+            }
+
             // VMAT2 Loading into vesicles (simplified as a pool here)
             // Phasic release: every 200 ticks
             if (G.state.timer % 200 === 0 && this.vesicle5HT > 5) {
@@ -63,6 +74,12 @@
         renderTransport(ctx, project, cam, w, h) {
             // Draw Pre-synaptic terminal
             const pre = project(0, -200, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+
+            // HUD for Melatonin
+            if (this.pinealMode) {
+                ctx.fillStyle = '#cc99ff';
+                ctx.fillText(`Melatonin: ${(this.melatonin || 0).toFixed(1)}`, 20, 150);
+            }
             if (pre.scale > 0) {
                 ctx.fillStyle = 'rgba(100, 100, 150, 0.3)';
                 ctx.beginPath();

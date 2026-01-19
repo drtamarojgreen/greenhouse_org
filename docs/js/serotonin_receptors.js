@@ -53,6 +53,21 @@
                 // Lipid Bilayer Modulation effect
                 const lipidDensity = G.state.lipids ? G.state.lipids.length : 0;
                 r.stability = 1.0 + (lipidDensity * 0.001);
+
+                // RNA Editing Efficiency for 5-HT2C
+                if (r.type === '5-HT2C' && r.editedIsoform) {
+                    // INI is most efficient, VSV is least
+                    const efficiencyMap = { 'INI': 1.0, 'VGV': 0.7, 'VSV': 0.3 };
+                    r.couplingEfficiency = efficiencyMap[r.editedIsoform] || 1.0;
+                } else {
+                    r.couplingEfficiency = 1.0;
+                }
+
+                // Biased Agonism Placeholder
+                // If 5-HT2A is bound by a biased ligand, adjust pathway weighting
+                if (r.type === '5-HT2A' && r.state === 'Active') {
+                    r.pathwayBias = r.biasedLigand ? 1.5 : 1.0; // Boosts Gq vs Beta-Arrestin (abstracted)
+                }
             });
         },
 
