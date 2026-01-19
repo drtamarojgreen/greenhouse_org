@@ -163,22 +163,16 @@
     };
 
     function captureAttributes() {
-        const attr = window._greenhouseScriptAttributes || {};
+        if (window._greenhouseScriptAttributes) return { targetSelector: window._greenhouseScriptAttributes['target-selector-left'], baseUrl: window._greenhouseScriptAttributes['base-url'] };
         const script = document.currentScript;
-        const utils = window.GreenhouseUtils;
-
-        const targetSelector = attr['target-selector-left'] || (script ? script.getAttribute('data-target-selector-left') : null) || (utils ? utils.appState.targetSelectorLeft : null);
-        const baseUrl = attr['base-url'] || (script ? script.getAttribute('data-base-url') : null) || (utils ? utils.appState.baseUrl : null);
-
-        return { targetSelector, baseUrl };
+        if (script) return { targetSelector: script.getAttribute('data-target-selector-left'), baseUrl: script.getAttribute('data-base-url') };
+        return { targetSelector: null, baseUrl: null };
     }
 
     async function main() {
         console.log('Dopamine App: main() started.');
         try {
-            await loadDependencies();
-
-            // Capture attributes after dependencies are loaded to ensure GreenhouseUtils is available as a fallback
+            // Capture attributes immediately to avoid race conditions with window._greenhouseScriptAttributes
             const attributes = captureAttributes();
             const { targetSelector, baseUrl } = attributes;
 
@@ -186,6 +180,8 @@
                 console.error('Dopamine App: Missing baseUrl, aborting initialization.');
                 return;
             }
+
+            await loadDependencies();
 
             // Load modular simulation components
             await GreenhouseUtils.loadScript('dopamine_controls.js', baseUrl);
