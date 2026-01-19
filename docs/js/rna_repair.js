@@ -88,6 +88,16 @@
                 y: 0
             };
 
+            // Enhancement 18: Tertiary Interactions (Pseudoknots)
+            this.tertiaryLinks = [];
+
+            // Enhancement 88: Telemetry
+            this.stats = {
+                repairedCount: 0,
+                atpUsedTotal: 0,
+                decayEvents: 0
+            };
+
             // Modular Physics
             if (window.Greenhouse && window.Greenhouse.RNAFoldingEngine) {
                 this.foldingEngine = new window.Greenhouse.RNAFoldingEngine();
@@ -151,6 +161,8 @@
             this.createRnaStrand();
             this.scheduleDamage();
             this.scheduleProteins(); // Enhancement 22
+            this.scheduleRNAi(); // Enhancement 11
+            this.scheduleTertiary(); // Enhancement 18
             this.setupInteraction();
 
             // Initialize tooltip if available
@@ -264,6 +276,33 @@
             const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
             this.eventLog.unshift(`[${time}] ${msg}`);
             if (this.eventLog.length > this.maxLogEntries) this.eventLog.pop();
+        }
+
+        /**
+         * Enhancement 18: Periodic Tertiary Interaction formation
+         */
+        scheduleTertiary() {
+            const nextTertiary = () => {
+                if (!this.isRunning) return;
+                const delay = 5000 + Math.random() * 10000;
+                setTimeout(() => {
+                    this.formTertiaryLink();
+                    nextTertiary();
+                }, delay);
+            };
+            nextTertiary();
+        }
+
+        formTertiaryLink() {
+            if (this.rnaStrand.length < 20) return;
+            const idx1 = Math.floor(Math.random() * (this.rnaStrand.length - 10));
+            const idx2 = idx1 + 8 + Math.floor(Math.random() * 5); // Distant link
+
+            if (this.rnaStrand[idx1] && this.rnaStrand[idx2]) {
+                const link = { i1: idx1, i2: idx2, life: 1.0 };
+                this.tertiaryLinks.push(link);
+                this.logEvent("Tertiary: Pseudoknot interaction formed.");
+            }
         }
 
         /**
@@ -446,6 +485,7 @@
          */
         triggerSurveillanceDecay(index) {
             console.log("NMD: Surveillance complex detected stall. Triggering decay.");
+            this.stats.decayEvents++;
             // Spawn a specialized decay enzyme at the stall site
             const enzyme = {
                 name: 'UPF1/Exosome',
@@ -527,7 +567,14 @@
             }
 
             // Modular Physics Updates
-            if (this.foldingEngine) this.foldingEngine.update(dt);
+            if (this.foldingEngine) {
+                // Enhancement 68: Temperature destabilizes folding
+                const temp = this.environmentManager ? this.environmentManager.temperature : 37;
+                if (temp > 42) {
+                    this.foldingEngine.targetStrength = 0; // Denaturation
+                }
+                this.foldingEngine.update(dt);
+            }
             if (this.environmentManager) this.environmentManager.update(dt);
 
             // Enhancement 36: Update BG
@@ -619,7 +666,13 @@
 
                 // Modular Enzyme Update
                 if (enzyme.update && typeof enzyme.update === 'function') {
+                    const prevProgress = enzyme.progress;
                     enzyme.update(dt, targetBase, this.atpManager);
+
+                    // Enhancement 88: Track Telemetry
+                    if (enzyme.progress >= 1 && prevProgress < 1) {
+                        this.stats.repairedCount++;
+                    }
                     if (enzyme.state === 'leaving') {
                         if (enzyme.progress >= 1 && enzyme.progress < 1.01) {
                             this.spawnParticles(enzyme.x, enzyme.y);
@@ -667,11 +720,20 @@
                     enzyme.progress += kinetics;
 
                     if (this.atpManager) {
-                        this.atpManager.consume(0.1 * (dt / 16));
+                        if (this.atpManager.consume(0.1 * (dt / 16))) {
+                            this.stats.atpUsedTotal += 0.1 * (dt / 16);
+                        }
                     } else if (this.atp > 0) {
                         this.atp -= 0.1 * (dt / 16);
                         this.atpConsumed += 0.1 * (dt / 16);
+                        this.stats.atpUsedTotal += 0.1 * (dt / 16);
                     }
+
+                    // Enhancement 34: RNA Bending during repair
+                    const bdx = enzyme.x - targetBase.x;
+                    const bdy = enzyme.y - targetBase.y;
+                    targetBase.x += bdx * 0.1;
+                    targetBase.y += bdy * 0.1;
 
                     if (enzyme.progress >= 1) {
                         if (enzyme.name === 'Ligase') {
@@ -690,6 +752,7 @@
                             targetBase.damageType = null;
                             this.logEvent(`${enzyme.name} repair complete.`);
                         }
+                        this.stats.repairedCount++;
                         targetBase.flash = 1.0;
                         enzyme.state = 'leaving';
                         this.spawnParticles(enzyme.x, enzyme.y);
@@ -719,7 +782,7 @@
 
             // Enhancement 22: Protective Proteins
             this.proteins.forEach((protein, index) => {
-                protein.life -= 0.001;
+                protein.life -= 0.001 * (dt / 16);
                 if (protein.life <= 0) {
                     // Remove protection
                     for (let i = 0; i < protein.length; i++) {
@@ -729,6 +792,12 @@
                     }
                     this.proteins.splice(index, 1);
                 }
+            });
+
+            // Enhancement 18: Update Tertiary Links
+            this.tertiaryLinks.forEach((link, idx) => {
+                link.life -= 0.002 * (dt / 16);
+                if (link.life <= 0) this.tertiaryLinks.splice(idx, 1);
             });
 
             // Update particles
@@ -772,6 +841,23 @@
             this.ctx.save();
             this.ctx.translate(this.offsetX, this.offsetY);
             this.ctx.scale(this.scale, this.scale);
+
+            // Enhancement 18: Draw Tertiary Interaction Links
+            this.tertiaryLinks.forEach(link => {
+                const b1 = this.rnaStrand[link.i1];
+                const b2 = this.rnaStrand[link.i2];
+                if (b1 && b2) {
+                    this.ctx.save();
+                    this.ctx.beginPath();
+                    this.ctx.setLineDash([5, 5]);
+                    this.ctx.strokeStyle = 'rgba(255, 255, 255, ' + (link.life * 0.4) + ')';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.moveTo(b1.x, b1.y);
+                    this.ctx.quadraticCurveTo((b1.x + b2.x) / 2 - 50, (b1.y + b2.y) / 2, b2.x, b2.y);
+                    this.ctx.stroke();
+                    this.ctx.restore();
+                }
+            });
 
             // Enhancement 31: Phosphorescence Backbone
             this.ctx.save();
@@ -985,6 +1071,11 @@
 
             // Enhancement 24: Poly-A Tail Status
             this.ctx.fillText(`Poly-A: ${this.polyATailLength}`, this.width - 20, 115);
+
+            // Enhancement 88: Telemetry Display
+            this.ctx.font = '12px Arial';
+            this.ctx.fillText(`Repaired: ${this.stats.repairedCount}`, this.width - 20, 135);
+            this.ctx.fillText(`Energy Used: ${Math.floor(this.stats.atpUsedTotal)}`, this.width - 20, 155);
 
             this.ctx.beginPath();
             this.ctx.rect(this.width - 120, 15, 100 * (atpStatus.atp / 100), 10);
