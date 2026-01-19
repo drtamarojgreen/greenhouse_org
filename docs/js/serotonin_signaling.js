@@ -80,6 +80,16 @@
         },
 
         renderSignaling(ctx, project, cam, w, h) {
+            // Render intracellular signaling "glow" based on Calcium/cAMP
+            const glowIntensity = Math.min(0.3, (this.calcium + this.cAMP * 0.1) * 0.05);
+            if (glowIntensity > 0) {
+                const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
+                grad.addColorStop(0, `rgba(0, 255, 255, ${glowIntensity})`);
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+            }
+
             // Render pulses
             this.pulses.forEach(p => {
                 const pt = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -93,22 +103,32 @@
             });
 
             // HUD for signaling levels
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(w - 200, 10, 190, 120);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(w - 210, 10, 200, 160);
             ctx.fillStyle = '#fff';
-            ctx.font = '12px Arial';
+            ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'left';
-            ctx.fillText(`cAMP: ${this.cAMP.toFixed(2)}`, w - 190, 30);
-            ctx.fillText(`Calcium: ${this.calcium.toFixed(2)}`, w - 190, 50);
-            ctx.fillText(`IP3: ${this.ip3.toFixed(2)}`, w - 190, 70);
-            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 190, 90);
+            ctx.fillText('INTRACELLULAR SIGNALING', w - 200, 30);
+
+            ctx.font = '11px Arial';
+            ctx.fillText(`cAMP: ${this.cAMP.toFixed(2)}`, w - 200, 50);
+            ctx.fillText(`Calcium: ${this.calcium.toFixed(2)}`, w - 200, 70);
+            ctx.fillText(`IP3: ${this.ip3.toFixed(2)}`, w - 200, 90);
+            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 110);
 
             // Draw membrane potential bar
             ctx.fillStyle = '#444';
-            ctx.fillRect(w - 190, 100, 170, 10);
-            const vWidth = ((this.membranePotential + 90) / 60) * 170; // Map -90..-30 to 0..170
+            ctx.fillRect(w - 200, 120, 180, 8);
+            const vWidth = ((this.membranePotential + 90) / 60) * 180;
             ctx.fillStyle = this.membranePotential > -60 ? '#ff4d4d' : '#4d79ff';
-            ctx.fillRect(w - 190, 100, Math.max(0, Math.min(170, vWidth)), 10);
+            ctx.fillRect(w - 200, 120, Math.max(0, Math.min(180, vWidth)), 8);
+
+            // Draw Pathway Bias indicator for 5-HT2A if active
+            const ht2a = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A') : null;
+            if (ht2a && ht2a.state === 'Active') {
+                ctx.fillStyle = ht2a.biasedLigand ? '#ff00ff' : '#ff4d4d';
+                ctx.fillText(ht2a.biasedLigand ? 'Biased Agonism Active' : 'Balanced Agonism', w - 200, 150);
+            }
         }
     };
 

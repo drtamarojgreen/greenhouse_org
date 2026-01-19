@@ -187,16 +187,22 @@
     };
 
     function captureAttributes() {
-        if (window._greenhouseScriptAttributes) return { targetSelector: window._greenhouseScriptAttributes['target-selector-left'], baseUrl: window._greenhouseScriptAttributes['base-url'] };
+        const attr = window._greenhouseScriptAttributes || {};
         const script = document.currentScript;
-        if (script) return { targetSelector: script.getAttribute('data-target-selector-left'), baseUrl: script.getAttribute('data-base-url') };
-        return { targetSelector: null, baseUrl: null };
+        const utils = window.GreenhouseUtils;
+
+        const targetSelector = attr['target-selector-left'] || (script ? script.getAttribute('data-target-selector-left') : null) || (utils ? utils.appState.targetSelectorLeft : null);
+        const baseUrl = attr['base-url'] || (script ? script.getAttribute('data-base-url') : null) || (utils ? utils.appState.baseUrl : null);
+
+        return { targetSelector, baseUrl };
     }
 
     async function main() {
         console.log('Serotonin App: main() started.');
         try {
-            // Capture attributes immediately to avoid race conditions with window._greenhouseScriptAttributes
+            await loadDependencies();
+
+            // Capture attributes after dependencies are loaded to ensure GreenhouseUtils is available as a fallback
             const attributes = captureAttributes();
             const { targetSelector, baseUrl } = attributes;
 
@@ -204,8 +210,6 @@
                 console.error('Serotonin App: Missing baseUrl, aborting initialization.');
                 return;
             }
-
-            await loadDependencies();
 
             // Load modular simulation components
             await GreenhouseUtils.loadScript('serotonin_controls.js', baseUrl);
