@@ -126,7 +126,7 @@
 
                 // Use the URL as provided in the XML (clean URLs)
                 const path = url.startsWith('/') ? url : '/' + url;
-                const canonicalBase = 'https://greenhousemhd.org';
+                const canonicalBase = 'https://greenhousemd.org';
                 launchLink.href = canonicalBase + path;
 
                 launchLink.className = 'greenhouse-btn greenhouse-btn-primary';
