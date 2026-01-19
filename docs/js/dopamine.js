@@ -132,6 +132,7 @@
             if (this.updateMolecular) this.updateMolecular();
             if (this.updateSynapse) this.updateSynapse();
             if (this.updateElectrophysiology) this.updateElectrophysiology();
+            if (this.updateCircuit) this.updateCircuit();
             if (this.updateTooltips) this.updateTooltips();
         },
 
@@ -201,6 +202,7 @@
             if (this.renderMolecular) this.renderMolecular(ctx, project);
             if (this.renderSynapse) this.renderSynapse(ctx, project);
             if (this.renderElectrophysiology) this.renderElectrophysiology(ctx, project);
+            if (this.renderCircuit) this.renderCircuit(ctx, project);
             if (this.renderLegend) this.renderLegend(ctx);
         }
     };
@@ -247,6 +249,7 @@
                 await GreenhouseUtils.loadScript('dopamine_molecular.js', baseUrl);
                 await GreenhouseUtils.loadScript('dopamine_synapse.js', baseUrl);
                 await GreenhouseUtils.loadScript('dopamine_electrophysiology.js', baseUrl);
+                await GreenhouseUtils.loadScript('dopamine_circuit.js', baseUrl);
                 await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             }
 
