@@ -69,10 +69,6 @@
          */
         pathwayPagePath: '/pathway',
         /**
-         * The path segment that identifies the synapse page.
-         */
-        synapsePagePath: '/synapse',
-        /**
          * The path segment that identifies the genetic page.
          */
         geneticPagePath: '/genetic',
@@ -199,10 +195,7 @@
             };
 
             if (uiScriptName) {
-                const scripts = Array.isArray(uiScriptName) ? uiScriptName : [uiScriptName];
-                for (const script of scripts) {
-                    await GreenhouseUtils.loadScript(script, config.githubPagesBaseUrl);
-                }
+                await GreenhouseUtils.loadScript(uiScriptName, config.githubPagesBaseUrl);
             }
             await GreenhouseUtils.loadScript(scriptName, config.githubPagesBaseUrl, appAttributes);
 
