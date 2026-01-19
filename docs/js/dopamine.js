@@ -181,7 +181,8 @@
             }
             if (targetSelector) {
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
-                setTimeout(() => G.initialize(container), 1000);
+                console.log('Dopamine App: Initializing in 5 seconds...');
+                setTimeout(() => G.initialize(container), 5000);
             }
         } catch (error) { console.error('Dopamine Simulation App: Initialization failed', error); }
     }
