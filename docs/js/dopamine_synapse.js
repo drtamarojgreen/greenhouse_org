@@ -65,7 +65,8 @@
         }
 
         // 36. DAT-Mediated Reuptake & 38. Volume Transmission
-        sState.cleftDA.forEach((da, index) => {
+        for (let i = sState.cleftDA.length - 1; i >= 0; i--) {
+            const da = sState.cleftDA[i];
             da.x += da.vx;
             da.y += da.vy;
             da.z += da.vz;
@@ -73,11 +74,11 @@
 
             // Reuptake at the top (presynaptic)
             if (da.y < -160 && Math.random() < 0.05 * sState.datActivity) {
-                sState.cleftDA.splice(index, 1);
+                sState.cleftDA.splice(i, 1);
             } else if (da.life <= 0) {
-                sState.cleftDA.splice(index, 1);
+                sState.cleftDA.splice(i, 1);
             }
-        });
+        }
 
         // 81. Parkinsonian DA Depletion
         if (sState.pathologicalState === 'Parkinsonian') {

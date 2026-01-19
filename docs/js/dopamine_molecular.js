@@ -43,11 +43,12 @@
             }
         }
 
-        mState.gProteins.forEach((gp, index) => {
+        for (let i = mState.gProteins.length - 1; i >= 0; i--) {
+            const gp = mState.gProteins[i];
             gp.life--;
             gp.y += 1; // Move away from membrane
-            if (gp.life <= 0) mState.gProteins.splice(index, 1);
-        });
+            if (gp.life <= 0) mState.gProteins.splice(i, 1);
+        }
 
         // 12. cAMP Microdomains & 17. PDE Activity
         if (state.mode.includes('D1') && state.signalingActive) {
@@ -62,11 +63,12 @@
             }
         }
 
-        mState.campMicrodomains.forEach((m, index) => {
+        for (let i = mState.campMicrodomains.length - 1; i >= 0; i--) {
+            const m = mState.campMicrodomains[i];
             m.radius += 0.5; // Diffusion
             m.life--;
-            if (m.life <= 0) mState.campMicrodomains.splice(index, 1);
-        });
+            if (m.life <= 0) mState.campMicrodomains.splice(i, 1);
+        }
 
         // 14. DARPP-32 Cycle
         if (state.mode.includes('D1') && state.signalingActive) {

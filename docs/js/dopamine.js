@@ -3,6 +3,21 @@
  * @description Core engine for Dopamine Signaling Simulation.
  */
 
+(function () {
+    const G = window.GreenhouseDopamine || {};
+    window.GreenhouseDopamine = G;
+
+    G.state = G.state || {
+        camera: { x: 0, y: 0, z: -400, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
+        receptors: [],
+        particles: [],
+        signalingActive: false,
+        mode: 'D1R',
+        atpConsumed: 0,
+        timer: 0
+    };
+})();
+
 (async function () {
     'use strict';
 
@@ -25,25 +40,14 @@
         });
     };
 
-    const G = window.GreenhouseDopamine || {};
-    window.GreenhouseDopamine = G;
+    const G = window.GreenhouseDopamine;
 
-    Object.assign(G, {
+    const G_CORE = {
         canvas: null,
         ctx: null,
         isRunning: false,
         width: 800,
         height: 600,
-
-        state: {
-            camera: { x: 0, y: 0, z: -400, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
-            receptors: [],
-            particles: [],
-            signalingActive: false,
-            mode: 'D1R',
-            atpConsumed: 0,
-            timer: 0
-        },
 
         initialize(container) {
             if (!container) return;
@@ -57,6 +61,8 @@
             container.appendChild(wrapper);
 
             if (this.createUI) this.createUI(wrapper);
+            if (this.initLegend) this.initLegend(wrapper);
+            if (this.initTooltips) this.initTooltips(wrapper);
 
             this.canvas = document.createElement('canvas');
             this.ctx = this.canvas.getContext('2d');
@@ -87,11 +93,11 @@
 
         setupReceptors() {
             this.state.receptors = [
-                { type: 'D1', x: -150, y: 0, z: 0, color: '#ff4d4d' },
-                { type: 'D2', x: -75, y: 0, z: 0, color: '#4d79ff' },
-                { type: 'D3', x: 0, y: 0, z: 0, color: '#4dff4d' },
-                { type: 'D4', x: 75, y: 0, z: 0, color: '#ffff4d' },
-                { type: 'D5', x: 150, y: 0, z: 0, color: '#ff4dff' }
+                { type: 'D1', x: -200, y: 0, z: 0, color: '#ff4d4d', il3Size: 20, tailLength: 60, helixRadius: 15 },
+                { type: 'D2', x: -100, y: 0, z: 0, color: '#4d79ff', il3Size: 50, tailLength: 15, helixRadius: 18 },
+                { type: 'D3', x: 0, y: 0, z: 0, color: '#4dff4d', il3Size: 45, tailLength: 15, helixRadius: 16 },
+                { type: 'D4', x: 100, y: 0, z: 0, color: '#ffff4d', il3Size: 40, tailLength: 20, helixRadius: 14 },
+                { type: 'D5', x: 200, y: 0, z: 0, color: '#ff4dff', il3Size: 22, tailLength: 55, helixRadius: 15 }
             ];
         },
 
@@ -119,7 +125,6 @@
 
         update() {
             this.state.timer++;
-            // Basic rotation for effect
             if (!this.isDragging) {
                 this.state.camera.rotationY += 0.005;
             }
@@ -127,6 +132,7 @@
             if (this.updateMolecular) this.updateMolecular();
             if (this.updateSynapse) this.updateSynapse();
             if (this.updateElectrophysiology) this.updateElectrophysiology();
+            if (this.updateTooltips) this.updateTooltips();
         },
 
         render() {
@@ -142,27 +148,64 @@
             if (!window.GreenhouseModels3DMath) return;
             const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
 
-            // Draw Receptors
             this.state.receptors.forEach(r => {
-                const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
-                if (p.scale > 0) {
-                    ctx.fillStyle = r.color;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, 20 * p.scale, 0, Math.PI * 2);
-                    ctx.fill();
+                const baseP = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (baseP.scale > 0) {
+                    for (let i = 0; i < 7; i++) {
+                        const angle = (i / 7) * Math.PI * 2 + this.state.timer * 0.01;
+                        const hx = r.x + Math.cos(angle) * r.helixRadius;
+                        const hz = r.z + Math.sin(angle) * r.helixRadius;
+                        const top = project(hx, r.y - 40, hz, cam, { width: w, height: h, near: 10, far: 5000 });
+                        const bottom = project(hx, r.y + 40, hz, cam, { width: w, height: h, near: 10, far: 5000 });
+                        if (top.scale > 0 && bottom.scale > 0) {
+                            ctx.strokeStyle = r.color;
+                            ctx.lineWidth = 6 * top.scale;
+                            ctx.lineCap = 'round';
+                            ctx.beginPath();
+                            ctx.moveTo(top.x, top.y);
+                            ctx.lineTo(bottom.x, bottom.y);
+                            ctx.stroke();
+                        }
+                    }
+
+                    const il3Top = project(r.x, r.y + 30, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                    if (il3Top.scale > 0) {
+                        ctx.strokeStyle = r.color;
+                        ctx.lineWidth = 2 * il3Top.scale;
+                        ctx.beginPath();
+                        ctx.arc(il3Top.x, il3Top.y + (r.il3Size / 2) * il3Top.scale, (r.il3Size / 2) * il3Top.scale, -Math.PI, 0);
+                        ctx.stroke();
+                    }
+
+                    const tailStart = project(r.x + r.helixRadius, r.y + 40, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                    if (tailStart.scale > 0) {
+                        ctx.strokeStyle = r.color;
+                        ctx.lineWidth = 2 * tailStart.scale;
+                        ctx.beginPath();
+                        ctx.moveTo(tailStart.x, tailStart.y);
+                        ctx.bezierCurveTo(
+                            tailStart.x + 10 * tailStart.scale, tailStart.y + r.tailLength * tailStart.scale,
+                            tailStart.x - 10 * tailStart.scale, tailStart.y + (r.tailLength + 10) * tailStart.scale,
+                            tailStart.x, tailStart.y + r.tailLength * tailStart.scale
+                        );
+                        ctx.stroke();
+                    }
 
                     ctx.fillStyle = '#fff';
-                    ctx.font = `${12 * p.scale}px Arial`;
+                    ctx.font = `${12 * baseP.scale}px Arial`;
                     ctx.textAlign = 'center';
-                    ctx.fillText(r.type, p.x, p.y + 30 * p.scale);
+                    ctx.fillText(r.type, baseP.x, baseP.y + 100 * baseP.scale);
                 }
             });
 
             if (this.renderMolecular) this.renderMolecular(ctx, project);
             if (this.renderSynapse) this.renderSynapse(ctx, project);
             if (this.renderElectrophysiology) this.renderElectrophysiology(ctx, project);
+            if (this.renderLegend) this.renderLegend(ctx);
         }
-    });
+    };
+
+    Object.assign(G, G_CORE);
 
     window.Greenhouse = window.Greenhouse || {};
     window.Greenhouse.initializeDopamineSimulation = function (selector) {
@@ -180,30 +223,24 @@
     async function main() {
         console.log('Dopamine App: main() started.');
         try {
-            // Capture attributes immediately to avoid race conditions with window._greenhouseScriptAttributes
             const attributes = captureAttributes();
             let { targetSelector, baseUrl } = attributes;
 
-            // Fallback for direct script loading
             if (!baseUrl) {
                 const script = document.currentScript;
                 if (script && script.src) {
                     baseUrl = script.src.substring(0, script.src.lastIndexOf('/') + 1);
-                    // If baseUrl is in /js/ directory, go up one level to match loadScript's expectations
                     if (baseUrl.endsWith('/js/')) {
                         baseUrl = baseUrl.substring(0, baseUrl.length - 3);
                     }
                 } else {
                     baseUrl = './';
                 }
-                console.log('Dopamine App: Inferred baseUrl:', baseUrl);
             }
 
             await loadDependencies();
 
-            // Skip script loading if we're on file:// (CORS/Fetch issues) and they are already loaded via tags
             if (!window.location.href.startsWith('file://')) {
-                // Load modular simulation components
                 await GreenhouseUtils.loadScript('dopamine_controls.js', baseUrl);
                 await GreenhouseUtils.loadScript('dopamine_legend.js', baseUrl);
                 await GreenhouseUtils.loadScript('dopamine_tooltips.js', baseUrl);
@@ -211,18 +248,11 @@
                 await GreenhouseUtils.loadScript('dopamine_synapse.js', baseUrl);
                 await GreenhouseUtils.loadScript('dopamine_electrophysiology.js', baseUrl);
                 await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            } else {
-                console.log('Dopamine App: Running on file://, assuming scripts are loaded via HTML tags.');
             }
 
             if (targetSelector) {
-                console.log('Dopamine App: Waiting for container:', targetSelector);
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
-                console.log('Dopamine App: Initializing in 5 seconds...');
-                setTimeout(() => {
-                    console.log('Dopamine App: Auto-initializing...');
-                    G.initialize(container);
-                }, 5000);
+                G.initialize(container);
             }
         } catch (error) {
             console.error('Dopamine Simulation App: Initialization failed', error);
