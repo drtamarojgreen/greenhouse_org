@@ -123,6 +123,10 @@
             if (!this.isDragging) {
                 this.state.camera.rotationY += 0.005;
             }
+
+            if (this.updateMolecular) this.updateMolecular();
+            if (this.updateSynapse) this.updateSynapse();
+            if (this.updateElectrophysiology) this.updateElectrophysiology();
         },
 
         render() {
@@ -153,6 +157,10 @@
                     ctx.fillText(r.type, p.x, p.y + 30 * p.scale);
                 }
             });
+
+            if (this.renderMolecular) this.renderMolecular(ctx, project);
+            if (this.renderSynapse) this.renderSynapse(ctx, project);
+            if (this.renderElectrophysiology) this.renderElectrophysiology(ctx, project);
         }
     });
 
@@ -174,20 +182,38 @@
         try {
             // Capture attributes immediately to avoid race conditions with window._greenhouseScriptAttributes
             const attributes = captureAttributes();
-            const { targetSelector, baseUrl } = attributes;
+            let { targetSelector, baseUrl } = attributes;
 
+            // Fallback for direct script loading
             if (!baseUrl) {
-                console.error('Dopamine App: Missing baseUrl, aborting initialization.');
-                return;
+                const script = document.currentScript;
+                if (script && script.src) {
+                    baseUrl = script.src.substring(0, script.src.lastIndexOf('/') + 1);
+                    // If baseUrl is in /js/ directory, go up one level to match loadScript's expectations
+                    if (baseUrl.endsWith('/js/')) {
+                        baseUrl = baseUrl.substring(0, baseUrl.length - 3);
+                    }
+                } else {
+                    baseUrl = './';
+                }
+                console.log('Dopamine App: Inferred baseUrl:', baseUrl);
             }
 
             await loadDependencies();
 
-            // Load modular simulation components
-            await GreenhouseUtils.loadScript('dopamine_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_legend.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_tooltips.js', baseUrl);
-            await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+            // Skip script loading if we're on file:// (CORS/Fetch issues) and they are already loaded via tags
+            if (!window.location.href.startsWith('file://')) {
+                // Load modular simulation components
+                await GreenhouseUtils.loadScript('dopamine_controls.js', baseUrl);
+                await GreenhouseUtils.loadScript('dopamine_legend.js', baseUrl);
+                await GreenhouseUtils.loadScript('dopamine_tooltips.js', baseUrl);
+                await GreenhouseUtils.loadScript('dopamine_molecular.js', baseUrl);
+                await GreenhouseUtils.loadScript('dopamine_synapse.js', baseUrl);
+                await GreenhouseUtils.loadScript('dopamine_electrophysiology.js', baseUrl);
+                await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+            } else {
+                console.log('Dopamine App: Running on file://, assuming scripts are loaded via HTML tags.');
+            }
 
             if (targetSelector) {
                 console.log('Dopamine App: Waiting for container:', targetSelector);
