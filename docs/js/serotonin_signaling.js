@@ -22,14 +22,20 @@
             let totalGs = 0;
             let totalGq = 0;
             let totalIonotropic = 0;
+            let girkActivation = 0;
 
             if (G.state.receptors) {
                 G.state.receptors.forEach(r => {
+                    const efficiency = r.couplingEfficiency || 1.0;
                     if (r.state === 'Active') {
-                        if (r.coupling === 'Gi/o') totalGi++;
-                        if (r.coupling === 'Gs') totalGs++;
-                        if (r.coupling === 'Gq/11') totalGq++;
-                        if (r.coupling === 'Ionotropic') totalIonotropic++;
+                        if (r.coupling === 'Gi/o') {
+                            totalGi += efficiency;
+                            // Gβγ-mediated GIRK activation
+                            girkActivation += efficiency * 0.8;
+                        }
+                        if (r.coupling === 'Gs') totalGs += efficiency;
+                        if (r.coupling === 'Gq/11') totalGq += efficiency * (r.pathwayBias || 1.0);
+                        if (r.coupling === 'Ionotropic') totalIonotropic += efficiency;
                     }
                 });
             }
@@ -41,14 +47,21 @@
 
             // Calcium/PLC dynamics
             this.ip3 += (totalGq * 0.3) - (this.ip3 * 0.1);
-            this.calcium += (this.ip3 * 0.2) + (totalIonotropic * 0.5) - (this.calcium * 0.1);
+
+            // Calcium Oscillations (Stochastic ER release)
+            const erReleaseThreshold = 0.5;
+            if (this.ip3 > erReleaseThreshold && Math.random() < this.ip3 * 0.05) {
+                this.calcium += 2.0; // Oscillatory spike
+                this.triggerPulse(0, 0, 0); // Internal visual pulse
+            }
+            this.calcium += (totalIonotropic * 0.5) - (this.calcium * 0.1);
             this.calcium = Math.max(0, this.calcium);
 
             // Electrophysiology
-            // 5-HT1A (Gi/o) opens GIRK -> Hyperpolarization
+            // 5-HT1A (Gi/o) opens GIRK via Gβγ -> Hyperpolarization
             // 5-HT2A (Gq) can close K+ channels -> Depolarization
             // 5-HT3 (Ionotropic) -> Rapid Depolarization
-            const girkEffect = totalGi * -2;
+            const girkEffect = girkActivation * -2.5;
             const hcnEffect = (this.cAMP * 0.5); // Ih current modulation
             const ionotropicEffect = totalIonotropic * 5;
 
