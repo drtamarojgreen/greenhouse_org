@@ -1,0 +1,129 @@
+/**
+ * @file serotonin_receptors.js
+ * @description Receptor subtypes and structural biology for the Serotonin simulation.
+ */
+
+(function () {
+    'use strict';
+
+    const G = window.GreenhouseSerotonin || {};
+    window.GreenhouseSerotonin = G;
+
+    G.Receptors = {
+        subtypes: {
+            '5-HT1A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#4d79ff', constitutiveActivity: 0.1 },
+            '5-HT1B': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#3366ff' },
+            '5-HT2A': { coupling: 'Gq/11', effect: 'Excitatory', color: '#ff4d4d', rnaEditingVariants: true },
+            '5-HT2C': { coupling: 'Gq/11', effect: 'Excitatory', color: '#cc3333', editedIsoforms: ['INI', 'VGV', 'VSV'] },
+            '5-HT3': { coupling: 'Ionotropic', effect: 'Excitatory (Na+/K+)', color: '#4dff4d' },
+            '5-HT4': { coupling: 'Gs', effect: 'Excitatory', color: '#ff9900' },
+            '5-HT5A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#9933ff' },
+            '5-HT6': { coupling: 'Gs', effect: 'Excitatory', color: '#ffff4d' },
+            '5-HT7': { coupling: 'Gs', effect: 'Excitatory', color: '#ff4dff' }
+        },
+
+        conformationalStates: ['Inactive', 'Intermediate', 'Active'],
+
+        setupReceptorModel() {
+            G.state.receptors = Object.keys(this.subtypes).map((type, i) => ({
+                type,
+                ...this.subtypes[type],
+                state: 'Inactive',
+                x: (i - 4) * 60,
+                y: 0,
+                z: 0,
+                oligomerizedWith: null,
+                palmitoylated: Math.random() > 0.5,
+                disulfideBridges: true
+            }));
+
+            // Example of Hetero-oligomerization (5-HT2A-mGlu2 placeholder)
+            if (G.state.receptors[2]) {
+                G.state.receptors[2].oligomerizedWith = 'mGlu2';
+            }
+        },
+
+        updateReceptorStates() {
+            G.state.receptors.forEach(r => {
+                // Constitutive activity
+                if (r.constitutiveActivity && Math.random() < r.constitutiveActivity * 0.01) {
+                    r.state = 'Intermediate';
+                }
+
+                // Lipid Bilayer Modulation effect
+                const lipidDensity = G.state.lipids ? G.state.lipids.length : 0;
+                r.stability = 1.0 + (lipidDensity * 0.001);
+            });
+        },
+
+        renderReceptors(ctx, project, cam, w, h) {
+            G.state.receptors.forEach(r => {
+                const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (p.scale > 0) {
+                    // Draw 7-TM Helices (simplified)
+                    ctx.strokeStyle = r.color;
+                    ctx.lineWidth = 10 * p.scale;
+
+                    for (let j = 0; j < 7; j++) {
+                        const hAngle = (j / 7) * Math.PI * 2;
+                        const hx = r.x + Math.cos(hAngle) * 15;
+                        const hz = r.z + Math.sin(hAngle) * 15;
+
+                        const hTop = project(hx, r.y - 40, hz, cam, { width: w, height: h, near: 10, far: 5000 });
+                        const hBottom = project(hx, r.y + 40, hz, cam, { width: w, height: h, near: 10, far: 5000 });
+
+                        if (hTop.scale > 0 && hBottom.scale > 0) {
+                            ctx.globalAlpha = r.state === 'Active' ? 1.0 : 0.6;
+                            ctx.beginPath();
+                            ctx.moveTo(hTop.x, hTop.y);
+                            ctx.lineTo(hBottom.x, hBottom.y);
+                            ctx.stroke();
+                        }
+                    }
+                    ctx.globalAlpha = 1.0;
+
+                    // Label
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `${10 * p.scale}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(r.type, p.x, p.y + 60 * p.scale);
+
+                    if (r.state !== 'Inactive') {
+                        ctx.fillStyle = '#00ffcc';
+                        ctx.fillText(r.state, p.x, p.y - 50 * p.scale);
+                    }
+                }
+            });
+        }
+    };
+
+    // Integrate with main object
+    const oldSetup = G.setupStructuralModel;
+    G.setupStructuralModel = function() {
+        if (oldSetup) oldSetup.call(G);
+        G.Receptors.setupReceptorModel();
+    };
+
+    const oldUpdate = G.update;
+    G.update = function() {
+        if (oldUpdate) oldUpdate.call(G);
+        G.Receptors.updateReceptorStates();
+    };
+
+    const oldRender = G.render;
+    G.render = function() {
+        // We override or hook into render.
+        // In this case, we'll let the original render run, then add ours.
+        if (oldRender) oldRender.call(G);
+
+        const ctx = G.ctx;
+        const w = G.width;
+        const h = G.height;
+        const cam = G.state.camera;
+        if (!window.GreenhouseModels3DMath) return;
+        const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+
+        G.Receptors.renderReceptors(ctx, project, cam, w, h);
+    };
+
+})();
