@@ -14,13 +14,34 @@
         alphaSynuclein: 0, // 87. Alpha-Synuclein Pathology
         inflammation: 0, // 86. Neuroinflammation Effects
         hpaAxisActivity: 0.2, // 90. HPA Axis Interaction
-        d2Supersensitivity: 1.0 // 89. D2 Receptor Supersensitivity
+        d2Supersensitivity: 1.0, // 89. D2 Receptor Supersensitivity
+        addictionPlasticity: 0, // 84. Addiction-Related Plasticity
+        schizophreniaMode: false, // 83. Schizophrenia D2 Overactivity
+        adhdMode: false // 85. ADHD DAT Polymorphisms
     };
 
     G.updateClinical = function () {
         const state = G.state;
         const cState = G.clinicalState;
         const sState = G.synapseState;
+
+        // 83. Schizophrenia D2 Overactivity
+        cState.schizophreniaMode = state.mode === 'Schizophrenia';
+        if (cState.schizophreniaMode) {
+            // Enhanced D2 sensitivity or density
+            cState.d2Supersensitivity = 2.0;
+        }
+
+        // 85. ADHD Mode (DAT Polymorphisms)
+        cState.adhdMode = state.mode === 'ADHD';
+        if (cState.adhdMode && sState) {
+            sState.dat.activity = 1.5; // High reuptake, low tonic DA
+        }
+
+        // 84. Addiction-Related Plasticity
+        if (state.mode === 'Cocaine' || state.mode === 'Amphetamine') {
+            cState.addictionPlasticity = Math.min(1.0, cState.addictionPlasticity + 0.001);
+        }
 
         // 88. Oxidative Stress from DA metabolism
         if (sState && sState.cleftDA.length > 200) {

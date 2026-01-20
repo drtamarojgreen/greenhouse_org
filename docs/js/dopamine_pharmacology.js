@@ -13,7 +13,8 @@
         activeDrugs: [],
         datBlockade: 0,
         vesicleDepletion: 0,
-        doseResponse: { concentration: 0, effect: 0 }
+        doseResponse: { concentration: 0, effect: 0, history: [] },
+        drugCombination: { active: false, compounds: [] }
     };
 
     G.updatePharmacology = function () {
@@ -52,6 +53,31 @@
                 }
             }
         }
+
+        // 99. Dose-Response Curve Generation
+        if (state.signalingActive) {
+            pState.doseResponse.concentration = Math.min(1.0, pState.doseResponse.concentration + 0.005);
+            pState.doseResponse.effect = G.molecularState ? G.molecularState.darpp32.thr34 : 0;
+            if (state.timer % 20 === 0) {
+                pState.doseResponse.history.push({
+                    c: pState.doseResponse.concentration,
+                    e: pState.doseResponse.effect
+                });
+            }
+        } else {
+            pState.doseResponse.concentration = 0;
+        }
+
+        // 100. Drug Combination Testing
+        if (state.mode === 'Drug Combo') {
+            pState.drugCombination.active = true;
+            // Modeled as simultaneous DAT blockade and D2 agonism
+            pState.datBlockade = 0.5;
+            if (sState) sState.datActivity = 0.5;
+            // D2 effect in clinical state or molecular state
+        } else {
+            pState.drugCombination.active = false;
+        }
     };
 
     G.renderPharmacology = function (ctx, project) {
@@ -69,6 +95,28 @@
             ctx.fillText('Mechanism: DAT Efflux (Reversal)', 10, h - 280);
         } else if (G.state.mode === 'Cocaine') {
             ctx.fillText('Mechanism: High-affinity Blockade', 10, h - 280);
+        }
+
+        // 99. Render Dose-Response Curve
+        if (pState.doseResponse.history.length > 2) {
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(w - 150, h - 50);
+            ctx.lineTo(w - 50, h - 50); // Axis
+            ctx.lineTo(w - 50, h - 150);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#0f0';
+            ctx.beginPath();
+            pState.doseResponse.history.forEach((pt, i) => {
+                const x = (w - 150) + pt.c * 100;
+                const y = (h - 50) - pt.e * 100;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Dose-Response', w - 150, h - 160);
         }
     };
 })();

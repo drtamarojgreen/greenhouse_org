@@ -20,11 +20,19 @@
         releaseRate: 0.1,
         pathologicalState: 'Healthy',
         volumeTransmission: true,
-        thActivity: 1.0,
-        maoActivity: 0.5,
-        comtActivity: 0.3,
+        // 21. Tyrosine Hydroxylase (TH) Regulation
+        synthesis: {
+            tyrosine: 100,
+            ldopa: 0,
+            dopamine: 50,
+            thRate: 1.0,
+            ddcRate: 1.0
+        },
+        maoActivity: 0.5, // 40. Monoamine Oxidase
+        comtActivity: 0.3, // 41. COMT
         astrocytes: [], // 80. Tripartite Synapse / 43. Astrocyte Reuptake
-        metabolites: { dopac: 0, hva: 0 }
+        metabolites: { dopac: 0, hva: 0, '3mt': 0 }, // 42. Metabolite Tracking
+        glutamate: [] // 77. Glutamate Co-transmission
     };
 
     // Initialize vesicles
@@ -78,6 +86,21 @@
                         vz: (Math.random() - 0.5) * 2.5,
                         life: 180 + Math.random() * 50
                     });
+                }
+
+                // 77. Glutamate Co-transmission
+                // Approximately 10% of vesicles co-release glutamate in specific projections
+                if (Math.random() > 0.9) {
+                    for (let i = 0; i < 5; i++) {
+                        sState.glutamate.push({
+                            x: v.x + (Math.random() - 0.5) * 10,
+                            y: -170, z: (Math.random() - 0.5) * 10,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: Math.random() * 4 + 2,
+                            vz: (Math.random() - 0.5) * 2,
+                            life: 150
+                        });
+                    }
                 }
 
                 // 34. Vesicle Endocytosis
@@ -138,17 +161,57 @@
             }
         }
 
+        // Update Glutamate molecules
+        for (let i = sState.glutamate.length - 1; i >= 0; i--) {
+            const glu = sState.glutamate[i];
+            glu.x += glu.vx; glu.y += glu.vy; glu.z += glu.vz;
+            glu.life--;
+            if (glu.y > 0 || glu.life <= 0) sState.glutamate.splice(i, 1);
+        }
+
         // 81. Parkinsonian DA Depletion
         if (sState.pathologicalState === 'Parkinsonian') {
             sState.releaseRate = 0.01;
             sState.datActivity = 0.2;
         }
 
-        // 40-42. Degradation & Metabolites
+        // 21-23. Synthesis Pathway (TH -> DDC)
+        const thEfficiency = sState.synthesis.thRate * (G.molecularState ? (1.0 + G.molecularState.darpp32.thr34 * 0.5) : 1.0);
+        if (sState.synthesis.tyrosine > 0) {
+            const conversion = 0.1 * thEfficiency;
+            sState.synthesis.tyrosine -= conversion;
+            sState.synthesis.ldopa += conversion;
+        }
+        if (sState.synthesis.ldopa > 0) {
+            const conversion = 0.5 * sState.synthesis.ddcRate;
+            sState.synthesis.ldopa -= conversion;
+            sState.synthesis.dopamine += conversion;
+        }
+        // Refill vesicles from cytosolic DA pool
+        sState.vesicles.reserve.forEach(v => {
+            if (v.filled < 1.0 && sState.synthesis.dopamine > 0.1) {
+                const fill = 0.01 * sState.vmat2.activity;
+                v.filled += fill;
+                sState.synthesis.dopamine -= fill;
+            }
+        });
+
+        // 40-42. Detailed Degradation & Metabolites
+        // MAO acts on intracellular DA and DOPAC
+        // COMT acts on extracellular DA (to 3-MT) and DOPAC (to HVA)
         if (sState.cleftDA.length > 0) {
-            const degraded = Math.random() * sState.maoActivity * 0.1;
-            sState.metabolites.dopac += degraded;
-            sState.metabolites.hva += degraded * sState.comtActivity;
+            const daCount = sState.cleftDA.length;
+            const comtDeg = daCount * sState.comtActivity * 0.001;
+            sState.metabolites['3mt'] += comtDeg;
+
+            const maoDeg = daCount * sState.maoActivity * 0.001;
+            sState.metabolites.dopac += maoDeg;
+        }
+
+        if (sState.metabolites.dopac > 0) {
+            const hvaConv = sState.metabolites.dopac * sState.comtActivity * 0.01;
+            sState.metabolites.dopac -= hvaConv;
+            sState.metabolites.hva += hvaConv;
         }
     };
 
@@ -194,9 +257,22 @@
             const p = project(da.x, da.y, da.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
                 ctx.fillStyle = '#00ff00';
-                ctx.globalAlpha = da.life / 200;
+                ctx.globalAlpha = Math.max(0, da.life / 200);
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        });
+
+        // 77. Render Glutamate molecules
+        sState.glutamate.forEach(glu => {
+            const p = project(glu.x, glu.y, glu.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.fillStyle = '#ffffff';
+                ctx.globalAlpha = Math.max(0, glu.life / 150);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 1.5 * p.scale, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.globalAlpha = 1.0;
             }

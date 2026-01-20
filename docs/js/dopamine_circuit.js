@@ -19,8 +19,8 @@
             vta: { x: 300, y: -400, z: 0, label: 'VTA (Mesolimbic)' }
         },
         compartments: {
-            striosome: { active: false, density: 1.5 },
-            matrix: { active: true, density: 1.0 }
+            striosome: { active: false, density: 1.5, color: 'rgba(255, 255, 0, 0.1)' },
+            matrix: { active: true, density: 1.0, color: 'rgba(0, 255, 255, 0.05)' }
         },
         interneurons: {
             cholinergic: { firing: true, pauseTimer: 0 },
@@ -71,6 +71,20 @@
         const w = G.width;
         const h = G.height;
         const cState = G.circuitState;
+
+        // 74. Striosome vs Matrix Visualization
+        // Matrix
+        ctx.fillStyle = cState.compartments.matrix.color;
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, w / 4, 0, Math.PI * 2);
+        ctx.fill();
+        // Striosomes
+        ctx.fillStyle = cState.compartments.striosome.color;
+        for(let i=0; i<5; i++) {
+            ctx.beginPath();
+            ctx.arc(w/2 + Math.cos(i)*100, h/2 + Math.sin(i)*100, 40, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // 79. 3D Brain Atlas Integration (Placeholder visual)
         ctx.strokeStyle = 'rgba(100, 100, 255, 0.1)';
