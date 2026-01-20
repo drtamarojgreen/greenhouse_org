@@ -14,6 +14,10 @@
         calcium: 0,
         ip3: 0,
         dag: 0,
+        pkc: 0,
+        rhoA: 0,
+        akt: 0,
+        creb: 0,
         membranePotential: -70, // mV
         pulses: [],
 
@@ -55,6 +59,19 @@
 
             // Calcium/PLC dynamics
             this.ip3 += (totalGq * 0.3) - (this.ip3 * 0.1);
+            this.dag += (totalGq * 0.2) - (this.dag * 0.1);
+
+            // Protein Kinase C (PKC) Isoforms (Category 3, #25)
+            this.pkc += (this.dag * 0.5 + this.calcium * 0.1) - (this.pkc * 0.05);
+
+            // RhoA/ROCK Pathway (Category 3, #26)
+            this.rhoA += (totalGq * 0.4) - (this.rhoA * 0.05);
+
+            // AKT/mTOR Pathway (Category 3, #28)
+            this.akt += (this.cAMP * 0.2 + totalGs * 0.3) - (this.akt * 0.03);
+
+            // CREB Transcription factor (Category 3, #29)
+            this.creb += (this.cAMP * 0.1 + this.calcium * 0.1 + this.akt * 0.05) - (this.creb * 0.01);
 
             // Calcium Oscillations (Stochastic ER release)
             const erReleaseThreshold = 0.5;
@@ -125,7 +142,7 @@
 
             // HUD for signaling levels
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(w - 210, 10, 200, 160);
+            ctx.fillRect(w - 210, 10, 200, 200);
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'left';
@@ -135,7 +152,11 @@
             ctx.fillText(`cAMP: ${this.cAMP.toFixed(2)}`, w - 200, 50);
             ctx.fillText(`Calcium: ${this.calcium.toFixed(2)}`, w - 200, 70);
             ctx.fillText(`IP3: ${this.ip3.toFixed(2)}`, w - 200, 90);
-            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 110);
+            ctx.fillText(`PKC: ${this.pkc.toFixed(2)}`, w - 200, 105);
+            ctx.fillText(`RhoA: ${this.rhoA.toFixed(2)}`, w - 200, 120);
+            ctx.fillText(`AKT: ${this.akt.toFixed(2)}`, w - 200, 135);
+            ctx.fillText(`CREB: ${this.creb.toFixed(2)}`, w - 200, 150);
+            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 165);
 
             if (G.Transport && G.Transport.glutamateCoRelease) {
                 ctx.fillStyle = '#ffcc00';
@@ -144,10 +165,10 @@
 
             // Draw membrane potential bar
             ctx.fillStyle = '#444';
-            ctx.fillRect(w - 200, 120, 180, 8);
+            ctx.fillRect(w - 200, 175, 180, 8);
             const vWidth = ((this.membranePotential + 90) / 60) * 180;
             ctx.fillStyle = this.membranePotential > -60 ? '#ff4d4d' : '#4d79ff';
-            ctx.fillRect(w - 200, 120, Math.max(0, Math.min(180, vWidth)), 8);
+            ctx.fillRect(w - 200, 175, Math.max(0, Math.min(180, vWidth)), 8);
 
             // Draw Pathway Bias indicator for 5-HT2A if active
             const ht2a = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A') : null;

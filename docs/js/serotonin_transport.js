@@ -23,6 +23,7 @@
         firingMode: 'tonic', // 'tonic' or 'phasic'
         synapticWeight: 1.0,
         longTermAvg5HT: 5,
+        astrocyte5HT: 0,
 
         updateTransport() {
             // TPH2 Activation by CaMKII/PKA
@@ -97,6 +98,14 @@
                             G.Kinetics.activeLigands.splice(index, 1);
                             this.vesicle5HT += 1;
                         }
+
+                        // Glial Serotonin Reuptake via PMAT (Category 5, #50)
+                        // Astrocytes are simulated at the periphery
+                        const distToGlia = Math.sqrt(l.x*l.x + l.z*l.z);
+                        if (distToGlia > 200 && Math.random() < 0.02) {
+                            G.Kinetics.activeLigands.splice(index, 1);
+                            this.astrocyte5HT += 1;
+                        }
                     }
                 });
             }
@@ -124,9 +133,24 @@
             // Glutamate Co-release (VGLUT3) logic
             // Release glutamate if vesicle 5-HT is high and not inhibited
             this.glutamateCoRelease = (this.vesicle5HT > 20 && releaseInhibition > 0.5);
+
+            // Heterosynaptic Modulation (Category 5, #49)
+            // If current synapse has high 5-HT, it "spills over" to modulate neighbors
+            this.heterosynapticEffect = current5HT > 10;
         },
 
         renderTransport(ctx, project, cam, w, h) {
+            // Draw Astrocytes (Category 5, #50)
+            const astrocytePos = project(250, 0, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (astrocytePos.scale > 0) {
+                ctx.fillStyle = 'rgba(100, 200, 100, 0.2)';
+                ctx.beginPath();
+                ctx.arc(astrocytePos.x, astrocytePos.y, 100 * astrocytePos.scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.fillText('Astrocyte (Glial Reuptake)', astrocytePos.x, astrocytePos.y - 110 * astrocytePos.scale);
+            }
+
             // Volume Transmission Visualization (extrasynaptic cloud)
             const extracellular5HT = G.Kinetics ? G.Kinetics.activeLigands.filter(l => l.name === 'Serotonin' && !l.boundTo).length : 0;
             if (extracellular5HT > 5) {

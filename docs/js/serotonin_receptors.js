@@ -49,14 +49,18 @@
                 // Sodium levels modulate 5-HT1A affinity
                 r.sodiumModulation = 1.0 - (Math.sin(G.state.timer * 0.01) * 0.2);
 
+                // Palmitoylation effect on membrane localization (Category 2, #18)
+                // Modulates stability and lateral movement speed
+                const palmitoylEffect = r.palmitoylated ? 1.1 : 1.0;
+
                 // Constitutive activity
                 if (r.constitutiveActivity && Math.random() < r.constitutiveActivity * 0.01) {
                     r.state = 'Intermediate';
                 }
 
-                // Lipid Bilayer Modulation effect
+                // Lipid Bilayer Modulation effect (Category 2, #16)
                 const lipidDensity = G.state.lipids ? G.state.lipids.length : 0;
-                r.stability = 1.0 + (lipidDensity * 0.001);
+                r.stability = (1.0 + (lipidDensity * 0.001)) * palmitoylEffect;
 
                 // RNA Editing Efficiency for 5-HT2C
                 if (r.type === '5-HT2C' && r.editedIsoform) {
@@ -132,6 +136,17 @@
                     if (r.state !== 'Inactive') {
                         ctx.fillStyle = '#00ffcc';
                         ctx.fillText(r.state, p.x, p.y - 50 * p.scale);
+
+                        // Binding Pocket Water Molecules visualization (Category 2, #14)
+                        // Simplified as blue sparkles within the pocket area
+                        ctx.fillStyle = '#66ccff';
+                        for (let k = 0; k < 3; k++) {
+                            const wx = p.x + Math.sin(G.state.timer * 0.1 + k) * 5 * p.scale;
+                            const wy = p.y - 20 * p.scale + Math.cos(G.state.timer * 0.1 + k) * 5 * p.scale;
+                            ctx.beginPath();
+                            ctx.arc(wx, wy, 1.5 * p.scale, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
                     }
                 }
             });
