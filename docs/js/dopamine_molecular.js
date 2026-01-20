@@ -10,7 +10,7 @@
     window.GreenhouseDopamine = G;
 
     G.molecularState = {
-        gProteins: [],
+        gProteins: [], // 2. G-Protein Cycle: Dissociation of Gα from Gβγ
         campMicrodomains: [],
         darpp32: { thr34: 0, thr75: 0, pp1Inhibited: false },
         pka: { reg: 10, cat: 0 }, // 13. PKA Holoenzyme Dynamics
@@ -40,12 +40,26 @@
         // 2. G-Protein Cycle & 3. GTP/GDP Exchange
         if (state.signalingActive) {
             if (mState.gProteins.length < 30) {
+                const type = state.mode.includes('D1') ? 'Gs' : (state.mode === 'Heteromer' ? 'Gq' : 'Gi');
+                const x = (Math.random() - 0.5) * 300;
+                const z = (Math.random() - 0.5) * 100;
+
+                // 2. Visualize dissociation of Gα from Gβγ subunits
                 mState.gProteins.push({
-                    x: (Math.random() - 0.5) * 300,
-                    y: (Math.random() - 0.5) * 50,
-                    z: (Math.random() - 0.5) * 100,
-                    type: state.mode.includes('D1') ? 'Gs' : (state.mode === 'Heteromer' ? 'Gq' : 'Gi'),
-                    life: 100 + Math.random() * 50
+                    x: x, y: 0, z: z,
+                    type: type,
+                    subunit: 'alpha',
+                    life: 100 + Math.random() * 50,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: 0.8
+                });
+                mState.gProteins.push({
+                    x: x, y: 0, z: z,
+                    type: type,
+                    subunit: 'betagamma',
+                    life: 100 + Math.random() * 50,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: 0.5
                 });
             }
             // 8. GRK Phosphorylation feedback
@@ -56,10 +70,14 @@
 
         for (let i = mState.gProteins.length - 1; i >= 0; i--) {
             const gp = mState.gProteins[i];
-            // 6. RGS proteins accelerate termination
+            // 6. RGS proteins accelerate termination (accelerate GTP hydrolysis)
             const rgsFactor = mState.rgsProteins.active ? mState.rgsProteins.factor : 1.0;
             gp.life -= 1 * rgsFactor;
-            gp.y += 0.8; // Dissociation from membrane
+
+            // Subunits move independently
+            gp.x += gp.vx || 0;
+            gp.y += gp.vy || 0.8;
+
             if (gp.life <= 0) mState.gProteins.splice(i, 1);
         }
 
@@ -191,17 +209,23 @@
             });
         }
 
-        // Render G-Proteins
+        // Render G-Proteins (Subunits)
         mState.gProteins.forEach(gp => {
             const p = project(gp.x, gp.y, gp.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                if (gp.type === 'Gs') ctx.fillStyle = '#ff9999';
-                else if (gp.type === 'Gq') ctx.fillStyle = '#99ff99';
-                else ctx.fillStyle = '#9999ff';
+                if (gp.type === 'Gs') ctx.fillStyle = gp.subunit === 'alpha' ? '#ff9999' : '#ffcccc';
+                else if (gp.type === 'Gq') ctx.fillStyle = gp.subunit === 'alpha' ? '#99ff99' : '#ccffcc';
+                else ctx.fillStyle = gp.subunit === 'alpha' ? '#9999ff' : '#ccccff';
 
                 ctx.globalAlpha = Math.min(1, gp.life / 100);
+                const size = gp.subunit === 'alpha' ? 4 : 3;
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 4 * p.scale, 0, Math.PI * 2);
+                if (gp.subunit === 'alpha') {
+                    ctx.arc(p.x, p.y, size * p.scale, 0, Math.PI * 2);
+                } else {
+                    // Render Gβγ as a small ellipse or distinct shape
+                    ctx.ellipse(p.x, p.y, size * p.scale, (size / 1.5) * p.scale, 0, 0, Math.PI * 2);
+                }
                 ctx.fill();
                 ctx.globalAlpha = 1.0;
             }
