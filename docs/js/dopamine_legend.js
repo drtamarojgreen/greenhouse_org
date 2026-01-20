@@ -40,7 +40,13 @@
                 <div style="width: 12px; height: 12px; background: #9999ff; border-radius: 50%; margin-right: 5px;"></div> Gi Protein
             </div>
             <div style="display: flex; align-items: center; margin-bottom: 3px;">
+                <div style="width: 12px; height: 12px; background: #99ff99; border-radius: 50%; margin-right: 5px;"></div> Gq Protein (PLC/IP3)
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 3px;">
                 <div style="width: 12px; height: 2px; border: 1px solid #ffff99; border-radius: 50%; margin-right: 5px;"></div> cAMP Microdomain
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 3px;">
+                <div style="width: 12px; height: 12px; border: 1px solid #fff; border-style: dashed; border-radius: 50%; margin-right: 5px;"></div> Internalized Receptor
             </div>
             <div style="display: flex; align-items: center; margin-bottom: 3px;">
                 <div style="width: 12px; height: 12px; border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 50%; margin-right: 5px;"></div> Astrocyte Process
