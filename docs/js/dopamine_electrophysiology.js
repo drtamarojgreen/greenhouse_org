@@ -19,12 +19,14 @@
             ampa: 0.5, // 50. AMPA
             kir2: 0.8, // 52. Kir2 (MSN down-state)
             nav16: 1.0,// 51. Nav1.6
-            ltypeCa: 0.2 // 48. L-type Ca2+
+            ltypeCa: 0.2, // 48. L-type Ca2+
+            sk: 0.1 // 56. SK Channels
         },
         isUpState: false,
         spikeCount: 0,
         stdpWindow: 0, // 59. STDP Dopamine-gate
-        inputResistance: 1.0 // 60. Input Resistance scaling
+        inputResistance: 1.0, // 60. Input Resistance scaling
+        ahpCurrent: 0 // 56. Afterhyperpolarization
     };
 
     G.updateElectrophysiology = function () {
@@ -99,10 +101,26 @@
             eState.stdpWindow = Math.max(0, eState.stdpWindow - 0.01);
         }
 
+        // 56. SK Channel modulation and AHP
+        // SK channels are activated by Calcium rise during spikes
+        if (mState && mState.plcPathway && mState.plcPathway.ip3 > 0.5) {
+             eState.channels.sk = Math.min(1, eState.channels.sk + 0.05);
+        } else {
+             eState.channels.sk = Math.max(0.1, eState.channels.sk - 0.01);
+        }
+
+        // AHP current decays over time
+        eState.ahpCurrent *= 0.95;
+        eState.membranePotential -= eState.ahpCurrent;
+
         // Simple Spike generation (influenced by Nav1.6)
         if (eState.membranePotential > eState.threshold && Math.random() > (1.1 - eState.channels.nav16 * 0.2)) {
             eState.spikeCount++;
             eState.membranePotential = 35; // Spike peak
+
+            // 56. Trigger AHP current based on SK channels
+            eState.ahpCurrent = eState.channels.sk * 30;
+
             setTimeout(() => {
                 eState.membranePotential = -95; // 56. Afterhyperpolarization (AHP)
             }, 5);

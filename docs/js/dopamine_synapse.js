@@ -32,7 +32,9 @@
         comtActivity: 0.3, // 41. COMT
         astrocytes: [], // 80. Tripartite Synapse / 43. Astrocyte Reuptake
         metabolites: { dopac: 0, hva: 0, '3mt': 0 }, // 42. Metabolite Tracking
-        glutamate: [] // 77. Glutamate Co-transmission
+        glutamate: [], // 77. Glutamate Co-transmission
+        autoreceptorFeedback: 1.0, // 31. D2-Short Autoreceptor Feedback
+        terminalGeometry: { width: 300, height: 200 } // 35. Axon Terminal Geometry
     };
 
     // Initialize vesicles
@@ -61,9 +63,18 @@
         const state = G.state;
         const sState = G.synapseState;
 
+        // 31. D2-Short Autoreceptor Feedback
+        // If DA in cleft is high, inhibit release
+        const cleftConcentration = sState.cleftDA.length;
+        if (cleftConcentration > 50) {
+            sState.autoreceptorFeedback = Math.max(0.2, sState.autoreceptorFeedback - 0.05);
+        } else {
+            sState.autoreceptorFeedback = Math.min(1.0, sState.autoreceptorFeedback + 0.02);
+        }
+
         // 29. Phasic Release Patterns & 30. Tonic Release
-        let releaseChance = sState.releaseRate;
-        if (state.mode === 'Phasic Burst') releaseChance = 0.6;
+        let releaseChance = sState.releaseRate * sState.autoreceptorFeedback;
+        if (state.mode === 'Phasic Burst') releaseChance = 0.6 * sState.autoreceptorFeedback;
 
         // 28. Synaptotagmin Calcium Sensing Trigger
         if (Math.random() < releaseChance && sState.vesicles.rrp.length > 0) {
@@ -221,6 +232,24 @@
         const h = G.height;
         const sState = G.synapseState;
 
+        // 35. Render Axon Terminal Geometry
+        const t = sState.terminalGeometry;
+        const p1 = project(-t.width/2, -300, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+        const p2 = project(t.width/2, -300, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+        const p3 = project(t.width/2, -150, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+        const p4 = project(-t.width/2, -150, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+
+        ctx.strokeStyle = 'rgba(100, 100, 200, 0.3)';
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.lineTo(p4.x, p4.y);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.setLineDash([]);
+
         // 80. Render Astrocyte Processes (Tripartite Synapse)
         sState.astrocytes.forEach(ast => {
             const p = project(ast.x, ast.y, ast.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -285,6 +314,7 @@
         ctx.fillText(`Vesicles (RRP): ${sState.vesicles.rrp.length}`, 10, h - 100);
         ctx.fillText(`Cleft DA Concentration: ${sState.cleftDA.length}`, 10, h - 80);
         ctx.fillText(`DAT Activity: ${(sState.dat.activity * 100).toFixed(0)}%`, 10, h - 60);
-        ctx.fillText(`State: ${sState.pathologicalState}`, 10, h - 40);
+        ctx.fillText(`Autoreceptor Feedback: ${(sState.autoreceptorFeedback * 100).toFixed(0)}%`, 10, h - 40);
+        ctx.fillText(`State: ${sState.pathologicalState}`, 10, h - 20);
     };
 })();

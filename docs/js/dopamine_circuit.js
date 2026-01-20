@@ -24,7 +24,10 @@
         },
         interneurons: {
             cholinergic: { firing: true, pauseTimer: 0 },
-            gabaergic: { pv: 0.5, som: 0.3 }
+            gabaergic: {
+                pv: { x: -150, y: 150, z: 100, active: 0.5, label: 'PV+' },
+                som: { x: 150, y: 150, z: -100, active: 0.3, label: 'SOM+' }
+            } // 76. GABAergic Interneuron Modulation
         },
         astrocytes: [] // 80. Tripartite Synapse
     };
@@ -64,6 +67,15 @@
             // Activation of direct pathway inhibits SNc, but here we model it as a closed loop
             // where signaling activity affects the next pulse
         }
+
+        // 76. GABAergic Interneuron Modulation
+        if (state.signalingActive) {
+            cState.interneurons.gabaergic.pv.active = Math.min(1.0, cState.interneurons.gabaergic.pv.active + 0.01);
+            cState.interneurons.gabaergic.som.active = Math.min(1.0, cState.interneurons.gabaergic.som.active + 0.005);
+        } else {
+            cState.interneurons.gabaergic.pv.active = Math.max(0.1, cState.interneurons.gabaergic.pv.active - 0.005);
+            cState.interneurons.gabaergic.som.active = Math.max(0.1, cState.interneurons.gabaergic.som.active - 0.002);
+        }
     };
 
     G.renderCircuit = function (ctx, project) {
@@ -71,6 +83,24 @@
         const w = G.width;
         const h = G.height;
         const cState = G.circuitState;
+
+        // 76. Render GABAergic Interneurons
+        Object.values(cState.interneurons.gabaergic).forEach(inter => {
+            const p = project(inter.x, inter.y, inter.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.fillStyle = inter.label === 'PV+' ? '#ff00ff' : '#00ffff';
+                ctx.globalAlpha = inter.active;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y - 10 * p.scale);
+                ctx.lineTo(p.x + 10 * p.scale, p.y + 10 * p.scale);
+                ctx.lineTo(p.x - 10 * p.scale, p.y + 10 * p.scale);
+                ctx.closePath();
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+                ctx.fillStyle = '#fff';
+                ctx.fillText(inter.label, p.x, p.y - 15 * p.scale);
+            }
+        });
 
         // 74. Striosome vs Matrix Visualization
         // Matrix
