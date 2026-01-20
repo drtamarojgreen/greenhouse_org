@@ -122,6 +122,7 @@ def create_text(content, location=(0, -2, -3)):
 def main():
     parser = argparse.ArgumentParser(description="Render greenhousemd.org animation with logo and brain")
     parser.add_argument("--output", default="//greenhouse_org_brain.mp4", help="Output path")
+    parser.add_argument("--output-video", help="Output video path")
     parser.add_argument("--logo", default="docs/images/Greenhouse_Logo.png", help="Path to logo")
     parser.add_argument("--brain", default="scripts/blender/brain.fbx", help="Path to brain FBX")
 
@@ -153,12 +154,17 @@ def main():
     bpy.ops.object.light_add(type='POINT', location=(0, 0, 5))
 
     # Render settings
-    scene.render.filepath = args.output
+    output_path = args.output_video if args.output_video else args.output
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    scene.render.filepath = output_path
     scene.render.image_settings.file_format = 'FFMPEG'
     scene.render.ffmpeg.format = 'MPEG4'
     scene.render.ffmpeg.codec = 'H264'
 
-    print(f"Rendering animation to {args.output}...")
+    print(f"Rendering animation to {output_path}...")
     bpy.ops.render.render(animation=True)
 
 if __name__ == "__main__":

@@ -11,8 +11,8 @@ def setup_scene():
 
     scene = bpy.context.scene
     scene.frame_start = 1
-    scene.frame_end = 1
-    scene.render.fps = 30
+    scene.frame_end = 24
+    scene.render.fps = 2
     scene.render.engine = 'CYCLES'
     scene.cycles.samples = 128
     scene.render.resolution_x = 1920
@@ -79,6 +79,7 @@ def create_text(content, location=(0, 0, 0.5)):
 def main():
     parser = argparse.ArgumentParser(description="Render GreenhouseMD text on logo background")
     parser.add_argument("--output", default="//greenhouse_md.png", help="Output path")
+    parser.add_argument("--output-video", help="Output video path")
     parser.add_argument("--logo", default="docs/images/Greenhouse_Logo.png", help="Path to logo image")
 
     # Handle blender arguments
@@ -106,9 +107,20 @@ def main():
     bpy.ops.object.light_add(type='SUN', location=(0, -5, 5), rotation=(math.radians(45), 0, 0))
     bpy.ops.object.light_add(type='AREA', location=(0, -2, 2))
 
-    scene.render.filepath = args.output
-    print(f"Rendering to {args.output}...")
-    bpy.ops.render.render(write_still=True)
+    if args.output_video:
+        output_dir = os.path.dirname(args.output_video)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+        scene.render.filepath = args.output_video
+        scene.render.image_settings.file_format = 'FFMPEG'
+        scene.render.ffmpeg.format = 'MPEG4'
+        scene.render.ffmpeg.codec = 'H264'
+        print(f"Rendering video to {args.output_video}...")
+        bpy.ops.render.render(animation=True)
+    else:
+        scene.render.filepath = args.output
+        print(f"Rendering to {args.output}...")
+        bpy.ops.render.render(write_still=True)
 
 if __name__ == "__main__":
     main()
