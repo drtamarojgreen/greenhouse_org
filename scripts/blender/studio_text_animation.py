@@ -27,7 +27,7 @@ scene.render.ffmpeg.codec = 'H264'
 # -------------------------------------------------
 # Create Text Object
 # -------------------------------------------------
-bpy.ops.object.text_add(location=(0, 0, 0))
+bpy.ops.object.text_add(location=(0, 0, 0), rotation=(math.radians(90), 0, 0))
 text_obj = bpy.context.object
 text_obj.data.body = "GreenhouseMHD Studios"
 
