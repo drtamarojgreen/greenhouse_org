@@ -62,6 +62,20 @@
         if (sState && sState.pathologicalState === 'Parkinsonian') {
             cState.d2Supersensitivity = Math.min(2.0, cState.d2Supersensitivity + 0.0001);
         }
+
+        // 87. Alpha-Synuclein Pathology (Inhibits vesicle release)
+        if (state.mode === 'Alpha-Synuclein') {
+            cState.alphaSynuclein = Math.min(1.0, cState.alphaSynuclein + 0.005);
+            if (sState) sState.releaseRate = Math.max(0.01, 0.1 * (1.0 - cState.alphaSynuclein));
+        }
+
+        // 86. Neuroinflammation (Cytokines affecting synthesis)
+        if (state.mode === 'Neuroinflammation') {
+            cState.inflammation = Math.min(1.0, cState.inflammation + 0.005);
+            if (sState && sState.synthesis) {
+                sState.synthesis.thRate = Math.max(0.1, 1.0 - cState.inflammation * 0.7);
+            }
+        }
     };
 
     G.renderClinical = function (ctx, project) {
@@ -75,6 +89,13 @@
         ctx.textAlign = 'right';
         ctx.fillText(`Oxidative Stress: ${(cState.oxidativeStress * 100).toFixed(1)}%`, w - 10, h - 200);
         ctx.fillText(`D2 Supersensitivity: ${cState.d2Supersensitivity.toFixed(2)}x`, w - 10, h - 180);
+
+        if (cState.alphaSynuclein > 0.1) {
+            ctx.fillText(`α-Synuclein: ${(cState.alphaSynuclein * 100).toFixed(1)}%`, w - 10, h - 160);
+        }
+        if (cState.inflammation > 0.1) {
+            ctx.fillText(`Neuroinflammation: ${(cState.inflammation * 100).toFixed(1)}%`, w - 10, h - 140);
+        }
 
         if (cState.oxidativeStress > 0.5) {
             ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';

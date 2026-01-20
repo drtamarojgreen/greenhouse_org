@@ -34,7 +34,10 @@
         metabolites: { dopac: 0, hva: 0, '3mt': 0 }, // 42. Metabolite Tracking
         glutamate: [], // 77. Glutamate Co-transmission
         autoreceptorFeedback: 1.0, // 31. D2-Short Autoreceptor Feedback
-        terminalGeometry: { width: 300, height: 200 } // 35. Axon Terminal Geometry
+        terminalGeometry: { width: 300, height: 200 }, // 35. Axon Terminal Geometry
+        caChannelInhibition: 1.0, // 32. Presynaptic Ca2+ Channel Inhibition
+        tortuosity: 1.5, // 39. Tortuosity & Extracellular Space
+        cleftGradient: [] // 45. Synaptic Cleft Concentration Profile
     };
 
     // Initialize vesicles
@@ -63,18 +66,21 @@
         const state = G.state;
         const sState = G.synapseState;
 
-        // 31. D2-Short Autoreceptor Feedback
-        // If DA in cleft is high, inhibit release
+        // 31. D2-Short Autoreceptor Feedback & 32. Ca2+ Channel Inhibition
+        // If DA in cleft is high, activate autoreceptors (D2-Short)
         const cleftConcentration = sState.cleftDA.length;
         if (cleftConcentration > 50) {
             sState.autoreceptorFeedback = Math.max(0.2, sState.autoreceptorFeedback - 0.05);
+            sState.caChannelInhibition = Math.max(0.3, sState.caChannelInhibition - 0.04);
         } else {
             sState.autoreceptorFeedback = Math.min(1.0, sState.autoreceptorFeedback + 0.02);
+            sState.caChannelInhibition = Math.min(1.0, sState.caChannelInhibition + 0.01);
         }
 
         // 29. Phasic Release Patterns & 30. Tonic Release
-        let releaseChance = sState.releaseRate * sState.autoreceptorFeedback;
-        if (state.mode === 'Phasic Burst') releaseChance = 0.6 * sState.autoreceptorFeedback;
+        // Release is also gated by Ca2+ channel status
+        let releaseChance = sState.releaseRate * sState.autoreceptorFeedback * sState.caChannelInhibition;
+        if (state.mode === 'Phasic Burst') releaseChance = 0.6 * sState.autoreceptorFeedback * sState.caChannelInhibition;
 
         // 28. Synaptotagmin Calcium Sensing Trigger
         if (Math.random() < releaseChance && sState.vesicles.rrp.length > 0) {
@@ -142,15 +148,24 @@
             }
         }
 
-        // 36. DAT-Mediated Reuptake & 38. Volume Transmission
-        // DAT efficiency depends on Sodium and Chloride gradients
-        const datEfficiency = sState.dat.activity * (sState.dat.na / 140) * (sState.dat.cl / 120);
+        // 36. DAT-Mediated Reuptake, 37. DAT Phosphorylation, 38. Volume Transmission
+        // 37. PKC-mediated DAT phosphorylation reduces its activity
+        const pkcLevel = G.molecularState ? G.molecularState.plcPathway.pkc : 0;
+        const datPhosphoInhibition = 1.0 - (pkcLevel * 0.4);
+
+        // 44. Competitive Inhibition at DAT (by Serotonin/Norepinephrine)
+        const competitiveInhibition = state.mode === 'Competitive' ? 0.5 : 1.0;
+
+        const datEfficiency = sState.dat.activity * (sState.dat.na / 140) * (sState.dat.cl / 120) * datPhosphoInhibition * competitiveInhibition;
 
         for (let i = sState.cleftDA.length - 1; i >= 0; i--) {
             const da = sState.cleftDA[i];
-            da.x += da.vx;
-            da.y += da.vy;
-            da.z += da.vz;
+
+            // 39. Tortuosity: slowed diffusion in extracellular space
+            const diffusionScale = da.y < -150 ? 1.0 : (1.0 / sState.tortuosity);
+            da.x += da.vx * diffusionScale;
+            da.y += da.vy * diffusionScale;
+            da.z += da.vz * diffusionScale;
             da.life--;
 
             // 43. Astrocyte Reuptake
@@ -280,6 +295,21 @@
                 ctx.stroke();
             }
         });
+
+        // 45. Render Synaptic Cleft Concentration Profile (Gradient)
+        if (sState.cleftDA.length > 10) {
+            const gradientY = -160;
+            const pG = project(0, gradientY, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (pG.scale > 0) {
+                const grad = ctx.createRadialGradient(pG.x, pG.y, 0, pG.x, pG.y, 100 * pG.scale);
+                grad.addColorStop(0, `rgba(0, 255, 0, ${Math.min(0.3, sState.cleftDA.length / 500)})`);
+                grad.addColorStop(1, 'rgba(0, 255, 0, 0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(pG.x, pG.y, 100 * pG.scale, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
 
         // Render DA molecules
         sState.cleftDA.forEach(da => {

@@ -18,7 +18,9 @@
             'D1R Signaling', 'D2R Signaling', 'Heteromer',
             'Parkinsonian', 'L-DOPA Pulse',
             'Cocaine', 'Amphetamine', 'Phasic Burst',
-            'Schizophrenia', 'ADHD', 'Drug Combo'
+            'Schizophrenia', 'ADHD', 'Drug Combo',
+            'Alpha-Synuclein', 'Neuroinflammation', 'MAOI',
+            'Antipsychotic (Fast-off)', 'Antipsychotic (Slow-off)'
         ];
         modes.forEach(mode => {
             const btn = document.createElement('button');

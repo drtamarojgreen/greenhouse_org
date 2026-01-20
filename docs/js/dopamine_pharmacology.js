@@ -13,6 +13,9 @@
         activeDrugs: [],
         datBlockade: 0,
         vesicleDepletion: 0,
+        maoiActive: false, // 95. MAO Inhibitors
+        antipsychoticType: 'None', // 96. Antipsychotic Binding Kinetics
+        antipsychoticOffRate: 0,
         doseResponse: { concentration: 0, effect: 0, history: [] },
         drugCombination: { active: false, compounds: [] }
     };
@@ -25,7 +28,23 @@
         // Reset effects if no drug
         if (state.mode === 'D1R Signaling' || state.mode === 'D2R Signaling') {
             pState.datBlockade = 0;
-            if (sState) sState.datActivity = 1.0;
+            if (sState) sState.dat.activity = 1.0;
+            pState.maoiActive = false;
+        }
+
+        // 95. MAO Inhibitors (Selegiline)
+        if (state.mode === 'MAOI') {
+            pState.maoiActive = true;
+            if (sState) sState.maoActivity = 0.05;
+        }
+
+        // 96. Antipsychotic Binding Kinetics
+        if (state.mode === 'Antipsychotic (Fast-off)') {
+            pState.antipsychoticType = 'Fast-off';
+            pState.antipsychoticOffRate = 0.5;
+        } else if (state.mode === 'Antipsychotic (Slow-off)') {
+            pState.antipsychoticType = 'Slow-off';
+            pState.antipsychoticOffRate = 0.05;
         }
 
         // 93. Cocaine Simulation
