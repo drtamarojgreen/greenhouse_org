@@ -28,7 +28,7 @@ def create_logo_test_animation(output_path, frame_count=5):
         scene.render.ffmpeg.codec = 'H264'
 
         # --- 3. Add Background Plane with Logo ---
-        bpy.ops.mesh.primitive_plane_add(size=20, location=(0, 0, 0))
+        bpy.ops.mesh.primitive_plane_add(size=20, location=(0, 0, 0), rotation=(math.radians(90), 0, 0))
         plane = bpy.context.active_object
         plane.name = "LogoPlane"
 
