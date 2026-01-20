@@ -59,5 +59,46 @@
         info.className = 'serotonin-info';
         info.innerHTML = '<strong>Serotonin Structural Model</strong><br>Visualization of 5-HT1A in complex with Gi.';
         container.appendChild(info);
+
+        // Subcellular Markers (Category 10, #93)
+        this.renderSubcellularMarkers = (ctx, project, cam, w, h) => {
+            // Golgi Apparatus
+            const golgiPos = project(-200, -250, -100, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (golgiPos.scale > 0) {
+                ctx.strokeStyle = 'rgba(255, 100, 255, 0.4)';
+                ctx.lineWidth = 5 * golgiPos.scale;
+                ctx.beginPath();
+                ctx.moveTo(golgiPos.x - 20 * golgiPos.scale, golgiPos.y);
+                ctx.bezierCurveTo(golgiPos.x, golgiPos.y - 20 * golgiPos.scale, golgiPos.x, golgiPos.y + 20 * golgiPos.scale, golgiPos.x + 20 * golgiPos.scale, golgiPos.y);
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = '9px Arial';
+                ctx.fillText('Golgi', golgiPos.x, golgiPos.y - 15 * golgiPos.scale);
+            }
+
+            // Endoplasmic Reticulum (ER)
+            const erPos = project(-250, -150, 50, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (erPos.scale > 0) {
+                ctx.fillStyle = 'rgba(100, 100, 255, 0.2)';
+                ctx.beginPath();
+                ctx.arc(erPos.x, erPos.y, 30 * erPos.scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.fillText('ER', erPos.x, erPos.y);
+            }
+        };
+    };
+
+    const oldRender = G.render;
+    G.render = function() {
+        if (oldRender) oldRender.call(G);
+        const ctx = G.ctx;
+        const w = G.width;
+        const h = G.height;
+        const cam = G.state.camera;
+        if (!window.GreenhouseModels3DMath) return;
+        const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+
+        if (G.renderSubcellularMarkers) G.renderSubcellularMarkers(ctx, project, cam, w, h);
     };
 })();
