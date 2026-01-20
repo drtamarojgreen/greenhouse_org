@@ -79,6 +79,16 @@
             G.state.receptors.forEach(r => {
                 const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
+                    // Protein Surface Map: Electrostatic Potential (Category 10, #92)
+                    // Simplified as a colored "glow" or aura around the receptor
+                    const surfaceGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 40 * p.scale);
+                    surfaceGrad.addColorStop(0, r.state === 'Active' ? 'rgba(255, 0, 0, 0.2)' : 'rgba(0, 0, 255, 0.1)');
+                    surfaceGrad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = surfaceGrad;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 40 * p.scale, 0, Math.PI * 2);
+                    ctx.fill();
+
                     // Draw 7-TM Helices (simplified)
                     ctx.strokeStyle = r.color;
                     ctx.lineWidth = 10 * p.scale;
