@@ -20,6 +20,9 @@
         vmat2Activity: 1.0,
         sertActivity: 1.0,
         maoActivity: 1.0,
+        firingMode: 'tonic', // 'tonic' or 'phasic'
+        synapticWeight: 1.0,
+        longTermAvg5HT: 5,
 
         updateTransport() {
             // TPH2 Activation by CaMKII/PKA
@@ -61,14 +64,26 @@
             }
 
             // VMAT2 Loading into vesicles (simplified as a pool here)
-            // Phasic release: every 200 ticks
-            if (G.state.timer % 200 === 0 && this.vesicle5HT > 5) {
-                if (Math.random() < releaseInhibition) {
-                    const releaseAmount = Math.min(this.vesicle5HT, 10);
-                    this.vesicle5HT -= releaseAmount;
-                    for (let i = 0; i < releaseAmount; i++) {
-                        if (G.Kinetics) G.Kinetics.spawnLigand('Serotonin', 0, -150, 0);
-                    }
+            // Release patterns (Category 5, #47)
+            let shouldRelease = false;
+            let releaseAmount = 0;
+
+            if (this.firingMode === 'tonic') {
+                if (G.state.timer % 50 === 0 && Math.random() < 0.3 * releaseInhibition) {
+                    shouldRelease = true;
+                    releaseAmount = 2;
+                }
+            } else if (this.firingMode === 'phasic') {
+                if (G.state.timer % 300 === 0 && Math.random() < releaseInhibition) {
+                    shouldRelease = true;
+                    releaseAmount = 15; // Burst
+                }
+            }
+
+            if (shouldRelease && this.vesicle5HT > releaseAmount) {
+                this.vesicle5HT -= releaseAmount;
+                for (let i = 0; i < releaseAmount; i++) {
+                    if (G.Kinetics) G.Kinetics.spawnLigand('Serotonin', 0, -150, 0);
                 }
             }
 
@@ -94,6 +109,17 @@
             // Replenish tryptophan (L-tryptophan transport across BBB)
             const bbbTransportRate = 0.05 * (this.pinealMode ? 1.5 : 1.0);
             if (this.tryptophan < 100) this.tryptophan += bbbTransportRate;
+
+            // Synaptic Scaling (Category 5, #48)
+            const current5HT = G.Kinetics ? G.Kinetics.activeLigands.filter(l => l.name === 'Serotonin').length : 0;
+            this.longTermAvg5HT = this.longTermAvg5HT * 0.99 + current5HT * 0.01;
+
+            // Homeostatic scaling: if 5-HT is low for a long time, increase synaptic weight
+            if (this.longTermAvg5HT < 3) {
+                this.synapticWeight = Math.min(2.0, this.synapticWeight + 0.001);
+            } else if (this.longTermAvg5HT > 10) {
+                this.synapticWeight = Math.max(0.5, this.synapticWeight - 0.001);
+            }
 
             // Glutamate Co-release (VGLUT3) logic
             // Release glutamate if vesicle 5-HT is high and not inhibited

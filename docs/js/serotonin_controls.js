@@ -26,6 +26,7 @@
         // Toggle Buttons for Physiological States
         const states = [
             { name: 'Depression', toggle: () => { G.Transport.tphActivity = G.Transport.tphActivity === 1.0 ? 0.3 : 1.0; } },
+            { name: 'Phasic Mode', toggle: () => { G.Transport.firingMode = G.Transport.firingMode === 'tonic' ? 'phasic' : 'tonic'; } },
             { name: 'Inflammation', toggle: () => { G.Transport.inflammationActive = !G.Transport.inflammationActive; } },
             { name: 'Pineal Mode', toggle: () => { G.Transport.pinealMode = !G.Transport.pinealMode; } },
             { name: 'Serotonin Syndrome', toggle: () => {

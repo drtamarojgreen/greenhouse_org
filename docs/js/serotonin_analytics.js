@@ -13,12 +13,27 @@
         history: {
             cleftConcentration: [],
             receptorOccupancy: [],
-            firingRate: []
+            firingRate: [],
+            neurogenesisScore: [],
+            appetiteSuppression: []
         },
         maxHistory: 100,
 
         updateAnalytics() {
             if (!G.isRunning) return;
+
+            // Neurogenesis Score (Category 8, #77)
+            // Driven by 5-HT1A and chronic SSRI-like levels
+            const ht1aActive = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT1A' && r.state === 'Active') : false;
+            const neurogenesis = (ht1aActive ? 0.5 : 0) + (G.Transport ? (G.Transport.longTermAvg5HT > 5 ? 0.5 : 0) : 0);
+            this.history.neurogenesisScore.push(neurogenesis);
+            if (this.history.neurogenesisScore.length > this.maxHistory) this.history.neurogenesisScore.shift();
+
+            // Appetite Suppression (Category 8, #76)
+            // Driven by 5-HT2C and POMC neuron activation (simulated)
+            const ht2cActive = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2C' && r.state === 'Active') : false;
+            this.history.appetiteSuppression.push(ht2cActive ? 1.0 : 0);
+            if (this.history.appetiteSuppression.length > this.maxHistory) this.history.appetiteSuppression.shift();
 
             // Pathway Flux Analysis (Category 9, #84)
             // Calculate rate of 5-HT synthesis vs degradation
@@ -82,6 +97,12 @@
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                 ctx.fillText('GENERATING EC50 CURVE...', startX, startY - 80);
             }
+
+            // Clinical Metrics (Category 8)
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px Arial';
+            ctx.fillText(`Neurogenesis: ${(this.history.neurogenesisScore.reduce((a,b)=>a+b,0)/this.maxHistory).toFixed(2)}`, padding, h - 40);
+            ctx.fillText(`Satiety Level: ${(this.history.appetiteSuppression.reduce((a,b)=>a+b,0)/this.maxHistory * 100).toFixed(0)}%`, padding, h - 25);
         }
     };
 
