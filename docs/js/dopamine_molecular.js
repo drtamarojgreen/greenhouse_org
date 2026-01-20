@@ -17,11 +17,16 @@
         crebActivation: 0,
         deltaFosB: 0,
         internalizedReceptors: [],
+        betaArrestin: [], // 7. Beta-Arrestin Recruitment
+        rgsProteins: { active: true, factor: 1.2 }, // 6. RGS proteins
+        heteromers: { d1d2: 0 }, // 1. D1-D2 Heteromerization
+        plcPathway: { ip3: 0, dag: 0 }, // 5. Gq Pathway
         drugLibrary: {
             d1Agonists: ['SKF-38393'],
             d1Antagonists: ['SCH-23390'],
             d2Agonists: ['Quinpirole', 'Aripiprazole (Partial)'],
-            d2Antagonists: ['Haloperidol']
+            d2Antagonists: ['Haloperidol'],
+            pams: ['LY-3154207'] // 98. Allosteric Modulators
         }
     };
 
@@ -89,6 +94,26 @@
         // 67. DeltaFosB Accumulation (Slow)
         if (mState.crebActivation > 0.5) {
             mState.deltaFosB += 0.0001;
+        }
+
+        // 1. D1-D2 Heteromerization & 5. Gq Pathway
+        if (state.mode === 'Heteromer' && state.signalingActive) {
+            mState.heteromers.d1d2 = Math.min(1, mState.heteromers.d1d2 + 0.01);
+            mState.plcPathway.ip3 += 0.05;
+            mState.plcPathway.dag += 0.05;
+        } else {
+            mState.heteromers.d1d2 = Math.max(0, mState.heteromers.d1d2 - 0.005);
+            mState.plcPathway.ip3 *= 0.95;
+            mState.plcPathway.dag *= 0.95;
+        }
+
+        // 7. Beta-Arrestin Recruitment
+        if (state.signalingActive && Math.random() > 0.95) {
+            mState.betaArrestin.push({ x: 0, y: 0, z: 0, life: 100 });
+        }
+        for (let i = mState.betaArrestin.length - 1; i >= 0; i--) {
+            mState.betaArrestin[i].life--;
+            if (mState.betaArrestin[i].life <= 0) mState.betaArrestin.splice(i, 1);
         }
     };
 

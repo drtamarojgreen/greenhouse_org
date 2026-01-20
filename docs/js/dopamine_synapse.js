@@ -18,7 +18,11 @@
         datActivity: 1.0,
         releaseRate: 0.1,
         pathologicalState: 'Healthy', // Healthy, Parkinsonian, etc.
-        volumeTransmission: true
+        volumeTransmission: true,
+        thActivity: 1.0, // 21. Tyrosine Hydroxylase
+        maoActivity: 0.5, // 40. Monoamine Oxidase
+        comtActivity: 0.3, // 41. COMT
+        metabolites: { dopac: 0, hva: 0 } // 42. Metabolite Tracking
     };
 
     // Initialize vesicles
@@ -84,6 +88,13 @@
         if (sState.pathologicalState === 'Parkinsonian') {
             sState.releaseRate = 0.01;
             sState.datActivity = 0.2;
+        }
+
+        // 40-42. Degradation & Metabolites
+        if (sState.cleftDA.length > 0) {
+            const degraded = Math.random() * sState.maoActivity * 0.1;
+            sState.metabolites.dopac += degraded;
+            sState.metabolites.hva += degraded * sState.comtActivity;
         }
     };
 

@@ -11,8 +11,14 @@
     G.createUI = function (container) {
         const controls = document.createElement('div');
         controls.className = 'dopamine-controls';
+        controls.style.flexWrap = 'wrap';
+        controls.style.maxWidth = '600px';
 
-        const modes = ['D1R Signaling', 'D2R Signaling', 'GTP/GDP Exchange', 'cAMP Release'];
+        const modes = [
+            'D1R Signaling', 'D2R Signaling', 'Heteromer',
+            'Parkinsonian', 'L-DOPA Pulse',
+            'Cocaine', 'Amphetamine', 'Phasic Burst'
+        ];
         modes.forEach(mode => {
             const btn = document.createElement('button');
             btn.className = 'dopamine-btn';
@@ -20,6 +26,14 @@
             btn.onclick = () => {
                 console.log(`Switching to ${mode}`);
                 G.state.mode = mode;
+                G.state.signalingActive = true;
+
+                // Special handlers
+                if (mode === 'Parkinsonian') {
+                    if (G.synapseState) G.synapseState.pathologicalState = 'Parkinsonian';
+                } else if (mode === 'D1R Signaling' || mode === 'D2R Signaling') {
+                    if (G.synapseState) G.synapseState.pathologicalState = 'Healthy';
+                }
             };
             controls.appendChild(btn);
         });

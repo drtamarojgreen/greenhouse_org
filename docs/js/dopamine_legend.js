@@ -42,6 +42,12 @@
             <div style="display: flex; align-items: center; margin-bottom: 3px;">
                 <div style="width: 12px; height: 2px; border: 1px solid #ffff99; border-radius: 50%; margin-right: 5px;"></div> cAMP Microdomain
             </div>
+            <div style="display: flex; align-items: center; margin-bottom: 3px;">
+                <div style="width: 12px; height: 12px; border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 50%; margin-right: 5px;"></div> Astrocyte Process
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 3px;">
+                <div style="width: 12px; height: 12px; background: #aa88ff; border-radius: 50%; margin-right: 5px;"></div> SNc/VTA Projections
+            </div>
             <div style="margin-top: 5px; font-style: italic;">Structures show 7-TM helices, IL3, and C-tail.</div>
         `;
 
