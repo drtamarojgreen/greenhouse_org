@@ -228,36 +228,29 @@
     }
 
     async function main() {
-        console.log('Dopamine App: main() started.');
         try {
             const attributes = captureAttributes();
-            let { targetSelector, baseUrl } = attributes;
+            const { targetSelector, baseUrl } = attributes;
 
             if (!baseUrl) {
-                const script = document.currentScript;
-                if (script && script.src) {
-                    baseUrl = script.src.substring(0, script.src.lastIndexOf('/') + 1);
-                    if (baseUrl.endsWith('/js/')) {
-                        baseUrl = baseUrl.substring(0, baseUrl.length - 3);
-                    }
-                } else {
-                    baseUrl = './';
-                }
+                console.error('Dopamine App: Missing baseUrl, aborting initialization.');
+                return;
             }
 
             await loadDependencies();
 
-            if (!window.location.href.startsWith('file://')) {
-                const scripts = [
-                    'dopamine_controls.js', 'dopamine_legend.js', 'dopamine_tooltips.js',
-                    'dopamine_molecular.js', 'dopamine_synapse.js', 'dopamine_electrophysiology.js',
-                    'dopamine_circuit.js', 'dopamine_plasticity.js', 'dopamine_clinical.js',
-                    'dopamine_pharmacology.js', 'models_3d_math.js'
-                ];
-                for (const s of scripts) {
-                    await GreenhouseUtils.loadScript(s, baseUrl);
-                }
-            }
+            // Load modular simulation components
+            await GreenhouseUtils.loadScript('dopamine_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_legend.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_tooltips.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_molecular.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_synapse.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_electrophysiology.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_circuit.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_plasticity.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_clinical.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_pharmacology.js', baseUrl);
+            await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
 
             if (targetSelector) {
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
