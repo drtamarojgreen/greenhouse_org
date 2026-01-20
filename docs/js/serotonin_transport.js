@@ -24,8 +24,12 @@
         synapticWeight: 1.0,
         longTermAvg5HT: 5,
         astrocyte5HT: 0,
+        serotonylatedProteins: 0,
+        sensorySensitivity: 1.0,
 
         updateTransport() {
+            const current5HT = G.Kinetics ? G.Kinetics.activeLigands.filter(l => l.name === 'Serotonin').length : 0;
+
             // TPH2 Activation by CaMKII/PKA
             // High Calcium or cAMP increases TPH activity
             const signalingBoost = G.Signaling ? (G.Signaling.calcium * 0.05 + G.Signaling.cAMP * 0.02) : 0;
@@ -119,8 +123,17 @@
             const bbbTransportRate = 0.05 * (this.pinealMode ? 1.5 : 1.0);
             if (this.tryptophan < 100) this.tryptophan += bbbTransportRate;
 
+            // Serotonylation of proteins (Category 4, #39)
+            // Covalent attachment of 5-HT to proteins (e.g. small GTPases)
+            if (current5HT > 8 && Math.random() < 0.005) {
+                this.serotonylatedProteins += 1;
+            }
+
+            // Sensory Processing Sensitivity (Category 8, #80)
+            // 5-HT role in filtering sensory input in thalamus
+            this.sensorySensitivity = 1.0 / (1.0 + current5HT * 0.05);
+
             // Synaptic Scaling (Category 5, #48)
-            const current5HT = G.Kinetics ? G.Kinetics.activeLigands.filter(l => l.name === 'Serotonin').length : 0;
             this.longTermAvg5HT = this.longTermAvg5HT * 0.99 + current5HT * 0.01;
 
             // Homeostatic scaling: if 5-HT is low for a long time, increase synaptic weight
@@ -166,6 +179,12 @@
                 ctx.fillStyle = '#cc99ff';
                 ctx.fillText(`Melatonin: ${(this.melatonin || 0).toFixed(1)}`, 20, 150);
             }
+
+            // HUD for Serotonylation and Sensory Sensitivity
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px Arial';
+            ctx.fillText(`Serotonylation: ${this.serotonylatedProteins}`, 20, 165);
+            ctx.fillText(`Sensory Filter: ${(100 - this.sensorySensitivity * 100).toFixed(0)}%`, 20, 180);
             if (pre.scale > 0) {
                 ctx.fillStyle = 'rgba(100, 100, 150, 0.3)';
                 ctx.beginPath();
@@ -190,11 +209,6 @@
         }
     };
 
-    const oldUpdate = G.update;
-    G.update = function() {
-        if (oldUpdate) oldUpdate.call(G);
-        G.Transport.updateTransport();
-    };
 
     const oldRender = G.render;
     G.render = function() {

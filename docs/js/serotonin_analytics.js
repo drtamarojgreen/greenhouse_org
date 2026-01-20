@@ -146,11 +146,6 @@
         }
     };
 
-    const oldUpdate = G.update;
-    G.update = function() {
-        if (oldUpdate) oldUpdate.call(G);
-        G.Analytics.updateAnalytics();
-    };
 
     const oldRender = G.render;
     G.render = function() {

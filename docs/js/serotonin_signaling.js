@@ -18,6 +18,7 @@
         rhoA: 0,
         akt: 0,
         creb: 0,
+        sahp: 0, // Slow Afterhyperpolarization
         adaptation: 0,
         inputResistance: 100, // MOhms
         membranePotential: -70, // mV
@@ -75,6 +76,11 @@
             // CREB Transcription factor (Category 3, #29)
             this.creb += (this.cAMP * 0.1 + this.calcium * 0.1 + this.akt * 0.05) - (this.creb * 0.01);
 
+            // sAHP Suppression (Category 6, #60)
+            // 5-HT often suppresses sAHP via Gi/o or cAMP, increasing excitability
+            this.sahp += (this.calcium * 0.1) - (totalGi * 0.2 + this.cAMP * 0.1) - (this.sahp * 0.05);
+            this.sahp = Math.max(0, this.sahp);
+
             // Calcium Oscillations (Stochastic ER release)
             const erReleaseThreshold = 0.5;
             if (this.ip3 > erReleaseThreshold && Math.random() < this.ip3 * 0.05) {
@@ -117,7 +123,7 @@
                 this.adaptation *= 0.98;
             }
 
-            this.membranePotential += (girkEffect + hcnEffect + excitabilityShift - (this.adaptation * 0.5)) * resistanceFactor + (-70 - this.membranePotential) * 0.05;
+            this.membranePotential += (girkEffect + hcnEffect + excitabilityShift - (this.adaptation * 0.5 + this.sahp)) * resistanceFactor + (-70 - this.membranePotential) * 0.05;
 
             // Update pulses
             this.pulses = this.pulses.filter(p => {
@@ -127,8 +133,8 @@
             });
         },
 
-        triggerPulse(x, y, z) {
-            this.pulses.push({ x, y, z, radius: 10, life: 1.0 });
+        triggerPulse(x, y, z, color) {
+            this.pulses.push({ x, y, z, radius: 10, life: 1.0, color: color || 'rgba(0, 255, 200,' });
         },
 
         renderSignaling(ctx, project, cam, w, h) {
@@ -142,11 +148,15 @@
                 ctx.fillRect(0, 0, w, h);
             }
 
+            // Dynamic Signaling Waves (Category 10, #94)
+            if (this.cAMP > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(255, 200, 0,');
+            if (this.calcium > 5 && Math.random() < 0.05) this.triggerPulse(0, 0, 0, 'rgba(0, 255, 255,');
+
             // Render pulses
             this.pulses.forEach(p => {
                 const pt = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (pt.scale > 0) {
-                    ctx.strokeStyle = `rgba(0, 255, 200, ${p.life})`;
+                    ctx.strokeStyle = `${p.color} ${p.life})`;
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.arc(pt.x, pt.y, p.radius * pt.scale, 0, Math.PI * 2);
@@ -195,11 +205,6 @@
         }
     };
 
-    const oldUpdate = G.update;
-    G.update = function() {
-        if (oldUpdate) oldUpdate.call(G);
-        G.Signaling.updateSignaling();
-    };
 
     const oldRender = G.render;
     G.render = function() {

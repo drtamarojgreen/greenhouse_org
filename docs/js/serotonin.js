@@ -116,9 +116,18 @@
         },
 
         update() {
-            this.state.timer++;
-            if (!this.isDragging) {
-                this.state.camera.rotationY += 0.003;
+            const iterations = this.timeLapse ? 5 : 1;
+            for (let i = 0; i < iterations; i++) {
+                this.state.timer++;
+                if (!this.isDragging) {
+                    this.state.camera.rotationY += 0.003;
+                }
+                // Call module updates if they exist
+                if (this.Receptors && this.Receptors.updateReceptorStates) this.Receptors.updateReceptorStates();
+                if (this.Kinetics && this.Kinetics.updateKinetics) this.Kinetics.updateKinetics();
+                if (this.Signaling && this.Signaling.updateSignaling) this.Signaling.updateSignaling();
+                if (this.Transport && this.Transport.updateTransport) this.Transport.updateTransport();
+                if (this.Analytics && this.Analytics.updateAnalytics) this.Analytics.updateAnalytics();
             }
         },
 
