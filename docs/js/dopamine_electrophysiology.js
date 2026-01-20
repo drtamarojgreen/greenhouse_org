@@ -13,13 +13,18 @@
         membranePotential: -80, // mV
         threshold: -50,
         channels: {
-            girk: 0,
-            hcn: 0.1,
-            nmda: 0.2,
-            ampa: 0.5
+            girk: 0,   // 46. GIRK
+            hcn: 0.1,  // 47. HCN
+            nmda: 0.2, // 49. NMDA
+            ampa: 0.5, // 50. AMPA
+            kir2: 0.8, // 52. Kir2 (MSN down-state)
+            nav16: 1.0,// 51. Nav1.6
+            ltypeCa: 0.2 // 48. L-type Ca2+
         },
         isUpState: false,
-        spikeCount: 0
+        spikeCount: 0,
+        stdpWindow: 0, // 59. STDP Dopamine-gate
+        inputResistance: 1.0 // 60. Input Resistance scaling
     };
 
     G.updateElectrophysiology = function () {
@@ -30,45 +35,77 @@
 
         // 46. GIRK Channel Activation (by D2/Gi)
         if (state.mode.includes('D2') && state.signalingActive) {
-            eState.channels.girk = Math.min(1, eState.channels.girk + 0.01);
+            eState.channels.girk = Math.min(1, eState.channels.girk + 0.015);
         } else {
-            eState.channels.girk = Math.max(0, eState.channels.girk - 0.005);
+            eState.channels.girk = Math.max(0, eState.channels.girk - 0.008);
         }
 
         // 47. HCN Channel Modulation (by cAMP)
-        if (mState && mState.campMicrodomains.length > 0) {
-            eState.channels.hcn = Math.min(1, eState.channels.hcn + 0.02);
+        if (mState && mState.campMicrodomains.length > 5) {
+            eState.channels.hcn = Math.min(1.2, eState.channels.hcn + 0.01);
         } else {
             eState.channels.hcn = Math.max(0.1, eState.channels.hcn - 0.005);
         }
 
-        // 52. Resting Membrane Potential & 53. Up-state/Down-state
-        let targetPotential = -80;
-        if (sState && sState.cleftDA.length > 50) {
-            targetPotential = -60; // Influence of DA
+        // 48. L-type Ca2+ Modulation
+        if (state.mode.includes('D1') && state.signalingActive) {
+            eState.channels.ltypeCa = Math.min(1.5, eState.channels.ltypeCa + 0.01);
+        } else if (state.mode.includes('D2') && state.signalingActive) {
+            eState.channels.ltypeCa = Math.max(0.05, eState.channels.ltypeCa - 0.01);
         }
 
-        // D1 increases excitability (Up-state), D2 decreases it
-        if (state.mode.includes('D1') && state.signalingActive) targetPotential += 15;
-        if (state.mode.includes('D2') && state.signalingActive) targetPotential -= 10;
+        // 53. Up-state/Down-state Transitions
+        let targetPotential = -85; // Default "Down-state"
+
+        // Influence of DA and Synaptic input
+        const daConcentration = sState ? sState.cleftDA.length : 0;
+        if (daConcentration > 40) {
+            targetPotential += (daConcentration / 100) * 15;
+        }
+
+        // Kir2 contributes to Down-state stability
+        targetPotential -= eState.channels.kir2 * 5;
+
+        // 53. Transitions triggered by DA mode
+        if (state.mode.includes('D1') && state.signalingActive) {
+            targetPotential += 20; // Facilitate Up-state
+            eState.channels.kir2 *= 0.99; // D1 reduces Kir conductance
+        } else {
+            eState.channels.kir2 = Math.min(1.0, eState.channels.kir2 + 0.01);
+        }
 
         // GIRK effect (Hyperpolarization)
-        targetPotential -= eState.channels.girk * 15;
+        targetPotential -= eState.channels.girk * 20;
 
-        // HCN effect (Depolarization)
-        targetPotential += eState.channels.hcn * 10;
+        // HCN effect (Depolarization, Ih current)
+        targetPotential += eState.channels.hcn * 12;
 
-        // Smooth transition
-        eState.membranePotential += (targetPotential - eState.membranePotential) * 0.05;
+        // 51. Nav1.6 Modulation by Dopamine
+        if (state.signalingActive) {
+            eState.channels.nav16 = 1.0 + (state.mode.includes('D1') ? 0.2 : -0.15);
+        }
 
-        // 60. Input Resistance Scaling (Placeholder for visual)
-        eState.isUpState = eState.membranePotential > -65;
+        // Smooth transition (RC circuit simulation)
+        eState.membranePotential += (targetPotential - eState.membranePotential) * 0.04;
 
-        // Simple Spike generation
-        if (eState.membranePotential > eState.threshold && Math.random() > 0.9) {
+        // 60. Input Resistance Scaling
+        eState.inputResistance = 1.0 / (0.5 + eState.channels.girk + eState.channels.kir2 + eState.channels.hcn);
+        eState.isUpState = eState.membranePotential > -62;
+
+        // 59. STDP Dopamine-gate Window
+        if (daConcentration > 50 || state.mode === 'Phasic Burst') {
+            eState.stdpWindow = Math.min(1, eState.stdpWindow + 0.1);
+        } else {
+            eState.stdpWindow = Math.max(0, eState.stdpWindow - 0.01);
+        }
+
+        // Simple Spike generation (influenced by Nav1.6)
+        if (eState.membranePotential > eState.threshold && Math.random() > (1.1 - eState.channels.nav16 * 0.2)) {
             eState.spikeCount++;
-            eState.membranePotential = 30; // Spike peak
-            setTimeout(() => { eState.membranePotential = -90; }, 10); // AHP
+            eState.membranePotential = 35; // Spike peak
+            setTimeout(() => {
+                eState.membranePotential = -95; // 56. Afterhyperpolarization (AHP)
+            }, 5);
         }
     };
 

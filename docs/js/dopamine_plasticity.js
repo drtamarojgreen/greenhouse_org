@@ -15,6 +15,8 @@
         ecbLevels: 0, // 63. eCB signaling
         geneExpression: { cFos: 0, jun: 0 }, // 66. IEG Induction
         bdnfLevels: 0.5, // 70. BDNF Interaction
+        proteinSynthesis: 0, // 69. Protein Synthesis
+        epigeneticShift: 0, // 68. Epigenetic Modifications
         lastPlasticityUpdate: 0
     };
 
@@ -22,15 +24,18 @@
         const state = G.state;
         const pState = G.plasticityState;
         const mState = G.molecularState;
+        const eState = G.electroState;
 
-        // 61-62. LTP/LTD Modeling
-        if (state.signalingActive) {
+        // 61-62. LTP/LTD Modeling with STDP gate
+        const stdpGate = eState ? eState.stdpWindow : 1.0;
+
+        if (state.signalingActive && stdpGate > 0.1) {
             if (state.mode.includes('D1')) {
-                // LTP for D1-MSN
-                pState.synapticStrength = Math.min(2.0, pState.synapticStrength + 0.001);
+                // LTP for D1-MSN (facilitated by D1 and spikes)
+                pState.synapticStrength = Math.min(2.5, pState.synapticStrength + 0.002 * stdpGate);
             } else if (state.mode.includes('D2')) {
                 // LTD for D2-MSN
-                pState.synapticStrength = Math.max(0.5, pState.synapticStrength - 0.0005);
+                pState.synapticStrength = Math.max(0.4, pState.synapticStrength - 0.001 * stdpGate);
             }
         }
 
@@ -42,19 +47,25 @@
         }
 
         // 64. Dendritic Spine Remodeling
-        if (pState.synapticStrength > 1.5) {
-            pState.spineDensity = Math.min(2.0, pState.spineDensity + 0.0001);
-        } else if (pState.synapticStrength < 0.7) {
-            pState.spineDensity = Math.max(0.5, pState.spineDensity - 0.0001);
+        if (pState.synapticStrength > 1.8) {
+            pState.spineDensity = Math.min(2.5, pState.spineDensity + 0.0005);
+        } else if (pState.synapticStrength < 0.6) {
+            pState.spineDensity = Math.max(0.4, pState.spineDensity - 0.0005);
         }
 
         // 66. Immediate Early Gene (IEG) Induction
         if (mState && mState.crebActivation > 0.8) {
-            pState.geneExpression.cFos = Math.min(1.0, pState.geneExpression.cFos + 0.005);
-            pState.geneExpression.jun = Math.min(1.0, pState.geneExpression.jun + 0.005);
+            pState.geneExpression.cFos = Math.min(1.0, pState.geneExpression.cFos + 0.008);
+            pState.geneExpression.jun = Math.min(1.0, pState.geneExpression.jun + 0.008);
+
+            // 69. Protein Synthesis triggered by IEGs
+            pState.proteinSynthesis = Math.min(1.0, pState.proteinSynthesis + 0.002);
+            // 68. Epigenetic modifications
+            pState.epigeneticShift = Math.min(1.0, pState.epigeneticShift + 0.001);
         } else {
             pState.geneExpression.cFos *= 0.995;
             pState.geneExpression.jun *= 0.995;
+            pState.proteinSynthesis *= 0.998;
         }
     };
 
