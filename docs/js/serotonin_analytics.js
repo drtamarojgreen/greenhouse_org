@@ -15,7 +15,8 @@
             receptorOccupancy: [],
             firingRate: [],
             neurogenesisScore: [],
-            appetiteSuppression: []
+            appetiteSuppression: [],
+            ec50Data: []
         },
         maxHistory: 100,
 
@@ -44,15 +45,42 @@
             if (this.history.cleftConcentration.length > this.maxHistory) this.history.cleftConcentration.shift();
 
             // Receptor Occupancy (Category 9, #83)
+            let occupancy = 0;
             if (G.state.receptors) {
                 const occupiedCount = G.state.receptors.filter(r => r.state !== 'Inactive').length;
-                const occupancy = occupiedCount / G.state.receptors.length;
+                occupancy = occupiedCount / G.state.receptors.length;
                 this.history.receptorOccupancy.push(occupancy);
                 if (this.history.receptorOccupancy.length > this.maxHistory) this.history.receptorOccupancy.shift();
+            }
+
+            // EC50 Data Collection (Category 9, #82)
+            if (G.state.timer % 10 === 0) {
+                this.history.ec50Data.push({ conc: extracellular, resp: occupancy });
+                if (this.history.ec50Data.length > 50) this.history.ec50Data.shift();
             }
         },
 
         renderAnalytics(ctx, w, h) {
+            // Spatial Heatmap (Category 9, #85)
+            // Simplified: Draw a grid and color based on nearby particles
+            const gridScale = 20;
+            ctx.globalAlpha = 0.15;
+            if (G.Kinetics && G.Kinetics.activeLigands) {
+                G.Kinetics.activeLigands.forEach(l => {
+                    if (l.name === 'Serotonin') {
+                        // Project 3D to 2D for heatmap center
+                        const cam = G.state.camera;
+                        const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+                        const p = project(l.x, l.y, l.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                        if (p.scale > 0) {
+                            ctx.fillStyle = '#00ffcc';
+                            ctx.fillRect(p.x - 10, p.y - 10, 20, 20);
+                        }
+                    }
+                });
+            }
+            ctx.globalAlpha = 1.0;
+
             // Draw real-time graphs (Category 9, #81)
             const graphW = 150;
             const graphH = 50;
@@ -92,11 +120,23 @@
             ctx.stroke();
             ctx.fillText('Receptor Occupancy', startX, occY - graphH - 5);
 
-            // Dose-Response Curve Placeholder (Category 9, #82)
-            if (G.state.timer % 500 < 100) {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                ctx.fillText('GENERATING EC50 CURVE...', startX, startY - 80);
-            }
+            // Dose-Response Curve (Category 9, #82)
+            const drX = startX;
+            const drY = startY - 100;
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(drX - 5, drY - graphH - 10, graphW + 10, graphH + 20);
+            ctx.strokeStyle = '#ff00ff';
+            ctx.beginPath();
+            const sortedData = [...this.history.ec50Data].sort((a,b) => a.conc - b.conc);
+            sortedData.forEach((d, i) => {
+                const x = drX + (d.conc / 30) * graphW;
+                const y = drY - (d.resp * graphH);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.fillText('EC50 Curve (Conc vs Resp)', drX, drY - graphH - 5);
 
             // Clinical Metrics (Category 8)
             ctx.fillStyle = '#fff';

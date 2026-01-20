@@ -60,8 +60,45 @@
         info.innerHTML = '<strong>Serotonin Structural Model</strong><br>Visualization of 5-HT1A in complex with Gi.';
         container.appendChild(info);
 
+        // Zoom Control (Category 10, #90)
+        const zoomControl = document.createElement('div');
+        zoomControl.style.position = 'absolute';
+        zoomControl.style.top = '10px';
+        zoomControl.style.right = '10px';
+        zoomControl.style.display = 'flex';
+        zoomControl.style.flexDirection = 'column';
+        zoomControl.style.gap = '5px';
+
+        const zoomIn = document.createElement('button');
+        zoomIn.className = 'serotonin-btn';
+        zoomIn.innerText = 'Zoom In (+)';
+        zoomIn.onclick = () => { G.state.camera.zoom *= 1.1; };
+
+        const zoomOut = document.createElement('button');
+        zoomOut.className = 'serotonin-btn';
+        zoomOut.innerText = 'Zoom Out (-)';
+        zoomOut.onclick = () => { G.state.camera.zoom *= 0.9; };
+
+        zoomControl.appendChild(zoomIn);
+        zoomControl.appendChild(zoomOut);
+        container.appendChild(zoomControl);
+
         // Subcellular Markers (Category 10, #93)
         this.renderSubcellularMarkers = (ctx, project, cam, w, h) => {
+            // Cytoskeleton visualization (Category 10, #93)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = -300; i <= 300; i += 100) {
+                const start = project(-300, i, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+                const end = project(300, i, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (start.scale > 0 && end.scale > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(start.x, start.y);
+                    ctx.lineTo(end.x, end.y);
+                    ctx.stroke();
+                }
+            }
+
             // Golgi Apparatus
             const golgiPos = project(-200, -250, -100, cam, { width: w, height: h, near: 10, far: 5000 });
             if (golgiPos.scale > 0) {
