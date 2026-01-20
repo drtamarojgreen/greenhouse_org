@@ -13,7 +13,9 @@
         ligandTypes: {
             'Serotonin': { affinity: 0.8, intrinsicActivity: 1.0, residenceTime: 100, color: '#00ffcc' },
             'Fluoxetine': { type: 'SSRI', target: 'SERT', affinity: 0.95, residenceTime: 500, color: '#ffffff' },
-            'LSD': { type: 'Psychedelic', target: '5-HT2A', affinity: 0.99, intrinsicActivity: 0.7, residenceTime: 1000, color: '#ff00ff' },
+            'Venlafaxine': { type: 'SNRI', target: ['SERT', 'NET'], affinity: 0.85, residenceTime: 400, color: '#e0e0e0' },
+            'LSD': { type: 'Psychedelic', target: '5-HT2A', affinity: 0.99, intrinsicActivity: 0.7, residenceTime: 1000, color: '#ff00ff', biased: true },
+            'Psilocin': { type: 'Psychedelic', target: '5-HT2A', affinity: 0.95, intrinsicActivity: 0.8, residenceTime: 600, color: '#cc00ff' },
             'Buspirone': { type: 'Partial Agonist', target: '5-HT1A', affinity: 0.7, intrinsicActivity: 0.4, residenceTime: 150, color: '#ffff00' },
             'Sumatriptan': { type: 'Triptan', target: '5-HT1B/D', affinity: 0.9, intrinsicActivity: 0.8, residenceTime: 200, color: '#00ffff' },
             'Clozapine': { type: 'Antipsychotic', target: '5-HT2A', affinity: 0.9, intrinsicActivity: 0.0, residenceTime: 300, color: '#ff6600' },
@@ -81,6 +83,13 @@
                             l.boundTo = r;
                             l.bindingTimer = l.residenceTime;
                             r.state = l.intrinsicActivity > 0.5 ? 'Active' : (l.intrinsicActivity > 0 ? 'Intermediate' : 'Inactive');
+
+                            // Biased Agonism implementation
+                            if (l.biased) {
+                                r.biasedLigand = true;
+                            } else {
+                                r.biasedLigand = false;
+                            }
 
                             // Visual pulse for binding
                             if (G.Signaling) G.Signaling.triggerPulse(r.x, r.y, r.z);

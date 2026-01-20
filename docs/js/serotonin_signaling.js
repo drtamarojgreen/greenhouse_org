@@ -23,6 +23,8 @@
             let totalGq = 0;
             let totalIonotropic = 0;
             let girkActivation = 0;
+            let ht2aActive = false;
+            let ht4Active = false;
 
             if (G.state.receptors) {
                 G.state.receptors.forEach(r => {
@@ -33,8 +35,14 @@
                             // Gβγ-mediated GIRK activation
                             girkActivation += efficiency * 0.8;
                         }
-                        if (r.coupling === 'Gs') totalGs += efficiency;
-                        if (r.coupling === 'Gq/11') totalGq += efficiency * (r.pathwayBias || 1.0);
+                        if (r.coupling === 'Gs') {
+                            totalGs += efficiency;
+                            if (r.type === '5-HT4') ht4Active = true;
+                        }
+                        if (r.coupling === 'Gq/11') {
+                            totalGq += efficiency * (r.pathwayBias || 1.0);
+                            if (r.type === '5-HT2A') ht2aActive = true;
+                        }
                         if (r.coupling === 'Ionotropic') totalIonotropic += efficiency;
                     }
                 });
@@ -57,15 +65,28 @@
             this.calcium += (totalIonotropic * 0.5) - (this.calcium * 0.1);
             this.calcium = Math.max(0, this.calcium);
 
+            // Co-transmission (Glutamate)
+            // If VGLUT3 is co-releasing glutamate, it adds to ionotropic effect
+            const glutamateEffect = (G.Transport && G.Transport.glutamateCoRelease) ? 2.0 : 0;
+
             // Electrophysiology
             // 5-HT1A (Gi/o) opens GIRK via Gβγ -> Hyperpolarization
             // 5-HT2A (Gq) can close K+ channels -> Depolarization
             // 5-HT3 (Ionotropic) -> Rapid Depolarization
             const girkEffect = girkActivation * -2.5;
             const hcnEffect = (this.cAMP * 0.5); // Ih current modulation
-            const ionotropicEffect = totalIonotropic * 5;
+            const ionotropicEffect = (totalIonotropic + glutamateEffect) * 5;
 
-            this.membranePotential += (girkEffect + hcnEffect + ionotropicEffect + (-70 - this.membranePotential) * 0.05);
+            // NMDA/AMPA Potentiation (5-HT2A and 5-HT4 mediated)
+            const potentiationFactor = (ht2aActive || ht4Active) ? 1.5 : 1.0;
+
+            // A-type Potassium Current (Kv4.2) modulation
+            // 5-HT often inhibits Kv4.2 to increase dendritic excitability
+            const kv42Inhibition = (totalGq > 0.5) ? 1.2 : 1.0;
+
+            const excitabilityShift = (ionotropicEffect * potentiationFactor * kv42Inhibition);
+
+            this.membranePotential += (girkEffect + hcnEffect + excitabilityShift + (-70 - this.membranePotential) * 0.05);
 
             // Update pulses
             this.pulses = this.pulses.filter(p => {
@@ -80,6 +101,16 @@
         },
 
         renderSignaling(ctx, project, cam, w, h) {
+            // Render intracellular signaling "glow" based on Calcium/cAMP
+            const glowIntensity = Math.min(0.3, (this.calcium + this.cAMP * 0.1) * 0.05);
+            if (glowIntensity > 0) {
+                const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
+                grad.addColorStop(0, `rgba(0, 255, 255, ${glowIntensity})`);
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+            }
+
             // Render pulses
             this.pulses.forEach(p => {
                 const pt = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -93,22 +124,37 @@
             });
 
             // HUD for signaling levels
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(w - 200, 10, 190, 120);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(w - 210, 10, 200, 160);
             ctx.fillStyle = '#fff';
-            ctx.font = '12px Arial';
+            ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'left';
-            ctx.fillText(`cAMP: ${this.cAMP.toFixed(2)}`, w - 190, 30);
-            ctx.fillText(`Calcium: ${this.calcium.toFixed(2)}`, w - 190, 50);
-            ctx.fillText(`IP3: ${this.ip3.toFixed(2)}`, w - 190, 70);
-            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 190, 90);
+            ctx.fillText('INTRACELLULAR SIGNALING', w - 200, 30);
+
+            ctx.font = '11px Arial';
+            ctx.fillText(`cAMP: ${this.cAMP.toFixed(2)}`, w - 200, 50);
+            ctx.fillText(`Calcium: ${this.calcium.toFixed(2)}`, w - 200, 70);
+            ctx.fillText(`IP3: ${this.ip3.toFixed(2)}`, w - 200, 90);
+            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 110);
+
+            if (G.Transport && G.Transport.glutamateCoRelease) {
+                ctx.fillStyle = '#ffcc00';
+                ctx.fillText('Glutamate Co-transmission: ON', w - 200, 135);
+            }
 
             // Draw membrane potential bar
             ctx.fillStyle = '#444';
-            ctx.fillRect(w - 190, 100, 170, 10);
-            const vWidth = ((this.membranePotential + 90) / 60) * 170; // Map -90..-30 to 0..170
+            ctx.fillRect(w - 200, 120, 180, 8);
+            const vWidth = ((this.membranePotential + 90) / 60) * 180;
             ctx.fillStyle = this.membranePotential > -60 ? '#ff4d4d' : '#4d79ff';
-            ctx.fillRect(w - 190, 100, Math.max(0, Math.min(170, vWidth)), 10);
+            ctx.fillRect(w - 200, 120, Math.max(0, Math.min(180, vWidth)), 8);
+
+            // Draw Pathway Bias indicator for 5-HT2A if active
+            const ht2a = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A') : null;
+            if (ht2a && ht2a.state === 'Active') {
+                ctx.fillStyle = ht2a.biasedLigand ? '#ff00ff' : '#ff4d4d';
+                ctx.fillText(ht2a.biasedLigand ? 'Biased Agonism Active' : 'Balanced Agonism', w - 200, 150);
+            }
         }
     };
 

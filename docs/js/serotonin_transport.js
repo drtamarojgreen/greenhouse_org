@@ -22,10 +22,32 @@
         maoActivity: 1.0,
 
         updateTransport() {
+            // TPH2 Activation by CaMKII/PKA
+            // High Calcium or cAMP increases TPH activity
+            const signalingBoost = G.Signaling ? (G.Signaling.calcium * 0.05 + G.Signaling.cAMP * 0.02) : 0;
+            const effectiveTPHActivity = this.tphActivity * (1.0 + signalingBoost);
+
             // TPH Synthesis: Tryptophan -> 5-HT
-            const synthesized = this.tryptophan * this.synthesisRate * this.tphActivity * 0.01;
+            const synthesized = this.tryptophan * this.synthesisRate * effectiveTPHActivity * 0.01;
             this.tryptophan -= synthesized;
             this.vesicle5HT += synthesized;
+
+            // Autoreceptor Feedback Logic
+            let releaseInhibition = 1.0;
+            if (G.state.receptors) {
+                G.state.receptors.forEach(r => {
+                    // 5-HT1B/D are often presynaptic autoreceptors
+                    if ((r.type === '5-HT1B' || r.type === '5-HT1D') && r.state === 'Active') {
+                        releaseInhibition *= 0.5; // Each active autoreceptor reduces release probability
+                    }
+                    // 5-HT1A can be somatodendritic autoreceptor
+                    if (r.type === '5-HT1A' && r.state === 'Active') {
+                        this.tphActivity *= 0.99; // Chronic activation reduces synthesis (very simplified)
+                    } else {
+                        this.tphActivity = Math.min(1.0, this.tphActivity + 0.001); // Recovery
+                    }
+                });
+            }
 
             // Kynurenine Pathway Competition (Depletes tryptophan under inflammation)
             if (this.inflammationActive) {
@@ -41,10 +63,12 @@
             // VMAT2 Loading into vesicles (simplified as a pool here)
             // Phasic release: every 200 ticks
             if (G.state.timer % 200 === 0 && this.vesicle5HT > 5) {
-                const releaseAmount = Math.min(this.vesicle5HT, 10);
-                this.vesicle5HT -= releaseAmount;
-                for (let i = 0; i < releaseAmount; i++) {
-                    if (G.Kinetics) G.Kinetics.spawnLigand('Serotonin', 0, -150, 0);
+                if (Math.random() < releaseInhibition) {
+                    const releaseAmount = Math.min(this.vesicle5HT, 10);
+                    this.vesicle5HT -= releaseAmount;
+                    for (let i = 0; i < releaseAmount; i++) {
+                        if (G.Kinetics) G.Kinetics.spawnLigand('Serotonin', 0, -150, 0);
+                    }
                 }
             }
 
@@ -67,11 +91,23 @@
                 if (this.vesicle5HT > 0) this.vesicle5HT -= 0.1;
             }
 
-            // Replenish tryptophan
-            if (this.tryptophan < 100) this.tryptophan += 0.05;
+            // Replenish tryptophan (L-tryptophan transport across BBB)
+            const bbbTransportRate = 0.05 * (this.pinealMode ? 1.5 : 1.0);
+            if (this.tryptophan < 100) this.tryptophan += bbbTransportRate;
+
+            // Glutamate Co-release (VGLUT3) logic
+            // Release glutamate if vesicle 5-HT is high and not inhibited
+            this.glutamateCoRelease = (this.vesicle5HT > 20 && releaseInhibition > 0.5);
         },
 
         renderTransport(ctx, project, cam, w, h) {
+            // Volume Transmission Visualization (extrasynaptic cloud)
+            const extracellular5HT = G.Kinetics ? G.Kinetics.activeLigands.filter(l => l.name === 'Serotonin' && !l.boundTo).length : 0;
+            if (extracellular5HT > 5) {
+                ctx.fillStyle = `rgba(0, 255, 200, ${Math.min(0.2, extracellular5HT * 0.01)})`;
+                ctx.fillRect(0, 0, w, h); // Full screen tint for volume transmission
+            }
+
             // Draw Pre-synaptic terminal
             const pre = project(0, -200, 0, cam, { width: w, height: h, near: 10, far: 5000 });
 
