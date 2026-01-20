@@ -18,6 +18,8 @@
         rhoA: 0,
         akt: 0,
         creb: 0,
+        adaptation: 0,
+        inputResistance: 100, // MOhms
         membranePotential: -70, // mV
         pulses: [],
 
@@ -103,7 +105,19 @@
 
             const excitabilityShift = (ionotropicEffect * potentiationFactor * kv42Inhibition);
 
-            this.membranePotential += (girkEffect + hcnEffect + excitabilityShift + (-70 - this.membranePotential) * 0.05);
+            // Membrane Resistance Modulation (Category 6, #57)
+            this.inputResistance = 100 * (1.0 + (girkActivation * -0.2) + (this.cAMP * 0.05));
+            const resistanceFactor = this.inputResistance / 100;
+
+            // Spike Frequency Adaptation (Category 6, #56)
+            // If Vmem is high, adaptation builds up to slow down firing
+            if (this.membranePotential > -50) {
+                this.adaptation += 0.2;
+            } else {
+                this.adaptation *= 0.98;
+            }
+
+            this.membranePotential += (girkEffect + hcnEffect + excitabilityShift - (this.adaptation * 0.5)) * resistanceFactor + (-70 - this.membranePotential) * 0.05;
 
             // Update pulses
             this.pulses = this.pulses.filter(p => {
@@ -142,7 +156,7 @@
 
             // HUD for signaling levels
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(w - 210, 10, 200, 200);
+            ctx.fillRect(w - 210, 10, 200, 220);
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'left';
@@ -156,7 +170,9 @@
             ctx.fillText(`RhoA: ${this.rhoA.toFixed(2)}`, w - 200, 120);
             ctx.fillText(`AKT: ${this.akt.toFixed(2)}`, w - 200, 135);
             ctx.fillText(`CREB: ${this.creb.toFixed(2)}`, w - 200, 150);
-            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 165);
+            ctx.fillText(`Rin: ${this.inputResistance.toFixed(1)} MΩ`, w - 200, 162);
+            ctx.fillText(`Adaptation: ${this.adaptation.toFixed(2)}`, w - 200, 174);
+            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 186);
 
             if (G.Transport && G.Transport.glutamateCoRelease) {
                 ctx.fillStyle = '#ffcc00';
@@ -165,10 +181,10 @@
 
             // Draw membrane potential bar
             ctx.fillStyle = '#444';
-            ctx.fillRect(w - 200, 175, 180, 8);
+            ctx.fillRect(w - 200, 190, 180, 8);
             const vWidth = ((this.membranePotential + 90) / 60) * 180;
             ctx.fillStyle = this.membranePotential > -60 ? '#ff4d4d' : '#4d79ff';
-            ctx.fillRect(w - 200, 175, Math.max(0, Math.min(180, vWidth)), 8);
+            ctx.fillRect(w - 200, 190, Math.max(0, Math.min(180, vWidth)), 8);
 
             // Draw Pathway Bias indicator for 5-HT2A if active
             const ht2a = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A') : null;
