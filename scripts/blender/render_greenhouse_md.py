@@ -72,6 +72,8 @@ def create_text(content, location=(0, 0, 0.5)):
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.05, 0.2, 0.05, 1)
+    bsdf.inputs["Roughness"].default_value = 0.1  # Low roughness for sharp reflections
+    bsdf.inputs["Metallic"].default_value = 0.7   # Higher metallic for distinct highlights
     text_obj.data.materials.append(mat)
 
     return text_obj

@@ -116,7 +116,10 @@ def create_text(content, location=(0, -2, -3)):
 
     mat = bpy.data.materials.new(name="URLTextMaterial")
     mat.use_nodes = True
-    mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.1, 0.5, 0.3, 1)
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Base Color"].default_value = (0.1, 0.5, 0.3, 1)
+    bsdf.inputs["Roughness"].default_value = 0.1  # Low roughness for sharp reflections
+    bsdf.inputs["Metallic"].default_value = 0.7   # Higher metallic for distinct highlights
     text_obj.data.materials.append(mat)
     return text_obj
 
