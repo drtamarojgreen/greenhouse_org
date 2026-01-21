@@ -13,7 +13,7 @@
         gProteins: [], // 2. G-Protein Cycle: Dissociation of Gα from Gβγ
         campMicrodomains: [],
         darpp32: { thr34: 0, thr75: 0, pp1Inhibited: false }, // 14. DARPP-32 Cycle, 15. PP1 Inhibition
-        pka: { reg: 10, cat: 0 }, // 13. PKA Holoenzyme Dynamics
+        pka: { reg: 10, cat: 0, subunits: [] }, // 13. PKA Holoenzyme Dynamics
         ac5: { activity: 0, inhibitedByCa: false }, // 11. Adenylate Cyclase Isoforms (AC5)
         crebActivation: 0,
         deltaFosB: 0,
@@ -23,14 +23,14 @@
         grkPhosphorylation: 0, // 8. GRK Phosphorylation
         camkii: { active: 0, calmodulin: 0 }, // 20. Calmodulin/CaMKII Activation
         heteromers: { d1d2: 0 }, // 1. D1-D2 Heteromerization
-        plcPathway: { ip3: 0, dag: 0, pkc: 0 }, // 5. Gq Pathway, 18. IP3, 19. DAG
+        plcPathway: { ip3: 0, dag: 0, pkc: 0, ip3Particles: [] }, // 5. Gq Pathway, 18. IP3, 19. DAG
         erkPathway: 0, // 16. ERK/MAPK Cascade
         drugLibrary: {
-            d1Agonists: ['SKF-38393'],
-            d1Antagonists: ['SCH-23390'],
-            d2Agonists: ['Quinpirole', 'Aripiprazole (Partial)'],
-            d2Antagonists: ['Haloperidol'],
-            pams: ['LY-3154207'] // 98. Allosteric Modulators
+            d1Agonists: ['SKF-38393', 'Fenoldopam'],
+            d1Antagonists: ['SCH-23390', 'Ecopipam'],
+            d2Agonists: ['Quinpirole', 'Bromocriptine', 'Pramipexole'],
+            d2Antagonists: ['Haloperidol', 'Risperidone', 'Clozapine'],
+            pams: ['LY-3154207', 'DETQ'] // 98. Allosteric Modulators
         }
     };
 
@@ -114,12 +114,34 @@
 
         // 13. PKA Holoenzyme Dynamics
         const campLevel = mState.campMicrodomains.length;
-        if (campLevel > 10 && mState.pka.reg > 0) {
+        if (campLevel > 8 && mState.pka.reg > 0) {
             mState.pka.reg -= 0.1;
             mState.pka.cat += 0.1;
-        } else if (campLevel < 5 && mState.pka.cat > 0) {
+
+            // Visualize dissociation
+            if (Math.random() > 0.9) {
+                mState.pka.subunits.push({
+                    x: (Math.random() - 0.5) * 200,
+                    y: 100,
+                    z: (Math.random() - 0.5) * 100,
+                    type: 'cat',
+                    life: 200,
+                    vx: (Math.random() - 0.5) * 1,
+                    vy: 0.5 + Math.random() * 0.5
+                });
+            }
+        } else if (campLevel < 4 && mState.pka.cat > 0) {
             mState.pka.reg += 0.1;
             mState.pka.cat -= 0.1;
+        }
+
+        // Update PKA subunits
+        for (let i = mState.pka.subunits.length - 1; i >= 0; i--) {
+            const s = mState.pka.subunits[i];
+            s.life--;
+            s.x += s.vx;
+            s.y += s.vy;
+            if (s.life <= 0) mState.pka.subunits.splice(i, 1);
         }
 
         // 14. DARPP-32 Cycle & 15. PP1 Inhibition
@@ -146,12 +168,27 @@
             mState.crebActivation = Math.max(0, mState.crebActivation - 0.001);
         }
 
+        // 98. Allosteric Modulators (PAMs)
+        const pamFactor = state.mode === 'PAM' ? 1.5 : 1.0;
+
         // 1. D1-D2 Heteromerization & 5. Gq Pathway
         if (state.mode === 'Heteromer' && state.signalingActive) {
-            mState.heteromers.d1d2 = Math.min(1, mState.heteromers.d1d2 + 0.01);
-            mState.plcPathway.ip3 = Math.min(1, mState.plcPathway.ip3 + 0.02);
+            mState.heteromers.d1d2 = Math.min(1, mState.heteromers.d1d2 + 0.01 * pamFactor);
+            mState.plcPathway.ip3 = Math.min(1, mState.plcPathway.ip3 + 0.02 * pamFactor);
             mState.plcPathway.dag = Math.min(1, mState.plcPathway.dag + 0.02);
             mState.plcPathway.pkc = Math.min(1, mState.plcPathway.pkc + 0.015);
+
+            // 18. IP3 Dynamics: visualize diffusion
+            if (Math.random() > 0.8) {
+                mState.plcPathway.ip3Particles.push({
+                    x: (Math.random() - 0.5) * 100,
+                    y: 0,
+                    z: (Math.random() - 0.5) * 50,
+                    life: 150,
+                    vx: (Math.random() - 0.5) * 1,
+                    vy: 2.0 // Diffuse towards ER (downward in our spatial model)
+                });
+            }
 
             // 20. CaMKII Activation via Gq-mediated Ca2+ rise (simplified)
             mState.camkii.calmodulin = Math.min(1, mState.camkii.calmodulin + 0.05);
@@ -190,6 +227,15 @@
             r.life--;
             r.y += 0.2; // Move deeper into cytosol
             if (r.life <= 0) mState.internalizedReceptors.splice(i, 1);
+        }
+
+        // 18. IP3 Particle Update
+        for (let i = mState.plcPathway.ip3Particles.length - 1; i >= 0; i--) {
+            const p = mState.plcPathway.ip3Particles[i];
+            p.life--;
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.life <= 0) mState.plcPathway.ip3Particles.splice(i, 1);
         }
 
         // 20. CaMKII Auto-phosphorylation & Decay
@@ -244,6 +290,38 @@
             }
         });
 
+        // 18. Render IP3 Particles
+        mState.plcPathway.ip3Particles.forEach(ip3 => {
+            const p = project(ip3.x, ip3.y, ip3.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.fillStyle = '#00ffff';
+                ctx.globalAlpha = Math.min(1, ip3.life / 50);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        });
+
+        // 19. Render DAG (Membrane-bound yellow dots)
+        if (mState.plcPathway.dag > 0.2) {
+            for (let i = 0; i < 20; i++) {
+                const angle = (i / 20) * Math.PI * 2 + G.state.timer * 0.01;
+                const r = 250; // Membrane radius approximation
+                const dx = Math.cos(angle) * r;
+                const dz = Math.sin(angle) * r;
+                const p = project(dx, 0, dz, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (p.scale > 0) {
+                    ctx.fillStyle = '#ffff00';
+                    ctx.globalAlpha = mState.plcPathway.dag * 0.5;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1.0;
+                }
+            }
+        }
+
         // 9. Render Internalized Receptors
         mState.internalizedReceptors.forEach(r => {
             const p = project(r.x, r.y + 50, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -267,6 +345,19 @@
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, m.radius * p.scale, 0, Math.PI * 2);
                 ctx.stroke();
+                ctx.globalAlpha = 1.0;
+            }
+        });
+
+        // 13. Render PKA Catalytic Subunits
+        mState.pka.subunits.forEach(s => {
+            const p = project(s.x, s.y, s.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.fillStyle = '#ff3300';
+                ctx.globalAlpha = Math.min(1, s.life / 50);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3 * p.scale, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.globalAlpha = 1.0;
             }
         });

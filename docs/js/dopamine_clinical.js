@@ -76,6 +76,18 @@
                 sState.synthesis.thRate = Math.max(0.1, 1.0 - cState.inflammation * 0.7);
             }
         }
+
+        // 90. HPA Axis Interaction (Stress hormones)
+        if (state.mode === 'High Stress') {
+            cState.hpaAxisActivity = Math.min(1.0, cState.hpaAxisActivity + 0.01);
+            if (sState) {
+                // Stress increases DA release initially but also increases reuptake/degradation
+                sState.releaseRate = 0.2 * (1.0 + cState.hpaAxisActivity);
+                sState.dat.activity = 1.0 + cState.hpaAxisActivity * 0.5;
+            }
+        } else {
+            cState.hpaAxisActivity = Math.max(0.1, cState.hpaAxisActivity - 0.002);
+        }
     };
 
     G.renderClinical = function (ctx, project) {
@@ -95,6 +107,9 @@
         }
         if (cState.inflammation > 0.1) {
             ctx.fillText(`Neuroinflammation: ${(cState.inflammation * 100).toFixed(1)}%`, w - 10, h - 140);
+        }
+        if (cState.hpaAxisActivity > 0.3) {
+            ctx.fillText(`HPA Activity (Cortisol): ${(cState.hpaAxisActivity * 100).toFixed(1)}%`, w - 10, h - 120);
         }
 
         if (cState.oxidativeStress > 0.5) {

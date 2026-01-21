@@ -29,8 +29,20 @@
         inputResistance: 1.0, // 60. Input Resistance scaling
         ahpCurrent: 0, // 56. Afterhyperpolarization
         ampaTrafficking: 1.0, // 50. AMPA Receptor Trafficking
-        tonicGaba: 0.2 // 55. Tonic GABAergic Inhibition
+        tonicGaba: 0.2, // 55. Tonic GABAergic Inhibition
+        gapJunctions: [], // 57. Gap Junction Coupling
+        apBackProp: 0 // 54. Action Potential Back-propagation
     };
+
+    // Initialize some interneuron positions for gap junctions
+    for(let i=0; i<3; i++) {
+        G.electroState.gapJunctions.push({
+            x: (Math.random()-0.5)*400,
+            y: 200,
+            z: (Math.random()-0.5)*200,
+            coupling: 0.2
+        });
+    }
 
     G.updateElectrophysiology = function () {
         const state = G.state;
@@ -54,9 +66,18 @@
 
         // 48. L-type Ca2+ Modulation
         if (state.mode.includes('D1') && state.signalingActive) {
-            eState.channels.ltypeCa = Math.min(1.5, eState.channels.ltypeCa + 0.01);
+            eState.channels.ltypeCa = Math.min(1.8, eState.channels.ltypeCa + 0.015);
         } else if (state.mode.includes('D2') && state.signalingActive) {
-            eState.channels.ltypeCa = Math.max(0.05, eState.channels.ltypeCa - 0.01);
+            eState.channels.ltypeCa = Math.max(0.05, eState.channels.ltypeCa - 0.015);
+        }
+
+        // 48. Visual representation of Calcium influx during spikes
+        if (eState.membranePotential > 0) {
+            // L-type Ca2+ channels open at high voltages
+            // This rise in Ca2+ will further activate SK channels and CaMKII
+            if (G.molecularState) {
+                G.molecularState.camkii.calmodulin = Math.min(1, G.molecularState.camkii.calmodulin + eState.channels.ltypeCa * 0.1);
+            }
         }
 
         // 53. Up-state/Down-state Transitions
@@ -130,10 +151,26 @@
         eState.ahpCurrent *= 0.95;
         eState.membranePotential -= eState.ahpCurrent;
 
+        // 49. NMDA Receptor Potentiation
+        // PKA phosphorylates NMDA subunits (e.g., GluN2B)
+        if (mState && mState.pka && mState.pka.cat > 2) {
+            eState.channels.nmda = Math.min(1.0, eState.channels.nmda + 0.005);
+        } else {
+            eState.channels.nmda = Math.max(0.2, eState.channels.nmda - 0.002);
+        }
+
+        // 54. Action Potential Back-propagation
+        if (eState.apBackProp > 0) {
+            eState.apBackProp -= 0.1;
+        }
+
         // Simple Spike generation (influenced by Nav1.6)
         if (eState.membranePotential > eState.threshold && Math.random() > (1.1 - eState.channels.nav16 * 0.2)) {
             eState.spikeCount++;
             eState.membranePotential = 35; // Spike peak
+
+            // 54. Trigger back-propagation visual
+            eState.apBackProp = 1.0;
 
             // 56. Trigger AHP current based on SK channels
             eState.ahpCurrent = eState.channels.sk * 30;
@@ -145,9 +182,50 @@
     };
 
     G.renderElectrophysiology = function (ctx, project) {
+        const cam = G.state.camera;
         const w = G.width;
         const h = G.height;
         const eState = G.electroState;
+
+        // 57. Render Gap Junctions
+        eState.gapJunctions.forEach(gj => {
+            const p = project(gj.x, gj.y, gj.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.setLineDash([2, 2]);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5 * p.scale, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Draw coupling lines between them
+                eState.gapJunctions.forEach(gj2 => {
+                    if (gj === gj2) return;
+                    const p2 = project(gj2.x, gj2.y, gj2.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                    if (p2.scale > 0) {
+                        ctx.strokeStyle = `rgba(100, 200, 255, ${gj.coupling * 0.5})`;
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                });
+            }
+        });
+
+        // 54. Render Action Potential Back-propagation
+        if (eState.apBackProp > 0) {
+            G.state.receptors.forEach(r => {
+                const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (p.scale > 0) {
+                    ctx.strokeStyle = `rgba(255, 255, 0, ${eState.apBackProp})`;
+                    ctx.lineWidth = 5 * p.scale;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 100 * (1 - eState.apBackProp) * p.scale, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+        }
 
         // Render Membrane Potential Graph
         ctx.strokeStyle = '#00ffff';
@@ -174,5 +252,15 @@
         // Render Channel Status
         ctx.fillText(`GIRK: ${(eState.channels.girk * 100).toFixed(0)}%`, 10, h - 240);
         ctx.fillText(`HCN: ${(eState.channels.hcn * 100).toFixed(0)}%`, 10, h - 220);
+
+        // 60. Input Resistance Visual
+        ctx.fillStyle = '#aaa';
+        ctx.fillText(`Input Resistance: ${eState.inputResistance.toFixed(2)} MΩ`, 10, h - 260);
+
+        // 58. Shunting Inhibition (Cl- conductance)
+        if (eState.channels.cl > 0.1) {
+            ctx.fillStyle = '#4488ff';
+            ctx.fillText(`Shunting (Cl-): ${(eState.channels.cl * 100).toFixed(0)}%`, 10, h - 280);
+        }
     };
 })();
