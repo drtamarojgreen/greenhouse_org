@@ -26,6 +26,7 @@ global.document = {
     getElementById: (id) => {
         if (id === 'synapse-sidebar') return mockSidebar;
         if (id === 'synapse-tooltip') return mockTooltip;
+        if (id === 'dose-response-chart') return mockCanvas;
         return null;
     },
     createElement: (tag) => {
@@ -46,10 +47,18 @@ global.document = {
             getContext: (type) => mockCtx,
             clientWidth: 800,
             clientHeight: 600,
+            width: 800,
+            height: 600,
             getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
         };
         return el;
     }
+};
+
+const mockCanvas = {
+    getContext: () => mockCtx,
+    width: 260,
+    height: 80
 };
 
 const mockContainer = {
@@ -83,6 +92,10 @@ const mockCtx = {
     arc: () => { mockCtx.calls.push('arc'); },
     rect: () => { mockCtx.calls.push('rect'); },
     setTransform: () => { },
+    clearRect: () => { },
+    createRadialGradient: () => ({ addColorStop: () => {} }),
+    fillText: () => { },
+    closePath: () => { },
     calls: []
 };
 
@@ -113,7 +126,8 @@ global.window.GreenhouseSynapseApp = {
         create: () => { },
         updateAndDraw: () => { mockCtx.calls.push('particles'); },
         particles: [],
-        ions: []
+        ions: [],
+        plasticityFactor: 1.0
     },
     Tooltips: {
         update: () => { },
@@ -132,13 +146,17 @@ global.window.GreenhouseSynapseApp = {
     Visuals3D: {
         applyDepth: () => { },
         drawShadows: () => { },
-        restoreDepth: () => { }
+        restoreDepth: () => { },
+        drawDynamicLighting: () => { },
+        drawIonHeatMap: () => { }
     },
     Molecular: {
         drawLipidBilayer: () => { },
         drawSNARE: () => { },
         drawECM: () => { },
-        drawAstrocyte: () => { }
+        drawAstrocyte: () => { },
+        drawScaffolding: () => { },
+        drawCascades: () => { }
     }
 };
 
