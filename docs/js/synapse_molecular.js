@@ -8,6 +8,7 @@
 
     G.Molecular = {
         ecmParticles: [],
+        cascades: [],
 
         drawSNARE(ctx, x, y, progress) {
             ctx.save();
@@ -25,7 +26,6 @@
             ctx.save();
             ctx.strokeStyle = isPost ? '#2c3e50' : '#707870';
             ctx.lineWidth = 4;
-            // Fluid-mosaic motion simulation
             const offset = Math.sin(Date.now() / 1000) * 2;
             ctx.beginPath();
             ctx.moveTo(x, y + offset);
@@ -68,7 +68,6 @@
             ctx.lineWidth = 2;
             ctx.beginPath();
 
-            // Draw a star-like astrocyte
             for (let i = 0; i < 8; i++) {
                 const angle = (i / 8) * Math.PI * 2;
                 const r = 30 + Math.sin(Date.now() / 500 + i) * 5;
@@ -81,7 +80,50 @@
             ctx.beginPath();
             ctx.arc(ax, ay, 15, 0, Math.PI * 2);
             ctx.fill();
+            ctx.restore();
+        },
 
+        drawScaffolding(ctx, w, h, plasticity) {
+            const surfaceY = h * 0.68;
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
+            const scale = 40 * plasticity;
+            ctx.beginPath();
+            ctx.moveTo(w * 0.3, surfaceY + 5);
+            ctx.lineTo(w * 0.7, surfaceY + 5);
+            ctx.lineTo(w * 0.65, surfaceY + 5 + scale);
+            ctx.lineTo(w * 0.35, surfaceY + 5 + scale);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 9px Arial';
+            ctx.fillText('POST-SYNAPTIC DENSITY (PSD-95)', w * 0.5 - 70, surfaceY + 15);
+            ctx.restore();
+        },
+
+        triggerCascade(x, y) {
+            this.cascades.push({ x, y, r: 5, alpha: 1.0 });
+        },
+
+        drawCascades(ctx) {
+            ctx.save();
+            for (let i = this.cascades.length - 1; i >= 0; i--) {
+                const c = this.cascades[i];
+                c.r += 2;
+                c.alpha -= 0.02;
+                c.y += 1;
+
+                if (c.alpha <= 0) {
+                    this.cascades.splice(i, 1);
+                } else {
+                    ctx.strokeStyle = `rgba(255, 100, 255, ${c.alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
             ctx.restore();
         }
     };

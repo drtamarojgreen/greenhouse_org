@@ -9,6 +9,7 @@
     G.Particles = {
         particles: [],
         ions: [],
+        plasticityFactor: 1.0,
 
         create(w, h, count = 1, config = {}, forceBurst = false) {
             const chem = G.Chemistry.neurotransmitters[config.activeNT || 'serotonin'];
@@ -49,9 +50,16 @@
             const astrocyteX = w * 0.8;
             const astrocyteY = h * 0.5;
 
-            // Simulation parameters from config
             const reuptakeBlocked = G.config.pharmacology?.ssriActive && G.config.activeNT === 'serotonin';
             const enzymaticRate = G.config.kinetics?.enzymaticRate || 0.002;
+
+            // LTP/LTD Simulation (Enhancement #46)
+            // High frequency stimulation (lots of particles) increases receptor sensitivity
+            if (this.particles.length > 50) {
+                this.plasticityFactor = Math.min(2.5, this.plasticityFactor + 0.001);
+            } else if (this.particles.length < 5) {
+                this.plasticityFactor = Math.max(0.5, this.plasticityFactor - 0.0005);
+            }
 
             // Draw Neurotransmitters - Safe backward loop
             for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -59,23 +67,19 @@
                 p.x += p.vx;
                 p.y += p.vy;
 
-                // Reuptake simulation (Enhancement #41)
                 const preTerminalTop = h * 0.4;
-                const distToTerminal = Math.abs(p.y - preTerminalTop);
                 if (p.y < preTerminalTop && !reuptakeBlocked) {
-                    p.life -= 0.05; // Reuptake absorption
+                    p.life -= 0.05;
                 }
 
-                // Enzymatic degradation (Enhancement #42)
                 p.life -= enzymaticRate;
 
-                // Astrocyte clearance logic (Enhancement #47)
                 if (isGlutamate) {
                     const dx = p.x - astrocyteX;
                     const dy = p.y - astrocyteY;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     if (dist < 60) {
-                        p.life -= 0.05; // Rapid clearance
+                        p.life -= 0.05;
                     }
                 }
 
@@ -94,7 +98,7 @@
             }
             ctx.globalAlpha = 1.0;
 
-            // Draw Ions - Safe backward loop
+            // Draw Ions
             for (let i = this.ions.length - 1; i >= 0; i--) {
                 const ion = this.ions[i];
                 ion.x += ion.vx;
@@ -109,7 +113,6 @@
                     ctx.arc(ion.x, ion.y, ion.r, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Draw tiny charge symbol
                     ctx.fillStyle = '#000';
                     ctx.font = 'bold 8px Arial';
                     ctx.fillText(ion.charge, ion.x - 3, ion.y + 3);

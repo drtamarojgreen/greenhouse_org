@@ -217,6 +217,8 @@
                 const surfaceY = h * 0.68;
                 G.Molecular.drawLipidBilayer(ctx, w * 0.3, h * 0.44, w * 0.4, false);
                 G.Molecular.drawLipidBilayer(ctx, w * 0.2, surfaceY, w * 0.6, true);
+                G.Molecular.drawScaffolding(ctx, w, h, G.Particles.plasticityFactor);
+                G.Molecular.drawCascades(ctx);
 
                 if (this.frame % 60 < 20) {
                     G.Molecular.drawSNARE(ctx, w * 0.5, h * 0.4, (this.frame % 60) / 20);
@@ -227,9 +229,13 @@
                 if (this.frame % 15 === 0) G.Particles.create(w, h, 1, G.config);
                 this.handleReceptorInteractions(w, h);
 
-                if (G.Analytics) G.Analytics.update(G.Particles.particles.length, G.Particles.ions.length);
+                const activeReceptors = G.config.elements.receptors.filter(r => r.state === 'open' || r.state === 'active').length;
+                if (G.Analytics) G.Analytics.update(G.Particles.particles.length, G.Particles.ions.length, activeReceptors);
+
                 if (G.Visuals3D) {
                     G.Visuals3D.drawShadows(ctx, G.Particles.particles);
+                    G.Visuals3D.drawDynamicLighting(ctx, G.config.elements.receptors, w, h);
+                    G.Visuals3D.drawIonHeatMap(ctx, G.Particles.ions, w, h);
                 }
 
                 G.Particles.updateAndDraw(ctx, w, h);
@@ -267,9 +273,8 @@
                         if (receptorType.binds.includes(p.chemistry.id)) {
                             p.life = 0;
 
-                            // Enhancement #54: Competitive Inhibition
                             if (isAntagonistActive && receptor.type === 'ionotropic_receptor') {
-                                return; // Block binding
+                                return;
                             }
 
                             if (receptor.type === 'ionotropic_receptor' && p.chemistry.ionEffect !== 'none') {
@@ -278,6 +283,7 @@
                                 setTimeout(() => receptor.state = 'closed', 200);
                             } else if (receptor.type === 'gpcr') {
                                 receptor.state = 'active';
+                                if (G.Molecular) G.Molecular.triggerCascade(rx, ry + 20);
                                 setTimeout(() => receptor.state = 'idle', 500);
                             }
                         }
@@ -325,7 +331,6 @@
             ctx.fill();
             ctx.restore();
 
-            // Draw Auto-receptors (Enhancement #43)
             G.config.elements.autoreceptors.forEach(ar => {
                 ctx.fillStyle = '#673AB7';
                 ctx.beginPath();
@@ -333,7 +338,6 @@
                 ctx.fill();
             });
 
-            // Draw Transporters (Enhancement #41)
             G.config.elements.transporters.forEach(tr => {
                 const isActive = G.config.pharmacology?.ssriActive && tr.type === 'SERT';
                 ctx.fillStyle = isActive ? '#ff4444' : '#4CAF50';
