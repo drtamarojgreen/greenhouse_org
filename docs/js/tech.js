@@ -176,9 +176,8 @@
             this.dashboardContainer.style.clear = 'both';
             this.renderDashboard(); // Pre-render the content
 
-            // Set up the interval to toggle its visibility
-            this.visibilityInterval = setInterval(() => this.toggleDashboardVisibility(), 5000);
-            console.log('TechApp: Dashboard visibility interval initiated.');
+            // Show dashboard immediately
+            this.toggleDashboardVisibility();
         }
 
         /**
