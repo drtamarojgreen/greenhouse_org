@@ -17,9 +17,9 @@
         ac5: { activity: 0, inhibitedByCa: false }, // 11. Adenylate Cyclase Isoforms (AC5)
         crebActivation: 0,
         deltaFosB: 0,
-        internalizedReceptors: [], // 9. Receptor Internalization
+        internalizedReceptors: [], // 9. Receptor Internalization, 10. Receptor Recycling
         betaArrestin: [], // 7. Beta-Arrestin Recruitment
-        rgsProteins: { active: true, factor: 1.5 }, // 6. RGS proteins
+        rgsProteins: { active: true, factor: 1.5, visual: [] }, // 6. RGS proteins
         grkPhosphorylation: 0, // 8. GRK Phosphorylation
         camkii: { active: 0, calmodulin: 0 }, // 20. Calmodulin/CaMKII Activation
         heteromers: { d1d2: 0 }, // 1. D1-D2 Heteromerization
@@ -67,6 +67,29 @@
             mState.grkPhosphorylation = Math.min(1, mState.grkPhosphorylation + 0.002);
         } else {
             mState.grkPhosphorylation = Math.max(0, mState.grkPhosphorylation - 0.001);
+        }
+
+        // 6. RGS Protein Logic
+        if (mState.rgsProteins.active && mState.gProteins.length > 5 && Math.random() > 0.95) {
+            mState.rgsProteins.visual.push({
+                x: (Math.random() - 0.5) * 300,
+                y: 100 + Math.random() * 50,
+                z: (Math.random() - 0.5) * 100,
+                life: 60
+            });
+        }
+        for (let i = mState.rgsProteins.visual.length - 1; i >= 0; i--) {
+            const rgs = mState.rgsProteins.visual[i];
+            rgs.life--;
+            // Find nearby G-alpha and speed up its decay
+            mState.gProteins.forEach(gp => {
+                if (gp.subunit === 'alpha' && Math.abs(gp.x - rgs.x) < 50 && Math.abs(gp.y - rgs.y) < 50) {
+                    gp.life -= 5;
+                    rgs.x += (gp.x - rgs.x) * 0.1;
+                    rgs.y += (gp.y - rgs.y) * 0.1;
+                }
+            });
+            if (rgs.life <= 0) mState.rgsProteins.visual.splice(i, 1);
         }
 
         for (let i = mState.gProteins.length - 1; i >= 0; i--) {
@@ -233,7 +256,11 @@
         for (let i = mState.internalizedReceptors.length - 1; i >= 0; i--) {
             const r = mState.internalizedReceptors[i];
             r.life--;
-            r.y += 0.2; // Move deeper into cytosol
+            if (r.life > 50) {
+                r.y += 0.2; // Move deeper into cytosol (internalization)
+            } else {
+                r.y -= 0.8; // Move back to membrane (recycling)
+            }
             if (r.life <= 0) mState.internalizedReceptors.splice(i, 1);
         }
 
@@ -260,6 +287,22 @@
         const h = G.height;
         const mState = G.molecularState;
 
+        // 8. GRK Phosphorylation visual (pulsing orange on receptors)
+        if (mState.grkPhosphorylation > 0.5) {
+             G.state.receptors.forEach(r => {
+                 const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                 if (p.scale > 0) {
+                     ctx.strokeStyle = '#ff9900';
+                     ctx.globalAlpha = (Math.sin(G.state.timer * 0.1) * 0.5 + 0.5) * mState.grkPhosphorylation;
+                     ctx.lineWidth = 15 * p.scale;
+                     ctx.beginPath();
+                     ctx.arc(p.x, p.y, 25 * p.scale, 0, Math.PI * 2);
+                     ctx.stroke();
+                     ctx.globalAlpha = 1.0;
+                 }
+             });
+        }
+
         // Render CaMKII activation (halo around receptors when active)
         if (mState.camkii.active > 0.1) {
             G.state.receptors.forEach(r => {
@@ -275,6 +318,17 @@
                 }
             });
         }
+
+        // 6. Render RGS Proteins
+        mState.rgsProteins.visual.forEach(rgs => {
+            const p = project(rgs.x, rgs.y, rgs.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.fillStyle = '#ff00ff';
+                ctx.globalAlpha = rgs.life / 60;
+                ctx.fillRect(p.x - 3*p.scale, p.y - 3*p.scale, 6*p.scale, 6*p.scale);
+                ctx.globalAlpha = 1.0;
+            }
+        });
 
         // Render G-Proteins (Subunits)
         mState.gProteins.forEach(gp => {

@@ -14,6 +14,10 @@
             direct: { color: '#ff4d4d', active: false, label: 'Direct Pathway (D1-MSN)' },
             indirect: { color: '#4d79ff', active: false, label: 'Indirect Pathway (D2-MSN)' }
         },
+        msnPopulations: {
+            d1: [], // 71. Distinct MSN populations
+            d2: []
+        },
         feedback: { gain: 1.0, sncActivity: 1.0 }, // 78. Feedback Loops
         projections: {
             snc: { x: -300, y: -400, z: 0, label: 'SNc (Nigrostriatal)' },
@@ -32,6 +36,20 @@
         },
         astrocytes: [] // 80. Tripartite Synapse
     };
+
+    // Initialize MSN Populations
+    for (let i = 0; i < 10; i++) {
+        G.circuitState.msnPopulations.d1.push({
+            x: -200 + (Math.random() - 0.5) * 100,
+            y: 300 + (Math.random() - 0.5) * 50,
+            z: (Math.random() - 0.5) * 100
+        });
+        G.circuitState.msnPopulations.d2.push({
+            x: 200 + (Math.random() - 0.5) * 100,
+            y: 300 + (Math.random() - 0.5) * 50,
+            z: (Math.random() - 0.5) * 100
+        });
+    }
 
     // Initialize Astrocytes
     for (let i = 0; i < 5; i++) {
@@ -96,6 +114,30 @@
         const w = G.width;
         const h = G.height;
         const cState = G.circuitState;
+
+        // 71. Render MSN Populations
+        cState.msnPopulations.d1.forEach(msn => {
+            const p = project(msn.x, msn.y, msn.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.fillStyle = '#ff4d4d';
+                ctx.globalAlpha = cState.pathways.direct.active ? 1.0 : 0.4;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 10 * p.scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        });
+        cState.msnPopulations.d2.forEach(msn => {
+            const p = project(msn.x, msn.y, msn.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.fillStyle = '#4d79ff';
+                ctx.globalAlpha = cState.pathways.indirect.active ? 1.0 : 0.4;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 10 * p.scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        });
 
         // 76. Render GABAergic Interneurons
         Object.values(cState.interneurons.gabaergic).forEach(inter => {

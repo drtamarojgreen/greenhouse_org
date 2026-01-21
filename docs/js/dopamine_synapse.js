@@ -35,6 +35,7 @@
         glutamate: [], // 77. Glutamate Co-transmission
         autoreceptorFeedback: 1.0, // 31. D2-Short Autoreceptor Feedback
         terminalGeometry: { width: 300, height: 200 }, // 35. Axon Terminal Geometry
+        kissAndRunCount: 0, // 33. Kiss-and-run visual indicator
         caChannelInhibition: 1.0, // 32. Presynaptic Ca2+ Channel Inhibition
         tortuosity: 1.5, // 39. Tortuosity & Extracellular Space
         cleftGradient: [] // 45. Synaptic Cleft Concentration Profile
@@ -91,6 +92,7 @@
                 // 33. Kiss-and-Run Fusion Mode (occasional)
                 const isKissAndRun = Math.random() > 0.8;
                 const releaseFactor = isKissAndRun ? 0.4 : 1.0;
+                if (isKissAndRun) sState.kissAndRunCount = 20;
 
                 // Release DA molecules proportional to filling
                 const count = Math.floor(15 * v.filled * releaseFactor);
@@ -205,7 +207,7 @@
         // 81. Parkinsonian DA Depletion
         if (sState.pathologicalState === 'Parkinsonian') {
             sState.releaseRate = 0.01;
-            sState.datActivity = 0.2;
+            sState.dat.activity = 0.2;
         }
 
         // 21-23. Synthesis Pathway (TH -> DDC)
@@ -249,6 +251,7 @@
     };
 
     G.renderSynapse = function (ctx, project) {
+        const state = G.state;
         const cam = G.state.camera;
         const w = G.width;
         const h = G.height;
@@ -353,5 +356,13 @@
         ctx.fillText(`DAT Activity: ${(sState.dat.activity * 100).toFixed(0)}%`, 10, h - 60);
         ctx.fillText(`Autoreceptor Feedback: ${(sState.autoreceptorFeedback * 100).toFixed(0)}%`, 10, h - 40);
         ctx.fillText(`State: ${sState.pathologicalState}`, 10, h - 20);
+
+        // 33. Kiss-and-run Indicator
+        if (sState.kissAndRunCount > 0) {
+            sState.kissAndRunCount--;
+            ctx.fillStyle = '#ffff00';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText('KISS-AND-RUN FUSION', 10, h - 120);
+        }
     };
 })();

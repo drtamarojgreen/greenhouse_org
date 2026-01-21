@@ -82,6 +82,8 @@
             });
         }
 
+        G.hoverTarget = found; // Set global hover target for UX contextual cursor
+
         if (found) {
             this.tooltipEl.style.left = `${x + 10}px`;
             this.tooltipEl.style.top = `${y + 10}px`;
