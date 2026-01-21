@@ -31,6 +31,8 @@
                 options: [
                     { name: 'Cinematic FX', toggle: () => { G.cinematicFX = !G.cinematicFX; } },
                     { name: 'Cinematic Fly-In', toggle: () => { G.cinematicFlyIn = !G.cinematicFlyIn; } },
+                    { name: 'Bloom Effect', toggle: () => { G.bloomEffect = !G.bloomEffect; } },
+                    { name: 'Volumetric Light', toggle: () => { G.volumetricLight = !G.volumetricLight; } },
                     { name: 'PBR Materials', toggle: () => { G.pbrEnabled = !G.pbrEnabled; } },
                     { name: 'Dynamic Lighting', toggle: () => { G.dynamicLighting = !G.dynamicLighting; } }
                 ]
@@ -42,7 +44,8 @@
                     { name: 'Status Bar', toggle: () => { G.showStatusBar = !G.showStatusBar; } },
                     { name: 'Occupancy Panel', toggle: () => { G.showOccupancyPanel = !G.showOccupancyPanel; } },
                     { name: 'Metabolic Gauges', toggle: () => { G.showMetabolicGauges = !G.showMetabolicGauges; } },
-                    { name: 'Heatmap Overlay', toggle: () => { G.showHeatmap = !G.showHeatmap; } }
+                    { name: 'Heatmap Overlay', toggle: () => { G.showHeatmap = !G.showHeatmap; } },
+                    { name: 'Comparison View', toggle: () => { G.comparisonMode = !G.comparisonMode; } }
                 ]
             },
             {
@@ -120,6 +123,10 @@
             btn.setAttribute('aria-label', `Toggle ${cat.name} menu`);
             btn.setAttribute('aria-haspopup', 'true');
 
+            // UI Micro-interactions (#36)
+            btn.onmouseenter = () => { btn.style.boxShadow = '0 0 10px #00ffcc'; };
+            btn.onmouseleave = () => { btn.style.boxShadow = 'none'; };
+
             const modal = document.createElement('div');
             modal.className = 'serotonin-checkbox-modal';
             modal.style.display = 'none';
@@ -156,6 +163,15 @@
         window.addEventListener('click', () => {
             document.querySelectorAll('.serotonin-checkbox-modal').forEach(m => m.style.display = 'none');
         });
+
+        // Language Selection (#8)
+        const langDropdown = document.createElement('div');
+        langDropdown.className = 'serotonin-dropdown';
+        const langBtn = document.createElement('button');
+        langBtn.className = 'serotonin-btn';
+        langBtn.innerText = 'Language: EN';
+        langDropdown.appendChild(langBtn);
+        controls.appendChild(langDropdown);
 
         container.appendChild(controls);
 
