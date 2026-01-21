@@ -23,6 +23,7 @@
         pde: 1.0, // Phosphodiesterase activity
         adaptation: 0,
         inputResistance: 100, // MOhms
+        eiBalance: 1.0, // Excitatory/Inhibitory Balance
         membranePotential: -70, // mV
         pulses: [],
 
@@ -124,6 +125,15 @@
 
             const excitabilityShift = (ionotropicEffect * potentiationFactor * kv42Inhibition);
 
+            // E/I Balance Visualization (Category 6, #58)
+            const totalE = totalGs + totalGq + totalIonotropic + (G.Transport && G.Transport.glutamateCoRelease ? 1 : 0);
+            const totalI = totalGi;
+            this.eiBalance = (totalE + 1) / (totalI + 1);
+
+            // Back-propagating Action Potentials (Category 6, #59)
+            // 5-HT modulation of dendritic spikes
+            const dendriticPropagation = (ht2aActive ? 1.4 : 1.0) * (totalGi > 1 ? 0.7 : 1.0);
+
             // Membrane Resistance Modulation (Category 6, #57)
             this.inputResistance = 100 * (1.0 + (girkActivation * -0.2) + (this.cAMP * 0.05));
             const resistanceFactor = this.inputResistance / 100;
@@ -136,7 +146,7 @@
                 this.adaptation *= 0.98;
             }
 
-            this.membranePotential += (girkEffect + hcnEffect + excitabilityShift - (this.adaptation * 0.5 + this.sahp + this.skBK * 2)) * resistanceFactor + (-70 - this.membranePotential) * 0.05;
+            this.membranePotential += (girkEffect + hcnEffect + (excitabilityShift * dendriticPropagation) - (this.adaptation * 0.5 + this.sahp + this.skBK * 2)) * resistanceFactor + (-70 - this.membranePotential) * 0.05;
 
             // Update pulses
             this.pulses = this.pulses.filter(p => {
@@ -197,7 +207,7 @@
             ctx.fillText(`Rin: ${this.inputResistance.toFixed(1)} MΩ`, w - 200, 152);
             ctx.fillText(`Adaptation: ${this.adaptation.toFixed(2)}`, w - 200, 165);
             ctx.fillText(`PDE: ${this.pde.toFixed(2)}`, w - 200, 178);
-            ctx.fillText(`Adaptation: ${this.adaptation.toFixed(2)}`, w - 200, 191);
+            ctx.fillText(`E/I Balance: ${this.eiBalance.toFixed(2)}`, w - 200, 191);
             ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 204);
 
             if (G.Transport && G.Transport.glutamateCoRelease) {

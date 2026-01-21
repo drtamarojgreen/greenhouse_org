@@ -12,8 +12,10 @@
         visible: true,
         items: [
             { label: '5-HT1A', color: '#4d79ff', desc: 'Inhibitory Gi/o coupled' },
+            { label: '5-HT1D', color: '#3399ff', desc: 'Presynaptic Autoreceptor' },
             { label: '5-HT2A', color: '#ff4d4d', desc: 'Excitatory Gq coupled' },
             { label: '5-HT3', color: '#4dff4d', desc: 'Ionotropic Na+/K+' },
+            { label: '5-HT4/7', color: '#ff9900', desc: 'Gs Coupled' },
             { label: 'Serotonin', color: '#00ffcc', desc: 'Endogenous Agonist' },
             { label: 'LSD', color: '#ff00ff', desc: 'Psychedelic Agonist' },
             { label: 'SSRI', color: '#ffffff', desc: 'Reuptake Inhibitor' }

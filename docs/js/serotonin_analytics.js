@@ -24,6 +24,12 @@
         updateAnalytics() {
             if (!G.isRunning) return;
 
+            // Pathway Flux Analysis (Category 9, #84)
+            // Net flux = Synthesis - Degradation - Reuptake (simplified pool delta)
+            const synthesisFlux = G.Transport ? G.Transport.synthesisRate * G.Transport.tphActivity : 0;
+            const degradationFlux = G.Transport ? G.Transport.degradationRate * G.Transport.maoActivity : 0;
+            this.sensitivityData.netFlux = (synthesisFlux - degradationFlux).toFixed(3);
+
             // Neurogenesis Score (Category 8, #77)
             // Driven by 5-HT1A and chronic SSRI-like levels
             const ht1aActive = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT1A' && r.state === 'Active') : false;
@@ -163,6 +169,7 @@
 
             // Sensitivity HUD
             ctx.fillText(`Sensitivity (Synth Drive): ${this.sensitivityData.synthesisDrive}`, drX, drY + 20);
+            ctx.fillText(`Net Flux: ${this.sensitivityData.netFlux}`, drX, drY + 35);
 
             // Clinical Metrics (Category 8)
             ctx.fillStyle = '#fff';

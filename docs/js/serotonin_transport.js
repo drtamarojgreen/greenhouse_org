@@ -133,9 +133,16 @@
                 if (this.vesicle5HT > 0) this.vesicle5HT -= 0.1;
             }
 
-            // Replenish tryptophan (L-tryptophan transport across BBB)
-            const bbbTransportRate = 0.05 * (this.pinealMode ? 1.5 : 1.0);
+            // L-Tryptophan Transport via LAT1 (Category 4, #33)
+            // Tryptophan availability depends on competition (simulated)
+            const bbbTransportRate = 0.05 * (this.pinealMode ? 1.5 : 1.0) * (this.inflammationActive ? 0.5 : 1.0);
             if (this.tryptophan < 100) this.tryptophan += bbbTransportRate;
+
+            // Monoamine Oxidase (MAO-A) Degradation steps (Category 4, #37)
+            // Model degradation into 5-HIAA placeholder
+            if (Math.random() < this.degradationRate * this.maoActivity) {
+                this.hiaa = (this.hiaa || 0) + 0.1;
+            }
 
             // Serotonylation of proteins (Category 4, #39)
             // Covalent attachment of 5-HT to proteins (e.g. small GTPases)
@@ -206,6 +213,7 @@
             ctx.fillText(`Sensory Filter: ${(100 - this.sensorySensitivity * 100).toFixed(0)}%`, 20, 180);
             ctx.fillText(`SERT Allele: ${this.sertAllele}`, 20, 195);
             ctx.fillText(`SERT Phos: ${(this.sertPhosphorylation * 100).toFixed(0)}%`, 20, 210);
+            ctx.fillText(`5-HIAA: ${(this.hiaa || 0).toFixed(1)}`, 20, 225);
             if (pre.scale > 0) {
                 ctx.fillStyle = 'rgba(100, 100, 150, 0.3)';
                 ctx.beginPath();

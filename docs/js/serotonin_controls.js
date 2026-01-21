@@ -98,7 +98,7 @@
         container.appendChild(zoomControl);
 
         // Subcellular Markers (Category 10, #93)
-        this.renderSubcellularMarkers = (ctx, project, cam, w, h) => {
+        G.renderSubcellularMarkers = (ctx, project, cam, w, h) => {
             // Cytoskeleton visualization (Category 10, #93)
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.lineWidth = 1;
