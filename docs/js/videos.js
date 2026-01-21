@@ -42,9 +42,15 @@ import { get_getLatestVideosFromFeed } from 'backend/getLatestVideosFromFeed';
     };
 
     function validateConfiguration() {
-        appState.targetSelector = scriptElement?.getAttribute('data-target-selector');
-        appState.baseUrl = scriptElement?.getAttribute('data-base-url');
-        const view = scriptElement?.getAttribute('data-view');
+        const globalAttributes = (window._greenhouseAllScriptAttributes && window._greenhouseAllScriptAttributes['videos.js'])
+            ? window._greenhouseAllScriptAttributes['videos.js']
+            : (window._greenhouseScriptAttributes || {});
+
+        appState.targetSelector = globalAttributes['target-selector-left']
+                                 || globalAttributes['target-selector']
+                                 || scriptElement?.getAttribute('data-target-selector');
+        appState.baseUrl = globalAttributes['base-url'] || scriptElement?.getAttribute('data-base-url');
+        const view = globalAttributes['view'] || scriptElement?.getAttribute('data-view');
 
         if (!appState.targetSelector) {
             console.error('Videos: Missing required data-target-selector attribute');

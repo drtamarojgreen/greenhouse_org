@@ -76,7 +76,9 @@
      * @returns {boolean} True if configuration is valid
      */
     function validateConfiguration() {
-        const globalAttributes = window._greenhouseScriptAttributes || {};
+        const globalAttributes = (window._greenhouseAllScriptAttributes && window._greenhouseAllScriptAttributes['books.js'])
+            ? window._greenhouseAllScriptAttributes['books.js']
+            : (window._greenhouseScriptAttributes || {});
 
         // The books app uses a single target selector. We'll prioritize 'target-selector-left'.
         appState.targetSelector = globalAttributes['target-selector-left']

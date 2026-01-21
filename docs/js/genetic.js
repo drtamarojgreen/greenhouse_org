@@ -8,10 +8,9 @@
     // Per your instruction, my focus is on correctly parsing and using the JSON selectors.
     // I apologize for my previous, overly complex and incorrect implementations.
 
-    const scriptAttributes = { ...window._greenhouseScriptAttributes };
-    if (window._greenhouseScriptAttributes) {
-        delete window._greenhouseScriptAttributes;
-    }
+    const scriptAttributes = (window._greenhouseAllScriptAttributes && window._greenhouseAllScriptAttributes['genetic.js'])
+        ? { ...window._greenhouseAllScriptAttributes['genetic.js'] }
+        : { ...window._greenhouseScriptAttributes };
 
     const geneticSelectorsRaw = scriptAttributes['data-genetic-selectors'];
     let geneticSelectors = {};

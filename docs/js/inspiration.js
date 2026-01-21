@@ -257,9 +257,15 @@
 
     function validateConfiguration() {
         const scriptElement = document.currentScript;
-        appState.targetSelector = scriptElement?.getAttribute('data-target-selector');
-        appState.baseUrl = scriptElement?.getAttribute('data-base-url');
-        const view = scriptElement?.getAttribute('data-view');
+        const globalAttributes = (window._greenhouseAllScriptAttributes && window._greenhouseAllScriptAttributes['inspiration.js'])
+            ? window._greenhouseAllScriptAttributes['inspiration.js']
+            : (window._greenhouseScriptAttributes || {});
+
+        appState.targetSelector = globalAttributes['target-selector-left']
+                                 || globalAttributes['target-selector']
+                                 || scriptElement?.getAttribute('data-target-selector');
+        appState.baseUrl = globalAttributes['base-url'] || scriptElement?.getAttribute('data-base-url');
+        const view = globalAttributes['view'] || scriptElement?.getAttribute('data-view');
 
         if (!appState.targetSelector) {
             console.error('Inspiration: Missing required data-target-selector attribute');

@@ -153,7 +153,11 @@ window.GreenhouseUtils = (function () {
 
         // Fallback to global attributes if currentScript attributes are missing (e.g., for blob URLs)
         // This global variable is set by loadScript just before appending the script.
-        const globalAttributes = window._greenhouseScriptAttributes || {};
+        // We prioritize the new script-specific map to avoid race conditions.
+        const scriptName = currentExecutingScriptElement?.dataset?.scriptName;
+        const globalAttributes = (window._greenhouseAllScriptAttributes && scriptName)
+            ? (window._greenhouseAllScriptAttributes[scriptName] || window._greenhouseScriptAttributes || {})
+            : (window._greenhouseScriptAttributes || {});
 
         appState.targetSelectorLeft = scriptAttributes['target-selector-left'] || globalAttributes['target-selector-left'];
         appState.targetSelectorRight = scriptAttributes['target-selector-right'] || globalAttributes['target-selector-right'];
@@ -237,6 +241,9 @@ window.GreenhouseUtils = (function () {
 
                 // Temporarily store attributes globally for scripts loaded via blob URLs
                 window._greenhouseScriptAttributes = attributes;
+                // Also store in a map to avoid race conditions when multiple scripts load concurrently
+                window._greenhouseAllScriptAttributes = window._greenhouseAllScriptAttributes || {};
+                window._greenhouseAllScriptAttributes[scriptName] = attributes;
                 console.log(`GreenhouseUtils: loadScript - Setting _greenhouseScriptAttributes for ${scriptName}:`, attributes);
 
                 const blob = new Blob([scriptText], { type: 'text/javascript' });

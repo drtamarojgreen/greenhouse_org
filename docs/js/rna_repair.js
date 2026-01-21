@@ -976,6 +976,13 @@
 
     // --- Auto-Initialization Logic ---
     function captureAttributes() {
+        if (window._greenhouseAllScriptAttributes && window._greenhouseAllScriptAttributes['rna_repair.js']) {
+            const attrs = window._greenhouseAllScriptAttributes['rna_repair.js'];
+            return {
+                targetSelector: attrs['target-selector-left'],
+                baseUrl: attrs['base-url']
+            };
+        }
         if (window._greenhouseScriptAttributes) {
             return {
                 targetSelector: window._greenhouseScriptAttributes['target-selector-left'],

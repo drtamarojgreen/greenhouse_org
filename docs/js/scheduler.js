@@ -97,11 +97,10 @@
         await loadDependencies();
     }
 
-    // Immediately capture and then clean up the global attributes
-    const scriptAttributes = { ...window._greenhouseScriptAttributes };
-    if (window._greenhouseScriptAttributes) {
-        delete window._greenhouseScriptAttributes;
-    }
+    // Immediately capture the global attributes
+    const scriptAttributes = (window._greenhouseAllScriptAttributes && window._greenhouseAllScriptAttributes['scheduler.js'])
+        ? { ...window._greenhouseAllScriptAttributes['scheduler.js'] }
+        : { ...window._greenhouseScriptAttributes };
 
     // Import GreenhouseUtils and GreenhouseSchedulerUI
     const GreenhouseUtils = window.GreenhouseUtils;

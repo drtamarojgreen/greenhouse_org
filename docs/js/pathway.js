@@ -54,7 +54,16 @@
 
     // --- Main Execution Logic ---
     function captureAttributes() {
-        // 1. Try global object (set by GreenhouseUtils)
+        // 0. Try script-specific attributes map (set by GreenhouseUtils)
+        if (window._greenhouseAllScriptAttributes && window._greenhouseAllScriptAttributes['pathway.js']) {
+            const attrs = window._greenhouseAllScriptAttributes['pathway.js'];
+            return {
+                targetSelector: attrs['target-selector-left'],
+                baseUrl: attrs['base-url']
+            };
+        }
+
+        // 1. Try global object (set by GreenhouseUtils) - legacy fallback
         if (window._greenhouseScriptAttributes) {
             const attrs = window._greenhouseScriptAttributes;
             return {

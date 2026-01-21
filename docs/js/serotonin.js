@@ -267,7 +267,10 @@
     };
 
     function captureAttributes() {
-        const attr = window._greenhouseScriptAttributes || {};
+        const attrMap = window._greenhouseAllScriptAttributes && window._greenhouseAllScriptAttributes['serotonin.js']
+            ? window._greenhouseAllScriptAttributes['serotonin.js']
+            : null;
+        const attr = attrMap || window._greenhouseScriptAttributes || {};
         const script = document.currentScript;
         const utils = window.GreenhouseUtils;
 

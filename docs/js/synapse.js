@@ -30,18 +30,29 @@
 
     // Function to capture necessary attributes from the script tag.
     const captureScriptAttributes = () => {
-        // Priority 1: Check global attributes object (set by GreenhouseUtils)
+        // Priority 1: Check script-specific attributes map (set by GreenhouseUtils)
+        if (window._greenhouseAllScriptAttributes && window._greenhouseAllScriptAttributes['synapse.js']) {
+            console.log('Synapse App: Using script-specific attributes map.');
+            const attrs = window._greenhouseAllScriptAttributes['synapse.js'];
+            window._greenhouseSynapseAttributes = {
+                baseUrl: attrs['base-url'],
+                targetSelector: attrs['target-selector-left']
+            };
+            return true;
+        }
+
+        // Priority 2: Check global attributes object (legacy fallback, subject to race conditions)
         if (window._greenhouseScriptAttributes) {
             console.log('Synapse App: Using global script attributes.');
             window._greenhouseSynapseAttributes = {
                 baseUrl: window._greenhouseScriptAttributes['base-url'],
                 targetSelector: window._greenhouseScriptAttributes['target-selector-left']
             };
-            delete window._greenhouseScriptAttributes; // Clean up
+            // Do not delete, as other scripts might still need it if they haven't switched to the map yet
             return true;
         }
 
-        // Priority 2: Fallback to DOM inspection (e.g. for synapse.html testing)
+        // Priority 3: Fallback to DOM inspection (e.g. for synapse.html testing)
         const scripts = document.querySelectorAll('script[src*="synapse.js"]');
         if (scripts.length > 0) {
             const script = scripts[scripts.length - 1];

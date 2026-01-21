@@ -313,6 +313,10 @@
     window.Greenhouse.setDNASimulationMode = function (mode) { G.startSimulation(mode); };
 
     function captureAttributes() {
+        if (window._greenhouseAllScriptAttributes && window._greenhouseAllScriptAttributes['dna_repair.js']) {
+            const attrs = window._greenhouseAllScriptAttributes['dna_repair.js'];
+            return { targetSelector: attrs['target-selector-left'], baseUrl: attrs['base-url'] };
+        }
         if (window._greenhouseScriptAttributes) return { targetSelector: window._greenhouseScriptAttributes['target-selector-left'], baseUrl: window._greenhouseScriptAttributes['base-url'] };
         const script = document.currentScript;
         if (script) return { targetSelector: script.getAttribute('data-target-selector-left'), baseUrl: script.getAttribute('data-base-url') };
