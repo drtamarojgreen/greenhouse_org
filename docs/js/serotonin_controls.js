@@ -30,7 +30,6 @@
                 name: 'Aesthetics',
                 options: [
                     { name: 'Cinematic FX', toggle: () => { G.cinematicFX = !G.cinematicFX; } },
-                    { name: 'Cinematic Fly-In', toggle: () => { G.cinematicFlyIn = !G.cinematicFlyIn; } },
                     { name: 'Bloom Effect', toggle: () => { G.bloomEffect = !G.bloomEffect; } },
                     { name: 'Volumetric Light', toggle: () => { G.volumetricLight = !G.volumetricLight; } },
                     { name: 'PBR Materials', toggle: () => { G.pbrEnabled = !G.pbrEnabled; } },

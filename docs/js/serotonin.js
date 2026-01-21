@@ -43,12 +43,11 @@
         volumetricLight: false,
         fps: 0,
         lastTime: 0,
-        flyInTargetIndex: 0,
-        flyInTimer: 0,
+        viewMode: '3D',
+        selectedReceptor: null,
 
         state: {
             camera: { x: 0, y: 0, z: -500, rotationX: 0.5, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
-            cinematicCamera: { x: 0, y: 0, z: -500, rotationX: 0.5, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
             receptorModel: null,
             ligands: [],
             lipids: [],
@@ -115,7 +114,14 @@
 
         setupInteraction() {
             let isDragging = false; let lastX = 0; let lastY = 0;
-            this.canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+            let startX = 0; let startY = 0;
+
+            this.canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                lastX = e.clientX; lastY = e.clientY;
+                startX = e.clientX; startY = e.clientY;
+            });
+
             window.addEventListener('mousemove', (e) => {
                 const rect = this.canvas.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
@@ -132,7 +138,47 @@
                     lastX = e.clientX; lastY = e.clientY;
                 }
             });
-            window.addEventListener('mouseup', () => { isDragging = false; });
+            window.addEventListener('mouseup', (e) => {
+                if (isDragging) {
+                    const dist = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
+                    if (dist < 5) { // It's a click
+                        this.handleCanvasClick(e);
+                    }
+                }
+                isDragging = false;
+            });
+        },
+
+        handleCanvasClick(e) {
+            const rect = this.canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            if (this.viewMode === '2D-Closeup') {
+                this.viewMode = '3D';
+                this.selectedReceptor = null;
+                return;
+            }
+
+            if (!this.ctx || !window.GreenhouseModels3DMath) return;
+            const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+            const cam = this.state.camera;
+            const w = this.width;
+            const h = this.height;
+
+            if (this.state.receptors) {
+                for (let r of this.state.receptors) {
+                    const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                    const dx = mx - p.x;
+                    const dy = my - p.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 30 * p.scale) {
+                        this.viewMode = '2D-Closeup';
+                        this.selectedReceptor = r;
+                        break;
+                    }
+                }
+            }
         },
 
         updateContextualCursor(mx, my) {
@@ -171,31 +217,6 @@
         update() {
             if (this.paused) return;
 
-            // Cinematic Fly-In Logic (#29, #90)
-            if (this.cinematicFlyIn && this.state.receptors && this.state.receptors.length > 0) {
-                this.flyInTimer++;
-                if (this.flyInTimer > 400) { // Stay on receptor for ~6-7 seconds at 60fps
-                    this.flyInTimer = 0;
-                    this.flyInTargetIndex = (this.flyInTargetIndex + 1) % this.state.receptors.length;
-                }
-
-                const target = this.state.receptors[this.flyInTargetIndex];
-                const tCam = this.state.cinematicCamera;
-
-                // Stop the revolution and interpolate camera to target receptor with dramatic zoom
-                tCam.x += (target.x - tCam.x) * 0.03;
-                tCam.y += (target.y - tCam.y) * 0.03;
-                tCam.z += ((target.z - 100) - tCam.z) * 0.03; // Close-up distance
-                tCam.rotationY += (0 - tCam.rotationY) * 0.03;
-                tCam.rotationX += (0.1 - tCam.rotationX) * 0.03;
-                tCam.zoom = 4.0; // High zoom for scientific detail
-            } else {
-                this.state.cinematicCamera.x = 0;
-                this.state.cinematicCamera.y = 0;
-                this.state.cinematicCamera.z = -500;
-                this.state.cinematicCamera.zoom = 1.0;
-            }
-
             // Performance Gauge (Feedback #50)
             const now = performance.now();
             if (this.lastTime) {
@@ -207,8 +228,8 @@
             const iterations = (this.timeLapse ? 5 : 1) * (this.playbackSpeed || 1);
             for (let i = 0; i < iterations; i++) {
                 this.state.timer++;
-                // Stop the revolution if Cinematic Fly-In is active
-                if (!this.isDragging && !this.cinematicFlyIn) {
+                // Stop the revolution if 2D Closeup is active
+                if (!this.isDragging && this.viewMode !== '2D-Closeup') {
                     this.state.camera.rotationY += 0.003;
                 }
                 // Call module updates if they exist
@@ -258,11 +279,63 @@
             ctx.restore();
         },
 
+        render2DCloseup(ctx, w, h) {
+            const r = this.selectedReceptor;
+            if (!r) return;
+
+            ctx.fillStyle = '#0a0510';
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.save();
+            ctx.translate(w / 2, h / 2);
+
+            // Draw detailed schematic
+            ctx.strokeStyle = r.color || '#00ffcc';
+            ctx.lineWidth = 5;
+            ctx.strokeRect(-100, -150, 200, 300);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(r.type + " Closeup", 0, -180);
+
+            ctx.font = '14px Arial';
+            ctx.fillText("State: " + (r.state || 'Normal'), 0, -100);
+            ctx.fillText("Subtype Architecture: GPCR Class A", 0, -80);
+
+            // Draw Helices (7-TM)
+            for (let i = 0; i < 7; i++) {
+                ctx.fillStyle = r.color || '#00ffcc';
+                ctx.globalAlpha = 0.6;
+                ctx.fillRect(-80 + i * 22, -120, 15, 240);
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Draw Binding Pocket
+            ctx.beginPath();
+            ctx.arc(0, -40, 40, 0, Math.PI * 2);
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            ctx.fillText("Binding Pocket", 0, -40);
+
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#aaa';
+            ctx.fillText("Click anywhere to return to 3D model", 0, 200);
+
+            ctx.restore();
+        },
+
         render() {
             const ctx = this.ctx;
             let w = this.width;
             let h = this.height;
-            const cam = this.cinematicFlyIn ? this.state.cinematicCamera : this.state.camera;
+
+            if (this.viewMode === '2D-Closeup') {
+                this.render2DCloseup(ctx, w, h);
+                return;
+            }
+
+            const cam = this.state.camera;
 
             // Serotonin Syndrome Warning visual distortion (#60)
             let offsetX = 0, offsetY = 0;
