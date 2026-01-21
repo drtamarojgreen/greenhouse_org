@@ -13,12 +13,23 @@
                 const chem = G.Chemistry;
 
                 let label = '';
+                let subtext = '';
 
-                // Intelligent label resolution
+                // Intelligent label resolution (Enhancement #25, #27, #31, #35)
                 if (chem.neurotransmitters[hoveredId]) {
-                    label = chem.neurotransmitters[hoveredId].name[lang];
+                    const nt = chem.neurotransmitters[hoveredId];
+                    label = nt.name[lang];
+                    subtext = `<div style="font-size: 10px; color: #aaa; margin-top: 5px;">
+                        MW: ${nt.molecularWeight}<br>
+                        pKa: ${nt.pKa}
+                    </div>`;
                 } else if (chem.receptors[hoveredId]) {
-                    label = chem.receptors[hoveredId].name[lang];
+                    const r = chem.receptors[hoveredId];
+                    label = r.name[lang];
+                    subtext = `<div style="font-size: 10px; color: #aaa; margin-top: 5px;">
+                        Stoichiometry: ${r.stoichiometry}<br>
+                        PDB: ${r.pdbId}
+                    </div>`;
                 } else if (config.translations[hoveredId]) {
                     label = config.translations[hoveredId][lang] || config.translations[hoveredId];
                 } else {
@@ -26,7 +37,7 @@
                 }
 
                 tooltipElem.style.display = 'block';
-                tooltipElem.innerHTML = label;
+                tooltipElem.innerHTML = `<div style="font-weight: bold; color: #00F2FF;">${label}</div>${subtext}`;
 
                 // Keep tooltip within bounds
                 const xOffset = mouseX + 25;

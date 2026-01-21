@@ -12,7 +12,8 @@
             atp: 100.0,    // %
             health: 100.0,
             membraneCurrent: 0.0, // pA
-            doseResponse: []
+            doseResponse: [],
+            sensitivity: 1.0
         },
 
         calculateHealthScore(config, particleCount) {
@@ -32,9 +33,14 @@
                         <span id="calcium-level" style="font-family: monospace; font-size: 14px; color: #fff;">0.10 μM</span>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="font-size: 11px; color: #aaa;">Membrane Current</span>
                         <span id="membrane-current" style="font-family: monospace; font-size: 14px; color: #FFD700;">0.0 pA</span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 11px; color: #aaa;">Simulation Sensitivity</span>
+                        <span id="sensitivity-index" style="font-family: monospace; font-size: 14px; color: #00F2FF;">1.00</span>
                     </div>
 
                     <div style="margin-bottom: 12px;">
@@ -57,14 +63,14 @@
         },
 
         update(particleCount, ionCount, activeReceptors) {
-            // Update Calcium based on ion activity
             this.state.calcium = 0.1 + (ionCount * 0.05);
             if (this.state.calcium > 2.0) this.state.calcium = 2.0;
 
-            // Virtual Patch-Clamp calculation (Enhancement #11)
             this.state.membraneCurrent = (activeReceptors * 1.5) + (ionCount * 0.8);
 
-            // ATP consumption simulation
+            // Sensitivity Analysis (Enhancement #98)
+            this.state.sensitivity = G.Particles.plasticityFactor;
+
             if (particleCount > 60) {
                 this.state.atp -= 0.05;
             } else {
@@ -74,14 +80,12 @@
 
             this.state.health = this.calculateHealthScore({}, particleCount);
 
-            // Update Dose-Response curve (simplified)
             if (G.frame % 30 === 0) {
                 this.state.doseResponse.push(this.state.membraneCurrent);
                 if (this.state.doseResponse.length > 20) this.state.doseResponse.shift();
                 this.drawChart();
             }
 
-            // Update UI
             const scoreElem = document.getElementById('health-score');
             if (scoreElem) scoreElem.innerText = this.state.health.toFixed(1);
 
@@ -90,6 +94,9 @@
 
             const currentElem = document.getElementById('membrane-current');
             if (currentElem) currentElem.innerText = `${this.state.membraneCurrent.toFixed(1)} pA`;
+
+            const sensElem = document.getElementById('sensitivity-index');
+            if (sensElem) sensElem.innerText = this.state.sensitivity.toFixed(2);
 
             const atpBar = document.getElementById('atp-bar');
             if (atpBar) {
@@ -119,7 +126,6 @@
             });
             ctx.stroke();
 
-            // Axis label
             ctx.fillStyle = 'rgba(255,255,255,0.3)';
             ctx.font = '8px Arial';
             ctx.fillText('DOSE-RESPONSE', 5, 10);

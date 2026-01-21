@@ -12,6 +12,7 @@
         accentCyan: '#00F2FF',
         accentGold: '#FFD700',
         activeNT: 'serotonin',
+        activeScenario: 'healthy',
         font: "'Quicksand', 'Segoe UI', sans-serif",
         translations: {
             preSynapticTerminal: { en: 'Pre-Synaptic Terminal', es: 'Terminal Presináptica' },
@@ -29,10 +30,10 @@
                 { id: 'vesicle', x: 0.5, y: 0.22, r: 10, offset: 4 }
             ],
             receptors: [
-                { x: 0.38, type: 'ionotropic_receptor', state: 'closed' },
-                { x: 0.46, type: 'ionotropic_receptor', state: 'closed' },
-                { x: 0.54, type: 'gpcr', state: 'idle' },
-                { x: 0.62, type: 'ionotropic_receptor', state: 'closed' }
+                { x: 0.38, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                { x: 0.46, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                { x: 0.54, type: 'gpcr', state: 'idle', activationCount: 0 },
+                { x: 0.62, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 }
             ],
             autoreceptors: [
                 { x: 0.42, y: 0.4, type: 'autoreceptor' },
@@ -136,6 +137,11 @@
                     onNTChange: (ntId) => {
                         G.config.activeNT = ntId;
                         this.renderSidebar();
+                    },
+                    onScenarioChange: (scenarioId) => {
+                        G.config.activeScenario = scenarioId;
+                        this.applyScenario(scenarioId);
+                        this.renderSidebar();
                     }
                 });
 
@@ -151,13 +157,57 @@
                         },
                         onToggleDrug: (drugId, isActive) => {
                             console.log(`Drug ${drugId} toggled: ${isActive}`);
-                        }
+                        },
+                        onGenerateFigure: () => this.exportFigure()
                     });
                 }
 
                 if (G.Analytics) {
                     G.Analytics.renderDashboard(document.getElementById('synapse-sidebar'));
                 }
+            }
+        },
+
+        exportFigure() {
+            if (!this.canvas) return;
+            const link = document.createElement('a');
+            link.download = `synapse_research_figure_${Date.now()}.png`;
+            link.href = this.canvas.toDataURL('image/png', 1.0);
+            link.click();
+        },
+
+        applyScenario(scenarioId) {
+            const scenario = G.Chemistry.scenarios[scenarioId];
+            if (!scenario) return;
+
+            if (scenarioId === 'schizophrenia') {
+                G.config.elements.receptors = [
+                    { x: 0.3, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                    { x: 0.4, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                    { x: 0.5, type: 'gpcr', state: 'idle', activationCount: 0 },
+                    { x: 0.6, type: 'gpcr', state: 'idle', activationCount: 0 },
+                    { x: 0.7, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 }
+                ];
+            } else if (scenarioId === 'alzheimers') {
+                G.config.elements.vesicles = [
+                    { id: 'vesicle', x: 0.5, y: 0.2, r: 10, offset: 0 }
+                ];
+                G.config.elements.receptors = [
+                    { x: 0.45, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                    { x: 0.55, type: 'gpcr', state: 'idle', activationCount: 0 }
+                ];
+            } else {
+                G.config.elements.vesicles = [
+                    { id: 'vesicle', x: 0.45, y: 0.15, r: 12, offset: 0 },
+                    { id: 'vesicle', x: 0.55, y: 0.18, r: 14, offset: 2 },
+                    { id: 'vesicle', x: 0.5, y: 0.22, r: 10, offset: 4 }
+                ];
+                G.config.elements.receptors = [
+                    { x: 0.38, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                    { x: 0.46, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                    { x: 0.54, type: 'gpcr', state: 'idle', activationCount: 0 },
+                    { x: 0.62, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 }
+                ];
             }
         },
 
@@ -201,7 +251,7 @@
             const w = this.canvas.width / (window.devicePixelRatio || 1);
             const h = this.canvas.height / (window.devicePixelRatio || 1);
 
-            ctx.fillStyle = '#010501';
+            ctx.fillStyle = G.config.highContrast ? '#000' : '#010501';
             ctx.fillRect(0, 0, w, h);
 
             if (G.Molecular) {
@@ -219,6 +269,7 @@
                 G.Molecular.drawLipidBilayer(ctx, w * 0.2, surfaceY, w * 0.6, true);
                 G.Molecular.drawScaffolding(ctx, w, h, G.Particles.plasticityFactor);
                 G.Molecular.drawCascades(ctx);
+                G.Molecular.drawRetrograde(ctx, w, h);
 
                 if (this.frame % 60 < 20) {
                     G.Molecular.drawSNARE(ctx, w * 0.5, h * 0.4, (this.frame % 60) / 20);
@@ -257,9 +308,19 @@
             const chem = G.Chemistry;
             const surfaceY = h * 0.68;
 
-            const isAntagonistActive = G.config.pharmacology?.antagonistActive;
+            const pharm = G.config.pharmacology || {};
 
             G.config.elements.receptors.forEach(receptor => {
+                if (receptor.state === 'internalized' || receptor.state === 'desensitized') {
+                    // Gradual recovery
+                    receptor.recovery = (receptor.recovery || 0) + 1;
+                    if (receptor.recovery > 300) {
+                        receptor.state = (receptor.type === 'gpcr' ? 'idle' : 'closed');
+                        receptor.activationCount = 0;
+                    }
+                    return;
+                }
+
                 const rx = w * receptor.x;
                 const ry = surfaceY;
 
@@ -273,18 +334,45 @@
                         if (receptorType.binds.includes(p.chemistry.id)) {
                             p.life = 0;
 
-                            if (isAntagonistActive && receptor.type === 'ionotropic_receptor') {
+                            // Pharmacology effects
+                            if (pharm.antagonistActive && receptor.type === 'ionotropic_receptor') return;
+
+                            // Enhancement #56: Receptor Desensitization & Internalization
+                            receptor.activationCount++;
+                            if (receptor.activationCount > 50) {
+                                receptor.state = 'internalized';
+                                receptor.recovery = 0;
                                 return;
+                            } else if (receptor.activationCount > 30) {
+                                receptor.state = 'desensitized';
+                                // 50% chance to still activate but won't trigger effects
+                                if (Math.random() > 0.5) return;
                             }
 
                             if (receptor.type === 'ionotropic_receptor' && p.chemistry.ionEffect !== 'none') {
-                                G.Particles.createIon(rx, ry + 10, p.chemistry.ionEffect);
+                                // Enhancement #66: TTX blocks Na channels
+                                if (pharm.ttxActive && p.chemistry.ionEffect === 'sodium') return;
+
+                                // Enhancement #55: PAM (Benzo) increases GABA/Cl influx
+                                let ionsToCreate = 1;
+                                if (pharm.benzodiazepineActive && p.chemistry.id === 'gaba') ionsToCreate = 3;
+
+                                for(let k=0; k<ionsToCreate; k++) {
+                                    G.Particles.createIon(rx, ry + 10, p.chemistry.ionEffect);
+                                }
+
                                 receptor.state = 'open';
-                                setTimeout(() => receptor.state = 'closed', 200);
+                                setTimeout(() => { if(receptor.state === 'open') receptor.state = 'closed'; }, 200);
+
+                                // Enhancement #18: Retrograde Signaling Trigger
+                                if (G.Particles.ions.length > 30 && Math.random() > 0.9) {
+                                    if (G.Molecular) G.Molecular.triggerRetrograde(rx, ry);
+                                }
+
                             } else if (receptor.type === 'gpcr') {
                                 receptor.state = 'active';
                                 if (G.Molecular) G.Molecular.triggerCascade(rx, ry + 20);
-                                setTimeout(() => receptor.state = 'idle', 500);
+                                setTimeout(() => { if(receptor.state === 'active') receptor.state = 'idle'; }, 500);
                             }
                         }
                     }
@@ -311,7 +399,7 @@
             const activeId = this.hoveredId || this.sidebarHoveredId;
 
             ctx.save();
-            const preColor = activeId === 'preSynapticTerminal' ? '#357438' : '#303830';
+            const preColor = activeId === 'preSynapticTerminal' ? (G.config.highContrast ? '#fff' : '#357438') : '#303830';
             ctx.fillStyle = preColor;
             ctx.beginPath();
             ctx.moveTo(centerX - w * 0.06, 0);
@@ -320,7 +408,7 @@
             ctx.bezierCurveTo(centerX + bW / 2, h * 0.2, centerX + w * 0.06, h * 0.2, centerX + w * 0.06, 0);
             ctx.fill();
 
-            const postColor = activeId === 'postSynapticTerminal' ? '#732751' : '#1a1c1e';
+            const postColor = activeId === 'postSynapticTerminal' ? (G.config.highContrast ? '#fff' : '#732751') : '#1a1c1e';
             ctx.fillStyle = postColor;
             ctx.beginPath();
             ctx.moveTo(0, h); ctx.lineTo(0, h * 0.88);
@@ -355,11 +443,19 @@
 
             G.config.elements.receptors.forEach(r => {
                 const rx = w * r.x, ry = surfaceY - 5;
+                if (r.state === 'internalized') {
+                    ctx.strokeStyle = '#333';
+                    ctx.setLineDash([2,2]);
+                    ctx.strokeRect(rx - 6, ry, 12, 12);
+                    ctx.setLineDash([]);
+                    return;
+                }
+
                 if (r.type === 'ionotropic_receptor') {
-                    ctx.fillStyle = r.state === 'open' ? '#fff' : '#4DB6AC';
+                    ctx.fillStyle = r.state === 'open' ? '#fff' : (r.state === 'desensitized' ? '#555' : '#4DB6AC');
                     ctx.fillRect(rx - 6, ry, 4, 12); ctx.fillRect(rx + 2, ry, 4, 12);
                 } else {
-                    ctx.strokeStyle = r.state === 'active' ? '#fff' : '#D32F2F';
+                    ctx.strokeStyle = r.state === 'active' ? '#fff' : (r.state === 'desensitized' ? '#555' : '#D32F2F');
                     ctx.lineWidth = 3; ctx.beginPath();
                     ctx.moveTo(rx - 8, ry + 10);
                     for (let i = 0; i < 5; i++) ctx.lineTo(rx - 8 + i * 4, ry + (i % 2 === 0 ? -6 : 6));
