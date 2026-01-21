@@ -110,7 +110,9 @@
 
             this.renderSidebar();
 
-            this.handleResize = this.resize.bind(this);
+            if (!this.handleResize) {
+                this.handleResize = this.resize.bind(this);
+            }
             window.removeEventListener('resize', this.handleResize);
             window.addEventListener('resize', this.handleResize);
             this.resize();

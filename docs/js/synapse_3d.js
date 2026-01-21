@@ -15,13 +15,12 @@
         },
 
         drawShadows(ctx, particles) {
-            ctx.save();
+            // Note: This is called by the main render loop.
+            // It sets the state for subsequent particle drawing.
             ctx.shadowBlur = 10;
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
             ctx.shadowOffsetX = 5;
             ctx.shadowOffsetY = 5;
-            // Particles will inherit this if drawn while this state is active
-            ctx.restore();
         },
 
         restoreDepth(ctx) {
