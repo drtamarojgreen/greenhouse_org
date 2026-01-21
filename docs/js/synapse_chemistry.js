@@ -17,7 +17,9 @@
                 targets: ['ionotropic_receptor'],
                 ionEffect: 'sodium',
                 reuptakeVia: 'EAAT',
-                enzyme: null
+                enzyme: null,
+                molecularWeight: '147.13 g/mol',
+                pKa: 2.1
             },
             gaba: {
                 id: 'gaba',
@@ -28,7 +30,9 @@
                 targets: ['ionotropic_receptor'],
                 ionEffect: 'chloride',
                 reuptakeVia: 'GAT',
-                enzyme: null
+                enzyme: null,
+                molecularWeight: '103.12 g/mol',
+                pKa: 4.2
             },
             dopamine: {
                 id: 'dopamine',
@@ -39,7 +43,9 @@
                 targets: ['gpcr'],
                 ionEffect: 'none',
                 reuptakeVia: 'DAT',
-                enzyme: 'COMT'
+                enzyme: 'COMT',
+                molecularWeight: '153.18 g/mol',
+                pKa: 8.9
             },
             serotonin: {
                 id: 'serotonin',
@@ -50,7 +56,9 @@
                 targets: ['gpcr'],
                 ionEffect: 'none',
                 reuptakeVia: 'SERT',
-                enzyme: 'MAO'
+                enzyme: 'MAO',
+                molecularWeight: '176.21 g/mol',
+                pKa: 9.5
             }
         },
 
@@ -58,17 +66,50 @@
             ionotropic_receptor: {
                 id: 'ionotropic_receptor',
                 name: { en: 'Ionotropic Receptor', es: 'Receptor Ionotrópico' },
-                binds: ['glutamate', 'gaba']
+                binds: ['glutamate', 'gaba'],
+                stoichiometry: 'Pentameric (α2βγδ)',
+                pdbId: '6X3Z'
             },
             gpcr: {
                 id: 'gpcr',
                 name: { en: 'GPCR', es: 'Receptor acoplado a proteína G' },
-                binds: ['serotonin', 'dopamine']
+                binds: ['serotonin', 'dopamine'],
+                stoichiometry: 'Monomeric / Heterodimeric',
+                pdbId: '7E2X'
             },
             autoreceptor: {
                 id: 'autoreceptor',
                 name: { en: 'Auto-receptor', es: 'Auto-receptor' },
-                binds: ['serotonin', 'dopamine', 'glutamate', 'gaba']
+                binds: ['serotonin', 'dopamine', 'glutamate', 'gaba'],
+                stoichiometry: 'Monomeric',
+                pdbId: '6VMS'
+            }
+        },
+
+        scenarios: {
+            healthy: {
+                id: 'healthy',
+                name: { en: 'Healthy State', es: 'Estado Saludable' },
+                description: 'Normal synaptic density and neurotransmitter kinetics.',
+                modifiers: { receptorDensity: 1.0, releaseProb: 0.5, reuptakeRate: 0.05 }
+            },
+            schizophrenia: {
+                id: 'schizophrenia',
+                name: { en: 'Schizophrenia (Dopamine Hypothesis)', es: 'Esquizofrenia' },
+                description: 'Increased D2 receptor density and dysregulated dopamine release.',
+                modifiers: { receptorDensity: 1.8, releaseProb: 0.8, reuptakeRate: 0.03 }
+            },
+            alzheimers: {
+                id: 'alzheimers',
+                name: { en: 'Alzheimer\'s (Synaptic Loss)', es: 'Alzheimer' },
+                description: 'Reduced synaptic vesicle density and impaired signaling.',
+                modifiers: { receptorDensity: 0.6, releaseProb: 0.3, reuptakeRate: 0.08 }
+            },
+            depression: {
+                id: 'depression',
+                name: { en: 'Major Depressive Disorder', es: 'Depresión Mayor' },
+                description: 'Reduced serotonin availability and receptor sensitivity.',
+                modifiers: { receptorDensity: 0.7, releaseProb: 0.4, reuptakeRate: 0.1 }
             }
         },
 

@@ -12,6 +12,7 @@
         accentCyan: '#00F2FF',
         accentGold: '#FFD700',
         activeNT: 'serotonin',
+        activeScenario: 'healthy',
         font: "'Quicksand', 'Segoe UI', sans-serif",
         translations: {
             preSynapticTerminal: { en: 'Pre-Synaptic Terminal', es: 'Terminal Presináptica' },
@@ -136,6 +137,11 @@
                     onNTChange: (ntId) => {
                         G.config.activeNT = ntId;
                         this.renderSidebar();
+                    },
+                    onScenarioChange: (scenarioId) => {
+                        G.config.activeScenario = scenarioId;
+                        this.applyScenario(scenarioId);
+                        this.renderSidebar();
                     }
                 });
 
@@ -158,6 +164,45 @@
                 if (G.Analytics) {
                     G.Analytics.renderDashboard(document.getElementById('synapse-sidebar'));
                 }
+            }
+        },
+
+        applyScenario(scenarioId) {
+            const scenario = G.Chemistry.scenarios[scenarioId];
+            if (!scenario) return;
+
+            // Apply modifiers to simulation (Enhancement #71, #72, #83)
+            if (scenarioId === 'schizophrenia') {
+                // Increase receptor count
+                G.config.elements.receptors = [
+                    { x: 0.3, type: 'ionotropic_receptor', state: 'closed' },
+                    { x: 0.4, type: 'ionotropic_receptor', state: 'closed' },
+                    { x: 0.5, type: 'gpcr', state: 'idle' },
+                    { x: 0.6, type: 'gpcr', state: 'idle' },
+                    { x: 0.7, type: 'ionotropic_receptor', state: 'closed' }
+                ];
+            } else if (scenarioId === 'alzheimers') {
+                // Reduce vesicles
+                G.config.elements.vesicles = [
+                    { id: 'vesicle', x: 0.5, y: 0.2, r: 10, offset: 0 }
+                ];
+                G.config.elements.receptors = [
+                    { x: 0.45, type: 'ionotropic_receptor', state: 'closed' },
+                    { x: 0.55, type: 'gpcr', state: 'idle' }
+                ];
+            } else {
+                // Reset to healthy
+                G.config.elements.vesicles = [
+                    { id: 'vesicle', x: 0.45, y: 0.15, r: 12, offset: 0 },
+                    { id: 'vesicle', x: 0.55, y: 0.18, r: 14, offset: 2 },
+                    { id: 'vesicle', x: 0.5, y: 0.22, r: 10, offset: 4 }
+                ];
+                G.config.elements.receptors = [
+                    { x: 0.38, type: 'ionotropic_receptor', state: 'closed' },
+                    { x: 0.46, type: 'ionotropic_receptor', state: 'closed' },
+                    { x: 0.54, type: 'gpcr', state: 'idle' },
+                    { x: 0.62, type: 'ionotropic_receptor', state: 'closed' }
+                ];
             }
         },
 
@@ -201,7 +246,7 @@
             const w = this.canvas.width / (window.devicePixelRatio || 1);
             const h = this.canvas.height / (window.devicePixelRatio || 1);
 
-            ctx.fillStyle = '#010501';
+            ctx.fillStyle = G.config.highContrast ? '#000' : '#010501';
             ctx.fillRect(0, 0, w, h);
 
             if (G.Molecular) {
@@ -311,7 +356,7 @@
             const activeId = this.hoveredId || this.sidebarHoveredId;
 
             ctx.save();
-            const preColor = activeId === 'preSynapticTerminal' ? '#357438' : '#303830';
+            const preColor = activeId === 'preSynapticTerminal' ? (G.config.highContrast ? '#fff' : '#357438') : '#303830';
             ctx.fillStyle = preColor;
             ctx.beginPath();
             ctx.moveTo(centerX - w * 0.06, 0);
@@ -320,7 +365,7 @@
             ctx.bezierCurveTo(centerX + bW / 2, h * 0.2, centerX + w * 0.06, h * 0.2, centerX + w * 0.06, 0);
             ctx.fill();
 
-            const postColor = activeId === 'postSynapticTerminal' ? '#732751' : '#1a1c1e';
+            const postColor = activeId === 'postSynapticTerminal' ? (G.config.highContrast ? '#fff' : '#732751') : '#1a1c1e';
             ctx.fillStyle = postColor;
             ctx.beginPath();
             ctx.moveTo(0, h); ctx.lineTo(0, h * 0.88);

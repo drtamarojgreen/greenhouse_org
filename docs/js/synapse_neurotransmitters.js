@@ -24,7 +24,8 @@
                     life: 1.0,
                     color: chem.color,
                     glow: chem.glow,
-                    chemistry: chem
+                    chemistry: chem,
+                    stochastic: [] // Store previous positions for Monte Carlo visualization
                 });
             }
         },
@@ -53,8 +54,7 @@
             const reuptakeBlocked = G.config.pharmacology?.ssriActive && G.config.activeNT === 'serotonin';
             const enzymaticRate = G.config.kinetics?.enzymaticRate || 0.002;
 
-            // LTP/LTD Simulation (Enhancement #46)
-            // High frequency stimulation (lots of particles) increases receptor sensitivity
+            // LTP/LTD Simulation
             if (this.particles.length > 50) {
                 this.plasticityFactor = Math.min(2.5, this.plasticityFactor + 0.001);
             } else if (this.particles.length < 5) {
@@ -64,8 +64,30 @@
             // Draw Neurotransmitters - Safe backward loop
             for (let i = this.particles.length - 1; i >= 0; i--) {
                 const p = this.particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
+
+                // Monte Carlo Simulation: Stochastic Diffusion (Enhancement #97)
+                const driftX = (Math.random() - 0.5) * 0.5;
+                const driftY = (Math.random() - 0.5) * 0.5;
+                p.x += p.vx + driftX;
+                p.y += p.vy + driftY;
+
+                // Track stochastic path
+                if (G.frame % 10 === 0) {
+                    p.stochastic.push({ x: p.x, y: p.y });
+                    if (p.stochastic.length > 5) p.stochastic.shift();
+                }
+
+                // Draw path
+                if (p.stochastic.length > 1) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = p.color;
+                    ctx.globalAlpha = 0.2;
+                    ctx.moveTo(p.stochastic[0].x, p.stochastic[0].y);
+                    for (let j = 1; j < p.stochastic.length; j++) {
+                        ctx.lineTo(p.stochastic[j].x, p.stochastic[j].y);
+                    }
+                    ctx.stroke();
+                }
 
                 const preTerminalTop = h * 0.4;
                 if (p.y < preTerminalTop && !reuptakeBlocked) {
