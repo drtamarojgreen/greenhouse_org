@@ -172,26 +172,33 @@
         }
 
         // 79. 3D Brain Atlas Integration (Coordinate-based visualization)
-        // Draw a wireframe "brain" shell to simulate atlas alignment
+        // Draw a more recognizable wireframe "brain" shell
         ctx.strokeStyle = 'rgba(100, 100, 255, 0.2)';
-        ctx.setLineDash([2, 10]);
-        ctx.beginPath();
-        for (let i = 0; i < 3; i++) {
-            const rX = 400 + i * 20;
-            const rY = 300 + i * 15;
-            const pAtlas = project(0, 0, 0, cam, { width: w, height: h, near: 10, far: 5000 });
-            ctx.ellipse(pAtlas.x, pAtlas.y, rX * pAtlas.scale, rY * pAtlas.scale, 0, 0, Math.PI * 2);
-        }
-        ctx.stroke();
-        ctx.setLineDash([]);
+        const pAtlas = project(0, 0, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+        if (pAtlas.scale > 0) {
+            ctx.setLineDash([5, 15]);
+            // Outer shell (Cortex)
+            ctx.beginPath();
+            ctx.ellipse(pAtlas.x, pAtlas.y, 500 * pAtlas.scale, 350 * pAtlas.scale, 0, 0, Math.PI * 2);
+            ctx.stroke();
 
-        // Render some "Atlas" coordinate markers
+            // Midbrain area
+            ctx.beginPath();
+            ctx.ellipse(pAtlas.x, pAtlas.y + 100 * pAtlas.scale, 200 * pAtlas.scale, 150 * pAtlas.scale, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+        }
+
+        // Render some "Atlas" coordinate markers and landmarks
         ctx.fillStyle = 'rgba(150, 150, 255, 0.5)';
         ctx.font = '8px monospace';
         const markers = [
-            { label: 'AP: +1.2', x: 0, y: -400, z: 0 },
+            { label: 'AP: +1.2 (Striatum)', x: 0, y: -200, z: 0 },
             { label: 'ML: +0.5', x: 300, y: 0, z: 0 },
-            { label: 'DV: -4.0', x: 0, y: 0, z: 300 }
+            { label: 'DV: -4.0', x: 0, y: 0, z: 300 },
+            { label: 'SNc (Midbrain)', x: -300, y: -450, z: 0 },
+            { label: 'VTA (Midbrain)', x: 300, y: -450, z: 0 }
         ];
         markers.forEach(m => {
             const p = project(m.x, m.y, m.z, cam, { width: w, height: h, near: 10, far: 5000 });

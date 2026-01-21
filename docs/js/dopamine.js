@@ -152,6 +152,7 @@
         if (G.updatePlasticity) G.updatePlasticity();
         if (G.updateClinical) G.updateClinical();
         if (G.updatePharmacology) G.updatePharmacology();
+        if (G.updateAnalytics) G.updateAnalytics();
         if (G.updateUX) G.updateUX();
         if (G.updateTooltips) G.updateTooltips();
     };
@@ -227,6 +228,7 @@
         if (G.renderPlasticity) G.renderPlasticity(ctx, project);
         if (G.renderClinical) G.renderClinical(ctx, project);
         if (G.renderPharmacology) G.renderPharmacology(ctx, project);
+        if (G.renderAnalytics) G.renderAnalytics(ctx);
         if (G.renderUX) G.renderUX(ctx);
         if (G.renderLegend) G.renderLegend(ctx);
     };
@@ -267,6 +269,7 @@
             await GreenhouseUtils.loadScript('dopamine_plasticity.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_clinical.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_pharmacology.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_analytics.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_ux.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
 

@@ -158,7 +158,7 @@
             const lib = G.molecularState.drugLibrary;
             const allDrugs = [...lib.d1Agonists, ...lib.d1Antagonists, ...lib.d2Agonists, ...lib.d2Antagonists, ...lib.pams];
             allDrugs.forEach(d => {
-                pharmacologyOptions.push({ label: `Drug: ${d}`, action: () => selectDrug(d) });
+                pharmacologyOptions.push({ label: `Drug: ${d.name}`, action: () => selectDrug(d.name) });
             });
         }
 

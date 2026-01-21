@@ -26,12 +26,13 @@
             ldopa: 0,
             dopamine: 50,
             thRate: 1.0,
-            ddcRate: 1.0
+            ddcRate: 1.0,
+            fluxVisuals: [] // 22. Tyrosine -> L-DOPA -> DA visuals
         },
         maoActivity: 0.5, // 40. Monoamine Oxidase
         comtActivity: 0.3, // 41. COMT
         astrocytes: [], // 80. Tripartite Synapse / 43. Astrocyte Reuptake
-        metabolites: { dopac: 0, hva: 0, '3mt': 0 }, // 42. Metabolite Tracking
+        metabolites: { dopac: 0, hva: 0, '3mt': 0, visual: [] }, // 42. Metabolite Tracking
         glutamate: [], // 77. Glutamate Co-transmission
         autoreceptorFeedback: 1.0, // 31. D2-Short Autoreceptor Feedback
         terminalGeometry: { width: 300, height: 200 }, // 35. Axon Terminal Geometry
@@ -271,11 +272,24 @@
             const conversion = 0.1 * thEfficiency;
             sState.synthesis.tyrosine -= conversion;
             sState.synthesis.ldopa += conversion;
+            // 22. Flux visuals
+            if (Math.random() > 0.9) {
+                sState.synthesis.fluxVisuals.push({ x: -100, y: -280, type: 'ldopa', life: 60 });
+            }
         }
         if (sState.synthesis.ldopa > 0) {
             const conversion = 0.5 * sState.synthesis.ddcRate;
             sState.synthesis.ldopa -= conversion;
             sState.synthesis.dopamine += conversion;
+            if (Math.random() > 0.9) {
+                sState.synthesis.fluxVisuals.push({ x: -80, y: -250, type: 'da', life: 60 });
+            }
+        }
+        for (let i = sState.synthesis.fluxVisuals.length - 1; i >= 0; i--) {
+            const f = sState.synthesis.fluxVisuals[i];
+            f.life--;
+            f.y += 0.5;
+            if (f.life <= 0) sState.synthesis.fluxVisuals.splice(i, 1);
         }
         // Refill vesicles from cytosolic DA pool
         sState.vesicles.reserve.forEach(v => {
@@ -296,12 +310,26 @@
 
             const maoDeg = daCount * sState.maoActivity * 0.001;
             sState.metabolites.dopac += maoDeg;
+
+            // 42. Visual Metabolites
+            if (Math.random() > 0.98) {
+                const da = sState.cleftDA[Math.floor(Math.random() * sState.cleftDA.length)];
+                sState.metabolites.visual.push({ x: da.x, y: da.y, z: da.z, type: 'dopac', life: 120 });
+            }
         }
 
         if (sState.metabolites.dopac > 0) {
             const hvaConv = sState.metabolites.dopac * sState.comtActivity * 0.01;
             sState.metabolites.dopac -= hvaConv;
             sState.metabolites.hva += hvaConv;
+        }
+
+        for (let i = sState.metabolites.visual.length - 1; i >= 0; i--) {
+            const m = sState.metabolites.visual[i];
+            m.life--;
+            m.x += (Math.random()-0.5);
+            m.y += (Math.random()-0.5);
+            if (m.life <= 0) sState.metabolites.visual.splice(i, 1);
         }
     };
 
@@ -324,23 +352,30 @@
 
         const state = G.state;
 
-        // 35. Render Axon Terminal Geometry
+        // 35. Render Axon Terminal Geometry (3D-like bulb)
         const t = sState.terminalGeometry;
-        const p1 = project(-t.width/2, -300, 0, cam, { width: w, height: h, near: 10, far: 5000 });
-        const p2 = project(t.width/2, -300, 0, cam, { width: w, height: h, near: 10, far: 5000 });
-        const p3 = project(t.width/2, -150, 0, cam, { width: w, height: h, near: 10, far: 5000 });
-        const p4 = project(-t.width/2, -150, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+        ctx.strokeStyle = 'rgba(100, 100, 200, 0.4)';
+        ctx.fillStyle = 'rgba(100, 100, 255, 0.05)';
 
-        ctx.strokeStyle = 'rgba(100, 100, 200, 0.3)';
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.lineTo(p3.x, p3.y);
-        ctx.lineTo(p4.x, p4.y);
-        ctx.closePath();
-        ctx.stroke();
-        ctx.setLineDash([]);
+        const pCenter = project(0, -225, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+        if (pCenter.scale > 0) {
+            ctx.beginPath();
+            ctx.ellipse(pCenter.x, pCenter.y, (t.width/2) * pCenter.scale, (t.height/2) * pCenter.scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.setLineDash([10, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // 22. Render Synthesis Flux
+        sState.synthesis.fluxVisuals.forEach(f => {
+            const p = project(f.x, f.y, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.fillStyle = f.type === 'ldopa' ? '#ffaa00' : '#00ff00';
+                ctx.font = `${8 * p.scale}px Arial`;
+                ctx.fillText(f.type.toUpperCase(), p.x, p.y);
+            }
+        });
 
         // 80. Render Astrocyte Processes (Tripartite Synapse)
         sState.astrocytes.forEach(ast => {
@@ -355,6 +390,18 @@
                 ctx.fillStyle = '#002222';
                 ctx.globalAlpha = 0.3;
                 ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        });
+
+        // 42. Render Visual Metabolites
+        sState.metabolites.visual.forEach(m => {
+            const p = project(m.x, m.y, m.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.fillStyle = '#ff5500';
+                ctx.globalAlpha = m.life / 120;
+                ctx.font = `${7 * p.scale}px Arial`;
+                ctx.fillText(m.type.toUpperCase(), p.x, p.y);
                 ctx.globalAlpha = 1.0;
             }
         });
