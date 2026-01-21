@@ -26,20 +26,17 @@
         const sState = G.synapseState;
 
         // 83. Schizophrenia D2 Overactivity
-        cState.schizophreniaMode = state.mode === 'Schizophrenia';
+        cState.schizophreniaMode = state.mode === 'Schizophrenia' || state.scenarios.schizophrenia;
         if (cState.schizophreniaMode) {
             // Enhanced D2 sensitivity or density
             cState.d2Supersensitivity = 2.0;
         }
 
         // 85. ADHD Mode (DAT Polymorphisms)
-        cState.adhdMode = state.mode === 'ADHD';
-        if (cState.adhdMode && sState) {
-            sState.dat.activity = 1.5; // High reuptake, low tonic DA
-        }
+        cState.adhdMode = state.mode === 'ADHD' || state.scenarios.adhd;
 
         // 84. Addiction-Related Plasticity
-        if (state.mode === 'Cocaine' || state.mode === 'Amphetamine') {
+        if (state.mode === 'Cocaine' || state.scenarios.cocaine || state.mode === 'Amphetamine' || state.scenarios.amphetamine) {
             cState.addictionPlasticity = Math.min(1.0, cState.addictionPlasticity + 0.001);
         }
 
@@ -59,12 +56,12 @@
         }
 
         // 89. D2 Receptor Supersensitivity (Compensatory)
-        if (sState && sState.pathologicalState === 'Parkinsonian') {
+        if (sState && (sState.pathologicalState === 'Parkinsonian' || state.scenarios.parkinsonian)) {
             cState.d2Supersensitivity = Math.min(2.0, cState.d2Supersensitivity + 0.0001);
         }
 
         // 81. Parkinsonian Terminal Loss visualization
-        if (state.mode === 'Parkinsonian') {
+        if (state.mode === 'Parkinsonian' || state.scenarios.parkinsonian) {
             // Shrink terminals or reduce their number visually
             if (G.circuitState && G.circuitState.projections) {
                 G.circuitState.projections.snc.label = "SNc (DEGENERATED)";
@@ -72,7 +69,7 @@
         }
 
         // 87. Alpha-Synuclein Pathology (Inhibits vesicle release)
-        if (state.mode === 'Alpha-Synuclein') {
+        if (state.mode === 'Alpha-Synuclein' || state.scenarios.alphaSynuclein) {
             cState.alphaSynuclein.level = Math.min(1.0, cState.alphaSynuclein.level + 0.005);
             if (sState) sState.releaseRate = Math.max(0.01, 0.1 * (1.0 - cState.alphaSynuclein.level));
 
@@ -88,7 +85,7 @@
         }
 
         // 86. Neuroinflammation (Cytokines affecting synthesis)
-        if (state.mode === 'Neuroinflammation') {
+        if (state.mode === 'Neuroinflammation' || state.scenarios.neuroinflammation) {
             cState.inflammation = Math.min(1.0, cState.inflammation + 0.005);
             if (sState && sState.synthesis) {
                 sState.synthesis.thRate = Math.max(0.1, 1.0 - cState.inflammation * 0.7);
@@ -96,7 +93,7 @@
         }
 
         // 90. HPA Axis Interaction (Stress hormones)
-        if (state.mode === 'High Stress') {
+        if (state.mode === 'High Stress' || state.scenarios.highStress) {
             cState.hpaAxisActivity = Math.min(1.0, cState.hpaAxisActivity + 0.01);
             if (sState) {
                 // Stress increases DA release initially but also increases reuptake/degradation
