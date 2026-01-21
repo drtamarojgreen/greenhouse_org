@@ -24,6 +24,8 @@
         adaptation: 0,
         inputResistance: 100, // MOhms
         eiBalance: 1.0, // Excitatory/Inhibitory Balance
+        srcKinase: 0, // Src kinase recruitment
+        gabaControl: 1.0, // GABAergic interneuron control factor
         membranePotential: -70, // mV
         pulses: [],
 
@@ -85,6 +87,17 @@
             // CREB Transcription factor (Category 3, #29)
             this.creb += (this.cAMP * 0.1 + this.calcium * 0.1 + this.akt * 0.05) - (this.creb * 0.01);
 
+            // Src Kinase Recruitment (Category 3, #27)
+            // Recruited by Beta-arrestins downstream of 5-HT2A (simulated by pathway bias)
+            const ht2aRef = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A' && r.state === 'Active') : null;
+            if (ht2aRef) {
+                // If biased ligand is NOT active, beta-arrestin signaling is higher (Src recruitment)
+                const arrestinDrive = ht2aRef.biasedLigand ? 0.2 : 0.8;
+                this.srcKinase += (arrestinDrive * 0.3) - (this.srcKinase * 0.05);
+            } else {
+                this.srcKinase *= 0.95;
+            }
+
             // sAHP Suppression (Category 6, #60)
             // 5-HT often suppresses sAHP via Gi/o or cAMP, increasing excitability
             this.sahp += (this.calcium * 0.1) - (totalGi * 0.2 + this.cAMP * 0.1) - (this.sahp * 0.05);
@@ -125,9 +138,13 @@
 
             const excitabilityShift = (ionotropicEffect * potentiationFactor * kv42Inhibition);
 
+            // GABAergic Interneuron Control (Category 5, #45)
+            // 5-HT modulates PFC interneurons, usually inhibitory
+            this.gabaControl = 1.0 + (totalGq * 0.2) + (totalGi * 0.3);
+
             // E/I Balance Visualization (Category 6, #58)
             const totalE = totalGs + totalGq + totalIonotropic + (G.Transport && G.Transport.glutamateCoRelease ? 1 : 0);
-            const totalI = totalGi;
+            const totalI = totalGi * this.gabaControl;
             this.eiBalance = (totalE + 1) / (totalI + 1);
 
             // Back-propagating Action Potentials (Category 6, #59)
@@ -189,7 +206,7 @@
 
             // HUD for signaling levels
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(w - 210, 10, 200, 260);
+            ctx.fillRect(w - 210, 10, 200, 280);
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'left';
@@ -207,20 +224,22 @@
             ctx.fillText(`Rin: ${this.inputResistance.toFixed(1)} MΩ`, w - 200, 152);
             ctx.fillText(`Adaptation: ${this.adaptation.toFixed(2)}`, w - 200, 165);
             ctx.fillText(`PDE: ${this.pde.toFixed(2)}`, w - 200, 178);
-            ctx.fillText(`E/I Balance: ${this.eiBalance.toFixed(2)}`, w - 200, 191);
-            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 204);
+            ctx.fillText(`Src Kinase: ${this.srcKinase.toFixed(2)}`, w - 200, 191);
+            ctx.fillText(`GABA Ctrl: ${this.gabaControl.toFixed(2)}`, w - 200, 204);
+            ctx.fillText(`E/I Balance: ${this.eiBalance.toFixed(2)}`, w - 200, 217);
+            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 230);
 
             if (G.Transport && G.Transport.glutamateCoRelease) {
                 ctx.fillStyle = '#ffcc00';
-                ctx.fillText('Glutamate Co-transmission: ON', w - 200, 217);
+                ctx.fillText('Glutamate Co-transmission: ON', w - 200, 243);
             }
 
             // Draw membrane potential bar
             ctx.fillStyle = '#444';
-            ctx.fillRect(w - 200, 225, 180, 8);
+            ctx.fillRect(w - 200, 255, 180, 8);
             const vWidth = ((this.membranePotential + 90) / 60) * 180;
             ctx.fillStyle = this.membranePotential > -60 ? '#ff4d4d' : '#4d79ff';
-            ctx.fillRect(w - 200, 225, Math.max(0, Math.min(180, vWidth)), 8);
+            ctx.fillRect(w - 200, 255, Math.max(0, Math.min(180, vWidth)), 8);
 
             // Draw Pathway Bias indicator for 5-HT2A if active
             const ht2a = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A') : null;

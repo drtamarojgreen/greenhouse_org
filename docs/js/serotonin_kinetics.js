@@ -18,7 +18,8 @@
             'Psilocin': { type: 'Psychedelic', target: '5-HT2A', affinity: 0.95, intrinsicActivity: 0.8, residenceTime: 600, color: '#cc00ff' },
             'Buspirone': { type: 'Partial Agonist', target: '5-HT1A', affinity: 0.7, intrinsicActivity: 0.4, residenceTime: 150, color: '#ffff00' },
             'Sumatriptan': { type: 'Triptan', target: '5-HT1B/D', affinity: 0.9, intrinsicActivity: 0.8, residenceTime: 200, color: '#00ffff' },
-            'Clozapine': { type: 'Antipsychotic', target: '5-HT2A', affinity: 0.9, intrinsicActivity: 0.0, residenceTime: 300, color: '#ff6600' },
+            'Clozapine': { type: 'Antipsychotic', target: ['5-HT2A', '5-HT1A'], affinity: 0.9, intrinsicActivity: 0.1, residenceTime: 300, color: '#ff6600' },
+            'Quetiapine': { type: 'Antipsychotic', target: '5-HT2A', affinity: 0.8, intrinsicActivity: 0.0, residenceTime: 200, color: '#ffcc66' },
             'Ondansetron': { type: 'Antiemetic', target: '5-HT3', affinity: 0.85, intrinsicActivity: 0.0, residenceTime: 250, color: '#00ff00' }
         },
 
@@ -105,6 +106,14 @@
         },
 
         renderKinetics(ctx, project, cam, w, h) {
+            // Visual Ligand Docking sequence (Category 7, #70)
+            if (this.dockingMode) {
+                ctx.fillStyle = 'rgba(0, 255, 200, 0.2)';
+                ctx.fillRect(w/2 - 50, h/2 - 50, 100, 100);
+                ctx.fillStyle = '#fff';
+                ctx.fillText('DOCKING SCAN...', w/2, h/2 - 60);
+            }
+
             this.activeLigands.forEach(l => {
                 const p = project(l.x, l.y, l.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {

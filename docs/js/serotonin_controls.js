@@ -12,7 +12,7 @@
         const controls = document.createElement('div');
         controls.className = 'serotonin-controls';
 
-        const views = ['5-HT1A Complex', 'Ligand Pocket', 'Lipid Interactions', 'Extracellular Loop', 'Time-lapse', 'OCD Pathway'];
+        const views = ['5-HT1A Complex', 'Ligand Pocket', 'Lipid Interactions', 'Extracellular Loop', 'Time-lapse', 'OCD Pathway', 'Amygdala Loop'];
         views.forEach(view => {
             const btn = document.createElement('button');
             btn.className = 'serotonin-btn';
@@ -41,6 +41,7 @@
             { name: 'Phasic Mode', toggle: () => { G.Transport.firingMode = G.Transport.firingMode === 'tonic' ? 'phasic' : 'tonic'; } },
             { name: 'Inflammation', toggle: () => { G.Transport.inflammationActive = !G.Transport.inflammationActive; } },
             { name: 'Pineal Mode', toggle: () => { G.Transport.pinealMode = !G.Transport.pinealMode; } },
+            { name: 'Gut-Brain Axis', toggle: () => { G.gutBrainActive = !G.gutBrainActive; } },
             { name: 'VR Mode', toggle: () => { G.vrMode = !G.vrMode; if(G.vrMode) G.state.camera.fov = 800; else G.state.camera.fov = 500; } },
             { name: 'Export Data', toggle: () => { if(G.Analytics) G.Analytics.exportData(); } },
             { name: 'Serotonin Syndrome', toggle: () => {
@@ -154,6 +155,17 @@
             ctx.fillStyle = '#fff';
             ctx.fillText('CSTC Loop Schematic', G.width/2, G.height/2 - 110);
             ctx.fillText('OFC -> Striatum -> Thalamus -> OFC', G.width/2, G.height/2);
+        }
+
+        // Amygdala feedback loop (Category 8, #72)
+        if (G.currentView === 'Amygdala Loop') {
+            ctx.strokeStyle = '#ff4d4d';
+            ctx.beginPath();
+            ctx.arc(G.width/2, G.height/2, 80, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Amygdala Feedback (Anxiety modeling)', G.width/2, G.height/2 - 95);
+            ctx.fillText('5-HT1A Autoreceptor Control', G.width/2, G.height/2);
         }
 
         // Serotonin Syndrome visuals (Category 7, #69)
