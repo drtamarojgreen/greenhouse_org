@@ -3,63 +3,26 @@
 (function () {
     'use strict';
 
-    const GreenhouseSynapseTooltips = {
-        update(tooltipElem, hoveredId, mouseX, mouseY, config, currentLanguage) {
-            if (hoveredId) {
-                const lang = currentLanguage || 'en';
-                const chem = window.GreenhouseSynapseChemistry;
+    const G = window.GreenhouseSynapseApp || {};
+    window.GreenhouseSynapseApp = G;
 
-                let label = '';
-
-                // Intelligent label resolution
-                if (chem.neurotransmitters[hoveredId]) {
-                    label = chem.neurotransmitters[hoveredId].name[lang];
-                } else if (chem.receptors[hoveredId]) {
-                    label = chem.receptors[hoveredId].name[lang];
-                } else if (config.translations[hoveredId]) {
-                    label = config.translations[hoveredId][lang] || config.translations[hoveredId];
-                } else {
-                    label = hoveredId;
-                }
-
-                tooltipElem.style.display = 'block';
-                tooltipElem.innerHTML = label;
-
-                // Keep tooltip within bounds
-                const xOffset = mouseX + 25;
-                const yOffset = mouseY - 25;
-                tooltipElem.style.left = `${xOffset}px`;
-                tooltipElem.style.top = `${yOffset}px`;
-            } else {
-                tooltipElem.style.display = 'none';
+    G.Tooltips = {
+        update(el, hoveredId, mx, my, config, lang) {
+            if (!hoveredId) {
+                el.style.display = 'none';
+                return;
             }
+
+            el.style.display = 'block';
+            el.style.left = (mx + 20) + 'px';
+            el.style.top = (my + 20) + 'px';
+            el.innerHTML = `<strong>${config.translations[hoveredId][lang]}</strong>`;
         },
 
-        drawLabels(ctx, w, h, config, currentLanguage, hoveredId, sidebarHoveredId) {
-            const activeId = hoveredId || sidebarHoveredId;
-            const lang = currentLanguage || 'en';
-
-            ctx.save();
-            ctx.font = `italic 500 11px ${config.font}`;
-            ctx.textAlign = 'center';
-
-            // Static Labels (Subtle)
-            const drawLabel = (x, y, text, id) => {
-                const isActive = activeId === id;
-                ctx.fillStyle = isActive ? '#00F2FF' : 'rgba(255,255,255,0.3)';
-                ctx.fillText(text.toUpperCase(), x, y);
-            };
-
-            if (config.translations.preSynapticTerminal) {
-                drawLabel(w * 0.5, h * 0.1, config.translations.preSynapticTerminal[lang], 'preSynapticTerminal');
-            }
-            if (config.translations.postSynapticTerminal) {
-                drawLabel(w * 0.5, h * 0.82, config.translations.postSynapticTerminal[lang], 'postSynapticTerminal');
-            }
-
-            ctx.restore();
+        drawLabels(ctx, w, h, config, lang, h1, h2) {
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = 'italic 10px sans-serif';
+            ctx.fillText(config.translations.preSynapticTerminal[lang].toUpperCase(), w * 0.5, h * 0.1);
         }
     };
-
-    window.GreenhouseSynapseTooltips = GreenhouseSynapseTooltips;
 })();

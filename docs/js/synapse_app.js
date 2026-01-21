@@ -1,12 +1,14 @@
 // docs/js/synapse_app.js
-// Optimized & Refactored Synapse Visualization Logic - Chemistry Integrated
+// Master Application Entry Point for Synapse Simulation
+// Follows the unified loader + engine pattern used on live site (dopamine/serotonin)
 
 (function () {
     'use strict';
 
-    console.log("Synapse App: Orchestrator Hooked.");
+    const G = window.GreenhouseSynapseApp || {};
+    window.GreenhouseSynapseApp = G;
 
-    const config = {
+    G.config = G.config || {
         backgroundColor: '#050705',
         accentCyan: '#00F2FF',
         accentGold: '#FFD700',
@@ -35,8 +37,65 @@
             ]
         }
     };
+})();
 
-    const GreenhouseSynapseApp = {
+(async function () {
+    'use strict';
+
+    const G = window.GreenhouseSynapseApp || {};
+    window.GreenhouseSynapseApp = G;
+
+    let GreenhouseUtils;
+    let resilienceObserver = null;
+
+    // --- Dependency Loading ---
+    const loadDependencies = async () => {
+        await new Promise((resolve, reject) => {
+            let attempts = 0;
+            const maxAttempts = 240; // 12 seconds
+            const interval = setInterval(() => {
+                if (window.GreenhouseUtils) {
+                    clearInterval(interval);
+                    GreenhouseUtils = window.GreenhouseUtils;
+                    resolve();
+                } else if (attempts++ >= maxAttempts) {
+                    clearInterval(interval);
+                    console.error('Synapse App: GreenhouseUtils load timeout');
+                    reject(new Error('GreenhouseUtils load timeout'));
+                }
+            }, 50);
+        });
+    };
+
+    // --- Attribute Capture ---
+    const captureAttributes = () => {
+        if (window._greenhouseScriptAttributes) {
+            return {
+                targetSelector: window._greenhouseScriptAttributes['target-selector-left'],
+                baseUrl: window._greenhouseScriptAttributes['base-url']
+            };
+        }
+        const script = document.currentScript;
+        if (script) {
+            return {
+                targetSelector: script.getAttribute('data-target-selector-left'),
+                baseUrl: script.getAttribute('data-base-url')
+            };
+        }
+        // Fallback for manual testing
+        const scripts = document.querySelectorAll('script[src*="synapse_app.js"]');
+        if (scripts.length > 0) {
+            const s = scripts[scripts.length - 1];
+            return {
+                targetSelector: s.getAttribute('data-target-selector-left'),
+                baseUrl: s.getAttribute('data-base-url')
+            };
+        }
+        return { targetSelector: null, baseUrl: null };
+    };
+
+    // --- Core Engine Logic ---
+    Object.assign(G, {
         canvas: null,
         ctx: null,
         container: null,
@@ -45,28 +104,42 @@
         currentLanguage: 'en',
         hoveredId: null,
         sidebarHoveredId: null,
+        isRunning: false,
 
         init(targetSelector, baseUrl) {
+            if (!targetSelector) return;
+            this.lastSelector = targetSelector;
             this.baseUrl = baseUrl || '';
-            this.container = document.querySelector(targetSelector);
-            if (!this.container) return;
 
-            // Initialize Extended Modules
-            if (window.GreenhouseSynapseControls) window.GreenhouseSynapseControls.init(config);
-            if (window.GreenhouseSynapseAnalytics) window.GreenhouseSynapseAnalytics.init();
-            if (window.GreenhouseSynapse3D) window.GreenhouseSynapse3D.init();
-            if (window.GreenhouseSynapseMolecular) window.GreenhouseSynapseMolecular.init();
+            console.log('SynapseApp: Initializing...');
+            setTimeout(() => {
+                this._initializeSimulation(targetSelector);
+            }, 5000);
+        },
+
+        async _initializeSimulation(selector) {
+            this.container = document.querySelector(selector);
+            if (!this.container) {
+                console.error(`SynapseApp: Target container ${selector} not found.`);
+                return;
+            }
 
             this.setupDOM();
+            this.isRunning = true;
             this.animate();
+
+            // Resilience
+            this.observeAndReinitializeApp(this.container);
         },
 
         setupDOM() {
+            const config = G.config;
             this.container.innerHTML = '';
             this.container.style.cssText = `
                 display: flex; flex-direction: row; gap: 0; background: ${config.backgroundColor}; 
                 border-radius: 24px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.6);
                 border: 1px solid rgba(53, 116, 56, 0.2); font-family: ${config.font}; height: 750px;
+                position: relative;
             `;
 
             const sidebar = document.createElement('div');
@@ -92,9 +165,7 @@
             `;
             canvasWrapper.appendChild(this.tooltip);
 
-            // Initialize Sidebar Module
             this.renderSidebar();
-
             this.resize();
             window.addEventListener('resize', () => this.resize());
             this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
@@ -102,13 +173,12 @@
         },
 
         renderSidebar() {
-            const sidebar = document.getElementById('synapse-sidebar');
-            if (window.GreenhouseSynapseSidebar) {
-                window.GreenhouseSynapseSidebar.render(sidebar, config, this.currentLanguage, {
+            if (G.Sidebar) {
+                G.Sidebar.render(document.getElementById('synapse-sidebar'), G.config, this.currentLanguage, {
                     onHover: (id) => this.sidebarHoveredId = id,
                     onNTChange: (ntId) => {
-                        config.activeNT = ntId;
-                        this.renderSidebar(); // Re-render to update tech description
+                        G.config.activeNT = ntId;
+                        this.renderSidebar();
                     }
                 });
             }
@@ -124,8 +194,8 @@
             const w = this.canvas.width / (window.devicePixelRatio || 1);
             const h = this.canvas.height / (window.devicePixelRatio || 1);
             if (this.mouse.y < h * 0.45 && Math.abs(this.mouse.x - w * 0.5) < w * 0.15) {
-                if (window.GreenhouseSynapseParticles) {
-                    window.GreenhouseSynapseParticles.create(w, h, 40, config, true);
+                if (G.Particles) {
+                    G.Particles.create(w, h, 40, G.config, true);
                 }
             }
         },
@@ -142,6 +212,7 @@
         },
 
         animate() {
+            if (!this.isRunning) return;
             requestAnimationFrame(() => this.animate());
             this.render();
         },
@@ -156,58 +227,46 @@
             ctx.fillStyle = '#010501';
             ctx.fillRect(0, 0, w, h);
 
-            // Apply 3D depth (Proposal 2)
-            if (window.GreenhouseSynapse3D) {
-                window.GreenhouseSynapse3D.applyDepthEffect(ctx, w, h, this.frame);
-            }
+            if (G.ThreeD) G.ThreeD.applyDepthEffect(ctx, w, h, this.frame);
 
             this.drawStructure(ctx, w, h);
 
-            // Molecular Enhancements (Proposals 7, 16, 33)
-            if (window.GreenhouseSynapseMolecular) {
-                window.GreenhouseSynapseMolecular.drawLipidBilayer(ctx, w, h);
-                window.GreenhouseSynapseMolecular.drawSNAREComplex(ctx, w, h, this.frame);
-                window.GreenhouseSynapseMolecular.drawScaffolding(ctx, w, h);
+            if (G.Molecular) {
+                G.Molecular.drawLipidBilayer(ctx, w, h);
+                G.Molecular.drawSNAREComplex(ctx, w, h, this.frame);
+                G.Molecular.drawScaffolding(ctx, w, h);
             }
 
-            // Particle System Module
-            if (window.GreenhouseSynapseParticles) {
-                if (this.frame % 15 === 0) window.GreenhouseSynapseParticles.create(w, h, 1, config);
+            if (G.Particles) {
+                if (this.frame % 15 === 0) G.Particles.create(w, h, 1, G.config);
                 this.handleReceptorInteractions(w, h);
 
-                // Analytics Update (Proposals 12, 100)
-                if (window.GreenhouseSynapseAnalytics) {
-                    window.GreenhouseSynapseAnalytics.update(window.GreenhouseSynapseParticles.particles, config.elements.receptors);
+                if (G.Analytics) G.Analytics.update(G.Particles.particles, G.config.elements.receptors);
+                if (G.ThreeD) {
+                    G.ThreeD.drawShadows(ctx, G.config.elements.vesicles, w, h);
+                    G.ThreeD.visualizeElectrostaticPotential(ctx, w, h, this.frame);
                 }
 
-                // 3D Shadows (Proposal 8)
-                if (window.GreenhouseSynapse3D) {
-                    window.GreenhouseSynapse3D.drawShadows(ctx, config.elements.vesicles, w, h);
-                    window.GreenhouseSynapse3D.visualizeElectrostaticPotential(ctx, w, h, this.frame);
-                }
-
-                window.GreenhouseSynapseParticles.updateAndDraw(ctx, w, h);
+                G.Particles.updateAndDraw(ctx, w, h);
             }
 
             this.checkHover(w, h);
 
-            if (window.GreenhouseSynapseTooltips) {
-                window.GreenhouseSynapseTooltips.update(this.tooltip, this.hoveredId || this.sidebarHoveredId, this.mouse.x, this.mouse.y, config, this.currentLanguage);
-                window.GreenhouseSynapseTooltips.drawLabels(ctx, w, h, config, this.currentLanguage, this.hoveredId, this.sidebarHoveredId);
+            if (G.Tooltips) {
+                G.Tooltips.update(this.tooltip, this.hoveredId || this.sidebarHoveredId, this.mouse.x, this.mouse.y, G.config, this.currentLanguage);
+                G.Tooltips.drawLabels(ctx, w, h, G.config, this.currentLanguage, this.hoveredId, this.sidebarHoveredId);
             }
         },
 
         handleReceptorInteractions(w, h) {
-            const particles = window.GreenhouseSynapseParticles.particles;
-            const chem = window.GreenhouseSynapseChemistry;
+            if (!G.Particles || !G.Chemistry) return;
+            const particles = G.Particles.particles;
+            const chem = G.Chemistry;
             const surfaceY = h * 0.68;
 
-            // Apply Controls (Proposal 50)
-            if (window.GreenhouseSynapseControls) {
-                window.GreenhouseSynapseControls.applyToSimulation(particles, config.elements.receptors);
-            }
+            if (G.Controls) G.Controls.applyToSimulation(particles, G.config.elements.receptors);
 
-            config.elements.receptors.forEach(receptor => {
+            G.config.elements.receptors.forEach(receptor => {
                 const rx = w * receptor.x;
                 const ry = surfaceY;
 
@@ -219,10 +278,9 @@
                     if (dist < 20 && p.life > 0.1) {
                         const receptorType = chem.receptors[receptor.type];
                         if (receptorType.binds.includes(p.chemistry.id)) {
-                            // Binding effect
-                            p.life = 0; // Consume NT
+                            p.life = 0;
                             if (receptor.type === 'ionotropic_receptor' && p.chemistry.ionEffect !== 'none') {
-                                window.GreenhouseSynapseParticles.createIon(rx, ry + 10, p.chemistry.ionEffect);
+                                G.Particles.createIon(rx, ry + 10, p.chemistry.ionEffect);
                                 receptor.state = 'open';
                                 setTimeout(() => receptor.state = 'closed', 200);
                             } else if (receptor.type === 'gpcr') {
@@ -243,7 +301,7 @@
             if (my < h * 0.44 && Math.abs(mx - w * 0.5) < w * 0.16) this.hoveredId = 'preSynapticTerminal';
             else if (my > h * 0.6 && Math.abs(mx - w * 0.5) < w * 0.28) this.hoveredId = 'postSynapticTerminal';
 
-            config.elements.vesicles.forEach(v => {
+            G.config.elements.vesicles.forEach(v => {
                 const vx = w * v.x, vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
                 if ((mx - vx) ** 2 + (my - vy) ** 2 < v.r ** 2 * 2) this.hoveredId = 'vesicle';
             });
@@ -253,7 +311,6 @@
             const centerX = w * 0.5, bulbY = h * 0.3, bW = w * 0.24, surfaceY = h * 0.68;
             const activeId = this.hoveredId || this.sidebarHoveredId;
 
-            // Pre & Post Terminals
             ctx.save();
             const preColor = activeId === 'preSynapticTerminal' ? '#357438' : '#303830';
             ctx.fillStyle = preColor;
@@ -275,16 +332,16 @@
             ctx.fill();
             ctx.restore();
 
-            // Vesicles Use active NT color
-            const ntChem = window.GreenhouseSynapseChemistry.neurotransmitters[config.activeNT];
-            config.elements.vesicles.forEach(v => {
-                const vx = w * v.x, vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
-                ctx.fillStyle = activeId === 'vesicle' ? '#fff' : ntChem.color;
-                ctx.beginPath(); ctx.arc(vx, vy, v.r, 0, Math.PI * 2); ctx.fill();
-            });
+            if (G.Chemistry) {
+                const ntChem = G.Chemistry.neurotransmitters[G.config.activeNT];
+                G.config.elements.vesicles.forEach(v => {
+                    const vx = w * v.x, vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
+                    ctx.fillStyle = activeId === 'vesicle' ? '#fff' : ntChem.color;
+                    ctx.beginPath(); ctx.arc(vx, vy, v.r, 0, Math.PI * 2); ctx.fill();
+                });
+            }
 
-            // Receptors
-            config.elements.receptors.forEach(r => {
+            G.config.elements.receptors.forEach(r => {
                 const rx = w * r.x, ry = surfaceY - 5;
                 if (r.type === 'ionotropic_receptor') {
                     ctx.fillStyle = r.state === 'open' ? '#fff' : '#4DB6AC';
@@ -297,8 +354,66 @@
                     ctx.stroke();
                 }
             });
-        }
-    };
+        },
 
-    window.GreenhouseSynapseApp = GreenhouseSynapseApp;
+        observeAndReinitializeApp(container) {
+            if (!container) return;
+            if (resilienceObserver) resilienceObserver.disconnect();
+            const observerCallback = (mutations) => {
+                const wasRemoved = mutations.some(m =>
+                    Array.from(m.removedNodes).some(n => n.nodeType === 1 && n.tagName === 'CANVAS')
+                );
+                if (wasRemoved) {
+                    this.isRunning = false;
+                    setTimeout(() => {
+                        if (G.init) G.init(this.lastSelector, this.baseUrl);
+                    }, 5000);
+                }
+            };
+            resilienceObserver = new MutationObserver(observerCallback);
+            resilienceObserver.observe(container, { childList: true });
+        }
+    });
+
+    // --- Main Entry ---
+    async function main() {
+        console.log('Synapse App: main() execution started.');
+        try {
+            await loadDependencies();
+            const { targetSelector, baseUrl } = captureAttributes();
+
+            if (!baseUrl) {
+                console.warn('Synapse App: baseUrl not found in attributes, using default.');
+            }
+
+            // Load Modular Components
+            const scripts = [
+                'synapse_chemistry.js',
+                'synapse_neurotransmitters.js',
+                'synapse_sidebar.js',
+                'synapse_tooltips.js',
+                'synapse_controls.js',
+                'synapse_analytics.js',
+                'synapse_3d.js',
+                'synapse_molecular.js'
+            ];
+
+            for (const script of scripts) {
+                await GreenhouseUtils.loadScript(script, baseUrl || '');
+            }
+
+            if (targetSelector) {
+                const container = await GreenhouseUtils.waitForElement(targetSelector);
+                G.init(targetSelector, baseUrl);
+            } else {
+                console.warn('Synapse App: No target selector found, waiting for manual init.');
+            }
+
+        } catch (error) {
+            console.error('Synapse App: Initialization sequence failed:', error);
+        }
+    }
+
+    main();
+
 })();

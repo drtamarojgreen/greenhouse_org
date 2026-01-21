@@ -3,13 +3,16 @@
 (function () {
     'use strict';
 
-    const GreenhouseSynapseChemistry = {
+    const G = window.GreenhouseSynapseApp || {};
+    window.GreenhouseSynapseApp = G;
+
+    G.Chemistry = {
         neurotransmitters: {
             glutamate: {
                 id: 'glutamate',
                 name: { en: 'Glutamate', es: 'Glutamato' },
                 type: 'excitatory',
-                color: '#FF8C00', // Dark Orange
+                color: '#FF8C00',
                 glow: 'rgba(255, 140, 0, 0.6)',
                 targets: ['ionotropic_receptor'],
                 ionEffect: 'sodium'
@@ -18,7 +21,7 @@
                 id: 'gaba',
                 name: { en: 'GABA', es: 'GABA' },
                 type: 'inhibitory',
-                color: '#32CD32', // Lime Green
+                color: '#32CD32',
                 glow: 'rgba(50, 205, 50, 0.6)',
                 targets: ['ionotropic_receptor'],
                 ionEffect: 'chloride'
@@ -27,7 +30,7 @@
                 id: 'dopamine',
                 name: { en: 'Dopamine', es: 'Dopamina' },
                 type: 'modulatory',
-                color: '#FF1493', // Deep Pink
+                color: '#FF1493',
                 glow: 'rgba(255, 20, 147, 0.6)',
                 targets: ['gpcr'],
                 ionEffect: 'none'
@@ -36,7 +39,7 @@
                 id: 'serotonin',
                 name: { en: 'Serotonin', es: 'Serotonina' },
                 type: 'modulatory',
-                color: '#00F2FF', // Electric Cyan
+                color: '#00F2FF',
                 glow: 'rgba(0, 242, 255, 0.6)',
                 targets: ['gpcr'],
                 ionEffect: 'none'
@@ -61,25 +64,23 @@
                 id: 'sodium',
                 name: { en: 'Sodium (Na+)', es: 'Sodio (Na+)' },
                 charge: '+',
-                color: '#ffd700', // Gold
+                color: '#ffd700',
                 effect: 'depolarize'
             },
             chloride: {
                 id: 'chloride',
                 name: { en: 'Chloride (Cl-)', es: 'Cloro (Cl-)' },
                 charge: '-',
-                color: '#adff2f', // Greenish Yellow
+                color: '#adff2f',
                 effect: 'hyperpolarize'
             },
             calcium: {
                 id: 'calcium',
                 name: { en: 'Calcium (Ca2+)', es: 'Calcio (Ca2+)' },
                 charge: '++',
-                color: '#ffffff', // White
+                color: '#ffffff',
                 effect: 'plasticity'
             }
         }
     };
-
-    window.GreenhouseSynapseChemistry = GreenhouseSynapseChemistry;
 })();

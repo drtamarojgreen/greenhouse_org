@@ -30,34 +30,12 @@
     <h1>Synapse Visualization Development</h1>
     <div id="synapse-app-container"></div>
 
-    <!-- Dependencies -->
-    <script src="js/synapse_chemistry.js"></script>
-    <script src="js/synapse_neurotransmitters.js"></script>
-    <script src="js/synapse_sidebar.js"></script>
-    <script src="js/synapse_tooltips.js"></script>
-    <script src="js/synapse_controls.js"></script>
-    <script src="js/synapse_analytics.js"></script>
-    <script src="js/synapse_3d.js"></script>
-    <script src="js/synapse_molecular.js"></script>
-    <script src="js/synapse_app.js"></script>
+    <!-- Core Utilities -->
+    <script src="js/GreenhouseUtils.js"></script>
 
-    <script>
-        // For this local file, we manually initialize the application
-        // after ensuring the DOM is fully loaded.
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.GreenhouseSynapseApp) {
-                // The init function in synapse_app.js will handle creating the canvas 
-                // and rendering the placeholder content inside the container.
-                window.GreenhouseSynapseApp.init('#synapse-app-container');
-            } else {
-                console.error('Synapse Init Error: GreenhouseSynapseApp not found on window object.');
-                const container = document.querySelector('#synapse-app-container');
-                if (container) {
-                    container.innerHTML = '<p style="color:red;">Error: Could not load Synapse application.</p>';
-                }
-            }
-        });
-    </script>
+    <!-- Master Application Script -->
+    <script src="js/synapse_app.js" data-base-url="js/" data-target-selector-left="#synapse-app-container"></script>
+
 </body>
 
 </html>
