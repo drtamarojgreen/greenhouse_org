@@ -167,6 +167,52 @@
                     }
                 }
             });
+        },
+
+        renderDockingDetail(ctx, receptor) {
+            // Visual Ligand Docking Visualization (#70)
+            const boundLigand = this.activeLigands.find(l => l.boundTo === receptor);
+            if (!boundLigand) return;
+
+            ctx.save();
+            // Draw bound ligand in pocket
+            ctx.fillStyle = boundLigand.color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = boundLigand.color;
+            ctx.beginPath();
+            ctx.arc(0, -60, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Visualize Interaction Points (Hydrogen Bonds, Salt Bridges)
+            ctx.setLineDash([2, 2]);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+
+            const interactionPoints = [
+                { label: 'D155 (Salt Bridge)', angle: -0.5 },
+                { label: 'S199 (H-Bond)', angle: 0.5 },
+                { label: 'W358 (Pi-Pi)', angle: 2.5 }
+            ];
+
+            interactionPoints.forEach(pt => {
+                const px = Math.cos(pt.angle) * 40;
+                const py = -60 + Math.sin(pt.angle) * 40;
+                ctx.beginPath();
+                ctx.moveTo(0, -60);
+                ctx.lineTo(px, py);
+                ctx.stroke();
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '8px Arial';
+                ctx.fillText(pt.label, px * 1.5, py - 5);
+            });
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#00ffcc';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText("LIGAND BOUND: " + boundLigand.name, 0, -100);
+            ctx.restore();
         }
     };
 

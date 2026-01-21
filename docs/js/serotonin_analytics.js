@@ -93,7 +93,9 @@
         renderAnalytics(ctx, w, h) {
             // Comparison View Data (Category 10, #97) - Dual Timeline (#92)
             if (G.comparisonMode) {
-                // Draw a split line and comparison labels
+                // Split Screen Rendering logic
+                ctx.save();
+                // Draw separator
                 ctx.strokeStyle = '#fff';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -101,23 +103,20 @@
                 ctx.lineTo(w / 2, h);
                 ctx.stroke();
 
-                ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
-                ctx.fillRect(0, 0, w / 2, h);
-                ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
-                ctx.fillRect(w / 2, 0, w / 2, h);
-
+                // Labels
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 12px Arial';
-                ctx.fillText('HEALTHY / PLACEBO', 50, 30);
-                ctx.fillText('PATHOLOGICAL / EXPERIMENTAL', w - 220, 30);
+                ctx.textAlign = 'center';
+                ctx.fillText('BASELINE (HEALTHY)', w / 4, 30);
+                ctx.fillText('MODIFIED (PATHOLOGICAL)', (w / 4) * 3, 30);
 
-                // Dual Timeline markers
-                const time = G.state.timer;
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(50, 45, 100, 2);
-                ctx.fillRect(w - 150, 45, 100, 2);
-                ctx.fillRect(50 + (time % 100), 40, 2, 10);
-                ctx.fillRect(w - 150 + (time % 100), 40, 2, 10);
+                // Show current scenario on right side
+                const scenario = G.lastInteraction && G.lastInteraction.type === 'parameter' ? G.lastInteraction.name : 'Active Scenario';
+                ctx.fillStyle = '#ff4d4d';
+                ctx.font = '10px Arial';
+                ctx.fillText(scenario, (w / 4) * 3, 45);
+
+                ctx.restore();
             }
 
             // Real-Time Occupancy Bar (Category III, #65)
