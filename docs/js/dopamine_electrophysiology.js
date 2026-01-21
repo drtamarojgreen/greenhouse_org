@@ -258,17 +258,14 @@
         ctx.fillStyle = '#fff';
         ctx.font = '12px Arial';
         ctx.textAlign = 'left';
-        ctx.fillText(`Membrane Potential: ${eState.membranePotential.toFixed(1)} mV`, 10, h - 200);
-        ctx.fillText(`State: ${eState.isUpState ? 'UP-STATE' : 'DOWN-STATE'}`, 10, h - 180);
-        ctx.fillText(`Spikes: ${eState.spikeCount}`, 10, h - 160);
-
-        // Render Channel Status
-        ctx.fillText(`GIRK: ${(eState.channels.girk * 100).toFixed(0)}%`, 10, h - 240);
-        ctx.fillText(`HCN (Ih): ${(eState.channels.hcn * 100).toFixed(0)}%`, 10, h - 220);
-
-        // 60. Input Resistance Visual
-        ctx.fillStyle = '#aaa';
-        ctx.fillText(`Input Resistance: ${eState.inputResistance.toFixed(2)} MΩ`, 10, h - 260);
+        ctx.fillText(`Resistance: ${eState.inputResistance.toFixed(2)} MΩ`, 10, h - 550);
+        ctx.fillText(`HCN: ${(eState.channels.hcn * 100).toFixed(0)}%`, 10, h - 535);
+        ctx.fillStyle = '#ff9999';
+        ctx.fillText(`DAT Blockade: ${(G.pharmacologyState ? G.pharmacologyState.datBlockade * 100 : 0).toFixed(0)}%`, 10, h - 520);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(`Potential: ${eState.membranePotential.toFixed(1)} mV`, 10, h - 505);
+        ctx.fillText(`State: ${eState.isUpState ? 'UP' : 'DOWN'}`, 10, h - 490);
+        ctx.fillText(`Spikes: ${eState.spikeCount}`, 10, h - 475);
 
         // 58. Shunting Inhibition (Cl- conductance)
         if (eState.channels.cl > 0.1) {

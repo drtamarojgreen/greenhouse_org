@@ -9,6 +9,7 @@
 
     G.state = G.state || {
         camera: { x: 0, y: 0, z: -400, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
+        cinematicCamera: true,
         receptors: [],
         particles: [],
         signalingActive: false,
@@ -143,6 +144,11 @@
         G.state.timer++;
         if (!G.isDragging) {
             G.state.camera.rotationY += 0.005;
+            // 100. Cinematic Camera: subtle zoom/pan
+            if (G.state.cinematicCamera) {
+                G.state.camera.zoom = 1.0 + Math.sin(G.state.timer * 0.005) * 0.1;
+                G.state.camera.rotationX = Math.sin(G.state.timer * 0.003) * 0.1;
+            }
         }
 
         if (G.updateMolecular) G.updateMolecular();
@@ -165,7 +171,12 @@
 
         if (!ctx) return;
         ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = '#050510';
+
+        // Background with subtle radial gradient
+        const bgGrad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w);
+        bgGrad.addColorStop(0, '#0a0a20');
+        bgGrad.addColorStop(1, '#050510');
+        ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, w, h);
 
         if (!window.GreenhouseModels3DMath) return;
@@ -174,50 +185,72 @@
         G.state.receptors.forEach(r => {
             const baseP = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (baseP.scale > 0) {
+                // 7-TM Helices with Gradients
                 for (let i = 0; i < 7; i++) {
                     const angle = (i / 7) * Math.PI * 2 + G.state.timer * 0.01;
                     const hx = r.x + Math.cos(angle) * r.helixRadius;
                     const hz = r.z + Math.sin(angle) * r.helixRadius;
-                    const top = project(hx, r.y - 40, hz, cam, { width: w, height: h, near: 10, far: 5000 });
-                    const bottom = project(hx, r.y + 40, hz, cam, { width: w, height: h, near: 10, far: 5000 });
+                    const top = project(hx, r.y - 45, hz, cam, { width: w, height: h, near: 10, far: 5000 });
+                    const bottom = project(hx, r.y + 45, hz, cam, { width: w, height: h, near: 10, far: 5000 });
+
                     if (top.scale > 0 && bottom.scale > 0) {
-                        ctx.strokeStyle = r.color;
-                        ctx.lineWidth = 6 * top.scale;
+                        const grad = ctx.createLinearGradient(top.x, top.y, bottom.x, bottom.y);
+                        grad.addColorStop(0, r.color);
+                        grad.addColorStop(0.5, 'rgba(255,255,255,0.4)');
+                        grad.addColorStop(1, r.color);
+
+                        ctx.strokeStyle = grad;
+                        ctx.lineWidth = 8 * top.scale;
                         ctx.lineCap = 'round';
+                        ctx.globalAlpha = 0.7;
                         ctx.beginPath();
                         ctx.moveTo(top.x, top.y);
                         ctx.lineTo(bottom.x, bottom.y);
                         ctx.stroke();
+                        ctx.globalAlpha = 1.0;
                     }
                 }
 
-                const il3Top = project(r.x, r.y + 30, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                // Enhanced IL3 Loop (Intracellular Loop 3)
+                const il3Top = project(r.x, r.y + 35, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (il3Top.scale > 0) {
                     ctx.strokeStyle = r.color;
-                    ctx.lineWidth = 2 * il3Top.scale;
+                    ctx.lineWidth = 3 * il3Top.scale;
                     ctx.beginPath();
-                    ctx.arc(il3Top.x, il3Top.y + (r.il3Size / 2) * il3Top.scale, (r.il3Size / 2) * il3Top.scale, -Math.PI, 0);
+                    // Draw a more biological curved loop
+                    ctx.moveTo(il3Top.x - 10*il3Top.scale, il3Top.y);
+                    ctx.bezierCurveTo(
+                        il3Top.x - r.il3Size*il3Top.scale, il3Top.y + r.il3Size*il3Top.scale,
+                        il3Top.x + r.il3Size*il3Top.scale, il3Top.y + r.il3Size*il3Top.scale,
+                        il3Top.x + 10*il3Top.scale, il3Top.y
+                    );
                     ctx.stroke();
                 }
 
-                const tailStart = project(r.x + r.helixRadius, r.y + 40, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                // Enhanced C-tail (Carboxyl Tail)
+                const tailStart = project(r.x + r.helixRadius, r.y + 45, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (tailStart.scale > 0) {
                     ctx.strokeStyle = r.color;
                     ctx.lineWidth = 2 * tailStart.scale;
                     ctx.beginPath();
                     ctx.moveTo(tailStart.x, tailStart.y);
+                    // Pulsing movement for tail
+                    const pulse = Math.sin(G.state.timer * 0.05) * 10;
                     ctx.bezierCurveTo(
-                        tailStart.x + 10 * tailStart.scale, tailStart.y + r.tailLength * tailStart.scale,
-                        tailStart.x - 10 * tailStart.scale, tailStart.y + (r.tailLength + 10) * tailStart.scale,
-                        tailStart.x, tailStart.y + r.tailLength * tailStart.scale
+                        tailStart.x + (15 + pulse) * tailStart.scale, tailStart.y + (r.tailLength/2) * tailStart.scale,
+                        tailStart.x - (15 + pulse) * tailStart.scale, tailStart.y + (r.tailLength) * tailStart.scale,
+                        tailStart.x, tailStart.y + (r.tailLength + 10) * tailStart.scale
                     );
                     ctx.stroke();
                 }
 
                 ctx.fillStyle = '#fff';
-                ctx.font = `${12 * baseP.scale}px Arial`;
+                ctx.font = `bold ${14 * baseP.scale}px Arial`;
                 ctx.textAlign = 'center';
-                ctx.fillText(r.type, baseP.x, baseP.y + 100 * baseP.scale);
+                ctx.shadowBlur = 10 * baseP.scale;
+                ctx.shadowColor = r.color;
+                ctx.fillText(r.type, baseP.x, baseP.y + 110 * baseP.scale);
+                ctx.shadowBlur = 0;
             }
         });
 

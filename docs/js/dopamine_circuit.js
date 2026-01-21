@@ -173,18 +173,30 @@
 
         // 79. 3D Brain Atlas Integration (Coordinate-based visualization)
         // Draw a more recognizable wireframe "brain" shell
-        ctx.strokeStyle = 'rgba(100, 100, 255, 0.2)';
+        ctx.strokeStyle = 'rgba(100, 100, 255, 0.15)';
         const pAtlas = project(0, 0, 0, cam, { width: w, height: h, near: 10, far: 5000 });
         if (pAtlas.scale > 0) {
-            ctx.setLineDash([5, 15]);
+            ctx.setLineDash([2, 10]);
+
             // Outer shell (Cortex)
             ctx.beginPath();
-            ctx.ellipse(pAtlas.x, pAtlas.y, 500 * pAtlas.scale, 350 * pAtlas.scale, 0, 0, Math.PI * 2);
+            ctx.ellipse(pAtlas.x, pAtlas.y, 550 * pAtlas.scale, 400 * pAtlas.scale, 0, 0, Math.PI * 2);
             ctx.stroke();
 
-            // Midbrain area
+            // Inner regions (Striatum/Thalamus approximation)
             ctx.beginPath();
-            ctx.ellipse(pAtlas.x, pAtlas.y + 100 * pAtlas.scale, 200 * pAtlas.scale, 150 * pAtlas.scale, 0, 0, Math.PI * 2);
+            ctx.ellipse(pAtlas.x, pAtlas.y + 50 * pAtlas.scale, 300 * pAtlas.scale, 200 * pAtlas.scale, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Midbrain area (SNc/VTA)
+            ctx.beginPath();
+            ctx.ellipse(pAtlas.x, pAtlas.y + 250 * pAtlas.scale, 150 * pAtlas.scale, 80 * pAtlas.scale, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Saggital-like midline
+            ctx.beginPath();
+            ctx.moveTo(pAtlas.x - 550 * pAtlas.scale, pAtlas.y);
+            ctx.lineTo(pAtlas.x + 550 * pAtlas.scale, pAtlas.y);
             ctx.stroke();
 
             ctx.setLineDash([]);
@@ -231,14 +243,26 @@
             }
         });
 
-        // 80. Tripartite Synapse (Astrocytes)
+        // 80. Tripartite Synapse (Astrocytes - Stellate Appearance)
         cState.astrocytes.forEach(a => {
             const pos = project(a.x, a.y, a.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (pos.scale > 0) {
-                ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.15)';
                 ctx.beginPath();
-                ctx.arc(pos.x, pos.y, a.radius * pos.scale, 0, Math.PI * 2);
+                // Draw stellate processes
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2 + G.state.timer * 0.005;
+                    const len = a.radius * (0.8 + Math.sin(G.state.timer * 0.02 + i) * 0.2);
+                    ctx.moveTo(pos.x, pos.y);
+                    ctx.lineTo(pos.x + Math.cos(angle) * len * pos.scale, pos.y + Math.sin(angle) * len * pos.scale);
+                }
                 ctx.stroke();
+
+                // Central soma
+                ctx.fillStyle = 'rgba(0, 200, 200, 0.05)';
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, (a.radius / 4) * pos.scale, 0, Math.PI * 2);
+                ctx.fill();
             }
         });
 

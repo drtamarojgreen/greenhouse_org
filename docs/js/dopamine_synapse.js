@@ -494,11 +494,11 @@
         ctx.fillStyle = '#fff';
         ctx.font = '12px Arial';
         ctx.textAlign = 'left';
-        ctx.fillText(`Vesicles (RRP): ${sState.vesicles.rrp.length}`, 10, h - 100);
-        ctx.fillText(`Cleft DA Concentration: ${sState.cleftDA.length}`, 10, h - 80);
-        ctx.fillText(`DAT Activity: ${(sState.dat.activity * 100).toFixed(0)}%`, 10, h - 60);
-        ctx.fillText(`Autoreceptor Feedback: ${(sState.autoreceptorFeedback * 100).toFixed(0)}%`, 10, h - 40);
-        ctx.fillText(`State: ${sState.pathologicalState}`, 10, h - 20);
+        ctx.fillText(`Vesicles: ${sState.vesicles.rrp.length}`, 10, h - 100);
+        ctx.fillText(`Cleft DA: ${sState.cleftDA.length}`, 10, h - 85);
+        ctx.fillText(`DAT: ${(sState.dat.activity * 100).toFixed(0)}%`, 10, h - 70);
+        ctx.fillText(`Autoreceptor: ${(sState.autoreceptorFeedback * 100).toFixed(0)}%`, 10, h - 55);
+        ctx.fillText(`Status: ${sState.pathologicalState}`, 10, h - 40);
 
         // 33. Kiss-and-run Indicator
         if (sState.kissAndRunCount > 0) {

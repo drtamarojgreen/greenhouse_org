@@ -543,11 +543,9 @@
         ctx.fillStyle = '#fff';
         ctx.font = '12px Arial';
         ctx.textAlign = 'right';
-        ctx.fillText(`DARPP-32 Thr34: ${(mState.darpp32.thr34 * 100).toFixed(1)}%`, w - 10, 20);
-        ctx.fillText(`PP1 Inhibition: ${mState.darpp32.pp1Inhibited ? 'ACTIVE' : 'INACTIVE'}`, w - 10, 40);
-        ctx.fillText(`CREB Activation: ${(mState.crebActivation * 100).toFixed(1)}%`, w - 10, 60);
-        ctx.fillText(`ΔFosB Level: ${mState.deltaFosB.toFixed(4)}`, w - 10, 80);
-        ctx.fillText(`AC5 Activity: ${(mState.ac5.activity * 100).toFixed(1)}% ${mState.ac5.inhibitedByCa ? '(Ca2+ INHIBITED)' : ''}`, w - 10, h - 300);
+        ctx.fillText(`DARPP-32: ${(mState.darpp32.thr34 * 100).toFixed(0)}%`, w - 10, 20);
+        ctx.fillText(`CREB: ${(mState.crebActivation * 100).toFixed(0)}%`, w - 10, 35);
+        ctx.fillText(`ΔFosB: ${mState.deltaFosB.toFixed(3)}`, w - 10, 50);
 
         // Additional indicators
         if (mState.plcPathway.pkc > 0.1) {
