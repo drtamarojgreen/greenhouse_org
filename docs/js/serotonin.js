@@ -276,23 +276,25 @@
             if (!window.GreenhouseModels3DMath) return;
             const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
 
-            // Draw receptor helices (simplified)
-            for (let i = 0; i < 7; i++) {
-                const angle = (i / 7) * Math.PI * 2;
-                const rx = Math.cos(angle) * 40;
-                const rz = Math.sin(angle) * 40;
+            // Draw receptor helices (Only draw original placeholder if modular receptors haven't initialized)
+            if (!this.state.receptors || this.state.receptors.length === 0) {
+                for (let i = 0; i < 7; i++) {
+                    const angle = (i / 7) * Math.PI * 2;
+                    const rx = Math.cos(angle) * 40;
+                    const rz = Math.sin(angle) * 40;
 
-                const top = project(rx, -80, rz, cam, { width: w, height: h, near: 10, far: 5000 });
-                const bottom = project(rx, 80, rz, cam, { width: w, height: h, near: 10, far: 5000 });
+                    const top = project(rx, -80, rz, cam, { width: w, height: h, near: 10, far: 5000 });
+                    const bottom = project(rx, 80, rz, cam, { width: w, height: h, near: 10, far: 5000 });
 
-                if (top.scale > 0 && bottom.scale > 0) {
-                    ctx.strokeStyle = '#667eea';
-                    ctx.lineWidth = 15 * top.scale;
-                    ctx.lineCap = 'round';
-                    ctx.beginPath();
-                    ctx.moveTo(top.x, top.y);
-                    ctx.lineTo(bottom.x, bottom.y);
-                    ctx.stroke();
+                    if (top.scale > 0 && bottom.scale > 0) {
+                        ctx.strokeStyle = '#667eea';
+                        ctx.lineWidth = 15 * top.scale;
+                        ctx.lineCap = 'round';
+                        ctx.beginPath();
+                        ctx.moveTo(top.x, top.y);
+                        ctx.lineTo(bottom.x, bottom.y);
+                        ctx.stroke();
+                    }
                 }
             }
 

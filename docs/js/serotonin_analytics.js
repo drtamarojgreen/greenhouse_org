@@ -91,6 +91,27 @@
         },
 
         renderAnalytics(ctx, w, h) {
+            // Comparison View Data (Category 10, #97)
+            if (G.comparisonMode) {
+                // Draw a split line and comparison labels
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(w/2, 0);
+                ctx.lineTo(w/2, h);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
+                ctx.fillRect(0, 0, w/2, h);
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+                ctx.fillRect(w/2, 0, w/2, h);
+
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText('HEALTHY / PLACEBO', 50, 30);
+                ctx.fillText('PATHOLOGICAL / EXPERIMENTAL', w - 220, 30);
+            }
+
             // Real-Time Occupancy Bar (Category III, #65)
             if (G.showOccupancyPanel && G.state.receptors) {
                 const panelW = 120;
