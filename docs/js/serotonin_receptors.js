@@ -236,6 +236,16 @@
             G.state.receptors.forEach(r => {
                 const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
+                    // Legend Highlight Effect (#95)
+                    const isHighlighted = G.Legend && G.Legend.highlightedItem === r.type;
+                    if (isHighlighted) {
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 3 * p.scale;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 60 * p.scale, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+
                     // Protein Surface Map: Physical Morphology
                     ctx.fillStyle = 'rgba(200, 200, 200, 0.1)';
                     ctx.beginPath();

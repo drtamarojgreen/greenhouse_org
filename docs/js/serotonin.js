@@ -155,6 +155,11 @@
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
 
+            // Check Legend Interaction first (#95)
+            if (this.Legend && this.Legend.checkInteraction && this.Legend.checkInteraction(mx, my, this.width, this.height)) {
+                return;
+            }
+
             if (this.viewMode === '2D-Closeup') {
                 this.viewMode = '3D';
                 this.selectedReceptor = null;
@@ -348,6 +353,11 @@
                 ctx.quadraticCurveTo(0, 140 + (r.il3Length || 10) * 2, 10, 140);
                 ctx.stroke();
                 ctx.fillText("IL3 Loop", 0, 160);
+            }
+
+            // Ligand Docking Visualization (#70)
+            if (this.Kinetics && this.Kinetics.renderDockingDetail) {
+                this.Kinetics.renderDockingDetail(ctx, r);
             }
 
             ctx.fillStyle = '#fff';

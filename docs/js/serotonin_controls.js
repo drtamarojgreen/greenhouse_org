@@ -45,7 +45,8 @@
                     { name: 'Metabolic Gauges', toggle: () => { G.showMetabolicGauges = !G.showMetabolicGauges; } },
                     { name: 'Heatmap Overlay', toggle: () => { G.showHeatmap = !G.showHeatmap; } },
                     { name: 'Comparison View', toggle: () => { G.comparisonMode = !G.comparisonMode; } },
-                    { name: 'Interactive Legend', toggle: () => { G.showInteractiveLegend = !G.showInteractiveLegend; } }
+                    { name: 'Interactive Legend', toggle: () => { G.showInteractiveLegend = !G.showInteractiveLegend; } },
+                    { name: 'Anatomical Environment', toggle: () => { this.cycleEnvironment(); } }
                 ]
             },
             {
@@ -242,6 +243,26 @@
         cholesterolSlider.oninput = (e) => { G.cholesterolLevel = parseFloat(e.target.value); };
         cholesterolControl.appendChild(cholesterolSlider);
         container.appendChild(cholesterolControl);
+
+        this.cycleEnvironment = () => {
+            const envs = ['PFC (High 5-HT2A)', 'Hippocampus (High 5-HT1A)', 'Raphe (Autoreceptors)'];
+            G.currentEnvIndex = ((G.currentEnvIndex || 0) + 1) % envs.length;
+            const env = envs[G.currentEnvIndex];
+            G.currentEnvLabel = env;
+
+            // Adjust receptor densities/types (Category 1, #1)
+            if (G.Receptors && G.Receptors.setupReceptorModel) {
+                G.Receptors.setupReceptorModel();
+                if (env.includes('PFC')) {
+                    G.state.receptors = G.state.receptors.filter(r => ['5-HT2A', '5-HT2C', '5-HT1A'].includes(r.type));
+                    for(let k=0; k<5; k++) G.state.receptors.push({...G.Receptors.subtypes['5-HT2A'], type: '5-HT2A', state: 'Inactive', x: Math.random()*200-100, y: 0, z: Math.random()*200-100});
+                } else if (env.includes('Hippocampus')) {
+                    G.state.receptors = G.state.receptors.filter(r => ['5-HT1A', '5-HT7'].includes(r.type));
+                    for(let k=0; k<8; k++) G.state.receptors.push({...G.Receptors.subtypes['5-HT1A'], type: '5-HT1A', state: 'Inactive', x: Math.random()*200-100, y: 0, z: Math.random()*200-100});
+                }
+            }
+            G.lastInteraction = { type: 'environment', name: env, time: G.state.timer };
+        };
 
         // Portal Link (Category 10, #100)
         const portalLink = document.createElement('a');

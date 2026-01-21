@@ -10,6 +10,7 @@
 
     G.Legend = {
         visible: true,
+        highlightedItem: null,
         items: [
             { label: '5-HT1A', color: '#4d79ff', desc: 'Inhibitory Gi/o coupled' },
             { label: '5-HT1D', color: '#3399ff', desc: 'Presynaptic Autoreceptor' },
@@ -22,39 +23,79 @@
         ],
 
         renderLegend(ctx, w, h) {
-            if (!this.visible) return;
-            const legendW = 180;
-            const legendH = this.items.length * 20 + 30;
+            if (!this.visible || !G.showInteractiveLegend) return;
+            const legendW = 200;
+            const legendH = this.items.length * 22 + 40;
+            const startX = 10;
+            const startY = h - legendH - 10;
 
-            ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(10, h - legendH - 10, legendW, legendH);
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 1;
+            ctx.fillRect(startX, startY, legendW, legendH);
+            ctx.strokeRect(startX, startY, legendW, legendH);
 
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 11px Arial';
+            ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'left';
-            ctx.fillText('INTERACTIVE LEGEND', 20, h - legendH);
+            ctx.fillText('INTERACTIVE LEGEND', startX + 10, startY + 20);
 
             this.items.forEach((item, i) => {
-                const y = h - legendH + 25 + i * 20;
+                const y = startY + 45 + i * 22;
+
+                // Interaction: Highlight if hovered or clicked
+                const isHighlighted = (this.highlightedItem === item.label);
 
                 // Legend Pulsation (#58)
                 let pulseScale = 1.0;
                 if (G.state.receptors) {
                     const isBound = G.state.receptors.some(r => r.type.startsWith(item.label) && r.state !== 'Inactive');
                     if (isBound) {
-                        pulseScale = 1.0 + Math.sin(G.state.timer * 0.2) * 0.2;
+                        pulseScale = 1.1 + Math.sin(G.state.timer * 0.1) * 0.1;
                     }
+                }
+
+                if (isHighlighted) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.fillRect(startX + 5, y - 15, legendW - 10, 20);
                 }
 
                 ctx.fillStyle = item.color;
                 ctx.beginPath();
-                ctx.arc(25, y - 4, 5 * pulseScale, 0, Math.PI * 2);
+                ctx.arc(startX + 15, y - 5, 6 * pulseScale, 0, Math.PI * 2);
                 ctx.fill();
 
-                ctx.fillStyle = '#fff';
-                ctx.font = '10px Arial';
-                ctx.fillText(item.label, 40, y);
+                ctx.fillStyle = isHighlighted ? '#00ffcc' : '#fff';
+                ctx.font = isHighlighted ? 'bold 11px Arial' : '11px Arial';
+                ctx.fillText(item.label, startX + 30, y);
+
+                // Show description if highlighted
+                if (isHighlighted) {
+                    ctx.fillStyle = '#aaa';
+                    ctx.font = '9px Arial';
+                    ctx.fillText(item.desc, startX + 10, y + 10);
+                }
             });
+        },
+
+        checkInteraction(mx, my, w, h) {
+            if (!this.visible || !G.showInteractiveLegend) return false;
+            const legendW = 200;
+            const legendH = this.items.length * 22 + 40;
+            const startX = 10;
+            const startY = h - legendH - 10;
+
+            if (mx >= startX && mx <= startX + legendW && my >= startY && my <= startY + legendH) {
+                // Determine which item
+                const relativeY = my - (startY + 30);
+                const index = Math.floor(relativeY / 22);
+                if (index >= 0 && index < this.items.length) {
+                    this.highlightedItem = this.items[index].label;
+                    return true;
+                }
+            }
+            this.highlightedItem = null;
+            return false;
         }
     };
 
