@@ -302,6 +302,7 @@
             await GreenhouseUtils.loadScript('dopamine_plasticity.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_clinical.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_pharmacology.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_scientific.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_analytics.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_ux.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);

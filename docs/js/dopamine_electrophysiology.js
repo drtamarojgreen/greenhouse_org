@@ -46,9 +46,17 @@
 
     G.updateElectrophysiology = function () {
         const state = G.state;
-        const eState = G.electroState;
-        const mState = G.molecularState;
         const sState = G.synapseState;
+        const eState = G.electroState;
+
+        // 57. Gap Junction Modulation by Dopamine
+        // High DA levels uncouple gap junctions in some interneuron types
+        const daConcentration = sState ? sState.cleftDA.length : 0;
+        eState.gapJunctions.forEach(gj => {
+            if (daConcentration > 150) gj.coupling = Math.max(0.05, gj.coupling - 0.01);
+            else gj.coupling = Math.min(0.3, gj.coupling + 0.005);
+        });
+        const mState = G.molecularState;
 
         // 46. GIRK Channel Activation (by D2/Gi)
         if (state.mode.includes('D2') && state.signalingActive) {
@@ -84,7 +92,6 @@
         let targetPotential = -85; // Default "Down-state"
 
         // Influence of DA and Synaptic input
-        const daConcentration = sState ? sState.cleftDA.length : 0;
         if (daConcentration > 40) {
             targetPotential += (daConcentration / 100) * 15;
         }

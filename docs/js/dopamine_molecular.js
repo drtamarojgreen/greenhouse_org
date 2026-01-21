@@ -273,6 +273,13 @@
         // 1. D1-D2 Heteromerization & 5. Gq Pathway
         if ((state.mode === 'Heteromer' || state.scenarios.heteromer) && state.signalingActive) {
             mState.heteromers.d1d2 = Math.min(1, mState.heteromers.d1d2 + 0.01 * pamFactor);
+            // Move D1 and D2 receptors closer together visually
+            const d1 = state.receptors.find(r => r.type === 'D1');
+            const d2 = state.receptors.find(r => r.type === 'D2');
+            if (d1 && d2) {
+                d1.x += (-155 - d1.x) * 0.05;
+                d2.x += (-145 - d2.x) * 0.05;
+            }
             mState.plcPathway.ip3 = Math.min(1, mState.plcPathway.ip3 + 0.02 * pamFactor);
             mState.plcPathway.dag = Math.min(1, mState.plcPathway.dag + 0.02);
             mState.plcPathway.pkc = Math.min(1, mState.plcPathway.pkc + 0.015);

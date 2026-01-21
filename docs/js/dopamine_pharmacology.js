@@ -9,6 +9,26 @@
     const G = window.GreenhouseDopamine || {};
     window.GreenhouseDopamine = G;
 
+    G.selectDrug = function (drugName) {
+        const pState = G.pharmacologyState;
+        const mState = G.molecularState;
+        if (!pState || !mState) return;
+
+        const lib = mState.drugLibrary;
+        const drug = [...lib.d1Agonists, ...lib.d1Antagonists, ...lib.d2Agonists, ...lib.d2Antagonists, ...lib.pams]
+            .find(d => d.name === drugName);
+
+        if (drug) {
+            pState.selectedDrug = drug;
+            console.log(`Applied drug: ${drugName} (Ki: ${drug.ki}, Efficacy: ${drug.efficacy})`);
+
+            // Trigger specific effects
+            if (drugName === 'Cocaine') pState.datBlockade = 0.95;
+            if (drugName === 'Haloperidol') pState.antipsychoticType = 'Slow-off';
+            if (drugName === 'Clozapine') pState.antipsychoticType = 'Fast-off';
+        }
+    };
+
     G.pharmacologyState = {
         activeDrugs: [],
         selectedDrug: null,
@@ -26,9 +46,25 @@
         const state = G.state;
         const pState = G.pharmacologyState;
         const sState = G.synapseState;
+        const mState = G.molecularState;
 
         // Reset effects base
         pState.datBlockade = 0;
+
+        // Apply selected drug efficacy
+        if (pState.selectedDrug) {
+            const d = pState.selectedDrug;
+            const occupancy = (1.0 / (1.0 + d.ki / (sState ? sState.cleftDA.length + 1 : 1)));
+            pState.drugOccupancy = occupancy;
+
+            if (d.efficacy > 0) {
+                if (d.name.startsWith('SKF') || d.name.startsWith('Fenoldopam')) {
+                    if (mState) mState.ac5.activity += d.efficacy * occupancy * 0.5;
+                } else if (d.name === 'Quinpirole' || d.name === 'Pramipexole') {
+                    if (mState) mState.ac5.activity = Math.max(0, mState.ac5.activity - d.efficacy * occupancy * 0.3);
+                }
+            }
+        }
         pState.maoiActive = false;
 
         // 95. MAO Inhibitors (Selegiline)
