@@ -8,7 +8,7 @@
 
     G.Controls = {
         render(container, config, callbacks) {
-            const { onToggleBurst, onUpdateSensitivity, onToggleDrug, onToggleHighContrast, onGenerateFigure } = callbacks;
+            const { onToggleBurst, onUpdateSensitivity, onToggleDrug, onToggleHighContrast, onGenerateFigure, onUpdateParam } = callbacks;
 
             G.config.pharmacology = G.config.pharmacology || {
                 ssriActive: false,
@@ -16,7 +16,15 @@
                 ttxActive: false,
                 benzodiazepineActive: false
             };
-            G.config.kinetics = G.config.kinetics || { enzymaticRate: 0.002 };
+            G.config.kinetics = G.config.kinetics || {
+                enzymaticRate: 0.002,
+                diffusionCoefficient: 1.0,
+                pH: 7.4
+            };
+            G.config.visuals = G.config.visuals || {
+                showIsoforms: false,
+                showElectrostatic: false
+            };
 
             let html = `
                 <div style="margin-top: 20px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);">
@@ -44,9 +52,26 @@
                         </div>
                     </div>
 
+                    <div style="margin-bottom: 15px;">
+                        <label for="diffusion-range" style="display: block; font-size: 10px; color: #aaa; margin-bottom: 5px;">Diffusion Coefficient (D)</label>
+                        <input type="range" id="diffusion-range" min="0.1" max="5.0" step="0.1" value="${G.config.kinetics.diffusionCoefficient}" style="width: 100%; accent-color: #00F2FF;">
+                    </div>
+
                     <div style="margin-bottom: 20px;">
-                        <label for="sensitivity-range" style="display: block; font-size: 10px; color: #aaa; margin-bottom: 5px;">Receptor Sensitivity</label>
-                        <input type="range" id="sensitivity-range" min="0.1" max="2.0" step="0.1" value="1.0" style="width: 100%; accent-color: #357438;" aria-label="Adjust Receptor Sensitivity">
+                        <label for="ph-range" style="display: block; font-size: 10px; color: #aaa; margin-bottom: 5px;">pH Level</label>
+                        <input type="range" id="ph-range" min="6.0" max="8.0" step="0.1" value="${G.config.kinetics.pH}" style="width: 100%; accent-color: #FF1493;">
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                         <label style="display: block; font-size: 10px; color: #aaa; margin-bottom: 8px;">Analysis Layers</label>
+                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" id="isoform-toggle" ${G.config.visuals.showIsoforms ? 'checked' : ''} style="margin-right: 5px;"> Proteomics
+                            </label>
+                            <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" id="electro-toggle" ${G.config.visuals.showElectrostatic ? 'checked' : ''} style="margin-right: 5px;"> Electrostatic
+                            </label>
+                         </div>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
@@ -63,8 +88,24 @@
                 if (onToggleBurst) onToggleBurst();
             });
 
-            container.querySelector('#sensitivity-range').addEventListener('input', (e) => {
-                if (onUpdateSensitivity) onUpdateSensitivity(parseFloat(e.target.value));
+            container.querySelector('#diffusion-range').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                G.config.kinetics.diffusionCoefficient = val;
+                if (onUpdateParam) onUpdateParam('diffusion', val);
+            });
+
+            container.querySelector('#ph-range').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                G.config.kinetics.pH = val;
+                if (onUpdateParam) onUpdateParam('pH', val);
+            });
+
+            container.querySelector('#isoform-toggle').addEventListener('change', (e) => {
+                G.config.visuals.showIsoforms = e.target.checked;
+            });
+
+            container.querySelector('#electro-toggle').addEventListener('change', (e) => {
+                G.config.visuals.showElectrostatic = e.target.checked;
             });
 
             container.querySelector('#ssri-toggle').addEventListener('change', (e) => {

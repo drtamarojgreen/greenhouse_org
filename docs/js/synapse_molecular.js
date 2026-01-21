@@ -10,6 +10,7 @@
         ecmParticles: [],
         cascades: [],
         retrogradeSignals: [],
+        isoforms: [],
 
         drawSNARE(ctx, x, y, progress) {
             ctx.save();
@@ -84,7 +85,31 @@
             ctx.restore();
         },
 
-        drawScaffolding(ctx, w, h, plasticity) {
+        drawMitochondria(ctx, x, y, atp) {
+            ctx.save();
+            // Oval mitochondria
+            const glow = atp / 100;
+            ctx.shadowBlur = 10 * glow;
+            ctx.shadowColor = '#FFD700';
+            ctx.fillStyle = `rgba(100, 20, 20, 0.8)`;
+            ctx.beginPath();
+            ctx.ellipse(x, y, 20, 35, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cristae (internal folds)
+            ctx.strokeStyle = `rgba(255, 215, 0, ${0.2 + glow * 0.5})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for(let i=0; i<5; i++) {
+                const my = y - 25 + i * 12;
+                ctx.moveTo(x - 12, my);
+                ctx.lineTo(x + 12, my + 4);
+            }
+            ctx.stroke();
+            ctx.restore();
+        },
+
+        drawScaffolding(ctx, w, h, plasticity, showIsoforms) {
             const surfaceY = h * 0.68;
             ctx.save();
             ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
@@ -96,6 +121,25 @@
             ctx.lineTo(w * 0.35, surfaceY + 5 + scale);
             ctx.closePath();
             ctx.fill();
+
+            if (showIsoforms) {
+                // Visualize specific protein isoforms (Enhancement #17)
+                if (this.isoforms.length === 0) {
+                    for(let i=0; i<30; i++) {
+                        this.isoforms.push({
+                            x: w * (0.35 + Math.random() * 0.3),
+                            y: surfaceY + 10 + Math.random() * 20,
+                            type: Math.random() > 0.5 ? 'PSD-95α' : 'PSD-95β'
+                        });
+                    }
+                }
+                this.isoforms.forEach(f => {
+                    ctx.fillStyle = f.type === 'PSD-95α' ? '#00F2FF' : '#FF1493';
+                    ctx.beginPath();
+                    ctx.arc(f.x, f.y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
 
             ctx.fillStyle = '#FFD700';
             ctx.font = 'bold 9px Arial';

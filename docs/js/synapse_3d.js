@@ -57,6 +57,29 @@
             ctx.restore();
         },
 
+        drawElectrostaticPotential(ctx, w, h, frame) {
+            // Enhancement #34: Electrostatic Potential Surface
+            ctx.save();
+            ctx.globalAlpha = 0.05;
+            ctx.fillStyle = '#00F2FF';
+
+            // Draw a shimmering field near the membranes
+            const offset = Math.sin(frame * 0.02) * 10;
+
+            // Pre-synaptic field
+            ctx.beginPath();
+            ctx.rect(w * 0.35, h * 0.38 + offset, w * 0.3, 10);
+            ctx.fill();
+
+            // Post-synaptic field
+            ctx.fillStyle = '#FF1493'; // Negative potential
+            ctx.beginPath();
+            ctx.rect(0, h * 0.68 - offset, w, 15);
+            ctx.fill();
+
+            ctx.restore();
+        },
+
         restoreDepth(ctx) {
             ctx.restore();
         }

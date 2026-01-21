@@ -158,7 +158,8 @@
                         onToggleDrug: (drugId, isActive) => {
                             console.log(`Drug ${drugId} toggled: ${isActive}`);
                         },
-                        onGenerateFigure: () => this.exportFigure()
+                        onGenerateFigure: () => this.exportFigure(),
+                        onUpdateParam: (p, v) => console.log(`Param ${p} set to ${v}`)
                     });
                 }
 
@@ -257,9 +258,15 @@
             if (G.Molecular) {
                 G.Molecular.drawECM(ctx, w, h);
                 G.Molecular.drawAstrocyte(ctx, w, h);
+                G.Molecular.drawMitochondria(ctx, w * 0.4, h * 0.15, G.Analytics?.state?.atp || 100);
             }
 
-            if (G.Visuals3D) G.Visuals3D.applyDepth(ctx, w, h);
+            if (G.Visuals3D) {
+                G.Visuals3D.applyDepth(ctx, w, h);
+                if (G.config.visuals?.showElectrostatic) {
+                    G.Visuals3D.drawElectrostaticPotential(ctx, w, h, this.frame);
+                }
+            }
 
             this.drawStructure(ctx, w, h);
 
@@ -267,7 +274,7 @@
                 const surfaceY = h * 0.68;
                 G.Molecular.drawLipidBilayer(ctx, w * 0.3, h * 0.44, w * 0.4, false);
                 G.Molecular.drawLipidBilayer(ctx, w * 0.2, surfaceY, w * 0.6, true);
-                G.Molecular.drawScaffolding(ctx, w, h, G.Particles.plasticityFactor);
+                G.Molecular.drawScaffolding(ctx, w, h, G.Particles.plasticityFactor, G.config.visuals?.showIsoforms);
                 G.Molecular.drawCascades(ctx);
                 G.Molecular.drawRetrograde(ctx, w, h);
 
@@ -310,9 +317,12 @@
 
             const pharm = G.config.pharmacology || {};
 
+            // Enhancement #49: pH-dependent binding affinity
+            const pH = G.config.kinetics?.pH || 7.4;
+            const pH_modifier = Math.max(0.1, 1.0 - Math.abs(pH - 7.4) * 2);
+
             G.config.elements.receptors.forEach(receptor => {
                 if (receptor.state === 'internalized' || receptor.state === 'desensitized') {
-                    // Gradual recovery
                     receptor.recovery = (receptor.recovery || 0) + 1;
                     if (receptor.recovery > 300) {
                         receptor.state = (receptor.type === 'gpcr' ? 'idle' : 'closed');
@@ -332,12 +342,14 @@
                     if (dist < 20 && p.life > 0.1) {
                         const receptorType = chem.receptors[receptor.type];
                         if (receptorType.binds.includes(p.chemistry.id)) {
+
+                            // pH effect check
+                            if (Math.random() > pH_modifier) return;
+
                             p.life = 0;
 
-                            // Pharmacology effects
                             if (pharm.antagonistActive && receptor.type === 'ionotropic_receptor') return;
 
-                            // Enhancement #56: Receptor Desensitization & Internalization
                             receptor.activationCount++;
                             if (receptor.activationCount > 50) {
                                 receptor.state = 'internalized';
@@ -345,15 +357,12 @@
                                 return;
                             } else if (receptor.activationCount > 30) {
                                 receptor.state = 'desensitized';
-                                // 50% chance to still activate but won't trigger effects
                                 if (Math.random() > 0.5) return;
                             }
 
                             if (receptor.type === 'ionotropic_receptor' && p.chemistry.ionEffect !== 'none') {
-                                // Enhancement #66: TTX blocks Na channels
                                 if (pharm.ttxActive && p.chemistry.ionEffect === 'sodium') return;
 
-                                // Enhancement #55: PAM (Benzo) increases GABA/Cl influx
                                 let ionsToCreate = 1;
                                 if (pharm.benzodiazepineActive && p.chemistry.id === 'gaba') ionsToCreate = 3;
 
@@ -364,7 +373,6 @@
                                 receptor.state = 'open';
                                 setTimeout(() => { if(receptor.state === 'open') receptor.state = 'closed'; }, 200);
 
-                                // Enhancement #18: Retrograde Signaling Trigger
                                 if (G.Particles.ions.length > 30 && Math.random() > 0.9) {
                                     if (G.Molecular) G.Molecular.triggerRetrograde(rx, ry);
                                 }
