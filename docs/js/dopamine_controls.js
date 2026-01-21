@@ -181,10 +181,9 @@
             G.state.signalingActive = true;
         };
 
-        const selectDrug = (drug) => {
-             if (G.pharmacologyState) {
-                G.pharmacologyState.selectedDrug = { name: drug };
-                console.log(`Selected drug: ${drug}`);
+        const selectDrug = (drugName) => {
+             if (G.selectDrug) {
+                G.selectDrug(drugName);
             }
         };
 
@@ -224,6 +223,13 @@
         controls.appendChild(createDropdown('Scenarios', scenarioOptions));
         controls.appendChild(createDropdown('Pharmacology', pharmacologyOptions));
         controls.appendChild(createDropdown('Settings', settingsOptions));
+
+        const scientificBtn = document.createElement('button');
+        scientificBtn.className = 'dopamine-btn';
+        scientificBtn.innerText = 'Scientific Report';
+        scientificBtn.style.borderColor = '#4fd1c5';
+        scientificBtn.onclick = () => G.showScientificDashboard();
+        controls.appendChild(scientificBtn);
 
         const resetBtn = document.createElement('button');
         resetBtn.className = 'dopamine-btn';

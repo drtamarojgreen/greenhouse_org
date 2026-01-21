@@ -352,6 +352,18 @@
 
         const state = G.state;
 
+        // 24. Render VMAT2 Proton Gradient (Visualized as purple glow inside terminal)
+        const pTerminal = project(0, -225, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+        if (pTerminal.scale > 0) {
+            const vmatGrad = ctx.createRadialGradient(pTerminal.x, pTerminal.y, 0, pTerminal.x, pTerminal.y, 150 * pTerminal.scale);
+            vmatGrad.addColorStop(0, `rgba(150, 0, 255, ${0.1 * sState.vmat2.phGradient / 2.0})`);
+            vmatGrad.addColorStop(1, 'rgba(150, 0, 255, 0)');
+            ctx.fillStyle = vmatGrad;
+            ctx.beginPath();
+            ctx.arc(pTerminal.x, pTerminal.y, 150 * pTerminal.scale, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         // 35. Render Axon Terminal Geometry (3D-like bulb)
         const t = sState.terminalGeometry;
         ctx.strokeStyle = 'rgba(100, 100, 200, 0.4)';
