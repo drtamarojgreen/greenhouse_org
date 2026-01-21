@@ -23,6 +23,7 @@
         rgsProteins: { active: true, factor: 1.5, visual: [] }, // 6. RGS proteins
         grkPhosphorylation: 0, // 8. GRK Phosphorylation
         camkii: { active: 0, calmodulin: 0 }, // 20. Calmodulin/CaMKII Activation
+        er: { x: 0, y: 300, z: 0, width: 300, height: 80, caContent: 1.0 }, // 18. Endoplasmic Reticulum
         heteromers: { d1d2: 0 }, // 1. D1-D2 Heteromerization
         plcPathway: { ip3: 0, dag: 0, pkc: 0, ip3Particles: [] }, // 5. Gq Pathway, 18. IP3, 19. DAG
         erkPathway: 0, // 16. ERK/MAPK Cascade
@@ -280,12 +281,21 @@
             if (r.life <= 0) mState.internalizedReceptors.splice(i, 1);
         }
 
-        // 18. IP3 Particle Update
+        // 18. IP3 Particle Update & ER Interaction
         for (let i = mState.plcPathway.ip3Particles.length - 1; i >= 0; i--) {
             const p = mState.plcPathway.ip3Particles[i];
             p.life--;
             p.x += p.vx;
             p.y += p.vy;
+
+            // Check collision with ER
+            if (p.y > mState.er.y - 40 && p.y < mState.er.y + 40 && Math.abs(p.x - mState.er.x) < mState.er.width / 2) {
+                // 18. IP3 binds to IP3R on ER, triggering Ca2+ release
+                mState.camkii.calmodulin = Math.min(1.0, mState.camkii.calmodulin + 0.1);
+                mState.plcPathway.ip3Particles.splice(i, 1);
+                continue;
+            }
+
             if (p.life <= 0) mState.plcPathway.ip3Particles.splice(i, 1);
         }
 
@@ -302,6 +312,25 @@
         const w = G.width;
         const h = G.height;
         const mState = G.molecularState;
+
+        // 18. Render Endoplasmic Reticulum (ER)
+        const pER = project(mState.er.x, mState.er.y, mState.er.z, cam, { width: w, height: h, near: 10, far: 5000 });
+        if (pER.scale > 0) {
+            ctx.strokeStyle = 'rgba(255, 100, 255, 0.4)';
+            ctx.lineWidth = 4 * pER.scale;
+            ctx.setLineDash([10, 5]);
+            ctx.beginPath();
+            ctx.ellipse(pER.x, pER.y, (mState.er.width / 2) * pER.scale, (mState.er.height / 2) * pER.scale, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(255, 100, 255, 0.1)';
+            ctx.fill();
+
+            ctx.fillStyle = '#fff';
+            ctx.font = `${10 * pER.scale}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillText("ER (IP3R / Ca2+ Store)", pER.x, pER.y);
+        }
 
         // 8. GRK Phosphorylation visual (pulsing orange on receptors)
         if (mState.grkPhosphorylation > 0.5) {
