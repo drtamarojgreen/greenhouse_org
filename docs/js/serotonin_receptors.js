@@ -11,18 +11,18 @@
 
     G.Receptors = {
         subtypes: {
-            '5-HT1A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#4d79ff', constitutiveActivity: 0.1, pdb: '7E2Y' },
-            '5-HT1B': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#3366ff', pdb: '6A93' },
-            '5-HT1D': { coupling: 'Gi/o', effect: 'Inhibitory (Presynaptic)', color: '#3399ff', pdb: '7E2Z' },
-            '5-HT1E': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#6699ff' },
-            '5-HT1F': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#9999ff', pdb: '7EXD' },
-            '5-HT2A': { coupling: 'Gq/11', effect: 'Excitatory', color: '#ff4d4d', rnaEditingVariants: true, pdb: '6WIV' },
-            '5-HT2C': { coupling: 'Gq/11', effect: 'Excitatory', color: '#cc3333', editedIsoforms: ['INI', 'VGV', 'VSV'] },
-            '5-HT3': { coupling: 'Ionotropic', effect: 'Excitatory (Na+/K+)', color: '#4dff4d' },
-            '5-HT4': { coupling: 'Gs', effect: 'Excitatory', color: '#ff9900', spliceVariants: ['a', 'b', 'c'] },
-            '5-HT5A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#9933ff' },
-            '5-HT6': { coupling: 'Gs', effect: 'Excitatory', color: '#ffff4d' },
-            '5-HT7': { coupling: 'Gs', effect: 'Excitatory', color: '#ff4dff', spliceVariants: ['a', 'b', 'd'] }
+            '5-HT1A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#4d79ff', constitutiveActivity: 0.1, pdb: '7E2Y', architecture: 'GPCR-A', tmHelices: 7, il3Length: 30, cTailLength: 40 },
+            '5-HT1B': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#3366ff', pdb: '6A93', architecture: 'GPCR-A', tmHelices: 7, il3Length: 10, cTailLength: 15 },
+            '5-HT1D': { coupling: 'Gi/o', effect: 'Inhibitory (Presynaptic)', color: '#3399ff', pdb: '7E2Z', architecture: 'GPCR-A', tmHelices: 7, il3Length: 10, cTailLength: 15 },
+            '5-HT1E': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#6699ff', architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 20 },
+            '5-HT1F': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#9999ff', pdb: '7EXD', architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 20 },
+            '5-HT2A': { coupling: 'Gq/11', effect: 'Excitatory', color: '#ff4d4d', rnaEditingVariants: true, pdb: '6WIV', architecture: 'GPCR-A', tmHelices: 7, il3Length: 12, cTailLength: 25 },
+            '5-HT2C': { coupling: 'Gq/11', effect: 'Excitatory', color: '#cc3333', editedIsoforms: ['INI', 'VGV', 'VSV'], architecture: 'GPCR-A', tmHelices: 7, il3Length: 12, cTailLength: 25 },
+            '5-HT3': { coupling: 'Ionotropic', effect: 'Excitatory (Na+/K+)', color: '#4dff4d', architecture: 'Pentameric', subunits: 5, poreRadius: 10 },
+            '5-HT4': { coupling: 'Gs', effect: 'Excitatory', color: '#ff9900', spliceVariants: ['a', 'b', 'c'], architecture: 'GPCR-A', tmHelices: 7, il3Length: 10, cTailLength: 35 },
+            '5-HT5A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#9933ff', architecture: 'GPCR-A', tmHelices: 7, il3Length: 20, cTailLength: 30 },
+            '5-HT6': { coupling: 'Gs', effect: 'Excitatory', color: '#ffff4d', architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 25 },
+            '5-HT7': { coupling: 'Gs', effect: 'Excitatory', color: '#ff4dff', spliceVariants: ['a', 'b', 'd'], architecture: 'GPCR-A', tmHelices: 7, il3Length: 15, cTailLength: 45 }
         },
 
         conformationalStates: ['Inactive', 'Intermediate', 'Active'],
@@ -68,7 +68,15 @@
             G.state.receptors.forEach(r => {
                 // Sodium Allosteric Site (Category 2, #17)
                 // Sodium levels modulate 5-HT1A affinity
-                r.sodiumModulation = 1.0 - (Math.sin(G.state.timer * 0.01) * 0.2);
+                // Higher sodium = lower agonist affinity for 5-HT1A
+                const sodiumLevel = 1.0 + Math.sin(G.state.timer * 0.005) * 0.5;
+                r.sodiumModulation = r.type === '5-HT1A' ? (1.0 / sodiumLevel) : 1.0;
+
+                // Lipid Bilayer Modulation effect (Category 2, #16)
+                // Cholesterol level modulates 5-HT1A stability and coupling
+                const cholesterol = G.cholesterolLevel || 1.0;
+                const lipidDensity = G.state.lipids ? G.state.lipids.length : 0;
+                const cholesterolMod = r.type === '5-HT1A' ? (cholesterol * 1.2) : 1.0;
 
                 // Palmitoylation effect on membrane localization (Category 2, #18)
                 // Modulates stability and lateral movement speed
@@ -79,10 +87,6 @@
                     r.state = 'Intermediate';
                 }
 
-                // Lipid Bilayer Modulation effect (Category 2, #16)
-                // Cholesterol and sphingomyelin modulate 5-HT1A stability
-                const lipidDensity = G.state.lipids ? G.state.lipids.length : 0;
-                const cholesterolMod = r.type === '5-HT1A' ? 1.2 : 1.0;
                 r.stability = (1.0 + (lipidDensity * 0.001)) * palmitoylEffect * cholesterolMod;
 
                 // RNA Editing Efficiency for 5-HT2C
@@ -169,6 +173,12 @@
             // Render additional membrane components
             this.renderMembraneChannels(ctx, project, cam, w, h);
 
+            // Lipid Bilayer Visualization (Cholesterol)
+            if (G.cholesterolLevel > 1.2) {
+                ctx.fillStyle = 'rgba(255, 255, 0, 0.05)';
+                ctx.fillRect(0, h/2 - 50, w, 100);
+            }
+
             // Molecular Composition visualization (Category II, #30)
             const drawMolecularComposition = (r, p) => {
                 if (cam.zoom > 2.0) {
@@ -226,54 +236,49 @@
             G.state.receptors.forEach(r => {
                 const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
-                    // Protein Surface Map: Electrostatic Potential (Category 10, #92)
-                    // Simplified as a colored "glow" or aura around the receptor
-                    const surfaceGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 40 * p.scale);
-                    surfaceGrad.addColorStop(0, r.state === 'Active' ? 'rgba(255, 0, 0, 0.2)' : 'rgba(0, 0, 255, 0.1)');
-                    surfaceGrad.addColorStop(1, 'transparent');
-                    ctx.fillStyle = surfaceGrad;
+                    // Protein Surface Map: Physical Morphology
+                    ctx.fillStyle = 'rgba(200, 200, 200, 0.1)';
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, 40 * p.scale, 0, Math.PI * 2);
+                    if (r.architecture === 'Pentameric') {
+                        ctx.arc(p.x, p.y, 50 * p.scale, 0, Math.PI * 2);
+                    } else {
+                        ctx.arc(p.x, p.y, 40 * p.scale, 0, Math.PI * 2);
+                    }
                     ctx.fill();
 
-                    // Draw 7-TM Helices (simplified)
-                    ctx.strokeStyle = r.color;
-                    ctx.lineWidth = 10 * p.scale;
-
-                    // Draw Subtype-Specific Glyphs (Accessibility #12)
-                    if (G.showGlyphs) {
-                        ctx.save();
-                        ctx.strokeStyle = '#fff';
-                        ctx.lineWidth = 2 * p.scale;
-                        drawGlyph(r.type, p.x, p.y - 100 * p.scale, 10 * p.scale);
-                        ctx.restore();
-                    }
-
-                    for (let j = 0; j < 7; j++) {
-                        const hAngle = (j / 7) * Math.PI * 2;
-                        const hx = r.x + Math.cos(hAngle) * 15;
-                        const hz = r.z + Math.sin(hAngle) * 15;
-
-                        const hTop = project(hx, r.y - 40, hz, cam, { width: w, height: h, near: 10, far: 5000 });
-                        const hBottom = project(hx, r.y + 40, hz, cam, { width: w, height: h, near: 10, far: 5000 });
-
-                        if (hTop.scale > 0 && hBottom.scale > 0) {
-                            ctx.globalAlpha = r.state === 'Active' ? 1.0 : 0.6;
+                    // Draw Architecture-Specific Elements
+                    if (r.architecture === 'Pentameric') {
+                        // 5-HT3 Pentameric Pore
+                        ctx.strokeStyle = '#888';
+                        ctx.lineWidth = 5 * p.scale;
+                        for (let j = 0; j < 5; j++) {
+                            const angle = (j / 5) * Math.PI * 2 + (G.state.timer * 0.01);
+                            const sx = p.x + Math.cos(angle) * 30 * p.scale;
+                            const sy = p.y + Math.sin(angle) * 30 * p.scale;
                             ctx.beginPath();
-                            ctx.moveTo(hTop.x, hTop.y);
-                            ctx.lineTo(hBottom.x, hBottom.y);
+                            ctx.arc(sx, sy, 15 * p.scale, 0, Math.PI * 2);
                             ctx.stroke();
-
-                            // Disulfide Bridges visualization (Category 2, #19)
-                            if (r.disulfideBridges && j === 0) {
-                                ctx.strokeStyle = '#ffff00';
-                                ctx.lineWidth = 2 * p.scale;
+                        }
+                        // Pore center
+                        ctx.fillStyle = r.state === 'Active' ? '#4dff4d' : '#222';
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 10 * p.scale, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else {
+                        // GPCR 7-TM Bundle
+                        ctx.strokeStyle = '#aaa';
+                        ctx.lineWidth = 12 * p.scale;
+                        for (let j = 0; j < 7; j++) {
+                            const hAngle = (j / 7) * Math.PI * 2;
+                            const hx = r.x + Math.cos(hAngle) * 15;
+                            const hz = r.z + Math.sin(hAngle) * 15;
+                            const hTop = project(hx, r.y - 40, hz, cam, { width: w, height: h, near: 10, far: 5000 });
+                            const hBottom = project(hx, r.y + 40, hz, cam, { width: w, height: h, near: 10, far: 5000 });
+                            if (hTop.scale > 0 && hBottom.scale > 0) {
                                 ctx.beginPath();
                                 ctx.moveTo(hTop.x, hTop.y);
-                                ctx.bezierCurveTo(hTop.x + 20 * p.scale, hTop.y - 20 * p.scale, hTop.x + 40 * p.scale, hTop.y, hTop.x + 30 * p.scale, hTop.y + 10 * p.scale);
+                                ctx.lineTo(hBottom.x, hBottom.y);
                                 ctx.stroke();
-                                ctx.strokeStyle = r.color;
-                                ctx.lineWidth = 10 * p.scale;
                             }
                         }
                     }

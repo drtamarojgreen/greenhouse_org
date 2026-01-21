@@ -290,38 +290,94 @@
             ctx.save();
             ctx.translate(w / 2, h / 2);
 
-            // Draw detailed schematic
-            ctx.strokeStyle = r.color || '#00ffcc';
-            ctx.lineWidth = 5;
-            ctx.strokeRect(-100, -150, 200, 300);
+            // Draw Architecture-Specific Schematic
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 2;
+
+            if (r.architecture === 'Pentameric') {
+                // Pentameric schematic (cross-section)
+                ctx.strokeRect(-150, -150, 300, 300);
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i / 5) * Math.PI * 2;
+                    ctx.fillStyle = 'rgba(100, 255, 100, 0.4)';
+                    ctx.beginPath();
+                    ctx.arc(Math.cos(angle) * 80, Math.sin(angle) * 80, 40, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+                ctx.fillStyle = r.state === 'Active' ? '#00ffcc' : '#111';
+                ctx.beginPath();
+                ctx.arc(0, 0, 30, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText("Ion Channel Pore", 0, 5);
+            } else {
+                // GPCR schematic
+                ctx.strokeRect(-120, -180, 240, 360);
+                // TM Helices
+                for (let i = 0; i < 7; i++) {
+                    ctx.fillStyle = 'rgba(150, 150, 150, 0.5)';
+                    ctx.fillRect(-100 + i * 28, -140, 20, 280);
+                }
+                // Binding Pocket
+                ctx.beginPath();
+                ctx.arc(0, -60, 50, 0, Math.PI * 2);
+                ctx.strokeStyle = '#fff';
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText("Orthosteric Pocket", 0, -60);
+
+                // C-Terminal Tail visualization (Category 1, #1)
+                ctx.strokeStyle = '#aaa';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(80, 140);
+                ctx.bezierCurveTo(90, 180, 70, 220, 80, 140 + (r.cTailLength || 20) * 2);
+                ctx.stroke();
+                ctx.font = '10px Arial';
+                ctx.fillText("C-Terminal Tail", 90, 180);
+
+                // IL3 Loop (Category 1, #1)
+                ctx.beginPath();
+                ctx.moveTo(-10, 140);
+                ctx.quadraticCurveTo(0, 140 + (r.il3Length || 10) * 2, 10, 140);
+                ctx.stroke();
+                ctx.fillText("IL3 Loop", 0, 160);
+            }
 
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 24px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(r.type + " Closeup", 0, -180);
+            ctx.fillText(r.type + " Molecular Architecture", 0, -210);
 
             ctx.font = '14px Arial';
-            ctx.fillText("State: " + (r.state || 'Normal'), 0, -100);
-            ctx.fillText("Subtype Architecture: GPCR Class A", 0, -80);
+            ctx.fillText("Architecture: " + (r.architecture || 'Unknown'), 0, -180);
+            ctx.fillText("State: " + (r.state || 'Inactive'), 0, -160);
 
-            // Draw Helices (7-TM)
-            for (let i = 0; i < 7; i++) {
-                ctx.fillStyle = r.color || '#00ffcc';
-                ctx.globalAlpha = 0.6;
-                ctx.fillRect(-80 + i * 22, -120, 15, 240);
+            // Sodium Allosteric Site (Category 2, #17)
+            if (r.type === '5-HT1A') {
+                ctx.fillStyle = '#ffcc00';
+                ctx.beginPath();
+                ctx.arc(0, 0, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Arial';
+                ctx.fillText("Na+ Allosteric Site", 0, 25);
             }
-            ctx.globalAlpha = 1.0;
 
-            // Draw Binding Pocket
-            ctx.beginPath();
-            ctx.arc(0, -40, 40, 0, Math.PI * 2);
-            ctx.strokeStyle = '#fff';
-            ctx.stroke();
-            ctx.fillText("Binding Pocket", 0, -40);
+            // Lipid Modulation indicator (Category 2, #16)
+            ctx.fillStyle = '#aaa';
+            ctx.font = '10px Arial';
+            ctx.fillText("Membrane Stability: " + (r.stability ? r.stability.toFixed(2) : '1.00'), 0, 250);
 
             ctx.font = '12px Arial';
-            ctx.fillStyle = '#aaa';
-            ctx.fillText("Click anywhere to return to 3D model", 0, 200);
+            ctx.fillStyle = '#00ffcc';
+            ctx.fillText("Click anywhere to return to 3D model", 0, 280);
 
             ctx.restore();
         },
