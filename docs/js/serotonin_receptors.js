@@ -11,12 +11,12 @@
 
     G.Receptors = {
         subtypes: {
-            '5-HT1A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#4d79ff', constitutiveActivity: 0.1 },
-            '5-HT1B': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#3366ff' },
-            '5-HT1D': { coupling: 'Gi/o', effect: 'Inhibitory (Presynaptic)', color: '#3399ff' },
+            '5-HT1A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#4d79ff', constitutiveActivity: 0.1, pdb: '7E2Y' },
+            '5-HT1B': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#3366ff', pdb: '6A93' },
+            '5-HT1D': { coupling: 'Gi/o', effect: 'Inhibitory (Presynaptic)', color: '#3399ff', pdb: '7E2Z' },
             '5-HT1E': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#6699ff' },
-            '5-HT1F': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#9999ff' },
-            '5-HT2A': { coupling: 'Gq/11', effect: 'Excitatory', color: '#ff4d4d', rnaEditingVariants: true },
+            '5-HT1F': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#9999ff', pdb: '7EXD' },
+            '5-HT2A': { coupling: 'Gq/11', effect: 'Excitatory', color: '#ff4d4d', rnaEditingVariants: true, pdb: '6WIV' },
             '5-HT2C': { coupling: 'Gq/11', effect: 'Excitatory', color: '#cc3333', editedIsoforms: ['INI', 'VGV', 'VSV'] },
             '5-HT3': { coupling: 'Ionotropic', effect: 'Excitatory (Na+/K+)', color: '#4dff4d' },
             '5-HT4': { coupling: 'Gs', effect: 'Excitatory', color: '#ff9900', spliceVariants: ['a', 'b', 'c'] },
@@ -74,8 +74,10 @@
                 }
 
                 // Lipid Bilayer Modulation effect (Category 2, #16)
+                // Cholesterol and sphingomyelin modulate 5-HT1A stability
                 const lipidDensity = G.state.lipids ? G.state.lipids.length : 0;
-                r.stability = (1.0 + (lipidDensity * 0.001)) * palmitoylEffect;
+                const cholesterolMod = r.type === '5-HT1A' ? 1.2 : 1.0;
+                r.stability = (1.0 + (lipidDensity * 0.001)) * palmitoylEffect * cholesterolMod;
 
                 // RNA Editing Efficiency for 5-HT2C
                 if (r.type === '5-HT2C' && r.editedIsoform) {
@@ -168,6 +170,7 @@
                     ctx.globalAlpha = 1.0;
 
                     // GPCR-G Protein Interface (Category 2, #12)
+                    // GPCR-G Protein Interface (Category 2, #12)
                     if (r.state === 'Active' && r.coupling !== 'Ionotropic') {
                         ctx.strokeStyle = '#fff';
                         ctx.lineWidth = 2 * p.scale;
@@ -177,6 +180,13 @@
                         ctx.stroke();
                         ctx.fillStyle = '#ccc';
                         ctx.fillText(r.coupling + ' alpha subunit', p.x, p.y + 75 * p.scale);
+                    }
+
+                    // Cryo-EM Structural details (Category 2, #11)
+                    if (r.pdb) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                        ctx.font = `${8 * p.scale}px Arial`;
+                        ctx.fillText(`PDB: ${r.pdb}`, p.x, p.y - 70 * p.scale);
                     }
 
                     // Label

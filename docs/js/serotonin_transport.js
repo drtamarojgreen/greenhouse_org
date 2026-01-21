@@ -11,7 +11,9 @@
 
     G.Transport = {
         tryptophan: 100,
+        htp5: 0, // 5-Hydroxytryptophan
         vesicle5HT: 0,
+        nAcetyl5HT: 0, // N-acetylserotonin
         synthesisRate: 0.1,
         reuptakeRate: 0.05,
         degradationRate: 0.02,
@@ -39,10 +41,16 @@
             const signalingBoost = G.Signaling ? (G.Signaling.calcium * 0.05 + G.Signaling.cAMP * 0.02) : 0;
             const effectiveTPHActivity = this.tphActivity * (1.0 + signalingBoost);
 
-            // TPH Synthesis: Tryptophan -> 5-HT
-            const synthesized = this.tryptophan * this.synthesisRate * effectiveTPHActivity * 0.01;
-            this.tryptophan -= synthesized;
-            this.vesicle5HT += synthesized;
+            // TPH Synthesis (Category 4, #31)
+            // Step 1: Tryptophan -> 5-HTP (rate limiting)
+            const htpSynthesized = this.tryptophan * this.synthesisRate * effectiveTPHActivity * 0.01;
+            this.tryptophan -= htpSynthesized;
+            this.htp5 += htpSynthesized;
+
+            // Step 2: 5-HTP -> 5-HT (rapid)
+            const htSynthesized = this.htp5 * 0.5;
+            this.htp5 -= htSynthesized;
+            this.vesicle5HT += htSynthesized;
 
             // Autoreceptor Feedback Logic
             let releaseInhibition = 1.0;
@@ -66,10 +74,16 @@
                 this.tryptophan -= 0.1;
             }
 
-            // Melatonin Conversion (Conversion of 5-HT in pineal-like conditions)
+            // Melatonin Conversion steps (Category 4, #38)
+            // 5-HT -> N-acetylserotonin -> Melatonin
             if (this.pinealMode && this.vesicle5HT > 0) {
-                this.melatonin = (this.melatonin || 0) + 0.05;
-                this.vesicle5HT -= 0.05;
+                const nacetyl = this.vesicle5HT * 0.05;
+                this.vesicle5HT -= nacetyl;
+                this.nAcetyl5HT += nacetyl;
+
+                const mela = this.nAcetyl5HT * 0.5;
+                this.nAcetyl5HT -= mela;
+                this.melatonin = (this.melatonin || 0) + mela;
             }
 
             // VMAT2 Loading into vesicles (simplified as a pool here)
@@ -253,9 +267,10 @@
             ctx.fillText(`Sensory Filter: ${(100 - this.sensorySensitivity * 100).toFixed(0)}%`, 20, 180);
             ctx.fillText(`SERT Allele: ${this.sertAllele}`, 20, 195);
             ctx.fillText(`SERT Phos: ${(this.sertPhosphorylation * 100).toFixed(0)}%`, 20, 210);
-            ctx.fillText(`5-HIAA: ${(this.hiaa || 0).toFixed(1)}`, 20, 225);
-            ctx.fillText(`Enteric 5-HT: ${this.enteric5HT.toFixed(1)}`, 20, 240);
-            ctx.fillText(`Arousal: ${(this.arousalLevel * 100).toFixed(0)}%`, 20, 255);
+            ctx.fillText(`5-HTP: ${this.htp5.toFixed(1)}`, 20, 225);
+            ctx.fillText(`5-HIAA: ${(this.hiaa || 0).toFixed(1)}`, 20, 238);
+            ctx.fillText(`Enteric 5-HT: ${this.enteric5HT.toFixed(1)}`, 20, 251);
+            ctx.fillText(`Arousal: ${(this.arousalLevel * 100).toFixed(0)}%`, 20, 264);
             if (pre.scale > 0) {
                 ctx.fillStyle = 'rgba(100, 100, 150, 0.3)';
                 ctx.beginPath();
