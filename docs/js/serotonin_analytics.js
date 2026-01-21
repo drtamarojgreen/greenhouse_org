@@ -100,7 +100,7 @@
                 let mood = 'Euthymic';
                 if (G.Transport && G.Transport.tphActivity < 0.5) mood = 'Depressed';
                 if (G.ssActive) mood = 'Serotonin Syndrome';
-                ctx.fillText(`SYSTEM STATUS: ${mood} | 5-HT: ${G.Transport ? G.Transport.vesicle5HT.toFixed(1) : '0'}`, 20, h - 10);
+                ctx.fillText(`SYSTEM STATUS: ${mood} | 5-HT: ${G.Transport ? G.Transport.vesicle5HT.toFixed(1) : '0'} | FPS: ${G.fps || 0}`, 20, h - 10);
             }
 
             // Comparison View Data (Category 10, #97)

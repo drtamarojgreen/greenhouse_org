@@ -19,7 +19,10 @@
                 options: [
                     { name: 'High-Contrast Mode', toggle: () => { G.highContrast = !G.highContrast; } },
                     { name: 'Large-Scale UI', toggle: () => { G.largeUI = !G.largeUI; this.updateUIScale(); } },
-                    { name: 'Reduced Motion', toggle: () => { G.reducedMotion = !G.reducedMotion; } }
+                    { name: 'Reduced Motion', toggle: () => { G.reducedMotion = !G.reducedMotion; } },
+                    { name: 'Deuteranopia', toggle: () => { this.toggleColorBlind('deuteranopia'); } },
+                    { name: 'Protanopia', toggle: () => { this.toggleColorBlind('protanopia'); } },
+                    { name: 'Tritanopia', toggle: () => { this.toggleColorBlind('tritanopia'); } }
                 ]
             },
             {
@@ -41,7 +44,9 @@
             {
                 name: 'Temporal',
                 options: [
-                    { name: 'Pause Simulation', toggle: () => { G.paused = !G.paused; } },
+                    { name: 'Pause Simulation (P)', toggle: () => { G.paused = !G.paused; } },
+                    { name: 'Fast Forward 2x', toggle: () => { G.playbackSpeed = G.playbackSpeed === 2 ? 1 : 2; } },
+                    { name: 'Fast Forward 4x', toggle: () => { G.playbackSpeed = G.playbackSpeed === 4 ? 1 : 4; } },
                     { name: 'Time-lapse Mode', toggle: () => { G.timeLapse = !G.timeLapse; } },
                     { name: 'Stochasticity', toggle: () => { G.stochastic = !G.stochastic; } }
                 ]
@@ -123,6 +128,8 @@
         });
 
         container.appendChild(controls);
+
+        this.setupKeyboardShortcuts();
 
         this.updateUIScale = () => {
             const scale = G.largeUI ? '1.5' : '1.0';
@@ -212,6 +219,40 @@
                 ctx.fillText('ER', erPos.x, erPos.y);
             }
         };
+    };
+
+    // Keyboard Shortcuts (Accessibility #11)
+    G.setupKeyboardShortcuts = function() {
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toUpperCase();
+            if (key === 'P') G.paused = !G.paused;
+            if (key === 'R') location.reload(); // Release/Reset
+            if (key === 'M') {
+                // Cycle through some modes or just log for now
+                console.log('Mode Switch triggered');
+            }
+            if (key === 'S') {
+                if (G.Analytics) G.Analytics.exportData();
+            }
+        });
+    };
+
+    G.toggleColorBlind = function(type) {
+        const filterMap = {
+            'deuteranopia': 'url("#deuteranopia-filter")',
+            'protanopia': 'url("#protanopia-filter")',
+            'tritanopia': 'url("#tritanopia-filter")'
+        };
+        const canvas = G.canvas;
+        if (!canvas) return;
+
+        if (canvas.style.filter.includes(type)) {
+            canvas.style.filter = 'none';
+        } else {
+            canvas.style.filter = filterMap[type] || 'none';
+            // Inject SVG filters if not present (simplified for now as standard CSS filter)
+            if (type === 'deuteranopia') canvas.style.filter = 'grayscale(50%) sepia(50%)'; // Placeholder
+        }
     };
 
     const oldRender = G.render;
