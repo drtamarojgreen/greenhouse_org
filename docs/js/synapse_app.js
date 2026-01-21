@@ -33,6 +33,14 @@
                 { x: 0.46, type: 'ionotropic_receptor', state: 'closed' },
                 { x: 0.54, type: 'gpcr', state: 'idle' },
                 { x: 0.62, type: 'ionotropic_receptor', state: 'closed' }
+            ],
+            autoreceptors: [
+                { x: 0.42, y: 0.4, type: 'autoreceptor' },
+                { x: 0.58, y: 0.4, type: 'autoreceptor' }
+            ],
+            transporters: [
+                { x: 0.35, y: 0.35, type: 'SERT' },
+                { x: 0.65, y: 0.35, type: 'SERT' }
             ]
         }
     };
@@ -140,6 +148,9 @@
                         },
                         onUpdateSensitivity: (val) => {
                             console.log('Sensitivity updated:', val);
+                        },
+                        onToggleDrug: (drugId, isActive) => {
+                            console.log(`Drug ${drugId} toggled: ${isActive}`);
                         }
                     });
                 }
@@ -240,6 +251,8 @@
             const chem = G.Chemistry;
             const surfaceY = h * 0.68;
 
+            const isAntagonistActive = G.config.pharmacology?.antagonistActive;
+
             G.config.elements.receptors.forEach(receptor => {
                 const rx = w * receptor.x;
                 const ry = surfaceY;
@@ -253,6 +266,12 @@
                         const receptorType = chem.receptors[receptor.type];
                         if (receptorType.binds.includes(p.chemistry.id)) {
                             p.life = 0;
+
+                            // Enhancement #54: Competitive Inhibition
+                            if (isAntagonistActive && receptor.type === 'ionotropic_receptor') {
+                                return; // Block binding
+                            }
+
                             if (receptor.type === 'ionotropic_receptor' && p.chemistry.ionEffect !== 'none') {
                                 G.Particles.createIon(rx, ry + 10, p.chemistry.ionEffect);
                                 receptor.state = 'open';
@@ -305,6 +324,21 @@
             ctx.lineTo(w, h);
             ctx.fill();
             ctx.restore();
+
+            // Draw Auto-receptors (Enhancement #43)
+            G.config.elements.autoreceptors.forEach(ar => {
+                ctx.fillStyle = '#673AB7';
+                ctx.beginPath();
+                ctx.arc(w * ar.x, h * ar.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw Transporters (Enhancement #41)
+            G.config.elements.transporters.forEach(tr => {
+                const isActive = G.config.pharmacology?.ssriActive && tr.type === 'SERT';
+                ctx.fillStyle = isActive ? '#ff4444' : '#4CAF50';
+                ctx.fillRect(w * tr.x - 4, h * tr.y - 8, 8, 16);
+            });
 
             if (G.Chemistry) {
                 const ntChem = G.Chemistry.neurotransmitters[G.config.activeNT];

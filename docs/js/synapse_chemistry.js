@@ -15,7 +15,9 @@
                 color: '#FF8C00', // Dark Orange
                 glow: 'rgba(255, 140, 0, 0.6)',
                 targets: ['ionotropic_receptor'],
-                ionEffect: 'sodium'
+                ionEffect: 'sodium',
+                reuptakeVia: 'EAAT',
+                enzyme: null
             },
             gaba: {
                 id: 'gaba',
@@ -24,7 +26,9 @@
                 color: '#32CD32', // Lime Green
                 glow: 'rgba(50, 205, 50, 0.6)',
                 targets: ['ionotropic_receptor'],
-                ionEffect: 'chloride'
+                ionEffect: 'chloride',
+                reuptakeVia: 'GAT',
+                enzyme: null
             },
             dopamine: {
                 id: 'dopamine',
@@ -33,7 +37,9 @@
                 color: '#FF1493', // Deep Pink
                 glow: 'rgba(255, 20, 147, 0.6)',
                 targets: ['gpcr'],
-                ionEffect: 'none'
+                ionEffect: 'none',
+                reuptakeVia: 'DAT',
+                enzyme: 'COMT'
             },
             serotonin: {
                 id: 'serotonin',
@@ -42,7 +48,9 @@
                 color: '#00F2FF', // Electric Cyan
                 glow: 'rgba(0, 242, 255, 0.6)',
                 targets: ['gpcr'],
-                ionEffect: 'none'
+                ionEffect: 'none',
+                reuptakeVia: 'SERT',
+                enzyme: 'MAO'
             }
         },
 
@@ -56,7 +64,31 @@
                 id: 'gpcr',
                 name: { en: 'GPCR', es: 'Receptor acoplado a proteína G' },
                 binds: ['serotonin', 'dopamine']
+            },
+            autoreceptor: {
+                id: 'autoreceptor',
+                name: { en: 'Auto-receptor', es: 'Auto-receptor' },
+                binds: ['serotonin', 'dopamine', 'glutamate', 'gaba']
             }
+        },
+
+        transporters: {
+            EAAT: { name: 'Excitatory Amino Acid Transporter', targets: ['glutamate'] },
+            GAT: { name: 'GABA Transporter', targets: ['gaba'] },
+            SERT: { name: 'Serotonin Transporter', targets: ['serotonin'] },
+            DAT: { name: 'Dopamine Transporter', targets: ['dopamine'] }
+        },
+
+        enzymes: {
+            MAO: { name: 'Monoamine Oxidase', targets: ['serotonin', 'dopamine'], rate: 0.01 },
+            COMT: { name: 'Catechol-O-methyltransferase', targets: ['dopamine'], rate: 0.008 },
+            AChE: { name: 'Acetylcholinesterase', targets: ['acetylcholine'], rate: 0.1 }
+        },
+
+        drugs: {
+            ssri: { name: 'SSRI', targetTransporter: 'SERT', effect: 'block_reuptake' },
+            antagonist: { name: 'Antagonist', targetReceptor: 'ionotropic_receptor', effect: 'block_binding' },
+            agonist: { name: 'Agonist', targetReceptor: 'gpcr', effect: 'activate' }
         },
 
         ions: {
