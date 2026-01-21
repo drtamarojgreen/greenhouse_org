@@ -107,6 +107,19 @@
                     { name: 'ADHD', toggle: () => {
                         G.adhdMode = !G.adhdMode;
                         G.Transport.tphActivity = G.adhdMode ? 0.5 : 1.0;
+                    }},
+                    { name: 'Migraine / Triptans', toggle: () => {
+                        G.migraineMode = !G.migraineMode;
+                        if (G.migraineMode) {
+                            // Triptans are selective 5-HT1B/1D agonists
+                            G.state.receptors.forEach(r => {
+                                if (r.type === '5-HT1B' || r.type === '5-HT1D') {
+                                    r.state = 'Active';
+                                    r.biasedLigand = 'G-Biased';
+                                }
+                            });
+                            for(let i=0; i<20; i++) G.Kinetics.spawnLigand('Sumatriptan');
+                        }
                     }}
                 ]
             }

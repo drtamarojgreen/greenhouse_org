@@ -88,15 +88,16 @@
             this.creb += (this.cAMP * 0.1 + this.calcium * 0.1 + this.akt * 0.05) - (this.creb * 0.01);
 
             // Src Kinase Recruitment (Category 3, #27)
-            // Recruited by Beta-arrestins downstream of 5-HT2A (simulated by pathway bias)
-            const ht2aRef = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A' && r.state === 'Active') : null;
-            if (ht2aRef) {
-                // If biased ligand is NOT active, beta-arrestin signaling is higher (Src recruitment)
-                const arrestinDrive = ht2aRef.biasedLigand ? 0.2 : 0.8;
-                this.srcKinase += (arrestinDrive * 0.3) - (this.srcKinase * 0.05);
-            } else {
-                this.srcKinase *= 0.95;
+            // Recruited by Beta-arrestins (Category 3, #27)
+            let totalArrestin = 0;
+            if (G.state.receptors) {
+                G.state.receptors.forEach(r => {
+                    if (r.state === 'Active') {
+                        totalArrestin += (r.betaArrestinRecruitment || 1.0);
+                    }
+                });
             }
+            this.srcKinase += (totalArrestin * 0.1) - (this.srcKinase * 0.05);
 
             // sAHP Suppression (Category 6, #60)
             // 5-HT often suppresses sAHP via Gi/o or cAMP, increasing excitability

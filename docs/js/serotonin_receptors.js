@@ -27,6 +27,11 @@
 
         conformationalStates: ['Inactive', 'Intermediate', 'Active'],
 
+        // RNA Editing Efficiency Maps (Category 1, #8)
+        rnaEditingMaps: {
+            '5-HT2C': { 'INI': 1.0, 'VGV': 0.7, 'VSV': 0.3 }
+        },
+
         setupReceptorModel() {
             G.state.receptors = Object.keys(this.subtypes).map((type, i) => {
                 const r = {
@@ -44,6 +49,7 @@
                 // Assign random RNA editing isoform to 5-HT2C
                 if (type === '5-HT2C') {
                     r.editedIsoform = this.subtypes[type].editedIsoforms[Math.floor(Math.random() * 3)];
+                    r.couplingEfficiency = this.rnaEditingMaps['5-HT2C'][r.editedIsoform];
                 }
                 // Alternative Splicing (Category 1, #9)
                 if (this.subtypes[type].spliceVariants) {
@@ -88,10 +94,19 @@
                     r.couplingEfficiency = 1.0;
                 }
 
-                // Biased Agonism Placeholder
-                // If 5-HT2A is bound by a biased ligand, adjust pathway weighting
-                if (r.type === '5-HT2A' && r.state === 'Active') {
-                    r.pathwayBias = r.biasedLigand ? 1.5 : 1.0; // Boosts Gq vs Beta-Arrestin (abstracted)
+                // Biased Agonism Logic (Category 1, #10)
+                // ligands can selectively activate G-protein vs beta-arrestin
+                if (r.state === 'Active') {
+                    // Biased agonism weighting
+                    if (r.biasedLigand) {
+                        r.gProteinActivation = r.biasedLigand === 'G-Biased' ? 1.5 : 0.5;
+                        r.betaArrestinRecruitment = r.biasedLigand === 'Arrestin-Biased' ? 1.5 : 0.5;
+                    } else {
+                        r.gProteinActivation = 1.0;
+                        r.betaArrestinRecruitment = 1.0;
+                    }
+
+                    r.pathwayBias = r.gProteinActivation; // For legacy signaling hooks
 
                     // Receptor Oligomerization (Category 1, #6)
                     // 5-HT2A-mGlu2 hetero-oligomer complex logic
@@ -115,7 +130,45 @@
             });
         },
 
+        renderMembraneChannels(ctx, project, cam, w, h) {
+            // Electrophysiological Channels (Category 6, #51, #53)
+            const channels = [
+                { type: 'HCN', color: '#ffcc00', x: -200, y: 0, z: 100 },
+                { type: 'SK', color: '#00ccff', x: 200, y: 0, z: 150 },
+                { type: 'BK', color: '#0066ff', x: 250, y: 0, z: -50 }
+            ];
+
+            channels.forEach(ch => {
+                const p = project(ch.x, ch.y, ch.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (p.scale > 0) {
+                    ctx.strokeStyle = ch.color;
+                    ctx.lineWidth = 3 * p.scale;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 8 * p.scale, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Channel activity "glow"
+                    const activity = (ch.type === 'HCN' ? (G.Signaling ? G.Signaling.cAMP : 0) : (G.Signaling ? G.Signaling.calcium : 0)) * 0.1;
+                    if (activity > 0.1) {
+                        ctx.fillStyle = ch.color;
+                        ctx.globalAlpha = Math.min(0.5, activity);
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 6 * p.scale, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.globalAlpha = 1.0;
+                    }
+
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `${8 * p.scale}px Arial`;
+                    ctx.fillText(ch.type, p.x, p.y - 12 * p.scale);
+                }
+            });
+        },
+
         renderReceptors(ctx, project, cam, w, h) {
+            // Render additional membrane components
+            this.renderMembraneChannels(ctx, project, cam, w, h);
+
             // Molecular Composition visualization (Category II, #30)
             const drawMolecularComposition = (r, p) => {
                 if (cam.zoom > 2.0) {

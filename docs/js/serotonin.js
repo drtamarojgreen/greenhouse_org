@@ -28,7 +28,8 @@
     const G = window.GreenhouseSerotonin || {};
     window.GreenhouseSerotonin = G;
 
-    Object.assign(G, {
+    // Define core properties and placeholders
+    const coreProperties = {
         canvas: null,
         ctx: null,
         isRunning: false,
@@ -348,7 +349,7 @@
 
             // Cinematic FX: Vignette (#22)
             if (this.cinematicFX) {
-                const grad = ctx.createRadialGradient(w/2, h/2, w/4, w/2, h/2, w/1.2);
+                const grad = ctx.createRadialGradient(w / 2, h / 2, w / 4, w / 2, h / 2, w / 1.2);
                 grad.addColorStop(0, 'rgba(0,0,0,0)');
                 grad.addColorStop(1, 'rgba(0,0,0,0.5)');
                 ctx.fillStyle = grad;
@@ -447,7 +448,8 @@
                 this.renderBloom();
             }
         }
-    });
+    };
+    Object.assign(G, coreProperties);
 
     window.Greenhouse = window.Greenhouse || {};
     window.Greenhouse.initializeSerotoninSimulation = function (selector) {
