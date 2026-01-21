@@ -136,11 +136,21 @@
             ctx.fillText(`HPA Activity (Cortisol): ${(cState.hpaAxisActivity * 100).toFixed(1)}%`, w - 10, h - 120);
         }
 
-        if (cState.oxidativeStress > 0.5) {
+        if (cState.oxidativeStress > 0.4) {
+            // 88. Visual "damage" (glitch/noise)
+            for(let i=0; i<10; i++) {
+                ctx.fillStyle = `rgba(255, 100, 100, ${cState.oxidativeStress * 0.5})`;
+                ctx.fillRect(Math.random()*w, Math.random()*h, 20, 2);
+            }
+        }
+
+        if (cState.oxidativeStress > 0.7) {
             ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
             ctx.fillRect(0, 0, w, h);
             ctx.fillStyle = '#f00';
-            ctx.fillText('CRITICAL OXIDATIVE STRESS', w / 2 + 100, h / 2);
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('CRITICAL OXIDATIVE STRESS: PROTEIN DAMAGE', w / 2, h / 2);
         }
     };
 })();

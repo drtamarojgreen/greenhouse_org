@@ -11,11 +11,13 @@
 
     G.pharmacologyState = {
         activeDrugs: [],
+        selectedDrug: null,
         datBlockade: 0,
         vesicleDepletion: 0,
         maoiActive: false, // 95. MAO Inhibitors
         antipsychoticType: 'None', // 96. Antipsychotic Binding Kinetics
         antipsychoticOffRate: 0,
+        drugOccupancy: 0,
         doseResponse: { concentration: 0, effect: 0, history: [] },
         drugCombination: { active: false, compounds: [] }
     };
@@ -100,7 +102,7 @@
 
         // 97. Partial Agonism (Aripiprazole)
         // Partial agonists act as agonists in low DA, but antagonists in high DA
-        if (state.mode === 'Antipsychotic (Partial)') {
+        if (state.mode === 'Antipsychotic (Partial)' || (pState.selectedDrug && pState.selectedDrug.name === 'Aripiprazole')) {
             const daLevel = sState ? sState.cleftDA.length : 0;
             if (daLevel < 20) {
                 // Acts as agonist
@@ -110,9 +112,19 @@
                 if (G.clinicalState) G.clinicalState.d2Supersensitivity = 0.8;
             }
         }
+
+        // 96. Antipsychotic Binding Kinetics
+        if (pState.antipsychoticType !== 'None') {
+            const offRate = pState.antipsychoticOffRate;
+            // Occupancy increases with concentration, decreases with off-rate
+            pState.drugOccupancy = Math.min(1.0, pState.drugOccupancy + 0.05 - offRate * 0.1);
+        } else {
+            pState.drugOccupancy *= 0.9;
+        }
     };
 
     G.renderPharmacology = function (ctx, project) {
+        const cam = G.state.camera;
         const w = G.width;
         const h = G.height;
         const pState = G.pharmacologyState;
@@ -127,6 +139,24 @@
             ctx.fillText('Mechanism: DAT Efflux (Reversal)', 10, h - 280);
         } else if (G.state.mode === 'Cocaine') {
             ctx.fillText('Mechanism: High-affinity Blockade', 10, h - 280);
+        }
+
+        if (pState.drugOccupancy > 0.1) {
+            ctx.fillStyle = '#ffaa00';
+            ctx.fillText(`Receptor Occupancy: ${(pState.drugOccupancy * 100).toFixed(1)}%`, 10, h - 300);
+
+            // 96. Visual indicators of bound drug (small dots on receptors)
+            G.state.receptors.forEach(r => {
+                if (r.type.startsWith('D2')) {
+                    const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                    if (p.scale > 0) {
+                        ctx.fillStyle = '#ff0000';
+                        ctx.beginPath();
+                        ctx.arc(p.x + 10*p.scale, p.y - 10*p.scale, 3*p.scale, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                }
+            });
         }
 
         // 99. Render Dose-Response Curve

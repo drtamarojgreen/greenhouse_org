@@ -78,6 +78,39 @@
             controls.appendChild(btn);
         });
 
+        // 91. Drug Library Selector
+        const drugSelect = document.createElement('select');
+        drugSelect.className = 'dopamine-btn';
+        drugSelect.innerHTML = '<option value="">Select Drug (Library)</option>';
+        if (G.molecularState && G.molecularState.drugLibrary) {
+            const lib = G.molecularState.drugLibrary;
+            const allDrugs = [...lib.d1Agonists, ...lib.d1Antagonists, ...lib.d2Agonists, ...lib.d2Antagonists, ...lib.pams];
+            allDrugs.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.innerText = d;
+                drugSelect.appendChild(opt);
+            });
+        }
+        drugSelect.onchange = (e) => {
+            const drug = e.target.value;
+            if (G.pharmacologyState) {
+                G.pharmacologyState.selectedDrug = { name: drug };
+                console.log(`Selected drug: ${drug}`);
+                // Implement kinetics based on drug name
+                if (drug === 'Haloperidol') {
+                    G.pharmacologyState.antipsychoticType = 'Slow-off';
+                    G.pharmacologyState.antipsychoticOffRate = 0.05;
+                } else if (drug === 'Clozapine' || drug === 'Risperidone') {
+                    G.pharmacologyState.antipsychoticType = 'Fast-off';
+                    G.pharmacologyState.antipsychoticOffRate = 0.5;
+                } else if (drug === 'Aripiprazole (Partial)') {
+                    G.state.mode = 'Antipsychotic (Partial)';
+                }
+            }
+        };
+        controls.appendChild(drugSelect);
+
         // 100. Reset to Default Safety
         const resetBtn = document.createElement('button');
         resetBtn.className = 'dopamine-btn';

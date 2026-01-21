@@ -122,8 +122,28 @@
     };
 
     // 97. Collaboration Mode (Placeholder logic)
+    G.uxState.isCollaborating = false;
     G.toggleCollaboration = function () {
-        alert("Collaboration Mode: Sharing session with researchers... (Simulated)");
+        G.uxState.isCollaborating = !G.uxState.isCollaborating;
+        if (G.uxState.isCollaborating) {
+            console.log("Collaboration Mode: Session shared. (Simulated)");
+            // Add a visual indicator for collaboration
+            G.uxState.collabID = Math.random().toString(36).substring(7).toUpperCase();
+        } else {
+            console.log("Collaboration Mode: Offline.");
+        }
+    };
+
+    const originalRenderUX = G.renderUX;
+    G.renderUX = function (ctx) {
+        originalRenderUX.call(this, ctx);
+        const w = G.width;
+        if (G.uxState.isCollaborating) {
+            ctx.fillStyle = '#4fd1c5';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText(`COLLAB ACTIVE: ${G.uxState.collabID}`, w - 10, 20);
+        }
     };
 
 })();
