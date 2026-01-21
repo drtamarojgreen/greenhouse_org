@@ -20,13 +20,16 @@
             kir2: 0.8, // 52. Kir2 (MSN down-state)
             nav16: 1.0,// 51. Nav1.6
             ltypeCa: 0.2, // 48. L-type Ca2+
-            sk: 0.1 // 56. SK Channels
+            sk: 0.1, // 56. SK Channels
+            cl: 0.1 // 58. Shunting Inhibition (Chloride)
         },
         isUpState: false,
         spikeCount: 0,
         stdpWindow: 0, // 59. STDP Dopamine-gate
         inputResistance: 1.0, // 60. Input Resistance scaling
-        ahpCurrent: 0 // 56. Afterhyperpolarization
+        ahpCurrent: 0, // 56. Afterhyperpolarization
+        ampaTrafficking: 1.0, // 50. AMPA Receptor Trafficking
+        tonicGaba: 0.2 // 55. Tonic GABAergic Inhibition
     };
 
     G.updateElectrophysiology = function () {
@@ -90,8 +93,22 @@
         // Smooth transition (RC circuit simulation)
         eState.membranePotential += (targetPotential - eState.membranePotential) * 0.04;
 
+        // 50. AMPA Receptor Trafficking
+        // DA-mediated plasticity increases surface AMPA
+        if (state.signalingActive && state.mode.includes('D1')) {
+            eState.ampaTrafficking = Math.min(2.0, eState.ampaTrafficking + 0.005);
+        } else if (state.signalingActive && state.mode.includes('D2')) {
+            eState.ampaTrafficking = Math.max(0.5, eState.ampaTrafficking - 0.002);
+        }
+
+        // 58. Shunting Inhibition & 55. Tonic GABA
+        // GABAergic input increases chloride conductance, pulling potential towards Ecl
+        const ecl = -70;
+        const gabaConductance = eState.tonicGaba + eState.channels.cl;
+        targetPotential = (targetPotential + gabaConductance * ecl) / (1 + gabaConductance);
+
         // 60. Input Resistance Scaling
-        eState.inputResistance = 1.0 / (0.5 + eState.channels.girk + eState.channels.kir2 + eState.channels.hcn);
+        eState.inputResistance = 1.0 / (0.5 + eState.channels.girk + eState.channels.kir2 + eState.channels.hcn + gabaConductance);
         eState.isUpState = eState.membranePotential > -62;
 
         // 59. STDP Dopamine-gate Window

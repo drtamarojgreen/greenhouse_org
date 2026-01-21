@@ -12,8 +12,9 @@
     G.molecularState = {
         gProteins: [], // 2. G-Protein Cycle: Dissociation of Gα from Gβγ
         campMicrodomains: [],
-        darpp32: { thr34: 0, thr75: 0, pp1Inhibited: false },
+        darpp32: { thr34: 0, thr75: 0, pp1Inhibited: false }, // 14. DARPP-32 Cycle, 15. PP1 Inhibition
         pka: { reg: 10, cat: 0 }, // 13. PKA Holoenzyme Dynamics
+        ac5: { activity: 0, inhibitedByCa: false }, // 11. Adenylate Cyclase Isoforms (AC5)
         crebActivation: 0,
         deltaFosB: 0,
         internalizedReceptors: [], // 9. Receptor Internalization
@@ -81,9 +82,19 @@
             if (gp.life <= 0) mState.gProteins.splice(i, 1);
         }
 
+        // 11. AC5 Activity modeled by Gs/Gi balance
+        let acGs = mState.gProteins.filter(gp => gp.type === 'Gs' && gp.subunit === 'alpha').length;
+        let acGi = mState.gProteins.filter(gp => gp.type === 'Gi' && gp.subunit === 'alpha').length;
+        mState.ac5.activity = Math.max(0, acGs * 0.2 - acGi * 0.3);
+
+        // AC5 is also inhibited by Ca2+ in some pathways
+        if (mState.camkii.calmodulin > 0.5) {
+            mState.ac5.activity *= 0.5;
+        }
+
         // 12. cAMP Microdomains & 17. PDE Activity
-        if (state.mode.includes('D1') && state.signalingActive) {
-            if (Math.random() > 0.85) {
+        if (mState.ac5.activity > 0.1) {
+            if (Math.random() < mState.ac5.activity) {
                 mState.campMicrodomains.push({
                     x: (Math.random() - 0.5) * 400,
                     y: 50 + (Math.random() * 100),
@@ -111,11 +122,13 @@
             mState.pka.cat -= 0.1;
         }
 
-        // 14. DARPP-32 Cycle
+        // 14. DARPP-32 Cycle & 15. PP1 Inhibition
         if (mState.pka.cat > 2) {
             mState.darpp32.thr34 = Math.min(1, mState.darpp32.thr34 + 0.01);
         } else {
-            mState.darpp32.thr34 = Math.max(0, mState.darpp32.thr34 - 0.005);
+            // 15. PP1 Inhibition: PP1 dephosphorylates Thr34, but is inhibited by Thr34 itself
+            const pp1Activity = mState.darpp32.pp1Inhibited ? 0.001 : 0.005;
+            mState.darpp32.thr34 = Math.max(0, mState.darpp32.thr34 - pp1Activity);
         }
         mState.darpp32.pp1Inhibited = mState.darpp32.thr34 > 0.6;
 
