@@ -49,6 +49,24 @@
     </description>
   </model>
 
+  <model id="dopamine">
+    <title>Dopamine Signaling Model</title>
+    <url>/dopamine</url>
+    <description>
+      <paragraph>The Dopamine Signaling Model explores the complex dynamics of reward, motivation, and motor control. It simulates the interaction between dopamine molecules and various receptor subtypes, illustrating how these signals translate into cellular responses and influence behavioral patterns.</paragraph>
+      <paragraph>This model highlights the multi-scale nature of dopaminergic transmission—from the immediate kinetics of receptor binding to the long-term effects on synaptic plasticity and circuit-level behavior. By visualizing these processes, the model provides insight into the biological foundations of drive and reinforcement.</paragraph>
+    </description>
+  </model>
+
+  <model id="serotonin">
+    <title>Serotonin Structural Model</title>
+    <url>/serotonin</url>
+    <description>
+      <paragraph>The Serotonin Structural Model provides a detailed visualization of the 5-HT1A receptor and its interactions with ligands. This simulation highlights the structural biology of serotonergic signaling, focusing on how molecular binding events influence mood regulation and emotional stability.</paragraph>
+      <paragraph>By modeling the 7-transmembrane architecture and the precise transport mechanisms of serotonin, this framework allows users to explore the fundamental biological processes that underpin emotional equilibrium and resilience. It emphasizes the critical link between molecular integrity and mental well-being.</paragraph>
+    </description>
+  </model>
+
   <model id="dna">
     <title>DNA Repair Model</title>
     <url>/dna</url>
