@@ -20,6 +20,7 @@
         creb: 0,
         sahp: 0, // Slow Afterhyperpolarization
         skBK: 0, // Calcium-activated Potassium Channels
+        pde: 1.0, // Phosphodiesterase activity
         adaptation: 0,
         inputResistance: 100, // MOhms
         membranePotential: -70, // mV
@@ -56,9 +57,15 @@
                 });
             }
 
-            // cAMP dynamics
-            const adenylateCyclaseBase = 0.1;
-            this.cAMP += (totalGs * 0.5) - (totalGi * 0.4) - (this.cAMP * 0.05);
+            // cAMP dynamics (Category 3, #21: Gαi specificity)
+            // Model specific Gi inhibitory potency
+            const giPotency = (G.state.receptors && G.state.receptors.find(r => r.inhibitoryPotential)) ? 1.2 : 1.0;
+
+            // PDE regulation (Category 3, #30)
+            // 5-HT signaling can modulate PDE activity (e.g. via PKC or Calcium)
+            this.pde = 1.0 + (this.pkc * 0.05 + this.calcium * 0.02);
+
+            this.cAMP += (totalGs * 0.5) - (totalGi * 0.4 * giPotency) - (this.cAMP * 0.05 * this.pde);
             this.cAMP = Math.max(0, this.cAMP);
 
             // Calcium/PLC dynamics
@@ -172,7 +179,7 @@
 
             // HUD for signaling levels
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(w - 210, 10, 200, 240);
+            ctx.fillRect(w - 210, 10, 200, 260);
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'left';
@@ -189,19 +196,21 @@
             ctx.fillText(`SK/BK: ${this.skBK.toFixed(2)}`, w - 200, 139);
             ctx.fillText(`Rin: ${this.inputResistance.toFixed(1)} MΩ`, w - 200, 152);
             ctx.fillText(`Adaptation: ${this.adaptation.toFixed(2)}`, w - 200, 165);
-            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 178);
+            ctx.fillText(`PDE: ${this.pde.toFixed(2)}`, w - 200, 178);
+            ctx.fillText(`Adaptation: ${this.adaptation.toFixed(2)}`, w - 200, 191);
+            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 204);
 
             if (G.Transport && G.Transport.glutamateCoRelease) {
                 ctx.fillStyle = '#ffcc00';
-                ctx.fillText('Glutamate Co-transmission: ON', w - 200, 135);
+                ctx.fillText('Glutamate Co-transmission: ON', w - 200, 217);
             }
 
             // Draw membrane potential bar
             ctx.fillStyle = '#444';
-            ctx.fillRect(w - 200, 190, 180, 8);
+            ctx.fillRect(w - 200, 225, 180, 8);
             const vWidth = ((this.membranePotential + 90) / 60) * 180;
             ctx.fillStyle = this.membranePotential > -60 ? '#ff4d4d' : '#4d79ff';
-            ctx.fillRect(w - 200, 190, Math.max(0, Math.min(180, vWidth)), 8);
+            ctx.fillRect(w - 200, 225, Math.max(0, Math.min(180, vWidth)), 8);
 
             // Draw Pathway Bias indicator for 5-HT2A if active
             const ht2a = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A') : null;

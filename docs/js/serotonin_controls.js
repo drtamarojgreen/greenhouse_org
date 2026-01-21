@@ -12,13 +12,14 @@
         const controls = document.createElement('div');
         controls.className = 'serotonin-controls';
 
-        const views = ['5-HT1A Complex', 'Ligand Pocket', 'Lipid Interactions', 'Extracellular Loop', 'Time-lapse'];
+        const views = ['5-HT1A Complex', 'Ligand Pocket', 'Lipid Interactions', 'Extracellular Loop', 'Time-lapse', 'OCD Pathway'];
         views.forEach(view => {
             const btn = document.createElement('button');
             btn.className = 'serotonin-btn';
             btn.innerText = view;
             btn.onclick = () => {
                 console.log(`Switching to ${view}`);
+                G.currentView = view;
             };
             controls.appendChild(btn);
         });
@@ -40,6 +41,8 @@
             { name: 'Phasic Mode', toggle: () => { G.Transport.firingMode = G.Transport.firingMode === 'tonic' ? 'phasic' : 'tonic'; } },
             { name: 'Inflammation', toggle: () => { G.Transport.inflammationActive = !G.Transport.inflammationActive; } },
             { name: 'Pineal Mode', toggle: () => { G.Transport.pinealMode = !G.Transport.pinealMode; } },
+            { name: 'VR Mode', toggle: () => { G.vrMode = !G.vrMode; if(G.vrMode) G.state.camera.fov = 800; else G.state.camera.fov = 500; } },
+            { name: 'Export Data', toggle: () => { if(G.Analytics) G.Analytics.exportData(); } },
             { name: 'Serotonin Syndrome', toggle: () => {
                 if (!G.ssActive) {
                     G.Transport.sertActivity = 0;
@@ -142,6 +145,17 @@
         if (oldRender) oldRender.call(G);
 
         const ctx = G.ctx;
+
+        // OCD Pathway schematic (Category 8, #73)
+        if (G.currentView === 'OCD Pathway') {
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(G.width/2 - 100, G.height/2 - 100, 200, 200);
+            ctx.fillStyle = '#fff';
+            ctx.fillText('CSTC Loop Schematic', G.width/2, G.height/2 - 110);
+            ctx.fillText('OFC -> Striatum -> Thalamus -> OFC', G.width/2, G.height/2);
+        }
+
         // Serotonin Syndrome visuals (Category 7, #69)
         if (G.ssActive) {
             ctx.fillStyle = `rgba(255, 0, 0, ${0.1 + Math.sin(Date.now() * 0.01) * 0.05})`;

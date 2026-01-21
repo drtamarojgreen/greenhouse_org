@@ -104,26 +104,28 @@
 
             const totalSertEfficiency = this.sertActivity * alleleEffect * phosphorylationEffect;
 
-            // SERT Reuptake
+            // SERT & Glial Reuptake (Revised to avoid splice-in-loop bug)
             if (G.Kinetics && G.Kinetics.activeLigands) {
-                G.Kinetics.activeLigands.forEach((l, index) => {
+                for (let i = G.Kinetics.activeLigands.length - 1; i >= 0; i--) {
+                    const l = G.Kinetics.activeLigands[i];
                     if (l.name === 'Serotonin' && !l.boundTo) {
                         // SERT is at the top (presynaptic)
                         const distToSert = Math.abs(l.y + 150) + Math.abs(l.x) + Math.abs(l.z);
                         if (distToSert < 50 && Math.random() < this.reuptakeRate * totalSertEfficiency) {
-                            G.Kinetics.activeLigands.splice(index, 1);
+                            G.Kinetics.activeLigands.splice(i, 1);
                             this.vesicle5HT += 1;
+                            continue;
                         }
 
                         // Glial Serotonin Reuptake via PMAT (Category 5, #50)
                         // Astrocytes are simulated at the periphery
                         const distToGlia = Math.sqrt(l.x*l.x + l.z*l.z);
                         if (distToGlia > 200 && Math.random() < 0.02) {
-                            G.Kinetics.activeLigands.splice(index, 1);
+                            G.Kinetics.activeLigands.splice(i, 1);
                             this.astrocyte5HT += 1;
                         }
                     }
-                });
+                }
             }
 
             // MAO Degradation
