@@ -52,14 +52,14 @@
         // 93. Cocaine Simulation
         if (state.mode === 'Cocaine') {
             pState.datBlockade = 0.95;
-            if (sState) sState.datActivity = 0.05;
+            if (sState) sState.dat.activity = 0.05;
         }
 
         // 94. Amphetamine Mechanism
         if (state.mode === 'Amphetamine') {
             pState.datBlockade = 1.0;
             if (sState) {
-                sState.datActivity = -0.5; // Reversal of DAT (efflux)
+                sState.dat.activity = -0.5; // Reversal of DAT (efflux)
                 // Competitive inhibition and reversal
                 if (state.timer % 10 === 0) {
                      sState.cleftDA.push({
@@ -94,7 +94,7 @@
             pState.drugCombination.active = true;
             // Modeled as simultaneous DAT blockade and D2 agonism
             pState.datBlockade = 0.5;
-            if (sState) sState.datActivity = 0.5;
+            if (sState) sState.dat.activity = 0.5;
             // D2 effect in clinical state or molecular state
         } else {
             pState.drugCombination.active = false;
@@ -161,14 +161,19 @@
 
         // 99. Render Dose-Response Curve
         if (pState.doseResponse.history.length > 2) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(w - 160, h - 170, 120, 130);
             ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(w - 150, h - 50);
-            ctx.lineTo(w - 50, h - 50); // Axis
-            ctx.lineTo(w - 50, h - 150);
+            ctx.lineTo(w - 50, h - 50); // X-axis
+            ctx.moveTo(w - 150, h - 50);
+            ctx.lineTo(w - 150, h - 150); // Y-axis
             ctx.stroke();
 
             ctx.strokeStyle = '#0f0';
+            ctx.lineWidth = 2;
             ctx.beginPath();
             pState.doseResponse.history.forEach((pt, i) => {
                 const x = (w - 150) + pt.c * 100;
@@ -178,7 +183,9 @@
             });
             ctx.stroke();
             ctx.fillStyle = '#fff';
-            ctx.fillText('Dose-Response', w - 150, h - 160);
+            ctx.font = '10px Arial';
+            ctx.fillText('Dose-Response', w - 150, h - 155);
+            ctx.fillText('Conc →', w - 90, h - 35);
         }
     };
 })();

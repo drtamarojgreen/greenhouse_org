@@ -38,8 +38,19 @@
         kissAndRunCount: 0, // 33. Kiss-and-run visual indicator
         caChannelInhibition: 1.0, // 32. Presynaptic Ca2+ Channel Inhibition
         tortuosity: 1.5, // 39. Tortuosity & Extracellular Space
+        extracellularObstacles: [], // 39. Visual obstacles
         cleftGradient: [] // 45. Synaptic Cleft Concentration Profile
     };
+
+    // Initialize extracellular obstacles for tortuosity
+    for (let i = 0; i < 20; i++) {
+        G.synapseState.extracellularObstacles.push({
+            x: (Math.random() - 0.5) * 600,
+            y: -100 + Math.random() * 200,
+            z: (Math.random() - 0.5) * 200,
+            radius: 5 + Math.random() * 10
+        });
+    }
 
     // Initialize vesicles
     for (let i = 0; i < 20; i++) {
@@ -186,6 +197,20 @@
                 if (dist < ast.radius) astrocyteHit = true;
             });
 
+        // 39. Collisions with extracellular obstacles (Tortuosity)
+        sState.extracellularObstacles.forEach(obs => {
+            const dx = da.x - obs.x;
+            const dy = da.y - obs.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < obs.radius) {
+                // Bounce effect
+                da.vx *= -0.5;
+                da.vy *= -0.5;
+                da.x += da.vx * 2;
+                da.y += da.vy * 2;
+            }
+        });
+
             // Reuptake at the top (presynaptic DAT)
             if (da.y < -160 && Math.random() < 0.06 * datEfficiency) {
                 sState.cleftDA.splice(i, 1);
@@ -251,11 +276,23 @@
     };
 
     G.renderSynapse = function (ctx, project) {
-        const state = G.state;
         const cam = G.state.camera;
         const w = G.width;
         const h = G.height;
         const sState = G.synapseState;
+
+        // 39. Render Extracellular Obstacles
+        sState.extracellularObstacles.forEach(obs => {
+            const p = project(obs.x, obs.y, obs.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.2)';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, obs.radius * p.scale, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+
+        const state = G.state;
 
         // 35. Render Axon Terminal Geometry
         const t = sState.terminalGeometry;
