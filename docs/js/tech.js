@@ -166,6 +166,9 @@
             this.dashboardContainer.id = 'tech-dashboard-section';
             this.dashboardContainer.style.backgroundColor = '#f0f4f7';
             this.dashboardContainer.style.padding = '40px 0';
+            this.dashboardContainer.style.width = '100%';
+            this.dashboardContainer.style.display = 'block';
+            this.dashboardContainer.style.boxSizing = 'border-box';
             this.renderDashboard(); // Pre-render the content
 
             // Set up the interval to toggle its visibility
@@ -331,5 +334,9 @@
     }
 
     const app = new TechApp();
-    app.init();
+    // Add the robust 5 second delay present in models pages
+    console.log('TechApp: Waiting 5 seconds before initialization...');
+    setTimeout(() => {
+        app.init();
+    }, 5000);
 })();
