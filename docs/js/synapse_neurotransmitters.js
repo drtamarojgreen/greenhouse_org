@@ -45,12 +45,39 @@
         updateAndDraw(ctx, w, h) {
             ctx.save();
 
+            const isGlutamate = G.config.activeNT === 'glutamate';
+            const astrocyteX = w * 0.8;
+            const astrocyteY = h * 0.5;
+
+            // Simulation parameters from config
+            const reuptakeBlocked = G.config.pharmacology?.ssriActive && G.config.activeNT === 'serotonin';
+            const enzymaticRate = G.config.kinetics?.enzymaticRate || 0.002;
+
             // Draw Neurotransmitters - Safe backward loop
             for (let i = this.particles.length - 1; i >= 0; i--) {
                 const p = this.particles[i];
                 p.x += p.vx;
                 p.y += p.vy;
-                p.life -= 0.005;
+
+                // Reuptake simulation (Enhancement #41)
+                const preTerminalTop = h * 0.4;
+                const distToTerminal = Math.abs(p.y - preTerminalTop);
+                if (p.y < preTerminalTop && !reuptakeBlocked) {
+                    p.life -= 0.05; // Reuptake absorption
+                }
+
+                // Enzymatic degradation (Enhancement #42)
+                p.life -= enzymaticRate;
+
+                // Astrocyte clearance logic (Enhancement #47)
+                if (isGlutamate) {
+                    const dx = p.x - astrocyteX;
+                    const dy = p.y - astrocyteY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 60) {
+                        p.life -= 0.05; // Rapid clearance
+                    }
+                }
 
                 if (p.life <= 0) {
                     this.particles.splice(i, 1);

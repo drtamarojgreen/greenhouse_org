@@ -104,12 +104,16 @@ global.window.GreenhouseSynapseApp = {
         receptors: {
             ionotropic_receptor: { binds: ['serotonin'], ionEffect: 'Na+' },
             gpcr: { binds: ['serotonin'] }
+        },
+        ions: {
+            sodium: { charge: '+' }
         }
     },
     Particles: {
         create: () => { },
         updateAndDraw: () => { mockCtx.calls.push('particles'); },
-        particles: []
+        particles: [],
+        ions: []
     },
     Tooltips: {
         update: () => { },
@@ -132,7 +136,9 @@ global.window.GreenhouseSynapseApp = {
     },
     Molecular: {
         drawLipidBilayer: () => { },
-        drawSNARE: () => { }
+        drawSNARE: () => { },
+        drawECM: () => { },
+        drawAstrocyte: () => { }
     }
 };
 
