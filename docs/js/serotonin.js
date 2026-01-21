@@ -204,6 +204,15 @@
 
             ctx.clearRect(0, 0, w, h);
 
+            // Cinematic FX: Vignette (#22)
+            if (this.cinematicFX) {
+                const grad = ctx.createRadialGradient(w/2, h/2, w/4, w/2, h/2, w/1.2);
+                grad.addColorStop(0, 'rgba(0,0,0,0)');
+                grad.addColorStop(1, 'rgba(0,0,0,0.5)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+            }
+
             // Distance HUD for Hover (Category III, #59)
             if (this.hoverDistance) {
                 ctx.fillStyle = '#fff';
@@ -223,6 +232,14 @@
             if (this.ssActive && this.state.timer % 10 < 5) {
                 ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
                 ctx.fillRect(0, 0, w, h);
+            }
+
+            // Cinematic FX: Film Grain (#22)
+            if (this.cinematicFX && Math.random() < 0.3) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+                for(let k=0; k<100; k++) {
+                    ctx.fillRect(Math.random()*w, Math.random()*h, 1, 1);
+                }
             }
 
             ctx.save();

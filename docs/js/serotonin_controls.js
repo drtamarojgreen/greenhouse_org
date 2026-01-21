@@ -20,6 +20,7 @@
                     { name: 'High-Contrast Mode', toggle: () => { G.highContrast = !G.highContrast; } },
                     { name: 'Large-Scale UI', toggle: () => { G.largeUI = !G.largeUI; this.updateUIScale(); } },
                     { name: 'Reduced Motion', toggle: () => { G.reducedMotion = !G.reducedMotion; } },
+                    { name: 'Subtype Glyphs', toggle: () => { G.showGlyphs = !G.showGlyphs; } },
                     { name: 'Deuteranopia', toggle: () => { this.toggleColorBlind('deuteranopia'); } },
                     { name: 'Protanopia', toggle: () => { this.toggleColorBlind('protanopia'); } },
                     { name: 'Tritanopia', toggle: () => { this.toggleColorBlind('tritanopia'); } }
@@ -38,6 +39,8 @@
                 options: [
                     { name: 'Performance Gauge', toggle: () => { G.showFPS = !G.showFPS; } },
                     { name: 'Status Bar', toggle: () => { G.showStatusBar = !G.showStatusBar; } },
+                    { name: 'Occupancy Panel', toggle: () => { G.showOccupancyPanel = !G.showOccupancyPanel; } },
+                    { name: 'Metabolic Gauges', toggle: () => { G.showMetabolicGauges = !G.showMetabolicGauges; } },
                     { name: 'Heatmap Overlay', toggle: () => { G.showHeatmap = !G.showHeatmap; } }
                 ]
             },
@@ -78,6 +81,29 @@
                     { name: 'SSRI blockade', toggle: () => {
                         G.ssriMode = !G.ssriMode;
                         G.Transport.sertActivity = G.ssriMode ? 0.1 : 1.0;
+                    }},
+                    { name: 'Cocaine', toggle: () => {
+                        G.cocaineMode = !G.cocaineMode;
+                        G.Transport.sertActivity = G.cocaineMode ? 0.05 : 1.0;
+                    }},
+                    { name: 'Methamphetamine', toggle: () => {
+                        G.methMode = !G.methMode;
+                        if (G.methMode) {
+                            G.Transport.reuptakeRate = -0.8; // Strong reversal
+                            for(let i=0; i<30; i++) G.Kinetics.spawnLigand('Serotonin');
+                        } else {
+                            G.Transport.reuptakeRate = 0.05;
+                        }
+                    }},
+                    { name: 'Schizophrenia', toggle: () => {
+                        G.schizMode = !G.schizMode;
+                        G.state.receptors.forEach(r => {
+                            if (r.type === '5-HT2A') r.pathwayBias = G.schizMode ? 2.5 : 1.0;
+                        });
+                    }},
+                    { name: 'ADHD', toggle: () => {
+                        G.adhdMode = !G.adhdMode;
+                        G.Transport.tphActivity = G.adhdMode ? 0.5 : 1.0;
                     }}
                 ]
             }

@@ -91,6 +91,45 @@
         },
 
         renderAnalytics(ctx, w, h) {
+            // Real-Time Occupancy Bar (Category III, #65)
+            if (G.showOccupancyPanel && G.state.receptors) {
+                const panelW = 120;
+                const panelH = G.state.receptors.length * 15 + 30;
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.fillRect(10, 50, panelW, panelH);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 10px Arial';
+                ctx.fillText('OCCUPANCY %', 20, 70);
+                G.state.receptors.forEach((r, i) => {
+                    const occ = r.state !== 'Inactive' ? 100 : 0; // Simplified for visual
+                    ctx.fillStyle = r.color;
+                    ctx.fillRect(20, 80 + i * 15, occ * 0.8, 8);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '9px Arial';
+                    ctx.fillText(r.type, 20, 78 + i * 15);
+                });
+            }
+
+            // Metabolic Progress Gauges (Category III, #63, #64)
+            if (G.showMetabolicGauges && G.Transport) {
+                const gaugeY = h - 100;
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Arial';
+                ctx.fillText('MELATONIN CONV:', 20, gaugeY);
+                ctx.fillStyle = '#444';
+                ctx.fillRect(20, gaugeY + 5, 100, 10);
+                ctx.fillStyle = '#cc99ff';
+                ctx.fillRect(20, gaugeY + 5, Math.min(100, (G.Transport.melatonin || 0) * 10), 10);
+
+                ctx.fillStyle = '#fff';
+                ctx.fillText('KYNURENINE FLUX:', 20, gaugeY + 30);
+                ctx.fillStyle = '#444';
+                ctx.fillRect(20, gaugeY + 35, 100, 10);
+                ctx.fillStyle = '#ff3333';
+                const kynFlux = G.Transport.inflammationActive ? 80 : 5;
+                ctx.fillRect(20, gaugeY + 35, kynFlux, 10);
+            }
+
             // Status Bar HUD (Category III, #47)
             if (G.showStatusBar) {
                 ctx.fillStyle = 'rgba(0,0,0,0.8)';
