@@ -127,16 +127,15 @@
         const h = G.height;
         const pState = G.pharmacologyState;
 
-        // Overlay Pharmacology Info
+        // Overlay Pharmacology Info (Condensed for HUD)
         ctx.fillStyle = '#99ff99';
         ctx.font = '12px Arial';
         ctx.textAlign = 'left';
-        ctx.fillText(`DAT Blockade: ${(pState.datBlockade * 100).toFixed(0)}%`, 10, h - 260);
 
         if (state.mode === 'Amphetamine' || state.scenarios.amphetamine) {
-            ctx.fillText('Mechanism: DAT Efflux (Reversal)', 10, h - 280);
+            ctx.fillText('Mode: DAT Efflux (Reversal)', 10, h - 280);
         } else if (state.mode === 'Cocaine' || state.scenarios.cocaine) {
-            ctx.fillText('Mechanism: High-affinity Blockade', 10, h - 280);
+            ctx.fillText('Mode: High-affinity Blockade', 10, h - 280);
         }
 
         if (pState.drugOccupancy > 0.1) {

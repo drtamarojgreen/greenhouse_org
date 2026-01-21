@@ -45,9 +45,10 @@
 
         // 99. Dose-Response Curve Generation
         // If a drug is selected in pharmacology, simulate its effect across doses
-        if (G.pharmState && G.pharmState.appliedDrugs.length > 0) {
+        const pState = G.pharmacologyState;
+        if (pState && pState.activeDrugs && pState.activeDrugs.length > 0) {
             aState.doseResponse.active = true;
-            const latestDrug = G.pharmState.appliedDrugs[G.pharmState.appliedDrugs.length - 1];
+            const latestDrug = pState.activeDrugs[pState.activeDrugs.length - 1];
             if (aState.doseResponse.currentDrug !== latestDrug.name) {
                 aState.doseResponse.currentDrug = latestDrug.name;
                 aState.doseResponse.points = [];
@@ -55,8 +56,20 @@
                 for (let dose = 0.1; dose <= 10; dose += 0.5) {
                     // Simplified Hill equation: Effect = Max * (Dose^n / (EC50^n + Dose^n))
                     const hill = (Math.pow(dose, 2) / (Math.pow(1.0, 2) + Math.pow(dose, 2)));
-                    const effect = latestDrug.efficacy * hill;
+                    const efficacy = latestDrug.efficacy || 1.0;
+                    const effect = efficacy * hill;
                     aState.doseResponse.points.push({ dose, effect });
+                }
+            }
+        } else if (pState && pState.selectedDrug) {
+            // Also handle a single selected drug
+            aState.doseResponse.active = true;
+            if (aState.doseResponse.currentDrug !== pState.selectedDrug.name) {
+                aState.doseResponse.currentDrug = pState.selectedDrug.name;
+                aState.doseResponse.points = [];
+                for (let dose = 0.1; dose <= 10; dose += 0.5) {
+                    const hill = (Math.pow(dose, 2) / (Math.pow(1.0, 2) + Math.pow(dose, 2)));
+                    aState.doseResponse.points.push({ dose, effect: hill });
                 }
             }
         } else {
@@ -64,8 +77,8 @@
         }
 
         // 100. Drug Combination Testing
-        if (G.pharmState) {
-            aState.drugCombinations = G.pharmState.appliedDrugs.map(d => d.name);
+        if (pState && pState.activeDrugs) {
+            aState.drugCombinations = pState.activeDrugs.map(d => d.name);
         }
     };
 
@@ -106,7 +119,7 @@
         if (G.synapseState && G.synapseState.metabolites) {
             const m = G.synapseState.metabolites;
             const startX = 10;
-            const startY = h - 350;
+            const startY = h - 450;
             ctx.fillStyle = '#aaa';
             ctx.textAlign = 'left';
             ctx.font = '10px Arial';
