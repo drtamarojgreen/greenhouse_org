@@ -86,6 +86,7 @@
                 .serotonin-dropdown { position: relative; }
                 .serotonin-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
                 .serotonin-btn:hover { background: #4a5568; }
+                .serotonin-btn:focus { outline: 2px solid #00ffcc; outline-offset: 2px; }
                 .serotonin-checkbox-modal {
                     position: absolute; top: 100%; left: 0; background: #2d3748; border: 1px solid #4a5568;
                     padding: 10px; border-radius: 4px; display: flex; flex-direction: column; gap: 8px; min-width: 150px;
@@ -190,9 +191,16 @@
 
         render() {
             const ctx = this.ctx;
-            const w = this.width;
-            const h = this.height;
+            let w = this.width;
+            let h = this.height;
             const cam = this.state.camera;
+
+            // Serotonin Syndrome Warning visual distortion (#60)
+            let offsetX = 0, offsetY = 0;
+            if (this.ssActive) {
+                offsetX = (Math.random() - 0.5) * 10;
+                offsetY = (Math.random() - 0.5) * 10;
+            }
 
             ctx.clearRect(0, 0, w, h);
 
@@ -211,6 +219,14 @@
                 ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.3})`;
                 ctx.fillRect(0, 0, w, h);
             }
+
+            if (this.ssActive && this.state.timer % 10 < 5) {
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+                ctx.fillRect(0, 0, w, h);
+            }
+
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
 
             if (!window.GreenhouseModels3DMath) return;
             const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);

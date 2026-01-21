@@ -90,6 +90,8 @@
             const btn = document.createElement('button');
             btn.className = 'serotonin-btn dropdown-toggle';
             btn.innerText = cat.name;
+            btn.setAttribute('aria-label', `Toggle ${cat.name} menu`);
+            btn.setAttribute('aria-haspopup', 'true');
 
             const modal = document.createElement('div');
             modal.className = 'serotonin-checkbox-modal';
@@ -100,6 +102,7 @@
                 label.className = 'serotonin-checkbox-item';
                 const cb = document.createElement('input');
                 cb.type = 'checkbox';
+                cb.setAttribute('aria-label', opt.name);
                 if (opt.checked) cb.checked = true;
                 cb.onchange = (e) => {
                     opt.toggle();
