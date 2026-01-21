@@ -129,7 +129,13 @@
         drugs: {
             ssri: { name: 'SSRI', targetTransporter: 'SERT', effect: 'block_reuptake' },
             antagonist: { name: 'Antagonist', targetReceptor: 'ionotropic_receptor', effect: 'block_binding' },
-            agonist: { name: 'Agonist', targetReceptor: 'gpcr', effect: 'activate' }
+            agonist: { name: 'Agonist', targetReceptor: 'gpcr', effect: 'activate' },
+            ttx: { name: 'Tetrodotoxin', targetIon: 'sodium', effect: 'block_ion_channel' },
+            benzodiazepine: { name: 'Benzodiazepine', targetReceptor: 'ionotropic_receptor', effect: 'positive_allosteric_modulator' }
+        },
+
+        retrograde: {
+            endocannabinoid: { name: '2-AG / Anandamide', color: '#9C27B0', effect: 'inhibit_release' }
         },
 
         ions: {

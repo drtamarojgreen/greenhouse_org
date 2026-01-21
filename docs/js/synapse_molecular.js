@@ -9,6 +9,7 @@
     G.Molecular = {
         ecmParticles: [],
         cascades: [],
+        retrogradeSignals: [],
 
         drawSNARE(ctx, x, y, progress) {
             ctx.save();
@@ -121,6 +122,39 @@
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        },
+
+        triggerRetrograde(x, y) {
+            this.retrogradeSignals.push({
+                x, y, vx: (Math.random() - 0.5) * 1.5, vy: -2 - Math.random() * 2, life: 1.0
+            });
+        },
+
+        drawRetrograde(ctx, w, h) {
+            ctx.save();
+            const chem = G.Chemistry.retrograde.endocannabinoid;
+            for (let i = this.retrogradeSignals.length - 1; i >= 0; i--) {
+                const s = this.retrogradeSignals[i];
+                s.x += s.vx;
+                s.y += s.vy;
+                s.life -= 0.01;
+
+                if (s.life <= 0 || s.y < h * 0.35) {
+                    this.retrogradeSignals.splice(i, 1);
+                } else {
+                    ctx.fillStyle = chem.color;
+                    ctx.globalAlpha = s.life;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Glow
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = chem.color;
                     ctx.stroke();
                 }
             }

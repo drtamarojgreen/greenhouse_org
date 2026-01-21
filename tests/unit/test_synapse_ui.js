@@ -49,7 +49,8 @@ global.document = {
             clientHeight: 600,
             width: 800,
             height: 600,
-            getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
+            getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
+            toDataURL: () => 'data:image/png;base64,mock'
         };
         return el;
     }
@@ -96,6 +97,8 @@ const mockCtx = {
     createRadialGradient: () => ({ addColorStop: () => {} }),
     fillText: () => { },
     closePath: () => { },
+    setLineDash: () => { },
+    strokeRect: () => { },
     calls: []
 };
 
@@ -120,6 +123,12 @@ global.window.GreenhouseSynapseApp = {
         },
         ions: {
             sodium: { charge: '+' }
+        },
+        retrograde: {
+            endocannabinoid: { color: '#9C27B0' }
+        },
+        scenarios: {
+            healthy: { description: 'test' }
         }
     },
     Particles: {
@@ -156,7 +165,8 @@ global.window.GreenhouseSynapseApp = {
         drawECM: () => { },
         drawAstrocyte: () => { },
         drawScaffolding: () => { },
-        drawCascades: () => { }
+        drawCascades: () => { },
+        drawRetrograde: () => { }
     }
 };
 
