@@ -140,7 +140,6 @@
                         },
                         onUpdateSensitivity: (val) => {
                             console.log('Sensitivity updated:', val);
-                            // Implementation hook for sensitivity
                         }
                     });
                 }
@@ -194,6 +193,11 @@
             ctx.fillStyle = '#010501';
             ctx.fillRect(0, 0, w, h);
 
+            if (G.Molecular) {
+                G.Molecular.drawECM(ctx, w, h);
+                G.Molecular.drawAstrocyte(ctx, w, h);
+            }
+
             if (G.Visuals3D) G.Visuals3D.applyDepth(ctx, w, h);
 
             this.drawStructure(ctx, w, h);
@@ -212,7 +216,7 @@
                 if (this.frame % 15 === 0) G.Particles.create(w, h, 1, G.config);
                 this.handleReceptorInteractions(w, h);
 
-                if (G.Analytics) G.Analytics.update(G.Particles.particles.length);
+                if (G.Analytics) G.Analytics.update(G.Particles.particles.length, G.Particles.ions.length);
                 if (G.Visuals3D) {
                     G.Visuals3D.drawShadows(ctx, G.Particles.particles);
                 }

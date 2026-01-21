@@ -45,12 +45,29 @@
         updateAndDraw(ctx, w, h) {
             ctx.save();
 
+            const isGlutamate = G.config.activeNT === 'glutamate';
+            const astrocyteX = w * 0.8;
+            const astrocyteY = h * 0.5;
+
             // Draw Neurotransmitters - Safe backward loop
             for (let i = this.particles.length - 1; i >= 0; i--) {
                 const p = this.particles[i];
                 p.x += p.vx;
                 p.y += p.vy;
-                p.life -= 0.005;
+
+                // Astrocyte clearance logic (Enhancement #47)
+                if (isGlutamate) {
+                    const dx = p.x - astrocyteX;
+                    const dy = p.y - astrocyteY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 60) {
+                        p.life -= 0.05; // Rapid clearance
+                    } else {
+                        p.life -= 0.005;
+                    }
+                } else {
+                    p.life -= 0.005;
+                }
 
                 if (p.life <= 0) {
                     this.particles.splice(i, 1);
