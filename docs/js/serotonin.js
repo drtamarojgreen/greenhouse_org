@@ -38,6 +38,9 @@
         largeUI: false,
         reducedMotion: false,
         paused: false,
+        playbackSpeed: 1,
+        fps: 0,
+        lastTime: 0,
 
         state: {
             camera: { x: 0, y: 0, z: -500, rotationX: 0.5, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
@@ -108,6 +111,13 @@
             let isDragging = false; let lastX = 0; let lastY = 0;
             this.canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
             window.addEventListener('mousemove', (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // Distance HUD & Contextual Cursor (Category III, #51, #59)
+                this.updateContextualCursor(mouseX, mouseY);
+
                 if (isDragging) {
                     const dx = e.clientX - lastX;
                     const dy = e.clientY - lastY;
@@ -119,6 +129,32 @@
             window.addEventListener('mouseup', () => { isDragging = false; });
         },
 
+        updateContextualCursor(mx, my) {
+            if (!this.ctx || !window.GreenhouseModels3DMath) return;
+            const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
+            const cam = this.state.camera;
+            const w = this.width;
+            const h = this.height;
+
+            let foundTarget = false;
+            this.hoverDistance = null;
+
+            if (this.state.receptors) {
+                this.state.receptors.forEach(r => {
+                    const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                    const dx = mx - p.x;
+                    const dy = my - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 30 * p.scale) {
+                        foundTarget = true;
+                        this.hoverDistance = (dist / p.scale).toFixed(1);
+                    }
+                });
+            }
+
+            this.canvas.style.cursor = foundTarget ? 'pointer' : 'default';
+        },
+
         animate() {
             if (!this.isRunning) return;
             this.update();
@@ -128,7 +164,16 @@
 
         update() {
             if (this.paused) return;
-            const iterations = this.timeLapse ? 5 : 1;
+
+            // Performance Gauge (Feedback #50)
+            const now = performance.now();
+            if (this.lastTime) {
+                const dt = now - this.lastTime;
+                this.fps = Math.round(1000 / dt);
+            }
+            this.lastTime = now;
+
+            const iterations = (this.timeLapse ? 5 : 1) * (this.playbackSpeed || 1);
             for (let i = 0; i < iterations; i++) {
                 this.state.timer++;
                 if (!this.isDragging) {
@@ -150,6 +195,13 @@
             const cam = this.state.camera;
 
             ctx.clearRect(0, 0, w, h);
+
+            // Distance HUD for Hover (Category III, #59)
+            if (this.hoverDistance) {
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Arial';
+                ctx.fillText(`Dist to pocket: ${this.hoverDistance} nm`, 20, 40);
+            }
             ctx.fillStyle = this.highContrast ? '#000000' : '#0a0510';
             ctx.fillRect(0, 0, w, h);
 
