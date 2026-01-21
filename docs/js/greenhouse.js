@@ -498,7 +498,26 @@
         } else if (window.location.pathname.includes(config.geneticPagePath)) {
             await loadGeneticApplication();
         } else if (window.location.pathname.includes(config.techPagePath)) {
-            await loadTechApplication();
+            // await loadTechApplication();
+            console.log('Greenhouse: Testing manual polling for Tech page target element...');
+            const pollInterval = 100;
+            const maxAttempts = 150; // 15 seconds
+            let attempts = 0;
+
+            const pollForElement = setInterval(async () => {
+                const targetElement = document.querySelector(config.selectors.tech);
+                if (targetElement) {
+                    clearInterval(pollForElement);
+                    console.log('Greenhouse: Tech page target element found via manual polling.');
+                    await loadTechApplication();
+                } else {
+                    attempts++;
+                    if (attempts >= maxAttempts) {
+                        clearInterval(pollForElement);
+                        console.error('Greenhouse: Timeout waiting for Tech page target element via manual polling.');
+                    }
+                }
+            }, pollInterval);
         } else if (window.location.pathname.includes(config.neuroPagePath)) {
             await loadNeuroApplication();
         } else if (window.location.pathname.includes(config.synapsePagePath)) {

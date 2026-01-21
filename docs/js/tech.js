@@ -286,7 +286,7 @@
                 console.error('TechApp: Could not find mock-user-output');
                 return;
             }
-            outputBox.textContent = 'Fetching...';
+            outputBox.textColntent = 'Fetching...';
             const mockData = { userId: "test-clientside-789", source: "Generated in tech.js" };
             outputBox.textContent = JSON.stringify(mockData, null, 2);
         }
@@ -297,7 +297,7 @@
         async runTestCase2() {
             const container = this.dashboardContainer.querySelector('#models-prototype-container');
             const button = this.dashboardContainer.querySelector('#load-models-prototype-btn');
-
+l
             if (!container || !button) {
                 console.error('TechApp: Required elements for Test Case 2 not found.');
                 return;
@@ -343,9 +343,5 @@
     }
 
     const app = new TechApp();
-    // Add the robust 5 second delay present in models pages
-    console.log('TechApp: Waiting 5 seconds before initialization...');
-    setTimeout(() => {
-        app.init();
-    }, 5000);
+    app.init();
 })();
