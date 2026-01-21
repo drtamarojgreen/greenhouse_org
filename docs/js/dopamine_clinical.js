@@ -11,7 +11,7 @@
 
     G.clinicalState = {
         oxidativeStress: 0, // 88. Oxidative Stress
-        alphaSynuclein: 0, // 87. Alpha-Synuclein Pathology
+        alphaSynuclein: { level: 0, aggregates: [] }, // 87. Alpha-Synuclein Pathology
         inflammation: 0, // 86. Neuroinflammation Effects
         hpaAxisActivity: 0.2, // 90. HPA Axis Interaction
         d2Supersensitivity: 1.0, // 89. D2 Receptor Supersensitivity
@@ -65,8 +65,18 @@
 
         // 87. Alpha-Synuclein Pathology (Inhibits vesicle release)
         if (state.mode === 'Alpha-Synuclein') {
-            cState.alphaSynuclein = Math.min(1.0, cState.alphaSynuclein + 0.005);
-            if (sState) sState.releaseRate = Math.max(0.01, 0.1 * (1.0 - cState.alphaSynuclein));
+            cState.alphaSynuclein.level = Math.min(1.0, cState.alphaSynuclein.level + 0.005);
+            if (sState) sState.releaseRate = Math.max(0.01, 0.1 * (1.0 - cState.alphaSynuclein.level));
+
+            // Generate visual aggregates
+            if (cState.alphaSynuclein.aggregates.length < 15 && Math.random() > 0.95) {
+                cState.alphaSynuclein.aggregates.push({
+                    x: (Math.random() - 0.5) * 300,
+                    y: -250 + Math.random() * 100, // Near presynaptic terminal
+                    z: (Math.random() - 0.5) * 100,
+                    size: 5 + Math.random() * 15
+                });
+            }
         }
 
         // 86. Neuroinflammation (Cytokines affecting synthesis)
@@ -102,8 +112,22 @@
         ctx.fillText(`Oxidative Stress: ${(cState.oxidativeStress * 100).toFixed(1)}%`, w - 10, h - 200);
         ctx.fillText(`D2 Supersensitivity: ${cState.d2Supersensitivity.toFixed(2)}x`, w - 10, h - 180);
 
-        if (cState.alphaSynuclein > 0.1) {
-            ctx.fillText(`α-Synuclein: ${(cState.alphaSynuclein * 100).toFixed(1)}%`, w - 10, h - 160);
+        if (cState.alphaSynuclein.level > 0.1) {
+            ctx.fillText(`α-Synuclein: ${(cState.alphaSynuclein.level * 100).toFixed(1)}%`, w - 10, h - 160);
+
+            // Render aggregates
+            cState.alphaSynuclein.aggregates.forEach(agg => {
+                const p = project(agg.x, agg.y, agg.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (p.scale > 0) {
+                    ctx.fillStyle = '#ff0000';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#ff0000';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, agg.size * p.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            });
         }
         if (cState.inflammation > 0.1) {
             ctx.fillText(`Neuroinflammation: ${(cState.inflammation * 100).toFixed(1)}%`, w - 10, h - 140);

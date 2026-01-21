@@ -83,13 +83,19 @@
         }
 
         // 11. AC5 Activity modeled by Gs/Gi balance
+        // AC5 is the predominant isoform in striatum
         let acGs = mState.gProteins.filter(gp => gp.type === 'Gs' && gp.subunit === 'alpha').length;
         let acGi = mState.gProteins.filter(gp => gp.type === 'Gi' && gp.subunit === 'alpha').length;
-        mState.ac5.activity = Math.max(0, acGs * 0.2 - acGi * 0.3);
 
-        // AC5 is also inhibited by Ca2+ in some pathways
-        if (mState.camkii.calmodulin > 0.5) {
-            mState.ac5.activity *= 0.5;
+        // Gs stimulates, Gi inhibits AC5
+        mState.ac5.activity = Math.max(0, acGs * 0.25 - acGi * 0.4);
+
+        // AC5 is also inhibited by high Ca2+ (Enhancement 11)
+        if (mState.camkii.calmodulin > 0.6) {
+            mState.ac5.activity *= 0.4;
+            mState.ac5.inhibitedByCa = true;
+        } else {
+            mState.ac5.inhibitedByCa = false;
         }
 
         // 12. cAMP Microdomains & 17. PDE Activity
@@ -155,8 +161,10 @@
         mState.darpp32.pp1Inhibited = mState.darpp32.thr34 > 0.6;
 
         // 16. ERK/MAPK Cascade
+        // Activated by D1 signaling and Gq pathway
         if (state.signalingActive) {
-            mState.erkPathway = Math.min(1, mState.erkPathway + 0.003);
+            const activationSource = (state.mode.includes('D1') ? 0.003 : 0) + (mState.plcPathway.pkc * 0.01);
+            mState.erkPathway = Math.min(1.0, mState.erkPathway + activationSource);
         } else {
             mState.erkPathway = Math.max(0, mState.erkPathway - 0.002);
         }
@@ -370,6 +378,7 @@
         ctx.fillText(`PP1 Inhibition: ${mState.darpp32.pp1Inhibited ? 'ACTIVE' : 'INACTIVE'}`, w - 10, 40);
         ctx.fillText(`CREB Activation: ${(mState.crebActivation * 100).toFixed(1)}%`, w - 10, 60);
         ctx.fillText(`ΔFosB Level: ${mState.deltaFosB.toFixed(4)}`, w - 10, 80);
+        ctx.fillText(`AC5 Activity: ${(mState.ac5.activity * 100).toFixed(1)}% ${mState.ac5.inhibitedByCa ? '(Ca2+ INHIBITED)' : ''}`, w - 10, h - 300);
 
         // Additional indicators
         if (mState.plcPathway.pkc > 0.1) {
