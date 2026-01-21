@@ -39,6 +39,8 @@
         reducedMotion: false,
         paused: false,
         playbackSpeed: 1,
+        bloomEffect: false,
+        volumetricLight: false,
         fps: 0,
         lastTime: 0,
         flyInTargetIndex: 0,
@@ -170,9 +172,9 @@
             if (this.paused) return;
 
             // Cinematic Fly-In Logic (#29, #90)
-            if (this.cinematicFlyIn && this.state.receptors) {
+            if (this.cinematicFlyIn && this.state.receptors && this.state.receptors.length > 0) {
                 this.flyInTimer++;
-                if (this.flyInTimer > 300) {
+                if (this.flyInTimer > 400) { // Stay on receptor for ~6-7 seconds at 60fps
                     this.flyInTimer = 0;
                     this.flyInTargetIndex = (this.flyInTargetIndex + 1) % this.state.receptors.length;
                 }
@@ -180,13 +182,13 @@
                 const target = this.state.receptors[this.flyInTargetIndex];
                 const tCam = this.state.cinematicCamera;
 
-                // Interpolate camera to target receptor
-                tCam.x += (target.x - tCam.x) * 0.02;
-                tCam.y += (target.y - tCam.y) * 0.02;
-                tCam.z += ((target.z - 150) - tCam.z) * 0.02;
-                tCam.rotationY += (0 - tCam.rotationY) * 0.02;
-                tCam.rotationX += (0.2 - tCam.rotationX) * 0.02;
-                tCam.zoom = 2.5;
+                // Stop the revolution and interpolate camera to target receptor with dramatic zoom
+                tCam.x += (target.x - tCam.x) * 0.03;
+                tCam.y += (target.y - tCam.y) * 0.03;
+                tCam.z += ((target.z - 100) - tCam.z) * 0.03; // Close-up distance
+                tCam.rotationY += (0 - tCam.rotationY) * 0.03;
+                tCam.rotationX += (0.1 - tCam.rotationX) * 0.03;
+                tCam.zoom = 4.0; // High zoom for scientific detail
             } else {
                 this.state.cinematicCamera.x = 0;
                 this.state.cinematicCamera.y = 0;
@@ -205,7 +207,8 @@
             const iterations = (this.timeLapse ? 5 : 1) * (this.playbackSpeed || 1);
             for (let i = 0; i < iterations; i++) {
                 this.state.timer++;
-                if (!this.isDragging) {
+                // Stop the revolution if Cinematic Fly-In is active
+                if (!this.isDragging && !this.cinematicFlyIn) {
                     this.state.camera.rotationY += 0.003;
                 }
                 // Call module updates if they exist
@@ -215,6 +218,44 @@
                 if (this.Transport && this.Transport.updateTransport) this.Transport.updateTransport();
                 if (this.Analytics && this.Analytics.updateAnalytics) this.Analytics.updateAnalytics();
             }
+        },
+
+        renderVolumetricLight() {
+            const ctx = this.ctx;
+            const w = this.width;
+            const h = this.height;
+            const time = this.state.timer * 0.02;
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            // God rays emanating from top center
+            for (let i = 0; i < 6; i++) {
+                const angle = Math.PI * 0.5 + (i - 2.5) * 0.3 + Math.sin(time + i) * 0.05;
+                const length = Math.max(w, h) * 1.5;
+                const grad = ctx.createLinearGradient(w / 2, 0, w / 2 + Math.cos(angle) * length, Math.sin(angle) * length);
+                const alpha = (0.03 + Math.sin(time * 0.7 + i) * 0.02);
+                grad.addColorStop(0, `rgba(150, 200, 255, ${alpha})`);
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(w / 2, -20);
+                ctx.lineTo(w / 2 + Math.cos(angle - 0.15) * length, Math.sin(angle - 0.15) * length);
+                ctx.lineTo(w / 2 + Math.cos(angle + 0.15) * length, Math.sin(angle + 0.15) * length);
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.restore();
+        },
+
+        renderBloom() {
+            const ctx = this.ctx;
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            ctx.globalAlpha = 0.4;
+            ctx.filter = 'blur(12px) brightness(1.2)';
+            ctx.drawImage(this.canvas, 0, 0);
+            ctx.restore();
         },
 
         render() {
@@ -265,9 +306,14 @@
             // Cinematic FX: Film Grain (#22)
             if (this.cinematicFX && Math.random() < 0.3) {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
-                for(let k=0; k<100; k++) {
-                    ctx.fillRect(Math.random()*w, Math.random()*h, 1, 1);
+                for (let k = 0; k < 100; k++) {
+                    ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
                 }
+            }
+
+            // Volumetric Light (#25)
+            if (this.volumetricLight) {
+                this.renderVolumetricLight();
             }
 
             ctx.save();
@@ -319,6 +365,13 @@
                 ctx.arc(ligandPos.x, ligandPos.y, 8 * ligandPos.scale, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.shadowBlur = 0;
+            }
+
+            ctx.restore();
+
+            // Bloom Effect (#22) - Apply at the very end of main scene render
+            if (this.bloomEffect) {
+                this.renderBloom();
             }
         }
     });
