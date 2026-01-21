@@ -3,12 +3,15 @@
 (function () {
     'use strict';
 
-    const GreenhouseSynapseParticles = {
+    const G = window.GreenhouseSynapseApp || {};
+    window.GreenhouseSynapseApp = G;
+
+    G.Particles = {
         particles: [],
         ions: [],
 
         create(w, h, count = 1, config = {}, forceBurst = false) {
-            const chem = window.GreenhouseSynapseChemistry.neurotransmitters[config.activeNT || 'serotonin'];
+            const chem = G.Chemistry.neurotransmitters[config.activeNT || 'serotonin'];
 
             for (let i = 0; i < count; i++) {
                 this.particles.push({
@@ -26,7 +29,7 @@
         },
 
         createIon(x, y, ionType) {
-            const ionChem = window.GreenhouseSynapseChemistry.ions[ionType || 'sodium'];
+            const ionChem = G.Chemistry.ions[ionType || 'sodium'];
             this.ions.push({
                 x: x,
                 y: y,
@@ -42,7 +45,7 @@
         updateAndDraw(ctx, w, h) {
             ctx.save();
 
-            // Draw Neurotransmitters
+            // Draw Neurotransmitters - Safe backward loop
             for (let i = this.particles.length - 1; i >= 0; i--) {
                 const p = this.particles[i];
                 p.x += p.vx;
@@ -64,7 +67,7 @@
             }
             ctx.globalAlpha = 1.0;
 
-            // Draw Ions
+            // Draw Ions - Safe backward loop
             for (let i = this.ions.length - 1; i >= 0; i--) {
                 const ion = this.ions[i];
                 ion.x += ion.vx;
@@ -94,6 +97,4 @@
             this.ions = [];
         }
     };
-
-    window.GreenhouseSynapseParticles = GreenhouseSynapseParticles;
 })();

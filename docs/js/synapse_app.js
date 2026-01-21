@@ -4,9 +4,10 @@
 (function () {
     'use strict';
 
-    console.log("Synapse App: Orchestrator Hooked.");
+    const G = window.GreenhouseSynapseApp || {};
+    window.GreenhouseSynapseApp = G;
 
-    const config = {
+    G.config = G.config || {
         backgroundColor: '#050705',
         accentCyan: '#00F2FF',
         accentGold: '#FFD700',
@@ -36,7 +37,9 @@
         }
     };
 
-    const GreenhouseSynapseApp = {
+    let resilienceObserver = null;
+
+    Object.assign(G, {
         canvas: null,
         ctx: null,
         container: null,
@@ -45,22 +48,41 @@
         currentLanguage: 'en',
         hoveredId: null,
         sidebarHoveredId: null,
+        isRunning: false,
 
         init(targetSelector, baseUrl) {
+            this.lastSelector = targetSelector;
             this.baseUrl = baseUrl || '';
-            this.container = document.querySelector(targetSelector);
+            this._initializeSimulation(targetSelector);
+        },
+
+        _initializeSimulation(selector) {
+            // Check dependencies
+            if (!G.Chemistry || !G.Particles || !G.Sidebar || !G.Tooltips ||
+                !G.Controls || !G.Analytics || !G.Visuals3D || !G.Molecular) {
+                console.error('SynapseApp: Missing modular dependencies.');
+                return;
+            }
+
+            this.container = document.querySelector(selector);
             if (!this.container) return;
 
             this.setupDOM();
+            this.isRunning = true;
             this.animate();
+
+            // Resilience
+            this.observeAndReinitializeApp(this.container);
         },
 
         setupDOM() {
+            const config = G.config;
             this.container.innerHTML = '';
             this.container.style.cssText = `
                 display: flex; flex-direction: row; gap: 0; background: ${config.backgroundColor}; 
                 border-radius: 24px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.6);
                 border: 1px solid rgba(53, 116, 56, 0.2); font-family: ${config.font}; height: 750px;
+                position: relative;
             `;
 
             const sidebar = document.createElement('div');
@@ -86,25 +108,44 @@
             `;
             canvasWrapper.appendChild(this.tooltip);
 
-            // Initialize Sidebar Module
             this.renderSidebar();
 
+            this.handleResize = this.resize.bind(this);
+            window.removeEventListener('resize', this.handleResize);
+            window.addEventListener('resize', this.handleResize);
             this.resize();
-            window.addEventListener('resize', () => this.resize());
+
             this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
             this.canvas.addEventListener('mousedown', () => this.handleMouseDown());
         },
 
         renderSidebar() {
-            const sidebar = document.getElementById('synapse-sidebar');
-            if (window.GreenhouseSynapseSidebar) {
-                window.GreenhouseSynapseSidebar.render(sidebar, config, this.currentLanguage, {
+            if (G.Sidebar) {
+                G.Sidebar.render(document.getElementById('synapse-sidebar'), G.config, this.currentLanguage, {
                     onHover: (id) => this.sidebarHoveredId = id,
                     onNTChange: (ntId) => {
-                        config.activeNT = ntId;
-                        this.renderSidebar(); // Re-render to update tech description
+                        G.config.activeNT = ntId;
+                        this.renderSidebar();
                     }
                 });
+
+                if (G.Controls) {
+                    G.Controls.render(document.getElementById('synapse-sidebar'), G.config, {
+                        onToggleBurst: () => {
+                            const w = this.canvas.width / (window.devicePixelRatio || 1);
+                            const h = this.canvas.height / (window.devicePixelRatio || 1);
+                            G.Particles.create(w, h, 60, G.config, true);
+                        },
+                        onUpdateSensitivity: (val) => {
+                            console.log('Sensitivity updated:', val);
+                            // Implementation hook for sensitivity
+                        }
+                    });
+                }
+
+                if (G.Analytics) {
+                    G.Analytics.renderDashboard(document.getElementById('synapse-sidebar'));
+                }
             }
         },
 
@@ -118,8 +159,8 @@
             const w = this.canvas.width / (window.devicePixelRatio || 1);
             const h = this.canvas.height / (window.devicePixelRatio || 1);
             if (this.mouse.y < h * 0.45 && Math.abs(this.mouse.x - w * 0.5) < w * 0.15) {
-                if (window.GreenhouseSynapseParticles) {
-                    window.GreenhouseSynapseParticles.create(w, h, 40, config, true);
+                if (G.Particles) {
+                    G.Particles.create(w, h, 40, G.config, true);
                 }
             }
         },
@@ -136,6 +177,7 @@
         },
 
         animate() {
+            if (!this.isRunning) return;
             requestAnimationFrame(() => this.animate());
             this.render();
         },
@@ -150,29 +192,49 @@
             ctx.fillStyle = '#010501';
             ctx.fillRect(0, 0, w, h);
 
+            if (G.Visuals3D) G.Visuals3D.applyDepth(ctx, w, h);
+
             this.drawStructure(ctx, w, h);
 
-            // Particle System Module
-            if (window.GreenhouseSynapseParticles) {
-                if (this.frame % 15 === 0) window.GreenhouseSynapseParticles.create(w, h, 1, config);
-                this.handleReceptorInteractions(w, h);
-                window.GreenhouseSynapseParticles.updateAndDraw(ctx, w, h);
+            if (G.Molecular) {
+                const surfaceY = h * 0.68;
+                G.Molecular.drawLipidBilayer(ctx, w * 0.3, h * 0.44, w * 0.4, false);
+                G.Molecular.drawLipidBilayer(ctx, w * 0.2, surfaceY, w * 0.6, true);
+
+                if (this.frame % 60 < 20) {
+                    G.Molecular.drawSNARE(ctx, w * 0.5, h * 0.4, (this.frame % 60) / 20);
+                }
             }
+
+            if (G.Particles) {
+                if (this.frame % 15 === 0) G.Particles.create(w, h, 1, G.config);
+                this.handleReceptorInteractions(w, h);
+
+                if (G.Analytics) G.Analytics.update(G.Particles.particles.length);
+                if (G.Visuals3D) {
+                    G.Visuals3D.drawShadows(ctx, G.Particles.particles);
+                }
+
+                G.Particles.updateAndDraw(ctx, w, h);
+            }
+
+            if (G.Visuals3D) G.Visuals3D.restoreDepth(ctx);
 
             this.checkHover(w, h);
 
-            if (window.GreenhouseSynapseTooltips) {
-                window.GreenhouseSynapseTooltips.update(this.tooltip, this.hoveredId || this.sidebarHoveredId, this.mouse.x, this.mouse.y, config, this.currentLanguage);
-                window.GreenhouseSynapseTooltips.drawLabels(ctx, w, h, config, this.currentLanguage, this.hoveredId, this.sidebarHoveredId);
+            if (G.Tooltips) {
+                G.Tooltips.update(this.tooltip, this.hoveredId || this.sidebarHoveredId, this.mouse.x, this.mouse.y, G.config, this.currentLanguage);
+                G.Tooltips.drawLabels(ctx, w, h, G.config, this.currentLanguage, this.hoveredId, this.sidebarHoveredId);
             }
         },
 
         handleReceptorInteractions(w, h) {
-            const particles = window.GreenhouseSynapseParticles.particles;
-            const chem = window.GreenhouseSynapseChemistry;
+            if (!G.Particles || !G.Chemistry) return;
+            const particles = G.Particles.particles;
+            const chem = G.Chemistry;
             const surfaceY = h * 0.68;
 
-            config.elements.receptors.forEach(receptor => {
+            G.config.elements.receptors.forEach(receptor => {
                 const rx = w * receptor.x;
                 const ry = surfaceY;
 
@@ -184,10 +246,9 @@
                     if (dist < 20 && p.life > 0.1) {
                         const receptorType = chem.receptors[receptor.type];
                         if (receptorType.binds.includes(p.chemistry.id)) {
-                            // Binding effect
-                            p.life = 0; // Consume NT
+                            p.life = 0;
                             if (receptor.type === 'ionotropic_receptor' && p.chemistry.ionEffect !== 'none') {
-                                window.GreenhouseSynapseParticles.createIon(rx, ry + 10, p.chemistry.ionEffect);
+                                G.Particles.createIon(rx, ry + 10, p.chemistry.ionEffect);
                                 receptor.state = 'open';
                                 setTimeout(() => receptor.state = 'closed', 200);
                             } else if (receptor.type === 'gpcr') {
@@ -208,7 +269,7 @@
             if (my < h * 0.44 && Math.abs(mx - w * 0.5) < w * 0.16) this.hoveredId = 'preSynapticTerminal';
             else if (my > h * 0.6 && Math.abs(mx - w * 0.5) < w * 0.28) this.hoveredId = 'postSynapticTerminal';
 
-            config.elements.vesicles.forEach(v => {
+            G.config.elements.vesicles.forEach(v => {
                 const vx = w * v.x, vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
                 if ((mx - vx) ** 2 + (my - vy) ** 2 < v.r ** 2 * 2) this.hoveredId = 'vesicle';
             });
@@ -218,7 +279,6 @@
             const centerX = w * 0.5, bulbY = h * 0.3, bW = w * 0.24, surfaceY = h * 0.68;
             const activeId = this.hoveredId || this.sidebarHoveredId;
 
-            // Pre & Post Terminals
             ctx.save();
             const preColor = activeId === 'preSynapticTerminal' ? '#357438' : '#303830';
             ctx.fillStyle = preColor;
@@ -240,16 +300,16 @@
             ctx.fill();
             ctx.restore();
 
-            // Vesicles Use active NT color
-            const ntChem = window.GreenhouseSynapseChemistry.neurotransmitters[config.activeNT];
-            config.elements.vesicles.forEach(v => {
-                const vx = w * v.x, vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
-                ctx.fillStyle = activeId === 'vesicle' ? '#fff' : ntChem.color;
-                ctx.beginPath(); ctx.arc(vx, vy, v.r, 0, Math.PI * 2); ctx.fill();
-            });
+            if (G.Chemistry) {
+                const ntChem = G.Chemistry.neurotransmitters[G.config.activeNT];
+                G.config.elements.vesicles.forEach(v => {
+                    const vx = w * v.x, vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
+                    ctx.fillStyle = activeId === 'vesicle' ? '#fff' : ntChem.color;
+                    ctx.beginPath(); ctx.arc(vx, vy, v.r, 0, Math.PI * 2); ctx.fill();
+                });
+            }
 
-            // Receptors
-            config.elements.receptors.forEach(r => {
+            G.config.elements.receptors.forEach(r => {
                 const rx = w * r.x, ry = surfaceY - 5;
                 if (r.type === 'ionotropic_receptor') {
                     ctx.fillStyle = r.state === 'open' ? '#fff' : '#4DB6AC';
@@ -262,8 +322,25 @@
                     ctx.stroke();
                 }
             });
-        }
-    };
+        },
 
-    window.GreenhouseSynapseApp = GreenhouseSynapseApp;
+        observeAndReinitializeApp(container) {
+            if (!container) return;
+            if (resilienceObserver) resilienceObserver.disconnect();
+            const observerCallback = (mutations) => {
+                const wasRemoved = mutations.some(m =>
+                    Array.from(m.removedNodes).some(n => n.nodeType === 1 && n.tagName === 'CANVAS')
+                );
+                if (wasRemoved) {
+                    this.isRunning = false;
+                    if (resilienceObserver) resilienceObserver.disconnect();
+                    setTimeout(() => {
+                        if (G.init) G.init(this.lastSelector, this.baseUrl);
+                    }, 5000);
+                }
+            };
+            resilienceObserver = new MutationObserver(observerCallback);
+            resilienceObserver.observe(container, { childList: true });
+        }
+    });
 })();

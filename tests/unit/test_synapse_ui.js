@@ -12,6 +12,12 @@ const TestFramework = require('../utils/test_framework.js');
 global.window = global;
 global.window.addEventListener = () => { };
 global.window.removeEventListener = () => { };
+global.MutationObserver = class {
+    constructor() { }
+    observe() { }
+    disconnect() { }
+};
+
 global.document = {
     querySelector: (sel) => {
         if (sel === '#synapse-container') return mockContainer;
@@ -29,6 +35,9 @@ global.document = {
             appendChild: (child) => {
                 if (!el.children) el.children = [];
                 el.children.push(child);
+            },
+            insertAdjacentHTML: (pos, html) => {
+                // simple mock
             },
             addEventListener: (evt, cb) => {
                 if (!el.listeners) el.listeners = {};
@@ -52,7 +61,13 @@ const mockContainer = {
     }
 };
 
-const mockSidebar = { innerHTML: '', appendChild: () => { } };
+const mockSidebar = {
+    innerHTML: '',
+    appendChild: () => { },
+    insertAdjacentHTML: () => { },
+    querySelector: () => ({ addEventListener: () => {} }),
+    querySelectorAll: () => []
+};
 const mockTooltip = { style: {}, innerHTML: '' };
 
 const mockCtx = {
@@ -75,33 +90,51 @@ global.requestAnimationFrame = (cb) => {
     global.window.lastRAF = cb;
 };
 
-// --- Mocks for logic modules ---
-global.window.GreenhouseSynapseChemistry = {
-    neurotransmitters: { serotonin: { color: '#00F2FF' } },
-    receptors: {
-        ionotropic_receptor: { binds: ['serotonin'], ionEffect: 'Na+' },
-        gpcr: { binds: ['serotonin'] }
-    }
-};
-global.window.GreenhouseSynapseParticles = {
-    create: () => { },
-    updateAndDraw: () => { mockCtx.calls.push('particles'); },
-    particles: []
-};
-global.window.GreenhouseSynapseTooltips = {
-    update: () => { },
-    drawLabels: () => { mockCtx.calls.push('labels'); }
-};
-global.window.GreenhouseSynapseSidebar = {
-    render: () => { }
-};
-
 // --- Helper to Load Script ---
 function loadScript(filename) {
     const filePath = path.join(__dirname, '../../docs/js', filename);
     const code = fs.readFileSync(filePath, 'utf8');
     vm.runInThisContext(code, { filename });
 }
+
+// --- Setup G Namespace ---
+global.window.GreenhouseSynapseApp = {
+    Chemistry: {
+        neurotransmitters: { serotonin: { color: '#00F2FF', id: 'serotonin', type: 'excitatory' } },
+        receptors: {
+            ionotropic_receptor: { binds: ['serotonin'], ionEffect: 'Na+' },
+            gpcr: { binds: ['serotonin'] }
+        }
+    },
+    Particles: {
+        create: () => { },
+        updateAndDraw: () => { mockCtx.calls.push('particles'); },
+        particles: []
+    },
+    Tooltips: {
+        update: () => { },
+        drawLabels: () => { mockCtx.calls.push('labels'); }
+    },
+    Sidebar: {
+        render: () => { }
+    },
+    Controls: {
+        render: () => { }
+    },
+    Analytics: {
+        renderDashboard: () => { },
+        update: () => { }
+    },
+    Visuals3D: {
+        applyDepth: () => { },
+        drawShadows: () => { },
+        restoreDepth: () => { }
+    },
+    Molecular: {
+        drawLipidBilayer: () => { },
+        drawSNARE: () => { }
+    }
+};
 
 // --- Test Suite ---
 
@@ -156,7 +189,7 @@ TestFramework.describe('Synapse UI Rendering', () => {
 
     TestFramework.it('should trigger neurotransmitter release on click in active zone', () => {
         let releaseTriggered = false;
-        window.GreenhouseSynapseParticles.create = (w, h, count, config, isBurst) => {
+        window.GreenhouseSynapseApp.Particles.create = (w, h, count, config, isBurst) => {
             if (isBurst) releaseTriggered = true;
         };
 

@@ -3,11 +3,14 @@
 (function () {
     'use strict';
 
-    const GreenhouseSynapseTooltips = {
+    const G = window.GreenhouseSynapseApp || {};
+    window.GreenhouseSynapseApp = G;
+
+    G.Tooltips = {
         update(tooltipElem, hoveredId, mouseX, mouseY, config, currentLanguage) {
             if (hoveredId) {
                 const lang = currentLanguage || 'en';
-                const chem = window.GreenhouseSynapseChemistry;
+                const chem = G.Chemistry;
 
                 let label = '';
 
@@ -60,6 +63,4 @@
             ctx.restore();
         }
     };
-
-    window.GreenhouseSynapseTooltips = GreenhouseSynapseTooltips;
 })();

@@ -3,11 +3,14 @@
 (function () {
     'use strict';
 
-    const GreenhouseSynapseSidebar = {
+    const G = window.GreenhouseSynapseApp || {};
+    window.GreenhouseSynapseApp = G;
+
+    G.Sidebar = {
         render(container, config, currentLanguage, callbacks) {
             const { onHover, onNTChange } = callbacks;
             const lang = currentLanguage || 'en';
-            const chem = window.GreenhouseSynapseChemistry;
+            const chem = G.Chemistry;
 
             const categories = [
                 { id: 'preSynapticTerminal', label: config.translations.preSynapticTerminal[lang], color: '#707870' },
@@ -27,7 +30,7 @@
                     <div style="width: 12px; height: 12px; border-radius: 50%; background: #357438; box-shadow: 0 0 15px #357438;"></div>
                     <h2 style="font-family: 'Quicksand', sans-serif; font-size: 28px; margin: 0; color: #fff;">Synaptic Bridge</h2>
                 </div>
-                
+
                 <div style="margin-bottom: 35px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);">
                     <label style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #357438; margin-bottom: 12px; font-weight: 700;">Select Neurotransmitter</label>
                     <select id="nt-selector" style="width: 100%; background: #1a1c1e; color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; font-family: inherit; font-size: 14px; cursor: pointer;">
@@ -86,6 +89,4 @@
             });
         }
     };
-
-    window.GreenhouseSynapseSidebar = GreenhouseSynapseSidebar;
 })();

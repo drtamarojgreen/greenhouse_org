@@ -65,6 +65,10 @@ TestFramework.describe('Synapse Page Loader', () => {
             'synapse_neurotransmitters.js',
             'synapse_sidebar.js',
             'synapse_tooltips.js',
+            'synapse_controls.js',
+            'synapse_analytics.js',
+            'synapse_3d.js',
+            'synapse_molecular.js',
             'synapse_app.js'
         ];
 
