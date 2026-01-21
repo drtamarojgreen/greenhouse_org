@@ -83,29 +83,29 @@ This document outlines 100 UI/UX enhancements for the Greenhouse Dopamine Signal
 74. **Synaptic Strength Multiplier HUD**: A persistent display of the current LTP/LTD status.
 75. **Drift Warning for Long-Runs**: Alert when cumulative errors might affect long-term simulation accuracy.
 
-## IV. Workflow & Research Management (76-100)
-76. **User Profile / History**: Remember the user's favorite settings and viewed tutorials.
-77. **In-App Feedback Tool**: A simple form to report bugs or suggest new biological features.
-78. **Collaboration Mode**: Shared session where multiple researchers can view the same simulation.
-79. **"Reset to Default" Safety**: A prominent button to revert all parameter changes if the simulation becomes unstable.
-80. **Experiment Versioning Control**: A "git-style" branch manager for tracking different parameter sets.
-81. **One-Click Figure Export**: Export high-resolution, publication-ready images with scale bars.
-82. **Batch Simulation Scripting**: A UI to queue multiple simulation runs with varying inputs.
-83. **Cloud-Based Result Sync**: Automatically sync simulation data across research team accounts.
-84. **ELN (Electronic Lab Notebook) Integration**: Direct export formats for standard lab notebook software.
-85. **Interactive Research Roadmap**: A checklist for pharmaceutical assay stages (e.g., Target Identification).
-86. **Parameter Sensitivity Analysis**: Tool to automatically test how small changes in one value affect the output.
-87. **Data Correlation Dashboard**: View side-by-side graphs of different signaling markers (e.g., cAMP vs. Ca2+).
-88. **Snapshot Comparison Tool**: Visually compare two "frozen" simulation states in a split-screen view.
-89. **Automated Summary Report**: Generate a PDF summary of the key outcomes of a simulation run.
-90. **Protocol Library Presets**: Standardized settings for common research benchmarks (e.g., "Parkinson's Model A").
-91. **Data Export for External Modeling**: Formats for MATLAB, Python (NumPy), or R data analysis.
-92. **Session Tagging and Search**: Meta-data tagging for experimental runs (e.g., "High Concentration", "Assay 4").
-93. **Interactive Guided Tour Creator**: Allow researchers to create walkthroughs for students or colleagues.
-94. **Auto-Calibration Tool**: Sync simulation parameters with user-uploaded experimental data points.
-95. **Conflict Alert for Biological Constraints**: Warn if parameters exceed physiologically realistic ranges.
-96. **Workflow "Save Points"**: Milestone markers in a session that can be reverted to instantly.
-97. **Asset Library for Custom Receptors**: A manager for importing and assigning 3D models to simulation types.
-98. **Shared Annotation Layer**: A collaborative "whiteboard" for drawing over the 3D space in real-time.
-99. **Task-Based Research Mode**: Focused UI layouts for specific tasks (e.g., "Drug Discovery", "Electrophysiology").
-100. **Live Peer-Review Interface**: A specific mode for presenting simulations for approval or feedback.
+## IV. Temporal Controls & Simulation Steering (76-100)
+76. **Pause/Resume Master Button**: Large, accessible toggle to halt all molecular and electrophysiological activity.
+77. **Real-Time Scrubbing Slider**: Integrated timeline to move forward or backward through the simulation's history.
+78. **Variable Fast Forward (2x, 4x, 8x)**: High-speed modes to observe long-term plasticity and protein synthesis.
+79. **Frame-by-Frame Reverse**: Granular back-stepping to analyze exact moments of vesicle fusion or binding.
+80. **Slow-Motion Capture (0.25x, 0.5x)**: Reduced temporal resolution for detailed observation of millisecond events.
+81. **Bookmark Timeline Events**: Allow users to place "time markers" at key signaling peaks for instant return.
+82. **"Rewind to Start" Quick Action**: One-click reset of the temporal state without losing parameter configurations.
+83. **Instant Replay Tool**: Loop a specific 5-second window to observe stochastic variations in binding.
+84. **Sync Timeline with Graphs**: Visual indicator on graphs showing the exact temporal position of the 3D model.
+85. **Reverse Kinetic Simulation**: Algorithmic reversal of molecular vectors to backtrack diffusion patterns.
+86. **Steering "Drift" Correction**: UI indicator to manually adjust simulation temporal drift during long research runs.
+87. **Temporal Snapshot Manager**: Save the entire state at a specific timestamp as a restorable "save point".
+88. **Automatic "Pause on Spike"**: Configurable trigger to halt the simulation whenever a neuron fires.
+89. **Visual Time-Scale Bar**: Stylized HUD element showing current elapsed biological time vs. real-world time.
+90. **Playback Speed Hotkeys**: Keyboard shortcuts for instant speed changes during live research presentations.
+91. **Timeline Event Tooltips**: Hovering over the scrubbing slider shows a preview of the state at that time.
+92. **Dual-Timeline Comparison**: Run a "recorded" baseline and "live" experiment side-by-side with synced play/pause.
+93. **Temporal Jitter Control**: UI to manually increase or decrease the "time-step" (Δt) for precision vs performance.
+94. **Cinematic "Slow-Zoom" on Play**: Automatically zoom into active receptors when resuming from a pause.
+95. **Simulation Steering "Auto-Pilot"**: Preset temporal sequences for educational walkthroughs (e.g., "The Life of a Vesicle").
+96. **Temporal Data Buffer HUD**: Visual indicator of how much "history" is stored and available for scrubbing.
+97. **Looping Mode for Phasic Bursts**: Automatically loop a specific burst event for repetitive analysis.
+98. **Jump-to-Peak Button**: Instant navigation to the highest dopamine concentration recorded in the session.
+99. **Simulation Steering Remote**: Mobile-optimized UI to control play/pause/reverse from a secondary device.
+100. **Temporal Verification Checkmark**: Visual indicator that the current playback time is synced and accurate.
