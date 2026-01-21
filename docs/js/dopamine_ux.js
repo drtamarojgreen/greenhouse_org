@@ -34,7 +34,7 @@
                     console.log(G.uxState.isPaused ? "Simulation Paused" : "Simulation Resumed");
                     break;
                 case 'r':
-                    if (confirm("Reset to default?")) G.resetToDefault();
+                    G.resetToDefault();
                     break;
                 case 'm':
                     this.cycleModes();
