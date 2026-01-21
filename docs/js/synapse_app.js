@@ -51,6 +51,12 @@
             this.container = document.querySelector(targetSelector);
             if (!this.container) return;
 
+            // Initialize Extended Modules
+            if (window.GreenhouseSynapseControls) window.GreenhouseSynapseControls.init(config);
+            if (window.GreenhouseSynapseAnalytics) window.GreenhouseSynapseAnalytics.init();
+            if (window.GreenhouseSynapse3D) window.GreenhouseSynapse3D.init();
+            if (window.GreenhouseSynapseMolecular) window.GreenhouseSynapseMolecular.init();
+
             this.setupDOM();
             this.animate();
         },
@@ -150,12 +156,36 @@
             ctx.fillStyle = '#010501';
             ctx.fillRect(0, 0, w, h);
 
+            // Apply 3D depth (Proposal 2)
+            if (window.GreenhouseSynapse3D) {
+                window.GreenhouseSynapse3D.applyDepthEffect(ctx, w, h, this.frame);
+            }
+
             this.drawStructure(ctx, w, h);
+
+            // Molecular Enhancements (Proposals 7, 16, 33)
+            if (window.GreenhouseSynapseMolecular) {
+                window.GreenhouseSynapseMolecular.drawLipidBilayer(ctx, w, h);
+                window.GreenhouseSynapseMolecular.drawSNAREComplex(ctx, w, h, this.frame);
+                window.GreenhouseSynapseMolecular.drawScaffolding(ctx, w, h);
+            }
 
             // Particle System Module
             if (window.GreenhouseSynapseParticles) {
                 if (this.frame % 15 === 0) window.GreenhouseSynapseParticles.create(w, h, 1, config);
                 this.handleReceptorInteractions(w, h);
+
+                // Analytics Update (Proposals 12, 100)
+                if (window.GreenhouseSynapseAnalytics) {
+                    window.GreenhouseSynapseAnalytics.update(window.GreenhouseSynapseParticles.particles, config.elements.receptors);
+                }
+
+                // 3D Shadows (Proposal 8)
+                if (window.GreenhouseSynapse3D) {
+                    window.GreenhouseSynapse3D.drawShadows(ctx, config.elements.vesicles, w, h);
+                    window.GreenhouseSynapse3D.visualizeElectrostaticPotential(ctx, w, h, this.frame);
+                }
+
                 window.GreenhouseSynapseParticles.updateAndDraw(ctx, w, h);
             }
 
@@ -171,6 +201,11 @@
             const particles = window.GreenhouseSynapseParticles.particles;
             const chem = window.GreenhouseSynapseChemistry;
             const surfaceY = h * 0.68;
+
+            // Apply Controls (Proposal 50)
+            if (window.GreenhouseSynapseControls) {
+                window.GreenhouseSynapseControls.applyToSimulation(particles, config.elements.receptors);
+            }
 
             config.elements.receptors.forEach(receptor => {
                 const rx = w * receptor.x;
