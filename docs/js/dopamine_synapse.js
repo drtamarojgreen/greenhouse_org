@@ -182,7 +182,12 @@
         // 44. Competitive Inhibition at DAT (by Serotonin/Norepinephrine)
         const competitiveInhibition = state.mode === 'Competitive' ? 0.5 : 1.0;
 
-        const datEfficiency = sState.dat.activity * (sState.dat.na / 140) * (sState.dat.cl / 120) * datPhosphoInhibition * competitiveInhibition;
+        // Scenario-based effects
+        const cocaineEffect = state.scenarios.cocaine ? 0.1 : 1.0;
+        const amphetamineEffect = state.scenarios.amphetamine ? -0.5 : 1.0;
+        const adhdEffect = state.scenarios.adhd ? 1.5 : 1.0;
+
+        const datEfficiency = sState.dat.activity * (sState.dat.na / 140) * (sState.dat.cl / 120) * datPhosphoInhibition * competitiveInhibition * cocaineEffect * adhdEffect;
 
         for (let i = sState.cleftDA.length - 1; i >= 0; i--) {
             const da = sState.cleftDA[i];

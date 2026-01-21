@@ -27,15 +27,12 @@
         const pState = G.pharmacologyState;
         const sState = G.synapseState;
 
-        // Reset effects if no drug
-        if (state.mode === 'D1R Signaling' || state.mode === 'D2R Signaling') {
-            pState.datBlockade = 0;
-            if (sState) sState.dat.activity = 1.0;
-            pState.maoiActive = false;
-        }
+        // Reset effects base
+        pState.datBlockade = 0;
+        pState.maoiActive = false;
 
         // 95. MAO Inhibitors (Selegiline)
-        if (state.mode === 'MAOI') {
+        if (state.mode === 'MAOI' || state.scenarios.maoi) {
             pState.maoiActive = true;
             if (sState) sState.maoActivity = 0.05;
         }
@@ -50,13 +47,13 @@
         }
 
         // 93. Cocaine Simulation
-        if (state.mode === 'Cocaine') {
+        if (state.mode === 'Cocaine' || state.scenarios.cocaine) {
             pState.datBlockade = 0.95;
             if (sState) sState.dat.activity = 0.05;
         }
 
         // 94. Amphetamine Mechanism
-        if (state.mode === 'Amphetamine') {
+        if (state.mode === 'Amphetamine' || state.scenarios.amphetamine) {
             pState.datBlockade = 1.0;
             if (sState) {
                 sState.dat.activity = -0.5; // Reversal of DAT (efflux)
@@ -124,7 +121,8 @@
     };
 
     G.renderPharmacology = function (ctx, project) {
-        const cam = G.state.camera;
+        const state = G.state;
+        const cam = state.camera;
         const w = G.width;
         const h = G.height;
         const pState = G.pharmacologyState;
@@ -135,9 +133,9 @@
         ctx.textAlign = 'left';
         ctx.fillText(`DAT Blockade: ${(pState.datBlockade * 100).toFixed(0)}%`, 10, h - 260);
 
-        if (G.state.mode === 'Amphetamine') {
+        if (state.mode === 'Amphetamine' || state.scenarios.amphetamine) {
             ctx.fillText('Mechanism: DAT Efflux (Reversal)', 10, h - 280);
-        } else if (G.state.mode === 'Cocaine') {
+        } else if (state.mode === 'Cocaine' || state.scenarios.cocaine) {
             ctx.fillText('Mechanism: High-affinity Blockade', 10, h - 280);
         }
 

@@ -39,79 +39,192 @@
     G.createUI = function (container) {
         const controls = document.createElement('div');
         controls.className = 'dopamine-controls';
-        controls.style.flexWrap = 'wrap';
-        controls.style.maxWidth = '600px';
-        // 93. Screen Reader Support
+        controls.style.display = 'flex';
+        controls.style.gap = '10px';
+        controls.style.padding = '10px';
+        controls.style.backgroundColor = 'rgba(0,0,0,0.8)';
+        controls.style.borderRadius = '0 0 10px 10px';
+        controls.style.backdropFilter = 'blur(5px)';
         controls.setAttribute('role', 'group');
         controls.setAttribute('aria-label', 'Dopamine Simulation Controls');
 
-        const modes = [
-            'D1R Signaling', 'D2R Signaling', 'Heteromer',
-            'Parkinsonian', 'L-DOPA Pulse',
-            'Cocaine', 'Amphetamine', 'Phasic Burst',
-            'Schizophrenia', 'ADHD', 'Drug Combo',
-            'Alpha-Synuclein', 'Neuroinflammation', 'MAOI',
-            'Antipsychotic (Fast-off)', 'Antipsychotic (Slow-off)',
-            'Antipsychotic (Partial)', 'High Stress', 'PAM', 'Competitive'
-        ];
-        modes.forEach(mode => {
+        const createDropdown = (label, options) => {
+            const dropdown = document.createElement('div');
+            dropdown.className = 'dopamine-dropdown';
+            dropdown.style.position = 'relative';
+
             const btn = document.createElement('button');
             btn.className = 'dopamine-btn';
-            btn.innerText = mode;
-            btn.setAttribute('aria-pressed', 'false');
-            btn.onclick = () => {
-                console.log(`Switching to ${mode}`);
-                G.state.mode = mode;
-                G.state.signalingActive = true;
-
-                // Update ARIA pressed state
-                Array.from(controls.querySelectorAll('.dopamine-btn')).forEach(b => b.setAttribute('aria-pressed', 'false'));
-                btn.setAttribute('aria-pressed', 'true');
-
-                // Special handlers
-                if (mode === 'Parkinsonian') {
-                    if (G.synapseState) G.synapseState.pathologicalState = 'Parkinsonian';
-                } else if (mode === 'D1R Signaling' || mode === 'D2R Signaling') {
-                    if (G.synapseState) G.synapseState.pathologicalState = 'Healthy';
-                }
+            btn.innerText = label;
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const content = dropdown.querySelector('.dropdown-content');
+                const isOpen = content.style.display === 'block';
+                document.querySelectorAll('.dropdown-content').forEach(c => c.style.display = 'none');
+                content.style.display = isOpen ? 'none' : 'block';
             };
-            controls.appendChild(btn);
-        });
+            dropdown.appendChild(btn);
 
-        // 91. Drug Library Selector
-        const drugSelect = document.createElement('select');
-        drugSelect.className = 'dopamine-btn';
-        drugSelect.innerHTML = '<option value="">Select Drug (Library)</option>';
+            const content = document.createElement('div');
+            content.className = 'dropdown-content';
+            content.style.display = 'none';
+            content.style.position = 'absolute';
+            content.style.top = '100%';
+            content.style.left = '0';
+            content.style.backgroundColor = '#1a202c';
+            content.style.border = '1px solid #4a5568';
+            content.style.borderRadius = '4px';
+            content.style.zIndex = '100';
+            content.style.minWidth = '200px';
+            content.style.maxHeight = '400px';
+            content.style.overflowY = 'auto';
+            content.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
+
+            options.forEach(opt => {
+                const item = document.createElement('div');
+                item.style.padding = '8px 12px';
+                item.style.cursor = 'pointer';
+                item.style.color = '#fff';
+                item.style.display = 'flex';
+                item.style.alignItems = 'center';
+                item.style.gap = '10px';
+                item.style.borderBottom = '1px solid #2d3748';
+
+                if (opt.type === 'checkbox') {
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.checked = opt.checked();
+                    cb.onchange = (e) => opt.action(e.target.checked);
+                    item.appendChild(cb);
+                    const lbl = document.createElement('span');
+                    lbl.innerText = opt.label;
+                    item.appendChild(lbl);
+                    item.onclick = (e) => {
+                        if (e.target !== cb) {
+                            cb.checked = !cb.checked;
+                            opt.action(cb.checked);
+                        }
+                    };
+                } else {
+                    item.innerText = opt.label;
+                    item.onclick = () => {
+                        opt.action();
+                        content.style.display = 'none';
+                    };
+                }
+
+                item.onmouseover = () => item.style.backgroundColor = '#2d3748';
+                item.onmouseout = () => item.style.backgroundColor = 'transparent';
+                content.appendChild(item);
+            });
+
+            dropdown.appendChild(content);
+            return dropdown;
+        };
+
+        // Groups
+        const signalingOptions = [
+            { label: 'D1R Signaling', action: () => setMode('D1R Signaling') },
+            { label: 'D2R Signaling', action: () => setMode('D2R Signaling') },
+            { label: 'Heteromer', action: () => setMode('Heteromer') },
+            { label: 'Phasic Burst', action: () => setMode('Phasic Burst') },
+            { label: 'Tonic Release', action: () => setMode('Tonic Release') }
+        ];
+
+        const scenarioOptions = [
+            { type: 'checkbox', label: 'Cocaine', checked: () => G.state.scenarios.cocaine, action: (val) => G.state.scenarios.cocaine = val },
+            { type: 'checkbox', label: 'Amphetamine', checked: () => G.state.scenarios.amphetamine, action: (val) => G.state.scenarios.amphetamine = val },
+            { type: 'checkbox', label: 'ADHD', checked: () => G.state.scenarios.adhd, action: (val) => G.state.scenarios.adhd = val },
+            { type: 'checkbox', label: 'Parkinsonian', checked: () => G.state.scenarios.parkinsonian, action: (val) => { G.state.scenarios.parkinsonian = val; if (G.synapseState) G.synapseState.pathologicalState = val ? 'Parkinsonian' : 'Healthy'; } },
+            { type: 'checkbox', label: 'Schizophrenia', checked: () => G.state.scenarios.schizophrenia, action: (val) => G.state.scenarios.schizophrenia = val },
+            { type: 'checkbox', label: 'Alpha-Synuclein', checked: () => G.state.scenarios.alphaSynuclein, action: (val) => G.state.scenarios.alphaSynuclein = val },
+            { type: 'checkbox', label: 'Neuroinflammation', checked: () => G.state.scenarios.neuroinflammation, action: (val) => G.state.scenarios.neuroinflammation = val },
+            { type: 'checkbox', label: 'High Stress', checked: () => G.state.scenarios.highStress, action: (val) => G.state.scenarios.highStress = val },
+            { type: 'checkbox', label: 'D1-D2 Heteromer', checked: () => G.state.scenarios.heteromer, action: (val) => G.state.scenarios.heteromer = val }
+        ];
+
+        const pharmacologyOptions = [
+            { type: 'checkbox', label: 'MAOI Inhibitor', checked: () => G.state.scenarios.maoi, action: (val) => G.state.scenarios.maoi = val },
+            { label: 'MAOI (Mode Only)', action: () => setMode('MAOI') },
+            { label: 'Antipsychotic (Fast-off)', action: () => setMode('Antipsychotic (Fast-off)') },
+            { label: 'Antipsychotic (Slow-off)', action: () => setMode('Antipsychotic (Slow-off)') },
+            { label: 'Antipsychotic (Partial)', action: () => setMode('Antipsychotic (Partial)') },
+            { label: 'PAM', action: () => setMode('PAM') },
+            { label: 'Competitive', action: () => setMode('Competitive') }
+        ];
+
+        // Drug Library for Pharmacology dropdown
         if (G.molecularState && G.molecularState.drugLibrary) {
             const lib = G.molecularState.drugLibrary;
             const allDrugs = [...lib.d1Agonists, ...lib.d1Antagonists, ...lib.d2Agonists, ...lib.d2Antagonists, ...lib.pams];
             allDrugs.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d;
-                opt.innerText = d;
-                drugSelect.appendChild(opt);
+                pharmacologyOptions.push({ label: `Drug: ${d}`, action: () => selectDrug(d) });
             });
         }
-        drugSelect.onchange = (e) => {
-            const drug = e.target.value;
-            if (G.pharmacologyState) {
+
+        const settingsOptions = [
+            { label: 'Language: English', action: () => setLanguage('en') },
+            { label: 'Language: Español', action: () => setLanguage('es') },
+            { type: 'checkbox', label: 'High Contrast', checked: () => G.uxState.highContrast, action: (val) => toggleHighContrast(val) },
+            { type: 'checkbox', label: 'Large Scale UI', checked: () => G.uxState.largeScale, action: (val) => toggleLargeScale(val) },
+            { type: 'checkbox', label: 'Reduced Motion', checked: () => G.uxState.reducedMotion, action: (val) => G.uxState.reducedMotion = val },
+            { type: 'checkbox', label: 'Show Performance', checked: () => G.uxState.showPerf, action: (val) => G.uxState.showPerf = val },
+            { label: 'Palette: Default', action: () => applyPalette('default') },
+            { label: 'Palette: Deuteranopia', action: () => applyPalette('deuteranopia') },
+            { label: 'Palette: Protanopia', action: () => applyPalette('protanopia') },
+            { label: 'Palette: Tritanopia', action: () => applyPalette('tritanopia') }
+        ];
+
+        const setMode = (mode) => {
+            console.log(`Switching to ${mode}`);
+            G.state.mode = mode;
+            G.state.signalingActive = true;
+        };
+
+        const selectDrug = (drug) => {
+             if (G.pharmacologyState) {
                 G.pharmacologyState.selectedDrug = { name: drug };
                 console.log(`Selected drug: ${drug}`);
-                // Implement kinetics based on drug name
-                if (drug === 'Haloperidol') {
-                    G.pharmacologyState.antipsychoticType = 'Slow-off';
-                    G.pharmacologyState.antipsychoticOffRate = 0.05;
-                } else if (drug === 'Clozapine' || drug === 'Risperidone') {
-                    G.pharmacologyState.antipsychoticType = 'Fast-off';
-                    G.pharmacologyState.antipsychoticOffRate = 0.5;
-                } else if (drug === 'Aripiprazole (Partial)') {
-                    G.state.mode = 'Antipsychotic (Partial)';
-                }
             }
         };
-        controls.appendChild(drugSelect);
 
-        // 100. Reset to Default Safety
+        const applyPalette = (p) => {
+            G.uxState.palette = p;
+            G.applyPalette(p);
+        };
+
+        const setLanguage = (l) => {
+            G.uxState.language = l;
+            G.updateLanguage();
+        };
+
+        const toggleHighContrast = (val) => {
+            G.uxState.highContrast = val;
+            if (val) {
+                document.body.style.filter = 'contrast(1.5) brightness(1.2)';
+            } else {
+                document.body.style.filter = 'none';
+            }
+        };
+
+        const toggleLargeScale = (val) => {
+            G.uxState.largeScale = val;
+            const root = document.documentElement;
+            if (val) {
+                root.style.fontSize = '20px';
+                container.style.transform = 'scale(1.1)';
+                container.style.transformOrigin = 'top left';
+            } else {
+                root.style.fontSize = '16px';
+                container.style.transform = 'none';
+            }
+        };
+
+        controls.appendChild(createDropdown('Signaling', signalingOptions));
+        controls.appendChild(createDropdown('Scenarios', scenarioOptions));
+        controls.appendChild(createDropdown('Pharmacology', pharmacologyOptions));
+        controls.appendChild(createDropdown('Settings', settingsOptions));
+
         const resetBtn = document.createElement('button');
         resetBtn.className = 'dopamine-btn';
         resetBtn.innerText = 'Reset (R)';
@@ -119,43 +232,12 @@
         resetBtn.onclick = () => G.resetToDefault();
         controls.appendChild(resetBtn);
 
-        // 92. Color-Blind Accessible Palettes
-        const paletteSelect = document.createElement('select');
-        paletteSelect.className = 'dopamine-btn';
-        paletteSelect.innerHTML = `
-            <option value="default">Default Palette</option>
-            <option value="deuteranopia">Deuteranopia</option>
-            <option value="protanopia">Protanopia</option>
-            <option value="tritanopia">Tritanopia</option>
-        `;
-        paletteSelect.onchange = (e) => {
-            G.uxState.palette = e.target.value;
-            this.applyPalette(e.target.value);
-        };
-        controls.appendChild(paletteSelect);
-
-        // 91. Multi-Language Support
-        const langBtn = document.createElement('button');
-        langBtn.className = 'dopamine-btn';
-        langBtn.innerText = 'Language (EN)';
-        langBtn.onclick = () => {
-            G.uxState.language = G.uxState.language === 'en' ? 'es' : 'en';
-            langBtn.innerText = `Language (${G.uxState.language.toUpperCase()})`;
-            this.updateLanguage();
-        };
-        controls.appendChild(langBtn);
-
-        // 96. In-App Feedback Tool
-        const feedbackBtn = document.createElement('button');
-        feedbackBtn.className = 'dopamine-btn';
-        feedbackBtn.innerText = 'Feedback';
-        feedbackBtn.onclick = () => {
-            const msg = prompt("Enter your feedback or bug report:");
-            if (msg) console.log("User Feedback:", msg);
-        };
-        controls.appendChild(feedbackBtn);
-
         container.appendChild(controls);
+
+        // Global click listener to close dropdowns
+        window.addEventListener('click', () => {
+            document.querySelectorAll('.dropdown-content').forEach(c => c.style.display = 'none');
+        });
 
         const info = document.createElement('div');
         info.className = 'dopamine-info';

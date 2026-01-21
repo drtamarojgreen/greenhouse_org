@@ -220,7 +220,7 @@
         const pamFactor = state.mode === 'PAM' ? 1.5 : 1.0;
 
         // 1. D1-D2 Heteromerization & 5. Gq Pathway
-        if (state.mode === 'Heteromer' && state.signalingActive) {
+        if ((state.mode === 'Heteromer' || state.scenarios.heteromer) && state.signalingActive) {
             mState.heteromers.d1d2 = Math.min(1, mState.heteromers.d1d2 + 0.01 * pamFactor);
             mState.plcPathway.ip3 = Math.min(1, mState.plcPathway.ip3 + 0.02 * pamFactor);
             mState.plcPathway.dag = Math.min(1, mState.plcPathway.dag + 0.02);

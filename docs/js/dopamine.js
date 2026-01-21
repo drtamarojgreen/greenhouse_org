@@ -13,6 +13,18 @@
         particles: [],
         signalingActive: false,
         mode: 'D1R',
+        scenarios: {
+            cocaine: false,
+            amphetamine: false,
+            adhd: false,
+            parkinsonian: false,
+            schizophrenia: false,
+            highStress: false,
+            neuroinflammation: false,
+            alphaSynuclein: false,
+            heteromer: false,
+            maoi: false
+        },
         atpConsumed: 0,
         timer: 0
     };
