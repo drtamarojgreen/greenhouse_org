@@ -30,6 +30,7 @@
                 name: 'Aesthetics',
                 options: [
                     { name: 'Cinematic FX', toggle: () => { G.cinematicFX = !G.cinematicFX; } },
+                    { name: 'Cinematic Fly-In', toggle: () => { G.cinematicFlyIn = !G.cinematicFlyIn; } },
                     { name: 'PBR Materials', toggle: () => { G.pbrEnabled = !G.pbrEnabled; } },
                     { name: 'Dynamic Lighting', toggle: () => { G.dynamicLighting = !G.dynamicLighting; } }
                 ]

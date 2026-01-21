@@ -116,6 +116,23 @@
         },
 
         renderReceptors(ctx, project, cam, w, h) {
+            // Molecular Composition visualization (Category II, #30)
+            const drawMolecularComposition = (r, p) => {
+                if (cam.zoom > 2.0) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    for (let n = 0; n < 15; n++) {
+                        const residueX = p.x + Math.sin(n + G.state.timer * 0.05) * 20 * p.scale;
+                        const residueY = p.y + (n - 7) * 8 * p.scale;
+                        ctx.beginPath();
+                        ctx.arc(residueX, residueY, 3 * p.scale, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `${8 * p.scale}px Arial`;
+                    ctx.fillText('Amino Acid Residues', p.x, p.y + 110 * p.scale);
+                }
+            };
+
             // Subtype-Specific Glyphs (Accessibility #12)
             const drawGlyph = (type, x, y, size) => {
                 ctx.beginPath();
@@ -228,6 +245,9 @@
                         ctx.font = `${8 * p.scale}px Arial`;
                         ctx.fillText(`PDB: ${r.pdb}`, p.x, p.y - 70 * p.scale);
                     }
+
+                    // Draw Molecular Composition detail
+                    drawMolecularComposition(r, p);
 
                     // Label
                     ctx.fillStyle = '#fff';

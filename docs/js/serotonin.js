@@ -41,9 +41,12 @@
         playbackSpeed: 1,
         fps: 0,
         lastTime: 0,
+        flyInTargetIndex: 0,
+        flyInTimer: 0,
 
         state: {
             camera: { x: 0, y: 0, z: -500, rotationX: 0.5, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
+            cinematicCamera: { x: 0, y: 0, z: -500, rotationX: 0.5, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
             receptorModel: null,
             ligands: [],
             lipids: [],
@@ -166,6 +169,31 @@
         update() {
             if (this.paused) return;
 
+            // Cinematic Fly-In Logic (#29, #90)
+            if (this.cinematicFlyIn && this.state.receptors) {
+                this.flyInTimer++;
+                if (this.flyInTimer > 300) {
+                    this.flyInTimer = 0;
+                    this.flyInTargetIndex = (this.flyInTargetIndex + 1) % this.state.receptors.length;
+                }
+
+                const target = this.state.receptors[this.flyInTargetIndex];
+                const tCam = this.state.cinematicCamera;
+
+                // Interpolate camera to target receptor
+                tCam.x += (target.x - tCam.x) * 0.02;
+                tCam.y += (target.y - tCam.y) * 0.02;
+                tCam.z += ((target.z - 150) - tCam.z) * 0.02;
+                tCam.rotationY += (0 - tCam.rotationY) * 0.02;
+                tCam.rotationX += (0.2 - tCam.rotationX) * 0.02;
+                tCam.zoom = 2.5;
+            } else {
+                this.state.cinematicCamera.x = 0;
+                this.state.cinematicCamera.y = 0;
+                this.state.cinematicCamera.z = -500;
+                this.state.cinematicCamera.zoom = 1.0;
+            }
+
             // Performance Gauge (Feedback #50)
             const now = performance.now();
             if (this.lastTime) {
@@ -193,7 +221,7 @@
             const ctx = this.ctx;
             let w = this.width;
             let h = this.height;
-            const cam = this.state.camera;
+            const cam = this.cinematicFlyIn ? this.state.cinematicCamera : this.state.camera;
 
             // Serotonin Syndrome Warning visual distortion (#60)
             let offsetX = 0, offsetY = 0;
