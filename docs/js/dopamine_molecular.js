@@ -28,11 +28,29 @@
         plcPathway: { ip3: 0, dag: 0, pkc: 0, ip3Particles: [] }, // 5. Gq Pathway, 18. IP3, 19. DAG
         erkPathway: 0, // 16. ERK/MAPK Cascade
         drugLibrary: {
-            d1Agonists: ['SKF-38393', 'Fenoldopam'],
-            d1Antagonists: ['SCH-23390', 'Ecopipam'],
-            d2Agonists: ['Quinpirole', 'Bromocriptine', 'Pramipexole'],
-            d2Antagonists: ['Haloperidol', 'Risperidone', 'Clozapine'],
-            pams: ['LY-3154207', 'DETQ'] // 98. Allosteric Modulators
+            d1Agonists: [
+                { name: 'SKF-38393', ki: 1.0, efficacy: 0.8 },
+                { name: 'Fenoldopam', ki: 2.3, efficacy: 1.0 },
+                { name: 'A-77636', ki: 1.1, efficacy: 1.0 }
+            ],
+            d1Antagonists: [
+                { name: 'SCH-23390', ki: 0.2, efficacy: 0 },
+                { name: 'Ecopipam', ki: 0.1, efficacy: 0 }
+            ],
+            d2Agonists: [
+                { name: 'Quinpirole', ki: 4.8, efficacy: 0.9 },
+                { name: 'Bromocriptine', ki: 2.5, efficacy: 0.8 },
+                { name: 'Pramipexole', ki: 2.2, efficacy: 1.0 }
+            ],
+            d2Antagonists: [
+                { name: 'Haloperidol', ki: 0.5, efficacy: 0 },
+                { name: 'Risperidone', ki: 3.0, efficacy: 0 },
+                { name: 'Clozapine', ki: 125, efficacy: 0 }
+            ],
+            pams: [
+                { name: 'LY-3154207', ki: 10, efficacy: 1.5 },
+                { name: 'DETQ', ki: 15, efficacy: 1.2 }
+            ] // 98. Allosteric Modulators
         }
     };
 
@@ -40,7 +58,11 @@
         const state = G.state;
         const mState = G.molecularState;
 
-        // 2. G-Protein Cycle & 3. GTP/GDP Exchange
+        // 2. G-Protein Cycle & 3. GTP/GDP Exchange Rates
+        // Constants (simplified but based on ~0.1 - 1.0 s^-1 rates)
+        const kGtpBinding = 0.5;
+        const kGdpRelease = 0.1;
+
         if (state.signalingActive) {
             if (mState.gProteins.length < 30) {
                 const type = state.mode.includes('D1') ? 'Gs' : (state.mode === 'Heteromer' ? 'Gq' : 'Gi');
@@ -48,10 +70,13 @@
                 const z = (Math.random() - 0.5) * 100;
 
                 // 2. Visualize dissociation of Gα from Gβγ subunits
+                // 3. GTP binding state
                 mState.gProteins.push({
                     x: x, y: 0, z: z,
                     type: type,
                     subunit: 'alpha',
+                    gtpBound: false,
+                    exchangeTimer: 0,
                     life: 100 + Math.random() * 50,
                     vx: (Math.random() - 0.5) * 2,
                     vy: 0.8
@@ -96,9 +121,23 @@
 
         for (let i = mState.gProteins.length - 1; i >= 0; i--) {
             const gp = mState.gProteins[i];
-            // 6. RGS proteins accelerate termination (accelerate GTP hydrolysis)
-            const rgsFactor = mState.rgsProteins.active ? mState.rgsProteins.factor : 1.0;
-            gp.life -= 1 * rgsFactor;
+
+            if (gp.subunit === 'alpha') {
+                // 3. GTP/GDP Exchange logic
+                if (!gp.gtpBound) {
+                    gp.exchangeTimer += kGdpRelease; // Simulate GDP release
+                    if (gp.exchangeTimer >= 1.0) {
+                        gp.gtpBound = true;
+                        gp.exchangeTimer = 0;
+                    }
+                } else {
+                    // 6. RGS proteins accelerate termination (accelerate GTP hydrolysis)
+                    const rgsFactor = mState.rgsProteins.active ? mState.rgsProteins.factor : 1.0;
+                    gp.life -= 1 * rgsFactor;
+                }
+            } else {
+                gp.life -= 1.0;
+            }
 
             // Subunits move independently
             gp.x += gp.vx || 0;
@@ -379,15 +418,22 @@
         mState.gProteins.forEach(gp => {
             const p = project(gp.x, gp.y, gp.z, cam, { width: w, height: h, near: 10, far: 5000 });
             if (p.scale > 0) {
-                if (gp.type === 'Gs') ctx.fillStyle = gp.subunit === 'alpha' ? '#ff9999' : '#ffcccc';
-                else if (gp.type === 'Gq') ctx.fillStyle = gp.subunit === 'alpha' ? '#99ff99' : '#ccffcc';
-                else ctx.fillStyle = gp.subunit === 'alpha' ? '#9999ff' : '#ccccff';
+                if (gp.type === 'Gs') ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#ff0000' : '#ff9999') : '#ffcccc';
+                else if (gp.type === 'Gq') ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#00ff00' : '#99ff99') : '#ccffcc';
+                else ctx.fillStyle = gp.subunit === 'alpha' ? (gp.gtpBound ? '#0000ff' : '#9999ff') : '#ccccff';
 
                 ctx.globalAlpha = Math.min(1, gp.life / 100);
                 const size = gp.subunit === 'alpha' ? 4 : 3;
                 ctx.beginPath();
                 if (gp.subunit === 'alpha') {
                     ctx.arc(p.x, p.y, size * p.scale, 0, Math.PI * 2);
+                    // 3. GDP/GTP Visual indicator (Glow if bound)
+                    if (gp.gtpBound) {
+                        ctx.shadowBlur = 5 * p.scale;
+                        ctx.shadowColor = ctx.fillStyle;
+                    }
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
                 } else {
                     // Render Gβγ as a small ellipse or distinct shape
                     ctx.ellipse(p.x, p.y, size * p.scale, (size / 1.5) * p.scale, 0, 0, Math.PI * 2);
