@@ -274,9 +274,16 @@
 
     function captureAttributes() {
         if (window._greenhouseScriptAttributes) return { targetSelector: window._greenhouseScriptAttributes['target-selector-left'], baseUrl: window._greenhouseScriptAttributes['base-url'] };
-        const script = document.currentScript;
-        if (script) return { targetSelector: script.getAttribute('data-target-selector-left'), baseUrl: script.getAttribute('data-base-url') };
-        return { targetSelector: null, baseUrl: null };
+        const script = document.querySelector('script[src*="dopamine.js"]');
+        let baseUrl = script ? script.getAttribute('data-base-url') : null;
+        if (baseUrl === null) {
+            // Fallback for when data-base-url is missing
+            baseUrl = 'js/';
+        }
+        return {
+            targetSelector: script ? script.getAttribute('data-target-selector-left') : '#dopamine-app-container',
+            baseUrl: baseUrl
+        };
     }
 
     async function main() {
@@ -284,10 +291,7 @@
             const attributes = captureAttributes();
             const { targetSelector, baseUrl } = attributes;
 
-            if (!baseUrl) {
-                console.error('Dopamine App: Missing baseUrl, aborting initialization.');
-                return;
-            }
+            console.log('Dopamine App Initializing with:', attributes);
 
             await loadDependencies();
 

@@ -141,6 +141,10 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; grid-column: span 2;">
+                    <h3>Real-Time Time-Series Analytics</h3>
+                    <canvas id="scientific-time-series" width="800" height="150" style="width: 100%; border: 1px solid #4fd1c5;"></canvas>
+                </div>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">
                     <h3>Live Bio-Metrics</h3>
                     <p>Membrane Potential: ${G.electroState ? G.electroState.membranePotential.toFixed(2) : -80} mV</p>
@@ -170,7 +174,48 @@
         `;
 
         modal.style.display = 'block';
+
+        // Start live chart update
+        if (G._sciChartInterval) clearInterval(G._sciChartInterval);
+        G._sciChartInterval = setInterval(() => {
+            const canvas = document.getElementById('scientific-time-series');
+            if (!canvas) {
+                clearInterval(G._sciChartInterval);
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            const data = G.analyticsState ? G.analyticsState.history : null;
+            if (!data) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw cAMP (Yellow)
+            drawSeries(ctx, data.camp, '#ffff00', 'cAMP', 0);
+            // Draw DA (Green)
+            drawSeries(ctx, data.da, '#00ff00', 'DA Conc', 40);
+            // Draw Potential (Cyan)
+            drawSeries(ctx, data.potential, '#00ffff', 'Potential', 80, -90, 40);
+        }, 100);
     };
+
+    function drawSeries(ctx, series, color, label, yOffset, minVal = 0, maxVal = 50) {
+        if (!series || series.length < 2) return;
+        const w = ctx.canvas.width;
+        const h = 40;
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        series.forEach((v, i) => {
+            const x = (i / 200) * w;
+            const norm = (v - minVal) / (maxVal - minVal);
+            const y = yOffset + h - (norm * h);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.font = '10px Arial';
+        ctx.fillText(label, 5, yOffset + 10);
+    }
 
     G.getSimulationStats = function() {
         // Collect real-time data for the dashboard
