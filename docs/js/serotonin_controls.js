@@ -21,6 +21,7 @@
                     { name: 'Large-Scale UI', toggle: () => { G.largeUI = !G.largeUI; this.updateUIScale(); } },
                     { name: 'Reduced Motion', toggle: () => { G.reducedMotion = !G.reducedMotion; } },
                     { name: 'Subtype Glyphs', toggle: () => { G.showGlyphs = !G.showGlyphs; } },
+                    { name: 'Stereoscopic Mode (VR)', toggle: () => { G.vrMode = !G.vrMode; } },
                     { name: 'Deuteranopia', toggle: () => { this.toggleColorBlind('deuteranopia'); } },
                     { name: 'Protanopia', toggle: () => { this.toggleColorBlind('protanopia'); } },
                     { name: 'Tritanopia', toggle: () => { this.toggleColorBlind('tritanopia'); } }
@@ -277,45 +278,65 @@
 
         // Subcellular Markers (Category 10, #93)
         G.renderSubcellularMarkers = (ctx, project, cam, w, h) => {
+            if (G.viewMode === '2D-Closeup') return;
+
             // Cytoskeleton visualization (Category 10, #93)
             // Modulated by RhoA activity (Category 3, #26)
-            const rhoEffect = G.Signaling ? G.Signaling.rhoA * 0.1 : 0;
-            ctx.strokeStyle = `rgba(255, 255, 255, ${0.05 + rhoEffect})`;
-            ctx.lineWidth = 1 + rhoEffect * 5;
-            for (let i = -300; i <= 300; i += 100) {
-                const start = project(-300, i, 0, cam, { width: w, height: h, near: 10, far: 5000 });
-                const end = project(300, i, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+            const rhoEffect = G.Signaling ? G.Signaling.rhoA * 0.2 : 0;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 + rhoEffect})`;
+            ctx.lineWidth = 1 + rhoEffect * 8;
+            for (let i = -400; i <= 400; i += 80) {
+                const start = project(-400, i, -100, cam, { width: w, height: h, near: 10, far: 5000 });
+                const end = project(400, i, -100, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (start.scale > 0 && end.scale > 0) {
                     ctx.beginPath();
                     ctx.moveTo(start.x, start.y);
                     ctx.lineTo(end.x, end.y);
                     ctx.stroke();
                 }
+                const vStart = project(i, -400, -100, cam, { width: w, height: h, near: 10, far: 5000 });
+                const vEnd = project(i, 400, -100, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (vStart.scale > 0 && vEnd.scale > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(vStart.x, vStart.y);
+                    ctx.lineTo(vEnd.x, vEnd.y);
+                    ctx.stroke();
+                }
             }
 
-            // Golgi Apparatus
-            const golgiPos = project(-200, -250, -100, cam, { width: w, height: h, near: 10, far: 5000 });
+            // Golgi Apparatus - 3D Structural Representation
+            const golgiPos = project(-250, -300, -150, cam, { width: w, height: h, near: 10, far: 5000 });
             if (golgiPos.scale > 0) {
-                ctx.strokeStyle = 'rgba(255, 100, 255, 0.4)';
-                ctx.lineWidth = 5 * golgiPos.scale;
-                ctx.beginPath();
-                ctx.moveTo(golgiPos.x - 20 * golgiPos.scale, golgiPos.y);
-                ctx.bezierCurveTo(golgiPos.x, golgiPos.y - 20 * golgiPos.scale, golgiPos.x, golgiPos.y + 20 * golgiPos.scale, golgiPos.x + 20 * golgiPos.scale, golgiPos.y);
-                ctx.stroke();
+                ctx.strokeStyle = 'rgba(255, 150, 255, 0.5)';
+                ctx.lineWidth = 8 * golgiPos.scale;
+                for (let k = 0; k < 4; k++) {
+                    ctx.beginPath();
+                    ctx.moveTo(golgiPos.x - 40 * golgiPos.scale, golgiPos.y + k * 10 * golgiPos.scale);
+                    ctx.bezierCurveTo(
+                        golgiPos.x - 20 * golgiPos.scale, golgiPos.y + k * 10 * golgiPos.scale - 20 * golgiPos.scale,
+                        golgiPos.x + 20 * golgiPos.scale, golgiPos.y + k * 10 * golgiPos.scale + 20 * golgiPos.scale,
+                        golgiPos.x + 40 * golgiPos.scale, golgiPos.y + k * 10 * golgiPos.scale
+                    );
+                    ctx.stroke();
+                }
                 ctx.fillStyle = '#fff';
-                ctx.font = '9px Arial';
-                ctx.fillText('Golgi', golgiPos.x, golgiPos.y - 15 * golgiPos.scale);
+                ctx.font = `bold ${10 * golgiPos.scale}px Arial`;
+                ctx.fillText('GOLGI COMPLEX', golgiPos.x, golgiPos.y - 30 * golgiPos.scale);
             }
 
-            // Endoplasmic Reticulum (ER)
-            const erPos = project(-250, -150, 50, cam, { width: w, height: h, near: 10, far: 5000 });
+            // Endoplasmic Reticulum (ER) - Tubular Network
+            const erPos = project(-300, 100, 200, cam, { width: w, height: h, near: 10, far: 5000 });
             if (erPos.scale > 0) {
-                ctx.fillStyle = 'rgba(100, 100, 255, 0.2)';
-                ctx.beginPath();
-                ctx.arc(erPos.x, erPos.y, 30 * erPos.scale, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.fillStyle = 'rgba(100, 150, 255, 0.3)';
+                for (let k = 0; k < 5; k++) {
+                    const ang = k * (Math.PI * 0.4);
+                    ctx.beginPath();
+                    ctx.arc(erPos.x + Math.cos(ang) * 40 * erPos.scale, erPos.y + Math.sin(ang) * 20 * erPos.scale, 25 * erPos.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
                 ctx.fillStyle = '#fff';
-                ctx.fillText('ER', erPos.x, erPos.y);
+                ctx.font = `bold ${10 * erPos.scale}px Arial`;
+                ctx.fillText('ROUGH ER', erPos.x, erPos.y);
             }
         };
     };

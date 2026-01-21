@@ -216,7 +216,29 @@
         animate() {
             if (!this.isRunning) return;
             this.update();
-            this.render();
+
+            if (this.vrMode) {
+                // Stereoscopic Side-by-Side Mode (Category 10, #98)
+                const fullW = this.width;
+                // Left eye
+                this.ctx.save();
+                this.ctx.beginPath();
+                this.ctx.rect(0, 0, fullW / 2, this.height);
+                this.ctx.clip();
+                this.render(0, 0, fullW / 2, this.height, -20);
+                this.ctx.restore();
+
+                // Right eye
+                this.ctx.save();
+                this.ctx.beginPath();
+                this.ctx.rect(fullW / 2, 0, fullW / 2, this.height);
+                this.ctx.clip();
+                this.render(fullW / 2, 0, fullW / 2, this.height, 20);
+                this.ctx.restore();
+            } else {
+                this.render(0, 0, this.width, this.height, 0);
+            }
+
             requestAnimationFrame(() => this.animate());
         },
 
@@ -392,7 +414,7 @@
             ctx.restore();
         },
 
-        render() {
+        render(vx = 0, vy = 0, vw = this.width, vh = this.height, eyeOffset = 0) {
             const ctx = this.ctx;
             let w = this.width;
             let h = this.height;
@@ -402,7 +424,8 @@
                 return;
             }
 
-            const cam = this.state.camera;
+            // Create temporary camera for eye offset if needed
+            const cam = eyeOffset ? { ...this.state.camera, x: this.state.camera.x + eyeOffset } : this.state.camera;
 
             // Serotonin Syndrome Warning visual distortion (#60)
             let offsetX = 0, offsetY = 0;
@@ -537,6 +560,17 @@
     async function main() {
         console.log('Serotonin App: main() started.');
         try {
+            // Internal API for Remote Control (#89)
+            window.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'SET_SIM_PARAM') {
+                    const { param, value } = event.data;
+                    if (G.hasOwnProperty(param)) {
+                        G[param] = value;
+                        console.log(`Remote Control: Set ${param} to ${value}`);
+                    }
+                }
+            });
+
             await loadDependencies();
 
             // Capture attributes after dependencies are loaded to ensure GreenhouseUtils is available as a fallback

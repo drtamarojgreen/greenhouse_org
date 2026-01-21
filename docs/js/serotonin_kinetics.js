@@ -48,6 +48,10 @@
                 this.spawnLigand('Serotonin');
             }
 
+            // Localized Volume Transmission Cloud logic (#42)
+            const extracellular5HT = this.activeLigands.filter(l => l.name === 'Serotonin' && !l.boundTo).length;
+            this.cloudOpacity = Math.min(0.4, (extracellular5HT / 30));
+
             this.activeLigands.forEach(l => {
                 if (l.boundTo) {
                     l.bindingTimer--;
@@ -117,12 +121,23 @@
         },
 
         renderKinetics(ctx, project, cam, w, h) {
+            if (G.viewMode === '2D-Closeup') return;
+
+            // Volume Transmission Cloud Visualization (#42)
+            if (this.cloudOpacity > 0.05) {
+                const grad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+                grad.addColorStop(0, `rgba(0, 255, 200, ${this.cloudOpacity})`);
+                grad.addColorStop(1, 'rgba(0, 255, 200, 0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+            }
+
             // Visual Ligand Docking sequence (Category 7, #70)
             if (this.dockingMode) {
                 ctx.fillStyle = 'rgba(0, 255, 200, 0.2)';
-                ctx.fillRect(w/2 - 50, h/2 - 50, 100, 100);
+                ctx.fillRect(w / 2 - 50, h / 2 - 50, 100, 100);
                 ctx.fillStyle = '#fff';
-                ctx.fillText('DOCKING SCAN...', w/2, h/2 - 60);
+                ctx.fillText('DOCKING SCAN...', w / 2, h / 2 - 60);
             }
 
             this.activeLigands.forEach(l => {
