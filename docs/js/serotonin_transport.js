@@ -36,10 +36,12 @@
         updateTransport() {
             const current5HT = G.Kinetics ? G.Kinetics.activeLigands.filter(l => l.name === 'Serotonin').length : 0;
 
-            // TPH2 Activation by CaMKII/PKA
-            // High Calcium or cAMP increases TPH activity
-            const signalingBoost = G.Signaling ? (G.Signaling.calcium * 0.05 + G.Signaling.cAMP * 0.02) : 0;
+            // TPH2 Activation by CaMKII/PKA (Category 4, #32)
+            // High Calcium or cAMP increases TPH activity via phosphorylation
+            const signalingBoost = G.Signaling ? (G.Signaling.calcium * 0.08 + G.Signaling.cAMP * 0.04) : 0;
             const effectiveTPHActivity = this.tphActivity * (1.0 + signalingBoost);
+
+            this.tphPhosphorylated = signalingBoost > 0.2;
 
             // TPH Synthesis (Category 4, #31)
             // Step 1: Tryptophan -> 5-HTP (rate limiting)

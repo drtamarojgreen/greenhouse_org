@@ -26,6 +26,7 @@
         eiBalance: 1.0, // Excitatory/Inhibitory Balance
         srcKinase: 0, // Src kinase recruitment
         gabaControl: 1.0, // GABAergic interneuron control factor
+        synapticStrength: 1.0, // CREB-mediated (Category 3, #29)
         membranePotential: -70, // mV
         pulses: [],
 
@@ -87,16 +88,21 @@
             // CREB Transcription factor (Category 3, #29)
             this.creb += (this.cAMP * 0.1 + this.calcium * 0.1 + this.akt * 0.05) - (this.creb * 0.01);
 
+            // Synaptic Scaling / Long-term changes (Category 5, #48)
+            // Modulated by CREB activity
+            this.synapticStrength = 1.0 + (this.creb * 0.05);
+
             // Src Kinase Recruitment (Category 3, #27)
-            // Recruited by Beta-arrestins downstream of 5-HT2A (simulated by pathway bias)
-            const ht2aRef = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A' && r.state === 'Active') : null;
-            if (ht2aRef) {
-                // If biased ligand is NOT active, beta-arrestin signaling is higher (Src recruitment)
-                const arrestinDrive = ht2aRef.biasedLigand ? 0.2 : 0.8;
-                this.srcKinase += (arrestinDrive * 0.3) - (this.srcKinase * 0.05);
-            } else {
-                this.srcKinase *= 0.95;
+            // Recruited by Beta-arrestins (Category 3, #27)
+            let totalArrestin = 0;
+            if (G.state.receptors) {
+                G.state.receptors.forEach(r => {
+                    if (r.state === 'Active') {
+                        totalArrestin += (r.betaArrestinRecruitment || 1.0);
+                    }
+                });
             }
+            this.srcKinase += (totalArrestin * 0.1) - (this.srcKinase * 0.05);
 
             // sAHP Suppression (Category 6, #60)
             // 5-HT often suppresses sAHP via Gi/o or cAMP, increasing excitability
@@ -171,6 +177,11 @@
                 p.life -= 0.02;
                 return p.life > 0;
             });
+
+            // GIRK Visual Flow (Category 3, #22)
+            if (girkActivation > 0.5 && G.state.timer % 10 === 0) {
+                this.triggerPulse(200, 0, 150, 'rgba(0, 150, 255,'); // Flow near SK/BK channels area
+            }
         },
 
         triggerPulse(x, y, z, color) {
@@ -227,7 +238,8 @@
             ctx.fillText(`Src Kinase: ${this.srcKinase.toFixed(2)}`, w - 200, 191);
             ctx.fillText(`GABA Ctrl: ${this.gabaControl.toFixed(2)}`, w - 200, 204);
             ctx.fillText(`E/I Balance: ${this.eiBalance.toFixed(2)}`, w - 200, 217);
-            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 230);
+            ctx.fillText(`Synaptic Str: ${this.synapticStrength.toFixed(2)}`, w - 200, 230);
+            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 243);
 
             if (G.Transport && G.Transport.glutamateCoRelease) {
                 ctx.fillStyle = '#ffcc00';
@@ -236,10 +248,10 @@
 
             // Draw membrane potential bar
             ctx.fillStyle = '#444';
-            ctx.fillRect(w - 200, 255, 180, 8);
+            ctx.fillRect(w - 200, 265, 180, 8);
             const vWidth = ((this.membranePotential + 90) / 60) * 180;
             ctx.fillStyle = this.membranePotential > -60 ? '#ff4d4d' : '#4d79ff';
-            ctx.fillRect(w - 200, 255, Math.max(0, Math.min(180, vWidth)), 8);
+            ctx.fillRect(w - 200, 265, Math.max(0, Math.min(180, vWidth)), 8);
 
             // Draw Pathway Bias indicator for 5-HT2A if active
             const ht2a = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A') : null;

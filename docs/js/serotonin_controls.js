@@ -44,7 +44,8 @@
                     { name: 'Occupancy Panel', toggle: () => { G.showOccupancyPanel = !G.showOccupancyPanel; } },
                     { name: 'Metabolic Gauges', toggle: () => { G.showMetabolicGauges = !G.showMetabolicGauges; } },
                     { name: 'Heatmap Overlay', toggle: () => { G.showHeatmap = !G.showHeatmap; } },
-                    { name: 'Comparison View', toggle: () => { G.comparisonMode = !G.comparisonMode; } }
+                    { name: 'Comparison View', toggle: () => { G.comparisonMode = !G.comparisonMode; } },
+                    { name: 'Interactive Legend', toggle: () => { G.showInteractiveLegend = !G.showInteractiveLegend; } }
                 ]
             },
             {
@@ -107,6 +108,19 @@
                     { name: 'ADHD', toggle: () => {
                         G.adhdMode = !G.adhdMode;
                         G.Transport.tphActivity = G.adhdMode ? 0.5 : 1.0;
+                    }},
+                    { name: 'Migraine / Triptans', toggle: () => {
+                        G.migraineMode = !G.migraineMode;
+                        if (G.migraineMode) {
+                            // Triptans are selective 5-HT1B/1D agonists
+                            G.state.receptors.forEach(r => {
+                                if (r.type === '5-HT1B' || r.type === '5-HT1D') {
+                                    r.state = 'Active';
+                                    r.biasedLigand = 'G-Biased';
+                                }
+                            });
+                            for(let i=0; i<20; i++) G.Kinetics.spawnLigand('Sumatriptan');
+                        }
                     }}
                 ]
             }
@@ -123,8 +137,8 @@
             btn.setAttribute('aria-haspopup', 'true');
 
             // UI Micro-interactions (#36)
-            btn.onmouseenter = () => { btn.style.boxShadow = '0 0 10px #00ffcc'; };
-            btn.onmouseleave = () => { btn.style.boxShadow = 'none'; };
+            btn.onmouseenter = () => { btn.style.background = '#2d3748'; btn.style.boxShadow = '0 0 10px #00ffcc'; };
+            btn.onmouseleave = () => { btn.style.background = '#1a202c'; btn.style.boxShadow = 'none'; };
 
             const modal = document.createElement('div');
             modal.className = 'serotonin-checkbox-modal';
@@ -209,6 +223,25 @@
         zoomControl.appendChild(zoomIn);
         zoomControl.appendChild(zoomOut);
         container.appendChild(zoomControl);
+
+        // Cholesterol Level Control (Category 2, #16)
+        const cholesterolControl = document.createElement('div');
+        cholesterolControl.style.position = 'absolute';
+        cholesterolControl.style.bottom = '50px';
+        cholesterolControl.style.right = '10px';
+        cholesterolControl.style.background = 'rgba(0,0,0,0.5)';
+        cholesterolControl.style.padding = '5px';
+        cholesterolControl.style.borderRadius = '4px';
+        cholesterolControl.innerHTML = '<label style="font-size:10px; color:#fff;">Cholesterol Level</label>';
+        const cholesterolSlider = document.createElement('input');
+        cholesterolSlider.type = 'range';
+        cholesterolSlider.min = '0.5';
+        cholesterolSlider.max = '2.0';
+        cholesterolSlider.step = '0.1';
+        cholesterolSlider.value = '1.0';
+        cholesterolSlider.oninput = (e) => { G.cholesterolLevel = parseFloat(e.target.value); };
+        cholesterolControl.appendChild(cholesterolSlider);
+        container.appendChild(cholesterolControl);
 
         // Portal Link (Category 10, #100)
         const portalLink = document.createElement('a');
