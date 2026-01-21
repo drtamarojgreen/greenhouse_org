@@ -114,6 +114,12 @@
         },
 
         renderReceptors(ctx, project, cam, w, h) {
+            // Molecular Dynamics (MD) Integration playback placeholder (Category 2, #20)
+            if (G.mdActive) {
+                ctx.fillStyle = '#fff';
+                ctx.fillText('MD TRAJECTORY PLAYBACK: frame ' + (G.state.timer % 100), 20, 20);
+            }
+
             G.state.receptors.forEach(r => {
                 const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
@@ -160,6 +166,18 @@
                         }
                     }
                     ctx.globalAlpha = 1.0;
+
+                    // GPCR-G Protein Interface (Category 2, #12)
+                    if (r.state === 'Active' && r.coupling !== 'Ionotropic') {
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 2 * p.scale;
+                        ctx.beginPath();
+                        ctx.moveTo(p.x - 10 * p.scale, p.y + 40 * p.scale);
+                        ctx.lineTo(p.x + 10 * p.scale, p.y + 60 * p.scale);
+                        ctx.stroke();
+                        ctx.fillStyle = '#ccc';
+                        ctx.fillText(r.coupling + ' alpha subunit', p.x, p.y + 75 * p.scale);
+                    }
 
                     // Label
                     ctx.fillStyle = '#fff';

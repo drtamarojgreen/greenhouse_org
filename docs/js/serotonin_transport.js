@@ -191,6 +191,34 @@
         },
 
         renderTransport(ctx, project, cam, w, h) {
+            // VGLUT3 Glutamate Co-transmission visualization (Category 5, #46)
+            if (this.glutamateCoRelease) {
+                const vglutPos = project(-50, -180, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (vglutPos.scale > 0) {
+                    ctx.fillStyle = '#ffcc00';
+                    ctx.beginPath();
+                    ctx.arc(vglutPos.x, vglutPos.y, 15 * vglutPos.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText('VGLUT3', vglutPos.x, vglutPos.y + 25 * vglutPos.scale);
+                }
+            }
+
+            // Kynurenine Shunt visualization (Category 4, #40)
+            if (this.inflammationActive) {
+                const shuntPos = project(-150, -200, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (shuntPos.scale > 0) {
+                    ctx.strokeStyle = '#ff3333';
+                    ctx.lineWidth = 3 * shuntPos.scale;
+                    ctx.beginPath();
+                    ctx.moveTo(shuntPos.x, shuntPos.y);
+                    ctx.lineTo(shuntPos.x - 50 * shuntPos.scale, shuntPos.y + 50 * shuntPos.scale);
+                    ctx.stroke();
+                    ctx.fillStyle = '#ff3333';
+                    ctx.fillText('Kynurenine Shunt', shuntPos.x - 60 * shuntPos.scale, shuntPos.y + 70 * shuntPos.scale);
+                }
+            }
+
             // Draw Astrocytes (Category 5, #50)
             const astrocytePos = project(250, 0, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (astrocytePos.scale > 0) {

@@ -27,6 +27,7 @@
         // Toggle Buttons for Physiological States
         const states = [
             { name: 'Depression', toggle: () => { G.Transport.tphActivity = G.Transport.tphActivity === 1.0 ? 0.3 : 1.0; } },
+            { name: 'Stochasticity', toggle: () => { G.stochastic = !G.stochastic; } },
             { name: 'Time-lapse', toggle: () => { G.timeLapse = !G.timeLapse; } },
             { name: 'Scenario: MDMA', toggle: () => {
                 G.mdmaActive = !G.mdmaActive;
@@ -98,11 +99,24 @@
         zoomControl.appendChild(zoomOut);
         container.appendChild(zoomControl);
 
+        // Portal Link (Category 10, #100)
+        const portalLink = document.createElement('a');
+        portalLink.href = '#';
+        portalLink.innerText = 'CITIZEN SCIENCE PORTAL';
+        portalLink.style.position = 'absolute';
+        portalLink.style.bottom = '10px';
+        portalLink.style.right = '10px';
+        portalLink.style.color = '#00ffcc';
+        portalLink.style.fontSize = '10px';
+        container.appendChild(portalLink);
+
         // Subcellular Markers (Category 10, #93)
         G.renderSubcellularMarkers = (ctx, project, cam, w, h) => {
             // Cytoskeleton visualization (Category 10, #93)
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.lineWidth = 1;
+            // Modulated by RhoA activity (Category 3, #26)
+            const rhoEffect = G.Signaling ? G.Signaling.rhoA * 0.1 : 0;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${0.05 + rhoEffect})`;
+            ctx.lineWidth = 1 + rhoEffect * 5;
             for (let i = -300; i <= 300; i += 100) {
                 const start = project(-300, i, 0, cam, { width: w, height: h, near: 10, far: 5000 });
                 const end = project(300, i, 0, cam, { width: w, height: h, near: 10, far: 5000 });
