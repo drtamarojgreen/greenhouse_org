@@ -1,6 +1,6 @@
 // docs/js/synapse.js
 // Loader for Synapse Simulation Application
-// Reverted and updated to load dependencies via GreenhouseUtils.loadScript
+// Modeled after live site master loaders (serotonin.js, rna_repair.js)
 
 (async function () {
     'use strict';
@@ -72,11 +72,8 @@
             if (!baseUrl) {
                 throw new Error("CRITICAL - Aborting main() due to missing data-base-url attribute.");
             }
-            if (!targetSelector) {
-                throw new Error("CRITICAL - Aborting main() due to missing target selector.");
-            }
 
-            // Load the modules required for the synapse application
+            // Sequential loading of all modular components
             await GreenhouseUtils.loadScript('synapse_chemistry.js', baseUrl);
             await GreenhouseUtils.loadScript('synapse_neurotransmitters.js', baseUrl);
             await GreenhouseUtils.loadScript('synapse_sidebar.js', baseUrl);
@@ -90,8 +87,15 @@
             // Check if all modules are loaded
             if (window.GreenhouseSynapseApp) {
                 console.log('Synapse App: All modules loaded successfully.');
-                // Initialize the application
-                window.GreenhouseSynapseApp.init(targetSelector, baseUrl);
+
+                if (targetSelector) {
+                    console.log('Synapse App: Initializing in 5 seconds...');
+                    setTimeout(() => {
+                        window.GreenhouseSynapseApp.init(targetSelector, baseUrl);
+                    }, 5000);
+                } else {
+                    console.warn('Synapse App: No target selector provided, skipping auto-init.');
+                }
             } else {
                 throw new Error("Synapse application module failed to load.");
             }

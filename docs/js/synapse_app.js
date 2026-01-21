@@ -1,5 +1,5 @@
 // docs/js/synapse_app.js
-// core engine for Synapse Simulation
+// Optimized & Refactored Synapse Visualization Logic - Chemistry Integrated
 
 (function () {
     'use strict';
@@ -51,19 +51,15 @@
         isRunning: false,
 
         init(targetSelector, baseUrl) {
-            console.log('SynapseApp: Initializing...');
             this.lastSelector = targetSelector;
             this.baseUrl = baseUrl || '';
-
-            setTimeout(() => {
-                this._delayedInit(targetSelector);
-            }, 5000);
+            this._initializeSimulation(targetSelector);
         },
 
-        _delayedInit(selector) {
+        _initializeSimulation(selector) {
             // Check dependencies
             if (!G.Chemistry || !G.Particles || !G.Sidebar || !G.Tooltips ||
-                !G.Controls || !G.Analytics || !G.ThreeD || !G.Molecular) {
+                !G.Controls || !G.Analytics || !G.Visuals3D || !G.Molecular) {
                 console.error('SynapseApp: Missing modular dependencies.');
                 return;
             }
@@ -75,6 +71,7 @@
             this.isRunning = true;
             this.animate();
 
+            // Resilience
             this.observeAndReinitializeApp(this.container);
         },
 
@@ -112,8 +109,12 @@
             canvasWrapper.appendChild(this.tooltip);
 
             this.renderSidebar();
+
+            this.handleResize = this.resize.bind(this);
+            window.removeEventListener('resize', this.handleResize);
+            window.addEventListener('resize', this.handleResize);
             this.resize();
-            window.addEventListener('resize', () => this.resize());
+
             this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
             this.canvas.addEventListener('mousedown', () => this.handleMouseDown());
         },
@@ -127,6 +128,24 @@
                         this.renderSidebar();
                     }
                 });
+
+                if (G.Controls) {
+                    G.Controls.render(document.getElementById('synapse-sidebar'), G.config, {
+                        onToggleBurst: () => {
+                            const w = this.canvas.width / (window.devicePixelRatio || 1);
+                            const h = this.canvas.height / (window.devicePixelRatio || 1);
+                            G.Particles.create(w, h, 60, G.config, true);
+                        },
+                        onUpdateSensitivity: (val) => {
+                            console.log('Sensitivity updated:', val);
+                            // Implementation hook for sensitivity
+                        }
+                    });
+                }
+
+                if (G.Analytics) {
+                    G.Analytics.renderDashboard(document.getElementById('synapse-sidebar'));
+                }
             }
         },
 
@@ -173,28 +192,33 @@
             ctx.fillStyle = '#010501';
             ctx.fillRect(0, 0, w, h);
 
-            if (G.ThreeD) G.ThreeD.applyDepthEffect(ctx, w, h, this.frame);
+            if (G.Visuals3D) G.Visuals3D.applyDepth(ctx, w, h);
 
             this.drawStructure(ctx, w, h);
 
             if (G.Molecular) {
-                G.Molecular.drawLipidBilayer(ctx, w, h);
-                G.Molecular.drawSNAREComplex(ctx, w, h, this.frame);
-                G.Molecular.drawScaffolding(ctx, w, h);
+                const surfaceY = h * 0.68;
+                G.Molecular.drawLipidBilayer(ctx, w * 0.3, h * 0.44, w * 0.4, false);
+                G.Molecular.drawLipidBilayer(ctx, w * 0.2, surfaceY, w * 0.6, true);
+
+                if (this.frame % 60 < 20) {
+                    G.Molecular.drawSNARE(ctx, w * 0.5, h * 0.4, (this.frame % 60) / 20);
+                }
             }
 
             if (G.Particles) {
                 if (this.frame % 15 === 0) G.Particles.create(w, h, 1, G.config);
                 this.handleReceptorInteractions(w, h);
 
-                if (G.Analytics) G.Analytics.update(G.Particles.particles, G.config.elements.receptors);
-                if (G.ThreeD) {
-                    G.ThreeD.drawShadows(ctx, G.config.elements.vesicles, w, h);
-                    G.ThreeD.visualizeElectrostaticPotential(ctx, w, h, this.frame);
+                if (G.Analytics) G.Analytics.update(G.Particles.particles.length);
+                if (G.Visuals3D) {
+                    G.Visuals3D.drawShadows(ctx, G.Particles.particles);
                 }
 
                 G.Particles.updateAndDraw(ctx, w, h);
             }
+
+            if (G.Visuals3D) G.Visuals3D.restoreDepth(ctx);
 
             this.checkHover(w, h);
 
@@ -209,8 +233,6 @@
             const particles = G.Particles.particles;
             const chem = G.Chemistry;
             const surfaceY = h * 0.68;
-
-            if (G.Controls) G.Controls.applyToSimulation(particles, G.config.elements.receptors);
 
             G.config.elements.receptors.forEach(receptor => {
                 const rx = w * receptor.x;
@@ -311,8 +333,9 @@
                 );
                 if (wasRemoved) {
                     this.isRunning = false;
+                    if (resilienceObserver) resilienceObserver.disconnect();
                     setTimeout(() => {
-                        if (this.init) this.init(this.lastSelector, this.baseUrl);
+                        if (G.init) G.init(this.lastSelector, this.baseUrl);
                     }, 5000);
                 }
             };

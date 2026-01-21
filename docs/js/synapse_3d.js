@@ -6,32 +6,25 @@
     const G = window.GreenhouseSynapseApp || {};
     window.GreenhouseSynapseApp = G;
 
-    G.ThreeD = {
-        applyDepthEffect(ctx, w, h, frame) {
-            const tiltX = Math.sin(frame * 0.01) * 5;
-            const tiltY = Math.cos(frame * 0.01) * 5;
-            ctx.setTransform(1, tiltX * 0.001, tiltY * 0.001, 1, 0, 0);
+    G.Visuals3D = {
+        applyDepth(ctx, w, h) {
+            ctx.save();
+            // Implement 3D depth using a slight perspective tilt
+            // Note: This must be wrapped in save/restore to avoid persistent state leakage
+            ctx.setTransform(1, 0.02, 0, 1, 0, 0);
         },
 
-        drawShadows(ctx, vesicles, w, h) {
+        drawShadows(ctx, particles) {
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            vesicles.forEach(v => {
-                const vx = w * v.x, vy = h * v.y;
-                ctx.beginPath();
-                ctx.ellipse(vx + 5, vy + 5, v.r, v.r * 0.5, 0, 0, Math.PI * 2);
-                ctx.fill();
-            });
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowOffsetX = 5;
+            ctx.shadowOffsetY = 5;
+            // Particles will inherit this if drawn while this state is active
             ctx.restore();
         },
 
-        visualizeElectrostaticPotential(ctx, w, h, frame) {
-            ctx.save();
-            const gradient = ctx.createLinearGradient(0, h * 0.6, 0, h * 0.7);
-            gradient.addColorStop(0, `rgba(0, 242, 255, ${0.1 + Math.sin(frame * 0.05) * 0.05})`);
-            gradient.addColorStop(1, 'transparent');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, h * 0.6, w, h * 0.1);
+        restoreDepth(ctx) {
             ctx.restore();
         }
     };

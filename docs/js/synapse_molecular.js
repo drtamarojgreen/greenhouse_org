@@ -7,41 +7,28 @@
     window.GreenhouseSynapseApp = G;
 
     G.Molecular = {
-        scaffoldingProteins: [
-            { id: 'psd95', x: 0.4, y: 0.7, size: 8 },
-            { id: 'psd95', x: 0.5, y: 0.72, size: 8 },
-            { id: 'psd95', x: 0.6, y: 0.7, size: 8 }
-        ],
-
-        drawScaffolding(ctx, w, h) {
-            ctx.fillStyle = '#FFD700';
-            this.scaffoldingProteins.forEach(p => {
-                ctx.beginPath();
-                ctx.rect(w * p.x - p.size / 2, h * p.y, p.size, p.size);
-                ctx.fill();
-            });
-        },
-
-        drawSNAREComplex(ctx, w, h, frame) {
-            ctx.strokeStyle = '#ADFF2F';
-            ctx.lineWidth = 2;
-            const centerX = w * 0.5;
-            const bulbY = h * 0.4;
-            ctx.beginPath();
-            ctx.moveTo(centerX - 10, bulbY);
-            ctx.quadraticCurveTo(centerX, bulbY + 20 * Math.sin(frame * 0.1), centerX + 10, bulbY);
-            ctx.stroke();
-        },
-
-        drawLipidBilayer(ctx, w, h) {
+        drawSNARE(ctx, x, y, progress) {
             ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-            ctx.lineWidth = 1;
-            const surfaceY = h * 0.68;
-            for (let x = 0; x < w; x += 10) {
-                ctx.beginPath(); ctx.arc(x, surfaceY, 3, 0, Math.PI * 2); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(x, surfaceY + 3); ctx.lineTo(x, surfaceY + 10); ctx.stroke();
-            }
+            ctx.strokeStyle = '#ff9900';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            ctx.moveTo(x - 10, y);
+            ctx.quadraticCurveTo(x, y - 20 * progress, x + 10, y);
+            ctx.stroke();
+            ctx.restore();
+        },
+
+        drawLipidBilayer(ctx, x, y, width, isPost) {
+            ctx.save();
+            ctx.strokeStyle = isPost ? '#2c3e50' : '#707870';
+            ctx.lineWidth = 4;
+            // Fluid-mosaic motion simulation
+            const offset = Math.sin(Date.now() / 1000) * 2;
+            ctx.beginPath();
+            ctx.moveTo(x, y + offset);
+            ctx.lineTo(x + width, y - offset);
+            ctx.stroke();
             ctx.restore();
         }
     };
