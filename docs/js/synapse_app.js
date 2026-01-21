@@ -66,7 +66,6 @@
         },
 
         _initializeSimulation(selector) {
-            // Check dependencies
             if (!G.Chemistry || !G.Particles || !G.Sidebar || !G.Tooltips ||
                 !G.Controls || !G.Analytics || !G.Visuals3D || !G.Molecular) {
                 console.error('SynapseApp: Missing modular dependencies.');
@@ -80,7 +79,6 @@
             this.isRunning = true;
             this.animate();
 
-            // Resilience
             this.observeAndReinitializeApp(this.container);
         },
 
@@ -281,6 +279,13 @@
                 if (this.frame % 60 < 20) {
                     G.Molecular.drawSNARE(ctx, w * 0.5, h * 0.4, (this.frame % 60) / 20);
                 }
+
+                // Draw 7TM for GPCRs
+                G.config.elements.receptors.forEach(r => {
+                    if (r.type === 'gpcr' && r.state !== 'internalized') {
+                        G.Molecular.drawGPCRTopology(ctx, w * r.x, surfaceY - 5);
+                    }
+                });
             }
 
             if (G.Particles) {
@@ -317,7 +322,6 @@
 
             const pharm = G.config.pharmacology || {};
 
-            // Enhancement #49: pH-dependent binding affinity
             const pH = G.config.kinetics?.pH || 7.4;
             const pH_modifier = Math.max(0.1, 1.0 - Math.abs(pH - 7.4) * 2);
 
@@ -343,7 +347,6 @@
                         const receptorType = chem.receptors[receptor.type];
                         if (receptorType.binds.includes(p.chemistry.id)) {
 
-                            // pH effect check
                             if (Math.random() > pH_modifier) return;
 
                             p.life = 0;
@@ -462,12 +465,6 @@
                 if (r.type === 'ionotropic_receptor') {
                     ctx.fillStyle = r.state === 'open' ? '#fff' : (r.state === 'desensitized' ? '#555' : '#4DB6AC');
                     ctx.fillRect(rx - 6, ry, 4, 12); ctx.fillRect(rx + 2, ry, 4, 12);
-                } else {
-                    ctx.strokeStyle = r.state === 'active' ? '#fff' : (r.state === 'desensitized' ? '#555' : '#D32F2F');
-                    ctx.lineWidth = 3; ctx.beginPath();
-                    ctx.moveTo(rx - 8, ry + 10);
-                    for (let i = 0; i < 5; i++) ctx.lineTo(rx - 8 + i * 4, ry + (i % 2 === 0 ? -6 : 6));
-                    ctx.stroke();
                 }
             });
         },

@@ -87,7 +87,6 @@
 
         drawMitochondria(ctx, x, y, atp) {
             ctx.save();
-            // Oval mitochondria
             const glow = atp / 100;
             ctx.shadowBlur = 10 * glow;
             ctx.shadowColor = '#FFD700';
@@ -96,7 +95,6 @@
             ctx.ellipse(x, y, 20, 35, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Cristae (internal folds)
             ctx.strokeStyle = `rgba(255, 215, 0, ${0.2 + glow * 0.5})`;
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -123,7 +121,6 @@
             ctx.fill();
 
             if (showIsoforms) {
-                // Visualize specific protein isoforms (Enhancement #17)
                 if (this.isoforms.length === 0) {
                     for(let i=0; i<30; i++) {
                         this.isoforms.push({
@@ -144,6 +141,29 @@
             ctx.fillStyle = '#FFD700';
             ctx.font = 'bold 9px Arial';
             ctx.fillText('POST-SYNAPTIC DENSITY (PSD-95)', w * 0.5 - 70, surfaceY + 15);
+            ctx.restore();
+        },
+
+        drawGPCRTopology(ctx, x, y) {
+            // Enhancement #26: 7-Transmembrane topology
+            ctx.save();
+            ctx.strokeStyle = '#D32F2F';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for(let i=0; i<7; i++) {
+                const tx = x - 12 + i * 4;
+                ctx.moveTo(tx, y - 5);
+                ctx.lineTo(tx, y + 15);
+                if(i < 6) {
+                    const nextX = tx + 4;
+                    if(i % 2 === 0) {
+                        ctx.bezierCurveTo(tx, y + 20, nextX, y + 20, nextX, y + 15);
+                    } else {
+                        ctx.bezierCurveTo(tx, y - 10, nextX, y - 10, nextX, y - 5);
+                    }
+                }
+            }
+            ctx.stroke();
             ctx.restore();
         },
 
@@ -196,7 +216,6 @@
                     ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Glow
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = chem.color;
                     ctx.stroke();

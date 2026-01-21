@@ -151,7 +151,8 @@ global.window.GreenhouseSynapseApp = {
     },
     Analytics: {
         renderDashboard: () => { },
-        update: () => { }
+        update: () => { },
+        state: { atp: 100 }
     },
     Visuals3D: {
         applyDepth: () => { },
@@ -169,7 +170,8 @@ global.window.GreenhouseSynapseApp = {
         drawScaffolding: () => { },
         drawCascades: () => { },
         drawRetrograde: () => { },
-        drawMitochondria: () => { }
+        drawMitochondria: () => { },
+        drawGPCRTopology: () => { }
     }
 };
 

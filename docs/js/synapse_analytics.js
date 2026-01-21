@@ -13,7 +13,8 @@
             health: 100.0,
             membraneCurrent: 0.0, // pA
             doseResponse: [],
-            sensitivity: 1.0
+            sensitivity: 1.0,
+            history: []
         },
 
         calculateHealthScore(config, particleCount) {
@@ -68,7 +69,6 @@
 
             this.state.membraneCurrent = (activeReceptors * 1.5) + (ionCount * 0.8);
 
-            // Sensitivity Analysis (Enhancement #98)
             this.state.sensitivity = G.Particles.plasticityFactor;
 
             if (particleCount > 60) {
@@ -82,7 +82,11 @@
 
             if (G.frame % 30 === 0) {
                 this.state.doseResponse.push(this.state.membraneCurrent);
-                if (this.state.doseResponse.length > 20) this.state.doseResponse.shift();
+                if (this.state.doseResponse.length > 20) {
+                    this.state.history.push([...this.state.doseResponse]);
+                    if(this.state.history.length > 5) this.state.history.shift();
+                    this.state.doseResponse.shift();
+                }
                 this.drawChart();
             }
 
@@ -113,6 +117,37 @@
             const h = canvas.height;
 
             ctx.clearRect(0, 0, w, h);
+
+            // Enhancement #95: Confidence Intervals / Standard Deviation
+            if (this.state.history.length > 1) {
+                ctx.fillStyle = 'rgba(0, 242, 255, 0.1)';
+                ctx.beginPath();
+                const step = w / 20;
+                for(let i=0; i<20; i++) {
+                    const vals = this.state.history.map(h => h[i]).filter(v => v !== undefined);
+                    if(vals.length === 0) continue;
+                    const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+                    const std = Math.sqrt(vals.map(x => Math.pow(x-avg, 2)).reduce((a,b) => a+b, 0) / vals.length);
+
+                    const x = i * step;
+                    const yHigh = h - ((avg + std) * 1.5);
+                    const yLow = h - ((avg - std) * 1.5);
+                    if(i === 0) ctx.moveTo(x, yHigh);
+                    else ctx.lineTo(x, yHigh);
+                }
+                for(let i=19; i>=0; i--) {
+                    const vals = this.state.history.map(h => h[i]).filter(v => v !== undefined);
+                    if(vals.length === 0) continue;
+                    const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+                    const std = Math.sqrt(vals.map(x => Math.pow(x-avg, 2)).reduce((a,b) => a+b, 0) / vals.length);
+                    const x = i * step;
+                    const yLow = h - ((avg - std) * 1.5);
+                    ctx.lineTo(x, yLow);
+                }
+                ctx.closePath();
+                ctx.fill();
+            }
+
             ctx.strokeStyle = '#00F2FF';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -128,7 +163,7 @@
 
             ctx.fillStyle = 'rgba(255,255,255,0.3)';
             ctx.font = '8px Arial';
-            ctx.fillText('DOSE-RESPONSE', 5, 10);
+            ctx.fillText('DOSE-RESPONSE (σ shaded)', 5, 10);
         }
     };
 })();

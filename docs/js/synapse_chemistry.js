@@ -19,7 +19,8 @@
                 reuptakeVia: 'EAAT',
                 enzyme: null,
                 molecularWeight: '147.13 g/mol',
-                pKa: 2.1
+                pKa: 2.1,
+                kinetics: { kon: 1.5, koff: 0.8, hill: 1.2 }
             },
             gaba: {
                 id: 'gaba',
@@ -32,7 +33,8 @@
                 reuptakeVia: 'GAT',
                 enzyme: null,
                 molecularWeight: '103.12 g/mol',
-                pKa: 4.2
+                pKa: 4.2,
+                kinetics: { kon: 1.2, koff: 0.6, hill: 1.5 }
             },
             dopamine: {
                 id: 'dopamine',
@@ -45,7 +47,8 @@
                 reuptakeVia: 'DAT',
                 enzyme: 'COMT',
                 molecularWeight: '153.18 g/mol',
-                pKa: 8.9
+                pKa: 8.9,
+                kinetics: { kon: 0.8, koff: 0.4, hill: 1.0 }
             },
             serotonin: {
                 id: 'serotonin',
@@ -58,7 +61,8 @@
                 reuptakeVia: 'SERT',
                 enzyme: 'MAO',
                 molecularWeight: '176.21 g/mol',
-                pKa: 9.5
+                pKa: 9.5,
+                kinetics: { kon: 0.9, koff: 0.5, hill: 1.0 }
             }
         },
 
@@ -75,7 +79,8 @@
                 name: { en: 'GPCR', es: 'Receptor acoplado a proteína G' },
                 binds: ['serotonin', 'dopamine'],
                 stoichiometry: 'Monomeric / Heterodimeric',
-                pdbId: '7E2X'
+                pdbId: '7E2X',
+                topology: '7TM Helices'
             },
             autoreceptor: {
                 id: 'autoreceptor',

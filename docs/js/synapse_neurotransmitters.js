@@ -54,7 +54,6 @@
             const reuptakeBlocked = G.config.pharmacology?.ssriActive && G.config.activeNT === 'serotonin';
             const enzymaticRate = G.config.kinetics?.enzymaticRate || 0.002;
 
-            // Enhancement #20: Diffusion Coefficient
             const D = G.config.kinetics?.diffusionCoefficient || 1.0;
 
             if (this.particles.length > 50) {
