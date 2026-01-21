@@ -49,10 +49,7 @@
 
                 this.populateAboutStripText();
                 this.createCanvasSection();
-                this.createDashboardContainer(); // This now sets up the interval
-
-                // Initial call to render
-                this.renderDashboard();
+                this.createDashboardContainer(); // This now sets up the interval and performs initial render
 
                 console.log('TechApp: Initialization complete.');
                 GreenhouseUtils.displaySuccess('Tech Test Dashboard Loaded Successfully.');
@@ -252,15 +249,31 @@
          * Attaches event listeners to the dashboard UI elements.
          */
         attachEventListeners() {
-            document.getElementById('fetch-mock-user-btn').addEventListener('click', () => this.runTestCase1());
-            document.getElementById('load-models-prototype-btn').addEventListener('click', () => this.runTestCase2());
+            const btn1 = this.dashboardContainer.querySelector('#fetch-mock-user-btn');
+            const btn2 = this.dashboardContainer.querySelector('#load-models-prototype-btn');
+
+            if (btn1) {
+                btn1.addEventListener('click', () => this.runTestCase1());
+            } else {
+                console.error('TechApp: Could not find fetch-mock-user-btn');
+            }
+
+            if (btn2) {
+                btn2.addEventListener('click', () => this.runTestCase2());
+            } else {
+                console.error('TechApp: Could not find load-models-prototype-btn');
+            }
         }
 
         /**
          * Test Case 1: Executes the client-side data fetch test.
          */
         async runTestCase1() {
-            const outputBox = document.getElementById('mock-user-output');
+            const outputBox = this.dashboardContainer.querySelector('#mock-user-output');
+            if (!outputBox) {
+                console.error('TechApp: Could not find mock-user-output');
+                return;
+            }
             outputBox.textContent = 'Fetching...';
             const mockData = { userId: "test-clientside-789", source: "Generated in tech.js" };
             outputBox.textContent = JSON.stringify(mockData, null, 2);
@@ -270,8 +283,13 @@
          * Test Case 2: Loads and initializes the models prototype.
          */
         async runTestCase2() {
-            const container = document.getElementById('models-prototype-container');
-            const button = document.getElementById('load-models-prototype-btn');
+            const container = this.dashboardContainer.querySelector('#models-prototype-container');
+            const button = this.dashboardContainer.querySelector('#load-models-prototype-btn');
+
+            if (!container || !button) {
+                console.error('TechApp: Required elements for Test Case 2 not found.');
+                return;
+            }
 
             const updateStatus = (message, isError = false) => {
                 container.innerHTML = ''; // Clear previous content
