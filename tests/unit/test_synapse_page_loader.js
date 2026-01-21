@@ -29,7 +29,14 @@ global.document = {
         if (sel === '#synapse-container') return mockContainer;
         return null;
     },
-    querySelectorAll: (sel) => [],
+    querySelectorAll: (sel) => {
+        if (sel.includes('synapse.js')) return [{ getAttribute: (name) => {
+            if (name === 'data-base-url') return '/';
+            if (name === 'data-target-selector-left') return '#synapse-container';
+            return null;
+        }}];
+        return [];
+    },
     createElement: (tag) => {
         return { tagName: tag.toUpperCase(), style: {}, appendChild: () => {}, getContext: () => ({}) };
     },
@@ -69,19 +76,17 @@ TestFramework.describe('Synapse Page Loader', () => {
 
     TestFramework.beforeEach(() => {
         loadedScripts = [];
-        delete global.window.GreenhouseSynapseApp; // Force reload
     });
 
     TestFramework.it('should load all synapse dependencies via main()', () => {
-        loadScript('synapse_app.js');
+        loadScript('synapse.js');
 
-        // Wait for the async main() IIFE to complete (simulated by checking in next tick or with a small delay if needed)
-        // In this specific framework, we'll just check after a small timeout
         return new Promise((resolve) => {
+            // synapse.js uses GreenhouseUtils.loadScript sequentially
+            // Give it some time to run the async main()
             setTimeout(() => {
                 assert.includes(loadedScripts, 'synapse_chemistry.js');
-                assert.includes(loadedScripts, 'synapse_3d.js');
-                assert.includes(loadedScripts, 'synapse_molecular.js');
+                assert.includes(loadedScripts, 'synapse_app.js');
                 resolve();
             }, 100);
         });

@@ -1,6 +1,5 @@
 // docs/js/synapse_app.js
-// Master Application Entry Point for Synapse Simulation
-// Follows the unified loader + engine pattern used on live site (dopamine/serotonin)
+// core engine for Synapse Simulation
 
 (function () {
     'use strict';
@@ -37,64 +36,9 @@
             ]
         }
     };
-})();
 
-(async function () {
-    'use strict';
-
-    const G = window.GreenhouseSynapseApp || {};
-    window.GreenhouseSynapseApp = G;
-
-    let GreenhouseUtils;
     let resilienceObserver = null;
 
-    // --- Dependency Loading ---
-    const loadDependencies = async () => {
-        await new Promise((resolve, reject) => {
-            let attempts = 0;
-            const maxAttempts = 240; // 12 seconds
-            const interval = setInterval(() => {
-                if (window.GreenhouseUtils) {
-                    clearInterval(interval);
-                    GreenhouseUtils = window.GreenhouseUtils;
-                    resolve();
-                } else if (attempts++ >= maxAttempts) {
-                    clearInterval(interval);
-                    console.error('Synapse App: GreenhouseUtils load timeout');
-                    reject(new Error('GreenhouseUtils load timeout'));
-                }
-            }, 50);
-        });
-    };
-
-    // --- Attribute Capture ---
-    const captureAttributes = () => {
-        if (window._greenhouseScriptAttributes) {
-            return {
-                targetSelector: window._greenhouseScriptAttributes['target-selector-left'],
-                baseUrl: window._greenhouseScriptAttributes['base-url']
-            };
-        }
-        const script = document.currentScript;
-        if (script) {
-            return {
-                targetSelector: script.getAttribute('data-target-selector-left'),
-                baseUrl: script.getAttribute('data-base-url')
-            };
-        }
-        // Fallback for manual testing
-        const scripts = document.querySelectorAll('script[src*="synapse_app.js"]');
-        if (scripts.length > 0) {
-            const s = scripts[scripts.length - 1];
-            return {
-                targetSelector: s.getAttribute('data-target-selector-left'),
-                baseUrl: s.getAttribute('data-base-url')
-            };
-        }
-        return { targetSelector: null, baseUrl: null };
-    };
-
-    // --- Core Engine Logic ---
     Object.assign(G, {
         canvas: null,
         ctx: null,
@@ -107,28 +51,30 @@
         isRunning: false,
 
         init(targetSelector, baseUrl) {
-            if (!targetSelector) return;
+            console.log('SynapseApp: Initializing...');
             this.lastSelector = targetSelector;
             this.baseUrl = baseUrl || '';
 
-            console.log('SynapseApp: Initializing...');
             setTimeout(() => {
-                this._initializeSimulation(targetSelector);
+                this._delayedInit(targetSelector);
             }, 5000);
         },
 
-        async _initializeSimulation(selector) {
-            this.container = document.querySelector(selector);
-            if (!this.container) {
-                console.error(`SynapseApp: Target container ${selector} not found.`);
+        _delayedInit(selector) {
+            // Check dependencies
+            if (!G.Chemistry || !G.Particles || !G.Sidebar || !G.Tooltips ||
+                !G.Controls || !G.Analytics || !G.ThreeD || !G.Molecular) {
+                console.error('SynapseApp: Missing modular dependencies.');
                 return;
             }
+
+            this.container = document.querySelector(selector);
+            if (!this.container) return;
 
             this.setupDOM();
             this.isRunning = true;
             this.animate();
 
-            // Resilience
             this.observeAndReinitializeApp(this.container);
         },
 
@@ -366,7 +312,7 @@
                 if (wasRemoved) {
                     this.isRunning = false;
                     setTimeout(() => {
-                        if (G.init) G.init(this.lastSelector, this.baseUrl);
+                        if (this.init) this.init(this.lastSelector, this.baseUrl);
                     }, 5000);
                 }
             };
@@ -374,46 +320,4 @@
             resilienceObserver.observe(container, { childList: true });
         }
     });
-
-    // --- Main Entry ---
-    async function main() {
-        console.log('Synapse App: main() execution started.');
-        try {
-            await loadDependencies();
-            const { targetSelector, baseUrl } = captureAttributes();
-
-            if (!baseUrl) {
-                console.warn('Synapse App: baseUrl not found in attributes, using default.');
-            }
-
-            // Load Modular Components
-            const scripts = [
-                'synapse_chemistry.js',
-                'synapse_neurotransmitters.js',
-                'synapse_sidebar.js',
-                'synapse_tooltips.js',
-                'synapse_controls.js',
-                'synapse_analytics.js',
-                'synapse_3d.js',
-                'synapse_molecular.js'
-            ];
-
-            for (const script of scripts) {
-                await GreenhouseUtils.loadScript(script, baseUrl || '');
-            }
-
-            if (targetSelector) {
-                const container = await GreenhouseUtils.waitForElement(targetSelector);
-                G.init(targetSelector, baseUrl);
-            } else {
-                console.warn('Synapse App: No target selector found, waiting for manual init.');
-            }
-
-        } catch (error) {
-            console.error('Synapse App: Initialization sequence failed:', error);
-        }
-    }
-
-    main();
-
 })();
