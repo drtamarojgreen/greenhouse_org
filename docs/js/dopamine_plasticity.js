@@ -15,6 +15,7 @@
         ecbLevels: 0, // 63. eCB signaling
         geneExpression: { cFos: 0, jun: 0 }, // 66. IEG Induction
         bdnfLevels: 0.5, // 70. BDNF Interaction
+        bdnfParticles: [],
         proteinSynthesis: 0, // 69. Protein Synthesis
         epigeneticShift: 0, // 68. Epigenetic Modifications
         lastPlasticityUpdate: 0
@@ -31,8 +32,8 @@
 
         if (state.signalingActive && stdpGate > 0.1) {
             if (state.mode.includes('D1')) {
-                // LTP for D1-MSN (facilitated by D1 and spikes)
-                pState.synapticStrength = Math.min(2.5, pState.synapticStrength + 0.002 * stdpGate);
+                // LTP for D1-MSN (facilitated by D1, spikes, and BDNF)
+                pState.synapticStrength = Math.min(2.5, pState.synapticStrength + 0.002 * stdpGate * pState.bdnfLevels);
             } else if (state.mode.includes('D2')) {
                 // LTD for D2-MSN
                 pState.synapticStrength = Math.max(0.4, pState.synapticStrength - 0.001 * stdpGate);
@@ -45,6 +46,21 @@
         } else {
             pState.ecbLevels *= 0.99;
         }
+
+        // 70. BDNF Interaction
+        if (state.signalingActive && state.mode.includes('D1') && Math.random() > 0.95) {
+            pState.bdnfParticles.push({
+                x: (Math.random() - 0.5) * 400,
+                y: 300, z: (Math.random() - 0.5) * 200,
+                life: 100, vy: -2
+            });
+        }
+        for (let i = pState.bdnfParticles.length - 1; i >= 0; i--) {
+            const p = pState.bdnfParticles[i];
+            p.life--; p.y += p.vy;
+            if (p.life <= 0) pState.bdnfParticles.splice(i, 1);
+        }
+        pState.bdnfLevels = 0.5 + (pState.bdnfParticles.length / 20);
 
         // 64. Dendritic Spine Remodeling
         if (pState.synapticStrength > 1.8) {
@@ -74,6 +90,19 @@
         const w = G.width;
         const h = G.height;
         const pState = G.plasticityState;
+
+        // 70. Render BDNF Particles
+        pState.bdnfParticles.forEach(p => {
+            const pos = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (pos.scale > 0) {
+                ctx.fillStyle = '#ff00ff';
+                ctx.globalAlpha = p.life / 100;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 4 * pos.scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        });
 
         // 64. Dendritic Spine Remodeling Visuals
         // Draw small visual spines on receptors based on spineDensity

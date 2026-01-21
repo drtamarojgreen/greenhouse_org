@@ -168,12 +168,19 @@
             da.z += da.vz * diffusionScale;
             da.life--;
 
-            // 43. Astrocyte Reuptake
+            // 43. Astrocyte Reuptake & Active Clearing
             let astrocyteHit = false;
             sState.astrocytes.forEach(ast => {
                 const dx = da.x - ast.x;
                 const dy = da.y - ast.y;
                 const dist = Math.sqrt(dx*dx + dy*dy);
+
+                // 43. Active "suction" towards astrocyte process
+                if (dist < ast.radius * 2) {
+                    da.vx += (ast.x - da.x) * 0.01;
+                    da.vy += (ast.y - da.y) * 0.01;
+                }
+
                 if (dist < ast.radius) astrocyteHit = true;
             });
 

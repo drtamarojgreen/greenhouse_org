@@ -64,6 +64,7 @@
         if (G.createUI) G.createUI(wrapper);
         if (G.initLegend) G.initLegend(wrapper);
         if (G.initTooltips) G.initTooltips(wrapper);
+        if (G.initUX) G.initUX();
 
         G.canvas = document.createElement('canvas');
         G.ctx = G.canvas.getContext('2d');
@@ -119,7 +120,9 @@
 
     G.animate = function() {
         if (!G.isRunning) return;
-        G.update();
+        if (!G.uxState || !G.uxState.isPaused) {
+            G.update();
+        }
         G.render();
         requestAnimationFrame(() => G.animate());
     };
@@ -137,6 +140,7 @@
         if (G.updatePlasticity) G.updatePlasticity();
         if (G.updateClinical) G.updateClinical();
         if (G.updatePharmacology) G.updatePharmacology();
+        if (G.updateUX) G.updateUX();
         if (G.updateTooltips) G.updateTooltips();
     };
 
@@ -211,6 +215,7 @@
         if (G.renderPlasticity) G.renderPlasticity(ctx, project);
         if (G.renderClinical) G.renderClinical(ctx, project);
         if (G.renderPharmacology) G.renderPharmacology(ctx, project);
+        if (G.renderUX) G.renderUX(ctx);
         if (G.renderLegend) G.renderLegend(ctx);
     };
 
@@ -250,6 +255,7 @@
             await GreenhouseUtils.loadScript('dopamine_plasticity.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_clinical.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_pharmacology.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine_ux.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
 
             if (targetSelector) {

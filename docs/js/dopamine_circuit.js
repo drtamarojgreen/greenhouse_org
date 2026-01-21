@@ -14,6 +14,7 @@
             direct: { color: '#ff4d4d', active: false, label: 'Direct Pathway (D1-MSN)' },
             indirect: { color: '#4d79ff', active: false, label: 'Indirect Pathway (D2-MSN)' }
         },
+        feedback: { gain: 1.0, sncActivity: 1.0 }, // 78. Feedback Loops
         projections: {
             snc: { x: -300, y: -400, z: 0, label: 'SNc (Nigrostriatal)' },
             vta: { x: 300, y: -400, z: 0, label: 'VTA (Mesolimbic)' }
@@ -62,10 +63,22 @@
             cState.interneurons.cholinergic.firing = true;
         }
 
-        // 78. Feedback Loops (Simplified)
-        if (cState.pathways.direct.active && state.signalingActive) {
-            // Activation of direct pathway inhibits SNc, but here we model it as a closed loop
-            // where signaling activity affects the next pulse
+        // 78. Feedback Loops (Striato-nigral)
+        // Activation of direct pathway inhibits SNc (disinhibition of movement)
+        // Activation of indirect pathway excites SNc (via STN)
+        if (state.signalingActive) {
+            if (cState.pathways.direct.active) {
+                cState.feedback.sncActivity = Math.max(0.2, cState.feedback.sncActivity - 0.01 * cState.feedback.gain);
+            } else if (cState.pathways.indirect.active) {
+                cState.feedback.sncActivity = Math.min(2.0, cState.feedback.sncActivity + 0.005 * cState.feedback.gain);
+            }
+        } else {
+            cState.feedback.sncActivity += (1.0 - cState.feedback.sncActivity) * 0.01;
+        }
+
+        // Apply feedback to synapse release rate
+        if (G.synapseState) {
+            G.synapseState.releaseRate = 0.1 * cState.feedback.sncActivity;
         }
 
         // 76. GABAergic Interneuron Modulation
@@ -168,5 +181,6 @@
         ctx.fillText(`Cholinergic Firing: ${cState.interneurons.cholinergic.firing ? 'ACTIVE' : 'PAUSE'}`, w - 10, h - 140);
         ctx.fillText(`Compartment: ${cState.compartments.matrix.active ? 'Matrix' : 'Striosome'}`, w - 10, h - 120);
         ctx.fillText(`Active Pathway: ${cState.pathways.direct.active ? 'Direct' : (cState.pathways.indirect.active ? 'Indirect' : 'None')}`, w - 10, h - 100);
+        ctx.fillText(`SNc Activity (Feedback): ${(cState.feedback.sncActivity * 100).toFixed(1)}%`, w - 10, h - 80);
     };
 })();
