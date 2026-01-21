@@ -12,9 +12,10 @@
     G.molecularState = {
         gProteins: [], // 2. G-Protein Cycle: Dissociation of Gα from Gβγ
         campMicrodomains: [],
-        darpp32: { thr34: 0, thr75: 0, pp1Inhibited: false }, // 14. DARPP-32 Cycle, 15. PP1 Inhibition
+        darpp32: { thr34: 0, thr75: 0.2, pp1Inhibited: false }, // 14. DARPP-32 Cycle, 15. PP1 Inhibition
         pka: { reg: 10, cat: 0, subunits: [] }, // 13. PKA Holoenzyme Dynamics
         ac5: { activity: 0, inhibitedByCa: false }, // 11. Adenylate Cyclase Isoforms (AC5)
+        pde: { pde4: 1.0, pde10a: 1.0 }, // 17. PDE Activity
         crebActivation: 0,
         deltaFosB: 0,
         internalizedReceptors: [], // 9. Receptor Internalization, 10. Receptor Recycling
@@ -137,7 +138,11 @@
         for (let i = mState.campMicrodomains.length - 1; i >= 0; i--) {
             const m = mState.campMicrodomains[i];
             m.radius += 0.4; // 12. Local cAMP gradients
-            m.life -= 1.2; // 17. PDE-mediated degradation
+
+            // 17. PDE-mediated degradation (PDE4 and PDE10A)
+            const pdeDegradation = (mState.pde.pde4 + mState.pde.pde10a) * 0.6;
+            m.life -= pdeDegradation;
+
             if (m.life <= 0) mState.campMicrodomains.splice(i, 1);
         }
 
@@ -174,6 +179,7 @@
         }
 
         // 14. DARPP-32 Cycle & 15. PP1 Inhibition
+        // Thr34 is phosphorylated by PKA
         if (mState.pka.cat > 2) {
             mState.darpp32.thr34 = Math.min(1, mState.darpp32.thr34 + 0.01);
         } else {
@@ -181,6 +187,16 @@
             const pp1Activity = mState.darpp32.pp1Inhibited ? 0.001 : 0.005;
             mState.darpp32.thr34 = Math.max(0, mState.darpp32.thr34 - pp1Activity);
         }
+
+        // Thr75 is phosphorylated by Cdk5 (Enhancement 14)
+        // Cdk5 is often constitutively active or modulated by other pathways
+        mState.darpp32.thr75 = Math.min(1.0, mState.darpp32.thr75 + 0.001);
+
+        // Phospho-Thr75-DARPP-32 inhibits PKA (Enhancement 14)
+        if (mState.darpp32.thr75 > 0.5) {
+            mState.pka.cat *= 0.99;
+        }
+
         mState.darpp32.pp1Inhibited = mState.darpp32.thr34 > 0.6;
 
         // 16. ERK/MAPK Cascade
