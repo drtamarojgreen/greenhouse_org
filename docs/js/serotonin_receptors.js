@@ -75,6 +75,12 @@
                 // If 5-HT2A is bound by a biased ligand, adjust pathway weighting
                 if (r.type === '5-HT2A' && r.state === 'Active') {
                     r.pathwayBias = r.biasedLigand ? 1.5 : 1.0; // Boosts Gq vs Beta-Arrestin (abstracted)
+
+                    // Receptor Oligomerization (Category 1, #6)
+                    // 5-HT2A-mGlu2 hetero-oligomer complex logic
+                    if (r.oligomerizedWith === 'mGlu2') {
+                        r.pathwayBias *= 0.8; // Oligomerization modulates coupling efficiency
+                    }
                 }
 
                 // 5-HT5A Gi/o inhibitory details (Category 1, #5)
@@ -144,7 +150,8 @@
                     ctx.fillStyle = '#fff';
                     ctx.font = `${10 * p.scale}px Arial`;
                     ctx.textAlign = 'center';
-                    ctx.fillText(r.type, p.x, p.y + 60 * p.scale);
+                    const label = r.oligomerizedWith ? `${r.type}-${r.oligomerizedWith}` : r.type;
+                    ctx.fillText(label, p.x, p.y + 60 * p.scale);
 
                     if (r.state !== 'Inactive') {
                         ctx.fillStyle = '#00ffcc';

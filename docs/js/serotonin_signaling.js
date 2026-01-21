@@ -19,6 +19,7 @@
         akt: 0,
         creb: 0,
         sahp: 0, // Slow Afterhyperpolarization
+        skBK: 0, // Calcium-activated Potassium Channels
         adaptation: 0,
         inputResistance: 100, // MOhms
         membranePotential: -70, // mV
@@ -81,6 +82,11 @@
             this.sahp += (this.calcium * 0.1) - (totalGi * 0.2 + this.cAMP * 0.1) - (this.sahp * 0.05);
             this.sahp = Math.max(0, this.sahp);
 
+            // Calcium-activated Potassium Channels (Category 6, #53)
+            // SK and BK channels open in response to Calcium, causing hyperpolarization
+            this.skBK += (this.calcium * 0.2) - (this.skBK * 0.1);
+            this.skBK = Math.max(0, this.skBK);
+
             // Calcium Oscillations (Stochastic ER release)
             const erReleaseThreshold = 0.5;
             if (this.ip3 > erReleaseThreshold && Math.random() < this.ip3 * 0.05) {
@@ -123,7 +129,7 @@
                 this.adaptation *= 0.98;
             }
 
-            this.membranePotential += (girkEffect + hcnEffect + excitabilityShift - (this.adaptation * 0.5 + this.sahp)) * resistanceFactor + (-70 - this.membranePotential) * 0.05;
+            this.membranePotential += (girkEffect + hcnEffect + excitabilityShift - (this.adaptation * 0.5 + this.sahp + this.skBK * 2)) * resistanceFactor + (-70 - this.membranePotential) * 0.05;
 
             // Update pulses
             this.pulses = this.pulses.filter(p => {
@@ -166,23 +172,24 @@
 
             // HUD for signaling levels
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(w - 210, 10, 200, 220);
+            ctx.fillRect(w - 210, 10, 200, 240);
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'left';
             ctx.fillText('INTRACELLULAR SIGNALING', w - 200, 30);
 
             ctx.font = '11px Arial';
-            ctx.fillText(`cAMP: ${this.cAMP.toFixed(2)}`, w - 200, 50);
-            ctx.fillText(`Calcium: ${this.calcium.toFixed(2)}`, w - 200, 70);
-            ctx.fillText(`IP3: ${this.ip3.toFixed(2)}`, w - 200, 90);
-            ctx.fillText(`PKC: ${this.pkc.toFixed(2)}`, w - 200, 105);
-            ctx.fillText(`RhoA: ${this.rhoA.toFixed(2)}`, w - 200, 120);
-            ctx.fillText(`AKT: ${this.akt.toFixed(2)}`, w - 200, 135);
-            ctx.fillText(`CREB: ${this.creb.toFixed(2)}`, w - 200, 150);
-            ctx.fillText(`Rin: ${this.inputResistance.toFixed(1)} MΩ`, w - 200, 162);
-            ctx.fillText(`Adaptation: ${this.adaptation.toFixed(2)}`, w - 200, 174);
-            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 186);
+            ctx.fillText(`cAMP: ${this.cAMP.toFixed(2)}`, w - 200, 48);
+            ctx.fillText(`Calcium: ${this.calcium.toFixed(2)}`, w - 200, 61);
+            ctx.fillText(`IP3: ${this.ip3.toFixed(2)}`, w - 200, 74);
+            ctx.fillText(`PKC: ${this.pkc.toFixed(2)}`, w - 200, 87);
+            ctx.fillText(`RhoA: ${this.rhoA.toFixed(2)}`, w - 200, 100);
+            ctx.fillText(`AKT: ${this.akt.toFixed(2)}`, w - 200, 113);
+            ctx.fillText(`CREB: ${this.creb.toFixed(2)}`, w - 200, 126);
+            ctx.fillText(`SK/BK: ${this.skBK.toFixed(2)}`, w - 200, 139);
+            ctx.fillText(`Rin: ${this.inputResistance.toFixed(1)} MΩ`, w - 200, 152);
+            ctx.fillText(`Adaptation: ${this.adaptation.toFixed(2)}`, w - 200, 165);
+            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 178);
 
             if (G.Transport && G.Transport.glutamateCoRelease) {
                 ctx.fillStyle = '#ffcc00';

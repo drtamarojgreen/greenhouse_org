@@ -27,6 +27,16 @@
         const states = [
             { name: 'Depression', toggle: () => { G.Transport.tphActivity = G.Transport.tphActivity === 1.0 ? 0.3 : 1.0; } },
             { name: 'Time-lapse', toggle: () => { G.timeLapse = !G.timeLapse; } },
+            { name: 'Scenario: MDMA', toggle: () => {
+                G.mdmaActive = !G.mdmaActive;
+                if (G.mdmaActive) {
+                    G.Transport.reuptakeRate = -0.5; // Reverse transport
+                    G.Transport.vesicle5HT = 0; // Empty vesicles into cleft
+                    for(let i=0; i<50; i++) G.Kinetics.spawnLigand('Serotonin');
+                } else {
+                    G.Transport.reuptakeRate = 0.05;
+                }
+            }},
             { name: 'Phasic Mode', toggle: () => { G.Transport.firingMode = G.Transport.firingMode === 'tonic' ? 'phasic' : 'tonic'; } },
             { name: 'Inflammation', toggle: () => { G.Transport.inflammationActive = !G.Transport.inflammationActive; } },
             { name: 'Pineal Mode', toggle: () => { G.Transport.pinealMode = !G.Transport.pinealMode; } },
@@ -136,6 +146,12 @@
         if (G.ssActive) {
             ctx.fillStyle = `rgba(255, 0, 0, ${0.1 + Math.sin(Date.now() * 0.01) * 0.05})`;
             ctx.fillRect(0, 0, G.width, G.height);
+            // Comparison View placeholder (Category 10, #97)
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(G.width/2, 0);
+            ctx.lineTo(G.width/2, G.height);
+            ctx.stroke();
         }
         const w = G.width;
         const h = G.height;
