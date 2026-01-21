@@ -25,10 +25,11 @@
             if (!G.isRunning) return;
 
             // Pathway Flux Analysis (Category 9, #84)
-            // Net flux = Synthesis - Degradation - Reuptake (simplified pool delta)
+            // Net flux = Synthesis - Degradation - Reuptake (detailed pool delta)
             const synthesisFlux = G.Transport ? G.Transport.synthesisRate * G.Transport.tphActivity : 0;
+            const htpFlux = G.Transport ? G.Transport.htp5 * 0.1 : 0;
             const degradationFlux = G.Transport ? G.Transport.degradationRate * G.Transport.maoActivity : 0;
-            this.sensitivityData.netFlux = (synthesisFlux - degradationFlux).toFixed(3);
+            this.sensitivityData.netFlux = (synthesisFlux + htpFlux - degradationFlux).toFixed(3);
 
             // Neurogenesis Score (Category 8, #77)
             // Driven by 5-HT1A and chronic SSRI-like levels
@@ -90,6 +91,17 @@
         },
 
         renderAnalytics(ctx, w, h) {
+            // Comparison View Data (Category 10, #97)
+            if (G.comparisonMode) {
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
+                ctx.fillRect(0, 0, w/2, h);
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+                ctx.fillRect(w/2, 0, w/2, h);
+                ctx.fillStyle = '#fff';
+                ctx.fillText('HEALTHY', 50, 30);
+                ctx.fillText('PATHOLOGICAL', w - 100, 30);
+            }
+
             // Spatial Heatmap (Category 9, #85)
             // Simplified: Draw a grid and color based on nearby particles
             const gridScale = 20;

@@ -43,6 +43,11 @@
             { name: 'Inflammation', toggle: () => { G.Transport.inflammationActive = !G.Transport.inflammationActive; } },
             { name: 'Pineal Mode', toggle: () => { G.Transport.pinealMode = !G.Transport.pinealMode; } },
             { name: 'Gut-Brain Axis', toggle: () => { G.gutBrainActive = !G.gutBrainActive; } },
+            { name: 'Comparison View', toggle: () => { G.comparisonMode = !G.comparisonMode; } },
+            { name: 'Scenario: SSRI', toggle: () => {
+                G.ssriMode = !G.ssriMode;
+                if(G.ssriMode) G.Transport.sertActivity = 0.1; else G.Transport.sertActivity = 1.0;
+            }},
             { name: 'VR Mode', toggle: () => { G.vrMode = !G.vrMode; if(G.vrMode) G.state.camera.fov = 800; else G.state.camera.fov = 500; } },
             { name: 'Export Data', toggle: () => { if(G.Analytics) G.Analytics.exportData(); } },
             { name: 'Serotonin Syndrome', toggle: () => {
@@ -186,8 +191,12 @@
         if (G.ssActive) {
             ctx.fillStyle = `rgba(255, 0, 0, ${0.1 + Math.sin(Date.now() * 0.01) * 0.05})`;
             ctx.fillRect(0, 0, G.width, G.height);
-            // Comparison View placeholder (Category 10, #97)
+        }
+
+        // Comparison View logic (Category 10, #97)
+        if (G.comparisonMode) {
             ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(G.width/2, 0);
             ctx.lineTo(G.width/2, G.height);
