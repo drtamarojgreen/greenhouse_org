@@ -76,6 +76,33 @@ def create_text(content, location=(0, 0, 0.5)):
 
     return text_obj
 
+def create_moving_spotlights(scene, target_obj):
+    # Create paths for spotlights
+    bpy.ops.curve.primitive_bezier_circle_add(radius=8, location=(5, -5, 5), rotation=(math.radians(60), 0, 0))
+    path1 = bpy.context.object
+    
+    bpy.ops.curve.primitive_bezier_circle_add(radius=8, location=(-5, -5, 5), rotation=(math.radians(60), 0, 0))
+    path2 = bpy.context.object
+    
+    for path in [path1, path2]:
+        bpy.ops.object.light_add(type='SPOT', location=(0, 0, 0))
+        spot = bpy.context.object
+        spot.data.energy = 2000
+        spot.data.spot_size = math.radians(35)
+        spot.data.spot_blend = 0.5
+        
+        follow = spot.constraints.new(type='FOLLOW_PATH')
+        follow.target = path
+        follow.offset_factor = 0.0
+        follow.keyframe_insert(data_path="offset_factor", frame=scene.frame_start)
+        follow.offset_factor = 1.0
+        follow.keyframe_insert(data_path="offset_factor", frame=scene.frame_end)
+        
+        track = spot.constraints.new(type='TRACK_TO')
+        track.target = target_obj
+        track.track_axis = 'TRACK_NEGATIVE_Z'
+        track.up_axis = 'UP_Y'
+
 def main():
     parser = argparse.ArgumentParser(description="Render GreenhouseMD text on logo background")
     parser.add_argument("--output", default="//greenhouse_md.png", help="Output path")
@@ -99,8 +126,13 @@ def main():
     create_logo_background(logo_path)
     create_text("GreenhouseMD")
 
+    # Create axis at midpoint for spotlights to focus on
+    bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0.5))
+    midpoint_axis = bpy.context.object
+    create_moving_spotlights(scene, midpoint_axis)
+
     # Camera
-    bpy.ops.object.camera_add(location=(0, -8, 0), rotation=(math.radians(90), 0, 0))
+    bpy.ops.object.camera_add(location=(0, -16, 0), rotation=(math.radians(90), 0, 0))
     scene.camera = bpy.context.object
 
     # Lighting
