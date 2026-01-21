@@ -164,8 +164,13 @@
             eState.apBackProp -= 0.1;
         }
 
+        // 51. Nav1.6 Modulation & Spike Threshold
+        // D1 increases Nav1.6 activity (lowers threshold), D2 decreases it
+        const thresholdShift = (state.mode.includes('D1') ? -2 : (state.mode.includes('D2') ? 2 : 0));
+        const currentThreshold = eState.threshold + thresholdShift;
+
         // Simple Spike generation (influenced by Nav1.6)
-        if (eState.membranePotential > eState.threshold && Math.random() > (1.1 - eState.channels.nav16 * 0.2)) {
+        if (eState.membranePotential > currentThreshold && Math.random() > (1.1 - eState.channels.nav16 * 0.2)) {
             eState.spikeCount++;
             eState.membranePotential = 35; // Spike peak
 
@@ -251,7 +256,7 @@
 
         // Render Channel Status
         ctx.fillText(`GIRK: ${(eState.channels.girk * 100).toFixed(0)}%`, 10, h - 240);
-        ctx.fillText(`HCN: ${(eState.channels.hcn * 100).toFixed(0)}%`, 10, h - 220);
+        ctx.fillText(`HCN (Ih): ${(eState.channels.hcn * 100).toFixed(0)}%`, 10, h - 220);
 
         // 60. Input Resistance Visual
         ctx.fillStyle = '#aaa';

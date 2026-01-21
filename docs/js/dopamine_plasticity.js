@@ -18,6 +18,7 @@
         bdnfParticles: [],
         proteinSynthesis: 0, // 69. Protein Synthesis
         epigeneticShift: 0, // 68. Epigenetic Modifications
+        deltaFosB: 0, // 67. DeltaFosB Accumulation
         lastPlasticityUpdate: 0
     };
 
@@ -78,6 +79,9 @@
             pState.proteinSynthesis = Math.min(1.0, pState.proteinSynthesis + 0.002);
             // 68. Epigenetic modifications
             pState.epigeneticShift = Math.min(1.0, pState.epigeneticShift + 0.001);
+
+            // 67. DeltaFosB Accumulation (Slow)
+            pState.deltaFosB = Math.min(5.0, pState.deltaFosB + 0.0005);
         } else {
             pState.geneExpression.cFos *= 0.995;
             pState.geneExpression.jun *= 0.995;
@@ -90,6 +94,17 @@
         const w = G.width;
         const h = G.height;
         const pState = G.plasticityState;
+
+        // 68. Render Epigenetic Markers (Histone Acetylation)
+        if (pState.epigeneticShift > 0.2) {
+             ctx.fillStyle = '#ffff00';
+             ctx.globalAlpha = pState.epigeneticShift * 0.3;
+             // Draw some background "chromatin" or symbols
+             for(let i=0; i<10; i++) {
+                 ctx.fillText("Ac", 50 + i*20, 50);
+             }
+             ctx.globalAlpha = 1.0;
+        }
 
         // 70. Render BDNF Particles
         pState.bdnfParticles.forEach(p => {
@@ -135,5 +150,6 @@
         ctx.fillText(`Spine Density: ${pState.spineDensity.toFixed(3)}`, 10, 120);
         ctx.fillText(`eCB Levels: ${(pState.ecbLevels * 100).toFixed(1)}%`, 10, 140);
         ctx.fillText(`c-Fos Expression: ${(pState.geneExpression.cFos * 100).toFixed(1)}%`, 10, 160);
+        ctx.fillText(`ΔFosB Level: ${pState.deltaFosB.toFixed(4)}`, 10, 180);
     };
 })();

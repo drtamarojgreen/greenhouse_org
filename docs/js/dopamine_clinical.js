@@ -63,6 +63,14 @@
             cState.d2Supersensitivity = Math.min(2.0, cState.d2Supersensitivity + 0.0001);
         }
 
+        // 81. Parkinsonian Terminal Loss visualization
+        if (state.mode === 'Parkinsonian') {
+            // Shrink terminals or reduce their number visually
+            if (G.circuitState && G.circuitState.projections) {
+                G.circuitState.projections.snc.label = "SNc (DEGENERATED)";
+            }
+        }
+
         // 87. Alpha-Synuclein Pathology (Inhibits vesicle release)
         if (state.mode === 'Alpha-Synuclein') {
             cState.alphaSynuclein.level = Math.min(1.0, cState.alphaSynuclein.level + 0.005);
@@ -103,6 +111,7 @@
     G.renderClinical = function (ctx, project) {
         const w = G.width;
         const h = G.height;
+        const cam = G.state.camera;
         const cState = G.clinicalState;
 
         // Overlay Clinical Info

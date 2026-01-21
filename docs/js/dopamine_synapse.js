@@ -57,12 +57,22 @@
         G.synapseState.vesicles.rrp.push({
             y: -180, x: (Math.random() - 0.5) * 120,
             filled: 1.0,
-            snareState: 'Primed' // 27. SNARE Complex Assembly
+            snareState: 'Primed', // 27. SNARE Complex Assembly
+            snareProteins: {
+                syntaxin: 1.0,
+                snap25: 1.0,
+                synaptobrevin: 1.0
+            }
         });
         G.synapseState.vesicles.reserve.push({
             y: -260, x: (Math.random() - 0.5) * 180,
             filled: 1.0,
-            snareState: 'Docked'
+            snareState: 'Docked',
+            snareProteins: {
+                syntaxin: 0.2,
+                snap25: 0.2,
+                synaptobrevin: 1.0
+            }
         });
     }
 
@@ -157,6 +167,9 @@
                 const v = sState.vesicles.reserve.splice(readyIndex, 1)[0];
                 v.y = -180;
                 v.snareState = 'Primed';
+                // 27. Assemble SNARE complex upon priming
+                v.snareProteins.syntaxin = 1.0;
+                v.snareProteins.snap25 = 1.0;
                 sState.vesicles.rrp.push(v);
             }
         }
@@ -340,6 +353,35 @@
                 ctx.arc(p.x, p.y, 7 * p.scale, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
+
+                // 27. Render SNARE Proteins (small colored ticks/lines around vesicle)
+                if (v.snareProteins) {
+                    const radius = 9 * p.scale;
+                    // Syntaxin (Red)
+                    if (v.snareProteins.syntaxin > 0.5) {
+                        ctx.strokeStyle = '#f00';
+                        ctx.beginPath();
+                        ctx.moveTo(p.x + radius, p.y);
+                        ctx.lineTo(p.x + radius + 3*p.scale, p.y);
+                        ctx.stroke();
+                    }
+                    // SNAP-25 (Blue)
+                    if (v.snareProteins.snap25 > 0.5) {
+                        ctx.strokeStyle = '#00f';
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y + radius);
+                        ctx.lineTo(p.x, p.y + radius + 3*p.scale);
+                        ctx.stroke();
+                    }
+                    // Synaptobrevin (Yellow)
+                    if (v.snareProteins.synaptobrevin > 0.5) {
+                        ctx.strokeStyle = '#ff0';
+                        ctx.beginPath();
+                        ctx.moveTo(p.x - radius, p.y);
+                        ctx.lineTo(p.x - radius - 3*p.scale, p.y);
+                        ctx.stroke();
+                    }
+                }
             }
         });
 
