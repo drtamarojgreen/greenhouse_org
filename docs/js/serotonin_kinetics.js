@@ -29,9 +29,9 @@
             this.activeLigands.push({
                 name,
                 ...proto,
-                x: x || (Math.random() - 0.5) * 200,
-                y: y || -150,
-                z: z || (Math.random() - 0.5) * 200,
+                x: (x !== undefined) ? x : (Math.random() - 0.5) * 200,
+                y: (y !== undefined) ? y : -150,
+                z: (z !== undefined) ? z : (Math.random() - 0.5) * 200,
                 vx: (Math.random() - 0.5) * 2,
                 vy: Math.random() * 2,
                 vz: (Math.random() - 0.5) * 2,

@@ -13,29 +13,44 @@
         subtypes: {
             '5-HT1A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#4d79ff', constitutiveActivity: 0.1 },
             '5-HT1B': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#3366ff' },
+            '5-HT1D': { coupling: 'Gi/o', effect: 'Inhibitory (Presynaptic)', color: '#3399ff' },
+            '5-HT1E': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#6699ff' },
+            '5-HT1F': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#9999ff' },
             '5-HT2A': { coupling: 'Gq/11', effect: 'Excitatory', color: '#ff4d4d', rnaEditingVariants: true },
             '5-HT2C': { coupling: 'Gq/11', effect: 'Excitatory', color: '#cc3333', editedIsoforms: ['INI', 'VGV', 'VSV'] },
             '5-HT3': { coupling: 'Ionotropic', effect: 'Excitatory (Na+/K+)', color: '#4dff4d' },
-            '5-HT4': { coupling: 'Gs', effect: 'Excitatory', color: '#ff9900' },
+            '5-HT4': { coupling: 'Gs', effect: 'Excitatory', color: '#ff9900', spliceVariants: ['a', 'b', 'c'] },
             '5-HT5A': { coupling: 'Gi/o', effect: 'Inhibitory', color: '#9933ff' },
             '5-HT6': { coupling: 'Gs', effect: 'Excitatory', color: '#ffff4d' },
-            '5-HT7': { coupling: 'Gs', effect: 'Excitatory', color: '#ff4dff' }
+            '5-HT7': { coupling: 'Gs', effect: 'Excitatory', color: '#ff4dff', spliceVariants: ['a', 'b', 'd'] }
         },
 
         conformationalStates: ['Inactive', 'Intermediate', 'Active'],
 
         setupReceptorModel() {
-            G.state.receptors = Object.keys(this.subtypes).map((type, i) => ({
-                type,
-                ...this.subtypes[type],
-                state: 'Inactive',
-                x: (i - 4) * 60,
-                y: 0,
-                z: 0,
-                oligomerizedWith: null,
-                palmitoylated: Math.random() > 0.5,
-                disulfideBridges: true
-            }));
+            G.state.receptors = Object.keys(this.subtypes).map((type, i) => {
+                const r = {
+                    type,
+                    ...this.subtypes[type],
+                    state: 'Inactive',
+                    x: (i - 4) * 60,
+                    y: 0,
+                    z: 0,
+                    oligomerizedWith: null,
+                    palmitoylated: Math.random() > 0.5,
+                    disulfideBridges: true
+                };
+
+                // Assign random RNA editing isoform to 5-HT2C
+                if (type === '5-HT2C') {
+                    r.editedIsoform = this.subtypes[type].editedIsoforms[Math.floor(Math.random() * 3)];
+                }
+                // Alternative Splicing (Category 1, #9)
+                if (this.subtypes[type].spliceVariants) {
+                    r.spliceVariant = this.subtypes[type].spliceVariants[Math.floor(Math.random() * this.subtypes[type].spliceVariants.length)];
+                }
+                return r;
+            });
 
             // Example of Hetero-oligomerization (5-HT2A-mGlu2 placeholder)
             if (G.state.receptors[2]) {
@@ -75,6 +90,12 @@
                 // If 5-HT2A is bound by a biased ligand, adjust pathway weighting
                 if (r.type === '5-HT2A' && r.state === 'Active') {
                     r.pathwayBias = r.biasedLigand ? 1.5 : 1.0; // Boosts Gq vs Beta-Arrestin (abstracted)
+
+                    // Receptor Oligomerization (Category 1, #6)
+                    // 5-HT2A-mGlu2 hetero-oligomer complex logic
+                    if (r.oligomerizedWith === 'mGlu2') {
+                        r.pathwayBias *= 0.8; // Oligomerization modulates coupling efficiency
+                    }
                 }
 
                 // 5-HT5A Gi/o inhibitory details (Category 1, #5)
@@ -144,7 +165,8 @@
                     ctx.fillStyle = '#fff';
                     ctx.font = `${10 * p.scale}px Arial`;
                     ctx.textAlign = 'center';
-                    ctx.fillText(r.type, p.x, p.y + 60 * p.scale);
+                    const label = (r.oligomerizedWith ? `${r.type}-${r.oligomerizedWith}` : r.type) + (r.spliceVariant ? `(${r.spliceVariant})` : '');
+                    ctx.fillText(label, p.x, p.y + 60 * p.scale);
 
                     if (r.state !== 'Inactive') {
                         ctx.fillStyle = '#00ffcc';

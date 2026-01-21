@@ -26,6 +26,8 @@
         astrocyte5HT: 0,
         serotonylatedProteins: 0,
         sensorySensitivity: 1.0,
+        sertAllele: 'Long', // 'Short' or 'Long' (Category 8, #79)
+        sertPhosphorylation: 0, // Category 4, #36
 
         updateTransport() {
             const current5HT = G.Kinetics ? G.Kinetics.activeLigands.filter(l => l.name === 'Serotonin').length : 0;
@@ -92,26 +94,38 @@
                 }
             }
 
-            // SERT Reuptake
+            // SERT Polymorphisms (Category 8, #79)
+            // 'Short' allele (s) results in lower SERT expression/activity
+            const alleleEffect = this.sertAllele === 'Short' ? 0.6 : 1.0;
+
+            // SERT Phosphorylation (Category 4, #36)
+            // p38 MAPK or PKC can phosphorylate SERT, usually reducing reuptake efficiency
+            const phosphorylationEffect = 1.0 - (this.sertPhosphorylation * 0.5);
+
+            const totalSertEfficiency = this.sertActivity * alleleEffect * phosphorylationEffect;
+
+            // SERT & Glial Reuptake (Revised to avoid splice-in-loop bug)
             if (G.Kinetics && G.Kinetics.activeLigands) {
-                G.Kinetics.activeLigands.forEach((l, index) => {
+                for (let i = G.Kinetics.activeLigands.length - 1; i >= 0; i--) {
+                    const l = G.Kinetics.activeLigands[i];
                     if (l.name === 'Serotonin' && !l.boundTo) {
                         // SERT is at the top (presynaptic)
                         const distToSert = Math.abs(l.y + 150) + Math.abs(l.x) + Math.abs(l.z);
-                        if (distToSert < 50 && Math.random() < this.reuptakeRate * this.sertActivity) {
-                            G.Kinetics.activeLigands.splice(index, 1);
+                        if (distToSert < 50 && Math.random() < this.reuptakeRate * totalSertEfficiency) {
+                            G.Kinetics.activeLigands.splice(i, 1);
                             this.vesicle5HT += 1;
+                            continue;
                         }
 
                         // Glial Serotonin Reuptake via PMAT (Category 5, #50)
                         // Astrocytes are simulated at the periphery
                         const distToGlia = Math.sqrt(l.x*l.x + l.z*l.z);
                         if (distToGlia > 200 && Math.random() < 0.02) {
-                            G.Kinetics.activeLigands.splice(index, 1);
+                            G.Kinetics.activeLigands.splice(i, 1);
                             this.astrocyte5HT += 1;
                         }
                     }
-                });
+                }
             }
 
             // MAO Degradation
@@ -119,9 +133,16 @@
                 if (this.vesicle5HT > 0) this.vesicle5HT -= 0.1;
             }
 
-            // Replenish tryptophan (L-tryptophan transport across BBB)
-            const bbbTransportRate = 0.05 * (this.pinealMode ? 1.5 : 1.0);
+            // L-Tryptophan Transport via LAT1 (Category 4, #33)
+            // Tryptophan availability depends on competition (simulated)
+            const bbbTransportRate = 0.05 * (this.pinealMode ? 1.5 : 1.0) * (this.inflammationActive ? 0.5 : 1.0);
             if (this.tryptophan < 100) this.tryptophan += bbbTransportRate;
+
+            // Monoamine Oxidase (MAO-A) Degradation steps (Category 4, #37)
+            // Model degradation into 5-HIAA placeholder
+            if (Math.random() < this.degradationRate * this.maoActivity) {
+                this.hiaa = (this.hiaa || 0) + 0.1;
+            }
 
             // Serotonylation of proteins (Category 4, #39)
             // Covalent attachment of 5-HT to proteins (e.g. small GTPases)
@@ -132,6 +153,11 @@
             // Sensory Processing Sensitivity (Category 8, #80)
             // 5-HT role in filtering sensory input in thalamus
             this.sensorySensitivity = 1.0 / (1.0 + current5HT * 0.05);
+
+            // Dynamic SERT Phosphorylation by signaling (p38/PKC simulation)
+            if (G.Signaling) {
+                this.sertPhosphorylation = G.Signaling.pkc * 0.2;
+            }
 
             // Synaptic Scaling (Category 5, #48)
             this.longTermAvg5HT = this.longTermAvg5HT * 0.99 + current5HT * 0.01;
@@ -185,6 +211,9 @@
             ctx.font = '10px Arial';
             ctx.fillText(`Serotonylation: ${this.serotonylatedProteins}`, 20, 165);
             ctx.fillText(`Sensory Filter: ${(100 - this.sensorySensitivity * 100).toFixed(0)}%`, 20, 180);
+            ctx.fillText(`SERT Allele: ${this.sertAllele}`, 20, 195);
+            ctx.fillText(`SERT Phos: ${(this.sertPhosphorylation * 100).toFixed(0)}%`, 20, 210);
+            ctx.fillText(`5-HIAA: ${(this.hiaa || 0).toFixed(1)}`, 20, 225);
             if (pre.scale > 0) {
                 ctx.fillStyle = 'rgba(100, 100, 150, 0.3)';
                 ctx.beginPath();

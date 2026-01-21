@@ -19,9 +19,16 @@
             ec50Data: []
         },
         maxHistory: 100,
+        sensitivityData: {},
 
         updateAnalytics() {
             if (!G.isRunning) return;
+
+            // Pathway Flux Analysis (Category 9, #84)
+            // Net flux = Synthesis - Degradation - Reuptake (simplified pool delta)
+            const synthesisFlux = G.Transport ? G.Transport.synthesisRate * G.Transport.tphActivity : 0;
+            const degradationFlux = G.Transport ? G.Transport.degradationRate * G.Transport.maoActivity : 0;
+            this.sensitivityData.netFlux = (synthesisFlux - degradationFlux).toFixed(3);
 
             // Neurogenesis Score (Category 8, #77)
             // Driven by 5-HT1A and chronic SSRI-like levels
@@ -58,6 +65,28 @@
                 this.history.ec50Data.push({ conc: extracellular, resp: occupancy });
                 if (this.history.ec50Data.length > 50) this.history.ec50Data.shift();
             }
+
+            // Sensitivity Analysis (Category 9, #86)
+            // Correlation between synthesis activity and extracellular tone
+            const tph = G.Transport ? G.Transport.tphActivity : 1;
+            this.sensitivityData.synthesisDrive = (extracellular / (tph + 0.1)).toFixed(2);
+        },
+
+        exportData() {
+            // Export simulation data (Category 9, #88)
+            const data = {
+                timestamp: Date.now(),
+                state: G.state,
+                history: this.history,
+                sensitivity: this.sensitivityData
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `serotonin_sim_export_${data.timestamp}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
         },
 
         renderAnalytics(ctx, w, h) {
@@ -137,6 +166,10 @@
             ctx.stroke();
             ctx.fillStyle = '#fff';
             ctx.fillText('EC50 Curve (Conc vs Resp)', drX, drY - graphH - 5);
+
+            // Sensitivity HUD
+            ctx.fillText(`Sensitivity (Synth Drive): ${this.sensitivityData.synthesisDrive}`, drX, drY + 20);
+            ctx.fillText(`Net Flux: ${this.sensitivityData.netFlux}`, drX, drY + 35);
 
             // Clinical Metrics (Category 8)
             ctx.fillStyle = '#fff';

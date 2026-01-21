@@ -19,8 +19,11 @@
         akt: 0,
         creb: 0,
         sahp: 0, // Slow Afterhyperpolarization
+        skBK: 0, // Calcium-activated Potassium Channels
+        pde: 1.0, // Phosphodiesterase activity
         adaptation: 0,
         inputResistance: 100, // MOhms
+        eiBalance: 1.0, // Excitatory/Inhibitory Balance
         membranePotential: -70, // mV
         pulses: [],
 
@@ -55,9 +58,15 @@
                 });
             }
 
-            // cAMP dynamics
-            const adenylateCyclaseBase = 0.1;
-            this.cAMP += (totalGs * 0.5) - (totalGi * 0.4) - (this.cAMP * 0.05);
+            // cAMP dynamics (Category 3, #21: Gαi specificity)
+            // Model specific Gi inhibitory potency
+            const giPotency = (G.state.receptors && G.state.receptors.find(r => r.inhibitoryPotential)) ? 1.2 : 1.0;
+
+            // PDE regulation (Category 3, #30)
+            // 5-HT signaling can modulate PDE activity (e.g. via PKC or Calcium)
+            this.pde = 1.0 + (this.pkc * 0.05 + this.calcium * 0.02);
+
+            this.cAMP += (totalGs * 0.5) - (totalGi * 0.4 * giPotency) - (this.cAMP * 0.05 * this.pde);
             this.cAMP = Math.max(0, this.cAMP);
 
             // Calcium/PLC dynamics
@@ -80,6 +89,11 @@
             // 5-HT often suppresses sAHP via Gi/o or cAMP, increasing excitability
             this.sahp += (this.calcium * 0.1) - (totalGi * 0.2 + this.cAMP * 0.1) - (this.sahp * 0.05);
             this.sahp = Math.max(0, this.sahp);
+
+            // Calcium-activated Potassium Channels (Category 6, #53)
+            // SK and BK channels open in response to Calcium, causing hyperpolarization
+            this.skBK += (this.calcium * 0.2) - (this.skBK * 0.1);
+            this.skBK = Math.max(0, this.skBK);
 
             // Calcium Oscillations (Stochastic ER release)
             const erReleaseThreshold = 0.5;
@@ -111,6 +125,15 @@
 
             const excitabilityShift = (ionotropicEffect * potentiationFactor * kv42Inhibition);
 
+            // E/I Balance Visualization (Category 6, #58)
+            const totalE = totalGs + totalGq + totalIonotropic + (G.Transport && G.Transport.glutamateCoRelease ? 1 : 0);
+            const totalI = totalGi;
+            this.eiBalance = (totalE + 1) / (totalI + 1);
+
+            // Back-propagating Action Potentials (Category 6, #59)
+            // 5-HT modulation of dendritic spikes
+            const dendriticPropagation = (ht2aActive ? 1.4 : 1.0) * (totalGi > 1 ? 0.7 : 1.0);
+
             // Membrane Resistance Modulation (Category 6, #57)
             this.inputResistance = 100 * (1.0 + (girkActivation * -0.2) + (this.cAMP * 0.05));
             const resistanceFactor = this.inputResistance / 100;
@@ -123,7 +146,7 @@
                 this.adaptation *= 0.98;
             }
 
-            this.membranePotential += (girkEffect + hcnEffect + excitabilityShift - (this.adaptation * 0.5 + this.sahp)) * resistanceFactor + (-70 - this.membranePotential) * 0.05;
+            this.membranePotential += (girkEffect + hcnEffect + (excitabilityShift * dendriticPropagation) - (this.adaptation * 0.5 + this.sahp + this.skBK * 2)) * resistanceFactor + (-70 - this.membranePotential) * 0.05;
 
             // Update pulses
             this.pulses = this.pulses.filter(p => {
@@ -166,35 +189,38 @@
 
             // HUD for signaling levels
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(w - 210, 10, 200, 220);
+            ctx.fillRect(w - 210, 10, 200, 260);
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'left';
             ctx.fillText('INTRACELLULAR SIGNALING', w - 200, 30);
 
             ctx.font = '11px Arial';
-            ctx.fillText(`cAMP: ${this.cAMP.toFixed(2)}`, w - 200, 50);
-            ctx.fillText(`Calcium: ${this.calcium.toFixed(2)}`, w - 200, 70);
-            ctx.fillText(`IP3: ${this.ip3.toFixed(2)}`, w - 200, 90);
-            ctx.fillText(`PKC: ${this.pkc.toFixed(2)}`, w - 200, 105);
-            ctx.fillText(`RhoA: ${this.rhoA.toFixed(2)}`, w - 200, 120);
-            ctx.fillText(`AKT: ${this.akt.toFixed(2)}`, w - 200, 135);
-            ctx.fillText(`CREB: ${this.creb.toFixed(2)}`, w - 200, 150);
-            ctx.fillText(`Rin: ${this.inputResistance.toFixed(1)} MΩ`, w - 200, 162);
-            ctx.fillText(`Adaptation: ${this.adaptation.toFixed(2)}`, w - 200, 174);
-            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 186);
+            ctx.fillText(`cAMP: ${this.cAMP.toFixed(2)}`, w - 200, 48);
+            ctx.fillText(`Calcium: ${this.calcium.toFixed(2)}`, w - 200, 61);
+            ctx.fillText(`IP3: ${this.ip3.toFixed(2)}`, w - 200, 74);
+            ctx.fillText(`PKC: ${this.pkc.toFixed(2)}`, w - 200, 87);
+            ctx.fillText(`RhoA: ${this.rhoA.toFixed(2)}`, w - 200, 100);
+            ctx.fillText(`AKT: ${this.akt.toFixed(2)}`, w - 200, 113);
+            ctx.fillText(`CREB: ${this.creb.toFixed(2)}`, w - 200, 126);
+            ctx.fillText(`SK/BK: ${this.skBK.toFixed(2)}`, w - 200, 139);
+            ctx.fillText(`Rin: ${this.inputResistance.toFixed(1)} MΩ`, w - 200, 152);
+            ctx.fillText(`Adaptation: ${this.adaptation.toFixed(2)}`, w - 200, 165);
+            ctx.fillText(`PDE: ${this.pde.toFixed(2)}`, w - 200, 178);
+            ctx.fillText(`E/I Balance: ${this.eiBalance.toFixed(2)}`, w - 200, 191);
+            ctx.fillText(`Vmem: ${this.membranePotential.toFixed(1)} mV`, w - 200, 204);
 
             if (G.Transport && G.Transport.glutamateCoRelease) {
                 ctx.fillStyle = '#ffcc00';
-                ctx.fillText('Glutamate Co-transmission: ON', w - 200, 135);
+                ctx.fillText('Glutamate Co-transmission: ON', w - 200, 217);
             }
 
             // Draw membrane potential bar
             ctx.fillStyle = '#444';
-            ctx.fillRect(w - 200, 190, 180, 8);
+            ctx.fillRect(w - 200, 225, 180, 8);
             const vWidth = ((this.membranePotential + 90) / 60) * 180;
             ctx.fillStyle = this.membranePotential > -60 ? '#ff4d4d' : '#4d79ff';
-            ctx.fillRect(w - 200, 190, Math.max(0, Math.min(180, vWidth)), 8);
+            ctx.fillRect(w - 200, 225, Math.max(0, Math.min(180, vWidth)), 8);
 
             // Draw Pathway Bias indicator for 5-HT2A if active
             const ht2a = G.state.receptors ? G.state.receptors.find(r => r.type === '5-HT2A') : null;

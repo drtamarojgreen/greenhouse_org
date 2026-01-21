@@ -12,13 +12,14 @@
         const controls = document.createElement('div');
         controls.className = 'serotonin-controls';
 
-        const views = ['5-HT1A Complex', 'Ligand Pocket', 'Lipid Interactions', 'Extracellular Loop', 'Time-lapse'];
+        const views = ['5-HT1A Complex', 'Ligand Pocket', 'Lipid Interactions', 'Extracellular Loop', 'Time-lapse', 'OCD Pathway'];
         views.forEach(view => {
             const btn = document.createElement('button');
             btn.className = 'serotonin-btn';
             btn.innerText = view;
             btn.onclick = () => {
                 console.log(`Switching to ${view}`);
+                G.currentView = view;
             };
             controls.appendChild(btn);
         });
@@ -27,9 +28,21 @@
         const states = [
             { name: 'Depression', toggle: () => { G.Transport.tphActivity = G.Transport.tphActivity === 1.0 ? 0.3 : 1.0; } },
             { name: 'Time-lapse', toggle: () => { G.timeLapse = !G.timeLapse; } },
+            { name: 'Scenario: MDMA', toggle: () => {
+                G.mdmaActive = !G.mdmaActive;
+                if (G.mdmaActive) {
+                    G.Transport.reuptakeRate = -0.5; // Reverse transport
+                    G.Transport.vesicle5HT = 0; // Empty vesicles into cleft
+                    for(let i=0; i<50; i++) G.Kinetics.spawnLigand('Serotonin');
+                } else {
+                    G.Transport.reuptakeRate = 0.05;
+                }
+            }},
             { name: 'Phasic Mode', toggle: () => { G.Transport.firingMode = G.Transport.firingMode === 'tonic' ? 'phasic' : 'tonic'; } },
             { name: 'Inflammation', toggle: () => { G.Transport.inflammationActive = !G.Transport.inflammationActive; } },
             { name: 'Pineal Mode', toggle: () => { G.Transport.pinealMode = !G.Transport.pinealMode; } },
+            { name: 'VR Mode', toggle: () => { G.vrMode = !G.vrMode; if(G.vrMode) G.state.camera.fov = 800; else G.state.camera.fov = 500; } },
+            { name: 'Export Data', toggle: () => { if(G.Analytics) G.Analytics.exportData(); } },
             { name: 'Serotonin Syndrome', toggle: () => {
                 if (!G.ssActive) {
                     G.Transport.sertActivity = 0;
@@ -85,7 +98,7 @@
         container.appendChild(zoomControl);
 
         // Subcellular Markers (Category 10, #93)
-        this.renderSubcellularMarkers = (ctx, project, cam, w, h) => {
+        G.renderSubcellularMarkers = (ctx, project, cam, w, h) => {
             // Cytoskeleton visualization (Category 10, #93)
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.lineWidth = 1;
@@ -132,10 +145,27 @@
         if (oldRender) oldRender.call(G);
 
         const ctx = G.ctx;
+
+        // OCD Pathway schematic (Category 8, #73)
+        if (G.currentView === 'OCD Pathway') {
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(G.width/2 - 100, G.height/2 - 100, 200, 200);
+            ctx.fillStyle = '#fff';
+            ctx.fillText('CSTC Loop Schematic', G.width/2, G.height/2 - 110);
+            ctx.fillText('OFC -> Striatum -> Thalamus -> OFC', G.width/2, G.height/2);
+        }
+
         // Serotonin Syndrome visuals (Category 7, #69)
         if (G.ssActive) {
             ctx.fillStyle = `rgba(255, 0, 0, ${0.1 + Math.sin(Date.now() * 0.01) * 0.05})`;
             ctx.fillRect(0, 0, G.width, G.height);
+            // Comparison View placeholder (Category 10, #97)
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(G.width/2, 0);
+            ctx.lineTo(G.width/2, G.height);
+            ctx.stroke();
         }
         const w = G.width;
         const h = G.height;
