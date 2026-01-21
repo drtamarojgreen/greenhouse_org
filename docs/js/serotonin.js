@@ -34,6 +34,10 @@
         isRunning: false,
         width: 800,
         height: 600,
+        highContrast: false,
+        largeUI: false,
+        reducedMotion: false,
+        paused: false,
 
         state: {
             camera: { x: 0, y: 0, z: -500, rotationX: 0.5, rotationY: 0, rotationZ: 0, fov: 500, zoom: 1.0 },
@@ -71,14 +75,21 @@
         },
 
         injectStyles() {
-            if (document.getElementById('serotonin-sim-styles')) return;
+            if (document.getElementById('serotonin-sim-styles-modular')) return;
             const style = document.createElement('style');
-            style.id = 'serotonin-sim-styles';
+            style.id = 'serotonin-sim-styles-modular';
             style.innerHTML = `
-                .serotonin-controls { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; z-index: 10; }
-                .serotonin-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+                .serotonin-controls-modular { position: absolute; top: 10px; left: 10px; display: flex; gap: 10px; z-index: 100; }
+                .serotonin-dropdown { position: relative; }
+                .serotonin-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
                 .serotonin-btn:hover { background: #4a5568; }
-                .serotonin-info { position: absolute; bottom: 10px; left: 10px; color: #fff; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; pointer-events: none; }
+                .serotonin-checkbox-modal {
+                    position: absolute; top: 100%; left: 0; background: #2d3748; border: 1px solid #4a5568;
+                    padding: 10px; border-radius: 4px; display: flex; flex-direction: column; gap: 8px; min-width: 150px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 101;
+                }
+                .serotonin-checkbox-item { color: #fff; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+                .serotonin-info { position: absolute; bottom: 10px; left: 10px; color: #fff; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; pointer-events: none; font-size: 12px; }
             `;
             document.head.appendChild(style);
         },
@@ -116,6 +127,7 @@
         },
 
         update() {
+            if (this.paused) return;
             const iterations = this.timeLapse ? 5 : 1;
             for (let i = 0; i < iterations; i++) {
                 this.state.timer++;
@@ -138,8 +150,15 @@
             const cam = this.state.camera;
 
             ctx.clearRect(0, 0, w, h);
-            ctx.fillStyle = '#0a0510';
+            ctx.fillStyle = this.highContrast ? '#000000' : '#0a0510';
             ctx.fillRect(0, 0, w, h);
+
+            // Interaction Confirmation Ping (Category III, #46)
+            if (this.lastInteraction && this.state.timer - this.lastInteraction.time < 30) {
+                const alpha = 1.0 - (this.state.timer - this.lastInteraction.time) / 30;
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.3})`;
+                ctx.fillRect(0, 0, w, h);
+            }
 
             if (!window.GreenhouseModels3DMath) return;
             const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);

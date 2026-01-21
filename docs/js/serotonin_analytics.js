@@ -91,6 +91,18 @@
         },
 
         renderAnalytics(ctx, w, h) {
+            // Status Bar HUD (Category III, #47)
+            if (G.showStatusBar) {
+                ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                ctx.fillRect(0, h - 30, w, 30);
+                ctx.fillStyle = '#fff';
+                ctx.font = '11px Arial';
+                let mood = 'Euthymic';
+                if (G.Transport && G.Transport.tphActivity < 0.5) mood = 'Depressed';
+                if (G.ssActive) mood = 'Serotonin Syndrome';
+                ctx.fillText(`SYSTEM STATUS: ${mood} | 5-HT: ${G.Transport ? G.Transport.vesicle5HT.toFixed(1) : '0'}`, 20, h - 10);
+            }
+
             // Comparison View Data (Category 10, #97)
             if (G.comparisonMode) {
                 ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';

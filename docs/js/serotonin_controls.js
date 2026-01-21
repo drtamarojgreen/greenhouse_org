@@ -9,72 +9,126 @@
     window.GreenhouseSerotonin = G;
 
     G.createUI = function (container) {
+        this.injectStyles();
         const controls = document.createElement('div');
-        controls.className = 'serotonin-controls';
+        controls.className = 'serotonin-controls-modular';
 
-        const views = ['5-HT1A Complex', 'Ligand Pocket', 'Lipid Interactions', 'Extracellular Loop', 'Time-lapse', 'OCD Pathway', 'Amygdala Loop'];
-        views.forEach(view => {
-            const btn = document.createElement('button');
-            btn.className = 'serotonin-btn';
-            btn.innerText = view;
-            btn.onclick = () => {
-                console.log(`Switching to ${view}`);
-                G.currentView = view;
-            };
-            controls.appendChild(btn);
-        });
-
-        // Toggle Buttons for Physiological States
-        const states = [
-            { name: 'Depression', toggle: () => { G.Transport.tphActivity = G.Transport.tphActivity === 1.0 ? 0.3 : 1.0; } },
-            { name: 'Stochasticity', toggle: () => { G.stochastic = !G.stochastic; } },
-            { name: 'Time-lapse', toggle: () => { G.timeLapse = !G.timeLapse; } },
-            { name: 'Scenario: MDMA', toggle: () => {
-                G.mdmaActive = !G.mdmaActive;
-                if (G.mdmaActive) {
-                    G.Transport.reuptakeRate = -0.5; // Reverse transport
-                    G.Transport.vesicle5HT = 0; // Empty vesicles into cleft
-                    for(let i=0; i<50; i++) G.Kinetics.spawnLigand('Serotonin');
-                } else {
-                    G.Transport.reuptakeRate = 0.05;
-                }
-            }},
-            { name: 'Phasic Mode', toggle: () => { G.Transport.firingMode = G.Transport.firingMode === 'tonic' ? 'phasic' : 'tonic'; } },
-            { name: 'Inflammation', toggle: () => { G.Transport.inflammationActive = !G.Transport.inflammationActive; } },
-            { name: 'Pineal Mode', toggle: () => { G.Transport.pinealMode = !G.Transport.pinealMode; } },
-            { name: 'Gut-Brain Axis', toggle: () => { G.gutBrainActive = !G.gutBrainActive; } },
-            { name: 'Comparison View', toggle: () => { G.comparisonMode = !G.comparisonMode; } },
-            { name: 'Scenario: SSRI', toggle: () => {
-                G.ssriMode = !G.ssriMode;
-                if(G.ssriMode) G.Transport.sertActivity = 0.1; else G.Transport.sertActivity = 1.0;
-            }},
-            { name: 'VR Mode', toggle: () => { G.vrMode = !G.vrMode; if(G.vrMode) G.state.camera.fov = 800; else G.state.camera.fov = 500; } },
-            { name: 'Export Data', toggle: () => { if(G.Analytics) G.Analytics.exportData(); } },
-            { name: 'Serotonin Syndrome', toggle: () => {
-                if (!G.ssActive) {
-                    G.Transport.sertActivity = 0;
-                    G.Transport.maoActivity = 0;
-                    G.ssActive = true;
-                } else {
-                    G.Transport.sertActivity = 1.0;
-                    G.Transport.maoActivity = 1.0;
-                    G.ssActive = false;
-                }
-            }}
+        const categories = [
+            {
+                name: 'Accessibility',
+                options: [
+                    { name: 'High-Contrast Mode', toggle: () => { G.highContrast = !G.highContrast; } },
+                    { name: 'Large-Scale UI', toggle: () => { G.largeUI = !G.largeUI; this.updateUIScale(); } },
+                    { name: 'Reduced Motion', toggle: () => { G.reducedMotion = !G.reducedMotion; } }
+                ]
+            },
+            {
+                name: 'Aesthetics',
+                options: [
+                    { name: 'Cinematic FX', toggle: () => { G.cinematicFX = !G.cinematicFX; } },
+                    { name: 'PBR Materials', toggle: () => { G.pbrEnabled = !G.pbrEnabled; } },
+                    { name: 'Dynamic Lighting', toggle: () => { G.dynamicLighting = !G.dynamicLighting; } }
+                ]
+            },
+            {
+                name: 'Feedback/HUD',
+                options: [
+                    { name: 'Performance Gauge', toggle: () => { G.showFPS = !G.showFPS; } },
+                    { name: 'Status Bar', toggle: () => { G.showStatusBar = !G.showStatusBar; } },
+                    { name: 'Heatmap Overlay', toggle: () => { G.showHeatmap = !G.showHeatmap; } }
+                ]
+            },
+            {
+                name: 'Temporal',
+                options: [
+                    { name: 'Pause Simulation', toggle: () => { G.paused = !G.paused; } },
+                    { name: 'Time-lapse Mode', toggle: () => { G.timeLapse = !G.timeLapse; } },
+                    { name: 'Stochasticity', toggle: () => { G.stochastic = !G.stochastic; } }
+                ]
+            },
+            {
+                name: 'Scenarios',
+                options: [
+                    { name: 'Depression', toggle: () => { G.Transport.tphActivity = G.Transport.tphActivity === 1.0 ? 0.3 : 1.0; } },
+                    { name: 'Serotonin Syndrome', toggle: () => {
+                        G.ssActive = !G.ssActive;
+                        if (G.ssActive) {
+                            G.Transport.sertActivity = 0;
+                            G.Transport.maoActivity = 0;
+                        } else {
+                            G.Transport.sertActivity = 1.0;
+                            G.Transport.maoActivity = 1.0;
+                        }
+                    }},
+                    { name: 'MDMA Scenario', toggle: () => {
+                        G.mdmaActive = !G.mdmaActive;
+                        if (G.mdmaActive) {
+                            G.Transport.reuptakeRate = -0.5;
+                            G.Transport.vesicle5HT = 0;
+                            for(let i=0; i<50; i++) G.Kinetics.spawnLigand('Serotonin');
+                        } else {
+                            G.Transport.reuptakeRate = 0.05;
+                        }
+                    }},
+                    { name: 'SSRI blockade', toggle: () => {
+                        G.ssriMode = !G.ssriMode;
+                        G.Transport.sertActivity = G.ssriMode ? 0.1 : 1.0;
+                    }}
+                ]
+            }
         ];
 
-        states.forEach(state => {
+        categories.forEach(cat => {
+            const dropdown = document.createElement('div');
+            dropdown.className = 'serotonin-dropdown';
+
             const btn = document.createElement('button');
-            btn.className = 'serotonin-btn';
-            btn.innerText = `Toggle ${state.name}`;
-            btn.onclick = () => {
-                state.toggle();
-                btn.style.borderColor = btn.style.borderColor === 'red' ? '#4a5568' : 'red';
+            btn.className = 'serotonin-btn dropdown-toggle';
+            btn.innerText = cat.name;
+
+            const modal = document.createElement('div');
+            modal.className = 'serotonin-checkbox-modal';
+            modal.style.display = 'none';
+
+            cat.options.forEach(opt => {
+                const label = document.createElement('label');
+                label.className = 'serotonin-checkbox-item';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                if (opt.checked) cb.checked = true;
+                cb.onchange = (e) => {
+                    opt.toggle();
+                    // Visual confirmation ping (Category III, #46)
+                    G.lastInteraction = { type: 'parameter', name: opt.name, time: G.state.timer };
+                };
+                label.appendChild(cb);
+                label.appendChild(document.createTextNode(' ' + opt.name));
+                modal.appendChild(label);
+            });
+
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const isVisible = modal.style.display === 'block';
+                document.querySelectorAll('.serotonin-checkbox-modal').forEach(m => m.style.display = 'none');
+                modal.style.display = isVisible ? 'none' : 'block';
             };
-            controls.appendChild(btn);
+
+            dropdown.appendChild(btn);
+            dropdown.appendChild(modal);
+            controls.appendChild(dropdown);
+        });
+
+        window.addEventListener('click', () => {
+            document.querySelectorAll('.serotonin-checkbox-modal').forEach(m => m.style.display = 'none');
         });
 
         container.appendChild(controls);
+
+        this.updateUIScale = () => {
+            const scale = G.largeUI ? '1.5' : '1.0';
+            controls.style.transform = `scale(${scale})`;
+            controls.style.transformOrigin = 'top left';
+        };
 
         const info = document.createElement('div');
         info.className = 'serotonin-info';
