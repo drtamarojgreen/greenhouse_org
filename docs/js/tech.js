@@ -127,6 +127,9 @@
             const canvasSection = document.createElement('section');
             canvasSection.id = 'tech-canvas-section';
             canvasSection.style.width = '100%';
+            canvasSection.style.display = 'block';
+            canvasSection.style.boxSizing = 'border-box';
+            canvasSection.style.clear = 'both';
             canvasSection.style.padding = '20px 0';
             canvasSection.style.backgroundColor = '#e0e0e0';
             canvasSection.style.textAlign = 'center';
@@ -153,8 +156,9 @@
 
             canvasSection.appendChild(canvas);
 
-            this.aboutStrip.appendChild(canvasSection);
-            console.log('TechApp: Canvas section appended as a child of aboutStrip.');
+            this.aboutStrip.after(canvasSection);
+            this.canvasSection = canvasSection;
+            console.log('TechApp: Canvas section inserted after aboutStrip.');
         }
 
         /**
@@ -169,6 +173,7 @@
             this.dashboardContainer.style.width = '100%';
             this.dashboardContainer.style.display = 'block';
             this.dashboardContainer.style.boxSizing = 'border-box';
+            this.dashboardContainer.style.clear = 'both';
             this.renderDashboard(); // Pre-render the content
 
             // Set up the interval to toggle its visibility
@@ -231,7 +236,11 @@
         toggleDashboardVisibility() {
             this.dashboardVisible = !this.dashboardVisible;
             if (this.dashboardVisible) {
-                this.aboutStrip.appendChild(this.dashboardContainer);
+                if (this.canvasSection) {
+                    this.canvasSection.after(this.dashboardContainer);
+                } else {
+                    this.aboutStrip.after(this.dashboardContainer);
+                }
                 console.log('TechApp: Dashboard is now VISIBLE.');
 
                 // Attach event listeners only once when the dashboard is first made visible.
