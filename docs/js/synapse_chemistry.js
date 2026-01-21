@@ -3,7 +3,10 @@
 (function () {
     'use strict';
 
-    const GreenhouseSynapseChemistry = {
+    const G = window.GreenhouseSynapseApp || {};
+    window.GreenhouseSynapseApp = G;
+
+    G.Chemistry = {
         neurotransmitters: {
             glutamate: {
                 id: 'glutamate',
@@ -80,6 +83,4 @@
             }
         }
     };
-
-    window.GreenhouseSynapseChemistry = GreenhouseSynapseChemistry;
 })();
