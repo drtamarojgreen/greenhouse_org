@@ -171,13 +171,32 @@
             ctx.fill();
         }
 
-        // 79. 3D Brain Atlas Integration (Placeholder visual)
-        ctx.strokeStyle = 'rgba(100, 100, 255, 0.1)';
-        ctx.setLineDash([5, 15]);
+        // 79. 3D Brain Atlas Integration (Coordinate-based visualization)
+        // Draw a wireframe "brain" shell to simulate atlas alignment
+        ctx.strokeStyle = 'rgba(100, 100, 255, 0.2)';
+        ctx.setLineDash([2, 10]);
         ctx.beginPath();
-        ctx.ellipse(w / 2, h / 2, w / 3, h / 3, 0, 0, Math.PI * 2);
+        for (let i = 0; i < 3; i++) {
+            const rX = 400 + i * 20;
+            const rY = 300 + i * 15;
+            const pAtlas = project(0, 0, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+            ctx.ellipse(pAtlas.x, pAtlas.y, rX * pAtlas.scale, rY * pAtlas.scale, 0, 0, Math.PI * 2);
+        }
         ctx.stroke();
         ctx.setLineDash([]);
+
+        // Render some "Atlas" coordinate markers
+        ctx.fillStyle = 'rgba(150, 150, 255, 0.5)';
+        ctx.font = '8px monospace';
+        const markers = [
+            { label: 'AP: +1.2', x: 0, y: -400, z: 0 },
+            { label: 'ML: +0.5', x: 300, y: 0, z: 0 },
+            { label: 'DV: -4.0', x: 0, y: 0, z: 300 }
+        ];
+        markers.forEach(m => {
+            const p = project(m.x, m.y, m.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) ctx.fillText(m.label, p.x, p.y);
+        });
 
         // Render Projections (SNc/VTA)
         Object.values(cState.projections).forEach(p => {

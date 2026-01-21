@@ -106,9 +106,15 @@
         // HCN effect (Depolarization, Ih current)
         targetPotential += eState.channels.hcn * 12;
 
-        // 51. Nav1.6 Modulation by Dopamine
+        // 51. Nav1.6 Modulation by Dopamine (D1-mediated enhancement, D2-mediated inhibition)
         if (state.signalingActive) {
-            eState.channels.nav16 = 1.0 + (state.mode.includes('D1') ? 0.2 : -0.15);
+            if (state.mode.includes('D1') || state.mode.includes('D5')) {
+                 eState.channels.nav16 = Math.min(1.5, eState.channels.nav16 + 0.01);
+            } else if (state.mode.includes('D2') || state.mode.includes('D3')) {
+                 eState.channels.nav16 = Math.max(0.5, eState.channels.nav16 - 0.01);
+            }
+        } else {
+             eState.channels.nav16 += (1.0 - eState.channels.nav16) * 0.01;
         }
 
         // Smooth transition (RC circuit simulation)
@@ -128,8 +134,10 @@
         const gabaConductance = eState.tonicGaba + eState.channels.cl;
         targetPotential = (targetPotential + gabaConductance * ecl) / (1 + gabaConductance);
 
-        // 60. Input Resistance Scaling
-        eState.inputResistance = 1.0 / (0.5 + eState.channels.girk + eState.channels.kir2 + eState.channels.hcn + gabaConductance);
+        // 60. Input Resistance Scaling (R = 1/G)
+        // Dynamically update based on open channel fractions
+        const totalConductance = 0.5 + eState.channels.girk + eState.channels.kir2 + eState.channels.hcn + gabaConductance + (eState.channels.ampa * eState.ampaTrafficking);
+        eState.inputResistance = 1.0 / totalConductance;
         eState.isUpState = eState.membranePotential > -62;
 
         // 59. STDP Dopamine-gate Window

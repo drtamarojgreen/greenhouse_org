@@ -147,17 +147,22 @@
                 setTimeout(() => {
                     sState.vesicles.reserve.push({
                         y: -260, x: (Math.random() - 0.5) * 180,
-                        filled: 0, snareState: 'Docked'
+                        filled: 0,
+                        snareState: 'Docked',
+                        snareProteins: { syntaxin: 0.1, snap25: 0.1, synaptobrevin: 1.0 }
                     });
                 }, 800);
             }
         }
 
-        // 25. Vesicle Filling (VMAT2) & 26. RRP replenishment
+        // 25. Vesicle Filling (VMAT2) kinetics & 26. RRP replenishment
+        // Experimental filling rate ~5-15 mins in vivo, scaled for simulation
+        const kFill = 0.005;
         sState.vesicles.reserve.forEach(v => {
             if (v.filled < 1.0) {
-                // Filling rate depends on VMAT2 and proton gradient
-                v.filled += 0.005 * sState.vmat2.activity * (sState.vmat2.phGradient / 2.0);
+                // Filling rate depends on VMAT2 and proton gradient (pH gradient of 2.0 is standard)
+                // 24. VMAT2 proton-gradient dependency
+                v.filled += kFill * sState.vmat2.activity * (sState.vmat2.phGradient / 2.0);
             }
         });
 
@@ -168,6 +173,9 @@
                 v.y = -180;
                 v.snareState = 'Primed';
                 // 27. Assemble SNARE complex upon priming
+                if (!v.snareProteins) {
+                    v.snareProteins = { syntaxin: 0.1, snap25: 0.1, synaptobrevin: 1.0 };
+                }
                 v.snareProteins.syntaxin = 1.0;
                 v.snareProteins.snap25 = 1.0;
                 sState.vesicles.rrp.push(v);
@@ -192,12 +200,16 @@
         for (let i = sState.cleftDA.length - 1; i >= 0; i--) {
             const da = sState.cleftDA[i];
 
-            // 39. Tortuosity: slowed diffusion in extracellular space
+            // 38. Volume Transmission & 39. Tortuosity: slowed diffusion in extracellular space
             const diffusionScale = da.y < -150 ? 1.0 : (1.0 / sState.tortuosity);
             da.x += da.vx * diffusionScale;
             da.y += da.vy * diffusionScale;
             da.z += da.vz * diffusionScale;
             da.life--;
+
+            // 38. Volume Transmission visual: fade out molecules as they move far from cleft
+            const distance = Math.sqrt(da.x*da.x + da.z*da.z);
+            if (distance > 200) da.life -= 2;
 
             // 43. Astrocyte Reuptake & Active Clearing
             let astrocyteHit = false;
