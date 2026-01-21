@@ -24,6 +24,7 @@
         },
 
         activeLigands: [],
+        maxTrailPoints: 10,
 
         spawnLigand(name, x, y, z) {
             const proto = this.ligandTypes[name] || this.ligandTypes['Serotonin'];
@@ -64,7 +65,17 @@
                     return;
                 }
 
-                // Brownian motion / Movement
+                // Particle Trail Splines (#31)
+                if (!l.trail) l.trail = [];
+                l.trail.push({ x: l.x, y: l.y, z: l.z });
+                if (l.trail.length > this.maxTrailPoints) l.trail.shift();
+
+                // Brownian motion / Movement (#26)
+                if (G.stochastic !== false) {
+                    l.vx += (Math.random() - 0.5) * 0.2;
+                    l.vy += (Math.random() - 0.5) * 0.2;
+                    l.vz += (Math.random() - 0.5) * 0.2;
+                }
                 l.x += l.vx;
                 l.y += l.vy;
                 l.z += l.vz;
@@ -117,6 +128,29 @@
             this.activeLigands.forEach(l => {
                 const p = project(l.x, l.y, l.z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p.scale > 0) {
+                    // Render Particle Trails (#31)
+                    if (l.trail && l.trail.length > 1) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = l.color;
+                        ctx.globalAlpha = 0.3;
+                        l.trail.forEach((pt, i) => {
+                            const pr = project(pt.x, pt.y, pt.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                            if (i === 0) ctx.moveTo(pr.x, pr.y);
+                            else ctx.lineTo(pr.x, pr.y);
+                        });
+                        ctx.stroke();
+                        ctx.globalAlpha = 1.0;
+                    }
+
+                    // High-Visibility Outlines (#14)
+                    if (G.highContrast) {
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 2 * p.scale;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 6 * p.scale, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+
                     ctx.fillStyle = l.color;
                     ctx.shadowBlur = l.boundTo ? 15 : 5;
                     ctx.shadowColor = l.color;

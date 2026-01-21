@@ -116,6 +116,54 @@
         },
 
         renderReceptors(ctx, project, cam, w, h) {
+            // Molecular Composition visualization (Category II, #30)
+            const drawMolecularComposition = (r, p) => {
+                if (cam.zoom > 2.0) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    for (let n = 0; n < 15; n++) {
+                        const residueX = p.x + Math.sin(n + G.state.timer * 0.05) * 20 * p.scale;
+                        const residueY = p.y + (n - 7) * 8 * p.scale;
+                        ctx.beginPath();
+                        ctx.arc(residueX, residueY, 3 * p.scale, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `${8 * p.scale}px Arial`;
+                    ctx.fillText('Amino Acid Residues', p.x, p.y + 110 * p.scale);
+                }
+            };
+
+            // Subtype-Specific Glyphs (Accessibility #12)
+            const drawGlyph = (type, x, y, size) => {
+                ctx.beginPath();
+                if (type.startsWith('5-HT1')) {
+                    // Triangle
+                    ctx.moveTo(x, y - size);
+                    ctx.lineTo(x + size, y + size);
+                    ctx.lineTo(x - size, y + size);
+                } else if (type.startsWith('5-HT2')) {
+                    // Square
+                    ctx.rect(x - size, y - size, size * 2, size * 2);
+                } else if (type === '5-HT3') {
+                    // Hexagon
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i / 6) * Math.PI * 2;
+                        ctx.lineTo(x + Math.cos(angle) * size, y + Math.sin(angle) * size);
+                    }
+                } else if (type.startsWith('5-HT5')) {
+                    // Diamond
+                    ctx.moveTo(x, y - size);
+                    ctx.lineTo(x + size, y);
+                    ctx.lineTo(x, y + size);
+                    ctx.lineTo(x - size, y);
+                } else {
+                    // Circle/Star
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                }
+                ctx.closePath();
+                ctx.stroke();
+            };
+
             // Molecular Dynamics (MD) Integration playback placeholder (Category 2, #20)
             if (G.mdActive) {
                 ctx.fillStyle = '#fff';
@@ -138,6 +186,15 @@
                     // Draw 7-TM Helices (simplified)
                     ctx.strokeStyle = r.color;
                     ctx.lineWidth = 10 * p.scale;
+
+                    // Draw Subtype-Specific Glyphs (Accessibility #12)
+                    if (G.showGlyphs) {
+                        ctx.save();
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 2 * p.scale;
+                        drawGlyph(r.type, p.x, p.y - 100 * p.scale, 10 * p.scale);
+                        ctx.restore();
+                    }
 
                     for (let j = 0; j < 7; j++) {
                         const hAngle = (j / 7) * Math.PI * 2;
@@ -188,6 +245,9 @@
                         ctx.font = `${8 * p.scale}px Arial`;
                         ctx.fillText(`PDB: ${r.pdb}`, p.x, p.y - 70 * p.scale);
                     }
+
+                    // Draw Molecular Composition detail
+                    drawMolecularComposition(r, p);
 
                     // Label
                     ctx.fillStyle = '#fff';

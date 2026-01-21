@@ -36,9 +36,19 @@
 
             this.items.forEach((item, i) => {
                 const y = h - legendH + 25 + i * 20;
+
+                // Legend Pulsation (#58)
+                let pulseScale = 1.0;
+                if (G.state.receptors) {
+                    const isBound = G.state.receptors.some(r => r.type.startsWith(item.label) && r.state !== 'Inactive');
+                    if (isBound) {
+                        pulseScale = 1.0 + Math.sin(G.state.timer * 0.2) * 0.2;
+                    }
+                }
+
                 ctx.fillStyle = item.color;
                 ctx.beginPath();
-                ctx.arc(25, y - 4, 5, 0, Math.PI * 2);
+                ctx.arc(25, y - 4, 5 * pulseScale, 0, Math.PI * 2);
                 ctx.fill();
 
                 ctx.fillStyle = '#fff';
