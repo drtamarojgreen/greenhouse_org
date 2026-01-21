@@ -41,6 +41,11 @@
         },
 
         updateKinetics() {
+            // Randomly spawn serotonin if few active
+            if (this.activeLigands.length < 15 && Math.random() < 0.05) {
+                this.spawnLigand('Serotonin');
+            }
+
             this.activeLigands.forEach(l => {
                 if (l.boundTo) {
                     l.bindingTimer--;
@@ -122,16 +127,6 @@
         }
     };
 
-    const oldUpdate = G.update;
-    G.update = function() {
-        if (oldUpdate) oldUpdate.call(G);
-        G.Kinetics.updateKinetics();
-
-        // Randomly spawn serotonin if few active
-        if (G.Kinetics.activeLigands.length < 15 && Math.random() < 0.05) {
-            G.Kinetics.spawnLigand('Serotonin');
-        }
-    };
 
     const oldRender = G.render;
     G.render = function() {

@@ -76,6 +76,19 @@
                 if (r.type === '5-HT2A' && r.state === 'Active') {
                     r.pathwayBias = r.biasedLigand ? 1.5 : 1.0; // Boosts Gq vs Beta-Arrestin (abstracted)
                 }
+
+                // 5-HT5A Gi/o inhibitory details (Category 1, #5)
+                if (r.type === '5-HT5A') {
+                    r.inhibitoryPotential = 1.2; // Slightly more potent Gi coupling simulated
+                }
+
+                // Conformational State Transition logic (Category 2, #15)
+                // Smoothly transition between states visually (simplified logic)
+                if (r.state === 'Intermediate' && Math.random() < 0.01) {
+                    r.state = 'Active';
+                } else if (r.state === 'Active' && Math.random() < 0.005) {
+                    r.state = 'Inactive';
+                }
             });
         },
 
@@ -160,11 +173,6 @@
         G.Receptors.setupReceptorModel();
     };
 
-    const oldUpdate = G.update;
-    G.update = function() {
-        if (oldUpdate) oldUpdate.call(G);
-        G.Receptors.updateReceptorStates();
-    };
 
     const oldRender = G.render;
     G.render = function() {

@@ -12,7 +12,7 @@
         const controls = document.createElement('div');
         controls.className = 'serotonin-controls';
 
-        const views = ['5-HT1A Complex', 'Ligand Pocket', 'Lipid Interactions', 'Extracellular Loop'];
+        const views = ['5-HT1A Complex', 'Ligand Pocket', 'Lipid Interactions', 'Extracellular Loop', 'Time-lapse'];
         views.forEach(view => {
             const btn = document.createElement('button');
             btn.className = 'serotonin-btn';
@@ -26,6 +26,7 @@
         // Toggle Buttons for Physiological States
         const states = [
             { name: 'Depression', toggle: () => { G.Transport.tphActivity = G.Transport.tphActivity === 1.0 ? 0.3 : 1.0; } },
+            { name: 'Time-lapse', toggle: () => { G.timeLapse = !G.timeLapse; } },
             { name: 'Phasic Mode', toggle: () => { G.Transport.firingMode = G.Transport.firingMode === 'tonic' ? 'phasic' : 'tonic'; } },
             { name: 'Inflammation', toggle: () => { G.Transport.inflammationActive = !G.Transport.inflammationActive; } },
             { name: 'Pineal Mode', toggle: () => { G.Transport.pinealMode = !G.Transport.pinealMode; } },
@@ -129,7 +130,13 @@
     const oldRender = G.render;
     G.render = function() {
         if (oldRender) oldRender.call(G);
+
         const ctx = G.ctx;
+        // Serotonin Syndrome visuals (Category 7, #69)
+        if (G.ssActive) {
+            ctx.fillStyle = `rgba(255, 0, 0, ${0.1 + Math.sin(Date.now() * 0.01) * 0.05})`;
+            ctx.fillRect(0, 0, G.width, G.height);
+        }
         const w = G.width;
         const h = G.height;
         const cam = G.state.camera;
