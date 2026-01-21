@@ -26,7 +26,7 @@
         er: { x: 0, y: 300, z: 0, width: 300, height: 80, caContent: 1.0 }, // 18. Endoplasmic Reticulum
         heteromers: { d1d2: 0 }, // 1. D1-D2 Heteromerization
         plcPathway: { ip3: 0, dag: 0, pkc: 0, ip3Particles: [] }, // 5. Gq Pathway, 18. IP3, 19. DAG
-        erkPathway: 0, // 16. ERK/MAPK Cascade
+        erkPathway: { level: 0, visual: [] }, // 16. ERK/MAPK Cascade
         drugLibrary: {
             d1Agonists: [
                 { name: 'SKF-38393', ki: 1.0, efficacy: 0.8 },
@@ -243,13 +243,25 @@
         // Activated by D1 signaling and Gq pathway
         if (state.signalingActive) {
             const activationSource = (state.mode.includes('D1') ? 0.003 : 0) + (mState.plcPathway.pkc * 0.01);
-            mState.erkPathway = Math.min(1.0, mState.erkPathway + activationSource);
+            mState.erkPathway.level = Math.min(1.0, mState.erkPathway.level + activationSource);
+
+            if (mState.erkPathway.level > 0.3 && Math.random() > 0.9) {
+                mState.erkPathway.visual.push({
+                    x: (Math.random()-0.5)*200, y: 150, z: (Math.random()-0.5)*100, life: 90
+                });
+            }
         } else {
-            mState.erkPathway = Math.max(0, mState.erkPathway - 0.002);
+            mState.erkPathway.level = Math.max(0, mState.erkPathway.level - 0.002);
+        }
+        for (let i = mState.erkPathway.visual.length - 1; i >= 0; i--) {
+            const v = mState.erkPathway.visual[i];
+            v.life--;
+            v.y += 0.3;
+            if (v.life <= 0) mState.erkPathway.visual.splice(i, 1);
         }
 
         // 65. CREB Activation
-        if (mState.darpp32.thr34 > 0.7 || mState.erkPathway > 0.8) {
+        if (mState.darpp32.thr34 > 0.7 || mState.erkPathway.level > 0.8) {
             mState.crebActivation = Math.min(1, mState.crebActivation + 0.005);
         } else {
             mState.crebActivation = Math.max(0, mState.crebActivation - 0.001);
@@ -515,6 +527,18 @@
             }
         });
 
+        // 16. Render ERK/MAPK Cascade visuals
+        mState.erkPathway.visual.forEach(v => {
+            const p = project(v.x, v.y, v.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.fillStyle = '#ff00ff';
+                ctx.globalAlpha = v.life / 90;
+                ctx.font = `${8 * p.scale}px Arial`;
+                ctx.fillText("ERK", p.x, p.y);
+                ctx.globalAlpha = 1.0;
+            }
+        });
+
         // Overlay Molecular Info
         ctx.fillStyle = '#fff';
         ctx.font = '12px Arial';
@@ -530,9 +554,9 @@
             ctx.fillStyle = '#99ff99';
             ctx.fillText(`PKC Activation: ${(mState.plcPathway.pkc * 100).toFixed(1)}%`, w - 10, 100);
         }
-        if (mState.erkPathway > 0.1) {
+        if (mState.erkPathway.level > 0.1) {
             ctx.fillStyle = '#ff99ff';
-            ctx.fillText(`ERK/MAPK: ${(mState.erkPathway * 100).toFixed(1)}%`, w - 10, 120);
+            ctx.fillText(`ERK/MAPK: ${(mState.erkPathway.level * 100).toFixed(1)}%`, w - 10, 120);
         }
     };
 })();
