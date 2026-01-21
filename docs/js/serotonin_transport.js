@@ -24,6 +24,8 @@
         synapticWeight: 1.0,
         longTermAvg5HT: 5,
         astrocyte5HT: 0,
+        enteric5HT: 0, // Enterochromaffin production
+        arousalLevel: 1.0, // Sleep-Wake arousal
         serotonylatedProteins: 0,
         sensorySensitivity: 1.0,
         sertAllele: 'Long', // 'Short' or 'Long' (Category 8, #79)
@@ -138,6 +140,16 @@
             const bbbTransportRate = 0.05 * (this.pinealMode ? 1.5 : 1.0) * (this.inflammationActive ? 0.5 : 1.0);
             if (this.tryptophan < 100) this.tryptophan += bbbTransportRate;
 
+            // Gut-Brain Axis: Enterochromaffin cell production (Category 8, #73)
+            // 95% of serotonin is produced in the gut
+            this.enteric5HT += 0.5 * (this.tryptophan / 100);
+            if (this.enteric5HT > 100) this.enteric5HT = 100;
+
+            // Sleep-Wake arousal modulation (Category 8, #74)
+            // Raphe firing (mode) modulates arousal
+            const arousalDrive = this.firingMode === 'phasic' ? 0.05 : -0.01;
+            this.arousalLevel = Math.max(0.1, Math.min(2.0, this.arousalLevel + arousalDrive));
+
             // Monoamine Oxidase (MAO-A) Degradation steps (Category 4, #37)
             // Model degradation into 5-HIAA placeholder
             if (Math.random() < this.degradationRate * this.maoActivity) {
@@ -179,6 +191,34 @@
         },
 
         renderTransport(ctx, project, cam, w, h) {
+            // VGLUT3 Glutamate Co-transmission visualization (Category 5, #46)
+            if (this.glutamateCoRelease) {
+                const vglutPos = project(-50, -180, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (vglutPos.scale > 0) {
+                    ctx.fillStyle = '#ffcc00';
+                    ctx.beginPath();
+                    ctx.arc(vglutPos.x, vglutPos.y, 15 * vglutPos.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText('VGLUT3', vglutPos.x, vglutPos.y + 25 * vglutPos.scale);
+                }
+            }
+
+            // Kynurenine Shunt visualization (Category 4, #40)
+            if (this.inflammationActive) {
+                const shuntPos = project(-150, -200, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (shuntPos.scale > 0) {
+                    ctx.strokeStyle = '#ff3333';
+                    ctx.lineWidth = 3 * shuntPos.scale;
+                    ctx.beginPath();
+                    ctx.moveTo(shuntPos.x, shuntPos.y);
+                    ctx.lineTo(shuntPos.x - 50 * shuntPos.scale, shuntPos.y + 50 * shuntPos.scale);
+                    ctx.stroke();
+                    ctx.fillStyle = '#ff3333';
+                    ctx.fillText('Kynurenine Shunt', shuntPos.x - 60 * shuntPos.scale, shuntPos.y + 70 * shuntPos.scale);
+                }
+            }
+
             // Draw Astrocytes (Category 5, #50)
             const astrocytePos = project(250, 0, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (astrocytePos.scale > 0) {
@@ -214,6 +254,8 @@
             ctx.fillText(`SERT Allele: ${this.sertAllele}`, 20, 195);
             ctx.fillText(`SERT Phos: ${(this.sertPhosphorylation * 100).toFixed(0)}%`, 20, 210);
             ctx.fillText(`5-HIAA: ${(this.hiaa || 0).toFixed(1)}`, 20, 225);
+            ctx.fillText(`Enteric 5-HT: ${this.enteric5HT.toFixed(1)}`, 20, 240);
+            ctx.fillText(`Arousal: ${(this.arousalLevel * 100).toFixed(0)}%`, 20, 255);
             if (pre.scale > 0) {
                 ctx.fillStyle = 'rgba(100, 100, 150, 0.3)';
                 ctx.beginPath();

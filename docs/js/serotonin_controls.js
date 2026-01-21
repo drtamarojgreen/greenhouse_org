@@ -12,7 +12,7 @@
         const controls = document.createElement('div');
         controls.className = 'serotonin-controls';
 
-        const views = ['5-HT1A Complex', 'Ligand Pocket', 'Lipid Interactions', 'Extracellular Loop', 'Time-lapse', 'OCD Pathway'];
+        const views = ['5-HT1A Complex', 'Ligand Pocket', 'Lipid Interactions', 'Extracellular Loop', 'Time-lapse', 'OCD Pathway', 'Amygdala Loop'];
         views.forEach(view => {
             const btn = document.createElement('button');
             btn.className = 'serotonin-btn';
@@ -27,6 +27,7 @@
         // Toggle Buttons for Physiological States
         const states = [
             { name: 'Depression', toggle: () => { G.Transport.tphActivity = G.Transport.tphActivity === 1.0 ? 0.3 : 1.0; } },
+            { name: 'Stochasticity', toggle: () => { G.stochastic = !G.stochastic; } },
             { name: 'Time-lapse', toggle: () => { G.timeLapse = !G.timeLapse; } },
             { name: 'Scenario: MDMA', toggle: () => {
                 G.mdmaActive = !G.mdmaActive;
@@ -41,6 +42,7 @@
             { name: 'Phasic Mode', toggle: () => { G.Transport.firingMode = G.Transport.firingMode === 'tonic' ? 'phasic' : 'tonic'; } },
             { name: 'Inflammation', toggle: () => { G.Transport.inflammationActive = !G.Transport.inflammationActive; } },
             { name: 'Pineal Mode', toggle: () => { G.Transport.pinealMode = !G.Transport.pinealMode; } },
+            { name: 'Gut-Brain Axis', toggle: () => { G.gutBrainActive = !G.gutBrainActive; } },
             { name: 'VR Mode', toggle: () => { G.vrMode = !G.vrMode; if(G.vrMode) G.state.camera.fov = 800; else G.state.camera.fov = 500; } },
             { name: 'Export Data', toggle: () => { if(G.Analytics) G.Analytics.exportData(); } },
             { name: 'Serotonin Syndrome', toggle: () => {
@@ -97,11 +99,24 @@
         zoomControl.appendChild(zoomOut);
         container.appendChild(zoomControl);
 
+        // Portal Link (Category 10, #100)
+        const portalLink = document.createElement('a');
+        portalLink.href = '#';
+        portalLink.innerText = 'CITIZEN SCIENCE PORTAL';
+        portalLink.style.position = 'absolute';
+        portalLink.style.bottom = '10px';
+        portalLink.style.right = '10px';
+        portalLink.style.color = '#00ffcc';
+        portalLink.style.fontSize = '10px';
+        container.appendChild(portalLink);
+
         // Subcellular Markers (Category 10, #93)
         G.renderSubcellularMarkers = (ctx, project, cam, w, h) => {
             // Cytoskeleton visualization (Category 10, #93)
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.lineWidth = 1;
+            // Modulated by RhoA activity (Category 3, #26)
+            const rhoEffect = G.Signaling ? G.Signaling.rhoA * 0.1 : 0;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${0.05 + rhoEffect})`;
+            ctx.lineWidth = 1 + rhoEffect * 5;
             for (let i = -300; i <= 300; i += 100) {
                 const start = project(-300, i, 0, cam, { width: w, height: h, near: 10, far: 5000 });
                 const end = project(300, i, 0, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -154,6 +169,17 @@
             ctx.fillStyle = '#fff';
             ctx.fillText('CSTC Loop Schematic', G.width/2, G.height/2 - 110);
             ctx.fillText('OFC -> Striatum -> Thalamus -> OFC', G.width/2, G.height/2);
+        }
+
+        // Amygdala feedback loop (Category 8, #72)
+        if (G.currentView === 'Amygdala Loop') {
+            ctx.strokeStyle = '#ff4d4d';
+            ctx.beginPath();
+            ctx.arc(G.width/2, G.height/2, 80, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Amygdala Feedback (Anxiety modeling)', G.width/2, G.height/2 - 95);
+            ctx.fillText('5-HT1A Autoreceptor Control', G.width/2, G.height/2);
         }
 
         // Serotonin Syndrome visuals (Category 7, #69)
