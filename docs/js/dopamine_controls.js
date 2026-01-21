@@ -20,7 +20,8 @@
             'Cocaine', 'Amphetamine', 'Phasic Burst',
             'Schizophrenia', 'ADHD', 'Drug Combo',
             'Alpha-Synuclein', 'Neuroinflammation', 'MAOI',
-            'Antipsychotic (Fast-off)', 'Antipsychotic (Slow-off)'
+            'Antipsychotic (Fast-off)', 'Antipsychotic (Slow-off)',
+            'Antipsychotic (Partial)', 'High Stress', 'PAM', 'Competitive'
         ];
         modes.forEach(mode => {
             const btn = document.createElement('button');

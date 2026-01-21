@@ -60,6 +60,28 @@
             });
         }
 
+        // Check Interneurons
+        if (!found && G.circuitState.interneurons.gabaergic) {
+            Object.values(G.circuitState.interneurons.gabaergic).forEach(inter => {
+                const p = project(inter.x, inter.y, inter.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+                if (dist < 15 * p.scale) {
+                    found = { type: 'interneuron', data: inter };
+                }
+            });
+        }
+
+        // Check Gap Junctions
+        if (!found && G.electroState.gapJunctions) {
+            G.electroState.gapJunctions.forEach(gj => {
+                const p = project(gj.x, gj.y, gj.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+                if (dist < 10 * p.scale) {
+                    found = { type: 'gap_junction', data: gj };
+                }
+            });
+        }
+
         if (found) {
             this.tooltipEl.style.left = `${x + 10}px`;
             this.tooltipEl.style.top = `${y + 10}px`;
@@ -84,6 +106,18 @@
                     <div style="font-size: 10px; margin-top: 5px; opacity: 0.8;">
                         Clears extracellular dopamine via reuptake and metabolic pathways (MAO/COMT).
                     </div>
+                `;
+            } else if (found.type === 'interneuron') {
+                const i = found.data;
+                this.tooltipEl.innerHTML = `
+                    <strong>GABAergic Interneuron (${i.label})</strong><br>
+                    Modulates MSN activity.<br>
+                    Status: ${(i.active * 100).toFixed(0)}% Active
+                `;
+            } else if (found.type === 'gap_junction') {
+                this.tooltipEl.innerHTML = `
+                    <strong>Gap Junction</strong><br>
+                    Electrical coupling between interneurons.
                 `;
             }
         } else {

@@ -70,9 +70,33 @@
     };
 
     G.renderPlasticity = function (ctx, project) {
+        const cam = G.state.camera;
         const w = G.width;
         const h = G.height;
         const pState = G.plasticityState;
+
+        // 64. Dendritic Spine Remodeling Visuals
+        // Draw small visual spines on receptors based on spineDensity
+        if (G.state.receptors) {
+            G.state.receptors.forEach(r => {
+                const baseP = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                if (baseP.scale > 0) {
+                    const spineCount = Math.floor(5 * pState.spineDensity);
+                    for (let i = 0; i < spineCount; i++) {
+                        const angle = (i / spineCount) * Math.PI * 2 + G.state.timer * 0.02;
+                        const sx = r.x + Math.cos(angle) * (r.helixRadius + 10 * pState.spineDensity);
+                        const sz = r.z + Math.sin(angle) * (r.helixRadius + 10 * pState.spineDensity);
+                        const sPos = project(sx, r.y, sz, cam, { width: w, height: h, near: 10, far: 5000 });
+                        if (sPos.scale > 0) {
+                            ctx.fillStyle = '#fff';
+                            ctx.beginPath();
+                            ctx.arc(sPos.x, sPos.y, 2 * sPos.scale * pState.spineDensity, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+            });
+        }
 
         // Overlay Plasticity Info
         ctx.fillStyle = '#fff';

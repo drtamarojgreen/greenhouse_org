@@ -97,6 +97,19 @@
         } else {
             pState.drugCombination.active = false;
         }
+
+        // 97. Partial Agonism (Aripiprazole)
+        // Partial agonists act as agonists in low DA, but antagonists in high DA
+        if (state.mode === 'Antipsychotic (Partial)') {
+            const daLevel = sState ? sState.cleftDA.length : 0;
+            if (daLevel < 20) {
+                // Acts as agonist
+                if (G.clinicalState) G.clinicalState.d2Supersensitivity = 1.2;
+            } else {
+                // Acts as antagonist
+                if (G.clinicalState) G.clinicalState.d2Supersensitivity = 0.8;
+            }
+        }
     };
 
     G.renderPharmacology = function (ctx, project) {
