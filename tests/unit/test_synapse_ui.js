@@ -27,6 +27,13 @@ global.document = {
         if (id === 'synapse-sidebar') return mockSidebar;
         if (id === 'synapse-tooltip') return mockTooltip;
         if (id === 'dose-response-chart') return mockCanvas;
+        if (id === 'literature-panel') return { style: {} };
+        if (id === 'literature-content') return { innerHTML: '' };
+        if (id === 'health-score') return { innerText: '' };
+        if (id === 'calcium-level') return { innerText: '' };
+        if (id === 'membrane-current') return { innerText: '' };
+        if (id === 'sensitivity-index') return { innerText: '' };
+        if (id === 'atp-bar') return { style: {} };
         return null;
     },
     createElement: (tag) => {
@@ -130,6 +137,9 @@ global.window.GreenhouseSynapseApp = {
         },
         scenarios: {
             healthy: { description: 'test' }
+        },
+        metaAnalysis: {
+            serotonin: []
         }
     },
     Particles: {
@@ -152,7 +162,7 @@ global.window.GreenhouseSynapseApp = {
     Analytics: {
         renderDashboard: () => { },
         update: () => { },
-        state: { atp: 100 }
+        state: { atp: 100, doseResponse: [], history: [] }
     },
     Visuals3D: {
         applyDepth: () => { },
@@ -160,7 +170,8 @@ global.window.GreenhouseSynapseApp = {
         restoreDepth: () => { },
         drawDynamicLighting: () => { },
         drawIonHeatMap: () => { },
-        drawElectrostaticPotential: () => { }
+        drawElectrostaticPotential: () => { },
+        drawBBB: () => { }
     },
     Molecular: {
         drawLipidBilayer: () => { },
@@ -171,7 +182,9 @@ global.window.GreenhouseSynapseApp = {
         drawCascades: () => { },
         drawRetrograde: () => { },
         drawMitochondria: () => { },
-        drawGPCRTopology: () => { }
+        drawGPCRTopology: () => { },
+        drawSolvationShell: () => { },
+        drawPatchPipette: () => { }
     }
 };
 

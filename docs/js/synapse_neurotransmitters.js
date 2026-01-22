@@ -14,7 +14,6 @@
         create(w, h, count = 1, config = {}, forceBurst = false) {
             const chem = G.Chemistry.neurotransmitters[config.activeNT || 'serotonin'];
 
-            // Enhancement #60: BBB Shield blocks release if active
             if (G.config.pharmacology?.bbbActive && Math.random() > 0.8) return;
 
             for (let i = 0; i < count; i++) {
@@ -43,7 +42,8 @@
                 vy: 3 + Math.random() * 2,
                 life: 1.0,
                 color: ionChem.color,
-                charge: ionChem.charge
+                charge: ionChem.charge,
+                hydrationRadius: ionChem.hydrationRadius || 2.0
             });
         },
 
@@ -56,7 +56,6 @@
 
             const reuptakeBlocked = G.config.pharmacology?.ssriActive && G.config.activeNT === 'serotonin';
 
-            // Enhancement #58/65: Drug clearance based on metabolizer
             const metabolizer = G.config.pharmacology?.metabolizer || 'normal';
             let clearanceMod = 1.0;
             if (metabolizer === 'slow') clearanceMod = 0.5;
@@ -64,6 +63,11 @@
 
             const enzymaticRate = (G.config.kinetics?.enzymaticRate || 0.002) * clearanceMod;
             const D = G.config.kinetics?.diffusionCoefficient || 1.0;
+
+            // Enhancement #57: Prodrug Conversion (Levodopa -> Dopamine)
+            if (G.config.pharmacology?.levodopaActive && G.frame % 30 === 0) {
+                this.create(w, h, 2, { activeNT: 'dopamine' });
+            }
 
             if (this.particles.length > 50) {
                 this.plasticityFactor = Math.min(2.5, this.plasticityFactor + 0.001);
@@ -114,7 +118,8 @@
                 if (p.life <= 0) {
                     this.particles.splice(i, 1);
                 } else {
-                    const surfaceY = h * (G.config.kinetics?.cleftWidth ? 0.6 + (G.config.kinetics.cleftWidth * 0.08) : 0.68);
+                    const cleft = G.config.kinetics?.cleftWidth || 1.0;
+                    const surfaceY = h * (0.6 + (cleft * 0.08));
                     const alpha = p.life * (p.y > surfaceY ? 0.2 : 1.0);
                     ctx.fillStyle = p.color;
                     ctx.globalAlpha = alpha;
@@ -136,6 +141,11 @@
                 if (ion.life <= 0) {
                     this.ions.splice(i, 1);
                 } else {
+                    // Visualize Solvation Shell during transport (Enhancement #32)
+                    if (G.Molecular) {
+                        G.Molecular.drawSolvationShell(ctx, ion.x, ion.y, ion.hydrationRadius, ion.charge);
+                    }
+
                     ctx.fillStyle = ion.color;
                     ctx.beginPath();
                     ctx.arc(ion.x, ion.y, ion.r, 0, Math.PI * 2);
