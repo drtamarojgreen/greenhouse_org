@@ -171,7 +171,9 @@ global.window.GreenhouseSynapseApp = {
         drawDynamicLighting: () => { },
         drawIonHeatMap: () => { },
         drawElectrostaticPotential: () => { },
-        drawBBB: () => { }
+        drawBBB: () => { },
+        drawVesicleShadows: () => { },
+        drawMeasurement: () => { }
     },
     Molecular: {
         drawLipidBilayer: () => { },

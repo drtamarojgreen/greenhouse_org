@@ -13,10 +13,25 @@
         },
 
         drawShadows(ctx, particles) {
+            ctx.save();
             ctx.shadowBlur = 10;
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
             ctx.shadowOffsetX = 5;
             ctx.shadowOffsetY = 5;
+        },
+
+        drawVesicleShadows(ctx, vesicles, w, h, frame) {
+            // Enhancement #8: Shadow casting for vesicles inside terminal
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            vesicles.forEach(v => {
+                const vx = w * v.x;
+                const vy = h * v.y + Math.sin(frame * 0.04 + v.offset) * 8;
+                ctx.beginPath();
+                ctx.ellipse(vx + 4, vy + 4, v.r, v.r * 0.6, 0, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
         },
 
         drawDynamicLighting(ctx, receptors, w, h) {
@@ -76,7 +91,6 @@
         },
 
         drawBBB(ctx, w, h) {
-            // Enhancement #60: BBB Shield
             ctx.save();
             ctx.strokeStyle = 'rgba(0, 242, 255, 0.5)';
             ctx.lineWidth = 4;
@@ -92,6 +106,27 @@
             ctx.fillStyle = '#00F2FF';
             ctx.font = 'bold 10px Arial';
             ctx.fillText('BLOOD-BRAIN BARRIER (BBB)', w * 0.5 - 70, h * 0.04);
+            ctx.restore();
+        },
+
+        drawMeasurement(ctx, start, end) {
+            // Enhancement #15: Synaptic cleft measurement tool
+            if (!start || !end) return;
+            ctx.save();
+            ctx.strokeStyle = '#FFD700';
+            ctx.setLineDash([2, 2]);
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(start.x, start.y);
+            ctx.lineTo(end.x, end.y);
+            ctx.stroke();
+
+            const dist = Math.sqrt((end.x - start.x)**2 + (end.y - start.y)**2);
+            const virtualNM = (dist * 0.2).toFixed(1);
+
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 10px Arial';
+            ctx.fillText(`${virtualNM} nm`, (start.x + end.x) / 2, (start.y + end.y) / 2 - 10);
             ctx.restore();
         },
 
