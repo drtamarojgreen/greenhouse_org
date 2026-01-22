@@ -12,10 +12,11 @@
     G.synapseState = {
         vesicles: {
             rrp: [], // 26. Readily Releasable Pool
-            reserve: [] // Reserve Pool
+            reserve: [], // Reserve Pool
+            synapsinPhospho: 0.1 // 26. Modulation by synapsin phosphorylation
         },
         cleftDA: [],
-        dat: { activity: 1.0, na: 140, cl: 120 }, // 36. DAT dependencies (Na+, Cl-)
+        dat: { activity: 1.0, na: 140, cl: 120, stoichiometry: { na: 2, cl: 1 } }, // 36. DAT dependencies (Na+, Cl-)
         vmat2: { activity: 1.0, phGradient: 2.0 }, // 24. VMAT2 Transport
         releaseRate: 0.1,
         pathologicalState: 'Healthy',
@@ -168,19 +169,27 @@
             }
         });
 
-        if (sState.vesicles.rrp.length < 12 && sState.vesicles.reserve.length > 0) {
-            const readyIndex = sState.vesicles.reserve.findIndex(v => v.filled > 0.8);
-            if (readyIndex !== -1) {
-                const v = sState.vesicles.reserve.splice(readyIndex, 1)[0];
-                v.y = -180;
-                v.snareState = 'Primed';
-                // 27. Assemble SNARE complex upon priming
-                if (!v.snareProteins) {
-                    v.snareProteins = { syntaxin: 0.1, snap25: 0.1, synaptobrevin: 1.0 };
+        // 26. Reserve pool mobilization via Synapsin phosphorylation (by PKA/CaMKII)
+        const pkaLevel = G.molecularState ? G.molecularState.pka.cat : 0;
+        const camkiiLevel = G.molecularState ? G.molecularState.camkii.active : 0;
+        sState.vesicles.synapsinPhospho = Math.min(1.0, 0.1 + pkaLevel * 0.1 + camkiiLevel * 0.2);
+
+        if (sState.vesicles.rrp.length < 15 && sState.vesicles.reserve.length > 0) {
+            // Replenishment rate increased by synapsin phosphorylation
+            if (Math.random() < 0.05 * sState.vesicles.synapsinPhospho) {
+                const readyIndex = sState.vesicles.reserve.findIndex(v => v.filled > 0.7);
+                if (readyIndex !== -1) {
+                    const v = sState.vesicles.reserve.splice(readyIndex, 1)[0];
+                    v.y = -180;
+                    v.snareState = 'Primed';
+                    // 27. Assemble SNARE complex upon priming
+                    if (!v.snareProteins) {
+                        v.snareProteins = { syntaxin: 0.1, snap25: 0.1, synaptobrevin: 1.0 };
+                    }
+                    v.snareProteins.syntaxin = 1.0;
+                    v.snareProteins.snap25 = 1.0;
+                    sState.vesicles.rrp.push(v);
                 }
-                v.snareProteins.syntaxin = 1.0;
-                v.snareProteins.snap25 = 1.0;
-                sState.vesicles.rrp.push(v);
             }
         }
 
@@ -197,7 +206,11 @@
         const amphetamineEffect = state.scenarios.amphetamine ? -0.5 : 1.0;
         const adhdEffect = state.scenarios.adhd ? 1.5 : 1.0;
 
-        const datEfficiency = sState.dat.activity * (sState.dat.na / 140) * (sState.dat.cl / 120) * datPhosphoInhibition * competitiveInhibition * cocaineEffect * adhdEffect;
+        // 36. Na+ and Cl- dependencies (Realistic stoichiometry: 2 Na+ : 1 Cl- : 1 DA)
+        const naFactor = Math.pow(sState.dat.na / 140, sState.dat.stoichiometry.na);
+        const clFactor = Math.pow(sState.dat.cl / 120, sState.dat.stoichiometry.cl);
+
+        const datEfficiency = sState.dat.activity * naFactor * clFactor * datPhosphoInhibition * competitiveInhibition * cocaineEffect * adhdEffect;
 
         for (let i = sState.cleftDA.length - 1; i >= 0; i--) {
             const da = sState.cleftDA[i];
@@ -478,17 +491,21 @@
             }
         });
 
-        // 45. Render Synaptic Cleft Concentration Profile (Gradient)
-        if (sState.cleftDA.length > 10) {
+        // 45. Render Synaptic Cleft Concentration Profile (Heatmap Gradient)
+        if (sState.cleftDA.length > 5) {
             const gradientY = -160;
             const pG = project(0, gradientY, 0, cam, { width: w, height: h, near: 10, far: 5000 });
             if (pG.scale > 0) {
-                const grad = ctx.createRadialGradient(pG.x, pG.y, 0, pG.x, pG.y, 100 * pG.scale);
-                grad.addColorStop(0, `rgba(0, 255, 0, ${Math.min(0.3, sState.cleftDA.length / 500)})`);
+                // Create a multi-stop heatmap gradient
+                const grad = ctx.createRadialGradient(pG.x, pG.y, 0, pG.x, pG.y, 150 * pG.scale);
+                const intensity = Math.min(1.0, sState.cleftDA.length / 400);
+                grad.addColorStop(0, `rgba(255, 255, 200, ${intensity * 0.6})`); // Core (White-Yellow)
+                grad.addColorStop(0.2, `rgba(0, 255, 0, ${intensity * 0.4})`);  // Mid (Green)
+                grad.addColorStop(0.5, `rgba(0, 100, 0, ${intensity * 0.2})`);  // Outer (Dark Green)
                 grad.addColorStop(1, 'rgba(0, 255, 0, 0)');
                 ctx.fillStyle = grad;
                 ctx.beginPath();
-                ctx.arc(pG.x, pG.y, 100 * pG.scale, 0, Math.PI * 2);
+                ctx.arc(pG.x, pG.y, 150 * pG.scale, 0, Math.PI * 2);
                 ctx.fill();
             }
         }

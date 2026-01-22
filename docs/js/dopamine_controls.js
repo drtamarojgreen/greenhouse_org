@@ -138,9 +138,12 @@
             { type: 'checkbox', label: 'Parkinsonian', checked: () => G.state.scenarios.parkinsonian, action: (val) => { G.state.scenarios.parkinsonian = val; if (G.synapseState) G.synapseState.pathologicalState = val ? 'Parkinsonian' : 'Healthy'; } },
             { type: 'checkbox', label: 'Schizophrenia', checked: () => G.state.scenarios.schizophrenia, action: (val) => G.state.scenarios.schizophrenia = val },
             { type: 'checkbox', label: 'Alpha-Synuclein', checked: () => G.state.scenarios.alphaSynuclein, action: (val) => G.state.scenarios.alphaSynuclein = val },
+            { label: 'L-DOPA Pulse', action: () => setMode('L-DOPA Pulse') },
             { type: 'checkbox', label: 'Neuroinflammation', checked: () => G.state.scenarios.neuroinflammation, action: (val) => G.state.scenarios.neuroinflammation = val },
             { type: 'checkbox', label: 'High Stress', checked: () => G.state.scenarios.highStress, action: (val) => G.state.scenarios.highStress = val },
-            { type: 'checkbox', label: 'D1-D2 Heteromer', checked: () => G.state.scenarios.heteromer, action: (val) => G.state.scenarios.heteromer = val }
+            { type: 'checkbox', label: 'D1-D2 Heteromer', checked: () => G.state.scenarios.heteromer, action: (val) => G.state.scenarios.heteromer = val },
+            { label: 'Region: Ventral Striatum', action: () => setMode('Ventral Striatum') },
+            { label: 'Region: PFC', action: () => setMode('PFC Signaling') }
         ];
 
         const pharmacologyOptions = [

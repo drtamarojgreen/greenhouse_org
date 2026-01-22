@@ -122,13 +122,19 @@
         // 51. Nav1.6 Modulation by Dopamine (D1-mediated enhancement, D2-mediated inhibition)
         if (state.signalingActive) {
             if (state.mode.includes('D1') || state.mode.includes('D5')) {
-                 eState.channels.nav16 = Math.min(1.5, eState.channels.nav16 + 0.01);
+                 eState.channels.nav16 = Math.min(1.5, eState.channels.nav16 + 0.015);
             } else if (state.mode.includes('D2') || state.mode.includes('D3')) {
-                 eState.channels.nav16 = Math.max(0.5, eState.channels.nav16 - 0.01);
+                 eState.channels.nav16 = Math.max(0.4, eState.channels.nav16 - 0.01);
             }
         } else {
              eState.channels.nav16 += (1.0 - eState.channels.nav16) * 0.01;
         }
+
+        // 47. HCN Channel Gating (Voltage-dependent activation)
+        // HCN channels activate upon hyperpolarization
+        const hcnGate = 1.0 / (1.0 + Math.exp((eState.membranePotential + 75) / 5));
+        const hcnCurrent = eState.channels.hcn * hcnGate * (targetPotential - eState.membranePotential);
+        eState.membranePotential += hcnCurrent * 0.2;
 
         // Smooth transition (RC circuit simulation)
         eState.membranePotential += (targetPotential - eState.membranePotential) * 0.04;
@@ -187,11 +193,13 @@
 
         // 51. Nav1.6 Modulation & Spike Threshold
         // D1 increases Nav1.6 activity (lowers threshold), D2 decreases it
-        const thresholdShift = (state.mode.includes('D1') ? -2 : (state.mode.includes('D2') ? 2 : 0));
+        // Nav1.6 is also more active at the AIS, modeled here by lowering threshold
+        const thresholdShift = (state.mode.includes('D1') ? -5 : (state.mode.includes('D2') ? 3 : 0));
         const currentThreshold = eState.threshold + thresholdShift;
 
-        // Simple Spike generation (influenced by Nav1.6)
-        if (eState.membranePotential > currentThreshold && Math.random() > (1.1 - eState.channels.nav16 * 0.2)) {
+        // Simple Spike generation (influenced by Nav1.6 and Up-state)
+        const spikeProbability = (eState.membranePotential - currentThreshold) * 0.1 * eState.channels.nav16;
+        if (eState.membranePotential > currentThreshold && Math.random() < spikeProbability) {
             eState.spikeCount++;
             eState.membranePotential = 35; // Spike peak
 
