@@ -1,0 +1,22 @@
+dataset:
+  min_years_present: 10
+  min_total_count: 500
+  year_start: 1965
+  year_end: 2024
+
+embedding:
+  method: pca
+  n_components: 16
+
+clustering:
+  algorithm: kmeans
+  n_clusters: 30
+  random_seed: 42
+
+mental_health_detection:
+  min_variance: 0.15
+  min_growth_slope: 0.02
+  min_peak_year: 1980
+
+output:
+  top_terms_per_year: 5
