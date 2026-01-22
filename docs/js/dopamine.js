@@ -278,7 +278,7 @@
         let baseUrl = script ? script.getAttribute('data-base-url') : null;
         if (baseUrl === null) {
             // Fallback for when data-base-url is missing
-            baseUrl = 'js/';
+            baseUrl = '';
         }
         return {
             targetSelector: script ? script.getAttribute('data-target-selector-left') : '#dopamine-app-container',
