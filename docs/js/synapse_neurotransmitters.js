@@ -14,6 +14,9 @@
         create(w, h, count = 1, config = {}, forceBurst = false) {
             const chem = G.Chemistry.neurotransmitters[config.activeNT || 'serotonin'];
 
+            // Enhancement #60: BBB Shield blocks release if active
+            if (G.config.pharmacology?.bbbActive && Math.random() > 0.8) return;
+
             for (let i = 0; i < count; i++) {
                 this.particles.push({
                     x: w * (0.48 + Math.random() * 0.04),
@@ -52,8 +55,14 @@
             const astrocyteY = h * 0.5;
 
             const reuptakeBlocked = G.config.pharmacology?.ssriActive && G.config.activeNT === 'serotonin';
-            const enzymaticRate = G.config.kinetics?.enzymaticRate || 0.002;
 
+            // Enhancement #58/65: Drug clearance based on metabolizer
+            const metabolizer = G.config.pharmacology?.metabolizer || 'normal';
+            let clearanceMod = 1.0;
+            if (metabolizer === 'slow') clearanceMod = 0.5;
+            if (metabolizer === 'rapid') clearanceMod = 2.0;
+
+            const enzymaticRate = (G.config.kinetics?.enzymaticRate || 0.002) * clearanceMod;
             const D = G.config.kinetics?.diffusionCoefficient || 1.0;
 
             if (this.particles.length > 50) {
@@ -88,7 +97,7 @@
 
                 const preTerminalTop = h * 0.4;
                 if (p.y < preTerminalTop && !reuptakeBlocked) {
-                    p.life -= 0.05;
+                    p.life -= 0.05 * clearanceMod;
                 }
 
                 p.life -= enzymaticRate;
@@ -98,14 +107,15 @@
                     const dy = p.y - astrocyteY;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     if (dist < 60) {
-                        p.life -= 0.05;
+                        p.life -= 0.05 * clearanceMod;
                     }
                 }
 
                 if (p.life <= 0) {
                     this.particles.splice(i, 1);
                 } else {
-                    const alpha = p.life * (p.y > h * 0.65 ? 0.2 : 1.0);
+                    const surfaceY = h * (G.config.kinetics?.cleftWidth ? 0.6 + (G.config.kinetics.cleftWidth * 0.08) : 0.68);
+                    const alpha = p.life * (p.y > surfaceY ? 0.2 : 1.0);
                     ctx.fillStyle = p.color;
                     ctx.globalAlpha = alpha;
                     ctx.shadowBlur = 15 * p.life;

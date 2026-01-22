@@ -250,13 +250,17 @@
             const w = this.canvas.width / (window.devicePixelRatio || 1);
             const h = this.canvas.height / (window.devicePixelRatio || 1);
 
-            ctx.fillStyle = G.config.highContrast ? '#000' : '#010501';
+            // Enhancement #85: Night Cycle
+            const nightDim = G.config.visuals?.isNight ? 0.3 : 1.0;
+            ctx.fillStyle = G.config.highContrast ? '#000' : (G.config.visuals?.isNight ? '#000500' : '#010501');
             ctx.fillRect(0, 0, w, h);
 
             if (G.Molecular) {
+                ctx.globalAlpha = nightDim;
                 G.Molecular.drawECM(ctx, w, h);
                 G.Molecular.drawAstrocyte(ctx, w, h);
                 G.Molecular.drawMitochondria(ctx, w * 0.4, h * 0.15, G.Analytics?.state?.atp || 100);
+                ctx.globalAlpha = 1.0;
             }
 
             if (G.Visuals3D) {
@@ -264,12 +268,15 @@
                 if (G.config.visuals?.showElectrostatic) {
                     G.Visuals3D.drawElectrostaticPotential(ctx, w, h, this.frame);
                 }
+                if (G.config.pharmacology?.bbbActive) {
+                    G.Visuals3D.drawBBB(ctx, w, h);
+                }
             }
 
             this.drawStructure(ctx, w, h);
 
             if (G.Molecular) {
-                const surfaceY = h * 0.68;
+                const surfaceY = h * (G.config.kinetics?.cleftWidth ? 0.6 + (G.config.kinetics.cleftWidth * 0.08) : 0.68);
                 G.Molecular.drawLipidBilayer(ctx, w * 0.3, h * 0.44, w * 0.4, false);
                 G.Molecular.drawLipidBilayer(ctx, w * 0.2, surfaceY, w * 0.6, true);
                 G.Molecular.drawScaffolding(ctx, w, h, G.Particles.plasticityFactor, G.config.visuals?.showIsoforms);
@@ -280,7 +287,6 @@
                     G.Molecular.drawSNARE(ctx, w * 0.5, h * 0.4, (this.frame % 60) / 20);
                 }
 
-                // Draw 7TM for GPCRs
                 G.config.elements.receptors.forEach(r => {
                     if (r.type === 'gpcr' && r.state !== 'internalized') {
                         G.Molecular.drawGPCRTopology(ctx, w * r.x, surfaceY - 5);
@@ -318,12 +324,15 @@
             if (!G.Particles || !G.Chemistry) return;
             const particles = G.Particles.particles;
             const chem = G.Chemistry;
-            const surfaceY = h * 0.68;
+            const surfaceY = h * (G.config.kinetics?.cleftWidth ? 0.6 + (G.config.kinetics.cleftWidth * 0.08) : 0.68);
 
             const pharm = G.config.pharmacology || {};
 
             const pH = G.config.kinetics?.pH || 7.4;
             const pH_modifier = Math.max(0.1, 1.0 - Math.abs(pH - 7.4) * 2);
+
+            // Enhancement #85: Circadian effect - reduced expression/activity at Night
+            const circadian_modifier = G.config.visuals?.isNight ? 0.7 : 1.0;
 
             G.config.elements.receptors.forEach(receptor => {
                 if (receptor.state === 'internalized' || receptor.state === 'desensitized') {
@@ -347,7 +356,7 @@
                         const receptorType = chem.receptors[receptor.type];
                         if (receptorType.binds.includes(p.chemistry.id)) {
 
-                            if (Math.random() > pH_modifier) return;
+                            if (Math.random() > (pH_modifier * circadian_modifier)) return;
 
                             p.life = 0;
 
@@ -395,9 +404,10 @@
             this.hoveredId = null;
             const mx = this.mouse.x;
             const my = this.mouse.y;
+            const surfaceY = h * (G.config.kinetics?.cleftWidth ? 0.6 + (G.config.kinetics.cleftWidth * 0.08) : 0.68);
 
             if (my < h * 0.44 && Math.abs(mx - w * 0.5) < w * 0.16) this.hoveredId = 'preSynapticTerminal';
-            else if (my > h * 0.6 && Math.abs(mx - w * 0.5) < w * 0.28) this.hoveredId = 'postSynapticTerminal';
+            else if (my > surfaceY - 10 && Math.abs(mx - w * 0.5) < w * 0.28) this.hoveredId = 'postSynapticTerminal';
 
             G.config.elements.vesicles.forEach(v => {
                 const vx = w * v.x, vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
@@ -406,7 +416,8 @@
         },
 
         drawStructure(ctx, w, h) {
-            const centerX = w * 0.5, bulbY = h * 0.3, bW = w * 0.24, surfaceY = h * 0.68;
+            const centerX = w * 0.5, bulbY = h * 0.3, bW = w * 0.24;
+            const surfaceY = h * (G.config.kinetics?.cleftWidth ? 0.6 + (G.config.kinetics.cleftWidth * 0.08) : 0.68);
             const activeId = this.hoveredId || this.sidebarHoveredId;
 
             ctx.save();

@@ -14,16 +14,20 @@
                 ssriActive: false,
                 antagonistActive: false,
                 ttxActive: false,
-                benzodiazepineActive: false
+                benzodiazepineActive: false,
+                bbbActive: false,
+                metabolizer: 'normal'
             };
             G.config.kinetics = G.config.kinetics || {
                 enzymaticRate: 0.002,
                 diffusionCoefficient: 1.0,
-                pH: 7.4
+                pH: 7.4,
+                cleftWidth: 1.0 // Normalized 1.0 = 20nm
             };
             G.config.visuals = G.config.visuals || {
                 showIsoforms: false,
-                showElectrostatic: false
+                showElectrostatic: false,
+                isNight: false
             };
 
             let html = `
@@ -44,34 +48,31 @@
                                 <input type="checkbox" id="antagonist-toggle" ${G.config.pharmacology.antagonistActive ? 'checked' : ''} style="margin-right: 5px;"> Antagonist
                             </label>
                             <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
-                                <input type="checkbox" id="ttx-toggle" ${G.config.pharmacology.ttxActive ? 'checked' : ''} style="margin-right: 5px;"> Tetrodotoxin
+                                <input type="checkbox" id="bbb-toggle" ${G.config.pharmacology.bbbActive ? 'checked' : ''} style="margin-right: 5px;"> BBB Shield
                             </label>
                             <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
-                                <input type="checkbox" id="benzo-toggle" ${G.config.pharmacology.benzodiazepineActive ? 'checked' : ''} style="margin-right: 5px;"> Benzo
+                                <input type="checkbox" id="night-toggle" ${G.config.visuals.isNight ? 'checked' : ''} style="margin-right: 5px;"> Night Cycle
                             </label>
                         </div>
                     </div>
 
                     <div style="margin-bottom: 15px;">
+                        <label for="metabolizer-selector" style="display: block; font-size: 10px; color: #aaa; margin-bottom: 5px;">Metabolizer (CYP450)</label>
+                        <select id="metabolizer-selector" style="width: 100%; background: #1a1c1e; color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 5px; border-radius: 5px; font-size: 11px;">
+                            <option value="slow" ${G.config.pharmacology.metabolizer === 'slow' ? 'selected' : ''}>Slow (Poor)</option>
+                            <option value="normal" ${G.config.pharmacology.metabolizer === 'normal' ? 'selected' : ''}>Normal</option>
+                            <option value="rapid" ${G.config.pharmacology.metabolizer === 'rapid' ? 'selected' : ''}>Ultra-fast</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label for="cleft-range" style="display: block; font-size: 10px; color: #aaa; margin-bottom: 5px;">Synaptic Cleft Width</label>
+                        <input type="range" id="cleft-range" min="0.5" max="2.0" step="0.1" value="${G.config.kinetics.cleftWidth}" style="width: 100%; accent-color: #FFD700;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
                         <label for="diffusion-range" style="display: block; font-size: 10px; color: #aaa; margin-bottom: 5px;">Diffusion Coefficient (D)</label>
                         <input type="range" id="diffusion-range" min="0.1" max="5.0" step="0.1" value="${G.config.kinetics.diffusionCoefficient}" style="width: 100%; accent-color: #00F2FF;">
-                    </div>
-
-                    <div style="margin-bottom: 20px;">
-                        <label for="ph-range" style="display: block; font-size: 10px; color: #aaa; margin-bottom: 5px;">pH Level</label>
-                        <input type="range" id="ph-range" min="6.0" max="8.0" step="0.1" value="${G.config.kinetics.pH}" style="width: 100%; accent-color: #FF1493;">
-                    </div>
-
-                    <div style="margin-bottom: 20px;">
-                         <label style="display: block; font-size: 10px; color: #aaa; margin-bottom: 8px;">Analysis Layers</label>
-                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
-                                <input type="checkbox" id="isoform-toggle" ${G.config.visuals.showIsoforms ? 'checked' : ''} style="margin-right: 5px;"> Proteomics
-                            </label>
-                            <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
-                                <input type="checkbox" id="electro-toggle" ${G.config.visuals.showElectrostatic ? 'checked' : ''} style="margin-right: 5px;"> Electrostatic
-                            </label>
-                         </div>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
@@ -88,24 +89,21 @@
                 if (onToggleBurst) onToggleBurst();
             });
 
+            container.querySelector('#cleft-range').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                G.config.kinetics.cleftWidth = val;
+                if (onUpdateParam) onUpdateParam('cleft', val);
+            });
+
             container.querySelector('#diffusion-range').addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
                 G.config.kinetics.diffusionCoefficient = val;
                 if (onUpdateParam) onUpdateParam('diffusion', val);
             });
 
-            container.querySelector('#ph-range').addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                G.config.kinetics.pH = val;
-                if (onUpdateParam) onUpdateParam('pH', val);
-            });
-
-            container.querySelector('#isoform-toggle').addEventListener('change', (e) => {
-                G.config.visuals.showIsoforms = e.target.checked;
-            });
-
-            container.querySelector('#electro-toggle').addEventListener('change', (e) => {
-                G.config.visuals.showElectrostatic = e.target.checked;
+            container.querySelector('#metabolizer-selector').addEventListener('change', (e) => {
+                G.config.pharmacology.metabolizer = e.target.value;
+                if (onUpdateParam) onUpdateParam('metabolizer', e.target.value);
             });
 
             container.querySelector('#ssri-toggle').addEventListener('change', (e) => {
@@ -118,14 +116,12 @@
                 if (onToggleDrug) onToggleDrug('antagonist', e.target.checked);
             });
 
-            container.querySelector('#ttx-toggle').addEventListener('change', (e) => {
-                G.config.pharmacology.ttxActive = e.target.checked;
-                if (onToggleDrug) onToggleDrug('ttx', e.target.checked);
+            container.querySelector('#bbb-toggle').addEventListener('change', (e) => {
+                G.config.pharmacology.bbbActive = e.target.checked;
             });
 
-            container.querySelector('#benzo-toggle').addEventListener('change', (e) => {
-                G.config.pharmacology.benzodiazepineActive = e.target.checked;
-                if (onToggleDrug) onToggleDrug('benzodiazepine', e.target.checked);
+            container.querySelector('#night-toggle').addEventListener('change', (e) => {
+                G.config.visuals.isNight = e.target.checked;
             });
 
             container.querySelector('#contrast-toggle').addEventListener('change', (e) => {
