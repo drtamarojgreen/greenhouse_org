@@ -17,6 +17,7 @@
             this.aboutStrip = null;
             this.dashboardVisible = false; // Track visibility state
             this.eventListenersAttached = false;
+            this.persistenceInterval = null;
         }
 
         /**
@@ -50,12 +51,57 @@
                 this.populateAboutStripText();
                 this.createCanvasSection();
                 this.createDashboardContainer(); // This now sets up the interval and performs initial render
+                this.startPersistenceCheck();
 
                 console.log('TechApp: Initialization complete.');
                 GreenhouseUtils.displaySuccess('Tech Test Dashboard Loaded Successfully.');
             } catch (error) {
                 console.error('TechApp: Initialization failed.', error);
                 GreenhouseUtils.displayError('Failed to load Tech Test Dashboard.');
+            }
+        }
+
+        /**
+         * Starts a polling interval to ensure elements remain in the DOM despite React reconciliation.
+         */
+        startPersistenceCheck() {
+            console.log('TechApp: Starting persistence check.');
+            this.persistenceInterval = setInterval(() => {
+                this.ensureElements();
+            }, 500);
+        }
+
+        /**
+         * Checks if the anchor and app elements are in the DOM, and re-inserts them if missing.
+         */
+        ensureElements() {
+            // 1. Check Anchor
+            if (!this.aboutStrip || !document.body.contains(this.aboutStrip)) {
+                const aboutStripSelector = 'section.wixui-column-strip:nth-child(3)';
+                const newStrip = document.querySelector(aboutStripSelector);
+                if (newStrip) {
+                    console.log('TechApp: Anchor re-acquired.');
+                    this.aboutStrip = newStrip;
+                    this.populateAboutStripText(); // Re-apply text changes
+                } else {
+                    return; // Anchor not found yet
+                }
+            }
+
+            // 2. Check Canvas Section
+            if (this.canvasSection && !document.body.contains(this.canvasSection)) {
+                console.log('TechApp: Re-inserting canvas section.');
+                this.aboutStrip.after(this.canvasSection);
+            }
+
+            // 3. Check Dashboard
+            if (this.dashboardVisible && this.dashboardContainer && !document.body.contains(this.dashboardContainer)) {
+                console.log('TechApp: Re-inserting dashboard.');
+                if (this.canvasSection && document.body.contains(this.canvasSection)) {
+                    this.canvasSection.after(this.dashboardContainer);
+                } else {
+                    this.aboutStrip.after(this.dashboardContainer);
+                }
             }
         }
 
