@@ -24,15 +24,76 @@
             ctx.restore();
         },
 
-        drawLipidBilayer(ctx, x, y, width, isPost) {
+        drawLipidBilayer(ctx, x, y, width, isPost, cholesterol = 1.0) {
+            // Enhancement #33: Detailed Lipid Bilayer (Heads and Tails)
             ctx.save();
-            ctx.strokeStyle = isPost ? '#2c3e50' : '#707870';
-            ctx.lineWidth = 4;
-            const offset = Math.sin(Date.now() / 1000) * 2;
+            const headRadius = 3;
+            const tailLength = 8;
+            const spacing = 7;
+            const count = Math.floor(width / spacing);
+
+            const time = Date.now() / 1000;
+            const fluidity = 1.0 / (cholesterol + 0.1); // Cholesterol reduces fluidity
+
+            ctx.fillStyle = isPost ? '#2c3e50' : '#707870';
+            ctx.strokeStyle = isPost ? 'rgba(44, 62, 80, 0.5)' : 'rgba(112, 120, 112, 0.5)';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < count; i++) {
+                const ox = x + i * spacing;
+                const offset = Math.sin(time * 2 * fluidity + i * 0.5) * 2;
+                const curY = y + offset;
+
+                // Upper leaflet
+                ctx.beginPath();
+                ctx.arc(ox, curY - tailLength, headRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(ox, curY - tailLength);
+                ctx.lineTo(ox - 2, curY);
+                ctx.moveTo(ox, curY - tailLength);
+                ctx.lineTo(ox + 2, curY);
+                ctx.stroke();
+
+                // Lower leaflet
+                ctx.beginPath();
+                ctx.arc(ox, curY + tailLength, headRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(ox, curY + tailLength);
+                ctx.lineTo(ox - 2, curY);
+                ctx.moveTo(ox, curY + tailLength);
+                ctx.lineTo(ox + 2, curY);
+                ctx.stroke();
+            }
+            ctx.restore();
+        },
+
+        drawPatchPipette(ctx, x, y) {
+            // Enhancement #11: Patch-Clamp Pipette
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 2;
+
+            // Pipette body
             ctx.beginPath();
-            ctx.moveTo(x, y + offset);
-            ctx.lineTo(x + width, y - offset);
+            ctx.moveTo(x - 40, y - 150);
+            ctx.lineTo(x - 5, y - 10);
+            ctx.lineTo(x + 5, y - 10);
+            ctx.lineTo(x + 40, y - 150);
+            ctx.closePath();
             ctx.stroke();
+            ctx.fill();
+
+            // Glass tip glow
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#fff';
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(x, y - 5, 4, 0, Math.PI * 2);
+            ctx.fill();
+
             ctx.restore();
         },
 
@@ -145,7 +206,6 @@
         },
 
         drawGPCRTopology(ctx, x, y) {
-            // Enhancement #26: 7-Transmembrane topology
             ctx.save();
             ctx.strokeStyle = '#D32F2F';
             ctx.lineWidth = 3;

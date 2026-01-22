@@ -59,6 +59,11 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="literature-panel" style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: none;">
+                    <h3 style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #357438; margin-bottom: 8px; font-weight: 700;">Literature Meta-analysis</h3>
+                    <div id="literature-content" style="font-size: 11px; color: #ccc; line-height: 1.4;"></div>
+                </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
         },
@@ -88,6 +93,7 @@
                     this.state.doseResponse.shift();
                 }
                 this.drawChart();
+                this.updateLiterature();
             }
 
             const scoreElem = document.getElementById('health-score');
@@ -109,6 +115,25 @@
             }
         },
 
+        updateLiterature() {
+            const panel = document.getElementById('literature-panel');
+            if (!panel || !G.config.visuals?.showLiterature) {
+                if (panel) panel.style.display = 'none';
+                return;
+            }
+
+            panel.style.display = 'block';
+            const content = document.getElementById('literature-content');
+            const data = G.Chemistry.metaAnalysis[G.config.activeNT] || [];
+
+            content.innerHTML = data.map(item => `
+                <div style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
+                    <div style="font-weight: 700; color: #357438; font-size: 9px;">${item.source}</div>
+                    <div>${item.findings}</div>
+                </div>
+            `).join('');
+        },
+
         drawChart() {
             const canvas = document.getElementById('dose-response-chart');
             if (!canvas) return;
@@ -118,7 +143,6 @@
 
             ctx.clearRect(0, 0, w, h);
 
-            // Enhancement #95: Confidence Intervals / Standard Deviation
             if (this.state.history.length > 1) {
                 ctx.fillStyle = 'rgba(0, 242, 255, 0.1)';
                 ctx.beginPath();
@@ -131,7 +155,6 @@
 
                     const x = i * step;
                     const yHigh = h - ((avg + std) * 1.5);
-                    const yLow = h - ((avg - std) * 1.5);
                     if(i === 0) ctx.moveTo(x, yHigh);
                     else ctx.lineTo(x, yHigh);
                 }
