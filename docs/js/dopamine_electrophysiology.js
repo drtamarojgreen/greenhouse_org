@@ -91,7 +91,13 @@
         // 53. Up-state/Down-state Transitions
         let targetPotential = -85; // Default "Down-state"
 
-        // Influence of DA and Synaptic input
+        // Influence of DA and Synaptic input (Enhancement 53)
+        // Glutamatergic input (simulated via synapse glutamate particles)
+        const gluCount = sState ? sState.glutamate.length : 0;
+        if (gluCount > 5) {
+            targetPotential += (gluCount / 20) * 20; // Depolarization by glutamate
+        }
+
         if (daConcentration > 40) {
             targetPotential += (daConcentration / 100) * 15;
         }

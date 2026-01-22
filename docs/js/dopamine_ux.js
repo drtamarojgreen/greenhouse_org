@@ -116,9 +116,31 @@
     // 100. Reset to Default Safety
     G.resetToDefault = function () {
         console.log("Resetting simulation to default parameters...");
-        // This would ideally revert all state objects.
-        // For now, we reload the page or reset the core state.
-        window.location.reload();
+        // Instead of a full reload, reset the core state properties
+        G.state.atpConsumed = 0;
+        G.state.timer = 0;
+        G.state.scenarios = {
+            cocaine: false,
+            amphetamine: false,
+            adhd: false,
+            parkinsonian: false,
+            schizophrenia: false,
+            highStress: false,
+            neuroinflammation: false,
+            alphaSynuclein: false,
+            heteromer: false,
+            maoi: false
+        };
+        G.state.mode = 'D1R';
+        G.state.cinematicCamera = true;
+
+        // Reset specific module states if they exist
+        if (G.resetMolecular) G.resetMolecular();
+        if (G.resetSynapse) G.resetSynapse();
+        if (G.resetElectrophysiology) G.resetElectrophysiology();
+        if (G.resetCircuit) G.resetCircuit();
+
+        console.log("Simulation state reset complete.");
     };
 
     // 97. Collaboration Mode (Placeholder logic)

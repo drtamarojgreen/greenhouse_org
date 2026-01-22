@@ -203,14 +203,17 @@
             const da = sState.cleftDA[i];
 
             // 38. Volume Transmission & 39. Tortuosity: slowed diffusion in extracellular space
-        // 38. Dopamine Wave: high-concentration pulses moving through space
-        let diffusionScale = da.y < -150 ? 1.0 : (1.0 / sState.tortuosity);
+            // 38. Dopamine Wave: high-concentration pulses moving through space (Enhancement 38)
+            let diffusionScale = da.y < -150 ? 1.0 : (1.0 / sState.tortuosity);
 
-        // Volume transmission wave effect: occasional "push" to molecules
-        const wavePush = Math.sin(G.state.timer * 0.05 + da.x * 0.01) * 0.2;
-        da.x += (da.vx + wavePush) * diffusionScale;
+            // Volumetric wave effect: push molecules outward from cleft center
+            const waveIntensity = state.mode === 'Phasic Burst' ? 1.5 : 0.5;
+            const distFromCleft = Math.sqrt(da.x*da.x + da.z*da.z);
+            const wavePush = Math.max(0, (200 - distFromCleft) / 200) * waveIntensity;
+
+            da.x += (da.vx + (da.x / (distFromCleft+1)) * wavePush) * diffusionScale;
             da.y += da.vy * diffusionScale;
-            da.z += da.vz * diffusionScale;
+            da.z += (da.vz + (da.z / (distFromCleft+1)) * wavePush) * diffusionScale;
             da.life--;
 
             // 38. Volume Transmission visual: fade out molecules as they move far from cleft

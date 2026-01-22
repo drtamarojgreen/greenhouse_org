@@ -142,8 +142,14 @@
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; grid-column: span 2;">
-                    <h3>Real-Time Time-Series Analytics</h3>
-                    <canvas id="scientific-time-series" width="800" height="150" style="width: 100%; border: 1px solid #4fd1c5;"></canvas>
+                    <div style="display: flex; justify-content: space-between;">
+                        <h3 style="margin-top: 0;">Real-Time Time-Series Analytics</h3>
+                        <h3 style="margin-top: 0;">Spatial DA Map (Top-Down)</h3>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <canvas id="scientific-time-series" width="600" height="150" style="width: 70%; border: 1px solid #4fd1c5;"></canvas>
+                        <canvas id="scientific-spatial-map" width="200" height="150" style="width: 25%; border: 1px solid #4fd1c5;"></canvas>
+                    </div>
                 </div>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">
                     <h3>Live Bio-Metrics</h3>
@@ -179,11 +185,13 @@
         if (G._sciChartInterval) clearInterval(G._sciChartInterval);
         G._sciChartInterval = setInterval(() => {
             const canvas = document.getElementById('scientific-time-series');
-            if (!canvas) {
+            const sCanvas = document.getElementById('scientific-spatial-map');
+            if (!canvas || !sCanvas) {
                 clearInterval(G._sciChartInterval);
                 return;
             }
             const ctx = canvas.getContext('2d');
+            const sCtx = sCanvas.getContext('2d');
             const data = G.analyticsState ? G.analyticsState.history : null;
             if (!data) return;
 
@@ -195,6 +203,23 @@
             drawSeries(ctx, data.da, '#00ff00', 'DA Conc', 40);
             // Draw Potential (Cyan)
             drawSeries(ctx, data.potential, '#00ffff', 'Potential', 80, -90, 40);
+
+            // 45. Spatial DA Map Rendering (Top-down view of synaptic volume)
+            sCtx.clearRect(0, 0, sCanvas.width, sCanvas.height);
+            sCtx.fillStyle = '#000';
+            sCtx.fillRect(0, 0, sCanvas.width, sCanvas.height);
+            if (G.synapseState && G.synapseState.cleftDA) {
+                sCtx.globalAlpha = 0.5;
+                G.synapseState.cleftDA.forEach(da => {
+                    const sx = (da.x + 300) / 600 * sCanvas.width;
+                    const sy = (da.z + 150) / 300 * sCanvas.height;
+                    sCtx.fillStyle = '#0f0';
+                    sCtx.beginPath();
+                    sCtx.arc(sx, sy, 2, 0, Math.PI * 2);
+                    sCtx.fill();
+                });
+                sCtx.globalAlpha = 1.0;
+            }
         }, 100);
     };
 
