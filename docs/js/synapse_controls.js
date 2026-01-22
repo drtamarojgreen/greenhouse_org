@@ -16,7 +16,8 @@
                 ttxActive: false,
                 benzodiazepineActive: false,
                 bbbActive: false,
-                metabolizer: 'normal'
+                metabolizer: 'normal',
+                levodopaActive: false
             };
             G.config.kinetics = G.config.kinetics || {
                 enzymaticRate: 0.002,
@@ -52,10 +53,10 @@
                                 <input type="checkbox" id="antagonist-toggle" ${G.config.pharmacology.antagonistActive ? 'checked' : ''} style="margin-right: 5px;"> Antagonist
                             </label>
                             <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
-                                <input type="checkbox" id="bbb-toggle" ${G.config.pharmacology.bbbActive ? 'checked' : ''} style="margin-right: 5px;"> BBB Shield
+                                <input type="checkbox" id="levodopa-toggle" ${G.config.pharmacology.levodopaActive ? 'checked' : ''} style="margin-right: 5px;"> Prodrug
                             </label>
                             <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
-                                <input type="checkbox" id="night-toggle" ${G.config.visuals.isNight ? 'checked' : ''} style="margin-right: 5px;"> Night Cycle
+                                <input type="checkbox" id="bbb-toggle" ${G.config.pharmacology.bbbActive ? 'checked' : ''} style="margin-right: 5px;"> BBB Shield
                             </label>
                         </div>
                     </div>
@@ -72,12 +73,18 @@
 
                     <div style="margin-bottom: 20px;">
                          <label style="display: block; font-size: 10px; color: #aaa; margin-bottom: 8px;">Analysis Layers</label>
-                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                             <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
                                 <input type="checkbox" id="isoform-toggle" ${G.config.visuals.showIsoforms ? 'checked' : ''} style="margin-right: 5px;"> Proteomics
                             </label>
                             <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
                                 <input type="checkbox" id="literature-toggle" ${G.config.visuals.showLiterature ? 'checked' : ''} style="margin-right: 5px;"> Literature
+                            </label>
+                            <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" id="night-toggle" ${G.config.visuals.isNight ? 'checked' : ''} style="margin-right: 5px;"> Night Mode
+                            </label>
+                            <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" id="contrast-toggle" ${G.config.highContrast ? 'checked' : ''} style="margin-right: 5px;"> Contrast
                             </label>
                          </div>
                     </div>
@@ -96,7 +103,7 @@
             container.querySelector('#patch-btn').addEventListener('click', () => {
                 G.config.visuals.patchClampActive = !G.config.visuals.patchClampActive;
                 if (onUpdateParam) onUpdateParam('patchClamp', G.config.visuals.patchClampActive);
-                this.render(container, config, callbacks); // Re-render to update button color
+                this.render(container, config, callbacks);
             });
 
             container.querySelector('#cholesterol-range').addEventListener('input', (e) => {
@@ -109,6 +116,10 @@
                 const val = parseFloat(e.target.value);
                 G.config.kinetics.cleftWidth = val;
                 if (onUpdateParam) onUpdateParam('cleft', val);
+            });
+
+            container.querySelector('#levodopa-toggle').addEventListener('change', (e) => {
+                G.config.pharmacology.levodopaActive = e.target.checked;
             });
 
             container.querySelector('#isoform-toggle').addEventListener('change', (e) => {
@@ -135,6 +146,11 @@
 
             container.querySelector('#night-toggle').addEventListener('change', (e) => {
                 G.config.visuals.isNight = e.target.checked;
+            });
+
+            container.querySelector('#contrast-toggle').addEventListener('change', (e) => {
+                G.config.highContrast = e.target.checked;
+                if (onToggleHighContrast) onToggleHighContrast(e.target.checked);
             });
 
             container.querySelector('#export-btn').addEventListener('click', () => {
