@@ -99,6 +99,7 @@ const mockCtx = {
     closePath: () => { },
     setLineDash: () => { },
     strokeRect: () => { },
+    ellipse: () => { },
     calls: []
 };
 
@@ -150,14 +151,16 @@ global.window.GreenhouseSynapseApp = {
     },
     Analytics: {
         renderDashboard: () => { },
-        update: () => { }
+        update: () => { },
+        state: { atp: 100 }
     },
     Visuals3D: {
         applyDepth: () => { },
         drawShadows: () => { },
         restoreDepth: () => { },
         drawDynamicLighting: () => { },
-        drawIonHeatMap: () => { }
+        drawIonHeatMap: () => { },
+        drawElectrostaticPotential: () => { }
     },
     Molecular: {
         drawLipidBilayer: () => { },
@@ -166,7 +169,9 @@ global.window.GreenhouseSynapseApp = {
         drawAstrocyte: () => { },
         drawScaffolding: () => { },
         drawCascades: () => { },
-        drawRetrograde: () => { }
+        drawRetrograde: () => { },
+        drawMitochondria: () => { },
+        drawGPCRTopology: () => { }
     }
 };
 

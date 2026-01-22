@@ -14,6 +14,9 @@
         create(w, h, count = 1, config = {}, forceBurst = false) {
             const chem = G.Chemistry.neurotransmitters[config.activeNT || 'serotonin'];
 
+            // Enhancement #60: BBB Shield blocks release if active
+            if (G.config.pharmacology?.bbbActive && Math.random() > 0.8) return;
+
             for (let i = 0; i < count; i++) {
                 this.particles.push({
                     x: w * (0.48 + Math.random() * 0.04),
@@ -25,7 +28,7 @@
                     color: chem.color,
                     glow: chem.glow,
                     chemistry: chem,
-                    stochastic: [] // Store previous positions for Monte Carlo visualization
+                    stochastic: []
                 });
             }
         },
@@ -52,32 +55,35 @@
             const astrocyteY = h * 0.5;
 
             const reuptakeBlocked = G.config.pharmacology?.ssriActive && G.config.activeNT === 'serotonin';
-            const enzymaticRate = G.config.kinetics?.enzymaticRate || 0.002;
 
-            // LTP/LTD Simulation
+            // Enhancement #58/65: Drug clearance based on metabolizer
+            const metabolizer = G.config.pharmacology?.metabolizer || 'normal';
+            let clearanceMod = 1.0;
+            if (metabolizer === 'slow') clearanceMod = 0.5;
+            if (metabolizer === 'rapid') clearanceMod = 2.0;
+
+            const enzymaticRate = (G.config.kinetics?.enzymaticRate || 0.002) * clearanceMod;
+            const D = G.config.kinetics?.diffusionCoefficient || 1.0;
+
             if (this.particles.length > 50) {
                 this.plasticityFactor = Math.min(2.5, this.plasticityFactor + 0.001);
             } else if (this.particles.length < 5) {
                 this.plasticityFactor = Math.max(0.5, this.plasticityFactor - 0.0005);
             }
 
-            // Draw Neurotransmitters - Safe backward loop
             for (let i = this.particles.length - 1; i >= 0; i--) {
                 const p = this.particles[i];
 
-                // Monte Carlo Simulation: Stochastic Diffusion (Enhancement #97)
-                const driftX = (Math.random() - 0.5) * 0.5;
-                const driftY = (Math.random() - 0.5) * 0.5;
-                p.x += p.vx + driftX;
-                p.y += p.vy + driftY;
+                const driftX = (Math.random() - 0.5) * 0.5 * D;
+                const driftY = (Math.random() - 0.5) * 0.5 * D;
+                p.x += (p.vx * D) + driftX;
+                p.y += (p.vy * D) + driftY;
 
-                // Track stochastic path
                 if (G.frame % 10 === 0) {
                     p.stochastic.push({ x: p.x, y: p.y });
                     if (p.stochastic.length > 5) p.stochastic.shift();
                 }
 
-                // Draw path
                 if (p.stochastic.length > 1) {
                     ctx.beginPath();
                     ctx.strokeStyle = p.color;
@@ -91,7 +97,7 @@
 
                 const preTerminalTop = h * 0.4;
                 if (p.y < preTerminalTop && !reuptakeBlocked) {
-                    p.life -= 0.05;
+                    p.life -= 0.05 * clearanceMod;
                 }
 
                 p.life -= enzymaticRate;
@@ -101,14 +107,15 @@
                     const dy = p.y - astrocyteY;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     if (dist < 60) {
-                        p.life -= 0.05;
+                        p.life -= 0.05 * clearanceMod;
                     }
                 }
 
                 if (p.life <= 0) {
                     this.particles.splice(i, 1);
                 } else {
-                    const alpha = p.life * (p.y > h * 0.65 ? 0.2 : 1.0);
+                    const surfaceY = h * (G.config.kinetics?.cleftWidth ? 0.6 + (G.config.kinetics.cleftWidth * 0.08) : 0.68);
+                    const alpha = p.life * (p.y > surfaceY ? 0.2 : 1.0);
                     ctx.fillStyle = p.color;
                     ctx.globalAlpha = alpha;
                     ctx.shadowBlur = 15 * p.life;
@@ -120,11 +127,10 @@
             }
             ctx.globalAlpha = 1.0;
 
-            // Draw Ions
             for (let i = this.ions.length - 1; i >= 0; i--) {
                 const ion = this.ions[i];
-                ion.x += ion.vx;
-                ion.y += ion.vy;
+                ion.x += ion.vx * D;
+                ion.y += ion.vy * D;
                 ion.life -= 0.01;
 
                 if (ion.life <= 0) {

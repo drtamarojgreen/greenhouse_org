@@ -13,7 +13,8 @@
             health: 100.0,
             membraneCurrent: 0.0, // pA
             doseResponse: [],
-            sensitivity: 1.0
+            sensitivity: 1.0,
+            history: []
         },
 
         calculateHealthScore(config, particleCount) {
@@ -58,6 +59,11 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="literature-panel" style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: none;">
+                    <h3 style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #357438; margin-bottom: 8px; font-weight: 700;">Literature Meta-analysis</h3>
+                    <div id="literature-content" style="font-size: 11px; color: #ccc; line-height: 1.4;"></div>
+                </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
         },
@@ -68,7 +74,6 @@
 
             this.state.membraneCurrent = (activeReceptors * 1.5) + (ionCount * 0.8);
 
-            // Sensitivity Analysis (Enhancement #98)
             this.state.sensitivity = G.Particles.plasticityFactor;
 
             if (particleCount > 60) {
@@ -82,8 +87,13 @@
 
             if (G.frame % 30 === 0) {
                 this.state.doseResponse.push(this.state.membraneCurrent);
-                if (this.state.doseResponse.length > 20) this.state.doseResponse.shift();
+                if (this.state.doseResponse.length > 20) {
+                    this.state.history.push([...this.state.doseResponse]);
+                    if(this.state.history.length > 5) this.state.history.shift();
+                    this.state.doseResponse.shift();
+                }
                 this.drawChart();
+                this.updateLiterature();
             }
 
             const scoreElem = document.getElementById('health-score');
@@ -105,6 +115,25 @@
             }
         },
 
+        updateLiterature() {
+            const panel = document.getElementById('literature-panel');
+            if (!panel || !G.config.visuals?.showLiterature) {
+                if (panel) panel.style.display = 'none';
+                return;
+            }
+
+            panel.style.display = 'block';
+            const content = document.getElementById('literature-content');
+            const data = G.Chemistry.metaAnalysis[G.config.activeNT] || [];
+
+            content.innerHTML = data.map(item => `
+                <div style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
+                    <div style="font-weight: 700; color: #357438; font-size: 9px;">${item.source}</div>
+                    <div>${item.findings}</div>
+                </div>
+            `).join('');
+        },
+
         drawChart() {
             const canvas = document.getElementById('dose-response-chart');
             if (!canvas) return;
@@ -113,6 +142,35 @@
             const h = canvas.height;
 
             ctx.clearRect(0, 0, w, h);
+
+            if (this.state.history.length > 1) {
+                ctx.fillStyle = 'rgba(0, 242, 255, 0.1)';
+                ctx.beginPath();
+                const step = w / 20;
+                for(let i=0; i<20; i++) {
+                    const vals = this.state.history.map(h => h[i]).filter(v => v !== undefined);
+                    if(vals.length === 0) continue;
+                    const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+                    const std = Math.sqrt(vals.map(x => Math.pow(x-avg, 2)).reduce((a,b) => a+b, 0) / vals.length);
+
+                    const x = i * step;
+                    const yHigh = h - ((avg + std) * 1.5);
+                    if(i === 0) ctx.moveTo(x, yHigh);
+                    else ctx.lineTo(x, yHigh);
+                }
+                for(let i=19; i>=0; i--) {
+                    const vals = this.state.history.map(h => h[i]).filter(v => v !== undefined);
+                    if(vals.length === 0) continue;
+                    const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+                    const std = Math.sqrt(vals.map(x => Math.pow(x-avg, 2)).reduce((a,b) => a+b, 0) / vals.length);
+                    const x = i * step;
+                    const yLow = h - ((avg - std) * 1.5);
+                    ctx.lineTo(x, yLow);
+                }
+                ctx.closePath();
+                ctx.fill();
+            }
+
             ctx.strokeStyle = '#00F2FF';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -128,7 +186,7 @@
 
             ctx.fillStyle = 'rgba(255,255,255,0.3)';
             ctx.font = '8px Arial';
-            ctx.fillText('DOSE-RESPONSE', 5, 10);
+            ctx.fillText('DOSE-RESPONSE (σ shaded)', 5, 10);
         }
     };
 })();

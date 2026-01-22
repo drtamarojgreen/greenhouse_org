@@ -66,7 +66,6 @@
         },
 
         _initializeSimulation(selector) {
-            // Check dependencies
             if (!G.Chemistry || !G.Particles || !G.Sidebar || !G.Tooltips ||
                 !G.Controls || !G.Analytics || !G.Visuals3D || !G.Molecular) {
                 console.error('SynapseApp: Missing modular dependencies.');
@@ -80,7 +79,6 @@
             this.isRunning = true;
             this.animate();
 
-            // Resilience
             this.observeAndReinitializeApp(this.container);
         },
 
@@ -158,7 +156,8 @@
                         onToggleDrug: (drugId, isActive) => {
                             console.log(`Drug ${drugId} toggled: ${isActive}`);
                         },
-                        onGenerateFigure: () => this.exportFigure()
+                        onGenerateFigure: () => this.exportFigure(),
+                        onUpdateParam: (p, v) => console.log(`Param ${p} set to ${v}`)
                     });
                 }
 
@@ -246,33 +245,59 @@
 
         render() {
             if (!this.ctx) return;
-            this.frame++;
+            this.frame++; // CRITICAL: Increment frame for timing-based logic
             const ctx = this.ctx;
             const w = this.canvas.width / (window.devicePixelRatio || 1);
             const h = this.canvas.height / (window.devicePixelRatio || 1);
 
-            ctx.fillStyle = G.config.highContrast ? '#000' : '#010501';
+            const nightDim = G.config.visuals?.isNight ? 0.3 : 1.0;
+            ctx.fillStyle = G.config.highContrast ? '#000' : (G.config.visuals?.isNight ? '#000500' : '#010501');
             ctx.fillRect(0, 0, w, h);
 
             if (G.Molecular) {
+                ctx.globalAlpha = nightDim;
                 G.Molecular.drawECM(ctx, w, h);
                 G.Molecular.drawAstrocyte(ctx, w, h);
+                G.Molecular.drawMitochondria(ctx, w * 0.4, h * 0.15, G.Analytics?.state?.atp || 100);
+                ctx.globalAlpha = 1.0;
             }
 
-            if (G.Visuals3D) G.Visuals3D.applyDepth(ctx, w, h);
+            if (G.Visuals3D) {
+                G.Visuals3D.applyDepth(ctx, w, h);
+                if (G.config.visuals?.showElectrostatic) {
+                    G.Visuals3D.drawElectrostaticPotential(ctx, w, h, this.frame);
+                }
+                if (G.config.pharmacology?.bbbActive) {
+                    G.Visuals3D.drawBBB(ctx, w, h);
+                }
+            }
 
             this.drawStructure(ctx, w, h);
 
             if (G.Molecular) {
-                const surfaceY = h * 0.68;
-                G.Molecular.drawLipidBilayer(ctx, w * 0.3, h * 0.44, w * 0.4, false);
-                G.Molecular.drawLipidBilayer(ctx, w * 0.2, surfaceY, w * 0.6, true);
-                G.Molecular.drawScaffolding(ctx, w, h, G.Particles.plasticityFactor);
+                const chol = G.config.kinetics?.cholesterol || 1.0;
+                const cleft = G.config.kinetics?.cleftWidth || 1.0;
+                const surfaceY = h * (0.6 + (cleft * 0.08));
+
+                G.Molecular.drawLipidBilayer(ctx, w * 0.3, h * 0.44, w * 0.4, false, chol);
+                G.Molecular.drawLipidBilayer(ctx, w * 0.2, surfaceY, w * 0.6, true, chol);
+
+                G.Molecular.drawScaffolding(ctx, w, h, G.Particles.plasticityFactor, G.config.visuals?.showIsoforms);
                 G.Molecular.drawCascades(ctx);
                 G.Molecular.drawRetrograde(ctx, w, h);
 
                 if (this.frame % 60 < 20) {
                     G.Molecular.drawSNARE(ctx, w * 0.5, h * 0.4, (this.frame % 60) / 20);
+                }
+
+                G.config.elements.receptors.forEach(r => {
+                    if (r.type === 'gpcr' && r.state !== 'internalized') {
+                        G.Molecular.drawGPCRTopology(ctx, w * r.x, surfaceY - 5);
+                    }
+                });
+
+                if (G.config.visuals?.patchClampActive) {
+                    G.Molecular.drawPatchPipette(ctx, this.mouse.x, this.mouse.y);
                 }
             }
 
@@ -306,13 +331,19 @@
             if (!G.Particles || !G.Chemistry) return;
             const particles = G.Particles.particles;
             const chem = G.Chemistry;
-            const surfaceY = h * 0.68;
+
+            const cleft = G.config.kinetics?.cleftWidth || 1.0;
+            const surfaceY = h * (0.6 + (cleft * 0.08));
 
             const pharm = G.config.pharmacology || {};
 
+            const pH = G.config.kinetics?.pH || 7.4;
+            const pH_modifier = Math.max(0.1, 1.0 - Math.abs(pH - 7.4) * 2);
+
+            const circadian_modifier = G.config.visuals?.isNight ? 0.7 : 1.0;
+
             G.config.elements.receptors.forEach(receptor => {
                 if (receptor.state === 'internalized' || receptor.state === 'desensitized') {
-                    // Gradual recovery
                     receptor.recovery = (receptor.recovery || 0) + 1;
                     if (receptor.recovery > 300) {
                         receptor.state = (receptor.type === 'gpcr' ? 'idle' : 'closed');
@@ -332,12 +363,13 @@
                     if (dist < 20 && p.life > 0.1) {
                         const receptorType = chem.receptors[receptor.type];
                         if (receptorType.binds.includes(p.chemistry.id)) {
+
+                            if (Math.random() > (pH_modifier * circadian_modifier)) return;
+
                             p.life = 0;
 
-                            // Pharmacology effects
                             if (pharm.antagonistActive && receptor.type === 'ionotropic_receptor') return;
 
-                            // Enhancement #56: Receptor Desensitization & Internalization
                             receptor.activationCount++;
                             if (receptor.activationCount > 50) {
                                 receptor.state = 'internalized';
@@ -345,15 +377,12 @@
                                 return;
                             } else if (receptor.activationCount > 30) {
                                 receptor.state = 'desensitized';
-                                // 50% chance to still activate but won't trigger effects
                                 if (Math.random() > 0.5) return;
                             }
 
                             if (receptor.type === 'ionotropic_receptor' && p.chemistry.ionEffect !== 'none') {
-                                // Enhancement #66: TTX blocks Na channels
                                 if (pharm.ttxActive && p.chemistry.ionEffect === 'sodium') return;
 
-                                // Enhancement #55: PAM (Benzo) increases GABA/Cl influx
                                 let ionsToCreate = 1;
                                 if (pharm.benzodiazepineActive && p.chemistry.id === 'gaba') ionsToCreate = 3;
 
@@ -364,7 +393,6 @@
                                 receptor.state = 'open';
                                 setTimeout(() => { if(receptor.state === 'open') receptor.state = 'closed'; }, 200);
 
-                                // Enhancement #18: Retrograde Signaling Trigger
                                 if (G.Particles.ions.length > 30 && Math.random() > 0.9) {
                                     if (G.Molecular) G.Molecular.triggerRetrograde(rx, ry);
                                 }
@@ -384,9 +412,11 @@
             this.hoveredId = null;
             const mx = this.mouse.x;
             const my = this.mouse.y;
+            const cleft = G.config.kinetics?.cleftWidth || 1.0;
+            const surfaceY = h * (0.6 + (cleft * 0.08));
 
             if (my < h * 0.44 && Math.abs(mx - w * 0.5) < w * 0.16) this.hoveredId = 'preSynapticTerminal';
-            else if (my > h * 0.6 && Math.abs(mx - w * 0.5) < w * 0.28) this.hoveredId = 'postSynapticTerminal';
+            else if (my > surfaceY - 10 && Math.abs(mx - w * 0.5) < w * 0.28) this.hoveredId = 'postSynapticTerminal';
 
             G.config.elements.vesicles.forEach(v => {
                 const vx = w * v.x, vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
@@ -395,7 +425,9 @@
         },
 
         drawStructure(ctx, w, h) {
-            const centerX = w * 0.5, bulbY = h * 0.3, bW = w * 0.24, surfaceY = h * 0.68;
+            const centerX = w * 0.5, bulbY = h * 0.3, bW = w * 0.24;
+            const cleft = G.config.kinetics?.cleftWidth || 1.0;
+            const surfaceY = h * (0.6 + (cleft * 0.08));
             const activeId = this.hoveredId || this.sidebarHoveredId;
 
             ctx.save();
@@ -454,12 +486,6 @@
                 if (r.type === 'ionotropic_receptor') {
                     ctx.fillStyle = r.state === 'open' ? '#fff' : (r.state === 'desensitized' ? '#555' : '#4DB6AC');
                     ctx.fillRect(rx - 6, ry, 4, 12); ctx.fillRect(rx + 2, ry, 4, 12);
-                } else {
-                    ctx.strokeStyle = r.state === 'active' ? '#fff' : (r.state === 'desensitized' ? '#555' : '#D32F2F');
-                    ctx.lineWidth = 3; ctx.beginPath();
-                    ctx.moveTo(rx - 8, ry + 10);
-                    for (let i = 0; i < 5; i++) ctx.lineTo(rx - 8 + i * 4, ry + (i % 2 === 0 ? -6 : 6));
-                    ctx.stroke();
                 }
             });
         },
