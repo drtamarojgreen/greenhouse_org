@@ -10,12 +10,20 @@ def setup_scene():
 
     scene = bpy.context.scene
     scene.frame_start = 1
-    scene.frame_end = 90
-    scene.render.fps = 30
+    scene.frame_end = 120
+    scene.render.fps = 24
     scene.render.engine = 'CYCLES'
-    scene.cycles.samples = 64
-    scene.render.resolution_x = 1280
-    scene.render.resolution_y = 720
+
+    scene.cycles.use_denoising = False
+    scene.cycles.samples = 4
+    scene.cycles.device = 'CPU'
+
+    for rl in scene.view_layers:
+        if hasattr(rl, "cycles"):
+            rl.cycles.use_denoising = False
+
+    scene.render.resolution_x = 854
+    scene.render.resolution_y = 480
 
     return scene
 
@@ -87,7 +95,7 @@ def import_brain(fbx_path):
         brain_parent.rotation_mode = 'XYZ'
         brain_parent.keyframe_insert(data_path="rotation_euler", frame=1)
         brain_parent.rotation_euler.z = math.radians(360)
-        brain_parent.keyframe_insert(data_path="rotation_euler", frame=90)
+        brain_parent.keyframe_insert(data_path="rotation_euler", frame=120)
 
         # Ensure materials have some glow
         for obj in brain_objs:
@@ -118,14 +126,14 @@ def create_text(content, location=(0, -2, -3)):
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.1, 0.5, 0.3, 1)
-    bsdf.inputs["Roughness"].default_value = 0.1  # Low roughness for sharp reflections
-    bsdf.inputs["Metallic"].default_value = 0.7   # Higher metallic for distinct highlights
+    bsdf.inputs["Roughness"].default_value = 0.05  # Very low roughness for sharp reflections
+    bsdf.inputs["Metallic"].default_value = 1.0    # Full metallic for maximum highlights
     text_obj.data.materials.append(mat)
     return text_obj
 
 def create_moving_spotlights(scene, target_obj):
-    # Create path for spotlights
-    bpy.ops.curve.primitive_bezier_circle_add(radius=12, location=(0, 0, 10), rotation=(0, 0, 0))
+    # Create path for spotlights - positioned behind the camera (Y < -15)
+    bpy.ops.curve.primitive_bezier_circle_add(radius=15, location=(0, -40, 20), rotation=(math.radians(30), 0, 0))
     path = bpy.context.object
     path.name = "SpotlightPath"
 
@@ -133,8 +141,8 @@ def create_moving_spotlights(scene, target_obj):
         bpy.ops.object.light_add(type='SPOT', location=(0, 0, 0))
         spot = bpy.context.object
         spot.name = f"MovingSpot_{i}"
-        spot.data.energy = 4000
-        spot.data.spot_size = math.radians(35)
+        spot.data.energy = 40000 # Increased energy for distance
+        spot.data.spot_size = math.radians(40)
         spot.data.spot_blend = 0.5
         
         follow = spot.constraints.new(type='FOLLOW_PATH')
@@ -180,8 +188,8 @@ def main():
     center_axis = bpy.context.object
     create_moving_spotlights(scene, center_axis)
 
-    # Camera setup
-    bpy.ops.object.camera_add(location=(0, -22, 0), rotation=(math.radians(90), 0, 0))
+    # Camera setup - positioned between spotlights and brain/text
+    bpy.ops.object.camera_add(location=(0, -15, 0), rotation=(math.radians(90), 0, 0))
     scene.camera = bpy.context.object
 
     # Lighting setup
