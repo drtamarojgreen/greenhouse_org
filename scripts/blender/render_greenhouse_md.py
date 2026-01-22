@@ -11,12 +11,21 @@ def setup_scene():
 
     scene = bpy.context.scene
     scene.frame_start = 1
-    scene.frame_end = 24
-    scene.render.fps = 2
+    scene.frame_end = 120
+    scene.render.fps = 24
     scene.render.engine = 'CYCLES'
-    scene.cycles.samples = 128
-    scene.render.resolution_x = 1920
-    scene.render.resolution_y = 1080
+
+    # Thoroughly disable denoising to avoid "Build without OpenImageDenoiser" errors
+    scene.cycles.use_denoising = False
+    scene.cycles.samples = 4 # Low samples for speed in sandbox
+    scene.cycles.device = 'CPU'
+
+    for rl in scene.view_layers:
+        if hasattr(rl, "cycles"):
+            rl.cycles.use_denoising = False
+
+    scene.render.resolution_x = 960
+    scene.render.resolution_y = 540
 
     return scene
 
@@ -58,7 +67,7 @@ def create_logo_background(logo_path):
 
     return bg_plane
 
-def create_text(content, location=(0, 0, 0.5)):
+def create_text(content, location=(0, 0, 0)):
     bpy.ops.object.text_add(location=location, rotation=(math.radians(90), 0, 0))
     text_obj = bpy.context.object
     text_obj.data.body = content
@@ -67,30 +76,31 @@ def create_text(content, location=(0, 0, 0.5)):
     text_obj.data.extrude = 0.1
     text_obj.data.bevel_depth = 0.02
 
-    # Dark Green Material
+    # Dark Green Material with high reflectivity
     mat = bpy.data.materials.new(name="TextMaterial")
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.05, 0.2, 0.05, 1)
-    bsdf.inputs["Roughness"].default_value = 0.1  # Low roughness for sharp reflections
-    bsdf.inputs["Metallic"].default_value = 0.7   # Higher metallic for distinct highlights
+    bsdf.inputs["Roughness"].default_value = 0.05  # Very low roughness for sharp reflections
+    bsdf.inputs["Metallic"].default_value = 1.0    # Full metallic for maximum highlights
     text_obj.data.materials.append(mat)
 
     return text_obj
 
 def create_moving_spotlights(scene, target_obj):
-    # Create paths for spotlights
-    bpy.ops.curve.primitive_bezier_circle_add(radius=8, location=(5, -5, 5), rotation=(math.radians(60), 0, 0))
+    # Create paths for spotlights - positioned behind the camera (Y < -10)
+    bpy.ops.curve.primitive_bezier_circle_add(radius=10, location=(0, -25, 15), rotation=(math.radians(45), 0, 0))
     path1 = bpy.context.object
     
-    bpy.ops.curve.primitive_bezier_circle_add(radius=8, location=(-5, -5, 5), rotation=(math.radians(60), 0, 0))
+    # Second path slightly offset
+    bpy.ops.curve.primitive_bezier_circle_add(radius=12, location=(0, -30, 10), rotation=(math.radians(45), 0, 0))
     path2 = bpy.context.object
     
-    for path in [path1, path2]:
+    for i, path in enumerate([path1, path2]):
         bpy.ops.object.light_add(type='SPOT', location=(0, 0, 0))
         spot = bpy.context.object
-        spot.data.energy = 2000
-        spot.data.spot_size = math.radians(35)
+        spot.data.energy = 20000 # Increased energy for distance
+        spot.data.spot_size = math.radians(40)
         spot.data.spot_blend = 0.5
         
         follow = spot.constraints.new(type='FOLLOW_PATH')
@@ -129,12 +139,12 @@ def main():
     create_text("GreenhouseMD")
 
     # Create axis at midpoint for spotlights to focus on
-    bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0.5))
+    bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
     midpoint_axis = bpy.context.object
     create_moving_spotlights(scene, midpoint_axis)
 
-    # Camera
-    bpy.ops.object.camera_add(location=(0, -16, 0), rotation=(math.radians(90), 0, 0))
+    # Camera - positioned between spotlights and text
+    bpy.ops.object.camera_add(location=(0, -10, 0), rotation=(math.radians(90), 0, 0))
     scene.camera = bpy.context.object
 
     # Lighting
