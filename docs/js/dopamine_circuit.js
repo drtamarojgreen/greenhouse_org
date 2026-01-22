@@ -64,6 +64,14 @@
         });
     }
 
+    // Initialize Realistic Brain Mesh
+    G.initRealisticBrain = function() {
+        if (window.GreenhouseBrainMeshRealistic) {
+            G.circuitState.brainMesh = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+            console.log("Realistic Brain Mesh Generated.");
+        }
+    };
+
     G.updateCircuit = function () {
         const state = G.state;
         const cState = G.circuitState;
@@ -72,6 +80,21 @@
         // 71. Direct vs. Indirect
         cState.pathways.direct.active = state.mode.includes('D1');
         cState.pathways.indirect.active = state.mode.includes('D2');
+
+        // 72-73. Pathway specific kinetics
+        if (state.mode.includes('SNc') || state.mode.includes('Dorsal') || state.mode === 'Parkinsonian') {
+            // Nigrostriatal Pathway: High DAT density
+            if (sState) {
+                sState.dat.activity = state.mode === 'Parkinsonian' ? 0.2 : 1.5;
+                sState.tortuosity = 1.8; // Denser tissue
+            }
+        } else if (state.mode.includes('VTA') || state.mode.includes('Ventral') || state.mode === 'Schizophrenia') {
+            // Mesolimbic Pathway: Lower DAT, more volume transmission
+            if (sState) {
+                sState.dat.activity = state.mode === 'Schizophrenia' ? 1.0 : 0.6;
+                sState.tortuosity = 1.3; // More open space for diffusion
+            }
+        }
 
         // 75. Cholinergic Interneuron "Pause"
         if (sState && sState.cleftDA.length > 100) {
@@ -113,10 +136,19 @@
     };
 
     G.renderCircuit = function (ctx, project) {
+        if (!G.circuitState.brainMesh && window.GreenhouseBrainMeshRealistic) {
+            G.initRealisticBrain();
+        }
+
         const cam = G.state.camera;
         const w = G.width;
         const h = G.height;
         const cState = G.circuitState;
+
+        // 79. Realistic 3D Brain Atlas Integration
+        if (cState.brainMesh) {
+            this.renderRealisticBrain(ctx, project);
+        }
 
         // 71. Render MSN Populations
         cState.msnPopulations.d1.forEach(msn => {
@@ -174,36 +206,7 @@
             ctx.fill();
         }
 
-        // 79. 3D Brain Atlas Integration (Coordinate-based visualization)
-        // Draw a more recognizable wireframe "brain" shell
-        ctx.strokeStyle = 'rgba(100, 100, 255, 0.15)';
-        const pAtlas = project(0, 0, 0, cam, { width: w, height: h, near: 10, far: 5000 });
-        if (pAtlas.scale > 0) {
-            ctx.setLineDash([2, 10]);
-
-            // Outer shell (Cortex)
-            ctx.beginPath();
-            ctx.ellipse(pAtlas.x, pAtlas.y, 550 * pAtlas.scale, 400 * pAtlas.scale, 0, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // Inner regions (Striatum/Thalamus approximation)
-            ctx.beginPath();
-            ctx.ellipse(pAtlas.x, pAtlas.y + 50 * pAtlas.scale, 300 * pAtlas.scale, 200 * pAtlas.scale, 0, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // Midbrain area (SNc/VTA)
-            ctx.beginPath();
-            ctx.ellipse(pAtlas.x, pAtlas.y + 250 * pAtlas.scale, 150 * pAtlas.scale, 80 * pAtlas.scale, 0, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // Saggital-like midline
-            ctx.beginPath();
-            ctx.moveTo(pAtlas.x - 550 * pAtlas.scale, pAtlas.y);
-            ctx.lineTo(pAtlas.x + 550 * pAtlas.scale, pAtlas.y);
-            ctx.stroke();
-
-            ctx.setLineDash([]);
-        }
+        // 79. Legacy wireframe replaced or augmented by Realistic Mesh in renderRealisticBrain
 
         // Render some "Atlas" coordinate markers and landmarks
         ctx.fillStyle = 'rgba(150, 150, 255, 0.5)';
@@ -278,5 +281,49 @@
         ctx.fillText(`Compartment: ${cState.compartments.matrix.active ? 'Matrix' : 'Striosome'}`, w - 10, h - 120);
         ctx.fillText(`Active Pathway: ${cState.pathways.direct.active ? 'Direct' : (cState.pathways.indirect.active ? 'Indirect' : 'None')}`, w - 10, h - 100);
         ctx.fillText(`SNc Activity (Feedback): ${(cState.feedback.sncActivity * 100).toFixed(1)}%`, w - 10, h - 80);
+    };
+
+    G.renderRealisticBrain = function (ctx, project) {
+        const cam = G.state.camera;
+        const w = G.width;
+        const h = G.height;
+        const mesh = G.circuitState.brainMesh;
+        if (!mesh) return;
+
+        ctx.lineWidth = 1;
+
+        // Draw regions with specific highlighting
+        const daLevel = G.synapseState ? G.synapseState.cleftDA.length : 0;
+        const phasicGlow = Math.min(0.5, daLevel / 1000);
+
+        mesh.faces.forEach(face => {
+            const v1 = mesh.vertices[face[0]];
+            const v2 = mesh.vertices[face[1]];
+            const v3 = mesh.vertices[face[2]];
+
+            // Simplification: only render if z > 0 for performance or some other heuristic
+            // In a real 3D engine we'd do backface culling
+
+            const p1 = project(v1.x, v1.y - 200, v1.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            const p2 = project(v2.x, v2.y - 200, v2.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            const p3 = project(v3.x, v3.y - 200, v3.z, cam, { width: w, height: h, near: 10, far: 5000 });
+
+            if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                // Determine face color based on region
+                let regionColor = 'rgba(100, 100, 200, 0.05)';
+                if (v1.region === 'prefrontalCortex') regionColor = `rgba(100, 150, 255, ${0.1 + phasicGlow})`;
+                else if (v1.region === 'brainstem') regionColor = `rgba(255, 100, 100, ${0.1 + phasicGlow * 2})`; // Midbrain area
+
+                ctx.fillStyle = regionColor;
+                ctx.strokeStyle = 'rgba(150, 150, 255, 0.02)';
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.lineTo(p3.x, p3.y);
+                ctx.closePath();
+                ctx.fill();
+                if (G.uxState && !G.uxState.reducedMotion) ctx.stroke();
+            }
+        });
     };
 })();

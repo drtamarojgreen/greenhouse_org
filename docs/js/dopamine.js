@@ -34,16 +34,16 @@
 (async function () {
     'use strict';
 
-    let GreenhouseUtils;
+    const G = window.GreenhouseDopamine || {};
+    window.GreenhouseDopamine = G;
 
-    const loadDependencies = async () => {
+    G.loadDependencies = async () => {
         await new Promise((resolve, reject) => {
             let attempts = 0;
             const maxAttempts = 240;
             const interval = setInterval(() => {
                 if (window.GreenhouseUtils) {
                     clearInterval(interval);
-                    GreenhouseUtils = window.GreenhouseUtils;
                     resolve();
                 } else if (attempts++ >= maxAttempts) {
                     clearInterval(interval);
@@ -52,9 +52,6 @@
             }, 50);
         });
     };
-
-    const G = window.GreenhouseDopamine || {};
-    window.GreenhouseDopamine = G;
 
     G.canvas = null;
     G.ctx = null;
@@ -266,12 +263,6 @@
         if (G.renderLegend) G.renderLegend(ctx);
     };
 
-    window.Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.initializeDopamineSimulation = function (selector) {
-        const container = document.querySelector(selector);
-        if (container) G.initialize(container);
-    };
-
     function captureAttributes() {
         if (window._greenhouseScriptAttributes) return { targetSelector: window._greenhouseScriptAttributes['target-selector-left'], baseUrl: window._greenhouseScriptAttributes['base-url'] };
         const script = document.querySelector('script[src*="dopamine.js"]');
@@ -293,7 +284,8 @@
 
             console.log('Dopamine App Initializing with:', attributes);
 
-            await loadDependencies();
+            await G.loadDependencies();
+            const GreenhouseUtils = window.GreenhouseUtils;
 
             // Load modular simulation components
             await GreenhouseUtils.loadScript('dopamine_controls.js', baseUrl);
@@ -310,6 +302,13 @@
             await GreenhouseUtils.loadScript('dopamine_analytics.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_ux.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
+            await GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
+
+            window.Greenhouse = window.Greenhouse || {};
+            window.Greenhouse.initializeDopamineSimulation = function (selector) {
+                const container = document.querySelector(selector);
+                if (container) G.initialize(container);
+            };
 
             if (targetSelector) {
                 const container = await GreenhouseUtils.waitForElement(targetSelector);

@@ -192,12 +192,15 @@
             mState.pka.reg -= 0.1;
             mState.pka.cat += 0.1;
 
-            // Visualize dissociation
+            // Visualize dissociation & recruitment (Enhancement 13)
             if (Math.random() > 0.9) {
+                const target = Math.random() > 0.5 ? {x: -200, y: 0} : {x: 0, y: -250}; // Target D1R or TH
                 mState.pka.subunits.push({
                     x: (Math.random() - 0.5) * 200,
                     y: 100,
                     z: (Math.random() - 0.5) * 100,
+                    targetX: target.x,
+                    targetY: target.y,
                     type: 'cat',
                     life: 200,
                     vx: (Math.random() - 0.5) * 1,
@@ -213,8 +216,17 @@
         for (let i = mState.pka.subunits.length - 1; i >= 0; i--) {
             const s = mState.pka.subunits[i];
             s.life--;
-            s.x += s.vx;
-            s.y += s.vy;
+
+            // 13. PKA recruitment to specific targets (e.g. TH in synapse or receptors)
+            // Move toward targets if life is high
+            if (s.life > 100) {
+                s.x += (s.targetX - s.x) * 0.05;
+                s.y += (s.targetY - s.y) * 0.05;
+            } else {
+                s.x += s.vx;
+                s.y += s.vy;
+            }
+
             if (s.life <= 0) mState.pka.subunits.splice(i, 1);
         }
 
@@ -453,8 +465,20 @@
                     }
                     ctx.fill();
                     ctx.shadowBlur = 0;
+
+                    // 2. Visual dissociation (Linkage to target AC)
+                    if (gp.life > 50 && gp.type === 'Gs') {
+                        ctx.strokeStyle = ctx.fillStyle;
+                        ctx.globalAlpha = 0.2;
+                        const acPos = project(0, 0, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(acPos.x, acPos.y);
+                        ctx.stroke();
+                        ctx.globalAlpha = 1.0;
+                    }
                 } else {
-                    // Render Gβγ as a small ellipse or distinct shape
+                    // 2. Gβγ dissociation
                     ctx.ellipse(p.x, p.y, size * p.scale, (size / 1.5) * p.scale, 0, 0, Math.PI * 2);
                 }
                 ctx.fill();
