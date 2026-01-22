@@ -94,10 +94,8 @@
 
             if (window.GreenhouseGeneticAlgo && window.GreenhouseGeneticUI3D) {
                 console.log('Genetic App: All modules loaded.');
-                setTimeout(() => {
-                    initApplication(selectors);
-                    isInitialized = true;
-                }, 5000);
+                initApplication(selectors);
+                isInitialized = true;
             } else {
                 throw new Error("Genetic application modules failed to load.");
             }

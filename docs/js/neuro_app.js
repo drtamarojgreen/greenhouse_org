@@ -16,9 +16,7 @@
             console.log('NeuroApp: Initializing...');
             this.lastSelector = selector;
 
-            setTimeout(() => {
-                this._delayedInit(selector);
-            }, 5000);
+            this._delayedInit(selector);
         },
 
         _delayedInit(selector) {
