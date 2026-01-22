@@ -88,17 +88,25 @@
                 sState.dat.activity = state.mode === 'Parkinsonian' ? 0.2 : 1.5;
                 sState.tortuosity = 1.8; // Denser tissue
             }
+            // 72. Highlight SNc Projections
+            cState.projections.snc.active = true;
+            if (cState.projections.vta) cState.projections.vta.active = false;
         } else if (state.mode.includes('VTA') || state.mode.includes('Ventral') || state.mode === 'Schizophrenia') {
             // Mesolimbic Pathway: Lower DAT, more volume transmission
             if (sState) {
                 sState.dat.activity = state.mode === 'Schizophrenia' ? 1.0 : 0.6;
                 sState.tortuosity = 1.3; // More open space for diffusion
             }
+            // 73. Highlight VTA Projections
+            cState.projections.vta.active = true;
+            if (cState.projections.snc) cState.projections.snc.active = false;
         }
 
-        // 75. Cholinergic Interneuron "Pause"
-        if (sState && sState.cleftDA.length > 100) {
-            cState.interneurons.cholinergic.pauseTimer = 50;
+        // 75. Cholinergic Interneuron "Pause" (specifically in Ventral Striatum / NAc)
+        const isVentral = state.mode.includes('Ventral') || state.mode.includes('VTA');
+        const pauseThreshold = isVentral ? 60 : 120; // Ventral is more sensitive to DA transients
+        if (sState && sState.cleftDA.length > pauseThreshold) {
+            cState.interneurons.cholinergic.pauseTimer = isVentral ? 100 : 50;
         }
         if (cState.interneurons.cholinergic.pauseTimer > 0) {
             cState.interneurons.cholinergic.pauseTimer--;
@@ -301,28 +309,35 @@
             const v2 = mesh.vertices[face[1]];
             const v3 = mesh.vertices[face[2]];
 
-            // Simplification: only render if z > 0 for performance or some other heuristic
-            // In a real 3D engine we'd do backface culling
-
             const p1 = project(v1.x, v1.y - 200, v1.z, cam, { width: w, height: h, near: 10, far: 5000 });
             const p2 = project(v2.x, v2.y - 200, v2.z, cam, { width: w, height: h, near: 10, far: 5000 });
             const p3 = project(v3.x, v3.y - 200, v3.z, cam, { width: w, height: h, near: 10, far: 5000 });
 
             if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
-                // Determine face color based on region
+                // 79. Interactive highlighting
+                let isActiveRegion = false;
+                if (v1.region === 'prefrontalCortex' && state.mode.includes('PFC')) isActiveRegion = true;
+                if (v1.region === 'brainstem' && (state.mode.includes('SNc') || state.mode.includes('VTA'))) isActiveRegion = true;
+                if (v1.region === 'striatum' && (state.mode.includes('D1') || state.mode.includes('D2'))) isActiveRegion = true;
+
                 let regionColor = 'rgba(100, 100, 200, 0.05)';
-                if (v1.region === 'prefrontalCortex') regionColor = `rgba(100, 150, 255, ${0.1 + phasicGlow})`;
-                else if (v1.region === 'brainstem') regionColor = `rgba(255, 100, 100, ${0.1 + phasicGlow * 2})`; // Midbrain area
+                if (isActiveRegion) {
+                    regionColor = `rgba(100, 255, 100, ${0.3 + phasicGlow})`;
+                } else if (v1.region === 'prefrontalCortex') {
+                    regionColor = `rgba(100, 150, 255, ${0.1 + phasicGlow})`;
+                } else if (v1.region === 'brainstem') {
+                    regionColor = `rgba(255, 100, 100, ${0.1 + phasicGlow * 2})`;
+                }
 
                 ctx.fillStyle = regionColor;
-                ctx.strokeStyle = 'rgba(150, 150, 255, 0.02)';
+                ctx.strokeStyle = isActiveRegion ? 'rgba(0, 255, 0, 0.2)' : 'rgba(150, 150, 255, 0.02)';
                 ctx.beginPath();
                 ctx.moveTo(p1.x, p1.y);
                 ctx.lineTo(p2.x, p2.y);
                 ctx.lineTo(p3.x, p3.y);
                 ctx.closePath();
                 ctx.fill();
-                if (G.uxState && !G.uxState.reducedMotion) ctx.stroke();
+                if (isActiveRegion || (G.uxState && !G.uxState.reducedMotion)) ctx.stroke();
             }
         });
     };

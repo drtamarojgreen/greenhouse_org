@@ -12,13 +12,14 @@
     G.molecularState = {
         gProteins: [], // 2. G-Protein Cycle: Dissociation of Gα from Gβγ
         campMicrodomains: [],
-        darpp32: { thr34: 0, thr75: 0.2, pp1Inhibited: false }, // 14. DARPP-32 Cycle, 15. PP1 Inhibition
+        darpp32: { thr34: 0, thr75: 0.2, pp1Inhibited: false, cdk5Activity: 0.1 }, // 14. DARPP-32 Cycle, 15. PP1 Inhibition
         pka: { reg: 10, cat: 0, subunits: [] }, // 13. PKA Holoenzyme Dynamics
         ac5: { activity: 0, inhibitedByCa: false }, // 11. Adenylate Cyclase Isoforms (AC5)
         pde: { pde4: 1.0, pde10a: 1.0 }, // 17. PDE Activity
         crebActivation: 0,
         deltaFosB: 0,
         internalizedReceptors: [], // 9. Receptor Internalization, 10. Receptor Recycling
+        clathrinPits: [], // 9. Visualization of clathrin-coated pits
         betaArrestin: [], // 7. Beta-Arrestin Recruitment
         rgsProteins: { active: true, factor: 1.5, visual: [] }, // 6. RGS proteins
         grkPhosphorylation: 0, // 8. GRK Phosphorylation
@@ -232,24 +233,27 @@
 
         // 14. DARPP-32 Cycle & 15. PP1 Inhibition
         // Thr34 is phosphorylated by PKA
-        if (mState.pka.cat > 2) {
-            mState.darpp32.thr34 = Math.min(1, mState.darpp32.thr34 + 0.01);
+        const pkaStrength = mState.pka.cat;
+        if (pkaStrength > 2) {
+            mState.darpp32.thr34 = Math.min(1, mState.darpp32.thr34 + 0.01 * (pkaStrength / 5));
         } else {
             // 15. PP1 Inhibition: PP1 dephosphorylates Thr34, but is inhibited by Thr34 itself
-            const pp1Activity = mState.darpp32.pp1Inhibited ? 0.001 : 0.005;
+            // Feed-forward loop: Thr34 inhibits PP1, which prevents its own dephosphorylation
+            const pp1Activity = mState.darpp32.pp1Inhibited ? 0.0005 : 0.008;
             mState.darpp32.thr34 = Math.max(0, mState.darpp32.thr34 - pp1Activity);
         }
 
         // Thr75 is phosphorylated by Cdk5 (Enhancement 14)
-        // Cdk5 is often constitutively active or modulated by other pathways
-        mState.darpp32.thr75 = Math.min(1.0, mState.darpp32.thr75 + 0.001);
+        // Cdk5 activity can be increased by high DA / stress in some contexts
+        mState.darpp32.cdk5Activity = 0.1 + (state.mode === 'High Stress' ? 0.4 : 0);
+        mState.darpp32.thr75 = Math.min(1.0, mState.darpp32.thr75 + 0.002 * mState.darpp32.cdk5Activity);
 
-        // Phospho-Thr75-DARPP-32 inhibits PKA (Enhancement 14)
-        if (mState.darpp32.thr75 > 0.5) {
-            mState.pka.cat *= 0.99;
+        // Phospho-Thr75-DARPP-32 inhibits PKA (Competitive Inhibition logic)
+        if (mState.darpp32.thr75 > 0.4) {
+            mState.pka.cat *= (1.0 - (mState.darpp32.thr75 - 0.4) * 0.1);
         }
 
-        mState.darpp32.pp1Inhibited = mState.darpp32.thr34 > 0.6;
+        mState.darpp32.pp1Inhibited = mState.darpp32.thr34 > 0.5;
 
         // 16. ERK/MAPK Cascade
         // Activated by D1 signaling and Gq pathway
@@ -318,19 +322,35 @@
         }
 
         // 7. Beta-Arrestin Recruitment & 9. Receptor Internalization
-        if (mState.grkPhosphorylation > 0.8 && state.signalingActive) {
-            if (Math.random() > 0.97) {
-                mState.betaArrestin.push({ x: (Math.random()-0.5)*100, y: 0, z: (Math.random()-0.5)*50, life: 120 });
+        if (mState.grkPhosphorylation > 0.7 && state.signalingActive) {
+            if (Math.random() > 0.96) {
+                const x = (Math.random()-0.5)*150;
+                const z = (Math.random()-0.5)*100;
+                mState.betaArrestin.push({ x: x, y: 0, z: z, life: 150 });
+
+                // 9. Form a clathrin pit visual
+                if (Math.random() > 0.8) {
+                    mState.clathrinPits.push({ x: x, y: 0, z: z, progress: 0, life: 200 });
+                }
             }
-            if (mState.betaArrestin.length > 5 && Math.random() > 0.9) {
+            if (mState.betaArrestin.length > 4 && Math.random() > 0.85) {
                 // Internalize a receptor
+                const targetPit = mState.clathrinPits[0];
                 mState.internalizedReceptors.push({
-                    x: (Math.random() - 0.5) * 100,
+                    x: targetPit ? targetPit.x : (Math.random() - 0.5) * 100,
                     y: 0,
-                    z: (Math.random() - 0.5) * 50,
-                    life: 300 // Time until recycling
+                    z: targetPit ? targetPit.z : (Math.random() - 0.5) * 50,
+                    life: 400
                 });
             }
+        }
+
+        // Update Clathrin Pits
+        for (let i = mState.clathrinPits.length - 1; i >= 0; i--) {
+            const pit = mState.clathrinPits[i];
+            pit.progress = Math.min(1.0, pit.progress + 0.02);
+            pit.life--;
+            if (pit.life <= 0) mState.clathrinPits.splice(i, 1);
         }
 
         for (let i = mState.betaArrestin.length - 1; i >= 0; i--) {
@@ -401,6 +421,20 @@
             ctx.textAlign = 'center';
             ctx.fillText("ER (IP3R / Ca2+ Store)", pER.x, pER.y);
         }
+
+        // 9. Render Clathrin Pits
+        mState.clathrinPits.forEach(pit => {
+            const p = project(pit.x, pit.y, pit.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 2 * p.scale;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 20 * pit.progress * p.scale, 0, Math.PI);
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
+                ctx.fill();
+            }
+        });
 
         // 8. GRK Phosphorylation visual (pulsing orange on receptors)
         if (mState.grkPhosphorylation > 0.5) {
