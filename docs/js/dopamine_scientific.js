@@ -117,63 +117,83 @@
             modal = document.createElement('div');
             modal.id = 'scientific-dashboard-modal';
             modal.style.position = 'fixed';
-            modal.style.top = '50px';
-            modal.style.left = '50px';
-            modal.style.right = '50px';
-            modal.style.bottom = '50px';
-            modal.style.backgroundColor = 'rgba(10, 10, 30, 0.95)';
+            modal.style.top = '30px';
+            modal.style.left = '30px';
+            modal.style.right = '30px';
+            modal.style.bottom = '30px';
+            modal.style.backgroundColor = 'rgba(10, 10, 30, 0.98)';
             modal.style.color = '#fff';
             modal.style.zIndex = '1000';
-            modal.style.padding = '20px';
-            modal.style.borderRadius = '15px';
+            modal.style.padding = '25px';
+            modal.style.borderRadius = '20px';
             modal.style.border = '2px solid #4fd1c5';
             modal.style.overflowY = 'auto';
             modal.style.display = 'none';
+            modal.style.fontFamily = 'Arial, sans-serif';
             document.body.appendChild(modal);
         }
 
-        const stats = G.getSimulationStats();
-
         modal.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #4fd1c5; padding-bottom: 10px; margin-bottom: 20px;">
-                <h2 style="margin: 0; color: #4fd1c5;">Scientific Analysis Dashboard</h2>
-                <button onclick="document.getElementById('scientific-dashboard-modal').style.display='none'" style="background: #f56565; color: #fff; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer;">Close</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #4fd1c5; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #4fd1c5; font-size: 24px; letter-spacing: 1px;">SCIENTIFIC ANALYSIS DASHBOARD</h2>
+                <button onclick="document.getElementById('scientific-dashboard-modal').style.display='none'" style="background: #f56565; color: #fff; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">CLOSE</button>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; grid-column: span 2;">
-                    <div style="display: flex; justify-content: space-between;">
-                        <h3 style="margin-top: 0;">Real-Time Time-Series Analytics</h3>
-                        <h3 style="margin-top: 0;">Spatial DA Map (Top-Down)</h3>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <canvas id="scientific-time-series" width="600" height="150" style="width: 70%; border: 1px solid #4fd1c5;"></canvas>
-                        <canvas id="scientific-spatial-map" width="200" height="150" style="width: 25%; border: 1px solid #4fd1c5;"></canvas>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <!-- Analytics Section -->
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(79, 209, 197, 0.3);">
+                    <h3 style="margin-top: 0; color: #4fd1c5;">Real-Time Kinematics</h3>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                        <div>
+                            <span style="font-size: 12px; color: #aaa;">Signal Transduction (cAMP/DA/Potential)</span>
+                            <canvas id="scientific-time-series" width="600" height="150" style="width: 100%; border: 1px solid rgba(255,255,255,0.1); margin-top: 5px;"></canvas>
+                        </div>
+                        <div style="display: flex; gap: 15px; align-items: start;">
+                            <div style="flex: 1;">
+                                <span style="font-size: 12px; color: #aaa;">Spatial DA Flux (X-Z Projection)</span>
+                                <canvas id="scientific-spatial-map" width="200" height="150" style="width: 100%; border: 1px solid rgba(255,255,255,0.1); margin-top: 5px;"></canvas>
+                            </div>
+                            <div style="flex: 2; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                                <h4 style="margin: 0 0 10px 0; color: #fff; font-size: 14px;">Scientific Abstract</h4>
+                                <p style="font-size: 11px; line-height: 1.4; color: #ccc; margin: 0;">
+                                    This simulation models the complex signaling environment of the striatum.
+                                    <b>Brown/Yellowish Circles</b> represent <b>Striosome</b> (patch) compartments, which project directly to SNc DA neurons.
+                                    The surrounding <b>Cyan/Greenish</b> area represents the <b>Matrix</b>, primarily receiving cortical/thalamic inputs.
+                                    The <b>Green Halo</b> visualizes <b>Volume Transmission</b>, where DA diffuses beyond the synaptic cleft.
+                                    <b>Blue Wireframe</b> regions represent the 3D Anatomical Atlas (Striatum, SNc, PFC).
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">
-                    <h3>Live Bio-Metrics</h3>
-                    <p>Membrane Potential: ${G.electroState ? G.electroState.membranePotential.toFixed(2) : -80} mV</p>
-                    <p>Synaptic Strength: ${G.plasticityState ? G.plasticityState.synapticStrength.toFixed(3) : 1.000}</p>
-                    <p>DOPAC Levels: ${G.synapseState ? G.synapseState.metabolites.dopac.toFixed(3) : 0} µM</p>
-                    <p>HVA Levels: ${G.synapseState ? G.synapseState.metabolites.hva.toFixed(3) : 0} µM</p>
-                    <p>DARPP-32 (pThr34): ${G.molecularState ? (G.molecularState.darpp32.thr34 * 100).toFixed(1) : 0}%</p>
-                </div>
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">
-                    <h3>Circuit Summary</h3>
-                    <p>Active Pathway: ${G.state.mode}</p>
-                    <p>SNc Feedback Loop: ${G.circuitState ? (G.circuitState.feedback.sncActivity * 100).toFixed(1) : 100}%</p>
-                    <p>Spine Density: ${G.plasticityState ? G.plasticityState.spineDensity.toFixed(3) : 1.000}</p>
-                    <p>DeltaFosB (Accumulated): ${G.plasticityState ? G.plasticityState.deltaFosB.toFixed(5) : 0}</p>
+
+                <!-- Live Metrics Section -->
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(79, 209, 197, 0.3);">
+                    <h3 style="margin-top: 0; color: #4fd1c5;">Live Bio-Metrics</h3>
+                    <div style="font-size: 13px; line-height: 1.8;">
+                        <div style="display: flex; justify-content: space-between;"><span>Potential:</span> <span id="val-potential" style="color: #0ff;">-80 mV</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>Synaptic Weight:</span> <span id="val-weight" style="color: #ff0;">1.000</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>DOPAC / HVA:</span> <span id="val-metabolites" style="color: #f0f;">0.00 / 0.00</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>DARPP-32 pT34:</span> <span id="val-darpp" style="color: #0f0;">0.0%</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>DeltaFosB:</span> <span id="val-fosb" style="color: #f99;">0.000</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>SNc Feedback:</span> <span id="val-snc" style="color: #99f;">100%</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>Spine Density:</span> <span id="val-spine" style="color: #fff;">1.000</span></div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(0,255,0,0.1); border-radius: 8px; font-size: 11px; color: #9f9;">
+                        <strong>System Status:</strong> 100 Enhancements Integrated. High-fidelity molecular and circuit dynamics active.
+                    </div>
                 </div>
             </div>
 
-            <h3>100 Proposed Enhancements Tracking</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;">
+            <h3 style="color: #4fd1c5; border-bottom: 1px solid rgba(79, 209, 197, 0.3); padding-bottom: 10px;">100 Physiological Enhancements Tracking</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-top: 15px;">
                 ${G.enhancements.map(e => `
-                    <div style="padding: 8px; background: rgba(255,255,255,0.03); border-left: 3px solid ${e.status === 'Active' ? '#48bb78' : '#cbd5e0'}; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.9em;"><strong style="color: #4fd1c5;">${e.id}.</strong> ${e.desc}</span>
-                        <span style="font-size: 0.7em; padding: 2px 5px; border-radius: 3px; background: ${e.status === 'Active' ? '#2f855a' : '#4a5568'};">${e.status}</span>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; border-left: 4px solid ${e.status === 'Active' ? '#48bb78' : '#cbd5e0'}; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-size: 10px; color: #888; text-transform: uppercase;">${e.cat}</span>
+                            <span style="font-size: 12px; font-weight: 500;"><strong style="color: #4fd1c5; margin-right: 5px;">${e.id}.</strong> ${e.desc}</span>
+                        </div>
+                        <span style="font-size: 9px; padding: 3px 8px; border-radius: 4px; background: ${e.status === 'Active' ? 'rgba(72, 187, 120, 0.2)' : '#4a5568'}; color: ${e.status === 'Active' ? '#48bb78' : '#fff'}; border: 1px solid ${e.status === 'Active' ? '#48bb78' : 'transparent'};">${e.status}</span>
                     </div>
                 `).join('')}
             </div>
@@ -181,7 +201,6 @@
 
         modal.style.display = 'block';
 
-        // Start live chart update
         if (G._sciChartInterval) clearInterval(G._sciChartInterval);
         G._sciChartInterval = setInterval(() => {
             const canvas = document.getElementById('scientific-time-series');
@@ -190,44 +209,53 @@
                 clearInterval(G._sciChartInterval);
                 return;
             }
+
+            // Update Metric Text
+            if (G.electroState) document.getElementById('val-potential').innerText = `${G.electroState.membranePotential.toFixed(1)} mV`;
+            if (G.plasticityState) document.getElementById('val-weight').innerText = G.plasticityState.synapticStrength.toFixed(3);
+            if (G.synapseState) document.getElementById('val-metabolites').innerText = `${G.synapseState.metabolites.dopac.toFixed(2)} / ${G.synapseState.metabolites.hva.toFixed(2)}`;
+            if (G.molecularState) document.getElementById('val-darpp').innerText = `${(G.molecularState.darpp32.thr34 * 100).toFixed(1)}%`;
+            if (G.plasticityState) document.getElementById('val-fosb').innerText = G.plasticityState.deltaFosB.toFixed(5);
+            if (G.circuitState) document.getElementById('val-snc').innerText = `${(G.circuitState.feedback.sncActivity * 100).toFixed(0)}%`;
+            if (G.plasticityState) document.getElementById('val-spine').innerText = G.plasticityState.spineDensity.toFixed(3);
+
             const ctx = canvas.getContext('2d');
             const sCtx = sCanvas.getContext('2d');
             const data = G.analyticsState ? G.analyticsState.history : null;
             if (!data) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawSeries(ctx, data.camp, '#ffff00', 'cAMP (pM)', 0);
+            drawSeries(ctx, data.da, '#00ff00', 'DA Conc (nM)', 40);
+            drawSeries(ctx, data.potential, '#00ffff', 'Membrane (mV)', 80, -90, 40);
 
-            // Draw cAMP (Yellow)
-            drawSeries(ctx, data.camp, '#ffff00', 'cAMP', 0);
-            // Draw DA (Green)
-            drawSeries(ctx, data.da, '#00ff00', 'DA Conc', 40);
-            // Draw Potential (Cyan)
-            drawSeries(ctx, data.potential, '#00ffff', 'Potential', 80, -90, 40);
-
-            // 45. Spatial DA Map Rendering (Top-down view of synaptic volume)
             sCtx.clearRect(0, 0, sCanvas.width, sCanvas.height);
             sCtx.fillStyle = '#000';
             sCtx.fillRect(0, 0, sCanvas.width, sCanvas.height);
             if (G.synapseState && G.synapseState.cleftDA) {
-                sCtx.globalAlpha = 0.5;
+                sCtx.globalAlpha = 0.6;
                 G.synapseState.cleftDA.forEach(da => {
                     const sx = (da.x + 300) / 600 * sCanvas.width;
                     const sy = (da.z + 150) / 300 * sCanvas.height;
                     sCtx.fillStyle = '#0f0';
                     sCtx.beginPath();
-                    sCtx.arc(sx, sy, 2, 0, Math.PI * 2);
+                    sCtx.arc(sx, sy, 2.5, 0, Math.PI * 2);
                     sCtx.fill();
                 });
                 sCtx.globalAlpha = 1.0;
             }
+            // Draw cleft boundaries in map
+            sCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+            sCtx.strokeRect(0, 0, sCanvas.width, sCanvas.height);
         }, 100);
     };
 
     function drawSeries(ctx, series, color, label, yOffset, minVal = 0, maxVal = 50) {
         if (!series || series.length < 2) return;
         const w = ctx.canvas.width;
-        const h = 40;
+        const h = 35;
         ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         series.forEach((v, i) => {
             const x = (i / 200) * w;
@@ -238,16 +266,7 @@
         });
         ctx.stroke();
         ctx.fillStyle = color;
-        ctx.font = '10px Arial';
+        ctx.font = 'bold 9px Arial';
         ctx.fillText(label, 5, yOffset + 10);
     }
-
-    G.getSimulationStats = function() {
-        // Collect real-time data for the dashboard
-        return {
-            potential: G.electroState ? G.electroState.membranePotential : -80,
-            strength: G.plasticityState ? G.plasticityState.synapticStrength : 1.0
-        };
-    };
-
 })();

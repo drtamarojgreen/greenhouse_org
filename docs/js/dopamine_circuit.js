@@ -292,7 +292,8 @@
     };
 
     G.renderRealisticBrain = function (ctx, project) {
-        const cam = G.state.camera;
+        const state = G.state;
+        const cam = state.camera;
         const w = G.width;
         const h = G.height;
         const mesh = G.circuitState.brainMesh;
