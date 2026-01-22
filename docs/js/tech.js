@@ -102,6 +102,12 @@
                 } else {
                     this.aboutStrip.after(this.dashboardContainer);
                 }
+
+                if (this.persistenceInterval) {
+                    console.log('TechApp: Dashboard re-inserted. Stopping persistence check.');
+                    clearInterval(this.persistenceInterval);
+                    this.persistenceInterval = null;
+                }
             }
         }
 
