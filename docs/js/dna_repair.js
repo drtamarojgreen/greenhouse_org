@@ -336,7 +336,7 @@
             }
             if (targetSelector) {
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
-                setTimeout(() => G.initializeDNARepairSimulation(container), 2000);
+                G.initializeDNARepairSimulation(container);
             }
         } catch (error) { console.error('DNA Repair App: Initialization failed', error); }
     }

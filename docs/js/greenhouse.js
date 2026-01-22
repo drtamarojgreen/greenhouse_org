@@ -472,6 +472,34 @@
     }
 
     /**
+     * @function pollAndLoad
+     * @description Polls for a selector and loads the application when found.
+     * @param {string} selector - The CSS selector to wait for.
+     * @param {function} loadFn - The async function to load the application.
+     */
+    async function pollAndLoad(selector, loadFn) {
+        console.log(`Greenhouse: Polling for ${selector}...`);
+        const pollInterval = 100;
+        const maxAttempts = 150; // 15 seconds
+        let attempts = 0;
+
+        const poll = setInterval(async () => {
+            const element = document.querySelector(selector);
+            if (element) {
+                clearInterval(poll);
+                console.log(`Greenhouse: Target found for ${selector}. Loading app...`);
+                await loadFn();
+            } else {
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    clearInterval(poll);
+                    console.error(`Greenhouse: Timeout waiting for ${selector}.`);
+                }
+            }
+        }, pollInterval);
+    }
+
+    /**
      * @function initialize
      * @description Main initialization function that runs when the DOM is ready.
      */
@@ -498,26 +526,7 @@
         } else if (window.location.pathname.includes(config.geneticPagePath)) {
             await loadGeneticApplication();
         } else if (window.location.pathname.includes(config.techPagePath)) {
-            // await loadTechApplication();
-            console.log('Greenhouse: Testing manual polling for Tech page target element...');
-            const pollInterval = 100;
-            const maxAttempts = 150; // 15 seconds
-            let attempts = 0;
-
-            const pollForElement = setInterval(async () => {
-                const targetElement = document.querySelector(config.selectors.tech);
-                if (targetElement) {
-                    clearInterval(pollForElement);
-                    console.log('Greenhouse: Tech page target element found via manual polling.');
-                    await loadTechApplication();
-                } else {
-                    attempts++;
-                    if (attempts >= maxAttempts) {
-                        clearInterval(pollForElement);
-                        console.error('Greenhouse: Timeout waiting for Tech page target element via manual polling.');
-                    }
-                }
-            }, pollInterval);
+            pollAndLoad(config.selectors.tech, loadTechApplication);
         } else if (window.location.pathname.includes(config.neuroPagePath)) {
             await loadNeuroApplication();
         } else if (window.location.pathname.includes(config.synapsePagePath)) {
@@ -525,7 +534,7 @@
         } else if (window.location.pathname.includes(config.pathwayPagePath)) {
             await loadPathwayApplication();
         } else if (window.location.pathname.includes(config.dnaPagePath)) {
-            await loadDnaRepairApplication();
+            pollAndLoad(config.selectors.dna, loadDnaRepairApplication);
         } else if (window.location.pathname.includes(config.rnaPagePath)) {
             await loadRnaRepairApplication();
         } else if (window.location.pathname.includes(config.dopaminePagePath)) {
