@@ -76,8 +76,10 @@
 
             this.state.sensitivity = G.Particles.plasticityFactor;
 
+            // Enhancement #14: ATP availability for synaptic vesicle recycling
+            const recyclingLoad = (G.frame % 15 === 0) ? 0.2 : 0;
             if (particleCount > 60) {
-                this.state.atp -= 0.05;
+                this.state.atp -= (0.05 + recyclingLoad);
             } else {
                 this.state.atp += 0.02;
             }

@@ -161,7 +161,7 @@
                         },
                         onGenerateFigure: () => this.exportFigure(),
                         onUpdateParam: (p, v) => {
-                            if (p === 'ruler') this.rulerActive = v;
+                            if (p === 'patchClamp') G.config.visuals.patchClampActive = v;
                             console.log(`Param ${p} set to ${v}`);
                         }
                     });
@@ -206,7 +206,14 @@
                     { x: 0.38, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
                     { x: 0.62, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 }
                 ];
-                // Other modifiers like shankMutation handled in logic
+            } else if (scenarioId === 'fearConditioning') {
+                G.config.elements.receptors = [
+                    { x: 0.3, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                    { x: 0.4, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                    { x: 0.5, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                    { x: 0.6, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                    { x: 0.7, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 }
+                ];
             } else {
                 G.config.elements.vesicles = [
                     { id: 'vesicle', x: 0.45, y: 0.15, r: 12, offset: 0 },
@@ -324,7 +331,6 @@
             }
 
             if (G.Particles) {
-                // Enhancement #48: Calcium-dependent release probability
                 const caLevel = G.Analytics?.state?.calcium || 0.1;
                 const releaseProb = (G.Chemistry.scenarios[G.config.activeScenario]?.modifiers?.releaseProb || 0.5) * (caLevel * 5);
                 if (this.frame % 15 === 0 && Math.random() < releaseProb) {
