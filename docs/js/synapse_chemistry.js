@@ -81,7 +81,7 @@
                 binds: ['glutamate', 'gaba'],
                 stoichiometry: 'Pentameric (α2βγδ)',
                 pdbId: '6X3Z',
-                offTargetAffinities: { serotonin: 0.05 } // Low affinity for off-target binding
+                offTargetAffinities: { serotonin: 0.05 }
             },
             gpcr: {
                 id: 'gpcr',
@@ -137,6 +137,18 @@
                 name: { en: 'Fear Conditioning (Amygdala)', es: 'Condicionamiento de Miedo' },
                 description: 'Rapid LTP induction and increased receptor recruitment.',
                 modifiers: { receptorDensity: 1.5, releaseProb: 0.7, reuptakeRate: 0.04, rapidLTP: true }
+            },
+            adolescent: {
+                id: 'adolescent',
+                name: { en: 'Adolescent Development', es: 'Desarrollo Adolescente' },
+                description: 'Active synaptic pruning and dynamic receptor expression.',
+                modifiers: { receptorDensity: 1.2, releaseProb: 0.6, reuptakeRate: 0.06, pruningActive: true }
+            },
+            chronicStress: {
+                id: 'chronicStress',
+                name: { en: 'Chronic Stress (Cortisol)', es: 'Estrés Crónico' },
+                description: 'Cortisol-mediated reduction in hippocampal synaptic connectivity.',
+                modifiers: { receptorDensity: 0.5, releaseProb: 0.4, reuptakeRate: 0.1, cortisolActive: true }
             }
         },
 

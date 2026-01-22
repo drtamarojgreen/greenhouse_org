@@ -68,7 +68,6 @@
             this._initializeSimulation(targetSelector);
         },
 
-        // Shared utility for dynamic cleft geometry
         getSurfaceY(h) {
             const cleft = this.config.kinetics?.cleftWidth || 1.0;
             return h * (0.6 + (cleft * 0.08));
@@ -220,6 +219,13 @@
                     { x: 0.6, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
                     { x: 0.7, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 }
                 ];
+            } else if (scenarioId === 'chronicStress') {
+                G.config.elements.receptors = [
+                    { x: 0.5, type: 'gpcr', state: 'idle', activationCount: 0 }
+                ];
+                G.config.elements.vesicles = [
+                    { id: 'vesicle', x: 0.5, y: 0.15, r: 10, offset: 0 }
+                ];
             } else {
                 G.config.elements.vesicles = [
                     { id: 'vesicle', x: 0.45, y: 0.15, r: 12, offset: 0 },
@@ -358,13 +364,22 @@
             }
 
             if (G.Particles) {
+                const retrogradeInhibition = (G.Molecular && G.Molecular.retrogradeSignals && G.Molecular.retrogradeSignals.length > 0) ? 0.4 : 1.0;
                 const azDensity = G.config.kinetics?.activeZoneDensity || 0.04;
                 const caLevel = G.Analytics?.state?.calcium || 0.1;
-                const releaseProb = (G.Chemistry.scenarios[G.config.activeScenario]?.modifiers?.releaseProb || 0.5) * (caLevel * 5);
+                const releaseProb = (G.Chemistry.scenarios[G.config.activeScenario]?.modifiers?.releaseProb || 0.5) * (caLevel * 5) * retrogradeInhibition;
+
                 if (this.frame % 15 === 0 && Math.random() < releaseProb) {
                     G.Particles.create(w, h, 1, G.config);
                     const p = G.Particles.particles[G.Particles.particles.length-1];
                     if (p) p.x = w * (0.5 - azDensity/2 + Math.random() * azDensity);
+                }
+
+                if (G.config.activeScenario === 'adolescent' && this.frame % 300 === 0 && G.config.elements.receptors.length > 2) {
+                    if (Math.random() > 0.8) {
+                        G.config.elements.receptors.splice(Math.floor(Math.random() * G.config.elements.receptors.length), 1);
+                        console.log('Synaptic pruning event: Receptor removed.');
+                    }
                 }
 
                 this.handleReceptorInteractions(w, h);
@@ -512,6 +527,8 @@
             const surfaceY = this.getSurfaceY(h);
             const activeId = this.hoveredId || this.sidebarHoveredId;
 
+            const spineWidthMod = G.Particles.plasticityFactor ? (G.Particles.plasticityFactor - 1.0) * 0.1 : 0;
+
             ctx.save();
             const preColor = activeId === 'preSynapticTerminal' ? (G.config.highContrast ? '#fff' : '#357438') : '#303830';
             ctx.fillStyle = preColor;
@@ -526,9 +543,9 @@
             ctx.fillStyle = postColor;
             ctx.beginPath();
             ctx.moveTo(0, h); ctx.lineTo(0, h * 0.88);
-            ctx.bezierCurveTo(w * 0.2, h * 0.88, centerX - w * 0.2, surfaceY + h * 0.12, centerX - w * 0.2, surfaceY);
-            ctx.bezierCurveTo(centerX - w * 0.2, surfaceY - h * 0.06, centerX + w * 0.2, surfaceY - h * 0.06, centerX + w * 0.2, surfaceY);
-            ctx.bezierCurveTo(centerX + w * 0.2, surfaceY + h * 0.12, w * 0.8, h * 0.88, w, h * 0.88);
+            ctx.bezierCurveTo(w * 0.2, h * 0.88, centerX - w * (0.2 + spineWidthMod), surfaceY + h * 0.12, centerX - w * (0.2 + spineWidthMod), surfaceY);
+            ctx.bezierCurveTo(centerX - w * (0.2 + spineWidthMod), surfaceY - h * 0.06, centerX + w * (0.2 + spineWidthMod), surfaceY - h * 0.06, centerX + w * (0.2 + spineWidthMod), surfaceY);
+            ctx.bezierCurveTo(centerX + w * (0.2 + spineWidthMod), surfaceY + h * 0.12, w * 0.8, h * 0.88, w, h * 0.88);
             ctx.lineTo(w, h);
             ctx.fill();
             ctx.restore();
