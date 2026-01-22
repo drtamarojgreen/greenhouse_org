@@ -18,4 +18,11 @@ def verify_cluster_distribution(labels):
         print("Warning: Cluster collapse detected (fewer than 2 clusters found).")
 
 def assert_determinism(run_a, run_b):
-    pass
+    """
+    Check if two runs produced the same results.
+    """
+    if isinstance(run_a, np.ndarray) and isinstance(run_b, np.ndarray):
+        if not np.allclose(run_a, run_b):
+            raise ValueError("Determinism check failed: arrays are not equal.")
+    elif run_a != run_b:
+        raise ValueError("Determinism check failed: values are not equal.")

@@ -35,7 +35,8 @@ def prune_terms(df, config):
     
     df = filter_by_year_presence(df, config['dataset']['min_years_present'])
     df = filter_by_total_frequency(df, config['dataset']['min_total_count'])
-    # Variance filtering usually happens after vectorization or on pivot, 
-    # but can be done here if 'count' is normalized.
+
+    if 'min_variance' in config['dataset']:
+        df = filter_by_variance(df, config['dataset']['min_variance'])
     
     return df

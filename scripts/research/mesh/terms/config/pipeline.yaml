@@ -1,6 +1,7 @@
 dataset:
   min_years_present: 10
   min_total_count: 500
+  min_variance: 1.0
   year_start: 1965
   year_end: 2024
 
