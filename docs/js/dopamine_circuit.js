@@ -20,12 +20,15 @@
         },
         feedback: { gain: 1.0, sncActivity: 1.0 }, // 78. Feedback Loops
         projections: {
-            snc: { x: -300, y: -400, z: 0, label: 'SNc (Nigrostriatal)' },
-            vta: { x: 300, y: -400, z: 0, label: 'VTA (Mesolimbic)' }
+            snc: { x: -350, y: -450, z: -50, label: 'SNc (Nigrostriatal)' },
+            vta: { x: 350, y: -450, z: 50, label: 'VTA (Mesolimbic)' },
+            pfc: { x: 0, y: -550, z: 200, label: 'PFC (Mesocortical)' }
         },
         compartments: {
             striosome: { active: false, density: 1.5, color: 'rgba(255, 255, 0, 0.1)' },
-            matrix: { active: true, density: 1.0, color: 'rgba(0, 255, 255, 0.05)' }
+            matrix: { active: true, density: 1.0, color: 'rgba(0, 255, 255, 0.05)' },
+            dorsal: { x: 0, y: -100, label: 'Dorsal Striatum (Motor)' },
+            ventral: { x: 0, y: 100, label: 'Ventral Striatum (NAc/Reward)' }
         },
         interneurons: {
             cholinergic: { firing: true, pauseTimer: 0 },
@@ -206,11 +209,12 @@
         ctx.fillStyle = 'rgba(150, 150, 255, 0.5)';
         ctx.font = '8px monospace';
         const markers = [
+            { label: 'Bregma: 0,0,0', x: 0, y: -100, z: 0 },
             { label: 'AP: +1.2 (Striatum)', x: 0, y: -200, z: 0 },
-            { label: 'ML: +0.5', x: 300, y: 0, z: 0 },
-            { label: 'DV: -4.0', x: 0, y: 0, z: 300 },
-            { label: 'SNc (Midbrain)', x: -300, y: -450, z: 0 },
-            { label: 'VTA (Midbrain)', x: 300, y: -450, z: 0 }
+            { label: 'ML: +1.5', x: 400, y: 0, z: 0 },
+            { label: 'DV: -4.5', x: 0, y: 0, z: 400 },
+            { label: 'Midbrain (SNc/VTA)', x: 0, y: -500, z: 0 },
+            { label: 'Cortex (PFC)', x: 0, y: -600, z: 250 }
         ];
         markers.forEach(m => {
             const p = project(m.x, m.y, m.z, cam, { width: w, height: h, near: 10, far: 5000 });

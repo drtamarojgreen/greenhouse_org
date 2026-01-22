@@ -32,6 +32,7 @@
         maoActivity: 0.5, // 40. Monoamine Oxidase
         comtActivity: 0.3, // 41. COMT
         astrocytes: [], // 80. Tripartite Synapse / 43. Astrocyte Reuptake
+        glt1Activity: 1.0, // 80. Astrocyte GLT-1 mediated glutamate reuptake
         metabolites: { dopac: 0, hva: 0, '3mt': 0, visual: [] }, // 42. Metabolite Tracking
         glutamate: [], // 77. Glutamate Co-transmission
         autoreceptorFeedback: 1.0, // 31. D2-Short Autoreceptor Feedback
@@ -202,8 +203,12 @@
             const da = sState.cleftDA[i];
 
             // 38. Volume Transmission & 39. Tortuosity: slowed diffusion in extracellular space
-            const diffusionScale = da.y < -150 ? 1.0 : (1.0 / sState.tortuosity);
-            da.x += da.vx * diffusionScale;
+        // 38. Dopamine Wave: high-concentration pulses moving through space
+        let diffusionScale = da.y < -150 ? 1.0 : (1.0 / sState.tortuosity);
+
+        // Volume transmission wave effect: occasional "push" to molecules
+        const wavePush = Math.sin(G.state.timer * 0.05 + da.x * 0.01) * 0.2;
+        da.x += (da.vx + wavePush) * diffusionScale;
             da.y += da.vy * diffusionScale;
             da.z += da.vz * diffusionScale;
             da.life--;
@@ -257,6 +262,15 @@
             const glu = sState.glutamate[i];
             glu.x += glu.vx; glu.y += glu.vy; glu.z += glu.vz;
             glu.life--;
+
+            // 80. Astrocyte GLT-1 mediated glutamate reuptake
+            sState.astrocytes.forEach(ast => {
+                const dist = Math.sqrt((glu.x - ast.x)**2 + (glu.y - ast.y)**2);
+                if (dist < ast.radius && Math.random() < 0.1 * sState.glt1Activity) {
+                    glu.life = 0;
+                }
+            });
+
             if (glu.y > 0 || glu.life <= 0) sState.glutamate.splice(i, 1);
         }
 
