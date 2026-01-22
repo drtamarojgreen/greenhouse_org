@@ -60,11 +60,18 @@
         isRunning: false,
         measurementStart: null,
         rulerActive: false,
+        annotations: [],
 
         init(targetSelector, baseUrl) {
             this.lastSelector = targetSelector;
             this.baseUrl = baseUrl || '';
             this._initializeSimulation(targetSelector);
+        },
+
+        // Shared utility for dynamic cleft geometry
+        getSurfaceY(h) {
+            const cleft = this.config.kinetics?.cleftWidth || 1.0;
+            return h * (0.6 + (cleft * 0.08));
         },
 
         _initializeSimulation(selector) {
@@ -161,8 +168,7 @@
                         },
                         onGenerateFigure: () => this.exportFigure(),
                         onUpdateParam: (p, v) => {
-                            if (p === 'patchClamp') G.config.visuals.patchClampActive = v;
-                            console.log(`Param ${p} set to ${v}`);
+                            if (p === 'ruler') this.rulerActive = v;
                         }
                     });
                 }
@@ -240,6 +246,11 @@
                 this.measurementStart = { x: this.mouse.x, y: this.mouse.y };
                 return;
             }
+            if (G.config.visuals?.annotationMode) {
+                const note = prompt('Enter research annotation:');
+                if (note) this.annotations.push({ x: this.mouse.x, y: this.mouse.y, text: note });
+                return;
+            }
 
             const w = this.canvas.width / (window.devicePixelRatio || 1);
             const h = this.canvas.height / (window.devicePixelRatio || 1);
@@ -290,6 +301,16 @@
                 ctx.globalAlpha = 1.0;
             }
 
+            if (G.config.visuals?.fluorescenceActive) {
+                const caLevel = G.Analytics?.state?.calcium || 0.1;
+                ctx.save();
+                ctx.fillStyle = `rgba(50, 255, 50, ${caLevel * 0.1})`;
+                ctx.beginPath();
+                ctx.ellipse(w * 0.5, h * 0.8, w * 0.4, h * 0.2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
             if (G.Visuals3D) {
                 G.Visuals3D.applyDepth(ctx, w, h);
                 if (G.config.visuals?.showElectrostatic) {
@@ -305,8 +326,7 @@
 
             if (G.Molecular) {
                 const chol = G.config.kinetics?.cholesterol || 1.0;
-                const cleft = G.config.kinetics?.cleftWidth || 1.0;
-                const surfaceY = h * (0.6 + (cleft * 0.08));
+                const surfaceY = this.getSurfaceY(h);
 
                 G.Molecular.drawLipidBilayer(ctx, w * 0.3, h * 0.44, w * 0.4, false, chol);
                 G.Molecular.drawLipidBilayer(ctx, w * 0.2, surfaceY, w * 0.6, true, chol);
@@ -320,8 +340,15 @@
                 }
 
                 G.config.elements.receptors.forEach(r => {
+                    const rx = w * r.x;
+                    const ry = surfaceY - 5;
                     if (r.type === 'gpcr' && r.state !== 'internalized') {
-                        G.Molecular.drawGPCRTopology(ctx, w * r.x, surfaceY - 5);
+                        G.Molecular.drawGPCRTopology(ctx, rx, ry);
+                    }
+                    if (r.state === 'active' || r.state === 'open') {
+                        G.Molecular.drawPhosphorylation(ctx, rx, ry, this.frame);
+                        ctx.fillStyle = '#fff'; ctx.font = '8px Arial';
+                        ctx.fillText(G.Chemistry.receptors[r.type].stoichiometry, rx - 30, ry - 20);
                     }
                 });
 
@@ -331,10 +358,13 @@
             }
 
             if (G.Particles) {
+                const azDensity = G.config.kinetics?.activeZoneDensity || 0.04;
                 const caLevel = G.Analytics?.state?.calcium || 0.1;
                 const releaseProb = (G.Chemistry.scenarios[G.config.activeScenario]?.modifiers?.releaseProb || 0.5) * (caLevel * 5);
                 if (this.frame % 15 === 0 && Math.random() < releaseProb) {
                     G.Particles.create(w, h, 1, G.config);
+                    const p = G.Particles.particles[G.Particles.particles.length-1];
+                    if (p) p.x = w * (0.5 - azDensity/2 + Math.random() * azDensity);
                 }
 
                 this.handleReceptorInteractions(w, h);
@@ -356,6 +386,17 @@
 
             if (G.Visuals3D) G.Visuals3D.restoreDepth(ctx);
 
+            if (this.annotations.length > 0) {
+                ctx.save();
+                this.annotations.forEach(a => {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.beginPath(); ctx.arc(a.x, a.y, 4, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Arial';
+                    ctx.fillText(a.text.toUpperCase(), a.x + 10, a.y + 5);
+                });
+                ctx.restore();
+            }
+
             this.checkHover(w, h);
 
             if (G.Tooltips) {
@@ -369,8 +410,7 @@
             const particles = G.Particles.particles;
             const chem = G.Chemistry;
 
-            const cleft = G.config.kinetics?.cleftWidth || 1.0;
-            const surfaceY = h * (0.6 + (cleft * 0.08));
+            const surfaceY = this.getSurfaceY(h);
 
             const pharm = G.config.pharmacology || {};
 
@@ -399,9 +439,16 @@
 
                     if (dist < 20 && p.life > 0.1) {
                         const receptorType = chem.receptors[receptor.type];
-                        if (receptorType.binds.includes(p.chemistry.id)) {
 
-                            if (Math.random() > (pH_modifier * circadian_modifier)) return;
+                        let canBind = receptorType.binds.includes(p.chemistry.id);
+                        if (!canBind && pharm.offTargetActive) {
+                            const affinity = receptorType.offTargetAffinities?.[p.chemistry.id] || 0;
+                            if (Math.random() < affinity) canBind = true;
+                        }
+
+                        if (canBind) {
+                            const hill = p.chemistry.kinetics?.hill || 1.0;
+                            if (Math.random() > (pH_modifier * circadian_modifier * hill)) return;
 
                             p.life = 0;
 
@@ -449,8 +496,7 @@
             this.hoveredId = null;
             const mx = this.mouse.x;
             const my = this.mouse.y;
-            const cleft = G.config.kinetics?.cleftWidth || 1.0;
-            const surfaceY = h * (0.6 + (cleft * 0.08));
+            const surfaceY = this.getSurfaceY(h);
 
             if (my < h * 0.44 && Math.abs(mx - w * 0.5) < w * 0.16) this.hoveredId = 'preSynapticTerminal';
             else if (my > surfaceY - 10 && Math.abs(mx - w * 0.5) < w * 0.28) this.hoveredId = 'postSynapticTerminal';
@@ -463,8 +509,7 @@
 
         drawStructure(ctx, w, h) {
             const centerX = w * 0.5, bulbY = h * 0.3, bW = w * 0.24;
-            const cleft = G.config.kinetics?.cleftWidth || 1.0;
-            const surfaceY = h * (0.6 + (cleft * 0.08));
+            const surfaceY = this.getSurfaceY(h);
             const activeId = this.hoveredId || this.sidebarHoveredId;
 
             ctx.save();
