@@ -58,6 +58,8 @@
         hoveredId: null,
         sidebarHoveredId: null,
         isRunning: false,
+        measurementStart: null,
+        rulerActive: false,
 
         init(targetSelector, baseUrl) {
             this.lastSelector = targetSelector;
@@ -125,7 +127,8 @@
             this.resize();
 
             this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-            this.canvas.addEventListener('mousedown', () => this.handleMouseDown());
+            this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+            this.canvas.addEventListener('mouseup', () => this.handleMouseUp());
         },
 
         renderSidebar() {
@@ -157,7 +160,10 @@
                             console.log(`Drug ${drugId} toggled: ${isActive}`);
                         },
                         onGenerateFigure: () => this.exportFigure(),
-                        onUpdateParam: (p, v) => console.log(`Param ${p} set to ${v}`)
+                        onUpdateParam: (p, v) => {
+                            if (p === 'ruler') this.rulerActive = v;
+                            console.log(`Param ${p} set to ${v}`);
+                        }
                     });
                 }
 
@@ -195,6 +201,12 @@
                     { x: 0.45, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
                     { x: 0.55, type: 'gpcr', state: 'idle', activationCount: 0 }
                 ];
+            } else if (scenarioId === 'autism') {
+                G.config.elements.receptors = [
+                    { x: 0.38, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                    { x: 0.62, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 }
+                ];
+                // Other modifiers like shankMutation handled in logic
             } else {
                 G.config.elements.vesicles = [
                     { id: 'vesicle', x: 0.45, y: 0.15, r: 12, offset: 0 },
@@ -216,7 +228,12 @@
             this.mouse.y = e.clientY - rect.top;
         },
 
-        handleMouseDown() {
+        handleMouseDown(e) {
+            if (this.rulerActive) {
+                this.measurementStart = { x: this.mouse.x, y: this.mouse.y };
+                return;
+            }
+
             const w = this.canvas.width / (window.devicePixelRatio || 1);
             const h = this.canvas.height / (window.devicePixelRatio || 1);
             if (this.mouse.y < h * 0.45 && Math.abs(this.mouse.x - w * 0.5) < w * 0.15) {
@@ -224,6 +241,10 @@
                     G.Particles.create(w, h, 40, G.config, true);
                 }
             }
+        },
+
+        handleMouseUp() {
+            this.measurementStart = null;
         },
 
         resize() {
@@ -245,7 +266,7 @@
 
         render() {
             if (!this.ctx) return;
-            this.frame++; // CRITICAL: Increment frame for timing-based logic
+            this.frame++;
             const ctx = this.ctx;
             const w = this.canvas.width / (window.devicePixelRatio || 1);
             const h = this.canvas.height / (window.devicePixelRatio || 1);
@@ -270,6 +291,7 @@
                 if (G.config.pharmacology?.bbbActive) {
                     G.Visuals3D.drawBBB(ctx, w, h);
                 }
+                G.Visuals3D.drawVesicleShadows(ctx, G.config.elements.vesicles, w, h, this.frame);
             }
 
             this.drawStructure(ctx, w, h);
@@ -302,7 +324,13 @@
             }
 
             if (G.Particles) {
-                if (this.frame % 15 === 0) G.Particles.create(w, h, 1, G.config);
+                // Enhancement #48: Calcium-dependent release probability
+                const caLevel = G.Analytics?.state?.calcium || 0.1;
+                const releaseProb = (G.Chemistry.scenarios[G.config.activeScenario]?.modifiers?.releaseProb || 0.5) * (caLevel * 5);
+                if (this.frame % 15 === 0 && Math.random() < releaseProb) {
+                    G.Particles.create(w, h, 1, G.config);
+                }
+
                 this.handleReceptorInteractions(w, h);
 
                 const activeReceptors = G.config.elements.receptors.filter(r => r.state === 'open' || r.state === 'active').length;
@@ -312,6 +340,9 @@
                     G.Visuals3D.drawShadows(ctx, G.Particles.particles);
                     G.Visuals3D.drawDynamicLighting(ctx, G.config.elements.receptors, w, h);
                     G.Visuals3D.drawIonHeatMap(ctx, G.Particles.ions, w, h);
+                    if (this.rulerActive && this.measurementStart) {
+                        G.Visuals3D.drawMeasurement(ctx, this.measurementStart, this.mouse);
+                    }
                 }
 
                 G.Particles.updateAndDraw(ctx, w, h);
