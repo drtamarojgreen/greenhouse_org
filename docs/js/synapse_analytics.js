@@ -14,7 +14,8 @@
             membraneCurrent: 0.0, // pA
             doseResponse: [],
             sensitivity: 1.0,
-            history: []
+            history: [],
+            baseline: null
         },
 
         calculateHealthScore(config, particleCount) {
@@ -68,6 +69,12 @@
             container.insertAdjacentHTML('beforeend', html);
         },
 
+        setBaseline() {
+            // Enhancement #92: Simulation Comparison
+            this.state.baseline = [...this.state.doseResponse];
+            console.log('Baseline set for comparison.');
+        },
+
         update(particleCount, ionCount, activeReceptors) {
             this.state.calcium = 0.1 + (ionCount * 0.05);
             if (this.state.calcium > 2.0) this.state.calcium = 2.0;
@@ -76,7 +83,6 @@
 
             this.state.sensitivity = G.Particles.plasticityFactor;
 
-            // Enhancement #14: ATP availability for synaptic vesicle recycling
             const recyclingLoad = (G.frame % 15 === 0) ? 0.2 : 0;
             if (particleCount > 60) {
                 this.state.atp -= (0.05 + recyclingLoad);
@@ -145,10 +151,26 @@
 
             ctx.clearRect(0, 0, w, h);
 
+            const step = w / 20;
+
+            // Draw Baseline (Enhancement #92)
+            if (this.state.baseline && this.state.baseline.length > 1) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.setLineDash([2, 2]);
+                ctx.beginPath();
+                this.state.baseline.forEach((val, i) => {
+                    const x = i * step;
+                    const y = h - (val * 1.5);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
             if (this.state.history.length > 1) {
                 ctx.fillStyle = 'rgba(0, 242, 255, 0.1)';
                 ctx.beginPath();
-                const step = w / 20;
                 for(let i=0; i<20; i++) {
                     const vals = this.state.history.map(h => h[i]).filter(v => v !== undefined);
                     if(vals.length === 0) continue;
@@ -177,7 +199,6 @@
             ctx.lineWidth = 2;
             ctx.beginPath();
 
-            const step = w / 20;
             this.state.doseResponse.forEach((val, i) => {
                 const x = i * step;
                 const y = h - (val * 1.5);
@@ -188,7 +209,7 @@
 
             ctx.fillStyle = 'rgba(255,255,255,0.3)';
             ctx.font = '8px Arial';
-            ctx.fillText('DOSE-RESPONSE (σ shaded)', 5, 10);
+            ctx.fillText(this.state.baseline ? 'DOSE-RESPONSE (VS BASELINE)' : 'DOSE-RESPONSE (σ shaded)', 5, 10);
         }
     };
 })();

@@ -92,7 +92,6 @@
         },
 
         drawSolvationShell(ctx, x, y, radius, charge) {
-            // Enhancement #32: Solvation Shell / Hydration Radius
             ctx.save();
             ctx.globalCompositeOperation = 'lighter';
 
@@ -105,7 +104,6 @@
             ctx.arc(x, y, radius * 5, 0, Math.PI * 2);
             ctx.fill();
 
-            // Draw tiny water molecules H2O (simplified as dots)
             ctx.fillStyle = '#fff';
             for(let i=0; i<4; i++) {
                 const angle = (Date.now() / 500) + (i * Math.PI / 2);
@@ -115,6 +113,23 @@
                 ctx.arc(wx, wy, 1.5, 0, Math.PI * 2);
                 ctx.fill();
             }
+            ctx.restore();
+        },
+
+        drawPhosphorylation(ctx, x, y, frame) {
+            // Enhancement #38: Phosphorylation state visualization
+            ctx.save();
+            const glow = (Math.sin(frame * 0.1) + 1) * 0.5;
+            ctx.strokeStyle = `rgba(255, 255, 0, ${glow})`;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            ctx.arc(x, y, 15, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#FFFF00';
+            ctx.font = 'bold 8px Arial';
+            ctx.fillText('P', x + 10, y - 10);
             ctx.restore();
         },
 

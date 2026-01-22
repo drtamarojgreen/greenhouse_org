@@ -80,7 +80,8 @@
                 name: { en: 'Ionotropic Receptor', es: 'Receptor Ionotrópico' },
                 binds: ['glutamate', 'gaba'],
                 stoichiometry: 'Pentameric (α2βγδ)',
-                pdbId: '6X3Z'
+                pdbId: '6X3Z',
+                offTargetAffinities: { serotonin: 0.05 }
             },
             gpcr: {
                 id: 'gpcr',
@@ -88,7 +89,8 @@
                 binds: ['serotonin', 'dopamine'],
                 stoichiometry: 'Monomeric / Heterodimeric',
                 pdbId: '7E2X',
-                topology: '7TM Helices'
+                topology: '7TM Helices',
+                offTargetAffinities: { glutamate: 0.02 }
             },
             autoreceptor: {
                 id: 'autoreceptor',
@@ -135,6 +137,18 @@
                 name: { en: 'Fear Conditioning (Amygdala)', es: 'Condicionamiento de Miedo' },
                 description: 'Rapid LTP induction and increased receptor recruitment.',
                 modifiers: { receptorDensity: 1.5, releaseProb: 0.7, reuptakeRate: 0.04, rapidLTP: true }
+            },
+            adolescent: {
+                id: 'adolescent',
+                name: { en: 'Adolescent Development', es: 'Desarrollo Adolescente' },
+                description: 'Active synaptic pruning and dynamic receptor expression.',
+                modifiers: { receptorDensity: 1.2, releaseProb: 0.6, reuptakeRate: 0.06, pruningActive: true }
+            },
+            chronicStress: {
+                id: 'chronicStress',
+                name: { en: 'Chronic Stress (Cortisol)', es: 'Estrés Crónico' },
+                description: 'Cortisol-mediated reduction in hippocampal synaptic connectivity.',
+                modifiers: { receptorDensity: 0.5, releaseProb: 0.4, reuptakeRate: 0.1, cortisolActive: true }
             }
         },
 
@@ -153,7 +167,8 @@
             EAAT: { name: 'Excitatory Amino Acid Transporter', targets: ['glutamate'] },
             GAT: { name: 'GABA Transporter', targets: ['gaba'] },
             SERT: { name: 'Serotonin Transporter', targets: ['serotonin'] },
-            DAT: { name: 'Dopamine Transporter', targets: ['dopamine'] }
+            DAT: { name: 'Dopamine Transporter', targets: ['dopamine'] },
+            ZnT: { name: 'Zinc Transporter', targets: ['zinc'] }
         },
 
         enzymes: {
@@ -163,11 +178,12 @@
         },
 
         drugs: {
-            ssri: { name: 'SSRI', targetTransporter: 'SERT', effect: 'block_reuptake' },
-            antagonist: { name: 'Antagonist', targetReceptor: 'ionotropic_receptor', effect: 'block_binding' },
-            agonist: { name: 'Agonist', targetReceptor: 'gpcr', effect: 'activate' },
-            ttx: { name: 'Tetrodotoxin', targetIon: 'sodium', effect: 'block_ion_channel' },
-            benzodiazepine: { name: 'Benzodiazepine', targetReceptor: 'ionotropic_receptor', effect: 'positive_allosteric_modulator' }
+            ssri: { name: 'SSRI', targetTransporter: 'SERT', effect: 'block_reuptake', safetyThreshold: 70 },
+            antagonist: { name: 'Antagonist', targetReceptor: 'ionotropic_receptor', effect: 'block_binding', safetyThreshold: 60 },
+            agonist: { name: 'Agonist', targetReceptor: 'gpcr', effect: 'activate', safetyThreshold: 80 },
+            ttx: { name: 'Tetrodotoxin', targetIon: 'sodium', effect: 'block_ion_channel', safetyThreshold: 10 },
+            benzodiazepine: { name: 'Benzodiazepine', targetReceptor: 'ionotropic_receptor', effect: 'positive_allosteric_modulator', safetyThreshold: 50 },
+            levodopa: { name: 'L-DOPA', type: 'prodrug', precursorOf: 'dopamine', conversionRate: 0.05 }
         },
 
         retrograde: {
@@ -180,21 +196,32 @@
                 name: { en: 'Sodium (Na+)', es: 'Sodio (Na+)' },
                 charge: '+',
                 color: '#ffd700', // Gold
-                effect: 'depolarize'
+                effect: 'depolarize',
+                hydrationRadius: 2.8 // Angstroms
             },
             chloride: {
                 id: 'chloride',
                 name: { en: 'Chloride (Cl-)', es: 'Cloro (Cl-)' },
                 charge: '-',
                 color: '#adff2f', // Greenish Yellow
-                effect: 'hyperpolarize'
+                effect: 'hyperpolarize',
+                hydrationRadius: 3.3
             },
             calcium: {
                 id: 'calcium',
                 name: { en: 'Calcium (Ca2+)', es: 'Calcio (Ca2+)' },
                 charge: '++',
                 color: '#ffffff', // White
-                effect: 'plasticity'
+                effect: 'plasticity',
+                hydrationRadius: 4.1
+            },
+            zinc: {
+                id: 'zinc',
+                name: { en: 'Zinc (Zn2+)', es: 'Zinc (Zn2+)' },
+                charge: '++',
+                color: '#C0C0C0', // Silver
+                effect: 'modulation',
+                hydrationRadius: 4.3
             }
         }
     };
