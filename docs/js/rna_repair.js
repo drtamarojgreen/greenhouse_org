@@ -881,19 +881,20 @@
      * @function initializeRNARepairSimulation
      * @description Entry point for initializing the simulation on a target element.
      */
-    function initializeRNARepairSimulation(targetElement) {
+    function initializeRNARepairSimulation(targetElement, selector = null) {
         if (!targetElement) {
             console.error('Target element for RNA repair simulation not found.');
             return;
         }
 
         if (typeof targetElement === 'string') {
-            const selector = targetElement;
+            selector = targetElement;
             targetElement = document.querySelector(selector);
             if (!targetElement) return;
         }
 
-        if (targetElement.dataset.initialized === 'true') return;
+        // Avoid double init/running
+        if (targetElement.dataset.initialized === 'true' && window.Greenhouse.rnaSimulation && window.Greenhouse.rnaSimulation.isRunning) return;
         targetElement.dataset.initialized = 'true';
 
         targetElement.innerHTML = '';
@@ -919,6 +920,12 @@
         window.Greenhouse = window.Greenhouse || {};
         window.Greenhouse.rnaSimulation = simulation;
 
+        // Expose re-init function on the simulation instance for the utility to call
+        // The utility calls appInstance[reinitFunctionName](container, selector)
+        // Here, the 'appInstance' is essentially this module scope, but we need to map it.
+        // Or we can attach the function to the existing global object used for re-init.
+        window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
+
         if (window.Greenhouse.initializeRNADisplay) {
             window.Greenhouse.initializeRNADisplay(simulation);
         }
@@ -936,56 +943,12 @@
 
         console.log('RNA Repair simulation initialized (Vertical).');
 
-        observeAndReinitializeApp(targetElement);
-        startCanvasSentinel(targetElement);
-    }
-
-    function observeAndReinitializeApp(container) {
-        if (!container) return;
-        if (resilienceObserver) resilienceObserver.disconnect();
-
-        const observerCallback = (mutations) => {
-            const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
-
-            if (wasRemoved) {
-                console.log('RNARepair: Simulation container removed. Re-initializing...');
-                if (window.Greenhouse.rnaSimulation) {
-                    window.Greenhouse.rnaSimulation.stop();
-                }
-                if (resilienceObserver) resilienceObserver.disconnect();
-
-                setTimeout(() => {
-                    // Try to recover selector if passed in captureAttributes, or assume ID
-                    const newContainer = container.id ? document.getElementById(container.id) : container;
-                    if (document.body.contains(newContainer)) initializeRNARepairSimulation(newContainer);
-                }, 1000);
-            }
-        };
-
-        resilienceObserver = new MutationObserver(observerCallback);
-        resilienceObserver.observe(document.body, { childList: true, subtree: true });
-    }
-
-    let sentinelInterval = null;
-    function startCanvasSentinel(container) {
-        if (sentinelInterval) clearInterval(sentinelInterval);
-        sentinelInterval = setInterval(() => {
-            const currentContainer = container.id ? document.getElementById(container.id) : container;
-            const currentCanvas = currentContainer ? currentContainer.querySelector('canvas') : null;
-            const isRunning = window.Greenhouse.rnaSimulation && window.Greenhouse.rnaSimulation.isRunning;
-
-            if (isRunning && (!currentContainer || !currentCanvas || !document.body.contains(currentCanvas))) {
-                console.log('RNA Repair App: DOM lost, re-initializing...');
-                if (window.Greenhouse.rnaSimulation) window.Greenhouse.rnaSimulation.stop();
-
-                if (currentContainer && document.body.contains(currentContainer)) {
-                    initializeRNARepairSimulation(currentContainer);
-                } else {
-                    const newContainer = container.id ? document.getElementById(container.id) : null;
-                    if (newContainer) initializeRNARepairSimulation(newContainer);
-                }
-            }
-        }, 3000);
+        // Resilience using shared GreenhouseUtils
+        if (window.GreenhouseUtils) {
+            // We pass 'window.Greenhouse' as the appInstance and 'initializeRNARepairSimulation' as the function name
+            window.GreenhouseUtils.observeAndReinitializeApplication(targetElement, selector, window.Greenhouse, 'initializeRNARepairSimulation');
+            window.GreenhouseUtils.startSentinel(targetElement, selector, window.Greenhouse, 'initializeRNARepairSimulation');
+        }
     }
 
     window.Greenhouse = window.Greenhouse || {};
@@ -1025,7 +988,7 @@
                 console.log('RNA Repair App: Waiting for container:', targetSelector);
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
                 console.log('RNA Repair App: Auto-initializing...');
-                initializeRNARepairSimulation(container);
+                initializeRNARepairSimulation(container, targetSelector);
             }
         } catch (error) {
             console.error('RNA Repair App: Initialization failed', error);

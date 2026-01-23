@@ -66,7 +66,7 @@
             }
         },
 
-        initializeDNARepairSimulation(container) {
+        initializeDNARepairSimulation(container, selector = null) {
             if (!container) return;
             container.innerHTML = '';
             this.injectStyles();
@@ -92,8 +92,12 @@
             this.isRunning = true;
             this.startSimulation('ber');
             this.animate();
-            this.observeAndReinitializeApp(container);
-            this.startCanvasSentinel(container);
+
+            // Resilience using shared GreenhouseUtils
+            if (window.GreenhouseUtils) {
+                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'initializeDNARepairSimulation');
+                window.GreenhouseUtils.startSentinel(container, selector, this, 'initializeDNARepairSimulation');
+            }
         },
 
         injectStyles() {
@@ -128,43 +132,7 @@
             if (analytics) analytics.innerText = `Successful Repairs: ${this.state.successfulRepairs} | Error-Prone: ${this.state.mutatedRepairs}`;
         },
 
-        observeAndReinitializeApp(container) {
-            if (!container) return;
-            if (resilienceObserver) resilienceObserver.disconnect();
-            const observerCallback = (mutations) => {
-                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
-                if (wasRemoved) {
-                    console.log('DNA App: Container element removal detected.');
-                    this.isRunning = false;
-                    if (resilienceObserver) resilienceObserver.disconnect();
-                    setTimeout(() => {
-                        const newContainer = container.id ? document.getElementById(container.id) : container;
-                        if (document.body.contains(newContainer)) this.initializeDNARepairSimulation(newContainer);
-                    }, 1000);
-                }
-            };
-            resilienceObserver = new MutationObserver(observerCallback);
-            resilienceObserver.observe(document.body, { childList: true, subtree: true });
-        },
 
-        startCanvasSentinel(container) {
-            if (this.sentinelInterval) clearInterval(this.sentinelInterval);
-            this.sentinelInterval = setInterval(() => {
-                const currentContainer = container.id ? document.getElementById(container.id) : container;
-                const currentCanvas = currentContainer ? currentContainer.querySelector('canvas') : null;
-
-                if (this.isRunning && (!currentContainer || !currentCanvas || !document.body.contains(currentCanvas))) {
-                    console.log('DNA App: DOM lost, re-initializing...');
-                    this.isRunning = false;
-                    if (currentContainer && document.body.contains(currentContainer)) {
-                        this.initializeDNARepairSimulation(currentContainer);
-                    } else {
-                        const newContainer = container.id ? document.getElementById(container.id) : null;
-                        if (newContainer) this.initializeDNARepairSimulation(newContainer);
-                    }
-                }
-            }, 3000);
-        },
 
         startSimulation(mode) {
             this.state.repairMode = mode;
@@ -360,7 +328,7 @@
             }
             if (targetSelector) {
                 const container = await GreenhouseUtils.waitForElement(targetSelector);
-                G.initializeDNARepairSimulation(container);
+                G.initializeDNARepairSimulation(container, targetSelector);
             }
         } catch (error) { console.error('DNA Repair App: Initialization failed', error); }
     }

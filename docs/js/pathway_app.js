@@ -11,7 +11,17 @@
         ctx: null,
         container: null,
 
-        init(targetSelector) {
+        init(targetSelector, selector = null) {
+            // handle both (selector) and (container, selector) call styles if needed, 
+            // but here init takes targetSelector string mostly.
+            // Let's standardize: init(container, selector) or just init(selector) if container logic is inside.
+            // The current code takes targetSelector string.
+
+            if (typeof targetSelector !== 'string' && selector) {
+                // Called via re-init with (container, selector)
+                targetSelector = selector;
+            }
+
             console.log(`Pathway App: Initializing in container: ${targetSelector}`);
             this.lastSelector = targetSelector;
 
@@ -29,8 +39,11 @@
             this.isRunning = true;
             this.animate();
 
-            this.observeAndReinitializeApp(this.container);
-            this.startCanvasSentinel(this.container);
+            // Resilience using shared GreenhouseUtils
+            if (window.GreenhouseUtils) {
+                window.GreenhouseUtils.observeAndReinitializeApplication(this.container, targetSelector, this, 'init');
+                window.GreenhouseUtils.startSentinel(this.container, targetSelector, this, 'init');
+            }
         },
 
         setupDOM() {
@@ -93,37 +106,7 @@
             // --- End Placeholder ---
         },
 
-        observeAndReinitializeApp(container) {
-            if (!container) return;
-            if (this.resilienceObserver) this.resilienceObserver.disconnect();
-            const observerCallback = (mutations) => {
-                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
-                if (wasRemoved) {
-                    if (this.resilienceObserver) this.resilienceObserver.disconnect();
-                    // Re-init logic
-                    setTimeout(() => {
-                        if (this.lastSelector) this.init(this.lastSelector);
-                    }, 1000);
-                }
-            };
-            this.resilienceObserver = new MutationObserver(observerCallback);
-            this.resilienceObserver.observe(document.body, { childList: true, subtree: true });
-        },
 
-        startCanvasSentinel(container) {
-            if (this.sentinelInterval) clearInterval(this.sentinelInterval);
-            this.sentinelInterval = setInterval(() => {
-                const currentContainer = document.querySelector(this.lastSelector);
-                // Check if container AND canvas exist in DOM
-                const currentCanvas = currentContainer ? currentContainer.querySelector('canvas') : null;
-
-                if (this.isRunning && (!currentContainer || !currentCanvas || !document.body.contains(currentCanvas))) {
-                    console.log('Pathway App: DOM lost, re-initializing...');
-                    this.isRunning = false; // Stop internal loop if any
-                    if (this.lastSelector) this.init(this.lastSelector);
-                }
-            }, 3000);
-        }
     };
 
     // Expose the app to the global window object

@@ -11,20 +11,23 @@
         intervalId: null,
         resilienceObserver: null,
 
-        init(selector) {
+        init(selector, selArg = null) {
+            // Standardize selector argument handling if re-invoked
+            if (typeof selector !== 'string' && selArg) selector = selArg;
+
             console.log('NeuroApp: Initializing...');
             this.lastSelector = selector;
 
-            this._delayedInit(selector);
-        },
-
-        _delayedInit(selector) {
             const container = document.querySelector(selector);
             if (!container) {
                 console.error('NeuroApp: Target container not found:', selector);
                 return;
             }
 
+            this._delayedInit(container, selector);
+        },
+
+        _delayedInit(container, selector) {
             // Clear existing content to ensure we replace rather than append
             container.innerHTML = '';
 
@@ -47,68 +50,15 @@
             });
 
             // Add control overlay
-            this.createControls(selector);
+            this.createControls(container);
 
             // Start simulation automatically
             this.startSimulation();
 
-            // Resilience
-            this.observeAndReinitializeApp(document.querySelector(selector));
-            this.startCanvasSentinel(document.querySelector(selector));
-        },
-
-        observeAndReinitializeApp(container) {
-            if (!container) return;
-            if (this.resilienceObserver) this.resilienceObserver.disconnect();
-
-            const observerCallback = (mutations) => {
-                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
-                if (wasRemoved) {
-                    console.log('NeuroApp: Container removed from DOM detected.');
-                    this.stopSimulation();
-                    if (this.resilienceObserver) this.resilienceObserver.disconnect();
-                    setTimeout(() => {
-                        this.reinitialize();
-                    }, 1000);
-                }
-            };
-
-            this.resilienceObserver = new MutationObserver(observerCallback);
-            this.resilienceObserver.observe(document.body, { childList: true, subtree: true });
-        },
-
-        startCanvasSentinel(container) {
-            if (this.sentinelInterval) clearInterval(this.sentinelInterval);
-            this.sentinelInterval = setInterval(() => {
-                const currentContainer = document.querySelector(this.lastSelector);
-                const currentCanvas = currentContainer ? currentContainer.querySelector('canvas') : null;
-
-                if (this.isRunning && (!currentContainer || !currentCanvas || !document.body.contains(currentCanvas))) {
-                    console.log('Neuro App: Canvas/Container lost, re-initializing...');
-                    this.reinitialize();
-                }
-            }, 3000);
-        },
-
-        reinitialize() {
-            console.log('NeuroApp: Re-initializing...');
-            this.stopSimulation();
-
-            if (this.resilienceObserver) {
-                this.resilienceObserver.disconnect();
-                this.resilienceObserver = null;
-            }
-            if (this.sentinelInterval) {
-                clearInterval(this.sentinelInterval);
-                this.sentinelInterval = null;
-            }
-
-            if (this.lastSelector) {
-                setTimeout(() => {
-                    this.init(this.lastSelector);
-                }, 200);
-            } else {
-                console.error('NeuroApp: Cannot reinitialize, selector not stored.');
+            // Resilience using shared GreenhouseUtils
+            if (window.GreenhouseUtils) {
+                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
+                window.GreenhouseUtils.startSentinel(container, selector, this, 'init');
             }
         },
 

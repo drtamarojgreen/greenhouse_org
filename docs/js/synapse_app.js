@@ -62,10 +62,28 @@
         rulerActive: false,
         annotations: [],
 
-        init(targetSelector, baseUrl) {
-            this.lastSelector = targetSelector;
-            this.baseUrl = baseUrl || '';
-            this._initializeSimulation(targetSelector);
+        init(targetSelector, baseUrl, selector = null) {
+            // Standardize: if re-initialized with (container, selector), we might get varying args.
+            // The utility calls: appInstance[reinitFunctionName](container, selector)
+            // So if `init(container, selector)` is called:
+            // targetSelector -> container element
+            // baseUrl -> selector string
+            // selector -> undefined
+
+            let actualSelector = targetSelector;
+            if (typeof targetSelector !== 'string' && baseUrl && typeof baseUrl === 'string') {
+                // Called via re-init
+                actualSelector = baseUrl;
+            } else if (typeof targetSelector === 'string') {
+                // Normal string call
+                actualSelector = targetSelector;
+                // baseUrl is actually baseUrl
+            }
+
+            this.lastSelector = actualSelector;
+            this.baseUrl = (typeof baseUrl === 'string' && baseUrl !== actualSelector) ? baseUrl : '';
+
+            this._initializeSimulation(actualSelector);
         },
 
         getSurfaceY(h) {
@@ -87,8 +105,11 @@
             this.isRunning = true;
             this.animate();
 
-            this.observeAndReinitializeApp(this.container);
-            this.startCanvasSentinel(this.container);
+            // Resilience using shared GreenhouseUtils
+            if (window.GreenhouseUtils) {
+                window.GreenhouseUtils.observeAndReinitializeApplication(this.container, selector, G, 'init');
+                window.GreenhouseUtils.startSentinel(this.container, selector, G, 'init');
+            }
         },
 
         setupDOM() {
@@ -590,36 +611,6 @@
             });
         },
 
-        observeAndReinitializeApp(container) {
-            if (!container) return;
-            if (resilienceObserver) resilienceObserver.disconnect();
-            const observerCallback = (mutations) => {
-                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
-                if (wasRemoved) {
-                    this.isRunning = false;
-                    if (resilienceObserver) resilienceObserver.disconnect();
-                    setTimeout(() => {
-                        if (G.init && this.lastSelector) G.init(this.lastSelector, this.baseUrl);
-                    }, 1000);
-                }
-            };
-            resilienceObserver = new MutationObserver(observerCallback);
-            resilienceObserver.observe(document.body, { childList: true, subtree: true });
-        },
 
-        startCanvasSentinel(container) {
-            if (this.sentinelInterval) clearInterval(this.sentinelInterval);
-            this.sentinelInterval = setInterval(() => {
-                const currentContainer = document.querySelector(this.lastSelector);
-                // Check if container AND canvas exist in DOM
-                const currentCanvas = currentContainer ? currentContainer.querySelector('canvas') : null;
-
-                if (this.isRunning && (!currentContainer || !currentCanvas || !document.body.contains(currentCanvas))) {
-                    console.log('Synapse App: DOM lost, re-initializing...');
-                    this.isRunning = false;
-                    if (G.init && this.lastSelector) G.init(this.lastSelector, this.baseUrl);
-                }
-            }, 3000);
-        }
     });
 })();
