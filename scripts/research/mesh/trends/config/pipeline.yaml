@@ -1,9 +1,9 @@
 dataset:
-  min_years_present: 2
-  min_total_count: 10
-  min_variance: 0.1
+  min_years_present: 5
+  min_total_count: 5
+  min_variance: 0.01
   year_start: 1965
-  year_end: 2024
+  year_end: 2026
 
 embedding:
   method: nn
