@@ -65,7 +65,7 @@
             }
         },
 
-        initialize(container) {
+        initialize(container, selector = null) {
             if (!container) return;
             container.innerHTML = '';
             this.injectStyles();
