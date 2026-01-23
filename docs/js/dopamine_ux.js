@@ -22,14 +22,11 @@
 
     G.initUX = function () {
         this.setupKeyboardShortcuts();
-        this.checkWelcome();
+        // Welcome screen removed per user request
     };
 
     G.checkWelcome = function () {
-        // Show welcome modal if not viewed or if forced
-        if (!G.uxState.history.viewedTutorial) {
-            setTimeout(() => this.showWelcomeModal(), 1000);
-        }
+        // Function retained for shortcut 'H' but auto-show disabled
     };
 
     G.showWelcomeModal = function () {
@@ -60,8 +57,8 @@
                     <h3 style="font-size: 16px; margin-top: 0; color: #fff;">Quick Visual Guide:</h3>
                     <ul style="font-size: 13px; color: #a0aec0; padding-left: 20px;">
                         <li><b style="color: #ff4d4d;">Red/Blue Spheres:</b> D1 and D2 Receptors with dynamic IL3/C-tail modeling.</li>
-                        <li><b style="color: #5c4033;">Brown Circles:</b> Striosome compartments (Patch neurons).</li>
-                        <li><b style="color: #008080;">Cyan Area:</b> Striatal Matrix environment.</li>
+                        <li><b style="color: #8B4513;">Brown Neurons:</b> Striosome compartments (Patch neurons).</li>
+                        <li><b style="color: #00ffff;">Cyan Lattice:</b> Striatal Matrix environment.</li>
                         <li><b style="color: #00ff00;">Green Glow:</b> Extracellular Dopamine flux (Volume Transmission).</li>
                     </ul>
                 </div>

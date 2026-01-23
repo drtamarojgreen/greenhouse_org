@@ -199,19 +199,63 @@
             }
         });
 
-        // 74. Striosome vs Matrix Visualization
-        // Matrix
-        ctx.fillStyle = cState.compartments.matrix.color;
-        ctx.beginPath();
-        ctx.arc(w / 2, h / 2, w / 4, 0, Math.PI * 2);
-        ctx.fill();
-        // Striosomes
-        ctx.fillStyle = cState.compartments.striosome.color;
+        // 74. Striosome vs Matrix Visualization (Intracellular/Micro-compartment focus)
+
+        // Enhanced Matrix: Structured lattice appearance
+        ctx.save();
+        ctx.strokeStyle = cState.compartments.matrix.color;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.2;
+        const gridSize = 40;
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const matrixRadius = w / 4;
+
+        // Draw a circular matrix lattice
+        for (let x = centerX - matrixRadius; x <= centerX + matrixRadius; x += gridSize) {
+            for (let y = centerY - matrixRadius; y <= centerY + matrixRadius; y += gridSize) {
+                const dist = Math.sqrt((x - centerX)**2 + (y - centerY)**2);
+                if (dist < matrixRadius) {
+                    ctx.beginPath();
+                    ctx.moveTo(x - 5, y); ctx.lineTo(x + 5, y);
+                    ctx.moveTo(x, y - 5); ctx.lineTo(x, y + 5);
+                    ctx.stroke();
+                }
+            }
+        }
+        ctx.restore();
+
+        // Enhanced Striosomes: Neuron-like morphology (soma + dendrites)
+        ctx.save();
         for(let i=0; i<5; i++) {
+            const sx = w/2 + Math.cos(i * 1.2)*120;
+            const sy = h/2 + Math.sin(i * 1.2)*120;
+
+            // Draw Dendrites
+            ctx.strokeStyle = 'rgba(139, 69, 19, 0.4)'; // Brownish
+            ctx.lineWidth = 2;
+            for (let d = 0; d < 6; d++) {
+                const angle = (d / 6) * Math.PI * 2 + G.state.timer * 0.01;
+                ctx.beginPath();
+                ctx.moveTo(sx, sy);
+                const cp1x = sx + Math.cos(angle) * 30;
+                const cp1y = sy + Math.sin(angle) * 30;
+                const endX = sx + Math.cos(angle + 0.2) * 60;
+                const endY = sy + Math.sin(angle + 0.2) * 60;
+                ctx.quadraticCurveTo(cp1x, cp1y, endX, endY);
+                ctx.stroke();
+            }
+
+            // Draw Soma
+            const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 20);
+            grad.addColorStop(0, '#8B4513');
+            grad.addColorStop(1, 'rgba(139, 69, 19, 0.2)');
+            ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.arc(w/2 + Math.cos(i)*100, h/2 + Math.sin(i)*100, 40, 0, Math.PI * 2);
+            ctx.arc(sx, sy, 20, 0, Math.PI * 2);
             ctx.fill();
         }
+        ctx.restore();
 
 
         // 80. Tripartite Synapse (Astrocytes - Stellate Appearance)

@@ -33,9 +33,8 @@
 
             <div style="margin-bottom: 6px;">
                 <div style="font-weight: bold; margin-bottom: 2px; color: #aaa; font-size: 9px;">Striatal Anatomy</div>
-                <div class="dopamine-legend-item"><div class="dopamine-legend-swatch" style="background: #5c4033;"></div> Striosome (Patch)</div>
-                <div class="dopamine-legend-item"><div class="dopamine-legend-swatch" style="background: rgba(0, 100, 100, 0.3); border-radius: 2px;"></div> Matrix</div>
-                <div class="dopamine-legend-item"><div class="dopamine-legend-swatch" style="border: 1px solid #6666ff; border-radius: 0;"></div> 3D Brain Atlas</div>
+                <div class="dopamine-legend-item"><div class="dopamine-legend-swatch" style="background: #8B4513;"></div> Striosome Neuron</div>
+                <div class="dopamine-legend-item"><div class="dopamine-legend-swatch" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3);"></div> Matrix Lattice</div>
             </div>
 
             <div style="margin-bottom: 6px;">

@@ -157,8 +157,8 @@
                                 <h4 style="margin: 0 0 10px 0; color: #fff; font-size: 14px;">Scientific Abstract</h4>
                                 <p style="font-size: 11px; line-height: 1.4; color: #ccc; margin: 0;">
                                     This simulation models high-fidelity intracellular dopamine signaling.
-                                    <b>Brown/Yellowish Circles</b> represent <b>Striosome</b> (patch) compartments at the cellular level.
-                                    The surrounding <b>Cyan/Greenish</b> area represents the <b>Matrix</b> environment.
+                                    <b>Brown Neurons</b> represent <b>Striosome</b> (patch) compartments at the cellular level.
+                                    The surrounding <b>Cyan Lattice</b> represents the <b>Matrix</b> environment.
                                     The <b>Green Halo</b> visualizes <b>Volume Transmission</b>, where DA diffuses beyond the synaptic cleft.
                                 </p>
                             </div>

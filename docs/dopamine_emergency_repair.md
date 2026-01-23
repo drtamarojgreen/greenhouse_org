@@ -32,6 +32,11 @@ The initial onboarding is cluttered with macro-anatomical "Quick Visual Guide" i
 
 ## 4. Implementation Plan
 1.  **Refactor `dopamine.js`**: Remove the `loadScript` call for the realistic brain mesh.
-2.  **Sanitize `dopamine_circuit.js`**: Comment out or delete all `ctx` calls rendering macro-labels, axon lines, and coordinate markers.
-3.  **Update `dopamine_ux.js`**: Refresh the `showWelcomeModal` content to be strictly molecular.
+2.  **Sanitize `dopamine_circuit.js`**:
+    - Removed macro-labels and coordinate markers.
+    - **Update (v1.1)**: Enhanced Striosome visualization with soma+dendrite neuron morphology.
+    - **Update (v1.1)**: Enhanced Matrix visualization with a structured lattice texture.
+3.  **Update `dopamine_ux.js`**:
+    - **Update (v1.1)**: Disabled the automatic show of the welcome screen per user request.
+    - Refreshed descriptions to reflect "Brown Neurons" and "Cyan Lattice".
 4.  **Verification**: Run `test_neuro_ui.js` and `test_synapse_ui.js` to confirm signaling core stability.
