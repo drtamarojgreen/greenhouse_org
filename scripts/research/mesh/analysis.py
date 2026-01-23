@@ -38,10 +38,10 @@ class Analyzer:
             stats.append({
                 'ui': ui,
                 'name': self.candidate_map.get(ui, "Unknown"),
-                'total_count': total_count,
-                'years_active': years_active,
-                'recent_slope': slope,
-                'score': total_count * (years_active / 50.0) # Heuristic score
+                'total_count': int(total_count),
+                'years_active': int(years_active),
+                'recent_slope': float(slope),
+                'score': float(total_count * (years_active / 50.0)) # Heuristic score
             })
 
         return pd.DataFrame(stats)
@@ -86,9 +86,9 @@ class Analyzer:
             return {
                 'model': 'logistic',
                 'params': {
-                    'L': popt[0] * y_max,
-                    'k': popt[1],
-                    'x0': popt[2]
+                    'L': float(popt[0] * y_max),
+                    'k': float(popt[1]),
+                    'x0': float(popt[2])
                 }
             }
         except:
@@ -97,7 +97,7 @@ class Analyzer:
             return {
                 'model': 'linear',
                 'params': {
-                    'slope': slope,
-                    'intercept': intercept
+                    'slope': float(slope),
+                    'intercept': float(intercept)
                 }
             }

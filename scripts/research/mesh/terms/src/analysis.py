@@ -77,16 +77,23 @@ def top_terms_by_year(term_matrix, target_clusters, cluster_assignments, terms, 
         # Get counts for all target terms for this year
         year_counts = term_matrix[indices, i]
 
-        # Get top n indices
-        # We sort indices within the 'indices' list
-        top_n_idx_in_subset = np.argsort(year_counts)[-n:][::-1]
+        # Only consider terms with non-zero counts
+        non_zero_mask = year_counts > 0
+        if not np.any(non_zero_mask):
+            continue
+
+        valid_indices_subset = np.where(non_zero_mask)[0]
+        valid_counts = year_counts[valid_indices_subset]
+
+        # Get top n indices among non-zero ones
+        top_n_idx_within_valid = np.argsort(valid_counts)[-n:][::-1]
 
         top_terms = []
-        for idx_subset in top_n_idx_in_subset:
-            original_idx = indices[idx_subset]
+        for subset_idx in top_n_idx_within_valid:
+            original_idx = indices[valid_indices_subset[subset_idx]]
             top_terms.append({
                 'term': terms[original_idx],
-                'count': float(year_counts[idx_subset])
+                'count': float(valid_counts[subset_idx])
             })
 
         results[int(year)] = top_terms
