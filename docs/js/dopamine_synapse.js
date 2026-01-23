@@ -361,6 +361,21 @@
             m.y += (Math.random()-0.5);
             if (m.life <= 0) sState.metabolites.visual.splice(i, 1);
         }
+
+        // Update UI metrics in the left panel
+        if (G.leftPanel && G.updateMetric) {
+            G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Vesicles (RRP)', sState.vesicles.rrp.length);
+            G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Cleft DA', sState.cleftDA.length);
+            G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'DAT Activity', `${(sState.dat.activity * 100).toFixed(0)}%`);
+            G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Autoreceptor', `${(sState.autoreceptorFeedback * 100).toFixed(0)}%`);
+            G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Status', sState.pathologicalState);
+
+            if (sState.kissAndRunCount > 0) {
+                G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Fusion Mode', 'Kiss-and-Run');
+            } else {
+                G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Fusion Mode', 'Full');
+            }
+        }
     };
 
     G.renderSynapse = function (ctx, project) {
@@ -536,22 +551,9 @@
             }
         });
 
-        // Overlay Synapse Info
-        ctx.fillStyle = '#fff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Vesicles: ${sState.vesicles.rrp.length}`, 10, h - 100);
-        ctx.fillText(`Cleft DA: ${sState.cleftDA.length}`, 10, h - 85);
-        ctx.fillText(`DAT: ${(sState.dat.activity * 100).toFixed(0)}%`, 10, h - 70);
-        ctx.fillText(`Autoreceptor: ${(sState.autoreceptorFeedback * 100).toFixed(0)}%`, 10, h - 55);
-        ctx.fillText(`Status: ${sState.pathologicalState}`, 10, h - 40);
-
         // 33. Kiss-and-run Indicator
         if (sState.kissAndRunCount > 0) {
             sState.kissAndRunCount--;
-            ctx.fillStyle = '#ffff00';
-            ctx.font = 'bold 12px Arial';
-            ctx.fillText('KISS-AND-RUN FUSION', 10, h - 120);
         }
     };
 })();

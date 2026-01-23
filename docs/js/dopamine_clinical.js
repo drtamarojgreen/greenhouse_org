@@ -103,6 +103,21 @@
         } else {
             cState.hpaAxisActivity = Math.max(0.1, cState.hpaAxisActivity - 0.002);
         }
+
+        // Update UI metrics in the right panel
+        if (G.rightPanel && G.updateMetric) {
+            G.updateMetric(G.rightPanel, 'Clinical State', 'Oxidative Stress', `${(cState.oxidativeStress * 100).toFixed(1)}%`);
+            G.updateMetric(G.rightPanel, 'Clinical State', 'D2 Supersensitivity', `${cState.d2Supersensitivity.toFixed(2)}x`);
+            if (cState.alphaSynuclein.level > 0.1) {
+                G.updateMetric(G.rightPanel, 'Clinical State', 'α-Synuclein', `${(cState.alphaSynuclein.level * 100).toFixed(1)}%`);
+            }
+            if (cState.inflammation > 0.1) {
+                G.updateMetric(G.rightPanel, 'Clinical State', 'Neuroinflammation', `${(cState.inflammation * 100).toFixed(1)}%`);
+            }
+            if (cState.hpaAxisActivity > 0.3) {
+                G.updateMetric(G.rightPanel, 'Clinical State', 'HPA Activity', `${(cState.hpaAxisActivity * 100).toFixed(1)}%`);
+            }
+        }
     };
 
     G.renderClinical = function (ctx, project) {
@@ -111,16 +126,7 @@
         const cam = G.state.camera;
         const cState = G.clinicalState;
 
-        // Overlay Clinical Info
-        ctx.fillStyle = '#ff9999';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'right';
-        ctx.fillText(`Oxidative Stress: ${(cState.oxidativeStress * 100).toFixed(1)}%`, w - 10, h - 200);
-        ctx.fillText(`D2 Supersensitivity: ${cState.d2Supersensitivity.toFixed(2)}x`, w - 10, h - 180);
-
         if (cState.alphaSynuclein.level > 0.1) {
-            ctx.fillText(`α-Synuclein: ${(cState.alphaSynuclein.level * 100).toFixed(1)}%`, w - 10, h - 160);
-
             // Render aggregates
             cState.alphaSynuclein.aggregates.forEach(agg => {
                 const p = project(agg.x, agg.y, agg.z, cam, { width: w, height: h, near: 10, far: 5000 });
@@ -134,12 +140,6 @@
                     ctx.shadowBlur = 0;
                 }
             });
-        }
-        if (cState.inflammation > 0.1) {
-            ctx.fillText(`Neuroinflammation: ${(cState.inflammation * 100).toFixed(1)}%`, w - 10, h - 140);
-        }
-        if (cState.hpaAxisActivity > 0.3) {
-            ctx.fillText(`HPA Activity (Cortisol): ${(cState.hpaAxisActivity * 100).toFixed(1)}%`, w - 10, h - 120);
         }
 
         if (cState.oxidativeStress > 0.4) {

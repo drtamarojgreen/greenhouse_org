@@ -72,6 +72,7 @@
         container.appendChild(wrapper);
 
         if (G.createUI) G.createUI(wrapper);
+        if (G.initSidePanels) G.initSidePanels(wrapper);
         if (G.initLegend) G.initLegend(wrapper);
         if (G.initTooltips) G.initTooltips(wrapper);
         if (G.initUX) G.initUX();
@@ -79,7 +80,7 @@
         G.canvas = document.createElement('canvas');
         G.ctx = G.canvas.getContext('2d');
         G.canvas.width = container.offsetWidth || 800;
-        G.canvas.height = 600;
+        G.canvas.height = container.offsetHeight || 600;
         wrapper.appendChild(G.canvas);
         G.width = G.canvas.width; G.height = G.canvas.height;
 
@@ -90,15 +91,105 @@
         G.animate();
     };
 
+    G.initSidePanels = function(container) {
+        G.leftPanel = document.createElement('div');
+        G.leftPanel.className = 'dopamine-side-panel left';
+        container.appendChild(G.leftPanel);
+
+        G.rightPanel = document.createElement('div');
+        G.rightPanel.className = 'dopamine-side-panel right';
+        container.appendChild(G.rightPanel);
+
+        // Define common update functions
+        G.updateMetric = (panel, sectionId, label, value) => {
+            let section = panel.querySelector(`#section-${sectionId.toLowerCase().replace(/\s+/g, '-')}`);
+            if (!section) {
+                section = document.createElement('div');
+                section.id = `section-${sectionId.toLowerCase().replace(/\s+/g, '-')}`;
+                section.className = 'dopamine-panel-section';
+                section.innerHTML = `<div class="dopamine-panel-header">${sectionId}</div>`;
+                panel.appendChild(section);
+            }
+
+            let item = section.querySelector(`[data-metric="${label}"]`);
+            if (!item) {
+                item = document.createElement('div');
+                item.className = 'dopamine-metric-item';
+                item.dataset.metric = label;
+                item.innerHTML = `<span class="dopamine-metric-label">${label}</span><span class="dopamine-metric-value"></span>`;
+                section.appendChild(item);
+            }
+            item.querySelector('.dopamine-metric-value').innerText = value;
+        };
+    };
+
     G.injectStyles = function() {
         if (document.getElementById('dopamine-sim-styles')) return;
         const style = document.createElement('style');
         style.id = 'dopamine-sim-styles';
         style.innerHTML = `
-            .dopamine-controls { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; z-index: 10; }
-            .dopamine-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-            .dopamine-btn:hover { background: #4a5568; }
-            .dopamine-info { position: absolute; bottom: 10px; left: 10px; color: #fff; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; pointer-events: none; }
+            .dopamine-controls { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; z-index: 10; width: calc(100% - 20px); justify-content: center; pointer-events: none; }
+            .dopamine-controls > * { pointer-events: auto; }
+            .dopamine-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: all 0.2s; }
+            .dopamine-btn:hover { background: #2d3748; border-color: #4fd1c5; box-shadow: 0 0 10px rgba(79, 209, 197, 0.4); }
+            .dopamine-info { color: #4fd1c5; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #4fd1c5; margin-bottom: 10px; font-size: 11px; }
+
+            .dopamine-side-panel {
+                position: absolute;
+                top: 60px;
+                bottom: 20px;
+                width: 220px;
+                background: rgba(5, 5, 20, 0.7);
+                backdrop-filter: blur(8px);
+                border: 1px solid rgba(79, 209, 197, 0.2);
+                color: #fff;
+                padding: 15px;
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+                z-index: 5;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: #4fd1c5 #1a202c;
+                transition: transform 0.3s ease;
+            }
+            .dopamine-side-panel.left { left: 10px; border-radius: 10px; }
+            .dopamine-side-panel.right { right: 10px; border-radius: 10px; width: 260px; }
+
+            .dopamine-panel-section {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                padding-bottom: 10px;
+            }
+            .dopamine-panel-section:last-child { border-bottom: none; }
+            .dopamine-panel-header {
+                font-size: 10px;
+                font-weight: bold;
+                color: #4fd1c5;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 8px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .dopamine-metric-item {
+                display: flex;
+                justify-content: space-between;
+                font-size: 11px;
+                margin-bottom: 4px;
+                font-family: 'Courier New', Courier, monospace;
+            }
+            .dopamine-metric-label { color: #a0aec0; }
+            .dopamine-metric-value { color: #fff; font-weight: bold; text-shadow: 0 0 5px rgba(79, 209, 197, 0.5); }
+
+            .dopamine-legend-compact { font-size: 10px; }
+            .dopamine-legend-item { display: flex; align-items: center; margin-bottom: 4px; transition: color 0.2s; cursor: help; }
+            .dopamine-legend-item:hover { color: #4fd1c5; }
+            .dopamine-legend-swatch { width: 8px; height: 8px; margin-right: 8px; flex-shrink: 0; border-radius: 50%; }
+
+            .dopamine-side-panel::-webkit-scrollbar { width: 4px; }
+            .dopamine-side-panel::-webkit-scrollbar-track { background: #1a202c; }
+            .dopamine-side-panel::-webkit-scrollbar-thumb { background: #4fd1c5; border-radius: 10px; }
         `;
         document.head.appendChild(style);
     };
@@ -261,6 +352,21 @@
         if (G.renderAnalytics) G.renderAnalytics(ctx);
         if (G.renderUX) G.renderUX(ctx);
         if (G.renderLegend) G.renderLegend(ctx);
+
+        // Render Hover Highlight
+        if (G.hoverTarget) {
+            const h = G.hoverTarget;
+            const p = project(h.data.x, h.data.y, h.data.z || 0, cam, { width: w, height: h, near: 10, far: 5000 });
+            if (p.scale > 0) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 30 * p.scale, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
     };
 
     function captureAttributes() {
@@ -302,7 +408,6 @@
             await GreenhouseUtils.loadScript('dopamine_analytics.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_ux.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
 
             window.Greenhouse = window.Greenhouse || {};
             window.Greenhouse.initializeDopamineSimulation = function (selector) {

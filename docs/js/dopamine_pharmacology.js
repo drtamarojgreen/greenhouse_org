@@ -154,6 +154,18 @@
         } else {
             pState.drugOccupancy *= 0.9;
         }
+
+        // Update UI metrics in the right panel
+        if (G.rightPanel && G.updateMetric) {
+            if (state.mode === 'Amphetamine' || state.scenarios.amphetamine) {
+                G.updateMetric(G.rightPanel, 'Pharmacology', 'DAT Mode', 'Efflux (Reversal)');
+            } else if (state.mode === 'Cocaine' || state.scenarios.cocaine) {
+                G.updateMetric(G.rightPanel, 'Pharmacology', 'DAT Mode', 'High-affinity Blockade');
+            } else {
+                G.updateMetric(G.rightPanel, 'Pharmacology', 'DAT Mode', 'Normal');
+            }
+            G.updateMetric(G.rightPanel, 'Pharmacology', 'Receptor Occupancy', `${(pState.drugOccupancy * 100).toFixed(1)}%`);
+        }
     };
 
     G.renderPharmacology = function (ctx, project) {
@@ -163,21 +175,7 @@
         const h = G.height;
         const pState = G.pharmacologyState;
 
-        // Overlay Pharmacology Info (Condensed for HUD)
-        ctx.fillStyle = '#99ff99';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'left';
-
-        if (state.mode === 'Amphetamine' || state.scenarios.amphetamine) {
-            ctx.fillText('Mode: DAT Efflux (Reversal)', 10, h - 280);
-        } else if (state.mode === 'Cocaine' || state.scenarios.cocaine) {
-            ctx.fillText('Mode: High-affinity Blockade', 10, h - 280);
-        }
-
         if (pState.drugOccupancy > 0.1) {
-            ctx.fillStyle = '#ffaa00';
-            ctx.fillText(`Receptor Occupancy: ${(pState.drugOccupancy * 100).toFixed(1)}%`, 10, h - 300);
-
             // 96. Visual indicators of bound drug (small dots on receptors)
             G.state.receptors.forEach(r => {
                 if (r.type.startsWith('D2')) {

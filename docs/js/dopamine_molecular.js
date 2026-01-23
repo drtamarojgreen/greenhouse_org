@@ -395,6 +395,19 @@
         }
         mState.camkii.calmodulin *= 0.95;
         mState.camkii.active *= 0.99;
+
+        // Update UI metrics in the right panel
+        if (G.rightPanel && G.updateMetric) {
+            G.updateMetric(G.rightPanel, 'Molecular Signaling', 'DARPP-32', `${(mState.darpp32.thr34 * 100).toFixed(0)}%`);
+            G.updateMetric(G.rightPanel, 'Molecular Signaling', 'CREB', `${(mState.crebActivation * 100).toFixed(0)}%`);
+            G.updateMetric(G.rightPanel, 'Molecular Signaling', 'ΔFosB', mState.deltaFosB.toFixed(3));
+            if (mState.plcPathway.pkc > 0.1) {
+                G.updateMetric(G.rightPanel, 'Molecular Signaling', 'PKC Activation', `${(mState.plcPathway.pkc * 100).toFixed(1)}%`);
+            }
+            if (mState.erkPathway.level > 0.1) {
+                G.updateMetric(G.rightPanel, 'Molecular Signaling', 'ERK/MAPK', `${(mState.erkPathway.level * 100).toFixed(1)}%`);
+            }
+        }
     };
 
     G.renderMolecular = function (ctx, project) {
@@ -604,22 +617,5 @@
             }
         });
 
-        // Overlay Molecular Info
-        ctx.fillStyle = '#fff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'right';
-        ctx.fillText(`DARPP-32: ${(mState.darpp32.thr34 * 100).toFixed(0)}%`, w - 10, 20);
-        ctx.fillText(`CREB: ${(mState.crebActivation * 100).toFixed(0)}%`, w - 10, 35);
-        ctx.fillText(`ΔFosB: ${mState.deltaFosB.toFixed(3)}`, w - 10, 50);
-
-        // Additional indicators
-        if (mState.plcPathway.pkc > 0.1) {
-            ctx.fillStyle = '#99ff99';
-            ctx.fillText(`PKC Activation: ${(mState.plcPathway.pkc * 100).toFixed(1)}%`, w - 10, 100);
-        }
-        if (mState.erkPathway.level > 0.1) {
-            ctx.fillStyle = '#ff99ff';
-            ctx.fillText(`ERK/MAPK: ${(mState.erkPathway.level * 100).toFixed(1)}%`, w - 10, 120);
-        }
     };
 })();

@@ -1,86 +1,37 @@
 # Dopamine Emergency Repair Plan: MSI-BMA v1.0
 
 ## 1. Executive Summary
-This document outlines the emergency response strategy for the `/dopamine` signaling page following critical beta feedback. The application faces significant adoption risk due to onboarding failures, scientific credibility gaps, and technical instability.
+This document outlines the strategic pivot for the `/dopamine` page from a "Macro/Micro Hybrid" to a **Strictly Intracellular Model**. This transition resolves critical scientific credibility issues regarding scale mismatch and "floating organelle" artifacts.
 
-*   **Overall Risk Level**: HIGH (Usability breakdowns at entry; scientific credibility risks).
-*   **Confidence Level**: MODERATE (Findings corroborated across 19 qualitative submissions; behavioral analytics pending).
+*   **Overall Risk Level**: LOW (Visual subtraction of macro-artifacts; core signaling logic preserved).
+*   **Confidence Level**: HIGH (Coordinate systems are decoupled).
 
----
+## 2. Key Findings: Purging Macro-Anatomical Noise
 
-## 2. Detailed Assessment & Findings
+### 2.1 Scientific Realism & Scale Mismatch (CRITICAL)
+The co-rendering of the 3D Brain Mesh and macro-labels (SNc, VTA) alongside intracellular organelles creates a confusing "floating" effect that undermines expert trust.
+*   **Finding**: Users perceive the Endoplasmic Reticulum and G-protein cycles as "out of scale" because they share a viewport with a human brain mesh.
+*   **Root Cause**: Attempting to visualize "where" the cell is (Circuit level) while simulating "how" it signals (Molecular level).
 
-### 2.1 Onboarding & Conceptual Scaffolding
-*   **Severity**: Critical
-*   **Status**: Failing
-*   **Code Mapping**: `docs/js/dopamine_ux.js` -> `G.showWelcomeModal()`
-*   **Finding**: The current onboarding is a static modal with dense text. Users (56% of negative feedback) cannot establish a mental model of the learning path.
-*   **Root Cause**: The system assumes prior domain expertise and interface familiarity.
-*   **Impact**: High abandonment within the first 120 seconds of session start.
+### 2.2 Onboarding Failure (Critical)
+The initial onboarding is cluttered with macro-anatomical "Quick Visual Guide" items that distract from the core educational pathway (dopaminergic signaling).
 
-### 2.2 Scientific Transparency & Accuracy
-*   **Severity**: Critical
-*   **Status**: Under Fire
-*   **Code Mapping**: `docs/js/dopamine_scientific.js` -> `G.enhancements[]`
-*   **Finding**: Domain experts report mis-scaled components and "ideological assertions." The "100 Enhancements" list is presented without citations.
-*   **Root Cause**: Prioritization of visual spectacle over peer-reviewed transparency.
-*   **Impact**: Potential permanent reputation damage in the academic community.
+## 3. Strategic Recommendations: The Intracellular Transition
 
-### 2.3 Technical Stability & State Persistence
-*   **Severity**: High
-*   **Status**: Unstable
-*   **Code Mapping**: `docs/js/dopamine_ux.js` -> `G.uxState.history`; `docs/js/dopamine_tooltips.js` -> `G.handleHover()`
-*   **Finding**: 21% of respondents report blocking bugs (disappearing objects, progress-wiping crashes).
-*   **Root Cause**: Incomplete QA for edge cases in 3D-to-2D projection; lack of robust `localStorage` backup.
+### 3.1 Removal of Macro-Anatomical Artifacts
+*   **Action**: Disable the loading of `brain_mesh_realistic.js`.
+*   **Action**: Remove the `renderRealisticBrain` call and all "Atlas" coordinate markers (Bregma, AP/ML/DV) from `dopamine_circuit.js`.
+*   **Action**: Delete SNc, VTA, and PFC projection labels that suggest a macro-scale context.
 
----
+### 3.2 Refocused Scientific Scaffolding
+*   **Problem**: Causality is currently lost between macro-location and molecular action.
+*   **Solution**: Re-center the view on the Synaptic Cleft and Intracellular space. Use the "100 Enhancements" tracker to explain *molecular* causality (e.g., G-protein dissociation rates) rather than regional projections.
 
-## 3. Strategic Recommendations & Implementation
+### 3.3 Sanitized Onboarding
+*   **Action**: Update `dopamine_ux.js` to remove macro-anatomical guide items ("Blue Mesh," "SNc Projections"). Focus on Receptors, ER, and Synaptic dynamics.
 
-### 3.1 Progressive Disclosure Onboarding (Phase 1)
-*   **Proposed Solution**: Replace static modal with a **Guided Entry Mode**. Implement a step-by-step interactive sequence where components are unlocked sequentially.
-*   **Implementation Effort**: High (3-4 Sprints). Requires refactoring `G.showWelcomeModal` into a state-driven sequence.
-*   **Expected Impact**: 30-40% reduction in early-session abandonment.
-*   **Accessibility**: WCAG 2.1 AA compliant tooltips; aria-live announcements for state changes.
-
-### 3.2 Scientific Reference Layer (Phase 1)
-*   **Proposed Solution**: Integrate a **Source Attribution Layer** into the `G.enhancements` array. Add a "Reference" button to each list item in `G.showScientificDashboard` that opens a modal with DOI links.
-*   **Implementation Effort**: Medium (2 Sprints). Primarily content curation of citations.
-*   **Expected Impact**: Recovery of expert trust; reduction in "unverifiable" claims feedback.
-
-### 3.3 State Recovery & Stability Patch (Phase 1)
-*   **Proposed Solution**:
-    1. Implement **Autosave** in `G.uxState` every 30s.
-    2. Add **Error Boundaries** to the canvas render loop to prevent full-app crashes on projection errors.
-*   **Implementation Effort**: Medium (1-2 Sprints).
-*   **Expected Impact**: 70-80% recovery rate from session interruptions.
-
----
-
-## 4. Risk Analysis & Mitigation
-
-| Risk | Impact | Mitigation Strategy |
-| :--- | :--- | :--- |
-| **Scientific Skepticism** | High | Launch "Expert Verification" portal for direct peer feedback. |
-| **Technical Debt** | Medium | Incremental refactoring of `dopamine_synapse.js` before adding new features. |
-| **User Abandonment** | High | Implement "Quick Start" skip options for returning power users. |
-
----
-
-## 5. Scope & Boundaries
-*   **In-Scope**: UI/UX refactoring, documentation/citation integration, state persistence, error handling.
-*   **Out-of-Scope**: Fundamental changes to the underlying simulation math/physics engine (e.g., Brownian motion algorithms).
-
----
-
-## 6. Alternative Strategies
-*   **Option A: Static Documentation (Rejected)**: Low cost, but fails to solve the interactive "confusion" reported by users.
-*   **Option B: Guided Scaffolding (Proposed)**: Higher cost, but directly addresses the 56% friction point.
-*   **Option C: Total UI Rewrite (Rejected)**: Prohibitive cost/time; risks alienating the 47% of users who like the "neuroscience noir" aesthetic.
-
----
-
-## 7. Success Metrics
-1.  **Retention**: Increase 5-minute retention rate by >25%.
-2.  **Accuracy**: Zero "unverifiable" feedback items in next beta round.
-3.  **Stability**: Reduce crash-related support tickets by 60%.
+## 4. Implementation Plan
+1.  **Refactor `dopamine.js`**: Remove the `loadScript` call for the realistic brain mesh.
+2.  **Sanitize `dopamine_circuit.js`**: Comment out or delete all `ctx` calls rendering macro-labels, axon lines, and coordinate markers.
+3.  **Update `dopamine_ux.js`**: Refresh the `showWelcomeModal` content to be strictly molecular.
+4.  **Verification**: Run `test_neuro_ui.js` and `test_synapse_ui.js` to confirm signaling core stability.
