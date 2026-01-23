@@ -103,49 +103,11 @@
             this.isRunning = true;
             this.animate();
 
-            // Resilience against React/DOM clearing
-            this.observeAndReinitializeApp(container);
-            this.startCanvasSentinel(container);
-        },
-
-        observeAndReinitializeApp(container) {
-            if (!container) return;
-            if (this.resilienceObserver) this.resilienceObserver.disconnect();
-            const observerCallback = (mutations) => {
-                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
-                if (wasRemoved) {
-                    console.log('Serotonin App: Container removal detected.');
-                    this.isRunning = false;
-                    if (this.resilienceObserver) this.resilienceObserver.disconnect();
-                    setTimeout(() => {
-                        const newContainer = container.id ? document.getElementById(container.id) : container;
-                        if (document.body.contains(newContainer)) this.initialize(newContainer);
-                    }, 1000);
-                }
-            };
-            this.resilienceObserver = new MutationObserver(observerCallback);
-            this.resilienceObserver.observe(document.body, { childList: true, subtree: true });
-        },
-
-        startCanvasSentinel(container) {
-            if (this.sentinelInterval) clearInterval(this.sentinelInterval);
-            this.sentinelInterval = setInterval(() => {
-                const currentContainer = container.id ? document.getElementById(container.id) : container;
-                // Since this simulation creates a wrapper div and then canvas, check for wrapper or canvas
-                const currentWrapper = currentContainer ? currentContainer.querySelector('.serotonin-simulation-container') : null;
-
-                if (this.isRunning && (!currentContainer || !currentWrapper || !document.body.contains(currentWrapper))) {
-                    console.log('Serotonin App: DOM lost, re-initializing...');
-                    this.isRunning = false;
-                    if (currentContainer && document.body.contains(currentContainer)) {
-                        this.initialize(currentContainer);
-                    } else {
-                        // Attempt recovery
-                        const newContainer = container.id ? document.getElementById(container.id) : null;
-                        if (newContainer) this.initialize(newContainer);
-                    }
-                }
-            }, 3000);
+            // Resilience using shared GreenhouseUtils
+            if (window.GreenhouseUtils) {
+                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'initialize');
+                window.GreenhouseUtils.startSentinel(container, selector, this, 'initialize');
+            }
         },
 
 
@@ -664,7 +626,7 @@
                 const container = document.querySelector(targetSelector);
                 if (container) {
                     console.log('Serotonin App: Auto-initializing...');
-                    G.initialize(container);
+                    G.initialize(container, targetSelector);
                 } else {
                     console.error('Serotonin App: Container not found on initialization for selector:', targetSelector);
                 }

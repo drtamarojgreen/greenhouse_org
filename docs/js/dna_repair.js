@@ -93,6 +93,7 @@
             this.startSimulation('ber');
             this.animate();
             this.observeAndReinitializeApp(container);
+            this.startCanvasSentinel(container);
         },
 
         injectStyles() {
@@ -131,15 +132,38 @@
             if (!container) return;
             if (resilienceObserver) resilienceObserver.disconnect();
             const observerCallback = (mutations) => {
-                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n.nodeType === 1 && n.classList.contains('dna-simulation-container')));
+                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
                 if (wasRemoved) {
+                    console.log('DNA App: Container element removal detected.');
                     this.isRunning = false;
                     if (resilienceObserver) resilienceObserver.disconnect();
-                    setTimeout(() => this.initializeDNARepairSimulation(container), 1000);
+                    setTimeout(() => {
+                        const newContainer = container.id ? document.getElementById(container.id) : container;
+                        if (document.body.contains(newContainer)) this.initializeDNARepairSimulation(newContainer);
+                    }, 1000);
                 }
             };
             resilienceObserver = new MutationObserver(observerCallback);
-            resilienceObserver.observe(container, { childList: true });
+            resilienceObserver.observe(document.body, { childList: true, subtree: true });
+        },
+
+        startCanvasSentinel(container) {
+            if (this.sentinelInterval) clearInterval(this.sentinelInterval);
+            this.sentinelInterval = setInterval(() => {
+                const currentContainer = container.id ? document.getElementById(container.id) : container;
+                const currentCanvas = currentContainer ? currentContainer.querySelector('canvas') : null;
+
+                if (this.isRunning && (!currentContainer || !currentCanvas || !document.body.contains(currentCanvas))) {
+                    console.log('DNA App: DOM lost, re-initializing...');
+                    this.isRunning = false;
+                    if (currentContainer && document.body.contains(currentContainer)) {
+                        this.initializeDNARepairSimulation(currentContainer);
+                    } else {
+                        const newContainer = container.id ? document.getElementById(container.id) : null;
+                        if (newContainer) this.initializeDNARepairSimulation(newContainer);
+                    }
+                }
+            }, 3000);
         },
 
         startSimulation(mode) {
@@ -244,8 +268,8 @@
                 const p = this.state.basePairs[i]; if (p.isBroken) continue;
                 const dAngle = p.angle * rotS;
 
-                const s1O = p.s1Offset || {y:0, z:0};
-                const s2O = p.s2Offset || {y:0, z:0};
+                const s1O = p.s1Offset || { y: 0, z: 0 };
+                const s2O = p.s2Offset || { y: 0, z: 0 };
 
                 const s1Y = Math.cos(dAngle) * radius + p.offsetY + s1O.y;
                 const s1Z = Math.sin(dAngle) * radius + s1O.z;
@@ -263,15 +287,15 @@
                     drawB({ x: midX, y: midY }, p2, p.base2, p.isDamaged);
                 } else {
                     const drawT = (sp, ep, type) => { ctx.strokeStyle = (this.config.colors[type] || '#fff'); ctx.lineWidth = 5 * p1.scale; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke(); ctx.globalAlpha = 1.0; };
-                    drawT(p1, {x: p1.x + (midX-p1.x)*0.4, y: p1.y + (midY-p1.y)*0.4}, p.base1);
-                    drawT(p2, {x: p2.x + (midX-p2.x)*0.4, y: p2.y + (midY-p2.y)*0.4}, p.base2);
+                    drawT(p1, { x: p1.x + (midX - p1.x) * 0.4, y: p1.y + (midY - p1.y) * 0.4 }, p.base1);
+                    drawT(p2, { x: p2.x + (midX - p2.x) * 0.4, y: p2.y + (midY - p2.y) * 0.4 }, p.base2);
                     if (p.newBase1) {
-                         const np1 = project(p.x, s1Y - s1O.y*0.3, s1Z - s1O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
-                         drawB(np1, {x: np1.x + (midX-np1.x)*0.2, y: np1.y + (midY-np1.y)*0.2}, p.newBase1, false);
+                        const np1 = project(p.x, s1Y - s1O.y * 0.3, s1Z - s1O.z * 0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                        drawB(np1, { x: np1.x + (midX - np1.x) * 0.2, y: np1.y + (midY - np1.y) * 0.2 }, p.newBase1, false);
                     }
                     if (p.newBase2) {
-                         const np2 = project(p.x, s2Y - s2O.y*0.3, s2Z - s2O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
-                         drawB(np2, {x: np2.x + (midX-np2.x)*0.2, y: np2.y + (midY-np2.y)*0.2}, p.newBase2, false);
+                        const np2 = project(p.x, s2Y - s2O.y * 0.3, s2Z - s2O.z * 0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                        drawB(np2, { x: np2.x + (midX - np2.x) * 0.2, y: np2.y + (midY - np2.y) * 0.2 }, p.newBase2, false);
                     }
                 }
 
@@ -281,7 +305,7 @@
                 if (p2.scale > 0.4 && p.base2) { ctx.fillStyle = "#000"; ctx.font = `bold ${8 * p2.scale}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.base2, (p2.x + midX) / 2, (p2.y + midY) / 2); }
                 if (i > 0 && !this.state.basePairs[i - 1].isBroken) {
                     const prev = this.state.basePairs[i - 1]; const pdAngle = prev.angle * rotS;
-                    const ps1O = prev.s1Offset || {y:0,z:0}; const ps2O = prev.s2Offset || {y:0,z:0};
+                    const ps1O = prev.s1Offset || { y: 0, z: 0 }; const ps2O = prev.s2Offset || { y: 0, z: 0 };
                     const pp1 = project(prev.x, Math.cos(pdAngle) * radius + prev.offsetY + ps1O.y, Math.sin(pdAngle) * radius + ps1O.z, cam, { width: w, height: h, near: 10, far: 5000 });
                     const pp2 = project(prev.x, Math.cos(pdAngle + Math.PI) * radius + prev.offsetY + ps2O.y, Math.sin(pdAngle + Math.PI) * radius + ps2O.z, cam, { width: w, height: h, near: 10, far: 5000 });
                     ctx.strokeStyle = this.config.colors.backbone; ctx.lineWidth = 2 * p1.scale;
@@ -291,13 +315,13 @@
                     if (p.isReplicating && prev.isReplicating) {
                         ctx.strokeStyle = '#00fbff';
                         if (p.newBase1 && prev.newBase1) {
-                            const npp1 = project(prev.x, Math.cos(pdAngle) * radius + prev.offsetY + ps1O.y - ps1O.y*0.3, Math.sin(pdAngle) * radius + ps1O.z - ps1O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
-                            const np1 = project(p.x, s1Y - s1O.y*0.3, s1Z - s1O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                            const npp1 = project(prev.x, Math.cos(pdAngle) * radius + prev.offsetY + ps1O.y - ps1O.y * 0.3, Math.sin(pdAngle) * radius + ps1O.z - ps1O.z * 0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                            const np1 = project(p.x, s1Y - s1O.y * 0.3, s1Z - s1O.z * 0.3, cam, { width: w, height: h, near: 10, far: 5000 });
                             ctx.beginPath(); ctx.moveTo(npp1.x, npp1.y); ctx.lineTo(np1.x, np1.y); ctx.stroke();
                         }
                         if (p.newBase2 && prev.newBase2) {
-                            const npp2 = project(prev.x, Math.cos(pdAngle + Math.PI) * radius + prev.offsetY + ps2O.y - ps2O.y*0.3, Math.sin(pdAngle + Math.PI) * radius + ps2O.z - ps2O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
-                            const np2 = project(p.x, s2Y - s2O.y*0.3, s2Z - s2O.z*0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                            const npp2 = project(prev.x, Math.cos(pdAngle + Math.PI) * radius + prev.offsetY + ps2O.y - ps2O.y * 0.3, Math.sin(pdAngle + Math.PI) * radius + ps2O.z - ps2O.z * 0.3, cam, { width: w, height: h, near: 10, far: 5000 });
+                            const np2 = project(p.x, s2Y - s2O.y * 0.3, s2Z - s2O.z * 0.3, cam, { width: w, height: h, near: 10, far: 5000 });
                             ctx.beginPath(); ctx.moveTo(npp2.x, npp2.y); ctx.lineTo(np2.x, np2.y); ctx.stroke();
                         }
                     }

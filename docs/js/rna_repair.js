@@ -937,21 +937,15 @@
         console.log('RNA Repair simulation initialized (Vertical).');
 
         observeAndReinitializeApp(targetElement);
+        startCanvasSentinel(targetElement);
     }
 
     function observeAndReinitializeApp(container) {
         if (!container) return;
-
-        if (resilienceObserver) {
-            resilienceObserver.disconnect();
-        }
+        if (resilienceObserver) resilienceObserver.disconnect();
 
         const observerCallback = (mutations) => {
-            const wasRemoved = mutations.some(m =>
-                Array.from(m.removedNodes).some(n =>
-                    n.nodeType === 1 && n.classList.contains('rna-simulation-container')
-                )
-            );
+            const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
 
             if (wasRemoved) {
                 console.log('RNARepair: Simulation container removed. Re-initializing...');
@@ -961,13 +955,37 @@
                 if (resilienceObserver) resilienceObserver.disconnect();
 
                 setTimeout(() => {
-                    initializeRNARepairSimulation(container);
+                    // Try to recover selector if passed in captureAttributes, or assume ID
+                    const newContainer = container.id ? document.getElementById(container.id) : container;
+                    if (document.body.contains(newContainer)) initializeRNARepairSimulation(newContainer);
                 }, 1000);
             }
         };
 
         resilienceObserver = new MutationObserver(observerCallback);
-        resilienceObserver.observe(container, { childList: true });
+        resilienceObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    let sentinelInterval = null;
+    function startCanvasSentinel(container) {
+        if (sentinelInterval) clearInterval(sentinelInterval);
+        sentinelInterval = setInterval(() => {
+            const currentContainer = container.id ? document.getElementById(container.id) : container;
+            const currentCanvas = currentContainer ? currentContainer.querySelector('canvas') : null;
+            const isRunning = window.Greenhouse.rnaSimulation && window.Greenhouse.rnaSimulation.isRunning;
+
+            if (isRunning && (!currentContainer || !currentCanvas || !document.body.contains(currentCanvas))) {
+                console.log('RNA Repair App: DOM lost, re-initializing...');
+                if (window.Greenhouse.rnaSimulation) window.Greenhouse.rnaSimulation.stop();
+
+                if (currentContainer && document.body.contains(currentContainer)) {
+                    initializeRNARepairSimulation(currentContainer);
+                } else {
+                    const newContainer = container.id ? document.getElementById(container.id) : null;
+                    if (newContainer) initializeRNARepairSimulation(newContainer);
+                }
+            }
+        }, 3000);
     }
 
     window.Greenhouse = window.Greenhouse || {};
@@ -1002,7 +1020,7 @@
                 await GreenhouseUtils.loadScript('rna_display.js', baseUrl);
                 await GreenhouseUtils.loadScript('rna_legend.js', baseUrl);
             }
-            
+
             if (targetSelector) {
                 console.log('RNA Repair App: Waiting for container:', targetSelector);
                 const container = await GreenhouseUtils.waitForElement(targetSelector);

@@ -379,6 +379,122 @@ window.GreenhouseUtils = (function () {
         return isFormValid;
     }
 
+    /**
+     * @function observeAndReinitializeApplication
+     * @description Observes the document body for removal of the application's container and triggers re-initialization.
+     * @param {HTMLElement} container - The container element to monitor.
+     * @param {string|null} selector - The CSS selector for the container (optional, used to find replacement if removal detected).
+     * @param {Object} appInstance - The application instance (e.g., `G`).
+     * @param {string} reinitFunctionName - The name of the initialization function on the app instance (e.g., 'initialize' or 'init').
+     * @returns {MutationObserver} The observer instance.
+     */
+    function observeAndReinitializeApplication(container, selector, appInstance, reinitFunctionName = 'initialize') {
+        if (!container) return null;
+
+        // Clean up previous observer if it exists on the app instance
+        if (appInstance._resilienceObserver) {
+            appInstance._resilienceObserver.disconnect();
+        }
+
+        const observerCallback = (mutations) => {
+            // Check if the container itself or a parent was removed
+            const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
+
+            if (wasRemoved) {
+                console.log(`GreenhouseUtils: Application container removal detected for ${selector || 'unnamed container'}.`);
+
+                if (appInstance.isRunning !== undefined) appInstance.isRunning = false;
+                if (appInstance.stop) appInstance.stop();
+                if (appInstance.stopSimulation) appInstance.stopSimulation();
+
+                if (appInstance._resilienceObserver) {
+                    appInstance._resilienceObserver.disconnect();
+                }
+
+                setTimeout(() => {
+                    let newContainer = container.id ? document.getElementById(container.id) : null;
+                    if (!newContainer && selector) {
+                        newContainer = document.querySelector(selector);
+                    }
+
+                    if (newContainer && document.body.contains(newContainer)) {
+                        console.log(`GreenhouseUtils: Re-initializing application via ${reinitFunctionName}...`);
+                        if (typeof appInstance[reinitFunctionName] === 'function') {
+                            // Call reinit using selector if available, or just container
+                            // Standardizing: prefer calling with (container, selector) signature if supported, or just (container)
+                            try {
+                                appInstance[reinitFunctionName](newContainer, selector);
+                            } catch (e) {
+                                console.warn(`GreenhouseUtils: Failed to re-initialize with (container, selector), falling back to (container).`, e);
+                                appInstance[reinitFunctionName](newContainer);
+                            }
+                        }
+                    } else {
+                        console.log('GreenhouseUtils: Re-init failed. Container not found.');
+                    }
+                }, 1000); // Wait for React/DOM to settle
+            }
+        };
+
+        const observer = new MutationObserver(observerCallback);
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Store observer on instance for cleanup
+        appInstance._resilienceObserver = observer;
+        return observer;
+    }
+
+    /**
+     * @function startSentinel
+     * @description Starts a polling interval to check if the application's critical elements (e.g., canvas) are still in the DOM.
+     * @param {HTMLElement} container - The initial container element.
+     * @param {string|null} selector - The CSS selector for the container.
+     * @param {Object} appInstance - The application instance.
+     * @param {string} reinitFunctionName - The name of the initialization function.
+     * @param {string} criticalSelector - CSS selector for a critical child element to check (e.g., 'canvas').
+     * @returns {number} The interval ID.
+     */
+    function startSentinel(container, selector, appInstance, reinitFunctionName = 'initialize', criticalSelector = 'canvas') {
+        if (appInstance._sentinelInterval) clearInterval(appInstance._sentinelInterval);
+
+        const intervalId = setInterval(() => {
+            let currentContainer = container.id ? document.getElementById(container.id) : container;
+            if ((!currentContainer || !document.body.contains(currentContainer)) && selector) {
+                currentContainer = document.querySelector(selector);
+            }
+
+            const criticalElement = currentContainer ? currentContainer.querySelector(criticalSelector) : null;
+            const isRunning = appInstance.isRunning !== undefined ? appInstance.isRunning : true;
+
+            if (isRunning && (!currentContainer || !criticalElement || !document.body.contains(criticalElement))) {
+                console.log(`GreenhouseUtils: Sentinel detected DOM loss for ${selector}. Re-initializing...`);
+
+                if (appInstance.isRunning !== undefined) appInstance.isRunning = false;
+
+                if (currentContainer && document.body.contains(currentContainer)) {
+                    if (typeof appInstance[reinitFunctionName] === 'function') {
+                        try {
+                            appInstance[reinitFunctionName](currentContainer, selector);
+                        } catch (e) {
+                            appInstance[reinitFunctionName](currentContainer);
+                        }
+                    }
+                } else if (selector) {
+                    const newContainer = document.querySelector(selector);
+                    if (newContainer && typeof appInstance[reinitFunctionName] === 'function') {
+                        try {
+                            appInstance[reinitFunctionName](newContainer, selector);
+                        } catch (e) {
+                            appInstance[reinitFunctionName](newContainer);
+                        }
+                    }
+                }
+            }
+        }, 3000);
+
+        appInstance._sentinelInterval = intervalId;
+        return intervalId;
+    }
 
     // Public API
     return {
@@ -393,6 +509,8 @@ window.GreenhouseUtils = (function () {
         retryOperation: retryOperation, // Expose retryOperation
         validateField: validateField, // Expose form validation utility
         validateForm: validateForm,   // Expose form validation utility
+        observeAndReinitializeApplication: observeAndReinitializeApplication,
+        startSentinel: startSentinel
     };
 })();
 
