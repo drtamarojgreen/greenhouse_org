@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,14 +12,14 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-        
+
         #models-app-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -27,26 +28,26 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
-        
+
         .page-header {
             background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
             color: white;
             padding: 30px;
             text-align: center;
         }
-        
+
         .page-header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
             font-weight: 300;
         }
-        
+
         .page-header p {
             font-size: 1.1em;
             opacity: 0.9;
             margin-bottom: 5px;
         }
-        
+
         .feature-badge {
             display: inline-block;
             background: rgba(102, 126, 234, 0.2);
@@ -57,19 +58,19 @@
             margin-top: 10px;
             font-weight: 500;
         }
-        
+
         .loading-screen {
             text-align: center;
             padding: 60px 20px;
             color: #4a5568;
         }
-        
+
         .loading-screen h2 {
             font-size: 1.8em;
             margin-bottom: 20px;
             color: #2d3748;
         }
-        
+
         .spinner {
             border: 4px solid #e2e8f0;
             border-top: 4px solid #667eea;
@@ -79,12 +80,17 @@
             animation: spin 1s linear infinite;
             margin: 20px auto;
         }
-        
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
-        
+
         .info-panel {
             background: #f7fafc;
             border-left: 4px solid #667eea;
@@ -92,30 +98,30 @@
             margin: 20px;
             border-radius: 8px;
         }
-        
+
         .info-panel h3 {
             color: #2d3748;
             margin-bottom: 10px;
             font-size: 1.2em;
         }
-        
+
         .info-panel ul {
             list-style: none;
             padding-left: 0;
         }
-        
+
         .info-panel li {
             padding: 8px 0;
             color: #4a5568;
         }
-        
+
         .info-panel li:before {
             content: "✓ ";
             color: #48bb78;
             font-weight: bold;
             margin-right: 8px;
         }
-        
+
         .footer {
             text-align: center;
             padding: 20px;
@@ -123,23 +129,24 @@
             font-size: 0.9em;
             background: #f7fafc;
         }
-        
+
         /* Responsive design */
         @media (max-width: 768px) {
             body {
                 padding: 10px;
             }
-            
+
             .page-header h1 {
                 font-size: 1.8em;
             }
-            
+
             .page-header p {
                 font-size: 1em;
             }
         }
     </style>
 </head>
+
 <body>
     <!-- Page Header -->
     <div class="page-header">
@@ -147,7 +154,7 @@
         <p>Interactive 3D Visualization of Mental Health & Brain Activity</p>
         <span class="feature-badge">✨ NEW: 3D Neural Network View</span>
     </div>
-    
+
     <!-- Main Application Container -->
     <div id="models-app-container">
         <!-- Loading Screen (will be replaced by the app) -->
@@ -157,7 +164,7 @@
             <p>Initializing 3D visualization modules</p>
         </div>
     </div>
-    
+
     <!-- Information Panel -->
     <div class="info-panel">
         <h3>🎯 Testing the 3D Model</h3>
@@ -172,32 +179,28 @@
             <li>Watch neurons light up with activation in real-time</li>
         </ul>
     </div>
-    
+
     <!-- Footer -->
     <div class="footer">
         <p>Greenhouse for Mental Health Development | Educational Simulation</p>
         <p>3D Visualization powered by HTML5 Canvas 2D API</p>
     </div>
-    
+
     <!-- Scripts -->
     <script src="js/GreenhouseDependencyManager.js"></script>
-    <script
-        src="js/GreenhouseUtils.js"
-        data-base-url="./"
-        data-target-selector-left="#models-app-container">
+    <script src="js/GreenhouseUtils.js" data-base-url="./" data-target-selector-left="#models-app-container">
     </script>
-    <script
-        src="js/models.js"
-        data-base-url="./"
-        data-target-selector-left="#models-app-container">
+    <script src="js/performance_profiler.js" data-auto-start="true"></script>
+    <script src="js/model_tests.js"></script>
+    <script src="js/models.js" data-base-url="./" data-target-selector-left="#models-app-container">
     </script>
-    
+
     <!-- Console Logger for Testing -->
     <script>
         // Log 3D module loading status
         window.addEventListener('load', () => {
             console.log('%c🎨 Models 3D Test Page Loaded', 'color: #667eea; font-size: 16px; font-weight: bold;');
-            
+
             // Check for 3D modules after a delay
             setTimeout(() => {
                 if (window.GreenhouseModels3DMath) {
@@ -205,16 +208,16 @@
                 } else {
                     console.warn('⚠️ 3D Math Module not found');
                 }
-                
+
                 if (window.GreenhouseModelsUI3D) {
                     console.log('%c✅ 3D UI Module Loaded', 'color: #48bb78; font-weight: bold;');
                 } else {
                     console.warn('⚠️ 3D UI Module not found');
                 }
-                
+
                 if (window.GreenhouseModelsUI) {
                     console.log('%c✅ Main UI Module Loaded', 'color: #48bb78; font-weight: bold;');
-                    
+
                     // Check if 3D methods are available
                     if (window.GreenhouseModelsUI.init3DCanvas) {
                         console.log('%c✅ 3D Canvas initialization method available', 'color: #48bb78; font-weight: bold;');
@@ -222,7 +225,7 @@
                 } else {
                     console.warn('⚠️ Main UI Module not found');
                 }
-                
+
                 console.log('%c📋 Testing Instructions:', 'color: #667eea; font-size: 14px; font-weight: bold;');
                 console.log('1. Accept the consent screen');
                 console.log('2. Look for "Launch 3D View" button in the left column');
@@ -230,11 +233,12 @@
                 console.log('4. Interact with the 3D view using mouse controls');
             }, 2000);
         });
-        
+
         // Monitor for errors
         window.addEventListener('error', (e) => {
             console.error('%c❌ Error detected:', 'color: #f56565; font-weight: bold;', e.message);
         });
     </script>
 </body>
+
 </html>

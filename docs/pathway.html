@@ -1,17 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pathway Viewer Test Harness</title>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; }
-        #app-container { width: 100vw; height: 100vh; }
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #app-container {
+            width: 100vw;
+            height: 100vh;
+        }
     </style>
 </head>
+
 <body>
     <div id="app-container"></div>
 
+    <script src="js/GreenhouseUtils.js"></script>
+    <script src="js/performance_profiler.js" data-auto-start="true"></script>
+    <script src="js/model_tests.js"></script>
     <script src="js/pathway.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -23,4 +37,5 @@
         });
     </script>
 </body>
+
 </html>
