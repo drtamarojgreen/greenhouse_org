@@ -58,10 +58,16 @@
         handleResize() {
             if (this.canvas && this.canvas.parentElement) {
                 const container = this.canvas.parentElement;
-                this.canvas.width = container.offsetWidth;
-                this.canvas.height = container.offsetHeight || 600;
-                this.width = this.canvas.width;
-                this.height = this.canvas.height;
+                // Use fallback to avoid 0x0 canvas during transitions/hidden states
+                const w = container.offsetWidth || this.canvas.width || 800;
+                const h = container.offsetHeight || this.canvas.height || 600;
+
+                if (w > 0 && h > 0) {
+                    this.canvas.width = w;
+                    this.canvas.height = h;
+                    this.width = w;
+                    this.height = h;
+                }
             }
         },
 

@@ -176,7 +176,7 @@
             // Lipid Bilayer Visualization (Cholesterol)
             if (G.cholesterolLevel > 1.2) {
                 ctx.fillStyle = 'rgba(255, 255, 0, 0.05)';
-                ctx.fillRect(0, h/2 - 50, w, 100);
+                ctx.fillRect(0, h / 2 - 50, w, 100);
             }
 
             // Molecular Composition visualization (Category II, #30)
@@ -346,26 +346,30 @@
 
     // Integrate with main object
     const oldSetup = G.setupStructuralModel;
-    G.setupStructuralModel = function() {
+    G.setupStructuralModel = function () {
         if (oldSetup) oldSetup.call(G);
         G.Receptors.setupReceptorModel();
     };
 
 
     const oldRender = G.render;
-    G.render = function() {
+    G.render = function (...args) {
         // We override or hook into render.
         // In this case, we'll let the original render run, then add ours.
-        if (oldRender) oldRender.call(G);
+        if (oldRender) oldRender.apply(G, args);
 
         const ctx = G.ctx;
         const w = G.width;
         const h = G.height;
-        const cam = G.state.camera;
+        const cam = G.state ? G.state.camera : null;
+
+        if (!ctx || !w || !h || !cam) return;
         if (!window.GreenhouseModels3DMath) return;
         const project = window.GreenhouseModels3DMath.project3DTo2D.bind(window.GreenhouseModels3DMath);
 
-        G.Receptors.renderReceptors(ctx, project, cam, w, h);
+        if (G.state && G.state.receptors) {
+            G.Receptors.renderReceptors(ctx, project, cam, w, h);
+        }
     };
 
 })();
