@@ -64,6 +64,72 @@
         });
     }
 
+    // Helper: Draw organic striosome patch
+    function drawStriosome(ctx, cx, cy, radius) {
+        ctx.beginPath();
+        const steps = 40;
+        for (let i = 0; i <= steps; i++) {
+            const angle = (i / steps) * Math.PI * 2;
+            const noise = 1 + Math.sin(angle * 3 + G.state.timer * 0.05) * 0.15;
+            const r = radius * noise;
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+
+        ctx.strokeStyle = "rgba(139, 69, 19, 0.6)";
+        ctx.fillStyle = "rgba(139, 69, 19, 0.15)";
+        ctx.lineWidth = 2;
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    // Helper: Populate striosome with MSNs
+    function populateStriosome(ctx, cx, cy, radius, count) {
+        for (let i = 0; i < count; i++) {
+            const angle = (i * 137.5) * (Math.PI / 180);
+            const r = Math.sqrt((i + 1) / count) * (radius * 0.7); // Fermat's spiral distribution
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
+
+            ctx.fillStyle = "rgba(139, 69, 19, 0.8)";
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Helper: Draw Matrix Lattice Field
+    function drawMatrixLattice(ctx, w, h, spacing) {
+        ctx.fillStyle = "rgba(0, 255, 255, 0.1)";
+        for (let x = spacing / 2; x < w; x += spacing) {
+            for (let y = spacing / 2; y < h; y += spacing) {
+                ctx.beginPath();
+                ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }
+
+    // Helper: Draw Matrix Flow Vectors
+    function drawMatrixFlow(ctx, w, h, time) {
+        ctx.strokeStyle = "rgba(0, 255, 255, 0.08)";
+        ctx.lineWidth = 1;
+        for (let x = 20; x < w; x += 40) {
+            for (let y = 20; y < h; y += 40) {
+                const angle = Math.sin(x * 0.01 + time * 0.02) + Math.cos(y * 0.01 + time * 0.01);
+                const dx = Math.cos(angle) * 5;
+                const dy = Math.sin(angle) * 5;
+
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + dx, y + dy);
+                ctx.stroke();
+            }
+        }
+    }
+
     // Initialize Realistic Brain Mesh
     G.initRealisticBrain = function() {
         if (window.GreenhouseBrainMeshRealistic) {
@@ -200,60 +266,26 @@
         });
 
         // 74. Striosome vs Matrix Visualization (Intracellular/Micro-compartment focus)
+        // Optimized Layering: Matrix (Field) -> Striosomes (Islands)
 
-        // Enhanced Matrix: Structured lattice appearance
+        // Matrix Lattice & Flow Field
         ctx.save();
-        ctx.strokeStyle = cState.compartments.matrix.color;
-        ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.2;
-        const gridSize = 40;
-        const centerX = w / 2;
-        const centerY = h / 2;
-        const matrixRadius = w / 4;
-
-        // Draw a circular matrix lattice
-        for (let x = centerX - matrixRadius; x <= centerX + matrixRadius; x += gridSize) {
-            for (let y = centerY - matrixRadius; y <= centerY + matrixRadius; y += gridSize) {
-                const dist = Math.sqrt((x - centerX)**2 + (y - centerY)**2);
-                if (dist < matrixRadius) {
-                    ctx.beginPath();
-                    ctx.moveTo(x - 5, y); ctx.lineTo(x + 5, y);
-                    ctx.moveTo(x, y - 5); ctx.lineTo(x, y + 5);
-                    ctx.stroke();
-                }
-            }
-        }
+        drawMatrixLattice(ctx, w, h, 40);
+        drawMatrixFlow(ctx, w, h, G.state.timer * 0.5);
         ctx.restore();
 
-        // Enhanced Striosomes: Neuron-like morphology (soma + dendrites)
+        // Organic Striosome Patches
         ctx.save();
-        for(let i=0; i<5; i++) {
-            const sx = w/2 + Math.cos(i * 1.2)*120;
-            const sy = h/2 + Math.sin(i * 1.2)*120;
+        const patchCount = 5;
+        for (let i = 0; i < patchCount; i++) {
+            const angle = (i / patchCount) * Math.PI * 2 + 0.5;
+            const dist = Math.min(w, h) * 0.2;
+            const sx = w / 2 + Math.cos(angle) * dist;
+            const sy = h / 2 + Math.sin(angle) * dist;
+            const radius = 60 + Math.sin(G.state.timer * 0.01 + i) * 5;
 
-            // Draw Dendrites
-            ctx.strokeStyle = 'rgba(139, 69, 19, 0.4)'; // Brownish
-            ctx.lineWidth = 2;
-            for (let d = 0; d < 6; d++) {
-                const angle = (d / 6) * Math.PI * 2 + G.state.timer * 0.01;
-                ctx.beginPath();
-                ctx.moveTo(sx, sy);
-                const cp1x = sx + Math.cos(angle) * 30;
-                const cp1y = sy + Math.sin(angle) * 30;
-                const endX = sx + Math.cos(angle + 0.2) * 60;
-                const endY = sy + Math.sin(angle + 0.2) * 60;
-                ctx.quadraticCurveTo(cp1x, cp1y, endX, endY);
-                ctx.stroke();
-            }
-
-            // Draw Soma
-            const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 20);
-            grad.addColorStop(0, '#8B4513');
-            grad.addColorStop(1, 'rgba(139, 69, 19, 0.2)');
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(sx, sy, 20, 0, Math.PI * 2);
-            ctx.fill();
+            drawStriosome(ctx, sx, sy, radius);
+            populateStriosome(ctx, sx, sy, radius, 12);
         }
         ctx.restore();
 
