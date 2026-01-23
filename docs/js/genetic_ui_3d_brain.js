@@ -109,10 +109,12 @@
 
         drawSurfaceGrid(ctx, projectedVertices, brainShell) {
             ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.lineWidth = 0.5;
+            // HUD-style subtle grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+            ctx.lineWidth = 0.3;
             ctx.beginPath();
             const bands = 40;
+
             for (let lat = 0; lat <= bands; lat += 5) {
                 for (let lon = 0; lon <= bands; lon++) {
                     const i = lat * (bands + 1) + lon;

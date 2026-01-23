@@ -210,11 +210,45 @@
                 for (let lon = 0; lon <= bands; lon++) {
                     const phi = (lon * 2 * Math.PI) / bands;
                     const sinP = Math.sin(phi); const cosP = Math.cos(phi);
-                    let x = cosP * sinT, y = cosT, z = sinP * sinT;
-                    // Generic brain shape deformations
-                    const fissure = 1 - Math.exp(-Math.abs(x) * 5) * 0.3;
+
+                    let x = cosP * sinT;
+                    let y = cosT;
+                    let z = sinP * sinT;
+
+                    // 1. Longitudanal Fissure (Hemispheric Split)
+                    const fissure = 1 - Math.exp(-Math.abs(x) * 5) * 0.35;
                     if (y > 0) y *= fissure;
-                    x *= radius; y *= radius; z *= radius;
+
+                    // 2. Temporal Lobe Bulge (Organic sides)
+                    const tempY = -0.2;
+                    const tempX = 0.65;
+                    const dy = y - tempY;
+                    const dx = Math.abs(x) - tempX;
+                    const distTemp = Math.sqrt(dx * dx + dy * dy);
+                    if (distTemp < 0.5) {
+                        const bulge = Math.cos(distTemp * Math.PI) * 0.5 + 0.5;
+                        x *= (1 + bulge * 0.25);
+                        z *= (1 + bulge * 0.15);
+                    }
+
+                    // 3. Cerebellum (Lower Posterior rounding)
+                    if (y < -0.3 && z < -0.4) {
+                        const distCere = Math.sqrt(x * x + (y + 0.5) * (y + 0.5) + (z + 0.6) * (z + 0.6));
+                        if (distCere < 0.5) {
+                            const bulge = 1 + (0.5 - distCere) * 0.5;
+                            x *= bulge; y *= bulge; z *= bulge;
+                        }
+                    }
+
+                    // 4. Procedural Gyri/Sulci Noise (The brain surface 'wrinkles')
+                    // This is key to removing the 'soccer ball' look
+                    const noise = (Math.sin(x * 12) * Math.cos(y * 12) * Math.sin(z * 12)) * 0.03 +
+                        (Math.sin(x * 25) * Math.cos(y * 25)) * 0.01;
+
+                    x = x * radius * (1 + noise);
+                    y = y * radius * (1 + noise);
+                    z = z * radius * (1 + noise);
+
                     brainShell.vertices.push({ x, y, z });
                 }
             }
