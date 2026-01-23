@@ -156,10 +156,11 @@
                             <div style="flex: 2; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;">
                                 <h4 style="margin: 0 0 10px 0; color: #fff; font-size: 14px;">Scientific Abstract</h4>
                                 <p style="font-size: 11px; line-height: 1.4; color: #ccc; margin: 0;">
-                                    This simulation models high-fidelity intracellular dopamine signaling.
+                                    This simulation models high-fidelity intracellular dopamine signaling and <b>striatal gating logic</b>.
                                     <b>Brown Neurons</b> represent <b>Striosome</b> (patch) compartments at the cellular level.
                                     The surrounding <b>Cyan Lattice</b> represents the <b>Matrix</b> environment.
                                     The <b>Green Halo</b> visualizes <b>Volume Transmission</b>, where DA diffuses beyond the synaptic cleft.
+                                    <br><br><i>Disclaimer: Conceptual educational model; not a diagnostic or molecular simulation.</i>
                                 </p>
                             </div>
                         </div>

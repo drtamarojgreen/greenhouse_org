@@ -19,7 +19,7 @@
         dat: { activity: 1.0, na: 140, cl: 120, stoichiometry: { na: 2, cl: 1 } }, // 36. DAT dependencies (Na+, Cl-)
         vmat2: { activity: 1.0, phGradient: 2.0 }, // 24. VMAT2 Transport
         releaseRate: 0.1,
-        pathologicalState: 'Healthy',
+        pathologicalState: 'Baseline',
         volumeTransmission: true,
         // 21. Tyrosine Hydroxylase (TH) Regulation
         synthesis: {
@@ -368,12 +368,12 @@
             G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Cleft DA', sState.cleftDA.length);
             G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'DAT Activity', `${(sState.dat.activity * 100).toFixed(0)}%`);
             G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Autoreceptor', `${(sState.autoreceptorFeedback * 100).toFixed(0)}%`);
-            G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Status', sState.pathologicalState);
+            G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Physiological State', sState.pathologicalState);
 
             if (sState.kissAndRunCount > 0) {
                 G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Fusion Mode', 'Kiss-and-Run');
             } else {
-                G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Fusion Mode', 'Full');
+                G.updateMetric(G.leftPanel, 'Synaptic Dynamics', 'Fusion Mode', 'Full Fusion');
             }
         }
     };
