@@ -281,10 +281,8 @@
             if (G.viewMode === '2D-Closeup') return;
 
             // Cytoskeleton visualization (Category 10, #93)
-            // Modulated by RhoA activity (Category 3, #26)
-            const rhoEffect = G.Signaling ? G.Signaling.rhoA * 0.2 : 0;
-            ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 + rhoEffect})`;
-            ctx.lineWidth = 1 + rhoEffect * 8;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
             for (let i = -400; i <= 400; i += 80) {
                 const start = project(-400, i, -100, cam, { width: w, height: h, near: 10, far: 5000 });
                 const end = project(400, i, -100, cam, { width: w, height: h, near: 10, far: 5000 });
