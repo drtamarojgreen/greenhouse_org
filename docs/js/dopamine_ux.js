@@ -53,6 +53,7 @@
                 <p style="font-size: 14px; line-height: 1.6; color: #cbd5e0;">
                     You are exploring a high-fidelity simulation of dopamine signaling in the striatum, featuring <b>100 scientific enhancements</b> covering molecular pathways, synaptic dynamics, and circuit-level interactions.
                 </p>
+                <p style="font-size: 12px; color: #a0aec0; margin-top: 10px;"><b>Disclaimer:</b> This is a conceptual educational model, not a diagnostic or molecular simulation. It represents striatal gating logic in the basal ganglia.</p>
                 <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin: 20px 0;">
                     <h3 style="font-size: 16px; margin-top: 0; color: #fff;">Quick Visual Guide:</h3>
                     <ul style="font-size: 13px; color: #a0aec0; padding-left: 20px;">

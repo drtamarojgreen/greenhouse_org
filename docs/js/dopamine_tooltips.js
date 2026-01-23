@@ -125,6 +125,59 @@
             });
         }
 
+        // Check Axon Terminal
+        if (!found && G.synapseState) {
+            const p = project(0, -225, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+            const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+            if (dist < 100 * p.scale) {
+                found = { type: 'axon_terminal', data: {} };
+            }
+        }
+
+        // Check Obstacles
+        if (!found && G.synapseState && G.synapseState.extracellularObstacles) {
+            G.synapseState.extracellularObstacles.forEach(obs => {
+                const p = project(obs.x, obs.y, obs.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+                if (dist < obs.radius * p.scale) {
+                    found = { type: 'obstacle', data: obs };
+                }
+            });
+        }
+
+        // Check Metabolites
+        if (!found && G.synapseState && G.synapseState.metabolites && G.synapseState.metabolites.visual) {
+            G.synapseState.metabolites.visual.forEach(m => {
+                const p = project(m.x, m.y, m.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+                if (dist < 15 * p.scale) {
+                    found = { type: 'metabolite', data: m };
+                }
+            });
+        }
+
+        // Check Glutamate
+        if (!found && G.synapseState && G.synapseState.glutamate) {
+            G.synapseState.glutamate.forEach(glu => {
+                const p = project(glu.x, glu.y, glu.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+                if (dist < 10 * p.scale) {
+                    found = { type: 'glutamate', data: glu };
+                }
+            });
+        }
+
+        // Check Dopamine Particles
+        if (!found && G.synapseState && G.synapseState.cleftDA) {
+            G.synapseState.cleftDA.forEach(da => {
+                const p = project(da.x, da.y, da.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+                if (dist < 10 * p.scale) {
+                    found = { type: 'dopamine_particle', data: da };
+                }
+            });
+        }
+
         G.hoverTarget = found; // Set global hover target for UX contextual cursor
 
         if (found) {
@@ -187,6 +240,31 @@
                 this.tooltipEl.innerHTML = `
                     <strong>Projection: ${found.data.label}</strong><br>
                     Anatomical source of dopaminergic input.
+                `;
+            } else if (found.type === 'axon_terminal') {
+                this.tooltipEl.innerHTML = `
+                    <strong>Axon Terminal</strong><br>
+                    Presynaptic site of dopamine synthesis and release.
+                `;
+            } else if (found.type === 'obstacle') {
+                this.tooltipEl.innerHTML = `
+                    <strong>Extracellular Obstacle</strong><br>
+                    Increases tortuosity, slowing dopamine diffusion.
+                `;
+            } else if (found.type === 'metabolite') {
+                this.tooltipEl.innerHTML = `
+                    <strong>Metabolite</strong><br>
+                    Dopamine breakdown product (DOPAC/HVA/3-MT).
+                `;
+            } else if (found.type === 'glutamate') {
+                this.tooltipEl.innerHTML = `
+                    <strong>Glutamate</strong><br>
+                    Excitatory neurotransmitter co-released with DA.
+                `;
+            } else if (found.type === 'dopamine_particle') {
+                this.tooltipEl.innerHTML = `
+                    <strong>Dopamine (DA)</strong><br>
+                    Key neuromodulator in reward and motor pathways.
                 `;
             }
         } else {

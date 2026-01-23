@@ -135,7 +135,7 @@
             { type: 'checkbox', label: 'Cocaine', checked: () => G.state.scenarios.cocaine, action: (val) => G.state.scenarios.cocaine = val },
             { type: 'checkbox', label: 'Amphetamine', checked: () => G.state.scenarios.amphetamine, action: (val) => G.state.scenarios.amphetamine = val },
             { type: 'checkbox', label: 'ADHD', checked: () => G.state.scenarios.adhd, action: (val) => G.state.scenarios.adhd = val },
-            { type: 'checkbox', label: 'Parkinsonian', checked: () => G.state.scenarios.parkinsonian, action: (val) => { G.state.scenarios.parkinsonian = val; if (G.synapseState) G.synapseState.pathologicalState = val ? 'Parkinsonian' : 'Healthy'; } },
+            { type: 'checkbox', label: 'Parkinsonian', checked: () => G.state.scenarios.parkinsonian, action: (val) => { G.state.scenarios.parkinsonian = val; if (G.synapseState) G.synapseState.pathologicalState = val ? 'Parkinsonian' : 'Baseline'; } },
             { type: 'checkbox', label: 'Schizophrenia', checked: () => G.state.scenarios.schizophrenia, action: (val) => G.state.scenarios.schizophrenia = val },
             { type: 'checkbox', label: 'Alpha-Synuclein', checked: () => G.state.scenarios.alphaSynuclein, action: (val) => G.state.scenarios.alphaSynuclein = val },
             { label: 'L-DOPA Pulse', action: () => setMode('L-DOPA Pulse') },
