@@ -87,6 +87,15 @@
             pState.geneExpression.jun *= 0.995;
             pState.proteinSynthesis *= 0.998;
         }
+
+        // Update UI metrics in the left panel
+        if (G.leftPanel && G.updateMetric) {
+            G.updateMetric(G.leftPanel, 'Plasticity', 'Synaptic Strength', pState.synapticStrength.toFixed(3));
+            G.updateMetric(G.leftPanel, 'Plasticity', 'Spine Density', pState.spineDensity.toFixed(3));
+            G.updateMetric(G.leftPanel, 'Plasticity', 'eCB Levels', `${(pState.ecbLevels * 100).toFixed(1)}%`);
+            G.updateMetric(G.leftPanel, 'Plasticity', 'c-Fos', `${(pState.geneExpression.cFos * 100).toFixed(1)}%`);
+            G.updateMetric(G.leftPanel, 'Plasticity', 'DeltaFosB', pState.deltaFosB.toFixed(4));
+        }
     };
 
     G.renderPlasticity = function (ctx, project) {
@@ -142,14 +151,5 @@
             });
         }
 
-        // Overlay Plasticity Info
-        ctx.fillStyle = '#fff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Synaptic Strength: ${pState.synapticStrength.toFixed(3)}`, 10, 100);
-        ctx.fillText(`Spine Density: ${pState.spineDensity.toFixed(3)}`, 10, 120);
-        ctx.fillText(`eCB Levels: ${(pState.ecbLevels * 100).toFixed(1)}%`, 10, 140);
-        ctx.fillText(`c-Fos Expression: ${(pState.geneExpression.cFos * 100).toFixed(1)}%`, 10, 160);
-        ctx.fillText(`ΔFosB Level: ${pState.deltaFosB.toFixed(4)}`, 10, 180);
     };
 })();

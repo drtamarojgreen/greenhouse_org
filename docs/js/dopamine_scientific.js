@@ -87,7 +87,7 @@
         { id: 76, cat: "Circuit", desc: "GABAergic Interneuron Modulation", status: "Active" },
         { id: 77, cat: "Circuit", desc: "Glutamate Co-transmission", status: "Active" },
         { id: 78, cat: "Circuit", desc: "Feedback Loops", status: "Active" },
-        { id: 79, cat: "Circuit", desc: "3D Brain Atlas Integration", status: "Active" },
+        { id: 79, cat: "Circuit", desc: "Intracellular Coordinate Mapping", status: "Active" },
         { id: 80, cat: "Circuit", desc: "Tripartite Synapse", status: "Active" },
         { id: 81, cat: "Clinical", desc: "Parkinsonian DA Depletion", status: "Active" },
         { id: 82, cat: "Clinical", desc: "L-DOPA Induced Dyskinesia", status: "Active" },
@@ -156,11 +156,10 @@
                             <div style="flex: 2; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;">
                                 <h4 style="margin: 0 0 10px 0; color: #fff; font-size: 14px;">Scientific Abstract</h4>
                                 <p style="font-size: 11px; line-height: 1.4; color: #ccc; margin: 0;">
-                                    This simulation models the complex signaling environment of the striatum.
-                                    <b>Brown/Yellowish Circles</b> represent <b>Striosome</b> (patch) compartments, which project directly to SNc DA neurons.
-                                    The surrounding <b>Cyan/Greenish</b> area represents the <b>Matrix</b>, primarily receiving cortical/thalamic inputs.
+                                    This simulation models high-fidelity intracellular dopamine signaling.
+                                    <b>Brown Neurons</b> represent <b>Striosome</b> (patch) compartments at the cellular level.
+                                    The surrounding <b>Cyan Lattice</b> represents the <b>Matrix</b> environment.
                                     The <b>Green Halo</b> visualizes <b>Volume Transmission</b>, where DA diffuses beyond the synaptic cleft.
-                                    <b>Blue Wireframe</b> regions represent the 3D Anatomical Atlas (Striatum, SNc, PFC).
                                 </p>
                             </div>
                         </div>

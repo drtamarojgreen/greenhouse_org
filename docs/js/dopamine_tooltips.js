@@ -82,6 +82,49 @@
             });
         }
 
+        // Check G-Proteins
+        if (!found && G.molecularState && G.molecularState.gProteins) {
+            G.molecularState.gProteins.forEach(gp => {
+                const p = project(gp.x, gp.y, gp.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+                if (dist < 8 * p.scale) {
+                    found = { type: 'gprotein', data: gp };
+                }
+            });
+        }
+
+        // Check Vesicles
+        if (!found && G.synapseState && G.synapseState.vesicles) {
+            [...G.synapseState.vesicles.rrp, ...G.synapseState.vesicles.reserve].forEach(v => {
+                const p = project(v.x, v.y, 0, cam, { width: w, height: h, near: 10, far: 5000 });
+                const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+                if (dist < 10 * p.scale) {
+                    found = { type: 'vesicle', data: v };
+                }
+            });
+        }
+
+        // Check ER
+        if (!found && G.molecularState && G.molecularState.er) {
+            const er = G.molecularState.er;
+            const p = project(er.x, er.y, er.z, cam, { width: w, height: h, near: 10, far: 5000 });
+            const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+            if (dist < (er.width / 4) * p.scale) {
+                found = { type: 'organelle', data: { label: 'Endoplasmic Reticulum', desc: 'Stores intracellular Ca2+. Regulated by IP3R.' } };
+            }
+        }
+
+        // Check Projections
+        if (!found && G.circuitState && G.circuitState.projections) {
+            Object.values(G.circuitState.projections).forEach(proj => {
+                const p = project(proj.x, proj.y, proj.z, cam, { width: w, height: h, near: 10, far: 5000 });
+                const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+                if (dist < 20 * p.scale) {
+                    found = { type: 'projection', data: proj };
+                }
+            });
+        }
+
         G.hoverTarget = found; // Set global hover target for UX contextual cursor
 
         if (found) {
@@ -120,6 +163,30 @@
                 this.tooltipEl.innerHTML = `
                     <strong>Gap Junction</strong><br>
                     Electrical coupling between interneurons.
+                `;
+            } else if (found.type === 'gprotein') {
+                const gp = found.data;
+                this.tooltipEl.innerHTML = `
+                    <strong>G-Protein Subunit (${gp.subunit})</strong><br>
+                    Type: ${gp.type}<br>
+                    Status: ${gp.gtpBound ? 'GTP-bound (Active)' : 'GDP-bound (Inactive)'}
+                `;
+            } else if (found.type === 'vesicle') {
+                const v = found.data;
+                this.tooltipEl.innerHTML = `
+                    <strong>Synaptic Vesicle</strong><br>
+                    Filling: ${(v.filled * 100).toFixed(0)}%<br>
+                    State: ${v.snareState}
+                `;
+            } else if (found.type === 'organelle') {
+                this.tooltipEl.innerHTML = `
+                    <strong>${found.data.label}</strong><br>
+                    ${found.data.desc}
+                `;
+            } else if (found.type === 'projection') {
+                this.tooltipEl.innerHTML = `
+                    <strong>Projection: ${found.data.label}</strong><br>
+                    Anatomical source of dopaminergic input.
                 `;
             }
         } else {

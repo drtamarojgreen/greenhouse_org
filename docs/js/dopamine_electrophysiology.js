@@ -213,6 +213,21 @@
                 eState.membranePotential = -95; // 56. Afterhyperpolarization (AHP)
             }, 5);
         }
+
+        // Update UI metrics in the left panel
+        if (G.leftPanel && G.updateMetric) {
+            G.updateMetric(G.leftPanel, 'Cellular State', 'Potential', `${eState.membranePotential.toFixed(1)} mV`);
+            G.updateMetric(G.leftPanel, 'Cellular State', 'State', eState.isUpState ? 'UP' : 'DOWN');
+            G.updateMetric(G.leftPanel, 'Cellular State', 'Spikes', eState.spikeCount);
+            G.updateMetric(G.leftPanel, 'Ion Channels', 'Resistance', `${eState.inputResistance.toFixed(2)} MΩ`);
+            G.updateMetric(G.leftPanel, 'Ion Channels', 'HCN', `${(eState.channels.hcn * 100).toFixed(0)}%`);
+            if (G.pharmacologyState) {
+                G.updateMetric(G.leftPanel, 'Ion Channels', 'DAT Blockade', `${(G.pharmacologyState.datBlockade * 100).toFixed(0)}%`);
+            }
+            if (eState.channels.cl > 0.1) {
+                G.updateMetric(G.leftPanel, 'Ion Channels', 'Shunting (Cl-)', `${(eState.channels.cl * 100).toFixed(0)}%`);
+            }
+        }
     };
 
     G.renderElectrophysiology = function (ctx, project) {
@@ -275,23 +290,5 @@
         ctx.beginPath();
         ctx.arc(w / 8, yPos, 5, 0, Math.PI * 2);
         ctx.fill();
-
-        ctx.fillStyle = '#fff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Resistance: ${eState.inputResistance.toFixed(2)} MΩ`, 10, h - 550);
-        ctx.fillText(`HCN: ${(eState.channels.hcn * 100).toFixed(0)}%`, 10, h - 535);
-        ctx.fillStyle = '#ff9999';
-        ctx.fillText(`DAT Blockade: ${(G.pharmacologyState ? G.pharmacologyState.datBlockade * 100 : 0).toFixed(0)}%`, 10, h - 520);
-        ctx.fillStyle = '#fff';
-        ctx.fillText(`Potential: ${eState.membranePotential.toFixed(1)} mV`, 10, h - 505);
-        ctx.fillText(`State: ${eState.isUpState ? 'UP' : 'DOWN'}`, 10, h - 490);
-        ctx.fillText(`Spikes: ${eState.spikeCount}`, 10, h - 475);
-
-        // 58. Shunting Inhibition (Cl- conductance)
-        if (eState.channels.cl > 0.1) {
-            ctx.fillStyle = '#4488ff';
-            ctx.fillText(`Shunting (Cl-): ${(eState.channels.cl * 100).toFixed(0)}%`, 10, h - 280);
-        }
     };
 })();

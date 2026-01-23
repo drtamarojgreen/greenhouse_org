@@ -22,14 +22,11 @@
 
     G.initUX = function () {
         this.setupKeyboardShortcuts();
-        this.checkWelcome();
+        // Welcome screen removed per user request
     };
 
     G.checkWelcome = function () {
-        // Show welcome modal if not viewed or if forced
-        if (!G.uxState.history.viewedTutorial) {
-            setTimeout(() => this.showWelcomeModal(), 1000);
-        }
+        // Function retained for shortcut 'H' but auto-show disabled
     };
 
     G.showWelcomeModal = function () {
@@ -60,10 +57,9 @@
                     <h3 style="font-size: 16px; margin-top: 0; color: #fff;">Quick Visual Guide:</h3>
                     <ul style="font-size: 13px; color: #a0aec0; padding-left: 20px;">
                         <li><b style="color: #ff4d4d;">Red/Blue Spheres:</b> D1 and D2 Receptors with dynamic IL3/C-tail modeling.</li>
-                        <li><b style="color: #5c4033;">Brown Circles:</b> Striosome compartments (Patch neurons).</li>
-                        <li><b style="color: #008080;">Cyan Area:</b> Striatal Matrix environment.</li>
+                        <li><b style="color: #8B4513;">Brown Neurons:</b> Striosome compartments (Patch neurons).</li>
+                        <li><b style="color: #00ffff;">Cyan Lattice:</b> Striatal Matrix environment.</li>
                         <li><b style="color: #00ff00;">Green Glow:</b> Extracellular Dopamine flux (Volume Transmission).</li>
-                        <li><b style="color: #6666ff;">Blue Mesh:</b> 3D Anatomical Brain Atlas (SNc, VTA, PFC, Striatum).</li>
                     </ul>
                 </div>
                 <p style="font-size: 13px; color: #718096; font-style: italic;">
@@ -113,6 +109,11 @@
             G.uxState.frames = 0;
         }
         this.handleContextualCursor();
+
+        // Update UI metrics in the right panel
+        if (G.uxState.showPerf && G.rightPanel && G.updateMetric) {
+            G.updateMetric(G.rightPanel, 'Performance', 'FPS', G.uxState.fps);
+        }
     };
 
     G.handleContextualCursor = function () {
@@ -130,15 +131,6 @@
     G.renderUX = function (ctx) {
         const w = G.width;
         const h = G.height;
-
-        if (G.uxState.showPerf) {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(w - 70, h - 30, 60, 20);
-            ctx.fillStyle = '#4fd1c5';
-            ctx.font = '10px monospace';
-            ctx.textAlign = 'right';
-            ctx.fillText(`FPS: ${G.uxState.fps}`, w - 15, h - 17);
-        }
 
         if (G.uxState.isPaused) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';

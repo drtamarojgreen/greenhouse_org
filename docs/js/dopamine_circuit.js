@@ -141,22 +141,21 @@
             cState.interneurons.gabaergic.pv.active = Math.max(0.1, cState.interneurons.gabaergic.pv.active - 0.005);
             cState.interneurons.gabaergic.som.active = Math.max(0.1, cState.interneurons.gabaergic.som.active - 0.002);
         }
+
+        // Update UI metrics in the right panel
+        if (G.rightPanel && G.updateMetric) {
+            G.updateMetric(G.rightPanel, 'Circuit Dynamics', 'Cholinergic Firing', cState.interneurons.cholinergic.firing ? 'ACTIVE' : 'PAUSE');
+            G.updateMetric(G.rightPanel, 'Circuit Dynamics', 'Compartment', cState.compartments.matrix.active ? 'Matrix' : 'Striosome');
+            G.updateMetric(G.rightPanel, 'Circuit Dynamics', 'Active Pathway', cState.pathways.direct.active ? 'Direct' : (cState.pathways.indirect.active ? 'Indirect' : 'None'));
+            G.updateMetric(G.rightPanel, 'Circuit Dynamics', 'SNc Feedback', `${(cState.feedback.sncActivity * 100).toFixed(1)}%`);
+        }
     };
 
     G.renderCircuit = function (ctx, project) {
-        if (!G.circuitState.brainMesh && window.GreenhouseBrainMeshRealistic) {
-            G.initRealisticBrain();
-        }
-
         const cam = G.state.camera;
         const w = G.width;
         const h = G.height;
         const cState = G.circuitState;
-
-        // 79. Realistic 3D Brain Atlas Integration
-        if (cState.brainMesh) {
-            this.renderRealisticBrain(ctx, project);
-        }
 
         // 71. Render MSN Populations
         cState.msnPopulations.d1.forEach(msn => {
@@ -200,63 +199,64 @@
             }
         });
 
-        // 74. Striosome vs Matrix Visualization
-        // Matrix
-        ctx.fillStyle = cState.compartments.matrix.color;
-        ctx.beginPath();
-        ctx.arc(w / 2, h / 2, w / 4, 0, Math.PI * 2);
-        ctx.fill();
-        // Striosomes
-        ctx.fillStyle = cState.compartments.striosome.color;
+        // 74. Striosome vs Matrix Visualization (Intracellular/Micro-compartment focus)
+
+        // Enhanced Matrix: Structured lattice appearance
+        ctx.save();
+        ctx.strokeStyle = cState.compartments.matrix.color;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.2;
+        const gridSize = 40;
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const matrixRadius = w / 4;
+
+        // Draw a circular matrix lattice
+        for (let x = centerX - matrixRadius; x <= centerX + matrixRadius; x += gridSize) {
+            for (let y = centerY - matrixRadius; y <= centerY + matrixRadius; y += gridSize) {
+                const dist = Math.sqrt((x - centerX)**2 + (y - centerY)**2);
+                if (dist < matrixRadius) {
+                    ctx.beginPath();
+                    ctx.moveTo(x - 5, y); ctx.lineTo(x + 5, y);
+                    ctx.moveTo(x, y - 5); ctx.lineTo(x, y + 5);
+                    ctx.stroke();
+                }
+            }
+        }
+        ctx.restore();
+
+        // Enhanced Striosomes: Neuron-like morphology (soma + dendrites)
+        ctx.save();
         for(let i=0; i<5; i++) {
+            const sx = w/2 + Math.cos(i * 1.2)*120;
+            const sy = h/2 + Math.sin(i * 1.2)*120;
+
+            // Draw Dendrites
+            ctx.strokeStyle = 'rgba(139, 69, 19, 0.4)'; // Brownish
+            ctx.lineWidth = 2;
+            for (let d = 0; d < 6; d++) {
+                const angle = (d / 6) * Math.PI * 2 + G.state.timer * 0.01;
+                ctx.beginPath();
+                ctx.moveTo(sx, sy);
+                const cp1x = sx + Math.cos(angle) * 30;
+                const cp1y = sy + Math.sin(angle) * 30;
+                const endX = sx + Math.cos(angle + 0.2) * 60;
+                const endY = sy + Math.sin(angle + 0.2) * 60;
+                ctx.quadraticCurveTo(cp1x, cp1y, endX, endY);
+                ctx.stroke();
+            }
+
+            // Draw Soma
+            const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 20);
+            grad.addColorStop(0, '#8B4513');
+            grad.addColorStop(1, 'rgba(139, 69, 19, 0.2)');
+            ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.arc(w/2 + Math.cos(i)*100, h/2 + Math.sin(i)*100, 40, 0, Math.PI * 2);
+            ctx.arc(sx, sy, 20, 0, Math.PI * 2);
             ctx.fill();
         }
+        ctx.restore();
 
-        // 79. Legacy wireframe replaced or augmented by Realistic Mesh in renderRealisticBrain
-
-        // Render some "Atlas" coordinate markers and landmarks
-        ctx.fillStyle = 'rgba(150, 150, 255, 0.5)';
-        ctx.font = '8px monospace';
-        const markers = [
-            { label: 'Bregma: 0,0,0', x: 0, y: -100, z: 0 },
-            { label: 'AP: +1.2 (Striatum)', x: 0, y: -200, z: 0 },
-            { label: 'ML: +1.5', x: 400, y: 0, z: 0 },
-            { label: 'DV: -4.5', x: 0, y: 0, z: 400 },
-            { label: 'Midbrain (SNc/VTA)', x: 0, y: -500, z: 0 },
-            { label: 'Cortex (PFC)', x: 0, y: -600, z: 250 }
-        ];
-        markers.forEach(m => {
-            const p = project(m.x, m.y, m.z, cam, { width: w, height: h, near: 10, far: 5000 });
-            if (p.scale > 0) ctx.fillText(m.label, p.x, p.y);
-        });
-
-        // Render Projections (SNc/VTA)
-        Object.values(cState.projections).forEach(p => {
-            const pos = project(p.x, p.y, p.z, cam, { width: w, height: h, near: 10, far: 5000 });
-            if (pos.scale > 0) {
-                ctx.fillStyle = '#aa88ff';
-                ctx.beginPath();
-                ctx.arc(pos.x, pos.y, 15 * pos.scale, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.font = `${10 * pos.scale}px Arial`;
-                ctx.fillText(p.label, pos.x, pos.y - 20 * pos.scale);
-
-                // Draw axon lines to receptors
-                G.state.receptors.forEach(r => {
-                    const rPos = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
-                    if (rPos.scale > 0) {
-                        ctx.strokeStyle = 'rgba(170, 136, 255, 0.2)';
-                        ctx.beginPath();
-                        ctx.moveTo(pos.x, pos.y);
-                        ctx.lineTo(rPos.x, rPos.y);
-                        ctx.stroke();
-                    }
-                });
-            }
-        });
 
         // 80. Tripartite Synapse (Astrocytes - Stellate Appearance)
         cState.astrocytes.forEach(a => {
@@ -281,65 +281,6 @@
             }
         });
 
-        // Overlay Circuit Info
-        ctx.fillStyle = '#fff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'right';
-        ctx.fillText(`Cholinergic Firing: ${cState.interneurons.cholinergic.firing ? 'ACTIVE' : 'PAUSE'}`, w - 10, h - 140);
-        ctx.fillText(`Compartment: ${cState.compartments.matrix.active ? 'Matrix' : 'Striosome'}`, w - 10, h - 120);
-        ctx.fillText(`Active Pathway: ${cState.pathways.direct.active ? 'Direct' : (cState.pathways.indirect.active ? 'Indirect' : 'None')}`, w - 10, h - 100);
-        ctx.fillText(`SNc Activity (Feedback): ${(cState.feedback.sncActivity * 100).toFixed(1)}%`, w - 10, h - 80);
     };
 
-    G.renderRealisticBrain = function (ctx, project) {
-        const state = G.state;
-        const cam = state.camera;
-        const w = G.width;
-        const h = G.height;
-        const mesh = G.circuitState.brainMesh;
-        if (!mesh) return;
-
-        ctx.lineWidth = 1;
-
-        // Draw regions with specific highlighting
-        const daLevel = G.synapseState ? G.synapseState.cleftDA.length : 0;
-        const phasicGlow = Math.min(0.5, daLevel / 1000);
-
-        mesh.faces.forEach(face => {
-            const v1 = mesh.vertices[face[0]];
-            const v2 = mesh.vertices[face[1]];
-            const v3 = mesh.vertices[face[2]];
-
-            const p1 = project(v1.x, v1.y - 200, v1.z, cam, { width: w, height: h, near: 10, far: 5000 });
-            const p2 = project(v2.x, v2.y - 200, v2.z, cam, { width: w, height: h, near: 10, far: 5000 });
-            const p3 = project(v3.x, v3.y - 200, v3.z, cam, { width: w, height: h, near: 10, far: 5000 });
-
-            if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
-                // 79. Interactive highlighting
-                let isActiveRegion = false;
-                if (v1.region === 'prefrontalCortex' && state.mode.includes('PFC')) isActiveRegion = true;
-                if (v1.region === 'brainstem' && (state.mode.includes('SNc') || state.mode.includes('VTA'))) isActiveRegion = true;
-                if (v1.region === 'striatum' && (state.mode.includes('D1') || state.mode.includes('D2'))) isActiveRegion = true;
-
-                let regionColor = 'rgba(100, 100, 200, 0.05)';
-                if (isActiveRegion) {
-                    regionColor = `rgba(100, 255, 100, ${0.3 + phasicGlow})`;
-                } else if (v1.region === 'prefrontalCortex') {
-                    regionColor = `rgba(100, 150, 255, ${0.1 + phasicGlow})`;
-                } else if (v1.region === 'brainstem') {
-                    regionColor = `rgba(255, 100, 100, ${0.1 + phasicGlow * 2})`;
-                }
-
-                ctx.fillStyle = regionColor;
-                ctx.strokeStyle = isActiveRegion ? 'rgba(0, 255, 0, 0.2)' : 'rgba(150, 150, 255, 0.02)';
-                ctx.beginPath();
-                ctx.moveTo(p1.x, p1.y);
-                ctx.lineTo(p2.x, p2.y);
-                ctx.lineTo(p3.x, p3.y);
-                ctx.closePath();
-                ctx.fill();
-                if (isActiveRegion || (G.uxState && !G.uxState.reducedMotion)) ctx.stroke();
-            }
-        });
-    };
 })();

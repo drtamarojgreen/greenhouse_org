@@ -252,6 +252,11 @@
         info.className = 'dopamine-info';
         info.id = 'dopamine-info-display';
         info.innerHTML = '<strong>Dopamine Signaling</strong><br>Select a mode to visualize pathway.';
-        container.appendChild(info);
+
+        if (G.leftPanel) {
+            G.leftPanel.prepend(info);
+        } else {
+            container.appendChild(info);
+        }
     };
 })();

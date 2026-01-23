@@ -80,6 +80,16 @@
         if (pState && pState.activeDrugs) {
             aState.drugCombinations = pState.activeDrugs.map(d => d.name);
         }
+
+        // Update UI metrics in the left panel
+        if (G.leftPanel && G.updateMetric) {
+            if (G.synapseState && G.synapseState.metabolites) {
+                const m = G.synapseState.metabolites;
+                G.updateMetric(G.leftPanel, 'Metabolites', 'DOPAC (µM)', m.dopac.toFixed(2));
+                G.updateMetric(G.leftPanel, 'Metabolites', 'HVA (µM)', m.hva.toFixed(2));
+                G.updateMetric(G.leftPanel, 'Metabolites', '3-MT (µM)', m['3mt'].toFixed(2));
+            }
+        }
     };
 
     G.renderAnalytics = function (ctx) {
@@ -113,20 +123,6 @@
             ctx.font = '10px Arial';
             ctx.textAlign = 'center';
             ctx.fillText(`Dose-Response: ${aState.doseResponse.currentDrug}`, startX + graphW/2, startY - 5);
-        }
-
-        // Render Metabolite Detail (42)
-        if (G.synapseState && G.synapseState.metabolites) {
-            const m = G.synapseState.metabolites;
-            const startX = 10;
-            const startY = h - 450;
-            ctx.fillStyle = '#aaa';
-            ctx.textAlign = 'left';
-            ctx.font = '10px Arial';
-            ctx.fillText(`METABOLITES (µM):`, startX, startY);
-            ctx.fillText(`DOPAC: ${m.dopac.toFixed(2)}`, startX, startY + 15);
-            ctx.fillText(`HVA: ${m.hva.toFixed(2)}`, startX, startY + 30);
-            ctx.fillText(`3-MT: ${m['3mt'].toFixed(2)}`, startX, startY + 45);
         }
 
         // Render mini history sparks
