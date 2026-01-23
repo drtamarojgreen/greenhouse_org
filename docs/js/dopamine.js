@@ -60,6 +60,15 @@
     G.height = 600;
     G.isDragging = false;
 
+    G.handleResize = function() {
+        if (!G.canvas || !G.canvas.parentElement) return;
+        const parent = G.canvas.parentElement;
+        G.canvas.width = parent.clientWidth || 800;
+        G.canvas.height = parent.clientHeight || 600;
+        G.width = G.canvas.width;
+        G.height = G.canvas.height;
+    };
+
     G.initialize = function(container) {
         if (!container || G.isRunning) return;
         container.innerHTML = '';
@@ -79,10 +88,21 @@
 
         G.canvas = document.createElement('canvas');
         G.ctx = G.canvas.getContext('2d');
-        G.canvas.width = container.offsetWidth || 800;
-        G.canvas.height = container.offsetHeight || 600;
         wrapper.appendChild(G.canvas);
-        G.width = G.canvas.width; G.height = G.canvas.height;
+
+        G.handleResize();
+        window.addEventListener('resize', () => G.handleResize());
+
+        if (window.ResizeObserver) {
+            const ro = new ResizeObserver(() => {
+                G.handleResize();
+            });
+            ro.observe(wrapper);
+        }
+
+        // Secondary fallback for slow-loading layouts
+        setTimeout(() => G.handleResize(), 500);
+        setTimeout(() => G.handleResize(), 2000);
 
         G.setupReceptors();
         G.setupInteraction();
@@ -128,6 +148,7 @@
         const style = document.createElement('style');
         style.id = 'dopamine-sim-styles';
         style.innerHTML = `
+            .dopamine-simulation-container { min-height: 500px; height: 100%; width: 100%; }
             .dopamine-controls { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; z-index: 10; width: calc(100% - 20px); justify-content: center; pointer-events: none; }
             .dopamine-controls > * { pointer-events: auto; }
             .dopamine-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: all 0.2s; }

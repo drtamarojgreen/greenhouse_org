@@ -1,42 +1,55 @@
 # Dopamine Emergency Repair Plan: MSI-BMA v1.0
 
 ## 1. Executive Summary
-This document outlines the strategic pivot for the `/dopamine` page from a "Macro/Micro Hybrid" to a **Strictly Intracellular Model**. This transition resolves critical scientific credibility issues regarding scale mismatch and "floating organelle" artifacts.
+This document outlines a comprehensive strategy to address critical feedback received during the beta testing of the `/dopamine` signaling page. While the application's atmospheric design and exploratory depth were highly praised, significant barriers in onboarding, scientific accuracy, and technical stability were identified.
 
-*   **Overall Risk Level**: LOW (Visual subtraction of macro-artifacts; core signaling logic preserved).
-*   **Confidence Level**: HIGH (Coordinate systems are decoupled).
+*   **Overall Risk Level**: HIGH (Core usability and credibility issues).
+*   **Target Audience**: Academic researchers, neuroscience students, and practitioners.
+*   **Goal**: Transition from a "clumsy" beta to a polished, scientifically rigorous educational tool.
 
-## 2. Key Findings: Purging Macro-Anatomical Noise
+## 2. Key Themes from Beta Feedback
+1.  **Onboarding Deficit**: Users struggle to understand the system logic and learning path upon entry.
+2.  **Scientific Trust Gap**: Domain experts identified factual inconsistencies and scaling issues.
+3.  **Technical Instability**: Glitches and progress-wiping crashes block task completion.
+4.  **Tonal Inconsistency**: Abrupt shifts between reflective education and "action-game" spectacle.
 
-### 2.1 Scientific Realism & Scale Mismatch (CRITICAL)
-The co-rendering of the 3D Brain Mesh and macro-labels (SNc, VTA) alongside intracellular organelles creates a confusing "floating" effect that undermines expert trust.
-*   **Finding**: Users perceive the Endoplasmic Reticulum and G-protein cycles as "out of scale" because they share a viewport with a human brain mesh.
-*   **Root Cause**: Attempting to visualize "where" the cell is (Circuit level) while simulating "how" it signals (Molecular level).
+## 3. Detailed Findings & Severity
 
-### 2.2 Onboarding Failure (Critical)
-The initial onboarding is cluttered with macro-anatomical "Quick Visual Guide" items that distract from the core educational pathway (dopaminergic signaling).
+### 3.1 Onboarding & Conceptual Scaffolding (CRITICAL)
+Users encounter complex concepts (dopaminergic signaling, receptor interactions) without adequate progressive introduction. upstream constraints are often introduced after incorrect mental models have formed.
+*   **Evidence**: "The interface logic and feature progression made very little sense... no clear onboarding bridges the gap." (7062_1)
 
-## 3. Strategic Recommendations: The Intracellular Transition
+### 3.2 Scientific Accuracy & Credibility (HIGH)
+Mis-scaled components and factual inconsistencies in pathway representation undermine trust among the core academic audience.
+*   **Evidence**: "Several components feel mis-scaled or misrepresented relative to established neuroscience literature." (360_4)
 
-### 3.1 Removal of Macro-Anatomical Artifacts
-*   **Action**: Disable the loading of `brain_mesh_realistic.js`.
-*   **Action**: Remove the `renderRealisticBrain` call and all "Atlas" coordinate markers (Bregma, AP/ML/DV) from `dopamine_circuit.js`.
-*   **Action**: Delete SNc, VTA, and PFC projection labels that suggest a macro-scale context.
+### 3.3 Visual Polish & State Persistence (HIGH)
+Beta-quality artifacts (disappearing objects, placeholder animations) and the loss of progress during tutorial crashes create significant friction.
+*   **Evidence**: "Objects disappear and then reappear... second tutorial arc crashes and wipes progress." (5357_1, 4139_8)
 
-### 3.2 Refocused Scientific Scaffolding
-*   **Problem**: Causality is currently lost between macro-location and molecular action.
-*   **Solution**: Re-center the view on the Synaptic Cleft and Intracellular space. Use the "100 Enhancements" tracker to explain *molecular* causality (e.g., G-protein dissociation rates) rather than regional projections.
+## 4. Strategic Recommendations
 
-### 3.3 Sanitized Onboarding
-*   **Action**: Update `dopamine_ux.js` to remove macro-anatomical guide items ("Blue Mesh," "SNc Projections"). Focus on Receptors, ER, and Synaptic dynamics.
+### 4.1 Progressive Disclosure Onboarding
+Implement a **Guided Entry Mode** that introduces concepts sequentially.
+*   **Action**: Add an optional "Guided Exploration" toggle.
+*   **Action**: Create an interactive **Concept Dependency Map** showing relationships between active components.
 
-## 4. Implementation Plan
-1.  **Refactor `dopamine.js`**: Remove the `loadScript` call for the realistic brain mesh.
-2.  **Sanitize `dopamine_circuit.js`**:
-    - Removed macro-labels and coordinate markers.
-    - **Update (v1.1)**: Enhanced Striosome visualization with soma+dendrite neuron morphology.
-    - **Update (v1.1)**: Enhanced Matrix visualization with a structured lattice texture.
-3.  **Update `dopamine_ux.js`**:
-    - **Update (v1.1)**: Disabled the automatic show of the welcome screen per user request.
-    - Refreshed descriptions to reflect "Brown Neurons" and "Cyan Lattice".
-4.  **Verification**: Run `test_neuro_ui.js` and `test_synapse_ui.js` to confirm signaling core stability.
+### 4.2 Simulation Transparency Layer
+Surface the underlying logic to build user trust and understanding.
+*   **Action**: Add an **Active State Panel** showing current constraints and dependencies in plain language.
+*   **Action**: Implement a **Change Log / Event Feed** to explain why system states shift.
+
+### 4.3 Scientific Reference & Attribution
+Provide transparency regarding model assumptions and literature sources.
+*   **Action**: Add a **Source Attribution Layer** with citations for each major pathway.
+*   **Action**: Implement a "Report Accuracy Concern" channel for domain experts.
+
+### 4.4 Technical Stability & Recovery
+Ensure the learning flow is not interrupted by technical failures.
+*   **Action**: Implement **Autosave and State Recovery** to resume sessions after a crash.
+*   **Action**: Conduct a systematic "Object Persistence Audit" to fix visual glitches.
+
+## 5. Implementation Roadmap
+*   **Phase 1 (Immediate)**: Fix state persistence/crashes and implement basic onboarding guidance.
+*   **Phase 2 (Short-term)**: Audit scientific accuracy and add the Reference/Attribution layer.
+*   **Phase 3 (Medium-term)**: Refine visual polish and implement the full Concept Dependency Map.
