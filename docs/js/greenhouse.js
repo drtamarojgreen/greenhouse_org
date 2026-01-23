@@ -522,7 +522,7 @@
         } else if (window.location.pathname.includes(config.newsPagePath)) {
             await loadNewsApplication();
         } else if (window.location.pathname.includes(config.modelsPagePath)) {
-            await loadModelsApplication();
+            pollAndLoad(config.selectors.models, loadModelsApplication);
         } else if (window.location.pathname.includes(config.geneticPagePath)) {
             pollAndLoad(config.selectors.genetic, loadGeneticApplication);
         } else if (window.location.pathname.includes(config.techPagePath)) {
@@ -530,7 +530,7 @@
         } else if (window.location.pathname.includes(config.neuroPagePath)) {
             pollAndLoad(config.selectors.neuro, loadNeuroApplication);
         } else if (window.location.pathname.includes(config.synapsePagePath)) {
-            await loadSynapseApplication();
+            pollAndLoad(config.selectors.synapse, loadSynapseApplication);
         } else if (window.location.pathname.includes(config.pathwayPagePath)) {
             pollAndLoad(config.selectors.pathway, loadPathwayApplication);
         } else if (window.location.pathname.includes(config.dnaPagePath)) {
@@ -538,9 +538,9 @@
         } else if (window.location.pathname.includes(config.rnaPagePath)) {
             pollAndLoad(config.selectors.rna, loadRnaRepairApplication);
         } else if (window.location.pathname.includes(config.dopaminePagePath)) {
-            await loadDopamineApplication();
+            pollAndLoad(config.selectors.dopamine, loadDopamineApplication);
         } else if (window.location.pathname.includes(config.serotoninPagePath)) {
-            await loadSerotoninApplication();
+            pollAndLoad(config.selectors.serotonin, loadSerotoninApplication);
         }
     }
 

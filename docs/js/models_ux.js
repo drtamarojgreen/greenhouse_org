@@ -105,7 +105,10 @@
                 if (resilienceObserver) resilienceObserver.disconnect();
                 if (!this.getConfiguration()) throw new Error("Missing configuration from script tag.");
 
-                this.state.targetElement = await GreenhouseUtils.waitForElement(this.state.targetSelector, 15000);
+                this.state.targetElement = document.querySelector(this.state.targetSelector);
+                if (!this.state.targetElement) {
+                    throw new Error(`Models App: Container not found on initialization for selector: ${this.state.targetSelector}`);
+                }
 
                 // Load data before rendering anything
                 await GreenhouseModelsData.loadData();
@@ -777,7 +780,7 @@
                         if (window.GreenhouseModels && typeof window.GreenhouseModels.reinitialize === 'function') {
                             window.GreenhouseModels.reinitialize();
                         }
-                    }, 5000);
+                    }, 0);
                 }
             };
             resilienceObserver = new MutationObserver(observerCallback);

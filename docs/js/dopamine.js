@@ -416,8 +416,12 @@
             };
 
             if (targetSelector) {
-                const container = await GreenhouseUtils.waitForElement(targetSelector);
-                G.initialize(container);
+                const container = document.querySelector(targetSelector);
+                if (container) {
+                    G.initialize(container);
+                } else {
+                    console.error('Dopamine App: Container not found on initialization for selector:', targetSelector);
+                }
             }
         } catch (error) {
             console.error('Dopamine Simulation App: Initialization failed', error);

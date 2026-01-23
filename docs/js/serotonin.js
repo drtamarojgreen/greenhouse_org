@@ -594,13 +594,13 @@
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
 
             if (targetSelector) {
-                console.log('Serotonin App: Waiting for container:', targetSelector);
-                const container = await GreenhouseUtils.waitForElement(targetSelector);
-                console.log('Serotonin App: Initializing in 5 seconds...');
-                setTimeout(() => {
+                const container = document.querySelector(targetSelector);
+                if (container) {
                     console.log('Serotonin App: Auto-initializing...');
                     G.initialize(container);
-                }, 5000);
+                } else {
+                    console.error('Serotonin App: Container not found on initialization for selector:', targetSelector);
+                }
             }
         } catch (error) {
             console.error('Serotonin Simulation App: Initialization failed', error);

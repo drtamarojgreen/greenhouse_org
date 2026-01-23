@@ -90,9 +90,7 @@
 
                 if (targetSelector) {
                     console.log('Synapse App: Initializing in 5 seconds...');
-                    setTimeout(() => {
-                        window.GreenhouseSynapseApp.init(targetSelector, baseUrl);
-                    }, 5000);
+                    window.GreenhouseSynapseApp.init(targetSelector, baseUrl);
                 } else {
                     console.warn('Synapse App: No target selector provided, skipping auto-init.');
                 }
