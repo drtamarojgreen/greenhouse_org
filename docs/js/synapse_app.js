@@ -88,6 +88,7 @@
             this.animate();
 
             this.observeAndReinitializeApp(this.container);
+            this.startCanvasSentinel(this.container);
         },
 
         setupDOM() {
@@ -371,8 +372,8 @@
 
                 if (this.frame % 15 === 0 && Math.random() < releaseProb) {
                     G.Particles.create(w, h, 1, G.config);
-                    const p = G.Particles.particles[G.Particles.particles.length-1];
-                    if (p) p.x = w * (0.5 - azDensity/2 + Math.random() * azDensity);
+                    const p = G.Particles.particles[G.Particles.particles.length - 1];
+                    if (p) p.x = w * (0.5 - azDensity / 2 + Math.random() * azDensity);
                 }
 
                 if (G.config.activeScenario === 'adolescent' && this.frame % 300 === 0 && G.config.elements.receptors.length > 2) {
@@ -485,12 +486,12 @@
                                 let ionsToCreate = 1;
                                 if (pharm.benzodiazepineActive && p.chemistry.id === 'gaba') ionsToCreate = 3;
 
-                                for(let k=0; k<ionsToCreate; k++) {
+                                for (let k = 0; k < ionsToCreate; k++) {
                                     G.Particles.createIon(rx, ry + 10, p.chemistry.ionEffect);
                                 }
 
                                 receptor.state = 'open';
-                                setTimeout(() => { if(receptor.state === 'open') receptor.state = 'closed'; }, 200);
+                                setTimeout(() => { if (receptor.state === 'open') receptor.state = 'closed'; }, 200);
 
                                 if (G.Particles.ions.length > 30 && Math.random() > 0.9) {
                                     if (G.Molecular) G.Molecular.triggerRetrograde(rx, ry);
@@ -499,7 +500,7 @@
                             } else if (receptor.type === 'gpcr') {
                                 receptor.state = 'active';
                                 if (G.Molecular) G.Molecular.triggerCascade(rx, ry + 20);
-                                setTimeout(() => { if(receptor.state === 'active') receptor.state = 'idle'; }, 500);
+                                setTimeout(() => { if (receptor.state === 'active') receptor.state = 'idle'; }, 500);
                             }
                         }
                     }
@@ -576,7 +577,7 @@
                 const rx = w * r.x, ry = surfaceY - 5;
                 if (r.state === 'internalized') {
                     ctx.strokeStyle = '#333';
-                    ctx.setLineDash([2,2]);
+                    ctx.setLineDash([2, 2]);
                     ctx.strokeRect(rx - 6, ry, 12, 12);
                     ctx.setLineDash([]);
                     return;
@@ -593,19 +594,32 @@
             if (!container) return;
             if (resilienceObserver) resilienceObserver.disconnect();
             const observerCallback = (mutations) => {
-                const wasRemoved = mutations.some(m =>
-                    Array.from(m.removedNodes).some(n => n.nodeType === 1 && n.tagName === 'CANVAS')
-                );
+                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
                 if (wasRemoved) {
                     this.isRunning = false;
                     if (resilienceObserver) resilienceObserver.disconnect();
                     setTimeout(() => {
-                        if (G.init) G.init(this.lastSelector, this.baseUrl);
-                    }, 5000);
+                        if (G.init && this.lastSelector) G.init(this.lastSelector, this.baseUrl);
+                    }, 1000);
                 }
             };
             resilienceObserver = new MutationObserver(observerCallback);
-            resilienceObserver.observe(container, { childList: true });
+            resilienceObserver.observe(document.body, { childList: true, subtree: true });
+        },
+
+        startCanvasSentinel(container) {
+            if (this.sentinelInterval) clearInterval(this.sentinelInterval);
+            this.sentinelInterval = setInterval(() => {
+                const currentContainer = document.querySelector(this.lastSelector);
+                // Check if container AND canvas exist in DOM
+                const currentCanvas = currentContainer ? currentContainer.querySelector('canvas') : null;
+
+                if (this.isRunning && (!currentContainer || !currentCanvas || !document.body.contains(currentCanvas))) {
+                    console.log('Synapse App: DOM lost, re-initializing...');
+                    this.isRunning = false;
+                    if (G.init && this.lastSelector) G.init(this.lastSelector, this.baseUrl);
+                }
+            }, 3000);
         }
     });
 })();

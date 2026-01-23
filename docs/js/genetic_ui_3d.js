@@ -72,13 +72,37 @@
             this.resize();
             this.setupInteraction();
 
+            // Add Resize Listeners
+            window.addEventListener('resize', () => {
+                requestAnimationFrame(() => this.resize());
+            });
+
+            if (window.ResizeObserver) {
+                const ro = new ResizeObserver(() => {
+                    requestAnimationFrame(() => this.resize());
+                });
+                ro.observe(this.container);
+            }
+
+            this.startAnimation();
+
             // Initial Data Map
             this.updateData();
+
+            // Resilience
+            this.observeAndReinitializeApp(container);
+            this.startCanvasSentinel(container);
         },
 
         startAnimation() {
-            if (!this.animationFrame) {
-                this.animate();
+            this.stopAnimation();
+            this.animate();
+        },
+
+        stopAnimation() {
+            if (this.animationFrame) {
+                cancelAnimationFrame(this.animationFrame);
+                this.animationFrame = null;
             }
         },
 
@@ -1336,6 +1360,44 @@
             });
 
             ctx.restore();
+        },
+
+        observeAndReinitializeApp(container) {
+            if (!container) return;
+            if (this.resilienceObserver) this.resilienceObserver.disconnect();
+            const observerCallback = (mutations) => {
+                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === this.container || (n.nodeType === 1 && n.contains(this.container))));
+                if (wasRemoved) {
+                    this.stopAnimation();
+                    if (this.resilienceObserver) this.resilienceObserver.disconnect();
+                    // Re-init logic handled by the parent app/container usually, but here we can try to re-bind if the container ID still exists or is recreated
+                    setTimeout(() => {
+                        const newContainer = document.getElementById(container.id); // Assuming ID persistence
+                        if (newContainer) {
+                            this.init(newContainer, this.algo);
+                        }
+                    }, 1000);
+                }
+            };
+            this.resilienceObserver = new MutationObserver(observerCallback);
+            this.resilienceObserver.observe(document.body, { childList: true, subtree: true });
+        },
+
+        startCanvasSentinel(container) {
+            if (this.sentinelInterval) clearInterval(this.sentinelInterval);
+            this.sentinelInterval = setInterval(() => {
+                if (this.isEvolving && (!this.canvas || !document.body.contains(this.canvas))) {
+                    console.log('Genetic App: Canvas lost, re-initializing...');
+                    this.stopAnimation();
+                    // Attempt to find container again
+                    const newContainer = container.id ? document.getElementById(container.id) : container;
+                    if (document.body.contains(newContainer)) {
+                        this.init(newContainer, this.algo);
+                        // Auto-restart evolution if it was running?
+                        // this.startAnimation(); // init does this
+                    }
+                }
+            }, 3000);
         },
     };
 

@@ -16,6 +16,7 @@
         container: null,
 
         init(options = {}) {
+            this.lastOptions = options;
             const target = options.target || this.config.target;
             let container;
 
@@ -40,6 +41,23 @@
             console.log('AGENT_DEBUG: TOC init() started.');
             this.fetchDataAndRender();
             this.state.isInitialized = true;
+
+            this.observeAndReinitializeApp(container);
+        },
+
+        observeAndReinitializeApp(container) {
+            if (!container) return;
+            if (this.resilienceObserver) this.resilienceObserver.disconnect();
+            const observerCallback = (mutations) => {
+                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n.nodeType === 1 && n.classList.contains('models-toc-grid')));
+                if (wasRemoved) {
+                    console.log('AGENT_DEBUG: TOC removed, re-initializing...');
+                    if (this.resilienceObserver) this.resilienceObserver.disconnect();
+                    this.init(this.lastOptions);
+                }
+            };
+            this.resilienceObserver = new MutationObserver(observerCallback);
+            this.resilienceObserver.observe(container, { childList: true });
         },
 
         async fetchDataAndRender() {

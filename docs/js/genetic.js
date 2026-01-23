@@ -149,25 +149,79 @@
 
         window.GreenhouseGeneticAlgo.init();
         window.GreenhouseGeneticUI3D.init(simContainer, window.GreenhouseGeneticAlgo);
+
+        // Start evolution loop automatically
+        startEvolutionLoop();
+
         observeAndReinitializeApp(container);
+        startCanvasSentinel(container);
     }
 
     function observeAndReinitializeApp(container) {
         if (!container) return;
+        if (resilienceObserver) resilienceObserver.disconnect();
+
         const observerCallback = (mutations) => {
-            const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n.nodeType === 1 && n.classList.contains('simulation-container')));
+            // Check if the main container or its specific child (sim container) was removed
+            const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n =>
+                n === container ||
+                (n.nodeType === 1 && n.contains(container)) ||
+                (n.classList && n.classList.contains('simulation-container'))
+            ));
+
             if (wasRemoved) {
-                if (resilienceObserver) resilienceObserver.disconnect();
-                setTimeout(() => {
-                    if (window.GreenhouseGenetic && typeof window.GreenhouseGenetic.reinitialize === 'function') {
+                console.log('Genetic App: DOM element removal detected.');
+                // We don't disconnect immediately if we are observing body, but we should pause logic
+                if (window.GreenhouseGenetic && typeof window.GreenhouseGenetic.reinitialize === 'function') {
+                    // Adding a small delay to allow React to finish operations
+                    setTimeout(() => {
                         window.GreenhouseGenetic.reinitialize();
-                    }
-                }, 5000);
+                    }, 1000);
+                }
             }
         };
+
         resilienceObserver = new MutationObserver(observerCallback);
-        resilienceObserver.observe(container, { childList: true });
+        resilienceObserver.observe(document.body, { childList: true, subtree: true });
     }
+
+    let sentinelInterval = null;
+    function startCanvasSentinel(container) {
+        // Capture selector from global state or closure
+        const selectors = window._greenhouseGeneticAttributes?.selectors || {};
+        const targetSelector = selectors.genetic;
+
+        if (sentinelInterval) clearInterval(sentinelInterval);
+        sentinelInterval = setInterval(() => {
+            // Check if Main Container exists in DOM
+            const currentContainer = targetSelector ? document.querySelector(targetSelector) : null;
+
+            // Check if Canvas exists
+            const currentCanvas = currentContainer ? currentContainer.querySelector('canvas') : null;
+
+            if (isInitialized) {
+                if (!currentContainer || !currentCanvas || !document.body.contains(currentCanvas)) {
+                    console.log('Genetic App: DOM lost, attempting re-initialization...');
+
+                    // If the container is back (or different one found by selector), re-init
+                    if (currentContainer && document.body.contains(currentContainer)) {
+                        if (window.GreenhouseGenetic && typeof window.GreenhouseGenetic.reinitialize === 'function') {
+                            window.GreenhouseGenetic.reinitialize();
+                        }
+                    } else {
+                        // Container completely gone, wait for it to return (sentinel will keep checking)
+                        // Maybe we need to actively try to re-run main() if container appears? 
+                        // reinitialize() calls main(), which checks if container exists.
+                        // So calling it is safe if it handles "container not found" gracefully.
+                        if (window.GreenhouseGenetic && typeof window.GreenhouseGenetic.reinitialize === 'function') {
+                            window.GreenhouseGenetic.reinitialize();
+                        }
+                    }
+                }
+            }
+        }, 3000);
+    }
+
 
     function startEvolutionLoop() {
         const loop = () => {

@@ -100,13 +100,15 @@
 
             // Handle Resize
             window.addEventListener('resize', () => {
-                if (this.canvas) {
-                    this.canvas.width = container.offsetWidth;
-                    this.canvas.height = container.offsetHeight;
-                    this.projection.width = this.canvas.width;
-                    this.projection.height = this.canvas.height;
-                }
+                requestAnimationFrame(() => this.resize());
             });
+
+            if (window.ResizeObserver) {
+                const ro = new ResizeObserver(() => {
+                    requestAnimationFrame(() => this.resize());
+                });
+                ro.observe(container);
+            }
 
             // Add Explanations
             this.addExplanation(container);
@@ -122,6 +124,16 @@
 
             // Initialize Synapse Meshes
             this.synapseMeshes = this.generateSynapseMeshes();
+        },
+
+        resize() {
+            if (this.canvas && this.canvas.parentElement) {
+                const container = this.canvas.parentElement;
+                this.canvas.width = container.offsetWidth;
+                this.canvas.height = container.offsetHeight;
+                this.projection.width = this.canvas.width;
+                this.projection.height = this.canvas.height;
+            }
         },
 
         addControlPanel(container) {
@@ -351,6 +363,7 @@
         },
 
         startAnimation() {
+            this.stopAnimation();
             const animate = () => {
                 if (this.cameraControls) {
                     this.cameraControls.update();
@@ -359,6 +372,13 @@
                 this.animationId = requestAnimationFrame(animate);
             };
             animate();
+        },
+
+        stopAnimation() {
+            if (this.animationId) {
+                cancelAnimationFrame(this.animationId);
+                this.animationId = null;
+            }
         },
 
         render() {

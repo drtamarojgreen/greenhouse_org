@@ -126,6 +126,54 @@
 
         G.isRunning = true;
         G.animate();
+
+        // Resilience against React/DOM clearing
+        G.observeAndReinitializeApp(container);
+        G.startCanvasSentinel(container);
+    };
+
+    G.observeAndReinitializeApp = function (container) {
+        if (!container) return;
+        if (G.resilienceObserver) G.resilienceObserver.disconnect();
+        const observerCallback = (mutations) => {
+            const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
+            if (wasRemoved) {
+                console.log('Dopamine App: Container removal detected.');
+                G.isRunning = false;
+                if (G.resilienceObserver) G.resilienceObserver.disconnect();
+                setTimeout(() => {
+                    // Try to find the container again by selector if possible, or assume ID persistence
+                    const newContainer = container.id ? document.getElementById(container.id) : container;
+                    // If valid re-init
+                    if (document.body.contains(newContainer)) G.initialize(newContainer);
+                }, 1000);
+            }
+        };
+        G.resilienceObserver = new MutationObserver(observerCallback);
+        G.resilienceObserver.observe(document.body, { childList: true, subtree: true });
+    };
+
+    G.startCanvasSentinel = function (container) {
+        if (G.sentinelInterval) clearInterval(G.sentinelInterval);
+        G.sentinelInterval = setInterval(() => {
+            // Check canvas existence in DOM
+            const canvas = G.canvas; // G.canvas is globally stored
+            // Or check via container lookup to be safe
+            const currentContainer = container.id ? document.getElementById(container.id) : container;
+            const currentCanvas = currentContainer ? currentContainer.querySelector('canvas') : null;
+
+            if (G.isRunning && (!currentCanvas || !document.body.contains(currentCanvas))) {
+                console.log('Dopamine App: Canvas lost, re-initializing...');
+                G.isRunning = false;
+                if (currentContainer && document.body.contains(currentContainer)) {
+                    G.initialize(currentContainer);
+                } else {
+                    // Try to recover container
+                    const newContainer = container.id ? document.getElementById(container.id) : null;
+                    if (newContainer) G.initialize(newContainer);
+                }
+            }
+        }, 3000);
     };
 
     G.initSidePanels = function (container) {

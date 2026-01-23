@@ -75,9 +75,10 @@
                         }
                     }
 
-                    // 5. Gyri/Sulci Noise
-                    // Use simple sine waves for noise if no noise lib
-                    const noise = Math.sin(x * 10) * Math.cos(y * 10) * Math.sin(z * 10) * 0.02;
+                    // 5. Gyri/Sulci Noise (The brain surface 'wrinkles')
+                    // Using layered sine waves to remove the 'soccer ball' look
+                    const noise = (Math.sin(x * 12) * Math.cos(y * 12) * Math.sin(z * 12)) * 0.03 +
+                        (Math.sin(x * 25) * Math.cos(y * 25)) * 0.01;
 
                     x = x * radius * (1 + noise);
                     y = y * radius * (1 + noise);

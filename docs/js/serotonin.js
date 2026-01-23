@@ -55,6 +55,16 @@
             timer: 0
         },
 
+        handleResize() {
+            if (this.canvas && this.canvas.parentElement) {
+                const container = this.canvas.parentElement;
+                this.canvas.width = container.offsetWidth;
+                this.canvas.height = container.offsetHeight || 600;
+                this.width = this.canvas.width;
+                this.height = this.canvas.height;
+            }
+        },
+
         initialize(container) {
             if (!container) return;
             container.innerHTML = '';
@@ -78,9 +88,66 @@
             this.setupStructuralModel();
             this.setupInteraction();
 
+            // Add Resize Listeners
+            window.addEventListener('resize', () => {
+                requestAnimationFrame(() => this.handleResize());
+            });
+
+            if (window.ResizeObserver) {
+                const ro = new ResizeObserver(() => {
+                    requestAnimationFrame(() => this.handleResize());
+                });
+                ro.observe(wrapper);
+            }
+
             this.isRunning = true;
             this.animate();
+
+            // Resilience against React/DOM clearing
+            this.observeAndReinitializeApp(container);
+            this.startCanvasSentinel(container);
         },
+
+        observeAndReinitializeApp(container) {
+            if (!container) return;
+            if (this.resilienceObserver) this.resilienceObserver.disconnect();
+            const observerCallback = (mutations) => {
+                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === container || (n.nodeType === 1 && n.contains(container))));
+                if (wasRemoved) {
+                    console.log('Serotonin App: Container removal detected.');
+                    this.isRunning = false;
+                    if (this.resilienceObserver) this.resilienceObserver.disconnect();
+                    setTimeout(() => {
+                        const newContainer = container.id ? document.getElementById(container.id) : container;
+                        if (document.body.contains(newContainer)) this.initialize(newContainer);
+                    }, 1000);
+                }
+            };
+            this.resilienceObserver = new MutationObserver(observerCallback);
+            this.resilienceObserver.observe(document.body, { childList: true, subtree: true });
+        },
+
+        startCanvasSentinel(container) {
+            if (this.sentinelInterval) clearInterval(this.sentinelInterval);
+            this.sentinelInterval = setInterval(() => {
+                const currentContainer = container.id ? document.getElementById(container.id) : container;
+                // Since this simulation creates a wrapper div and then canvas, check for wrapper or canvas
+                const currentWrapper = currentContainer ? currentContainer.querySelector('.serotonin-simulation-container') : null;
+
+                if (this.isRunning && (!currentContainer || !currentWrapper || !document.body.contains(currentWrapper))) {
+                    console.log('Serotonin App: DOM lost, re-initializing...');
+                    this.isRunning = false;
+                    if (currentContainer && document.body.contains(currentContainer)) {
+                        this.initialize(currentContainer);
+                    } else {
+                        // Attempt recovery
+                        const newContainer = container.id ? document.getElementById(container.id) : null;
+                        if (newContainer) this.initialize(newContainer);
+                    }
+                }
+            }, 3000);
+        },
+
 
         injectStyles() {
             if (document.getElementById('serotonin-sim-styles-modular')) return;
@@ -202,7 +269,7 @@
                     const p = project(r.x, r.y, r.z, cam, { width: w, height: h, near: 10, far: 5000 });
                     const dx = mx - p.x;
                     const dy = my - p.y;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const dist = Math.sqrt(dx * dx + dy * dy);
                     if (dist < 30 * p.scale) {
                         foundTarget = true;
                         this.hoverDistance = (dist / p.scale).toFixed(1);

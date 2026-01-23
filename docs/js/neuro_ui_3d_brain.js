@@ -162,8 +162,8 @@
         // Draws a subtle Lat/Lon grid to give a 'generic' scientific look
         drawSurfaceGrid(ctx, projectedVertices, brainShell) {
             ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+            ctx.lineWidth = 0.3;
             ctx.beginPath();
 
             // Assuming vertex ordering matches the latitude/longitude bands from generator
