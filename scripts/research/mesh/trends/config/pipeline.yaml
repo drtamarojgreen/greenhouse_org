@@ -6,8 +6,10 @@ dataset:
   year_end: 2026
 
 embedding:
-  method: pca
+  method: nn
   n_components: 16
+  epochs: 100
+  lr: 0.05
 
 clustering:
   algorithm: kmeans

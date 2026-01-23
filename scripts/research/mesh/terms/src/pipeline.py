@@ -16,6 +16,8 @@ def run(config_path):
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
     
+    logger.info(f"Configuration loaded. Random Seed: {config['clustering']['random_seed']}")
+
     # 1. Load Data
     start_time = time.time()
     raw_data_path = 'data/raw/mesh_year_counts.csv'
@@ -28,9 +30,11 @@ def run(config_path):
     
     # 2. Prune Terms
     start_time = time.time()
+    initial_term_count = df['term'].nunique()
     df_pruned = pruning.prune_terms(df, config)
+    pruned_term_count = df_pruned['term'].nunique()
     data_io.save_dataframe('data/interim/pruned_terms.csv', df_pruned)
-    logger.info(f"Pruned terms. Remaining rows: {len(df_pruned)}. Time: {time.time() - start_time:.4f}s")
+    logger.info(f"Pruned terms. Terms: {initial_term_count} -> {pruned_term_count}. Time: {time.time() - start_time:.4f}s")
     
     # 3. Vectorize
     start_time = time.time()
@@ -65,7 +69,7 @@ def run(config_path):
     data_io.save_json('data/output/mental_health_clusters.json', target_clusters)
     
     # Top terms (placeholder logic in analysis module)
-    top_terms = analysis.top_terms_by_year(matrix, target_clusters, years, config['output']['top_terms_per_year'])
+    top_terms = analysis.top_terms_by_year(matrix, target_clusters, assignments, terms, years, config['output']['top_terms_per_year'])
     data_io.save_json('data/output/top_terms_by_year.json', top_terms)
     
     logger.info(f"Analysis complete. Found {len(target_clusters)} target clusters. Time: {time.time() - start_time:.4f}s")

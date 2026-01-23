@@ -46,6 +46,14 @@ class PubMedParser:
             if year_elem is not None:
                 year = year_elem.text
         
+        # Fallback to ArticleDate
+        if not year:
+            article_date = article_elem.find(".//ArticleDate")
+            if article_date is not None:
+                year_elem = article_date.find("Year")
+                if year_elem is not None:
+                    year = year_elem.text
+
         # Fallback to DateCompleted
         if not year:
             date_completed = article_elem.find(".//DateCompleted")
@@ -54,7 +62,7 @@ class PubMedParser:
                 if year_elem is not None:
                     year = year_elem.text
 
-        if not year or not year.isdigit():
+        if not year or not str(year).isdigit():
             return
 
         year = int(year)
