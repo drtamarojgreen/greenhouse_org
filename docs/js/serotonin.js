@@ -58,16 +58,10 @@
         handleResize() {
             if (this.canvas && this.canvas.parentElement) {
                 const container = this.canvas.parentElement;
-                // Use fallback to avoid 0x0 canvas during transitions/hidden states
-                const w = container.offsetWidth || this.canvas.width || 800;
-                const h = container.offsetHeight || this.canvas.height || 600;
-
-                if (w > 0 && h > 0) {
-                    this.canvas.width = w;
-                    this.canvas.height = h;
-                    this.width = w;
-                    this.height = h;
-                }
+                this.canvas.width = container.offsetWidth;
+                this.canvas.height = container.offsetHeight || 600;
+                this.width = this.canvas.width;
+                this.height = this.canvas.height;
             }
         },
 
@@ -94,17 +88,10 @@
             this.setupStructuralModel();
             this.setupInteraction();
 
-            // Add Resize Listeners
+            // Add Resize Listeners (Window only, no ResizeObserver)
             window.addEventListener('resize', () => {
                 requestAnimationFrame(() => this.handleResize());
             });
-
-            if (window.ResizeObserver) {
-                const ro = new ResizeObserver(() => {
-                    requestAnimationFrame(() => this.handleResize());
-                });
-                ro.observe(wrapper);
-            }
 
             this.isRunning = true;
             this.animate();
