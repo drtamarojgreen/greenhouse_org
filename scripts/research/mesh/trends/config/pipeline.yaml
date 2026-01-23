@@ -1,7 +1,7 @@
 dataset:
-  min_years_present: 10
-  min_total_count: 500
-  min_variance: 1.0
+  min_years_present: 2
+  min_total_count: 10
+  min_variance: 0.1
   year_start: 1965
   year_end: 2024
 
@@ -13,13 +13,13 @@ embedding:
 
 clustering:
   algorithm: kmeans
-  n_clusters: 30
+  n_clusters: 2
   random_seed: 42
 
 mental_health_detection:
-  min_variance: 0.15
-  min_growth_slope: 0.02
-  min_peak_year: 1980
+  min_variance: 0.01
+  min_growth_slope: -1.0
+  min_peak_year: 1960
 
 output:
   top_terms_per_year: 5

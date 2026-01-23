@@ -23,8 +23,15 @@ class MeshLoader:
 
         for event, elem in context:
             if elem.tag == "DescriptorRecord":
-                ui = elem.find("DescriptorUI").text
-                name = elem.find("DescriptorName/String").text
+                ui_elem = elem.find("DescriptorUI")
+                name_elem = elem.find("DescriptorName/String")
+
+                if ui_elem is None or name_elem is None:
+                    elem.clear()
+                    continue
+
+                ui = ui_elem.text
+                name = name_elem.text
                 
                 tree_numbers = []
                 tree_list = elem.find("TreeNumberList")

@@ -10,37 +10,37 @@ def compute_cluster_metrics(term_matrix, cluster_assignments, terms, years):
     """
     # Create a mapping from term to index
     term_to_idx = {t: i for i, t in enumerate(terms)}
-    
+
     metrics = []
-    
+
     for cluster_id in cluster_assignments['cluster'].unique():
         cluster_terms = cluster_assignments[cluster_assignments['cluster'] == cluster_id]['term']
         indices = [term_to_idx[t] for t in cluster_terms if t in term_to_idx]
-        
+
         if not indices:
             continue
-            
+
         sub_matrix = term_matrix[indices]
         mean_series = np.mean(sub_matrix, axis=0)
-        
+
         # Slope (simple linear regression on mean series)
         x = np.arange(len(years))
         slope, _ = np.polyfit(x, mean_series, 1)
-        
+
         # Variance
         variance = np.var(mean_series)
-        
+
         # Peak Year
         peak_idx = np.argmax(mean_series)
         peak_year = years[peak_idx]
-        
+
         metrics.append({
             'cluster': int(cluster_id),
             'slope': float(slope),
             'variance': float(variance),
             'peak_year': int(peak_year)
         })
-        
+
     return metrics
 
 def select_target_clusters(metrics, config):
