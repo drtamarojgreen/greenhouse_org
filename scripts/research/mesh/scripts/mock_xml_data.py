@@ -60,5 +60,5 @@ def create_mock_pubmed_gz(path, start_year=1965, end_year=2024):
     print(f"Mock PubMed GZ created at {path}")
 
 if __name__ == "__main__":
-    create_mock_mesh_xml("data/desc2024.xml")
+    create_mock_mesh_xml("data/desc2026.xml")
     create_mock_pubmed_gz("data/pubmed_baseline/sample.xml.gz")
