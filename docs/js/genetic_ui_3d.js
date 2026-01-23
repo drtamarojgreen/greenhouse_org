@@ -47,9 +47,22 @@
 
         mainCameraController: null,
 
-        init(container, algo) {
+        init(container, algo, selector = null) {
+            // Support (container, selector) re-init signature where algo might be missing or passed differently
+            // But here the signature is tricky because `algo` is needed.
+            // The utility calls: appInstance[reinitFunctionName](container, selector)
+            // So if `init(container, selector)` is called, `algo` becomes the selector string.
+            // We need to store `algo` on the instance to survive re-init.
+
+            if (algo && typeof algo !== 'string') {
+                this.algo = algo;
+            }
+
+            if (typeof algo === 'string' && !selector) {
+                selector = algo;
+            }
+
             this.container = container;
-            this.algo = algo;
             this.isEvolving = false; // Don't start until button pressed
 
             // Set main camera to cameras[0]
@@ -89,9 +102,11 @@
             // Initial Data Map
             this.updateData();
 
-            // Resilience
-            this.observeAndReinitializeApp(container);
-            this.startCanvasSentinel(container);
+            // Resilience using shared GreenhouseUtils
+            if (window.GreenhouseUtils) {
+                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
+                window.GreenhouseUtils.startSentinel(container, selector, this, 'init');
+            }
         },
 
         startAnimation() {
@@ -1362,43 +1377,7 @@
             ctx.restore();
         },
 
-        observeAndReinitializeApp(container) {
-            if (!container) return;
-            if (this.resilienceObserver) this.resilienceObserver.disconnect();
-            const observerCallback = (mutations) => {
-                const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n === this.container || (n.nodeType === 1 && n.contains(this.container))));
-                if (wasRemoved) {
-                    this.stopAnimation();
-                    if (this.resilienceObserver) this.resilienceObserver.disconnect();
-                    // Re-init logic handled by the parent app/container usually, but here we can try to re-bind if the container ID still exists or is recreated
-                    setTimeout(() => {
-                        const newContainer = document.getElementById(container.id); // Assuming ID persistence
-                        if (newContainer) {
-                            this.init(newContainer, this.algo);
-                        }
-                    }, 1000);
-                }
-            };
-            this.resilienceObserver = new MutationObserver(observerCallback);
-            this.resilienceObserver.observe(document.body, { childList: true, subtree: true });
-        },
 
-        startCanvasSentinel(container) {
-            if (this.sentinelInterval) clearInterval(this.sentinelInterval);
-            this.sentinelInterval = setInterval(() => {
-                if (this.isEvolving && (!this.canvas || !document.body.contains(this.canvas))) {
-                    console.log('Genetic App: Canvas lost, re-initializing...');
-                    this.stopAnimation();
-                    // Attempt to find container again
-                    const newContainer = container.id ? document.getElementById(container.id) : container;
-                    if (document.body.contains(newContainer)) {
-                        this.init(newContainer, this.algo);
-                        // Auto-restart evolution if it was running?
-                        // this.startAnimation(); // init does this
-                    }
-                }
-            }, 3000);
-        },
     };
 
     window.GreenhouseGeneticUI3D = GreenhouseGeneticUI3D;
