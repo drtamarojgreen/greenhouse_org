@@ -116,6 +116,9 @@
             return;
         }
 
+        // Clear existing content to ensure we replace rather than append
+        container.innerHTML = '';
+
         if (selectors.geneticTitle) {
             const titleContainer = document.querySelector(selectors.geneticTitle);
             if (titleContainer) {
@@ -137,15 +140,10 @@
             }
         }
 
-        const loadingScreen = container.querySelector('.loading-screen');
-        if (loadingScreen) loadingScreen.style.display = 'none';
+        const simContainer = document.createElement('div');
+        simContainer.className = 'simulation-container';
+        container.appendChild(simContainer);
 
-        let simContainer = container.querySelector('.simulation-container');
-        if (!simContainer) {
-            simContainer = document.createElement('div');
-            simContainer.className = 'simulation-container';
-            container.appendChild(simContainer);
-        }
         simContainer.style.display = 'block';
         simContainer.style.width = '100%';
 

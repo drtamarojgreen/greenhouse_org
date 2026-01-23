@@ -8,7 +8,6 @@
         ga: null,
         ui: null,
         isRunning: false,
-        isRunning: false,
         intervalId: null,
         resilienceObserver: null,
 
@@ -20,6 +19,14 @@
         },
 
         _delayedInit(selector) {
+            const container = document.querySelector(selector);
+            if (!container) {
+                console.error('NeuroApp: Target container not found:', selector);
+                return;
+            }
+
+            // Clear existing content to ensure we replace rather than append
+            container.innerHTML = '';
 
             // Check dependencies
             if (!window.NeuroGA || !window.GreenhouseNeuroUI3D || !window.GreenhouseModels3DMath) {
@@ -39,12 +46,9 @@
                 bounds: { x: 500, y: 500, z: 500 }
             });
 
-            // Start loop
-            // Start loop
-            // this.startSimulation(); // Started by UI overlay
-
             // Add control overlay
             this.createControls(selector);
+
 
             // Resilience
             this.observeAndReinitializeApp(document.querySelector(selector));
@@ -56,11 +60,9 @@
                 const wasRemoved = mutations.some(m => Array.from(m.removedNodes).some(n => n.nodeType === 1 && n.id === 'neuro-stats')); // Check for removal of controls or canvas
                 if (wasRemoved) {
                     if (this.resilienceObserver) this.resilienceObserver.disconnect();
-                    setTimeout(() => {
-                        if (window.GreenhouseNeuroApp && typeof window.GreenhouseNeuroApp.reinitialize === 'function') {
-                            window.GreenhouseNeuroApp.reinitialize();
-                        }
-                    }, 5000);
+                    if (window.GreenhouseNeuroApp && typeof window.GreenhouseNeuroApp.reinitialize === 'function') {
+                        window.GreenhouseNeuroApp.reinitialize();
+                    }
                 }
             };
             this.resilienceObserver = new MutationObserver(observerCallback);

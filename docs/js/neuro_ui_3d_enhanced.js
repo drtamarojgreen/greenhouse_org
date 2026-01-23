@@ -68,62 +68,60 @@
 
             console.log('NeuroUI3D: Canvas build delayed by 5 seconds.');
 
-            setTimeout(() => {
-                this.canvas = document.createElement('canvas');
-                this.canvas.width = container.offsetWidth;
-                this.canvas.height = Math.max(container.offsetHeight, 600);
-                this.canvas.style.width = '100%';
-                this.canvas.style.height = '100%';
-                this.canvas.style.backgroundColor = '#111';
+            this.canvas = document.createElement('canvas');
+            this.canvas.width = container.offsetWidth;
+            this.canvas.height = Math.max(container.offsetHeight, 600);
+            this.canvas.style.width = '100%';
+            this.canvas.style.height = '100%';
+            this.canvas.style.backgroundColor = '#111';
 
-                container.appendChild(this.canvas);
-                this.ctx = this.canvas.getContext('2d');
+            container.appendChild(this.canvas);
+            this.ctx = this.canvas.getContext('2d');
 
-                this.projection.width = this.canvas.width;
-                this.projection.height = this.canvas.height;
+            this.projection.width = this.canvas.width;
+            this.projection.height = this.canvas.height;
 
-                // Initialize camera controls
-                if (window.GreenhouseNeuroCameraControls) {
-                    this.cameraControls = Object.create(window.GreenhouseNeuroCameraControls);
-                    this.cameraControls.init(this.canvas, this.camera, this.config);
-                    console.log('NeuroUI3D: Camera controls initialized');
+            // Initialize camera controls
+            if (window.GreenhouseNeuroCameraControls) {
+                this.cameraControls = Object.create(window.GreenhouseNeuroCameraControls);
+                this.cameraControls.init(this.canvas, this.camera, this.config);
+                console.log('NeuroUI3D: Camera controls initialized');
+            }
+
+            // Initialize lighting system
+            if (window.GreenhouseNeuroLighting) {
+                this.lighting = Object.create(window.GreenhouseNeuroLighting);
+                this.lighting.init(this.config);
+                console.log('NeuroUI3D: Lighting system initialized');
+            }
+
+            // Setup mouse event handlers for synapse camera
+            this.setupSynapseMouseHandlers();
+
+            // Handle Resize
+            window.addEventListener('resize', () => {
+                if (this.canvas) {
+                    this.canvas.width = container.offsetWidth;
+                    this.canvas.height = container.offsetHeight;
+                    this.projection.width = this.canvas.width;
+                    this.projection.height = this.canvas.height;
                 }
+            });
 
-                // Initialize lighting system
-                if (window.GreenhouseNeuroLighting) {
-                    this.lighting = Object.create(window.GreenhouseNeuroLighting);
-                    this.lighting.init(this.config);
-                    console.log('NeuroUI3D: Lighting system initialized');
-                }
+            // Add Explanations
+            this.addExplanation(container);
 
-                // Setup mouse event handlers for synapse camera
-                this.setupSynapseMouseHandlers();
+            // Add Start Overlay
+            this.addStartOverlay(container);
 
-                // Handle Resize
-                window.addEventListener('resize', () => {
-                    if (this.canvas) {
-                        this.canvas.width = container.offsetWidth;
-                        this.canvas.height = container.offsetHeight;
-                        this.projection.width = this.canvas.width;
-                        this.projection.height = this.canvas.height;
-                    }
-                });
+            // Add Control Panel
+            this.addControlPanel(container);
 
-                // Add Explanations
-                this.addExplanation(container);
+            // Start Animation Loop
+            this.startAnimation();
 
-                // Add Start Overlay
-                this.addStartOverlay(container);
-
-                // Add Control Panel
-                this.addControlPanel(container);
-
-                // Start Animation Loop
-                this.startAnimation();
-
-                // Initialize Synapse Meshes
-                this.synapseMeshes = this.generateSynapseMeshes();
-            }, 5000);
+            // Initialize Synapse Meshes
+            this.synapseMeshes = this.generateSynapseMeshes();
         },
 
         addControlPanel(container) {

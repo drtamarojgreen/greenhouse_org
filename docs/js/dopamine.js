@@ -60,24 +60,36 @@
     G.height = 600;
     G.isDragging = false;
 
-    G.handleResize = function() {
+    G.handleResize = function () {
         if (!G.canvas || !G.canvas.parentElement) return;
         const parent = G.canvas.parentElement;
-        G.canvas.width = parent.clientWidth || 800;
-        G.canvas.height = parent.clientHeight || 600;
-        G.width = G.canvas.width;
-        G.height = G.canvas.height;
+        // Measure parent size first - since canvas is absolute/block and container is relative/hidden,
+        // measuring the parent should be stable.
+        const w = parent.clientWidth || 800;
+        const h = parent.clientHeight || 500;
+
+        // Only update if dimensions actually changed to avoid unnecessary churn
+        if (G.canvas.width !== w || G.canvas.height !== h) {
+            G.canvas.width = w;
+            G.canvas.height = h;
+            G.width = w;
+            G.height = h;
+        }
     };
 
-    G.initialize = function(container) {
+    G.initialize = function (container) {
         if (!container || G.isRunning) return;
         container.innerHTML = '';
         G.injectStyles();
 
         const wrapper = document.createElement('div');
         wrapper.className = 'dopamine-simulation-container';
-        wrapper.style.width = '100%'; wrapper.style.height = '100%';
-        wrapper.style.position = 'relative'; wrapper.style.backgroundColor = '#050510';
+        // Ensure wrapper takes full space but doesn't grow indefinitely
+        wrapper.style.width = '100%';
+        wrapper.style.height = '100%';
+        wrapper.style.position = 'relative';
+        wrapper.style.backgroundColor = '#050510';
+        wrapper.style.overflow = 'hidden';
         container.appendChild(wrapper);
 
         if (G.createUI) G.createUI(wrapper);
@@ -87,6 +99,10 @@
         if (G.initUX) G.initUX();
 
         G.canvas = document.createElement('canvas');
+        G.canvas.style.display = 'block';
+        G.canvas.style.position = 'absolute';
+        G.canvas.style.top = '0';
+        G.canvas.style.left = '0';
         G.ctx = G.canvas.getContext('2d');
         wrapper.appendChild(G.canvas);
 
@@ -95,14 +111,15 @@
 
         if (window.ResizeObserver) {
             const ro = new ResizeObserver(() => {
-                G.handleResize();
+                // Use requestAnimationFrame to decouple resize from measurement
+                // to avoid "ResizeObserver loop limit exceeded"
+                requestAnimationFrame(() => G.handleResize());
             });
             ro.observe(wrapper);
         }
 
-        // Secondary fallback for slow-loading layouts
+        // Single fallback for late layout settling
         setTimeout(() => G.handleResize(), 500);
-        setTimeout(() => G.handleResize(), 2000);
 
         G.setupReceptors();
         G.setupInteraction();
@@ -111,7 +128,7 @@
         G.animate();
     };
 
-    G.initSidePanels = function(container) {
+    G.initSidePanels = function (container) {
         G.leftPanel = document.createElement('div');
         G.leftPanel.className = 'dopamine-side-panel left';
         container.appendChild(G.leftPanel);
@@ -143,12 +160,13 @@
         };
     };
 
-    G.injectStyles = function() {
+    G.injectStyles = function () {
         if (document.getElementById('dopamine-sim-styles')) return;
         const style = document.createElement('style');
         style.id = 'dopamine-sim-styles';
         style.innerHTML = `
-            .dopamine-simulation-container { min-height: 500px; height: 100%; width: 100%; }
+            .dopamine-simulation-container { min-height: 500px; height: 100%; width: 100%; overflow: hidden; position: relative; }
+            .dopamine-simulation-container canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: auto; }
             .dopamine-controls { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; z-index: 10; width: calc(100% - 20px); justify-content: center; pointer-events: none; }
             .dopamine-controls > * { pointer-events: auto; }
             .dopamine-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: all 0.2s; }
@@ -215,7 +233,7 @@
         document.head.appendChild(style);
     };
 
-    G.setupReceptors = function() {
+    G.setupReceptors = function () {
         G.state.receptors = [
             { type: 'D1', x: -200, y: 0, z: 0, color: '#ff4d4d', il3Size: 20, tailLength: 60, helixRadius: 15 },
             { type: 'D2', x: -100, y: 0, z: 0, color: '#4d79ff', il3Size: 50, tailLength: 15, helixRadius: 18 },
@@ -225,7 +243,7 @@
         ];
     };
 
-    G.setupInteraction = function() {
+    G.setupInteraction = function () {
         let lastX = 0; let lastY = 0;
         G.canvas.addEventListener('mousedown', (e) => { G.isDragging = true; lastX = e.clientX; lastY = e.clientY; });
         window.addEventListener('mousemove', (e) => {
@@ -240,7 +258,7 @@
         window.addEventListener('mouseup', () => { G.isDragging = false; });
     };
 
-    G.animate = function() {
+    G.animate = function () {
         if (!G.isRunning) return;
         if (!G.uxState || !G.uxState.isPaused) {
             G.update();
@@ -249,7 +267,7 @@
         requestAnimationFrame(() => G.animate());
     };
 
-    G.update = function() {
+    G.update = function () {
         G.state.timer++;
         if (!G.isDragging) {
             G.state.camera.rotationY += 0.005;
@@ -272,7 +290,7 @@
         if (G.updateTooltips) G.updateTooltips();
     };
 
-    G.render = function() {
+    G.render = function () {
         const ctx = G.ctx;
         const w = G.width;
         const h = G.height;
@@ -282,7 +300,7 @@
         ctx.clearRect(0, 0, w, h);
 
         // Background with subtle radial gradient
-        const bgGrad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w);
+        const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w);
         bgGrad.addColorStop(0, '#0a0a20');
         bgGrad.addColorStop(1, '#050510');
         ctx.fillStyle = bgGrad;
@@ -327,11 +345,11 @@
                     ctx.lineWidth = 3 * il3Top.scale;
                     ctx.beginPath();
                     // Draw a more biological curved loop
-                    ctx.moveTo(il3Top.x - 10*il3Top.scale, il3Top.y);
+                    ctx.moveTo(il3Top.x - 10 * il3Top.scale, il3Top.y);
                     ctx.bezierCurveTo(
-                        il3Top.x - r.il3Size*il3Top.scale, il3Top.y + r.il3Size*il3Top.scale,
-                        il3Top.x + r.il3Size*il3Top.scale, il3Top.y + r.il3Size*il3Top.scale,
-                        il3Top.x + 10*il3Top.scale, il3Top.y
+                        il3Top.x - r.il3Size * il3Top.scale, il3Top.y + r.il3Size * il3Top.scale,
+                        il3Top.x + r.il3Size * il3Top.scale, il3Top.y + r.il3Size * il3Top.scale,
+                        il3Top.x + 10 * il3Top.scale, il3Top.y
                     );
                     ctx.stroke();
                 }
@@ -346,7 +364,7 @@
                     // Pulsing movement for tail
                     const pulse = Math.sin(G.state.timer * 0.05) * 10;
                     ctx.bezierCurveTo(
-                        tailStart.x + (15 + pulse) * tailStart.scale, tailStart.y + (r.tailLength/2) * tailStart.scale,
+                        tailStart.x + (15 + pulse) * tailStart.scale, tailStart.y + (r.tailLength / 2) * tailStart.scale,
                         tailStart.x - (15 + pulse) * tailStart.scale, tailStart.y + (r.tailLength) * tailStart.scale,
                         tailStart.x, tailStart.y + (r.tailLength + 10) * tailStart.scale
                     );
