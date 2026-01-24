@@ -514,7 +514,7 @@ window.GreenhouseUtils = (function () {
 
         console.log('[GreenhouseUtils] Preparing bottom navigation TOC...');
 
-        const baseUrl = appState.baseUrl || './';
+        const baseUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
 
         // Load CSS if not present
         if (!document.querySelector('link[href*="models_toc.css"]')) {
