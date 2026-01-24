@@ -34,6 +34,9 @@ def _create_and_render_animation(svg_path, output_path):
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
         logo_obj.location = (0, 0, 0)
+        # Rotate logo to stand upright and face the camera
+        logo_obj.rotation_euler.x = math.pi / 2
+        logo_obj.rotation_euler.z = math.pi
         
         mat = bpy.data.materials.new(name="Logo_Material_3D")
         mat.use_nodes = True
@@ -45,7 +48,8 @@ def _create_and_render_animation(svg_path, output_path):
         frames = 10
         bpy.context.scene.frame_end = frames
         for f in range(1, frames + 1):
-            logo_obj.rotation_euler.z = (f / frames) * 2 * math.pi
+            # Rotate around Z while maintaining the 180 degree offset for orientation
+            logo_obj.rotation_euler.z = ((f / frames) * 2 * math.pi) + math.pi
             logo_obj.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
 
         # --- 5. Scene Lighting and Camera ---
@@ -55,8 +59,6 @@ def _create_and_render_animation(svg_path, output_path):
         target_empty.name = "CenterTarget"
 
         # Calculate bounding box to ensure logo fits
-        import mathutils
-        bbox_corners = [logo_obj.matrix_world @ mathutils.Vector(corner) for corner in logo_obj.bound_box]
         max_dim = max(logo_obj.dimensions)
         # Conservative camera distance based on logo size
         camera_dist = max(10, max_dim * 2.5)

@@ -69,7 +69,7 @@ def setup_scene(fbx_path):
         constraint.up_axis = 'UP_Y'
 
     # Add background plane with logo
-    bpy.ops.mesh.primitive_plane_add(size=20, location=(0, 10, 0), rotation=(1.5708, 0, 0)) # Rotate 90 degrees on X-axis
+    bpy.ops.mesh.primitive_plane_add(size=20, location=(0, 10, 0), rotation=(math.pi / 2, 0, math.pi)) # Rotate 90 degrees on X-axis, 180 on Z
     plane = bpy.context.active_object
     plane.name = "BackgroundPlane"
 
