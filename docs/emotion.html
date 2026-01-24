@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greenhouse Emotion Simulation</title>
+    <style>
+        body { margin: 0; padding: 20px; background-color: #1a1a1a; color: #eee; font-family: sans-serif; }
+        #emotion-app-container { width: 100%; max-width: 1200px; margin: 0 auto; background: #050510; border-radius: 8px; overflow: hidden; min-height: 700px; position: relative; }
+        h1 { text-align: center; color: #ff4d4d; }
+    </style>
+</head>
+<body>
+    <h1>Emotion Simulation Development</h1>
+    <div id="emotion-app-container"></div>
+
+    <!-- Dependencies -->
+    <script src="js/GreenhouseUtils.js"></script>
+    <script src="js/models_util.js"></script>
+    <script src="js/models_3d_math.js"></script>
+    <script src="js/brain_mesh_realistic.js"></script>
+    <script src="js/neuro_ui_3d_brain.js"></script>
+    <script src="js/emotion_config.js"></script>
+    <script src="js/emotion_app.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.GreenhouseEmotionApp) {
+                window.GreenhouseEmotionApp.init('#emotion-app-container');
+            }
+        });
+    </script>
+</body>
+</html>
