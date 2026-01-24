@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { performance } = require('perf_hooks');
 const { assert } = require('../../../utils/assertion_library.js');
 const TestFramework = require('../../../utils/test_framework.js');
 
@@ -39,17 +40,34 @@ global.document = {
     }),
     createElement: () => ({
         getContext: () => ({})
-    })
+    }),
+    querySelectorAll: () => [],
+    currentScript: {
+        getAttribute: () => 'test'
+    }
 };
 global.addEventListener = () => { };
 global.console = console;
 global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
 
+// --- Helper to Load Scripts ---
+function loadScript(filename) {
+    const filePath = path.join(__dirname, '../../../../docs/js', filename);
+    const startTime = performance.now();
+    const code = fs.readFileSync(filePath, 'utf8');
+    vm.runInThisContext(code, { filename });
+    const duration = performance.now() - startTime;
+    if (TestFramework.ResourceReporter) {
+        TestFramework.ResourceReporter.recordScript(filePath, duration);
+    }
+}
+
 // --- Test Suites ---
 
 TestFramework.describe('Neuro Page', () => {
 
-    TestFramework.it('should have a placeholder test', () => {
+    TestFramework.it('should load neuro.js and report resources', () => {
+        loadScript('neuro.js');
         assert.isTrue(true);
     });
 

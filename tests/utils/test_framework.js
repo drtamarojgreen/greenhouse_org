@@ -311,6 +311,10 @@ class TestFramework {
     console.log(`Duration: ${duration}ms`);
     console.log('========================================\n');
 
+    if (typeof module !== 'undefined' && module.exports && this.ResourceReporter) {
+      console.log(this.ResourceReporter.generateReport());
+    }
+
     if (this.results.failed > 0) {
       console.log('❌ Tests failed');
     } else {
@@ -410,6 +414,7 @@ testFramework.run = testFramework.run.bind(testFramework);
 
 // Export for use in tests
 if (typeof module !== 'undefined' && module.exports) {
+  testFramework.ResourceReporter = require('./resource_reporter.js');
   module.exports = testFramework;
 }
 
