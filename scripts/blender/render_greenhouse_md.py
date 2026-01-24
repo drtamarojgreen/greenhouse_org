@@ -11,12 +11,36 @@ def setup_scene():
 
     scene = bpy.context.scene
     scene.frame_start = 1
-    scene.frame_end = 24
-    scene.render.fps = 2
+    scene.frame_end = 120
+    scene.render.fps = 24
     scene.render.engine = 'CYCLES'
-    scene.cycles.samples = 128
-    scene.render.resolution_x = 1920
-    scene.render.resolution_y = 1080
+    
+    # Cycles Noise Reduction Settings
+    scene.cycles.device = 'CPU'
+    scene.cycles.samples = 32
+    scene.cycles.use_adaptive_sampling = True
+    scene.cycles.adaptive_threshold = 0.1
+    scene.cycles.use_denoising = False
+    
+    # Advanced Noise Clamping
+    scene.cycles.blur_glossy = 1.0
+    scene.cycles.sample_clamp_indirect = 1.0
+    scene.cycles.caustics_reflective = False
+    scene.cycles.caustics_refractive = False
+    scene.cycles.max_bounces = 4
+    
+    for rl in scene.view_layers:
+        if hasattr(rl, "cycles"):
+            rl.cycles.use_denoising = False
+    
+    scene.render.resolution_x = 960
+    scene.render.resolution_y = 540
+
+    # Dark environment for better reflections
+    scene.world.use_nodes = True
+    bg_node = scene.world.node_tree.nodes.get("Background")
+    if bg_node:
+        bg_node.inputs[0].default_value = (0.002, 0.002, 0.002, 1)
 
     return scene
 
@@ -25,8 +49,8 @@ def create_logo_background(logo_path):
         print(f"Warning: Logo not found at {logo_path}")
         return None
 
-    # Create plane for logo
-    bpy.ops.mesh.primitive_plane_add(size=10, location=(0, 2, 0), rotation=(math.radians(90), 0, 0))
+    # Create plane for logo at the back (Y=5)
+    bpy.ops.mesh.primitive_plane_add(size=25, location=(0, 5, 0), rotation=(math.radians(90), 0, 0))
     bg_plane = bpy.context.object
     bg_plane.name = "LogoBackground"
 
@@ -58,7 +82,7 @@ def create_logo_background(logo_path):
 
     return bg_plane
 
-def create_text(content, location=(0, 0, 0.5)):
+def create_text(content, location=(0, 0, 0)):
     bpy.ops.object.text_add(location=location, rotation=(math.radians(90), 0, 0))
     text_obj = bpy.context.object
     text_obj.data.body = content
@@ -67,38 +91,31 @@ def create_text(content, location=(0, 0, 0.5)):
     text_obj.data.extrude = 0.1
     text_obj.data.bevel_depth = 0.02
 
-    # Dark Green Material
+    # High reflectivity material
     mat = bpy.data.materials.new(name="TextMaterial")
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs["Base Color"].default_value = (0.05, 0.2, 0.05, 1)
-    bsdf.inputs["Roughness"].default_value = 0.1  # Low roughness for sharp reflections
-    bsdf.inputs["Metallic"].default_value = 0.7   # Higher metallic for distinct highlights
+    bsdf.inputs["Base Color"].default_value = (0.05, 0.4, 0.1, 1)
+    bsdf.inputs["Roughness"].default_value = 0.15
+    bsdf.inputs["Metallic"].default_value = 1.0
     text_obj.data.materials.append(mat)
 
     return text_obj
 
-def create_moving_spotlights(scene, target_obj):
-    # Create paths for spotlights
-    bpy.ops.curve.primitive_bezier_circle_add(radius=8, location=(5, -5, 5), rotation=(math.radians(60), 0, 0))
-    path1 = bpy.context.object
-    
-    bpy.ops.curve.primitive_bezier_circle_add(radius=8, location=(-5, -5, 5), rotation=(math.radians(60), 0, 0))
-    path2 = bpy.context.object
-    
-    for path in [path1, path2]:
-        bpy.ops.object.light_add(type='SPOT', location=(0, 0, 0))
+def create_crossing_spotlights(scene, target_obj):
+    # Positioned behind the camera (Camera at Y=-25, Spots at Y=-45)
+    for i, start_loc in enumerate([(-15, -45, -8), (15, -45, -8)]):
+        end_loc = (15, -45, 8) if i == 0 else (-15, -45, 8)
+        bpy.ops.object.light_add(type='SPOT', location=start_loc)
         spot = bpy.context.object
-        spot.data.energy = 2000
-        spot.data.spot_size = math.radians(35)
-        spot.data.spot_blend = 0.5
+        spot.name = f"CrossingSpot_{i}"
+        spot.data.energy = 150000
+        spot.data.spot_size = math.radians(25)
+        spot.data.shadow_soft_size = 1.5
         
-        follow = spot.constraints.new(type='FOLLOW_PATH')
-        follow.target = path
-        follow.offset_factor = 0.0
-        follow.keyframe_insert(data_path="offset_factor", frame=scene.frame_start)
-        follow.offset_factor = 1.0
-        follow.keyframe_insert(data_path="offset_factor", frame=scene.frame_end)
+        spot.keyframe_insert(data_path="location", frame=1)
+        spot.location = end_loc
+        spot.keyframe_insert(data_path="location", frame=120)
         
         track = spot.constraints.new(type='TRACK_TO')
         track.target = target_obj
@@ -106,12 +123,11 @@ def create_moving_spotlights(scene, target_obj):
         track.up_axis = 'UP_Y'
 
 def main():
-    parser = argparse.ArgumentParser(description="Render GreenhouseMD text on logo background")
-    parser.add_argument("--output", default="//greenhouse_md.png", help="Output path")
+    parser = argparse.ArgumentParser(description="Render GreenhouseMD text with Crossing Spotlights")
+    parser.add_argument("--output", default="//greenhouse_md_final.png", help="Output path")
     parser.add_argument("--output-video", help="Output video path")
     parser.add_argument("--logo", default="docs/images/Greenhouse_Logo.png", help="Path to logo image")
 
-    # Handle blender arguments
     argv = sys.argv
     if "--" in argv:
         argv = argv[argv.index("--") + 1:]
@@ -121,25 +137,25 @@ def main():
 
     scene = setup_scene()
 
-    # Adjust paths relative to script or absolute
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    base_dir = os.getcwd()
     logo_path = os.path.join(base_dir, args.logo)
 
     create_logo_background(logo_path)
     create_text("GreenhouseMD")
 
-    # Create axis at midpoint for spotlights to focus on
-    bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0.5))
-    midpoint_axis = bpy.context.object
-    create_moving_spotlights(scene, midpoint_axis)
+    # Target Axis
+    bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+    target_axis = bpy.context.object
+    create_crossing_spotlights(scene, target_axis)
 
-    # Camera
-    bpy.ops.object.camera_add(location=(0, -16, 0), rotation=(math.radians(90), 0, 0))
+    # Camera - positioned back to frame logo (Y=-25)
+    bpy.ops.object.camera_add(location=(0, -25, 0), rotation=(math.radians(90), 0, 0))
     scene.camera = bpy.context.object
+    scene.camera.data.lens = 35 # Balance FOV
 
-    # Lighting
-    bpy.ops.object.light_add(type='SUN', location=(0, -5, 5), rotation=(math.radians(45), 0, 0))
-    bpy.ops.object.light_add(type='AREA', location=(0, -2, 2))
+    # Lighting - minimal base lighting
+    bpy.ops.object.light_add(type='SUN', location=(0, -5, 10), rotation=(math.radians(45), 0, 0))
+    bpy.context.object.data.energy = 0.05
 
     if args.output_video:
         output_dir = os.path.dirname(args.output_video)
@@ -149,7 +165,7 @@ def main():
         scene.render.image_settings.file_format = 'FFMPEG'
         scene.render.ffmpeg.format = 'MPEG4'
         scene.render.ffmpeg.codec = 'H264'
-        print(f"Rendering video to {args.output_video}...")
+        print(f"Rendering framed video to {args.output_video}...")
         bpy.ops.render.render(animation=True)
     else:
         scene.render.filepath = args.output
