@@ -469,6 +469,12 @@
                 const container = document.querySelector(targetSelector);
                 if (container) {
                     G.initialize(container, targetSelector);
+
+                    // Render bottom navigation TOC via common utilities
+                    const GreenhouseUtils = window.GreenhouseUtils;
+                    if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {
+                        GreenhouseUtils.renderModelsTOC(targetSelector);
+                    }
                 } else {
                     console.error('Dopamine App: Container not found on initialization for selector:', targetSelector);
                 }

@@ -496,6 +496,154 @@ window.GreenhouseUtils = (function () {
         return intervalId;
     }
 
+    /**
+     * @function renderModelsTOC
+     * @description Renders the models table of contents at the bottom of the simulation.
+     * @param {string} [targetSelector] - Optional selector for placement. If not provided, appends to the bottom of the body.
+     */
+    async function renderModelsTOC(targetSelector = null) {
+        // Avoid rendering on local documentation/test HTML files as per user preference
+        const isLocalHtml = window.location.pathname.endsWith('.html') ||
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1';
+
+        if (isLocalHtml) {
+            console.log('[GreenhouseUtils] TOC rendering skipped on local/docs HTML file.');
+            return;
+        }
+
+        console.log('[GreenhouseUtils] Preparing bottom navigation TOC...');
+
+        const baseUrl = appState.baseUrl || './';
+
+        // Load CSS if not present
+        if (!document.querySelector('link[href*="models_toc.css"]')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = `${baseUrl}css/models_toc.css`;
+            document.head.appendChild(link);
+        }
+
+        // Load JS if not present
+        if (!window.GreenhouseModelsTOC) {
+            try {
+                await loadScript('models_toc.js', baseUrl);
+            } catch (e) {
+                console.error('[GreenhouseUtils] Failed to load models_toc.js', e);
+                return;
+            }
+        }
+
+        // Create or find the footer container
+        let tocContainer = document.getElementById('greenhouse-models-footer-toc');
+        if (!tocContainer) {
+            tocContainer = document.createElement('div');
+            tocContainer.id = 'greenhouse-models-footer-toc';
+            tocContainer.className = 'models-toc-footer-section';
+
+            // Add style block for the footer section
+            if (!document.getElementById('greenhouse-footer-styles')) {
+                const style = document.createElement('style');
+                style.id = 'greenhouse-footer-styles';
+                style.textContent = `
+                    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
+                    
+                    .models-toc-footer-section {
+                        background: linear-gradient(to bottom, #000 0%, #0a100a 100%);
+                        border-top: 2px solid #1a2a1a;
+                        padding: 80px 20px;
+                        margin-top: 150px;
+                        position: relative;
+                        z-index: 1000;
+                        min-height: 400px;
+                        color: #fff;
+                        box-shadow: 0 -30px 60px rgba(0, 0, 0, 0.6);
+                        clear: both;
+                    }
+                    .models-toc-footer-section .models-toc-container {
+                        max-width: 1200px;
+                        margin: 0 auto;
+                    }
+                    .models-toc-footer-header {
+                        text-align: center;
+                        margin-bottom: 60px;
+                    }
+                    .models-toc-footer-header h2 {
+                        font-family: 'Quicksand', sans-serif;
+                        font-size: 2.8rem;
+                        font-weight: 300;
+                        color: #4ca1af;
+                        letter-spacing: 2px;
+                        margin-bottom: 15px;
+                        text-transform: uppercase;
+                    }
+                    .models-toc-footer-header .accent-line {
+                        width: 80px;
+                        height: 3px;
+                        background: linear-gradient(to right, transparent, #4ca1af, transparent);
+                        margin: 0 auto;
+                    }
+                    
+                    /* Force scrolling if the app was previously locked */
+                    html, body {
+                        overflow-y: auto !important;
+                        height: auto !important;
+                        min-height: 100% !important;
+                    }
+                    
+                    /* Dark Mode Theme Overrides for TOC Cards */
+                    .models-toc-footer-section .model-toc-card {
+                        background: rgba(255, 255, 255, 0.04);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        backdrop-filter: blur(12px);
+                        transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+                    }
+                    .models-toc-footer-section .model-toc-card:hover {
+                        background: rgba(255, 255, 255, 0.08);
+                        border-color: #4ca1af;
+                        transform: translateY(-12px);
+                        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(76, 161, 175, 0.2);
+                    }
+                    .models-toc-footer-section .model-toc-card h3 {
+                        color: #4ca1af;
+                        border-bottom-color: rgba(255, 255, 255, 0.05);
+                        font-family: 'Quicksand', sans-serif;
+                    }
+                    .models-toc-footer-section .model-toc-card p {
+                        color: #bbb;
+                    }
+                    .models-toc-footer-section .models-toc-intro {
+                        display: none; /* Hide intro text in the footer/bottom view */
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // Add Footer Header
+            const header = document.createElement('div');
+            header.className = 'models-toc-footer-header';
+            header.innerHTML = `
+                <h2>Greenhouse Models</h2>
+                <div class="accent-line"></div>
+            `;
+            tocContainer.appendChild(header);
+
+            // Append to body after the main app container
+            const mainApp = targetSelector ? document.querySelector(targetSelector) : null;
+            if (mainApp && mainApp.parentNode) {
+                // Insert after the main simulation container
+                mainApp.parentNode.insertBefore(tocContainer, mainApp.nextSibling);
+            } else {
+                document.body.appendChild(tocContainer);
+            }
+        }
+
+        // Initialize the TOC component inside the new footer container
+        if (window.GreenhouseModelsTOC) {
+            window.GreenhouseModelsTOC.init({ target: tocContainer });
+        }
+    }
+
     // Public API
     return {
         displayError: (msg, duration) => displayMessage(msg, 'error', duration),
@@ -510,7 +658,8 @@ window.GreenhouseUtils = (function () {
         validateField: validateField, // Expose form validation utility
         validateForm: validateForm,   // Expose form validation utility
         observeAndReinitializeApplication: observeAndReinitializeApplication,
-        startSentinel: startSentinel
+        startSentinel: startSentinel,
+        renderModelsTOC: renderModelsTOC
     };
 })();
 

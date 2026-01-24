@@ -89,8 +89,13 @@
                 console.log('Synapse App: All modules loaded successfully.');
 
                 if (targetSelector) {
-                    console.log('Synapse App: Initializing in 5 seconds...');
+                    console.log('Synapse App: Initializing...');
                     window.GreenhouseSynapseApp.init(targetSelector, baseUrl);
+
+                    // Render bottom navigation TOC via common utilities
+                    if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {
+                        GreenhouseUtils.renderModelsTOC(targetSelector);
+                    }
                 } else {
                     console.warn('Synapse App: No target selector provided, skipping auto-init.');
                 }

@@ -619,6 +619,11 @@
                 if (container) {
                     console.log('Serotonin App: Auto-initializing...');
                     G.initialize(container, targetSelector);
+
+                    // Render bottom navigation TOC via common utilities
+                    if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {
+                        GreenhouseUtils.renderModelsTOC(targetSelector);
+                    }
                 } else {
                     console.error('Serotonin App: Container not found on initialization for selector:', targetSelector);
                 }

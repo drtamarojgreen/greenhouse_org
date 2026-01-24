@@ -82,11 +82,11 @@
             await GreenhouseUtils.loadScript('models_ui_environment_medication.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ui_environment_therapy.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ui_environment.js', baseUrl);
-            
+
             // Load 3D modules
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ui_3d.js', baseUrl);
-            
+
             await GreenhouseUtils.loadScript('models_ui.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ux.js', baseUrl);
 
@@ -98,6 +98,12 @@
 
                 // Kick off the application by initializing the UX module
                 GreenhouseModelsUX.init();
+
+                // Render bottom navigation TOC via common utilities
+                const { targetSelector } = window._greenhouseModelsAttributes;
+                if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {
+                    GreenhouseUtils.renderModelsTOC(targetSelector);
+                }
             } else {
                 throw new Error("One or more application modules failed to load.");
             }

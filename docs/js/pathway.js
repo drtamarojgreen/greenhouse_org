@@ -38,6 +38,11 @@
                 if (window.GreenhousePathwayViewer) {
                     console.log('Pathway App: All modules loaded. Initializing...');
                     window.GreenhousePathwayViewer.init(containerSelector, base);
+
+                    // Render bottom navigation TOC via common utilities
+                    if (window.GreenhouseUtils && typeof window.GreenhouseUtils.renderModelsTOC === 'function') {
+                        window.GreenhouseUtils.renderModelsTOC(containerSelector);
+                    }
                 } else {
                     console.error('Pathway App: GreenhousePathwayViewer failed to load.');
                 }

@@ -168,11 +168,15 @@
         // Start evolution loop automatically
         startEvolutionLoop();
 
-        // Resilience using shared GreenhouseUtils
         if (window.GreenhouseUtils) {
             // We pass 'window.GreenhouseGenetic' as app instance, and 'initApplication' as function
             window.GreenhouseUtils.observeAndReinitializeApplication(container, targetSelector, window.GreenhouseGenetic, 'initApplication');
             window.GreenhouseUtils.startSentinel(container, targetSelector, window.GreenhouseGenetic, 'initApplication');
+
+            // Render bottom navigation TOC via common utilities
+            if (typeof window.GreenhouseUtils.renderModelsTOC === 'function') {
+                window.GreenhouseUtils.renderModelsTOC(targetSelector);
+            }
         }
     }
 

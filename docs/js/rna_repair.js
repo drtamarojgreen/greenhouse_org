@@ -943,11 +943,15 @@
 
         console.log('RNA Repair simulation initialized (Vertical).');
 
-        // Resilience using shared GreenhouseUtils
         if (window.GreenhouseUtils) {
             // We pass 'window.Greenhouse' as the appInstance and 'initializeRNARepairSimulation' as the function name
             window.GreenhouseUtils.observeAndReinitializeApplication(targetElement, selector, window.Greenhouse, 'initializeRNARepairSimulation');
             window.GreenhouseUtils.startSentinel(targetElement, selector, window.Greenhouse, 'initializeRNARepairSimulation');
+
+            // Render bottom navigation TOC via common utilities
+            if (typeof window.GreenhouseUtils.renderModelsTOC === 'function') {
+                window.GreenhouseUtils.renderModelsTOC(targetElement);
+            }
         }
     }
 
