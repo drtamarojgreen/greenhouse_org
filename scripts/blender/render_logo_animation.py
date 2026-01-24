@@ -49,19 +49,56 @@ def _create_and_render_animation(svg_path, output_path):
             logo_obj.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
 
         # --- 5. Scene Lighting and Camera ---
-        bpy.ops.object.light_add(type='SUN', location=(5, 5, 5))
-        bpy.ops.object.camera_add(location=(0, -10, 3))
+        # Create Plain Axis Empty at center
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+        target_empty = bpy.context.active_object
+        target_empty.name = "CenterTarget"
+
+        # Calculate bounding box to ensure logo fits
+        import mathutils
+        bbox_corners = [logo_obj.matrix_world @ mathutils.Vector(corner) for corner in logo_obj.bound_box]
+        max_dim = max(logo_obj.dimensions)
+        # Conservative camera distance based on logo size
+        camera_dist = max(10, max_dim * 2.5)
+
+        bpy.ops.object.camera_add(location=(0, -camera_dist, camera_dist * 0.3))
         camera = bpy.context.active_object
         bpy.context.scene.camera = camera
-        look_at = logo_obj.location
-        direction = look_at - camera.location
-        rot_quat = direction.to_track_quat('-Z', 'Y')
-        camera.rotation_euler = rot_quat.to_euler()
+
+        # Track camera to center
+        constraint = camera.constraints.new(type='TRACK_TO')
+        constraint.target = target_empty
+        constraint.track_axis = 'TRACK_NEGATIVE_Z'
+        constraint.up_axis = 'UP_Y'
+
+        # Place spotlights behind the camera
+        # Light 1: Slightly to the left
+        bpy.ops.object.light_add(type='SPOT', location=(-camera_dist * 0.5, -camera_dist * 1.2, camera_dist * 0.8))
+        spot1 = bpy.context.active_object
+        spot1.data.energy = 5000 * (camera_dist / 10)**2 # Scale energy with distance
+
+        # Light 2: Slightly to the right
+        bpy.ops.object.light_add(type='SPOT', location=(camera_dist * 0.5, -camera_dist * 1.2, camera_dist * 0.8))
+        spot2 = bpy.context.active_object
+        spot2.data.energy = 5000 * (camera_dist / 10)**2
+
+        # Track spotlights to center empty
+        for light_obj in [spot1, spot2]:
+            l_constraint = light_obj.constraints.new(type='TRACK_TO')
+            l_constraint.target = target_empty
+            l_constraint.track_axis = 'TRACK_NEGATIVE_Z'
+            l_constraint.up_axis = 'UP_Y'
 
         # --- 6. Render Settings ---
         scene = bpy.context.scene
         scene.render.engine = 'CYCLES'
-        scene.cycles.samples = 128
+        scene.cycles.samples = 512 # Increased samples to help with noise if denoising is unavailable
+
+        # Fallback to adaptive sampling and higher samples if denoising fails
+        scene.cycles.use_adaptive_sampling = True
+        scene.cycles.adaptive_threshold = 0.005 # Lower threshold for less noise
+        scene.cycles.use_denoising = False # Disabled by default due to environment issues
+
         scene.render.filepath = output_path
         scene.render.image_settings.file_format = 'FFMPEG'
         scene.render.ffmpeg.format = 'MPEG4'

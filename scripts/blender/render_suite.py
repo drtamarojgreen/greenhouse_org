@@ -40,19 +40,33 @@ def setup_scene(fbx_path):
     vfx.apply_brain_texture(model)
     bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
     model.location = (0, 0, 0)
-    bpy.ops.object.camera_add(location=(0, -12, 2))
+    bpy.ops.object.camera_add(location=(0, -18, 2)) # Increased distance to ensure background logo plane fits
     camera = bpy.context.active_object
     camera.name = "SceneCamera"
     bpy.context.scene.camera = camera
 
-    # Add lighting
-    bpy.ops.object.light_add(type='POINT', location=(5, 5, 5))
-    light = bpy.context.active_object
-    light.data.energy = 1000.0
+    # Create Plain Axis Empty at center for tracking
+    bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+    target_empty = bpy.context.active_object
+    target_empty.name = "CenterTarget"
 
-    bpy.ops.object.light_add(type='POINT', location=(-5, -5, 5))
-    light2 = bpy.context.active_object
-    light2.data.energy = 1000.0
+    # Add lighting: Spotlights behind the camera directed to the center
+    # Light 1: Slightly to the left and behind
+    bpy.ops.object.light_add(type='SPOT', location=(-10, -30, 15))
+    spot1 = bpy.context.active_object
+    spot1.data.energy = 30000.0
+
+    # Light 2: Slightly to the right and behind
+    bpy.ops.object.light_add(type='SPOT', location=(10, -30, 15))
+    spot2 = bpy.context.active_object
+    spot2.data.energy = 30000.0
+
+    # Add constraints to lights to point at center
+    for light_obj in [spot1, spot2]:
+        constraint = light_obj.constraints.new(type='TRACK_TO')
+        constraint.target = target_empty
+        constraint.track_axis = 'TRACK_NEGATIVE_Z'
+        constraint.up_axis = 'UP_Y'
 
     # Add background plane with logo
     bpy.ops.mesh.primitive_plane_add(size=20, location=(0, 10, 0), rotation=(1.5708, 0, 0)) # Rotate 90 degrees on X-axis
@@ -96,7 +110,10 @@ def setup_scene(fbx_path):
 def configure_render_settings(output_folder, duration_frames):
     scene = bpy.context.scene
     scene.render.engine = 'CYCLES'
-    scene.cycles.samples = 128
+    scene.cycles.samples = 512
+    scene.cycles.use_adaptive_sampling = True
+    scene.cycles.adaptive_threshold = 0.005 # Lower threshold for less noise
+    scene.cycles.use_denoising = False # Disabled by default due to environment issues
     scene.cycles.diffuse_bounces = 3
     scene.cycles.glossy_bounces = 3
     scene.cycles.transparent_max_bounces = 8
