@@ -17,9 +17,9 @@ def setup_scene():
     
     # Cycles Noise Reduction Settings
     scene.cycles.device = 'CPU'
-    scene.cycles.samples = 32
+    scene.cycles.samples = 512
     scene.cycles.use_adaptive_sampling = True
-    scene.cycles.adaptive_threshold = 0.1
+    scene.cycles.adaptive_threshold = 0.005
     scene.cycles.use_denoising = False
     
     # Advanced Noise Clamping
@@ -50,7 +50,7 @@ def create_logo_background(logo_path):
         return None
 
     # Create plane for logo at the back (Y=5)
-    bpy.ops.mesh.primitive_plane_add(size=25, location=(0, 5, 0), rotation=(math.radians(90), 0, 0))
+    bpy.ops.mesh.primitive_plane_add(size=25, location=(0, 5, 0), rotation=(math.pi / 2, 0, math.pi))
     bg_plane = bpy.context.object
     bg_plane.name = "LogoBackground"
 
@@ -103,19 +103,14 @@ def create_text(content, location=(0, 0, 0)):
     return text_obj
 
 def create_crossing_spotlights(scene, target_obj):
-    # Positioned behind the camera (Camera at Y=-25, Spots at Y=-45)
-    for i, start_loc in enumerate([(-15, -45, -8), (15, -45, -8)]):
-        end_loc = (15, -45, 8) if i == 0 else (-15, -45, 8)
+    # Positioned behind the camera (Camera at Y=-25)
+    for i, start_loc in enumerate([(-15, -40, 10), (15, -40, 10)]):
         bpy.ops.object.light_add(type='SPOT', location=start_loc)
         spot = bpy.context.object
-        spot.name = f"CrossingSpot_{i}"
-        spot.data.energy = 150000
-        spot.data.spot_size = math.radians(25)
+        spot.name = f"Spotlight_{i}"
+        spot.data.energy = 200000
+        spot.data.spot_size = math.radians(30)
         spot.data.shadow_soft_size = 1.5
-        
-        spot.keyframe_insert(data_path="location", frame=1)
-        spot.location = end_loc
-        spot.keyframe_insert(data_path="location", frame=120)
         
         track = spot.constraints.new(type='TRACK_TO')
         track.target = target_obj
@@ -146,16 +141,13 @@ def main():
     # Target Axis
     bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
     target_axis = bpy.context.object
+    target_axis.name = "CenterTarget"
     create_crossing_spotlights(scene, target_axis)
 
     # Camera - positioned back to frame logo (Y=-25)
     bpy.ops.object.camera_add(location=(0, -25, 0), rotation=(math.radians(90), 0, 0))
     scene.camera = bpy.context.object
     scene.camera.data.lens = 24 # Balance FOV to fit size 25 logo at distance 30
-
-    # Lighting - minimal base lighting
-    bpy.ops.object.light_add(type='SUN', location=(0, -5, 10), rotation=(math.radians(45), 0, 0))
-    bpy.context.object.data.energy = 0.05
 
     if args.output_video:
         output_dir = os.path.dirname(args.output_video)
