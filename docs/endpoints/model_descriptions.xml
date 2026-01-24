@@ -84,4 +84,22 @@
       <paragraph>This simulation helps users understand the linear nature of long RNA transcripts and the specialized enzymes, such as AlkB, that ensure cellular information remains accurate and functional.</paragraph>
     </description>
   </model>
+
+  <model id="emotion">
+    <title>Emotion Model</title>
+    <url>/emotion</url>
+    <description>
+      <paragraph>The Emotion Model explores the neurological foundations of human affect, focusing on the Limbic System—a complex set of structures including the amygdala, hippocampus, and hypothalamus. This model visualizes how emotional states are not just feelings, but physiological events triggered by sensory input and modulated by cognitive appraisal.</paragraph>
+      <paragraph>By integrating classical psychological theories such as James-Lange, Cannon-Bard, and Schachter-Singer, the simulation illustrates the dynamic interplay between bodily responses and mental interpretation. It highlights how the brain detects threats, contextualizes experiences, and regulates autonomic responses to create the rich tapestry of human emotion.</paragraph>
+    </description>
+  </model>
+
+  <model id="cognition">
+    <title>Cognition Model</title>
+    <url>/cognition</url>
+    <description>
+      <paragraph>The Cognition Model focuses on the higher-order mental processes that enable us to perceive, think, and remember. Centered on the Cerebral Cortex—specifically the prefrontal, parietal, temporal, and occipital lobes—this model represents the mind as an advanced information processing system.</paragraph>
+      <paragraph>The simulation explores key cognitive frameworks such as Information Processing, Dual Process Theory (System 1 vs. System 2), and Cognitive Load. It visualizes how the brain integrates sensory data, manages working memory, and executes complex decision-making processes, emphasizing the fundamental link between cortical architecture and intellectual function.</paragraph>
+    </description>
+  </model>
 </models>

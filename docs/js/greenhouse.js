@@ -93,6 +93,14 @@
          */
         serotoninPagePath: '/serotonin',
         /**
+         * The path segment that identifies the emotion page.
+         */
+        emotionPagePath: '/emotion',
+        /**
+         * The path segment that identifies the cognition page.
+         */
+        cognitionPagePath: '/cognition',
+        /**
          * Timeout for waiting for elements to appear (in milliseconds).
          */
         elementWaitTimeout: 15000,
@@ -121,6 +129,8 @@
             rna: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             dopamine: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             serotonin: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            emotion: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            cognition: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -145,7 +155,9 @@
             dna: 'section.wixui-section',
             rna: 'section.wixui-section',
             dopamine: 'section.wixui-section',
-            serotonin: 'section.wixui-section'
+            serotonin: 'section.wixui-section',
+            emotion: 'section.wixui-section',
+            cognition: 'section.wixui-section'
         }
     };
 
@@ -221,6 +233,42 @@
         } catch (error) {
             console.error(`Greenhouse: Failed to load ${appName} application:`, error);
         }
+    }
+
+    /**
+     * @function loadEmotionApplication
+     * @description Loads the emotion simulation application.
+     */
+    async function loadEmotionApplication() {
+        await loadApplication(
+            'emotion',
+            'emotion.js',
+            config.selectors.emotion,
+            config.fallbackSelectors.emotion,
+            null,
+            'default',
+            null,
+            null,
+            {}
+        );
+    }
+
+    /**
+     * @function loadCognitionApplication
+     * @description Loads the cognition simulation application.
+     */
+    async function loadCognitionApplication() {
+        await loadApplication(
+            'cognition',
+            'cognition.js',
+            config.selectors.cognition,
+            config.fallbackSelectors.cognition,
+            null,
+            'default',
+            null,
+            null,
+            {}
+        );
     }
 
     /**
@@ -541,6 +589,10 @@
             pollAndLoad(config.selectors.dopamine, loadDopamineApplication);
         } else if (window.location.pathname.includes(config.serotoninPagePath)) {
             pollAndLoad(config.selectors.serotonin, loadSerotoninApplication);
+        } else if (window.location.pathname.includes(config.emotionPagePath)) {
+            pollAndLoad(config.selectors.emotion, loadEmotionApplication);
+        } else if (window.location.pathname.includes(config.cognitionPagePath)) {
+            pollAndLoad(config.selectors.cognition, loadCognitionApplication);
         }
     }
 

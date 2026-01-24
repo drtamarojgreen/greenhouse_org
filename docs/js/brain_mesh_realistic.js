@@ -126,6 +126,16 @@
                     name: 'Hippocampus',
                     color: 'rgba(100, 255, 150, 0.6)',
                     vertices: []
+                },
+                thalamus: {
+                    name: 'Thalamus',
+                    color: 'rgba(100, 150, 255, 0.6)',
+                    vertices: []
+                },
+                hypothalamus: {
+                    name: 'Hypothalamus',
+                    color: 'rgba(255, 200, 100, 0.6)',
+                    vertices: []
                 }
             };
 
@@ -293,6 +303,16 @@
             // Brainstem (bottom center)
             if (y < -0.5 && Math.abs(x) < 0.3 && Math.abs(z) < 0.3) {
                 return 'brainstem';
+            }
+
+            // Thalamus (deep, center, slightly above mid)
+            if (Math.abs(x) < 0.2 && y < 0.2 && y > -0.1 && Math.abs(z) < 0.2) {
+                return 'thalamus';
+            }
+
+            // Hypothalamus (deep, center, below thalamus)
+            if (Math.abs(x) < 0.15 && y <= -0.1 && y > -0.3 && Math.abs(z) < 0.15) {
+                return 'hypothalamus';
             }
 
             // Amygdala (deep, center-side)
