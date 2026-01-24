@@ -293,9 +293,9 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, w, h);
 
-            if (window.GreenhouseNeuroBrain && window.GreenhouseModels3DMath) {
-                // We use GreenhouseNeuroBrain but with our active region highlight
-                window.GreenhouseNeuroBrain.drawBrainShell(
+            if (window.GreenhouseEmotionBrain && window.GreenhouseModels3DMath) {
+                // We use GreenhouseEmotionBrain but with our active region highlight
+                window.GreenhouseEmotionBrain.drawBrainShell(
                     ctx,
                     this.brainMesh,
                     this.camera,

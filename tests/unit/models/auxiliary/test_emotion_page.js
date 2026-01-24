@@ -66,7 +66,7 @@ loadScript('GreenhouseUtils.js');
 loadScript('models_util.js');
 loadScript('models_3d_math.js');
 loadScript('brain_mesh_realistic.js');
-loadScript('neuro_ui_3d_brain.js');
+loadScript('emotion_ui_3d_brain.js');
 loadScript('emotion_config.js');
 loadScript('emotion_regions.js');
 loadScript('emotion_interventions.js');
