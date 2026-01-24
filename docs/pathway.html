@@ -86,9 +86,20 @@
             margin-right: 5px;
         }
 
-        .badge-velo { background: #6b4ca1; color: white; }
-        .badge-local { background: #4ca177; color: white; }
-        .badge-gen { background: #a17c4c; color: white; }
+        .badge-velo {
+            background: #6b4ca1;
+            color: white;
+        }
+
+        .badge-local {
+            background: #4ca177;
+            color: white;
+        }
+
+        .badge-gen {
+            background: #a17c4c;
+            color: white;
+        }
     </style>
 </head>
 
@@ -96,39 +107,77 @@
     <!-- The Target Selector Container -->
     <div id="app-container"></div>
 
-    <!-- Test Overlay -->
+    <!-- Rigorous Test Overlay -->
     <div id="test-controls">
-        <h3>Velo Simulation Panel</h3>
-        <button class="test-btn" onclick="simulatePreFetch()">1. Simulate Pre-Init Fetch (Dopaminergic)</button>
-        <button class="test-btn" onclick="simulateLateFetch()">2. Simulate Late Fetch (+3s Delay, HPA)</button>
-        <button class="test-btn" onclick="simulateEmptyInit()">3. Simulate Clean Init (No Bridge Data)</button>
-        <button class="test-btn" onclick="reloadPage()">4. Reset Environment</button>
-        
-        <div style="margin-top:15px; font-size:12px;">
-            <strong>Data Source Trace:</strong>
-            <div id="test-log" class="status-box">Ready for testing...</div>
+        <h3>Pathway Test Harness</h3>
+
+        <div class="test-group">
+            <div class="test-label">1. Bridge & Timing</div>
+            <button class="test-btn" onclick="simulatePreFetch()">Pre-Init Bridge (Dopamine)</button>
+            <button class="test-btn" onclick="simulateLateFetch()">Late Bridge (+3s HPA)</button>
+        </div>
+
+        <div class="test-group">
+            <div class="test-label">2. Robustness Checks</div>
+            <button class="test-btn btn-warn" onclick="simulateJunkXml()">Inject XML with Junk</button>
+            <button class="test-btn btn-warn" onclick="simulateDoubleInit()">Simulate Double Init</button>
+        </div>
+
+        <div class="test-group">
+            <div class="test-label">3. Fallbacks</div>
+            <button class="test-btn" onclick="simulateEmptyInit()">Generator Fallback</button>
+            <button class="test-btn btn-err" onclick="reloadPage()">Hard Reset</button>
+        </div>
+
+        <div style="margin-top:15px; font-size:11px; border-top: 1px solid #333; padding-top:10px;">
+            <div id="system-status" style="color: #4ca1af; margin-bottom: 5px;">Trace Log:</div>
+            <div id="test-log" class="status-box">Harness Loaded.</div>
         </div>
     </div>
 
+    <!-- Harness Styles -->
+    <style>
+        .test-group {
+            margin-bottom: 12px;
+        }
+
+        .test-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+
+        .btn-warn {
+            border-color: #a17c4c !important;
+        }
+
+        .btn-warn:hover {
+            background: #453521 !important;
+        }
+
+        .btn-err {
+            border-color: #a14c4c !important;
+        }
+
+        .btn-err:hover {
+            background: #452121 !important;
+        }
+    </style>
+
     <script src="js/GreenhouseUtils.js"></script>
-    <script src="js/pathway.js"></script>
+    <script src="js/pathway.js" data-target-selector-left="#app-container" data-base-url="./"></script>
 
     <script>
         const logEl = document.getElementById('test-log');
         const container = document.getElementById('app-container');
 
-        function log(msg) {
+        function log(msg, type = 'info') {
             const time = new Date().toLocaleTimeString().split(' ')[0];
-            logEl.innerHTML = `[${time}] ${msg}<br>` + logEl.innerHTML;
+            const color = type === 'warn' ? '#a17c4c' : (type === 'err' ? '#ff4d4d' : '#888');
+            logEl.innerHTML = `<span style="color:${color}">[${time}] ${msg}</span><br>` + logEl.innerHTML;
         }
-
-        // Mock XML data for Tryptophan (Small snippet for weight)
-        const mockTryptophan = `<?xml version="1.0"?>
-        <pathway name="path:hsa00380" title="Tryptophan metabolism">
-            <entry id="1" name="cpd:C00078" type="compound"><graphics name="Tryptophan" x="100" y="100"/></entry>
-            <entry id="2" name="cpd:C00632" type="compound"><graphics name="Kynurenine" x="300" y="100"/></entry>
-            <relation entry1="1" entry2="2" type="ECrel"/>
-        </pathway>`;
 
         // Mock XML data for HPA Axis
         const mockHpa = `<?xml version="1.0"?>
@@ -142,39 +191,52 @@
 
         async function simulatePreFetch() {
             log("Simulating Velo pre-fetch...");
-            // Step 1: Put data in container BEFORE script loads
-            // Fetching actual raw xml for dopaminergic because we have it locally
-            const res = await fetch('endpoints/kegg_dopaminergic_raw.xml');
-            const xml = await res.text();
-            container.textContent = xml;
-            log("<span class='badge badge-velo'>VELO</span> Writing XML to container...");
-            
-            // Step 2: Initialize App
-            initApp();
+            try {
+                const res = await fetch('endpoints/kegg_dopaminergic_raw.xml');
+                const xml = await res.text();
+                container.textContent = xml;
+                log("XML written to container.", 'success');
+                initApp();
+            } catch (e) { log("Fetch failed: " + e.message, 'err'); }
         }
 
         function simulateLateFetch() {
-            log("Simulating Late Fetch (3s delay)...");
-            // Step 1: Initialize App EMPTY
+            log("Simulating Late Fetch (+3s)...");
             initApp();
-
-            // Step 2: Wait 3 seconds then write to container (Tests MutationObserver)
             setTimeout(() => {
-                log("<span class='badge badge-velo'>VELO</span> Writing Late HPA data...");
+                log("Injecting HPA data...");
                 container.textContent = mockHpa;
             }, 3000);
         }
 
+        function simulateJunkXml() {
+            log("Injecting XML with trailing junk...", 'warn');
+            const junkXml = mockHpa + "\n\n<!-- Trailing junk from Velo bridge -->\n<div class='extra-label'>KEGG Data Loaded</div>";
+            container.textContent = junkXml;
+            initApp();
+        }
+
+        function simulateDoubleInit() {
+            log("Triggering double initialization...", 'warn');
+            initApp();
+            setTimeout(() => {
+                log("Attempting second init call...");
+                initApp();
+            }, 500);
+        }
+
         function simulateEmptyInit() {
-            log("Simulating Clean Init (Network/Gen fallback)...");
+            log("Simulating Pure Generator Init...");
             container.textContent = "";
             initApp();
         }
 
         function initApp() {
             if (window.GreenhousePathwayApp) {
-                log("Initializing GreenhousePathwayApp...");
-                window.GreenhousePathwayApp.init('#app-container');
+                log("Calling GreenhousePathwayApp.init()...");
+                window.GreenhousePathwayApp.init('#app-container', './');
+            } else {
+                log("PathwayApp not found in global scope.", 'err');
             }
         }
 
@@ -182,20 +244,15 @@
             window.location.reload();
         }
 
-        function logSourceTrace() {
-            // Hook into the viewer logic periodically to show status
-            setInterval(() => {
-                if (window.GreenhousePathwayViewer) {
-                    const v = window.GreenhousePathwayViewer;
-                    const status = v.rawXmlData ? "Mode: Bridge" : "Mode: Standalone";
-                    // Just a visual check
-                }
-            }, 1000);
-        }
-
-        // Auto-run Clean Init if not triggered manually
         window.onload = () => {
-            log("Workspace ready. Click a simulation button to begin testing.");
+            log("Harness Ready.");
+            // Check if attributes were captured by checking the script element
+            const script = document.querySelector('script[src*="pathway.js"]');
+            if (script && script.getAttribute('data-target-selector-left')) {
+                log("Configuration attributes detected.", 'info');
+            } else {
+                log("No static attributes found on script tag.", 'warn');
+            }
         };
     </script>
 </body>

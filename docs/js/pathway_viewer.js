@@ -203,22 +203,64 @@
         rawXmlData: null, // Bridge storage
 
         async init(containerSelector, baseUrl) {
-            console.log(`Pathway App: Initializing Viewer in ${containerSelector}`);
-            this.baseUrl = baseUrl || '';
+            if (this.isRunning) return;
+
             const container = document.querySelector(containerSelector);
             if (!container) {
                 console.error("Pathway App: Target container not found.");
                 return;
             }
 
-            // The targetSelector element is the data bridge. 
-            // Wix Velo writes the XML data here. We start an observer because Velo might finish AFTER init.
-            this.setupDataBridgeObserver(container);
+            // Polling logic: Wait for the XML to be completely loaded before initiating
+            console.log("Pathway App: Waiting for complete KGML data bridge...");
 
-            this.rawXmlData = container.textContent.trim();
-            if (this.rawXmlData.startsWith('<')) {
-                console.log("Pathway App: Initial XML captured from container.");
+            const checkCompletion = () => {
+                const text = container.textContent.trim();
+                return text.includes('<pathway') && text.includes('</pathway>');
+            };
+
+            if (checkCompletion()) {
+                console.log("Pathway App: Data bridge detected. Initiating...");
+                this.executeInitialization(container, containerSelector, baseUrl);
+            } else {
+                const pollInterval = setInterval(() => {
+                    if (checkCompletion()) {
+                        clearInterval(pollInterval);
+                        console.log("Pathway App: Data bridge completely loaded. Initiating...");
+                        this.executeInitialization(container, containerSelector, baseUrl);
+                    }
+                }, 100);
+
+                // Safety timeout: If no data after 15s, initiate with generator fallback
+                setTimeout(() => {
+                    if (!this.isRunning) {
+                        clearInterval(pollInterval);
+                        console.warn("Pathway App: Data bridge timeout. Initiating with standalone generator.");
+                        this.executeInitialization(container, containerSelector, baseUrl);
+                    }
+                }, 15000);
             }
+        },
+
+        async executeInitialization(container, containerSelector, baseUrl) {
+            if (this.isRunning) return;
+            this.isRunning = true;
+            this.baseUrl = baseUrl || '';
+
+            // 1. Resilience Pattern: wipe previous content
+            const bridgeData = container.textContent.trim();
+            container.innerHTML = '';
+
+            // 2. Capture and Clean the initial XML Data
+            if (bridgeData.includes('<pathway')) {
+                const start = bridgeData.indexOf('<pathway');
+                const end = bridgeData.lastIndexOf('</pathway>') + 10;
+                this.rawXmlData = bridgeData.substring(start, end);
+                console.log("Pathway App: Clean XML captured from bridge.");
+            }
+
+            // The targetSelector element is the data bridge for future updates.
+            this.setupDataBridgeObserver(container);
 
             this.setupUI(container);
             this.setupCanvas(container);
@@ -289,6 +331,13 @@
             this.initializeGeometry();
             await this.loadPathwayMetadata();
             this.initialized = true;
+
+            // 3. Resilience Pattern: Enable shared GreenhouseUtils recovery
+            if (window.GreenhouseUtils) {
+                window.GreenhouseUtils.observeAndReinitializeApplication(container, containerSelector, this, 'init');
+                window.GreenhouseUtils.startSentinel(container, containerSelector, this, 'init');
+            }
+
             this.startAnimation();
         },
 
@@ -296,7 +345,7 @@
             this._bridgeObserver = new MutationObserver(() => {
                 const newData = container.textContent.trim();
                 if (newData.startsWith('<') && newData !== this.rawXmlData) {
-                    console.log("Pathway App: New XML detected in target container bridge.");
+                    //console.log("Pathway App: New XML detected in target container bridge.");
                     this.rawXmlData = newData;
                     // If we've already initialized, try to reload current pathway with this data
                     if (this.initialized) {
@@ -345,7 +394,7 @@
         },
 
         async switchPathway(pathwayId) {
-            console.log(`Pathway App: Switching to ${pathwayId}`);
+            //console.log(`Pathway App: Switching to ${pathwayId}`);
             this.currentPathwayId = pathwayId;
             const pathway = this.availablePathways.find(p => p.id === pathwayId);
             if (!pathway) return;
