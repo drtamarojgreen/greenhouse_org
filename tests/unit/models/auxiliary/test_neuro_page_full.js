@@ -46,6 +46,7 @@ global.document = {
 global.addEventListener = () => { };
 global.console = console;
 global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+global.getComputedStyle = () => ({ position: 'static' });
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
@@ -58,6 +59,7 @@ function loadScript(filename) {
 loadScript('neuro_config.js');
 loadScript('neuro_camera_controls.js');
 loadScript('neuro_ga.js');
+loadScript('neuro_app.js');
 
 // --- Test Suites ---
 
@@ -177,6 +179,8 @@ TestFramework.describe('Neuro Page Models', () => {
             // Clear intervals set by startSimulation
             TestFramework.sinon.stub(global, 'setInterval').returns(123);
             TestFramework.sinon.stub(global, 'clearInterval');
+            TestFramework.sinon.stub(app, 'stopSimulation');
+            TestFramework.sinon.stub(app, 'startSimulation');
 
             // Reset app state
             app.isRunning = false;
@@ -190,7 +194,8 @@ TestFramework.describe('Neuro Page Models', () => {
         });
 
         TestFramework.it('should initialize dependencies and UI on delayedInit', async () => {
-            await app._delayedInit(mockSelector);
+            const mockContainer = document.querySelector(mockSelector);
+            await app._delayedInit(mockContainer, mockSelector);
 
             assert.isTrue(window.NeuroGA.calledOnce, 'NeuroGA constructor should be called once');
             assert.isTrue(mockGA.init.calledOnce, 'NeuroGA init should be called once');
@@ -201,6 +206,7 @@ TestFramework.describe('Neuro Page Models', () => {
         });
 
         TestFramework.it('should start simulation and set interval', () => {
+            app.startSimulation.restore(); // Use real method for this test
             app.ga = mockGA; // Manually set ga for this test as _delayedInit is not called
             app.ui = mockUI; // Manually set ui for this test
             app.startSimulation();
@@ -211,11 +217,16 @@ TestFramework.describe('Neuro Page Models', () => {
         });
 
         TestFramework.it('should stop simulation and clear interval', () => {
+            app.stopSimulation.restore(); // Use real method for this test
+            app.startSimulation.restore(); // Use real method for this test
             app.startSimulation(); // Start it first
+            const intervalId = app.intervalId;
             app.stopSimulation();
 
             assert.isFalse(app.isRunning, 'isRunning should be false');
-            assert.isTrue(global.clearInterval.calledWith(123), 'clearInterval should be called with correct id');
+            assert.equal(intervalId, 123, `intervalId should be 123 but was ${intervalId}`);
+            assert.isTrue(global.clearInterval.called, 'clearInterval should be called');
+            assert.isTrue(global.clearInterval.calledWith(123), 'clearInterval should be called with 123');
         });
 
         TestFramework.it('should reinitialize by calling init again', () => {
@@ -231,4 +242,8 @@ TestFramework.describe('Neuro Page Models', () => {
 });
 
 // Run the tests
-TestFramework.run();
+TestFramework.run().then(results => {
+    if (results.failed > 0) {
+        process.exit(1);
+    }
+});
