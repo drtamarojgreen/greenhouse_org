@@ -6,7 +6,7 @@
             "name": "Tryptophan-Kynurenine",
             "kegg_id": "hsa00380",
             "description": "Metabolic pathway linking the gut-brain axis and immune response.",
-            "source": "endpoints/kegg_hsa00380.xml",
+            "source": null,
             "regions": [
                 "gut",
                 "blood_stream",
@@ -19,7 +19,7 @@
             "name": "HPA Axis",
             "kegg_id": "hsa04921",
             "description": "Hypothalamic-Pituitary-Adrenal axis; the central stress response system.",
-            "source": "endpoints/kegg_hsa04921.xml",
+            "source": null,
             "regions": [
                 "hypothalamus",
                 "pituitary",
@@ -31,7 +31,7 @@
             "name": "Circadian Rhythm",
             "kegg_id": "hsa04710",
             "description": "Suprachiasmatic nucleus (SCN) regulation of sleep-wake cycles.",
-            "source": "endpoints/kegg_hsa04710.xml",
+            "source": null,
             "regions": [
                 "scn",
                 "pineal",
@@ -57,7 +57,7 @@
             "name": "Serotonergic",
             "kegg_id": "hsa04726",
             "description": "Raphe nuclei projections regulating mood, appetite, and sleep.",
-            "source": "endpoints/kegg_hsa04726.xml",
+            "source": null,
             "regions": [
                 "raphe",
                 "amygdala",
@@ -70,7 +70,7 @@
             "name": "Noradrenergic",
             "kegg_id": "hsa04724",
             "description": "Locus coeruleus system for arousal and attention.",
-            "source": "endpoints/kegg_hsa04724.xml",
+            "source": null,
             "regions": [
                 "locus_coeruleus",
                 "thalamus",
@@ -83,7 +83,7 @@
             "name": "Protein Kinase (MAPK)",
             "kegg_id": "hsa04010",
             "description": "Intracellular signaling cascade for growth and synaptic plasticity.",
-            "source": "endpoints/kegg_hsa04010.xml",
+            "source": null,
             "regions": [
                 "synapse",
                 "cytosol",

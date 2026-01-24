@@ -6,13 +6,18 @@
 
     // Internal helper for parsing KGML data
     const KeggParser = {
-        async parse(url) {
+        async parse(source, isRaw = false) {
             try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch KGML data: ${response.statusText}`);
+                let xmlText;
+                if (isRaw) {
+                    xmlText = source;
+                } else {
+                    const response = await fetch(source);
+                    if (!response.ok) {
+                        return { nodes: [], edges: [] };
+                    }
+                    xmlText = await response.text();
                 }
-                const xmlText = await response.text();
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
@@ -21,7 +26,6 @@
 
                 return { nodes, edges };
             } catch (error) {
-                console.error("Error parsing KGML data:", error);
                 return { nodes: [], edges: [] };
             }
         },
@@ -196,14 +200,23 @@
         canvas: null, ctx: null, camera: null, projection: null, cameraControls: null,
         pathwayData: null, pathwayEdges: null, brainShell: null, torsoShell: null, highlightedNodeId: null,
         availablePathways: [], currentPathwayId: null, baseUrl: '', initialized: false,
+        rawXmlData: null, // Bridge storage
 
         async init(containerSelector, baseUrl) {
-            console.log("Pathway App: Initializing Viewer.");
+            console.log(`Pathway App: Initializing Viewer in ${containerSelector}`);
             this.baseUrl = baseUrl || '';
             const container = document.querySelector(containerSelector);
             if (!container) {
-                console.error("Pathway App: Container not found.");
+                console.error("Pathway App: Target container not found.");
                 return;
+            }
+
+            // The targetSelector element is the data bridge. 
+            // Wix Velo writes the XML data here before the app starts.
+            const embeddedData = container.textContent.trim();
+            if (embeddedData.startsWith('<')) {
+                this.rawXmlData = embeddedData;
+                console.log("Pathway App: Successfully captured XML data from target container.");
             }
 
             this.setupUI(container);
@@ -319,8 +332,18 @@
 
             let success = false;
 
-            // Priority 1: Local XML
-            if (pathway.source) {
+            // Priority 1: Use bridged data from Velo if available
+            if (this.rawXmlData) {
+                const parsed = await KeggParser.parse(this.rawXmlData, true);
+                if (parsed.nodes.length > 0) {
+                    this.pathwayData = PathwayLayout.generate3DLayout(parsed);
+                    this.pathwayEdges = parsed.edges;
+                    success = true;
+                }
+            }
+
+            // Priority 2: Remote fetch
+            if (!success && pathway.source) {
                 success = await this.loadExternalPathway(pathway.source);
             }
 
