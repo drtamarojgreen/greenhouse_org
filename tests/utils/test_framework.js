@@ -415,6 +415,7 @@ testFramework.run = testFramework.run.bind(testFramework);
 // Export for use in tests
 if (typeof module !== 'undefined' && module.exports) {
   testFramework.ResourceReporter = require('./resource_reporter.js');
+  testFramework.sinon = require('./sinon_mock.js');
   module.exports = testFramework;
 }
 

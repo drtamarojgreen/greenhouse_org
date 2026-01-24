@@ -50,7 +50,7 @@
             });
 
             // Add control overlay
-            this.createControls(container);
+            this.createControls(selector);
 
             // Start simulation automatically
             this.startSimulation();
@@ -81,6 +81,11 @@
         stopSimulation() {
             this.isRunning = false;
             clearInterval(this.intervalId);
+        },
+
+        reinitialize() {
+            this.stopSimulation();
+            this.init(this.lastSelector);
         },
 
         createControls(selector) {

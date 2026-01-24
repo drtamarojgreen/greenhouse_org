@@ -278,6 +278,7 @@
          * @param {number} delta - Zoom delta
          */
         zoom(delta) {
+            if (typeof delta !== 'number' || isNaN(delta)) return;
             this.camera.z += delta;
             
             // Clamp zoom
