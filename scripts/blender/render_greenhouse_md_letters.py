@@ -14,9 +14,9 @@ def setup_scene():
     scene.render.fps = 24
     scene.render.engine = 'CYCLES'
     scene.cycles.device = 'CPU'
-    scene.cycles.samples = 128
+    scene.cycles.samples = 512
     scene.cycles.use_adaptive_sampling = True
-    scene.cycles.adaptive_threshold = 0.01
+    scene.cycles.adaptive_threshold = 0.005
     scene.cycles.use_denoising = False
     scene.render.resolution_x = 960
     scene.render.resolution_y = 540
@@ -27,7 +27,7 @@ def setup_scene():
 
 def create_logo_background(logo_path):
     if not os.path.exists(logo_path): return None
-    bpy.ops.mesh.primitive_plane_add(size=40, location=(0, 20, 0), rotation=(math.radians(90), 0, 0))
+    bpy.ops.mesh.primitive_plane_add(size=40, location=(0, 20, 0), rotation=(math.pi / 2, 0, math.pi))
     bg_plane = bpy.context.object
     mat = bpy.data.materials.new(name="LogoMaterial")
     mat.use_nodes = True
@@ -73,16 +73,12 @@ def create_spinning_letters(text_content):
                         kp.easing = 'EASE_OUT'
 
 def create_crossing_spotlights(target_obj):
-    for i, start_x in enumerate([-20, 20]):
-        end_x = 20 if i == 0 else -20
-        bpy.ops.object.light_add(type='SPOT', location=(start_x, -35, -8 if i==0 else 8))
+    for i, start_x in enumerate([-15, 15]):
+        bpy.ops.object.light_add(type='SPOT', location=(start_x, -35, 10))
         spot = bpy.context.object
-        spot.data.energy = 400000
-        spot.data.spot_size = math.radians(25)
+        spot.data.energy = 300000
+        spot.data.spot_size = math.radians(30)
         spot.data.shadow_soft_size = 1.5
-        spot.keyframe_insert(data_path="location", frame=1)
-        spot.location = (end_x, -35, 8 if i==0 else -8)
-        spot.keyframe_insert(data_path="location", frame=96)
         track = spot.constraints.new(type='TRACK_TO')
         track.target = target_obj
         track.track_axis = 'TRACK_NEGATIVE_Z'
@@ -98,9 +94,12 @@ def main():
     base_dir = os.getcwd()
     create_logo_background(os.path.join(base_dir, args.logo))
     create_spinning_letters("GreenhouseMD")
-    target = bpy.data.objects.new("Target", None)
-    bpy.context.collection.objects.link(target)
-    target.location = (0, 0, 0)
+
+    # Target Axis
+    bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+    target = bpy.context.object
+    target.name = "CenterTarget"
+
     create_crossing_spotlights(target)
     bpy.ops.object.camera_add(location=(0, -20, 0), rotation=(math.radians(90), 0, 0))
     scene.camera = bpy.context.object
