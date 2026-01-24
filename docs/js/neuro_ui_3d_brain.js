@@ -37,9 +37,12 @@
             // Prepare Faces with Depth and Normals
             const facesToDraw = [];
             faces.forEach((face, index) => {
-                const p1 = projectedVertices[face.indices[0]];
-                const p2 = projectedVertices[face.indices[1]];
-                const p3 = projectedVertices[face.indices[2]];
+                const indices = face.indices || (Array.isArray(face) ? face : null);
+                if (!indices) return;
+
+                const p1 = projectedVertices[indices[0]];
+                const p2 = projectedVertices[indices[1]];
+                const p3 = projectedVertices[indices[2]];
 
                 if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     // Backface Culling
@@ -52,13 +55,9 @@
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
 
                         // Calculate Normal (World Space)
-                        // We need rotated vertices for correct lighting if the object rotates
-                        // But here the camera rotates around the object.
-                        // So the object is static in World Space, camera moves.
-                        // Normal is static in World Space.
-                        const v1 = vertices[face.indices[0]];
-                        const v2 = vertices[face.indices[1]];
-                        const v3 = vertices[face.indices[2]];
+                        const v1 = vertices[indices[0]];
+                        const v2 = vertices[indices[1]];
+                        const v3 = vertices[indices[2]];
 
                         const ux = v2.x - v1.x;
                         const uy = v2.y - v1.y;
@@ -81,7 +80,7 @@
                             p1, p2, p3,
                             depth,
                             nx, ny, nz,
-                            region: face.region
+                            region: face.region || v1.region
                         });
                     }
                 }
@@ -131,7 +130,8 @@
                 }
 
                 // If this is the target region, use a bright, glowing color and bypass lighting.
-                if (targetRegion && f.region === targetRegion) {
+                const isTarget = targetRegion && (f.region === targetRegion || (Array.isArray(targetRegion) && targetRegion.includes(f.region)));
+                if (isTarget) {
                     const fog = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
                     ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green for ROI with fog
                 } else {
@@ -202,9 +202,11 @@
                 const threshold = plane.value * radius;
 
                 faces.forEach(face => {
-                    const v1 = vertices[face.indices[0]];
-                    const v2 = vertices[face.indices[1]];
-                    const v3 = vertices[face.indices[2]];
+                    const indices = face.indices || (Array.isArray(face) ? face : null);
+                    if (!indices) return;
+                    const v1 = vertices[indices[0]];
+                    const v2 = vertices[indices[1]];
+                    const v3 = vertices[indices[2]];
 
                     // Check which vertices are on which side of the plane
                     const s1 = v1[axis] > threshold;
