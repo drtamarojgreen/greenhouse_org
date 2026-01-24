@@ -15,6 +15,7 @@
         brainMesh: null,
         activeRegion: null,
         activeTheory: null,
+        activeEnhancement: null,
         config: null,
 
         init(selector) {
@@ -48,7 +49,14 @@
                 this.brainMesh = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
             }
 
-            this.createTheorySelector(container);
+            // Initialize Sub-modules
+            if (window.GreenhouseCognitionAnalytics) window.GreenhouseCognitionAnalytics.init(this);
+            if (window.GreenhouseCognitionTheories) window.GreenhouseCognitionTheories.init(this);
+            if (window.GreenhouseCognitionDevelopment) window.GreenhouseCognitionDevelopment.init(this);
+            if (window.GreenhouseCognitionInterventions) window.GreenhouseCognitionInterventions.init(this);
+            if (window.GreenhouseCognitionMedications) window.GreenhouseCognitionMedications.init(this);
+
+            this.createEnhancementUI(container);
             this.createInfoPanel(container);
             this.setupInteraction();
 
@@ -60,49 +68,96 @@
             }
         },
 
-        createTheorySelector(container) {
-            const selectorDiv = document.createElement('div');
-            selectorDiv.style.cssText = `
+        createEnhancementUI(container) {
+            const uiContainer = document.createElement('div');
+            uiContainer.style.cssText = `
                 display: flex;
-                gap: 10px;
-                padding: 15px;
+                flex-direction: column;
                 background: rgba(255, 255, 255, 0.05);
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                justify-content: center;
+                padding: 10px;
             `;
 
-            const theories = this.config.theories || [];
-            theories.forEach(theory => {
-                const btn = document.createElement('button');
-                btn.textContent = theory.name;
-                btn.style.cssText = `
-                    background: #1a202c;
-                    color: #fff;
-                    border: 1px solid #4a5568;
-                    padding: 8px 15px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                `;
-                btn.onmouseover = () => { btn.style.borderColor = '#4fd1c5'; };
-                btn.onmouseout = () => { if (this.activeTheory !== theory) btn.style.borderColor = '#4a5568'; };
-                btn.onclick = () => {
-                    this.activeTheory = theory;
-                    this.updateInfoPanel();
-                    if (theory.name === 'Information Processing') {
-                        this.activeRegion = 'temporalLobe';
-                    } else if (theory.name === 'Dual Process') {
-                        this.activeRegion = 'prefrontalCortex';
-                    } else {
-                        this.activeRegion = 'parietalLobe';
-                    }
-                    Array.from(selectorDiv.children).forEach(b => b.style.borderColor = '#4a5568');
-                    btn.style.borderColor = '#4fd1c5';
-                };
-                selectorDiv.appendChild(btn);
+            const controlsRow = document.createElement('div');
+            controlsRow.style.cssText = `
+                display: flex;
+                gap: 10px;
+                margin-bottom: 10px;
+                align-items: center;
+                flex-wrap: wrap;
+            `;
+
+            const categories = ['All', 'Analytical', 'Theory', 'Development', 'Intervention', 'Medication'];
+            const categorySelect = document.createElement('select');
+            categorySelect.style.cssText = `
+                background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px;
+            `;
+            categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                categorySelect.appendChild(opt);
             });
 
-            container.prepend(selectorDiv);
+            const searchInput = document.createElement('input');
+            searchInput.placeholder = 'Search 100 enhancements...';
+            searchInput.style.cssText = `
+                background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px; flex-grow: 1;
+            `;
+
+            controlsRow.appendChild(categorySelect);
+            controlsRow.appendChild(searchInput);
+            uiContainer.appendChild(controlsRow);
+
+            const listContainer = document.createElement('div');
+            listContainer.style.cssText = `
+                display: flex;
+                gap: 8px;
+                overflow-x: auto;
+                padding-bottom: 8px;
+                scrollbar-width: thin;
+                scrollbar-color: #4fd1c5 #1a202c;
+            `;
+
+            const renderList = () => {
+                listContainer.innerHTML = '';
+                const filter = categorySelect.value;
+                const search = searchInput.value.toLowerCase();
+                const enhancements = (this.config.enhancements || []).filter(e => {
+                    const matchCat = filter === 'All' || e.category === filter;
+                    const matchSearch = e.name.toLowerCase().includes(search);
+                    return matchCat && matchSearch;
+                });
+
+                enhancements.forEach(enh => {
+                    const btn = document.createElement('button');
+                    btn.textContent = enh.name;
+                    btn.title = enh.description;
+                    btn.style.cssText = `
+                        background: #1a202c; color: #fff; border: 1px solid #4a5568;
+                        padding: 6px 14px; border-radius: 4px; cursor: pointer; white-space: nowrap;
+                        font-size: 12px; transition: all 0.2s;
+                    `;
+                    if (this.activeEnhancement === enh) btn.style.borderColor = '#4fd1c5';
+                    btn.onmouseover = () => { btn.style.background = '#2d3748'; };
+                    btn.onmouseout = () => { btn.style.background = '#1a202c'; };
+                    btn.onclick = () => {
+                        this.activeEnhancement = enh;
+                        this.activeRegion = enh.region;
+                        this.updateInfoPanel();
+                        Array.from(listContainer.children).forEach(b => b.style.borderColor = '#4a5568');
+                        btn.style.borderColor = '#4fd1c5';
+                    };
+                    listContainer.appendChild(btn);
+                });
+            };
+
+            categorySelect.onchange = renderList;
+            searchInput.oninput = renderList;
+            renderList();
+
+            uiContainer.appendChild(listContainer);
+            container.prepend(uiContainer);
         },
 
         createInfoPanel(container) {
@@ -120,12 +175,16 @@
         },
 
         updateInfoPanel() {
-            if (!this.activeTheory) return;
+            const enh = this.activeEnhancement;
+            if (!enh) return;
             const region = this.config.regions[this.activeRegion] || {};
             this.infoPanel.innerHTML = `
-                <h3 style="color: #4fd1c5; margin-top: 0;">${this.activeTheory.name} Theory</h3>
-                <p>${this.activeTheory.description}</p>
-                <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h3 style="color: #4fd1c5; margin-top: 0;">${enh.name}</h3>
+                    <span style="font-size: 10px; background: #2d3748; padding: 2px 6px; border-radius: 10px; color: #ccc;">${enh.category}</span>
+                </div>
+                <p style="margin: 5px 0 15px 0; color: #ddd;">${enh.description}</p>
+                <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px; border-left: 3px solid ${region.color || '#4fd1c5'}">
                     <strong style="color: ${region.color || '#fff'}">${region.name || 'Region'}:</strong> ${region.description || ''}
                 </div>
             `;
@@ -194,10 +253,18 @@
             ctx.textAlign = 'left';
             ctx.fillText('COGNITION MODEL: CEREBRAL CORTEX', 20, 30);
 
-            if (this.activeTheory) {
+            if (this.activeEnhancement) {
                 ctx.fillStyle = '#4fd1c5';
-                ctx.fillText(`ACTIVE THEORY: ${this.activeTheory.name.toUpperCase()}`, 20, 55);
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText(`ACTIVE ENHANCEMENT: ${this.activeEnhancement.name.toUpperCase()}`, 20, 50);
             }
+
+            // Call sub-module renders
+            if (window.GreenhouseCognitionAnalytics) window.GreenhouseCognitionAnalytics.render(ctx);
+            if (window.GreenhouseCognitionTheories) window.GreenhouseCognitionTheories.render(ctx);
+            if (window.GreenhouseCognitionDevelopment) window.GreenhouseCognitionDevelopment.render(ctx);
+            if (window.GreenhouseCognitionInterventions) window.GreenhouseCognitionInterventions.render(ctx);
+            if (window.GreenhouseCognitionMedications) window.GreenhouseCognitionMedications.render(ctx);
         }
     };
 

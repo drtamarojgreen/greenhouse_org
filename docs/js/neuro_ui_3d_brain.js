@@ -37,11 +37,12 @@
             // Prepare Faces with Depth and Normals
             const facesToDraw = [];
             faces.forEach((face, index) => {
-                const p1 = projectedVertices[face.indices[0]];
-                const p2 = projectedVertices[face.indices[1]];
-                const p3 = projectedVertices[face.indices[2]];
+                const indices = face.indices || face;
+                const p1 = projectedVertices[indices[0]];
+                const p2 = projectedVertices[indices[1]];
+                const p3 = projectedVertices[indices[2]];
 
-                if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     // Backface Culling
                     const dx1 = p2.x - p1.x;
                     const dy1 = p2.y - p1.y;
@@ -56,9 +57,9 @@
                         // But here the camera rotates around the object.
                         // So the object is static in World Space, camera moves.
                         // Normal is static in World Space.
-                        const v1 = vertices[face.indices[0]];
-                        const v2 = vertices[face.indices[1]];
-                        const v3 = vertices[face.indices[2]];
+                        const v1 = vertices[indices[0]];
+                        const v2 = vertices[indices[1]];
+                        const v3 = vertices[indices[2]];
 
                         const ux = v2.x - v1.x;
                         const uy = v2.y - v1.y;
@@ -81,7 +82,7 @@
                             p1, p2, p3,
                             depth,
                             nx, ny, nz,
-                            region: face.region
+                            region: face.region || v1.region || v2.region || v3.region
                         });
                     }
                 }
@@ -202,9 +203,10 @@
                 const threshold = plane.value * radius;
 
                 faces.forEach(face => {
-                    const v1 = vertices[face.indices[0]];
-                    const v2 = vertices[face.indices[1]];
-                    const v3 = vertices[face.indices[2]];
+                    const indices = face.indices || face;
+                    const v1 = vertices[indices[0]];
+                    const v2 = vertices[indices[1]];
+                    const v3 = vertices[indices[2]];
 
                     // Check which vertices are on which side of the plane
                     const s1 = v1[axis] > threshold;
