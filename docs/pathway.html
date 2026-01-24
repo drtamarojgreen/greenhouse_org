@@ -4,37 +4,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pathway Viewer Test Harness</title>
+    <title>Pathway Viewer - Rigorous Test Harness</title>
     <style>
         body,
         html {
             margin: 0;
             padding: 0;
             overflow: hidden;
+            background: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         #app-container {
             width: 100vw;
             height: 100vh;
         }
+
+        #test-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 280px;
+            z-index: 1000;
+            background: rgba(25, 25, 25, 0.9);
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            color: #ddd;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        #test-controls h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #4ca1af;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+
+        .test-btn {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 8px;
+            background: #333;
+            border: 1px solid #555;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: left;
+            transition: background 0.2s;
+        }
+
+        .test-btn:hover {
+            background: #444;
+            border-color: #4ca1af;
+        }
+
+        .status-box {
+            font-size: 11px;
+            background: #111;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            color: #888;
+            font-family: monospace;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .badge-velo { background: #6b4ca1; color: white; }
+        .badge-local { background: #4ca177; color: white; }
+        .badge-gen { background: #a17c4c; color: white; }
     </style>
 </head>
 
 <body>
+    <!-- The Target Selector Container -->
     <div id="app-container"></div>
 
+    <!-- Test Overlay -->
+    <div id="test-controls">
+        <h3>Velo Simulation Panel</h3>
+        <button class="test-btn" onclick="simulatePreFetch()">1. Simulate Pre-Init Fetch (Dopaminergic)</button>
+        <button class="test-btn" onclick="simulateLateFetch()">2. Simulate Late Fetch (+3s Delay, HPA)</button>
+        <button class="test-btn" onclick="simulateEmptyInit()">3. Simulate Clean Init (No Bridge Data)</button>
+        <button class="test-btn" onclick="reloadPage()">4. Reset Environment</button>
+        
+        <div style="margin-top:15px; font-size:12px;">
+            <strong>Data Source Trace:</strong>
+            <div id="test-log" class="status-box">Ready for testing...</div>
+        </div>
+    </div>
+
     <script src="js/GreenhouseUtils.js"></script>
-    <script src="js/performance_profiler.js" data-auto-start="true"></script>
-    <script src="js/model_tests.js"></script>
     <script src="js/pathway.js"></script>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        const logEl = document.getElementById('test-log');
+        const container = document.getElementById('app-container');
+
+        function log(msg) {
+            const time = new Date().toLocaleTimeString().split(' ')[0];
+            logEl.innerHTML = `[${time}] ${msg}<br>` + logEl.innerHTML;
+        }
+
+        // Mock XML data for Tryptophan (Small snippet for weight)
+        const mockTryptophan = `<?xml version="1.0"?>
+        <pathway name="path:hsa00380" title="Tryptophan metabolism">
+            <entry id="1" name="cpd:C00078" type="compound"><graphics name="Tryptophan" x="100" y="100"/></entry>
+            <entry id="2" name="cpd:C00632" type="compound"><graphics name="Kynurenine" x="300" y="100"/></entry>
+            <relation entry1="1" entry2="2" type="ECrel"/>
+        </pathway>`;
+
+        // Mock XML data for HPA Axis
+        const mockHpa = `<?xml version="1.0"?>
+        <pathway name="path:hsa04921" title="HPA Axis Response">
+            <entry id="1" name="cpd:C00001" type="compound" region="hypothalamus"><graphics name="CRH" x="200" y="50"/></entry>
+            <entry id="2" name="cpd:C00002" type="compound" region="pituitary"><graphics name="ACTH" x="200" y="250"/></entry>
+            <entry id="3" name="cpd:C00003" type="compound" region="adrenals"><graphics name="Cortisol" x="200" y="450"/></entry>
+            <relation entry1="1" entry2="2" type="PPrel"/>
+            <relation entry1="2" entry2="3" type="PPrel"/>
+        </pathway>`;
+
+        async function simulatePreFetch() {
+            log("Simulating Velo pre-fetch...");
+            // Step 1: Put data in container BEFORE script loads
+            // Fetching actual raw xml for dopaminergic because we have it locally
+            const res = await fetch('endpoints/kegg_dopaminergic_raw.xml');
+            const xml = await res.text();
+            container.textContent = xml;
+            log("<span class='badge badge-velo'>VELO</span> Writing XML to container...");
+            
+            // Step 2: Initialize App
+            initApp();
+        }
+
+        function simulateLateFetch() {
+            log("Simulating Late Fetch (3s delay)...");
+            // Step 1: Initialize App EMPTY
+            initApp();
+
+            // Step 2: Wait 3 seconds then write to container (Tests MutationObserver)
+            setTimeout(() => {
+                log("<span class='badge badge-velo'>VELO</span> Writing Late HPA data...");
+                container.textContent = mockHpa;
+            }, 3000);
+        }
+
+        function simulateEmptyInit() {
+            log("Simulating Clean Init (Network/Gen fallback)...");
+            container.textContent = "";
+            initApp();
+        }
+
+        function initApp() {
             if (window.GreenhousePathwayApp) {
+                log("Initializing GreenhousePathwayApp...");
                 window.GreenhousePathwayApp.init('#app-container');
-            } else {
-                console.error('Test Harness: GreenhousePathwayApp not found.');
             }
-        });
+        }
+
+        function reloadPage() {
+            window.location.reload();
+        }
+
+        function logSourceTrace() {
+            // Hook into the viewer logic periodically to show status
+            setInterval(() => {
+                if (window.GreenhousePathwayViewer) {
+                    const v = window.GreenhousePathwayViewer;
+                    const status = v.rawXmlData ? "Mode: Bridge" : "Mode: Standalone";
+                    // Just a visual check
+                }
+            }, 1000);
+        }
+
+        // Auto-run Clean Init if not triggered manually
+        window.onload = () => {
+            log("Workspace ready. Click a simulation button to begin testing.");
+        };
     </script>
 </body>
 

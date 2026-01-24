@@ -212,11 +212,12 @@
             }
 
             // The targetSelector element is the data bridge. 
-            // Wix Velo writes the XML data here before the app starts.
-            const embeddedData = container.textContent.trim();
-            if (embeddedData.startsWith('<')) {
-                this.rawXmlData = embeddedData;
-                console.log("Pathway App: Successfully captured XML data from target container.");
+            // Wix Velo writes the XML data here. We start an observer because Velo might finish AFTER init.
+            this.setupDataBridgeObserver(container);
+
+            this.rawXmlData = container.textContent.trim();
+            if (this.rawXmlData.startsWith('<')) {
+                console.log("Pathway App: Initial XML captured from container.");
             }
 
             this.setupUI(container);
@@ -291,6 +292,21 @@
             this.startAnimation();
         },
 
+        setupDataBridgeObserver(container) {
+            this._bridgeObserver = new MutationObserver(() => {
+                const newData = container.textContent.trim();
+                if (newData.startsWith('<') && newData !== this.rawXmlData) {
+                    console.log("Pathway App: New XML detected in target container bridge.");
+                    this.rawXmlData = newData;
+                    // If we've already initialized, try to reload current pathway with this data
+                    if (this.initialized) {
+                        this.switchPathway(this.currentPathwayId || (this.availablePathways[0] && this.availablePathways[0].id));
+                    }
+                }
+            });
+            this._bridgeObserver.observe(container, { childList: true, characterData: true, subtree: true });
+        },
+
         async loadPathwayMetadata() {
             try {
                 const response = await fetch(this.baseUrl + 'endpoints/models_pathways.json');
@@ -298,9 +314,17 @@
                 this.availablePathways = data.pathways;
                 this.populatePathwaySelector();
 
-                // Load default (first) pathway
+                // Match bridge data to a pathway if possible
                 if (this.availablePathways.length > 0) {
-                    await this.switchPathway(this.availablePathways[0].id);
+                    let startId = this.availablePathways[0].id;
+
+                    // If bridge has data, see if it mentions a specific pathway
+                    if (this.rawXmlData) {
+                        const match = this.availablePathways.find(p => this.rawXmlData.toLowerCase().includes(p.name.toLowerCase()));
+                        if (match) startId = match.id;
+                    }
+
+                    await this.switchPathway(startId);
                 }
             } catch (err) {
                 console.error("Pathway App: Failed to load metadata.", err);
