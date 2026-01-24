@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { performance } = require('perf_hooks');
 const { assert } = require('../../../utils/assertion_library.js');
 const TestFramework = require('../../../utils/test_framework.js');
 
@@ -58,6 +59,7 @@ const mockGreenhouseUtils = {
     loadedScripts: new Set(),
     loadScript: async function(scriptName) {
         this.loadedScripts.add(scriptName);
+        loadScript(scriptName);
         // Simulate loading by creating mock objects
         if (scriptName === 'models_data.js') {
             global.window.GreenhouseModelsData = {};
@@ -91,8 +93,13 @@ global.window.GreenhouseUtils = mockGreenhouseUtils;
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
     const filePath = path.join(__dirname, '../../../../docs/js', filename);
+    const startTime = performance.now();
     const code = fs.readFileSync(filePath, 'utf8');
     vm.runInThisContext(code, { filename });
+    const duration = performance.now() - startTime;
+    if (TestFramework.ResourceReporter) {
+        TestFramework.ResourceReporter.recordScript(filePath, duration);
+    }
 }
 
 // --- Test Suites ---
