@@ -159,6 +159,7 @@ def setup_scene(config):
     bpy.ops.object.camera_add(location=center_vec + mathutils.Vector((0, -8, 4)))
     camera = bpy.context.active_object
     camera.parent = pivot
+    camera.data.lens = 18 # Fit size 25 logo at distance 23
     bpy.context.scene.camera = camera
     
     track = camera.constraints.new(type='TRACK_TO')

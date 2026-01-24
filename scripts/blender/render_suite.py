@@ -43,6 +43,7 @@ def setup_scene(fbx_path):
     bpy.ops.object.camera_add(location=(0, -12, 2))
     camera = bpy.context.active_object
     camera.name = "SceneCamera"
+    camera.data.lens = 20 # Fit size 20 logo at distance 22
     bpy.context.scene.camera = camera
 
     # Add lighting

@@ -143,7 +143,7 @@ def main():
     create_crossing_spotlights(target)
     bpy.ops.object.camera_add(location=(0, -20, 0), rotation=(math.radians(90), 0, 0))
     scene.camera = bpy.context.object
-    scene.camera.data.lens = 28
+    scene.camera.data.lens = 20 # Fit size 40 logo at distance 40
     if args.output_video:
         scene.render.filepath = args.output_video
         scene.render.image_settings.file_format = 'FFMPEG'

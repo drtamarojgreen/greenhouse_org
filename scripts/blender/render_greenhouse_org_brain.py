@@ -169,7 +169,7 @@ def main():
     # Camera back to frame logo (Y=-25)
     bpy.ops.object.camera_add(location=(0, -25, 0), rotation=(math.radians(90), 0, 0))
     scene.camera = bpy.context.object
-    scene.camera.data.lens = 35
+    scene.camera.data.lens = 20 # Fit size 30 logo at distance 30
 
     # Minor fill light
     bpy.ops.object.light_add(type='SUN', location=(5, -5, 10))

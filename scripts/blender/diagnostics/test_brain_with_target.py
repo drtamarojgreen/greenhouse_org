@@ -334,6 +334,7 @@ def create_brain_logo_animation(output_path, frame_count=20):
         camera_z_pos = start_z + (len(text_lines) - 1) * line_height / 2
         bpy.ops.object.camera_add(location=(-10, -35, camera_z_pos))
         camera = bpy.context.active_object
+        camera.data.lens = 35 # Fit size 30 logo at distance 55
         scene.camera = camera
 
         # Add Track To constraint

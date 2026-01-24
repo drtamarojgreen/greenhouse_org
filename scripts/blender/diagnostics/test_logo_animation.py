@@ -64,6 +64,7 @@ def create_logo_test_animation(output_path, frame_count=5):
 
         bpy.ops.object.camera_add(location=(15, 0, 5))
         camera = bpy.context.active_object
+        camera.data.lens = 15 # Fit size 20 logo at distance 15
         scene.camera = camera
         
         follow_path = camera.constraints.new(type='FOLLOW_PATH')

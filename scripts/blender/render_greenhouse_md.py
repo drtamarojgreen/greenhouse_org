@@ -151,7 +151,7 @@ def main():
     # Camera - positioned back to frame logo (Y=-25)
     bpy.ops.object.camera_add(location=(0, -25, 0), rotation=(math.radians(90), 0, 0))
     scene.camera = bpy.context.object
-    scene.camera.data.lens = 35 # Balance FOV
+    scene.camera.data.lens = 24 # Balance FOV to fit size 25 logo at distance 30
 
     # Lighting - minimal base lighting
     bpy.ops.object.light_add(type='SUN', location=(0, -5, 10), rotation=(math.radians(45), 0, 0))
