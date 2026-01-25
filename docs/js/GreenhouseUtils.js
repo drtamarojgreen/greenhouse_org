@@ -549,6 +549,8 @@ window.GreenhouseUtils = (function () {
                     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
                     
                     .models-toc-footer-section {
+                        flex-basis: 100%; /* For Flexbox */
+                        grid-column: 1 / -1; /* For Grid */
                         background: linear-gradient(to bottom, #000 0%, #0a100a 100%);
                         border-top: 2px solid #1a2a1a;
                         padding: 80px 20px;
