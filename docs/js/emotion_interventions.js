@@ -1,6 +1,6 @@
 /**
  * @file emotion_interventions.js
- * @description Therapeutic and Medication enhancements for the Emotion Simulation.
+ * @description Philosophical and Pharmacological enhancements for the Emotion Simulation.
  * Part of the 100 enhancements project.
  */
 
@@ -8,31 +8,31 @@
     'use strict';
 
     const therapeuticInterventions = [
-        { id: 26, name: 'CBT Thought Records Integration', description: 'Interactive panel to input "Automatic Thoughts" and see their neurological "threat" mapping.', regions: ['prefrontalCortex'] },
-        { id: 27, name: 'DBT "Wise Mind" Visualization', description: 'A visual overlap area representing the synthesis of the "Emotional Brain" and "Rational Brain."', regions: ['prefrontalCortex', 'amygdala'] },
-        { id: 28, name: 'Mindfulness Breath Sync', description: 'Feature where the model\'s animation synchronizes with a breathing pacer, slowing Hypothalamus activity.', regions: ['hypothalamus'] },
-        { id: 29, name: 'ACT "Defusion" Tool', description: 'Visualization of "detaching" from a thought, moving it from the PFC center to the periphery.', regions: ['prefrontalCortex'] },
-        { id: 30, name: 'EMDR Bilateral Stimulation Simulation', description: 'A moving visual target that triggers alternating hemispheric activation for trauma processing.', regions: ['amygdala', 'hippocampus'] },
-        { id: 31, name: 'Exposure Therapy Hierarchy', description: 'A progressive list of "stressors" to demonstrate the Fear Extinction process in the model.', regions: ['amygdala', 'prefrontalCortex'] },
-        { id: 32, name: 'Distress Tolerance "TIPP" Mode', description: 'Simulates the effect of sudden temperature changes on the Autonomic Nervous System.', regions: ['hypothalamus'] },
-        { id: 33, name: 'Compassion-Focused Therapy (CFT) Module', description: 'Activates the "Soothe System" (Oxytocin/Opiates) to counter the "Threat System."', regions: ['hypothalamus', 'amygdala'] },
-        { id: 34, name: 'Interpersonal Effectiveness Scripts', description: 'Linking social communication patterns to Oxytocin release and stress reduction.', regions: ['hypothalamus'] },
-        { id: 35, name: 'Gratitude Journal Neuromapping', description: 'Highlighting the Dopamine and Serotonin pathways activated during gratitude exercises.', regions: ['thalamus', 'prefrontalCortex'] },
-        { id: 36, name: 'Positive Psychology "Three Good Things"', description: 'Modeling the shift from "Negativity Bias" (Amygdala) to "Positivity" (Nucleus Accumbens).', regions: ['amygdala', 'thalamus'] },
-        { id: 37, name: 'Somatic Experiencing "Pendulation"', description: 'Visualizing the shifting of attention between "safe" and "distressing" bodily sensations.', regions: ['thalamus'] },
-        { id: 38, name: 'IFS "Parts" Visualization', description: 'Representing different emotional "parts" (e.g., Manager, Firefighter) as distinct sub-circuits.', regions: ['prefrontalCortex'] },
-        { id: 39, name: 'Self-Affirmation PFC Activation', description: 'Showing how self-affirmation increases activity in the vmPFC, aiding resilience.', regions: ['prefrontalCortex'] },
-        { id: 40, name: 'Biofeedback-Driven Animation', description: 'Integration of real-time heart rate data (via API) to drive the model\'s pulse and color.', regions: ['hypothalamus'] },
-        { id: 41, name: 'Reframing "Challenge vs Threat"', description: 'Visual shift in simulated blood flow (Oxy-Hemoglobin) during different cognitive appraisals.', regions: ['prefrontalCortex'] },
-        { id: 42, name: 'Non-Violent Communication (NVC) Logic', description: 'Modeling how expressing "needs" reduces defensive Amygdala activity.', regions: ['amygdala'] },
-        { id: 43, name: 'Progressive Muscle Relaxation (PMR)', description: 'Showing descending motor signals reducing peripheral tension and HPA axis firing.', regions: ['brainstem', 'hypothalamus'] },
-        { id: 44, name: 'Art Therapy "Flow State"', description: 'Modeling the reduction in DMN activity and increase in task-positive network activation during creativity.', regions: ['prefrontalCortex'] },
-        { id: 45, name: 'Narrative Therapy "Externalization"', description: 'Visualizing the "problem" as a separate entity from the core brain model.', regions: ['prefrontalCortex'] },
-        { id: 46, name: 'Schema Therapy "Mode" Switcher', description: 'Ability to toggle between "Vulnerable Child" and "Healthy Adult" neurological states.', regions: ['prefrontalCortex', 'amygdala'] },
-        { id: 47, name: 'Motivational Interviewing "Ambivalence"', description: 'Showing the conflict between two competing reward/motivation pathways.', regions: ['thalamus'] },
-        { id: 48, name: 'Behavioral Activation Loop', description: 'Modeling the "Upward Spiral" where increased activity leads to increased Dopamine availability.', regions: ['thalamus'] },
-        { id: 49, name: 'Logotherapy "Meaning" Anchor', description: 'Highlighting the role of higher Neocortex centers in modulating existential distress.', regions: ['prefrontalCortex'] },
-        { id: 50, name: 'Wellness Recovery Action Plan (WRAP)', description: 'Interactive checklist that triggers "Safety Plans" in the model\'s UI during high arousal.', regions: ['prefrontalCortex'] }
+        { id: 26, name: 'Stoic Socratic Questioning', description: 'Elenchus: Interrogating "Automatic Thoughts" through logic to reveal underlying philosophical errors.', regions: ['prefrontalCortex'] },
+        { id: 27, name: 'Aristotelian Phronesis', description: 'Practical Wisdom: The synthesis of the "Sensitive" and "Rational" minds to find the virtuous mean.', regions: ['prefrontalCortex', 'amygdala'] },
+        { id: 28, name: 'Zen Breath Counting', description: 'Anapanasati: Synchronizing focus with the breath to stabilize the autonomic nervous system.', regions: ['hypothalamus'] },
+        { id: 29, name: 'Buddhist Non-Attachment', description: 'Anatta: Visualization of "detaching" from a fixed self-concept, moving thoughts to the mental periphery.', regions: ['prefrontalCortex'] },
+        { id: 30, name: 'Heraclitean Sensory Integration', description: 'Panta Rhei: Modeling the bilateral flow of information to process trauma through sensory rhythm.', regions: ['amygdala', 'hippocampus'] },
+        { id: 31, name: 'Stoic Hardship Training', description: 'Voluntary Discomfort: A progressive hierarchy of challenges to build fear extinction and resilience.', regions: ['amygdala', 'prefrontalCortex'] },
+        { id: 32, name: 'Pythagorean Temperance', description: 'The use of harmony and proportion to regulate physiological arousal and autonomic balance.', regions: ['hypothalamus'] },
+        { id: 33, name: 'Buddhist Metta Module', description: 'Cultivating Loving-Kindness to activate the "Soothe System" and counter threat-based responses.', regions: ['hypothalamus', 'amygdala'] },
+        { id: 34, name: 'Confucian Li Scripts', description: 'Linking social propriety and ritual harmony to stress reduction and communal stability.', regions: ['hypothalamus'] },
+        { id: 35, name: 'Seneca’s Reflection Practice', description: 'Morning and evening gratitude reviews to activate Dopamine and Serotonin pathways.', regions: ['thalamus', 'prefrontalCortex'] },
+        { id: 36, name: 'Epicurean Hedonic Calculus', description: 'Modeling the shift from transient "Negativity Bias" to stable "Katasthēmatikē" pleasure.', regions: ['amygdala', 'thalamus'] },
+        { id: 37, name: 'Spinoza’s Conatus Striving', description: 'Visualizing the "Striving to Persist" as a safe harbor amidst distressing bodily sensations.', regions: ['thalamus'] },
+        { id: 38, name: 'Platonic Tripartite Soul', description: 'Representing the Reason, Spirit, and Appetite as distinct but integrated sub-circuits.', regions: ['prefrontalCortex'] },
+        { id: 39, name: 'Nietzschean Self-Affirmation', description: 'Activating the vmPFC through the "Will to Power" over one’s own internal narratives.', regions: ['prefrontalCortex'] },
+        { id: 40, name: 'Yoga Sutra Mastery', description: 'Integration of breath and posture to drive the model’s internal physiological state.', regions: ['hypothalamus'] },
+        { id: 41, name: 'Epictetus’ Prohairesis', description: 'The "Moral Choice": Visual shift in blood flow during the appraisal of "Challenge vs Threat."', regions: ['prefrontalCortex'] },
+        { id: 42, name: 'Ahimsa Compassion Logic', description: 'Modeling how non-harming intent reduces defensive Amygdala activity.', regions: ['amygdala'] },
+        { id: 43, name: 'Taoist Stillness Practice', description: 'Reducing peripheral tension and HPA axis firing through the principle of non-contention.', regions: ['brainstem', 'hypothalamus'] },
+        { id: 44, name: 'Platonic Poiesis Flow', description: 'Modeling the reduction in DMN activity during the "Creative Act" and task-positive focus.', regions: ['prefrontalCortex'] },
+        { id: 45, name: 'Aristotelian Catharsis', description: 'Visualizing the externalization of the "Problem" through dramatic storytelling.', regions: ['prefrontalCortex'] },
+        { id: 46, name: 'Archetypal Integration', description: 'Toggling between "Shadow" and "Integrated" neurological states of the psyche.', regions: ['prefrontalCortex', 'amygdala'] },
+        { id: 47, name: 'Socratic Aporia Resolution', description: 'Showing the conflict and eventual resolution between competing motivation pathways.', regions: ['thalamus'] },
+        { id: 48, name: 'Aristotelian Habituation', description: 'The "Upward Spiral" where repeated virtuous action increases neural efficiency.', regions: ['thalamus'] },
+        { id: 49, name: 'Existential Meaning Anchor', description: 'Highlighting the role of higher centers in modulating the dread of non-existence.', regions: ['prefrontalCortex'] },
+        { id: 50, name: 'Enchiridion Safety Plan', description: 'A "Handbook" of principles that triggers safety protocols in the model during high arousal.', regions: ['prefrontalCortex'] }
     ];
 
     const medicationTreatments = [

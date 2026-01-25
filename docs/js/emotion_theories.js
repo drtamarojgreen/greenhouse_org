@@ -1,6 +1,6 @@
 /**
  * @file emotion_theories.js
- * @description Advanced Theories on Emotional Regulation and Resilience.
+ * @description Advanced Theories on Emotional Regulation and Resilience from World Philosophy.
  * Part of the 100 enhancements project.
  */
 
@@ -8,31 +8,31 @@
     'use strict';
 
     const advancedTheories = [
-        { id: 76, name: 'Gross’s Process Model Stages', description: 'Interactive 5-step timeline: Situation Selection -> Modification -> Attention -> Appraisal -> Response.', regions: ['prefrontalCortex', 'amygdala'] },
-        { id: 77, name: 'Polyvagal "Hierarchy of Response"', description: 'Color-coded states: Social Engagement (Green), Fight/Flight (Yellow), Freeze/Shutdown (Red).', regions: ['brainstem', 'hypothalamus'] },
-        { id: 78, name: 'Broaden-and-Build Visualization', description: 'Showing how positive emotions expand the "Thought-Action Repertoire" in the Neocortex.', regions: ['prefrontalCortex'] },
-        { id: 79, name: 'Post-Traumatic Growth Pillars', description: 'Modeling growth in areas like Strength, Relationships, and New Possibilities after adversity.', regions: ['prefrontalCortex', 'hippocampus'] },
-        { id: 80, name: 'Yerkes-Dodson Performance Curve', description: 'Interactive graph showing the optimal level of arousal for cognitive performance.', regions: ['hypothalamus'] },
-        { id: 81, name: 'Lazarus Cognitive Appraisal Model', description: 'Primary (Threat Assessment) and Secondary (Coping Resource Assessment) appraisal toggles.', regions: ['prefrontalCortex', 'amygdala'] },
-        { id: 82, name: 'Evolutionary "Fear Module"', description: 'Highlighting "Old Brain" structures (Amygdala/Hypothalamus) vs "New Brain" (Neocortex) evolution.', regions: ['amygdala', 'prefrontalCortex'] },
-        { id: 83, name: 'Social Baseline Theory', description: 'Showing how the presence of social support reduces the "Neurological Cost" of regulation.', regions: ['hypothalamus', 'amygdala'] },
-        { id: 84, name: 'Resilience Portfolio Model', description: 'Visualizing "Protective Factors" (Social, Regulatory, Meaning-making) as a protective shield.', regions: ['prefrontalCortex'] },
-        { id: 85, name: 'Dweck’s Growth Mindset', description: 'Linking the belief in "Changeability" to increased PFC activity during challenging tasks.', regions: ['prefrontalCortex'] },
-        { id: 86, name: 'Two-Factor Theory (Schachter-Singer)', description: 'Interactive "Arousal" + "Cognitive Label" = "Emotion" mixer.', regions: ['hypothalamus', 'prefrontalCortex'] },
-        { id: 87, name: 'Cognitive Load Theory', description: 'Demonstrating how high cognitive load (multitasking) impairs emotional regulation capacity.', regions: ['prefrontalCortex'] },
-        { id: 88, name: 'Self-Determination Theory (SDT)', description: 'Mapping Autonomy, Competence, and Relatedness to Dopamine and Oxytocin pathways.', regions: ['thalamus', 'hypothalamus'] },
-        { id: 89, name: 'Moral Injury Modeling', description: 'Showing the neurological conflict between "Core Values" and "Compromising Actions."', regions: ['prefrontalCortex', 'amygdala'] },
-        { id: 90, name: 'Learned Helplessness vs Optimism', description: 'Modeling the "Giving Up" response in the Dorsal Raphe Nucleus vs resilient responses.', regions: ['brainstem', 'prefrontalCortex'] },
-        { id: 91, name: 'Affective Forecasting', description: 'Showing the PFC\'s role in predicting future emotional states and the "Impact Bias" error.', regions: ['prefrontalCortex'] },
-        { id: 92, name: 'Dual-Process Theory', description: 'Modeling the interaction between System 1 (Intuitive/Emotional) and System 2 (Analytical/Regulatory).', regions: ['prefrontalCortex', 'amygdala'] },
-        { id: 93, name: 'Constructed Emotion Theory', description: 'Showing the brain "Predicting" emotion based on past concepts rather than just reacting.', regions: ['prefrontalCortex', 'hippocampus'] },
-        { id: 94, name: 'Windows of Tolerance', description: 'A visual "gauge" showing the zone of optimal arousal vs Hyper-arousal and Hypo-arousal.', regions: ['hypothalamus'] },
-        { id: 95, name: 'Biological Sensitivity to Context', description: 'Modeling "Orchid" (High Sensitivity) vs "Dandelion" (High Resilience) genetic types.', regions: ['amygdala', 'prefrontalCortex'] },
-        { id: 96, name: 'Eudaimonic vs Hedonic Wellbeing', description: 'Showing different neurological signatures for "Meaning-based" vs "Pleasure-based" happiness.', regions: ['prefrontalCortex', 'thalamus'] },
-        { id: 97, name: 'Attunement and Attachment Theory', description: 'Modeling the "Secure Base" and its effect on internal regulatory working models.', regions: ['amygdala', 'hypothalamus'] },
-        { id: 98, name: 'Allostasis and Predictive Processing', description: 'Showing the brain\'s attempt to minimize "Prediction Error" through emotional regulation.', regions: ['prefrontalCortex'] },
-        { id: 99, name: 'Emotional Contagion Mechanism', description: 'Modeling the Mirror Neuron System\'s role in synchronizing with others\' emotional states.', regions: ['prefrontalCortex', 'amygdala'] },
-        { id: 100, name: 'Antifragility Framework', description: 'Showing how managed exposure to stressors strengthens the regulatory system over time.', regions: ['prefrontalCortex', 'amygdala'] }
+        { id: 76, name: 'Stoic Pre-meditation of Evils', description: 'Praemeditatio Malorum: Mentally rehearsing potential challenges to diminish their emotional impact and build resilience.', regions: ['prefrontalCortex', 'amygdala'] },
+        { id: 77, name: 'Aristotelian Tripartite Soul', description: 'The hierarchy of Nutritive, Sensitive, and Rational souls, modeling the transition from instinct to reason.', regions: ['brainstem', 'hypothalamus', 'prefrontalCortex'] },
+        { id: 78, name: 'Epicurean Ataraxia', description: 'The state of robust tranquility and freedom from distress achieved by understanding the nature of desire.', regions: ['prefrontalCortex'] },
+        { id: 79, name: 'Nietzschean Amor Fati', description: '"Love of Fate": The radical acceptance of all life’s experiences, including suffering, as necessary and good.', regions: ['prefrontalCortex', 'hippocampus'] },
+        { id: 80, name: 'Taoist Principle of Wu Wei', description: '"Effortless Action": Modeling the optimal state of flow where internal resistance is minimized through alignment with nature.', regions: ['hypothalamus'] },
+        { id: 81, name: 'Spinoza’s Affects', description: 'The transition between Ratio (reason) and Intuition to transform passive passions into active emotions.', regions: ['prefrontalCortex', 'amygdala'] },
+        { id: 82, name: 'Platonic Chariot Allegory', description: 'Visualization of the Charioteer (Reason) guiding the two horses of Spirit and Appetite.', regions: ['amygdala', 'prefrontalCortex'] },
+        { id: 83, name: 'Ubuntu Philosophy', description: '"I am because we are": Modeling the reduced neurological cost of regulation through communal connection.', regions: ['hypothalamus', 'amygdala'] },
+        { id: 84, name: 'Confucian Ren', description: 'The cultivation of Benevolence and Humaneness as a core regulatory "shield" for social resilience.', regions: ['prefrontalCortex'] },
+        { id: 85, name: 'Heraclitean Panta Rhei', description: '"Everything Flows": Linking the belief in constant change (Flux) to increased PFC flexibility during challenges.', regions: ['prefrontalCortex'] },
+        { id: 86, name: 'Hume’s Passions and Reason', description: 'Exploring the idea that "Reason is a slave to the passions," and its implications for emotional labeling.', regions: ['hypothalamus', 'prefrontalCortex'] },
+        { id: 87, name: 'Buddhist Mindfulness (Sati)', description: 'Simulating the reduction of "Mental Proliferation" (Papanca) through bare, non-judgmental awareness.', regions: ['prefrontalCortex'] },
+        { id: 88, name: 'Existentialist Authenticity', description: 'Mapping the drive for Autonomy and radical responsibility to Dopamine and Oxytocin pathways.', regions: ['thalamus', 'hypothalamus'] },
+        { id: 89, name: 'Kantian Categorical Imperative', description: 'Modeling the neurological conflict between universal moral laws and impulsive emotional actions.', regions: ['prefrontalCortex', 'amygdala'] },
+        { id: 90, name: 'Stoic Dichotomy of Control', description: 'Visualizing the "Giving Up" of what is outside our control vs focused resilient action on what is within.', regions: ['brainstem', 'prefrontalCortex'] },
+        { id: 91, name: 'Zen Non-Attachment', description: 'The PFC’s role in predicting future states while remaining detached from the "Impact Bias" of desire.', regions: ['prefrontalCortex'] },
+        { id: 92, name: 'Zoroastrian Dualism', description: 'Modeling the mental interaction between Asha (Order/Truth) and Druj (Deceit/Chaos).', regions: ['prefrontalCortex', 'amygdala'] },
+        { id: 93, name: 'Buddhist Sunyata', description: '"Emptiness": Showing the brain predicting emotion as "Empty" constructs rather than fixed realities.', regions: ['prefrontalCortex', 'hippocampus'] },
+        { id: 94, name: 'The Middle Way', description: 'Madhyamaka: A visual "gauge" showing the path between the extremes of self-indulgence and self-mortification.', regions: ['hypothalamus'] },
+        { id: 95, name: 'Seven Generations Principle', description: 'Indigenous North American philosophy modeling biological sensitivity across deep time and ancestry.', regions: ['amygdala', 'prefrontalCortex'] },
+        { id: 96, name: 'Socratic Eudaimonia', description: 'The neurological signature of "Meaning-based" flourishing vs "Pleasure-based" transient happiness.', regions: ['prefrontalCortex', 'thalamus'] },
+        { id: 97, name: 'Buber’s I-Thou Relationship', description: 'Modeling the "Secure Base" and its effect on internal regulatory working models through dialogue.', regions: ['amygdala', 'hypothalamus'] },
+        { id: 98, name: 'Hegelian Dialectic', description: 'The brain’s attempt to resolve contradiction through the synthesis of stability and change.', regions: ['prefrontalCortex'] },
+        { id: 99, name: 'Schopenhauer’s Compassion', description: 'Modeling the Mirror Neuron System’s role in recognizing the "Oneness of Will" in others.', regions: ['prefrontalCortex', 'amygdala'] },
+        { id: 100, name: 'Taoist Yin and Yang', description: 'Visualizing how managed exposure to opposing forces (Stress/Rest) strengthens the whole system.', regions: ['prefrontalCortex', 'amygdala'] }
     ];
 
     if (window.GreenhouseEmotionConfig) {
