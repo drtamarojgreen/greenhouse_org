@@ -254,8 +254,8 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, w, h);
 
-            if (window.GreenhouseNeuroBrain && window.GreenhouseModels3DMath) {
-                window.GreenhouseNeuroBrain.drawBrainShell(
+            if (window.GreenhouseCognitionBrain && window.GreenhouseModels3DMath) {
+                window.GreenhouseCognitionBrain.drawBrainShell(
                     ctx, this.brainMesh, this.camera, this.projection, w, h,
                     this.activeRegion ? { region: this.activeRegion } : null
                 );
