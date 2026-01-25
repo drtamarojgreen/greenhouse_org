@@ -53,6 +53,11 @@
                 name: 'Prefrontal Cortex',
                 color: 'rgba(200, 200, 200, 0.2)', // Dimmed for focus on limbic system
                 description: 'The PFC regulates emotional responses through cognitive control and reappraisal.'
+            },
+            brainstem: {
+                name: 'Brainstem',
+                color: 'rgba(150, 100, 255, 0.8)',
+                description: 'The brainstem regulates fundamental autonomic functions and serves as the conduit for the Vagus nerve and major monoamine projections.'
             }
         },
         theories: [

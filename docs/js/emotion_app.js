@@ -178,7 +178,6 @@
                 btn.onmouseout = () => { if (this.activeTheory !== item) btn.style.borderColor = '#4a5568'; };
                 btn.onclick = () => {
                     this.activeTheory = item;
-                    this.updateInfoPanel();
 
                     // Support single or multiple regions
                     if (item.regions) {
@@ -193,6 +192,8 @@
                             this.activeRegion = 'amygdala';
                         }
                     }
+
+                    this.updateInfoPanel();
 
                     // Reset all button styles in this container
                     Array.from(selectorDiv.children).forEach(b => b.style.borderColor = '#4a5568');
@@ -232,9 +233,23 @@
                 regionInfo = `<span style="color: ${reg.color || '#ff4d4d'}">${reg.name || this.activeRegion}</span>: ${reg.description || ''}`;
             }
 
+            const wellnessInfo = this.activeTheory.wellnessFocus ? `
+                <div style="margin-top: 10px; padding: 10px; background: rgba(0,255,100,0.1); border-radius: 4px; border-left: 3px solid #00ff64;">
+                    <strong>Wellness Focus:</strong> ${this.activeTheory.wellnessFocus}
+                </div>
+            ` : '';
+
+            const conditionInfo = this.activeTheory.conditionMapping ? `
+                <div style="margin-top: 10px; padding: 10px; background: rgba(255,100,0,0.1); border-radius: 4px; border-left: 3px solid #ff6400;">
+                    <strong>Clinical Relevance:</strong> ${this.activeTheory.conditionMapping}
+                </div>
+            ` : '';
+
             this.infoPanel.innerHTML = `
                 <h3 style="color: #ff4d4d; margin-top: 0;">${this.activeTheory.name}</h3>
                 <p>${this.activeTheory.description}</p>
+                ${wellnessInfo}
+                ${conditionInfo}
                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px;">
                     <strong>Involved Regions:</strong> ${regionInfo}
                 </div>
