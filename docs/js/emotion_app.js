@@ -18,9 +18,12 @@
         activeTheory: null,
         config: null,
 
-        init(selector) {
+        init(selector, selArg = null) {
+            // Standardize selector argument handling if re-invoked by GreenhouseUtils
+            if (typeof selector !== 'string' && selArg) selector = selArg;
+
             console.log('EmotionApp: Initializing with selector:', selector);
-            const container = document.querySelector(selector);
+            const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!container) {
                 console.error('EmotionApp: Target container not found:', selector);
                 return;
