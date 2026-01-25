@@ -101,6 +101,12 @@
             if (activeEnhancement.id === 25) { // Mathematical Logic
                 this.drawGridOverlay(ctx, w * 0.6, h * 0.3, '#ffff00', 'Numerical Processing (IPS)');
             }
+            if (activeEnhancement.id === 26) { // Auditory
+                this.drawSoundHierarchy(ctx, w * 0.65, h * 0.5, '#4da6ff', 'Auditory Processing Hierarchy');
+            }
+            if (activeEnhancement.id === 27) { // Olfactory
+                this.drawDirectLink(ctx, w * 0.45, h * 0.7, w * 0.55, h * 0.6, '#00ff00', 'Direct Olfactory-Limbic Link');
+            }
             if (activeEnhancement.id === 28) { // Risk/Reward
                 this.drawDecisionTree(ctx, w * 0.35, h * 0.5, '#ff9900', 'Valuation (Orbitofrontal Cortex)');
             }
@@ -184,6 +190,36 @@
             ctx.stroke();
             ctx.fillStyle = color;
             ctx.fillText(label, x - 60, y + 40);
+        },
+
+        drawSoundHierarchy(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.arc(x, y, 10 + i * 20, Math.PI, 0);
+                ctx.stroke();
+            }
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 60, y + 30);
+        },
+
+        drawDirectLink(ctx, x1, y1, x2, y2, color, label) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            // Pulse
+            const t = (Date.now() * 0.005) % 1;
+            const px = x1 + (x2 - x1) * t;
+            const py = y1 + (y2 - y1) * t;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(px, py, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = color;
+            ctx.fillText(label, x1 - 50, y1 + 30);
         },
 
         drawReciprocalLoop(ctx, x1, y1, x2, y2, color, label) {

@@ -48,6 +48,9 @@
             if (activeEnhancement.id === 61) { // Biofeedback
                 this.drawWaves(ctx, w * 0.5, h * 0.5, '#4da6ff', 'Simulated EEG States');
             }
+            if (activeEnhancement.id === 62) { // Cognitive Remediation
+                this.drawExercise(ctx, w * 0.35, h * 0.35, '#ffff00', 'Targeted Executive Stimulation');
+            }
             if (activeEnhancement.id === 63) { // EMDR
                 this.drawEMDR(ctx, w * 0.5, h * 0.5, '#ff9900', 'Bilateral Stimulation');
             }
@@ -57,20 +60,50 @@
             if (activeEnhancement.id === 65) { // Sleep
                 this.drawGlymphatic(ctx, w * 0.5, h * 0.5, '#4da6ff', 'Glymphatic Waste Clearance');
             }
+            if (activeEnhancement.id === 66) { // Social Skills
+                this.drawPulse(ctx, w * 0.6, h * 0.5, '#ff00ff', 'Mirror Neuron & TPJ Strengthening');
+            }
+            if (activeEnhancement.id === 67) { // ACT
+                this.drawFlexibility(ctx, w * 0.5, h * 0.5, '#4fd1c5', 'Psychological Flexibility Hub');
+            }
+            if (activeEnhancement.id === 68) { // DBT
+                this.drawBalance(ctx, w * 0.5, h * 0.5, '#ff9900', 'Dialectics: Acceptance & Change');
+            }
+            if (activeEnhancement.id === 69) { // Art Therapy
+                this.drawColorSplash(ctx, w * 0.5, h * 0.5);
+            }
             if (activeEnhancement.id === 70) { // Music Therapy
                 this.drawSoundWaves(ctx, w * 0.5, h * 0.5, '#ff00ff', 'Multi-sensory Resonance');
             }
             if (activeEnhancement.id === 71) { // ADHD Neurofeedback
                 this.drawFrequencyBars(ctx, w * 0.5, h * 0.5, '#ffff00', 'Theta/Beta Ratio Target');
             }
+            if (activeEnhancement.id === 72) { // VR Exposure
+                this.drawVROverlay(ctx, w * 0.5, h * 0.5);
+            }
             if (activeEnhancement.id === 73) { // Breathing
                 this.drawVagusBreathing(ctx, w * 0.5, h * 0.7);
+            }
+            if (activeEnhancement.id === 74) { // Narrative
+                this.drawSchema(ctx, w * 0.4, h * 0.4, '#ffffff', 'Re-authoring Self-Schemas');
             }
             if (activeEnhancement.id === 75) { // VNS
                 this.drawVNS(ctx, w * 0.5, h * 0.8, '#00ffff', 'Vagus Nerve Stimulation');
             }
+            if (activeEnhancement.id === 76) { // Social Interaction
+                this.drawOxytocin(ctx, w * 0.5, h * 0.5);
+            }
+            if (activeEnhancement.id === 77) { // Trauma-Informed
+                this.drawSafety(ctx, w * 0.5, h * 0.5);
+            }
+            if (activeEnhancement.id === 78) { // Motivational Interviewing
+                this.drawChangeTalk(ctx, w * 0.35, h * 0.35);
+            }
             if (activeEnhancement.id === 79) { // Light Therapy
                 this.drawLight(ctx, w * 0.5, h * 0.6, '#ffffcc', 'SCN Photostimulation');
+            }
+            if (activeEnhancement.id === 80) { // Play Therapy
+                this.drawPlay(ctx, w * 0.5, h * 0.6);
             }
         },
 
@@ -255,6 +288,105 @@
             ctx.fill();
             ctx.fillStyle = '#fff';
             ctx.fillText(label, x - 50, y + 70);
+        },
+
+        drawExercise(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.strokeRect(x - 20, y - 20, 40, 40);
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 50, y + 40);
+        },
+
+        drawFlexibility(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + Math.cos(angle) * 50, y + Math.sin(angle) * 50);
+            }
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 60, y + 70);
+        },
+
+        drawBalance(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x - 50, y + 20);
+            ctx.lineTo(x + 50, y - 20);
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 60, y + 50);
+        },
+
+        drawColorSplash(ctx, x, y) {
+            const colors = ['#ff4d4d', '#4fd1c5', '#ffff00', '#ff00ff'];
+            colors.forEach((c, i) => {
+                ctx.fillStyle = c;
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.arc(x - 30 + i * 20, y + Math.sin(Date.now() * 0.01 + i) * 20, 15, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1.0;
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Art Therapy: Emotional Expression', x - 80, y + 60);
+        },
+
+        drawVROverlay(ctx, x, y) {
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(x - 100, y - 60, 200, 120);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.fillRect(x - 100, y - 60, 200, 120);
+            ctx.fillStyle = '#ff4d4d';
+            ctx.fillText('VR EXPOSURE: Controlled Activation', x - 80, y);
+        },
+
+        drawSchema(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.strokeRect(x, y, 60, 80);
+            ctx.fillStyle = color;
+            ctx.fillText('NEW STORY', x + 5, y + 40);
+            ctx.fillText(label, x - 20, y + 100);
+        },
+
+        drawOxytocin(ctx, x, y) {
+            ctx.fillStyle = '#ffb6c1';
+            const time = Date.now() * 0.002;
+            for (let i = 0; i < 8; i++) {
+                ctx.beginPath();
+                ctx.arc(x + Math.sin(time + i) * 40, y + Math.cos(time + i) * 40, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillText('Oxytocin Surge: Social Bonding', x - 70, y + 70);
+        },
+
+        drawSafety(ctx, x, y) {
+            ctx.strokeStyle = '#4da6ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, 60, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = '#4da6ff';
+            ctx.fillText('Safety Boundary: Limbic Calming', x - 80, y + 80);
+        },
+
+        drawChangeTalk(ctx, x, y) {
+            ctx.fillStyle = '#4fd1c5';
+            ctx.font = 'italic 12px Arial';
+            ctx.fillText('"I want to change..."', x, y);
+            ctx.font = '12px Arial';
+            ctx.fillText('Motivational Interviewing: Change-Talk', x - 50, y + 30);
+        },
+
+        drawPlay(ctx, x, y) {
+            ctx.fillStyle = '#ffff00';
+            const time = Date.now() * 0.01;
+            ctx.beginPath();
+            ctx.arc(x + Math.cos(time) * 30, y + Math.sin(time) * 30, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillText('Play Therapy: Reward & Social Activation', x - 90, y + 60);
         },
 
         drawArrowLine(ctx, fromx, fromy, tox, toy) {

@@ -51,8 +51,14 @@
             if (activeEnhancement.id === 87) { // Ketamine
                 this.drawRapidSynaptogenesis(ctx, w * 0.5, h * 0.5, '#4fd1c5', 'Rapid Synaptogenesis Burst');
             }
+            if (activeEnhancement.id === 88) { // MAOI
+                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff9900', 'MAO Enzyme Inhibition');
+            }
             if (activeEnhancement.id === 89) { // Acetylcholinesterase
                 this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff9900', 'Inhibiting Enzyme Breakdown (ACh)');
+            }
+            if (activeEnhancement.id === 90) { // Side Effects
+                this.drawEPS(ctx, w * 0.6, h * 0.6, '#ff4d4d', 'Extrapyramidal Side Effects (EPS)');
             }
             if (activeEnhancement.id === 91) { // BBB
                 this.drawBBB(ctx, w * 0.5, h * 0.5, '#ffffff', 'Blood-Brain Barrier Permeability');
@@ -63,8 +69,26 @@
             if (activeEnhancement.id === 93) { // Tolerance
                 this.drawDownregulation(ctx, w * 0.5, h * 0.5, '#ff9900', 'Receptor Down-regulation');
             }
+            if (activeEnhancement.id === 94) { // Withdrawal
+                this.drawRebound(ctx, w * 0.5, h * 0.6, '#ff0000', 'Withdrawal Rebound Effect');
+            }
+            if (activeEnhancement.id === 95) { // Pharmacogenomic
+                this.drawDNAVariation(ctx, w * 0.5, h * 0.5, '#4da6ff', 'Genetic Metabolism Variation');
+            }
             if (activeEnhancement.id === 96) { // Steady State
                 this.drawConcentrationCurve(ctx, w * 0.6, h * 0.3, '#4da6ff', 'Steady-State Concentration Tracking');
+            }
+            if (activeEnhancement.id === 97) { // Polypharmacy
+                this.drawInteractions(ctx, w * 0.5, h * 0.5);
+            }
+            if (activeEnhancement.id === 98) { // Novel Targets
+                this.drawNovel(ctx, w * 0.5, h * 0.5, '#ffffff', 'Orphan Receptor Research');
+            }
+            if (activeEnhancement.id === 99) { // Metabolic
+                this.drawMetabolic(ctx, w * 0.5, h * 0.5);
+            }
+            if (activeEnhancement.id === 100) { // Offline
+                this.drawOfflineSync(ctx, w * 0.5, h * 0.5);
             }
         },
 
@@ -248,6 +272,83 @@
             ctx.font = '10px Arial';
             ctx.fillText(label, x, y - 10);
             ctx.fillText('Steady State Range', x + 10, y + 25);
+        },
+
+        drawEPS(ctx, x, y, color, label) {
+            const time = Date.now() * 0.01;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x + Math.sin(time) * 5, y + Math.cos(time) * 5, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillText(label, x - 50, y + 30);
+        },
+
+        drawRebound(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x - 50, y);
+            ctx.lineTo(x, y - 40);
+            ctx.lineTo(x + 50, y + 20);
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 60, y + 50);
+        },
+
+        drawDNAVariation(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            for (let i = 0; i < 20; i++) {
+                const py = y - 40 + i * 4;
+                const px = x + Math.sin(i * 0.5) * 15;
+                ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 60, y + 60);
+        },
+
+        drawInteractions(ctx, x, y) {
+            ctx.strokeStyle = '#ff4d4d';
+            ctx.beginPath();
+            ctx.moveTo(x - 40, y - 40);
+            ctx.lineTo(x + 40, y + 40);
+            ctx.moveTo(x + 40, y - 40);
+            ctx.lineTo(x - 40, y + 40);
+            ctx.stroke();
+            ctx.fillStyle = '#ff4d4d';
+            ctx.fillText('Complex Drug Interaction', x - 70, y + 60);
+        },
+
+        drawNovel(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.arc(x, y, 30, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = color;
+            ctx.fillText('?', x - 5, y + 5);
+            ctx.fillText(label, x - 60, y + 50);
+        },
+
+        drawMetabolic(ctx, x, y) {
+            ctx.fillStyle = '#ff9900';
+            ctx.beginPath();
+            ctx.arc(x, y, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillText('Metabolic Health Impact', x - 70, y + 40);
+        },
+
+        drawOfflineSync(ctx, x, y) {
+            ctx.fillStyle = '#4fd1c5';
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#4fd1c5';
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillText('PWA: Local Model Synced', x - 70, y + 40);
         }
     };
 

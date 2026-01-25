@@ -49,6 +49,9 @@
             if (activeEnhancement.id === 36) { // Language Critical Period
                 this.drawSensitivityWindow(ctx, w * 0.5, h * 0.4, '#ff9900', 'Critical Period: Phoneme Sensitivity');
             }
+            if (activeEnhancement.id === 37) { // Self-Awareness
+                this.drawMirror(ctx, w * 0.35, h * 0.35, '#ffffff', 'Medial PFC: Emergence of Self');
+            }
 
             // 38-44: Adolescence/Aging
             if (activeEnhancement.id === 38) { // Adolescent Reward
@@ -57,25 +60,46 @@
             if (activeEnhancement.id === 39) { // Aging
                 this.drawVolumeChange(ctx, w * 0.5, h * 0.5, '#ccc', 'Normal Hippocampal Atrophy Simulation');
             }
+            if (activeEnhancement.id === 40) { // Plasticity Comparative
+                this.drawPlasticityCompare(ctx, w * 0.5, h * 0.5);
+            }
             if (activeEnhancement.id === 41) { // White Matter DTI
                 this.drawDTIFibers(ctx, w * 0.5, h * 0.4, '#00ffff', 'Strengthening Long-Range Tracts');
+            }
+            if (activeEnhancement.id === 42) { // Lateralization
+                this.drawLateralization(ctx, w * 0.5, h * 0.5);
             }
             if (activeEnhancement.id === 43) { // Enrichment
                 this.drawBranching(ctx, w * 0.5, h * 0.5, '#00ff00', 'Increased Dendritic Complexity');
             }
+            if (activeEnhancement.id === 44) { // Early Life Stress
+                this.drawStressImpact(ctx, w * 0.5, h * 0.6, '#ff4d4d', 'HPA Axis Sensitivity & Hippocampal Impact');
+            }
 
             // 45-55: Higher Functions
+            if (activeEnhancement.id === 45) { // Executive Emergence
+                this.drawPulse(ctx, w * 0.35, h * 0.35, '#4fd1c5', 'Emergence of Inhibitory Control');
+            }
             if (activeEnhancement.id === 46) { // Theory of Mind
                 this.drawPulse(ctx, w * 0.6, h * 0.5, '#ff00ff', 'TPJ Maturation (Social Perspective)');
             }
             if (activeEnhancement.id === 47) { // Literacy
                 this.drawPulse(ctx, w * 0.6, h * 0.6, '#4da6ff', 'VWFA Specialization');
             }
+            if (activeEnhancement.id === 48) { // Numerical Sense
+                this.drawGridOverlay(ctx, w * 0.6, h * 0.3, '#ffff00', 'Intraparietal Sulcus Specialization');
+            }
             if (activeEnhancement.id === 49) { // WM Capacity
                 this.drawBandwidth(ctx, w * 0.4, h * 0.4, w * 0.6, h * 0.4, '#4da6ff', 'PFC-Parietal Bandwidth Increase');
             }
+            if (activeEnhancement.id === 50) { // Cognitive Reserve
+                this.drawReserve(ctx, w * 0.5, h * 0.5, '#4fd1c5', 'Education & Mental Activity Buffer');
+            }
             if (activeEnhancement.id === 51) { // Adult Neurogenesis
                 this.drawNewNeurons(ctx, w * 0.5, h * 0.6, '#4fd1c5', 'New Neuron Formation (Dentate Gyrus)');
+            }
+            if (activeEnhancement.id === 52) { // Sensory Critical Periods
+                this.drawSensitivityWindow(ctx, w * 0.7, h * 0.5, '#ff9900', 'Primary Sensory Windows');
             }
             if (activeEnhancement.id === 53) { // Fluid Intelligence
                 this.drawTrajectory(ctx, '#4da6ff', 'Fluid Intelligence Peak/Decline');
@@ -83,6 +107,94 @@
             if (activeEnhancement.id === 54) { // Crystallized Intelligence
                 this.drawGrowthTrajectory(ctx, '#00ff00', 'Crystallized Intelligence Accumulation');
             }
+            if (activeEnhancement.id === 55) { // Social Brain
+                this.drawNetwork(ctx, '#ff00ff', 'Social Brain Circuit Maturation');
+            }
+        },
+
+        drawMirror(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.ellipse(x, y, 30, 40, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 50, y + 60);
+        },
+
+        drawPlasticityCompare(ctx, x, y) {
+            ctx.fillStyle = '#4da6ff';
+            ctx.fillText('CHILD (High Plasticity)', x - 150, y - 50);
+            this.drawBranching(ctx, x - 100, y, '#4da6ff', '');
+
+            ctx.fillStyle = '#ff9900';
+            ctx.fillText('ADULT (Refined Efficiency)', x + 50, y - 50);
+            ctx.strokeStyle = '#ff9900';
+            ctx.beginPath();
+            ctx.moveTo(x + 100, y + 40);
+            ctx.lineTo(x + 100, y - 10);
+            ctx.stroke();
+        },
+
+        drawLateralization(ctx, x, y) {
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(x, y - 100);
+            ctx.lineTo(x, y + 100);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#4da6ff';
+            ctx.fillText('LEFT: Logic/Lang', x - 100, y);
+            ctx.fillStyle = '#ff4d4d';
+            ctx.fillText('RIGHT: Spatial/Emot', x + 20, y);
+        },
+
+        drawStressImpact(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x - 50, y);
+            ctx.lineTo(x + 50, y);
+            ctx.stroke();
+            ctx.fillStyle = color;
+            const time = Date.now() * 0.01;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.arc(x - 40 + i * 20, y + Math.sin(time + i) * 10, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillText(label, x - 100, y + 40);
+        },
+
+        drawReserve(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 10;
+            ctx.beginPath();
+            ctx.arc(x, y, 60, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.lineWidth = 1;
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 80, y + 85);
+        },
+
+        drawNetwork(ctx, color, label) {
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.arc(this.app.canvas.width / 2, this.app.canvas.height / 2, 80, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+            ctx.fillText(label, 20, 110);
+        },
+
+        drawGridOverlay(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 3; i++) {
+                ctx.strokeRect(x + i * 15, y, 10, 10);
+                ctx.strokeRect(x, y + i * 15, 10, 10);
+            }
+            ctx.fillStyle = color;
+            ctx.fillText(label, x, y - 10);
         },
 
         drawMaturation(ctx, x, y, color, label) {
