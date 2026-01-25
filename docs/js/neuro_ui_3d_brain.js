@@ -37,7 +37,9 @@
             // Prepare Faces with Depth and Normals
             const facesToDraw = [];
             faces.forEach((face, index) => {
-                const indices = face.indices || face;
+                const indices = face.indices || (Array.isArray(face) ? face : null);
+                if (!indices) return;
+
                 const p1 = projectedVertices[indices[0]];
                 const p2 = projectedVertices[indices[1]];
                 const p3 = projectedVertices[indices[2]];
@@ -203,7 +205,9 @@
                 const threshold = plane.value * radius;
 
                 faces.forEach(face => {
-                    const indices = face.indices || face;
+                    const indices = face.indices || (Array.isArray(face) ? face : null);
+                    if (!indices) return;
+
                     const v1 = vertices[indices[0]];
                     const v2 = vertices[indices[1]];
                     const v3 = vertices[indices[2]];

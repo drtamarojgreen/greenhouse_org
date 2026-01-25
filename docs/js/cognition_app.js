@@ -47,6 +47,19 @@
 
             if (window.GreenhouseBrainMeshRealistic) {
                 this.brainMesh = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+
+                // Assign regions to vertices for highlighting
+                if (this.brainMesh.regions) {
+                    for (const [regionId, regionData] of Object.entries(this.brainMesh.regions)) {
+                        if (regionData.vertices) {
+                            regionData.vertices.forEach(vIdx => {
+                                if (this.brainMesh.vertices[vIdx]) {
+                                    this.brainMesh.vertices[vIdx].region = regionId;
+                                }
+                            });
+                        }
+                    }
+                }
             }
 
             // Initialize Sub-modules
