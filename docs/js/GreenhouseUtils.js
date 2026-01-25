@@ -640,7 +640,7 @@ window.GreenhouseUtils = (function () {
 
         // Initialize the TOC component inside the new footer container
         if (window.GreenhouseModelsTOC) {
-            window.GreenhouseModelsTOC.init({ target: tocContainer });
+            window.GreenhouseModelsTOC.init({ target: tocContainer, baseUrl: githubUrl });
         }
     }
 

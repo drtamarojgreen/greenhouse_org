@@ -17,6 +17,7 @@
 
         init(options = {}) {
             this.lastOptions = options;
+            this.config.baseUrl = options.baseUrl;
             const target = options.target || this.config.target;
             let container;
 
@@ -63,7 +64,7 @@
         async fetchDataAndRender() {
             try {
                 // Adjust the base URL based on the main app's state if available
-                const baseUrl = window.GreenhouseModelsUX ? window.GreenhouseModelsUX.state.baseUrl : './';
+                const baseUrl = this.config.baseUrl || (window.GreenhouseModelsUX ? window.GreenhouseModelsUX.state.baseUrl : './');
 
                 const response = await fetch(`${baseUrl}${this.config.xmlPath}`);
                 if (!response.ok) {
