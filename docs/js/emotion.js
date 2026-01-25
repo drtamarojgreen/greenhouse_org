@@ -56,8 +56,11 @@
             // Load components
             await window.GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await window.GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('emotion_ui_3d_brain.js', baseUrl);
             await window.GreenhouseUtils.loadScript('emotion_config.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('emotion_regions.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('emotion_interventions.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('emotion_theories.js', baseUrl);
             await window.GreenhouseUtils.loadScript('emotion_app.js', baseUrl);
 
             if (window.GreenhouseEmotionApp) {
