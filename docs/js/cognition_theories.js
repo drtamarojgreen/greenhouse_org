@@ -31,8 +31,22 @@
 
             // Specific logic for batches
             // 7-12: Executive/Memory
+            if (activeEnhancement.id === 7) { // Executive Function
+                this.drawPulse(ctx, w * 0.35, h * 0.35, '#4fd1c5', 'Executive Control (PFC)');
+            }
             if (activeEnhancement.id === 8) { // Working Memory Loops
                 this.drawReciprocalLoop(ctx, w * 0.4, h * 0.4, w * 0.6, h * 0.4, '#4da6ff', 'PFC <-> Parietal');
+            }
+            if (activeEnhancement.id === 9) { // Reward Processing
+                this.drawRewardCircuit(ctx, w * 0.5, h * 0.5, '#ffff00', 'Mesolimbic Dopamine Pathway');
+            }
+            if (activeEnhancement.id === 10) { // Social Cognition
+                this.drawActivationWave(ctx, w * 0.6, h * 0.5, '#ff00ff');
+                ctx.fillStyle = '#ff00ff';
+                ctx.fillText('Social Inference (TPJ & mPFC)', 20, 110);
+            }
+            if (activeEnhancement.id === 11) { // Salience Network
+                this.drawNetwork(ctx, '#ff9900', 'Salience Network: Anterior Insula & ACC');
             }
             if (activeEnhancement.id === 12) { // DMN
                 this.drawNetwork(ctx, '#ff4d4d', 'Default Mode Network Active (Rest State)');
@@ -44,8 +58,20 @@
                 ctx.fillStyle = '#39ff14';
                 ctx.fillText('Premotor Activation during Observation', 20, 110);
             }
+            if (activeEnhancement.id === 14) { // Error Monitoring
+                this.drawPulse(ctx, w * 0.45, h * 0.4, '#ff0000', 'Error Related Negativity (ACC)');
+            }
+            if (activeEnhancement.id === 15) { // Moral Reasoning
+                this.drawReciprocalLoop(ctx, w * 0.35, h * 0.45, w * 0.5, h * 0.6, '#ffffff', 'vMPFC <-> Amygdala');
+            }
             if (activeEnhancement.id === 16) { // Threat Detection
                 this.drawFastArrow(ctx, w * 0.5, h * 0.5, w * 0.6, h * 0.6, '#ff0000', 'Thalamus -> Amygdala (Fast Path)');
+            }
+            if (activeEnhancement.id === 17) { // Broca's
+                this.drawPulse(ctx, w * 0.35, h * 0.45, '#4da6ff', 'Speech Production (Broca\'s Area)');
+            }
+            if (activeEnhancement.id === 18) { // Wernicke's
+                this.drawPulse(ctx, w * 0.6, h * 0.55, '#4da6ff', 'Language Comprehension (Wernicke\'s Area)');
             }
             if (activeEnhancement.id === 19) { // Visual Streams
                 ctx.strokeStyle = '#ff00ff';
@@ -55,17 +81,109 @@
                 this.drawArrowLine(ctx, w * 0.7, h * 0.5, w * 0.6, h * 0.7); // Ventral
                 ctx.fillText('Ventral (What)', w * 0.72, h * 0.55);
             }
+            if (activeEnhancement.id === 20) { // Face Recognition
+                this.drawGridOverlay(ctx, w * 0.65, h * 0.65, '#4fd1c5', 'Fusiform Face Area (FFA)');
+            }
 
             // 21-30: Memory/Logic
             if (activeEnhancement.id === 21) { // Episodic Memory
                 this.drawPulse(ctx, w * 0.5, h * 0.6, '#4fd1c5', 'Hippocampal Encoding...');
             }
+            if (activeEnhancement.id === 22) { // Procedural Memory
+                this.drawNetwork(ctx, '#00ffff', 'Basal Ganglia & Cerebellum Coordination');
+            }
+            if (activeEnhancement.id === 23) { // Selective Attention
+                this.drawFilter(ctx, w * 0.5, h * 0.4, '#ffff00', 'Thalamic Reticular Nucleus Filter');
+            }
+            if (activeEnhancement.id === 24) { // Mental Rotation
+                this.drawRotation(ctx, w * 0.6, h * 0.4, '#4da6ff', 'Parietal Spatial Transformation');
+            }
             if (activeEnhancement.id === 25) { // Mathematical Logic
                 this.drawGridOverlay(ctx, w * 0.6, h * 0.3, '#ffff00', 'Numerical Processing (IPS)');
+            }
+            if (activeEnhancement.id === 28) { // Risk/Reward
+                this.drawDecisionTree(ctx, w * 0.35, h * 0.5, '#ff9900', 'Valuation (Orbitofrontal Cortex)');
+            }
+            if (activeEnhancement.id === 29) { // Inhibition Control
+                this.drawStopSign(ctx, w * 0.4, h * 0.4, '#ff4d4d', 'Inhibitory Control (rIFG)');
             }
             if (activeEnhancement.id === 30) { // Cognitive Flexibility
                 this.drawSwitchSymbol(ctx, w * 0.35, h * 0.35, '#ff9900', 'Task Switching (Lateral PFC)');
             }
+        },
+
+        drawRewardCircuit(ctx, x, y, color, label) {
+            const time = Date.now() * 0.005;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x - 50, y + 20);
+            ctx.bezierCurveTo(x - 20, y - 50, x + 20, y - 50, x + 50, y - 20);
+            ctx.stroke();
+            // Moving particles
+            for (let i = 0; i < 3; i++) {
+                const t = (time + i * 2) % 10 / 10;
+                const px = (1-t)*(1-t)*(x-50) + 2*t*(1-t)*x + t*t*(x+50);
+                const py = (1-t)*(1-t)*(y+20) + 2*t*(1-t)*(y-50) + t*t*(y-20);
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(px, py, 4, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.fillText(label, x - 70, y + 50);
+        },
+
+        drawFilter(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x - 40, y - 20);
+            ctx.lineTo(x + 40, y - 20);
+            ctx.stroke();
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            ctx.moveTo(x - 40, y + 20);
+            ctx.lineTo(x + 40, y + 20);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 70, y + 50);
+        },
+
+        drawRotation(ctx, x, y, color, label) {
+            const time = Date.now() * 0.002;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(time);
+            ctx.strokeStyle = color;
+            ctx.strokeRect(-20, -20, 40, 40);
+            ctx.restore();
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 60, y + 50);
+        },
+
+        drawDecisionTree(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 30, y - 30);
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 30, y + 30);
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 60, y + 60);
+        },
+
+        drawStopSign(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(x - 15, y - 15);
+            ctx.lineTo(x + 15, y + 15);
+            ctx.moveTo(x + 15, y - 15);
+            ctx.lineTo(x - 15, y + 15);
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 60, y + 40);
         },
 
         drawReciprocalLoop(ctx, x1, y1, x2, y2, color, label) {

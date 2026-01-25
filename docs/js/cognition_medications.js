@@ -39,11 +39,26 @@
             if (activeEnhancement.id === 83) { // ADHD Stimulants
                 this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ffff00', 'Increased NE/DA Concentration');
             }
+            if (activeEnhancement.id === 84) { // GABA
+                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#4da6ff', 'GABAergic Potentiation (Inhibitory)');
+            }
+            if (activeEnhancement.id === 85) { // Lithium
+                this.drawStabilization(ctx, w * 0.5, h * 0.5, '#ffffff', 'Intracellular Signal Stabilization');
+            }
+            if (activeEnhancement.id === 86) { // SNRI
+                this.drawSynapseDual(ctx, w * 0.5, h * 0.45, '#00ff00', '#ffff00', 'Dual Action: 5-HT & NE');
+            }
             if (activeEnhancement.id === 87) { // Ketamine
                 this.drawRapidSynaptogenesis(ctx, w * 0.5, h * 0.5, '#4fd1c5', 'Rapid Synaptogenesis Burst');
             }
+            if (activeEnhancement.id === 89) { // Acetylcholinesterase
+                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff9900', 'Inhibiting Enzyme Breakdown (ACh)');
+            }
             if (activeEnhancement.id === 91) { // BBB
                 this.drawBBB(ctx, w * 0.5, h * 0.5, '#ffffff', 'Blood-Brain Barrier Permeability');
+            }
+            if (activeEnhancement.id === 92) { // Occupancy
+                this.drawOccupancy(ctx, w * 0.5, h * 0.5, '#39ff14', 'Receptor Occupancy: ~70-80%');
             }
             if (activeEnhancement.id === 93) { // Tolerance
                 this.drawDownregulation(ctx, w * 0.5, h * 0.5, '#ff9900', 'Receptor Down-regulation');
@@ -51,6 +66,50 @@
             if (activeEnhancement.id === 96) { // Steady State
                 this.drawConcentrationCurve(ctx, w * 0.6, h * 0.3, '#4da6ff', 'Steady-State Concentration Tracking');
             }
+        },
+
+        drawStabilization(ctx, x, y, color, label) {
+            const time = Date.now() * 0.001;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x - 100, y);
+            for (let i = 0; i < 200; i++) {
+                const noise = Math.sin(time + i * 0.1) * (20 * Math.exp(-i * 0.01));
+                ctx.lineTo(x - 100 + i, y + noise);
+            }
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 80, y + 40);
+        },
+
+        drawSynapseDual(ctx, x, y, color1, color2, label) {
+            this.drawSynapse(ctx, x, y, color1, label);
+            // Add second neurotransmitter
+            ctx.fillStyle = color2;
+            const time = Date.now() * 0.002;
+            for (let i = 0; i < 10; i++) {
+                const ox = Math.cos(time + i) * 30;
+                const oy = (i * 4 + time * 12) % 40 - 20;
+                ctx.beginPath();
+                ctx.arc(x + ox, y + oy, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        },
+
+        drawOccupancy(ctx, x, y, color, label) {
+            const receptors = 10;
+            const occupied = 7;
+            for (let i = 0; i < receptors; i++) {
+                ctx.fillStyle = i < occupied ? color : '#333';
+                ctx.beginPath();
+                ctx.arc(x - 100 + i * 20, y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#666';
+                ctx.stroke();
+            }
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 60, y + 40);
         },
 
         drawSynapse(ctx, x, y, color, label) {

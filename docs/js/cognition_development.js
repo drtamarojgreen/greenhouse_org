@@ -40,6 +40,15 @@
             if (activeEnhancement.id === 33) { // Myelination
                 this.drawMyelination(ctx, w * 0.5, h * 0.6, '#ffffff', 'Axonal Insulation Progress');
             }
+            if (activeEnhancement.id === 34) { // PFC Maturation
+                this.drawMaturation(ctx, w * 0.35, h * 0.35, '#4fd1c5', 'PFC Maturation (20+ years)');
+            }
+            if (activeEnhancement.id === 35) { // Piagetian
+                this.drawPiagetianStages(ctx, w * 0.5, h * 0.5);
+            }
+            if (activeEnhancement.id === 36) { // Language Critical Period
+                this.drawSensitivityWindow(ctx, w * 0.5, h * 0.4, '#ff9900', 'Critical Period: Phoneme Sensitivity');
+            }
 
             // 38-44: Adolescence/Aging
             if (activeEnhancement.id === 38) { // Adolescent Reward
@@ -51,10 +60,19 @@
             if (activeEnhancement.id === 41) { // White Matter DTI
                 this.drawDTIFibers(ctx, w * 0.5, h * 0.4, '#00ffff', 'Strengthening Long-Range Tracts');
             }
+            if (activeEnhancement.id === 43) { // Enrichment
+                this.drawBranching(ctx, w * 0.5, h * 0.5, '#00ff00', 'Increased Dendritic Complexity');
+            }
 
             // 45-55: Higher Functions
             if (activeEnhancement.id === 46) { // Theory of Mind
                 this.drawPulse(ctx, w * 0.6, h * 0.5, '#ff00ff', 'TPJ Maturation (Social Perspective)');
+            }
+            if (activeEnhancement.id === 47) { // Literacy
+                this.drawPulse(ctx, w * 0.6, h * 0.6, '#4da6ff', 'VWFA Specialization');
+            }
+            if (activeEnhancement.id === 49) { // WM Capacity
+                this.drawBandwidth(ctx, w * 0.4, h * 0.4, w * 0.6, h * 0.4, '#4da6ff', 'PFC-Parietal Bandwidth Increase');
             }
             if (activeEnhancement.id === 51) { // Adult Neurogenesis
                 this.drawNewNeurons(ctx, w * 0.5, h * 0.6, '#4fd1c5', 'New Neuron Formation (Dentate Gyrus)');
@@ -62,6 +80,88 @@
             if (activeEnhancement.id === 53) { // Fluid Intelligence
                 this.drawTrajectory(ctx, '#4da6ff', 'Fluid Intelligence Peak/Decline');
             }
+            if (activeEnhancement.id === 54) { // Crystallized Intelligence
+                this.drawGrowthTrajectory(ctx, '#00ff00', 'Crystallized Intelligence Accumulation');
+            }
+        },
+
+        drawMaturation(ctx, x, y, color, label) {
+            const time = Date.now() * 0.001;
+            const opacity = 0.2 + Math.abs(Math.sin(time)) * 0.5;
+            ctx.fillStyle = color;
+            ctx.globalAlpha = opacity;
+            ctx.beginPath();
+            ctx.arc(x, y, 30, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+            ctx.fillText(label, x - 50, y + 50);
+        },
+
+        drawPiagetianStages(ctx, x, y) {
+            const stages = ['Sensorimotor', 'Preoperational', 'Concrete', 'Formal'];
+            ctx.font = '10px Arial';
+            stages.forEach((s, i) => {
+                ctx.fillStyle = (i === 3) ? '#4fd1c5' : '#666';
+                ctx.fillText(s, x - 150 + i * 80, y + 100);
+                ctx.fillRect(x - 150 + i * 80, y + 110, 60, 5);
+            });
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Piagetian Development Path', x - 50, y + 135);
+        },
+
+        drawSensitivityWindow(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x - 100, y + 50);
+            ctx.quadraticCurveTo(x, y - 50, x + 100, y + 50);
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 80, y - 20);
+        },
+
+        drawBranching(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            const drawTree = (x1, y1, angle, depth) => {
+                if (depth === 0) return;
+                const x2 = x1 + Math.cos(angle) * depth * 5;
+                const y2 = y1 + Math.sin(angle) * depth * 5;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                drawTree(x2, y2, angle - 0.5, depth - 1);
+                drawTree(x2, y2, angle + 0.5, depth - 1);
+            };
+            drawTree(x, y + 40, -Math.PI / 2, 5);
+            ctx.fillStyle = color;
+            ctx.fillText(label, x - 60, y + 60);
+        },
+
+        drawBandwidth(ctx, x1, y1, x2, y2, color, label) {
+            const thickness = 2 + Math.sin(Date.now() * 0.01) * 5 + 5;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = thickness;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.lineWidth = 1;
+            ctx.fillStyle = color;
+            ctx.fillText(label, (x1 + x2) / 2 - 80, y1 - 20);
+        },
+
+        drawGrowthTrajectory(ctx, color, label) {
+            const w = 200;
+            const h = 100;
+            const sx = 400, sy = 250;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy + h);
+            ctx.lineTo(sx + w, sy);
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.fillText(label, sx, sy - 20);
         },
 
         drawSynapticGrowth(ctx, x, y, color, label) {
