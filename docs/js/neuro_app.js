@@ -83,10 +83,7 @@
             clearInterval(this.intervalId);
         },
 
-        createControls(selector) {
-            console.log('NeuroApp createControls, selector:', selector);
-            console.log('NeuroApp createControls, typeof selector:', typeof selector);
-            const container = document.querySelector(selector);
+        createControls(container) {
             const controls = document.createElement('div');
             controls.style.cssText = `
                 position: absolute;
