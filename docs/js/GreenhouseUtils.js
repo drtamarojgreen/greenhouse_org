@@ -514,20 +514,20 @@ window.GreenhouseUtils = (function () {
 
         console.log('[GreenhouseUtils] Preparing bottom navigation TOC...');
 
-        const baseUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
+        const githubUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
 
         // Load CSS if not present
         if (!document.querySelector('link[href*="models_toc.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = `${baseUrl}css/models_toc.css`;
+            link.href = `${githubUrl}css/models_toc.css`;
             document.head.appendChild(link);
         }
 
         // Load JS if not present
         if (!window.GreenhouseModelsTOC) {
             try {
-                await loadScript('models_toc.js', baseUrl);
+                await loadScript('models_toc.js', githubUrl);
             } catch (e) {
                 console.error('[GreenhouseUtils] Failed to load models_toc.js', e);
                 return;
