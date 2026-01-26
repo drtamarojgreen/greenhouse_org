@@ -21,6 +21,12 @@
         currentCategory: 'theories',
         uiContainer: null,
         theorySelectorContainer: null,
+        simState: {
+            cortisol: 0.5,
+            serotonin: 0.5,
+            gaba: 0.5,
+            heartRate: 70
+        },
 
         init(selector) {
             console.log('EmotionApp: Initializing with:', selector);
@@ -180,6 +186,7 @@
                 btn.onmouseout = () => { if (this.activeTheory !== item) btn.style.borderColor = '#4a5568'; };
                 btn.onclick = () => {
                     this.activeTheory = item;
+                    this.updateSimulationState(item);
 
                     // Support single or multiple regions
                     if (item.regions) {
@@ -219,6 +226,19 @@
             `;
             this.infoPanel.innerHTML = '<h3>Emotion Simulation</h3><p>Select a psychological theory to see how it relates to brain structures.</p>';
             container.appendChild(this.infoPanel);
+        },
+
+        updateSimulationState(item) {
+            // Default reset
+            this.simState.cortisol = 0.3 + Math.random() * 0.2;
+            this.simState.serotonin = 0.5;
+
+            // Item-specific impacts
+            const id = item.id;
+            if (id === 9 || id === 25) this.simState.cortisol = 0.8; // Stress
+            if (id === 2 || id === 28 || id === 33) this.simState.cortisol = 0.1; // Calming
+            if (id === 23 || id === 51 || id === 61) this.simState.serotonin = 0.9; // SSRI/Serotonin
+            if (id === 8 || id === 53) this.simState.gaba = 0.8; // Benzos/GABA
         },
 
         updateInfoPanel() {

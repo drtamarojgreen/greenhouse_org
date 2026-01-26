@@ -17,7 +17,8 @@
             thalamus: { x: 0, y: 20, z: 0 },
             brainstem: { x: 0, y: -180, z: 0 },
             insula: { x: 100, y: -20, z: 0 },
-            acc: { x: 0, y: 80, z: 60 }
+            acc: { x: 0, y: 80, z: 60 },
+            striatum: { x: 40, y: -10, z: 40 }
         },
 
         draw(ctx, app) {
@@ -56,6 +57,15 @@
             if (id === 68) { // DBS
                 this.drawDBS(ctx, app, 'acc', time);
             }
+            if (id === 10) { // Oxytocin Social Buffering
+                this.drawSocialBuffering(ctx, app, 'amygdala', time);
+            }
+            if (id === 12) { // Insula Activity
+                this.drawPulseAlongPath(ctx, app, 'thalamus', 'insula', time, '#ff00ff');
+            }
+            if (id === 22 || id === 48) { // Reward
+                this.drawDopamineBurst(ctx, app, 'striatum', time);
+            }
             if (id === 30) { // EMDR
                 this.drawEMDR(ctx, app, time);
             }
@@ -76,12 +86,20 @@
                 this.drawHUDGauge(ctx, w - 180, 130, 'SEROTONIN', 0.7 + Math.sin(time * 0.5) * 0.1, '#ff00ff');
             }
             if (id === 9 || id === 25) {
-                this.drawHUDGauge(ctx, w - 180, 180, 'CORTISOL', 0.3 + Math.sin(time * 2) * 0.4, '#ff4d4d');
+                this.drawHUDGauge(ctx, w - 180, 180, 'CORTISOL', app.simState?.cortisol || (0.3 + Math.sin(time * 2) * 0.4), '#ff4d4d');
             }
 
             // Physiological metrics
-            if (id === 2 || id === 6) {
+            if (id === 2 || id === 6 || id === 40) {
                 this.drawHRV(ctx, w - 180, 230, time);
+            }
+
+            // Theory/Model specific gauges
+            if (id === 77) { // Polyvagal
+                this.drawPolyvagalGauge(ctx, w - 180, 280, time);
+            }
+            if (id === 94) { // Windows of Tolerance
+                this.drawWindowOfTolerance(ctx, w - 180, 330, time);
             }
         },
 
@@ -233,6 +251,83 @@
             ctx.font = 'bold 10px Arial';
             ctx.textAlign = 'left';
             ctx.fillText(label, x, y - 5);
+        },
+
+        drawSocialBuffering(ctx, app, region, time) {
+            const p = this.projectRegion(app, region);
+            if (!p) return;
+            ctx.save();
+            ctx.strokeStyle = '#00ff64';
+            ctx.lineWidth = 2;
+            const r = 20 + Math.sin(time * 4) * 10;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        },
+
+        drawDopamineBurst(ctx, app, region, time) {
+            const p = this.projectRegion(app, region);
+            if (!p) return;
+            const count = 10;
+            for (let i = 0; i < count; i++) {
+                const t = (time * 2 + i / count) % 1;
+                const r = t * 50;
+                const angle = (i / count) * Math.PI * 2;
+                const px = p.x + Math.cos(angle) * r;
+                const py = p.y + Math.sin(angle) * r;
+                ctx.fillStyle = `rgba(255, 200, 0, ${1 - t})`;
+                ctx.beginPath();
+                ctx.arc(px, py, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        },
+
+        drawPolyvagalGauge(ctx, x, y, time) {
+            const states = ['SOCIAL', 'FIGHT/FLIGHT', 'FREEZE'];
+            const colors = ['#00ff64', '#ffff00', '#ff0000'];
+            const activeIndex = Math.floor((Math.sin(time * 0.5) + 1) * 1.5);
+
+            ctx.font = 'bold 10px Arial';
+            ctx.fillStyle = '#fff';
+            ctx.fillText('POLYVAGAL STATE', x, y - 5);
+
+            for (let i = 0; i < 3; i++) {
+                ctx.fillStyle = (i === activeIndex) ? colors[i] : 'rgba(255,255,255,0.1)';
+                ctx.fillRect(x + i * 52, y, 48, 15);
+                ctx.fillStyle = (i === activeIndex) ? '#000' : '#fff';
+                ctx.font = '8px Arial';
+                ctx.fillText(states[i], x + i * 52 + 5, y + 10);
+            }
+        },
+
+        drawWindowOfTolerance(ctx, x, y, time) {
+            const val = (Math.sin(time) + 1) / 2; // 0 to 1
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px Arial';
+            ctx.fillText('WINDOW OF TOLERANCE', x, y - 5);
+
+            // Background
+            ctx.fillStyle = 'rgba(255,0,0,0.2)'; // Hyper
+            ctx.fillRect(x, y, 150, 20);
+            ctx.fillStyle = 'rgba(0,255,0,0.2)'; // Window
+            ctx.fillRect(x, y + 20, 150, 20);
+            ctx.fillStyle = 'rgba(0,0,255,0.2)'; // Hypo
+            ctx.fillRect(x, y + 40, 150, 20);
+
+            // Needle
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, y + val * 60);
+            ctx.lineTo(x + 150, y + val * 60);
+            ctx.stroke();
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '8px Arial';
+            ctx.fillText('HYPER', x + 155, y + 12);
+            ctx.fillText('OPTIMAL', x + 155, y + 32);
+            ctx.fillText('HYPO', x + 155, y + 52);
         },
 
         drawHRV(ctx, x, y, time) {
