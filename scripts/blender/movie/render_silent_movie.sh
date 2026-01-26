@@ -14,13 +14,17 @@ OUTPUT_PATH="scripts/blender/render_outputs/silent_movie/movie.mp4"
 mkdir -p "scripts/blender/render_outputs/silent_movie"
 
 echo "Step 1: Generating Test Frames..."
+# Intro / Brain
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 50
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 200
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 350
+# Garden / Socratic
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 475
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 600
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 725
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 850
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 750
+# Forge / Connectivity
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1050
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1325
+# Outro
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1450
 
 echo "Step 2: Starting Full Animation Render (Low Sample Count)..."
 echo "Output will be at: $OUTPUT_PATH"

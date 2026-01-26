@@ -48,36 +48,44 @@ def create_vine(start, end, radius=0.05):
     bpy.context.collection.objects.link(obj)
     return obj
 
-def create_plant_humanoid(name, location):
-    """Generates a humanoid plant character."""
+def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05, seed=None):
+    """Generates a humanoid plant character with variety."""
+    if seed is not None:
+        random.seed(seed)
+
     container = bpy.data.collections.new(name)
     bpy.context.scene.collection.children.link(container)
 
     # Torso (Trunk)
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.2, depth=1.5, location=location + mathutils.Vector((0,0,0.75)))
+    torso_height = 1.5 * height_scale
+    bpy.ops.mesh.primitive_cylinder_add(radius=0.2, depth=torso_height, location=location + mathutils.Vector((0,0,torso_height/2)))
     torso = bpy.context.object
     torso.name = f"{name}_Torso"
 
     # Head (Leafy)
-    bpy.ops.mesh.primitive_ico_sphere_add(radius=0.4, location=location + mathutils.Vector((0,0,1.8)))
+    head_radius = 0.4 * (0.8 + random.random() * 0.4)
+    bpy.ops.mesh.primitive_ico_sphere_add(radius=head_radius, location=location + mathutils.Vector((0,0,torso_height + head_radius)))
     head = bpy.context.object
     head.name = f"{name}_Head"
 
     # Arms (Vines)
-    left_arm = create_vine(location + mathutils.Vector((0.2, 0, 1.4)), location + mathutils.Vector((0.8, 0, 1.0)))
-    right_arm = create_vine(location + mathutils.Vector((-0.2, 0, 1.4)), location + mathutils.Vector((-0.8, 0, 1.0)))
+    arm_height = torso_height * 0.9
+    left_arm = create_vine(location + mathutils.Vector((0.2, 0, arm_height)), location + mathutils.Vector((0.8, 0, arm_height - 0.4)), radius=vine_thickness)
+    right_arm = create_vine(location + mathutils.Vector((-0.2, 0, arm_height)), location + mathutils.Vector((-0.8, 0, arm_height - 0.4)), radius=vine_thickness)
 
     # Legs (Roots)
-    left_leg = create_vine(location + mathutils.Vector((0.1, 0, 0.1)), location + mathutils.Vector((0.3, 0, -0.8)), radius=0.08)
-    right_leg = create_vine(location + mathutils.Vector((-0.1, 0, 0.1)), location + mathutils.Vector((-0.3, 0, -0.8)), radius=0.08)
+    left_leg = create_vine(location + mathutils.Vector((0.1, 0, 0.1)), location + mathutils.Vector((0.3, 0, -0.8)), radius=vine_thickness * 1.5)
+    right_leg = create_vine(location + mathutils.Vector((-0.1, 0, 0.1)), location + mathutils.Vector((-0.3, 0, -0.8)), radius=vine_thickness * 1.5)
 
-    # Add leaves to the head
+    # Add leaves to the head and torso
     leaf_template = create_leaf_mesh()
-    for i in range(12):
+    num_leaves = int(12 * height_scale)
+    for i in range(num_leaves):
         leaf = bpy.data.objects.new(f"{name}_Leaf_{i}", leaf_template.data)
         container.objects.link(leaf)
-        angle = (i / 12) * math.pi * 2
-        leaf.location = head.location + mathutils.Vector((math.cos(angle)*0.4, math.sin(angle)*0.4, random.uniform(-0.2, 0.2)))
+        angle = (i / num_leaves) * math.pi * 2
+        # Head leaves
+        leaf.location = head.location + mathutils.Vector((math.cos(angle)*head_radius, math.sin(angle)*head_radius, random.uniform(-0.2, 0.2)))
         leaf.rotation_euler = (random.uniform(0, 3.14), random.uniform(0, 3.14), angle)
 
     # Cleanup and Material
@@ -87,7 +95,7 @@ def create_plant_humanoid(name, location):
     if bsdf:
         bsdf.inputs["Base Color"].default_value = (0.1, 0.5, 0.1, 1) # Green
 
-    parts = [torso, head, left_arm, right_arm, left_leg, right_leg]
+    parts = [head, left_arm, right_arm, left_leg, right_leg]
     for p in parts:
         if p.name not in container.objects:
             container.objects.link(p)
@@ -99,17 +107,39 @@ def create_plant_humanoid(name, location):
             bpy.context.view_layer.objects.active = p
             bpy.ops.object.convert(target='MESH')
 
+        # Parent to torso
+        p.parent = torso
         p.data.materials.append(mat)
 
+    torso.data.materials.append(mat)
+
+    # Material for leaves
+    for obj in container.objects:
+        if "Leaf" in obj.name:
+            obj.data.materials.append(mat)
+            obj.parent = head
+
     return torso # Return torso as main handle
+
+def create_scroll(location, name="PhilosophicalScroll"):
+    """Creates a simple rolled scroll prop."""
+    bpy.ops.mesh.primitive_cylinder_add(radius=0.05, depth=0.4, location=location, rotation=(0, math.pi/2, 0))
+    scroll = bpy.context.object
+    scroll.name = name
+
+    mat = bpy.data.materials.new(name="ScrollMat")
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+    if bsdf:
+        bsdf.inputs["Base Color"].default_value = (0.9, 0.8, 0.6, 1) # Parchment
+    scroll.data.materials.append(mat)
+    return scroll
 
 if __name__ == "__main__":
     # Clear scene for testing
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete()
 
-    create_plant_humanoid("Herbaceous", mathutils.Vector((0, 0, 0)))
-    create_plant_humanoid("Arbor", mathutils.Vector((2, 0, 0)))
-
-    # Save for verification if needed
-    # bpy.ops.wm.save_as_mainfile(filepath="plant_test.blend")
+    create_plant_humanoid("Herbaceous", mathutils.Vector((0, 0, 0)), height_scale=0.8, seed=42)
+    create_plant_humanoid("Arbor", mathutils.Vector((2, 0, 0)), height_scale=1.3, vine_thickness=0.07, seed=123)
+    create_scroll(mathutils.Vector((1, 0, 0.5)))
