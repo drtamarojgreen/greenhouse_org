@@ -98,10 +98,10 @@
 
             const categories = [
                 { id: 'theories', label: 'Core Theories' },
-                { id: 'regulations', label: 'Regulation' },
-                { id: 'therapeuticInterventions', label: 'Therapeutic' },
-                { id: 'medicationTreatments', label: 'Medication' },
-                { id: 'advancedTheories', label: 'Advanced Theories' }
+                { id: 'regulations', label: 'Emotional Regulation' },
+                { id: 'therapeuticInterventions', label: 'Therapeutic Effects' },
+                { id: 'medicationTreatments', label: 'Medication Treatments' },
+                { id: 'advancedTheories', label: 'Regulation Theories' }
             ];
 
             categories.forEach(cat => {
