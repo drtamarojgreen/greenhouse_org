@@ -116,6 +116,7 @@
             });
 
             const searchInput = document.createElement('input');
+            searchInput.id = 'enhancement-search';
             searchInput.placeholder = 'Search 100 enhancements...';
             searchInput.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px; flex-grow: 1;
@@ -126,6 +127,7 @@
             uiContainer.appendChild(controlsRow);
 
             const listContainer = document.createElement('div');
+            listContainer.id = 'enhancement-list';
             listContainer.style.cssText = `
                 display: flex;
                 gap: 8px;
@@ -147,6 +149,7 @@
 
                 enhancements.forEach(enh => {
                     const btn = document.createElement('button');
+                    btn.className = 'enhancement-item';
                     btn.textContent = enh.name;
                     btn.title = enh.description;
                     btn.style.cssText = `
