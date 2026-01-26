@@ -55,8 +55,13 @@
 
             await window.GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await window.GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition_ui_3d_brain.js', baseUrl);
             await window.GreenhouseUtils.loadScript('cognition_config.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition_analytics.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition_theories.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition_development.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition_interventions.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition_medications.js', baseUrl);
             await window.GreenhouseUtils.loadScript('cognition_app.js', baseUrl);
 
             if (window.GreenhouseCognitionApp) {
