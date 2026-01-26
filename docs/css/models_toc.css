@@ -14,12 +14,14 @@
 
 /* Use a class for the container for better flexibility between local and live site */
 .models-toc-container {
-  flex-basis: 100%; /* For Flexbox */
-  grid-column: 1 / -1; /* For Grid */
+  display: block !important;
+  flex: 0 0 100% !important; /* For Flexbox */
+  grid-column: 1 / -1 !important; /* For Grid */
   padding: 0;
   margin: 20px 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  width: 100%;
+  width: 100% !important;
+  clear: both !important;
 }
 
 .models-toc-intro {
