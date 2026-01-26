@@ -109,6 +109,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
 
         # Parent to torso
         p.parent = torso
+        p.matrix_parent_inverse = torso.matrix_world.inverted()
         if not p.material_slots:
             p.data.materials.append(None)
         p.material_slots[0].link = 'OBJECT'
@@ -127,6 +128,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
             obj.material_slots[0].link = 'OBJECT'
             obj.material_slots[0].material = mat
             obj.parent = head
+            obj.matrix_parent_inverse = head.matrix_world.inverted()
 
     return torso # Return torso as main handle
 
@@ -173,6 +175,30 @@ def create_procedural_bush(location, name="GardenBush", size=1.0):
         branch.data.materials.append(mat)
 
     return container
+
+def create_inscribed_pillar(location, name="StoicPillar", height=5.0):
+    """Creates a classic pillar with simple geometry suggesting inscriptions."""
+    bpy.ops.mesh.primitive_cylinder_add(radius=0.4, depth=height, location=location + mathutils.Vector((0,0,height/2)))
+    pillar = bpy.context.object
+    pillar.name = name
+
+    mat = bpy.data.materials.get("PillarMat") or bpy.data.materials.new(name="PillarMat")
+    mat.use_nodes = True
+    mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.3, 0.3, 0.3, 1)
+    pillar.data.materials.append(mat)
+
+    # Add "Inscription" bands
+    for i in range(3):
+        z_offset = height * (0.2 + i * 0.3)
+        bpy.ops.mesh.primitive_torus_add(align='WORLD', location=location + mathutils.Vector((0,0,z_offset)),
+                                        major_radius=0.42, minor_radius=0.02)
+        band = bpy.context.object
+        band.name = f"{name}_Band_{i}"
+        band.parent = pillar
+        band.matrix_parent_inverse = pillar.matrix_world.inverted()
+        band.data.materials.append(mat)
+
+    return pillar
 
 if __name__ == "__main__":
     # Clear scene for testing

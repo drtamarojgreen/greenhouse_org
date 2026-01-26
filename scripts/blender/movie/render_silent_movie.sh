@@ -27,9 +27,9 @@ $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1150
 # Forge / Bridge
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1425
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1700
-# Neuron / Outro
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1950
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 2050
+# Finale / Outro
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 2250
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 2450
 
 echo "Step 2: Starting Full Animation Render (Low Sample Count)..."
 echo "Output will be at: $OUTPUT_PATH"
