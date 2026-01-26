@@ -3,8 +3,18 @@
 
     const GreenhouseEmotionBrain = {
         drawBrainShell(ctx, brainShell, camera, projection, width, height, activeROI = null) {
-            const targetRegion = activeROI ? activeROI.region : null;
             if (!brainShell) return;
+
+            // Robustly extract target region from activeROI (can be object {region: ...} or string or array)
+            let targetRegion = null;
+            if (activeROI) {
+                if (typeof activeROI === 'object' && !Array.isArray(activeROI) && activeROI.region) {
+                    targetRegion = activeROI.region;
+                } else {
+                    targetRegion = activeROI;
+                }
+            }
+
 
             const vertices = brainShell.vertices;
             const faces = brainShell.faces;

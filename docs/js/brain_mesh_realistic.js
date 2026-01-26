@@ -136,6 +136,11 @@
                     name: 'Hypothalamus',
                     color: 'rgba(255, 200, 100, 0.6)',
                     vertices: []
+                },
+                cortex: {
+                    name: 'Cortex',
+                    color: 'rgba(120, 120, 120, 0.3)',
+                    vertices: []
                 }
             };
 
@@ -325,8 +330,8 @@
                 return 'hippocampus';
             }
 
-            // Default to cortex
-            return 'prefrontalCortex';
+            // Default to general cortex
+            return 'cortex';
         }
     };
 
