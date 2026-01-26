@@ -109,14 +109,23 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
 
         # Parent to torso
         p.parent = torso
-        p.data.materials.append(mat)
+        if not p.material_slots:
+            p.data.materials.append(None)
+        p.material_slots[0].link = 'OBJECT'
+        p.material_slots[0].material = mat
 
-    torso.data.materials.append(mat)
+    if not torso.material_slots:
+        torso.data.materials.append(None)
+    torso.material_slots[0].link = 'OBJECT'
+    torso.material_slots[0].material = mat
 
     # Material for leaves
     for obj in container.objects:
         if "Leaf" in obj.name:
-            obj.data.materials.append(mat)
+            if not obj.material_slots:
+                obj.data.materials.append(None)
+            obj.material_slots[0].link = 'OBJECT'
+            obj.material_slots[0].material = mat
             obj.parent = head
 
     return torso # Return torso as main handle
@@ -134,6 +143,36 @@ def create_scroll(location, name="PhilosophicalScroll"):
         bsdf.inputs["Base Color"].default_value = (0.9, 0.8, 0.6, 1) # Parchment
     scroll.data.materials.append(mat)
     return scroll
+
+def create_procedural_bush(location, name="GardenBush", size=1.0):
+    """Creates a cluster of leaves and vines to simulate a bush."""
+    container = bpy.data.collections.new(name)
+    bpy.context.scene.collection.children.link(container)
+
+    leaf_template = create_leaf_mesh()
+    mat = bpy.data.materials.get("BushMat") or bpy.data.materials.new(name="BushMat")
+    mat.use_nodes = True
+    mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.05, 0.3, 0.05, 1)
+
+    for i in range(20):
+        # Random position in a sphere
+        offset = mathutils.Vector((random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(0, 1))) * size
+        leaf = bpy.data.objects.new(f"{name}_Leaf_{i}", leaf_template.data)
+        container.objects.link(leaf)
+        leaf.location = location + offset
+        leaf.rotation_euler = (random.uniform(0, 3.14), random.uniform(0, 3.14), random.uniform(0, 3.14))
+        leaf.scale = (size, size, size)
+        leaf.data.materials.append(mat)
+
+    # Add a few internal "branches"
+    for i in range(3):
+        start = location
+        end = location + mathutils.Vector((random.uniform(-0.5, 0.5), random.uniform(-0.5, 0.5), size))
+        branch = create_vine(start, end, radius=0.03*size)
+        container.objects.link(branch)
+        branch.data.materials.append(mat)
+
+    return container
 
 if __name__ == "__main__":
     # Clear scene for testing

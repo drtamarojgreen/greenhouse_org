@@ -14,22 +14,28 @@ OUTPUT_PATH="scripts/blender/render_outputs/silent_movie/movie.mp4"
 mkdir -p "scripts/blender/render_outputs/silent_movie"
 
 echo "Step 1: Generating Test Frames..."
-# Intro / Brain
+# Intro / Titles
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 50
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 200
-# Garden / Socratic
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 475
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 750
-# Forge / Connectivity
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1050
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1325
-# Outro
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1450
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 150
+# Brain / Garden
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 300
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 450
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 575
+# Dialogue / Exchange
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 850
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1150
+# Forge / Bridge
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1425
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1700
+# Neuron / Outro
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1950
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 2050
 
 echo "Step 2: Starting Full Animation Render (Low Sample Count)..."
 echo "Output will be at: $OUTPUT_PATH"
 
 # Run blender with the python script and then trigger animation render
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" --render-anim --render-output "$OUTPUT_PATH"
+# Ensure flags are AFTER the '--' separator for the python script to parse them
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --render-anim --render-output "$OUTPUT_PATH"
 
 echo "Render Job Completed."

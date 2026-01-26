@@ -3,6 +3,7 @@ import math
 import os
 import sys
 import mathutils
+import random
 
 # Import plant humanoid generator
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -25,9 +26,9 @@ def setup_scene():
     # Disable denoising if OIDN is not available
     scene.cycles.use_denoising = False
 
-    # Timeline settings (1500 frames @ 24fps ~= 62.5 seconds)
+    # Timeline settings (2100 frames @ 24fps ~= 87.5 seconds)
     scene.frame_start = 1
-    scene.frame_end = 1500
+    scene.frame_end = 2100
 
     # Dark world for high contrast
     scene.world.use_nodes = True
@@ -119,7 +120,7 @@ def create_intertitle(text, frame_start, frame_end):
     return text_obj
 
 def setup_compositor():
-    """Sets up post-processing for B&W, high contrast, and vignette."""
+    """Sets up post-processing for B&W, high contrast, vignette, and film grain."""
     bpy.context.scene.use_nodes = True
     tree = bpy.context.scene.node_tree
     for node in tree.nodes:
@@ -128,36 +129,63 @@ def setup_compositor():
     rl = tree.nodes.new('CompositorNodeRLayers')
     composite = tree.nodes.new('CompositorNodeComposite')
 
-    # RGB to BW
+    # 1. RGB to BW
     bw = tree.nodes.new('CompositorNodeRGBToBW')
 
-    # Bright/Contrast
+    # 2. Bright/Contrast with Flicker
     bright = tree.nodes.new('CompositorNodeBrightContrast')
-    bright.inputs['Bright'].default_value = 0.0
-    bright.inputs['Contrast'].default_value = 1.5
+    bright.inputs['Contrast'].default_value = 1.6
+    # Animate Brightness for flicker effect
+    for f in range(1, 2101, 2):
+        bright.inputs['Bright'].default_value = random.uniform(-0.02, 0.02)
+        bright.inputs['Bright'].keyframe_insert(data_path="default_value", frame=f)
 
-    # Vignette
+    # 3. Film Grain (Noise Texture)
+    noise = tree.nodes.new('CompositorNodeTexture')
+    # Create a procedural noise texture
+    if "FilmNoise" not in bpy.data.textures:
+        tex = bpy.data.textures.new("FilmNoise", type='NOISE')
+    noise.texture = bpy.data.textures["FilmNoise"]
+
+    mix_grain = tree.nodes.new('CompositorNodeMixRGB')
+    mix_grain.blend_type = 'OVERLAY'
+    mix_grain.inputs[0].default_value = 0.15 # Factor
+
+    # 4. Vertical Scratches (Musgrave)
+    if "Scratches" not in bpy.data.textures:
+        stex = bpy.data.textures.new("Scratches", type='MUSGRAVE')
+        stex.musgrave_type = 'FBM'
+        stex.noise_scale = 10.0
+    scratches = tree.nodes.new('CompositorNodeTexture')
+    scratches.texture = bpy.data.textures["Scratches"]
+
+    mix_scratches = tree.nodes.new('CompositorNodeMixRGB')
+    mix_scratches.blend_type = 'MULTIPLY'
+    mix_scratches.inputs[0].default_value = 0.1
+
+    # 5. Vignette
     mask = tree.nodes.new('CompositorNodeEllipseMask')
-    mask.width = 0.9
-    mask.height = 0.8
-
+    mask.width = 0.95
+    mask.height = 0.85
     blur = tree.nodes.new('CompositorNodeBlur')
-    blur.size_x = 200
-    blur.size_y = 200
-
-    mix = tree.nodes.new('CompositorNodeMixRGB')
-    mix.blend_type = 'MULTIPLY'
-    mix.inputs[0].default_value = 1.0 # Factor
+    blur.size_x = 250
+    blur.size_y = 250
+    mix_vignette = tree.nodes.new('CompositorNodeMixRGB')
+    mix_vignette.blend_type = 'MULTIPLY'
 
     # Connections
     tree.links.new(rl.outputs['Image'], bw.inputs['Image'])
     tree.links.new(bw.outputs['Val'], bright.inputs['Image'])
+    tree.links.new(bright.outputs['Image'], mix_grain.inputs[1])
+    tree.links.new(noise.outputs['Value'], mix_grain.inputs[2])
+
+    tree.links.new(mix_grain.outputs['Image'], mix_scratches.inputs[1])
+    tree.links.new(scratches.outputs['Value'], mix_scratches.inputs[2])
 
     tree.links.new(mask.outputs['Mask'], blur.inputs['Image'])
-    # Mix node has two 'Image' inputs in Blender 4.0
-    tree.links.new(bright.outputs['Image'], mix.inputs[1])
-    tree.links.new(blur.outputs['Image'], mix.inputs[2])
-    tree.links.new(mix.outputs['Image'], composite.inputs['Image'])
+    tree.links.new(mix_scratches.outputs['Image'], mix_vignette.inputs[1])
+    tree.links.new(blur.outputs['Image'], mix_vignette.inputs[2])
+    tree.links.new(mix_vignette.outputs['Image'], composite.inputs['Image'])
 
 def animate_camera():
     """Sets up and animates the camera across scenes."""
@@ -165,92 +193,111 @@ def animate_camera():
     camera = bpy.context.object
     bpy.context.scene.camera = camera
 
-    # 1. Intro Card (1-100)
-    camera.location = (0, -8, 0)
-    camera.keyframe_insert(data_path="location", frame=1)
-    camera.keyframe_insert(data_path="location", frame=100)
+    # Static position for Titles
+    title_loc = (0, -8, 0)
+    title_rot = (math.radians(90), 0, 0)
 
-    # 2. Brain Turntable (101-300)
+    # 1. Intro Card (1-100)
+    camera.location = title_loc
+    camera.rotation_euler = title_rot
+    camera.keyframe_insert(data_path="location", frame=1)
+    camera.keyframe_insert(data_path="rotation_euler", frame=1)
+
+    # 2. Intertitle (101-200)
+    camera.keyframe_insert(data_path="location", frame=101)
+
+    # 3. Brain Turntable (201-400)
     camera.location = (0, -25, 5)
     camera.rotation_euler = (math.radians(75), 0, 0)
-    camera.keyframe_insert(data_path="location", frame=101)
-    camera.keyframe_insert(data_path="rotation_euler", frame=101)
+    camera.keyframe_insert(data_path="location", frame=201)
+    camera.keyframe_insert(data_path="rotation_euler", frame=201)
     camera.location = (0, -30, 8)
-    camera.keyframe_insert(data_path="location", frame=300)
-
-    # 3. Intertitle (301-400)
-    camera.location = (0, -8, 0)
-    camera.rotation_euler = (math.radians(90), 0, 0)
-    camera.keyframe_insert(data_path="location", frame=301)
-    camera.keyframe_insert(data_path="rotation_euler", frame=301)
     camera.keyframe_insert(data_path="location", frame=400)
-    camera.keyframe_insert(data_path="rotation_euler", frame=400)
 
-    # 4. Garden Scene (401-550)
-    camera.location = (2, -15, 2)
-    camera.rotation_euler = (math.radians(85), 0, 0)
+    # 4. Intertitle (401-500)
+    camera.location = title_loc
+    camera.rotation_euler = title_rot
     camera.keyframe_insert(data_path="location", frame=401)
     camera.keyframe_insert(data_path="rotation_euler", frame=401)
+
+    # 5. Garden Scene (501-650)
+    camera.location = (2, -15, 2)
+    camera.rotation_euler = (math.radians(85), 0, 0)
+    camera.keyframe_insert(data_path="location", frame=501)
+    camera.keyframe_insert(data_path="rotation_euler", frame=501)
     camera.location = (-2, -12, 1)
-    camera.keyframe_insert(data_path="location", frame=550)
-
-    # 5. Intertitle (551-650)
-    camera.location = (0, -8, 0)
-    camera.rotation_euler = (math.radians(90), 0, 0)
-    camera.keyframe_insert(data_path="location", frame=551)
-    camera.keyframe_insert(data_path="rotation_euler", frame=551)
     camera.keyframe_insert(data_path="location", frame=650)
-    camera.keyframe_insert(data_path="rotation_euler", frame=650)
 
-    # 6. Socratic Dialogue (651-850)
-    camera.location = (0, -10, 2)
-    camera.rotation_euler = (math.radians(80), 0, 0)
+    # 6. Intertitle (651-750)
+    camera.location = title_loc
+    camera.rotation_euler = title_rot
     camera.keyframe_insert(data_path="location", frame=651)
     camera.keyframe_insert(data_path="rotation_euler", frame=651)
+
+    # 7. Socratic Dialogue (751-950)
+    camera.location = (0, -10, 2)
+    camera.rotation_euler = (math.radians(80), 0, 0)
+    camera.keyframe_insert(data_path="location", frame=751)
+    camera.keyframe_insert(data_path="rotation_euler", frame=751)
     camera.location = (0, -12, 3)
-    camera.keyframe_insert(data_path="location", frame=850)
-
-    # 7. Intertitle (851-950)
-    camera.location = (0, -8, 0)
-    camera.rotation_euler = (math.radians(90), 0, 0)
-    camera.keyframe_insert(data_path="location", frame=851)
-    camera.keyframe_insert(data_path="rotation_euler", frame=851)
     camera.keyframe_insert(data_path="location", frame=950)
-    camera.keyframe_insert(data_path="rotation_euler", frame=950)
 
-    # 8. Stoic Forge (951-1150)
-    camera.location = (0, -5, 0)
-    camera.rotation_euler = (math.radians(90), 0, 0)
+    # 8. Intertitle (951-1050)
+    camera.location = title_loc
     camera.keyframe_insert(data_path="location", frame=951)
-    camera.keyframe_insert(data_path="rotation_euler", frame=951)
-    camera.location = (0, -4, 0)
-    camera.keyframe_insert(data_path="location", frame=1150)
 
-    # 9. Intertitle (1151-1250)
-    camera.location = (0, -8, 0)
-    camera.rotation_euler = (math.radians(90), 0, 0)
-    camera.keyframe_insert(data_path="location", frame=1151)
-    camera.keyframe_insert(data_path="rotation_euler", frame=1151)
+    # 9. Scroll Exchange (1051-1250)
+    camera.location = (1.5, -8, 1.5)
+    camera.rotation_euler = (math.radians(85), 0, math.radians(10))
+    camera.keyframe_insert(data_path="location", frame=1051)
+    camera.keyframe_insert(data_path="rotation_euler", frame=1051)
+    camera.location = (-1.5, -8, 1.5)
     camera.keyframe_insert(data_path="location", frame=1250)
-    camera.keyframe_insert(data_path="rotation_euler", frame=1250)
 
-    # 10. Neuron Fly-by (1251-1400)
-    camera.location = (5, -10, 5)
-    camera.rotation_euler = (math.radians(60), 0, math.radians(30))
+    # 10. Intertitle (1251-1350)
+    camera.location = title_loc
+    camera.rotation_euler = title_rot
     camera.keyframe_insert(data_path="location", frame=1251)
     camera.keyframe_insert(data_path="rotation_euler", frame=1251)
-    camera.location = (-5, -20, -5)
-    camera.rotation_euler = (math.radians(120), 0, math.radians(-30))
-    camera.keyframe_insert(data_path="location", frame=1400)
-    camera.keyframe_insert(data_path="rotation_euler", frame=1400)
 
-    # 11. Outro Card (1401-1500)
-    camera.location = (0, -8, 0)
+    # 11. Stoic Forge (1351-1500)
+    camera.location = (0, -5, 0)
     camera.rotation_euler = (math.radians(90), 0, 0)
-    camera.keyframe_insert(data_path="location", frame=1401)
-    camera.keyframe_insert(data_path="rotation_euler", frame=1401)
+    camera.keyframe_insert(data_path="location", frame=1351)
+    camera.keyframe_insert(data_path="rotation_euler", frame=1351)
+    camera.location = (0, -4, 0)
     camera.keyframe_insert(data_path="location", frame=1500)
-    camera.keyframe_insert(data_path="rotation_euler", frame=1500)
+
+    # 12. Intertitle (1501-1600)
+    camera.location = title_loc
+    camera.keyframe_insert(data_path="location", frame=1501)
+
+    # 13. Synaptic Bridge (1601-1800)
+    camera.location = (10, -25, 10)
+    camera.rotation_euler = (math.radians(70), 0, math.radians(20))
+    camera.keyframe_insert(data_path="location", frame=1601)
+    camera.keyframe_insert(data_path="rotation_euler", frame=1601)
+    camera.location = (5, -20, 5)
+    camera.keyframe_insert(data_path="location", frame=1800)
+
+    # 14. Intertitle (1801-1900)
+    camera.location = title_loc
+    camera.rotation_euler = title_rot
+    camera.keyframe_insert(data_path="location", frame=1801)
+    camera.keyframe_insert(data_path="rotation_euler", frame=1801)
+
+    # 15. Neuron Fly-by (1901-2000)
+    camera.location = (5, -10, 5)
+    camera.rotation_euler = (math.radians(60), 0, math.radians(30))
+    camera.keyframe_insert(data_path="location", frame=1901)
+    camera.location = (-5, -20, -5)
+    camera.keyframe_insert(data_path="location", frame=2000)
+
+    # 16. Outro Card (2001-2100)
+    camera.location = title_loc
+    camera.rotation_euler = title_rot
+    camera.keyframe_insert(data_path="location", frame=2001)
+    camera.keyframe_insert(data_path="rotation_euler", frame=2001)
 
 def create_environment():
     """Creates a simple philosophical garden environment."""
@@ -279,110 +326,169 @@ def main():
     # Plant Humanoids
     h1 = plant_humanoid.create_plant_humanoid("Herbaceous", mathutils.Vector((-1, 0, 0)), height_scale=0.8, seed=42)
     h2 = plant_humanoid.create_plant_humanoid("Arbor", mathutils.Vector((1, 1, 0)), height_scale=1.3, seed=123)
-    scroll = plant_humanoid.create_scroll(mathutils.Vector((0, 0.5, 0.5)))
+    scroll = plant_humanoid.create_scroll(mathutils.Vector((0.8, 1.0, 1.2)))
+
+    # Bushes
+    plant_humanoid.create_procedural_bush(mathutils.Vector((-3, 2, 0)), name="Bush1", size=1.2)
+    plant_humanoid.create_procedural_bush(mathutils.Vector((4, -3, 0)), name="Bush2", size=0.8)
 
     # Group plant humanoid parts and props
-    plants = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["Herbaceous", "Arbor", "Scroll"])]
+    plants = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["Herbaceous", "Arbor", "Scroll", "Bush"])]
     for p in plants:
         p.hide_render = True
         p.hide_viewport = True
-        # Visible in Garden and Socratic scenes
-        p.keyframe_insert(data_path="hide_render", frame=400)
+        # Visible in Garden (501), Socratic (751), Exchange (1051), and Bridge (1601) scenes
+        p.keyframe_insert(data_path="hide_render", frame=500)
         p.hide_render = False
         p.hide_viewport = False
-        p.keyframe_insert(data_path="hide_render", frame=401)
+        p.keyframe_insert(data_path="hide_render", frame=501)
         p.hide_render = True
         p.hide_viewport = True
-        p.keyframe_insert(data_path="hide_render", frame=551)
-        p.hide_render = False
-        p.hide_viewport = False
         p.keyframe_insert(data_path="hide_render", frame=651)
+
+        p.hide_render = False
+        p.hide_viewport = False
+        p.keyframe_insert(data_path="hide_render", frame=751)
         p.hide_render = True
         p.hide_viewport = True
-        p.keyframe_insert(data_path="hide_render", frame=851)
+        p.keyframe_insert(data_path="hide_render", frame=951)
+
+        p.hide_render = False
+        p.hide_viewport = False
+        p.keyframe_insert(data_path="hide_render", frame=1051)
+        p.hide_render = True
+        p.hide_viewport = True
+        p.keyframe_insert(data_path="hide_render", frame=1251)
+
+        p.hide_render = False
+        p.hide_viewport = False
+        p.keyframe_insert(data_path="hide_render", frame=1601)
+        p.hide_render = True
+        p.hide_viewport = True
+        p.keyframe_insert(data_path="hide_render", frame=1801)
 
         # Apply Silent movie material override
-        if hasattr(p.data, "materials") and len(p.data.materials) > 0:
-            p.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.7, 0.7, 0.7, 1)
+        if p.material_slots and p.material_slots[0].material:
+            mat = p.material_slots[0].material
+            if mat.use_nodes:
+                bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                if bsdf:
+                    bsdf.inputs["Base Color"].default_value = (0.7, 0.7, 0.7, 1)
 
-    # Animate characters in Socratic Dialogue
+    # Animate Scroll Exchange
+    scroll.location = mathutils.Vector((0.8, 1.0, 1.2)) # Arbor's hand area
+    scroll.keyframe_insert(data_path="location", frame=1051)
+    scroll.location = mathutils.Vector((-0.8, 0.0, 1.0)) # Herbaceous's hand area
+    scroll.keyframe_insert(data_path="location", frame=1150)
+    scroll.keyframe_insert(data_path="location", frame=1250)
+
+    # Animate characters in Socratic Dialogue and Exchange
     h1.rotation_euler = (0, 0, 0)
-    h1.keyframe_insert(data_path="rotation_euler", frame=651)
+    h1.keyframe_insert(data_path="rotation_euler", frame=751)
     h1.rotation_euler = (0, 0, math.radians(-30))
-    h1.keyframe_insert(data_path="rotation_euler", frame=750)
-    h1.rotation_euler = (0, 0, 0)
     h1.keyframe_insert(data_path="rotation_euler", frame=850)
+    h1.rotation_euler = (0, 0, 0)
+    h1.keyframe_insert(data_path="rotation_euler", frame=950)
+
+    h2.rotation_euler = (0, 0, 0)
+    h2.keyframe_insert(data_path="rotation_euler", frame=1051)
+    h2.rotation_euler = (0, 0, math.radians(45))
+    h2.keyframe_insert(data_path="rotation_euler", frame=1150)
+    h2.rotation_euler = (0, 0, 0)
+    h2.keyframe_insert(data_path="rotation_euler", frame=1250)
 
     # Scene sequencing
     # Intro: GreenhouseMD
     create_intertitle("GreenhouseMD\nPresents", 1, 100)
 
+    # Intertitle: Stoic Reason
+    create_intertitle("The Seat of\nStoic Reason", 101, 200)
+
     # Brain: Stoic Reason
     if brain:
         brain.hide_render = True
         brain.hide_viewport = True
-        brain.keyframe_insert(data_path="hide_render", frame=100)
+        # Visible in Brain (201), Socratic (751), Forge (1351) and Bridge (1601)
+        brain.keyframe_insert(data_path="hide_render", frame=200)
         brain.hide_render = False
         brain.hide_viewport = False
-        brain.keyframe_insert(data_path="hide_render", frame=101)
+        brain.keyframe_insert(data_path="hide_render", frame=201)
         brain.hide_render = True
         brain.hide_viewport = True
-        brain.keyframe_insert(data_path="hide_render", frame=301)
+        brain.keyframe_insert(data_path="hide_render", frame=401)
 
-        # Also visible in Socratic and Forge
-        brain.keyframe_insert(data_path="hide_render", frame=650)
+        brain.keyframe_insert(data_path="hide_render", frame=750)
         brain.hide_render = False
         brain.hide_viewport = False
-        brain.keyframe_insert(data_path="hide_render", frame=651)
+        brain.keyframe_insert(data_path="hide_render", frame=751)
         brain.hide_render = True
         brain.hide_viewport = True
-        brain.keyframe_insert(data_path="hide_render", frame=851)
-
-        brain.keyframe_insert(data_path="hide_render", frame=950)
-        brain.hide_render = False
-        brain.hide_viewport = False
         brain.keyframe_insert(data_path="hide_render", frame=951)
+
+        brain.keyframe_insert(data_path="hide_render", frame=1350)
+        brain.hide_render = False
+        brain.hide_viewport = False
+        brain.keyframe_insert(data_path="hide_render", frame=1351)
         brain.hide_render = True
         brain.hide_viewport = True
-        brain.keyframe_insert(data_path="hide_render", frame=1151)
+        brain.keyframe_insert(data_path="hide_render", frame=1501)
+
+        brain.keyframe_insert(data_path="hide_render", frame=1600)
+        brain.hide_render = False
+        brain.hide_viewport = False
+        brain.keyframe_insert(data_path="hide_render", frame=1601)
+        brain.hide_render = True
+        brain.hide_viewport = True
+        brain.keyframe_insert(data_path="hide_render", frame=1801)
 
         # Rotation
         brain.rotation_euler = (0, 0, 0)
-        brain.keyframe_insert(data_path="rotation_euler", frame=101)
+        brain.keyframe_insert(data_path="rotation_euler", frame=201)
         brain.rotation_euler = (0, 0, math.pi * 2)
-        brain.keyframe_insert(data_path="rotation_euler", frame=300)
+        brain.keyframe_insert(data_path="rotation_euler", frame=400)
 
         # Thought Pulsing in Forge
         mat = brain.data.materials[0]
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs["Emission Strength"].default_value = 0.0
-        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=951)
+        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1351)
         bsdf.inputs["Emission Strength"].default_value = 5.0
-        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1050)
+        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1425)
         bsdf.inputs["Emission Strength"].default_value = 0.0
-        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1150)
+        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1500)
 
     # Narrative Intertitles
-    create_intertitle("The Garden of\nThe Mind", 301, 400)
-    create_intertitle("The Dialectic of\nGrowth", 551, 650)
-    create_intertitle("The Forge of\nFortitude", 851, 950)
-    create_intertitle("The Architecture of\nConnectivity", 1151, 1250)
+    create_intertitle("The Garden of\nThe Mind", 401, 500)
+    create_intertitle("The Dialectic of\nGrowth", 651, 750)
+    create_intertitle("The Exchange of\nKnowledge", 951, 1050)
+    create_intertitle("The Forge of\nFortitude", 1251, 1350)
+    create_intertitle("The Bridge of\nConnectivity", 1501, 1600)
+    create_intertitle("The Architecture of\nConnectivity", 1801, 1900)
 
     # Neuron: Connecting the Mind
     if neuron:
         neuron.hide_render = True
         neuron.hide_viewport = True
-        neuron.keyframe_insert(data_path="hide_render", frame=1250)
+        # Visible in Bridge (1601) and Fly-by (1901)
+        neuron.keyframe_insert(data_path="hide_render", frame=1600)
         neuron.hide_render = False
         neuron.hide_viewport = False
-        neuron.keyframe_insert(data_path="hide_render", frame=1251)
+        neuron.keyframe_insert(data_path="hide_render", frame=1601)
         neuron.hide_render = True
         neuron.hide_viewport = True
-        neuron.keyframe_insert(data_path="hide_render", frame=1401)
+        neuron.keyframe_insert(data_path="hide_render", frame=1801)
+
+        neuron.keyframe_insert(data_path="hide_render", frame=1900)
+        neuron.hide_render = False
+        neuron.hide_viewport = False
+        neuron.keyframe_insert(data_path="hide_render", frame=1901)
+        neuron.hide_render = True
+        neuron.hide_viewport = True
+        neuron.keyframe_insert(data_path="hide_render", frame=2001)
         neuron.scale = (5, 5, 5)
 
     # Outro: Fin
-    create_intertitle("The Greenhouse for\nMental Health Development\n\nFin", 1401, 1500)
+    create_intertitle("The Greenhouse for\nMental Health Development\n\nFin", 2001, 2100)
 
     animate_camera()
     setup_compositor()
