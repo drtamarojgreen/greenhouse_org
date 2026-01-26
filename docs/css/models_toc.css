@@ -15,13 +15,18 @@
 /* Use a class for the container for better flexibility between local and live site */
 .models-toc-container {
   display: block !important;
-  flex: 0 0 100% !important; /* For Flexbox */
-  grid-column: 1 / -1 !important; /* For Grid */
+  flex: 0 0 100% !important;
+  /* For Flexbox */
+  grid-column: 1 / -1 !important;
+  /* For Grid */
+  order: 9999 !important;
+  /* Ensure it's last in flex layouts */
   padding: 0;
   margin: 20px 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   width: 100% !important;
   clear: both !important;
+  z-index: 10 !important;
 }
 
 .models-toc-intro {

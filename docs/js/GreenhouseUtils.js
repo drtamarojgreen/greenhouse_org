@@ -549,22 +549,26 @@ window.GreenhouseUtils = (function () {
                     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
                     
                     .models-toc-footer-section {
-                        flex-basis: 100%; /* For Flexbox */
-                        grid-column: 1 / -1; /* For Grid */
+                        display: block !important;
+                        flex: 0 0 100% !important; /* Force full width in flexbox */
+                        width: 100% !important;
+                        grid-column: 1 / -1 !important; /* For Grid */
+                        order: 9999 !important; /* Push to end in flexbox */
                         background: linear-gradient(to bottom, #000 0%, #0a100a 100%);
                         border-top: 2px solid #1a2a1a;
                         padding: 80px 20px;
-                        margin-top: 150px;
+                        margin-top: 50px;
                         position: relative;
-                        z-index: 1000;
+                        z-index: 10; /* Lower z-index to avoid covering fixed UI */
                         min-height: 400px;
                         color: #fff;
                         box-shadow: 0 -30px 60px rgba(0, 0, 0, 0.6);
-                        clear: both;
+                        clear: both !important;
                     }
                     .models-toc-footer-section .models-toc-container {
                         max-width: 1200px;
                         margin: 0 auto;
+                        width: 100% !important;
                     }
                     .models-toc-footer-header {
                         text-align: center;
@@ -633,8 +637,25 @@ window.GreenhouseUtils = (function () {
             // Append to body after the main app container
             const mainApp = targetSelector ? document.querySelector(targetSelector) : null;
             if (mainApp && mainApp.parentNode) {
+                const parent = mainApp.parentNode;
+
+                // Force wrap for flex parents
+                try {
+                    const computedStyle = window.getComputedStyle(parent);
+                    if (computedStyle.display.includes('flex')) {
+                        parent.style.flexWrap = 'wrap';
+                    }
+                } catch (e) { }
+
+                // Check if mainApp has no height (likely absolute/fixed)
+                const mainHeight = mainApp.offsetHeight;
+                if (mainHeight < 100) {
+                    // If simulation doesn't take space, simulate some flow offset
+                    tocContainer.style.marginTop = '600px';
+                }
+
                 // Insert after the main simulation container
-                mainApp.parentNode.insertBefore(tocContainer, mainApp.nextSibling);
+                parent.insertBefore(tocContainer, mainApp.nextSibling);
             } else {
                 document.body.appendChild(tocContainer);
             }
