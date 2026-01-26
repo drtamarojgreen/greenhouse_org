@@ -17,6 +17,7 @@
         activeRegion: null,
         activeTheory: null,
         config: null,
+        diagrams: null,
         currentCategory: 'theories',
         uiContainer: null,
         theorySelectorContainer: null,
@@ -30,6 +31,7 @@
             }
 
             this.config = window.GreenhouseEmotionConfig || {};
+            this.diagrams = window.GreenhouseEmotionDiagrams || null;
 
             // Setup Container
             container.innerHTML = '';
@@ -318,6 +320,11 @@
                     w, h,
                     this.activeRegion ? { region: this.activeRegion } : null
                 );
+            }
+
+            // Draw Diagrams/Overlays
+            if (this.diagrams) {
+                this.diagrams.draw(ctx, this);
             }
 
             // Title Overlay
