@@ -116,6 +116,7 @@
             });
 
             const searchInput = document.createElement('input');
+            searchInput.id = 'enhancement-search';
             searchInput.placeholder = 'Search 100 enhancements...';
             searchInput.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px; flex-grow: 1;
@@ -126,6 +127,7 @@
             uiContainer.appendChild(controlsRow);
 
             const listContainer = document.createElement('div');
+            listContainer.id = 'enhancement-list';
             listContainer.style.cssText = `
                 display: flex;
                 gap: 8px;
@@ -147,6 +149,7 @@
 
                 enhancements.forEach(enh => {
                     const btn = document.createElement('button');
+                    btn.className = 'enhancement-item';
                     btn.textContent = enh.name;
                     btn.title = enh.description;
                     btn.style.cssText = `
@@ -207,31 +210,99 @@
         },
 
         setupInteraction() {
-            let lastX = 0;
+            let lastX = 0, lastY = 0;
             let isDragging = false;
+            let hasDragged = false;
 
             this.canvas.addEventListener('mousedown', (e) => {
                 isDragging = true;
+                hasDragged = false;
                 lastX = e.clientX;
+                lastY = e.clientY;
             });
 
             window.addEventListener('mousemove', (e) => {
                 if (isDragging) {
                     const dx = e.clientX - lastX;
+                    const dy = e.clientY - lastY;
+                    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) hasDragged = true;
+
                     this.camera.rotationY += dx * 0.01;
+                    this.camera.rotationX += dy * 0.01;
+
+                    // Limit X rotation to avoid flipping
+                    this.camera.rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotationX));
+
                     lastX = e.clientX;
+                    lastY = e.clientY;
                 }
             });
 
-            window.addEventListener('mouseup', () => {
+            window.addEventListener('mouseup', (e) => {
+                if (isDragging && !hasDragged) {
+                    // It was a click, not a drag
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    this.onBrainClick(x, y);
+                }
                 isDragging = false;
             });
 
             this.canvas.addEventListener('wheel', (e) => {
                 e.preventDefault();
-                this.camera.z += e.deltaY * 0.5;
-                this.camera.z = Math.min(-300, Math.max(-1500, this.camera.z));
+                // Improved zoom speed and feel
+                const delta = e.deltaY;
+                const zoomSpeed = Math.abs(this.camera.z) * 0.001;
+                this.camera.z += delta * zoomSpeed * 5;
+                this.camera.z = Math.min(-200, Math.max(-2000, this.camera.z));
             }, { passive: false });
+        },
+
+        onBrainClick(x, y) {
+            if (window.GreenhouseCognitionBrain) {
+                const pickedRegion = window.GreenhouseCognitionBrain.pickRegion(
+                    x, y, this.brainMesh, this.camera, this.projection
+                );
+
+                if (pickedRegion) {
+                    this.activeRegion = pickedRegion;
+                    // Find an enhancement that uses this region to update the UI
+                    const relatedEnhancement = this.config.enhancements.find(e => e.region === pickedRegion);
+                    if (relatedEnhancement) {
+                        this.activeEnhancement = relatedEnhancement;
+                        this.updateInfoPanel();
+                        this.syncSidebarSelection();
+                    } else {
+                        // Just highlight region if no specific enhancement is mapped
+                        this.updateInfoPanelWithRegionOnly(pickedRegion);
+                    }
+                }
+            }
+        },
+
+        syncSidebarSelection() {
+            const listContainer = document.getElementById('enhancement-list');
+            if (!listContainer) return;
+
+            Array.from(listContainer.children).forEach(btn => {
+                if (btn.textContent === this.activeEnhancement?.name) {
+                    btn.style.borderColor = '#4fd1c5';
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                } else {
+                    btn.style.borderColor = '#4a5568';
+                }
+            });
+        },
+
+        updateInfoPanelWithRegionOnly(regionId) {
+            const region = this.config.regions[regionId];
+            if (!region) return;
+            this.infoPanel.innerHTML = `
+                <h3 style="color: ${region.color || '#4fd1c5'}; margin-top: 0;">${region.name}</h3>
+                <p>${region.description}</p>
+                <p style="font-size: 11px; color: #888;">No specific enhancement currently active for this region.</p>
+            `;
         },
 
         startLoop() {
