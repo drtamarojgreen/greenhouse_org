@@ -129,6 +129,61 @@
             this.drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection);
         },
 
+        /**
+         * Identifies which region is at the given screen coordinates.
+         */
+        pickRegion(mouseX, mouseY, brainShell, camera, projection) {
+            if (!brainShell) return null;
+
+            const vertices = brainShell.vertices;
+            const faces = brainShell.faces;
+
+            const projectedVertices = vertices.map(v => {
+                return GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
+            });
+
+            const hits = [];
+
+            faces.forEach(face => {
+                const indices = face.indices || (Array.isArray(face) ? face : null);
+                if (!indices) return;
+
+                const p1 = projectedVertices[indices[0]];
+                const p2 = projectedVertices[indices[1]];
+                const p3 = projectedVertices[indices[2]];
+
+                if (p1 && p2 && p3 && p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                    // Inside-triangle check
+                    if (this.isPointInTriangle(mouseX, mouseY, p1, p2, p3)) {
+                        // Backface culling for picking too
+                        const dx1 = p2.x - p1.x;
+                        const dy1 = p2.y - p1.y;
+                        const dx2 = p3.x - p1.x;
+                        const dy2 = p3.y - p1.y;
+
+                        if (dx1 * dy2 - dy1 * dx2 > 0) {
+                            const depth = (p1.depth + p2.depth + p3.depth) / 3;
+                            hits.push({
+                                region: face.region || vertices[indices[0]].region,
+                                depth
+                            });
+                        }
+                    }
+                }
+            });
+
+            if (hits.length === 0) return null;
+            hits.sort((a, b) => a.depth - b.depth);
+            return hits[0].region;
+        },
+
+        isPointInTriangle(px, py, p1, p2, p3) {
+            const area = 0.5 * (-p2.y * p3.x + p1.y * (-p2.x + p3.x) + p1.x * (p2.y - p3.y) + p2.x * p3.y);
+            const s = 1 / (2 * area) * (p1.y * p3.x - p1.x * p3.y + (p3.y - p1.y) * px + (p1.x - p3.x) * py);
+            const t = 1 / (2 * area) * (p1.x * p2.y - p1.y * p2.x + (p1.y - p2.y) * px + (p2.x - p1.x) * py);
+            return s >= 0 && t >= 0 && (s + t) <= 1;
+        },
+
         drawSurfaceGrid(ctx, projectedVertices, brainShell) {
             ctx.save();
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
