@@ -11,6 +11,9 @@
         // Anatomical Centers (Approximate for 200-radius model)
         centers: {
             prefrontalCortex: { x: 0, y: 50, z: 180 },
+            dlPFC: { x: 120, y: 150, z: 120 },
+            vmPFC: { x: 0, y: -20, z: 180 },
+            ofc: { x: 0, y: -80, z: 150 },
             amygdala: { x: 60, y: -40, z: 20 },
             hippocampus: { x: 80, y: -40, z: -40 },
             hypothalamus: { x: 0, y: -60, z: 0 },
@@ -18,7 +21,11 @@
             brainstem: { x: 0, y: -180, z: 0 },
             insula: { x: 100, y: -20, z: 0 },
             acc: { x: 0, y: 80, z: 60 },
-            striatum: { x: 40, y: -10, z: 40 }
+            subgenualACC: { x: 0, y: 10, z: 80 },
+            striatum: { x: 40, y: -10, z: 40 },
+            nucleusAccumbens: { x: 20, y: -40, z: 60 },
+            parietalLobe: { x: 100, y: 180, z: -100 },
+            occipitalLobe: { x: 0, y: 20, z: -200 }
         },
 
         draw(ctx, app) {
@@ -626,19 +633,67 @@
         drawNetworkState(ctx, app, time) {
             const w = ctx.canvas.width;
             const h = ctx.canvas.height;
-            const mode = Math.sin(time * 0.5) > 0 ? 'DMN' : 'CEN';
+
+            // Cycle through 3 major networks
+            const cycle = (time * 0.3) % 3;
+            let mode = 'DMN';
+            let label = 'DEFAULT MODE (Internal Reflection/Rumination)';
+            let color = '#ff00ff';
+            let nodes = ['vmPFC', 'parietalLobe', 'hippocampus'];
+
+            if (cycle > 1 && cycle <= 2) {
+                mode = 'CEN';
+                label = 'CENTRAL EXECUTIVE (Goal-Directed Focus)';
+                color = '#00ffff';
+                nodes = ['dlPFC', 'parietalLobe', 'thalamus'];
+            } else if (cycle > 2) {
+                mode = 'SN';
+                label = 'SALIENCE (Stimulus Detection/Switching)';
+                color = '#ffff00';
+                nodes = ['insula', 'acc', 'amygdala'];
+            }
 
             ctx.save();
-            ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            ctx.font = 'bold 12px Arial';
-            ctx.fillText(`NETWORK: ${mode === 'DMN' ? 'DEFAULT MODE (Rumination)' : 'CENTRAL EXECUTIVE (Focus)'}`, w/2 - 150, 80);
 
-            // Highlight connections based on mode
-            if (mode === 'DMN') {
-                this.drawPulseAlongPath(ctx, app, 'prefrontalCortex', 'hippocampus', time, '#ff00ff');
-            } else {
-                this.drawPulseAlongPath(ctx, app, 'prefrontalCortex', 'thalamus', time, '#00ffff');
+            // UI Label
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(w/2 - 200, 70, 400, 30);
+            ctx.strokeStyle = color;
+            ctx.strokeRect(w/2 - 200, 70, 400, 30);
+
+            ctx.fillStyle = color;
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`NETWORK: ${label}`, w/2, 90);
+
+            // Draw Network Graph
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    this.drawCircuit(ctx, app, nodes[i], nodes[j], time + i, color, false);
+                }
             }
+
+            // Node Highlights
+            nodes.forEach(nodeId => {
+                const p = this.projectRegion(app, nodeId);
+                if (p) {
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Node Label
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(nodeId.toUpperCase(), p.x, p.y - 12);
+                }
+            });
+
             ctx.restore();
         },
 
