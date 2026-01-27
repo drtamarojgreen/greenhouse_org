@@ -47,7 +47,7 @@
                 this.drawCircuit(ctx, app, 'prefrontalCortex', 'amygdala', time, '#39ff14', true);
             }
             if (id === 66 || id === 23 || id === 6) { // Vagus Nerve / Brainstem
-                this.drawPulseAlongPath(ctx, app, 'brainstem', 'hypothalamus', time, '#ffcc00');
+                this.drawVagalSignal(ctx, app, time);
             }
 
             // Specialized Visuals
@@ -96,10 +96,10 @@
 
             // Neurochemical Meters
             if (id === 8 || id === 53 || id === 60) {
-                this.drawHUDGauge(ctx, w - 180, 80, 'GABA/GLUTAMATE', 0.5 + Math.sin(time) * 0.2, '#4fd1c5');
+                this.drawBalanceMeter(ctx, w - 180, 80, time, app.simState?.gaba || 0.5);
             }
             if (id === 23 || id === 51 || id === 61) {
-                this.drawHUDGauge(ctx, w - 180, 130, 'SEROTONIN', 0.7 + Math.sin(time * 0.5) * 0.1, '#ff00ff');
+                this.drawHUDGauge(ctx, w - 180, 130, 'SEROTONIN', app.simState?.serotonin || (0.7 + Math.sin(time * 0.5) * 0.1), '#ff00ff');
             }
             if (id === 9 || id === 25) {
                 this.drawHUDGauge(ctx, w - 180, 180, 'CORTISOL', app.simState?.cortisol || (0.3 + Math.sin(time * 2) * 0.4), '#ff4d4d');
@@ -108,6 +108,11 @@
             // Physiological metrics
             if (id === 2 || id === 6 || id === 40) {
                 this.drawHRV(ctx, w - 180, 230, time);
+            }
+
+            // Allostatic Load
+            if (id === 25) {
+                this.drawAllostaticGauge(ctx, w - 180, 380, time);
             }
 
             // Theory/Model specific gauges
@@ -176,6 +181,37 @@
             ctx.arc(px, py, 3, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
+        },
+
+        drawVagalSignal(ctx, app, time) {
+            const p1 = this.projectRegion(app, 'brainstem');
+            const p2 = this.projectRegion(app, 'hypothalamus');
+            if (!p1 || !p2) return;
+
+            // Nerve fiber line
+            ctx.strokeStyle = 'rgba(255, 204, 0, 0.4)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+
+            // Moving pulses (Multiple)
+            for (let i = 0; i < 3; i++) {
+                const t = (time * 1.5 + i * 0.3) % 1;
+                const px = p1.x + (p2.x - p1.x) * t;
+                const py = p1.y + (p2.y - p1.y) * t;
+                ctx.fillStyle = '#ffcc00';
+                ctx.beginPath();
+                ctx.arc(px, py, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.arc(px, py, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
         },
 
         drawTMS(ctx, app, region, time) {
@@ -269,6 +305,34 @@
             ctx.fillText(label, x, y - 5);
         },
 
+        drawBalanceMeter(ctx, x, y, time, gaba) {
+            const w = 150, h = 30;
+            const glutamate = 1.0 - gaba;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(x, y, w, h);
+
+            // Glutamate (Excitatory)
+            ctx.fillStyle = '#ff4d4d';
+            ctx.fillRect(x, y, w * glutamate, h / 2);
+            ctx.fillStyle = '#fff';
+            ctx.font = '8px Arial';
+            ctx.fillText('GLUTAMATE', x + 5, y + 10);
+
+            // GABA (Inhibitory)
+            ctx.fillStyle = '#4fd1c5';
+            ctx.fillRect(x, y + h / 2, w * gaba, h / 2);
+            ctx.fillStyle = '#fff';
+            ctx.fillText('GABA', x + 5, y + 25);
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.strokeRect(x, y, w, h);
+            ctx.beginPath();
+            ctx.moveTo(x, y + h / 2);
+            ctx.lineTo(x + w, y + h / 2);
+            ctx.stroke();
+        },
+
         drawSocialBuffering(ctx, app, region, time) {
             const p = this.projectRegion(app, region);
             if (!p) return;
@@ -359,6 +423,30 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 10px Arial';
             ctx.fillText('HRV BIOFEEDBACK', x, y - 5);
+        },
+
+        drawAllostaticGauge(ctx, x, y, time) {
+            const radius = 30;
+            const centerX = x + 75;
+            const centerY = y + 30;
+            const val = 0.5 + Math.sin(time * 0.3) * 0.4;
+
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI * 0.8, Math.PI * 2.2);
+            ctx.stroke();
+
+            ctx.strokeStyle = (val > 0.7) ? '#ff4d4d' : '#ffcc00';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI * 0.8, Math.PI * (0.8 + 1.4 * val));
+            ctx.stroke();
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ALLOSTATIC LOAD', centerX, y - 5);
+            ctx.fillText(`${(val * 100).toFixed(0)}%`, centerX, centerY + 5);
         },
 
         drawSynapse(ctx, app, id, time) {
