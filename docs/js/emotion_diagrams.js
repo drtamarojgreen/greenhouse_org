@@ -72,6 +72,22 @@
             if (id === 28 || id === 33) { // Breath Sync / Soothe
                 this.drawPacer(ctx, app, time);
             }
+
+            // Synapse Callouts
+            if (id >= 51 && id <= 61 || id === 75) {
+                this.drawSynapse(ctx, app, id, time);
+            }
+
+            // Network States
+            if (id === 7) { // DMN vs CEN
+                this.drawNetworkState(ctx, app, time);
+            }
+            if (id === 11) { // Sleep Deprivation
+                this.drawSleepEffect(ctx, ctx.canvas.width, ctx.canvas.height, time);
+            }
+            if (id === 17) { // Top-Down vs Bottom-Up
+                this.drawTopDownBottomUp(ctx, app, time);
+            }
         },
 
         renderHUD(ctx, app, id, time) {
@@ -343,6 +359,121 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 10px Arial';
             ctx.fillText('HRV BIOFEEDBACK', x, y - 5);
+        },
+
+        drawSynapse(ctx, app, id, time) {
+            const x = ctx.canvas.width - 250;
+            const y = ctx.canvas.height - 150;
+            const w = 200, h = 120;
+
+            ctx.save();
+            ctx.translate(x, y);
+
+            // Box
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.strokeRect(0, 0, w, h);
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px Arial';
+            ctx.fillText('SYNAPTIC SIMULATION', 10, 15);
+
+            // Presynaptic (Top)
+            ctx.strokeStyle = '#4a5568';
+            ctx.beginPath();
+            ctx.moveTo(40, 30);
+            ctx.bezierCurveTo(40, 50, 160, 50, 160, 30);
+            ctx.stroke();
+
+            // Postsynaptic (Bottom)
+            ctx.beginPath();
+            ctx.moveTo(40, 90);
+            ctx.bezierCurveTo(40, 70, 160, 70, 160, 90);
+            ctx.stroke();
+
+            // Reuptake Pump
+            ctx.fillStyle = (id === 51 || id === 52) ? '#ff0000' : '#4a5568';
+            ctx.fillRect(100, 35, 10, 5);
+            if (id === 51 || id === 52) {
+                ctx.fillStyle = '#fff';
+                ctx.font = '8px Arial';
+                ctx.fillText('BLOCKED', 115, 40);
+            }
+
+            // Neurotransmitters
+            const color = (id === 53) ? '#4fd1c5' : (id === 59 ? '#ffcc00' : '#ff00ff');
+            const count = (id === 59) ? 15 : 8;
+            for (let i = 0; i < count; i++) {
+                const t = (time * (1 + i * 0.1)) % 1;
+                const tx = 50 + i * 15;
+                const ty = 45 + t * 30;
+
+                // If blocked, they stay in cleft longer
+                if ((id === 51 || id === 52) && t > 0.8) continue;
+
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(tx, ty, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Postsynaptic Receptors
+            for (let i = 0; i < 5; i++) {
+                const rx = 60 + i * 25;
+                ctx.fillStyle = (id === 58 || id === 75) ? '#ff4d4d' : '#2d3748';
+                ctx.fillRect(rx, 75, 10, 5);
+                if (id === 58 || id === 75) {
+                    ctx.strokeStyle = '#fff';
+                    ctx.strokeRect(rx, 75, 10, 5);
+                }
+            }
+
+            ctx.restore();
+        },
+
+        drawNetworkState(ctx, app, time) {
+            const w = ctx.canvas.width;
+            const h = ctx.canvas.height;
+            const mode = Math.sin(time * 0.5) > 0 ? 'DMN' : 'CEN';
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText(`NETWORK: ${mode === 'DMN' ? 'DEFAULT MODE (Rumination)' : 'CENTRAL EXECUTIVE (Focus)'}`, w/2 - 150, 80);
+
+            // Highlight connections based on mode
+            if (mode === 'DMN') {
+                this.drawPulseAlongPath(ctx, app, 'prefrontalCortex', 'hippocampus', time, '#ff00ff');
+            } else {
+                this.drawPulseAlongPath(ctx, app, 'prefrontalCortex', 'thalamus', time, '#00ffff');
+            }
+            ctx.restore();
+        },
+
+        drawSleepEffect(ctx, w, h, time) {
+            const alpha = 0.3 + Math.sin(time) * 0.2;
+            ctx.fillStyle = `rgba(0, 0, 20, ${alpha})`;
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'italic 12px Arial';
+            ctx.fillText('SLEEP DEPRIVATION: REDUCED PFC CONTROL', 20, h - 20);
+        },
+
+        drawTopDownBottomUp(ctx, app, time) {
+            const isTopDown = Math.sin(time) > 0;
+            const color = isTopDown ? '#00ffff' : '#ff4d4d';
+
+            if (isTopDown) {
+                this.drawCircuit(ctx, app, 'prefrontalCortex', 'amygdala', time, color, true);
+                ctx.fillStyle = color;
+                ctx.fillText('TOP-DOWN REGULATION', 20, 100);
+            } else {
+                this.drawCircuit(ctx, app, 'amygdala', 'prefrontalCortex', time, color, false);
+                ctx.fillStyle = color;
+                ctx.fillText('BOTTOM-UP REACTIVITY', 20, 100);
+            }
         },
 
         projectRegion(app, region) {

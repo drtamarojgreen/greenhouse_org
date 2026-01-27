@@ -25,7 +25,10 @@
             cortisol: 0.5,
             serotonin: 0.5,
             gaba: 0.5,
-            heartRate: 70
+            heartRate: 70,
+            targetCortisol: 0.5,
+            targetSerotonin: 0.5,
+            targetGaba: 0.5
         },
 
         init(selector) {
@@ -229,16 +232,56 @@
         },
 
         updateSimulationState(item) {
-            // Default reset
-            this.simState.cortisol = 0.3 + Math.random() * 0.2;
-            this.simState.serotonin = 0.5;
+            // Default targets
+            let targetCortisol = 0.3 + Math.random() * 0.1;
+            let targetSerotonin = 0.5;
+            let targetGaba = 0.5;
 
             // Item-specific impacts
             const id = item.id;
-            if (id === 9 || id === 25) this.simState.cortisol = 0.8; // Stress
-            if (id === 2 || id === 28 || id === 33) this.simState.cortisol = 0.1; // Calming
-            if (id === 23 || id === 51 || id === 61) this.simState.serotonin = 0.9; // SSRI/Serotonin
-            if (id === 8 || id === 53) this.simState.gaba = 0.8; // Benzos/GABA
+
+            // Stress / High Arousal
+            if (id === 1 || id === 9 || id === 25 || id === 31 || id === 71 || id === 89 || id === 94) {
+                targetCortisol = 0.85;
+            }
+
+            // Calming / Regulation
+            if (id === 2 || id === 10 || id === 28 || id === 33 || id === 43 || id === 65) {
+                targetCortisol = 0.15;
+            }
+
+            // Serotonin Modulation
+            if (id === 23 || (id >= 51 && id <= 55) || id === 61 || id === 63 || id === 74) {
+                targetSerotonin = 0.9;
+            }
+
+            // GABA Modulation
+            if (id === 8 || id === 53 || id === 60) {
+                targetGaba = 0.85;
+            }
+
+            // Reward
+            if (id === 22 || id === 35 || id === 36 || id === 48 || id === 88) {
+                targetSerotonin = 0.7; // Boost mood
+            }
+
+            // Social support
+            if (id === 10 || id === 34 || id === 83 || id === 97) {
+                targetCortisol = 0.2;
+            }
+
+            this.simState.targetCortisol = targetCortisol;
+            this.simState.targetSerotonin = targetSerotonin;
+            this.simState.targetGaba = targetGaba;
+        },
+
+        updateSimAnimation() {
+            const lerp = (a, b, t) => a + (b - a) * t;
+            const speed = 0.05;
+
+            this.simState.cortisol = lerp(this.simState.cortisol, this.simState.targetCortisol, speed);
+            this.simState.serotonin = lerp(this.simState.serotonin, this.simState.targetSerotonin, speed);
+            this.simState.gaba = lerp(this.simState.gaba, this.simState.targetGaba, speed);
         },
 
         updateInfoPanel() {
@@ -317,6 +360,9 @@
 
         render() {
             if (!this.ctx || !this.brainMesh) return;
+
+            this.updateSimAnimation();
+
             const ctx = this.ctx;
             const w = this.canvas.width;
             const h = this.canvas.height;
