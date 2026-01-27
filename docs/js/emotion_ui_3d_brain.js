@@ -109,7 +109,8 @@
                 const isTarget = targetRegion && (f.region === targetRegion || (Array.isArray(targetRegion) && targetRegion.includes(f.region)));
 
                 if (isTarget) {
-                    const fog = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
+                    const intensity = (activeROI && activeROI.intensity !== undefined) ? activeROI.intensity : 0.9;
+                    const fog = GreenhouseModels3DMath.applyDepthFog(intensity, f.depth);
                     ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green for ROI with fog
                 } else {
                     // Apply Lighting for all other regions

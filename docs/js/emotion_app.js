@@ -21,6 +21,8 @@
         currentCategory: 'theories',
         uiContainer: null,
         theorySelectorContainer: null,
+        hoveredRegion: null,
+        mousePos: { x: 0, y: 0 },
         simState: {
             cortisol: 0.5,
             serotonin: 0.5,
@@ -28,7 +30,8 @@
             heartRate: 70,
             targetCortisol: 0.5,
             targetSerotonin: 0.5,
-            targetGaba: 0.5
+            targetGaba: 0.5,
+            jitter: 0
         },
 
         init(selector) {
@@ -275,13 +278,46 @@
             this.simState.targetGaba = targetGaba;
         },
 
+        updateHoveredRegion() {
+            if (!this.brainMesh || !window.GreenhouseModels3DMath) return;
+
+            let minDiv = 20;
+            let closest = null;
+
+            // Sample vertices for performance
+            const step = 5;
+            for (let i = 0; i < this.brainMesh.vertices.length; i += step) {
+                const v = this.brainMesh.vertices[i];
+                const proj = window.GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, this.camera, this.projection);
+                if (proj.scale > 0 && proj.depth < 0.8) {
+                    const dx = proj.x - this.mousePos.x;
+                    const dy = proj.y - this.mousePos.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < minDiv) {
+                        minDiv = dist;
+                        closest = v.region;
+                    }
+                }
+            }
+            this.hoveredRegion = closest;
+        },
+
         updateSimAnimation() {
             const lerp = (a, b, t) => a + (b - a) * t;
             const speed = 0.05;
 
-            this.simState.cortisol = lerp(this.simState.cortisol, this.simState.targetCortisol, speed);
-            this.simState.serotonin = lerp(this.simState.serotonin, this.simState.targetSerotonin, speed);
-            this.simState.gaba = lerp(this.simState.gaba, this.simState.targetGaba, speed);
+            // Biological Jitter (Organic noise)
+            const noise = (Math.random() - 0.5) * 0.01;
+            this.simState.jitter = lerp(this.simState.jitter, noise, 0.1);
+
+            this.simState.cortisol = lerp(this.simState.cortisol, this.simState.targetCortisol, speed) + this.simState.jitter;
+            this.simState.serotonin = lerp(this.simState.serotonin, this.simState.targetSerotonin, speed) + this.simState.jitter * 0.5;
+            this.simState.gaba = lerp(this.simState.gaba, this.simState.targetGaba, speed) + this.simState.jitter * 0.3;
+
+            // Clamping
+            this.simState.cortisol = Math.max(0, Math.min(1, this.simState.cortisol));
+            this.simState.serotonin = Math.max(0, Math.min(1, this.simState.serotonin));
+            this.simState.gaba = Math.max(0, Math.min(1, this.simState.gaba));
         },
 
         updateInfoPanel() {
@@ -325,17 +361,23 @@
             let lastX = 0;
             let isDragging = false;
 
-            this.canvas.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                lastX = e.clientX;
-            });
+            this.canvas.addEventListener('mousemove', (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                this.mousePos.x = e.clientX - rect.left;
+                this.mousePos.y = e.clientY - rect.top;
 
-            window.addEventListener('mousemove', (e) => {
                 if (isDragging) {
                     const dx = e.clientX - lastX;
                     this.camera.rotationY += dx * 0.01;
                     lastX = e.clientX;
+                } else {
+                    this.updateHoveredRegion();
                 }
+            });
+
+            this.canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                lastX = e.clientX;
             });
 
             window.addEventListener('mouseup', () => {
@@ -369,22 +411,35 @@
 
             ctx.clearRect(0, 0, w, h);
 
-            // Background
+            // Atmospheric Background based on state
+            const moodFactor = this.simState.serotonin - this.simState.cortisol * 0.5;
+            let bgColor1 = '#0a0a20'; // Default dark blue
+            let bgColor2 = '#050510';
+
+            if (moodFactor > 0.6) { // High Serotonin, Low Cortisol (Joy/Calm)
+                bgColor1 = '#002b1a'; // Deep forest green
+            } else if (moodFactor < 0.2) { // High Cortisol, Low Serotonin (Stress/Distress)
+                bgColor1 = '#2b0a0a'; // Deep blood red
+            } else if (this.simState.serotonin < 0.3) { // Low everything (Depression)
+                bgColor1 = '#0a0a0a'; // Black/Grey
+            }
+
             const grad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
-            grad.addColorStop(0, '#0a0a20');
-            grad.addColorStop(1, '#050510');
+            grad.addColorStop(0, bgColor1);
+            grad.addColorStop(1, bgColor2);
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, w, h);
 
             if (window.GreenhouseEmotionBrain && window.GreenhouseModels3DMath) {
-                // We use GreenhouseEmotionBrain but with our active region highlight
+                // Pulse effect for highlighted regions
+                const pulse = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
                 window.GreenhouseEmotionBrain.drawBrainShell(
                     ctx,
                     this.brainMesh,
                     this.camera,
                     this.projection,
                     w, h,
-                    this.activeRegion ? { region: this.activeRegion } : null
+                    this.activeRegion ? { region: this.activeRegion, intensity: pulse } : null
                 );
             }
 
@@ -402,6 +457,27 @@
             if (this.activeTheory) {
                 ctx.fillStyle = '#ff4d4d';
                 ctx.fillText(`ACTIVE THEORY: ${this.activeTheory.name.toUpperCase()}`, 20, 55);
+            }
+
+            // Hover Info
+            if (this.hoveredRegion && this.hoveredRegion !== 'cortex') {
+                const regName = this.config.regions && this.config.regions[this.hoveredRegion] ?
+                                this.config.regions[this.hoveredRegion].name : this.hoveredRegion;
+
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.font = '12px Arial';
+                const tw = ctx.measureText(regName).width;
+
+                ctx.beginPath();
+                ctx.roundRect(this.mousePos.x + 15, this.mousePos.y - 30, tw + 20, 25, 5);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#fff';
+                ctx.fillText(regName, this.mousePos.x + 25, this.mousePos.y - 13);
+                ctx.restore();
             }
         }
     };

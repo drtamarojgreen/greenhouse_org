@@ -94,6 +94,9 @@
             const w = ctx.canvas.width;
             const h = ctx.canvas.height;
 
+            // Neural Oscillations (EEG)
+            this.drawEEG(ctx, 20, h - 100, time, app.simState);
+
             // Neurochemical Meters
             if (id === 8 || id === 53 || id === 60) {
                 this.drawBalanceMeter(ctx, w - 180, 80, time, app.simState?.gaba || 0.5);
@@ -162,6 +165,25 @@
             ctx.beginPath();
             ctx.arc(px, py, 15, 0, Math.PI * 2);
             ctx.fill();
+            ctx.globalAlpha = 1.0;
+
+            // Particle Burst at Target
+            if (t > 0.95) {
+                this.drawBurst(ctx, p2.x, p2.y, color, time);
+            }
+        },
+
+        drawBurst(ctx, x, y, color, time) {
+            const count = 8;
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2 + time * 5;
+                const dist = 10 + Math.sin(time * 10) * 5;
+                ctx.fillStyle = color;
+                ctx.globalAlpha = 0.6;
+                ctx.beginPath();
+                ctx.arc(x + Math.cos(angle) * dist, y + Math.sin(angle) * dist, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
             ctx.globalAlpha = 1.0;
         },
 
@@ -425,6 +447,40 @@
             ctx.fillText('HRV BIOFEEDBACK', x, y - 5);
         },
 
+        drawEEG(ctx, x, y, time, state) {
+            const w = 200, h = 60;
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.strokeRect(x, y, w, h);
+
+            // Alpha Waves (8-13 Hz) - Relaxation
+            this.drawWave(ctx, x, y + 15, w, time, 10, 5 * (state.serotonin || 0.5), '#4fd1c5', 'ALPHA');
+            // Beta Waves (13-30 Hz) - Alertness/Stress
+            this.drawWave(ctx, x, y + 35, w, time, 20, 3 * (state.cortisol || 0.5), '#ff4d4d', 'BETA');
+            // Gamma Waves (30-100 Hz) - High Processing
+            this.drawWave(ctx, x, y + 55, w, time, 40, 2 * (1 - (state.cortisol || 0.5)), '#fff', 'GAMMA');
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 9px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('NEURAL OSCILLATIONS (EEG)', x, y - 5);
+        },
+
+        drawWave(ctx, x, y, w, time, freq, amp, color, label) {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            for (let i = 0; i < w; i++) {
+                const val = Math.sin((time * freq) - i * 0.1) * amp;
+                if (i === 0) ctx.moveTo(x + i, y + val);
+                else ctx.lineTo(x + i, y + val);
+            }
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.font = '7px Arial';
+            ctx.fillText(label, x + w + 5, y + 3);
+        },
+
         drawAllostaticGauge(ctx, x, y, time) {
             const radius = 30;
             const centerX = x + 75;
@@ -451,73 +507,120 @@
 
         drawSynapse(ctx, app, id, time) {
             const x = ctx.canvas.width - 250;
-            const y = ctx.canvas.height - 150;
-            const w = 200, h = 120;
+            const y = ctx.canvas.height - 170;
+            const w = 220, h = 140;
 
             ctx.save();
             ctx.translate(x, y);
 
-            // Box
-            ctx.fillStyle = 'rgba(0,0,0,0.8)';
-            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-            ctx.strokeRect(0, 0, w, h);
-            ctx.fillRect(0, 0, w, h);
+            // Container with glow
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(0, 255, 255, 0.2)';
+            ctx.fillStyle = 'rgba(5, 5, 20, 0.9)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            this.roundRect(ctx, 0, 0, w, h, 8, true, true);
+            ctx.shadowBlur = 0;
 
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 10px Arial';
-            ctx.fillText('SYNAPTIC SIMULATION', 10, 15);
+            ctx.textAlign = 'left';
+            ctx.fillText('SYNAPTIC TERMINAL', 10, 18);
 
-            // Presynaptic (Top)
-            ctx.strokeStyle = '#4a5568';
+            // Labels
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = '7px Arial';
+            ctx.fillText('PRE-SYNAPTIC', 10, 35);
+            ctx.fillText('POST-SYNAPTIC', 10, 115);
+            ctx.fillText('CLEFT', 185, 75);
+
+            // Presynaptic Membrane
+            ctx.strokeStyle = '#718096';
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(40, 30);
-            ctx.bezierCurveTo(40, 50, 160, 50, 160, 30);
+            ctx.moveTo(40, 40);
+            ctx.bezierCurveTo(40, 65, 180, 65, 180, 40);
             ctx.stroke();
 
-            // Postsynaptic (Bottom)
+            // Postsynaptic Membrane
             ctx.beginPath();
-            ctx.moveTo(40, 90);
-            ctx.bezierCurveTo(40, 70, 160, 70, 160, 90);
+            ctx.moveTo(40, 110);
+            ctx.bezierCurveTo(40, 85, 180, 85, 180, 110);
             ctx.stroke();
 
-            // Reuptake Pump
-            ctx.fillStyle = (id === 51 || id === 52) ? '#ff0000' : '#4a5568';
-            ctx.fillRect(100, 35, 10, 5);
-            if (id === 51 || id === 52) {
+            // Reuptake Pump (DAT/SERT)
+            const isBlocked = (id === 51 || id === 52 || id === 54);
+            ctx.fillStyle = isBlocked ? '#f56565' : '#4a5568';
+            ctx.fillRect(100, 48, 12, 6);
+            if (isBlocked) {
                 ctx.fillStyle = '#fff';
-                ctx.font = '8px Arial';
-                ctx.fillText('BLOCKED', 115, 40);
+                ctx.font = 'bold 7px Arial';
+                ctx.fillText('BLOCKED', 115, 54);
+            } else {
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.font = '7px Arial';
+                ctx.fillText('PUMP', 115, 54);
             }
 
-            // Neurotransmitters
-            const color = (id === 53) ? '#4fd1c5' : (id === 59 ? '#ffcc00' : '#ff00ff');
-            const count = (id === 59) ? 15 : 8;
-            for (let i = 0; i < count; i++) {
-                const t = (time * (1 + i * 0.1)) % 1;
-                const tx = 50 + i * 15;
-                const ty = 45 + t * 30;
+            // Neurotransmitters (NT)
+            const ntColor = (id === 53) ? '#4fd1c5' : (id >= 51 && id <= 55 ? '#ed64a6' : '#ecc94b');
+            const ntCount = (id === 59) ? 20 : 10;
+            for (let i = 0; i < ntCount; i++) {
+                const cycle = (time * (0.8 + i * 0.1)) % 1;
+                const tx = 50 + i * 12;
+                const ty = 55 + cycle * 35;
 
-                // If blocked, they stay in cleft longer
-                if ((id === 51 || id === 52) && t > 0.8) continue;
+                // Reuptake simulation: if not blocked, NT goes back up at end
+                if (!isBlocked && cycle > 0.8) {
+                     const backT = (cycle - 0.8) * 5;
+                     const bty = 90 - backT * 40;
+                     const btx = 100 + (tx - 100) * (1 - backT);
+                     ctx.fillStyle = ntColor;
+                     ctx.beginPath(); ctx.arc(btx, bty, 2, 0, Math.PI * 2); ctx.fill();
+                     continue;
+                }
 
-                ctx.fillStyle = color;
+                ctx.fillStyle = ntColor;
+                ctx.globalAlpha = 1.0 - (cycle > 0.9 ? (cycle - 0.9) * 10 : 0);
                 ctx.beginPath();
-                ctx.arc(tx, ty, 3, 0, Math.PI * 2);
+                ctx.arc(tx, ty, 2.5, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.globalAlpha = 1.0;
             }
 
-            // Postsynaptic Receptors
-            for (let i = 0; i < 5; i++) {
-                const rx = 60 + i * 25;
-                ctx.fillStyle = (id === 58 || id === 75) ? '#ff4d4d' : '#2d3748';
-                ctx.fillRect(rx, 75, 10, 5);
-                if (id === 58 || id === 75) {
+            // Postsynaptic Receptors (Binding Animation)
+            for (let i = 0; i < 6; i++) {
+                const rx = 55 + i * 22;
+                const isAntagonist = (id === 58 || id === 75);
+                const isBinding = Math.sin(time * 5 + i) > 0.5;
+
+                ctx.fillStyle = isAntagonist ? '#f56565' : (isBinding ? ntColor : '#2d3748');
+                ctx.fillRect(rx, 90, 10, 4);
+
+                if (isAntagonist) {
                     ctx.strokeStyle = '#fff';
-                    ctx.strokeRect(rx, 75, 10, 5);
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(rx, 90, 10, 4);
                 }
             }
 
             ctx.restore();
+        },
+
+        roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            if (typeof radius === 'undefined') radius = 5;
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) ctx.fill();
+            if (stroke) ctx.stroke();
         },
 
         drawNetworkState(ctx, app, time) {
