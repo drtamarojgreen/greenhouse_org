@@ -7,8 +7,9 @@
      * Includes support for realistic brain meshes with polymorphic face structures.
      */
     const GreenhouseCognitionBrain = {
-        drawBrainShell(ctx, brainShell, camera, projection, width, height, activeItem = null) {
+        drawBrainShell(ctx, brainShell, camera, projection, width, height, activeItem = null, options = {}) {
             const targetRegion = activeItem ? activeItem.region : null;
+            const glassBrain = options.glassBrain || false;
             if (!brainShell) return;
 
             const vertices = brainShell.vertices;
@@ -91,7 +92,7 @@
                 const specular = Math.pow(diffuse, 30);
 
                 // Base Color
-                let r = 100, g = 100, b = 100, a = 0.1;
+                let r = 100, g = 100, b = 100, a = glassBrain ? 0.03 : 0.1;
                 if (f.region && regions[f.region]) {
                     const color = regions[f.region].color;
                     const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
@@ -105,8 +106,21 @@
 
                 // Highlighting Active Region
                 if (targetRegion && f.region === targetRegion) {
-                    const fog = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
+                    const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 400);
+                    const fog = GreenhouseModels3DMath.applyDepthFog(pulse, f.depth);
                     ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green
+
+                    // Additive Glow Effect
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'lighter';
+                    ctx.shadowBlur = 10 * pulse;
+                    ctx.shadowColor = 'rgba(57, 255, 20, 0.8)';
+                    ctx.beginPath();
+                    ctx.moveTo(f.p1.x, f.p1.y);
+                    ctx.lineTo(f.p2.x, f.p2.y);
+                    ctx.lineTo(f.p3.x, f.p3.y);
+                    ctx.fill();
+                    ctx.restore();
                 } else {
                     const ambient = 0.2;
                     const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
@@ -125,7 +139,7 @@
             });
 
             // Topological Overlays
-            this.drawSurfaceGrid(ctx, projectedVertices, brainShell);
+            this.drawSurfaceGrid(ctx, projectedVertices, brainShell, glassBrain);
             this.drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection);
         },
 
@@ -184,9 +198,9 @@
             return s >= 0 && t >= 0 && (s + t) <= 1;
         },
 
-        drawSurfaceGrid(ctx, projectedVertices, brainShell) {
+        drawSurfaceGrid(ctx, projectedVertices, brainShell, glassBrain) {
             ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+            ctx.strokeStyle = glassBrain ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)';
             ctx.lineWidth = 0.3;
             ctx.beginPath();
             const latitudeBands = 40;
@@ -258,6 +272,126 @@
                         }
                     }
                 });
+            });
+            ctx.restore();
+        },
+
+        calculateCentroids(brainShell) {
+            const centroids = {};
+            const counts = {};
+            if (!brainShell || !brainShell.vertices) return centroids;
+
+            brainShell.vertices.forEach(v => {
+                const r = v.region;
+                if (!r) return;
+                if (!centroids[r]) {
+                    centroids[r] = { x: 0, y: 0, z: 0 };
+                    counts[r] = 0;
+                }
+                centroids[r].x += v.x;
+                centroids[r].y += v.y;
+                centroids[r].z += v.z;
+                counts[r]++;
+            });
+
+            for (const region in centroids) {
+                centroids[region].x /= counts[region];
+                centroids[region].y /= counts[region];
+                centroids[region].z /= counts[region];
+            }
+            return centroids;
+        },
+
+        drawConnections(ctx, centroids, regions, camera, projection, color = '57, 255, 20') {
+            ctx.save();
+            ctx.strokeStyle = `rgba(${color}, 0.4)`;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 5]);
+
+            for (let i = 0; i < regions.length; i++) {
+                for (let j = i + 1; j < regions.length; j++) {
+                    const from = centroids[regions[i]];
+                    const to = centroids[regions[j]];
+                    if (from && to) {
+                        const p1 = GreenhouseModels3DMath.project3DTo2D(from.x, -from.y, from.z, camera, projection);
+                        const p2 = GreenhouseModels3DMath.project3DTo2D(to.x, -to.y, to.z, camera, projection);
+                        if (p1.scale > 0 && p2.scale > 0) {
+                            ctx.beginPath();
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+
+                            // Glowing endpoints
+                            ctx.fillStyle = `rgba(${color}, 0.8)`;
+                            ctx.beginPath();
+                            ctx.arc(p1.x, p1.y, 2, 0, Math.PI * 2);
+                            ctx.arc(p2.x, p2.y, 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+            ctx.restore();
+        },
+
+        drawLabels(ctx, centroids, config, camera, projection) {
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            for (const regionId in centroids) {
+                const center = centroids[regionId];
+                const proj = GreenhouseModels3DMath.project3DTo2D(center.x, -center.y, center.z, camera, projection);
+
+                // Only draw labels for the front half of the brain
+                if (proj.scale > 0 && proj.depth < 0.6) {
+                    const regionConfig = config.regions[regionId];
+                    if (!regionConfig) continue;
+
+                    const alpha = GreenhouseModels3DMath.applyDepthFog(0.7, proj.depth, 0.2, 0.6);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                    ctx.font = `bold ${Math.max(8, Math.floor(10 * proj.scale))}px Arial`;
+
+                    // Shadow/Outline for readability
+                    ctx.shadowBlur = 4;
+                    ctx.shadowColor = 'black';
+                    ctx.fillText(regionConfig.name.toUpperCase(), proj.x, proj.y);
+                    ctx.shadowBlur = 0;
+
+                    // Connector dot
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, 1.5 * proj.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.restore();
+        },
+
+        drawPulses(ctx, pulses, camera, projection) {
+            ctx.save();
+            pulses.forEach(p => {
+                const proj = GreenhouseModels3DMath.project3DTo2D(p.x, -p.y, p.z, camera, projection);
+                if (proj.scale > 0) {
+                    const size = (p.size || 3) * proj.scale;
+                    const alpha = (p.alpha || 1.0) * GreenhouseModels3DMath.applyDepthFog(1, proj.depth);
+
+                    // Core
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, size, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Outer Glow
+                    const grad = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, size * 4);
+                    const color = p.color || '57, 255, 20';
+                    grad.addColorStop(0, `rgba(${color}, ${alpha * 0.6})`);
+                    grad.addColorStop(1, `rgba(${color}, 0)`);
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, size * 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             });
             ctx.restore();
         }

@@ -17,6 +17,12 @@
         activeTheory: null,
         activeEnhancement: null,
         config: null,
+        centroids: {},
+        pulses: [],
+        backgroundParticles: [],
+        options: { glassBrain: false },
+        targetCamera: null,
+        isAnimatingCamera: false,
 
         init(selector, selArg = null) {
             // Standardize selector argument handling if re-invoked by GreenhouseUtils
@@ -63,6 +69,10 @@
                         }
                     }
                 }
+
+                if (window.GreenhouseCognitionBrain) {
+                    this.centroids = window.GreenhouseCognitionBrain.calculateCentroids(this.brainMesh);
+                }
             }
 
             // Initialize Sub-modules
@@ -74,6 +84,7 @@
             if (window.GreenhouseCognitionResearch) window.GreenhouseCognitionResearch.init(this);
             if (window.GreenhouseCognitionEducational) window.GreenhouseCognitionEducational.init(this);
 
+            this.initBackground();
             this.createEnhancementUI(container);
             this.createInfoPanel(container);
             this.setupInteraction();
@@ -124,8 +135,31 @@
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px; flex-grow: 1;
             `;
 
+            const glassToggle = document.createElement('button');
+            glassToggle.textContent = 'Glass Brain: Off';
+            glassToggle.style.cssText = `
+                background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+            `;
+            glassToggle.onclick = () => {
+                this.options.glassBrain = !this.options.glassBrain;
+                glassToggle.textContent = `Glass Brain: ${this.options.glassBrain ? 'On' : 'Off'}`;
+                glassToggle.style.borderColor = this.options.glassBrain ? '#4fd1c5' : '#4a5568';
+            };
+
+            const resetCamera = document.createElement('button');
+            resetCamera.textContent = 'Reset View';
+            resetCamera.style.cssText = `
+                background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+            `;
+            resetCamera.onclick = () => {
+                this.targetCamera = { rotationX: 0.2, rotationY: 0, z: -600 };
+                this.isAnimatingCamera = true;
+            };
+
             controlsRow.appendChild(categorySelect);
             controlsRow.appendChild(searchInput);
+            controlsRow.appendChild(glassToggle);
+            controlsRow.appendChild(resetCamera);
             uiContainer.appendChild(controlsRow);
 
             const listContainer = document.createElement('div');
@@ -166,6 +200,7 @@
                         this.activeEnhancement = enh;
                         this.activeRegion = enh.region;
                         this.updateInfoPanel();
+                        this.zoomToRegion(enh.region);
                         Array.from(listContainer.children).forEach(b => b.style.borderColor = '#4a5568');
                         btn.style.borderColor = '#4fd1c5';
                     };
@@ -219,6 +254,7 @@
             this.canvas.addEventListener('mousedown', (e) => {
                 isDragging = true;
                 hasDragged = false;
+                this.isAnimatingCamera = false; // Stop auto-animation on manual interaction
                 lastX = e.clientX;
                 lastY = e.clientY;
             });
@@ -310,10 +346,123 @@
         startLoop() {
             const animate = () => {
                 if (!this.isRunning) return;
+                this.update();
                 this.render();
                 requestAnimationFrame(animate);
             };
             animate();
+        },
+
+        zoomToRegion(regionId) {
+            const centroid = this.centroids[regionId];
+            if (!centroid) return;
+
+            // Calculate target rotation to face the centroid roughly
+            // Brain is centered at 0,0,0. Centroid is at (x,y,z)
+            const targetRotY = -Math.atan2(centroid.x, -centroid.z);
+            const targetRotX = Math.atan2(centroid.y, Math.sqrt(centroid.x * centroid.x + centroid.z * centroid.z)) * 0.5;
+
+            this.targetCamera = {
+                rotationX: targetRotX,
+                rotationY: targetRotY,
+                z: -450 // Zoom in
+            };
+            this.isAnimatingCamera = true;
+        },
+
+        initBackground() {
+            this.backgroundParticles = [];
+            for (let i = 0; i < 150; i++) {
+                this.backgroundParticles.push({
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    size: 0.5 + Math.random() * 1.5,
+                    alpha: 0.1 + Math.random() * 0.3
+                });
+            }
+        },
+
+        update() {
+            // Background update
+            this.backgroundParticles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0) p.x = this.canvas.width;
+                if (p.x > this.canvas.width) p.x = 0;
+                if (p.y < 0) p.y = this.canvas.height;
+                if (p.y > this.canvas.height) p.y = 0;
+            });
+
+            // Camera Interpolation
+            if (this.isAnimatingCamera && this.targetCamera) {
+                const lerp = 0.05;
+                this.camera.rotationX += (this.targetCamera.rotationX - this.camera.rotationX) * lerp;
+
+                // Handle rotation wrapping for Y
+                let diffY = this.targetCamera.rotationY - this.camera.rotationY;
+                while (diffY > Math.PI) diffY -= Math.PI * 2;
+                while (diffY < -Math.PI) diffY += Math.PI * 2;
+                this.camera.rotationY += diffY * lerp;
+
+                this.camera.z += (this.targetCamera.z - this.camera.z) * lerp;
+
+                if (Math.abs(diffY) < 0.01 && Math.abs(this.camera.z - this.targetCamera.z) < 1) {
+                    this.isAnimatingCamera = false;
+                }
+            }
+
+            // Update Pulses
+            for (let i = this.pulses.length - 1; i >= 0; i--) {
+                const p = this.pulses[i];
+                p.progress += p.speed;
+                if (p.progress >= 1) {
+                    this.pulses.splice(i, 1);
+                    continue;
+                }
+                // Linear interpolation for now, can be curved later
+                p.x = p.from.x + (p.to.x - p.from.x) * p.progress;
+                p.y = p.from.y + (p.to.y - p.from.y) * p.progress;
+                p.z = p.from.z + (p.to.z - p.from.z) * p.progress;
+            }
+
+            // Random pulse generation based on active state
+            if (Math.random() < 0.05) {
+                this.generateContextualPulses();
+            }
+        },
+
+        generateContextualPulses() {
+            const enh = this.activeEnhancement;
+            if (!enh) return;
+
+            // Mapping enhancements to pulse paths
+            const paths = {
+                2: [['prefrontalCortex', 'parietalLobe'], ['parietalLobe', 'occipitalLobe']], // Signal Propagation
+                8: [['prefrontalCortex', 'parietalLobe']], // Working Memory
+                16: [['thalamus', 'amygdala']], // Threat Detection
+                106: [['temporalLobe', 'prefrontalCortex']], // Language Processing
+                12: [['prefrontalCortex', 'parietalLobe'], ['parietalLobe', 'temporalLobe']] // DMN
+            };
+
+            const pathSet = paths[enh.id];
+            if (pathSet) {
+                pathSet.forEach(pair => {
+                    const from = this.centroids[pair[0]];
+                    const to = this.centroids[pair[1]];
+                    if (from && to) {
+                        this.pulses.push({
+                            x: from.x, y: from.y, z: from.z,
+                            from, to,
+                            progress: 0,
+                            speed: 0.01 + Math.random() * 0.02,
+                            size: 2 + Math.random() * 2,
+                            color: enh.id === 16 ? '255, 100, 100' : '57, 255, 20'
+                        });
+                    }
+                });
+            }
         },
 
         render() {
@@ -324,6 +473,17 @@
 
             ctx.clearRect(0, 0, w, h);
 
+            // Draw Background
+            ctx.save();
+            this.backgroundParticles.forEach(p => {
+                const brightness = (this.activeEnhancement && this.activeEnhancement.category === 'Theory') ? 1.5 : 1.0;
+                ctx.fillStyle = `rgba(57, 255, 20, ${p.alpha * brightness})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+
             const grad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
             grad.addColorStop(0, '#0a200a');
             grad.addColorStop(1, '#051005');
@@ -333,8 +493,26 @@
             if (window.GreenhouseCognitionBrain && window.GreenhouseModels3DMath) {
                 window.GreenhouseCognitionBrain.drawBrainShell(
                     ctx, this.brainMesh, this.camera, this.projection, w, h,
-                    this.activeRegion ? { region: this.activeRegion } : null
+                    this.activeRegion ? { region: this.activeRegion } : null,
+                    this.options
                 );
+
+                if (this.pulses.length > 0) {
+                    window.GreenhouseCognitionBrain.drawPulses(ctx, this.pulses, this.camera, this.projection);
+                }
+
+                // Connection Maps
+                const enh = this.activeEnhancement;
+                if (enh) {
+                    if (enh.id === 12) { // DMN
+                        window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['prefrontalCortex', 'parietalLobe', 'temporalLobe'], this.camera, this.projection, '80, 100, 255');
+                    } else if (enh.id === 11) { // Salience Network
+                        window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['amygdala', 'temporalLobe', 'prefrontalCortex'], this.camera, this.projection, '255, 100, 50');
+                    }
+                }
+
+                // Floating Labels
+                window.GreenhouseCognitionBrain.drawLabels(ctx, this.centroids, this.config, this.camera, this.projection);
             }
 
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
