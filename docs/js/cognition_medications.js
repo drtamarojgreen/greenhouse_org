@@ -142,47 +142,60 @@
             ctx.strokeStyle = '#666';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(x - 40, y - 60);
-            ctx.quadraticCurveTo(x, y - 80, x + 40, y - 60);
-            ctx.lineTo(x + 30, y - 20);
-            ctx.lineTo(x - 30, y - 20);
+            ctx.moveTo(x - 50, y - 80);
+            ctx.quadraticCurveTo(x, y - 100, x + 50, y - 80);
+            ctx.lineTo(x + 40, y - 30);
+            ctx.lineTo(x - 40, y - 30);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
+            // Transporters (SERT/DAT)
+            ctx.fillStyle = '#555';
+            ctx.fillRect(x - 35, y - 35, 10, 10);
+            ctx.fillRect(x + 25, y - 35, 10, 10);
+
             // Postsynaptic density
             ctx.fillStyle = '#222';
             ctx.beginPath();
-            ctx.rect(x - 50, y + 20, 100, 10);
+            ctx.rect(x - 60, y + 30, 120, 15);
             ctx.fill();
             ctx.stroke();
+
+            // Receptors
+            ctx.strokeStyle = '#4da6ff';
+            for(let i=0; i<4; i++) {
+                ctx.beginPath();
+                ctx.arc(x - 45 + i*30, y + 30, 8, Math.PI, 0);
+                ctx.stroke();
+            }
 
             // Neurotransmitters
             ctx.fillStyle = color;
             const time = Date.now() * 0.002;
-            for (let i = 0; i < 15; i++) {
-                const ox = Math.sin(time + i) * 30;
-                const oy = (i * 3 + time * 10) % 40 - 20;
+            for (let i = 0; i < 20; i++) {
+                const ox = Math.sin(time + i) * 40;
+                const oy = (i * 4 + time * 15) % 60 - 30;
                 ctx.beginPath();
-                ctx.arc(x + ox, y + oy, 2, 0, Math.PI * 2);
+                ctx.arc(x + ox, y + oy, 2.5, 0, Math.PI * 2);
                 ctx.fill();
             }
 
-            // Inhibition markers if SSRI
-            if (label.includes('Inhibition')) {
-                ctx.strokeStyle = '#ff0000';
-                ctx.lineWidth = 1;
+            // Inhibition markers (Red 'X' on transporters)
+            if (label.includes('Inhibition') || label.includes('Blockade')) {
+                ctx.strokeStyle = '#ff4d4d';
+                ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.moveTo(x - 20, y - 30);
-                ctx.lineTo(x + 20, y - 10);
-                ctx.moveTo(x + 20, y - 30);
-                ctx.lineTo(x - 20, y - 10);
+                ctx.moveTo(x - 35, y - 35); ctx.lineTo(x - 25, y - 25);
+                ctx.moveTo(x - 25, y - 35); ctx.lineTo(x - 35, y - 25);
+                ctx.moveTo(x + 25, y - 35); ctx.lineTo(x + 35, y - 25);
+                ctx.moveTo(x + 35, y - 35); ctx.lineTo(x + 25, y - 25);
                 ctx.stroke();
             }
 
             ctx.fillStyle = color;
             ctx.font = 'bold 12px Arial';
-            ctx.fillText(label, x - 80, y + 60);
+            ctx.fillText(label, x - 100, y + 70);
         },
 
         drawRapidSynaptogenesis(ctx, x, y, color, label) {
@@ -205,27 +218,49 @@
         },
 
         drawBBB(ctx, x, y, color, label) {
+            // Endothelial cells
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            for(let i=0; i<4; i++) {
+                ctx.fillRect(x - 120 + i*60, y - 5, 55, 10);
+            }
+
             ctx.strokeStyle = color;
-            ctx.lineWidth = 5;
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(x - 100, y);
-            ctx.lineTo(x + 100, y);
+            ctx.moveTo(x - 120, y);
+            ctx.lineTo(x + 120, y);
             ctx.stroke();
 
-            // Molecules attempting to cross
+            // Blood side vs CNS side
+            ctx.fillStyle = 'rgba(255, 77, 77, 0.1)';
+            ctx.fillRect(x - 120, y - 100, 240, 100);
+            ctx.fillStyle = 'rgba(77, 166, 255, 0.1)';
+            ctx.fillRect(x - 120, y, 240, 100);
+
+            // Molecules
             const time = Date.now() * 0.005;
-            for (let i = 0; i < 6; i++) {
-                const tx = x - 90 + i * 35;
-                const ty = y - 40 + (time + i) % 80;
-                if (ty < y) ctx.fillStyle = '#ff0000'; // Blocked
-                else ctx.fillStyle = '#4da6ff'; // Crossed
+            for (let i = 0; i < 8; i++) {
+                const tx = x - 100 + i * 30;
+                const ty = y - 60 + (time + i*5) % 120;
+                const isLarge = i % 3 === 0;
+                const isLipophilic = i % 2 === 0;
+
+                if (ty < y) {
+                    ctx.fillStyle = isLarge ? '#ff4d4d' : '#f6e05e';
+                } else {
+                    ctx.fillStyle = isLarge && ty < y + 10 ? '#ff4d4d' : '#4da6ff';
+                    if (isLarge && ty < y + 15) return; // Blocked large ones
+                }
 
                 ctx.beginPath();
-                ctx.arc(tx, ty, 4, 0, Math.PI * 2);
+                ctx.arc(tx, Math.min(ty, y - 5) > y - 10 && isLarge ? y - 10 : ty, isLarge ? 6 : 3, 0, Math.PI * 2);
                 ctx.fill();
             }
             ctx.fillStyle = color;
-            ctx.fillText(label, x - 80, y + 60);
+            ctx.fillText(label, x - 100, y + 80);
+            ctx.font = '10px Arial';
+            ctx.fillText('BLOOD SIDE', x + 50, y - 20);
+            ctx.fillText('CNS SIDE', x + 50, y + 30);
         },
 
         drawDownregulation(ctx, x, y, color, label) {
@@ -253,25 +288,34 @@
         },
 
         drawConcentrationCurve(ctx, x, y, color, label) {
-            const w = 150, h = 80;
+            const w = 200, h = 120;
             ctx.strokeStyle = 'rgba(255,255,255,0.2)';
             ctx.strokeRect(x, y, w, h);
 
+            // Zones
+            ctx.fillStyle = 'rgba(255, 77, 77, 0.1)'; ctx.fillRect(x, y, w, 30); // Toxic
+            ctx.fillStyle = 'rgba(57, 255, 20, 0.1)'; ctx.fillRect(x, y + 30, w, 50); // Therapeutic
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'; ctx.fillRect(x, y + 80, w, 40); // Sub-therapeutic
+
             ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(x, y + h);
             for (let i = 0; i < w; i++) {
-                const steady = h * 0.7 * (1 - Math.exp(-i * 0.05));
-                const ripple = Math.sin(i * 0.4) * 5;
-                const val = h - (steady + ripple);
+                const doseEffect = Math.sin(i * 0.2) * 5;
+                const val = h - (h * 0.6 * (1 - Math.exp(-i * 0.03)) + 30 + doseEffect);
                 ctx.lineTo(x + i, y + val);
             }
             ctx.stroke();
+
             ctx.fillStyle = color;
-            ctx.font = '10px Arial';
-            ctx.fillText(label, x, y - 10);
-            ctx.fillText('Steady State Range', x + 10, y + 25);
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText(label, x, y - 15);
+            ctx.fillStyle = '#fff';
+            ctx.font = '9px Arial';
+            ctx.fillText('TOXIC', x + w + 5, y + 20);
+            ctx.fillText('THERAPEUTIC', x + w + 5, y + 60);
+            ctx.fillText('SUB-THERAPEUTIC', x + w + 5, y + 100);
         },
 
         drawEPS(ctx, x, y, color, label) {

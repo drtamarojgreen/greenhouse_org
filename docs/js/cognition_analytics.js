@@ -15,44 +15,104 @@
 
         render(ctx) {
             const activeEnhancement = this.app.activeEnhancement;
-            if (!activeEnhancement || activeEnhancement.category !== 'Analytical') return;
+            if (!activeEnhancement) return;
 
-            if (activeEnhancement.id === 1) this.renderCorticalLayers(ctx);
-            if (activeEnhancement.id === 2) this.renderSignalPropagation(ctx);
-            if (activeEnhancement.id === 3) this.renderSystemSplit(ctx);
-            if (activeEnhancement.id === 4) this.renderAnatomicalTooltips(ctx);
-            if (activeEnhancement.id === 5) this.renderLesionMode(ctx);
-            if (activeEnhancement.id === 6) this.renderMeSHLinkage(ctx);
+            if (activeEnhancement.category === 'Analytical') {
+                if (activeEnhancement.id === 1) this.renderCorticalLayers(ctx);
+                if (activeEnhancement.id === 2) this.renderSignalPropagation(ctx);
+                if (activeEnhancement.id === 3) this.renderSystemSplit(ctx);
+                if (activeEnhancement.id === 4) this.renderAnatomicalTooltips(ctx);
+                if (activeEnhancement.id === 5) this.renderLesionMode(ctx);
+                if (activeEnhancement.id === 6) this.renderMeSHLinkage(ctx);
+            }
+
+            if (activeEnhancement.category === 'Visualization') {
+                this.renderVisualizationEnhancements(ctx, activeEnhancement);
+            }
         },
 
         renderCorticalLayers(ctx) {
             const w = this.app.canvas.width;
-            ctx.fillStyle = 'rgba(79, 209, 197, 0.2)';
-            ctx.font = '12px Arial';
-            const layers = ['I. Molecular', 'II. External Granular', 'III. External Pyramidal', 'IV. Internal Granular', 'V. Internal Pyramidal', 'VI. Multiform'];
-            layers.forEach((layer, i) => {
-                ctx.fillStyle = 'rgba(79, 209, 197, 0.8)';
-                ctx.fillText(layer, 20, 100 + i * 25);
-                ctx.fillStyle = `rgba(79, 209, 197, ${0.1 + i * 0.15})`;
-                ctx.fillRect(150, 85 + i * 25, 120, 20);
-                ctx.strokeStyle = '#4fd1c5';
-                ctx.strokeRect(150, 85 + i * 25, 120, 20);
-            });
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 14px Arial';
             ctx.fillText('EXPLODED CORTICAL VIEW', 20, 70);
+
+            const layers = ['I. Molecular', 'II. External Granular', 'III. External Pyramidal', 'IV. Internal Granular', 'V. Internal Pyramidal', 'VI. Multiform'];
+            layers.forEach((layer, i) => {
+                const y = 100 + i * 35;
+                // Layer label
+                ctx.fillStyle = '#fff';
+                ctx.font = '11px Arial';
+                ctx.fillText(layer, 20, y + 15);
+
+                // Box
+                ctx.fillStyle = `rgba(79, 209, 197, ${0.1 + i * 0.1})`;
+                ctx.fillRect(150, y, 200, 25);
+                ctx.strokeStyle = '#4fd1c5';
+                ctx.strokeRect(150, y, 200, 25);
+
+                // Simulated neurons
+                ctx.fillStyle = '#fff';
+                for (let j = 0; j < 3 + i; j++) {
+                    const nx = 160 + (j * 25) % 180;
+                    const ny = y + 12 + Math.sin(j) * 5;
+                    ctx.beginPath();
+                    ctx.arc(nx, ny, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Dendrites
+                    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                    ctx.beginPath();
+                    ctx.moveTo(nx, ny);
+                    ctx.lineTo(nx, ny - 10);
+                    ctx.stroke();
+                }
+            });
         },
 
         renderSignalPropagation(ctx) {
             const w = this.app.canvas.width;
             const h = this.app.canvas.height;
-            ctx.strokeStyle = '#39ff14';
-            ctx.lineWidth = 2;
-            this.drawArrow(ctx, w * 0.3, h * 0.6, w * 0.45, h * 0.4);
-            this.drawArrow(ctx, w * 0.45, h * 0.4, w * 0.7, h * 0.5);
+            const time = Date.now() * 0.002;
+
             ctx.fillStyle = '#39ff14';
             ctx.font = 'bold 14px Arial';
             ctx.fillText('SIGNAL PROPAGATION PATHWAY', 20, 70);
+
+            ctx.strokeStyle = '#39ff14';
+            ctx.lineWidth = 2;
+
+            const path = [
+                {x: w * 0.2, y: h * 0.7},
+                {x: w * 0.4, y: h * 0.4},
+                {x: w * 0.7, y: h * 0.5},
+                {x: w * 0.8, y: h * 0.3}
+            ];
+
+            // Draw path
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(path[0].x, path[0].y);
+            for(let i=1; i<path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw pulses
+            for(let i=0; i<path.length - 1; i++) {
+                this.drawArrow(ctx, path[i].x, path[i].y, path[i+1].x, path[i+1].y);
+
+                // Animated packet
+                const t = (time + i * 1.5) % 3 / 3;
+                const px = path[i].x + (path[i+1].x - path[i].x) * t;
+                const py = path[i].y + (path[i+1].y - path[i].y) * t;
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(px, py, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#39ff14';
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
         },
 
         renderSystemSplit(ctx) {
@@ -66,64 +126,427 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
+            // System 1
             ctx.fillStyle = '#ff4d4d';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('SYSTEM 1: AUTOMATIC', w * 0.1, 100);
+            ctx.fillText('SYSTEM 1: AUTOMATIC', w * 0.05, 100);
+            ctx.font = '11px Arial';
+            const traits1 = ['• Intuitive', '• Fast', '• Emotional', '• Implicit', '• Reflexive'];
+            traits1.forEach((t, i) => ctx.fillText(t, w * 0.05, 130 + i * 20));
+
+            // System 2
             ctx.fillStyle = '#4da6ff';
-            ctx.fillText('SYSTEM 2: EFFORTFUL', w * 0.6, 100);
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText('SYSTEM 2: EFFORTFUL', w * 0.55, 100);
+            ctx.font = '11px Arial';
+            const traits2 = ['• Analytical', '• Slow', '• Logical', '• Explicit', '• Deliberate'];
+            traits2.forEach((t, i) => ctx.fillText(t, w * 0.55, 130 + i * 20));
+
+            // Central icon
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(w/2, h/2, 40, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px Arial';
+            ctx.fillText('COGNITIVE', w/2 - 25, h/2 - 5);
+            ctx.fillText('CONTROL', w/2 - 22, h/2 + 10);
         },
 
         renderAnatomicalTooltips(ctx) {
             const w = this.app.canvas.width;
+            const h = this.app.canvas.height;
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('ANATOMICAL TOOLTIPS', 20, 70);
+            ctx.fillText('ANATOMICAL HUD INTERFACE', 20, 70);
+
+            // Connection line
+            ctx.strokeStyle = '#4fd1c5';
+            ctx.beginPath();
+            ctx.moveTo(w/2, h/2);
+            ctx.lineTo(w - 240, 100);
+            ctx.stroke();
 
             ctx.fillStyle = 'rgba(0,0,0,0.8)';
             ctx.strokeStyle = '#4fd1c5';
-            ctx.lineWidth = 1;
-            ctx.fillRect(w - 240, 50, 220, 80);
-            ctx.strokeRect(w - 240, 50, 220, 80);
+            ctx.lineWidth = 2;
+            ctx.fillRect(w - 250, 60, 230, 100);
+            ctx.strokeRect(w - 250, 60, 230, 100);
 
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 12px Arial';
-            ctx.fillText('Superior Frontal Gyrus', w - 230, 75);
+            ctx.fillText('IDENTIFIED: Superior Frontal Gyrus', w - 240, 85);
             ctx.font = '10px Arial';
-            ctx.fillStyle = '#ccc';
-            ctx.fillText('Region: Prefrontal Cortex', w - 230, 95);
-            ctx.fillText('Function: Executive control, self-awareness', w - 230, 115);
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Brodmann Area: 9/10', w - 240, 105);
+            ctx.fillText('Volume: 14.2 cm³', w - 240, 120);
+            ctx.fillText('Activity Index: 0.82 [HIGH]', w - 240, 135);
         },
 
         renderLesionMode(ctx) {
             const w = this.app.canvas.width;
+            const h = this.app.canvas.height;
             ctx.fillStyle = '#ff4d4d';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('LESION STUDY MODE', 20, 70);
+            ctx.fillText('LESION STUDY SIMULATION', 20, 70);
+
+            // Damage area
+            ctx.fillStyle = 'rgba(255, 77, 77, 0.3)';
+            ctx.beginPath();
+            ctx.arc(w/2, h/2, 50, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Static effect
+            for(let i=0; i<20; i++) {
+                ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.5})`;
+                ctx.fillRect(w/2 - 50 + Math.random() * 100, h/2 - 50 + Math.random() * 100, 2, 2);
+            }
+
+            ctx.fillStyle = '#fff';
             ctx.font = '12px Arial';
-            ctx.fillText('Region: Temporal Lobe (Simulated Impairment)', 20, 95);
-            ctx.fillStyle = 'rgba(255, 77, 77, 0.2)';
-            ctx.fillRect(20, 110, 300, 40);
+            ctx.fillText('SIMULATED DEFICIT: Retrograde Amnesia', 20, 95);
             ctx.fillStyle = '#ff4d4d';
-            ctx.fillText('Deficit: Auditory processing & Memory encoding', 30, 135);
+            ctx.fillRect(20, 110, 320, 45);
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('WARNING: Neural pathway interruption detected.', 30, 130);
+            ctx.fillText('Impact: Hippocampal-Cortical dissociation.', 30, 145);
         },
 
         renderMeSHLinkage(ctx) {
             const w = this.app.canvas.width;
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('MeSH DATA LINKAGE', 20, 70);
+            ctx.fillText('MeSH RESEARCH LINKAGE', 20, 70);
 
-            ctx.fillStyle = 'rgba(0, 40, 40, 0.6)';
-            ctx.fillRect(20, 90, 350, 100);
-            ctx.strokeRect(20, 90, 350, 100);
+            ctx.fillStyle = 'rgba(0, 40, 40, 0.8)';
+            ctx.fillRect(20, 90, 360, 150);
+            ctx.strokeStyle = '#4fd1c5';
+            ctx.strokeRect(20, 90, 360, 150);
 
             ctx.fillStyle = '#4fd1c5';
-            ctx.font = '11px monospace';
-            ctx.fillText('> FETCHING RESEARCH TRENDS (2020-2024)...', 30, 115);
+            ctx.font = '10px monospace';
+            ctx.fillText('> MESH_EXEC_PROTOCOL: ANALYZE_TRENDS', 30, 110);
+
+            const terms = [
+                {name: 'Executive Function', val: 4.52},
+                {name: 'Cerebral Cortex', val: 4.18},
+                {name: 'Cognitive Control', val: 3.85},
+                {name: 'Neuroimaging', val: 3.62}
+            ];
+
+            terms.forEach((term, i) => {
+                const y = 135 + i * 25;
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Arial';
+                ctx.fillText(term.name, 35, y);
+
+                // Bar
+                ctx.fillStyle = 'rgba(79, 209, 197, 0.4)';
+                ctx.fillRect(160, y - 8, term.val * 30, 10);
+                ctx.strokeStyle = '#4fd1c5';
+                ctx.strokeRect(160, y - 8, term.val * 30, 10);
+
+                ctx.fillStyle = '#4fd1c5';
+                ctx.fillText(term.val.toFixed(2), 165 + term.val * 30, y);
+            });
+        },
+
+        renderVisualizationEnhancements(ctx, activeEnhancement) {
+            const w = this.app.canvas.width;
+            const h = this.app.canvas.height;
+            const time = Date.now() * 0.001;
+
+            ctx.fillStyle = '#4da6ff';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText(`VISUALIZATION: ${activeEnhancement.name.toUpperCase()}`, 20, 70);
+
+            if (activeEnhancement.id === 101) { // 3D Network
+                this.draw3DNetwork(ctx, w, h, time);
+            } else if (activeEnhancement.id === 102) { // Process Flow
+                this.drawProcessFlow(ctx, w, h, time);
+            } else if (activeEnhancement.id === 103) { // Working Memory
+                this.drawWorkingMemory(ctx, w, h, time);
+            } else if (activeEnhancement.id === 104) { // LTM Formation
+                this.drawLTMFormation(ctx, w, h, time);
+            } else if (activeEnhancement.id === 105) { // Attention Network
+                this.drawAttentionNetwork(ctx, w, h, time);
+            } else if (activeEnhancement.id === 106) { // Language Processing
+                this.drawLanguagePath(ctx, w, h, time);
+            } else if (activeEnhancement.id === 109) { // Neural Oscillation
+                this.drawOscillation(ctx, w, h, time);
+            } else if (activeEnhancement.id === 110) { // Timeline
+                this.drawTimeline(ctx, w, h, time);
+            } else if (activeEnhancement.id === 111) { // Cognitive Load
+                this.drawLoadMeter(ctx, w, h, time);
+            } else if (activeEnhancement.id === 113) { // Heatmap
+                this.drawHeatmap(ctx, w, h, time);
+            } else if (activeEnhancement.id === 115) { // Aging
+                this.drawAging(ctx, w, h, time);
+            } else if (activeEnhancement.id === 117) { // Brain Plasticity
+                this.drawPlasticity(ctx, w, h, time);
+            } else if (activeEnhancement.id === 120) { // Bias Simulator
+                this.drawBiasSimulator(ctx, w, h, time);
+            } else {
+                ctx.fillStyle = '#4da6ff';
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText('ACTIVE VISUALIZATION PROTOCOL:', 30, 100);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'italic 11px Arial';
+                ctx.fillText(activeEnhancement.description, 30, 120);
+                ctx.fillText('Rendering dynamic network nodes...', 30, 140);
+                this.drawGenericNetwork(ctx, w, h, time);
+            }
+        },
+
+        draw3DNetwork(ctx, w, h, time) {
+            ctx.strokeStyle = 'rgba(77, 166, 255, 0.3)';
+            const nodes = [];
+            for(let i=0; i<8; i++) {
+                nodes.push({
+                    x: w/2 + Math.cos(time + i) * 100,
+                    y: h/2 + Math.sin(time * 0.5 + i * 2) * 80
+                });
+            }
+            ctx.beginPath();
+            for(let i=0; i<nodes.length; i++) {
+                for(let j=i+1; j<nodes.length; j++) {
+                    ctx.moveTo(nodes[i].x, nodes[i].y);
+                    ctx.lineTo(nodes[j].x, nodes[j].y);
+                }
+            }
+            ctx.stroke();
+            nodes.forEach(n => {
+                ctx.fillStyle = '#4da6ff';
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        },
+
+        drawProcessFlow(ctx, w, h, time) {
+            const steps = ['Input', 'Perception', 'Encoding', 'Decision', 'Action'];
+            steps.forEach((step, i) => {
+                const x = 50 + i * (w - 100) / (steps.length - 1);
+                const y = h / 2;
+                ctx.fillStyle = `hsl(${200 + i * 20}, 70%, 60%)`;
+                ctx.fillRect(x - 30, y - 20, 60, 40);
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Arial';
+                ctx.fillText(step, x - 25, y + 5);
+
+                if (i < steps.length - 1) {
+                    const nx = 50 + (i+1) * (w - 100) / (steps.length - 1);
+                    ctx.strokeStyle = '#fff';
+                    this.drawArrow(ctx, x + 30, y, nx - 30, y);
+                }
+            });
+        },
+
+        drawWorkingMemory(ctx, w, h, time) {
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(w/2 - 100, h/2 - 50, 200, 100);
             ctx.fillStyle = '#fff';
-            ctx.fillText('Top MeSH Terms found in context:', 30, 135);
-            ctx.fillText('1. Executive Function (ln: 4.52)', 40, 155);
-            ctx.fillText('2. Cerebral Cortex (ln: 4.18)', 40, 175);
+            ctx.fillText('WORKING MEMORY BUFFER (7±2)', w/2 - 80, h/2 - 60);
+
+            for(let i=0; i<5; i++) {
+                const x = w/2 - 80 + i * 35;
+                const y = h/2 + Math.sin(time * 2 + i) * 10;
+                ctx.fillStyle = '#4da6ff';
+                ctx.fillRect(x, y - 10, 25, 20);
+                ctx.fillStyle = '#000';
+                ctx.fillText(String.fromCharCode(65 + i), x + 8, y + 5);
+            }
+        },
+
+        drawLoadMeter(ctx, w, h, time) {
+            const load = (Math.sin(time) + 1) / 2;
+            ctx.fillStyle = '#fff';
+            ctx.fillText('COGNITIVE LOAD:', w/2 - 100, h/2 - 20);
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(w/2 - 100, h/2, 200, 20);
+            const color = load > 0.8 ? '#ff4d4d' : (load > 0.5 ? '#f6e05e' : '#4fd1c5');
+            ctx.fillStyle = color;
+            ctx.fillRect(w/2 - 100, h/2, 200 * load, 20);
+            ctx.fillText(`${(load * 100).toFixed(0)}%`, w/2 + 110, h/2 + 15);
+        },
+
+        drawPlasticity(ctx, w, h, time) {
+            ctx.strokeStyle = '#4fd1c5';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(w/2 - 100, h/2);
+            ctx.bezierCurveTo(w/2 - 50, h/2 - 50, w/2 + 50, h/2 + 50, w/2 + 100, h/2);
+            ctx.stroke();
+
+            const thickness = 2 + Math.sin(time) * 1.5;
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Synaptic Strengthening (LTP)', w/2 - 70, h/2 + 60);
+        },
+
+        drawLTMFormation(ctx, w, h, time) {
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Consolidating: Hippocampus -> Neocortex', w/2 - 100, h/2 - 40);
+            ctx.strokeStyle = '#f6e05e';
+            ctx.beginPath();
+            ctx.arc(w/2 - 50, h/2, 30, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(w/2 + 50, h/2, 40, 0, Math.PI * 2);
+            ctx.stroke();
+
+            const t = (time % 2) / 2;
+            const px = (w/2 - 50) + (100 * t);
+            const py = h/2;
+            ctx.fillStyle = '#f6e05e';
+            ctx.beginPath();
+            ctx.arc(px, py, 5, 0, Math.PI * 2);
+            ctx.fill();
+        },
+
+        drawAttentionNetwork(ctx, w, h, time) {
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(w/2 - 150, h/2 - 50, 300, 100);
+            const focusX = w/2 + Math.cos(time) * 120;
+            const focusY = h/2 + Math.sin(time * 1.2) * 30;
+
+            ctx.beginPath();
+            ctx.moveTo(w/2, h/2);
+            ctx.lineTo(focusX, focusY);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(79, 209, 197, 0.4)';
+            ctx.beginPath();
+            ctx.arc(focusX, focusY, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.fillText('ATTENTION FOCUS', focusX - 45, focusY - 25);
+        },
+
+        drawLanguagePath(ctx, w, h, time) {
+            ctx.fillStyle = '#4da6ff';
+            ctx.fillText('Wernicke\'s (Comprehension)', w * 0.6, h * 0.6);
+            ctx.fillText('Broca\'s (Production)', w * 0.3, h * 0.4);
+
+            ctx.strokeStyle = '#4da6ff';
+            ctx.setLineDash([10, 5]);
+            ctx.beginPath();
+            ctx.moveTo(w * 0.65, h * 0.55);
+            ctx.quadraticCurveTo(w * 0.5, h * 0.3, w * 0.35, h * 0.35);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillText('Arcuate Fasciculus', w * 0.45, h * 0.3);
+        },
+
+        drawOscillation(ctx, w, h, time) {
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(50, h/2);
+            for(let x=0; x<w-100; x++) {
+                const y = h/2 + Math.sin(x * 0.05 + time * 5) * 20 + Math.sin(x * 0.2 + time * 10) * 5;
+                ctx.lineTo(50 + x, y);
+            }
+            ctx.stroke();
+            ctx.fillStyle = '#4da6ff';
+            ctx.fillText('GAMMA OSCILLATION (40Hz)', 50, h/2 - 40);
+        },
+
+        drawTimeline(ctx, w, h, time) {
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(50, h/2 + 50);
+            ctx.lineTo(w - 50, h/2 + 50);
+            ctx.stroke();
+
+            const milestones = ['Infancy', 'Childhood', 'Adolescence', 'Adulthood', 'Senior'];
+            milestones.forEach((m, i) => {
+                const x = 50 + i * (w - 100) / 4;
+                ctx.beginPath();
+                ctx.moveTo(x, h/2 + 45);
+                ctx.lineTo(x, h/2 + 55);
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Arial';
+                ctx.fillText(m, x - 20, h/2 + 70);
+            });
+
+            const currentAge = (time % 10) / 10;
+            const px = 50 + currentAge * (w - 100);
+            ctx.fillStyle = '#4fd1c5';
+            ctx.beginPath();
+            ctx.arc(px, h/2 + 50, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillText('Development Stage', px - 40, h/2 + 30);
+        },
+
+        drawHeatmap(ctx, w, h, time) {
+            for(let i=0; i<50; i++) {
+                const x = w/2 + Math.cos(i * 137.5) * i * 2;
+                const y = h/2 + Math.sin(i * 137.5) * i * 2;
+                const intensity = (Math.sin(time + i * 0.1) + 1) / 2;
+                ctx.fillStyle = `rgba(255, ${255 * (1-intensity)}, 0, ${intensity * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(x, y, 15, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Task-Related Activation Heatmap', 30, 100);
+        },
+
+        drawAging(ctx, w, h, time) {
+            const age = (time % 10) / 10;
+            const volume = 1.0 - (age * 0.3);
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(w/2, h/2, 60 * volume, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.fillText(`Simulated Brain Volume: ${(volume * 100).toFixed(0)}%`, w/2 - 60, h/2 + 80);
+            ctx.fillText(`Age proxy: ${(age * 100).toFixed(0)} years`, w/2 - 40, h/2 + 100);
+        },
+
+        drawBiasSimulator(ctx, w, h, time) {
+            ctx.fillStyle = '#fff';
+            ctx.fillText('BIAS: Confirmation Bias Simulation', 30, 100);
+            ctx.strokeStyle = '#ff4d4d';
+            ctx.strokeRect(w/2 - 50, h/2 - 50, 100, 100);
+
+            const dataIn = Math.sin(time * 3);
+            ctx.fillStyle = dataIn > 0 ? '#4fd1c5' : '#ff4d4d';
+            ctx.beginPath();
+            ctx.arc(w/2 - 150, h/2, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillText('Incoming Data', w/2 - 180, h/2 + 25);
+
+            if (dataIn > 0) {
+                this.drawArrow(ctx, w/2 - 130, h/2, w/2 - 60, h/2);
+                ctx.fillText('ACCEPTED', w/2 - 30, h/2 + 5);
+            } else {
+                ctx.fillText('REJECTED', w/2 - 30, h/2 + 5);
+            }
+        },
+
+        drawGenericNetwork(ctx, w, h, time) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            for(let i=0; i<5; i++) {
+                const x1 = 100 + i * 50;
+                const y1 = 150 + Math.sin(time + i) * 20;
+                const x2 = 100 + ((i+1)%5) * 50;
+                const y2 = 150 + Math.sin(time + ((i+1)%5)) * 20;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                ctx.fillStyle = '#4da6ff';
+                ctx.beginPath();
+                ctx.arc(x1, y1, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
         },
 
         drawArrow(ctx, fromx, fromy, tox, toy) {

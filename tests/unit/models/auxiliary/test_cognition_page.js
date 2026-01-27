@@ -100,15 +100,17 @@ TestFramework.describe('Cognition Page Enhancements', () => {
         loadScript('cognition_development.js');
         loadScript('cognition_interventions.js');
         loadScript('cognition_medications.js');
+        loadScript('cognition_research.js');
+        loadScript('cognition_educational.js');
         loadScript('cognition_app.js');
 
         assert.isDefined(global.window.GreenhouseCognitionConfig);
         assert.isDefined(global.window.GreenhouseCognitionApp);
     });
 
-    TestFramework.it('should have 100 enhancements in config', () => {
+    TestFramework.it('should have 200 enhancements in config', () => {
         const config = global.window.GreenhouseCognitionConfig;
-        assert.equal(config.enhancements.length, 100);
+        assert.equal(config.enhancements.length, 200);
     });
 
     TestFramework.it('should initialize app and sub-modules', () => {
@@ -124,7 +126,7 @@ TestFramework.describe('Cognition Page Enhancements', () => {
         const config = global.window.GreenhouseCognitionConfig;
         const app = global.window.GreenhouseCognitionApp;
 
-        const categories = ['Analytical', 'Theory', 'Development', 'Intervention', 'Medication'];
+        const categories = ['Analytical', 'Theory', 'Development', 'Intervention', 'Medication', 'Visualization', 'Accuracy', 'Research', 'Educational'];
         categories.forEach(cat => {
             const enh = config.enhancements.find(e => e.category === cat);
             assert.isDefined(enh, `Should have at least one ${cat} enhancement`);

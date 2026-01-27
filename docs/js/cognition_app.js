@@ -71,6 +71,8 @@
             if (window.GreenhouseCognitionDevelopment) window.GreenhouseCognitionDevelopment.init(this);
             if (window.GreenhouseCognitionInterventions) window.GreenhouseCognitionInterventions.init(this);
             if (window.GreenhouseCognitionMedications) window.GreenhouseCognitionMedications.init(this);
+            if (window.GreenhouseCognitionResearch) window.GreenhouseCognitionResearch.init(this);
+            if (window.GreenhouseCognitionEducational) window.GreenhouseCognitionEducational.init(this);
 
             this.createEnhancementUI(container);
             this.createInfoPanel(container);
@@ -103,7 +105,7 @@
                 flex-wrap: wrap;
             `;
 
-            const categories = ['All', 'Analytical', 'Theory', 'Development', 'Intervention', 'Medication'];
+            const categories = ['All', 'Analytical', 'Theory', 'Development', 'Intervention', 'Medication', 'Visualization', 'Accuracy', 'Research', 'Educational'];
             const categorySelect = document.createElement('select');
             categorySelect.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px;
@@ -117,7 +119,7 @@
 
             const searchInput = document.createElement('input');
             searchInput.id = 'enhancement-search';
-            searchInput.placeholder = 'Search 100 enhancements...';
+            searchInput.placeholder = 'Search 200 enhancements...';
             searchInput.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px; flex-grow: 1;
             `;
@@ -352,6 +354,8 @@
             if (window.GreenhouseCognitionDevelopment) window.GreenhouseCognitionDevelopment.render(ctx);
             if (window.GreenhouseCognitionInterventions) window.GreenhouseCognitionInterventions.render(ctx);
             if (window.GreenhouseCognitionMedications) window.GreenhouseCognitionMedications.render(ctx);
+            if (window.GreenhouseCognitionResearch) window.GreenhouseCognitionResearch.render(ctx);
+            if (window.GreenhouseCognitionEducational) window.GreenhouseCognitionEducational.render(ctx);
         }
     };
 

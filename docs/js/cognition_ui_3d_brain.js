@@ -240,7 +240,7 @@
                                     y: va.y + t * (vb.y - va.y),
                                     z: va.z + t * (vb.z - va.z)
                                 };
-                                const proj = GreenhouseModels3DMath.project3DTo2D(inter.x, inter.y, inter.z, camera, projection);
+                                const proj = GreenhouseModels3DMath.project3DTo2D(inter.x, -inter.y, inter.z, camera, projection);
                                 if (proj.scale > 0 && proj.depth < 0.8) {
                                     points.push(proj);
                                 }

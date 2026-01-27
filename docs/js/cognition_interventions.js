@@ -209,8 +209,27 @@
             ctx.strokeStyle = color;
             ctx.lineWidth = 3;
             this.drawArrowLine(ctx, x1, y1, x2, y2);
+
+            // Amygdala node
+            ctx.fillStyle = '#ff4d4d';
+            ctx.beginPath();
+            ctx.arc(x2, y2, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Inhibitory wave
+            const time = Date.now() * 0.005;
+            ctx.strokeStyle = color;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.arc(x2, y2, 30 + (time % 20), 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
             ctx.fillStyle = color;
-            ctx.fillText(label, x1, y1 - 10);
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText(label, x1 - 20, y1 - 20);
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Regulated State', x2 - 40, y2 + 40);
         },
 
         drawPulse(ctx, x, y, color, label) {
@@ -224,35 +243,55 @@
         },
 
         drawElectrode(ctx, x, y, color, label) {
+            // Brain outline
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.beginPath();
+            ctx.ellipse(x, y + 20, 60, 80, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(x, y - 100);
+            ctx.moveTo(x, y - 120);
             ctx.lineTo(x, y);
             ctx.stroke();
+
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.arc(x, y, 5, 0, Math.PI * 2);
             ctx.fill();
+
             const time = Date.now() * 0.01;
             ctx.strokeStyle = color;
-            ctx.beginPath();
-            ctx.arc(x, y, 10 + (time % 20), 0, Math.PI * 2);
-            ctx.stroke();
+            for(let i=0; i<3; i++) {
+                ctx.beginPath();
+                ctx.arc(x, y, (10 + i * 15 + time % 15), 0, Math.PI * 2);
+                ctx.stroke();
+            }
             ctx.fillText(label, x + 15, y);
         },
 
         drawTMS(ctx, x, y, color, label) {
             ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
+            // Figure-8 coil
             ctx.beginPath();
-            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.arc(x - 20, y, 25, 0, Math.PI * 2);
             ctx.stroke();
             ctx.beginPath();
-            ctx.arc(x + 10, y, 20, 0, Math.PI * 2);
+            ctx.arc(x + 20, y, 25, 0, Math.PI * 2);
             ctx.stroke();
+
+            // Magnetic field lines
+            ctx.setLineDash([2, 4]);
+            ctx.beginPath();
+            ctx.ellipse(x, y + 30, 20, 40, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
             ctx.fillStyle = color;
-            ctx.fillText(label, x - 20, y + 40);
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText(label, x - 50, y + 80);
         },
 
         drawEMDR(ctx, x, y, color, label) {
@@ -336,19 +375,43 @@
 
         drawVROverlay(ctx, x, y) {
             ctx.strokeStyle = '#fff';
-            ctx.strokeRect(x - 100, y - 60, 200, 120);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.fillRect(x - 100, y - 60, 200, 120);
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - 120, y - 70, 240, 140);
+            // Grid lines for VR effect
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            for(let i=0; i<10; i++) {
+                ctx.beginPath();
+                ctx.moveTo(x - 120 + i * 24, y - 70);
+                ctx.lineTo(x - 120 + i * 24, y + 70);
+                ctx.stroke();
+            }
             ctx.fillStyle = '#ff4d4d';
-            ctx.fillText('VR EXPOSURE: Controlled Activation', x - 80, y);
+            ctx.font = 'bold 12px Courier New';
+            ctx.fillText('VR_MODE: PHOBIA_EXPOSURE', x - 100, y - 40);
+            ctx.fillStyle = '#4da6ff';
+            ctx.fillText('TARGET: AMYGDALA_EXTINCTION', x - 100, y + 40);
+
+            // HUD elements
+            ctx.strokeStyle = '#39ff14';
+            ctx.beginPath();
+            ctx.arc(x, y, 30, 0, Math.PI * 2);
+            ctx.stroke();
         },
 
         drawSchema(ctx, x, y, color, label) {
             ctx.strokeStyle = color;
-            ctx.strokeRect(x, y, 60, 80);
+            ctx.strokeRect(x, y, 80, 100);
             ctx.fillStyle = color;
-            ctx.fillText('NEW STORY', x + 5, y + 40);
-            ctx.fillText(label, x - 20, y + 100);
+            ctx.font = 'italic 10px Arial';
+            ctx.fillText('OLD SCHEMA', x + 5, y + 20);
+            ctx.beginPath();
+            ctx.moveTo(x + 5, y + 25); ctx.lineTo(x + 75, y + 25);
+            ctx.stroke();
+
+            ctx.fillStyle = '#4fd1c5';
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('NEW NARRATIVE', x + 5, y + 60);
+            ctx.fillText(label, x - 40, y + 120);
         },
 
         drawOxytocin(ctx, x, y) {
