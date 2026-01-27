@@ -162,17 +162,26 @@ class MovieMaster:
             self.gnome.location = (10, 10, 0) # Running away
             self.gnome.keyframe_insert(data_path="location", frame=2800)
 
-        # Visibility ranges for characters/bushes
-        plant_objs = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["Herbaceous", "Arbor", "Scroll", "Bush"])]
+        # Visibility ranges for characters/bushes/props
+        def set_visibility(objs, ranges):
+            for obj in objs:
+                obj.hide_render = True
+                for rs, re in ranges:
+                    obj.keyframe_insert(data_path="hide_render", frame=rs-1)
+                    obj.hide_render = False
+                    obj.keyframe_insert(data_path="hide_render", frame=rs)
+                    obj.hide_render = True
+                    obj.keyframe_insert(data_path="hide_render", frame=re)
+
+        plant_keywords = ["Herbaceous", "Arbor", "Scroll", "Bush", "Eye", "ShoulderPlate"]
+        plants = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in plant_keywords) and "GloomGnome" not in obj.name]
         p_ranges = [(501, 650), (751, 950), (1051, 1250), (1601, 1800), (2101, 2500), (2601, 2800), (2901, 3400)]
-        for p in plant_objs:
-            p.hide_render = True
-            for rs, re in p_ranges:
-                p.keyframe_insert(data_path="hide_render", frame=rs-1)
-                p.hide_render = False
-                p.keyframe_insert(data_path="hide_render", frame=rs)
-                p.hide_render = True
-                p.keyframe_insert(data_path="hide_render", frame=re)
+        set_visibility(plants, p_ranges)
+
+        gnome_keywords = ["GloomGnome", "Mouth", "Cloak", "Staff"]
+        gnomes = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in gnome_keywords)]
+        g_ranges = [(2101, 2500), (2601, 2800)] # Shadow, Confrontation, and Retreat
+        set_visibility(gnomes, g_ranges)
 
         # Neuron ranges
         if self.neuron:

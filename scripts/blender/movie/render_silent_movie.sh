@@ -30,9 +30,8 @@ $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 1700
 # Shadow / Confrontation
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 2250
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 2450
-# Library / Bloom
+# Library
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 2700
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 3200
 # Lab / Sanctuary
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 3650
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 4000

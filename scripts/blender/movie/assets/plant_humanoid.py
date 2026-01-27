@@ -48,6 +48,43 @@ def create_vine(start, end, radius=0.05):
     bpy.context.collection.objects.link(obj)
     return obj
 
+def create_bark_material(name, color=(0.1, 0.5, 0.1)):
+    """Creates a procedural bark material."""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    nodes.clear()
+
+    node_output = nodes.new(type='ShaderNodeOutputMaterial')
+    node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    node_noise = nodes.new(type='ShaderNodeTexNoise')
+    node_ramp = nodes.new(type='ShaderNodeValToRGB')
+
+    node_noise.inputs['Scale'].default_value = 10.0
+    node_noise.inputs['Detail'].default_value = 15.0
+
+    node_ramp.color_ramp.elements[0].color = (*[c*0.5 for c in color], 1)
+    node_ramp.color_ramp.elements[1].color = (*color, 1)
+
+    links.new(node_noise.outputs['Fac'], node_ramp.inputs['Fac'])
+    links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
+    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
+
+    return mat
+
+def create_fingers(location, direction, radius=0.02):
+    """Adds small vine fingers to a limb end."""
+    fingers = []
+    for i in range(3):
+        angle = math.radians(random.uniform(-30, 30))
+        # Orthogonal offset for spread
+        offset = mathutils.Vector((random.uniform(-0.05, 0.05), random.uniform(-0.05, 0.05), random.uniform(-0.05, 0.05)))
+        end_point = location + direction * 0.15 + offset
+        f = create_vine(location, end_point, radius=radius*0.6)
+        fingers.append(f)
+    return fingers
+
 def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05, seed=None):
     """Generates a humanoid plant character with variety."""
     if seed is not None:
@@ -85,8 +122,21 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
 
     # Arms (Vines)
     arm_height = torso_height * 0.9
-    left_arm = create_vine(location + mathutils.Vector((0.2, 0, arm_height)), location + mathutils.Vector((0.8, 0, arm_height - 0.4)), radius=vine_thickness)
-    right_arm = create_vine(location + mathutils.Vector((-0.2, 0, arm_height)), location + mathutils.Vector((-0.8, 0, arm_height - 0.4)), radius=vine_thickness)
+    l_arm_start = location + mathutils.Vector((0.2, 0, arm_height))
+    l_arm_end = location + mathutils.Vector((0.8, 0, arm_height - 0.4))
+    left_arm = create_vine(l_arm_start, l_arm_end, radius=vine_thickness)
+    l_fingers = create_fingers(l_arm_end, (l_arm_end - l_arm_start).normalized(), radius=vine_thickness)
+    for f in l_fingers:
+        f.parent = left_arm
+        f.matrix_parent_inverse = left_arm.matrix_world.inverted()
+
+    r_arm_start = location + mathutils.Vector((-0.2, 0, arm_height))
+    r_arm_end = location + mathutils.Vector((-0.8, 0, arm_height - 0.4))
+    right_arm = create_vine(r_arm_start, r_arm_end, radius=vine_thickness)
+    r_fingers = create_fingers(r_arm_end, (r_arm_end - r_arm_start).normalized(), radius=vine_thickness)
+    for f in r_fingers:
+        f.parent = right_arm
+        f.matrix_parent_inverse = right_arm.matrix_world.inverted()
 
     # Legs (Roots)
     left_leg = create_vine(location + mathutils.Vector((0.1, 0, 0.1)), location + mathutils.Vector((0.3, 0, -0.8)), radius=vine_thickness * 1.5)
@@ -104,14 +154,30 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         leaf.rotation_euler = (random.uniform(0, 3.14), random.uniform(0, 3.14), angle)
 
     # Cleanup and Material
-    mat = bpy.data.materials.new(name=f"PlantMat_{name}")
-    mat.use_nodes = True
-    bsdf = mat.node_tree.nodes.get("Principled BSDF")
-    if bsdf:
-        bsdf.inputs["Base Color"].default_value = (0.1, 0.5, 0.1, 1) # Green
+    mat = create_bark_material(f"PlantMat_{name}", color=(0.1, random.uniform(0.3, 0.6), 0.1))
 
-    parts = [head, left_arm, right_arm, left_leg, right_leg]
-    for p in parts:
+    # Hierarchical parts that need to be parented to torso
+    main_parts = [head, left_arm, right_arm, left_leg, right_leg]
+
+    # Character specific traits
+    if "Herbaceous" in name:
+        # Reason Staff
+        staff_loc = location + mathutils.Vector((1.0, -0.2, 0.5))
+        staff = create_vine(staff_loc, staff_loc + mathutils.Vector((0, 0, 1.8)), radius=0.04)
+        staff.name = f"{name}_ReasonStaff"
+        main_parts.append(staff)
+    elif "Arbor" in name:
+        # Shoulder plating
+        for side in [-1, 1]:
+            bpy.ops.mesh.primitive_ico_sphere_add(radius=0.15, location=location + mathutils.Vector((side * 0.3, 0, arm_height + 0.1)))
+            plate = bpy.context.object
+            plate.scale = (1, 0.5, 0.5)
+            plate.name = f"{name}_ShoulderPlate_{side}"
+            main_parts.append(plate)
+
+    # Collect all parts for linking and material
+    all_parts = main_parts + l_fingers + r_fingers
+    for p in all_parts:
         if p.name not in container.objects:
             container.objects.link(p)
 
@@ -122,9 +188,11 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
             bpy.context.view_layer.objects.active = p
             bpy.ops.object.convert(target='MESH')
 
-        # Parent to torso
-        p.parent = torso
-        p.matrix_parent_inverse = torso.matrix_world.inverted()
+        # Parent main parts to torso
+        if p in main_parts:
+            p.parent = torso
+            p.matrix_parent_inverse = torso.matrix_world.inverted()
+
         if not p.material_slots:
             p.data.materials.append(None)
         p.material_slots[0].link = 'OBJECT'

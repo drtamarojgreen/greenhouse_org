@@ -35,7 +35,7 @@ def setup_scene(master):
             char.keyframe_insert(data_path="location", frame=2500)
 
         # Staff animation
-        staff = bpy.data.objects.get("GloomGnome_Staff")
+        staff = bpy.data.objects.get("GloomGnome_Staff_Container")
         if staff:
             staff.rotation_euler = (0, 0, 0)
             staff.keyframe_insert(data_path="rotation_euler", frame=2101)
