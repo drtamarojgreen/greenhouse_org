@@ -5,12 +5,15 @@ import sys
 import mathutils
 import random
 
-# Add movie root to path for local imports
+# Add movie root and assets to path for local imports
 MOVIE_ROOT = os.path.dirname(os.path.abspath(__file__))
-if MOVIE_ROOT not in sys.path:
-    sys.path.append(MOVIE_ROOT)
+ASSETS_ROOT = os.path.join(MOVIE_ROOT, "assets")
+for p in [MOVIE_ROOT, ASSETS_ROOT]:
+    if p not in sys.path:
+        sys.path.append(p)
 
 import plant_humanoid
+import gnome_antagonist
 import unity_exporter
 
 # Import scene modules
@@ -20,6 +23,8 @@ from scene03_socratic import scene_logic as scene03
 from scene04_forge import scene_logic as scene04
 from scene05_bridge import scene_logic as scene05
 from scene06_resonance import scene_logic as scene06
+from scene07_shadow import scene_logic as scene07
+from scene08_confrontation import scene_logic as scene08
 
 class MovieMaster:
     def __init__(self, mode='SILENT_FILM'):
@@ -29,6 +34,7 @@ class MovieMaster:
         self.neuron = None
         self.h1 = None
         self.h2 = None
+        self.gnome = None
         self.scroll = None
 
     def setup_engine(self):
@@ -38,7 +44,7 @@ class MovieMaster:
 
         scene = bpy.context.scene
         scene.frame_start = 1
-        scene.frame_end = 2500
+        scene.frame_end = 3000
         scene.render.fps = 24
 
         if self.mode == 'SILENT_FILM':
@@ -92,6 +98,9 @@ class MovieMaster:
         """Loads models and characters."""
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+        # Antagonist
+        self.gnome = gnome_antagonist.create_gnome("GloomGnome", mathutils.Vector((5, 5, 0)))
+
         # Load Brain
         brain_path = os.path.join(base_path, "brain.fbx")
         if os.path.exists(brain_path):
@@ -135,7 +144,7 @@ class MovieMaster:
         """Global animation and scene visibility logic."""
         # Visibility ranges for characters/bushes
         plant_objs = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["Herbaceous", "Arbor", "Scroll", "Bush"])]
-        p_ranges = [(501, 650), (751, 950), (1051, 1250), (1601, 1800), (2101, 2400)]
+        p_ranges = [(501, 650), (751, 950), (1051, 1250), (1601, 1800), (2101, 2400), (2601, 2900)]
         for p in plant_objs:
             p.hide_render = True
             for rs, re in p_ranges:
@@ -168,6 +177,8 @@ class MovieMaster:
         scene04.setup_scene(self)
         scene05.setup_scene(self)
         scene06.setup_scene(self)
+        scene07.setup_scene(self)
+        scene08.setup_scene(self)
 
         # Character animations
         self.h1.rotation_euler = (0, 0, 0)
@@ -194,7 +205,7 @@ class MovieMaster:
         # Asset visibility and basic movement
         if self.brain:
             self.brain.hide_render = True
-            ranges = [(201, 400), (751, 950), (1351, 1500), (1601, 1800), (2101, 2400)]
+            ranges = [(201, 400), (751, 950), (1351, 1500), (1601, 1800), (2101, 2500), (2601, 2900)]
             for rs, re in ranges:
                 self.brain.keyframe_insert(data_path="hide_render", frame=rs-1)
                 self.brain.hide_render = False
@@ -214,11 +225,11 @@ class MovieMaster:
                 bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1500)
 
                 bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2101)
+                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2601)
                 bsdf.inputs["Emission Strength"].default_value = 10.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2250)
+                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2750)
                 bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2400)
+                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2900)
 
         # Camera sequence (simplified version for modularity)
         bpy.ops.object.camera_add(location=(0, -8, 0), rotation=(math.radians(90), 0, 0))
@@ -268,34 +279,64 @@ class MovieMaster:
             cam.keyframe_insert(data_path="rotation_euler", frame=frame)
 
         kf(1, title_loc, (90,0,0))
+        kf(200, title_loc, (90,0,0))
+
+        # Brain
+        kf(201, (0,-25,5), (75,0,0))
+        kf(400, (0,-30,8), (75,0,0))
+
+        kf(401, title_loc, (90,0,0))
         kf(500, title_loc, (90,0,0))
 
         # Garden
         kf(501, (2,-15,2), (85,0,0))
         kf(650, (-2,-12,1), (85,0,0))
 
+        kf(651, title_loc, (90,0,0))
+        kf(750, title_loc, (90,0,0))
+
         # Dialogue
         kf(751, (0,-10,2), (80,0,0))
         kf(950, (0,-12,3), (80,0,0))
+
+        kf(951, title_loc, (90,0,0))
+        kf(1050, title_loc, (90,0,0))
 
         # Exchange
         kf(1051, (1.5,-8,1.5), (85,0,10))
         kf(1250, (-1.5,-8,1.5), (85,0,10))
 
+        kf(1251, title_loc, (90,0,0))
+        kf(1350, title_loc, (90,0,0))
+
         # Forge
         kf(1351, (0,-5,0), (90,0,0))
         kf(1500, (0,-4,0), (90,0,0))
+
+        kf(1501, title_loc, (90,0,0))
+        kf(1600, title_loc, (90,0,0))
 
         # Bridge
         kf(1601, (10,-25,10), (70,0,20))
         kf(1800, (5,-20,5), (70,0,20))
 
-        # Finale
-        kf(2101, (0,-40,15), (70,0,0))
-        kf(2400, (0,-35,12), (70,0,0))
+        kf(1801, title_loc, (90,0,0))
+        kf(2100, title_loc, (90,0,0))
 
-        kf(2401, title_loc, (90,0,0))
-        kf(2500, title_loc, (90,0,0))
+        # Shadow
+        kf(2101, (5, 5, 2), (80, 0, 45))
+        kf(2500, (2, 2, 1), (80, 0, 45))
+
+        # Finale intertitle
+        kf(2501, title_loc, (90,0,0))
+        kf(2600, title_loc, (90,0,0))
+
+        # Finale
+        kf(2601, (0,-40,15), (70,0,0))
+        kf(2900, (0,-35,12), (70,0,0))
+
+        kf(2901, title_loc, (90,0,0))
+        kf(3000, title_loc, (90,0,0))
 
     def setup_compositor(self):
         self.scene.use_nodes = True
@@ -309,7 +350,7 @@ class MovieMaster:
             bw = tree.nodes.new('CompositorNodeRGBToBW')
             bright = tree.nodes.new('CompositorNodeBrightContrast')
             bright.inputs['Contrast'].default_value = 1.6
-            for f in range(1, 2501, 2):
+            for f in range(1, 3001, 2):
                 bright.inputs['Bright'].default_value = random.uniform(-0.02, 0.02)
                 bright.inputs['Bright'].keyframe_insert(data_path="default_value", frame=f)
 
