@@ -176,6 +176,36 @@ def create_procedural_bush(location, name="GardenBush", size=1.0):
 
     return container
 
+def create_flower(location, name="MentalBloom", scale=0.2):
+    """Creates a procedural flower that can bloom."""
+    container = bpy.data.collections.new(name)
+    bpy.context.scene.collection.children.link(container)
+
+    # Core (Sphere)
+    bpy.ops.mesh.primitive_ico_sphere_add(radius=0.1, location=location)
+    core = bpy.context.object
+    core.name = f"{name}_Core"
+
+    # Petals (Planes with rotation)
+    petals = []
+    mat_petal = bpy.data.materials.new(name=f"{name}_MatPetal")
+    mat_petal.use_nodes = True
+    mat_petal.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.2, 0.5, 1)
+
+    for i in range(5):
+        angle = (i / 5) * math.pi * 2
+        bpy.ops.mesh.primitive_plane_add(size=0.2, location=location + mathutils.Vector((math.cos(angle)*0.15, math.sin(angle)*0.15, 0.05)))
+        p = bpy.context.object
+        p.name = f"{name}_Petal_{i}"
+        p.rotation_euler = (math.radians(45), 0, angle)
+        p.parent = core
+        p.matrix_parent_inverse = core.matrix_world.inverted()
+        p.data.materials.append(mat_petal)
+        petals.append(p)
+
+    core.scale = (0.01, 0.01, 0.01) # Start small for blooming
+    return core
+
 def create_inscribed_pillar(location, name="StoicPillar", height=5.0):
     """Creates a classic pillar with simple geometry suggesting inscriptions."""
     bpy.ops.mesh.primitive_cylinder_add(radius=0.4, depth=height, location=location + mathutils.Vector((0,0,height/2)))
@@ -208,3 +238,4 @@ if __name__ == "__main__":
     create_plant_humanoid("Herbaceous", mathutils.Vector((0, 0, 0)), height_scale=0.8, seed=42)
     create_plant_humanoid("Arbor", mathutils.Vector((2, 0, 0)), height_scale=1.3, vine_thickness=0.07, seed=123)
     create_scroll(mathutils.Vector((1, 0, 0.5)))
+    create_flower(mathutils.Vector((0, 0, 2)))

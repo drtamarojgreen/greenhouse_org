@@ -14,6 +14,7 @@ for p in [MOVIE_ROOT, ASSETS_ROOT]:
 
 import plant_humanoid
 import gnome_antagonist
+import library_props
 import unity_exporter
 
 # Import scene modules
@@ -25,6 +26,7 @@ from scene05_bridge import scene_logic as scene05
 from scene06_resonance import scene_logic as scene06
 from scene07_shadow import scene_logic as scene07
 from scene08_confrontation import scene_logic as scene08
+from scene09_library import scene_logic as scene09
 
 class MovieMaster:
     def __init__(self, mode='SILENT_FILM'):
@@ -36,6 +38,9 @@ class MovieMaster:
         self.h2 = None
         self.gnome = None
         self.scroll = None
+        self.book = None
+        self.pedestal = None
+        self.flower = None
 
     def setup_engine(self):
         """Initializes the scene based on the desired aesthetic."""
@@ -44,7 +49,7 @@ class MovieMaster:
 
         scene = bpy.context.scene
         scene.frame_start = 1
-        scene.frame_end = 3000
+        scene.frame_end = 3500
         scene.render.fps = 24
 
         if self.mode == 'SILENT_FILM':
@@ -142,9 +147,16 @@ class MovieMaster:
 
     def animate_master(self):
         """Global animation and scene visibility logic."""
+        # Gnome retreat
+        if self.gnome:
+            self.gnome.location = (2, 2, 0)
+            self.gnome.keyframe_insert(data_path="location", frame=2600)
+            self.gnome.location = (10, 10, 0) # Running away
+            self.gnome.keyframe_insert(data_path="location", frame=2800)
+
         # Visibility ranges for characters/bushes
         plant_objs = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["Herbaceous", "Arbor", "Scroll", "Bush"])]
-        p_ranges = [(501, 650), (751, 950), (1051, 1250), (1601, 1800), (2101, 2400), (2601, 2900)]
+        p_ranges = [(501, 650), (751, 950), (1051, 1250), (1601, 1800), (2101, 2500), (2601, 2800), (2901, 3400)]
         for p in plant_objs:
             p.hide_render = True
             for rs, re in p_ranges:
@@ -172,6 +184,47 @@ class MovieMaster:
 
         # Call scene modules
         scene01.setup_scene(self)
+
+        # Iris Transitions
+        # Open at start
+        self.animate_iris(1, 48, mode='IN')
+        # Close/Open at titles
+        self.animate_iris(190, 200, mode='OUT')
+        self.animate_iris(201, 210, mode='IN')
+        self.animate_iris(390, 400, mode='OUT')
+        self.animate_iris(401, 410, mode='IN')
+        self.animate_iris(490, 500, mode='OUT')
+        self.animate_iris(501, 510, mode='IN')
+        self.animate_iris(640, 650, mode='OUT')
+        self.animate_iris(651, 660, mode='IN')
+        self.animate_iris(740, 750, mode='OUT')
+        self.animate_iris(751, 760, mode='IN')
+        self.animate_iris(940, 950, mode='OUT')
+        self.animate_iris(951, 960, mode='IN')
+        self.animate_iris(1040, 1050, mode='OUT')
+        self.animate_iris(1051, 1060, mode='IN')
+        self.animate_iris(1240, 1250, mode='OUT')
+        self.animate_iris(1251, 1260, mode='IN')
+        self.animate_iris(1340, 1350, mode='OUT')
+        self.animate_iris(1351, 1360, mode='IN')
+        self.animate_iris(1490, 1500, mode='OUT')
+        self.animate_iris(1501, 1510, mode='IN')
+        self.animate_iris(1590, 1600, mode='OUT')
+        self.animate_iris(1601, 1610, mode='IN')
+        self.animate_iris(1790, 1800, mode='OUT')
+        self.animate_iris(1801, 1810, mode='IN')
+        self.animate_iris(2090, 2100, mode='OUT')
+        self.animate_iris(2101, 2110, mode='IN')
+        self.animate_iris(2490, 2500, mode='OUT')
+        self.animate_iris(2501, 2510, mode='IN')
+        self.animate_iris(2790, 2800, mode='OUT')
+        self.animate_iris(2801, 2810, mode='IN')
+        self.animate_iris(2890, 2900, mode='OUT')
+        self.animate_iris(2901, 2910, mode='IN')
+        self.animate_iris(3390, 3400, mode='OUT')
+        self.animate_iris(3401, 3410, mode='IN')
+        self.animate_iris(3490, 3500, mode='OUT')
+
         scene02.setup_scene(self)
         scene03.setup_scene(self)
         scene04.setup_scene(self)
@@ -179,8 +232,16 @@ class MovieMaster:
         scene06.setup_scene(self)
         scene07.setup_scene(self)
         scene08.setup_scene(self)
+        scene09.setup_scene(self)
 
         # Character animations
+        # Bloom effect
+        if self.flower:
+            self.flower.scale = (0.01, 0.01, 0.01)
+            self.flower.keyframe_insert(data_path="scale", frame=2900)
+            self.flower.scale = (1, 1, 1)
+            self.flower.keyframe_insert(data_path="scale", frame=3200)
+
         self.h1.rotation_euler = (0, 0, 0)
         self.h1.keyframe_insert(data_path="rotation_euler", frame=751)
         self.h1.rotation_euler = (0, 0, math.radians(-30))
@@ -205,7 +266,7 @@ class MovieMaster:
         # Asset visibility and basic movement
         if self.brain:
             self.brain.hide_render = True
-            ranges = [(201, 400), (751, 950), (1351, 1500), (1601, 1800), (2101, 2500), (2601, 2900)]
+            ranges = [(201, 400), (751, 950), (1351, 1500), (1601, 1800), (2101, 2500), (2901, 3400)]
             for rs, re in ranges:
                 self.brain.keyframe_insert(data_path="hide_render", frame=rs-1)
                 self.brain.hide_render = False
@@ -225,11 +286,11 @@ class MovieMaster:
                 bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1500)
 
                 bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2601)
+                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2901)
                 bsdf.inputs["Emission Strength"].default_value = 10.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2750)
+                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3150)
                 bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2900)
+                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3400)
 
         # Camera sequence (simplified version for modularity)
         bpy.ops.object.camera_add(location=(0, -8, 0), rotation=(math.radians(90), 0, 0))
@@ -267,11 +328,36 @@ class MovieMaster:
         spark.keyframe_insert(data_path="location", frame=frame_end)
         return spark
 
+    def animate_iris(self, frame_start, frame_end, mode='OUT'):
+        """Animates the iris mask in the compositor."""
+        if self.mode != 'SILENT_FILM': return
+        tree = self.scene.node_tree
+        iris = tree.nodes.get("IrisMask")
+        if not iris: return
+
+        if mode == 'OUT': # Close to black
+            iris.width = 2.0
+            iris.height = 2.0
+            iris.keyframe_insert(data_path="width", frame=frame_start)
+            iris.keyframe_insert(data_path="height", frame=frame_start)
+            iris.width = 0.0
+            iris.height = 0.0
+            iris.keyframe_insert(data_path="width", frame=frame_end)
+            iris.keyframe_insert(data_path="height", frame=frame_end)
+        else: # IN: Open from black
+            iris.width = 0.0
+            iris.height = 0.0
+            iris.keyframe_insert(data_path="width", frame=frame_start)
+            iris.keyframe_insert(data_path="height", frame=frame_start)
+            iris.width = 2.0
+            iris.height = 2.0
+            iris.keyframe_insert(data_path="width", frame=frame_end)
+            iris.keyframe_insert(data_path="height", frame=frame_end)
+
     def setup_camera_keyframes(self, cam):
         title_loc = (0, -8, 0)
         title_rot = (math.radians(90), 0, 0)
 
-        # Keyframe helper
         def kf(frame, loc, rot_deg):
             cam.location = loc
             cam.rotation_euler = (math.radians(rot_deg[0]), math.radians(rot_deg[1]), math.radians(rot_deg[2]))
@@ -280,63 +366,48 @@ class MovieMaster:
 
         kf(1, title_loc, (90,0,0))
         kf(200, title_loc, (90,0,0))
-
-        # Brain
         kf(201, (0,-25,5), (75,0,0))
         kf(400, (0,-30,8), (75,0,0))
-
         kf(401, title_loc, (90,0,0))
         kf(500, title_loc, (90,0,0))
-
-        # Garden
         kf(501, (2,-15,2), (85,0,0))
         kf(650, (-2,-12,1), (85,0,0))
-
         kf(651, title_loc, (90,0,0))
         kf(750, title_loc, (90,0,0))
-
-        # Dialogue
         kf(751, (0,-10,2), (80,0,0))
         kf(950, (0,-12,3), (80,0,0))
-
         kf(951, title_loc, (90,0,0))
         kf(1050, title_loc, (90,0,0))
-
-        # Exchange
         kf(1051, (1.5,-8,1.5), (85,0,10))
         kf(1250, (-1.5,-8,1.5), (85,0,10))
-
         kf(1251, title_loc, (90,0,0))
         kf(1350, title_loc, (90,0,0))
-
-        # Forge
         kf(1351, (0,-5,0), (90,0,0))
         kf(1500, (0,-4,0), (90,0,0))
-
         kf(1501, title_loc, (90,0,0))
         kf(1600, title_loc, (90,0,0))
-
-        # Bridge
         kf(1601, (10,-25,10), (70,0,20))
         kf(1800, (5,-20,5), (70,0,20))
-
         kf(1801, title_loc, (90,0,0))
         kf(2100, title_loc, (90,0,0))
-
-        # Shadow
         kf(2101, (5, 5, 2), (80, 0, 45))
         kf(2500, (2, 2, 1), (80, 0, 45))
-
-        # Finale intertitle
         kf(2501, title_loc, (90,0,0))
         kf(2600, title_loc, (90,0,0))
 
-        # Finale
-        kf(2601, (0,-40,15), (70,0,0))
-        kf(2900, (0,-35,12), (70,0,0))
+        # Library
+        kf(2601, (0,-3,1.5), (80,0,0))
+        kf(2800, (0,-2,1.5), (80,0,0))
 
-        kf(2901, title_loc, (90,0,0))
-        kf(3000, title_loc, (90,0,0))
+        kf(2801, title_loc, (90,0,0))
+        kf(2900, title_loc, (90,0,0))
+
+        # Finale
+        kf(2901, (0,-40,15), (70,0,0))
+        kf(3400, (0,-35,12), (70,0,0))
+
+        kf(3401, title_loc, (90,0,0))
+        kf(3500, title_loc, (90,0,0))
 
     def setup_compositor(self):
         self.scene.use_nodes = True
@@ -350,7 +421,7 @@ class MovieMaster:
             bw = tree.nodes.new('CompositorNodeRGBToBW')
             bright = tree.nodes.new('CompositorNodeBrightContrast')
             bright.inputs['Contrast'].default_value = 1.6
-            for f in range(1, 3001, 2):
+            for f in range(1, 3501, 2):
                 bright.inputs['Bright'].default_value = random.uniform(-0.02, 0.02)
                 bright.inputs['Bright'].keyframe_insert(data_path="default_value", frame=f)
 
@@ -390,7 +461,19 @@ class MovieMaster:
             tree.links.new(mask.outputs['Mask'], blur.inputs['Image'])
             tree.links.new(mix_scratches.outputs['Image'], mix_vignette.inputs[1])
             tree.links.new(blur.outputs['Image'], mix_vignette.inputs[2])
-            tree.links.new(mix_vignette.outputs['Image'], composite.inputs['Image'])
+
+            # 6. Iris Transition
+            iris_mask = tree.nodes.new('CompositorNodeEllipseMask')
+            iris_mask.name = "IrisMask"
+            iris_mask.width = 2.0 # Default open
+            iris_mask.height = 2.0
+            mix_iris = tree.nodes.new('CompositorNodeMixRGB')
+            mix_iris.blend_type = 'MULTIPLY'
+            mix_iris.inputs[0].default_value = 1.0
+
+            tree.links.new(mix_vignette.outputs['Image'], mix_iris.inputs[1])
+            tree.links.new(iris_mask.outputs['Mask'], mix_iris.inputs[2])
+            tree.links.new(mix_iris.outputs['Image'], composite.inputs['Image'])
         else:
             # Unity style (Simple Passthrough with Bloom in Eevee)
             self.scene.eevee.use_bloom = True
@@ -399,8 +482,8 @@ class MovieMaster:
 
     def run(self):
         self.load_assets()
-        self.animate_master()
         self.setup_compositor()
+        self.animate_master()
 
         # Lighting
         bpy.ops.object.light_add(type='SUN', location=(10,-10,20))

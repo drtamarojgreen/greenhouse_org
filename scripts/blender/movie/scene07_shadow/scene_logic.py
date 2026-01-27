@@ -19,6 +19,8 @@ def setup_scene(master):
         gnome.location = (5, 5, 0)
         gnome.keyframe_insert(data_path="location", frame=2101)
         gnome.location = (2, 2, 0)
+        gnome.keyframe_insert(data_path="location", frame=2300)
+        gnome.location = (2, 2, 0) # Pause
         gnome.keyframe_insert(data_path="location", frame=2500)
 
         # Staff animation
