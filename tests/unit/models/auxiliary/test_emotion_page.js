@@ -119,6 +119,27 @@ TestFramework.describe('Emotion Page Enhancements', () => {
         assert.equal(app.activeRegion.length, 2);
     });
 
+    TestFramework.it('should update simulation state and animate correctly', () => {
+        const app = global.window.GreenhouseEmotionApp;
+        const config = global.window.GreenhouseEmotionConfig;
+
+        // Find an SSRI theory (e.g., ID 51)
+        const ssri = config.medicationTreatments.find(t => t.id === 51);
+        assert.isDefined(ssri);
+
+        app.updateSimulationState(ssri);
+        assert.equal(app.simState.targetSerotonin, 0.9);
+
+        // Initial state is 0.5
+        app.simState.serotonin = 0.5;
+
+        // Run one animation frame
+        app.updateSimAnimation();
+
+        // With speed 0.05, it should be 0.5 + (0.9 - 0.5) * 0.05 = 0.52
+        assert.equal(app.simState.serotonin.toFixed(2), "0.52");
+    });
+
 });
 
 // Run the tests

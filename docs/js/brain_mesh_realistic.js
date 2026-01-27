@@ -137,6 +137,21 @@
                     color: 'rgba(255, 200, 100, 0.6)',
                     vertices: []
                 },
+                insula: {
+                    name: 'Insula',
+                    color: 'rgba(255, 100, 255, 0.6)',
+                    vertices: []
+                },
+                acc: {
+                    name: 'Anterior Cingulate Cortex',
+                    color: 'rgba(100, 255, 255, 0.6)',
+                    vertices: []
+                },
+                striatum: {
+                    name: 'Striatum',
+                    color: 'rgba(200, 100, 255, 0.6)',
+                    vertices: []
+                },
                 cortex: {
                     name: 'Cortex',
                     color: 'rgba(120, 120, 120, 0.3)',
@@ -328,6 +343,21 @@
             // Hippocampus (deep, side, slightly back)
             if (Math.abs(x) > 0.3 && Math.abs(x) < 0.5 && y < 0 && y > -0.3 && z > -0.3 && z < 0.1) {
                 return 'hippocampus';
+            }
+
+            // Insula (deep within lateral sulcus)
+            if (Math.abs(x) > 0.4 && Math.abs(x) < 0.6 && y < 0.2 && y > -0.2 && z > -0.2 && z < 0.2) {
+                return 'insula';
+            }
+
+            // Anterior Cingulate Cortex (ACC) - inner surface above corpus callosum
+            if (Math.abs(x) < 0.15 && y > 0.1 && y < 0.4 && z > 0 && z < 0.5) {
+                return 'acc';
+            }
+
+            // Striatum (deep, near thalamus but slightly forward/out)
+            if (Math.abs(x) > 0.15 && Math.abs(x) < 0.35 && y < 0.1 && y > -0.2 && z > 0.1 && z < 0.4) {
+                return 'striatum';
             }
 
             // Default to general cortex

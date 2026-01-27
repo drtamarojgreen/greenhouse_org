@@ -58,6 +58,21 @@
                 name: 'Brainstem',
                 color: 'rgba(150, 100, 255, 0.8)',
                 description: 'The brainstem regulates fundamental autonomic functions and serves as the conduit for the Vagus nerve and major monoamine projections.'
+            },
+            insula: {
+                name: 'Insula',
+                color: 'rgba(255, 100, 255, 0.8)',
+                description: 'The insula is involved in interoceptive awareness, sensing internal bodily states and mapping them to emotional feelings.'
+            },
+            acc: {
+                name: 'Anterior Cingulate Cortex',
+                color: 'rgba(100, 255, 255, 0.8)',
+                description: 'The ACC monitors conflict between emotional impulses and cognitive goals, and is a target for deep brain stimulation in treatment-resistant depression.'
+            },
+            striatum: {
+                name: 'Striatum',
+                color: 'rgba(200, 100, 255, 0.8)',
+                description: 'The striatum, including the nucleus accumbens, is the core of the brain\'s reward system and mediates motivation and pleasure.'
             }
         },
         theories: [
