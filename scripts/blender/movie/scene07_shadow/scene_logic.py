@@ -1,5 +1,6 @@
 import bpy
 import math
+import random
 
 def setup_scene(master):
     """The Intrusion of Gloom."""
@@ -22,6 +23,16 @@ def setup_scene(master):
         gnome.keyframe_insert(data_path="location", frame=2300)
         gnome.location = (2, 2, 0) # Pause
         gnome.keyframe_insert(data_path="location", frame=2500)
+
+    # Characters shiver in suspense
+    for char in [master.h1, master.h2]:
+        if char:
+            base_x = char.location.x
+            for f in range(2101, 2500, 4):
+                char.location.x = base_x + random.uniform(-0.02, 0.02)
+                char.keyframe_insert(data_path="location", frame=f)
+            char.location.x = base_x
+            char.keyframe_insert(data_path="location", frame=2500)
 
         # Staff animation
         staff = bpy.data.objects.get("GloomGnome_Staff")

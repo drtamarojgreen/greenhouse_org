@@ -68,6 +68,21 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     head = bpy.context.object
     head.name = f"{name}_Head"
 
+    # Eyes (Small icospheres)
+    mat_eye = bpy.data.materials.get("CharacterEyeMat") or bpy.data.materials.new(name="CharacterEyeMat")
+    mat_eye.use_nodes = True
+    mat_eye.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 5.0
+    mat_eye.node_tree.nodes["Principled BSDF"].inputs["Emission Color"].default_value = (1, 1, 1, 1)
+
+    for side in [-1, 1]:
+        eye_loc = location + mathutils.Vector((side * head_radius * 0.4, -head_radius * 0.8, torso_height + head_radius * 1.1))
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.03, location=eye_loc)
+        eye = bpy.context.object
+        eye.name = f"{name}_Eye_{'L' if side < 0 else 'R'}"
+        eye.parent = head
+        eye.matrix_parent_inverse = head.matrix_world.inverted()
+        eye.data.materials.append(mat_eye)
+
     # Arms (Vines)
     arm_height = torso_height * 0.9
     left_arm = create_vine(location + mathutils.Vector((0.2, 0, arm_height)), location + mathutils.Vector((0.8, 0, arm_height - 0.4)), radius=vine_thickness)

@@ -27,6 +27,21 @@ def create_gnome(name, location, scale=0.6):
     beard.parent = body
     beard.matrix_parent_inverse = body.matrix_world.inverted()
 
+    # Red Glowing Eyes
+    mat_gnome_eye = bpy.data.materials.new(name=f"{name}_MatEye")
+    mat_gnome_eye.use_nodes = True
+    mat_gnome_eye.node_tree.nodes["Principled BSDF"].inputs["Emission Color"].default_value = (1, 0, 0, 1)
+    mat_gnome_eye.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 10.0
+
+    for side in [-1, 1]:
+        eye_loc = location + mathutils.Vector((side * 0.15, -0.25, 0.85))
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.04, location=eye_loc)
+        eye = bpy.context.object
+        eye.name = f"{name}_Eye_{'L' if side < 0 else 'R'}"
+        eye.parent = body
+        eye.matrix_parent_inverse = body.matrix_world.inverted()
+        eye.data.materials.append(mat_gnome_eye)
+
     # Gloom Staff
     bpy.ops.mesh.primitive_cylinder_add(radius=0.03, depth=1.5, location=location + mathutils.Vector((0.5, -0.3, 0.75)))
     staff = bpy.context.object

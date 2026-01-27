@@ -32,9 +32,13 @@ $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 2250
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 2450
 # Library / Bloom
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 2700
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 3150
-# Outro
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 3450
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 3200
+# Lab / Sanctuary
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 3650
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 4000
+# Finale / Outro
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 4300
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 4450
 
 echo "Step 2: Starting Full Animation Render (Low Sample Count)..."
 echo "Output will be at: $OUTPUT_PATH"

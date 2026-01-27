@@ -15,6 +15,7 @@ for p in [MOVIE_ROOT, ASSETS_ROOT]:
 import plant_humanoid
 import gnome_antagonist
 import library_props
+import futuristic_props
 import unity_exporter
 
 # Import scene modules
@@ -27,6 +28,8 @@ from scene06_resonance import scene_logic as scene06
 from scene07_shadow import scene_logic as scene07
 from scene08_confrontation import scene_logic as scene08
 from scene09_library import scene_logic as scene09
+from scene10_futuristic_lab import scene_logic as scene10
+from scene11_nature_sanctuary import scene_logic as scene11
 
 class MovieMaster:
     def __init__(self, mode='SILENT_FILM'):
@@ -49,7 +52,7 @@ class MovieMaster:
 
         scene = bpy.context.scene
         scene.frame_start = 1
-        scene.frame_end = 3500
+        scene.frame_end = 4500
         scene.render.fps = 24
 
         if self.mode == 'SILENT_FILM':
@@ -137,6 +140,11 @@ class MovieMaster:
         self.h2 = plant_humanoid.create_plant_humanoid("Arbor", mathutils.Vector((2, 1, 0)), height_scale=1.3, seed=123)
         self.scroll = plant_humanoid.create_scroll(mathutils.Vector((1.8, 1.0, 1.2)))
 
+        # Bloom Asset (Flower on Herbaceous's head)
+        self.flower = plant_humanoid.create_flower(self.h1.location + mathutils.Vector((0, 0, 2.2)))
+        self.flower.parent = self.h1
+        self.flower.matrix_parent_inverse = self.h1.matrix_world.inverted()
+
         # Environment
         bpy.ops.mesh.primitive_plane_add(size=40, location=(0, 0, -1))
         floor = bpy.context.object
@@ -221,9 +229,19 @@ class MovieMaster:
         self.animate_iris(2801, 2810, mode='IN')
         self.animate_iris(2890, 2900, mode='OUT')
         self.animate_iris(2901, 2910, mode='IN')
-        self.animate_iris(3390, 3400, mode='OUT')
-        self.animate_iris(3401, 3410, mode='IN')
+
+        # New segments
         self.animate_iris(3490, 3500, mode='OUT')
+        self.animate_iris(3501, 3510, mode='IN')
+        self.animate_iris(3790, 3800, mode='OUT')
+        self.animate_iris(3801, 3810, mode='IN')
+        self.animate_iris(4090, 4100, mode='OUT')
+        self.animate_iris(4101, 4110, mode='IN')
+        self.animate_iris(4190, 4200, mode='OUT')
+        self.animate_iris(4201, 4210, mode='IN')
+        self.animate_iris(4390, 4400, mode='OUT')
+        self.animate_iris(4401, 4410, mode='IN')
+        self.animate_iris(4490, 4500, mode='OUT')
 
         scene02.setup_scene(self)
         scene03.setup_scene(self)
@@ -233,6 +251,8 @@ class MovieMaster:
         scene07.setup_scene(self)
         scene08.setup_scene(self)
         scene09.setup_scene(self)
+        scene10.setup_scene(self)
+        scene11.setup_scene(self)
 
         # Character animations
         # Bloom effect
@@ -328,6 +348,14 @@ class MovieMaster:
         spark.keyframe_insert(data_path="location", frame=frame_end)
         return spark
 
+    def animate_suspense_flicker(self, frame_start, frame_end):
+        """Intensifies flickering for suspenseful moments."""
+        sun = bpy.data.objects.get("Sun")
+        if not sun: return
+        for f in range(frame_start, frame_end, 2):
+            sun.data.energy = random.uniform(0.1, 1.5)
+            sun.data.keyframe_insert(data_path="energy", frame=f)
+
     def animate_iris(self, frame_start, frame_end, mode='OUT'):
         """Animates the iris mask in the compositor."""
         if self.mode != 'SILENT_FILM': return
@@ -402,12 +430,28 @@ class MovieMaster:
         kf(2801, title_loc, (90,0,0))
         kf(2900, title_loc, (90,0,0))
 
-        # Finale
-        kf(2901, (0,-40,15), (70,0,0))
-        kf(3400, (0,-35,12), (70,0,0))
+        # Lab
+        kf(3501, title_loc, (90,0,0))
+        kf(3600, title_loc, (90,0,0))
+        kf(3601, (0,-5,2), (85,0,0))
+        kf(3800, (0,-4,2), (85,0,0))
 
-        kf(3401, title_loc, (90,0,0))
-        kf(3500, title_loc, (90,0,0))
+        # Sanctuary
+        kf(3801, title_loc, (90,0,0))
+        kf(3900, title_loc, (90,0,0))
+        kf(3901, (0,-15,5), (70,0,0))
+        kf(4100, (0,-12,3), (70,0,0))
+
+        # Finale Intertitle
+        kf(4101, title_loc, (90,0,0))
+        kf(4200, title_loc, (90,0,0))
+
+        # Finale
+        kf(4201, (0,-40,15), (70,0,0))
+        kf(4400, (0,-35,12), (70,0,0))
+
+        kf(4401, title_loc, (90,0,0))
+        kf(4500, title_loc, (90,0,0))
 
     def setup_compositor(self):
         self.scene.use_nodes = True
@@ -421,7 +465,7 @@ class MovieMaster:
             bw = tree.nodes.new('CompositorNodeRGBToBW')
             bright = tree.nodes.new('CompositorNodeBrightContrast')
             bright.inputs['Contrast'].default_value = 1.6
-            for f in range(1, 3501, 2):
+            for f in range(1, 4501, 2):
                 bright.inputs['Bright'].default_value = random.uniform(-0.02, 0.02)
                 bright.inputs['Bright'].keyframe_insert(data_path="default_value", frame=f)
 
@@ -482,12 +526,15 @@ class MovieMaster:
 
     def run(self):
         self.load_assets()
+
+        # Lighting (Created before animation logic needs them)
+        bpy.ops.object.light_add(type='SUN', location=(10,-10,20))
+        bpy.context.object.name = "Sun"
+        bpy.ops.object.light_add(type='SPOT', location=(0,-15,10))
+        bpy.context.object.name = "Spot"
+
         self.setup_compositor()
         self.animate_master()
-
-        # Lighting
-        bpy.ops.object.light_add(type='SUN', location=(10,-10,20))
-        bpy.ops.object.light_add(type='SPOT', location=(0,-15,10))
 
 def main():
     argv = sys.argv
