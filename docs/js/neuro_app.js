@@ -28,8 +28,12 @@
         },
 
         _delayedInit(container, selector) {
-            // Clear existing content to ensure we replace rather than append
-            container.innerHTML = '';
+            const base = window.GreenhouseBaseApp;
+            if (base) {
+                base.initContainer(container);
+            } else {
+                container.innerHTML = '';
+            }
 
             // Check dependencies
             if (!window.NeuroGA || !window.GreenhouseNeuroUI3D || !window.GreenhouseModels3DMath) {
@@ -55,10 +59,20 @@
             // Start simulation automatically
             this.startSimulation();
 
-            // Resilience using shared GreenhouseUtils
-            if (window.GreenhouseUtils) {
+            // Resilience using Unified Base
+            if (base) {
+                base.applyResilience(container, selector, this);
+            } else if (window.GreenhouseUtils) {
                 window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
                 window.GreenhouseUtils.startSentinel(container, selector, this, 'init');
+            }
+        },
+
+        reinitialize() {
+            console.log('NeuroApp: Re-initializing...');
+            this.stopSimulation();
+            if (this.lastSelector) {
+                this.init(this.lastSelector);
             }
         },
 

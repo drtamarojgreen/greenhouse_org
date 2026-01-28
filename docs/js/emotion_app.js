@@ -19,7 +19,7 @@
         activeTheory: null,
         config: null,
         diagrams: null,
-        currentCategory: 'theories',
+        currentCategory: 'philosophies',
         uiContainer: null,
         mainContentContainer: null,
         theorySelectorContainer: null,
@@ -37,24 +37,13 @@
         },
 
         init(selector) {
-            console.log('EmotionApp: Initializing with:', selector);
-            const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
-            if (!container) {
-                console.error('EmotionApp: Target container not found:', selector);
-                return;
-            }
+            console.log('EmotionApp: Initializing with Unified Base:', selector);
+            const base = window.GreenhouseBaseApp;
+            const container = base ? base.initContainer(selector, { minHeight: '700px' }) : null;
+            if (!container) return;
 
             this.config = window.GreenhouseEmotionConfig || {};
             this.diagrams = window.GreenhouseEmotionDiagrams || null;
-
-            // Setup Container
-            container.innerHTML = '';
-            container.style.position = 'relative';
-            container.style.backgroundColor = '#050510';
-            container.style.minHeight = '700px';
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
-            container.style.overflow = 'hidden';
 
             // Create UI Container (Top)
             this.uiContainer = document.createElement('div');
@@ -66,16 +55,12 @@
             this.mainContentContainer.style.cssText = 'display: flex; flex: 1; position: relative; overflow: hidden;';
             container.appendChild(this.mainContentContainer);
 
-            // Create Canvas
-            this.canvas = document.createElement('canvas');
-            this.canvas.style.display = 'block';
-            this.canvas.style.flex = '1';
+            // Create Canvas using base
+            this.canvas = base ? base.setupCanvas(this.mainContentContainer) : document.createElement('canvas');
             this.canvas.style.minWidth = '0'; // Allow shrinking in flex
-            this.mainContentContainer.appendChild(this.canvas);
             this.ctx = this.canvas.getContext('2d');
 
-            this.projection.width = this.canvas.width;
-            this.projection.height = this.canvas.height;
+            if (base) base.handleResize(this.canvas, this.projection);
 
             // Generate Brain Mesh
             if (window.GreenhouseBrainMeshRealistic) {
@@ -99,10 +84,8 @@
             this.isRunning = true;
             this.startLoop();
 
-            // Resilience
-            if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
-            }
+            // Resilience via Unified Base
+            if (base) base.applyResilience(container, selector, this);
         },
 
         createCategorySelector(container) {
@@ -118,7 +101,7 @@
             `;
 
             const categories = [
-                { id: 'theories', label: 'Core Theories' },
+                { id: 'philosophies', label: 'World Philosophical Frameworks' },
                 { id: 'regulations', label: 'Emotional Regulation' },
                 { id: 'therapeuticInterventions', label: 'Therapeutic Effects' },
                 { id: 'medicationTreatments', label: 'Medication Treatments' },
@@ -279,6 +262,29 @@
 
             // Item-specific impacts
             const id = item.id;
+
+            // Philosophical Frameworks logic
+            if (id === 'p1') { // Stoicism - Low Cortisol via control
+                targetCortisol = 0.2;
+                targetSerotonin = 0.6;
+            } else if (id === 'p2') { // Buddhism - High Serotonin, High GABA
+                targetSerotonin = 0.8;
+                targetGaba = 0.8;
+                targetCortisol = 0.1;
+            } else if (id === 'p3') { // Existentialism - Moderate arousal, meaningful focus
+                targetSerotonin = 0.7;
+                targetCortisol = 0.4;
+            } else if (id === 'p4') { // Taoism - High GABA (harmony)
+                targetGaba = 0.9;
+                targetSerotonin = 0.6;
+                targetCortisol = 0.2;
+            } else if (id === 'p5') { // Nihilism - Low arousal, low reward sensitivity
+                targetSerotonin = 0.4;
+                targetCortisol = 0.3;
+            } else if (id === 'p6') { // Epicureanism - Balanced pleasure
+                targetSerotonin = 0.75;
+                targetGaba = 0.6;
+            }
 
             // Stress / High Arousal
             if (id === 1 || id === 9 || id === 25 || id === 31 || id === 71 || id === 89 || id === 94) {
@@ -539,12 +545,9 @@
         render() {
             if (!this.ctx || !this.brainMesh) return;
 
-            // Sync resolution with display size
-            if (this.canvas.width !== this.canvas.offsetWidth || this.canvas.height !== this.canvas.offsetHeight) {
-                this.canvas.width = this.canvas.offsetWidth;
-                this.canvas.height = this.canvas.offsetHeight;
-                this.projection.width = this.canvas.width;
-                this.projection.height = this.canvas.height;
+            // Sync resolution with display size via Unified Base
+            if (window.GreenhouseBaseApp) {
+                window.GreenhouseBaseApp.handleResize(this.canvas, this.projection);
             }
 
             this.updateSimAnimation();
