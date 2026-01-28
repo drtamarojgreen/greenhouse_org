@@ -113,6 +113,8 @@ class MovieMaster:
         bsdf = mat.node_tree.nodes.get("Principled BSDF")
         if bsdf:
             bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
+            if "Emission Color" in bsdf.inputs:
+                bsdf.inputs["Emission Color"].default_value = (1, 1, 1, 1)
             bsdf.inputs["Emission Strength"].default_value = 1.0
         text_obj.data.materials.append(mat)
 
@@ -231,6 +233,8 @@ class MovieMaster:
             mat = bpy.data.materials.get("NeuronMat")
             if mat:
                 bsdf = mat.node_tree.nodes["Principled BSDF"]
+                if "Emission Color" in bsdf.inputs:
+                    bsdf.inputs["Emission Color"].default_value = (0.2, 0.8, 1.0, 1) # Cyan pulse
                 bsdf.inputs["Emission Strength"].default_value = 0.0
                 bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3001)
                 bsdf.inputs["Emission Strength"].default_value = 15.0
@@ -373,6 +377,8 @@ class MovieMaster:
             mat = bpy.data.materials.get("BrainMat")
             if mat:
                 bsdf = mat.node_tree.nodes["Principled BSDF"]
+                if "Emission Color" in bsdf.inputs:
+                    bsdf.inputs["Emission Color"].default_value = (1.0, 0.4, 0.1, 1) # Orange/Red pulse
                 bsdf.inputs["Emission Strength"].default_value = 0.0
                 bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1351)
                 bsdf.inputs["Emission Strength"].default_value = 5.0
@@ -405,6 +411,8 @@ class MovieMaster:
         mat.use_nodes = True
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
+        if "Emission Color" in bsdf.inputs:
+            bsdf.inputs["Emission Color"].default_value = (1, 1, 1, 1)
         bsdf.inputs["Emission Strength"].default_value = 10.0
         spark.data.materials.append(mat)
 
