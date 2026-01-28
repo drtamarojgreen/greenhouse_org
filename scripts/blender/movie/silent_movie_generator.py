@@ -115,7 +115,10 @@ class MovieMaster:
             bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
             if "Emission Color" in bsdf.inputs:
                 bsdf.inputs["Emission Color"].default_value = (1, 1, 1, 1)
-            bsdf.inputs["Emission Strength"].default_value = 1.0
+                if "Emission Strength" in bsdf.inputs:
+                    bsdf.inputs["Emission Strength"].default_value = 1.0
+            elif "Emission" in bsdf.inputs:
+                bsdf.inputs["Emission"].default_value = (1, 1, 1, 1)
         text_obj.data.materials.append(mat)
 
         text_obj.hide_render = True
@@ -145,6 +148,14 @@ class MovieMaster:
                 if o.type == 'MESH':
                     mat = bpy.data.materials.new(name="BrainMat")
                     mat.use_nodes = True
+                    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                    if bsdf:
+                        if "Emission Color" in bsdf.inputs:
+                            bsdf.inputs["Emission Color"].default_value = (0.2, 0.2, 0.2, 1)
+                            if "Emission Strength" in bsdf.inputs:
+                                bsdf.inputs["Emission Strength"].default_value = 0.2
+                        elif "Emission" in bsdf.inputs:
+                            bsdf.inputs["Emission"].default_value = (0.2, 0.2, 0.2, 1)
                     o.data.materials.append(mat)
 
         # Load Neuron
@@ -160,6 +171,14 @@ class MovieMaster:
                 if o.type == 'MESH':
                     mat = bpy.data.materials.new(name="NeuronMat")
                     mat.use_nodes = True
+                    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                    if bsdf:
+                        if "Emission Color" in bsdf.inputs:
+                            bsdf.inputs["Emission Color"].default_value = (0.2, 0.2, 0.2, 1)
+                            if "Emission Strength" in bsdf.inputs:
+                                bsdf.inputs["Emission Strength"].default_value = 0.2
+                        elif "Emission" in bsdf.inputs:
+                            bsdf.inputs["Emission"].default_value = (0.2, 0.2, 0.2, 1)
                     o.data.materials.append(mat)
 
         # Characters
@@ -235,12 +254,20 @@ class MovieMaster:
                 bsdf = mat.node_tree.nodes["Principled BSDF"]
                 if "Emission Color" in bsdf.inputs:
                     bsdf.inputs["Emission Color"].default_value = (0.2, 0.8, 1.0, 1) # Cyan pulse
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3001)
-                bsdf.inputs["Emission Strength"].default_value = 15.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3250)
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3500)
+                    if "Emission Strength" in bsdf.inputs:
+                        bsdf.inputs["Emission Strength"].default_value = 0.0
+                        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3001)
+                        bsdf.inputs["Emission Strength"].default_value = 15.0
+                        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3250)
+                        bsdf.inputs["Emission Strength"].default_value = 0.0
+                        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3500)
+                elif "Emission" in bsdf.inputs:
+                    bsdf.inputs["Emission"].default_value = (0, 0, 0, 1)
+                    bsdf.inputs["Emission"].keyframe_insert(data_path="default_value", frame=3001)
+                    bsdf.inputs["Emission"].default_value = (0.2, 0.8, 1.0, 1)
+                    bsdf.inputs["Emission"].keyframe_insert(data_path="default_value", frame=3250)
+                    bsdf.inputs["Emission"].default_value = (0, 0, 0, 1)
+                    bsdf.inputs["Emission"].keyframe_insert(data_path="default_value", frame=3500)
 
         # Thought Sparks
         self.create_thought_spark(self.h1.location + mathutils.Vector((0,0,2)), mathutils.Vector((0,0,0)), 760, 800)
@@ -379,19 +406,34 @@ class MovieMaster:
                 bsdf = mat.node_tree.nodes["Principled BSDF"]
                 if "Emission Color" in bsdf.inputs:
                     bsdf.inputs["Emission Color"].default_value = (1.0, 0.4, 0.1, 1) # Orange/Red pulse
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1351)
-                bsdf.inputs["Emission Strength"].default_value = 5.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1425)
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1500)
+                    if "Emission Strength" in bsdf.inputs:
+                        bsdf.inputs["Emission Strength"].default_value = 0.0
+                        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1351)
+                        bsdf.inputs["Emission Strength"].default_value = 5.0
+                        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1425)
+                        bsdf.inputs["Emission Strength"].default_value = 0.0
+                        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1500)
 
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2901)
-                bsdf.inputs["Emission Strength"].default_value = 10.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3150)
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3400)
+                        bsdf.inputs["Emission Strength"].default_value = 0.0
+                        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2901)
+                        bsdf.inputs["Emission Strength"].default_value = 10.0
+                        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3150)
+                        bsdf.inputs["Emission Strength"].default_value = 0.0
+                        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3400)
+                elif "Emission" in bsdf.inputs:
+                    bsdf.inputs["Emission"].default_value = (0, 0, 0, 1)
+                    bsdf.inputs["Emission"].keyframe_insert(data_path="default_value", frame=1351)
+                    bsdf.inputs["Emission"].default_value = (1.0, 0.4, 0.1, 1)
+                    bsdf.inputs["Emission"].keyframe_insert(data_path="default_value", frame=1425)
+                    bsdf.inputs["Emission"].default_value = (0, 0, 0, 1)
+                    bsdf.inputs["Emission"].keyframe_insert(data_path="default_value", frame=1500)
+
+                    bsdf.inputs["Emission"].default_value = (0, 0, 0, 1)
+                    bsdf.inputs["Emission"].keyframe_insert(data_path="default_value", frame=2901)
+                    bsdf.inputs["Emission"].default_value = (1.0, 0.4, 0.1, 1)
+                    bsdf.inputs["Emission"].keyframe_insert(data_path="default_value", frame=3150)
+                    bsdf.inputs["Emission"].default_value = (0, 0, 0, 1)
+                    bsdf.inputs["Emission"].keyframe_insert(data_path="default_value", frame=3400)
 
         # Camera sequence (simplified version for modularity)
         bpy.ops.object.camera_add(location=(0, -8, 0), rotation=(math.radians(90), 0, 0))
@@ -413,7 +455,10 @@ class MovieMaster:
         bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
         if "Emission Color" in bsdf.inputs:
             bsdf.inputs["Emission Color"].default_value = (1, 1, 1, 1)
-        bsdf.inputs["Emission Strength"].default_value = 10.0
+            if "Emission Strength" in bsdf.inputs:
+                bsdf.inputs["Emission Strength"].default_value = 10.0
+        elif "Emission" in bsdf.inputs:
+            bsdf.inputs["Emission"].default_value = (1, 1, 1, 1)
         spark.data.materials.append(mat)
 
         # Visibility
