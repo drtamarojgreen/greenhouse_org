@@ -4,7 +4,7 @@ import random
 
 def setup_scene(master):
     """The Intrusion of Gloom."""
-    master.create_intertitle("The Intrusion of\nGloom", 1801, 2100)
+    master.create_intertitle("The Intrusion of\nGloom", 1801, 1900)
 
     # Gnome animation and visibility
     gnome = master.gnome

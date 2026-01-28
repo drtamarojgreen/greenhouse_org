@@ -38,12 +38,13 @@ $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 4000
 # Finale / Outro
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 4300
 $BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 4450
+# Credits
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 4750
+$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --frame 4950
 
-echo "Step 2: Starting Full Animation Render (Low Sample Count)..."
-echo "Output will be at: $OUTPUT_PATH"
+echo "Step 2: Starting Full Animation Render (Divided into 200-frame chunks)..."
+echo "This uses the render_full_movie.py script to manage the render lifecycle."
 
-# Run blender with the python script and then trigger animation render
-# Ensure flags are AFTER the '--' separator for the python script to parse them
-$BLENDER_CMD --background --python "$PYTHON_SCRIPT" -- --render-anim --render-output "$OUTPUT_PATH"
+python3 scripts/blender/movie/render_full_movie.py
 
-echo "Render Job Completed."
+echo "Render Job Completed. Individual chunks are located in scripts/blender/movie/renders/"
