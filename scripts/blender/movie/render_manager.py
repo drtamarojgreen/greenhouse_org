@@ -8,7 +8,7 @@ def render_range(start, end, output_subdir):
     Ensures that no single blender call renders more than 200 frames.
     """
     master_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "silent_movie_generator.py")
-    render_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "renders", output_subdir)
+    render_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "target", output_subdir)
     os.makedirs(render_dir, exist_ok=True)
 
     # Verify range
