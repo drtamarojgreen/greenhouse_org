@@ -62,6 +62,8 @@
             await window.GreenhouseUtils.loadScript('cognition_development.js', baseUrl);
             await window.GreenhouseUtils.loadScript('cognition_interventions.js', baseUrl);
             await window.GreenhouseUtils.loadScript('cognition_medications.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition_research.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition_educational.js', baseUrl);
             await window.GreenhouseUtils.loadScript('cognition_app.js', baseUrl);
 
             if (window.GreenhouseCognitionApp) {

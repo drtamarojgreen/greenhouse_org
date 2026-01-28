@@ -280,52 +280,78 @@
             ctx.strokeStyle = color;
             ctx.lineWidth = 1;
             const time = Date.now() * 0.002;
-            for (let i = 0; i < 12; i++) {
-                const angle = (i / 12) * Math.PI * 2 + time;
-                const len = 40 + Math.sin(time * 2 + i) * 15;
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            for (let i = 0; i < 16; i++) {
+                const angle = (i / 16) * Math.PI * 2;
+                const len = 50 + Math.sin(time + i) * 10;
                 ctx.beginPath();
                 ctx.moveTo(x, y);
-                ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
+                const x2 = x + Math.cos(angle) * len;
+                const y2 = y + Math.sin(angle) * len;
+                ctx.lineTo(x2, y2);
                 ctx.stroke();
+
+                // Branching
+                if (i % 2 === 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(x2, y2);
+                    ctx.lineTo(x2 + Math.cos(angle + 0.5) * 15, y2 + Math.sin(angle + 0.5) * 15);
+                    ctx.stroke();
+                }
             }
             ctx.fillStyle = color;
-            ctx.fillText(label, x - 50, y + 80);
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText(label, x - 60, y + 90);
         },
 
         drawPruning(ctx, x, y, color, label) {
-            ctx.strokeStyle = 'rgba(255, 77, 77, 0.5)';
-            ctx.setLineDash([2, 2]);
-            for (let i = 0; i < 8; i++) {
-                const angle = (i / 8) * Math.PI * 2;
+            const time = Date.now() * 0.001;
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2;
+                const isWeak = i % 3 !== 0;
+                const opacity = isWeak ? Math.max(0.1, 0.5 - (time % 2)) : 0.8;
+
+                ctx.strokeStyle = isWeak ? `rgba(255, 77, 77, ${opacity})` : `rgba(79, 209, 197, 0.8)`;
                 ctx.beginPath();
                 ctx.moveTo(x, y);
-                ctx.lineTo(x + Math.cos(angle) * 30, y + Math.sin(angle) * 30);
+                ctx.lineTo(x + Math.cos(angle) * 40, y + Math.sin(angle) * 40);
                 ctx.stroke();
-                ctx.fillStyle = color;
-                ctx.fillText('X', x + Math.cos(angle) * 35, y + Math.sin(angle) * 35);
+
+                if (isWeak && opacity < 0.2) {
+                    ctx.fillStyle = '#ff4d4d';
+                    ctx.fillText('✕', x + Math.cos(angle) * 45 - 4, y + Math.sin(angle) * 45 + 4);
+                }
             }
-            ctx.setLineDash([]);
-            ctx.fillStyle = color;
-            ctx.fillText(label, x - 50, y + 80);
+            ctx.fillStyle = '#ff4d4d';
+            ctx.fillText(label, x - 80, y + 80);
         },
 
         drawMyelination(ctx, x, y, color, label) {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            ctx.moveTo(x - 50, y);
-            ctx.lineTo(x + 50, y);
-            ctx.stroke();
-            const offset = (Date.now() * 0.05) % 20;
-            ctx.strokeStyle = '#4fd1c5';
+            ctx.strokeStyle = '#fff';
             ctx.lineWidth = 1;
-            for (let i = -50; i < 50; i += 10) {
-                ctx.beginPath();
-                ctx.arc(x + i + offset, y, 5, 0, Math.PI * 2);
-                ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x - 100, y);
+            ctx.lineTo(x + 100, y);
+            ctx.stroke();
+
+            const time = Date.now() * 0.05;
+            for (let i = 0; i < 6; i++) {
+                const mx = x - 90 + i * 35;
+                const isFormed = (time % 100) > i * 15;
+                ctx.fillStyle = isFormed ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(mx, y - 5, 25, 10);
+                if (isFormed) {
+                    ctx.strokeStyle = '#4fd1c5';
+                    ctx.strokeRect(mx, y - 5, 25, 10);
+                }
             }
             ctx.fillStyle = color;
-            ctx.fillText(label, x - 50, y + 30);
+            ctx.fillText(label, x - 80, y + 30);
         },
 
         drawRewardSpike(ctx, x, y, color, label) {
@@ -387,20 +413,32 @@
         },
 
         drawTrajectory(ctx, color, label) {
-            const w = 200;
-            const h = 100;
-            const sx = 400, sy = 250;
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
+            const w = 250;
+            const h = 120;
+            const sx = 50, sy = 120;
+
+            // Axes
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
             ctx.beginPath();
-            ctx.moveTo(sx, sy);
-            ctx.quadraticCurveTo(sx + w / 2, sy - h, sx + w, sy + h / 2);
+            ctx.moveTo(sx, sy + h); ctx.lineTo(sx + w, sy + h);
+            ctx.moveTo(sx, sy + h); ctx.lineTo(sx, sy);
             ctx.stroke();
+
+            // Curve
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy + h - 10);
+            ctx.bezierCurveTo(sx + w*0.3, sy - 20, sx + w*0.6, sy + 20, sx + w, sy + h - 40);
+            ctx.stroke();
+
             ctx.fillStyle = color;
-            ctx.fillText(label, sx, sy - 20);
-            ctx.font = '10px Arial';
-            ctx.fillText('Infancy', sx, sy + 15);
-            ctx.fillText('Old Age', sx + w - 20, sy + h / 2 + 15);
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText(label, sx + 10, sy + 10);
+            ctx.font = '9px Arial';
+            ctx.fillStyle = '#fff';
+            ctx.fillText('0 yrs', sx - 10, sy + h + 15);
+            ctx.fillText('80 yrs', sx + w - 10, sy + h + 15);
         }
     };
 
