@@ -77,17 +77,17 @@ loadScript('emotion_app.js');
 
 TestFramework.describe('Emotion Page Enhancements', () => {
 
-    TestFramework.it('should have 103 enhancements total in the config (3 core + 100 new)', () => {
+    TestFramework.it('should have 106 enhancements total in the config (6 philosophies + 100 new)', () => {
         const config = global.window.GreenhouseEmotionConfig;
         assert.isDefined(config);
 
-        const count = (config.theories ? config.theories.length : 0) +
+        const count = (config.philosophies ? config.philosophies.length : 0) +
                       (config.regulations ? config.regulations.length : 0) +
                       (config.therapeuticInterventions ? config.therapeuticInterventions.length : 0) +
                       (config.medicationTreatments ? config.medicationTreatments.length : 0) +
                       (config.advancedTheories ? config.advancedTheories.length : 0);
 
-        assert.equal(count, 103);
+        assert.equal(count, 106);
     });
 
     TestFramework.it('should initialize the app without error', () => {

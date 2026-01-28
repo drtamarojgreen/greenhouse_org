@@ -82,21 +82,6 @@
                     color: 'rgba(100, 150, 255, 0.6)',
                     vertices: []
                 },
-                dlPFC: {
-                    name: 'Dorsal PFC',
-                    color: 'rgba(100, 180, 255, 0.7)',
-                    vertices: []
-                },
-                vmPFC: {
-                    name: 'Ventromedial PFC',
-                    color: 'rgba(120, 160, 255, 0.7)',
-                    vertices: []
-                },
-                ofc: {
-                    name: 'Orbitofrontal Cortex',
-                    color: 'rgba(80, 140, 255, 0.7)',
-                    vertices: []
-                },
                 motorCortex: {
                     name: 'Motor Cortex',
                     color: 'rgba(255, 150, 100, 0.6)',
@@ -150,36 +135,6 @@
                 hypothalamus: {
                     name: 'Hypothalamus',
                     color: 'rgba(255, 200, 100, 0.6)',
-                    vertices: []
-                },
-                insula: {
-                    name: 'Insula',
-                    color: 'rgba(255, 100, 255, 0.6)',
-                    vertices: []
-                },
-                acc: {
-                    name: 'Anterior Cingulate Cortex',
-                    color: 'rgba(100, 255, 255, 0.6)',
-                    vertices: []
-                },
-                subgenualACC: {
-                    name: 'Subgenual ACC (Area 25)',
-                    color: 'rgba(80, 220, 220, 0.7)',
-                    vertices: []
-                },
-                striatum: {
-                    name: 'Striatum',
-                    color: 'rgba(200, 100, 255, 0.6)',
-                    vertices: []
-                },
-                nucleusAccumbens: {
-                    name: 'Nucleus Accumbens',
-                    color: 'rgba(180, 80, 255, 0.8)',
-                    vertices: []
-                },
-                cortex: {
-                    name: 'Cortex',
-                    color: 'rgba(120, 120, 120, 0.3)',
                     vertices: []
                 }
             };
@@ -310,11 +265,8 @@
          * @returns {string} Region name
          */
         determineRegion(x, y, z) {
-            // Prefrontal Cortex Subdivisions
-            if (z > 0.4) {
-                if (y > 0.4) return 'dlPFC';
-                if (y < 0.1 && y > -0.3) return 'ofc';
-                if (Math.abs(x) < 0.2) return 'vmPFC';
+            // Prefrontal Cortex (front, upper)
+            if (z > 0.4 && y > 0.1) {
                 return 'prefrontalCortex';
             }
 
@@ -373,25 +325,8 @@
                 return 'hippocampus';
             }
 
-            // Insula (deep within lateral sulcus)
-            if (Math.abs(x) > 0.4 && Math.abs(x) < 0.6 && y < 0.2 && y > -0.2 && z > -0.2 && z < 0.2) {
-                return 'insula';
-            }
-
-            // Anterior Cingulate Cortex (ACC)
-            if (Math.abs(x) < 0.15 && z > 0 && z < 0.5) {
-                if (y > 0.1 && y < 0.4) return 'acc';
-                if (y <= 0.1 && y > -0.2 && z > 0.2) return 'subgenualACC';
-            }
-
-            // Striatum
-            if (Math.abs(x) > 0.15 && Math.abs(x) < 0.35 && y < 0.1 && y > -0.2 && z > 0.1 && z < 0.4) {
-                if (y < 0 && z > 0.3) return 'nucleusAccumbens';
-                return 'striatum';
-            }
-
-            // Default to general cortex
-            return 'cortex';
+            // Default to cortex
+            return 'prefrontalCortex';
         }
     };
 

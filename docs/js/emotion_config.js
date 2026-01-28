@@ -156,10 +156,13 @@
                 clinicalSignificance: 'Central to addiction and the "anhedonia" symptom of depression.'
             }
         },
-        theories: [
-            { name: 'James-Lange', description: 'Emotions are the result of physical changes in the body.' },
-            { name: 'Cannon-Bard', description: 'Emotions and physical changes happen at the same time.' },
-            { name: 'Schachter-Singer', description: 'Emotions depend on both physical changes and cognitive appraisal.' }
+        philosophies: [
+            { id: 'p1', name: 'Stoicism', description: 'Focus on rational control and the dichotomy of control to regulate emotional impulses.', regions: ['dlPFC', 'amygdala'], wellnessFocus: 'Rationality', conditionMapping: 'Emotional Volatility' },
+            { id: 'p2', name: 'Buddhism', description: 'Mindfulness and detachment from craving to reduce suffering and calm the mind.', regions: ['insula', 'vmPFC', 'hippocampus'], wellnessFocus: 'Equanimity', conditionMapping: 'Craving/Attachment' },
+            { id: 'p3', name: 'Existentialism', description: 'Creating individual meaning and exercising radical freedom in an indifferent universe.', regions: ['ofc', 'acc'], wellnessFocus: 'Agency', conditionMapping: 'Existential Dread' },
+            { id: 'p4', name: 'Taoism', description: 'Harmony with the natural flow of the universe (Wu Wei) through balance and non-action.', regions: ['thalamus', 'hypothalamus'], wellnessFocus: 'Harmony', conditionMapping: 'Hyper-striving' },
+            { id: 'p5', name: 'Nihilism', description: 'Recognizing the lack of intrinsic meaning as a form of detachment and freedom from social pressure.', regions: ['striatum', 'prefrontalCortex'], wellnessFocus: 'Detachment', conditionMapping: 'Social Pressure' },
+            { id: 'p6', name: 'Epicureanism', description: 'Pursuit of modest, sustainable pleasures and the complete absence of physical and mental pain.', regions: ['nucleusAccumbens', 'striatum'], wellnessFocus: 'Tranquility', conditionMapping: 'Hedonic Treadmill' }
         ]
     };
 

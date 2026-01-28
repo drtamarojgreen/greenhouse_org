@@ -19,7 +19,7 @@
         activeTheory: null,
         config: null,
         diagrams: null,
-        currentCategory: 'theories',
+        currentCategory: 'philosophies',
         uiContainer: null,
         mainContentContainer: null,
         theorySelectorContainer: null,
@@ -37,15 +37,13 @@
         },
 
         init(selector) {
-            console.log('EmotionApp: Initializing with:', selector);
+            console.log('EmotionApp: Initializing:', selector);
+
             const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!container) {
                 console.error('EmotionApp: Target container not found:', selector);
                 return;
             }
-
-            this.config = window.GreenhouseEmotionConfig || {};
-            this.diagrams = window.GreenhouseEmotionDiagrams || null;
 
             // Setup Container
             container.innerHTML = '';
@@ -55,6 +53,9 @@
             container.style.display = 'flex';
             container.style.flexDirection = 'column';
             container.style.overflow = 'hidden';
+
+            this.config = window.GreenhouseEmotionConfig || {};
+            this.diagrams = window.GreenhouseEmotionDiagrams || null;
 
             // Create UI Container (Top)
             this.uiContainer = document.createElement('div');
@@ -70,18 +71,21 @@
             this.canvas = document.createElement('canvas');
             this.canvas.style.display = 'block';
             this.canvas.style.flex = '1';
+            this.canvas.style.width = '100%';
+            this.canvas.style.height = '100%';
             this.canvas.style.minWidth = '0'; // Allow shrinking in flex
             this.mainContentContainer.appendChild(this.canvas);
             this.ctx = this.canvas.getContext('2d');
 
-            this.projection.width = this.canvas.width;
-            this.projection.height = this.canvas.height;
+            this.handleResize();
 
-            // Generate Brain Mesh
-            if (window.GreenhouseBrainMeshRealistic) {
+            // Generate Enhanced Brain Mesh (localized to Emotion App)
+            if (window.GreenhouseEmotionBrain && window.GreenhouseEmotionBrain.generateEnhancedBrain) {
+                this.brainMesh = window.GreenhouseEmotionBrain.generateEnhancedBrain();
+            } else if (window.GreenhouseBrainMeshRealistic) {
                 this.brainMesh = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
             } else {
-                console.error('EmotionApp: GreenhouseBrainMeshRealistic not found.');
+                console.error('EmotionApp: Brain mesh generator not found.');
             }
 
             this.createCategorySelector(this.uiContainer);
@@ -100,8 +104,28 @@
             this.startLoop();
 
             // Resilience
+            this.applyResilience(container, selector);
+        },
+
+        handleResize() {
+            if (this.canvas.width !== this.canvas.offsetWidth || this.canvas.height !== this.canvas.offsetHeight) {
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+                if (this.projection) {
+                    this.projection.width = this.canvas.width;
+                    this.projection.height = this.canvas.height;
+                }
+                return true;
+            }
+            return false;
+        },
+
+        applyResilience(container, selector) {
             if (window.GreenhouseUtils) {
                 window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
+                if (this.startSentinel) {
+                    window.GreenhouseUtils.startSentinel(container, selector, this, 'init');
+                }
             }
         },
 
@@ -118,7 +142,7 @@
             `;
 
             const categories = [
-                { id: 'theories', label: 'Core Theories' },
+                { id: 'philosophies', label: 'World Philosophical Frameworks' },
                 { id: 'regulations', label: 'Emotional Regulation' },
                 { id: 'therapeuticInterventions', label: 'Therapeutic Effects' },
                 { id: 'medicationTreatments', label: 'Medication Treatments' },
@@ -279,6 +303,29 @@
 
             // Item-specific impacts
             const id = item.id;
+
+            // Philosophical Frameworks logic
+            if (id === 'p1') { // Stoicism - Low Cortisol via control
+                targetCortisol = 0.2;
+                targetSerotonin = 0.6;
+            } else if (id === 'p2') { // Buddhism - High Serotonin, High GABA
+                targetSerotonin = 0.8;
+                targetGaba = 0.8;
+                targetCortisol = 0.1;
+            } else if (id === 'p3') { // Existentialism - Moderate arousal, meaningful focus
+                targetSerotonin = 0.7;
+                targetCortisol = 0.4;
+            } else if (id === 'p4') { // Taoism - High GABA (harmony)
+                targetGaba = 0.9;
+                targetSerotonin = 0.6;
+                targetCortisol = 0.2;
+            } else if (id === 'p5') { // Nihilism - Low arousal, low reward sensitivity
+                targetSerotonin = 0.4;
+                targetCortisol = 0.3;
+            } else if (id === 'p6') { // Epicureanism - Balanced pleasure
+                targetSerotonin = 0.75;
+                targetGaba = 0.6;
+            }
 
             // Stress / High Arousal
             if (id === 1 || id === 9 || id === 25 || id === 31 || id === 71 || id === 89 || id === 94) {
@@ -540,12 +587,7 @@
             if (!this.ctx || !this.brainMesh) return;
 
             // Sync resolution with display size
-            if (this.canvas.width !== this.canvas.offsetWidth || this.canvas.height !== this.canvas.offsetHeight) {
-                this.canvas.width = this.canvas.offsetWidth;
-                this.canvas.height = this.canvas.offsetHeight;
-                this.projection.width = this.canvas.width;
-                this.projection.height = this.canvas.height;
-            }
+            this.handleResize();
 
             this.updateSimAnimation();
 
