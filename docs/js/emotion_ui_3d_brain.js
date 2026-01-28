@@ -2,10 +2,146 @@
     'use strict';
 
     const GreenhouseEmotionBrain = {
+        /**
+         * Generates an enhanced brain mesh specifically for the Emotion Simulation.
+         * Wraps the base GreenhouseBrainMeshRealistic generator and overlays granular regions.
+         */
+        generateEnhancedBrain() {
+            if (!window.GreenhouseBrainMeshRealistic) {
+                console.error('GreenhouseBrainMeshRealistic not found.');
+                return null;
+            }
+
+            const brain = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
+
+            // Overlay granular emotion regions
+            this.enhanceRegions(brain);
+
+            return brain;
+        },
+
+        /**
+         * Enhances the base brain mesh with more granular regions for emotion modeling.
+         */
+        enhanceRegions(brain) {
+            // Add new regions to the regions object
+            const newRegions = {
+                dlPFC: {
+                    name: 'Dorsal PFC',
+                    color: 'rgba(100, 180, 255, 0.7)',
+                    vertices: []
+                },
+                vmPFC: {
+                    name: 'Ventromedial PFC',
+                    color: 'rgba(120, 160, 255, 0.7)',
+                    vertices: []
+                },
+                ofc: {
+                    name: 'Orbitofrontal Cortex',
+                    color: 'rgba(80, 140, 255, 0.7)',
+                    vertices: []
+                },
+                acc: {
+                    name: 'Anterior Cingulate Cortex',
+                    color: 'rgba(100, 255, 255, 0.6)',
+                    vertices: []
+                },
+                subgenualACC: {
+                    name: 'Subgenual ACC (Area 25)',
+                    color: 'rgba(80, 220, 220, 0.7)',
+                    vertices: []
+                },
+                insula: {
+                    name: 'Insula',
+                    color: 'rgba(255, 100, 255, 0.6)',
+                    vertices: []
+                },
+                striatum: {
+                    name: 'Striatum',
+                    color: 'rgba(200, 100, 255, 0.6)',
+                    vertices: []
+                },
+                nucleusAccumbens: {
+                    name: 'Nucleus Accumbens',
+                    color: 'rgba(180, 80, 255, 0.8)',
+                    vertices: []
+                },
+                cortex: {
+                    name: 'Cortex',
+                    color: 'rgba(120, 120, 120, 0.3)',
+                    vertices: []
+                }
+            };
+
+            Object.assign(brain.regions, newRegions);
+
+            // Re-categorize vertices using more granular logic
+            brain.vertices.forEach((v, i) => {
+                const nx = v.x / 200; // Assuming baseRadius 200
+                const ny = v.y / 200;
+                const nz = v.z / 200;
+
+                const newRegion = this.determineGranularRegion(nx, ny, nz);
+                if (newRegion) {
+                    // Remove from old region list
+                    if (v.region && brain.regions[v.region]) {
+                        const idx = brain.regions[v.region].vertices.indexOf(i);
+                        if (idx > -1) brain.regions[v.region].vertices.splice(idx, 1);
+                    }
+
+                    v.region = newRegion;
+                    brain.regions[newRegion].vertices.push(i);
+                }
+            });
+        },
+
+        /**
+         * More granular region determination for emotion-specific modeling.
+         */
+        determineGranularRegion(x, y, z) {
+            // Prefrontal Cortex Subdivisions
+            if (z > 0.4) {
+                if (y > 0.4) return 'dlPFC';
+                if (y < 0.1 && y > -0.3) return 'ofc';
+                if (Math.abs(x) < 0.2) return 'vmPFC';
+                return 'prefrontalCortex';
+            }
+
+            // Anterior Cingulate Cortex (ACC)
+            if (Math.abs(x) < 0.15 && z > 0 && z < 0.5) {
+                if (y > 0.1 && y < 0.4) return 'acc';
+                if (y <= 0.1 && y > -0.2 && z > 0.2) return 'subgenualACC';
+            }
+
+            // Striatum & Nucleus Accumbens
+            if (Math.abs(x) > 0.15 && Math.abs(x) < 0.35 && y < 0.1 && y > -0.2 && z > 0.1 && z < 0.4) {
+                if (y < 0 && z > 0.3) return 'nucleusAccumbens';
+                return 'striatum';
+            }
+
+            // Insula (deep within lateral sulcus)
+            if (Math.abs(x) > 0.4 && Math.abs(x) < 0.6 && y < 0.2 && y > -0.2 && z > -0.2 && z < 0.2) {
+                return 'insula';
+            }
+
+            // Explicitly check for other standard regions to maintain them if desired,
+            // or return null to keep the base region.
+
+            // For general cortex areas not caught above
+            if (y > -0.2 && (z > 0.4 || Math.abs(x) > 0.5 || y > 0.5)) {
+                // If not one of the specific ones above, categorize as general cortex for visualization
+                const baseRegions = ['prefrontalCortex', 'motorCortex', 'somatosensoryCortex', 'parietalLobe', 'temporalLobe', 'occipitalLobe'];
+                // We'll return null to keep whatever the base generator assigned, unless we want to override it to 'cortex'
+                return null;
+            }
+
+            return null;
+        },
+
         drawBrainShell(ctx, brainShell, camera, projection, width, height, activeROI = null) {
             if (!brainShell) return;
 
-            // Robustly extract target region from activeROI (can be object {region: ...} or string or array)
+            // Robustly extract target region from activeROI
             let targetRegion = null;
             if (activeROI) {
                 if (typeof activeROI === 'object' && !Array.isArray(activeROI) && activeROI.region) {
@@ -33,7 +169,6 @@
             // Prepare Faces with Depth and Normals
             const facesToDraw = [];
             faces.forEach((face, index) => {
-                // Support both object and array formats for face indices
                 const indices = face.indices || (Array.isArray(face) ? face : null);
                 if (!indices) return;
 
@@ -51,7 +186,6 @@
                     if (dx1 * dy2 - dy1 * dx2 > 0) {
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
 
-                        // Calculate Normal (World Space)
                         const v1 = vertices[indices[0]];
                         const v2 = vertices[indices[1]];
                         const v3 = vertices[indices[2]];
@@ -83,14 +217,13 @@
                 }
             });
 
-            // Sort by Depth (Painter's Algorithm)
+            // Sort by Depth
             facesToDraw.sort((a, b) => b.depth - a.depth);
 
             // Draw Faces
             facesToDraw.forEach(f => {
-                // Lighting (Phong)
                 const diffuse = Math.max(0, f.nx * lightDir.x + f.ny * lightDir.y + f.nz * lightDir.z);
-                const specular = Math.pow(diffuse, 30); // Sharp highlight
+                const specular = Math.pow(diffuse, 30);
 
                 // Base Color
                 let r = 100, g = 100, b = 100, a = 0.1;
@@ -105,15 +238,13 @@
                     }
                 }
 
-                // Multi-region highlighting support
                 const isTarget = targetRegion && (f.region === targetRegion || (Array.isArray(targetRegion) && targetRegion.includes(f.region)));
 
                 if (isTarget) {
                     const intensity = (activeROI && activeROI.intensity !== undefined) ? activeROI.intensity : 0.9;
                     const fog = GreenhouseModels3DMath.applyDepthFog(intensity, f.depth);
-                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green for ROI with fog
+                    ctx.fillStyle = `rgba(57, 255, 20, ${fog})`;
                 } else {
-                    // Apply Lighting for all other regions
                     const ambient = 0.2;
                     const lightIntensity = ambient + diffuse * 0.8 + specular * 0.5;
 
@@ -131,7 +262,6 @@
                 ctx.fill();
             });
 
-            // Surface details
             this.drawSurfaceGrid(ctx, projectedVertices, brainShell);
             this.drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection);
         },
@@ -160,16 +290,21 @@
         },
 
         drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection) {
-            if (!brainShell.regionalPlanes) return;
-
+            // Simplified boundaries for performance and clarity in the emotion model
             ctx.save();
-            ctx.setLineDash([8, 4]);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.lineWidth = 1;
+            if (ctx.setLineDash) ctx.setLineDash([8, 4]);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 0.8;
+
+            // Major anatomical splits
+            const majorPlanes = [
+                { axis: 'z', value: 0.4 }, // Frontal/PFC boundary
+                { axis: 'x', value: 0 }     // Longitudinal fissure
+            ];
 
             const radius = 200;
 
-            brainShell.regionalPlanes.forEach(plane => {
+            majorPlanes.forEach(plane => {
                 const axis = plane.axis;
                 const threshold = plane.value * radius;
 
@@ -186,7 +321,6 @@
 
                     if ((s1 !== s2) || (s1 !== s3) || (s2 !== s3)) {
                         const points = [];
-
                         const checkEdge = (va, vb) => {
                             if ((va[axis] > threshold) !== (vb[axis] > threshold)) {
                                 const t = (threshold - va[axis]) / (vb[axis] - va[axis]);
@@ -196,12 +330,11 @@
                                     z: va.z + t * (vb.z - va.z)
                                 };
                                 const proj = GreenhouseModels3DMath.project3DTo2D(inter.x, inter.y, inter.z, camera, projection);
-                                if (proj.scale > 0 && proj.depth < 0.8) {
+                                if (proj.scale > 0 && proj.depth < 0.7) {
                                     points.push(proj);
                                 }
                             }
                         };
-
                         checkEdge(v1, v2);
                         checkEdge(v2, v3);
                         checkEdge(v3, v1);
@@ -210,7 +343,6 @@
                             ctx.beginPath();
                             ctx.moveTo(points[0].x, points[0].y);
                             ctx.lineTo(points[1].x, points[1].y);
-                            ctx.globalAlpha = 0.6 * GreenhouseModels3DMath.applyDepthFog(1, points[0].depth, 0.3, 0.8);
                             ctx.stroke();
                         }
                     }

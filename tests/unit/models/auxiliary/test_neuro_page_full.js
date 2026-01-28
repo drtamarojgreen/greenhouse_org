@@ -10,12 +10,6 @@ const TestFramework = require('../../../utils/test_framework.js');
 
 // --- Mock Browser Environment ---
 global.window = global;
-global.window.dispatchEvent = () => {};
-global.window.addEventListener = () => {};
-global.window.getComputedStyle = () => ({ position: 'relative' });
-global.CustomEvent = class { constructor(name, detail) { this.name = name; this.detail = detail; } };
-global.MutationObserver = class { constructor() {} observe() {} disconnect() {} };
-
 global.document = {
     getElementById: () => ({
         addEventListener: () => { },
@@ -61,12 +55,9 @@ function loadScript(filename) {
 }
 
 // --- Load Dependencies ---
-loadScript('GreenhouseUtils.js');
-loadScript('GreenhouseBaseApp.js');
 loadScript('neuro_config.js');
 loadScript('neuro_camera_controls.js');
 loadScript('neuro_ga.js');
-loadScript('neuro_app.js');
 
 // --- Test Suites ---
 
@@ -199,8 +190,7 @@ TestFramework.describe('Neuro Page Models', () => {
         });
 
         TestFramework.it('should initialize dependencies and UI on delayedInit', async () => {
-            const mockContainer = document.querySelector(mockSelector);
-            await app._delayedInit(mockContainer, mockSelector);
+            await app._delayedInit(mockSelector);
 
             assert.isTrue(window.NeuroGA.calledOnce, 'NeuroGA constructor should be called once');
             assert.isTrue(mockGA.init.calledOnce, 'NeuroGA init should be called once');
@@ -231,7 +221,6 @@ TestFramework.describe('Neuro Page Models', () => {
         TestFramework.it('should reinitialize by calling init again', () => {
             app.lastSelector = mockSelector;
             TestFramework.sinon.stub(app, 'init'); // Mock init itself to prevent recursion
-            TestFramework.sinon.spy(app, 'stopSimulation');
             app.reinitialize();
 
             assert.isTrue(app.stopSimulation.calledOnce, 'stopSimulation should be called');

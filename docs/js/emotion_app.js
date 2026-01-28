@@ -37,10 +37,22 @@
         },
 
         init(selector) {
-            console.log('EmotionApp: Initializing with Unified Base:', selector);
-            const base = window.GreenhouseBaseApp;
-            const container = base ? base.initContainer(selector, { minHeight: '700px' }) : null;
-            if (!container) return;
+            console.log('EmotionApp: Initializing:', selector);
+
+            const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
+            if (!container) {
+                console.error('EmotionApp: Target container not found:', selector);
+                return;
+            }
+
+            // Setup Container
+            container.innerHTML = '';
+            container.style.position = 'relative';
+            container.style.backgroundColor = '#050510';
+            container.style.minHeight = '700px';
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            container.style.overflow = 'hidden';
 
             this.config = window.GreenhouseEmotionConfig || {};
             this.diagrams = window.GreenhouseEmotionDiagrams || null;
@@ -55,18 +67,25 @@
             this.mainContentContainer.style.cssText = 'display: flex; flex: 1; position: relative; overflow: hidden;';
             container.appendChild(this.mainContentContainer);
 
-            // Create Canvas using base
-            this.canvas = base ? base.setupCanvas(this.mainContentContainer) : document.createElement('canvas');
+            // Create Canvas
+            this.canvas = document.createElement('canvas');
+            this.canvas.style.display = 'block';
+            this.canvas.style.flex = '1';
+            this.canvas.style.width = '100%';
+            this.canvas.style.height = '100%';
             this.canvas.style.minWidth = '0'; // Allow shrinking in flex
+            this.mainContentContainer.appendChild(this.canvas);
             this.ctx = this.canvas.getContext('2d');
 
-            if (base) base.handleResize(this.canvas, this.projection);
+            this.handleResize();
 
-            // Generate Brain Mesh
-            if (window.GreenhouseBrainMeshRealistic) {
+            // Generate Enhanced Brain Mesh (localized to Emotion App)
+            if (window.GreenhouseEmotionBrain && window.GreenhouseEmotionBrain.generateEnhancedBrain) {
+                this.brainMesh = window.GreenhouseEmotionBrain.generateEnhancedBrain();
+            } else if (window.GreenhouseBrainMeshRealistic) {
                 this.brainMesh = window.GreenhouseBrainMeshRealistic.generateRealisticBrain();
             } else {
-                console.error('EmotionApp: GreenhouseBrainMeshRealistic not found.');
+                console.error('EmotionApp: Brain mesh generator not found.');
             }
 
             this.createCategorySelector(this.uiContainer);
@@ -84,8 +103,30 @@
             this.isRunning = true;
             this.startLoop();
 
-            // Resilience via Unified Base
-            if (base) base.applyResilience(container, selector, this);
+            // Resilience
+            this.applyResilience(container, selector);
+        },
+
+        handleResize() {
+            if (this.canvas.width !== this.canvas.offsetWidth || this.canvas.height !== this.canvas.offsetHeight) {
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+                if (this.projection) {
+                    this.projection.width = this.canvas.width;
+                    this.projection.height = this.canvas.height;
+                }
+                return true;
+            }
+            return false;
+        },
+
+        applyResilience(container, selector) {
+            if (window.GreenhouseUtils) {
+                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
+                if (this.startSentinel) {
+                    window.GreenhouseUtils.startSentinel(container, selector, this, 'init');
+                }
+            }
         },
 
         createCategorySelector(container) {
@@ -545,10 +586,8 @@
         render() {
             if (!this.ctx || !this.brainMesh) return;
 
-            // Sync resolution with display size via Unified Base
-            if (window.GreenhouseBaseApp) {
-                window.GreenhouseBaseApp.handleResize(this.canvas, this.projection);
-            }
+            // Sync resolution with display size
+            this.handleResize();
 
             this.updateSimAnimation();
 
