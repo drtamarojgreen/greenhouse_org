@@ -82,6 +82,21 @@
                     color: 'rgba(100, 150, 255, 0.6)',
                     vertices: []
                 },
+                dlPFC: {
+                    name: 'Dorsal PFC',
+                    color: 'rgba(100, 180, 255, 0.7)',
+                    vertices: []
+                },
+                vmPFC: {
+                    name: 'Ventromedial PFC',
+                    color: 'rgba(120, 160, 255, 0.7)',
+                    vertices: []
+                },
+                ofc: {
+                    name: 'Orbitofrontal Cortex',
+                    color: 'rgba(80, 140, 255, 0.7)',
+                    vertices: []
+                },
                 motorCortex: {
                     name: 'Motor Cortex',
                     color: 'rgba(255, 150, 100, 0.6)',
@@ -147,9 +162,19 @@
                     color: 'rgba(100, 255, 255, 0.6)',
                     vertices: []
                 },
+                subgenualACC: {
+                    name: 'Subgenual ACC (Area 25)',
+                    color: 'rgba(80, 220, 220, 0.7)',
+                    vertices: []
+                },
                 striatum: {
                     name: 'Striatum',
                     color: 'rgba(200, 100, 255, 0.6)',
+                    vertices: []
+                },
+                nucleusAccumbens: {
+                    name: 'Nucleus Accumbens',
+                    color: 'rgba(180, 80, 255, 0.8)',
                     vertices: []
                 },
                 cortex: {
@@ -285,8 +310,11 @@
          * @returns {string} Region name
          */
         determineRegion(x, y, z) {
-            // Prefrontal Cortex (front, upper)
-            if (z > 0.4 && y > 0.1) {
+            // Prefrontal Cortex Subdivisions
+            if (z > 0.4) {
+                if (y > 0.4) return 'dlPFC';
+                if (y < 0.1 && y > -0.3) return 'ofc';
+                if (Math.abs(x) < 0.2) return 'vmPFC';
                 return 'prefrontalCortex';
             }
 
@@ -350,13 +378,15 @@
                 return 'insula';
             }
 
-            // Anterior Cingulate Cortex (ACC) - inner surface above corpus callosum
-            if (Math.abs(x) < 0.15 && y > 0.1 && y < 0.4 && z > 0 && z < 0.5) {
-                return 'acc';
+            // Anterior Cingulate Cortex (ACC)
+            if (Math.abs(x) < 0.15 && z > 0 && z < 0.5) {
+                if (y > 0.1 && y < 0.4) return 'acc';
+                if (y <= 0.1 && y > -0.2 && z > 0.2) return 'subgenualACC';
             }
 
-            // Striatum (deep, near thalamus but slightly forward/out)
+            // Striatum
             if (Math.abs(x) > 0.15 && Math.abs(x) < 0.35 && y < 0.1 && y > -0.2 && z > 0.1 && z < 0.4) {
+                if (y < 0 && z > 0.3) return 'nucleusAccumbens';
                 return 'striatum';
             }
 
