@@ -667,22 +667,66 @@ window.GreenhouseUtils = (function () {
         }
     }
 
+    /**
+     * @function isMobileUser
+     * @description Detects if the current device is mobile or the screen is narrow.
+     */
+    function isMobileUser() {
+        const isNarrow = window.innerWidth <= 1024;
+        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        return (isNarrow && hasTouch) || isMobileUA;
+    }
+
+    /**
+     * @function fetchModelDescriptions
+     * @description Fetches model metadata from the central XML repository.
+     */
+    async function fetchModelDescriptions() {
+        const baseUrl = appState.baseUrl || "https://drtamarojgreen.github.io/greenhouse_org/";
+        const xmlUrl = `${baseUrl}endpoints/model_descriptions.xml`;
+
+        try {
+            const response = await fetch(xmlUrl);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const xmlText = await response.text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+            return Array.from(xmlDoc.querySelectorAll('model')).map(model => ({
+                id: model.getAttribute('id'),
+                title: model.querySelector('title').textContent,
+                url: model.querySelector('url') ? model.querySelector('url').textContent : `/${model.getAttribute('id')}`
+            }));
+        } catch (e) {
+            console.warn('[GreenhouseUtils] Failed to fetch model descriptions, using fallback', e);
+            return [
+                { id: 'genetic', title: 'Genetic Model', url: '/genetic' },
+                { id: 'neuro', title: 'Neuro Model', url: '/neuro' },
+                { id: 'pathway', title: 'Pathway Model', url: '/pathway' },
+                { id: 'synapse', title: 'Synapse Model', url: '/synapse' }
+            ];
+        }
+    }
+
     // Public API
     return {
         displayError: (msg, duration) => displayMessage(msg, 'error', duration),
         displaySuccess: (msg, duration) => displayMessage(msg, 'success', duration),
         displayInfo: (msg, duration) => displayMessage(msg, 'info', duration),
         waitForElement: waitForElement,
-        appState: appState, // Expose appState
-        validateConfiguration: validateConfiguration, // Expose validateConfiguration
-        loadScript: loadScript, // Expose loadScript
-        config: config, // Expose config
-        retryOperation: retryOperation, // Expose retryOperation
-        validateField: validateField, // Expose form validation utility
-        validateForm: validateForm,   // Expose form validation utility
+        appState: appState,
+        validateConfiguration: validateConfiguration,
+        loadScript: loadScript,
+        config: config,
+        retryOperation: retryOperation,
+        validateField: validateField,
+        validateForm: validateForm,
         observeAndReinitializeApplication: observeAndReinitializeApplication,
         startSentinel: startSentinel,
-        renderModelsTOC: renderModelsTOC
+        renderModelsTOC: renderModelsTOC,
+        isMobileUser: isMobileUser,
+        fetchModelDescriptions: fetchModelDescriptions
     };
 })();
 
