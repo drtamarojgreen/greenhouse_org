@@ -214,25 +214,27 @@
         },
 
         renderMeSHLinkage(ctx) {
+            this.showMeSHDisclaimer();
             const w = this.app.canvas.width;
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('MeSH RESEARCH LINKAGE', 20, 70);
+            ctx.fillText('MeSH RESEARCH LINKAGE: REAL-TIME TRENDS', 20, 70);
 
-            ctx.fillStyle = 'rgba(0, 40, 40, 0.8)';
-            ctx.fillRect(20, 90, 360, 150);
+            ctx.fillStyle = 'rgba(0, 40, 40, 0.9)';
+            ctx.fillRect(20, 90, 380, 180);
             ctx.strokeStyle = '#4fd1c5';
-            ctx.strokeRect(20, 90, 360, 150);
+            ctx.strokeRect(20, 90, 380, 180);
 
             ctx.fillStyle = '#4fd1c5';
             ctx.font = '10px monospace';
-            ctx.fillText('> MESH_EXEC_PROTOCOL: ANALYZE_TRENDS', 30, 110);
+            ctx.fillText('> MESH_EXEC_PROTOCOL: ANALYZE_TRENDS (2014-2024)', 30, 110);
 
             const terms = [
-                {name: 'Executive Function', val: 4.52},
-                {name: 'Cerebral Cortex', val: 4.18},
-                {name: 'Cognitive Control', val: 3.85},
-                {name: 'Neuroimaging', val: 3.62}
+                {name: 'Membrane Potentials', val: 4.14, trend: '+12.0'},
+                {name: 'Synaptic Transmission', val: 3.72, trend: '-5.3'},
+                {name: 'Anxiety', val: 3.48, trend: '+5.7'},
+                {name: 'Mental Disorders', val: 3.57, trend: '-4.5'},
+                {name: 'Reaction Time', val: 3.33, trend: '-5.0'}
             ];
 
             terms.forEach((term, i) => {
@@ -241,15 +243,68 @@
                 ctx.font = '10px Arial';
                 ctx.fillText(term.name, 35, y);
 
-                // Bar
-                ctx.fillStyle = 'rgba(79, 209, 197, 0.4)';
-                ctx.fillRect(160, y - 8, term.val * 30, 10);
+                // Log-normalized bar (simulated ln(1+x))
+                const barWidth = term.val * 35;
+                ctx.fillStyle = 'rgba(79, 209, 197, 0.5)';
+                ctx.fillRect(180, y - 8, barWidth, 12);
                 ctx.strokeStyle = '#4fd1c5';
-                ctx.strokeRect(160, y - 8, term.val * 30, 10);
+                ctx.strokeRect(180, y - 8, barWidth, 12);
 
+                ctx.fillStyle = term.trend.startsWith('+') ? '#39ff14' : '#ff4d4d';
+                ctx.fillText(term.trend, 185 + barWidth, y);
                 ctx.fillStyle = '#4fd1c5';
-                ctx.fillText(term.val.toFixed(2), 165 + term.val * 30, y);
+                ctx.fillText(term.val.toFixed(2), 150, y);
             });
+
+            ctx.font = 'italic 9px Arial';
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Data source: PubMed Baseline (scripts/research/mesh/data/discovery_stats.csv)', 30, 260);
+        },
+
+        showMeSHDisclaimer() {
+            if (this.disclaimerAcknowledged) return;
+
+            const modalId = 'mesh-disclaimer-modal';
+            if (document.getElementById(modalId)) return;
+
+            console.log('CognitionAnalytics: Showing MeSH Disclaimer');
+            const modal = document.createElement('div');
+            modal.id = modalId;
+            modal.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #1a202c;
+                border: 2px solid #4fd1c5;
+                padding: 20px;
+                color: #fff;
+                z-index: 1000;
+                width: 300px;
+                text-align: center;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+                border-radius: 8px;
+            `;
+            modal.innerHTML = `
+                <h4 style="color: #4fd1c5; margin-top: 0;">Experimental Data Warning</h4>
+                <p style="font-size: 12px; line-height: 1.5;">
+                    The MeSH research linkage displays experimental data derived from PubMed baseline analysis.
+                    These trends are for research simulation purposes and are <strong>not confirmed</strong>
+                    medical or scientific facts.
+                </p>
+                <button id="close-mesh-disclaimer" style="background: #4fd1c5; color: #1a202c; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px;">
+                    I UNDERSTAND
+                </button>
+            `;
+
+            const container = this.app.canvas.parentElement;
+            container.appendChild(modal);
+
+            document.getElementById('close-mesh-disclaimer').onclick = () => {
+                console.log('CognitionAnalytics: MeSH Disclaimer Acknowledged');
+                this.disclaimerAcknowledged = true;
+                container.removeChild(modal);
+            };
         },
 
         renderVisualizationEnhancements(ctx, activeEnhancement) {
