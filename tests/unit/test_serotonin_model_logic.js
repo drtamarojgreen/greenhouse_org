@@ -29,7 +29,7 @@ global.document = {
             innerHTML: '',
             style: {},
             appendChild: () => { },
-            getContext: () => mockCtx
+            getContext: () => ({})
         };
     },
     createElement: (tag) => {
@@ -58,7 +58,8 @@ global.document = {
                 strokeRect: () => { },
                 drawImage: () => { },
                 createLinearGradient: () => ({ addColorStop: () => { } }),
-                createRadialGradient: () => ({ addColorStop: () => { } })
+                createRadialGradient: () => ({ addColorStop: () => { } }),
+                setLineDash: () => { }
             }),
             width: 800,
             height: 600,
@@ -69,7 +70,8 @@ global.document = {
         return element;
     },
     body: { appendChild: () => { } },
-    head: { appendChild: () => { } }
+    head: { appendChild: () => { } },
+    addEventListener: () => { }
 };
 global.navigator = { userAgent: 'node' };
 global.console = {
@@ -88,8 +90,6 @@ function loadScript(filename) {
 }
 
 // --- Load Serotonin Modules ---
-// Note: serotonin.js is an IIFE that auto-runs main(), so we need
-// to be careful. We'll pre-define GreenhouseUtils to avoid timeout.
 global.window.GreenhouseUtils = {
     loadScript: async () => { },
     observeAndReinitializeApplication: () => { },
@@ -113,7 +113,7 @@ TestFramework.describe('Serotonin Model Logic (Unit)', () => {
 
     TestFramework.describe('Structural Model', () => {
         TestFramework.it('should initialize with default receptors', () => {
-            G.setupReceptorModel();
+            G.setupStructuralModel();
             assert.isDefined(G.state.receptors);
             assert.greaterThan(G.state.receptors.length, 0);
             assert.equal(G.state.receptors[0].type, '5-HT1A');
@@ -127,7 +127,7 @@ TestFramework.describe('Serotonin Model Logic (Unit)', () => {
 
     TestFramework.describe('Receptor States & Dynamics', () => {
         TestFramework.it('should modulate affinity based on sodium levels', () => {
-            G.setupReceptorModel();
+            G.setupStructuralModel();
             G.state.timer = 1000;
             G.Receptors.updateReceptorStates();
             const h1a = G.state.receptors.find(r => r.type === '5-HT1A');
@@ -135,7 +135,7 @@ TestFramework.describe('Serotonin Model Logic (Unit)', () => {
         });
 
         TestFramework.it('should account for RNA editing in 5-HT2C', () => {
-            G.setupReceptorModel();
+            G.setupStructuralModel();
             const h2c = G.state.receptors.find(r => r.type === '5-HT2C');
             assert.includes(['INI', 'VGV', 'VSV'], h2c.editedIsoform);
             assert.isNumber(h2c.couplingEfficiency);
@@ -143,12 +143,11 @@ TestFramework.describe('Serotonin Model Logic (Unit)', () => {
     });
 
     TestFramework.describe('Ligand Kinetics', () => {
-        TestFramework.it('should calculate binding probability', () => {
-            G.setupReceptorModel();
-            const receptor = G.state.receptors[0];
-            const prob = G.Kinetics.calculateBindingProbability(receptor, '5-HT');
-            assert.isNumber(prob);
-            assert.inRange(prob, 0, 1.1);
+        TestFramework.it('should spawn ligands correctly', () => {
+            const initialCount = G.Kinetics.activeLigands.length;
+            G.Kinetics.spawnLigand('Serotonin');
+            assert.equal(G.Kinetics.activeLigands.length, initialCount + 1);
+            assert.equal(G.Kinetics.activeLigands[initialCount].name, 'Serotonin');
         });
     });
 

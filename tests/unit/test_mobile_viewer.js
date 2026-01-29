@@ -129,8 +129,8 @@ TestFramework.describe('Mobile Model Viewer (Unit)', () => {
     });
 
     TestFramework.describe('Registry Expansion', () => {
-        TestFramework.it('should support all 8 primary models', async () => {
-            const models = ['genetic', 'neuro', 'pathway', 'synapse', 'dna', 'rna', 'emotion', 'cognition'];
+        TestFramework.it('should support all 10 primary models', async () => {
+            const models = ['genetic', 'neuro', 'pathway', 'synapse', 'dna', 'rna', 'dopamine', 'serotonin', 'emotion', 'cognition'];
             const container = document.createElement('div');
 
             for (const modelId of models) {
