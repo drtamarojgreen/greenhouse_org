@@ -84,6 +84,38 @@
                 },
                 onSelectMode: (index) => { /* RNA specific logic */ }
             },
+            dopamine: {
+                scripts: ['models_3d_math.js', 'dopamine_controls.js', 'dopamine_legend.js', 'dopamine_tooltips.js', 'dopamine_molecular.js', 'dopamine_synapse.js', 'dopamine_electrophysiology.js', 'dopamine_circuit.js', 'dopamine_plasticity.js', 'dopamine_clinical.js', 'dopamine_pharmacology.js', 'dopamine_scientific.js', 'dopamine_analytics.js', 'dopamine_ux.js', 'dopamine.js'],
+                modes: ['D1R Signaling', 'D2R Signaling', 'Synaptic Release', 'Circuit Dynamics'],
+                init: (container, baseUrl) => {
+                    const uniqueId = 'dopamine-canvas-' + Math.random().toString(36).substr(2, 9);
+                    container.id = uniqueId;
+                    if (window.GreenhouseDopamine) window.GreenhouseDopamine.initialize(container, '#' + uniqueId);
+                },
+                onSelectMode: (index) => {
+                    const g = window.GreenhouseDopamine;
+                    if (g && g.state) {
+                        const modes = ['D1R', 'D2R', 'Synapse', 'Circuit'];
+                        g.state.mode = modes[index];
+                    }
+                }
+            },
+            serotonin: {
+                scripts: ['models_3d_math.js', 'serotonin_controls.js', 'serotonin_legend.js', 'serotonin_tooltips.js', 'serotonin_receptors.js', 'serotonin_kinetics.js', 'serotonin_signaling.js', 'serotonin_transport.js', 'serotonin_analytics.js', 'serotonin.js'],
+                modes: ['3D Receptor', '5-HT1A Structural', '2D Closeup', 'Ligand Kinetics'],
+                init: (container, baseUrl) => {
+                    const uniqueId = 'serotonin-canvas-' + Math.random().toString(36).substr(2, 9);
+                    container.id = uniqueId;
+                    if (window.GreenhouseSerotonin) window.GreenhouseSerotonin.initialize(container, '#' + uniqueId);
+                },
+                onSelectMode: (index) => {
+                    const g = window.GreenhouseSerotonin;
+                    if (g) {
+                        const modes = ['3D', 'Structural', '2D-Closeup', 'Kinetics'];
+                        g.viewMode = modes[index];
+                    }
+                }
+            },
             emotion: {
                 scripts: ['models_3d_math.js', 'brain_mesh_realistic.js', 'emotion_config.js', 'emotion_diagrams.js', 'emotion_ui_3d_brain.js', 'emotion_app.js'],
                 modes: ['James-Lange', 'Cannon-Bard', 'Schachter-Singer'],
