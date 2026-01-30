@@ -6,7 +6,7 @@
 const path = require('path');
 const fs = require('fs');
 const vm = require('vm');
-const assert = require('../utils/assertion_library.js');
+const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
 // --- Setup Global Environment ---
@@ -16,31 +16,132 @@ global.window = {
     location: { pathname: '/models', search: '', hostname: 'localhost' },
     navigator: { userAgent: 'Desktop', maxTouchPoints: 0 },
     dispatchEvent: () => { },
-    _greenhouseScriptAttributes: {}
+    _greenhouseScriptAttributes: {},
+    getComputedStyle: () => ({ display: 'block', visibility: 'visible', opacity: '1' })
 };
+
+Object.defineProperty(global, 'navigator', {
+    get: () => global.window.navigator,
+    configurable: true
+});
+
+function createMockElement(tag) {
+    const el = {
+        tag, id: '', className: '', textContent: '', _innerHTML: '',
+        style: {}, dataset: {}, children: [],
+        appendChild: function (c) { c._parent = this; this.children.push(c); return c; },
+        prepend: function (c) { c._parent = this; this.children.unshift(c); return c; },
+        remove: function () { if (this._parent) this._parent.children = this._parent.children.filter(c => c !== this); },
+        addEventListener: function () { },
+        querySelector: function (sel) {
+            if (sel.startsWith('#')) {
+                const id = sel.substring(1);
+                return this.children.find(c => c.id === id) || null;
+            }
+            if (sel.startsWith('.')) {
+                const cls = sel.substring(1);
+                return this.children.find(c => (c.className || '').includes(cls)) || null;
+            }
+            return null;
+        },
+        querySelectorAll: function(sel) {
+            if (sel.startsWith('.')) {
+                const cls = sel.substring(1);
+                return this.children.filter(c => (c.className || '').includes(cls));
+            }
+            return [];
+        },
+        setAttribute: function (k, v) { this[k] = v; },
+        getAttribute: function(k) { return this[k]; },
+        hasAttribute: function(k) { return this[k] !== undefined; },
+        get innerHTML() { return this._innerHTML; },
+        set innerHTML(html) {
+            this._innerHTML = html;
+            // More robust child extraction for specific test cases
+            if (!html || html.trim() === '') {
+                this.children = [];
+                return;
+            }
+            // Clear existing children for major updates
+            if (html.includes('<') && this.children.length > 0) {
+                this.children = [];
+            }
+            const idRegex = /id=["']([^"']+)["']/g;
+            let match;
+            while ((match = idRegex.exec(html)) !== null) {
+                const id = match[1];
+                if (!this.children.find(c => c.id === id)) {
+                    const child = createMockElement('div');
+                    child.id = id;
+                    child._parent = this;
+                    this.children.push(child);
+                }
+            }
+        },
+        classList: {
+            contains: function(c) {
+                return (this._parent.className || '').split(/\s+/).filter(Boolean).includes(c);
+            },
+            add: function(c) {
+                if (!this.contains(c)) {
+                    this._parent.className = ((this._parent.className || '') + ' ' + c).trim();
+                }
+            },
+            remove: function(c) {
+                this._parent.className = (this._parent.className || '').split(/\s+/).filter(cls => cls !== c).join(' ');
+            },
+            toggle: function(c, val) {
+                if (val === undefined) val = !this.contains(c);
+                if (val) this.add(c); else this.remove(c);
+            }
+        }
+    };
+    el.classList._parent = el;
+    return el;
+}
 
 global.document = {
     currentScript: null,
-    querySelector: (sel) => null,
-    getElementById: (id) => null,
-    createElement: (tag) => {
-        const el = {
-            tag, id: '', className: '', textContent: '', innerHTML: '',
-            style: {}, dataset: {}, children: [],
-            appendChild: function (c) { this.children.push(c); return c; },
-            prepend: function (c) { this.children.unshift(c); return c; },
-            remove: function () { },
-            addEventListener: function () { },
-            querySelector: function () { return null; },
-            setAttribute: function (k, v) { this[k] = v; }
+    querySelector: (sel) => {
+        if (sel === '#greenhouse-mobile-styles') return global.document.head.children.find(c => c.id === 'greenhouse-mobile-styles');
+        if (sel === '#greenhouse-mobile-viewer') return global.document.body.children.find(c => c.id === 'greenhouse-mobile-viewer');
+        return null;
+    },
+    getElementById: (id) => {
+        const findIn = (el) => {
+            if (el.id === id) return el;
+            if (el.children) {
+                for (const child of el.children) {
+                    const found = findIn(child);
+                    if (found) return found;
+                }
+            }
+            return null;
         };
+        return findIn(global.document.head) || findIn(global.document.body);
+    },
+    createElement: (tag) => {
+        const el = createMockElement(tag);
+        el.classList._parent = el;
         if (tag === 'script') {
             setTimeout(() => { if (el.onload) el.onload(); }, 10);
         }
         return el;
     },
-    body: { appendChild: (el) => { }, style: {} },
-    head: { appendChild: (el) => { if (el.tag === 'script' && el.onload) setTimeout(() => el.onload(), 10); return el; } }
+    body: {
+        appendChild: (el) => { global.document.body.children.push(el); return el; },
+        style: {},
+        children: [],
+        querySelector: (sel) => global.document.querySelector(sel)
+    },
+    head: {
+        appendChild: (el) => {
+            global.document.head.children.push(el);
+            if (el.tag === 'script' && el.onload) setTimeout(() => el.onload(), 10);
+            return el;
+        },
+        children: []
+    }
 };
 
 global.MutationObserver = class {
