@@ -21,11 +21,28 @@
                     if (window.GreenhouseGeneticAlgo && window.GreenhouseGeneticUI3D) {
                         window.GreenhouseGeneticAlgo.init();
                         window.GreenhouseGeneticUI3D.init(container, window.GreenhouseGeneticAlgo);
+
+                        // Expose global controller if missing (mobile hub specific)
+                        if (!window.GreenhouseGenetic) {
+                            window.GreenhouseGenetic = {
+                                startSimulation: () => {
+                                    const loop = () => {
+                                        if (window.GreenhouseGeneticUI3D.shouldEvolve()) {
+                                            window.GreenhouseGeneticAlgo.evolve();
+                                            window.GreenhouseGeneticUI3D.updateData();
+                                        }
+                                        setTimeout(() => requestAnimationFrame(loop), 100);
+                                    };
+                                    loop();
+                                }
+                            };
+                        }
+
                         setTimeout(() => {
                             const overlay = container.querySelector('#genetic-start-overlay');
                             if (overlay) overlay.style.display = 'none';
                             window.GreenhouseGeneticUI3D.isEvolving = true;
-                            if (window.GreenhouseGenetic) window.GreenhouseGenetic.startSimulation();
+                            window.GreenhouseGenetic.startSimulation();
                         }, 500);
                     }
                 },
@@ -38,6 +55,11 @@
                     const uniqueId = 'neuro-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
                     if (window.GreenhouseNeuroApp) window.GreenhouseNeuroApp.init('#' + uniqueId);
+                },
+                onSelectMode: (index) => {
+                    const modes = ['Neural Network', 'Synaptic Density', 'Burst Patterns'];
+                    console.log(`[Mobile Hub] Neuro Mode Selected: ${modes[index]}`);
+                    // Neuro app logic to switch modes could be added here
                 }
             },
             pathway: {
@@ -47,6 +69,10 @@
                     const uniqueId = 'pathway-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
                     if (window.GreenhousePathwayViewer) window.GreenhousePathwayViewer.init('#' + uniqueId, baseUrl);
+                },
+                onSelectMode: (index) => {
+                    const internalIds = ['dopaminergic', 'hpa', 'serotonergic'];
+                    if (window.GreenhousePathwayViewer) window.GreenhousePathwayViewer.switchPathway(internalIds[index]);
                 }
             },
             synapse: {
@@ -56,6 +82,13 @@
                     const uniqueId = 'synapse-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
                     if (window.GreenhouseSynapseApp) window.GreenhouseSynapseApp.init('#' + uniqueId, baseUrl);
+                },
+                onSelectMode: (index) => {
+                    const scenarios = ['healthy', 'alzheimers', 'schizophrenia'];
+                    if (window.GreenhouseSynapseApp && window.GreenhouseSynapseApp.applyScenario) {
+                        window.GreenhouseSynapseApp.applyScenario(scenarios[index]);
+                        if (window.GreenhouseSynapseApp.renderSidebar) window.GreenhouseSynapseApp.renderSidebar();
+                    }
                 }
             },
             dna: {
@@ -80,9 +113,16 @@
                         container.appendChild(canvas);
                         const sim = new window.RNARepairSimulation(canvas);
                         container._sim = sim;
+                        window.Greenhouse.rnaSimulation = sim;
                     }
                 },
-                onSelectMode: (index) => { /* RNA specific logic */ }
+                onSelectMode: (index) => {
+                    const sim = window.Greenhouse?.rnaSimulation;
+                    if (sim && sim.spawnEnzyme) {
+                        const enzymes = ['Ligase', 'Demethylase', 'Pus1', 'Dcp2'];
+                        sim.spawnEnzyme(enzymes[index], Math.floor(Math.random() * 20) + 5);
+                    }
+                }
             },
             dopamine: {
                 scripts: ['models_3d_math.js', 'dopamine_controls.js', 'dopamine_legend.js', 'dopamine_tooltips.js', 'dopamine_molecular.js', 'dopamine_synapse.js', 'dopamine_electrophysiology.js', 'dopamine_circuit.js', 'dopamine_plasticity.js', 'dopamine_clinical.js', 'dopamine_pharmacology.js', 'dopamine_scientific.js', 'dopamine_analytics.js', 'dopamine_ux.js', 'dopamine.js'],

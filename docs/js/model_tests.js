@@ -97,10 +97,32 @@
     });
 
     GreenhouseTestSuite.addTest('App Instance Check', () => {
-        const apps = ['GreenhouseDopamine', 'GreenhouseSerotonin', 'GreenhouseNeuroApp', 'GreenhouseSynapseApp', 'Greenhouse'];
+        const apps = ['GreenhouseDopamine', 'GreenhouseSerotonin', 'GreenhouseNeuroApp', 'GreenhouseSynapseApp', 'Greenhouse', 'GreenhouseGenetic', 'GreenhousePathwayViewer', 'GreenhouseDNARepair', 'GreenhouseEmotionApp', 'GreenhouseCognitionApp'];
         const found = apps.find(a => window[a]);
         if (!found) throw new Error('No Greenhouse app instance found on window object');
         return `Found active model instance: ${found}`;
+    });
+
+    GreenhouseTestSuite.addTest('Mobile Hub Integrity Check', () => {
+        if (!window.GreenhouseMobile) throw new Error('GreenhouseMobile missing');
+        const registry = window.GreenhouseMobile.modelRegistry;
+        const requiredModels = ['genetic', 'neuro', 'pathway', 'synapse', 'dna', 'rna', 'dopamine', 'serotonin', 'emotion', 'cognition'];
+
+        requiredModels.forEach(model => {
+            if (!registry[model]) throw new Error(`Model ${model} missing from registry`);
+            if (!registry[model].init) throw new Error(`Model ${model} missing init function`);
+            if (!registry[model].modes || registry[model].modes.length === 0) throw new Error(`Model ${model} missing modes`);
+        });
+
+        return `Mobile hub registry verified with ${requiredModels.length} models`;
+    });
+
+    GreenhouseTestSuite.addTest('Mobile Detection Logic Check', () => {
+        if (!window.GreenhouseMobile) throw new Error('GreenhouseMobile missing');
+        const isMobile = window.GreenhouseMobile.isMobileUser();
+        // This test will vary depending on the environment, but we ensure it returns a boolean
+        if (typeof isMobile !== 'boolean') throw new Error('isMobileUser did not return a boolean');
+        return `Mobile detection active (Result: ${isMobile})`;
     });
 
     GreenhouseTestSuite.addTest('Canvas Memory/Lifecycle Leak Check', async () => {
