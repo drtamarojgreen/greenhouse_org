@@ -139,6 +139,6 @@ To ensure code quality and maintainability, all contributions must adhere to the
 
 For technical assistance or inquiries, please contact:
 
--   **IT Lead**: Tamaro (cito@greenhousementalhealth.org)
--   **Office Manager**: Niel (officemanager@greenhousementalhealth.org)
--   **Clinic Director**: Dr. Ayodele Green (admin@greenhousementalhealth.org)
+-   **IT Lead**: Tamaro (cito@greenhousemd.org)
+-   **Office Manager**: Niel (officemanager@greenhousemd.org)
+-   **Clinic Director**: Dr. Ayodele Green (admin@greenhousemd.org)
