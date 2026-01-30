@@ -43,10 +43,10 @@
             pathway: {
                 scripts: ['models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'pathway_ui_3d_geometry.js', 'pathway_camera_controls.js', 'pathway_ui_3d_brain.js', 'pathway_viewer.js'],
                 modes: ['Basal Ganglia', 'Dopamine Loop', 'Serotonin Path'],
-                init: (container, baseUrl) => {
+                init: (container, baseUrl, options = {}) => {
                     const uniqueId = 'pathway-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
-                    if (window.GreenhousePathwayViewer) window.GreenhousePathwayViewer.init('#' + uniqueId, baseUrl);
+                    if (window.GreenhousePathwayViewer) window.GreenhousePathwayViewer.init('#' + uniqueId, baseUrl, options);
                 }
             },
             synapse: {
@@ -73,16 +73,24 @@
                 scripts: ['rna_repair_atp.js', 'rna_repair_enzymes.js', 'rna_repair_physics.js', 'rna_display.js', 'rna_tooltip.js', 'rna_repair.js'],
                 modes: ['Ligation', 'Demethylation', 'Pseudouridylation', 'Decapping'],
                 init: (container, baseUrl) => {
-                    if (window.RNARepairSimulation) {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = container.offsetWidth || 400;
-                        canvas.height = container.offsetHeight || 600;
-                        container.appendChild(canvas);
-                        const sim = new window.RNARepairSimulation(canvas);
-                        container._sim = sim;
-                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = container.offsetWidth || 400;
+                    canvas.height = container.offsetHeight || 600;
+                    container.appendChild(canvas);
+
+                    // RNA Repair uses a class-based simulation
+                    const sim = new window.Greenhouse.RNARepairSimulation(canvas);
+                    sim.animate(); // Ensure loop starts
+                    container._sim = sim;
                 },
-                onSelectMode: (index) => { /* RNA specific logic */ }
+                onSelectMode: (index, card) => {
+                    const sim = card.querySelector('.gh-mobile-canvas-wrapper')._sim;
+                    if (sim) {
+                        const internalModes = ['ligation', 'demethylation', 'pseudouridylation', 'decapping'];
+                        sim.setMode(internalModes[index]);
+                        sim.triggerManualDamage(); // Immediate visual feedback
+                    }
+                }
             },
             dopamine: {
                 scripts: ['models_3d_math.js', 'dopamine_controls.js', 'dopamine_legend.js', 'dopamine_tooltips.js', 'dopamine_molecular.js', 'dopamine_synapse.js', 'dopamine_electrophysiology.js', 'dopamine_circuit.js', 'dopamine_plasticity.js', 'dopamine_clinical.js', 'dopamine_pharmacology.js', 'dopamine_scientific.js', 'dopamine_analytics.js', 'dopamine_ux.js', 'dopamine.js'],
@@ -137,7 +145,7 @@
                 }
             },
             cognition: {
-                scripts: ['models_3d_math.js', 'brain_mesh_realistic.js', 'cognition_config.js', 'cognition_analytics.js', 'cognition_app.js'],
+                scripts: ['models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'cognition_ui_3d_brain.js', 'cognition_config.js', 'cognition_analytics.js', 'cognition_theories.js', 'cognition_development.js', 'cognition_interventions.js', 'cognition_medications.js', 'cognition_research.js', 'cognition_educational.js', 'cognition_app.js'],
                 modes: ['Analytical', 'Executive', 'Memory', 'Attention'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'cognition-canvas-' + Math.random().toString(36).substr(2, 9);
@@ -391,7 +399,13 @@
                     await Utils.loadScript(scriptName, baseUrl);
                 }
                 container.innerHTML = `<div class="gh-mode-indicator" id="mode-indicator-${modelId}"></div>`;
-                config.init(container, baseUrl);
+
+                // Add a small delay to ensure all scripts are fully interpreted as modules
+                setTimeout(() => {
+                    const options = modelId === 'pathway' ? { immediateFallback: true } : {};
+                    config.init(container, baseUrl, options);
+                }, 50);
+
                 this.activeModels.set(container, modelId);
             } catch (e) {
                 container.innerHTML = `<p style="color: #e74c3c; padding: 20px;">Failed to load ${modelId}</p>`;
@@ -408,7 +422,7 @@
                     let index = parseInt(card.dataset.currentModeIndex);
                     index = (deltaY < 0) ? (index + 1) % config.modes.length : (index - 1 + config.modes.length) % config.modes.length;
                     card.dataset.currentModeIndex = index;
-                    if (config.onSelectMode) config.onSelectMode(index);
+                    if (config.onSelectMode) config.onSelectMode(index, card);
 
                     const indicator = card.querySelector(`#mode-indicator-${modelId}`);
                     if (indicator) {

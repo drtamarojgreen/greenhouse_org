@@ -83,6 +83,11 @@
             clearInterval(this.intervalId);
         },
 
+        reinitialize() {
+            this.stopSimulation();
+            this.init(this.lastSelector);
+        },
+
         createControls(container) {
             const controls = document.createElement('div');
             controls.style.cssText = `
