@@ -140,6 +140,25 @@ main {
     color: #666;
 }
 
+.circle-container {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+#breathing-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #4a90e2;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+#breathing-circle:active {
+    transform: scale(0.9);
+}
+
 .feature button {
     background-color: #5cb85c;
     color: white;

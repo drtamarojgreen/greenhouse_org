@@ -19,8 +19,14 @@ const NETWORK_DELAY = 100; // milliseconds
 
 // Helper function to simulate async operations
 function simulateAsync(fn, delay = NETWORK_DELAY) {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(fn()), delay);
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      try {
+        resolve(fn());
+      } catch (error) {
+        reject(error);
+      }
+    }, delay);
   });
 }
 
@@ -98,8 +104,13 @@ function mockLogout() {
 
 // Check if user has permission
 function hasPermission(permission) {
-  if (!currentUser) return false;
-  return currentUser.permissions.includes(permission);
+  // Publicly available permissions even when not logged in
+  const publicPermissions = ['request_appointment', 'view_services'];
+
+  if (!currentUser) {
+    return publicPermissions.includes(permission);
+  }
+  return currentUser.permissions.includes(permission) || publicPermissions.includes(permission);
 }
 
 // Appointment Management Functions

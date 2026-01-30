@@ -5,6 +5,7 @@
  */
 
 // Use the globally available TestFramework and assert objects
+(function() {
 const TestFramework = window.TestFramework;
 const assert = window.assert;
 const mockVeloBackend = window.mockVeloBackend;
@@ -50,6 +51,9 @@ TestFramework.describe('Scheduler Integration Tests', () => {
     // Submit the form
     const form = document.getElementById('appointment-form');
     form.dispatchEvent(new Event('submit'));
+
+    // Wait for the async operation to complete
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // Verify that the appointment was created in the mock backend
     const mockData = mockVeloBackend._getMockData();
@@ -106,3 +110,4 @@ TestFramework.describe('Scheduler Integration Tests', () => {
 });
 
 console.log('[Integration Tests] Scheduler integration test suite loaded');
+})();
