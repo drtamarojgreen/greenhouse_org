@@ -45,11 +45,12 @@ def setup_scene(master):
             staff.keyframe_insert(data_path="rotation_euler", frame=2500)
 
         # Dim the lights
-        sun = bpy.data.objects.get("Sun")
-        if sun:
-            sun.data.energy = 2.0
-            sun.data.keyframe_insert(data_path="energy", frame=2100)
-            sun.data.energy = 0.2
-            sun.data.keyframe_insert(data_path="energy", frame=2200)
-            sun.data.energy = 2.0
-            sun.data.keyframe_insert(data_path="energy", frame=2600)
+        for light_name in ["Sun", "FillLight", "RimLight", "Spot"]:
+            light = bpy.data.objects.get(light_name)
+            if not light: continue
+            base_energy = light.data.energy
+            light.data.keyframe_insert(data_path="energy", frame=2100)
+            light.data.energy = base_energy * 0.1
+            light.data.keyframe_insert(data_path="energy", frame=2200)
+            light.data.energy = base_energy
+            light.data.keyframe_insert(data_path="energy", frame=2600)

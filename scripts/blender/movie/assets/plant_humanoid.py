@@ -49,7 +49,7 @@ def create_vine(start, end, radius=0.05):
     return obj
 
 def create_bark_material(name, color=(0.1, 0.5, 0.1)):
-    """Creates a procedural bark material."""
+    """Creates an enhanced procedural bark material with Voronoi and Noise."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
@@ -58,18 +58,83 @@ def create_bark_material(name, color=(0.1, 0.5, 0.1)):
 
     node_output = nodes.new(type='ShaderNodeOutputMaterial')
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+
+    # Texture Mapping
+    node_coord = nodes.new(type='ShaderNodeTexCoord')
+    node_mapping = nodes.new(type='ShaderNodeMapping')
+    links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
+
+    # Noise for color variation
     node_noise = nodes.new(type='ShaderNodeTexNoise')
-    node_ramp = nodes.new(type='ShaderNodeValToRGB')
-
-    node_noise.inputs['Scale'].default_value = 10.0
+    node_noise.inputs['Scale'].default_value = 5.0
     node_noise.inputs['Detail'].default_value = 15.0
+    node_noise.inputs['Roughness'].default_value = 0.6
+    links.new(node_mapping.outputs['Vector'], node_noise.inputs['Vector'])
 
-    node_ramp.color_ramp.elements[0].color = (*[c*0.5 for c in color], 1)
+    node_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_ramp.color_ramp.elements[0].position = 0.3
+    node_ramp.color_ramp.elements[0].color = (*[c*0.3 for c in color], 1) # Dark grooves
+    node_ramp.color_ramp.elements[1].position = 0.7
+    node_ramp.color_ramp.elements[1].color = (*color, 1) # Main bark
+
+    # Voronoi for bump/texture
+    node_voronoi = nodes.new(type='ShaderNodeTexVoronoi')
+    node_voronoi.feature = 'DISTANCE_TO_EDGE'
+    node_voronoi.inputs['Scale'].default_value = 20.0
+    links.new(node_mapping.outputs['Vector'], node_voronoi.inputs['Vector'])
+
+    node_bump = nodes.new(type='ShaderNodeBump')
+    node_bump.inputs['Strength'].default_value = 0.5
+
+    links.new(node_noise.outputs['Fac'], node_ramp.inputs['Fac'])
+    links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
+    links.new(node_voronoi.outputs['Distance'], node_bump.inputs['Height'])
+    links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
+    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
+
+    node_bsdf.inputs['Roughness'].default_value = 0.9
+
+    # Lifelike Subsurface for bark
+    if "Subsurface Weight" in node_bsdf.inputs:
+        node_bsdf.inputs["Subsurface Weight"].default_value = 0.15
+    elif "Subsurface" in node_bsdf.inputs:
+        node_bsdf.inputs["Subsurface"].default_value = 0.15
+    node_bsdf.inputs["Subsurface Radius"].default_value = (0.2, 0.1, 0.1)
+
+    return mat
+
+def create_leaf_material(name, color=(0.2, 0.6, 0.2)):
+    """Creates a procedural leaf material."""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    nodes.clear()
+
+    node_output = nodes.new(type='ShaderNodeOutputMaterial')
+    node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+
+    node_coord = nodes.new(type='ShaderNodeTexCoord')
+    node_noise = nodes.new(type='ShaderNodeTexNoise')
+    node_noise.inputs['Scale'].default_value = 20.0
+    links.new(node_coord.outputs['Generated'], node_noise.inputs['Vector'])
+
+    node_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_ramp.color_ramp.elements[0].color = (*[c*0.7 for c in color], 1)
     node_ramp.color_ramp.elements[1].color = (*color, 1)
 
     links.new(node_noise.outputs['Fac'], node_ramp.inputs['Fac'])
     links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
+
+    node_bsdf.inputs['Roughness'].default_value = 0.4
+
+    # Subsurface for translucent leaves
+    if "Subsurface Weight" in node_bsdf.inputs:
+        node_bsdf.inputs["Subsurface Weight"].default_value = 0.3
+    elif "Subsurface" in node_bsdf.inputs:
+        node_bsdf.inputs["Subsurface"].default_value = 0.3
+    node_bsdf.inputs["Subsurface Radius"].default_value = (0.5, 0.5, 0.1)
 
     return mat
 
@@ -85,6 +150,17 @@ def create_fingers(location, direction, radius=0.02):
         fingers.append(f)
     return fingers
 
+def add_tracking_constraint(obj, target, name="TrackTarget"):
+    """Adds a Damped Track constraint to an object."""
+    if not obj or not target: return
+    # Clear existing
+    for c in obj.constraints: obj.constraints.remove(c)
+
+    con = obj.constraints.new(type='DAMPED_TRACK')
+    con.target = target
+    con.track_axis = 'TRACK_NEGATIVE_Y' # Eyes look forward (-Y)
+    con.name = name
+
 def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05, seed=None):
     """Generates a humanoid plant character with variety."""
     if seed is not None:
@@ -98,12 +174,14 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     bpy.ops.mesh.primitive_cylinder_add(radius=0.2, depth=torso_height, location=location + mathutils.Vector((0,0,torso_height/2)))
     torso = bpy.context.object
     torso.name = f"{name}_Torso"
+    bpy.ops.object.shade_smooth()
 
     # Head (Leafy)
     head_radius = 0.4 * (0.8 + random.random() * 0.4)
-    bpy.ops.mesh.primitive_ico_sphere_add(radius=head_radius, location=location + mathutils.Vector((0,0,torso_height + head_radius)))
+    bpy.ops.mesh.primitive_ico_sphere_add(radius=head_radius, subdivisions=4, location=location + mathutils.Vector((0,0,torso_height + head_radius)))
     head = bpy.context.object
     head.name = f"{name}_Head"
+    bpy.ops.object.shade_smooth()
 
     # Eyes (Small icospheres)
     mat_eye = bpy.data.materials.get("CharacterEyeMat") or bpy.data.materials.new(name="CharacterEyeMat")
@@ -113,9 +191,10 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
 
     for side in [-1, 1]:
         eye_loc = location + mathutils.Vector((side * head_radius * 0.4, -head_radius * 0.8, torso_height + head_radius * 1.1))
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.03, location=eye_loc)
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.03, subdivisions=3, location=eye_loc)
         eye = bpy.context.object
         eye.name = f"{name}_Eye_{'L' if side < 0 else 'R'}"
+        bpy.ops.object.shade_smooth()
         eye.parent = head
         eye.matrix_parent_inverse = head.matrix_world.inverted()
         eye.data.materials.append(mat_eye)
@@ -155,6 +234,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
 
     # Cleanup and Material
     mat = create_bark_material(f"PlantMat_{name}", color=(0.1, random.uniform(0.3, 0.6), 0.1))
+    leaf_mat = create_leaf_material(f"LeafMat_{name}", color=(0.1, random.uniform(0.4, 0.7), 0.1))
 
     # Hierarchical parts that need to be parented to torso
     main_parts = [head, left_arm, right_arm, left_leg, right_leg]
@@ -169,10 +249,11 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     elif "Arbor" in name:
         # Shoulder plating
         for side in [-1, 1]:
-            bpy.ops.mesh.primitive_ico_sphere_add(radius=0.15, location=location + mathutils.Vector((side * 0.3, 0, arm_height + 0.1)))
+            bpy.ops.mesh.primitive_ico_sphere_add(radius=0.15, subdivisions=3, location=location + mathutils.Vector((side * 0.3, 0, arm_height + 0.1)))
             plate = bpy.context.object
             plate.scale = (1, 0.5, 0.5)
             plate.name = f"{name}_ShoulderPlate_{side}"
+            bpy.ops.object.shade_smooth()
             main_parts.append(plate)
 
     # Collect all parts for linking and material
@@ -187,6 +268,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
             p.select_set(True)
             bpy.context.view_layer.objects.active = p
             bpy.ops.object.convert(target='MESH')
+            bpy.ops.object.shade_smooth()
 
         # Parent main parts to torso
         if p in main_parts:
@@ -209,7 +291,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
             if not obj.material_slots:
                 obj.data.materials.append(None)
             obj.material_slots[0].link = 'OBJECT'
-            obj.material_slots[0].material = mat
+            obj.material_slots[0].material = leaf_mat
             obj.parent = head
             obj.matrix_parent_inverse = head.matrix_world.inverted()
 
@@ -235,9 +317,7 @@ def create_procedural_bush(location, name="GardenBush", size=1.0):
     bpy.context.scene.collection.children.link(container)
 
     leaf_template = create_leaf_mesh()
-    mat = bpy.data.materials.get("BushMat") or bpy.data.materials.new(name="BushMat")
-    mat.use_nodes = True
-    mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.05, 0.3, 0.05, 1)
+    mat = bpy.data.materials.get("BushMat") or create_leaf_material("BushMat", color=(0.05, 0.3, 0.05))
 
     for i in range(20):
         # Random position in a sphere
