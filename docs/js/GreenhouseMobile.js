@@ -43,10 +43,13 @@
             pathway: {
                 scripts: ['models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'pathway_ui_3d_geometry.js', 'pathway_camera_controls.js', 'pathway_ui_3d_brain.js', 'pathway_viewer.js'],
                 modes: ['Basal Ganglia', 'Dopamine Loop', 'Serotonin Path'],
-                init: (container, baseUrl, options = {}) => {
+                init: (container, baseUrl) => {
                     const uniqueId = 'pathway-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
-                    if (window.GreenhousePathwayViewer) window.GreenhousePathwayViewer.init('#' + uniqueId, baseUrl, options);
+                    // Inject dummy XML to bypass the 15s polling bridge in pathway_viewer.js
+                    // This is a mobile-specific hack to skip searching for DOM-embedded config
+                    container.textContent = '<pathway></pathway>';
+                    if (window.GreenhousePathwayViewer) window.GreenhousePathwayViewer.init('#' + uniqueId, baseUrl);
                 }
             },
             synapse: {
@@ -402,8 +405,7 @@
 
                 // Add a small delay to ensure all scripts are fully interpreted as modules
                 setTimeout(() => {
-                    const options = modelId === 'pathway' ? { immediateFallback: true } : {};
-                    config.init(container, baseUrl, options);
+                    config.init(container, baseUrl);
                 }, 50);
 
                 this.activeModels.set(container, modelId);

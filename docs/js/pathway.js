@@ -16,7 +16,7 @@
             });
         },
 
-        async init(containerSelector, baseUrl, options = {}) {
+        async init(containerSelector, baseUrl) {
             try {
                 const base = baseUrl && !baseUrl.endsWith('/') ? baseUrl + '/' : (baseUrl || '');
                 // Define the correct loading order for the native 3D engine and our application
@@ -37,7 +37,7 @@
                 // All scripts are loaded, now initialize the main viewer
                 if (window.GreenhousePathwayViewer) {
                     console.log('Pathway App: All modules loaded. Initializing...');
-                    window.GreenhousePathwayViewer.init(containerSelector, base, options);
+                    window.GreenhousePathwayViewer.init(containerSelector, base);
 
                     // Render bottom navigation TOC via common utilities
                     if (window.GreenhouseUtils && typeof window.GreenhouseUtils.renderModelsTOC === 'function') {

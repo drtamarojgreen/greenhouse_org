@@ -202,7 +202,7 @@
         availablePathways: [], currentPathwayId: null, baseUrl: '', initialized: false,
         rawXmlData: null, // Bridge storage
 
-        async init(containerSelector, baseUrl, options = {}) {
+        async init(containerSelector, baseUrl) {
             if (this.isRunning) return;
 
             const container = document.querySelector(containerSelector);
@@ -215,7 +215,6 @@
             console.log("Pathway App: Waiting for complete KGML data bridge...");
 
             const checkCompletion = () => {
-                if (options.immediateFallback) return true;
                 const text = container.textContent.trim();
                 return text.includes('<pathway') && text.includes('</pathway>');
             };

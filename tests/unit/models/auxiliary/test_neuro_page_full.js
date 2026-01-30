@@ -8,48 +8,6 @@ const vm = require('vm');
 const { assert } = require('../../../utils/assertion_library.js');
 const TestFramework = require('../../../utils/test_framework.js');
 
-// --- Minimal Sinon Mock ---
-const stubs = [];
-TestFramework.sinon = {
-    spy: () => {
-        const fn = function(...args) {
-            fn.called = true;
-            fn.callCount++;
-            fn.args.push(args);
-            fn.calledOnce = fn.callCount === 1;
-            if (fn._returns !== undefined) return fn._returns;
-            if (fn._implementation) return fn._implementation(...args);
-        };
-        fn.called = false;
-        fn.calledOnce = false;
-        fn.callCount = 0;
-        fn.args = [];
-        fn.calledWith = (...expected) => fn.args.some(actual =>
-            expected.every((arg, i) => actual[i] === arg)
-        );
-        return fn;
-    },
-    stub: (obj, method) => {
-        const s = TestFramework.sinon.spy();
-        let original;
-        if (obj && method) {
-            original = obj[method];
-            obj[method] = s;
-            stubs.push({ obj, method, original });
-        }
-        s.returns = (val) => { s._returns = val; return s; };
-        s.withArgs = () => s;
-        s.restore = () => { if (obj && method) obj[method] = original; };
-        return s;
-    },
-    restore: () => {
-        while (stubs.length > 0) {
-            const { obj, method, original } = stubs.pop();
-            obj[method] = original;
-        }
-    }
-};
-
 // --- Mock Browser Environment ---
 global.window = global;
 global.document = {
@@ -87,7 +45,6 @@ global.document = {
 };
 global.addEventListener = () => { };
 global.console = console;
-global.getComputedStyle = () => ({ position: 'static' });
 global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
 
 // --- Helper to Load Scripts ---
@@ -101,7 +58,6 @@ function loadScript(filename) {
 loadScript('neuro_config.js');
 loadScript('neuro_camera_controls.js');
 loadScript('neuro_ga.js');
-loadScript('neuro_app.js');
 
 // --- Test Suites ---
 
@@ -234,8 +190,7 @@ TestFramework.describe('Neuro Page Models', () => {
         });
 
         TestFramework.it('should initialize dependencies and UI on delayedInit', async () => {
-            const mockContainer = document.querySelector(mockSelector);
-            await app._delayedInit(mockContainer, mockSelector);
+            await app._delayedInit(mockSelector);
 
             assert.isTrue(window.NeuroGA.calledOnce, 'NeuroGA constructor should be called once');
             assert.isTrue(mockGA.init.calledOnce, 'NeuroGA init should be called once');
@@ -266,7 +221,6 @@ TestFramework.describe('Neuro Page Models', () => {
         TestFramework.it('should reinitialize by calling init again', () => {
             app.lastSelector = mockSelector;
             TestFramework.sinon.stub(app, 'init'); // Mock init itself to prevent recursion
-            TestFramework.sinon.stub(app, 'stopSimulation');
             app.reinitialize();
 
             assert.isTrue(app.stopSimulation.calledOnce, 'stopSimulation should be called');
