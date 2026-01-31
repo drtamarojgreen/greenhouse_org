@@ -6,6 +6,8 @@
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseCognitionApp = {
         canvas: null,
         ctx: null,
@@ -121,7 +123,7 @@
         },
 
         refreshUIText() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
             const lBtn = document.getElementById('cognition-lang-toggle');
             if (lBtn) lBtn.textContent = t('btn_language');
 
@@ -142,7 +144,7 @@
         },
 
         createEnhancementUI(container) {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
             const uiContainer = document.createElement('div');
             uiContainer.style.cssText = `
                 display: flex;
@@ -234,8 +236,8 @@
                 enhancements.forEach(enh => {
                     const btn = document.createElement('button');
                     btn.className = 'enhancement-item';
-                    btn.textContent = enh.name;
-                    btn.title = enh.description;
+                    btn.textContent = t(enh.name);
+                    btn.title = t(enh.description);
                     btn.style.cssText = `
                         background: #1a202c; color: #fff; border: 1px solid #4a5568;
                         padding: 6px 14px; border-radius: 4px; cursor: pointer; white-space: nowrap;
@@ -265,7 +267,7 @@
         },
 
         createInfoPanel(container) {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
             this.infoPanel = document.createElement('div');
             this.infoPanel.style.cssText = `
                 padding: 20px;
@@ -280,17 +282,18 @@
         },
 
         updateInfoPanel() {
+
             const enh = this.activeEnhancement;
             if (!enh) return;
             const region = this.config.regions[this.activeRegion] || {};
             this.infoPanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <h3 style="color: #4fd1c5; margin-top: 0;">${enh.name}</h3>
-                    <span style="font-size: 10px; background: #2d3748; padding: 2px 6px; border-radius: 10px; color: #ccc;">${enh.category}</span>
+                    <h3 style="color: #4fd1c5; margin-top: 0;">${t(enh.name)}</h3>
+                    <span style="font-size: 10px; background: #2d3748; padding: 2px 6px; border-radius: 10px; color: #ccc;">${t(enh.category)}</span>
                 </div>
-                <p style="margin: 5px 0 15px 0; color: #ddd;">${enh.description}</p>
+                <p style="margin: 5px 0 15px 0; color: #ddd;">${t(enh.description)}</p>
                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px; border-left: 3px solid ${region.color || '#4fd1c5'}">
-                    <strong style="color: ${region.color || '#fff'}">${region.name || 'Region'}:</strong> ${region.description || ''}
+                    <strong style="color: ${region.color || '#fff'}">${t(region.name) || 'Region'}:</strong> ${t(region.description) || ''}
                 </div>
             `;
         },
@@ -372,8 +375,9 @@
             const listContainer = document.getElementById('enhancement-list');
             if (!listContainer) return;
 
+
             Array.from(listContainer.children).forEach(btn => {
-                if (btn.textContent === this.activeEnhancement?.name) {
+                if (btn.textContent === t(this.activeEnhancement?.name)) {
                     btn.style.borderColor = '#4fd1c5';
                     btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 } else {
@@ -383,12 +387,13 @@
         },
 
         updateInfoPanelWithRegionOnly(regionId) {
+
             const region = this.config.regions[regionId];
             if (!region) return;
             this.infoPanel.innerHTML = `
-                <h3 style="color: ${region.color || '#4fd1c5'}; margin-top: 0;">${region.name}</h3>
-                <p>${region.description}</p>
-                <p style="font-size: 11px; color: #888;">No specific enhancement currently active for this region.</p>
+                <h3 style="color: ${region.color || '#4fd1c5'}; margin-top: 0;">${t(region.name)}</h3>
+                <p>${t(region.description)}</p>
+                <p style="font-size: 11px; color: #888;">${t('cog_ui_no_enhancement')}</p>
             `;
         },
 
@@ -520,7 +525,7 @@
             const w = this.canvas.width;
             const h = this.canvas.height;
 
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
 
             ctx.clearRect(0, 0, w, h);
 
@@ -574,7 +579,7 @@
             if (this.activeEnhancement) {
                 ctx.fillStyle = '#4fd1c5';
                 ctx.font = 'bold 12px Arial';
-                ctx.fillText(`${t('active_enhancement').toUpperCase()}: ${this.activeEnhancement.name.toUpperCase()}`, 20, 50);
+                ctx.fillText(`${t('active_enhancement').toUpperCase()}: ${t(this.activeEnhancement.name).toUpperCase()}`, 20, 50);
             }
 
             // Call sub-module renders

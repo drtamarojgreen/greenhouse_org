@@ -4,32 +4,6 @@
     const GreenhouseDNATooltip = {
         tooltipElement: null,
 
-        // Dictionary for Internationalization (i18n)
-        i18n: {
-            'en': {
-                'A': { title: 'Adenine (A)', desc: 'A purine base that pairs with Thymine (T) in DNA.' },
-                'T': { title: 'Thymine (T)', desc: 'A pyrimidine base that pairs with Adenine (A) in DNA.' },
-                'C': { title: 'Cytosine (C)', desc: 'A pyrimidine base that pairs with Guanine (G) in DNA.' },
-                'G': { title: 'Guanine (G)', desc: 'A purine base that pairs with Cytosine (C) in DNA.' },
-                'Backbone': { title: 'Sugar-Phosphate Backbone', desc: 'The structural framework of nucleic acids, composed of alternating sugar and phosphate groups.' },
-                'BER': { title: 'Base Excision Repair', desc: 'A cellular mechanism that repairs damaged DNA throughout the cell cycle.' },
-                'MMR': { title: 'Mismatch Repair', desc: 'A system for recognizing and repairing erroneous insertion, deletion, and mis-incorporation of bases.' },
-                'DSB': { title: 'Double-Strand Break Repair', desc: 'A mechanism to repair breaks that occur in both strands of the DNA double helix.' },
-                'Helicase': { title: 'Helicase', desc: 'Enzymes that bind and may even remodel nucleic acid or nucleic acid protein complexes. DNA helicases are essential during DNA replication because they separate double-stranded DNA into single strands allowing each strand to be copied.' },
-                'Polymerase': { title: 'DNA Polymerase', desc: 'A type of enzyme that is responsible for forming new copies of DNA, in the form of nucleic acid molecules.' },
-                'Okazaki': { title: 'Okazaki Fragment', desc: 'Short sequences of DNA nucleotides which are synthesized discontinuously and later linked together by the enzyme DNA ligase to create the lagging strand.' }
-            },
-            'es': {
-                'A': { title: 'Adenina (A)', desc: 'Una base de purina que se empareja con Timina (T) en el ADN.' },
-                'T': { title: 'Timina (T)', desc: 'Una base de pirimidina que se empareja con Adenina (A) en el ADN.' },
-                'C': { title: 'Citosina (C)', desc: 'Una base de pirimidina que se empareja con Guanina (G) en el ADN.' },
-                'G': { title: 'Guanina (G)', desc: 'Una base de purina que se empareja con Citosina (C) en el ADN.' }
-            }
-            // Add other languages here
-        },
-
-        currentLang: 'en',
-
         initialize() {
             if (this.tooltipElement) return;
 
@@ -51,37 +25,60 @@
             this.tooltipElement.style.transition = 'opacity 0.2s';
 
             document.body.appendChild(this.tooltipElement);
+
+            window.addEventListener('greenhouseLanguageChanged', () => {
+                this.hide();
+            });
         },
 
         // Show Tooltip at specific screen coordinates
         show(x, y, key) {
             if (!this.tooltipElement) this.initialize();
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
 
-            const data = this.i18n[this.currentLang][key];
-            if (!data) return;
+            const keyMap = {
+                'A': 'dna_base_a',
+                'T': 'dna_base_t',
+                'C': 'dna_base_c',
+                'G': 'dna_base_g',
+                'Backbone': 'dna_backbone',
+                'BER': 'dna_ber',
+                'MMR': 'dna_mmr',
+                'DSB': 'dna_dsb',
+                'Helicase': 'dna_helicase',
+                'Polymerase': 'dna_polymerase',
+                'Okazaki': 'dna_okazaki'
+            };
+
+            const baseKey = keyMap[key] || key;
+            const title = t(baseKey + '_title');
+            const desc = t(baseKey + '_desc');
+
+            if (title === baseKey + '_title') return;
 
             const wikipediaBase = 'https://en.wikipedia.org/wiki/';
             const links = {
-                'A': 'Adenine',
-                'T': 'Thymine',
-                'C': 'Cytosine',
-                'G': 'Guanine',
-                'Backbone': 'Phosphodiester_bond',
-                'BER': 'Base_excision_repair',
-                'MMR': 'DNA_mismatch_repair',
-                'DSB': 'Double-strand_break',
-                'Helicase': 'Helicase',
-                'Polymerase': 'DNA_polymerase',
-                'Okazaki': 'Okazaki_fragments'
+                'dna_base_a': 'Adenine',
+                'dna_base_t': 'Thymine',
+                'dna_base_c': 'Cytosine',
+                'dna_base_g': 'Guanine',
+                'dna_backbone': 'Phosphodiester_bond',
+                'dna_ber': 'Base_excision_repair',
+                'dna_mmr': 'DNA_mismatch_repair',
+                'dna_dsb': 'Double-strand_break',
+                'dna_helicase': 'Helicase',
+                'dna_polymerase': 'DNA_polymerase',
+                'dna_okazaki': 'Okazaki_fragments'
             };
 
-            const link = links[key] ? `<div style="margin-top: 8px; border-top: 1px solid #4a5568; padding-top: 5px;">
-                <a href="${wikipediaBase}${links[key]}" target="_blank" style="color: #63b3ed; text-decoration: none; font-size: 0.8em;">Learn more on Wikipedia ↗</a>
+            const linkText = t('dna_wiki_link');
+            const link = links[baseKey] ? `<div style="margin-top: 8px; border-top: 1px solid #4a5568; padding-top: 5px;">
+                <a href="${wikipediaBase}${links[baseKey]}" target="_blank" style="color: #63b3ed; text-decoration: none; font-size: 0.8em;">${linkText}</a>
             </div>` : '';
 
             this.tooltipElement.innerHTML = `
-                <div style="font-weight: bold; color: #a3bffa; margin-bottom: 4px;">${data.title}</div>
-                <div style="font-size: 0.9em; line-height: 1.4;">${data.desc}</div>
+                <div style="font-weight: bold; color: #a3bffa; margin-bottom: 4px;">${title}</div>
+                <div style="font-size: 0.9em; line-height: 1.4;">${desc}</div>
                 ${link}
             `;
 
@@ -93,12 +90,6 @@
         hide() {
             if (this.tooltipElement) {
                 this.tooltipElement.style.display = 'none';
-            }
-        },
-
-        setLanguage(lang) {
-            if (this.i18n[lang]) {
-                this.currentLang = lang;
             }
         }
     };

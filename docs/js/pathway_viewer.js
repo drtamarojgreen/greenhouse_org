@@ -689,6 +689,7 @@
             // Draw Subtle Grid for spatial orientation
             this.drawReferenceGrid(ctx, w, h);
 
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const highlightedNode = this.pathwayData ? this.pathwayData.find(n => n.id === this.highlightedNodeId) : null;
             const activeRegion = highlightedNode ? highlightedNode.region : null;
 
@@ -725,7 +726,7 @@
                 ctx.rect(0, 0, pipW, pipH);
                 ctx.clip(); // Ensure PiP content stays inside bounds
 
-                window.GreenhousePathwayBrain.drawInteractionPiP(ctx, pipW, pipH, highlightedNode.name);
+                window.GreenhousePathwayBrain.drawInteractionPiP(ctx, pipW, pipH, t(highlightedNode.name));
 
                 ctx.restore();
             }
@@ -815,7 +816,7 @@
                         radius *= 2.5;
 
                         // Draw background box for label
-                        const label = node.name.toUpperCase();
+                        const label = t(node.name).toUpperCase();
                         this.ctx.font = 'bold 11px "Courier New", Courier, monospace';
                         const textWidth = this.ctx.measureText(label).width;
                         this.ctx.fillStyle = 'rgba(0,0,0,0.8)';

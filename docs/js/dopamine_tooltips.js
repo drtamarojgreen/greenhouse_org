@@ -351,178 +351,168 @@
             this.tooltipEl.style.top = `${y + 10}px`;
             this.tooltipEl.style.display = 'block';
 
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
             if (found.type === 'receptor') {
                 const r = found.data;
                 this.tooltipEl.innerHTML = `
-                    <strong>${r.type} Receptor</strong><br>
-                    Class: ${r.type === 'D1' || r.type === 'D5' ? 'D1-like (Gs)' : 'D2-like (Gi)'}<br>
-                    IL3 Size: ${r.il3Size} units<br>
-                    C-tail: ${r.tailLength} units<br>
+                    <strong>${r.type} ${t('dopamine_receptor_title')}</strong><br>
+                    ${t('dopamine_receptor_class')}: ${r.type === 'D1' || r.type === 'D5' ? 'D1-like (Gs)' : 'D2-like (Gi)'}<br>
+                    ${t('dopamine_receptor_il3')}: ${r.il3Size} units<br>
+                    ${t('dopamine_receptor_ctail')}: ${r.tailLength} units<br>
                     <div style="font-size: 10px; margin-top: 5px; opacity: 0.8;">
-                        ${r.type === 'D1' ? 'Stimulates adenylyl cyclase, increases cAMP.' : 'Inhibits adenylyl cyclase, opens GIRK channels.'}
-                        ${G.state.mode === 'Heteromer' ? '<br>Currently in D1-D2 Heteromer state (Gq signaling).' : ''}
+                        ${r.type === 'D1' ? t('dopamine_d1_desc') : t('dopamine_d2_desc')}
+                        ${G.state.mode === 'Heteromer' ? `<br>${t('dopamine_heteromer_desc')}` : ''}
                     </div>
                 `;
             } else if (found.type === 'astrocyte') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Astrocyte Process</strong><br>
-                    Part of the Tripartite Synapse.<br>
-                    <div style="font-size: 10px; margin-top: 5px; opacity: 0.8;">
-                        Clears extracellular dopamine via reuptake and metabolic pathways (MAO/COMT).
-                    </div>
+                    <strong>${t('dopamine_astrocyte_title')}</strong><br>
+                    ${t('dopamine_astrocyte_desc')}
                 `;
             } else if (found.type === 'interneuron') {
                 const i = found.data;
                 this.tooltipEl.innerHTML = `
-                    <strong>GABAergic Interneuron (${i.label})</strong><br>
-                    Modulates MSN activity.<br>
-                    Status: ${(i.active * 100).toFixed(0)}% Active
+                    <strong>${t('dopamine_interneuron_title')} (${i.label})</strong><br>
+                    ${t('dopamine_interneuron_desc')}<br>
+                    ${t('dopamine_status')}: ${(i.active * 100).toFixed(0)}% ${t('dopamine_active')}
                 `;
             } else if (found.type === 'gap_junction') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Gap Junction</strong><br>
-                    Electrical coupling between interneurons.
+                    <strong>${t('dopamine_gap_junction_title')}</strong><br>
+                    ${t('dopamine_gap_junction_desc')}
                 `;
             } else if (found.type === 'gprotein') {
                 const gp = found.data;
                 this.tooltipEl.innerHTML = `
-                    <strong>G-Protein Subunit (${gp.subunit})</strong><br>
-                    Type: ${gp.type}<br>
-                    Status: ${gp.gtpBound ? 'GTP-bound (Active)' : 'GDP-bound (Inactive)'}<br>
+                    <strong>${t('dopamine_gprotein_title')} (${gp.subunit})</strong><br>
+                    ${t('dopamine_receptor_class')}: ${gp.type}<br>
+                    ${t('dopamine_status')}: ${gp.gtpBound ? t('dopamine_gprotein_bound') : t('dopamine_gprotein_unbound')}<br>
                     <div style="font-size: 10px; margin-top: 5px; opacity: 0.8;">
-                        ${gp.type === 'Gs' ? 'Gs: Stimulates adenylyl cyclase (↑cAMP).' :
-                          (gp.type === 'Gi' ? 'Gi: Inhibits adenylyl cyclase (↓cAMP).' :
-                           'Gq: Activates PLC (↑IP3, ↑Ca2+).')}
+                        ${gp.type === 'Gs' ? t('dopamine_gs_desc') :
+                          (gp.type === 'Gi' ? t('dopamine_gi_desc') :
+                           t('dopamine_gq_desc'))}
                     </div>
                 `;
             } else if (found.type === 'vesicle') {
                 const v = found.data;
                 this.tooltipEl.innerHTML = `
-                    <strong>Synaptic Vesicle</strong><br>
-                    Filling: ${(v.filled * 100).toFixed(0)}%<br>
-                    State: ${v.snareState}
+                    <strong>${t('dopamine_vesicle_title')}</strong><br>
+                    ${t('dopamine_vesicle_filling')}: ${(v.filled * 100).toFixed(0)}%<br>
+                    ${t('dopamine_status')}: ${v.snareState}
                 `;
             } else if (found.type === 'organelle') {
                 this.tooltipEl.innerHTML = `
-                    <strong>${found.data.label}</strong><br>
-                    ${found.data.desc}
+                    <strong>${t('dopamine_organelle_er')}</strong><br>
+                    ${t('dopamine_er_desc')}
                 `;
             } else if (found.type === 'projection') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Projection: ${found.data.label}</strong><br>
-                    Anatomical source of dopaminergic input.
+                    <strong>${t('dopamine_projection_title')}: ${found.data.label}</strong><br>
+                    ${t('dopamine_projection_desc')}
                 `;
             } else if (found.type === 'axon_terminal') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Axon Terminal</strong><br>
-                    Presynaptic site of dopamine synthesis and release.
+                    <strong>${t('dopamine_axon_terminal_title')}</strong><br>
+                    ${t('dopamine_axon_terminal_desc')}
                 `;
             } else if (found.type === 'obstacle') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Extracellular Obstacle</strong><br>
-                    Increases tortuosity, slowing dopamine diffusion.
+                    <strong>${t('dopamine_obstacle_title')}</strong><br>
+                    ${t('dopamine_obstacle_desc')}
                 `;
             } else if (found.type === 'metabolite') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Metabolite</strong><br>
-                    Dopamine breakdown product (DOPAC/HVA/3-MT).
+                    <strong>${t('dopamine_metabolite_title')}</strong><br>
+                    ${t('dopamine_metabolite_desc')}
                 `;
             } else if (found.type === 'glutamate') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Glutamate</strong><br>
-                    Excitatory neurotransmitter co-released with DA.
+                    <strong>${t('dopamine_glutamate_title')}</strong><br>
+                    ${t('dopamine_glutamate_desc')}
                 `;
             } else if (found.type === 'dopamine_particle') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Dopamine (DA)</strong><br>
-                    Key neuromodulator in reward and motor pathways.
+                    <strong>${t('dopamine_da_title')}</strong><br>
+                    ${t('dopamine_da_desc')}
                 `;
             } else if (found.type === 'msn') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Medium Spiny Neuron (${found.data.type})</strong><br>
-                    Primary projection neuron of the striatum.<br>
-                    ${found.data.type === 'D1' ? 'Direct pathway: Facilitates movement.' : 'Indirect pathway: Inhibits movement.'}
+                    <strong>${t('dopamine_msn_title')} (${found.data.type})</strong><br>
+                    ${found.data.type === 'D1' ? t('dopamine_msn_d1_desc') : t('dopamine_msn_d2_desc')}
                 `;
             } else if (found.type === 'striosome_patch') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Striosome (Patch)</strong><br>
-                    Compartment primarily linked to the limbic system and SNc projections.
+                    <strong>${t('dopamine_striosome_title')}</strong><br>
+                    ${t('dopamine_striosome_desc')}
                 `;
             } else if (found.type === 'matrix_point') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Matrix Lattice Point</strong><br>
-                    Represents the Matrix compartment, involved in sensorimotor integration.
+                    <strong>${t('dopamine_matrix_title')}</strong><br>
+                    ${t('dopamine_matrix_desc')}
                 `;
             } else if (found.type === 'synthesis_flux') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Dopamine Synthesis Flux</strong><br>
-                    Intermediate molecule: ${found.data.type.toUpperCase()}<br>
+                    <strong>${t('dopamine_synthesis_title')}</strong><br>
+                    ${found.data.type.toUpperCase()}<br>
                     <div style="font-size: 10px; margin-top: 5px; opacity: 0.8;">
-                        Tyrosine → L-DOPA → Dopamine
+                        ${t('dopamine_synthesis_desc')}
                     </div>
                 `;
             } else if (found.type === 'vmat2_gradient') {
                 this.tooltipEl.innerHTML = `
-                    <strong>VMAT2 Proton Gradient</strong><br>
-                    Acidic environment driving vesicular dopamine uptake.
+                    <strong>${t('dopamine_vmat2_title')}</strong><br>
+                    ${t('dopamine_vmat2_desc')}
                 `;
             } else if (found.type === 'cleft_heatmap') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Synaptic Cleft Concentration</strong><br>
-                    DA Molecules: ${found.data.count}<br>
-                    Gradient shows diffusion density.
+                    <strong>${t('dopamine_cleft_title')}</strong><br>
+                    ${t('dopamine_cleft_desc').replace('{count}', found.data.count)}
                 `;
             } else if (found.type === 'rgs_protein') {
                 this.tooltipEl.innerHTML = `
-                    <strong>RGS Protein</strong><br>
-                    Regulator of G-protein Signaling.<br>
-                    <div style="font-size: 10px; margin-top: 5px; opacity: 0.8;">
-                        Accelerates GTP hydrolysis, terminating G-protein activity.
-                    </div>
+                    <strong>${t('dopamine_rgs_title')}</strong><br>
+                    ${t('dopamine_rgs_desc')}
                 `;
             } else if (found.type === 'clathrin_pit') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Clathrin-Coated Pit</strong><br>
-                    Site of receptor internalization (endocytosis).
+                    <strong>${t('dopamine_clathrin_title')}</strong><br>
+                    ${t('dopamine_clathrin_desc')}
                 `;
             } else if (found.type === 'internalized_receptor') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Internalized Receptor</strong><br>
-                    Receptor moved into the cytosol for sorting/recycling.
+                    <strong>${t('dopamine_internalized_title')}</strong><br>
+                    ${t('dopamine_internalized_desc')}
                 `;
             } else if (found.type === 'camp_microdomain') {
                 this.tooltipEl.innerHTML = `
-                    <strong>cAMP Microdomain</strong><br>
-                    Localized gradient of cyclic AMP.<br>
-                    <div style="font-size: 10px; margin-top: 5px; opacity: 0.8;">
-                        Activates PKA and HCN channels.
-                    </div>
+                    <strong>${t('dopamine_camp_title')}</strong><br>
+                    ${t('dopamine_camp_desc')}
                 `;
             } else if (found.type === 'ip3_particle') {
                 this.tooltipEl.innerHTML = `
-                    <strong>IP3 (Inositol Trisphosphate)</strong><br>
-                    Second messenger that triggers Ca2+ release from ER.
+                    <strong>${t('dopamine_ip3_title')}</strong><br>
+                    ${t('dopamine_ip3_desc')}
                 `;
             } else if (found.type === 'erk_molecule') {
                 this.tooltipEl.innerHTML = `
-                    <strong>ERK (Extracellular Signal-Regulated Kinase)</strong><br>
-                    Part of the MAPK cascade, involved in gene expression (CREB).
+                    <strong>${t('dopamine_erk_title')}</strong><br>
+                    ${t('dopamine_erk_desc')}
                 `;
             } else if (found.type === 'pka_subunit') {
                 this.tooltipEl.innerHTML = `
-                    <strong>PKA Catalytic Subunit</strong><br>
-                    Phosphorylates targets like DARPP-32 and NMDA receptors.
+                    <strong>${t('dopamine_pka_title')}</strong><br>
+                    ${t('dopamine_pka_desc')}
                 `;
             } else if (found.type === 'ap_backprop') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Action Potential Back-propagation</strong><br>
-                    Electrical signal traveling back from soma to dendrites.
+                    <strong>${t('dopamine_ap_backprop_title')}</strong><br>
+                    ${t('dopamine_ap_backprop_desc')}
                 `;
             } else if (found.type === 'potential_graph') {
                 this.tooltipEl.innerHTML = `
-                    <strong>Membrane Potential Graph</strong><br>
-                    Current: ${found.data.potential.toFixed(1)} mV<br>
-                    Shows the real-time electrical state of the neuron.
+                    <strong>${t('dopamine_potential_title')}</strong><br>
+                    ${t('dopamine_potential_desc').replace('{value}', found.data.potential.toFixed(1))}
                 `;
             }
         } else {

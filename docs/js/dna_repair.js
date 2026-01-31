@@ -170,15 +170,15 @@
             this.generateDNA();
             if (this.updateInfoOverlay) this.updateInfoOverlay();
             const titles = {
-                'ber': t("Base Excision"),
-                'mmr': t("Mismatch Repair"),
-                'dsb': t("Double-Strand Break"),
-                'nhej': "Non-Homologous End Joining",
-                'ner': t("Nucleotide Excision"),
-                'hr': "Homologous Recombination",
-                'photo': "Direct Reversal (Photolyase)",
-                'mgmt': "MGMT Repair",
-                'replicate': "DNA Replication"
+                'ber': t("dna_ber_title"),
+                'mmr': t("dna_mmr_title"),
+                'dsb': t("dna_dsb_title"),
+                'nhej': t("dna_mode_nhej"),
+                'ner': t("dna_ner_title"),
+                'hr': t("dna_mode_hr"),
+                'photo': t("dna_mode_photo"),
+                'mgmt': t("dna_mode_mgmt"),
+                'replicate': t("dna_mode_replicate")
             };
             this.currentModeText = titles[mode];
         },
@@ -239,7 +239,7 @@
                         this.handleHR(st.timer);
                     } else {
                         // Biological constraint: HR requires a sister chromatid, only available in S/G2
-                        this.currentModeText = "HR Blocked (Requires S or G2)";
+                        this.currentModeText = t("dna_hr_blocked");
                     }
                 }
                 else if (m === 'photo' && this.handlePhotolyase) this.handlePhotolyase(st.timer);

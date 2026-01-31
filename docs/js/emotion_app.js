@@ -7,6 +7,8 @@
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseEmotionApp = {
         canvas: null,
         ctx: null,
@@ -154,7 +156,7 @@
         },
 
         refreshUIText() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
             const lBtn = document.getElementById('emotion-lang-toggle');
             if (lBtn) lBtn.textContent = t('btn_language');
 
@@ -192,7 +194,7 @@
                 flex-wrap: wrap;
             `;
 
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
             const categories = [
                 { id: 'philosophies', label: t('emotion_cat_philosophies') },
                 { id: 'regulations', label: t('emotion_cat_regulations') },
@@ -244,6 +246,7 @@
         },
 
         createTheorySelector(container) {
+
             const selectorDiv = document.createElement('div');
             selectorDiv.className = 'emotion-theory-selector';
             selectorDiv.style.cssText = `
@@ -260,8 +263,8 @@
             const items = this.config[this.currentCategory] || [];
             items.forEach(item => {
                 const btn = document.createElement('button');
-                btn.textContent = item.name;
-                btn.title = item.name;
+                btn.textContent = t(item.name);
+                btn.title = t(item.name);
                 btn.style.cssText = `
                     background: #1a202c;
                     color: #eee;
@@ -306,7 +309,7 @@
         },
 
         createInfoPanel(container) {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
             this.infoPanel = document.createElement('div');
             this.infoPanel.style.cssText = `
                 padding: 20px;
@@ -458,7 +461,7 @@
         },
 
         updateInfoPanel() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
             if (!this.activeTheory) return;
 
             let regionInfo = '';
@@ -466,31 +469,31 @@
                 regionInfo = this.activeRegion.map(r => {
                     const reg = this.config.regions[r] || { name: r };
                     const color = reg.color || '#ff4d4d';
-                    return `<button onclick="window.GreenhouseEmotionApp.selectRegion('${r}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0; margin-right: 5px;">${reg.name}</button>`;
+                    return `<button onclick="window.GreenhouseEmotionApp.selectRegion('${r}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0; margin-right: 5px;">${t(reg.name)}</button>`;
                 }).join(', ');
             } else if (this.activeRegion) {
                 const reg = this.config.regions[this.activeRegion] || {};
                 const color = reg.color || '#ff4d4d';
-                regionInfo = `<button onclick="window.GreenhouseEmotionApp.selectRegion('${this.activeRegion}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0;">${reg.name || this.activeRegion}</button>: ${reg.description || ''}`;
+                regionInfo = `<button onclick="window.GreenhouseEmotionApp.selectRegion('${this.activeRegion}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0;">${t(reg.name) || this.activeRegion}</button>: ${t(reg.description) || ''}`;
             }
 
             const wellnessInfo = this.activeTheory.wellnessFocus ? `
                 <div style="margin-top: 10px; padding: 10px; background: rgba(0,255,100,0.1); border-radius: 4px; border-left: 3px solid #00ff64;">
-                    <strong>${t('wellness_focus')}:</strong> ${this.activeTheory.wellnessFocus}
+                    <strong>${t('wellness_focus')}:</strong> ${t(this.activeTheory.wellnessFocus)}
                 </div>
             ` : '';
 
             const conditionInfo = this.activeTheory.conditionMapping ? `
                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,100,0,0.1); border-radius: 4px; border-left: 3px solid #ff6400;">
-                    <strong>${t('clinical_relevance')}:</strong> ${this.activeTheory.conditionMapping}
+                    <strong>${t('clinical_relevance')}:</strong> ${t(this.activeTheory.conditionMapping)}
                 </div>
             ` : '';
 
             this.infoPanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 300px;">
-                        <h3 style="color: #ff4d4d; margin: 0;">${this.activeTheory.name}</h3>
-                        <p style="margin: 10px 0;">${this.activeTheory.description}</p>
+                        <h3 style="color: #ff4d4d; margin: 0;">${t(this.activeTheory.name)}</h3>
+                        <p style="margin: 10px 0;">${t(this.activeTheory.description)}</p>
                         <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px;">
                             <strong>${t('involved_regions')}:</strong> ${regionInfo}
                         </div>
@@ -512,6 +515,7 @@
         updateDeepDivePanel() {
             if (!this.deepDivePanel) return;
 
+
             if (!this.selectedRegion || this.selectedRegion === 'cortex') {
                 this.deepDivePanel.style.width = '0';
                 this.deepDivePanel.innerHTML = '';
@@ -529,7 +533,7 @@
 
             const subRegionsHtml = reg.subRegions ? `
                 <div style="margin-bottom: 15px;">
-                    <h5 style="color: #aaa; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">Sub-Regions</h5>
+                    <h5 style="color: #aaa; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">${t('emotion_ui_subregions')}</h5>
                     <div style="display: flex; flex-wrap: wrap; gap: 5px;">
                         ${reg.subRegions.map(s => `<span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 3px; font-size: 12px;">${s}</span>`).join('')}
                     </div>
@@ -538,7 +542,7 @@
 
             const ntHtml = reg.primaryNTs ? `
                 <div style="margin-bottom: 15px;">
-                    <h5 style="color: #aaa; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">Primary Neurotransmitters</h5>
+                    <h5 style="color: #aaa; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">${t('emotion_ui_primary_nts')}</h5>
                     <div style="display: flex; flex-wrap: wrap; gap: 5px;">
                         ${reg.primaryNTs.map(nt => `<span style="border: 1px solid rgba(255,77,77,0.3); color: #ff4d4d; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${nt}</span>`).join('')}
                     </div>
@@ -547,7 +551,7 @@
 
             const networkHtml = reg.networks ? `
                 <div style="margin-bottom: 15px;">
-                    <h5 style="color: #aaa; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">Network Connectivity</h5>
+                    <h5 style="color: #aaa; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">${t('emotion_ui_connectivity')}</h5>
                     <div style="display: flex; flex-wrap: wrap; gap: 5px;">
                         ${reg.networks.map(n => `<span style="background: rgba(0,150,255,0.2); color: #0096ff; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${n}</span>`).join('')}
                     </div>
@@ -556,17 +560,17 @@
 
             const clinicalHtml = reg.clinicalSignificance ? `
                 <div style="margin-bottom: 15px; padding: 10px; background: rgba(255,150,0,0.05); border-left: 2px solid #ff9600;">
-                    <h5 style="color: #ff9600; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">Clinical Significance</h5>
-                    <p style="margin: 0; font-size: 13px; line-height: 1.4;">${reg.clinicalSignificance}</p>
+                    <h5 style="color: #ff9600; margin: 0 0 5px 0; font-size: 11px; text-transform: uppercase;">${t('emotion_ui_clinical')}</h5>
+                    <p style="margin: 0; font-size: 13px; line-height: 1.4;">${t(reg.clinicalSignificance)}</p>
                 </div>
             ` : '';
 
             this.deepDivePanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h4 style="color: ${reg.color || '#ff4d4d'}; margin: 0;">${reg.name}</h4>
+                    <h4 style="color: ${reg.color || '#ff4d4d'}; margin: 0;">${t(reg.name)}</h4>
                     <button onclick="window.GreenhouseEmotionApp.selectRegion(null)" style="background: none; border: none; color: #888; cursor: pointer; font-size: 20px;">&times;</button>
                 </div>
-                <p style="font-size: 14px; line-height: 1.5; color: #ccc; margin-bottom: 20px;">${reg.description || ''}</p>
+                <p style="font-size: 14px; line-height: 1.5; color: #ccc; margin-bottom: 20px;">${t(reg.description) || ''}</p>
 
                 ${subRegionsHtml}
                 ${ntHtml}
@@ -574,9 +578,9 @@
                 ${clinicalHtml}
 
                 <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-                    <h5 style="color: #aaa; margin: 0 0 10px 0; font-size: 11px; text-transform: uppercase;">Functional Connectivity Map</h5>
+                    <h5 style="color: #aaa; margin: 0 0 10px 0; font-size: 11px; text-transform: uppercase;">${t('emotion_ui_func_map')}</h5>
                     <div id="connectivity-visual" style="height: 100px; background: rgba(0,0,0,0.3); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #666;">
-                        Interactive Neural Map Loading...
+                        ${t('emotion_ui_map_loading')}
                     </div>
                 </div>
             `;
@@ -691,7 +695,7 @@
             }
 
             // Title Overlay
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'left';
@@ -705,7 +709,7 @@
             // Hover Info
             if (this.hoveredRegion && this.hoveredRegion !== 'cortex') {
                 const regName = this.config.regions && this.config.regions[this.hoveredRegion] ?
-                                this.config.regions[this.hoveredRegion].name : this.hoveredRegion;
+                                t(this.config.regions[this.hoveredRegion].name) : this.hoveredRegion;
 
                 ctx.save();
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';

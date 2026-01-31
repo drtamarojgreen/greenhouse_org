@@ -104,6 +104,11 @@
 </head>
 
 <body>
+    <div style="position: absolute; top: 10px; left: 10px; z-index: 1001; display: flex; gap: 10px; align-items: center;">
+        <h1 data-t="pathway_viewer_title" style="color: white; font-size: 18px; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Pathway Viewer</h1>
+        <button onclick="window.GreenhouseModelsUtil.toggleLanguage()" data-t="btn_language" style="background: rgba(76, 161, 175, 0.2); color: #4ca1af; border: 1px solid #4ca1af; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; backdrop-filter: blur(5px);">Español</button>
+    </div>
+
     <!-- The Target Selector Container -->
     <div id="app-container"></div>
 
@@ -168,6 +173,7 @@
 
     <script src="js/GreenhouseUtils.js"></script>
     <script src="js/GreenhouseMobile.js"></script>
+    <script src="js/models_util.js"></script>
     <script src="js/pathway.js"></script>
 
     <script>

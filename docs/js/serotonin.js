@@ -345,6 +345,8 @@
             ctx.strokeStyle = '#888';
             ctx.lineWidth = 2;
 
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
             if (r.architecture === 'Pentameric') {
                 // Pentameric schematic (cross-section)
                 ctx.strokeRect(-150, -150, 300, 300);
@@ -364,7 +366,7 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText("Ion Channel Pore", 0, 5);
+                ctx.fillText(t("serotonin_ion_pore"), 0, 5);
             } else {
                 // GPCR schematic
                 ctx.strokeRect(-120, -180, 240, 360);
@@ -381,7 +383,7 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText("Orthosteric Pocket", 0, -60);
+                ctx.fillText(t("serotonin_pocket"), 0, -60);
 
                 // C-Terminal Tail visualization (Category 1, #1)
                 ctx.strokeStyle = '#aaa';
@@ -391,14 +393,14 @@
                 ctx.bezierCurveTo(90, 180, 70, 220, 80, 140 + (r.cTailLength || 20) * 2);
                 ctx.stroke();
                 ctx.font = '10px Arial';
-                ctx.fillText("C-Terminal Tail", 90, 180);
+                ctx.fillText(t("serotonin_ctail"), 90, 180);
 
                 // IL3 Loop (Category 1, #1)
                 ctx.beginPath();
                 ctx.moveTo(-10, 140);
                 ctx.quadraticCurveTo(0, 140 + (r.il3Length || 10) * 2, 10, 140);
                 ctx.stroke();
-                ctx.fillText("IL3 Loop", 0, 160);
+                ctx.fillText(t("serotonin_il3"), 0, 160);
             }
 
             // Ligand Docking Visualization (#70)
@@ -409,11 +411,11 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 24px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(r.type + " Molecular Architecture", 0, -210);
+            ctx.fillText(r.type + " " + t("serotonin_arch_title"), 0, -210);
 
             ctx.font = '14px Arial';
             ctx.fillText("Architecture: " + (r.architecture || 'Unknown'), 0, -180);
-            ctx.fillText("State: " + (r.state || 'Inactive'), 0, -160);
+            ctx.fillText(t("serotonin_state") + ": " + (r.state === 'Active' ? t('serotonin_active') : t('serotonin_inactive')), 0, -160);
 
             // Sodium Allosteric Site (Category 2, #17)
             if (r.type === '5-HT1A') {
@@ -423,17 +425,17 @@
                 ctx.fill();
                 ctx.fillStyle = '#fff';
                 ctx.font = '10px Arial';
-                ctx.fillText("Na+ Allosteric Site", 0, 25);
+                ctx.fillText(t("serotonin_na_site"), 0, 25);
             }
 
             // Lipid Modulation indicator (Category 2, #16)
             ctx.fillStyle = '#aaa';
             ctx.font = '10px Arial';
-            ctx.fillText("Membrane Stability: " + (r.stability ? r.stability.toFixed(2) : '1.00'), 0, 250);
+            ctx.fillText(t("serotonin_stability") + ": " + (r.stability ? r.stability.toFixed(2) : '1.00'), 0, 250);
 
             ctx.font = '12px Arial';
             ctx.fillStyle = '#00ffcc';
-            ctx.fillText("Click anywhere to return to 3D model", 0, 280);
+            ctx.fillText(t("serotonin_return"), 0, 280);
 
             ctx.restore();
         },
