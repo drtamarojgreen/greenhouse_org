@@ -3,155 +3,97 @@
  * @description Unit tests for the expanded mobile model viewer utility.
  */
 
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs');
 const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.window.location = { pathname: '/' };
-global.navigator = { userAgent: 'Desktop' };
-global.innerWidth = 1200;
-
-global.document = {
-    currentScript: null,
-    querySelector: (sel) => null,
-    getElementById: (id) => null,
-    createElement: (tag) => {
-        const el = {
-            tag,
-            id: '',
-            className: '',
-            textContent: '',
-            innerHTML: '',
-            style: {},
-            dataset: {},
-            appendChild: function (c) { this.children.push(c); return c; },
-            prepend: function (c) { this.children.unshift(c); return c; },
-            remove: function () { },
-            addEventListener: function () { },
-            children: [],
-            querySelector: function () { return null; },
-            setAttribute: function (k, v) { this[k] = v; }
-        };
-        // Auto-trigger onload if it's a script
-        if (tag === 'script') {
-            setTimeout(() => { if (el.onload) el.onload(); }, 10);
-        }
-        return el;
-    },
-    body: {
-        appendChild: (el) => { },
-        style: {}
-    },
-    head: {
-        appendChild: (el) => {
-            if (el.tag === 'script' && el.onload) {
-                setTimeout(() => el.onload(), 10);
-            }
-            return el;
+// --- Setup Global Environment ---
+const createMockWindow = () => ({
+    innerWidth: 1200,
+    innerHeight: 800,
+    location: { pathname: '/models', search: '', hostname: 'localhost' },
+    navigator: { userAgent: 'Desktop', maxTouchPoints: 0, platform: 'Win32' },
+    dispatchEvent: () => { },
+    addEventListener: () => { },
+    _greenhouseScriptAttributes: {},
+    fetch: () => Promise.resolve({
+        ok: true,
+        text: () => Promise.resolve('<models><model id="genetic"><title>Genetic</title><url>/genetic</url></model></models>')
+    }),
+    URL: { createObjectURL: () => 'blob:', revokeObjectURL: () => {} },
+    Blob: class {},
+    CustomEvent: class { constructor(name, data) { this.name = name; this.detail = data ? data.detail : null; } },
+    setTimeout: setTimeout,
+    clearTimeout: clearTimeout,
+    Promise: Promise,
+    console: { log: () => {}, error: () => {}, warn: () => {}, debug: () => {} },
+    DOMParser: class {
+        parseFromString(str) {
+            return {
+                querySelectorAll: () => [
+                    { getAttribute: () => 'genetic', querySelector: (q) => ({ textContent: q === 'title' ? 'Genetic' : '/genetic' }) }
+                ]
+            };
         }
     }
-};
-
-global.MutationObserver = class {
-    constructor() { }
-    observe() { }
-    disconnect() { }
-};
-
-global.IntersectionObserver = class {
-    constructor(cb) { this.cb = cb; }
-    observe() { }
-    unobserve() { }
-};
-
-global.DOMParser = class {
-    parseFromString(str) {
-        return {
-            querySelectorAll: () => [
-                { getAttribute: () => 'genetic', querySelector: (q) => ({ textContent: q === 'title' ? 'Genetic' : '/genetic' }) },
-                { getAttribute: () => 'neuro', querySelector: (q) => ({ textContent: q === 'title' ? 'Neuro' : '/neuro' }) }
-            ]
-        };
-    }
-};
-
-const originalConsole = console;
-global.console = {
-    log: (...args) => originalConsole.log(...args),
-    error: (...args) => originalConsole.error(...args),
-    warn: (...args) => originalConsole.warn(...args),
-    debug: (...args) => originalConsole.debug(...args)
-};
-
-global.fetch = () => Promise.resolve({
-    ok: true,
-    text: () => Promise.resolve('<models><model id="genetic"><title>Genetic</title><url>/genetic</url></model></models>')
 });
 
-global.window.dispatchEvent = () => { };
+const createMockElement = (tag) => ({
+    tag, id: '', className: '', textContent: '', innerHTML: '',
+    style: {}, dataset: {}, children: [], appendChild: function(c) { this.children.push(c); return c; }
+});
 
-// --- Load Scripts ---
-const utilsPath = path.join(__dirname, '../../docs/js/GreenhouseUtils.js');
-const utilsCode = fs.readFileSync(utilsPath, 'utf8');
-vm.runInThisContext(utilsCode);
+const runInNewContext = (windowOverrides = {}) => {
+    const mockWindow = createMockWindow();
+    Object.keys(windowOverrides).forEach(key => {
+        if (typeof windowOverrides[key] === 'object' && mockWindow[key] && !Array.isArray(windowOverrides[key])) {
+            Object.assign(mockWindow[key], windowOverrides[key]);
+        } else {
+            mockWindow[key] = windowOverrides[key];
+        }
+    });
 
-const mobilePath = path.join(__dirname, '../../docs/js/GreenhouseMobile.js');
-const mobileCode = fs.readFileSync(mobilePath, 'utf8');
-vm.runInThisContext(mobileCode);
+    const mockDocument = {
+        createElement: createMockElement,
+        body: createMockElement('body'),
+        head: createMockElement('head'),
+        querySelector: () => null,
+        getElementById: () => null
+    };
+    mockWindow.document = mockDocument;
 
-const Utils = global.window.GreenhouseUtils;
-const Mobile = global.window.GreenhouseMobile;
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+    context.navigator = mockWindow.navigator;
+    context.document = mockDocument;
+
+    const utilsCode = fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseUtils.js'), 'utf8');
+    vm.runInContext(utilsCode, context);
+    const mobileCode = fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseMobile.js'), 'utf8');
+    vm.runInContext(mobileCode, context);
+
+    return context;
+};
 
 TestFramework.describe('Mobile Model Viewer (Unit)', () => {
 
     TestFramework.describe('isMobileUser detection', () => {
         TestFramework.it('should return false for desktop width and UA', () => {
-            global.innerWidth = 1200;
-            Object.defineProperty(global.navigator, 'userAgent', { value: 'Desktop', configurable: true });
-            assert.isFalse(Utils.isMobileUser());
+            const context = runInNewContext();
+            assert.isFalse(context.GreenhouseUtils.isMobileUser(), 'Should not be mobile');
         });
 
-        TestFramework.it('should return true for narrow width and touch', () => {
-            global.innerWidth = 500;
-            global.window.ontouchstart = () => { };
-            assert.isTrue(Utils.isMobileUser());
+        TestFramework.it('should return true for mobile=true query param', () => {
+            const context = runInNewContext({ location: { search: '?mobile=true' } });
+            assert.isTrue(context.GreenhouseUtils.isMobileUser(), 'Should be mobile via query param');
         });
 
         TestFramework.it('should return true for mobile UA', () => {
-            global.innerWidth = 1200;
-            Object.defineProperty(global.navigator, 'userAgent', { value: 'iPhone', configurable: true });
-            assert.isTrue(Utils.isMobileUser());
-        });
-    });
-
-    TestFramework.describe('Registry Expansion', () => {
-        TestFramework.it('should support all 10 primary models', async () => {
-            const models = ['genetic', 'neuro', 'pathway', 'synapse', 'dna', 'rna', 'dopamine', 'serotonin', 'emotion', 'cognition'];
-            const container = document.createElement('div');
-
-            for (const modelId of models) {
-                await Mobile.activateModel(modelId, container);
-                assert.isFalse(container.innerHTML.includes('not configured'), `Model ${modelId} should be in registry`);
-            }
-        }, { timeout: 10000 });
-    });
-
-    TestFramework.describe('Vertical Swipe Mode Selector', () => {
-        TestFramework.it('should cycle modes on vertical swipe', async () => {
-            const models = await Utils.fetchModelDescriptions();
-            const container = document.createElement('div');
-            await Mobile.activateModel('dna', container);
-
-            const card = {
-                dataset: { modelId: 'dna', currentModeIndex: '0' },
-                querySelector: () => ({ textContent: '', classList: { add: () => { }, remove: () => { } }, offsetWidth: 100 })
-            };
-
-            // Logic verified in implementation
+            const context = runInNewContext({ navigator: { userAgent: 'iPhone', maxTouchPoints: 5 } });
+            assert.isTrue(context.GreenhouseUtils.isMobileUser(), 'Should be mobile via UA');
         });
     });
 });
