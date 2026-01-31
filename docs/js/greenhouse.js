@@ -557,6 +557,14 @@
         // Load the visual effects script on all pages (no need to wait for specific elements)
         GreenhouseUtils.loadScript('effects.js', config.githubPagesBaseUrl);
 
+        // Load mobile experience handler if on a mobile device
+        if (GreenhouseUtils.isMobileUser()) {
+            console.log('Greenhouse: Mobile device detected. Loading mobile experience handler...');
+            GreenhouseUtils.loadScript('GreenhouseMobile.js', config.githubPagesBaseUrl, {
+                'base-url': config.githubPagesBaseUrl
+            });
+        }
+
         // Check if the current page is the schedule page.
         if (window.location.pathname.includes(config.schedulePagePath)) {
             await loadSchedulerApplication();

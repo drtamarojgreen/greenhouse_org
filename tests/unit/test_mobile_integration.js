@@ -133,6 +133,17 @@ TestFramework.describe('Mobile Integration Tests', () => {
             assert.isTrue(Mobile.isMobileUser(), 'Should detect iPhone');
         });
 
+        TestFramework.it('should detect iPad Pro (MacIntel + multi-touch)', () => {
+            mockWindow.innerWidth = 1024;
+            mockWindow.navigator.platform = 'MacIntel';
+            mockWindow.navigator.maxTouchPoints = 5;
+            mockWindow.navigator.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15';
+            assert.isTrue(Mobile.isMobileUser(), 'Should detect iPad Pro as mobile');
+
+            // Cleanup platform for other tests
+            mockWindow.navigator.platform = 'Desktop';
+        });
+
         TestFramework.it('should detect mobile by screen width and touch', () => {
             mockWindow.innerWidth = 500;
             mockWindow.ontouchstart = () => { };
