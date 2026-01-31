@@ -77,7 +77,7 @@ def run(config_path):
     target_cluster_ids = [c['cluster'] for c in target_clusters]
     target_terms_df = assignments[assignments['cluster'].isin(target_cluster_ids)]
 
-    for _, row in target_terms_df.head(50).iterrows(): # Limit for demo
+    for _, row in target_terms_df.iterrows():
         term = row['term']
         idx = terms.index(term)
         series = matrix[idx]

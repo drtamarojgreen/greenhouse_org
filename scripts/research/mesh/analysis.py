@@ -14,37 +14,45 @@ class Analyzer:
 
     def calculate_tss(self):
         """
-        Calculate Term Significance Scores.
-        For this implementation, we score based on total count,
-        temporal spread (years active), and recent growth.
+        Calculate Term Significance Scores using efficient grouping.
+        Scores based on total count, temporal spread, and recent growth.
         """
         self.logger.info("Calculating Term Significance Scores...")
 
-        stats = []
-        for ui in self.df['ui'].unique():
-            term_df = self.df[self.df['ui'] == ui].sort_values('year')
-            total_count = term_df['count'].sum()
-            years_active = term_df['year'].nunique()
+        # Calculate base stats
+        grouped = self.df.groupby('ui')['count'].agg(['sum', 'count']).reset_index()
+        grouped.columns = ['ui', 'total_count', 'years_active']
 
-            # Simple slope calculation for recent growth (last 10 years if available)
-            recent_df = term_df[term_df['year'] >= term_df['year'].max() - 10]
-            if len(recent_df) > 1:
-                x = recent_df['year'].values
-                y = recent_df['count'].values
-                slope, _ = np.polyfit(x, y, 1)
-            else:
-                slope = 0
+        # Calculate recent slope (heuristic: last 10 years)
+        max_year = self.df['year'].max()
+        recent_mask = self.df['year'] >= (max_year - 10)
+        recent_df = self.df[recent_mask].copy()
 
-            stats.append({
-                'ui': ui,
-                'name': self.candidate_map.get(ui, "Unknown"),
-                'total_count': int(total_count),
-                'years_active': int(years_active),
-                'recent_slope': float(slope),
-                'score': float(total_count * (years_active / 50.0)) # Heuristic score
-            })
+        def calculate_slope(group):
+            if len(group) < 2:
+                return 0.0
+            x = group['year'].values
+            y = group['count'].values
+            slope, _ = np.polyfit(x, y, 1)
+            return float(slope)
 
-        return pd.DataFrame(stats)
+        slopes = recent_df.groupby('ui').apply(calculate_slope, include_groups=False).reset_index()
+        slopes.columns = ['ui', 'recent_slope']
+
+        # Merge results
+        stats = pd.merge(grouped, slopes, on='ui', how='left').fillna(0.0)
+
+        # Add metadata and final score
+        stats['name'] = stats['ui'].map(lambda x: self.candidate_map.get(x, "Unknown"))
+        stats['score'] = stats['total_count'] * (stats['years_active'] / 50.0)
+
+        # Ensure native types
+        stats['total_count'] = stats['total_count'].astype(int)
+        stats['years_active'] = stats['years_active'].astype(int)
+        stats['recent_slope'] = stats['recent_slope'].astype(float)
+        stats['score'] = stats['score'].astype(float)
+
+        return stats[['ui', 'name', 'total_count', 'years_active', 'recent_slope', 'score']]
 
     def prune_terms(self, stats_df):
         """
