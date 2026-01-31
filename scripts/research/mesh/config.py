@@ -6,7 +6,7 @@ import os
 # --- File Paths ---
 DATA_DIR = os.getenv("MESH_DATA_DIR", "./data")
 OUTPUT_DIR = os.path.join(DATA_DIR, "output")
-MESH_DESC_XML = os.path.join(DATA_DIR, "desc2026.xml")  # Update year as needed
+MESH_DESC_XML = os.path.join(DATA_DIR, "desc2024.xml")  # Update year as needed
 PUBMED_DIR = os.path.join(DATA_DIR, "pubmed_baseline")
 
 # --- Tree Number Prefixes for Mental Health ---
