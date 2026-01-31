@@ -677,6 +677,9 @@ window.GreenhouseUtils = (function () {
         const isNarrow = window.innerWidth <= 1024;
         const ua = navigator.userAgent;
 
+        // 0. Manual override via query parameter for testing
+        if (window.location.search.includes('mobile=true')) return true;
+
         // 1. Specialized detection for iPad Pro (identifies as MacIntel but has multi-touch)
         const isIPadPro = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !window.MSStream);
 
