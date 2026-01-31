@@ -306,7 +306,7 @@
                 }
                 .gh-mobile-overlay * { box-sizing: border-box; }
                 .gh-mobile-overlay-header { padding: 50px 20px 10px; text-align: center; }
-                .gh-mobile-overlay-header h2 { color: #4ca1af; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; font-size: 1.1rem; margin: 0; opacity: 0.8; }
+                .gh-mobile-overlay-header h2 { color: #4ca1af; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; font-size: 1.4rem; margin: 0; opacity: 0.8; }
                 
                 .gh-mobile-container {
                     display: flex; flex: 1; overflow-x: auto; scroll-snap-type: x mandatory;
@@ -328,8 +328,8 @@
                     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
                     display: flex; justify-content: space-between; align-items: center; z-index: 2;
                 }
-                .gh-model-title { color: #fff; font-weight: 500; font-size: 1.1rem; }
-                .gh-model-index { color: #4ca1af; font-size: 0.85rem; font-weight: 600; background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px; }
+                .gh-model-title { color: #fff; font-weight: 500; font-size: 1.3rem; }
+                .gh-model-index { color: #4ca1af; font-size: 1.0rem; font-weight: 600; background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px; }
                 
                 .gh-mobile-canvas-wrapper {
                     flex: 1; position: relative; background: #000; margin: 12px; border-radius: 20px;
@@ -342,7 +342,7 @@
                 .gh-mode-indicator {
                     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
                     background: rgba(0, 0, 0, 0.8); color: #4ca1af; padding: 15px 30px;
-                    border-radius: 40px; font-weight: 600; font-size: 1.2rem; letter-spacing: 2px;
+                    border-radius: 40px; font-weight: 600; font-size: 1.5rem; letter-spacing: 2px;
                     border: 1px solid rgba(76, 161, 175, 0.3); pointer-events: none;
                     opacity: 0; z-index: 100; transition: opacity 0.3s ease;
                 }
@@ -351,13 +351,13 @@
                 .gh-mobile-btn {
                     background: linear-gradient(135deg, #4ca1af 0%, #2c3e50 100%);
                     color: white; text-decoration: none; padding: 14px 35px; border-radius: 18px;
-                    font-size: 0.95rem; font-weight: 600; text-align: center; margin: 0 24px 24px;
+                    font-size: 1.2rem; font-weight: 600; text-align: center; margin: 0 24px 24px;
                 }
                 .gh-mobile-close {
                     position: absolute; top: 40px; right: 25px;
                     background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
                     color: white; width: 44px; height: 44px; border-radius: 50%;
-                    font-size: 28px; display: flex; align-items: center; justify-content: center;
+                    font-size: 32px; display: flex; align-items: center; justify-content: center;
                     z-index: 100001; backdrop-filter: blur(10px);
                 }
                 .gh-swipe-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: all 0.3s ease; }
