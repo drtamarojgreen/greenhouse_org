@@ -195,7 +195,7 @@
             const canvas = document.createElement('canvas');
             canvas.id = 'tech-canvas';
             canvas.width = 500;
-            canvas.height = 250;
+            canvas.height = 300; // Increased height to accommodate the mobile message
             canvas.style.border = '1px solid black';
             canvas.style.backgroundColor = 'white';
 
@@ -205,6 +205,29 @@
             ctx.fillRect(10, 10, 50, 50);
             ctx.fillStyle = 'rgba(0, 0, 200, 0.5)';
             ctx.fillRect(30, 30, 50, 50);
+
+            // Mobile Browser Detection UI on Canvas
+            if (GreenhouseUtils.isMobileUser()) {
+                console.log('TechApp: Mobile browser detected. Adding indicator to canvas.');
+
+                // Draw a stylized text box
+                ctx.fillStyle = '#fff9c4'; // Light yellow background
+                ctx.strokeStyle = '#fbc02d'; // Yellow-gold border
+                ctx.lineWidth = 3;
+
+                const boxX = 100;
+                const boxY = 180;
+                const boxWidth = 300;
+                const boxHeight = 60;
+
+                ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+                ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+                ctx.fillStyle = '#f57f17'; // Dark orange/gold text
+                ctx.font = 'bold 18px Quicksand, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Mobile Browser Detected', boxX + (boxWidth / 2), boxY + 38);
+            }
 
             canvasSection.appendChild(canvas);
 
