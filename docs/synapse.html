@@ -34,38 +34,20 @@
     <script src="js/GreenhouseUtils.js"></script>
     <script src="js/GreenhouseMobile.js"></script>
     <script src="js/performance_profiler.js" data-auto-start="true"></script>
-    <script src="js/GreenhouseMobile.js"></script>
     <script src="js/model_tests.js"></script>
-    <script src="js/GreenhouseMobile.js"></script>
-    <script src="js/synapse_chemistry.js"></script>
-    <script src="js/GreenhouseMobile.js"></script>
-    <script src="js/synapse_neurotransmitters.js"></script>
-    <script src="js/GreenhouseMobile.js"></script>
-    <script src="js/synapse_sidebar.js"></script>
-    <script src="js/GreenhouseMobile.js"></script>
-    <script src="js/synapse_tooltips.js"></script>
-    <script src="js/GreenhouseMobile.js"></script>
-    <script src="js/synapse_app.js"></script>
-    <script src="js/GreenhouseMobile.js"></script>
+    <script src="js/synapse.js"></script>
 
     <script>
-        // For this local file, we manually initialize the application
-        // after ensuring the DOM is fully loaded.
         document.addEventListener('DOMContentLoaded', () => {
-            if (window.GreenhouseSynapseApp) {
-                // The init function in synapse_app.js will handle creating the canvas
-                // and rendering the placeholder content inside the container.
-                window.GreenhouseSynapseApp.init('#synapse-app-container');
-            } else {
-                console.error('Synapse Init Error: GreenhouseSynapseApp not found on window object.');
-                const container = document.querySelector('#synapse-app-container');
-                if (container) {
-                    container.innerHTML = '<p style="color:red;">Error: Could not load Synapse application.</p>';
+            const checkInit = setInterval(() => {
+                if (window.GreenhouseSynapseApp && window.GreenhouseSynapseApp.init) {
+                    window.GreenhouseSynapseApp.init('#synapse-app-container', './');
+                    clearInterval(checkInit);
                 }
-            }
+            }, 100);
+            setTimeout(() => clearInterval(checkInit), 10000);
         });
     </script>
-    <script src="js/GreenhouseMobile.js"></script>
 </body>
 
 </html>

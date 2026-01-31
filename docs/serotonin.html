@@ -52,8 +52,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const checkInit = setInterval(() => {
-                if (window.Greenhouse && window.Greenhouse.initializeSerotoninSimulation) {
-                    window.Greenhouse.initializeSerotoninSimulation('#serotonin-app-container');
+                if (window.GreenhouseSerotonin && window.GreenhouseSerotonin.initialize) {
+                    window.GreenhouseSerotonin.initialize(document.querySelector('#serotonin-app-container'), '#serotonin-app-container');
                     clearInterval(checkInit);
                 }
             }, 100);

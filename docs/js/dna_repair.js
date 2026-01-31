@@ -76,7 +76,15 @@
             wrapper.style.position = 'relative'; wrapper.style.backgroundColor = '#101015';
             container.appendChild(wrapper);
 
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
             if (this.createUI) this.createUI(wrapper);
+
+            if (isMobile) {
+                const staticHeader = document.querySelector('.page-header');
+                if (staticHeader) staticHeader.style.display = 'none';
+                const infoOverlay = wrapper.querySelector('.dna-info-overlay');
+                if (infoOverlay) infoOverlay.style.display = 'none';
+            }
 
             this.canvas = document.createElement('canvas');
             this.ctx = this.canvas.getContext('2d');
@@ -86,6 +94,12 @@
             this.width = this.canvas.width; this.height = this.canvas.height;
 
             this.setupInteraction();
+
+            // Handle Language Change
+            window.addEventListener('greenhouseLanguageChanged', () => {
+                this.refreshUIText();
+            });
+
             this.generateDNA();
             if (window.GreenhouseDNATooltip) window.GreenhouseDNATooltip.initialize();
 
@@ -106,8 +120,11 @@
             style.id = 'dna-sim-styles';
             style.innerHTML = `
                 .dna-controls-bar { display: flex; justify-content: center; gap: 10px; padding: 10px; background: rgba(26, 32, 44, 0.8); position: absolute; top: 0; left: 0; right: 0; z-index: 10; flex-wrap: wrap; }
-                .dna-control-btn { background: #2d3748; color: #e2e8f0; border: 1px solid #4a5568; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: all 0.3s ease; font-size: 12px; font-weight: 500; }
+                .dna-control-btn { background: #2d3748; color: #e2e8f0; border: 1px solid #4a5568; padding: 8px 16px; border-radius: 4px; cursor: pointer; transition: all 0.3s ease; font-size: 14px; font-weight: 500; min-height: 44px; display: flex; align-items: center; justify-content: center; }
                 .dna-control-btn:hover { background: #667eea; color: white; }
+                @media (max-width: 1024px) {
+                    .dna-control-btn { font-size: 16px; padding: 10px 20px; }
+                }
                 .dna-control-btn.active { background: #667eea; border-color: #5a67d8; color: white; }
                 .dna-info-overlay { position: absolute; bottom: 20px; left: 20px; background: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 8px; color: #fff; max-width: 300px; font-size: 13px; pointer-events: none; border-left: 4px solid #667eea; display: flex; flex-direction: column; gap: 10px; }
                 .dna-atp-counter { font-weight: bold; color: #48bb78; font-size: 14px; }
@@ -120,21 +137,31 @@
             if (x !== undefined && amount > 0) this.spawnParticles(x, y || 0, z || 0, Math.min(amount * 2, 20), '#48bb78');
         },
 
+        refreshUIText() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            this.startSimulation(this.state.repairMode); // This updates currentModeText
+            this.updateStats();
+            const langBtn = document.getElementById('dna-lang-toggle');
+            if (langBtn) langBtn.textContent = t('btn_language');
+        },
+
         updateStats() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const counter = document.getElementById('dna-atp-counter');
-            if (counter) counter.innerText = `ATP Consumed: ${Math.floor(this.state.atpConsumed)}`;
+            if (counter) counter.innerText = `${t('atp_consumed')}: ${Math.floor(this.state.atpConsumed)}`;
             const integrity = document.getElementById('dna-integrity-stat');
             if (integrity) {
-                integrity.innerText = `Genomic Integrity: ${Math.round(this.state.genomicIntegrity)}% | Mutations: ${this.state.mutationCount}`;
+                integrity.innerText = `${t('genomic_integrity')}: ${Math.round(this.state.genomicIntegrity)}% | ${t('mutations')}: ${this.state.mutationCount}`;
                 integrity.style.color = this.state.genomicIntegrity < 100 ? '#f56565' : '#a0aec0';
             }
             const analytics = document.getElementById('dna-analytics-stat');
-            if (analytics) analytics.innerText = `Successful Repairs: ${this.state.successfulRepairs} | Error-Prone: ${this.state.mutatedRepairs}`;
+            if (analytics) analytics.innerText = `${t('successful_repairs')}: ${this.state.successfulRepairs} | ${t('error_prone')}: ${this.state.mutatedRepairs}`;
         },
 
 
 
         startSimulation(mode) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             this.state.repairMode = mode;
             this.state.timer = 0; this.state.atpConsumed = 0;
             this.state.simulating = true; this.state.particles = [];
@@ -143,11 +170,11 @@
             this.generateDNA();
             if (this.updateInfoOverlay) this.updateInfoOverlay();
             const titles = {
-                'ber': "Base Excision Repair",
-                'mmr': "Mismatch Repair",
-                'dsb': "Double-Strand Break Repair",
+                'ber': t("Base Excision"),
+                'mmr': t("Mismatch Repair"),
+                'dsb': t("Double-Strand Break"),
                 'nhej': "Non-Homologous End Joining",
-                'ner': "Nucleotide Excision Repair",
+                'ner': t("Nucleotide Excision"),
                 'hr': "Homologous Recombination",
                 'photo': "Direct Reversal (Photolyase)",
                 'mgmt': "MGMT Repair",
@@ -314,9 +341,11 @@
     async function main() {
         try {
             await loadDependencies();
-            const { targetSelector, baseUrl } = captureAttributes();
+            const { targetSelector, baseUrl: attrBaseUrl } = captureAttributes();
+            const baseUrl = attrBaseUrl || './';
             if (baseUrl !== null) {
                 // Load modular simulation components
+                await GreenhouseUtils.loadScript('models_util.js', baseUrl);
                 await GreenhouseUtils.loadScript('dna_repair_mechanisms.js', baseUrl);
                 await GreenhouseUtils.loadScript('dna_repair_mutations.js', baseUrl);
                 await GreenhouseUtils.loadScript('dna_repair_buttons.js', baseUrl);

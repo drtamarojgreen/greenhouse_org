@@ -38,6 +38,7 @@
 
         init(selector) {
             console.log('EmotionApp: Initializing:', selector);
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
 
             const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!container) {
@@ -79,6 +80,20 @@
 
             this.handleResize();
 
+            // Local Language Toggle for Emotion
+            const langBtn = document.createElement('button');
+            langBtn.id = 'emotion-lang-toggle';
+            langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
+            langBtn.style.cssText = `
+                position: absolute; top: 10px; right: 10px; z-index: 100;
+                background: #ff4d4d; color: white; border: none; padding: 5px 12px;
+                border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
+            `;
+            langBtn.onclick = () => {
+                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+            };
+            container.appendChild(langBtn);
+
             // Generate Enhanced Brain Mesh (localized to Emotion App)
             if (window.GreenhouseEmotionBrain && window.GreenhouseEmotionBrain.generateEnhancedBrain) {
                 this.brainMesh = window.GreenhouseEmotionBrain.generateEnhancedBrain();
@@ -88,12 +103,21 @@
                 console.error('EmotionApp: Brain mesh generator not found.');
             }
 
-            this.createCategorySelector(this.uiContainer);
+            if (!isMobile) {
+                this.createCategorySelector(this.uiContainer);
+            }
             this.theorySelectorContainer = document.createElement('div');
             this.uiContainer.appendChild(this.theorySelectorContainer);
 
+            // Handle Language Change
+            window.addEventListener('greenhouseLanguageChanged', () => {
+                this.refreshUIText();
+            });
+
             this.updateTheorySelector();
-            this.createInfoPanel(container);
+            if (!isMobile) {
+                this.createInfoPanel(container);
+            }
             this.createDeepDivePanel(this.mainContentContainer);
 
             // Interaction
@@ -129,6 +153,33 @@
             }
         },
 
+        refreshUIText() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const lBtn = document.getElementById('emotion-lang-toggle');
+            if (lBtn) lBtn.textContent = t('btn_language');
+
+            this.updateTheorySelector();
+            this.updateInfoPanel();
+            if (this.selectedRegion) this.updateDeepDivePanel();
+
+            // Refresh Category Selector labels
+            if (this.uiContainer) {
+                const catDiv = this.uiContainer.firstChild;
+                if (catDiv) {
+                    const categories = [
+                        { id: 'philosophies', label: t('emotion_cat_philosophies') },
+                        { id: 'regulations', label: t('emotion_cat_regulations') },
+                        { id: 'therapeuticInterventions', label: t('emotion_cat_therapeutic') },
+                        { id: 'medicationTreatments', label: t('emotion_cat_medication') },
+                        { id: 'advancedTheories', label: t('emotion_cat_advanced') }
+                    ];
+                    Array.from(catDiv.children).forEach((btn, i) => {
+                        if (categories[i]) btn.textContent = categories[i].label;
+                    });
+                }
+            }
+        },
+
         createCategorySelector(container) {
             const catDiv = document.createElement('div');
             catDiv.style.cssText = `
@@ -141,12 +192,13 @@
                 flex-wrap: wrap;
             `;
 
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const categories = [
-                { id: 'philosophies', label: 'World Philosophical Frameworks' },
-                { id: 'regulations', label: 'Emotional Regulation' },
-                { id: 'therapeuticInterventions', label: 'Therapeutic Effects' },
-                { id: 'medicationTreatments', label: 'Medication Treatments' },
-                { id: 'advancedTheories', label: 'Regulation Theories' }
+                { id: 'philosophies', label: t('emotion_cat_philosophies') },
+                { id: 'regulations', label: t('emotion_cat_regulations') },
+                { id: 'therapeuticInterventions', label: t('emotion_cat_therapeutic') },
+                { id: 'medicationTreatments', label: t('emotion_cat_medication') },
+                { id: 'advancedTheories', label: t('emotion_cat_advanced') }
             ];
 
             categories.forEach(cat => {
@@ -254,6 +306,7 @@
         },
 
         createInfoPanel(container) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             this.infoPanel = document.createElement('div');
             this.infoPanel.style.cssText = `
                 padding: 20px;
@@ -265,13 +318,13 @@
                 z-index: 5;
             `;
             this.infoPanel.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
                     <div>
-                        <h3 style="margin: 0; color: #ff4d4d;">Emotion Simulation</h3>
-                        <p style="margin: 5px 0 0 0; opacity: 0.8;">Select a psychological theory to explore neurological pathways and emotional regulation.</p>
+                        <h3 style="margin: 0; color: #ff4d4d;">${t('emotion_app_title')}</h3>
+                        <p style="margin: 5px 0 0 0; opacity: 0.8;">${t('emotion_app_desc')}</p>
                     </div>
                     <div style="font-size: 11px; text-align: right; opacity: 0.6;">
-                        DRAG to rotate • SCROLL to zoom • CLICK regions for deep dive
+                        ${t('mobile_interaction_hint') || 'DRAG to rotate • CLICK regions'}
                     </div>
                 </div>
             `;
@@ -405,6 +458,7 @@
         },
 
         updateInfoPanel() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             if (!this.activeTheory) return;
 
             let regionInfo = '';
@@ -422,23 +476,23 @@
 
             const wellnessInfo = this.activeTheory.wellnessFocus ? `
                 <div style="margin-top: 10px; padding: 10px; background: rgba(0,255,100,0.1); border-radius: 4px; border-left: 3px solid #00ff64;">
-                    <strong>Wellness Focus:</strong> ${this.activeTheory.wellnessFocus}
+                    <strong>${t('wellness_focus')}:</strong> ${this.activeTheory.wellnessFocus}
                 </div>
             ` : '';
 
             const conditionInfo = this.activeTheory.conditionMapping ? `
                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,100,0,0.1); border-radius: 4px; border-left: 3px solid #ff6400;">
-                    <strong>Clinical Relevance:</strong> ${this.activeTheory.conditionMapping}
+                    <strong>${t('clinical_relevance')}:</strong> ${this.activeTheory.conditionMapping}
                 </div>
             ` : '';
 
             this.infoPanel.innerHTML = `
-                <div style="display: flex; justify-content: space-between;">
-                    <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 300px;">
                         <h3 style="color: #ff4d4d; margin: 0;">${this.activeTheory.name}</h3>
                         <p style="margin: 10px 0;">${this.activeTheory.description}</p>
                         <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px;">
-                            <strong>Involved Regions:</strong> ${regionInfo}
+                            <strong>${t('involved_regions')}:</strong> ${regionInfo}
                         </div>
                     </div>
                     <div style="width: 300px; margin-left: 20px;">
@@ -637,14 +691,15 @@
             }
 
             // Title Overlay
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'left';
-            ctx.fillText('EMOTION MODEL: LIMBIC SYSTEM', 20, 30);
+            ctx.fillText(`${t('emotion_app_title').toUpperCase()}: ${t('limbic_system').toUpperCase()}`, 20, 30);
 
             if (this.activeTheory) {
                 ctx.fillStyle = '#ff4d4d';
-                ctx.fillText(`ACTIVE THEORY: ${this.activeTheory.name.toUpperCase()}`, 20, 55);
+                ctx.fillText(`${t('active_theory').toUpperCase()}: ${this.activeTheory.name.toUpperCase()}`, 20, 55);
             }
 
             // Hover Info

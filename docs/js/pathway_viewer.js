@@ -329,6 +329,12 @@
             }
 
             this.initializeGeometry();
+
+            // Handle Language Change
+            window.addEventListener('greenhouseLanguageChanged', () => {
+                this.refreshUIText();
+            });
+
             await this.loadPathwayMetadata();
             this.initialized = true;
 
@@ -437,51 +443,64 @@
         },
 
         setupUI(container) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            if (isMobile) {
+                const testControls = document.getElementById('test-controls');
+                if (testControls) testControls.style.display = 'none';
+            }
             const uiContainer = document.createElement('div');
             uiContainer.style.cssText = `
                 position: absolute; 
-                top: 20px; 
+                top: ${isMobile ? 'auto' : '20px'};
+                bottom: ${isMobile ? '20px' : 'auto'};
                 left: 20px; 
+                right: ${isMobile ? '20px' : 'auto'};
                 z-index: 100; 
                 background: rgba(18, 18, 18, 0.85); 
-                padding: 15px; 
+                padding: ${isMobile ? '10px' : '15px'};
                 border-radius: 12px; 
                 color: #e0e0e0; 
                 font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                 border: 1px solid rgba(255, 255, 255, 0.1);
                 backdrop-filter: blur(10px);
                 box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-                min-width: 200px;
+                min-width: ${isMobile ? 'auto' : '220px'};
+                display: ${isMobile ? 'flex' : 'block'};
+                flex-direction: column;
+                gap: 5px;
             `;
             container.style.position = 'relative';
 
             const header = document.createElement('div');
-            header.style.cssText = 'font-weight: bold; margin-bottom: 10px; font-size: 14px; color: #4ca1af; text-transform: uppercase; letter-spacing: 1px;';
-            header.textContent = 'Pathway Control';
-            uiContainer.appendChild(header);
+            header.style.cssText = `font-weight: bold; margin-bottom: ${isMobile ? '5px' : '10px'}; font-size: ${isMobile ? '16px' : '14px'}; color: #4ca1af; text-transform: uppercase; letter-spacing: 1px;`;
+            header.textContent = t('pathway_control');
+            if (!isMobile) uiContainer.appendChild(header);
 
             const pathwayGroup = document.createElement('div');
-            pathwayGroup.style.marginBottom = '15px';
+            pathwayGroup.style.marginBottom = isMobile ? '5px' : '15px';
             const pLabel = document.createElement('label');
-            pLabel.textContent = 'Systemic Pathway:';
-            pLabel.style.cssText = 'display: block; font-size: 12px; margin-bottom: 5px; color: #aaa;';
-            pathwayGroup.appendChild(pLabel);
+            pLabel.id = 'pathway-systemic-label';
+            pLabel.textContent = t('systemic_pathway');
+            pLabel.style.cssText = `display: block; font-size: ${isMobile ? '16px' : '12px'}; margin-bottom: 5px; color: #aaa;`;
+            if (!isMobile) pathwayGroup.appendChild(pLabel);
             const pSelect = document.createElement('select');
             pSelect.id = 'master-pathway-selector';
             pSelect.style.cssText = `
                 width: 100%; background: #2a2a2a; color: #4ca1af; border: 1px solid #444; 
-                padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer;
+                padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: ${isMobile ? '16px' : '14px'};
             `;
             pathwayGroup.appendChild(pSelect);
             uiContainer.appendChild(pathwayGroup);
 
             const selectGroup = document.createElement('div');
-            selectGroup.style.marginBottom = '10px';
+            selectGroup.style.marginBottom = isMobile ? '5px' : '10px';
 
             const label = document.createElement('label');
-            label.textContent = 'Component / Gene:';
-            label.style.cssText = 'display: block; font-size: 12px; margin-bottom: 5px; color: #aaa;';
-            selectGroup.appendChild(label);
+            label.id = 'pathway-component-label';
+            label.textContent = t('component_gene');
+            label.style.cssText = `display: block; font-size: ${isMobile ? '16px' : '12px'}; margin-bottom: 5px; color: #aaa;`;
+            if (!isMobile) selectGroup.appendChild(label);
 
             const select = document.createElement('select');
             select.id = 'pathway-selector';
@@ -493,17 +512,21 @@
                 padding: 8px; 
                 border-radius: 6px;
                 outline: none;
-                font-size: 13px;
+                font-size: ${isMobile ? '16px' : '13px'};
                 cursor: pointer;
             `;
             selectGroup.appendChild(select);
             uiContainer.appendChild(selectGroup);
 
+            const btnGroup = document.createElement('div');
+            btnGroup.style.display = 'flex';
+            btnGroup.style.gap = '10px';
+
             const button = document.createElement('button');
             button.id = 'highlight-gene-btn';
-            button.textContent = 'Highlight Pathway';
+            button.textContent = t('highlight_pathway');
             button.style.cssText = `
-                width: 100%; 
+                flex: 1;
                 background: linear-gradient(135deg, #4ca1af, #2c3e50); 
                 color: white; 
                 border: none; 
@@ -511,14 +534,34 @@
                 border-radius: 6px; 
                 font-weight: bold; 
                 cursor: pointer;
-                transition: transform 0.2s, background 0.2s;
+                font-size: ${isMobile ? '16px' : '14px'};
             `;
-            button.onmouseover = () => button.style.filter = 'brightness(1.2)';
-            button.onmouseout = () => button.style.filter = 'brightness(1.0)';
             button.onclick = () => {
                 this.highlightedNodeId = select.value;
             };
-            uiContainer.appendChild(button);
+            btnGroup.appendChild(button);
+
+            const langBtn = document.createElement('button');
+            langBtn.id = 'pathway-lang-toggle';
+            langBtn.textContent = t('btn_language');
+            langBtn.style.cssText = `
+                flex: 0 0 auto;
+                background: #732751;
+                color: white;
+                border: none;
+                padding: 10px;
+                border-radius: 6px;
+                font-weight: bold;
+                cursor: pointer;
+                font-size: ${isMobile ? '16px' : '14px'};
+            `;
+            langBtn.onclick = () => {
+                if (window.GreenhouseModelsUtil) {
+                    window.GreenhouseModelsUtil.toggleLanguage();
+                }
+            };
+            btnGroup.appendChild(langBtn);
+            uiContainer.appendChild(btnGroup);
 
             container.appendChild(uiContainer);
         },
@@ -589,16 +632,37 @@
             return 'pfc';
         },
 
+        refreshUIText() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const pLabel = document.getElementById('pathway-systemic-label');
+            if (pLabel) pLabel.textContent = t('systemic_pathway');
+
+            const cLabel = document.getElementById('pathway-component-label');
+            if (cLabel) cLabel.textContent = t('component_gene');
+
+            const hBtn = document.getElementById('highlight-gene-btn');
+            if (hBtn) hBtn.textContent = t('highlight_pathway');
+
+            const lBtn = document.getElementById('pathway-lang-toggle');
+            if (lBtn) lBtn.textContent = t('btn_language');
+
+            this.updateGeneSelector();
+            this.populatePathwaySelector();
+        },
+
         updateGeneSelector() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const selector = document.getElementById('pathway-selector');
             if (selector && this.pathwayData) {
-                selector.innerHTML = '<option value="">-- Select focus --</option>';
+                const currentVal = selector.value;
+                selector.innerHTML = `<option value="">${t('select_focus')}</option>`;
                 this.pathwayData.forEach(node => {
                     const option = document.createElement('option');
                     option.value = node.id;
                     option.textContent = node.name;
                     selector.appendChild(option);
                 });
+                selector.value = currentVal;
             }
         },
 

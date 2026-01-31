@@ -362,7 +362,7 @@
                 }
                 .gh-swipe-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: all 0.3s ease; }
                 .gh-swipe-dot.active { background: #4ca1af; width: 22px; border-radius: 10px; }
-                
+
                 .gh-mobile-loader {
                     width: 40px; height: 40px; border: 3px solid rgba(76, 161, 175, 0.2);
                     border-top-color: #4ca1af; border-radius: 50%; animation: ghSpin 1s linear infinite;

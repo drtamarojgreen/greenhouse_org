@@ -10,16 +10,17 @@
 
     G.createUI = function (container) {
         this.injectStyles();
+        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
         const controls = document.createElement('div');
         controls.className = 'serotonin-controls-modular';
 
         const categories = [
             {
-                name: 'Accessibility',
+                name: t('accessibility'),
                 options: [
-                    { name: 'High-Contrast Mode', toggle: () => { G.highContrast = !G.highContrast; } },
-                    { name: 'Large-Scale UI', toggle: () => { G.largeUI = !G.largeUI; this.updateUIScale(); } },
-                    { name: 'Reduced Motion', toggle: () => { G.reducedMotion = !G.reducedMotion; } },
+                    { name: t('high_contrast'), toggle: () => { G.highContrast = !G.highContrast; } },
+                    { name: t('large_scale_ui'), toggle: () => { G.largeUI = !G.largeUI; this.updateUIScale(); } },
+                    { name: t('reduced_motion'), toggle: () => { G.reducedMotion = !G.reducedMotion; } },
                     { name: 'Subtype Glyphs', toggle: () => { G.showGlyphs = !G.showGlyphs; } },
                     { name: 'Stereoscopic Mode (VR)', toggle: () => { G.vrMode = !G.vrMode; } },
                     { name: 'Deuteranopia', toggle: () => { this.toggleColorBlind('deuteranopia'); } },
@@ -28,7 +29,7 @@
                 ]
             },
             {
-                name: 'Aesthetics',
+                name: t('aesthetics'),
                 options: [
                     { name: 'Cinematic FX', toggle: () => { G.cinematicFX = !G.cinematicFX; } },
                     { name: 'Bloom Effect', toggle: () => { G.bloomEffect = !G.bloomEffect; } },
@@ -38,7 +39,7 @@
                 ]
             },
             {
-                name: 'Feedback/HUD',
+                name: t('feedback'),
                 options: [
                     { name: 'Performance Gauge', toggle: () => { G.showFPS = !G.showFPS; } },
                     { name: 'Status Bar', toggle: () => { G.showStatusBar = !G.showStatusBar; } },
@@ -51,9 +52,9 @@
                 ]
             },
             {
-                name: 'Temporal',
+                name: t('temporal'),
                 options: [
-                    { name: 'Pause Simulation (P)', toggle: () => { G.paused = !G.paused; } },
+                    { name: t('pause'), toggle: () => { G.paused = !G.paused; } },
                     { name: 'Fast Forward 2x', toggle: () => { G.playbackSpeed = G.playbackSpeed === 2 ? 1 : 2; } },
                     { name: 'Fast Forward 4x', toggle: () => { G.playbackSpeed = G.playbackSpeed === 4 ? 1 : 4; } },
                     { name: 'Time-lapse Mode', toggle: () => { G.timeLapse = !G.timeLapse; } },
@@ -61,7 +62,7 @@
                 ]
             },
             {
-                name: 'Scenarios',
+                name: t('scenarios'),
                 options: [
                     { name: 'Depression', toggle: () => { G.Transport.tphActivity = G.Transport.tphActivity === 1.0 ? 0.3 : 1.0; } },
                     { name: 'Serotonin Syndrome', toggle: () => {
@@ -129,6 +130,7 @@
         ];
 
         categories.forEach(cat => {
+            if (isMobile && (cat.name === t('aesthetics') || cat.name === t('temporal'))) return;
             const dropdown = document.createElement('div');
             dropdown.className = 'serotonin-dropdown';
 
@@ -183,12 +185,39 @@
         const langDropdown = document.createElement('div');
         langDropdown.className = 'serotonin-dropdown';
         const langBtn = document.createElement('button');
+        langBtn.id = 'serotonin-lang-toggle';
         langBtn.className = 'serotonin-btn';
-        langBtn.innerText = 'Language: EN';
+        langBtn.innerText = t('btn_language');
+        langBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+        };
         langDropdown.appendChild(langBtn);
         controls.appendChild(langDropdown);
 
         container.appendChild(controls);
+
+        window.addEventListener('greenhouseLanguageChanged', () => {
+            if (this.refreshUIText) this.refreshUIText();
+        });
+
+        this.refreshUIText = () => {
+            const t2 = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const lBtn = document.getElementById('serotonin-lang-toggle');
+            if (lBtn) lBtn.innerText = t2('btn_language');
+            const infoBox = document.querySelector('.serotonin-info');
+            if (infoBox) infoBox.innerHTML = `<strong>${t2('neuro_serotonin_title')}</strong><br>${t2('neuro_serotonin_desc')}`;
+
+            // Update dropdown headers
+            const dropdowns = document.querySelectorAll('.serotonin-dropdown .dropdown-toggle');
+            if (dropdowns.length >= 5) {
+                dropdowns[0].innerText = t2('accessibility');
+                dropdowns[1].innerText = t2('aesthetics');
+                dropdowns[2].innerText = t2('feedback');
+                dropdowns[3].innerText = t2('temporal');
+                dropdowns[4].innerText = t2('scenarios');
+            }
+        };
 
         this.setupKeyboardShortcuts();
 
@@ -198,52 +227,56 @@
             controls.style.transformOrigin = 'top left';
         };
 
+        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
         const info = document.createElement('div');
         info.className = 'serotonin-info';
-        info.innerHTML = '<strong>Serotonin Structural Model</strong><br>Visualization of 5-HT1A in complex with Gi.';
+        info.innerHTML = `<strong>${t('neuro_serotonin_title')}</strong><br>${t('neuro_serotonin_desc')}`;
+        if (isMobile) info.style.display = 'none';
         container.appendChild(info);
 
-        // Zoom Control (Category 10, #90)
-        const zoomControl = document.createElement('div');
-        zoomControl.style.position = 'absolute';
-        zoomControl.style.top = '10px';
-        zoomControl.style.right = '10px';
-        zoomControl.style.display = 'flex';
-        zoomControl.style.flexDirection = 'column';
-        zoomControl.style.gap = '5px';
+        if (!isMobile) {
+            // Zoom Control (Category 10, #90)
+            const zoomControl = document.createElement('div');
+            zoomControl.style.position = 'absolute';
+            zoomControl.style.top = '10px';
+            zoomControl.style.right = '10px';
+            zoomControl.style.display = 'flex';
+            zoomControl.style.flexDirection = 'column';
+            zoomControl.style.gap = '5px';
 
-        const zoomIn = document.createElement('button');
-        zoomIn.className = 'serotonin-btn';
-        zoomIn.innerText = 'Zoom In (+)';
-        zoomIn.onclick = () => { G.state.camera.zoom *= 1.1; };
+            const zoomIn = document.createElement('button');
+            zoomIn.className = 'serotonin-btn';
+            zoomIn.innerText = 'Zoom In (+)';
+            zoomIn.onclick = () => { G.state.camera.zoom *= 1.1; };
 
-        const zoomOut = document.createElement('button');
-        zoomOut.className = 'serotonin-btn';
-        zoomOut.innerText = 'Zoom Out (-)';
-        zoomOut.onclick = () => { G.state.camera.zoom *= 0.9; };
+            const zoomOut = document.createElement('button');
+            zoomOut.className = 'serotonin-btn';
+            zoomOut.innerText = 'Zoom Out (-)';
+            zoomOut.onclick = () => { G.state.camera.zoom *= 0.9; };
 
-        zoomControl.appendChild(zoomIn);
-        zoomControl.appendChild(zoomOut);
-        container.appendChild(zoomControl);
+            zoomControl.appendChild(zoomIn);
+            zoomControl.appendChild(zoomOut);
+            container.appendChild(zoomControl);
 
-        // Cholesterol Level Control (Category 2, #16)
-        const cholesterolControl = document.createElement('div');
-        cholesterolControl.style.position = 'absolute';
-        cholesterolControl.style.bottom = '50px';
-        cholesterolControl.style.right = '10px';
-        cholesterolControl.style.background = 'rgba(0,0,0,0.5)';
-        cholesterolControl.style.padding = '5px';
-        cholesterolControl.style.borderRadius = '4px';
-        cholesterolControl.innerHTML = '<label style="font-size:10px; color:#fff;">Cholesterol Level</label>';
-        const cholesterolSlider = document.createElement('input');
-        cholesterolSlider.type = 'range';
-        cholesterolSlider.min = '0.5';
-        cholesterolSlider.max = '2.0';
-        cholesterolSlider.step = '0.1';
-        cholesterolSlider.value = '1.0';
-        cholesterolSlider.oninput = (e) => { G.cholesterolLevel = parseFloat(e.target.value); };
-        cholesterolControl.appendChild(cholesterolSlider);
-        container.appendChild(cholesterolControl);
+            // Cholesterol Level Control (Category 2, #16)
+            const cholesterolControl = document.createElement('div');
+            cholesterolControl.style.position = 'absolute';
+            cholesterolControl.style.bottom = '50px';
+            cholesterolControl.style.right = '10px';
+            cholesterolControl.style.background = 'rgba(0,0,0,0.5)';
+            cholesterolControl.style.padding = '5px';
+            cholesterolControl.style.borderRadius = '4px';
+            cholesterolControl.innerHTML = '<label style="font-size:10px; color:#fff;">Cholesterol Level</label>';
+            const cholesterolSlider = document.createElement('input');
+            cholesterolSlider.type = 'range';
+            cholesterolSlider.min = '0.5';
+            cholesterolSlider.max = '2.0';
+            cholesterolSlider.step = '0.1';
+            cholesterolSlider.value = '1.0';
+            cholesterolSlider.oninput = (e) => { G.cholesterolLevel = parseFloat(e.target.value); };
+            cholesterolControl.appendChild(cholesterolSlider);
+            container.appendChild(cholesterolControl);
+        }
 
         this.cycleEnvironment = () => {
             const envs = ['PFC (High 5-HT2A)', 'Hippocampus (High 5-HT1A)', 'Raphe (Autoreceptors)'];
@@ -265,16 +298,18 @@
             G.lastInteraction = { type: 'environment', name: env, time: G.state.timer };
         };
 
-        // Portal Link (Category 10, #100)
-        const portalLink = document.createElement('a');
-        portalLink.href = '#';
-        portalLink.innerText = 'CITIZEN SCIENCE PORTAL';
-        portalLink.style.position = 'absolute';
-        portalLink.style.bottom = '10px';
-        portalLink.style.right = '10px';
-        portalLink.style.color = '#00ffcc';
-        portalLink.style.fontSize = '10px';
-        container.appendChild(portalLink);
+        if (!isMobile) {
+            // Portal Link (Category 10, #100)
+            const portalLink = document.createElement('a');
+            portalLink.href = '#';
+            portalLink.innerText = 'CITIZEN SCIENCE PORTAL';
+            portalLink.style.position = 'absolute';
+            portalLink.style.bottom = '10px';
+            portalLink.style.right = '10px';
+            portalLink.style.color = '#00ffcc';
+            portalLink.style.fontSize = '10px';
+            container.appendChild(portalLink);
+        }
 
         // Subcellular Markers (Category 10, #93)
         G.renderSubcellularMarkers = (ctx, project, cam, w, h) => {

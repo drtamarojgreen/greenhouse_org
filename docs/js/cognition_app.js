@@ -28,6 +28,8 @@
             // Standardize selector argument handling if re-invoked by GreenhouseUtils
             if (typeof selector !== 'string' && selArg) selector = selArg;
 
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+
             console.log('CognitionApp: Initializing with selector:', selector);
             const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!container) {
@@ -86,8 +88,29 @@
 
             this.initBackground();
             this.createEnhancementUI(container);
-            this.createInfoPanel(container);
+            if (!isMobile) {
+                this.createInfoPanel(container);
+            }
             this.setupInteraction();
+
+            // Handle Language Change
+            window.addEventListener('greenhouseLanguageChanged', () => {
+                this.refreshUIText();
+            });
+
+            // Local Language Toggle for Cognition
+            const langBtn = document.createElement('button');
+            langBtn.id = 'cognition-lang-toggle';
+            langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
+            langBtn.style.cssText = `
+                position: absolute; top: 10px; right: 10px; z-index: 100;
+                background: #4fd1c5; color: white; border: none; padding: 5px 12px;
+                border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
+            `;
+            langBtn.onclick = () => {
+                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+            };
+            container.appendChild(langBtn);
 
             this.isRunning = true;
             this.startLoop();
@@ -97,7 +120,29 @@
             }
         },
 
+        refreshUIText() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const lBtn = document.getElementById('cognition-lang-toggle');
+            if (lBtn) lBtn.textContent = t('btn_language');
+
+            this.updateInfoPanel();
+
+            // Refresh search placeholder
+            const searchInput = document.getElementById('enhancement-search');
+            if (searchInput) searchInput.placeholder = t('cog_search_placeholder');
+
+            // Refresh UI Row
+            const row = document.querySelector('#cognition-ui-row');
+            if (row) {
+                const glassBtn = row.querySelector('.cog-glass-btn');
+                if (glassBtn) glassBtn.textContent = `${t('cog_glass_brain')}: ${this.options.glassBrain ? 'On' : 'Off'}`;
+                const resetBtn = row.querySelector('.cog-reset-btn');
+                if (resetBtn) resetBtn.textContent = t('cog_reset_view');
+            }
+        },
+
         createEnhancementUI(container) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const uiContainer = document.createElement('div');
             uiContainer.style.cssText = `
                 display: flex;
@@ -108,6 +153,7 @@
             `;
 
             const controlsRow = document.createElement('div');
+            controlsRow.id = 'cognition-ui-row';
             controlsRow.style.cssText = `
                 display: flex;
                 gap: 10px;
@@ -130,24 +176,26 @@
 
             const searchInput = document.createElement('input');
             searchInput.id = 'enhancement-search';
-            searchInput.placeholder = 'Search 200 enhancements...';
+            searchInput.placeholder = t('cog_search_placeholder');
             searchInput.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px; flex-grow: 1;
             `;
 
             const glassToggle = document.createElement('button');
-            glassToggle.textContent = 'Glass Brain: Off';
+            glassToggle.className = 'cog-glass-btn';
+            glassToggle.textContent = `${t('cog_glass_brain')}: Off`;
             glassToggle.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
             `;
             glassToggle.onclick = () => {
                 this.options.glassBrain = !this.options.glassBrain;
-                glassToggle.textContent = `Glass Brain: ${this.options.glassBrain ? 'On' : 'Off'}`;
+                glassToggle.textContent = `${t('cog_glass_brain')}: ${this.options.glassBrain ? 'On' : 'Off'}`;
                 glassToggle.style.borderColor = this.options.glassBrain ? '#4fd1c5' : '#4a5568';
             };
 
             const resetCamera = document.createElement('button');
-            resetCamera.textContent = 'Reset View';
+            resetCamera.className = 'cog-reset-btn';
+            resetCamera.textContent = t('cog_reset_view');
             resetCamera.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
             `;
@@ -217,6 +265,7 @@
         },
 
         createInfoPanel(container) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             this.infoPanel = document.createElement('div');
             this.infoPanel.style.cssText = `
                 padding: 20px;
@@ -226,7 +275,7 @@
                 font-family: sans-serif;
                 min-height: 100px;
             `;
-            this.infoPanel.innerHTML = '<h3>Cognition Simulation</h3><p>Select a cognitive theory to explore its neurological mapping.</p>';
+            this.infoPanel.innerHTML = `<h3>${t('cog_simulation')}</h3><p>${t('cog_select_desc')}</p>`;
             container.appendChild(this.infoPanel);
         },
 
@@ -471,6 +520,8 @@
             const w = this.canvas.width;
             const h = this.canvas.height;
 
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
             ctx.clearRect(0, 0, w, h);
 
             // Draw Background
@@ -518,12 +569,12 @@
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'left';
-            ctx.fillText('COGNITION MODEL: CEREBRAL CORTEX', 20, 30);
+            ctx.fillText(`${t('cog_model_title').toUpperCase()}: ${t('cerebral_cortex').toUpperCase()}`, 20, 30);
 
             if (this.activeEnhancement) {
                 ctx.fillStyle = '#4fd1c5';
                 ctx.font = 'bold 12px Arial';
-                ctx.fillText(`ACTIVE ENHANCEMENT: ${this.activeEnhancement.name.toUpperCase()}`, 20, 50);
+                ctx.fillText(`${t('active_enhancement').toUpperCase()}: ${this.activeEnhancement.name.toUpperCase()}`, 20, 50);
             }
 
             // Call sub-module renders

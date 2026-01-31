@@ -216,6 +216,7 @@ a {
 
     .greenhouse-btn {
         font-size: 1.1rem;
+        min-height: 44px; /* Touch target standard */
     }
 
     .greenhouse-consent-label {
@@ -229,6 +230,16 @@ a {
     .greenhouse-landing-container {
         padding: 1em;
         margin: 1em;
+    }
+
+    /* Enforce 16px+ for all primary text elements on mobile */
+    input, select, button, label, p, span {
+        font-size: 16px !important;
+    }
+
+    /* Primary Simulation Overlay adjustments */
+    .gh-mobile-overlay-header h2 {
+        font-size: 1.6rem !important;
     }
 }
 

@@ -190,6 +190,83 @@
                 btn_fullscreen: "Full Screen",
                 btn_language: "Español", // Label to switch TO Spanish
 
+                // Shared Simulation Terms
+                "signaling": "Signaling",
+                "scenarios": "Scenarios",
+                "pharmacology": "Pharmacology",
+                "settings": "Settings",
+                "accessibility": "Accessibility",
+                "aesthetics": "Aesthetics",
+                "feedback": "Feedback",
+                "temporal": "Temporal",
+                "pause": "Pause",
+                "involved_regions": "Involved Regions",
+                "wellness_focus": "Wellness Focus",
+                "clinical_relevance": "Clinical Relevance",
+                "initializing": "Initializing...",
+                "gen": "Gen",
+                "fitness": "Fitness",
+                "best_fitness": "Best Fitness",
+                "used": "Used",
+                "ph": "pH",
+                "temp": "Temp",
+                "high_contrast": "High Contrast",
+                "large_scale_ui": "Large Scale UI",
+                "reduced_motion": "Reduced Motion",
+                "mobile_interaction_hint": "DRAG to rotate • CLICK regions",
+                "limbic_system": "Limbic System",
+                "active_theory": "Active Theory",
+                "cerebral_cortex": "Cerebral Cortex",
+                "active_enhancement": "Active Enhancement",
+                "atp_consumed": "ATP Consumed",
+                "genomic_integrity": "Genomic Integrity",
+                "mutations": "Mutations",
+                "successful_repairs": "Successful Repairs",
+                "error_prone": "Error Prone",
+                "whole_brain_topology": "Whole Brain Topology",
+
+                // Model Specific Titles
+                "emotion_app_title": "Emotion Simulation",
+                "emotion_app_desc": "Explore neurological pathways and emotional regulation.",
+                "emotion_cat_philosophies": "Philosophical Frameworks",
+                "emotion_cat_regulations": "Emotional Regulation",
+                "emotion_cat_therapeutic": "Therapeutic Effects",
+                "emotion_cat_medication": "Medication Treatments",
+                "emotion_cat_advanced": "Regulation Theories",
+
+                "cog_simulation": "Cognition Simulation",
+                "cog_select_desc": "Select a cognitive theory to explore its neurological mapping.",
+                "cog_search_placeholder": "Search enhancements...",
+                "cog_glass_brain": "Glass Brain",
+                "cog_reset_view": "Reset View",
+                "cog_model_title": "Cognition Model",
+
+                "neuro_dopamine_signaling": "Dopamine Signaling",
+                "neuro_dopamine_select": "Select a mode to visualize pathway.",
+                "neuro_serotonin_title": "Serotonin Structural Model",
+                "neuro_serotonin_desc": "Visualization of 5-HT1A in complex with Gi.",
+
+                "genetic_model_title": "Genetic Model",
+                "pathway_control": "Pathway Control",
+                "systemic_pathway": "Systemic Pathway",
+                "component_gene": "Component/Gene",
+                "highlight_pathway": "Highlight Pathway",
+                "select_focus": "Select Focus...",
+
+                "pip_dna": "DNA Double Helix",
+                "pip_micro": "Micro View",
+                "pip_protein": "Protein View",
+                "pip_target": "Target View",
+
+                // DNA Repair Buttons
+                "Base Excision": "Base Excision",
+                "Mismatch Repair": "Mismatch Repair",
+                "Nucleotide Excision": "Nucleotide Excision",
+                "Double-Strand Break": "Double-Strand Break",
+
+                "Burst": "Explosión",
+                "Idioma": "Idioma",
+
                 how_to_title: "How to Use",
                 how_to_synaptic: "Use the controls to see how different parameters affect the strength of neural connections in real-time.",
                 how_to_env: "Use the sliders to adjust environmental stress and social support. Click the gene buttons to simulate genetic predispositions.",
@@ -431,6 +508,83 @@
                 btn_fullscreen: "Pantalla Completa",
                 btn_language: "English", // Label to switch TO English
 
+                // Shared Simulation Terms
+                "signaling": "Señalización",
+                "scenarios": "Escenarios",
+                "pharmacology": "Farmacología",
+                "settings": "Ajustes",
+                "accessibility": "Accesibilidad",
+                "aesthetics": "Estética",
+                "feedback": "Retroalimentación",
+                "temporal": "Temporal",
+                "pause": "Pausa",
+                "involved_regions": "Regiones Involucradas",
+                "wellness_focus": "Enfoque de Bienestar",
+                "clinical_relevance": "Relevancia Clínica",
+                "initializing": "Inicializando...",
+                "gen": "Gen",
+                "fitness": "Aptitud",
+                "best_fitness": "Mejor Aptitud",
+                "used": "Usado",
+                "ph": "pH",
+                "temp": "Temp",
+                "high_contrast": "Alto Contraste",
+                "large_scale_ui": "IU de Gran Escala",
+                "reduced_motion": "Movimiento Reducido",
+                "mobile_interaction_hint": "ARRASTRAR para rotar • CLICK en regiones",
+                "limbic_system": "Sistema Límbico",
+                "active_theory": "Teoría Activa",
+                "cerebral_cortex": "Corteza Cerebral",
+                "active_enhancement": "Mejora Activa",
+                "atp_consumed": "ATP Consumido",
+                "genomic_integrity": "Integridad Genómica",
+                "mutations": "Mutaciones",
+                "successful_repairs": "Reparaciones Exitosas",
+                "error_prone": "Propenso a Errores",
+                "whole_brain_topology": "Topología Cerebral Completa",
+
+                // Model Specific Titles
+                "emotion_app_title": "Simulación de Emoción",
+                "emotion_app_desc": "Explora las vías neurológicas y la regulación emocional.",
+                "emotion_cat_philosophies": "Marcos Filosóficos",
+                "emotion_cat_regulations": "Regulación Emocional",
+                "emotion_cat_therapeutic": "Efectos Terapéuticos",
+                "emotion_cat_medication": "Tratamientos Médicos",
+                "emotion_cat_advanced": "Teorías de Regulación",
+
+                "cog_simulation": "Simulación de Cognición",
+                "cog_select_desc": "Seleccione una teoría cognitiva para explorar su mapeo neurológico.",
+                "cog_search_placeholder": "Buscar mejoras...",
+                "cog_glass_brain": "Cerebro de Cristal",
+                "cog_reset_view": "Restablecer Vista",
+                "cog_model_title": "Modelo de Cognición",
+
+                "neuro_dopamine_signaling": "Señalización de Dopamina",
+                "neuro_dopamine_select": "Seleccione un modo para visualizar la vía.",
+                "neuro_serotonin_title": "Modelo Estructural de Serotonina",
+                "neuro_serotonin_desc": "Visualización de 5-HT1A en complejo con Gi.",
+
+                "genetic_model_title": "Modelo Genético",
+                "pathway_control": "Control de Vía",
+                "systemic_pathway": "Vía Sistémica",
+                "component_gene": "Componente/Gen",
+                "highlight_pathway": "Resaltar Vía",
+                "select_focus": "Seleccionar Foco...",
+
+                "pip_dna": "Doble Hélice de ADN",
+                "pip_micro": "Vista Micro",
+                "pip_protein": "Vista de Proteína",
+                "pip_target": "Vista de Objetivo",
+
+                // DNA Repair Buttons
+                "Base Excision": "Escisión de Base",
+                "Mismatch Repair": "Reparación de Desajustes",
+                "Nucleotide Excision": "Escisión de Nucleótidos",
+                "Double-Strand Break": "Ruptura de Doble Cadena",
+
+                "Burst": "Explosión",
+                "Idioma": "Idioma",
+
                 how_to_title: "Cómo Usar",
                 how_to_synaptic: "Usa los controles para ver cómo diferentes parámetros afectan la fuerza de las conexiones neuronales en tiempo real.",
                 how_to_env: "Usa los deslizadores para ajustar el estrés ambiental y el apoyo social. Haz clic en los botones de genes para simular predisposiciones genéticas.",
@@ -656,6 +810,9 @@
 
         toggleLanguage() {
             this.currentLanguage = this.currentLanguage === 'en' ? 'es' : 'en';
+            window.dispatchEvent(new CustomEvent('greenhouseLanguageChanged', {
+                detail: { language: this.currentLanguage }
+            }));
             return this.currentLanguage;
         },
 

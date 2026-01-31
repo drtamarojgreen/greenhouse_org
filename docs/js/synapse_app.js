@@ -102,6 +102,12 @@
             if (!this.container) return;
 
             this.setupDOM();
+
+            // Handle Language Change
+            window.addEventListener('greenhouseLanguageChanged', () => {
+                this.refreshUIText();
+            });
+
             this.isRunning = true;
             this.animate();
 
@@ -114,28 +120,72 @@
 
         setupDOM() {
             const config = G.config;
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+
             this.container.innerHTML = '';
+            if (isMobile) {
+                const staticHeader = document.querySelector('.page-header');
+                if (staticHeader) staticHeader.style.display = 'none';
+            }
             this.container.style.cssText = `
-                display: flex; flex-direction: row; gap: 0; background: ${config.backgroundColor}; 
+                display: flex; flex-direction: ${isMobile ? 'column' : 'row'}; gap: 0; background: ${config.backgroundColor};
                 border-radius: 24px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.6);
-                border: 1px solid rgba(53, 116, 56, 0.2); font-family: ${config.font}; height: 750px;
-                position: relative;
+                border: 1px solid rgba(53, 116, 56, 0.2); font-family: ${config.font}; height: ${isMobile ? 'auto' : '750px'};
+                position: relative; min-height: ${isMobile ? '500px' : 'auto'};
             `;
 
             const sidebar = document.createElement('div');
             sidebar.id = 'synapse-sidebar';
             sidebar.style.cssText = `
-                flex: 1; max-width: 340px; padding: 50px 40px; background: rgba(53, 116, 56, 0.05);
-                backdrop-filter: blur(15px); border-right: 1px solid rgba(255, 255, 255, 0.05); color: #fff;
+                flex: 1; max-width: ${isMobile ? '100%' : '340px'}; padding: ${isMobile ? '20px' : '50px 40px'};
+                background: rgba(53, 116, 56, 0.05); backdrop-filter: blur(15px);
+                border-right: ${isMobile ? 'none' : '1px solid rgba(255, 255, 255, 0.05)'};
+                border-bottom: ${isMobile ? '1px solid rgba(255, 255, 255, 0.05)' : 'none'};
+                color: #fff; display: ${isMobile ? 'none' : 'block'};
             `;
             this.container.appendChild(sidebar);
 
             const canvasWrapper = document.createElement('div');
-            canvasWrapper.style.cssText = 'flex: 2; position: relative; overflow: hidden; background: #000;';
+            canvasWrapper.style.cssText = `flex: 2; position: relative; overflow: hidden; background: #000; min-height: ${isMobile ? '400px' : 'auto'};`;
             this.canvas = document.createElement('canvas');
             this.canvas.style.cssText = 'width: 100%; height: 100%; display: block;';
             canvasWrapper.appendChild(this.canvas);
             this.container.appendChild(canvasWrapper);
+
+            if (isMobile) {
+                // Simplified Mobile Controls Overlay
+                const mobileControls = document.createElement('div');
+                mobileControls.style.cssText = `
+                    position: absolute; bottom: 10px; left: 10px; right: 10px;
+                    display: flex; gap: 10px; justify-content: center; z-index: 100;
+                `;
+                const burstBtn = document.createElement('button');
+                burstBtn.id = 'synapse-mobile-burst-btn';
+                burstBtn.textContent = t('Burst');
+                burstBtn.className = 'greenhouse-btn greenhouse-btn-primary';
+                burstBtn.style.fontSize = '16px';
+                burstBtn.onclick = () => {
+                    const w = this.canvas.width / (window.devicePixelRatio || 1);
+                    const h = this.canvas.height / (window.devicePixelRatio || 1);
+                    G.Particles.create(w, h, 60, G.config, true);
+                };
+                mobileControls.appendChild(burstBtn);
+
+                const langBtn = document.createElement('button');
+                langBtn.id = 'synapse-lang-toggle';
+                langBtn.textContent = t('btn_language');
+                langBtn.className = 'greenhouse-btn greenhouse-btn-secondary';
+                langBtn.style.fontSize = '16px';
+                langBtn.onclick = () => {
+                    if (window.GreenhouseModelsUtil) {
+                        window.GreenhouseModelsUtil.toggleLanguage();
+                    }
+                };
+                mobileControls.appendChild(langBtn);
+
+                canvasWrapper.appendChild(mobileControls);
+            }
 
             this.tooltip = document.createElement('div');
             this.tooltip.id = 'synapse-tooltip';
@@ -157,6 +207,19 @@
             this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
             this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
             this.canvas.addEventListener('mouseup', () => this.handleMouseUp());
+        },
+
+        refreshUIText() {
+            this.currentLanguage = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.currentLanguage : 'en';
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
+            const burstBtn = document.getElementById('synapse-mobile-burst-btn');
+            if (burstBtn) burstBtn.textContent = t('Burst');
+
+            const langBtn = document.getElementById('synapse-lang-toggle');
+            if (langBtn) langBtn.textContent = t('btn_language');
+
+            this.renderSidebar();
         },
 
         renderSidebar() {

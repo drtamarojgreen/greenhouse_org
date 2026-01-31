@@ -30,6 +30,12 @@
         _delayedInit(container, selector) {
             // Clear existing content to ensure we replace rather than append
             container.innerHTML = '';
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+
+            if (isMobile) {
+                const staticTitle = document.querySelector('h1');
+                if (staticTitle) staticTitle.style.display = 'none';
+            }
 
             // Check dependencies
             if (!window.NeuroGA || !window.GreenhouseNeuroUI3D || !window.GreenhouseModels3DMath) {
@@ -39,6 +45,11 @@
 
             this.ga = new window.NeuroGA();
             this.ui = window.GreenhouseNeuroUI3D;
+
+            // Handle Language Change
+            window.addEventListener('greenhouseLanguageChanged', () => {
+                this.refreshUIText();
+            });
 
             // Initialize UI
             this.ui.init(selector);
@@ -62,9 +73,30 @@
             }
         },
 
+        refreshUIText() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const btn = document.getElementById('neuro-pause-btn');
+            if (btn) {
+                btn.textContent = this.isRunning ? t('btn_pause') : t('btn_play');
+            }
+            const statsEl = document.getElementById('neuro-stats');
+            if (statsEl && this.ga) {
+                if (this.ga.generation === 0) {
+                    statsEl.textContent = t('initializing');
+                } else {
+                    statsEl.textContent = `${t('gen')}: ${this.ga.generation} | ${t('best_fitness')}: ${Math.round(this.ga.bestGenome.fitness)}`;
+                }
+            }
+            const langBtn = document.getElementById('neuro-lang-toggle');
+            if (langBtn) {
+                langBtn.textContent = t('btn_language');
+            }
+        },
+
         startSimulation() {
             if (this.isRunning) return;
             this.isRunning = true;
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
 
             this.intervalId = setInterval(() => {
                 const bestGenome = this.ga.step();
@@ -73,7 +105,7 @@
                 // Update stats
                 const statsEl = document.getElementById('neuro-stats');
                 if (statsEl) {
-                    statsEl.textContent = `Gen: ${this.ga.generation} | Best Fitness: ${Math.round(this.ga.bestGenome.fitness)}`;
+                    statsEl.textContent = `${t('gen')}: ${this.ga.generation} | ${t('best_fitness')}: ${Math.round(this.ga.bestGenome.fitness)}`;
                 }
             }, 100); // 10 generations per second
         },
@@ -84,37 +116,68 @@
         },
 
         createControls(container) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
             const controls = document.createElement('div');
+
+            // Reduced layout for mobile: show controls but minimal
             controls.style.cssText = `
                 position: absolute;
-                top: 20px;
-                right: 20px;
-                background: rgba(0, 0, 0, 0.7);
-                padding: 10px;
-                border-radius: 8px;
+                top: 10px;
+                right: 10px;
+                background: rgba(0, 0, 0, 0.8);
+                padding: ${isMobile ? '8px' : '15px'};
+                border-radius: 12px;
                 color: white;
-                font-family: monospace;
+                font-family: 'Quicksand', sans-serif;
                 z-index: 100;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                border: 1px solid rgba(255,255,255,0.1);
+                font-size: ${isMobile ? '12px' : '14px'};
             `;
 
             const stats = document.createElement('div');
             stats.id = 'neuro-stats';
-            stats.textContent = 'Initializing...';
+            stats.textContent = t('initializing');
+            stats.style.marginBottom = '8px';
             controls.appendChild(stats);
 
+            const btnGroup = document.createElement('div');
+            btnGroup.style.display = 'flex';
+            btnGroup.style.flexDirection = isMobile ? 'row' : 'column';
+            btnGroup.style.gap = '8px';
+
             const btn = document.createElement('button');
-            btn.textContent = 'Pause';
-            btn.style.marginTop = '10px';
+            btn.id = 'neuro-pause-btn';
+            btn.textContent = t('btn_pause');
+            btn.className = 'greenhouse-btn greenhouse-btn-primary';
+            btn.style.fontSize = isMobile ? '12px' : '14px';
+            btn.style.padding = '6px 12px';
             btn.onclick = () => {
                 if (this.isRunning) {
                     this.stopSimulation();
-                    btn.textContent = 'Resume';
+                    btn.textContent = t('btn_play');
                 } else {
                     this.startSimulation();
-                    btn.textContent = 'Pause';
+                    btn.textContent = t('btn_pause');
                 }
             };
-            controls.appendChild(btn);
+            btnGroup.appendChild(btn);
+
+            // Minimal Language Toggle for the model
+            const langBtn = document.createElement('button');
+            langBtn.id = 'neuro-lang-toggle';
+            langBtn.textContent = t('btn_language');
+            langBtn.className = 'greenhouse-btn greenhouse-btn-secondary';
+            langBtn.style.fontSize = isMobile ? '12px' : '14px';
+            langBtn.style.padding = '6px 12px';
+            langBtn.onclick = () => {
+                if (window.GreenhouseModelsUtil) {
+                    window.GreenhouseModelsUtil.toggleLanguage();
+                }
+            };
+            btnGroup.appendChild(langBtn);
+            controls.appendChild(btnGroup);
 
             // Ensure container is relative so absolute positioning works
             if (getComputedStyle(container).position === 'static') {

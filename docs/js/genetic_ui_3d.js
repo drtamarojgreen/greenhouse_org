@@ -90,6 +90,11 @@
                 requestAnimationFrame(() => this.resize());
             });
 
+            // Handle Language Change
+            window.addEventListener('greenhouseLanguageChanged', () => {
+                this.refreshUIText();
+            });
+
             if (window.ResizeObserver) {
                 const ro = new ResizeObserver(() => {
                     requestAnimationFrame(() => this.resize());
@@ -121,28 +126,79 @@
             }
         },
 
+        refreshUIText() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const btn = document.getElementById('gen-pause-btn');
+            if (btn) {
+                btn.textContent = this.isEvolving ? t("Pause Evolution") : t("Resume Evolution");
+            }
+            const genLabel = document.getElementById('gen-label-container');
+            if (genLabel) {
+                genLabel.innerHTML = `${t('gen')}: <span id="gen-counter">${this.algo ? this.algo.generation : 0}</span> | ${t('fitness')}: <span id="fitness-display">${this.algo && this.algo.bestNetwork ? this.algo.bestNetwork.fitness.toFixed(2) : '0.00'}</span>`;
+            }
+
+            const startBtn = document.querySelector('#genetic-start-overlay button');
+            if (startBtn) {
+                startBtn.textContent = t('Start Simulation');
+            }
+
+            const explanation = document.getElementById('genetic-explanation');
+            if (explanation) {
+                explanation.innerHTML = `
+                    <h3 style="margin-top:0;">${t('genetic_explanation_title')}</h3>
+                    <p>${t('genetic_explanation_text')}</p>
+                `;
+            }
+
+            const langBtn = document.getElementById('genetic-lang-toggle');
+            if (langBtn) {
+                langBtn.textContent = t('btn_language');
+            }
+        },
+
         setupDOM() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+
+            if (isMobile) {
+                // Hide static HTML elements if they exist
+                const staticInfo = document.querySelector('.info-panel');
+                if (staticInfo) staticInfo.style.display = 'none';
+                const staticHeader = document.querySelector('.page-header');
+                if (staticHeader) staticHeader.style.display = 'none';
+            }
+
             // Controls
             const controls = document.createElement('div');
             controls.className = 'greenhouse-controls-panel';
             controls.style.marginBottom = '15px';
+            controls.style.padding = isMobile ? '10px' : '15px';
+
             controls.innerHTML = `
-                <div style="display: flex; gap: 10px; align-items: center; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px;">
-                    <button id="gen-pause-btn" class="greenhouse-btn">Pause Evolution</button>
-                    <div style="margin-left: auto; font-weight: bold; color: #2c3e50;">
-                        Gen: <span id="gen-counter">0</span> | Fitness: <span id="fitness-display">0.00</span>
+                <div style="display: flex; gap: 10px; align-items: center; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px; flex-wrap: wrap;">
+                    <button id="gen-pause-btn" class="greenhouse-btn greenhouse-btn-primary" style="font-size: ${isMobile ? '12px' : '14px'}">${t('Pause Evolution')}</button>
+                    <button id="genetic-lang-toggle" class="greenhouse-btn greenhouse-btn-secondary" style="font-size: ${isMobile ? '12px' : '14px'}">${t('btn_language')}</button>
+                    <div id="gen-label-container" style="margin-left: ${isMobile ? '0' : 'auto'}; font-weight: bold; color: #2c3e50; font-size: ${isMobile ? '12px' : '14px'}">
+                        ${t('gen')}: <span id="gen-counter">0</span> | ${t('fitness')}: <span id="fitness-display">0.00</span>
                     </div>
                 </div>
             `;
             this.container.appendChild(controls);
 
-            // Bind Button
+            // Bind Buttons
             const btn = controls.querySelector('#gen-pause-btn');
             btn.addEventListener('click', () => {
                 this.isEvolving = !this.isEvolving;
-                btn.textContent = this.isEvolving ? "Pause Evolution" : "Resume Evolution";
+                btn.textContent = this.isEvolving ? t("Pause Evolution") : t("Resume Evolution");
                 btn.style.background = this.isEvolving ? "" : "#e74c3c";
                 btn.style.color = this.isEvolving ? "" : "white";
+            });
+
+            const langBtn = controls.querySelector('#genetic-lang-toggle');
+            langBtn.addEventListener('click', () => {
+                if (window.GreenhouseModelsUtil) {
+                    window.GreenhouseModelsUtil.toggleLanguage();
+                }
             });
 
             // Canvas
@@ -166,9 +222,11 @@
 
         addExplanation(container) {
             const util = window.GreenhouseModelsUtil;
-            if (!util) return;
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            if (!util || isMobile) return;
 
             const section = document.createElement('div');
+            section.id = 'genetic-explanation';
             section.style.padding = '20px';
             section.style.background = '#f4f4f9';
             section.style.marginTop = '10px';
@@ -548,6 +606,7 @@
 
         render() {
             if (!this.ctx || !this.canvas) return;
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
 
             const ctx = this.ctx;
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -610,14 +669,14 @@
             }
 
             // 2. PiP 1: DNA Double Helix - Top Left
-            this.drawDNAHelixPiP(ctx, leftPipX, gap, pipW, pipH, helixState, drawPiPFrame);
+            this.drawDNAHelixPiP(ctx, leftPipX, gap, pipW, pipH, helixState, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_dna')));
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, leftPipX, gap, pipW, pipH, 'helix');
             }
 
             // 3. PiP 2: Micro View (Gene Structure) - Top Right
             this.drawMicroView(ctx, rightPipX, gap, pipW, pipH, activeGene,
-                this.activeGeneIndex, this.neuronMeshes, drawPiPFrame, microState);
+                this.activeGeneIndex, this.neuronMeshes, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_micro')), microState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, gap, pipW, pipH, 'micro');
             }
@@ -625,7 +684,7 @@
             // 4. PiP 3: Protein View - Middle Right
             const proteinY = gap + pipH + gap;
             this.drawProteinView(ctx, rightPipX, proteinY, pipW, pipH, activeGene,
-                this.proteinCache, drawPiPFrame, proteinState);
+                this.proteinCache, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_protein')), proteinState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, proteinY, pipW, pipH, 'protein');
             }
@@ -633,7 +692,7 @@
             // 5. PiP 4: Target View (Brain Region) - Bottom Right
             const targetY = gap + pipH + gap + pipH + gap;
             this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene,
-                this.activeGeneIndex, this.brainShell, drawPiPFrame, { ...targetState, activeGene: activeGene });
+                this.activeGeneIndex, this.brainShell, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_target')), { ...targetState, activeGene: activeGene });
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, targetY, pipW, pipH, 'target');
             }
@@ -964,7 +1023,8 @@
             ctx.clip();
             // Draw PiP frame with title
             if (drawPiPFrame) {
-                drawPiPFrame(ctx, x, y, w, h, "DNA Double Helix");
+                const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+                drawPiPFrame(ctx, x, y, w, h, t("pip_dna"));
             }
 
             // Use the specific camera for this PiP - no fallback

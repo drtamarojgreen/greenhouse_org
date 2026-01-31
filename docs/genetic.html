@@ -191,7 +191,7 @@
     <!-- Scripts -->
     <script src="js/models_util.js"></script>
     <script src="js/GreenhouseDependencyManager.js"></script>
-    <script src="js/GreenhouseUtils.js" data-base-url="./" data-target-selector="#genetic-app-container"></script>
+    <script src="js/GreenhouseUtils.js"></script>
     <script src="js/GreenhouseMobile.js"></script>
     <script src="js/performance_profiler.js" data-auto-start="true"></script>
     <script src="js/model_tests.js"></script>
@@ -202,16 +202,12 @@
     <script src="js/genetic_camera_controls.js"></script>
     <script src="js/genetic_lighting.js"></script>
     <script src="js/genetic_pip_controls.js"></script>
-    <script src="js/genetic_algo.js" data-base-url="./" data-target-selector="#genetic-app-container">
-    </script>
+    <script src="js/genetic_algo.js"></script>
     <script src="js/neuro_ui_3d_geometry.js"></script>
     <script src="js/neuro_ui_3d_brain.js"></script>
-    <script src="js/genetic_ui_3d_geometry.js" data-base-url="./" data-target-selector="#genetic-app-container">
-    </script>
-    <script src="js/genetic_ui_3d_dna.js" data-base-url="./" data-target-selector="#genetic-app-container">
-    </script>
-    <script src="js/genetic_ui_3d_gene.js" data-base-url="./" data-target-selector="#genetic-app-container">
-    </script>
+    <script src="js/genetic_ui_3d_geometry.js"></script>
+    <script src="js/genetic_ui_3d_dna.js"></script>
+    <script src="js/genetic_ui_3d_gene.js"></script>
     <script src="js/genetic_ui_3d_chromosome.js"></script>
     <script src="js/genetic_ui_3d_protein.js"></script>
     <script src="js/genetic_ui_3d_brain.js"></script>
@@ -221,10 +217,10 @@
     <script>
         // Manual Initialization for Standalone Page
         document.addEventListener('DOMContentLoaded', () => {
-            // Wait for scripts to load
-            setTimeout(() => {
+            const checkInit = setInterval(() => {
                 if (window.GreenhouseGeneticAlgo && window.GreenhouseGeneticUI3D) {
                     console.log("Initializing Genetic App...");
+                    clearInterval(checkInit);
 
                     // Hide loading screen
                     const loadingScreen = document.querySelector('.loading-screen');
@@ -236,7 +232,7 @@
 
                     // Initialize
                     window.GreenhouseGeneticAlgo.init();
-                    window.GreenhouseGeneticUI3D.init(simContainer, window.GreenhouseGeneticAlgo);
+                    window.GreenhouseGeneticUI3D.init(simContainer, window.GreenhouseGeneticAlgo, '.simulation-container');
 
                     // Start Loop
                     const startEvolutionLoop = () => {
@@ -254,14 +250,9 @@
                     window.GreenhouseGenetic = {
                         startSimulation: startEvolutionLoop
                     };
-
-                    // DO NOT AUTO-START - Wait for user to click Start button
-                    console.log("Waiting for user to click Start Simulation button...");
-
-                } else {
-                    console.error("Failed to load Genetic App modules.");
                 }
-            }, 1000);
+            }, 100);
+            setTimeout(() => clearInterval(checkInit), 10000);
         });
     </script>
 </body>

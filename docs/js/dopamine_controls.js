@@ -25,14 +25,22 @@
     };
 
     G.updateLanguage = function () {
-        const translations = {
-            en: { title: "Dopamine Signaling", select: "Select a mode to visualize pathway." },
-            es: { title: "Señalización de Dopamina", select: "Seleccione un modo para visualizar la vía." }
-        };
-        const t = translations[G.uxState.language];
+        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
         const info = document.getElementById('dopamine-info-display');
         if (info) {
-            info.innerHTML = `<strong>${t.title}</strong><br>${t.select}`;
+            info.innerHTML = `<strong>${t('neuro_dopamine_signaling')}</strong><br>${t('neuro_dopamine_select')}`;
+        }
+        // Update button labels
+        const btnLang = document.getElementById('dopamine-lang-toggle');
+        if (btnLang) btnLang.innerText = t('btn_language');
+
+        // Update dropdown headers
+        const dropdowns = document.querySelectorAll('.dopamine-dropdown .dopamine-btn');
+        if (dropdowns.length >= 4) {
+            dropdowns[0].innerText = t('signaling');
+            dropdowns[1].innerText = t('scenarios');
+            dropdowns[2].innerText = t('pharmacology');
+            dropdowns[3].innerText = t('settings');
         }
     };
 
@@ -222,17 +230,23 @@
             }
         };
 
-        controls.appendChild(createDropdown('Signaling', signalingOptions));
-        controls.appendChild(createDropdown('Scenarios', scenarioOptions));
-        controls.appendChild(createDropdown('Pharmacology', pharmacologyOptions));
-        controls.appendChild(createDropdown('Settings', settingsOptions));
+        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
 
-        const scientificBtn = document.createElement('button');
-        scientificBtn.className = 'dopamine-btn';
-        scientificBtn.innerText = 'Scientific Report';
-        scientificBtn.style.borderColor = '#4fd1c5';
-        scientificBtn.onclick = () => G.showScientificDashboard();
-        controls.appendChild(scientificBtn);
+        controls.appendChild(createDropdown(t('signaling'), signalingOptions));
+        controls.appendChild(createDropdown(t('scenarios'), scenarioOptions));
+
+        if (!isMobile) {
+            controls.appendChild(createDropdown(t('pharmacology'), pharmacologyOptions));
+            controls.appendChild(createDropdown(t('settings'), settingsOptions));
+
+            const scientificBtn = document.createElement('button');
+            scientificBtn.className = 'dopamine-btn';
+            scientificBtn.innerText = 'Scientific Report';
+            scientificBtn.style.borderColor = '#4fd1c5';
+            scientificBtn.onclick = () => G.showScientificDashboard();
+            controls.appendChild(scientificBtn);
+        }
 
         const resetBtn = document.createElement('button');
         resetBtn.className = 'dopamine-btn';
@@ -241,7 +255,22 @@
         resetBtn.onclick = () => G.resetToDefault();
         controls.appendChild(resetBtn);
 
+        // Language toggle
+        const langBtn = document.createElement('button');
+        langBtn.id = 'dopamine-lang-toggle';
+        langBtn.className = 'dopamine-btn';
+        langBtn.innerText = t('btn_language');
+        langBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+        };
+        controls.appendChild(langBtn);
+
         container.appendChild(controls);
+
+        window.addEventListener('greenhouseLanguageChanged', () => {
+            G.updateLanguage();
+        });
 
         // Global click listener to close dropdowns
         window.addEventListener('click', () => {
@@ -252,6 +281,7 @@
         info.className = 'dopamine-info';
         info.id = 'dopamine-info-display';
         info.innerHTML = '<strong>Dopamine Signaling</strong><br>Select a mode to visualize pathway.';
+        if (isMobile) info.style.display = 'none';
 
         if (G.leftPanel) {
             G.leftPanel.prepend(info);

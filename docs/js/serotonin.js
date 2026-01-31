@@ -110,8 +110,11 @@
             style.innerHTML = `
                 .serotonin-controls-modular { position: absolute; top: 10px; left: 10px; display: flex; gap: 10px; z-index: 100; }
                 .serotonin-dropdown { position: relative; }
-                .serotonin-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+                .serotonin-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
                 .serotonin-btn:hover { background: #4a5568; }
+                @media (max-width: 1024px) {
+                    .serotonin-btn { font-size: 16px; padding: 10px 20px; }
+                }
                 .serotonin-btn:focus { outline: 2px solid #00ffcc; outline-offset: 2px; }
                 .serotonin-checkbox-modal {
                     position: absolute; top: 100%; left: 0; background: #2d3748; border: 1px solid #4a5568;
@@ -596,14 +599,11 @@
 
             // Capture attributes after dependencies are loaded to ensure GreenhouseUtils is available as a fallback
             const attributes = captureAttributes();
-            const { targetSelector, baseUrl } = attributes;
-
-            if (!baseUrl) {
-                console.error('Serotonin App: Missing baseUrl, aborting initialization.');
-                return;
-            }
+            const { targetSelector, baseUrl: attrBaseUrl } = attributes;
+            const baseUrl = attrBaseUrl || './';
 
             // Load modular simulation components
+            await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('serotonin_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('serotonin_legend.js', baseUrl);
             await GreenhouseUtils.loadScript('serotonin_tooltips.js', baseUrl);
