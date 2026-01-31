@@ -111,7 +111,7 @@ class MovieMaster:
         bsdf = mat.node_tree.nodes.get("Principled BSDF")
         if bsdf:
             bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
-            bsdf.inputs["Emission Strength"].default_value = 1.0
+            bsdf.inputs["Emission Strength"].default_value = 5.0
         text_obj.data.materials.append(mat)
 
         text_obj.hide_render = True
@@ -127,7 +127,7 @@ class MovieMaster:
         mat.use_nodes = True
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
-        bsdf.inputs["Emission Strength"].default_value = 1.0
+        bsdf.inputs["Emission Strength"].default_value = 5.0
 
         char_spacing = 0.8
         start_x = -((len(text_content) - 1) * char_spacing) / 2
@@ -583,8 +583,8 @@ class MovieMaster:
         if not iris: return
 
         if mode == 'OUT':
-            iris.width = 2.0
-            iris.height = 2.0
+            iris.width = 1.4
+            iris.height = 1.4
             iris.keyframe_insert(data_path="width", frame=frame_start)
             iris.keyframe_insert(data_path="height", frame=frame_start)
             iris.width = 0.0
@@ -594,23 +594,23 @@ class MovieMaster:
             if burn:
                 burn.inputs[0].default_value = 0.0
                 burn.inputs[0].keyframe_insert(data_path="default_value", frame=frame_start)
-                burn.inputs[0].default_value = 0.8
+                burn.inputs[0].default_value = 0.4
                 burn.inputs[0].keyframe_insert(data_path="default_value", frame=(frame_start+frame_end)//2)
                 burn.inputs[0].default_value = 0.0
                 burn.inputs[0].keyframe_insert(data_path="default_value", frame=frame_end)
         else:
-            iris.width = 0.0
-            iris.height = 0.0
+            iris.width = 0.4 # Start slightly open for immediate branding visibility
+            iris.height = 0.4
             iris.keyframe_insert(data_path="width", frame=frame_start)
             iris.keyframe_insert(data_path="height", frame=frame_start)
-            iris.width = 2.0
-            iris.height = 2.0
+            iris.width = 1.4 # Expand beyond frame edges
+            iris.height = 1.4
             iris.keyframe_insert(data_path="width", frame=frame_end)
             iris.keyframe_insert(data_path="height", frame=frame_end)
             if burn:
                 burn.inputs[0].default_value = 0.0
                 burn.inputs[0].keyframe_insert(data_path="default_value", frame=frame_start)
-                burn.inputs[0].default_value = 0.8
+                burn.inputs[0].default_value = 0.4
                 burn.inputs[0].keyframe_insert(data_path="default_value", frame=(frame_start+frame_end)//2)
                 burn.inputs[0].default_value = 0.0
                 burn.inputs[0].keyframe_insert(data_path="default_value", frame=frame_end)
@@ -712,7 +712,7 @@ class MovieMaster:
             mix_scratches.blend_type = 'MULTIPLY'
             mix_scratches.inputs[0].default_value = 0.1
             mask = tree.nodes.new('CompositorNodeEllipseMask')
-            mask.width, mask.height = 0.95, 0.85
+            mask.width, mask.height = 1.2, 1.0 # Wider vignette for text clearance
             blur = tree.nodes.new('CompositorNodeBlur')
             blur.size_x = blur.size_y = 250
             mix_vignette = tree.nodes.new('CompositorNodeMixRGB')
