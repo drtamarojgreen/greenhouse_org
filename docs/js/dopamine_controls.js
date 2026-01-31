@@ -37,8 +37,11 @@
     };
 
     G.createUI = function (container) {
+        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
         const controls = document.createElement('div');
         controls.className = 'dopamine-controls';
+        if (isMobile) controls.style.display = 'none';
         controls.style.display = 'flex';
         controls.style.gap = '10px';
         controls.style.padding = '10px';
@@ -251,12 +254,31 @@
         const info = document.createElement('div');
         info.className = 'dopamine-info';
         info.id = 'dopamine-info-display';
-        info.innerHTML = '<strong>Dopamine Signaling</strong><br>Select a mode to visualize pathway.';
+        info.innerHTML = `<strong>${t('Dopamine Signaling Model')}</strong><br>${t('Select a mode to visualize pathway.')}`;
+        if (isMobile) info.style.display = 'none';
 
         if (G.leftPanel) {
             G.leftPanel.prepend(info);
         } else {
             container.appendChild(info);
+        }
+    };
+
+    G.refreshUIText = function() {
+        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+        const info = document.getElementById('dopamine-info-display');
+        if (info) {
+            info.innerHTML = `<strong>${t('Dopamine Signaling Model')}</strong><br>${t('Select a mode to visualize pathway.')}`;
+        }
+        // Update dropdown buttons
+        const btns = document.querySelectorAll('.dopamine-btn');
+        if (btns.length >= 6) {
+            btns[0].innerText = t('Signaling');
+            btns[1].innerText = t('Scenarios');
+            btns[2].innerText = t('Pharmacology');
+            btns[3].innerText = t('Settings');
+            btns[4].innerText = t('Scientific Report');
+            btns[5].innerText = t('Reset (R)');
         }
     };
 })();

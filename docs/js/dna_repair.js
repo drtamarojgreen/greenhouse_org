@@ -68,6 +68,7 @@
 
         initializeDNARepairSimulation(container, selector = null) {
             if (!container) return;
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
             container.innerHTML = '';
             this.injectStyles();
             const wrapper = document.createElement('div');
@@ -76,7 +77,7 @@
             wrapper.style.position = 'relative'; wrapper.style.backgroundColor = '#101015';
             container.appendChild(wrapper);
 
-            if (this.createUI) this.createUI(wrapper);
+            if (this.createUI && !isMobile) this.createUI(wrapper);
 
             this.canvas = document.createElement('canvas');
             this.ctx = this.canvas.getContext('2d');
@@ -86,6 +87,12 @@
             this.width = this.canvas.width; this.height = this.canvas.height;
 
             this.setupInteraction();
+
+            // Handle Language Change
+            window.addEventListener('greenhouse:language-changed', () => {
+                this. refreshUIText();
+            });
+
             this.generateDNA();
             if (window.GreenhouseDNATooltip) window.GreenhouseDNATooltip.initialize();
 
@@ -115,26 +122,33 @@
             document.head.appendChild(style);
         },
 
+        refreshUIText() {
+            this.startSimulation(this.state.repairMode); // This updates currentModeText
+            this.updateStats();
+        },
+
         consumeATP(amount, x, y, z) {
             this.state.atpConsumed += amount;
             if (x !== undefined && amount > 0) this.spawnParticles(x, y || 0, z || 0, Math.min(amount * 2, 20), '#48bb78');
         },
 
         updateStats() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const counter = document.getElementById('dna-atp-counter');
-            if (counter) counter.innerText = `ATP Consumed: ${Math.floor(this.state.atpConsumed)}`;
+            if (counter) counter.innerText = `${t('atp_consumed')}: ${Math.floor(this.state.atpConsumed)}`;
             const integrity = document.getElementById('dna-integrity-stat');
             if (integrity) {
-                integrity.innerText = `Genomic Integrity: ${Math.round(this.state.genomicIntegrity)}% | Mutations: ${this.state.mutationCount}`;
+                integrity.innerText = `${t('genomic_integrity')}: ${Math.round(this.state.genomicIntegrity)}% | ${t('mutations')}: ${this.state.mutationCount}`;
                 integrity.style.color = this.state.genomicIntegrity < 100 ? '#f56565' : '#a0aec0';
             }
             const analytics = document.getElementById('dna-analytics-stat');
-            if (analytics) analytics.innerText = `Successful Repairs: ${this.state.successfulRepairs} | Error-Prone: ${this.state.mutatedRepairs}`;
+            if (analytics) analytics.innerText = `${t('successful_repairs')}: ${this.state.successfulRepairs} | ${t('error_prone')}: ${this.state.mutatedRepairs}`;
         },
 
 
 
         startSimulation(mode) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             this.state.repairMode = mode;
             this.state.timer = 0; this.state.atpConsumed = 0;
             this.state.simulating = true; this.state.particles = [];
@@ -143,11 +157,11 @@
             this.generateDNA();
             if (this.updateInfoOverlay) this.updateInfoOverlay();
             const titles = {
-                'ber': "Base Excision Repair",
-                'mmr': "Mismatch Repair",
-                'dsb': "Double-Strand Break Repair",
+                'ber': t("Base Excision"),
+                'mmr': t("Mismatch Repair"),
+                'dsb': t("Double-Strand Break"),
                 'nhej': "Non-Homologous End Joining",
-                'ner': "Nucleotide Excision Repair",
+                'ner': t("Nucleotide Excision"),
                 'hr': "Homologous Recombination",
                 'photo': "Direct Reversal (Photolyase)",
                 'mgmt': "MGMT Repair",

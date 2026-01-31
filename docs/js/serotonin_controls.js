@@ -9,9 +9,11 @@
     window.GreenhouseSerotonin = G;
 
     G.createUI = function (container) {
+        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
         this.injectStyles();
         const controls = document.createElement('div');
         controls.className = 'serotonin-controls-modular';
+        if (isMobile) controls.style.display = 'none';
 
         const categories = [
             {
@@ -198,13 +200,16 @@
             controls.style.transformOrigin = 'top left';
         };
 
+        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
         const info = document.createElement('div');
         info.className = 'serotonin-info';
-        info.innerHTML = '<strong>Serotonin Structural Model</strong><br>Visualization of 5-HT1A in complex with Gi.';
+        info.innerHTML = `<strong>${t('Serotonin Structural Model')}</strong><br>${t('Visualization of 5-HT1A in complex with Gi.')}`;
+        if (isMobile) info.style.display = 'none';
         container.appendChild(info);
 
         // Zoom Control (Category 10, #90)
         const zoomControl = document.createElement('div');
+        if (isMobile) zoomControl.style.display = 'none';
         zoomControl.style.position = 'absolute';
         zoomControl.style.top = '10px';
         zoomControl.style.right = '10px';
@@ -228,6 +233,7 @@
 
         // Cholesterol Level Control (Category 2, #16)
         const cholesterolControl = document.createElement('div');
+        if (isMobile) cholesterolControl.style.display = 'none';
         cholesterolControl.style.position = 'absolute';
         cholesterolControl.style.bottom = '50px';
         cholesterolControl.style.right = '10px';
@@ -267,6 +273,7 @@
 
         // Portal Link (Category 10, #100)
         const portalLink = document.createElement('a');
+        if (isMobile) portalLink.style.display = 'none';
         portalLink.href = '#';
         portalLink.innerText = 'CITIZEN SCIENCE PORTAL';
         portalLink.style.position = 'absolute';
@@ -337,6 +344,22 @@
                 ctx.fillText('ROUGH ER', erPos.x, erPos.y);
             }
         };
+
+G.refreshUIText = function() {
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const info = document.querySelector('.serotonin-info');
+    if (info) {
+        info.innerHTML = `<strong>${t('Serotonin Structural Model')}</strong><br>${t('Visualization of 5-HT1A in complex with Gi.')}`;
+    }
+    const btns = document.querySelectorAll('.serotonin-btn.dropdown-toggle');
+    if (btns.length >= 5) {
+        btns[0].innerText = t('Accessibility');
+        btns[1].innerText = t('Aesthetics');
+        btns[2].innerText = t('Feedback/HUD');
+        btns[3].innerText = t('Temporal');
+        btns[4].innerText = t('Scenarios');
+    }
+};
     };
 
     // Keyboard Shortcuts (Accessibility #11)

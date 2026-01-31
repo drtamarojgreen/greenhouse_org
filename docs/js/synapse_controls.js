@@ -8,6 +8,7 @@
 
     G.Controls = {
         render(container, config, callbacks) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const { onToggleBurst, onUpdateSensitivity, onToggleDrug, onToggleHighContrast, onGenerateFigure, onUpdateParam } = callbacks;
 
             G.config.pharmacology = G.config.pharmacology || {
@@ -41,15 +42,15 @@
 
             let html = `
                 <div style="margin-top: 20px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);">
-                    <h3 style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #357438; margin-bottom: 15px; font-weight: 700;">Research Controls</h3>
+                    <h3 style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #357438; margin-bottom: 15px; font-weight: 700;">${t('Research Controls')}</h3>
 
                     <div style="margin-bottom: 15px; display: flex; gap: 8px;">
-                        <button id="burst-btn" aria-label="Trigger Synaptic Vesicle Burst" style="flex: 1; background: #357438; color: #fff; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; transition: background 0.3s;">Burst</button>
-                        <button id="baseline-btn" style="flex: 1; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600;">Set Baseline</button>
+                        <button id="burst-btn" aria-label="${t('Trigger Synaptic Vesicle Burst')}" style="flex: 1; background: #357438; color: #fff; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; transition: background 0.3s;">${t('Burst')}</button>
+                        <button id="baseline-btn" style="flex: 1; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600;">${t('Set Baseline')}</button>
                     </div>
 
                     <div style="margin-bottom: 20px;">
-                        <label style="display: block; font-size: 10px; color: #aaa; margin-bottom: 8px;">Pharmacological Panel</label>
+                        <label style="display: block; font-size: 10px; color: #aaa; margin-bottom: 8px;">${t('Pharmacological Panel')}</label>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;" role="group" aria-label="Pharmacology Toggles">
                             <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
                                 <input type="checkbox" id="ssri-toggle" ${G.config.pharmacology.ssriActive ? 'checked' : ''} style="margin-right: 5px;"> SSRI
@@ -67,30 +68,30 @@
                     </div>
 
                     <div style="margin-bottom: 12px;">
-                        <label for="az-range" style="display: block; font-size: 10px; color: #aaa; margin-bottom: 5px;">Active Zone Density</label>
+                        <label for="az-range" style="display: block; font-size: 10px; color: #aaa; margin-bottom: 5px;">${t('Active Zone Density')}</label>
                         <input type="range" id="az-range" min="0.01" max="0.15" step="0.01" value="${G.config.kinetics.activeZoneDensity}" style="width: 100%; accent-color: #357438;">
                     </div>
 
                     <div style="margin-bottom: 20px;">
-                         <label style="display: block; font-size: 10px; color: #aaa; margin-bottom: 8px;">Research Tools</label>
+                         <label style="display: block; font-size: 10px; color: #aaa; margin-bottom: 8px;">${t('Research Tools')}</label>
                          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                             <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
-                                <input type="checkbox" id="ruler-toggle" ${G.config.visuals.rulerActive ? 'checked' : ''} style="margin-right: 5px;"> Ruler
+                                <input type="checkbox" id="ruler-toggle" ${G.config.visuals.rulerActive ? 'checked' : ''} style="margin-right: 5px;"> ${t('Ruler')}
                             </label>
                             <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
-                                <input type="checkbox" id="annotate-toggle" ${G.config.visuals.annotationMode ? 'checked' : ''} style="margin-right: 5px;"> Annotate
+                                <input type="checkbox" id="annotate-toggle" ${G.config.visuals.annotationMode ? 'checked' : ''} style="margin-right: 5px;"> ${t('Annotate')}
                             </label>
                             <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
-                                <input type="checkbox" id="fluor-toggle" ${G.config.visuals.fluorescenceActive ? 'checked' : ''} style="margin-right: 5px;"> Calcium-FL
+                                <input type="checkbox" id="fluor-toggle" ${G.config.visuals.fluorescenceActive ? 'checked' : ''} style="margin-right: 5px;"> ${t('Calcium-FL')}
                             </label>
                             <label style="font-size: 11px; color: #ddd; display: flex; align-items: center; cursor: pointer;">
-                                <input type="checkbox" id="literature-toggle" ${G.config.visuals.showLiterature ? 'checked' : ''} style="margin-right: 5px;"> Literature
+                                <input type="checkbox" id="literature-toggle" ${G.config.visuals.showLiterature ? 'checked' : ''} style="margin-right: 5px;"> ${t('Literature')}
                             </label>
                          </div>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
-                        <button id="export-btn" style="width: 100%; background: transparent; color: #00F2FF; border: 1px solid #00F2FF; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; text-transform: uppercase;">Generate Research Figure</button>
+                        <button id="export-btn" style="width: 100%; background: transparent; color: #00F2FF; border: 1px solid #00F2FF; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; text-transform: uppercase;">${t('Generate Research Figure')}</button>
                     </div>
                 </div>
             `;

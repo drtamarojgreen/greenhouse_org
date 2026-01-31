@@ -129,6 +129,11 @@
         G.setupReceptors();
         G.setupInteraction();
 
+        // Handle Language Change
+        window.addEventListener('greenhouse:language-changed', () => {
+            if (G.refreshUIText) G.refreshUIText();
+        });
+
         G.isRunning = true;
         G.animate();
 
@@ -140,12 +145,16 @@
     };
 
     G.initSidePanels = function (container) {
+        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+
         G.leftPanel = document.createElement('div');
         G.leftPanel.className = 'dopamine-side-panel left';
+        if (isMobile) G.leftPanel.style.display = 'none';
         container.appendChild(G.leftPanel);
 
         G.rightPanel = document.createElement('div');
         G.rightPanel.className = 'dopamine-side-panel right';
+        if (isMobile) G.rightPanel.style.display = 'none';
         container.appendChild(G.rightPanel);
 
         // Define common update functions

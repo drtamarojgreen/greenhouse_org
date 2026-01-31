@@ -40,6 +40,11 @@
             this.ga = new window.NeuroGA();
             this.ui = window.GreenhouseNeuroUI3D;
 
+            // Handle Language Change
+            window.addEventListener('greenhouse:language-changed', () => {
+                this.refreshUIText();
+            });
+
             // Initialize UI
             this.ui.init(selector);
 
@@ -62,9 +67,26 @@
             }
         },
 
+        refreshUIText() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const btn = document.getElementById('neuro-pause-btn');
+            if (btn) {
+                btn.textContent = this.isRunning ? t('btn_pause') : t('btn_play');
+            }
+            const statsEl = document.getElementById('neuro-stats');
+            if (statsEl && this.ga) {
+                if (this.ga.generation === 0) {
+                    statsEl.textContent = t('initializing');
+                } else {
+                    statsEl.textContent = `${t('gen')}: ${this.ga.generation} | ${t('best_fitness')}: ${Math.round(this.ga.bestGenome.fitness)}`;
+                }
+            }
+        },
+
         startSimulation() {
             if (this.isRunning) return;
             this.isRunning = true;
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
 
             this.intervalId = setInterval(() => {
                 const bestGenome = this.ga.step();
@@ -73,7 +95,7 @@
                 // Update stats
                 const statsEl = document.getElementById('neuro-stats');
                 if (statsEl) {
-                    statsEl.textContent = `Gen: ${this.ga.generation} | Best Fitness: ${Math.round(this.ga.bestGenome.fitness)}`;
+                    statsEl.textContent = `${t('gen')}: ${this.ga.generation} | ${t('best_fitness')}: ${Math.round(this.ga.bestGenome.fitness)}`;
                 }
             }, 100); // 10 generations per second
         },
@@ -84,7 +106,10 @@
         },
 
         createControls(container) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
             const controls = document.createElement('div');
+            if (isMobile) controls.style.display = 'none';
             controls.style.cssText = `
                 position: absolute;
                 top: 20px;
@@ -99,19 +124,20 @@
 
             const stats = document.createElement('div');
             stats.id = 'neuro-stats';
-            stats.textContent = 'Initializing...';
+            stats.textContent = t('initializing');
             controls.appendChild(stats);
 
             const btn = document.createElement('button');
-            btn.textContent = 'Pause';
+            btn.id = 'neuro-pause-btn';
+            btn.textContent = t('btn_pause');
             btn.style.marginTop = '10px';
             btn.onclick = () => {
                 if (this.isRunning) {
                     this.stopSimulation();
-                    btn.textContent = 'Resume';
+                    btn.textContent = t('btn_play');
                 } else {
                     this.startSimulation();
-                    btn.textContent = 'Pause';
+                    btn.textContent = t('btn_pause');
                 }
             };
             controls.appendChild(btn);

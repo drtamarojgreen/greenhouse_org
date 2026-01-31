@@ -17,7 +17,6 @@
 
         init(options = {}) {
             this.lastOptions = options;
-            this.config.baseUrl = options.baseUrl;
             const target = options.target || this.config.target;
             let container;
 
@@ -63,10 +62,8 @@
 
         async fetchDataAndRender() {
             try {
-                // Adjust the base URL based on the main app's state if available
-                const baseUrl = this.config.baseUrl || (window.GreenhouseModelsUX ? window.GreenhouseModelsUX.state.baseUrl : './');
-
-                const response = await fetch(`${baseUrl}${this.config.xmlPath}`);
+                // Use relative path for fetching description XML
+                const response = await fetch(this.config.xmlPath);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -78,8 +75,9 @@
                 this.renderComponent(xmlDoc);
             } catch (error) {
                 console.error('AGENT_DEBUG: Error fetching or parsing XML for TOC:', error);
+                const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
                 if (this.container) {
-                    this.container.innerHTML = '<p>Error loading model descriptions. Please try again later.</p>';
+                    this.container.innerHTML = `<p>${t('Error loading model descriptions. Please try again later.')}</p>`;
                 }
             }
         },
@@ -148,8 +146,9 @@
                 const canonicalBase = 'https://greenhousemd.org';
                 launchLink.href = canonicalBase + path;
 
+                const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
                 launchLink.className = 'greenhouse-btn greenhouse-btn-primary';
-                launchLink.textContent = 'Launch Simulation';
+                launchLink.textContent = t('launch_btn');
 
                 actionGroup.appendChild(launchLink);
                 card.appendChild(actionGroup);

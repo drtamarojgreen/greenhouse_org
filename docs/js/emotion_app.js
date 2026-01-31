@@ -57,9 +57,11 @@
             this.config = window.GreenhouseEmotionConfig || {};
             this.diagrams = window.GreenhouseEmotionDiagrams || null;
 
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+
             // Create UI Container (Top)
             this.uiContainer = document.createElement('div');
-            this.uiContainer.style.cssText = 'background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10;';
+            this.uiContainer.style.cssText = `background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10; display: ${isMobile ? 'none' : 'block'};`;
             container.appendChild(this.uiContainer);
 
             // Create Main Content (Canvas + Deep Dive)
@@ -96,6 +98,11 @@
             this.createInfoPanel(container);
             this.createDeepDivePanel(this.mainContentContainer);
 
+            // Handle Language Change
+            window.addEventListener('greenhouse:language-changed', () => {
+                this.refreshUIText();
+            });
+
             // Interaction
             this.setupInteraction();
 
@@ -130,6 +137,7 @@
         },
 
         createCategorySelector(container) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const catDiv = document.createElement('div');
             catDiv.style.cssText = `
                 display: flex;
@@ -142,11 +150,11 @@
             `;
 
             const categories = [
-                { id: 'philosophies', label: 'World Philosophical Frameworks' },
-                { id: 'regulations', label: 'Emotional Regulation' },
-                { id: 'therapeuticInterventions', label: 'Therapeutic Effects' },
-                { id: 'medicationTreatments', label: 'Medication Treatments' },
-                { id: 'advancedTheories', label: 'Regulation Theories' }
+                { id: 'philosophies', label: t('cat_philosophies') },
+                { id: 'regulations', label: t('cat_regulations') },
+                { id: 'therapeuticInterventions', label: t('cat_therapeutic') },
+                { id: 'medicationTreatments', label: t('cat_medication') },
+                { id: 'advancedTheories', label: t('cat_advanced') }
             ];
 
             categories.forEach(cat => {
@@ -254,6 +262,7 @@
         },
 
         createInfoPanel(container) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             this.infoPanel = document.createElement('div');
             this.infoPanel.style.cssText = `
                 padding: 20px;
@@ -267,8 +276,8 @@
             this.infoPanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
-                        <h3 style="margin: 0; color: #ff4d4d;">Emotion Simulation</h3>
-                        <p style="margin: 5px 0 0 0; opacity: 0.8;">Select a psychological theory to explore neurological pathways and emotional regulation.</p>
+                        <h3 style="margin: 0; color: #ff4d4d;">${t('Emotion Model')}</h3>
+                        <p style="margin: 5px 0 0 0; opacity: 0.8;">${t('Select a psychological theory to explore neurological pathways and emotional regulation.')}</p>
                     </div>
                     <div style="font-size: 11px; text-align: right; opacity: 0.6;">
                         DRAG to rotate • SCROLL to zoom • CLICK regions for deep dive
@@ -457,8 +466,9 @@
 
         updateDeepDivePanel() {
             if (!this.deepDivePanel) return;
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
 
-            if (!this.selectedRegion || this.selectedRegion === 'cortex') {
+            if (isMobile || !this.selectedRegion || this.selectedRegion === 'cortex') {
                 this.deepDivePanel.style.width = '0';
                 this.deepDivePanel.innerHTML = '';
                 return;
@@ -581,6 +591,19 @@
                 requestAnimationFrame(animate);
             };
             animate();
+        },
+
+        refreshUIText() {
+            this.updateTheorySelector();
+            this.updateInfoPanel();
+            // Category selector is hard to update without re-creating, let's re-create
+            if (this.uiContainer) {
+                const firstChild = this.uiContainer.firstChild;
+                if (firstChild) this.uiContainer.removeChild(firstChild);
+                this.createCategorySelector(this.uiContainer);
+                // Move it to top
+                this.uiContainer.prepend(this.uiContainer.lastChild);
+            }
         },
 
         render() {

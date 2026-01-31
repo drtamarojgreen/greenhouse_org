@@ -170,12 +170,12 @@ window.GreenhouseUtils = (function () {
         }
 
         if (!appState.baseUrl) {
-            console.error('GreenhouseUtils: Missing required data-base-url attribute');
-            return false;
+            console.warn('GreenhouseUtils: Missing data-base-url attribute, defaulting to relative paths.');
+            appState.baseUrl = './';
         }
 
         // Ensure baseUrl ends with slash
-        if (!appState.baseUrl.endsWith('/')) {
+        if (appState.baseUrl && !appState.baseUrl.endsWith('/')) {
             appState.baseUrl += '/';
         }
 
@@ -514,7 +514,7 @@ window.GreenhouseUtils = (function () {
 
         console.log('[GreenhouseUtils] Preparing bottom navigation TOC...');
 
-        const githubUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
+        const githubUrl = getDefaultBaseUrl();
 
         // Load CSS if not present
         if (!document.querySelector('link[href*="models_toc.css"]')) {
@@ -708,7 +708,7 @@ window.GreenhouseUtils = (function () {
      * @description Fetches model metadata from the central XML repository.
      */
     async function fetchModelDescriptions() {
-        const baseUrl = appState.baseUrl || "https://drtamarojgreen.github.io/greenhouse_org/";
+        const baseUrl = appState.baseUrl || './';
         const xmlUrl = `${baseUrl}endpoints/model_descriptions.xml`;
 
         try {

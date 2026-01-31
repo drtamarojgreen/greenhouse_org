@@ -9,19 +9,20 @@
     const G = window.GreenhouseDNARepair;
 
     G.createUI = function(wrapper) {
+        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
         const controls = document.createElement('div');
         controls.className = 'dna-controls-bar';
 
         const modes = [
-            { id: 'ber', label: 'Base Excision' },
-            { id: 'mmr', label: 'Mismatch Repair' },
-            { id: 'ner', label: 'Nucleotide Excision' },
-            { id: 'replicate', label: 'Replication' },
-            { id: 'photo', label: 'Photolyase (Direct)' },
-            { id: 'mgmt', label: 'MGMT Repair' },
-            { id: 'dsb', label: 'Double-Strand Break' },
-            { id: 'nhej', label: 'NHEJ (Error Prone)' },
-            { id: 'hr', label: 'Homologous Recomb' }
+            { id: 'ber', label: t('Base Excision') },
+            { id: 'mmr', label: t('Mismatch Repair') },
+            { id: 'ner', label: t('Nucleotide Excision') },
+            { id: 'replicate', label: t('DNA Replication') },
+            { id: 'photo', label: t('Photolyase (Direct)') },
+            { id: 'mgmt', label: t('MGMT Repair') },
+            { id: 'dsb', label: t('Double-Strand Break') },
+            { id: 'nhej', label: t('NHEJ (Error Prone)') },
+            { id: 'hr', label: t('Homologous Recomb') }
         ];
 
         modes.forEach(mode => {
@@ -90,7 +91,7 @@
         // Reset Button
         const resetBtn = document.createElement('button');
         resetBtn.className = 'dna-control-btn';
-        resetBtn.innerText = 'Reset Stats';
+        resetBtn.innerText = t('btn_reset_sim');
         resetBtn.style.marginLeft = '10px';
         resetBtn.onclick = () => {
             this.state.atpConsumed = 0;
@@ -138,7 +139,7 @@
 
         const content = document.createElement('div');
         content.id = 'dna-info-content';
-        content.innerHTML = '<strong>DNA Repair Simulation</strong><br>Select a mode above to observe molecular repair pathways.';
+        content.innerHTML = `<strong>${t('DNA Repair Model')}</strong><br>${t('Select a mode above to observe molecular repair pathways.')}`;
 
         const stats = document.createElement('div');
         stats.id = 'dna-stats-container';
@@ -149,13 +150,13 @@
         const atp = document.createElement('div');
         atp.className = 'dna-atp-counter';
         atp.id = 'dna-atp-counter';
-        atp.innerText = 'ATP Consumed: 0';
+        atp.innerText = `${t('atp_consumed')}: 0`;
 
         const integrity = document.createElement('div');
         integrity.id = 'dna-integrity-stat';
         integrity.style.color = '#a0aec0';
         integrity.style.fontSize = '12px';
-        integrity.innerText = 'Genomic Integrity: 100%';
+        integrity.innerText = `${t('genomic_integrity')}: 100%`;
 
         const analytics = document.createElement('div');
         analytics.id = 'dna-analytics-stat';

@@ -133,6 +133,11 @@
             this.scheduleProteins(); // Enhancement 22
             this.setupInteraction();
 
+            // Handle Language Change
+            window.addEventListener('greenhouse:language-changed', () => {
+                this.refreshUIText();
+            });
+
             // Initialize tooltip if available
             if (window.GreenhouseRNATooltip && window.GreenhouseRNATooltip.initialize) {
                 window.GreenhouseRNATooltip.initialize();
@@ -809,7 +814,14 @@
             });
 
             // Enhancement 66: ATP Display
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            if (isMobile) {
+                this.ctx.restore();
+                return;
+            }
+
             this.ctx.save();
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             this.ctx.fillStyle = 'white';
             this.ctx.font = 'bold 14px Arial';
             this.ctx.textAlign = 'right';
@@ -820,14 +832,14 @@
             };
 
             this.ctx.fillText(`ATP: ${atpStatus.atp}%`, this.width - 20, 30);
-            this.ctx.fillText(`Used: ${atpStatus.consumed}`, this.width - 20, 50);
+            this.ctx.fillText(`${t('used')}: ${atpStatus.consumed}`, this.width - 20, 50);
 
             // Enhancement 67/68: Environment Display
             if (this.environmentManager) {
                 const env = this.environmentManager.getStatus();
                 this.ctx.font = '12px Arial';
-                this.ctx.fillText(`pH: ${env.ph}`, this.width - 20, 75);
-                this.ctx.fillText(`Temp: ${env.temp}°C`, this.width - 20, 95);
+                this.ctx.fillText(`${t('ph')}: ${env.ph}`, this.width - 20, 75);
+                this.ctx.fillText(`${t('temp')}: ${env.temp}°C`, this.width - 20, 95);
             }
 
             this.ctx.beginPath();
@@ -872,6 +884,10 @@
             requestAnimationFrame((ts) => this.animate(ts));
         }
 
+        refreshUIText() {
+            // Force redraw to update text in next frame
+        },
+
         stop() {
             this.isRunning = false;
         }
@@ -886,6 +902,8 @@
             console.error('Target element for RNA repair simulation not found.');
             return;
         }
+
+        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
 
         if (typeof targetElement === 'string') {
             selector = targetElement;
@@ -926,7 +944,7 @@
         // Or we can attach the function to the existing global object used for re-init.
         window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
 
-        if (window.Greenhouse.initializeRNADisplay) {
+        if (window.Greenhouse.initializeRNADisplay && !isMobile) {
             window.Greenhouse.initializeRNADisplay(simulation);
         }
 

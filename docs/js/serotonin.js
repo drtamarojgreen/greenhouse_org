@@ -88,6 +88,11 @@
             this.setupStructuralModel();
             this.setupInteraction();
 
+            // Handle Language Change
+            window.addEventListener('greenhouse:language-changed', () => {
+                if (this.refreshUIText) this.refreshUIText();
+            });
+
             // Add Resize Listeners (Window only, no ResizeObserver)
             window.addEventListener('resize', () => {
                 requestAnimationFrame(() => this.handleResize());

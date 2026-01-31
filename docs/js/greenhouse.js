@@ -29,10 +29,6 @@
      */
     const config = {
         /**
-         * The base URL for fetching application assets from the GitHub Pages site.
-         */
-        githubPagesBaseUrl: 'https://drtamarojgreen.github.io/greenhouse_org/',
-        /**
          * The path segment that identifies the schedule page.
          */
         schedulePagePath: '/schedule/',
@@ -217,7 +213,7 @@
             const appAttributes = {
                 'target-selector-left': targetSelectorLeft,
                 'target-selector-right': targetSelectorRight, // Will be null if not a two-panel app
-                'base-url': config.githubPagesBaseUrl,
+                'base-url': './',
                 'view': view,
                 ...extraAttributes
             };
@@ -225,10 +221,10 @@
             if (uiScriptName) {
                 const scripts = Array.isArray(uiScriptName) ? uiScriptName : [uiScriptName];
                 for (const script of scripts) {
-                    await GreenhouseUtils.loadScript(script, config.githubPagesBaseUrl);
+                    await GreenhouseUtils.loadScript(script, '');
                 }
             }
-            await GreenhouseUtils.loadScript(scriptName, config.githubPagesBaseUrl, appAttributes);
+            await GreenhouseUtils.loadScript(scriptName, '', appAttributes);
 
         } catch (error) {
             console.error(`Greenhouse: Failed to load ${appName} application:`, error);
@@ -555,13 +551,13 @@
         console.log('Greenhouse: Initializing application loader');
 
         // Load the visual effects script on all pages (no need to wait for specific elements)
-        GreenhouseUtils.loadScript('effects.js', config.githubPagesBaseUrl);
+        GreenhouseUtils.loadScript('effects.js', '');
 
         // Load mobile experience handler if on a mobile device
         if (GreenhouseUtils.isMobileUser()) {
             console.log('Greenhouse: Mobile device detected. Loading mobile experience handler...');
-            GreenhouseUtils.loadScript('GreenhouseMobile.js', config.githubPagesBaseUrl, {
-                'base-url': config.githubPagesBaseUrl
+            GreenhouseUtils.loadScript('GreenhouseMobile.js', '', {
+                'base-url': './'
             });
         }
 
