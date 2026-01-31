@@ -122,32 +122,16 @@
   transform: scale(1.02);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .models-toc-grid {
     grid-template-columns: 1fr;
-    gap: 15px;
   }
 
   .model-toc-card {
-    padding: 15px;
+    padding: 20px;
   }
 
   .model-toc-card h3 {
-    font-size: 1.6rem;
-    margin-bottom: 10px;
-  }
-
-  .model-toc-card p {
-    font-size: 1.1rem;
-    line-height: 1.4;
-  }
-
-  .model-toc-intro p {
-    font-size: 1.2rem;
-  }
-
-  .model-toc-card .greenhouse-btn {
-    font-size: 1.1rem;
-    padding: 10px 15px;
+    font-size: 1.4rem;
   }
 }

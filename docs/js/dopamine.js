@@ -129,11 +129,6 @@
         G.setupReceptors();
         G.setupInteraction();
 
-        // Handle Language Change
-        window.addEventListener('greenhouse:language-changed', () => {
-            if (G.refreshUIText) G.refreshUIText();
-        });
-
         G.isRunning = true;
         G.animate();
 
@@ -146,15 +141,14 @@
 
     G.initSidePanels = function (container) {
         const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+        if (isMobile) return;
 
         G.leftPanel = document.createElement('div');
         G.leftPanel.className = 'dopamine-side-panel left';
-        if (isMobile) G.leftPanel.style.display = 'none';
         container.appendChild(G.leftPanel);
 
         G.rightPanel = document.createElement('div');
         G.rightPanel.className = 'dopamine-side-panel right';
-        if (isMobile) G.rightPanel.style.display = 'none';
         container.appendChild(G.rightPanel);
 
         // Define common update functions
@@ -189,8 +183,11 @@
             .dopamine-simulation-container canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: auto; }
             .dopamine-controls { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; z-index: 10; width: calc(100% - 20px); justify-content: center; pointer-events: none; }
             .dopamine-controls > * { pointer-events: auto; }
-            .dopamine-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: all 0.2s; }
+            .dopamine-btn { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: all 0.2s; min-height: 44px; display: flex; align-items: center; justify-content: center; }
             .dopamine-btn:hover { background: #2d3748; border-color: #4fd1c5; box-shadow: 0 0 10px rgba(79, 209, 197, 0.4); }
+            @media (max-width: 1024px) {
+                .dopamine-btn { font-size: 16px; padding: 10px 20px; }
+            }
             .dopamine-info { color: #4fd1c5; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #4fd1c5; margin-bottom: 10px; font-size: 11px; }
 
             .dopamine-side-panel {
@@ -453,6 +450,7 @@
             const GreenhouseUtils = window.GreenhouseUtils;
 
             // Load modular simulation components
+            await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_legend.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_tooltips.js', baseUrl);

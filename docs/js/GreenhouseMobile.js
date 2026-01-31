@@ -274,11 +274,7 @@
                 Utils.validateConfiguration();
             }
 
-            const appBaseUrl = Utils.appState.baseUrl || './';
-
             try {
-                // Load models_util for internationalization
-                await Utils.loadScript('models_util.js', appBaseUrl);
                 const models = await Utils.fetchModelDescriptions();
                 this.injectStyles();
                 this.renderHub(models);
@@ -309,16 +305,12 @@
                     box-sizing: border-box;
                 }
                 .gh-mobile-overlay * { box-sizing: border-box; }
-                .gh-mobile-overlay-header { padding: 60px 20px 10px; text-align: center; }
-                .gh-mobile-overlay-header h2 {
-                    color: #4ca1af; font-weight: 300; letter-spacing: 2px;
-                    text-transform: uppercase; font-size: 1.5rem; margin: 0; opacity: 0.8;
-                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-                }
+                .gh-mobile-overlay-header { padding: 50px 20px 10px; text-align: center; }
+                .gh-mobile-overlay-header h2 { color: #4ca1af; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; font-size: 1.4rem; margin: 0; opacity: 0.8; }
                 
                 .gh-mobile-container {
                     display: flex; flex: 1; overflow-x: auto; scroll-snap-type: x mandatory;
-                    align-items: center; gap: 15px; padding: 10px 20px 60px;
+                    align-items: center; gap: 25px; padding: 10px 30px 60px;
                     -webkit-overflow-scrolling: touch;
                 }
                 .gh-mobile-container::-webkit-scrollbar { display: none; }
@@ -358,22 +350,15 @@
 
                 .gh-mobile-btn {
                     background: linear-gradient(135deg, #4ca1af 0%, #2c3e50 100%);
-                    color: white; text-decoration: none; padding: 12px 20px; border-radius: 18px;
-                    font-size: 1.2rem; font-weight: 600; text-align: center; margin: 0 20px 20px;
+                    color: white; text-decoration: none; padding: 14px 35px; border-radius: 18px;
+                    font-size: 1.2rem; font-weight: 600; text-align: center; margin: 0 24px 24px;
                 }
                 .gh-mobile-close {
-                    position: absolute; top: 15px; right: 20px;
-                    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-                    color: white; width: 40px; height: 40px; border-radius: 50%;
-                    font-size: 28px; display: flex; align-items: center; justify-content: center;
+                    position: absolute; top: 40px; right: 25px;
+                    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+                    color: white; width: 44px; height: 44px; border-radius: 50%;
+                    font-size: 32px; display: flex; align-items: center; justify-content: center;
                     z-index: 100001; backdrop-filter: blur(10px);
-                }
-                .gh-mobile-lang-toggle {
-                    position: absolute; top: 15px; right: 75px;
-                    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-                    color: white; padding: 6px 14px; border-radius: 20px;
-                    font-size: 14px; font-weight: 600; z-index: 100001;
-                    backdrop-filter: blur(10px); cursor: pointer;
                 }
                 .gh-swipe-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: all 0.3s ease; }
                 .gh-swipe-dot.active { background: #4ca1af; width: 22px; border-radius: 10px; }
@@ -401,11 +386,8 @@
             overlay.id = 'greenhouse-mobile-viewer';
             overlay.className = 'gh-mobile-overlay';
 
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-
             overlay.innerHTML = `
-                <div class="gh-mobile-overlay-header"><h2 class="gh-hub-title">${t('hub_title')}</h2></div>
-                <button class="gh-mobile-lang-toggle" id="gh-mobile-lang-btn">${t('btn_language')}</button>
+                <div class="gh-mobile-overlay-header"><h2>Greenhouse Models</h2></div>
                 <button class="gh-mobile-close" id="gh-mobile-close-btn">&times;</button>
                 <div class="gh-mobile-container" id="gh-mobile-scroller"></div>
                 <div class="gh-mobile-hint" id="gh-mobile-dots" style="position: absolute; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px;"></div>
@@ -418,19 +400,18 @@
                 const card = document.createElement('div');
                 card.className = 'gh-mobile-card';
                 card.dataset.modelId = model.id;
-                card.dataset.modelTitle = model.title;
                 card.dataset.currentModeIndex = 0;
 
                 card.innerHTML = `
                     <div class="gh-mobile-card-header">
-                        <span class="gh-model-title">${t(model.title)}</span>
+                        <span class="gh-model-title">${model.title}</span>
                         <span class="gh-model-index">${index + 1}</span>
                     </div>
                     <div class="gh-mobile-canvas-wrapper" id="canvas-target-${model.id}">
                         <div class="gh-mobile-loader"></div>
                         <div class="gh-mode-indicator" id="mode-indicator-${model.id}"></div>
                     </div>
-                    <a href="${model.url}" class="gh-mobile-btn">${t('btn_select_model')}</a>
+                    <a href="${model.url}" class="gh-mobile-btn">Select Model</a>
                 `;
 
                 scroller.appendChild(card);
@@ -456,51 +437,6 @@
                     this.activeModels.clear();
                 }, 400);
             };
-
-            document.getElementById('gh-mobile-lang-btn').onclick = () => {
-                if (window.GreenhouseModelsUtil) {
-                    window.GreenhouseModelsUtil.toggleLanguage();
-                    this.refreshHubText();
-                }
-            };
-        },
-
-        /**
-         * @function refreshHubText
-         * @description Refreshes all translated text in the hub.
-         */
-        refreshHubText() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-
-            // Update Header
-            const hubTitle = document.querySelector('.gh-hub-title');
-            if (hubTitle) hubTitle.textContent = t('hub_title');
-
-            const langBtn = document.getElementById('gh-mobile-lang-btn');
-            if (langBtn) langBtn.textContent = t('btn_language');
-
-            // Update Cards
-            const cards = document.querySelectorAll('.gh-mobile-card');
-            cards.forEach(card => {
-                const titleEl = card.querySelector('.gh-model-title');
-                if (titleEl && card.dataset.modelTitle) {
-                    titleEl.textContent = t(card.dataset.modelTitle);
-                }
-
-                const btnEl = card.querySelector('.gh-mobile-btn');
-                if (btnEl) btnEl.textContent = t('btn_select_model');
-
-                // Update active indicator if visible
-                const indicator = card.querySelector('.gh-mode-indicator');
-                if (indicator && indicator.classList.contains('show')) {
-                    const modelId = card.dataset.modelId;
-                    const config = this.modelRegistry[modelId];
-                    const index = parseInt(card.dataset.currentModeIndex);
-                    if (config && config.modes && config.modes[index]) {
-                        indicator.textContent = t(config.modes[index]);
-                    }
-                }
-            });
         },
 
         setupIntersectionObserver(card, modelId) {
@@ -523,15 +459,19 @@
 
             const Utils = window.GreenhouseUtils;
 
-            // Use relative path for loading if baseUrl is not explicitly set to avoid breaking live site
-            const appBaseUrl = Utils.appState.baseUrl || './';
+            // Ensure configuration is validated before accessing appState
+            if (typeof Utils.validateConfiguration === 'function' && !Utils.appState.baseUrl) {
+                Utils.validateConfiguration();
+            }
+
+            const baseUrl = Utils.appState.baseUrl || "https://drtamarojgreen.github.io/greenhouse_org/";
 
             try {
                 for (const scriptName of config.scripts) {
-                    await Utils.loadScript(scriptName, appBaseUrl);
+                    await Utils.loadScript(scriptName, baseUrl);
                 }
                 container.innerHTML = `<div class="gh-mode-indicator" id="mode-indicator-${modelId}"></div>`;
-                config.init(container, appBaseUrl);
+                config.init(container, baseUrl);
                 this.activeModels.set(container, modelId);
             } catch (e) {
                 container.innerHTML = `<p style="color: #e74c3c; padding: 20px;">Failed to load ${modelId}</p>`;
@@ -552,8 +492,7 @@
 
                     const indicator = card.querySelector(`#mode-indicator-${modelId}`);
                     if (indicator) {
-                        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-                        indicator.textContent = t(config.modes[index]);
+                        indicator.textContent = config.modes[index];
                         indicator.classList.remove('show');
                         void indicator.offsetWidth;
                         indicator.classList.add('show');

@@ -205,60 +205,41 @@ a {
 /* --- Responsive Design --- */
 @media (max-width: 1024px) {
     body {
-        font-size: 1.2rem;
-        line-height: 1.4;
+        font-size: 1.1rem;
     }
 
     .greenhouse-panel-title,
     .greenhouse-controls-panel h3,
     .greenhouse-metrics-panel h3 {
-        font-size: 1.6rem;
-        margin-bottom: 0.5rem;
+        font-size: 1.7rem;
     }
 
     .greenhouse-btn {
         font-size: 1.1rem;
-        padding: 0.6em 1.2em;
+        min-height: 44px; /* Touch target standard */
     }
 
     .greenhouse-consent-label {
         font-size: 1.2rem;
     }
 
-    .simulation-main-container {
-        padding: 0.5rem;
-    }
-
     .simulation-content-area {
         flex-direction: column;
-        gap: 1rem;
     }
 
     .greenhouse-landing-container {
-        padding: 1rem;
-        margin: 0.5rem;
-        max-width: none;
+        padding: 1em;
+        margin: 1em;
     }
 
-    .greenhouse-controls-panel,
-    .greenhouse-metrics-panel {
-        padding: 1rem;
-        margin-top: 1rem;
+    /* Enforce 16px+ for all primary text elements on mobile */
+    input, select, button, label, p, span {
+        font-size: 16px !important;
     }
 
-    .control-group {
-        margin-bottom: 1rem;
-    }
-
-    .button-group {
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-
-    /* Prevent overlaps in labels and sliders */
-    label {
-        display: block;
-        margin-bottom: 0.3rem;
+    /* Primary Simulation Overlay adjustments */
+    .gh-mobile-overlay-header h2 {
+        font-size: 1.6rem !important;
     }
 }
 

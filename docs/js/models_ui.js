@@ -183,25 +183,15 @@
 
         populateMetricsPanel(panel, type) {
             const t = (k) => this.util.t(k);
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
             const title = type === 'synaptic' ? t('metrics_title_synaptic') : t('metrics_title_network');
 
-            if (isMobile) {
-                // Reduced metrics for mobile
-                panel.innerHTML = `
-                    <h3 class="greenhouse-panel-title">${title}</h3>
-                    <p>${t('metric_weight')}: <span id="metric-weight-${type}">0.50</span></p>
-                    <p>${t('metric_learning')}: <span id="metric-learning-${type}">0.0</span></p>
-                `;
-            } else {
-                panel.innerHTML = `
-                    <h3 class="greenhouse-panel-title">${title}</h3>
-                    <p>${t('metric_weight')}: <span id="metric-weight-${type}">0.50</span></p>
-                    <p>${t('metric_neuro')}: <span id="metric-neuro-${type}">0</span></p>
-                    <p>${t('metric_ions')}: <span id="metric-ions-${type}">0</span></p>
-                    <p>${t('metric_learning')}: <span id="metric-learning-${type}">0.0</span></p>
-                `;
-            }
+            panel.innerHTML = `
+                <h3 class="greenhouse-panel-title">${title}</h3>
+                <p>${t('metric_weight')}: <span id="metric-weight-${type}">0.50</span></p>
+                <p>${t('metric_neuro')}: <span id="metric-neuro-${type}">0</span></p>
+                <p>${t('metric_ions')}: <span id="metric-ions-${type}">0</span></p>
+                <p>${t('metric_learning')}: <span id="metric-learning-${type}">0.0</span></p>
+            `;
         },
 
         populateControlsPanel(container, type) {
@@ -305,15 +295,11 @@
         },
 
         updateMetrics() {
-            const setSafe = (id, val) => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = val;
-            };
-            setSafe('metric-weight-synaptic', this.state.synaptic.synapticWeight.toFixed(2));
-            setSafe('metric-neuro-synaptic', this.state.synaptic.neurotransmitters);
-            setSafe('metric-ions-synaptic', this.state.synaptic.ionsCrossed);
-            setSafe('metric-learning-synaptic', this.state.synaptic.learningMetric.toFixed(2));
-            setSafe('metric-weight-network', this.state.network.synapticWeight.toFixed(4));
+            document.getElementById('metric-weight-synaptic').textContent = this.state.synaptic.synapticWeight.toFixed(2);
+            document.getElementById('metric-neuro-synaptic').textContent = this.state.synaptic.neurotransmitters;
+            document.getElementById('metric-ions-synaptic').textContent = this.state.synaptic.ionsCrossed;
+            document.getElementById('metric-learning-synaptic').textContent = this.state.synaptic.learningMetric.toFixed(2);
+            document.getElementById('metric-weight-network').textContent = this.state.network.synapticWeight.toFixed(4);
         },
 
         resizeAllCanvases() {

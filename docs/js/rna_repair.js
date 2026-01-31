@@ -134,13 +134,21 @@
             this.setupInteraction();
 
             // Handle Language Change
-            window.addEventListener('greenhouse:language-changed', () => {
+            window.addEventListener('greenhouseLanguageChanged', () => {
                 this.refreshUIText();
             });
 
             // Initialize tooltip if available
             if (window.GreenhouseRNATooltip && window.GreenhouseRNATooltip.initialize) {
                 window.GreenhouseRNATooltip.initialize();
+            }
+        }
+
+        refreshUIText() {
+            // Redraw loop will handle language changes automatically via t()
+            const langBtn = document.getElementById('rna-lang-toggle');
+            if (langBtn && window.GreenhouseModelsUtil) {
+                langBtn.textContent = window.GreenhouseModelsUtil.t('btn_language');
             }
         }
 
@@ -814,14 +822,7 @@
             });
 
             // Enhancement 66: ATP Display
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
-            if (isMobile) {
-                this.ctx.restore();
-                return;
-            }
-
             this.ctx.save();
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             this.ctx.fillStyle = 'white';
             this.ctx.font = 'bold 14px Arial';
             this.ctx.textAlign = 'right';
@@ -831,6 +832,7 @@
                 consumed: this.atpConsumed.toFixed(1)
             };
 
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             this.ctx.fillText(`ATP: ${atpStatus.atp}%`, this.width - 20, 30);
             this.ctx.fillText(`${t('used')}: ${atpStatus.consumed}`, this.width - 20, 50);
 
@@ -884,10 +886,6 @@
             requestAnimationFrame((ts) => this.animate(ts));
         }
 
-        refreshUIText() {
-            // Force redraw to update text in next frame
-        },
-
         stop() {
             this.isRunning = false;
         }
@@ -903,6 +901,7 @@
             return;
         }
 
+        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
         const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
 
         if (typeof targetElement === 'string') {
@@ -927,11 +926,30 @@
 
         const rect = targetElement.getBoundingClientRect();
         canvas.width = rect.width || 800;
-        canvas.height = 600;
+        canvas.height = isMobile ? 500 : 600;
         canvas.style.display = 'block';
         canvas.style.cursor = 'grab';
 
         wrapper.appendChild(canvas);
+
+        // Language toggle for RNA
+        const langBtn = document.createElement('button');
+        langBtn.id = 'rna-lang-toggle';
+        langBtn.textContent = t('btn_language');
+        langBtn.style.cssText = `
+            position: absolute; top: 10px; right: 10px; z-index: 100;
+            background: #732751; color: white; border: none; padding: 5px 10px;
+            border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Quicksand', sans-serif;
+        `;
+        langBtn.onclick = () => {
+            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+        };
+        wrapper.appendChild(langBtn);
+
+        if (isMobile) {
+            const staticHeader = document.querySelector('.page-header');
+            if (staticHeader) staticHeader.style.display = 'none';
+        }
 
         const simulation = new RNARepairSimulation(canvas);
 
@@ -944,7 +962,7 @@
         // Or we can attach the function to the existing global object used for re-init.
         window.Greenhouse.initializeRNARepairSimulation = initializeRNARepairSimulation;
 
-        if (window.Greenhouse.initializeRNADisplay && !isMobile) {
+        if (window.Greenhouse.initializeRNADisplay) {
             window.Greenhouse.initializeRNADisplay(simulation);
         }
 
@@ -1001,6 +1019,7 @@
             const { targetSelector, baseUrl } = captureAttributes();
 
             if (baseUrl) {
+                await GreenhouseUtils.loadScript('models_util.js', baseUrl);
                 await GreenhouseUtils.loadScript('rna_tooltip.js', baseUrl);
                 await GreenhouseUtils.loadScript('rna_display.js', baseUrl);
                 await GreenhouseUtils.loadScript('rna_legend.js', baseUrl);

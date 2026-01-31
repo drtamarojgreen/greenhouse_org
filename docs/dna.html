@@ -197,32 +197,20 @@
     <script src="js/GreenhouseUtils.js"></script>
     <script src="js/GreenhouseMobile.js"></script>
     <script src="js/performance_profiler.js" data-auto-start="true"></script>
-    <script src="js/GreenhouseMobile.js"></script>
     <script src="js/model_tests.js"></script>
-    <script src="js/GreenhouseMobile.js"></script>
     <script src="js/greenhouse.js"></script>
-    <script src="js/GreenhouseMobile.js"></script>
     <script src="js/models_3d_math.js"></script>
-    <script src="js/GreenhouseMobile.js"></script>
     <script src="js/dna_tooltip.js"></script>
-    <script src="js/GreenhouseMobile.js"></script>
     <script src="js/dna_repair.js"></script>
-    <script src="js/GreenhouseMobile.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("DNA Standalone: Initializing...");
-            const targetSelector = '#dna-simulation-target';
-
-            // Check if global simulation object exists (from dna_repair.js)
             const checkInit = setInterval(() => {
-                if (window.Greenhouse && window.Greenhouse.initializeDNARepairSimulation) {
-                    window.Greenhouse.initializeDNARepairSimulation(targetSelector);
+                if (window.GreenhouseDNARepair && window.GreenhouseDNARepair.initializeDNARepairSimulation) {
+                    window.GreenhouseDNARepair.initializeDNARepairSimulation(document.querySelector('#dna-simulation-target'), '#dna-simulation-target');
                     clearInterval(checkInit);
                 }
             }, 100);
-
-            // Timeout after 10 seconds
             setTimeout(() => clearInterval(checkInit), 10000);
         });
 
@@ -237,7 +225,6 @@
             }
         }
     </script>
-    <script src="js/GreenhouseMobile.js"></script>
 </body>
 
 </html>

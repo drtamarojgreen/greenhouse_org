@@ -62,20 +62,27 @@
         rulerActive: false,
         annotations: [],
 
-        init(targetSelector, selector = null) {
+        init(targetSelector, baseUrl, selector = null) {
             // Standardize: if re-initialized with (container, selector), we might get varying args.
             // The utility calls: appInstance[reinitFunctionName](container, selector)
+            // So if `init(container, selector)` is called:
+            // targetSelector -> container element
+            // baseUrl -> selector string
+            // selector -> undefined
 
             let actualSelector = targetSelector;
-            if (typeof targetSelector !== 'string' && selector && typeof selector === 'string') {
+            if (typeof targetSelector !== 'string' && baseUrl && typeof baseUrl === 'string') {
                 // Called via re-init
-                actualSelector = selector;
+                actualSelector = baseUrl;
             } else if (typeof targetSelector === 'string') {
                 // Normal string call
                 actualSelector = targetSelector;
+                // baseUrl is actually baseUrl
             }
 
             this.lastSelector = actualSelector;
+            this.baseUrl = (typeof baseUrl === 'string' && baseUrl !== actualSelector) ? baseUrl : '';
+
             this._initializeSimulation(actualSelector);
         },
 
@@ -97,7 +104,7 @@
             this.setupDOM();
 
             // Handle Language Change
-            window.addEventListener('greenhouse:language-changed', () => {
+            window.addEventListener('greenhouseLanguageChanged', () => {
                 this.refreshUIText();
             });
 
@@ -113,9 +120,14 @@
 
         setupDOM() {
             const config = G.config;
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
 
             this.container.innerHTML = '';
+            if (isMobile) {
+                const staticHeader = document.querySelector('.page-header');
+                if (staticHeader) staticHeader.style.display = 'none';
+            }
             this.container.style.cssText = `
                 display: flex; flex-direction: ${isMobile ? 'column' : 'row'}; gap: 0; background: ${config.backgroundColor};
                 border-radius: 24px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.6);
@@ -149,7 +161,8 @@
                     display: flex; gap: 10px; justify-content: center; z-index: 100;
                 `;
                 const burstBtn = document.createElement('button');
-                burstBtn.textContent = 'Trigger Burst';
+                burstBtn.id = 'synapse-mobile-burst-btn';
+                burstBtn.textContent = t('Burst');
                 burstBtn.className = 'greenhouse-btn greenhouse-btn-primary';
                 burstBtn.style.fontSize = '16px';
                 burstBtn.onclick = () => {
@@ -158,6 +171,19 @@
                     G.Particles.create(w, h, 60, G.config, true);
                 };
                 mobileControls.appendChild(burstBtn);
+
+                const langBtn = document.createElement('button');
+                langBtn.id = 'synapse-lang-toggle';
+                langBtn.textContent = t('btn_language');
+                langBtn.className = 'greenhouse-btn greenhouse-btn-secondary';
+                langBtn.style.fontSize = '16px';
+                langBtn.onclick = () => {
+                    if (window.GreenhouseModelsUtil) {
+                        window.GreenhouseModelsUtil.toggleLanguage();
+                    }
+                };
+                mobileControls.appendChild(langBtn);
+
                 canvasWrapper.appendChild(mobileControls);
             }
 
@@ -185,8 +211,15 @@
 
         refreshUIText() {
             this.currentLanguage = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.currentLanguage : 'en';
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
+            const burstBtn = document.getElementById('synapse-mobile-burst-btn');
+            if (burstBtn) burstBtn.textContent = t('Burst');
+
+            const langBtn = document.getElementById('synapse-lang-toggle');
+            if (langBtn) langBtn.textContent = t('btn_language');
+
             this.renderSidebar();
-            // Other dynamic text updates if any
         },
 
         renderSidebar() {

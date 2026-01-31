@@ -202,7 +202,7 @@
         availablePathways: [], currentPathwayId: null, baseUrl: '', initialized: false,
         rawXmlData: null, // Bridge storage
 
-        async init(containerSelector) {
+        async init(containerSelector, baseUrl) {
             if (this.isRunning) return;
 
             const container = document.querySelector(containerSelector);
@@ -221,13 +221,13 @@
 
             if (checkCompletion()) {
                 console.log("Pathway App: Data bridge detected. Initiating...");
-                this.executeInitialization(container, containerSelector);
+                this.executeInitialization(container, containerSelector, baseUrl);
             } else {
                 const pollInterval = setInterval(() => {
                     if (checkCompletion()) {
                         clearInterval(pollInterval);
                         console.log("Pathway App: Data bridge completely loaded. Initiating...");
-                        this.executeInitialization(container, containerSelector);
+                        this.executeInitialization(container, containerSelector, baseUrl);
                     }
                 }, 100);
 
@@ -236,15 +236,16 @@
                     if (!this.isRunning) {
                         clearInterval(pollInterval);
                         console.warn("Pathway App: Data bridge timeout. Initiating with standalone generator.");
-                        this.executeInitialization(container, containerSelector);
+                        this.executeInitialization(container, containerSelector, baseUrl);
                     }
                 }, 15000);
             }
         },
 
-        async executeInitialization(container, containerSelector) {
+        async executeInitialization(container, containerSelector, baseUrl) {
             if (this.isRunning) return;
             this.isRunning = true;
+            this.baseUrl = baseUrl || '';
 
             // 1. Resilience Pattern: wipe previous content
             const bridgeData = container.textContent.trim();
@@ -330,7 +331,7 @@
             this.initializeGeometry();
 
             // Handle Language Change
-            window.addEventListener('greenhouse:language-changed', () => {
+            window.addEventListener('greenhouseLanguageChanged', () => {
                 this.refreshUIText();
             });
 
@@ -363,8 +364,7 @@
 
         async loadPathwayMetadata() {
             try {
-                const baseUrl = window.GreenhouseUtils ? window.GreenhouseUtils.appState.baseUrl : '';
-                const response = await fetch(baseUrl + 'endpoints/models_pathways.json');
+                const response = await fetch(this.baseUrl + 'endpoints/models_pathways.json');
                 const data = await response.json();
                 this.availablePathways = data.pathways;
                 this.populatePathwaySelector();
@@ -400,7 +400,6 @@
         },
 
         async switchPathway(pathwayId) {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             //console.log(`Pathway App: Switching to ${pathwayId}`);
             this.currentPathwayId = pathwayId;
             const pathway = this.availablePathways.find(p => p.id === pathwayId);
@@ -408,7 +407,7 @@
 
             // Show loading status
             const geneSelector = document.getElementById('pathway-selector');
-            if (geneSelector) geneSelector.innerHTML = `<option>${t('connecting_kegg')}</option>`;
+            if (geneSelector) geneSelector.innerHTML = '<option>Connecting to KEGG...</option>';
 
             let success = false;
 
@@ -446,6 +445,10 @@
         setupUI(container) {
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            if (isMobile) {
+                const testControls = document.getElementById('test-controls');
+                if (testControls) testControls.style.display = 'none';
+            }
             const uiContainer = document.createElement('div');
             uiContainer.style.cssText = `
                 position: absolute; 
@@ -462,7 +465,7 @@
                 border: 1px solid rgba(255, 255, 255, 0.1);
                 backdrop-filter: blur(10px);
                 box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-                min-width: ${isMobile ? 'auto' : '200px'};
+                min-width: ${isMobile ? 'auto' : '220px'};
                 display: ${isMobile ? 'flex' : 'block'};
                 flex-direction: column;
                 gap: 5px;
@@ -485,7 +488,7 @@
             pSelect.id = 'master-pathway-selector';
             pSelect.style.cssText = `
                 width: 100%; background: #2a2a2a; color: #4ca1af; border: 1px solid #444; 
-                padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer;
+                padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: ${isMobile ? '16px' : '14px'};
             `;
             pathwayGroup.appendChild(pSelect);
             uiContainer.appendChild(pathwayGroup);
@@ -496,7 +499,7 @@
             const label = document.createElement('label');
             label.id = 'pathway-component-label';
             label.textContent = t('component_gene');
-            label.style.cssText = 'display: block; font-size: 12px; margin-bottom: 5px; color: #aaa;';
+            label.style.cssText = `display: block; font-size: ${isMobile ? '16px' : '12px'}; margin-bottom: 5px; color: #aaa;`;
             if (!isMobile) selectGroup.appendChild(label);
 
             const select = document.createElement('select');
@@ -515,11 +518,15 @@
             selectGroup.appendChild(select);
             uiContainer.appendChild(selectGroup);
 
+            const btnGroup = document.createElement('div');
+            btnGroup.style.display = 'flex';
+            btnGroup.style.gap = '10px';
+
             const button = document.createElement('button');
             button.id = 'highlight-gene-btn';
             button.textContent = t('highlight_pathway');
             button.style.cssText = `
-                width: 100%; 
+                flex: 1;
                 background: linear-gradient(135deg, #4ca1af, #2c3e50); 
                 color: white; 
                 border: none; 
@@ -527,14 +534,34 @@
                 border-radius: 6px; 
                 font-weight: bold; 
                 cursor: pointer;
-                transition: transform 0.2s, background 0.2s;
+                font-size: ${isMobile ? '16px' : '14px'};
             `;
-            button.onmouseover = () => button.style.filter = 'brightness(1.2)';
-            button.onmouseout = () => button.style.filter = 'brightness(1.0)';
             button.onclick = () => {
                 this.highlightedNodeId = select.value;
             };
-            uiContainer.appendChild(button);
+            btnGroup.appendChild(button);
+
+            const langBtn = document.createElement('button');
+            langBtn.id = 'pathway-lang-toggle';
+            langBtn.textContent = t('btn_language');
+            langBtn.style.cssText = `
+                flex: 0 0 auto;
+                background: #732751;
+                color: white;
+                border: none;
+                padding: 10px;
+                border-radius: 6px;
+                font-weight: bold;
+                cursor: pointer;
+                font-size: ${isMobile ? '16px' : '14px'};
+            `;
+            langBtn.onclick = () => {
+                if (window.GreenhouseModelsUtil) {
+                    window.GreenhouseModelsUtil.toggleLanguage();
+                }
+            };
+            btnGroup.appendChild(langBtn);
+            uiContainer.appendChild(btnGroup);
 
             container.appendChild(uiContainer);
         },
@@ -560,8 +587,7 @@
 
         async loadExternalPathway(url, isLive = false) {
             try {
-                const baseUrl = window.GreenhouseUtils ? window.GreenhouseUtils.appState.baseUrl : '';
-                const fetchUrl = isLive ? url : (baseUrl + url);
+                const fetchUrl = isLive ? url : (this.baseUrl + url);
                 const parsedData = await KeggParser.parse(fetchUrl);
 
                 if (parsedData.nodes.length > 0) {
@@ -617,6 +643,9 @@
             const hBtn = document.getElementById('highlight-gene-btn');
             if (hBtn) hBtn.textContent = t('highlight_pathway');
 
+            const lBtn = document.getElementById('pathway-lang-toggle');
+            if (lBtn) lBtn.textContent = t('btn_language');
+
             this.updateGeneSelector();
             this.populatePathwaySelector();
         },
@@ -647,7 +676,6 @@
         },
 
         render() {
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
             const ctx = this.ctx;
             const w = this.canvas.width;
             const h = this.canvas.height;
@@ -685,7 +713,7 @@
             }
 
             // Draw Interaction PiP if a node is selected
-            if (highlightedNode && window.GreenhousePathwayBrain && !isMobile) {
+            if (highlightedNode && window.GreenhousePathwayBrain) {
                 const pipW = 300;
                 const pipH = 250;
                 const pipX = w - pipW - 20;

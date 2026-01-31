@@ -6,7 +6,7 @@
 const path = require('path');
 const fs = require('fs');
 const vm = require('vm');
-const { assert } = require('../utils/assertion_library.js');
+const assert = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
 // --- Mock Browser Environment ---
@@ -18,68 +18,15 @@ global.window = {
     dispatchEvent: () => { },
     addEventListener: () => { },
     ontouchstart: () => { },
-    _greenhouseScriptAttributes: {},
-    GreenhouseModelsUtil: {
-        currentLanguage: 'en',
-        t: (k) => {
-            const translations = {
-                hub_title: 'Greenhouse Models',
-                btn_select_model: 'Select Model',
-                'Genetic': 'Genetic',
-                'Neuro': 'Neuro',
-                'DNA': 'DNA'
-            };
-            return translations[k] || k;
-        },
-        toggleLanguage: function() { this.currentLanguage = this.currentLanguage === 'en' ? 'es' : 'en'; }
-    },
-    DOMParser: class {
-        parseFromString(str, type) {
-            return {
-                querySelectorAll: (sel) => {
-                    if (sel === 'model') {
-                        return [
-                            { getAttribute: () => 'genetic', querySelector: (s) => s === 'title' ? { textContent: 'Genetic' } : { textContent: '/genetic' } },
-                            { getAttribute: () => 'neuro', querySelector: (s) => s === 'title' ? { textContent: 'Neuro' } : { textContent: '/neuro' } },
-                            { getAttribute: () => 'dna', querySelector: (s) => s === 'title' ? { textContent: 'DNA' } : { textContent: '/dna' } }
-                        ];
-                    }
-                    return [];
-                }
-            };
-        }
-    }
+    _greenhouseScriptAttributes: {}
 };
 
 global.document = {
     currentScript: null,
     querySelector: (sel) => null,
-    getElementById: function(id) {
+    getElementById: (id) => {
         if (id === 'greenhouse-mobile-styles') return null;
         if (id === 'greenhouse-mobile-viewer') return null;
-
-        // Search in body children for elements with this id
-        const search = (nodes) => {
-            if (!nodes) return null;
-            for (const node of nodes) {
-                if (node.id === id) return node;
-                if (node.children) {
-                    const found = search(node.children);
-                    if (found) return found;
-                }
-            }
-            return null;
-        };
-        const found = search(document.body._children);
-        if (found) return found;
-
-        // Lazy creation for common mobile hub elements
-        if (id === 'gh-mobile-close-btn' || id === 'gh-mobile-lang-btn' || id.startsWith('mode-indicator-')) {
-            const sub = global.document.createElement('button');
-            sub.id = id;
-            document.body.appendChild(sub);
-            return sub;
-        }
         return null;
     },
     createElement: (tag) => {
@@ -97,21 +44,10 @@ global.document = {
                 this._listenerOpts[evt] = opts;
             },
             querySelector: function (sel) {
-                const found = sel.startsWith('#') ?
-                    this.children.find(c => c.id === sel.substring(1)) :
-                    this.children.find(c => c.className?.includes(sel.replace('.', '')));
-
-                if (found) return found;
-
-                // Lazy creation for common mobile hub elements to support innerHTML-based rendering
-                if (sel === '#gh-mobile-scroller' || sel === '#gh-mobile-dots' || sel === '#gh-mobile-lang-btn' || sel === '.gh-hub-title' || sel === '.gh-mobile-canvas-wrapper' || sel.startsWith('#mode-indicator-')) {
-                    const sub = global.document.createElement('div');
-                    if (sel.startsWith('#')) sub.id = sel.substring(1);
-                    else sub.className = sel.substring(1);
-                    this.appendChild(sub);
-                    return sub;
+                if (sel.startsWith('#')) {
+                    return this.children.find(c => c.id === sel.substring(1)) || null;
                 }
-                return null;
+                return this.children.find(c => c.className?.includes(sel.replace('.', ''))) || null;
             },
             querySelectorAll: function (sel) {
                 return this.children.filter(c => c.className?.includes(sel.replace('.', '')));
@@ -263,15 +199,15 @@ TestFramework.describe('Mobile UI Interactions', () => {
             assert.isTrue(indicator.classList.contains('show'), 'Should have show class');
         });
 
-        TestFramework.it('should remove show class after timeout', async () => {
+        TestFramework.it('should remove show class after timeout', (done) => {
             const indicator = document.createElement('div');
             indicator.classList.add('show');
 
-            await new Promise(resolve => setTimeout(() => {
+            setTimeout(() => {
                 indicator.classList.remove('show');
                 assert.isFalse(indicator.classList.contains('show'), 'Should remove show class');
-                resolve();
-            }, 100));
+                done();
+            }, 100);
         });
     });
 
@@ -582,7 +518,7 @@ TestFramework.describe('Mobile UI Interactions', () => {
             assert.equal(threshold, 0.5, 'Should use 50% visibility threshold');
         });
 
-        TestFramework.it('should trigger activation when card is 50% visible', async () => {
+        TestFramework.it('should trigger activation when card is 50% visible', (done) => {
             const card = document.createElement('div');
             card.dataset.modelId = 'genetic';
             const wrapper = document.createElement('div');
@@ -591,10 +527,10 @@ TestFramework.describe('Mobile UI Interactions', () => {
 
             Mobile.setupIntersectionObserver(card, 'genetic');
 
-            await new Promise(resolve => setTimeout(() => {
+            setTimeout(() => {
                 // Observer should have triggered
-                resolve();
-            }, 100));
+                done();
+            }, 100);
         });
     });
 

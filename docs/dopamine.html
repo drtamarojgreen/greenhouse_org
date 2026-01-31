@@ -47,12 +47,12 @@
     <script src="js/GreenhouseMobile.js"></script>
     <script src="js/performance_profiler.js" data-auto-start="true"></script>
     <script src="js/model_tests.js"></script>
-    <script src="js/dopamine.js" data-base-url="./" data-target-selector-left="#dopamine-app-container"></script>
+    <script src="js/dopamine.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const checkInit = setInterval(() => {
-                if (window.Greenhouse && window.Greenhouse.initializeDopamineSimulation) {
-                    window.Greenhouse.initializeDopamineSimulation('#dopamine-app-container');
+                if (window.GreenhouseDopamine && window.GreenhouseDopamine.initialize) {
+                    window.GreenhouseDopamine.initialize(document.querySelector('#dopamine-app-container'), '#dopamine-app-container');
                     clearInterval(checkInit);
                 }
             }, 100);

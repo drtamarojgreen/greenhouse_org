@@ -10,25 +10,30 @@
 
     G.createUI = function(wrapper) {
         const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
         const controls = document.createElement('div');
         controls.className = 'dna-controls-bar';
+        if (isMobile) {
+            controls.style.padding = '5px';
+        }
 
         const modes = [
-            { id: 'ber', label: t('Base Excision') },
-            { id: 'mmr', label: t('Mismatch Repair') },
-            { id: 'ner', label: t('Nucleotide Excision') },
-            { id: 'replicate', label: t('DNA Replication') },
-            { id: 'photo', label: t('Photolyase (Direct)') },
-            { id: 'mgmt', label: t('MGMT Repair') },
-            { id: 'dsb', label: t('Double-Strand Break') },
-            { id: 'nhej', label: t('NHEJ (Error Prone)') },
-            { id: 'hr', label: t('Homologous Recomb') }
+            { id: 'ber', label: 'Base Excision' },
+            { id: 'mmr', label: 'Mismatch Repair' },
+            { id: 'ner', label: 'Nucleotide Excision' },
+            { id: 'replicate', label: 'Replication' },
+            { id: 'photo', label: 'Photolyase (Direct)' },
+            { id: 'mgmt', label: 'MGMT Repair' },
+            { id: 'dsb', label: 'Double-Strand Break' },
+            { id: 'nhej', label: 'NHEJ (Error Prone)' },
+            { id: 'hr', label: 'Homologous Recomb' }
         ];
 
-        modes.forEach(mode => {
+        modes.forEach((mode, idx) => {
+            if (isMobile && idx > 3) return; // Only show first 4 modes on mobile
             const btn = document.createElement('button');
             btn.className = 'dna-control-btn' + (this.state.repairMode === mode.id ? ' active' : '');
-            btn.innerText = mode.label;
+            btn.innerText = t(mode.label);
             btn.onclick = () => {
                 document.querySelectorAll('.dna-control-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
@@ -37,77 +42,91 @@
             controls.appendChild(btn);
         });
 
-        // Radiation Slider
-        const sliderContainer = document.createElement('div');
-        sliderContainer.style.display = 'flex';
-        sliderContainer.style.alignItems = 'center';
-        sliderContainer.style.gap = '10px';
-        sliderContainer.style.marginLeft = '15px';
-        sliderContainer.style.color = '#e2e8f0';
-        sliderContainer.style.fontSize = '11px';
-        sliderContainer.style.background = 'rgba(0,0,0,0.3)';
-        sliderContainer.style.padding = '4px 8px';
-        sliderContainer.style.borderRadius = '4px';
-
-        const label = document.createElement('label');
-        label.innerText = 'Radiation:';
-
-        const slider = document.createElement('input');
-        slider.type = 'range';
-        slider.min = '0';
-        slider.max = '100';
-        slider.value = this.state.radiationLevel;
-        slider.style.width = '80px';
-        slider.style.cursor = 'pointer';
-        slider.oninput = (e) => {
-            this.state.radiationLevel = parseInt(e.target.value);
+        // Minimal Language Toggle
+        const langBtn = document.createElement('button');
+        langBtn.id = 'dna-lang-toggle';
+        langBtn.className = 'dna-control-btn';
+        langBtn.style.background = '#732751';
+        langBtn.innerText = t('btn_language');
+        langBtn.onclick = () => {
+            if (window.GreenhouseModelsUtil) {
+                window.GreenhouseModelsUtil.toggleLanguage();
+            }
         };
+        controls.appendChild(langBtn);
 
-        sliderContainer.appendChild(label);
-        sliderContainer.appendChild(slider);
-        controls.appendChild(sliderContainer);
+        if (!isMobile) {
+            // Radiation Slider
+            const sliderContainer = document.createElement('div');
+            sliderContainer.style.display = 'flex';
+            sliderContainer.style.alignItems = 'center';
+            sliderContainer.style.gap = '10px';
+            sliderContainer.style.marginLeft = '15px';
+            sliderContainer.style.color = '#e2e8f0';
+            sliderContainer.style.fontSize = '11px';
+            sliderContainer.style.background = 'rgba(0,0,0,0.3)';
+            sliderContainer.style.padding = '4px 8px';
+            sliderContainer.style.borderRadius = '4px';
 
-        // Cell Cycle Phase Selector
-        const phaseContainer = document.createElement('div');
-        phaseContainer.style.display = 'flex';
-        phaseContainer.style.gap = '5px';
-        phaseContainer.style.marginLeft = '15px';
+            const label = document.createElement('label');
+            label.innerText = 'Radiation:';
 
-        ['G1', 'S', 'G2'].forEach(phase => {
-            const pBtn = document.createElement('button');
-            pBtn.className = 'dna-control-btn' + (this.state.cellCyclePhase === phase ? ' active' : '');
-            pBtn.innerText = phase;
-            pBtn.style.padding = '4px 8px';
-            pBtn.onclick = () => {
-                this.state.cellCyclePhase = phase;
-                phaseContainer.querySelectorAll('.dna-control-btn').forEach(b => b.classList.remove('active'));
-                pBtn.classList.add('active');
-                this.updateInfoOverlay();
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.min = '0';
+            slider.max = '100';
+            slider.value = this.state.radiationLevel;
+            slider.style.width = '80px';
+            slider.style.cursor = 'pointer';
+            slider.oninput = (e) => {
+                this.state.radiationLevel = parseInt(e.target.value);
             };
-            phaseContainer.appendChild(pBtn);
-        });
-        controls.appendChild(phaseContainer);
 
-        // Reset Button
-        const resetBtn = document.createElement('button');
-        resetBtn.className = 'dna-control-btn';
-        resetBtn.innerText = t('btn_reset_sim');
-        resetBtn.style.marginLeft = '10px';
-        resetBtn.onclick = () => {
-            this.state.atpConsumed = 0;
-            this.state.genomicIntegrity = 100;
-            this.state.mutationCount = 0;
-            this.state.successfulRepairs = 0;
-            this.state.mutatedRepairs = 0;
-            this.updateStats();
-        };
-        controls.appendChild(resetBtn);
+            sliderContainer.appendChild(label);
+            sliderContainer.appendChild(slider);
+            controls.appendChild(sliderContainer);
 
-        // Export Button
-        const exportBtn = document.createElement('button');
-        exportBtn.className = 'dna-control-btn';
-        exportBtn.innerText = 'Export Stats';
-        exportBtn.style.marginLeft = '10px';
+            // Cell Cycle Phase Selector
+            const phaseContainer = document.createElement('div');
+            phaseContainer.style.display = 'flex';
+            phaseContainer.style.gap = '5px';
+            phaseContainer.style.marginLeft = '15px';
+
+            ['G1', 'S', 'G2'].forEach(phase => {
+                const pBtn = document.createElement('button');
+                pBtn.className = 'dna-control-btn' + (this.state.cellCyclePhase === phase ? ' active' : '');
+                pBtn.innerText = phase;
+                pBtn.style.padding = '4px 8px';
+                pBtn.onclick = () => {
+                    this.state.cellCyclePhase = phase;
+                    phaseContainer.querySelectorAll('.dna-control-btn').forEach(b => b.classList.remove('active'));
+                    pBtn.classList.add('active');
+                    this.updateInfoOverlay();
+                };
+                phaseContainer.appendChild(pBtn);
+            });
+            controls.appendChild(phaseContainer);
+
+            // Reset Button
+            const resetBtn = document.createElement('button');
+            resetBtn.className = 'dna-control-btn';
+            resetBtn.innerText = 'Reset Stats';
+            resetBtn.style.marginLeft = '10px';
+            resetBtn.onclick = () => {
+                this.state.atpConsumed = 0;
+                this.state.genomicIntegrity = 100;
+                this.state.mutationCount = 0;
+                this.state.successfulRepairs = 0;
+                this.state.mutatedRepairs = 0;
+                this.updateStats();
+            };
+            controls.appendChild(resetBtn);
+
+            // Export Button
+            const exportBtn = document.createElement('button');
+            exportBtn.className = 'dna-control-btn';
+            exportBtn.innerText = 'Export Stats';
+            exportBtn.style.marginLeft = '10px';
         exportBtn.onclick = () => {
             const data = {
                 timestamp: new Date().toISOString(),
@@ -139,13 +158,14 @@
 
         const content = document.createElement('div');
         content.id = 'dna-info-content';
-        content.innerHTML = `<strong>${t('DNA Repair Model')}</strong><br>${t('Select a mode above to observe molecular repair pathways.')}`;
+        content.innerHTML = '<strong>DNA Repair Simulation</strong><br>Select a mode above to observe molecular repair pathways.';
 
         const stats = document.createElement('div');
         stats.id = 'dna-stats-container';
         stats.style.display = 'flex';
         stats.style.flexDirection = 'column';
         stats.style.gap = '5px';
+        if (isMobile) stats.style.fontSize = '10px';
 
         const atp = document.createElement('div');
         atp.className = 'dna-atp-counter';
@@ -155,14 +175,14 @@
         const integrity = document.createElement('div');
         integrity.id = 'dna-integrity-stat';
         integrity.style.color = '#a0aec0';
-        integrity.style.fontSize = '12px';
+        integrity.style.fontSize = isMobile ? '10px' : '12px';
         integrity.innerText = `${t('genomic_integrity')}: 100%`;
 
         const analytics = document.createElement('div');
         analytics.id = 'dna-analytics-stat';
         analytics.style.color = '#63b3ed';
-        analytics.style.fontSize = '11px';
-        analytics.innerText = 'Successes: 0 | Mutations: 0';
+        analytics.style.fontSize = isMobile ? '10px' : '11px';
+        analytics.innerText = `${t('successful_repairs')}: 0 | ${t('error_prone')}: 0`;
 
         const cycle = document.createElement('div');
         cycle.id = 'dna-cycle-info';

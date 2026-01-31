@@ -68,12 +68,11 @@
                 throw new Error("CRITICAL - Aborting main() due to missing GreenhouseUtils.");
             }
 
-            const { baseUrl, targetSelector } = window._greenhouseSynapseAttributes;
-            if (!baseUrl) {
-                throw new Error("CRITICAL - Aborting main() due to missing data-base-url attribute.");
-            }
+            const { baseUrl: attrBaseUrl, targetSelector } = window._greenhouseSynapseAttributes;
+            const baseUrl = attrBaseUrl || './';
 
             // Sequential loading of all modular components
+            await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('synapse_chemistry.js', baseUrl);
             await GreenhouseUtils.loadScript('synapse_neurotransmitters.js', baseUrl);
             await GreenhouseUtils.loadScript('synapse_sidebar.js', baseUrl);
