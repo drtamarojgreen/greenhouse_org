@@ -208,13 +208,35 @@
 
         /**
          * @function isMobileUser
-         * @description Unified mobile detection.
+         * @description Unified mobile detection using feature detection and UA fallback.
+         * Combines screen width, touch support, and User Agent sniffing to avoid
+         * false positives on desktop touchscreens.
          */
         isMobileUser() {
             const isNarrow = window.innerWidth <= 1024;
-            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-            return (isNarrow && hasTouch) || isMobileUA;
+
+            // 1. Check for touch event support and maxTouchPoints (modern, MDN recommended)
+            let hasTouchScreen = false;
+            if ("maxTouchPoints" in navigator) {
+                hasTouchScreen = navigator.maxTouchPoints > 0;
+            } else {
+                // Fallback for older browsers
+                const mQ = window.matchMedia && window.matchMedia("(pointer:coarse)");
+                if (mQ && mQ.media === "(pointer:coarse)") {
+                    hasTouchScreen = !!mQ.matches;
+                } else if ('orientation' in window) {
+                    hasTouchScreen = true; // Deprecated, but useful fallback
+                }
+            }
+
+            // 2. User Agent sniffing and viewport as fallbacks
+            const ua = navigator.userAgent;
+            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua);
+            const hasLegacyTouch = ('ontouchstart' in window);
+
+            // Combined Logic: treat as mobile if it's a known mobile UA,
+            // OR if it has touch support AND is a narrow screen.
+            return isMobileUA || (isNarrow && (hasTouchScreen || hasLegacyTouch));
         },
 
         /**
@@ -223,11 +245,13 @@
          */
         setupAutoTrigger() {
             const path = window.location.pathname.toLowerCase();
-            const isModelHub = path.includes('/models') || path.endsWith('/models.html');
+            const isModelHub = path.includes('/models') || path.includes('models.html');
             const modelNames = Object.keys(this.modelRegistry);
             const isRegisteredModel = modelNames.some(m => path.includes(m));
+            const isForceMobile = window.location.search.includes('mobile=true');
 
-            if (isModelHub || isRegisteredModel) {
+            if (isModelHub || isRegisteredModel || isForceMobile) {
+                console.log('[GreenhouseMobile] Auto-trigger matched path or force flag. Launching hub...');
                 setTimeout(() => {
                     this.launchHub();
                 }, 500);
@@ -264,13 +288,15 @@
                 @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
                 
                 .gh-mobile-overlay {
-                    position: fixed; inset: 0; z-index: 100000;
+                    position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 100000;
                     background: radial-gradient(circle at center, rgba(10, 20, 10, 0.98) 0%, #000 100%);
                     backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
                     display: flex; flex-direction: column;
                     animation: ghFadeIn 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
                     font-family: 'Quicksand', sans-serif; overflow: hidden;
+                    box-sizing: border-box;
                 }
+                .gh-mobile-overlay * { box-sizing: border-box; }
                 .gh-mobile-overlay-header { padding: 50px 20px 10px; text-align: center; }
                 .gh-mobile-overlay-header h2 { color: #4ca1af; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; font-size: 1.1rem; margin: 0; opacity: 0.8; }
                 
@@ -473,10 +499,18 @@
 
     window.GreenhouseMobile = GreenhouseMobile;
 
-    // Auto-run if GreenhouseUtils is ready
+    // Auto-run if GreenhouseUtils is ready, ensuring DOM is fully available
+    const boot = () => {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => GreenhouseMobile.init());
+        } else {
+            GreenhouseMobile.init();
+        }
+    };
+
     if (window.GreenhouseUtils) {
-        GreenhouseMobile.init();
+        boot();
     } else {
-        window.addEventListener('greenhouse:utils-ready', () => GreenhouseMobile.init());
+        window.addEventListener('greenhouse:utils-ready', () => boot());
     }
 })();

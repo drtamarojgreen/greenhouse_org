@@ -669,13 +669,35 @@ window.GreenhouseUtils = (function () {
 
     /**
      * @function isMobileUser
-     * @description Detects if the current device is mobile or the screen is narrow.
+     * @description Unified mobile detection using feature detection and UA fallback.
+     * Combines screen width, touch support, and User Agent sniffing to avoid
+     * false positives on desktop touchscreens.
      */
     function isMobileUser() {
         const isNarrow = window.innerWidth <= 1024;
-        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        return (isNarrow && hasTouch) || isMobileUA;
+
+        // 1. Check for touch event support and maxTouchPoints (modern, MDN recommended)
+        let hasTouchScreen = false;
+        if ("maxTouchPoints" in navigator) {
+            hasTouchScreen = navigator.maxTouchPoints > 0;
+        } else {
+            // Fallback for older browsers
+            const mQ = window.matchMedia && window.matchMedia("(pointer:coarse)");
+            if (mQ && mQ.media === "(pointer:coarse)") {
+                hasTouchScreen = !!mQ.matches;
+            } else if ('orientation' in window) {
+                hasTouchScreen = true; // Deprecated, but useful fallback
+            }
+        }
+
+        // 2. User Agent sniffing and viewport as fallbacks
+        const ua = navigator.userAgent;
+        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua);
+        const hasLegacyTouch = ('ontouchstart' in window);
+
+        // Combined Logic: treat as mobile if it's a known mobile UA,
+        // OR if it has touch support AND is a narrow screen.
+        return isMobileUA || (isNarrow && (hasTouchScreen || hasLegacyTouch));
     }
 
     /**
@@ -687,24 +709,40 @@ window.GreenhouseUtils = (function () {
         const xmlUrl = `${baseUrl}endpoints/model_descriptions.xml`;
 
         try {
-            const response = await fetch(xmlUrl);
+            // Add a 5 second timeout to the fetch
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const response = await fetch(xmlUrl, { signal: controller.signal });
+            clearTimeout(timeoutId);
+
             if (!response.ok) throw new Error('Network response was not ok');
             const xmlText = await response.text();
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
-            return Array.from(xmlDoc.querySelectorAll('model')).map(model => ({
+            const models = Array.from(xmlDoc.querySelectorAll('model')).map(model => ({
                 id: model.getAttribute('id'),
-                title: model.querySelector('title').textContent,
+                title: model.querySelector('title') ? model.querySelector('title').textContent : (model.getAttribute('id') || 'Unknown Model'),
                 url: model.querySelector('url') ? model.querySelector('url').textContent : `/${model.getAttribute('id')}`
             }));
+
+            if (models.length === 0) throw new Error('No models found in XML');
+            return models;
+
         } catch (e) {
             console.warn('[GreenhouseUtils] Failed to fetch model descriptions, using fallback', e);
             return [
                 { id: 'genetic', title: 'Genetic Model', url: '/genetic' },
                 { id: 'neuro', title: 'Neuro Model', url: '/neuro' },
                 { id: 'pathway', title: 'Pathway Model', url: '/pathway' },
-                { id: 'synapse', title: 'Synapse Model', url: '/synapse' }
+                { id: 'synapse', title: 'Synapse Model', url: '/synapse' },
+                { id: 'dna', title: 'DNA Repair Model', url: '/dna' },
+                { id: 'rna', title: 'RNA Repair Model', url: '/rna' },
+                { id: 'dopamine', title: 'Dopamine Signaling', url: '/dopamine' },
+                { id: 'serotonin', title: 'Serotonin Structural', url: '/serotonin' },
+                { id: 'emotion', title: 'Emotion Model', url: '/emotion' },
+                { id: 'cognition', title: 'Cognition Model', url: '/cognition' }
             ];
         }
     }
