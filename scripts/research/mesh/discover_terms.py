@@ -4,16 +4,21 @@ This script implements a discovery algorithm analogous to a "random forest"
 or breadth-first search, exploring related terms and filtering them by
 publication count.
 """
-import pandas as pd
+import json
 import os
 from collections import deque
-from .pubmed_client import get_term_publication_count, discover_related_terms
+
+# Improved import to handle both standalone and package execution
+try:
+    from .pubmed_client import get_term_publication_count, discover_related_terms
+except ImportError:
+    from pubmed_client import get_term_publication_count, discover_related_terms
 
 # --- Configuration ---
 SEED_TERM = "Mental Health"
 MAX_TERMS_TO_DISCOVER = 20  # The target number of terms to find
 MIN_PUBLICATION_COUNT = 5000 # A term must have at least this many publications to be included
-OUTPUT_CSV_PATH = "scripts/research/mesh/data/discovered_mental_health_terms.csv"
+OUTPUT_JSON_PATH = "scripts/research/mesh/data/discovered_mental_health_terms.json"
 
 def run_discovery_pipeline():
     """
@@ -24,14 +29,17 @@ def run_discovery_pipeline():
     # A deque is efficient for popping from the left (FIFO queue) 
     terms_to_visit = deque([SEED_TERM])
     
-    # Using a dict to store the terms and their counts
-    discovered_terms = {}
+    # Results list to store objects with primary_term and related_terms
+    results = []
+    
+    # Using a dict to track publication counts for internal display
+    term_counts = {}
     
     # A set to keep track of terms we've already processed to avoid cycles
     visited_terms = set()
 
     # --- Main Discovery Loop ---
-    while terms_to_visit and len(discovered_terms) < MAX_TERMS_TO_DISCOVER:
+    while terms_to_visit and len(results) < MAX_TERMS_TO_DISCOVER:
         
         current_term = terms_to_visit.popleft()
 
@@ -48,11 +56,18 @@ def run_discovery_pipeline():
         # 2. Apply the filter (our "competition" rule)
         if count >= MIN_PUBLICATION_COUNT:
             print(f"  -> Term accepted! (Count >= {MIN_PUBLICATION_COUNT})")
-            discovered_terms[current_term] = count
+            term_counts[current_term] = count
             
             # 3. If the term is significant, find related terms to explore next
             print("  -> Discovering related terms...")
             related_terms = discover_related_terms(current_term)
+            
+            # Store the term and its discovery in the requested JSON format
+            results.append({
+                "primary_term": current_term,
+                "count": count,
+                "related_terms": sorted(list(related_terms))
+            })
             
             new_candidates = 0
             for rel_term in related_terms:
@@ -65,23 +80,29 @@ def run_discovery_pipeline():
             print(f"  -> Term rejected. (Count < {MIN_PUBLICATION_COUNT})")
         
         # Progress update
-        print(f"Progress: {len(discovered_terms)} / {MAX_TERMS_TO_DISCOVER} terms discovered.")
+        print(f"Progress: {len(results)} / {MAX_TERMS_TO_DISCOVER} terms discovered.")
 
     print("\nPipeline finished.")
-    print(f"Discovered a total of {len(discovered_terms)} significant terms.")
+    print(f"Discovered a total of {len(results)} significant terms.")
 
-    # --- Save Results to CSV ---
-    if discovered_terms:
-        df = pd.DataFrame(list(discovered_terms.items()), columns=['Term', 'PublicationCount'])
-        df = df.sort_values(by='PublicationCount', ascending=False)
+    # --- Save Results to JSON ---
+    if results:
+        # Sort results by the count of the primary term for the report
+        # Note: count isn't in the JSON object per user request, but we have term_counts for sorting
+        results.sort(key=lambda x: term_counts.get(x["primary_term"], 0), reverse=True)
         
         # Ensure the directory exists
-        os.makedirs(os.path.dirname(OUTPUT_CSV_PATH), exist_ok=True)
-        df.to_csv(OUTPUT_CSV_PATH, index=False)
+        os.makedirs(os.path.dirname(OUTPUT_JSON_PATH), exist_ok=True)
         
-        print(f"\nResults saved to {OUTPUT_CSV_PATH}")
-        print("Top 10 most frequent terms:")
-        print(df.head(10).to_string())
+        with open(OUTPUT_JSON_PATH, 'w', encoding='utf-8') as f:
+            json.dump(results, f, indent=4)
+        
+        print(f"\nResults saved to {OUTPUT_JSON_PATH}")
+        print(f"Top 10 primary terms with related term counts:")
+        for item in results[:10]:
+            p_term = item["primary_term"]
+            rel_count = len(item["related_terms"])
+            print(f"  - '{p_term}': {term_counts[p_term]} pubs, {rel_count} related terms")
     else:
         print("\nNo significant terms were discovered that met the criteria.")
 

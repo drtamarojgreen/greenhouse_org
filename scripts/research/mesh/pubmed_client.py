@@ -22,12 +22,18 @@ def _optimize_query_for_pubmed(term: str) -> str:
     """
     return f"({term}[MeSH Major Topic])"[:200]
 
-def get_term_publication_count(term: str) -> int:
+def get_term_publication_count(term: str, year: Optional[int] = None) -> int:
     """
     Searches PubMed for a given term and returns the number of publications.
+    Supports filtering by year if provided.
     """
     optimized_query = _optimize_query_for_pubmed(term)
     
+    if year:
+        # PDAT: Publication Date
+        # Format: YYYY[PDAT]
+        optimized_query += f" AND ({year}[PDAT])"
+
     params = {
         "db": "pubmed",
         "term": optimized_query,
@@ -118,14 +124,15 @@ def discover_related_terms(term: str, max_papers: int = 50) -> Set[str]:
             related_terms.remove(term)
 
         time.sleep(1.0)
-        return related_terms
+        # Return as a sorted list for JSON consistency
+        return sorted(list(related_terms))
 
     except requests.exceptions.RequestException as e:
         print(f"API error discovering related terms for '{term}': {e}")
-        return set()
+        return []
     except ElementTree.ParseError as e:
         print(f"XML parse error discovering related terms for '{term}': {e}")
-        return set()
+        return []
 
 
 # --- Example Usage ---
@@ -147,7 +154,8 @@ if __name__ == '__main__':
     # Test 3: Get counts for a few of the new terms
     if related:
         print("\n3. Getting counts for a sample of discovered terms...")
-        for term in list(related)[:5]:
+        # Since 'related' is now a list, we can slice it directly
+        for term in related[:5]:
             rel_count = get_term_publication_count(term)
             print(f"  - '{term}': {rel_count} publications")
 
