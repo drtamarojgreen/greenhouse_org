@@ -51,7 +51,7 @@
             neuro: {
                 scripts: ['models_3d_math.js', 'neuro_config.js', 'neuro_camera_controls.js', 'neuro_lighting.js', 'neuro_ga.js', 'neuro_ui_3d_geometry.js', 'neuro_ui_3d_brain.js', 'neuro_ui_3d_neuron.js', 'neuro_ui_3d_synapse.js', 'neuro_ui_3d_stats.js', 'neuro_ui_3d_enhanced.js', 'neuro_app.js'],
                 modes: ['Neural Network', 'Synaptic Density', 'Burst Patterns'],
-                init: (container) => {
+                init: (container, baseUrl) => {
                     const uniqueId = 'neuro-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
                     if (window.GreenhouseNeuroApp) window.GreenhouseNeuroApp.init('#' + uniqueId);
@@ -65,10 +65,10 @@
             pathway: {
                 scripts: ['models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'pathway_ui_3d_geometry.js', 'pathway_camera_controls.js', 'pathway_ui_3d_brain.js', 'pathway_viewer.js'],
                 modes: ['Basal Ganglia', 'Dopamine Loop', 'Serotonin Path'],
-                init: (container) => {
+                init: (container, baseUrl) => {
                     const uniqueId = 'pathway-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
-                    if (window.GreenhousePathwayViewer) window.GreenhousePathwayViewer.init('#' + uniqueId);
+                    if (window.GreenhousePathwayViewer) window.GreenhousePathwayViewer.init('#' + uniqueId, baseUrl);
                 },
                 onSelectMode: (index) => {
                     const internalIds = ['dopaminergic', 'hpa', 'serotonergic'];
@@ -78,10 +78,10 @@
             synapse: {
                 scripts: ['synapse_chemistry.js', 'synapse_neurotransmitters.js', 'synapse_sidebar.js', 'synapse_tooltips.js', 'synapse_controls.js', 'synapse_analytics.js', 'synapse_3d.js', 'synapse_molecular.js', 'synapse_app.js'],
                 modes: ['Clean Signal', 'Inhibited', 'Excited'],
-                init: (container) => {
+                init: (container, baseUrl) => {
                     const uniqueId = 'synapse-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
-                    if (window.GreenhouseSynapseApp) window.GreenhouseSynapseApp.init('#' + uniqueId);
+                    if (window.GreenhouseSynapseApp) window.GreenhouseSynapseApp.init('#' + uniqueId, baseUrl);
                 },
                 onSelectMode: (index) => {
                     const scenarios = ['healthy', 'alzheimers', 'schizophrenia'];
@@ -94,7 +94,7 @@
             dna: {
                 scripts: ['models_3d_math.js', 'dna_repair_mechanisms.js', 'dna_repair_mutations.js', 'dna_repair_buttons.js', 'dna_replication.js', 'dna_tooltip.js', 'dna_repair.js'],
                 modes: ['Base Excision', 'Mismatch Repair', 'Nucleotide Excision', 'Double-Strand Break'],
-                init: (container) => {
+                init: (container, baseUrl) => {
                     if (window.GreenhouseDNARepair) window.GreenhouseDNARepair.initializeDNARepairSimulation(container);
                 },
                 onSelectMode: (index) => {
@@ -105,7 +105,7 @@
             rna: {
                 scripts: ['rna_repair_atp.js', 'rna_repair_enzymes.js', 'rna_repair_physics.js', 'rna_display.js', 'rna_tooltip.js', 'rna_repair.js'],
                 modes: ['Ligation', 'Demethylation', 'Pseudouridylation', 'Decapping'],
-                init: (container) => {
+                init: (container, baseUrl) => {
                     if (window.RNARepairSimulation) {
                         const canvas = document.createElement('canvas');
                         canvas.width = container.offsetWidth || 400;
@@ -127,7 +127,7 @@
             dopamine: {
                 scripts: ['models_3d_math.js', 'dopamine_controls.js', 'dopamine_legend.js', 'dopamine_tooltips.js', 'dopamine_molecular.js', 'dopamine_synapse.js', 'dopamine_electrophysiology.js', 'dopamine_circuit.js', 'dopamine_plasticity.js', 'dopamine_clinical.js', 'dopamine_pharmacology.js', 'dopamine_scientific.js', 'dopamine_analytics.js', 'dopamine_ux.js', 'dopamine.js'],
                 modes: ['D1R Signaling', 'D2R Signaling', 'Synaptic Release', 'Circuit Dynamics'],
-                init: (container) => {
+                init: (container, baseUrl) => {
                     const uniqueId = 'dopamine-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
                     if (window.GreenhouseDopamine) window.GreenhouseDopamine.initialize(container, '#' + uniqueId);
@@ -143,7 +143,7 @@
             serotonin: {
                 scripts: ['models_3d_math.js', 'serotonin_controls.js', 'serotonin_legend.js', 'serotonin_tooltips.js', 'serotonin_receptors.js', 'serotonin_kinetics.js', 'serotonin_signaling.js', 'serotonin_transport.js', 'serotonin_analytics.js', 'serotonin.js'],
                 modes: ['3D Receptor', '5-HT1A Structural', '2D Closeup', 'Ligand Kinetics'],
-                init: (container) => {
+                init: (container, baseUrl) => {
                     const uniqueId = 'serotonin-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
                     if (window.GreenhouseSerotonin) window.GreenhouseSerotonin.initialize(container, '#' + uniqueId);
@@ -159,7 +159,7 @@
             emotion: {
                 scripts: ['models_3d_math.js', 'brain_mesh_realistic.js', 'emotion_config.js', 'emotion_diagrams.js', 'emotion_ui_3d_brain.js', 'emotion_app.js'],
                 modes: ['James-Lange', 'Cannon-Bard', 'Schachter-Singer'],
-                init: (container) => {
+                init: (container, baseUrl) => {
                     const uniqueId = 'emotion-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
                     if (window.GreenhouseEmotionApp) window.GreenhouseEmotionApp.init('#' + uniqueId);
@@ -179,7 +179,7 @@
             cognition: {
                 scripts: ['models_3d_math.js', 'brain_mesh_realistic.js', 'cognition_config.js', 'cognition_analytics.js', 'cognition_app.js'],
                 modes: ['Analytical', 'Executive', 'Memory', 'Attention'],
-                init: (container) => {
+                init: (container, baseUrl) => {
                     const uniqueId = 'cognition-canvas-' + Math.random().toString(36).substr(2, 9);
                     container.id = uniqueId;
                     if (window.GreenhouseCognitionApp) window.GreenhouseCognitionApp.init('#' + uniqueId);
@@ -274,11 +274,11 @@
                 Utils.validateConfiguration();
             }
 
-            const baseUrl = Utils.appState.baseUrl || Utils.getDefaultBaseUrl();
+            const appBaseUrl = Utils.appState.baseUrl || './';
 
             try {
                 // Load models_util for internationalization
-                await Utils.loadScript('models_util.js', baseUrl);
+                await Utils.loadScript('models_util.js', appBaseUrl);
                 const models = await Utils.fetchModelDescriptions();
                 this.injectStyles();
                 this.renderHub(models);
@@ -336,12 +336,8 @@
                     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
                     display: flex; justify-content: space-between; align-items: center; z-index: 2;
                 }
-                .gh-model-title {
-                    color: #fff; font-weight: 500; font-size: 1.3rem;
-                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-                    max-width: 70%;
-                }
-                .gh-model-index { color: #4ca1af; font-size: 0.9rem; font-weight: 600; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px; }
+                .gh-model-title { color: #fff; font-weight: 500; font-size: 1.3rem; }
+                .gh-model-index { color: #4ca1af; font-size: 1.0rem; font-weight: 600; background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px; }
                 
                 .gh-mobile-canvas-wrapper {
                     flex: 1; position: relative; background: #000; margin: 12px; border-radius: 20px;
@@ -354,7 +350,7 @@
                 .gh-mode-indicator {
                     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
                     background: rgba(0, 0, 0, 0.8); color: #4ca1af; padding: 15px 30px;
-                    border-radius: 40px; font-weight: 600; font-size: 2.0rem; letter-spacing: 2px;
+                    border-radius: 40px; font-weight: 600; font-size: 1.5rem; letter-spacing: 2px;
                     border: 1px solid rgba(76, 161, 175, 0.3); pointer-events: none;
                     opacity: 0; z-index: 100; transition: opacity 0.3s ease;
                 }
@@ -372,20 +368,19 @@
                     font-size: 28px; display: flex; align-items: center; justify-content: center;
                     z-index: 100001; backdrop-filter: blur(10px);
                 }
-                .gh-swipe-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: all 0.3s ease; }
-                .gh-swipe-dot.active { background: #4ca1af; width: 22px; border-radius: 10px; }
-                
-                .gh-mobile-loader {
-                    width: 40px; height: 40px; border: 3px solid rgba(76, 161, 175, 0.2);
-                    border-top-color: #4ca1af; border-radius: 50%; animation: ghSpin 1s linear infinite;
-                }
-
                 .gh-mobile-lang-toggle {
                     position: absolute; top: 15px; right: 75px;
                     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
                     color: white; padding: 6px 14px; border-radius: 20px;
                     font-size: 14px; font-weight: 600; z-index: 100001;
                     backdrop-filter: blur(10px); cursor: pointer;
+                }
+                .gh-swipe-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: all 0.3s ease; }
+                .gh-swipe-dot.active { background: #4ca1af; width: 22px; border-radius: 10px; }
+
+                .gh-mobile-loader {
+                    width: 40px; height: 40px; border: 3px solid rgba(76, 161, 175, 0.2);
+                    border-top-color: #4ca1af; border-radius: 50%; animation: ghSpin 1s linear infinite;
                 }
 
                 @keyframes ghFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -528,12 +523,15 @@
 
             const Utils = window.GreenhouseUtils;
 
+            // Use relative path for loading if baseUrl is not explicitly set to avoid breaking live site
+            const appBaseUrl = Utils.appState.baseUrl || './';
+
             try {
                 for (const scriptName of config.scripts) {
-                    await Utils.loadScript(scriptName, '');
+                    await Utils.loadScript(scriptName, appBaseUrl);
                 }
                 container.innerHTML = `<div class="gh-mode-indicator" id="mode-indicator-${modelId}"></div>`;
-                config.init(container);
+                config.init(container, appBaseUrl);
                 this.activeModels.set(container, modelId);
             } catch (e) {
                 container.innerHTML = `<p style="color: #e74c3c; padding: 20px;">Failed to load ${modelId}</p>`;
