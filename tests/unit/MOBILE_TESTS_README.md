@@ -83,19 +83,35 @@ Comprehensive test coverage for the mobile version of Greenhouse models pages, e
 
 ---
 
+### 5. test_mobile_typography_contrast.js
+**Focus**: Accessibility compliance, typography, and color contrast
+
+**Coverage**:
+- ✓ Minimum font size (16px / 1.0rem) enforcement for all text
+- ✓ Typography standards (1.2rem+) for titles and interactive labels
+- ✓ WCAG AA Color Contrast (4.5:1) for key UI components
+- ✓ Gradient contrast validation for buttons
+- ✓ Relative luminance and contrast ratio calculations
+- ✓ Style injection validation for typography rules
+
+**Key Tests**: Specialized tests for accessibility and readability compliance
+
+---
+
 ## Test Statistics
 
 ### Total Coverage
-- **Total Test Files**: 4 new files + 2 existing = 6 files
-- **Total Test Cases**: 240+ rigorous tests
+- **Total Test Files**: 5 new files + 2 existing = 7 files
+- **Total Test Cases**: 250+ rigorous tests
 - **Models Covered**: All 10 models (genetic, neuro, pathway, synapse, dna, rna, dopamine, serotonin, emotion, cognition)
-- **Code Coverage Areas**: Lifecycle, Behaviors, Edge Cases, UI Interactions
+- **Code Coverage Areas**: Lifecycle, Behaviors, Edge Cases, UI Interactions, Accessibility
 
 ### Test Categories
 1. **Lifecycle Tests**: 50+ tests
 2. **Behavior Tests**: 60+ tests  
 3. **Edge Case Tests**: 70+ tests
 4. **UI Interaction Tests**: 60+ tests
+5. **Accessibility Tests**: Specialized coverage for typography/contrast
 
 ---
 
@@ -190,6 +206,11 @@ Comprehensive test coverage for the mobile version of Greenhouse models pages, e
 - Responsive flexbox layout
 - Scroll-snap behavior
 
+### Accessibility
+- Color contrast (4.5:1 minimum)
+- Font scaling (16px base, 1.2rem titles)
+- Semantic spacing and touch targets
+
 ### Error Handling
 - Missing dependencies
 - Invalid inputs
@@ -215,6 +236,9 @@ node tests/unit/test_mobile_edge_cases.js
 
 # UI interaction tests
 node tests/unit/test_mobile_ui_interactions.js
+
+# Typography and contrast tests
+node tests/unit/test_mobile_typography_contrast.js
 ```
 
 ### All Mobile Tests
@@ -226,6 +250,7 @@ node tests/unit/test_mobile_models_lifecycle.js
 node tests/unit/test_mobile_model_behaviors.js
 node tests/unit/test_mobile_edge_cases.js
 node tests/unit/test_mobile_ui_interactions.js
+node tests/unit/test_mobile_typography_contrast.js
 ```
 
 ---
@@ -241,6 +266,7 @@ node tests/unit/test_mobile_ui_interactions.js
 - ✓ Async operation handling
 - ✓ UI interaction validation
 - ✓ Cross-model consistency
+- ✓ Accessibility standard compliance
 
 ### Coverage Areas
 1. **Functional**: 100% of mobile model features
@@ -248,6 +274,7 @@ node tests/unit/test_mobile_ui_interactions.js
 3. **Error Handling**: Comprehensive failure scenarios
 4. **UI/UX**: Complete interaction patterns
 5. **Performance**: Memory and rapid operation tests
+6. **Accessibility**: Typography and color contrast compliance
 
 ---
 
@@ -307,7 +334,7 @@ Potential areas for additional testing:
 ---
 
 **Created**: 2026-01-30  
-**Test Suite Version**: 1.0  
+**Test Suite Version**: 1.1
 **Models Covered**: 10/10  
-**Test Files**: 6  
-**Total Tests**: 240+
+**Test Files**: 7
+**Total Tests**: 250+
