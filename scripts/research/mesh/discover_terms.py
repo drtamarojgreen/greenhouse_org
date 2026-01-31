@@ -5,12 +5,13 @@ or breadth-first search, exploring related terms and filtering them by
 publication count.
 """
 import pandas as pd
+import os
 from collections import deque
 from .pubmed_client import get_term_publication_count, discover_related_terms
 
 # --- Configuration ---
 SEED_TERM = "Mental Health"
-MAX_TERMS_TO_DISCOVER = 100  # The target number of terms to find
+MAX_TERMS_TO_DISCOVER = 20  # The target number of terms to find
 MIN_PUBLICATION_COUNT = 5000 # A term must have at least this many publications to be included
 OUTPUT_CSV_PATH = "scripts/research/mesh/data/discovered_mental_health_terms.csv"
 
@@ -75,7 +76,7 @@ def run_discovery_pipeline():
         df = df.sort_values(by='PublicationCount', ascending=False)
         
         # Ensure the directory exists
-        pd.io.common.get_handle(OUTPUT_CSV_PATH, 'w', is_compression=False)
+        os.makedirs(os.path.dirname(OUTPUT_CSV_PATH), exist_ok=True)
         df.to_csv(OUTPUT_CSV_PATH, index=False)
         
         print(f"\nResults saved to {OUTPUT_CSV_PATH}")
