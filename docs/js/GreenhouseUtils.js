@@ -669,13 +669,35 @@ window.GreenhouseUtils = (function () {
 
     /**
      * @function isMobileUser
-     * @description Detects if the current device is mobile or the screen is narrow.
+     * @description Unified mobile detection using feature detection and UA fallback.
+     * Combines screen width, touch support, and User Agent sniffing to avoid
+     * false positives on desktop touchscreens.
      */
     function isMobileUser() {
-        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(navigator.userAgent);
         const isNarrow = window.innerWidth <= 1024;
-        const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        return isMobileUA || (isNarrow && hasTouch);
+
+        // 1. Check for touch event support and maxTouchPoints (modern, MDN recommended)
+        let hasTouchScreen = false;
+        if ("maxTouchPoints" in navigator) {
+            hasTouchScreen = navigator.maxTouchPoints > 0;
+        } else {
+            // Fallback for older browsers
+            const mQ = window.matchMedia && window.matchMedia("(pointer:coarse)");
+            if (mQ && mQ.media === "(pointer:coarse)") {
+                hasTouchScreen = !!mQ.matches;
+            } else if ('orientation' in window) {
+                hasTouchScreen = true; // Deprecated, but useful fallback
+            }
+        }
+
+        // 2. User Agent sniffing and viewport as fallbacks
+        const ua = navigator.userAgent;
+        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua);
+        const hasLegacyTouch = ('ontouchstart' in window);
+
+        // Combined Logic: treat as mobile if it's a known mobile UA,
+        // OR if it has touch support AND is a narrow screen.
+        return isMobileUA || (isNarrow && (hasTouchScreen || hasLegacyTouch));
     }
 
     /**

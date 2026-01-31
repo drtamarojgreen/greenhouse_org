@@ -15,6 +15,10 @@ const mockWindow = {
     innerHeight: 800,
     location: { pathname: '/models', search: '', hostname: 'localhost' },
     navigator: { userAgent: 'Desktop', maxTouchPoints: 0 },
+    matchMedia: (query) => ({
+        media: query,
+        matches: false
+    }),
     dispatchEvent: () => { },
     addEventListener: () => { },
     _greenhouseScriptAttributes: {},
@@ -132,16 +136,59 @@ TestFramework.describe('Mobile Integration Tests', () => {
         TestFramework.it('should detect mobile by screen width and touch', () => {
             mockWindow.innerWidth = 500;
             mockWindow.ontouchstart = () => { };
-            mockWindow.navigator.userAgent = 'Desktop';
+            mockWindow.navigator.maxTouchPoints = 1;
+            mockWindow.navigator.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
             assert.isTrue(Mobile.isMobileUser(), 'Should detect narrow touch device');
         });
 
         TestFramework.it('should not detect desktop as mobile', () => {
             mockWindow.innerWidth = 1920;
-            mockWindow.navigator.userAgent = 'Desktop';
+            mockWindow.navigator.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
             delete mockWindow.ontouchstart;
             mockWindow.navigator.maxTouchPoints = 0;
+            mockWindow.matchMedia = (q) => ({ media: q, matches: false });
             assert.isFalse(Mobile.isMobileUser(), 'Should not detect desktop');
+        });
+
+        TestFramework.it('should not detect desktop touchscreens as mobile', () => {
+            mockWindow.innerWidth = 1920;
+            mockWindow.navigator.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+            mockWindow.navigator.maxTouchPoints = 10;
+            assert.isFalse(Mobile.isMobileUser(), 'Should not detect desktop even with touch');
+        });
+
+        TestFramework.it('should detect mobile via matchMedia fallback if narrow', () => {
+            // Simulate older browser without maxTouchPoints
+            mockWindow.innerWidth = 500;
+            const originalMaxTouchPoints = mockWindow.navigator.maxTouchPoints;
+            delete mockWindow.navigator.maxTouchPoints;
+
+            mockWindow.matchMedia = (q) => ({
+                media: q,
+                matches: q === '(pointer:coarse)'
+            });
+            assert.isTrue(Mobile.isMobileUser(), 'Should detect via pointer:coarse on narrow screen');
+
+            // Restore
+            mockWindow.navigator.maxTouchPoints = originalMaxTouchPoints;
+        });
+
+        TestFramework.it('should detect mobile via orientation fallback if narrow', () => {
+            mockWindow.innerWidth = 500;
+            const originalMaxTouchPoints = mockWindow.navigator.maxTouchPoints;
+            delete mockWindow.navigator.maxTouchPoints;
+
+            // Simulate matchMedia not being supported to reach orientation fallback
+            const originalMatchMedia = mockWindow.matchMedia;
+            mockWindow.matchMedia = null;
+
+            mockWindow.orientation = 0;
+
+            assert.isTrue(Mobile.isMobileUser(), 'Should detect via window.orientation on narrow screen');
+
+            delete mockWindow.orientation;
+            mockWindow.matchMedia = originalMatchMedia;
+            mockWindow.navigator.maxTouchPoints = originalMaxTouchPoints;
         });
     });
 
