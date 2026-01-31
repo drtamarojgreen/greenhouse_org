@@ -48,8 +48,8 @@ def create_vine(start, end, radius=0.05):
     bpy.context.collection.objects.link(obj)
     return obj
 
-def create_bark_material(name, color=(0.1, 0.5, 0.1)):
-    """Creates an enhanced procedural bark material with Voronoi and Noise."""
+def create_bark_material(name, color=(0.106, 0.302, 0.118)):
+    """Creates an enhanced procedural bark material using Greenhouse Brand Green."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
@@ -103,8 +103,8 @@ def create_bark_material(name, color=(0.1, 0.5, 0.1)):
 
     return mat
 
-def create_leaf_material(name, color=(0.2, 0.6, 0.2)):
-    """Creates a procedural leaf material."""
+def create_leaf_material(name, color=(0.522, 0.631, 0.490)):
+    """Creates a procedural leaf material using Greenhouse Sage."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
@@ -233,8 +233,12 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         leaf.rotation_euler = (random.uniform(0, 3.14), random.uniform(0, 3.14), angle)
 
     # Cleanup and Material
-    mat = create_bark_material(f"PlantMat_{name}", color=(0.1, random.uniform(0.3, 0.6), 0.1))
-    leaf_mat = create_leaf_material(f"LeafMat_{name}", color=(0.1, random.uniform(0.4, 0.7), 0.1))
+    # Mix brand color with slight variation for character depth
+    bark_col = (0.106 * random.uniform(0.8, 1.2), 0.302 * random.uniform(0.8, 1.2), 0.118 * random.uniform(0.8, 1.2))
+    leaf_col = (0.522 * random.uniform(0.9, 1.1), 0.631 * random.uniform(0.9, 1.1), 0.490 * random.uniform(0.9, 1.1))
+
+    mat = create_bark_material(f"PlantMat_{name}", color=bark_col)
+    leaf_mat = create_leaf_material(f"LeafMat_{name}", color=leaf_col)
 
     # Hierarchical parts that need to be parented to torso
     main_parts = [head, left_arm, right_arm, left_leg, right_leg]

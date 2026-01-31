@@ -255,6 +255,14 @@ class MovieMaster:
         gh_ranges = [(401, 650), (2901, 3500), (3901, 4100)]
         set_visibility(gh_objs, gh_ranges)
 
+        # Ensure Boolean keyframes are CONSTANT
+        for obj in plants + gh_objs:
+            if obj.animation_data and obj.animation_data.action:
+                for fcurve in obj.animation_data.action.fcurves:
+                    if fcurve.data_path == "hide_render":
+                        for kp in fcurve.keyframe_points:
+                            kp.interpolation = 'CONSTANT'
+
         gnomes = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["GloomGnome", "Mouth", "Cloak", "Staff"])]
         g_ranges = [(2101, 2500), (2601, 2800)]
         set_visibility(gnomes, g_ranges)
@@ -490,20 +498,33 @@ class MovieMaster:
                 bsdf.inputs["Emission Strength"].default_value = 0.0
                 bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3400)
 
-        bpy.ops.object.camera_add(location=(0, -8, 0), rotation=(math.radians(90), 0, 0))
+        bpy.ops.object.camera_add(location=(0, -8, 0))
         cam = bpy.context.object
         self.scene.camera = cam
+
+        # Camera Target for tracking
+        bpy.ops.object.empty_add(type='PLAIN_AXES')
+        target = bpy.context.object
+        target.name = "CamTarget"
+
+        con = cam.constraints.new(type='TRACK_TO')
+        con.target = target
+        con.track_axis = 'TRACK_NEGATIVE_Z'
+        con.up_axis = 'UP_Y'
 
         if self.mode == 'SILENT_FILM':
             if not cam.animation_data: cam.animation_data_create()
             if not cam.animation_data.action: cam.animation_data.action = bpy.data.actions.new(name="CamShake")
+            # Shake the target location slightly instead of rotation for more stable tracking
+            target.animation_data_create()
+            target.animation_data.action = bpy.data.actions.new(name="TargetShake")
             for axis in range(3):
-                fcurve = cam.animation_data.action.fcurves.new(data_path="rotation_euler", index=axis)
+                fcurve = target.animation_data.action.fcurves.new(data_path="location", index=axis)
                 noise = fcurve.modifiers.new(type='NOISE')
-                noise.strength = 0.005
+                noise.strength = 0.02
                 noise.scale = 2.0
 
-        self.setup_camera_keyframes(cam)
+        self.setup_camera_keyframes(cam, target)
 
     def create_diagnostic_highlight(self, name, location, frame_start, frame_end, color=(1,1,1,1)):
         """Creates a localized glowing sphere on the brain."""
@@ -594,70 +615,74 @@ class MovieMaster:
                 burn.inputs[0].default_value = 0.0
                 burn.inputs[0].keyframe_insert(data_path="default_value", frame=frame_end)
 
-    def setup_camera_keyframes(self, cam):
-        title_loc = (0, -8, 0)
-        def kf(frame, loc, rot_deg):
-            cam.location = loc
-            cam.rotation_euler = (math.radians(rot_deg[0]), math.radians(rot_deg[1]), math.radians(rot_deg[2]))
-            cam.keyframe_insert(data_path="location", frame=frame)
-            cam.keyframe_insert(data_path="rotation_euler", frame=frame)
+    def setup_camera_keyframes(self, cam, target):
+        title_loc = (0, -12, 0) # Moved back for better proportion
+        origin = (0, 0, 0)
+        high_target = (0, 0, 1.5) # Raised to prevent cutting off heads
 
-        kf(1, title_loc, (90,0,0))
-        kf(100, title_loc, (90,0,0))
-        kf(101, title_loc, (90,0,0))
-        kf(200, title_loc, (90,0,0))
-        kf(201, (0,-25,5), (75,0,0))
-        kf(400, (0,-30,8), (75,0,0))
-        kf(401, title_loc, (90,0,0))
-        kf(500, title_loc, (90,0,0))
-        kf(501, (2,-15,2), (85,0,0))
-        kf(650, (-2,-12,1), (85,0,0))
-        kf(651, title_loc, (90,0,0))
-        kf(750, title_loc, (90,0,0))
-        kf(751, (0,-10,2), (80,0,0))
-        kf(950, (0,-12,3), (80,0,0))
-        kf(951, title_loc, (90,0,0))
-        kf(1050, title_loc, (90,0,0))
-        kf(1051, (1.5,-8,1.5), (85,0,10))
-        kf(1250, (-1.5,-8,1.5), (85,0,10))
-        kf(1251, title_loc, (90,0,0))
-        kf(1350, title_loc, (90,0,0))
-        kf(1351, (0,-5,0), (90,0,0))
-        kf(1500, (0,-4,0), (90,0,0))
-        kf(1501, title_loc, (90,0,0))
-        kf(1600, title_loc, (90,0,0))
-        kf(1601, (10,-25,10), (70,0,20))
-        kf(1800, (5,-20,5), (70,0,20))
-        kf(1801, title_loc, (90,0,0))
-        kf(1900, title_loc, (90,0,0))
-        kf(1901, (0,-15,5), (70,0,0))
-        kf(2100, (0,-12,3), (70,0,0))
-        kf(2101, (10, 10, 5), (75, 0, 45)) # Wider shot of Gnome entrance
-        kf(2300, (6, 6, 3), (80, 0, 45))
-        kf(2301, (6, 6, 3), (80, 0, 45)) # Confrontation
-        kf(2500, (4, 4, 2), (85, 0, 45))
-        kf(2501, title_loc, (90,0,0))
-        kf(2600, title_loc, (90,0,0))
-        kf(2601, (0,-3,1.5), (80,0,0))
-        kf(2800, (0,-2,1.5), (80,0,0))
-        kf(2801, (0,-8,5), (85,0,0))
-        kf(2900, (0,-8,5), (85,0,0))
-        kf(2901, title_loc, (90,0,0))
-        kf(3000, title_loc, (90,0,0))
-        kf(3001, (0,-15,2), (85,0,0))
-        kf(3500, (0,-10,3), (85,0,0))
-        kf(3501, title_loc, (90,0,0))
-        kf(3600, title_loc, (90,0,0))
-        kf(3601, (0,-5,2), (85,0,0))
-        kf(3800, (0,-4,2), (85,0,0))
-        kf(3801, title_loc, (90,0,0))
-        kf(3900, title_loc, (90,0,0))
-        kf(3901, (0,-15,5), (70,0,0))
-        kf(4100, (0,-12,3), (70,0,0))
-        kf(4101, (0,-40,15), (70,0,0))
-        kf(4500, (0,-35,12), (70,0,0))
-        kf(4501, (0,-10,0), (90,0,0))
-        kf(5000, (0,-10,0), (90,0,0))
+        def kf(frame, cam_loc, target_loc):
+            cam.location = cam_loc
+            target.location = target_loc
+            cam.keyframe_insert(data_path="location", frame=frame)
+            target.location = target_loc
+            target.keyframe_insert(data_path="location", frame=frame)
+
+        kf(1, title_loc, origin)
+        kf(100, title_loc, origin)
+        kf(101, title_loc, origin)
+        kf(200, title_loc, origin)
+        kf(201, (0,-30,8), origin) # Brain focus - Moved back
+        kf(400, (0,-35,10), origin)
+        kf(401, title_loc, origin)
+        kf(500, title_loc, origin)
+        kf(501, (5,-20,4), (-2, 0, 1.5)) # Garden Action - Raised target, moved back
+        kf(650, (-5,-15,3), (2, 0, 1.5))
+        kf(651, title_loc, origin)
+        kf(750, title_loc, origin)
+        kf(751, (0,-15,4), high_target) # Socratic Action - Moved back
+        kf(950, (0,-18,5), high_target)
+        kf(951, title_loc, origin)
+        kf(1050, title_loc, origin)
+        kf(1051, (6,-12,3), (0, 0, 1.5)) # Exchange Action - Moved back
+        kf(1250, (-6,-12,3), (0, 0, 1.5))
+        kf(1251, title_loc, origin)
+        kf(1350, title_loc, origin)
+        kf(1351, (0,-15,5), origin) # Forge Action - Moved back
+        kf(1500, (0,-10,4), origin)
+        kf(1501, title_loc, origin)
+        kf(1600, title_loc, origin)
+        kf(1601, (20,-30,15), (10, 0, 2)) # Bridge Action - Moved back
+        kf(1800, (10,-25,10), (10, 0, 2))
+        kf(1801, title_loc, origin)
+        kf(1900, title_loc, origin)
+        kf(1901, (0,-20,8), origin) # Gloom buildup - Moved back
+        kf(2100, (0,-15,6), origin)
+        kf(2101, (12, 12, 6), (2, 2, 1.5)) # Gnome Entrance - Moved back, raised target
+        kf(2300, (8, 8, 4), (2, 2, 1.5))
+        kf(2301, (8, 8, 4), (2, 2, 1.5)) # Confrontation
+        kf(2500, (6, 6, 3), (2, 2, 1.5))
+        kf(2501, title_loc, origin)
+        kf(2600, title_loc, origin)
+        kf(2601, (0,-12,4), high_target) # Library Action - Moved back
+        kf(2800, (0,-10,3), high_target)
+        kf(2801, (0,-20,8), origin)
+        kf(2900, (0,-15,5), origin)
+        kf(2901, title_loc, origin)
+        kf(3000, title_loc, origin)
+        kf(3001, (0,-25,8), origin) # Resonance Action - Moved back
+        kf(3500, (0,-20,5), origin)
+        kf(3501, title_loc, origin)
+        kf(3600, title_loc, origin)
+        kf(3601, (0,-15,4), high_target) # Lab Action - Moved back
+        kf(3800, (0,-12,3), high_target)
+        kf(3801, title_loc, origin)
+        kf(3900, title_loc, origin)
+        kf(3901, (0,-25,10), origin) # Sanctuary Action
+        kf(4100, (0,-15,5), origin)
+        kf(4101, (0,-40,15), origin) # Finale
+        kf(4500, (0,-35,12), origin)
+        kf(4501, (0,-10,0), (0, 0, 5)) # Credits
+        kf(5000, (0,-10,0), (0, 0, 15))
 
     def setup_compositor(self):
         self.scene.use_nodes = True
@@ -668,9 +693,9 @@ class MovieMaster:
         if self.mode == 'SILENT_FILM':
             bw = tree.nodes.new('CompositorNodeRGBToBW')
             bright = tree.nodes.new('CompositorNodeBrightContrast')
-            bright.inputs['Contrast'].default_value = 2.5
+            bright.inputs['Contrast'].default_value = 1.5 # Lowered to prevent black crushing
             for f in range(1, 5001, 2):
-                bright.inputs['Bright'].default_value = random.uniform(-0.02, 0.02)
+                bright.inputs['Bright'].default_value = random.uniform(0.0, 0.05) # Increased brightness
                 bright.inputs['Bright'].keyframe_insert(data_path="default_value", frame=f)
             if "FilmNoise" not in bpy.data.textures: bpy.data.textures.new("FilmNoise", type='NOISE')
             noise = tree.nodes.new('CompositorNodeTexture')

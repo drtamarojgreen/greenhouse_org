@@ -8,7 +8,7 @@ def create_greenhouse_iron_mat():
     mat = bpy.data.materials.new(name="GH_Iron")
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs["Base Color"].default_value = (0.02, 0.02, 0.02, 1)
+    bsdf.inputs["Base Color"].default_value = (0.106, 0.302, 0.118, 1) # Greenhouse Brand Green
     bsdf.inputs["Metallic"].default_value = 1.0
     bsdf.inputs["Roughness"].default_value = 0.7
     return mat
