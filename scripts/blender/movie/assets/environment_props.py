@@ -14,11 +14,11 @@ def create_marble_floor_mat():
     node_out = nodes.new(type='ShaderNodeOutputMaterial')
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
 
-    # Checkered Texture
+    # Checkered Texture using Greenhouse Palette
     node_checker = nodes.new(type='ShaderNodeTexChecker')
     node_checker.inputs['Scale'].default_value = 10.0
-    node_checker.inputs['Color1'].default_value = (0.01, 0.01, 0.01, 1) # Black
-    node_checker.inputs['Color2'].default_value = (0.9, 0.9, 0.9, 1) # White
+    node_checker.inputs['Color1'].default_value = (0.106, 0.302, 0.118, 1) # Brand Green
+    node_checker.inputs['Color2'].default_value = (0.769, 0.812, 0.729, 1) # Pale Sage
 
     # Noise for marble veins
     node_noise = nodes.new(type='ShaderNodeTexNoise')
@@ -39,8 +39,8 @@ def create_marble_floor_mat():
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
     return mat
 
-def setup_volumetric_haze(density=0.02):
-    """Sets up volumetric haze in the world shader."""
+def setup_volumetric_haze(density=0.005):
+    """Sets up volumetric haze in the world shader. Density lowered to prevent occlusion."""
     world = bpy.context.scene.world
     world.use_nodes = True
     nodes = world.node_tree.nodes
