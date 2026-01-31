@@ -141,6 +141,7 @@
                 disclaimer: "Please Note: This is an educational simulation, not a medical tool.",
                 consent_check: "I acknowledge that this is an educational tool and not a substitute for professional medical advice.",
                 launch_btn: "Launch Simulation",
+                err_loading_models: "Error loading model descriptions. Please try again later.",
 
                 // Simulation Interface
                 edu_banner: "For Educational Purposes: This model simulates conceptual brain activity.",
@@ -459,6 +460,7 @@
                 disclaimer: "Nota: Esta es una simulación educativa, no una herramienta médica.",
                 consent_check: "Reconozco que esta es una herramienta educativa y no un sustituto del consejo médico profesional.",
                 launch_btn: "Iniciar Simulación",
+                err_loading_models: "Error al cargar las descripciones de los modelos. Por favor, inténtelo de nuevo más tarde.",
 
                 // Simulation Interface
                 edu_banner: "Para Fines Educativos: Este modelo simula la actividad cerebral conceptual.",

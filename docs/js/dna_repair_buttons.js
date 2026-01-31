@@ -8,7 +8,7 @@
     window.GreenhouseDNARepair = window.GreenhouseDNARepair || {};
     const G = window.GreenhouseDNARepair;
 
-    G.createUI = function(wrapper) {
+    G.createUI = function (wrapper) {
         const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
         const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
         const controls = document.createElement('div');
@@ -42,18 +42,20 @@
             controls.appendChild(btn);
         });
 
-        // Minimal Language Toggle
-        const langBtn = document.createElement('button');
-        langBtn.id = 'dna-lang-toggle';
-        langBtn.className = 'dna-control-btn';
-        langBtn.style.background = '#732751';
-        langBtn.innerText = t('btn_language');
-        langBtn.onclick = () => {
-            if (window.GreenhouseModelsUtil) {
-                window.GreenhouseModelsUtil.toggleLanguage();
-            }
-        };
-        controls.appendChild(langBtn);
+        if (isMobile) {
+            // Minimal Language Toggle - Mobile Only
+            const langBtn = document.createElement('button');
+            langBtn.id = 'dna-lang-toggle';
+            langBtn.className = 'dna-control-btn';
+            langBtn.style.background = '#732751';
+            langBtn.innerText = t('btn_language');
+            langBtn.onclick = () => {
+                if (window.GreenhouseModelsUtil) {
+                    window.GreenhouseModelsUtil.toggleLanguage();
+                }
+            };
+            controls.appendChild(langBtn);
+        }
 
         if (!isMobile) {
             // Radiation Slider
@@ -127,96 +129,96 @@
             exportBtn.className = 'dna-control-btn';
             exportBtn.innerText = 'Export Stats';
             exportBtn.style.marginLeft = '10px';
-        exportBtn.onclick = () => {
-            const data = {
-                timestamp: new Date().toISOString(),
-                stats: {
-                    atpConsumed: this.state.atpConsumed,
-                    genomicIntegrity: this.state.genomicIntegrity,
-                    mutationCount: this.state.mutationCount,
-                    successfulRepairs: this.state.successfulRepairs,
-                    mutatedRepairs: this.state.mutatedRepairs
-                },
-                config: this.config
+            exportBtn.onclick = () => {
+                const data = {
+                    timestamp: new Date().toISOString(),
+                    stats: {
+                        atpConsumed: this.state.atpConsumed,
+                        genomicIntegrity: this.state.genomicIntegrity,
+                        mutationCount: this.state.mutationCount,
+                        successfulRepairs: this.state.successfulRepairs,
+                        mutatedRepairs: this.state.mutatedRepairs
+                    },
+                    config: this.config
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `dna_repair_stats_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
             };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `dna_repair_stats_${Date.now()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        };
-        controls.appendChild(exportBtn);
+            controls.appendChild(exportBtn);
 
-        wrapper.appendChild(controls);
+            wrapper.appendChild(controls);
 
-        // Info Overlay
-        const info = document.createElement('div');
-        info.className = 'dna-info-overlay';
-        info.id = 'dna-info-overlay';
+            // Info Overlay
+            const info = document.createElement('div');
+            info.className = 'dna-info-overlay';
+            info.id = 'dna-info-overlay';
 
-        const content = document.createElement('div');
-        content.id = 'dna-info-content';
-        content.innerHTML = '<strong>DNA Repair Simulation</strong><br>Select a mode above to observe molecular repair pathways.';
+            const content = document.createElement('div');
+            content.id = 'dna-info-content';
+            content.innerHTML = '<strong>DNA Repair Simulation</strong><br>Select a mode above to observe molecular repair pathways.';
 
-        const stats = document.createElement('div');
-        stats.id = 'dna-stats-container';
-        stats.style.display = 'flex';
-        stats.style.flexDirection = 'column';
-        stats.style.gap = '5px';
-        if (isMobile) stats.style.fontSize = '10px';
+            const stats = document.createElement('div');
+            stats.id = 'dna-stats-container';
+            stats.style.display = 'flex';
+            stats.style.flexDirection = 'column';
+            stats.style.gap = '5px';
+            if (isMobile) stats.style.fontSize = '10px';
 
-        const atp = document.createElement('div');
-        atp.className = 'dna-atp-counter';
-        atp.id = 'dna-atp-counter';
-        atp.innerText = `${t('atp_consumed')}: 0`;
+            const atp = document.createElement('div');
+            atp.className = 'dna-atp-counter';
+            atp.id = 'dna-atp-counter';
+            atp.innerText = `${t('atp_consumed')}: 0`;
 
-        const integrity = document.createElement('div');
-        integrity.id = 'dna-integrity-stat';
-        integrity.style.color = '#a0aec0';
-        integrity.style.fontSize = isMobile ? '10px' : '12px';
-        integrity.innerText = `${t('genomic_integrity')}: 100%`;
+            const integrity = document.createElement('div');
+            integrity.id = 'dna-integrity-stat';
+            integrity.style.color = '#a0aec0';
+            integrity.style.fontSize = isMobile ? '10px' : '12px';
+            integrity.innerText = `${t('genomic_integrity')}: 100%`;
 
-        const analytics = document.createElement('div');
-        analytics.id = 'dna-analytics-stat';
-        analytics.style.color = '#63b3ed';
-        analytics.style.fontSize = isMobile ? '10px' : '11px';
-        analytics.innerText = `${t('successful_repairs')}: 0 | ${t('error_prone')}: 0`;
+            const analytics = document.createElement('div');
+            analytics.id = 'dna-analytics-stat';
+            analytics.style.color = '#63b3ed';
+            analytics.style.fontSize = isMobile ? '10px' : '11px';
+            analytics.innerText = `${t('successful_repairs')}: 0 | ${t('error_prone')}: 0`;
 
-        const cycle = document.createElement('div');
-        cycle.id = 'dna-cycle-info';
-        cycle.style.color = '#ecc94b';
-        cycle.style.fontSize = '12px';
-        cycle.innerText = 'Cell Cycle: G1';
+            const cycle = document.createElement('div');
+            cycle.id = 'dna-cycle-info';
+            cycle.style.color = '#ecc94b';
+            cycle.style.fontSize = '12px';
+            cycle.innerText = 'Cell Cycle: G1';
 
-        stats.appendChild(atp);
-        stats.appendChild(integrity);
-        stats.appendChild(analytics);
-        stats.appendChild(cycle);
+            stats.appendChild(atp);
+            stats.appendChild(integrity);
+            stats.appendChild(analytics);
+            stats.appendChild(cycle);
 
-        info.appendChild(content);
-        info.appendChild(stats);
-        wrapper.appendChild(info);
-    };
-
-    G.updateInfoOverlay = function() {
-        const content = document.getElementById('dna-info-content');
-        if (!content) return;
-
-        const descriptions = {
-            'ber': "<strong>Base Excision Repair (BER)</strong><br>Corrects small, non-helix-distorting base lesions. A single damaged base is removed and replaced.",
-            'mmr': "<strong>Mismatch Repair (MMR)</strong><br>Corrects errors that escape proofreading during replication, such as mispaired bases.",
-            'ner': "<strong>Nucleotide Excision Repair (NER)</strong><br>Repairs bulky, helix-distorting lesions (e.g. UV dimers) by removing a short single-stranded DNA segment.",
-            'photo': "<strong>Photolyase (Direct Reversal)</strong><br>A light-dependent enzyme that directly breaks the bonds of UV-induced thymine dimers without removing any DNA bases.",
-            'mgmt': "<strong>MGMT (Direct Repair)</strong><br>Repairs O6-methylguanine by direct methyl group transfer to a cysteine residue in the protein, which is then degraded.",
-            'replicate': "<strong>DNA Replication</strong><br>The process of producing two identical replicas from one original DNA molecule. Demonstration includes Helicase (unwinding), DNA Polymerase (synthesis), and Leading/Lagging strands.",
-            'dsb': "<strong>Double-Strand Break (DSB)</strong><br>A dangerous break where both strands of the helix are severed. Repaired by re-joining the ends.",
-            'nhej': "<strong>Non-Homologous End Joining (NHEJ)</strong><br>A fast, error-prone pathway for DSBs that ligates ends directly, often causing small deletions.",
-            'hr': "<strong>Homologous Recombination (HR)</strong><br>High-fidelity DSB repair that uses a sister chromatid as a template to ensure accurate restoration. Only available in S and G2 phases when a sister chromatid is present."
+            info.appendChild(content);
+            info.appendChild(stats);
+            wrapper.appendChild(info);
         };
 
-        content.innerHTML = descriptions[this.state.repairMode] || '';
-        this.updateStats();
-    };
-})();
+        G.updateInfoOverlay = function () {
+            const content = document.getElementById('dna-info-content');
+            if (!content) return;
+
+            const descriptions = {
+                'ber': "<strong>Base Excision Repair (BER)</strong><br>Corrects small, non-helix-distorting base lesions. A single damaged base is removed and replaced.",
+                'mmr': "<strong>Mismatch Repair (MMR)</strong><br>Corrects errors that escape proofreading during replication, such as mispaired bases.",
+                'ner': "<strong>Nucleotide Excision Repair (NER)</strong><br>Repairs bulky, helix-distorting lesions (e.g. UV dimers) by removing a short single-stranded DNA segment.",
+                'photo': "<strong>Photolyase (Direct Reversal)</strong><br>A light-dependent enzyme that directly breaks the bonds of UV-induced thymine dimers without removing any DNA bases.",
+                'mgmt': "<strong>MGMT (Direct Repair)</strong><br>Repairs O6-methylguanine by direct methyl group transfer to a cysteine residue in the protein, which is then degraded.",
+                'replicate': "<strong>DNA Replication</strong><br>The process of producing two identical replicas from one original DNA molecule. Demonstration includes Helicase (unwinding), DNA Polymerase (synthesis), and Leading/Lagging strands.",
+                'dsb': "<strong>Double-Strand Break (DSB)</strong><br>A dangerous break where both strands of the helix are severed. Repaired by re-joining the ends.",
+                'nhej': "<strong>Non-Homologous End Joining (NHEJ)</strong><br>A fast, error-prone pathway for DSBs that ligates ends directly, often causing small deletions.",
+                'hr': "<strong>Homologous Recombination (HR)</strong><br>High-fidelity DSB repair that uses a sister chromatid as a template to ensure accurate restoration. Only available in S and G2 phases when a sister chromatid is present."
+            };
+
+            content.innerHTML = descriptions[this.state.repairMode] || '';
+            this.updateStats();
+        };
+    }) ();

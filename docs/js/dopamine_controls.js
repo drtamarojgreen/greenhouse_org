@@ -193,7 +193,7 @@
         };
 
         const selectDrug = (drugName) => {
-             if (G.selectDrug) {
+            if (G.selectDrug) {
                 G.selectDrug(drugName);
             }
         };
@@ -255,16 +255,18 @@
         resetBtn.onclick = () => G.resetToDefault();
         controls.appendChild(resetBtn);
 
-        // Language toggle
-        const langBtn = document.createElement('button');
-        langBtn.id = 'dopamine-lang-toggle';
-        langBtn.className = 'dopamine-btn';
-        langBtn.innerText = t('btn_language');
-        langBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-        };
-        controls.appendChild(langBtn);
+        if (isMobile) {
+            // Language toggle - Mobile Only
+            const langBtn = document.createElement('button');
+            langBtn.id = 'dopamine-lang-toggle';
+            langBtn.className = 'dopamine-btn';
+            langBtn.innerText = t('btn_language');
+            langBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+            };
+            controls.appendChild(langBtn);
+        }
 
         container.appendChild(controls);
 
