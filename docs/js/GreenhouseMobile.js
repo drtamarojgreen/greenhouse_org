@@ -214,8 +214,12 @@
          */
         isMobileUser() {
             const isNarrow = window.innerWidth <= 1024;
+            const ua = navigator.userAgent;
 
-            // 1. Check for touch event support and maxTouchPoints (modern, MDN recommended)
+            // 1. Specialized detection for iPad Pro (identifies as MacIntel but has multi-touch)
+            const isIPadPro = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !window.MSStream);
+
+            // 2. Check for touch event support and maxTouchPoints (modern, MDN recommended)
             let hasTouchScreen = false;
             if ("maxTouchPoints" in navigator) {
                 hasTouchScreen = navigator.maxTouchPoints > 0;
@@ -229,14 +233,13 @@
                 }
             }
 
-            // 2. User Agent sniffing and viewport as fallbacks
-            const ua = navigator.userAgent;
+            // 3. User Agent sniffing and legacy touch
             const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua);
             const hasLegacyTouch = ('ontouchstart' in window);
 
-            // Combined Logic: treat as mobile if it's a known mobile UA,
-            // OR if it has touch support AND is a narrow screen.
-            return isMobileUA || (isNarrow && (hasTouchScreen || hasLegacyTouch));
+            // Combined Logic: treat as mobile if it's a known mobile UA, or iPad Pro,
+            // OR if it has touch support AND is a narrow screen (mobile/tablet size).
+            return isMobileUA || isIPadPro || (isNarrow && (hasTouchScreen || hasLegacyTouch));
         },
 
         /**
@@ -265,6 +268,11 @@
         async launchHub() {
             const Utils = window.GreenhouseUtils;
             if (!Utils) return;
+
+            // Ensure configuration is validated to pick up data-base-url from script tags
+            if (typeof Utils.validateConfiguration === 'function') {
+                Utils.validateConfiguration();
+            }
 
             try {
                 const models = await Utils.fetchModelDescriptions();
@@ -450,6 +458,12 @@
             if (!config) return;
 
             const Utils = window.GreenhouseUtils;
+
+            // Ensure configuration is validated before accessing appState
+            if (typeof Utils.validateConfiguration === 'function' && !Utils.appState.baseUrl) {
+                Utils.validateConfiguration();
+            }
+
             const baseUrl = Utils.appState.baseUrl || "https://drtamarojgreen.github.io/greenhouse_org/";
 
             try {
