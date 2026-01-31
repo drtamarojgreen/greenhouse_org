@@ -44,7 +44,7 @@ def get_term_publication_count(term: str) -> int:
         data = response.json()
         count = int(data.get("esearchresult", {}).get("count", 0))
         
-        time.sleep(0.4)
+        time.sleep(1.0)
         return count
         
     except requests.exceptions.RequestException as e:
@@ -92,7 +92,7 @@ def discover_related_terms(term: str, max_papers: int = 50) -> Set[str]:
             print(f"Could not find any papers for '{term}' to discover related terms.")
             return related_terms
         
-        time.sleep(0.4)
+        time.sleep(1.0)
 
         # 2. Fetch the metadata for those papers
         fetch_params = {
@@ -117,7 +117,7 @@ def discover_related_terms(term: str, max_papers: int = 50) -> Set[str]:
         if term in related_terms:
             related_terms.remove(term)
 
-        time.sleep(0.4)
+        time.sleep(1.0)
         return related_terms
 
     except requests.exceptions.RequestException as e:
