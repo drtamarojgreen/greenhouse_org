@@ -203,7 +203,25 @@ a {
 }
 
 /* --- Responsive Design --- */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
+    body {
+        font-size: 1.1rem;
+    }
+
+    .greenhouse-panel-title,
+    .greenhouse-controls-panel h3,
+    .greenhouse-metrics-panel h3 {
+        font-size: 1.7rem;
+    }
+
+    .greenhouse-btn {
+        font-size: 1.1rem;
+    }
+
+    .greenhouse-consent-label {
+        font-size: 1.2rem;
+    }
+
     .simulation-content-area {
         flex-direction: column;
     }

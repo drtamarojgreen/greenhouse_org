@@ -40,7 +40,7 @@
             const container = GreenhouseModelsUtil.createElement('div', { className: 'greenhouse-landing-container' });
             container.innerHTML = `
                 <div style="position: absolute; top: 10px; right: 10px;">
-                    <button id="lang-toggle-consent" class="greenhouse-btn greenhouse-btn-secondary" style="padding: 5px 10px; font-size: 12px;">
+                    <button id="lang-toggle-consent" class="greenhouse-btn greenhouse-btn-secondary" style="padding: 5px 10px; font-size: 16px;">
                         ${t('btn_language')}
                     </button>
                 </div>
