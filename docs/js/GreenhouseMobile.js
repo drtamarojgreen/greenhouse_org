@@ -352,7 +352,7 @@
                 .gh-mode-indicator.show { opacity: 1; animation: ghPulseScale 0.6s ease-out; }
 
                 .gh-mobile-btn {
-                    background: linear-gradient(135deg, #4ca1af 0%, #2c3e50 100%);
+                    background: linear-gradient(135deg, #2c7a7b 0%, #2c3e50 100%);
                     color: white; text-decoration: none; padding: 14px 35px; border-radius: 18px;
                     font-size: 1.2rem; font-weight: 600; text-align: center; margin: 0 24px 24px;
                 }
