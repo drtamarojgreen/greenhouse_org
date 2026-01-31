@@ -115,6 +115,23 @@
             clearInterval(this.intervalId);
         },
 
+        switchMode(index) {
+            if (!this.ga) return;
+            // 0: Neural Network (Default), 1: Synaptic Density (Enhanced weights), 2: Burst Patterns (High activity)
+            if (index === 1) {
+                this.ga.populationSize = 80;
+                console.log('NeuroApp: Mode -> Synaptic Density');
+            } else if (index === 2) {
+                this.ga.config = this.ga.config || {};
+                this.ga.config.burstMode = true;
+                console.log('NeuroApp: Mode -> Burst Patterns');
+            } else {
+                this.ga.populationSize = 50;
+                if (this.ga.config) this.ga.config.burstMode = false;
+                console.log('NeuroApp: Mode -> Neural Network');
+            }
+        },
+
         createControls(container) {
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();

@@ -59,7 +59,7 @@
                 onSelectMode: (index) => {
                     const modes = ['Neural Network', 'Synaptic Density', 'Burst Patterns'];
                     console.log(`[Mobile Hub] Neuro Mode Selected: ${modes[index]}`);
-                    // Neuro app logic to switch modes could be added here
+                    if (window.GreenhouseNeuroApp) window.GreenhouseNeuroApp.switchMode(index);
                 }
             },
             pathway: {
@@ -480,13 +480,13 @@
 
         setupSwipeInteraction(card, modelId) {
             let startY = 0;
-            card.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: true });
-            card.addEventListener('touchend', (e) => {
-                const deltaY = e.changedTouches[0].clientY - startY;
+            const threshold = 60;
+
+            const changeMode = (direction) => {
                 const config = this.modelRegistry[modelId];
-                if (Math.abs(deltaY) > 80 && config && config.modes) {
+                if (config && config.modes) {
                     let index = parseInt(card.dataset.currentModeIndex);
-                    index = (deltaY < 0) ? (index + 1) % config.modes.length : (index - 1 + config.modes.length) % config.modes.length;
+                    index = (direction > 0) ? (index + 1) % config.modes.length : (index - 1 + config.modes.length) % config.modes.length;
                     card.dataset.currentModeIndex = index;
                     if (config.onSelectMode) config.onSelectMode(index);
 
@@ -499,7 +499,23 @@
                         setTimeout(() => indicator.classList.remove('show'), 1200);
                     }
                 }
+            };
+
+            card.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: true });
+            card.addEventListener('touchend', (e) => {
+                const deltaY = e.changedTouches[0].clientY - startY;
+                if (Math.abs(deltaY) > threshold) {
+                    changeMode(deltaY < 0 ? 1 : -1);
+                }
             }, { passive: true });
+
+            card.addEventListener('wheel', (e) => {
+                // If the event target is the canvas, let the canvas handle zoom unless it's a large scroll
+                if (Math.abs(e.deltaY) > 20) {
+                    changeMode(e.deltaY > 0 ? 1 : -1);
+                    e.preventDefault();
+                }
+            }, { passive: false });
         },
 
         setupScrollListener(scroller, dotContainer) {

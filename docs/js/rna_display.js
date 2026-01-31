@@ -3,7 +3,7 @@
  * @description Zoom and scroll (pan) controls for the RNA repair simulation.
  */
 
-(function() {
+(function () {
     'use strict';
 
     console.log("RNA Display controls script loaded.");
@@ -64,6 +64,51 @@
         window.addEventListener('mouseup', () => {
             isDragging = false;
             canvas.style.cursor = 'grab';
+        });
+
+        // Touch Support: Pan and Pinch Zoom
+        let lastTouchDistance = 0;
+        let lastTouchX, lastTouchY;
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                lastTouchX = e.touches[0].clientX;
+                lastTouchY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                isDragging = false; // Stop panning when zooming
+                const dx = e.touches[1].clientX - e.touches[0].clientX;
+                const dy = e.touches[1].clientY - e.touches[0].clientY;
+                lastTouchDistance = Math.hypot(dx, dy);
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && isDragging) {
+                const dx = e.touches[0].clientX - lastTouchX;
+                const dy = e.touches[0].clientY - lastTouchY;
+                simulation.offsetX += dx;
+                simulation.offsetY += dy;
+                lastTouchX = e.touches[0].clientX;
+                lastTouchY = e.touches[0].clientY;
+                e.preventDefault(); // Block page scroll when interacting with model
+            } else if (e.touches.length === 2) {
+                const dx = e.touches[1].clientX - e.touches[0].clientX;
+                const dy = e.touches[1].clientY - e.touches[0].clientY;
+                const distance = Math.hypot(dx, dy);
+                if (lastTouchDistance > 0) {
+                    const factor = distance / lastTouchDistance;
+                    simulation.scale *= factor;
+                    simulation.scale = Math.max(0.2, Math.min(simulation.scale, 5));
+                }
+                lastTouchDistance = distance;
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', () => {
+            isDragging = false;
+            lastTouchDistance = 0;
         });
 
         console.log('RNA Display controls attached.');
