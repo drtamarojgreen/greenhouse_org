@@ -583,8 +583,8 @@ class MovieMaster:
         if not iris: return
 
         if mode == 'OUT':
-            iris.width = 1.4
-            iris.height = 1.4
+            iris.width = 1.6
+            iris.height = 1.6
             iris.keyframe_insert(data_path="width", frame=frame_start)
             iris.keyframe_insert(data_path="height", frame=frame_start)
             iris.width = 0.0
@@ -603,8 +603,8 @@ class MovieMaster:
             iris.height = 0.4
             iris.keyframe_insert(data_path="width", frame=frame_start)
             iris.keyframe_insert(data_path="height", frame=frame_start)
-            iris.width = 1.4 # Expand beyond frame edges
-            iris.height = 1.4
+            iris.width = 1.6 # Expand fully beyond frame edges for clear viewing
+            iris.height = 1.6
             iris.keyframe_insert(data_path="width", frame=frame_end)
             iris.keyframe_insert(data_path="height", frame=frame_end)
             if burn:
@@ -693,7 +693,7 @@ class MovieMaster:
         if self.mode == 'SILENT_FILM':
             bw = tree.nodes.new('CompositorNodeRGBToBW')
             bright = tree.nodes.new('CompositorNodeBrightContrast')
-            bright.inputs['Contrast'].default_value = 1.5 # Lowered to prevent black crushing
+            bright.inputs['Contrast'].default_value = 1.3 # Further lowered to soften the look and prevent crushing
             for f in range(1, 5001, 2):
                 bright.inputs['Bright'].default_value = random.uniform(0.0, 0.05) # Increased brightness
                 bright.inputs['Bright'].keyframe_insert(data_path="default_value", frame=f)
@@ -712,11 +712,12 @@ class MovieMaster:
             mix_scratches.blend_type = 'MULTIPLY'
             mix_scratches.inputs[0].default_value = 0.1
             mask = tree.nodes.new('CompositorNodeEllipseMask')
-            mask.width, mask.height = 1.2, 1.0 # Wider vignette for text clearance
+            mask.width, mask.height = 1.5, 1.3 # Increased size for a wider, non-obstructive vignette
             blur = tree.nodes.new('CompositorNodeBlur')
-            blur.size_x = blur.size_y = 250
+            blur.size_x = blur.size_y = 300 # Heavier blur for a softer edge transition
             mix_vignette = tree.nodes.new('CompositorNodeMixRGB')
             mix_vignette.blend_type = 'MULTIPLY'
+            mix_vignette.inputs[0].default_value = 0.5 # Reduced factor to make it subtle rather than pure black
             tree.links.new(rl.outputs['Image'], bw.inputs['Image'])
             tree.links.new(bw.outputs['Val'], bright.inputs['Image'])
             tree.links.new(bright.outputs['Image'], mix_grain.inputs[1])
