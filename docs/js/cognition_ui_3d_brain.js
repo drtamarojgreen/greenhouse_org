@@ -355,7 +355,8 @@
                     // Shadow/Outline for readability
                     ctx.shadowBlur = 4;
                     ctx.shadowColor = 'black';
-                    ctx.fillText(regionConfig.name.toUpperCase(), proj.x, proj.y);
+                    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+                    ctx.fillText(t(regionConfig.name).toUpperCase(), proj.x, proj.y);
                     ctx.shadowBlur = 0;
 
                     // Connector dot

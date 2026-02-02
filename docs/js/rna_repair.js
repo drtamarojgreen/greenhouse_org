@@ -759,7 +759,7 @@
 
                     this.ctx.fillStyle = 'white';
                     this.ctx.font = 'bold 10px Arial';
-                    this.ctx.fillText("HnRNP", startBase.x - 45, (startBase.y + endBase.y) / 2);
+                    this.ctx.fillText(t("HnRNP"), startBase.x - 45, (startBase.y + endBase.y) / 2);
                     this.ctx.restore();
                 }
             });
@@ -781,7 +781,7 @@
             this.ctx.fillStyle = 'white';
             this.ctx.globalAlpha = 1;
             this.ctx.font = 'bold 12px Arial';
-            this.ctx.fillText("RIBOSOME", this.ribosome.x, this.ribosome.y + 5);
+            this.ctx.fillText(t("RIBOSOME"), this.ribosome.x, this.ribosome.y + 5);
             this.ctx.restore();
 
             // Draw Enzymes
@@ -811,7 +811,7 @@
 
                 this.ctx.fillStyle = 'white';
                 this.ctx.font = '12px Arial';
-                this.ctx.fillText(enzyme.name, enzyme.x, enzyme.y - enzyme.size - 5);
+                this.ctx.fillText(t(enzyme.name), enzyme.x, enzyme.y - enzyme.size - 5);
 
                 if (enzyme.state === 'repairing' || enzyme.state === 'decaying') {
                     this.ctx.beginPath();

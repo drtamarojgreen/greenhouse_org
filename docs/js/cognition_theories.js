@@ -14,6 +14,7 @@
         },
 
         render(ctx) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const activeEnhancement = this.app.activeEnhancement;
             if (!activeEnhancement) return;
 
@@ -24,11 +25,11 @@
                 // Header
                 ctx.fillStyle = '#4fd1c5';
                 ctx.font = 'bold 14px Arial';
-                ctx.fillText(`THEORY MAPPING: ${activeEnhancement.name.toUpperCase()}`, 20, 70);
+                ctx.fillText(`${t('cog_ui_theory_mapping')}: ${t(activeEnhancement.name).toUpperCase()}`, 20, 70);
 
                 ctx.font = '12px Arial';
                 ctx.fillStyle = '#fff';
-                ctx.fillText(`Active Region: ${this.app.config.regions[activeEnhancement.region]?.name || activeEnhancement.region}`, 20, 90);
+                ctx.fillText(`${t('cog_ui_active_region')}: ${t(this.app.config.regions[activeEnhancement.region]?.name) || activeEnhancement.region}`, 20, 90);
 
                 this.renderTheoryLogic(ctx, activeEnhancement, w, h);
             }
@@ -39,48 +40,49 @@
         },
 
         renderTheoryLogic(ctx, activeEnhancement, w, h) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             // 7-12: Executive/Memory
             if (activeEnhancement.id === 7) { // Executive Function
-                this.drawPulse(ctx, w * 0.35, h * 0.35, '#4fd1c5', 'Executive Control (PFC)');
+                this.drawPulse(ctx, w * 0.35, h * 0.35, '#4fd1c5', t('cog_label_exec_control'));
             }
             if (activeEnhancement.id === 8) { // Working Memory Loops
-                this.drawReciprocalLoop(ctx, w * 0.4, h * 0.4, w * 0.6, h * 0.4, '#4da6ff', 'PFC <-> Parietal');
+                this.drawReciprocalLoop(ctx, w * 0.4, h * 0.4, w * 0.6, h * 0.4, '#4da6ff', t('cog_label_pfc_parietal'));
             }
             if (activeEnhancement.id === 9) { // Reward Processing
-                this.drawRewardCircuit(ctx, w * 0.5, h * 0.5, '#ffff00', 'Mesolimbic Dopamine Pathway');
+                this.drawRewardCircuit(ctx, w * 0.5, h * 0.5, '#ffff00', t('cog_label_mesolimbic'));
             }
             if (activeEnhancement.id === 10) { // Social Cognition
                 this.drawActivationWave(ctx, w * 0.6, h * 0.5, '#ff00ff');
                 ctx.fillStyle = '#ff00ff';
-                ctx.fillText('Social Inference (TPJ & mPFC)', 20, 110);
+                ctx.fillText(t('cog_label_social_inference'), 20, 110);
             }
             if (activeEnhancement.id === 11) { // Salience Network
-                this.drawNetwork(ctx, '#ff9900', 'Salience Network: Anterior Insula & ACC');
+                this.drawNetwork(ctx, '#ff9900', t('cog_label_salience'));
             }
             if (activeEnhancement.id === 12) { // DMN
-                this.drawNetwork(ctx, '#ff4d4d', 'Default Mode Network Active (Rest State)');
+                this.drawNetwork(ctx, '#ff4d4d', t('cog_label_dmn_active'));
             }
 
             // 13-20: Specialized Circuits
             if (activeEnhancement.id === 13) { // Mirror Neurons
                 this.drawActivationWave(ctx, w * 0.4, h * 0.3, '#39ff14');
                 ctx.fillStyle = '#39ff14';
-                ctx.fillText('Premotor Activation during Observation', 20, 110);
+                ctx.fillText(t('cog_label_premotor'), 20, 110);
             }
             if (activeEnhancement.id === 14) { // Error Monitoring
-                this.drawPulse(ctx, w * 0.45, h * 0.4, '#ff0000', 'Error Related Negativity (ACC)');
+                this.drawPulse(ctx, w * 0.45, h * 0.4, '#ff0000', t('cog_label_ern'));
             }
             if (activeEnhancement.id === 15) { // Moral Reasoning
-                this.drawReciprocalLoop(ctx, w * 0.35, h * 0.45, w * 0.5, h * 0.6, '#ffffff', 'vMPFC <-> Amygdala');
+                this.drawReciprocalLoop(ctx, w * 0.35, h * 0.45, w * 0.5, h * 0.6, '#ffffff', t('cog_label_vmpfc_amygdala'));
             }
             if (activeEnhancement.id === 16) { // Threat Detection
-                this.drawFastArrow(ctx, w * 0.5, h * 0.5, w * 0.6, h * 0.6, '#ff0000', 'Thalamus -> Amygdala (Fast Path)');
+                this.drawFastArrow(ctx, w * 0.5, h * 0.5, w * 0.6, h * 0.6, '#ff0000', t('cog_label_threat_path'));
             }
             if (activeEnhancement.id === 17) { // Broca's
-                this.drawPulse(ctx, w * 0.35, h * 0.45, '#4da6ff', 'Speech Production (Broca\'s Area)');
+                this.drawPulse(ctx, w * 0.35, h * 0.45, '#4da6ff', t('cog_label_broca'));
             }
             if (activeEnhancement.id === 18) { // Wernicke's
-                this.drawPulse(ctx, w * 0.6, h * 0.55, '#4da6ff', 'Language Comprehension (Wernicke\'s Area)');
+                this.drawPulse(ctx, w * 0.6, h * 0.55, '#4da6ff', t('cog_label_wernicke'));
             }
             if (activeEnhancement.id === 19) { // Visual Streams
                 ctx.strokeStyle = '#ff00ff';
@@ -96,41 +98,42 @@
 
             // 21-30: Memory/Logic
             if (activeEnhancement.id === 21) { // Episodic Memory
-                this.drawPulse(ctx, w * 0.5, h * 0.6, '#4fd1c5', 'Hippocampal Encoding...');
+                this.drawPulse(ctx, w * 0.5, h * 0.6, '#4fd1c5', t('cog_label_hippocampal'));
             }
             if (activeEnhancement.id === 22) { // Procedural Memory
-                this.drawNetwork(ctx, '#00ffff', 'Basal Ganglia & Cerebellum Coordination');
+                this.drawNetwork(ctx, '#00ffff', t('cog_label_basal_cerebellum'));
             }
             if (activeEnhancement.id === 23) { // Selective Attention
-                this.drawFilter(ctx, w * 0.5, h * 0.4, '#ffff00', 'Thalamic Reticular Nucleus Filter');
+                this.drawFilter(ctx, w * 0.5, h * 0.4, '#ffff00', t('cog_label_trn_filter'));
             }
             if (activeEnhancement.id === 24) { // Mental Rotation
-                this.drawRotation(ctx, w * 0.6, h * 0.4, '#4da6ff', 'Parietal Spatial Transformation');
+                this.drawRotation(ctx, w * 0.6, h * 0.4, '#4da6ff', t('cog_label_parietal_spatial'));
             }
             if (activeEnhancement.id === 25) { // Mathematical Logic
-                this.drawGridOverlay(ctx, w * 0.6, h * 0.3, '#ffff00', 'Numerical Processing (IPS)');
+                this.drawGridOverlay(ctx, w * 0.6, h * 0.3, '#ffff00', t('cog_label_ips_numerical'));
             }
             if (activeEnhancement.id === 26) { // Auditory
-                this.drawSoundHierarchy(ctx, w * 0.65, h * 0.5, '#4da6ff', 'Auditory Processing Hierarchy');
+                this.drawSoundHierarchy(ctx, w * 0.65, h * 0.5, '#4da6ff', t('cog_label_auditory_hierarchy'));
             }
             if (activeEnhancement.id === 27) { // Olfactory
-                this.drawDirectLink(ctx, w * 0.45, h * 0.7, w * 0.55, h * 0.6, '#00ff00', 'Direct Olfactory-Limbic Link');
+                this.drawDirectLink(ctx, w * 0.45, h * 0.7, w * 0.55, h * 0.6, '#00ff00', t('cog_label_olfactory_link'));
             }
             if (activeEnhancement.id === 28) { // Risk/Reward
-                this.drawDecisionTree(ctx, w * 0.35, h * 0.5, '#ff9900', 'Valuation (Orbitofrontal Cortex)');
+                this.drawDecisionTree(ctx, w * 0.35, h * 0.5, '#ff9900', t('cog_label_valuation_ofc'));
             }
             if (activeEnhancement.id === 29) { // Inhibition Control
-                this.drawStopSign(ctx, w * 0.4, h * 0.4, '#ff4d4d', 'Inhibitory Control (rIFG)');
+                this.drawStopSign(ctx, w * 0.4, h * 0.4, '#ff4d4d', t('cog_label_inhibitory_rifg'));
             }
             if (activeEnhancement.id === 30) { // Cognitive Flexibility
-                this.drawSwitchSymbol(ctx, w * 0.35, h * 0.35, '#ff9900', 'Task Switching (Lateral PFC)');
+                this.drawSwitchSymbol(ctx, w * 0.35, h * 0.35, '#ff9900', t('cog_label_task_switching'));
             }
         },
 
         renderAccuracyLogic(ctx, activeEnhancement, w, h) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             ctx.fillStyle = '#f6e05e';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText(`SCIENTIFIC ACCURACY: ${activeEnhancement.name.toUpperCase()}`, 20, 70);
+            ctx.fillText(`${t('cog_ui_scientific_accuracy')}: ${t(activeEnhancement.name).toUpperCase()}`, 20, 70);
 
             if (activeEnhancement.id === 126) { // Sourcing
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
@@ -139,23 +142,23 @@
                 ctx.strokeRect(40, 100, 300, 120);
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 11px Arial';
-                ctx.fillText('PEER-REVIEWED SOURCE:', 50, 120);
+                ctx.fillText(t('cog_ui_peer_source'), 50, 120);
                 ctx.font = '10px Arial';
-                ctx.fillText('Journal: Nature Neuroscience', 50, 140);
-                ctx.fillText('Title: "Neural correlates of executive control"', 50, 155);
-                ctx.fillText('DOI: 10.1038/nn.2024.15', 50, 170);
+                ctx.fillText(`${t('cog_ui_journal')}: Nature Neuroscience`, 50, 140);
+                ctx.fillText(`${t('cog_ui_title')}: "Neural correlates of executive control"`, 50, 155);
+                ctx.fillText(`${t('cog_ui_doi')}: 10.1038/nn.2024.15`, 50, 170);
                 ctx.fillStyle = '#4fd1c5';
-                ctx.fillText('[DOWNLOAD CITATION]', 50, 200);
+                ctx.fillText(t('cog_ui_download_cit'), 50, 200);
             } else if (activeEnhancement.id === 127) { // Advisory
                 ctx.fillStyle = '#fff';
-                ctx.fillText('VERIFIED BY ADVISORY BOARD', 50, 110);
+                ctx.fillText(t('cog_ui_verified_board'), 50, 110);
                 for(let i=0; i<3; i++) {
                     ctx.beginPath();
                     ctx.arc(60, 135 + i*30, 8, 0, Math.PI*2);
                     ctx.fillStyle = '#4fd1c5';
                     ctx.fill();
                     ctx.fillStyle = '#fff';
-                    ctx.fillText('PhD Verified', 75, 140 + i*30);
+                    ctx.fillText(t('cog_ui_phd_verified'), 75, 140 + i*30);
                 }
             } else if (activeEnhancement.id === 130) { // Glossary
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
@@ -164,7 +167,7 @@
                 ctx.strokeRect(w/2 - 100, 100, 200, 100);
                 ctx.fillStyle = '#000';
                 ctx.font = 'bold 12px Arial';
-                ctx.fillText('TERM: Metacognition', w/2 - 90, 125);
+                ctx.fillText(`${t('cog_ui_term')}: Metacognition`, w/2 - 90, 125);
                 ctx.font = '10px Arial';
                 ctx.fillText('The awareness and understanding', w/2 - 90, 145);
                 ctx.fillText('of one\'s own thought processes.', w/2 - 90, 160);
@@ -188,7 +191,7 @@
             } else if (activeEnhancement.id === 135) { // Limitations
                 ctx.fillStyle = '#ff4d4d';
                 ctx.font = 'bold 12px Arial';
-                ctx.fillText('MODEL LIMITATIONS & SIMPLIFICATIONS', 50, 110);
+                ctx.fillText(t('cog_ui_limitations'), 50, 110);
                 ctx.fillStyle = '#fff';
                 ctx.font = '10px Arial';
                 ctx.fillText('1. Discrete modules vs distributed networks.', 50, 135);
@@ -227,11 +230,11 @@
             } else {
                 ctx.fillStyle = '#fff';
                 ctx.font = '11px Arial';
-                ctx.fillText(activeEnhancement.description, 40, 110);
+                ctx.fillText(t(activeEnhancement.description), 40, 110);
                 ctx.fillStyle = 'rgba(246, 224, 94, 0.4)';
                 ctx.fillRect(40, 130, 200, 20);
                 ctx.fillStyle = '#f6e05e';
-                ctx.fillText('VALIDATED SCIENTIFIC DATA', 50, 145);
+                ctx.fillText(t('cog_ui_validated_data'), 50, 145);
             }
         },
 
