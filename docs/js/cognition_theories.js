@@ -29,7 +29,7 @@
 
                 ctx.font = '12px Arial';
                 ctx.fillStyle = '#fff';
-                ctx.fillText(`${t('cog_ui_active_region')}: ${t(this.app.config.regions[activeEnhancement.region]?.name) || activeEnhancement.region}`, 20, 90);
+                ctx.fillText(`${t('cog_ui_active_region')}: ${t(this.app.config.regions[activeEnhancement.region]?.name).toUpperCase() || activeEnhancement.region}`, 20, 90);
 
                 this.renderTheoryLogic(ctx, activeEnhancement, w, h);
             }
@@ -87,13 +87,13 @@
             if (activeEnhancement.id === 19) { // Visual Streams
                 ctx.strokeStyle = '#ff00ff';
                 this.drawArrowLine(ctx, w * 0.7, h * 0.5, w * 0.6, h * 0.3); // Dorsal
-                ctx.fillText('Dorsal (Where)', w * 0.72, h * 0.45);
+                ctx.fillText(t('cog_label_dorsal'), w * 0.72, h * 0.45);
                 ctx.strokeStyle = '#00ffff';
                 this.drawArrowLine(ctx, w * 0.7, h * 0.5, w * 0.6, h * 0.7); // Ventral
-                ctx.fillText('Ventral (What)', w * 0.72, h * 0.55);
+                ctx.fillText(t('cog_label_ventral'), w * 0.72, h * 0.55);
             }
             if (activeEnhancement.id === 20) { // Face Recognition
-                this.drawGridOverlay(ctx, w * 0.65, h * 0.65, '#4fd1c5', 'Fusiform Face Area (FFA)');
+                this.drawGridOverlay(ctx, w * 0.65, h * 0.65, '#4fd1c5', t('cog_label_ffa'));
             }
 
             // 21-30: Memory/Logic

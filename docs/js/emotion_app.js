@@ -82,21 +82,19 @@
 
             this.handleResize();
 
-            if (isMobile) {
-                // Local Language Toggle for Emotion - Mobile Only
-                const langBtn = document.createElement('button');
-                langBtn.id = 'emotion-lang-toggle';
-                langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
-                langBtn.style.cssText = `
-                    position: absolute; top: 10px; right: 10px; z-index: 100;
-                    background: #ff4d4d; color: white; border: none; padding: 5px 12px;
-                    border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
-                `;
-                langBtn.onclick = () => {
-                    if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-                };
-                container.appendChild(langBtn);
-            }
+            // Local Language Toggle for Emotion
+            const langBtn = document.createElement('button');
+            langBtn.id = 'emotion-lang-toggle';
+            langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
+            langBtn.style.cssText = `
+                position: absolute; top: 10px; right: 10px; z-index: 100;
+                background: #ff4d4d; color: white; border: none; padding: 5px 12px;
+                border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
+            `;
+            langBtn.onclick = () => {
+                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+            };
+            container.appendChild(langBtn);
 
             // Generate Enhanced Brain Mesh (localized to Emotion App)
             if (window.GreenhouseEmotionBrain && window.GreenhouseEmotionBrain.generateEnhancedBrain) {
@@ -158,7 +156,7 @@
         },
 
         refreshUIText() {
-
+            
             const lBtn = document.getElementById('emotion-lang-toggle');
             if (lBtn) lBtn.textContent = t('btn_language');
 
@@ -196,7 +194,7 @@
                 flex-wrap: wrap;
             `;
 
-
+            
             const categories = [
                 { id: 'philosophies', label: t('emotion_cat_philosophies') },
                 { id: 'regulations', label: t('emotion_cat_regulations') },
@@ -248,7 +246,7 @@
         },
 
         createTheorySelector(container) {
-
+            
             const selectorDiv = document.createElement('div');
             selectorDiv.className = 'emotion-theory-selector';
             selectorDiv.style.cssText = `
@@ -311,7 +309,7 @@
         },
 
         createInfoPanel(container) {
-
+            
             this.infoPanel = document.createElement('div');
             this.infoPanel.style.cssText = `
                 padding: 20px;
@@ -434,7 +432,7 @@
                 if (proj.scale > 0 && proj.depth < 0.8) {
                     const dx = proj.x - this.mousePos.x;
                     const dy = proj.y - this.mousePos.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const dist = Math.sqrt(dx*dx + dy*dy);
                     if (dist < minDiv) {
                         minDiv = dist;
                         closest = v.region;
@@ -463,7 +461,7 @@
         },
 
         updateInfoPanel() {
-
+            
             if (!this.activeTheory) return;
 
             let regionInfo = '';
@@ -516,7 +514,7 @@
 
         updateDeepDivePanel() {
             if (!this.deepDivePanel) return;
-
+            
 
             if (!this.selectedRegion || this.selectedRegion === 'cortex') {
                 this.deepDivePanel.style.width = '0';
@@ -697,7 +695,7 @@
             }
 
             // Title Overlay
-
+            
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'left';
@@ -705,7 +703,7 @@
 
             if (this.activeTheory) {
                 ctx.fillStyle = '#ff4d4d';
-                ctx.fillText(`${t('active_theory').toUpperCase()}: ${this.activeTheory.name.toUpperCase()}`, 20, 55);
+                ctx.fillText(`${t('active_theory').toUpperCase()}: ${t(this.activeTheory.name).toUpperCase()}`, 20, 55);
             }
 
             // Hover Info

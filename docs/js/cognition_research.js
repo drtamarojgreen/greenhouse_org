@@ -7,6 +7,8 @@
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseCognitionResearch = {
         init(app) {
             this.app = app;
@@ -23,11 +25,11 @@
             // Header
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText(`RESEARCH TOOL: ${activeEnhancement.name.toUpperCase()}`, 20, 70);
+            ctx.fillText(`RESEARCH TOOL: ${t(activeEnhancement.name).toUpperCase()}`, 20, 70);
 
             ctx.font = '12px Arial';
             ctx.fillStyle = '#fff';
-            ctx.fillText(`Target Region: ${this.app.config.regions[activeEnhancement.region]?.name || activeEnhancement.region}`, 20, 90);
+            ctx.fillText(`Target Region: ${t(this.app.config.regions[activeEnhancement.region]?.name) || activeEnhancement.region}`, 20, 90);
 
             if (activeEnhancement.id === 151) this.renderHypothesisSandbox(ctx, w, h);
             else if (activeEnhancement.id === 152) this.renderDataGenerator(ctx, w, h);
@@ -38,8 +40,8 @@
             else {
                 ctx.fillStyle = '#ccc';
                 ctx.font = 'italic 11px Arial';
-                ctx.fillText(activeEnhancement.description, 30, 120);
-                ctx.fillText('Accessing research portal...', 30, 140);
+                ctx.fillText(t(activeEnhancement.description), 30, 120);
+                ctx.fillText(t('cog_label_accessing_portal'), 30, 140);
                 this.drawGenericPortal(ctx, w, h);
             }
         },
@@ -52,13 +54,13 @@
 
             ctx.fillStyle = '#39ff14';
             ctx.font = '10px monospace';
-            ctx.fillText('> PROPOSE_HYPOTHESIS', 50, 130);
+            ctx.fillText(`> ${t('cog_label_propose_hypothesis')}`, 50, 130);
             ctx.fillStyle = '#fff';
             ctx.fillText('IF [Cortical_Layer_V_Activity] > [Threshold]', 50, 150);
             ctx.fillText('THEN [Signal_Propagation] == [Efficient]', 50, 165);
 
             ctx.fillStyle = '#4fd1c5';
-            ctx.fillText('[RUN SIMULATION]', 50, 200);
+            ctx.fillText(`[${t('cog_label_run_simulation')}]`, 50, 200);
 
             const progress = (Date.now() * 0.001) % 1;
             ctx.fillRect(50, 210, (w-100) * progress, 4);
@@ -83,7 +85,7 @@
                 ctx.fillText(`SUB_0${i+1}     | PFC    | ${val} | ${Date.now() - i*1000}`, 50, 145 + i*15);
             }
             ctx.fillStyle = '#f6e05e';
-            ctx.fillText('[GENERATE MORE SAMPLES]', 50, 230);
+            ctx.fillText(`[${t('cog_label_generate_samples')}]`, 50, 230);
         },
 
         renderLiteratureSearch(ctx, w, h) {
@@ -104,7 +106,7 @@
                 ctx.font = '9px Arial';
                 ctx.fillText(`${r.j} - ${r.a}`, 50, 142 + i * 40);
                 ctx.fillStyle = '#666';
-                ctx.fillText('Summary: Investigating neural efficiency...', 50, 152 + i * 40);
+                ctx.fillText(t('cog_label_summary_investigating'), 50, 152 + i * 40);
             });
         },
 
@@ -124,20 +126,20 @@
             ctx.fillText('}', 60, 185);
 
             ctx.fillStyle = '#fff';
-            ctx.fillText('FORMAT: JSON (Standard)', 60, 210);
+            ctx.fillText(t('cog_label_format_json'), 60, 210);
             ctx.fillStyle = '#4da6ff';
-            ctx.fillText('[CONFIRM EXPORT]', 60, 225);
+            ctx.fillText(`[${t('cog_label_confirm_export')}]`, 60, 225);
         },
 
         renderDesignAssistant(ctx, w, h) {
             ctx.fillStyle = '#fff';
-            ctx.fillText('STEP 1: Define Independent Variable', 50, 120);
+            ctx.fillText(t('cog_label_step1_var'), 50, 120);
             ctx.fillStyle = 'rgba(77, 166, 255, 0.2)';
             ctx.fillRect(50, 130, 150, 25);
             ctx.fillStyle = '#fff';
             ctx.fillText('> Medication Dosage', 60, 147);
 
-            ctx.fillText('STEP 2: Select ROI (Region of Interest)', 50, 180);
+            ctx.fillText(t('cog_label_step2_roi'), 50, 180);
             ctx.fillStyle = 'rgba(79, 209, 197, 0.2)';
             ctx.fillRect(50, 190, 150, 25);
             ctx.fillStyle = '#fff';
@@ -160,8 +162,8 @@
             ctx.stroke();
             ctx.fillStyle = '#fff';
             ctx.font = '10px Arial';
-            ctx.fillText('p-value: 0.0042 [SIGNIFICANT]', 160, 150);
-            ctx.fillText('Effect Size (d): 0.78', 160, 170);
+            ctx.fillText(`${t('cog_label_p_value')}: 0.0042 [${t('cog_label_significant')}]`, 160, 150);
+            ctx.fillText(`${t('cog_label_effect_size')}: 0.78`, 160, 170);
         },
 
         drawGenericPortal(ctx, w, h) {

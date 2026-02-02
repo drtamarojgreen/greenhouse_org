@@ -932,21 +932,19 @@
 
         wrapper.appendChild(canvas);
 
-        if (isMobile) {
-            // Language toggle for RNA - Mobile Only
-            const langBtn = document.createElement('button');
-            langBtn.id = 'rna-lang-toggle';
-            langBtn.textContent = t('btn_language');
-            langBtn.style.cssText = `
-                position: absolute; top: 10px; right: 10px; z-index: 100;
-                background: #732751; color: white; border: none; padding: 5px 10px;
-                border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Quicksand', sans-serif;
-            `;
-            langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-            };
-            wrapper.appendChild(langBtn);
-        }
+        // Language toggle for RNA
+        const langBtn = document.createElement('button');
+        langBtn.id = 'rna-lang-toggle';
+        langBtn.textContent = t('btn_language');
+        langBtn.style.cssText = `
+            position: absolute; top: 10px; right: 10px; z-index: 100;
+            background: #732751; color: white; border: none; padding: 5px 10px;
+            border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Quicksand', sans-serif;
+        `;
+        langBtn.onclick = () => {
+            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+        };
+        wrapper.appendChild(langBtn);
 
         if (isMobile) {
             const staticHeader = document.querySelector('.page-header');

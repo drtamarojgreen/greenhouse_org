@@ -7,6 +7,8 @@
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseCognitionDevelopment = {
         init(app) {
             this.app = app;
@@ -23,92 +25,92 @@
             // Header
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText(`DEVELOPMENTAL STAGE: ${activeEnhancement.name.toUpperCase()}`, 20, 70);
+            ctx.fillText(`DEVELOPMENTAL STAGE: ${t(activeEnhancement.name).toUpperCase()}`, 20, 70);
 
             ctx.font = '12px Arial';
             ctx.fillStyle = '#fff';
-            ctx.fillText(`Target Region: ${this.app.config.regions[activeEnhancement.region]?.name || activeEnhancement.region}`, 20, 90);
+            ctx.fillText(`Target Region: ${t(this.app.config.regions[activeEnhancement.region]?.name) || activeEnhancement.region}`, 20, 90);
 
             // Specific logic for batches
             // 31-37: Early Childhood
             if (activeEnhancement.id === 31) { // Synaptogenesis
-                this.drawSynapticGrowth(ctx, w * 0.4, h * 0.4, '#00ff00', 'Rapid Connectivity Bloom');
+                this.drawSynapticGrowth(ctx, w * 0.4, h * 0.4, '#00ff00', t('cog_label_synaptic_bloom'));
             }
             if (activeEnhancement.id === 32) { // Pruning
-                this.drawPruning(ctx, w * 0.4, h * 0.4, '#ff4d4d', 'Eliminating Redundant Connections');
+                this.drawPruning(ctx, w * 0.4, h * 0.4, '#ff4d4d', t('cog_label_pruning'));
             }
             if (activeEnhancement.id === 33) { // Myelination
-                this.drawMyelination(ctx, w * 0.5, h * 0.6, '#ffffff', 'Axonal Insulation Progress');
+                this.drawMyelination(ctx, w * 0.5, h * 0.6, '#ffffff', t('cog_label_myelination'));
             }
             if (activeEnhancement.id === 34) { // PFC Maturation
-                this.drawMaturation(ctx, w * 0.35, h * 0.35, '#4fd1c5', 'PFC Maturation (20+ years)');
+                this.drawMaturation(ctx, w * 0.35, h * 0.35, '#4fd1c5', t('cog_label_pfc_maturation'));
             }
             if (activeEnhancement.id === 35) { // Piagetian
                 this.drawPiagetianStages(ctx, w * 0.5, h * 0.5);
             }
             if (activeEnhancement.id === 36) { // Language Critical Period
-                this.drawSensitivityWindow(ctx, w * 0.5, h * 0.4, '#ff9900', 'Critical Period: Phoneme Sensitivity');
+                this.drawSensitivityWindow(ctx, w * 0.5, h * 0.4, '#ff9900', t('cog_label_phoneme_window'));
             }
             if (activeEnhancement.id === 37) { // Self-Awareness
-                this.drawMirror(ctx, w * 0.35, h * 0.35, '#ffffff', 'Medial PFC: Emergence of Self');
+                this.drawMirror(ctx, w * 0.35, h * 0.35, '#ffffff', t('cog_label_self_emergence'));
             }
 
             // 38-44: Adolescence/Aging
             if (activeEnhancement.id === 38) { // Adolescent Reward
-                this.drawRewardSpike(ctx, w * 0.5, h * 0.5, '#ffff00', 'Peak Striatal Reactivity');
+                this.drawRewardSpike(ctx, w * 0.5, h * 0.5, '#ffff00', t('cog_label_striatal_spike'));
             }
             if (activeEnhancement.id === 39) { // Aging
-                this.drawVolumeChange(ctx, w * 0.5, h * 0.5, '#ccc', 'Normal Hippocampal Atrophy Simulation');
+                this.drawVolumeChange(ctx, w * 0.5, h * 0.5, '#ccc', t('cog_label_atrophy_sim'));
             }
             if (activeEnhancement.id === 40) { // Plasticity Comparative
                 this.drawPlasticityCompare(ctx, w * 0.5, h * 0.5);
             }
             if (activeEnhancement.id === 41) { // White Matter DTI
-                this.drawDTIFibers(ctx, w * 0.5, h * 0.4, '#00ffff', 'Strengthening Long-Range Tracts');
+                this.drawDTIFibers(ctx, w * 0.5, h * 0.4, '#00ffff', t('cog_label_white_matter'));
             }
             if (activeEnhancement.id === 42) { // Lateralization
                 this.drawLateralization(ctx, w * 0.5, h * 0.5);
             }
             if (activeEnhancement.id === 43) { // Enrichment
-                this.drawBranching(ctx, w * 0.5, h * 0.5, '#00ff00', 'Increased Dendritic Complexity');
+                this.drawBranching(ctx, w * 0.5, h * 0.5, '#00ff00', t('cog_label_dendritic_complexity'));
             }
             if (activeEnhancement.id === 44) { // Early Life Stress
-                this.drawStressImpact(ctx, w * 0.5, h * 0.6, '#ff4d4d', 'HPA Axis Sensitivity & Hippocampal Impact');
+                this.drawStressImpact(ctx, w * 0.5, h * 0.6, '#ff4d4d', t('cog_label_hpa_sensitivity'));
             }
 
             // 45-55: Higher Functions
             if (activeEnhancement.id === 45) { // Executive Emergence
-                this.drawPulse(ctx, w * 0.35, h * 0.35, '#4fd1c5', 'Emergence of Inhibitory Control');
+                this.drawPulse(ctx, w * 0.35, h * 0.35, '#4fd1c5', t('cog_label_inhibitory_emergence'));
             }
             if (activeEnhancement.id === 46) { // Theory of Mind
-                this.drawPulse(ctx, w * 0.6, h * 0.5, '#ff00ff', 'TPJ Maturation (Social Perspective)');
+                this.drawPulse(ctx, w * 0.6, h * 0.5, '#ff00ff', t('cog_label_tpj_maturation'));
             }
             if (activeEnhancement.id === 47) { // Literacy
-                this.drawPulse(ctx, w * 0.6, h * 0.6, '#4da6ff', 'VWFA Specialization');
+                this.drawPulse(ctx, w * 0.6, h * 0.6, '#4da6ff', t('cog_label_vwfa_spec'));
             }
             if (activeEnhancement.id === 48) { // Numerical Sense
-                this.drawGridOverlay(ctx, w * 0.6, h * 0.3, '#ffff00', 'Intraparietal Sulcus Specialization');
+                this.drawGridOverlay(ctx, w * 0.6, h * 0.3, '#ffff00', t('cog_label_ips_spec'));
             }
             if (activeEnhancement.id === 49) { // WM Capacity
-                this.drawBandwidth(ctx, w * 0.4, h * 0.4, w * 0.6, h * 0.4, '#4da6ff', 'PFC-Parietal Bandwidth Increase');
+                this.drawBandwidth(ctx, w * 0.4, h * 0.4, w * 0.6, h * 0.4, '#4da6ff', t('cog_label_wm_bandwidth'));
             }
             if (activeEnhancement.id === 50) { // Cognitive Reserve
-                this.drawReserve(ctx, w * 0.5, h * 0.5, '#4fd1c5', 'Education & Mental Activity Buffer');
+                this.drawReserve(ctx, w * 0.5, h * 0.5, '#4fd1c5', t('cog_label_cog_reserve'));
             }
             if (activeEnhancement.id === 51) { // Adult Neurogenesis
-                this.drawNewNeurons(ctx, w * 0.5, h * 0.6, '#4fd1c5', 'New Neuron Formation (Dentate Gyrus)');
+                this.drawNewNeurons(ctx, w * 0.5, h * 0.6, '#4fd1c5', t('cog_label_neurogenesis'));
             }
             if (activeEnhancement.id === 52) { // Sensory Critical Periods
-                this.drawSensitivityWindow(ctx, w * 0.7, h * 0.5, '#ff9900', 'Primary Sensory Windows');
+                this.drawSensitivityWindow(ctx, w * 0.7, h * 0.5, '#ff9900', t('cog_label_sensory_windows'));
             }
             if (activeEnhancement.id === 53) { // Fluid Intelligence
-                this.drawTrajectory(ctx, '#4da6ff', 'Fluid Intelligence Peak/Decline');
+                this.drawTrajectory(ctx, '#4da6ff', t('cog_label_fluid_peak'));
             }
             if (activeEnhancement.id === 54) { // Crystallized Intelligence
-                this.drawGrowthTrajectory(ctx, '#00ff00', 'Crystallized Intelligence Accumulation');
+                this.drawGrowthTrajectory(ctx, '#00ff00', t('cog_label_cryst_accum'));
             }
             if (activeEnhancement.id === 55) { // Social Brain
-                this.drawNetwork(ctx, '#ff00ff', 'Social Brain Circuit Maturation');
+                this.drawNetwork(ctx, '#ff00ff', t('cog_label_social_circuit'));
             }
         },
 
@@ -123,11 +125,11 @@
 
         drawPlasticityCompare(ctx, x, y) {
             ctx.fillStyle = '#4da6ff';
-            ctx.fillText('CHILD (High Plasticity)', x - 150, y - 50);
+            ctx.fillText(t('cog_label_child_plasticity'), x - 150, y - 50);
             this.drawBranching(ctx, x - 100, y, '#4da6ff', '');
 
             ctx.fillStyle = '#ff9900';
-            ctx.fillText('ADULT (Refined Efficiency)', x + 50, y - 50);
+            ctx.fillText(t('cog_label_adult_efficiency'), x + 50, y - 50);
             ctx.strokeStyle = '#ff9900';
             ctx.beginPath();
             ctx.moveTo(x + 100, y + 40);
@@ -144,9 +146,9 @@
             ctx.stroke();
             ctx.setLineDash([]);
             ctx.fillStyle = '#4da6ff';
-            ctx.fillText('LEFT: Logic/Lang', x - 100, y);
+            ctx.fillText(t('cog_label_left_brain'), x - 100, y);
             ctx.fillStyle = '#ff4d4d';
-            ctx.fillText('RIGHT: Spatial/Emot', x + 20, y);
+            ctx.fillText(t('cog_label_right_brain'), x + 20, y);
         },
 
         drawStressImpact(ctx, x, y, color, label) {
@@ -218,7 +220,7 @@
                 ctx.fillRect(x - 150 + i * 80, y + 110, 60, 5);
             });
             ctx.fillStyle = '#fff';
-            ctx.fillText('Piagetian Development Path', x - 50, y + 135);
+            ctx.fillText(t('cog_label_piaget_path'), x - 50, y + 135);
         },
 
         drawSensitivityWindow(ctx, x, y, color, label) {

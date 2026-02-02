@@ -12,8 +12,8 @@
             this.tooltipElement.id = 'rna-tooltip';
             this.tooltipElement.style.position = 'absolute';
             this.tooltipElement.style.display = 'none';
-            this.tooltipElement.style.pointerEvents = 'none';
-            this.tooltipElement.style.backgroundColor = 'rgba(20, 30, 40, 0.95)';
+            this.tooltipElement.style.pointerEvents = 'none'; 
+            this.tooltipElement.style.backgroundColor = 'rgba(20, 30, 40, 0.95)'; 
             this.tooltipElement.style.border = '1px solid #4ECDC4';
             this.tooltipElement.style.padding = '10px 15px';
             this.tooltipElement.style.borderRadius = '8px';

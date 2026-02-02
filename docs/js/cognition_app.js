@@ -100,21 +100,19 @@
                 this.refreshUIText();
             });
 
-            if (isMobile) {
-                // Local Language Toggle for Cognition - Mobile Only
-                const langBtn = document.createElement('button');
-                langBtn.id = 'cognition-lang-toggle';
-                langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
-                langBtn.style.cssText = `
-                    position: absolute; top: 10px; right: 10px; z-index: 100;
-                    background: #4fd1c5; color: white; border: none; padding: 5px 12px;
-                    border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
-                `;
-                langBtn.onclick = () => {
-                    if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-                };
-                container.appendChild(langBtn);
-            }
+            // Local Language Toggle for Cognition
+            const langBtn = document.createElement('button');
+            langBtn.id = 'cognition-lang-toggle';
+            langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
+            langBtn.style.cssText = `
+                position: absolute; top: 10px; right: 10px; z-index: 100;
+                background: #4fd1c5; color: white; border: none; padding: 5px 12px;
+                border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
+            `;
+            langBtn.onclick = () => {
+                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+            };
+            container.appendChild(langBtn);
 
             this.isRunning = true;
             this.startLoop();
@@ -125,7 +123,7 @@
         },
 
         refreshUIText() {
-
+            
             const lBtn = document.getElementById('cognition-lang-toggle');
             if (lBtn) lBtn.textContent = t('btn_language');
 
@@ -139,14 +137,35 @@
             const row = document.querySelector('#cognition-ui-row');
             if (row) {
                 const glassBtn = row.querySelector('.cog-glass-btn');
-                if (glassBtn) glassBtn.textContent = `${t('cog_glass_brain')}: ${this.options.glassBrain ? 'On' : 'Off'}`;
+                if (glassBtn) glassBtn.textContent = `${t('cog_glass_brain')}: ${this.options.glassBrain ? t('cog_ui_on') : t('cog_ui_off')}`;
                 const resetBtn = row.querySelector('.cog-reset-btn');
                 if (resetBtn) resetBtn.textContent = t('cog_reset_view');
+
+                // Refresh categories
+                const catSelect = row.querySelector('select');
+                if (catSelect) {
+                    const categories = [
+                        { id: 'All', key: 'cog_cat_all' },
+                        { id: 'Analytical', key: 'cog_cat_analytical' },
+                        { id: 'Theory', key: 'cog_cat_theory' },
+                        { id: 'Development', key: 'cog_cat_development' },
+                        { id: 'Intervention', key: 'cog_cat_intervention' },
+                        { id: 'Medication', key: 'cog_cat_medication' },
+                        { id: 'Visualization', key: 'cog_cat_visualization' },
+                        { id: 'Accuracy', key: 'cog_cat_accuracy' },
+                        { id: 'Research', key: 'cog_cat_research' },
+                        { id: 'Educational', key: 'cog_cat_educational' }
+                    ];
+                    Array.from(catSelect.options).forEach((opt, i) => {
+                        if (categories[i]) opt.textContent = t(categories[i].key);
+                    });
+                }
             }
+            if (this.renderEnhancementList) this.renderEnhancementList();
         },
 
         createEnhancementUI(container) {
-
+            
             const uiContainer = document.createElement('div');
             uiContainer.style.cssText = `
                 display: flex;
@@ -166,15 +185,26 @@
                 flex-wrap: wrap;
             `;
 
-            const categories = ['All', 'Analytical', 'Theory', 'Development', 'Intervention', 'Medication', 'Visualization', 'Accuracy', 'Research', 'Educational'];
+            const categories = [
+                { id: 'All', key: 'cog_cat_all' },
+                { id: 'Analytical', key: 'cog_cat_analytical' },
+                { id: 'Theory', key: 'cog_cat_theory' },
+                { id: 'Development', key: 'cog_cat_development' },
+                { id: 'Intervention', key: 'cog_cat_intervention' },
+                { id: 'Medication', key: 'cog_cat_medication' },
+                { id: 'Visualization', key: 'cog_cat_visualization' },
+                { id: 'Accuracy', key: 'cog_cat_accuracy' },
+                { id: 'Research', key: 'cog_cat_research' },
+                { id: 'Educational', key: 'cog_cat_educational' }
+            ];
             const categorySelect = document.createElement('select');
             categorySelect.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px;
             `;
             categories.forEach(cat => {
                 const opt = document.createElement('option');
-                opt.value = cat;
-                opt.textContent = cat;
+                opt.value = cat.id;
+                opt.textContent = t(cat.key);
                 categorySelect.appendChild(opt);
             });
 
@@ -187,13 +217,13 @@
 
             const glassToggle = document.createElement('button');
             glassToggle.className = 'cog-glass-btn';
-            glassToggle.textContent = `${t('cog_glass_brain')}: Off`;
+            glassToggle.textContent = `${t('cog_glass_brain')}: ${t('cog_ui_off')}`;
             glassToggle.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
             `;
             glassToggle.onclick = () => {
                 this.options.glassBrain = !this.options.glassBrain;
-                glassToggle.textContent = `${t('cog_glass_brain')}: ${this.options.glassBrain ? 'On' : 'Off'}`;
+                glassToggle.textContent = `${t('cog_glass_brain')}: ${this.options.glassBrain ? t('cog_ui_on') : t('cog_ui_off')}`;
                 glassToggle.style.borderColor = this.options.glassBrain ? '#4fd1c5' : '#4a5568';
             };
 
@@ -226,12 +256,14 @@
             `;
 
             const renderList = () => {
+                this.renderEnhancementList = renderList;
                 listContainer.innerHTML = '';
                 const filter = categorySelect.value;
                 const search = searchInput.value.toLowerCase();
                 const enhancements = (this.config.enhancements || []).filter(e => {
                     const matchCat = filter === 'All' || e.category === filter;
-                    const matchSearch = e.name.toLowerCase().includes(search);
+                    const translatedName = t(e.name).toLowerCase();
+                    const matchSearch = translatedName.includes(search);
                     return matchCat && matchSearch;
                 });
 
@@ -269,7 +301,7 @@
         },
 
         createInfoPanel(container) {
-
+            
             this.infoPanel = document.createElement('div');
             this.infoPanel.style.cssText = `
                 padding: 20px;
@@ -284,7 +316,7 @@
         },
 
         updateInfoPanel() {
-
+            
             const enh = this.activeEnhancement;
             if (!enh) return;
             const region = this.config.regions[this.activeRegion] || {};
@@ -377,7 +409,7 @@
             const listContainer = document.getElementById('enhancement-list');
             if (!listContainer) return;
 
-
+            
             Array.from(listContainer.children).forEach(btn => {
                 if (btn.textContent === t(this.activeEnhancement?.name)) {
                     btn.style.borderColor = '#4fd1c5';
@@ -389,7 +421,7 @@
         },
 
         updateInfoPanelWithRegionOnly(regionId) {
-
+            
             const region = this.config.regions[regionId];
             if (!region) return;
             this.infoPanel.innerHTML = `
@@ -527,7 +559,7 @@
             const w = this.canvas.width;
             const h = this.canvas.height;
 
-
+            
 
             ctx.clearRect(0, 0, w, h);
 
