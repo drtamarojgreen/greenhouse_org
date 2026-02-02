@@ -541,26 +541,28 @@
             };
             btnGroup.appendChild(button);
 
-            const langBtn = document.createElement('button');
-            langBtn.id = 'pathway-lang-toggle';
-            langBtn.textContent = t('btn_language');
-            langBtn.style.cssText = `
-                flex: 0 0 auto;
-                background: #732751;
-                color: white;
-                border: none;
-                padding: 10px;
-                border-radius: 6px;
-                font-weight: bold;
-                cursor: pointer;
-                font-size: ${isMobile ? '16px' : '14px'};
-            `;
-            langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) {
-                    window.GreenhouseModelsUtil.toggleLanguage();
-                }
-            };
-            btnGroup.appendChild(langBtn);
+            if (isMobile) {
+                const langBtn = document.createElement('button');
+                langBtn.id = 'pathway-lang-toggle';
+                langBtn.textContent = t('btn_language');
+                langBtn.style.cssText = `
+                    flex: 0 0 auto;
+                    background: #732751;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 6px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    font-size: 16px;
+                `;
+                langBtn.onclick = () => {
+                    if (window.GreenhouseModelsUtil) {
+                        window.GreenhouseModelsUtil.toggleLanguage();
+                    }
+                };
+                btnGroup.appendChild(langBtn);
+            }
             uiContainer.appendChild(btnGroup);
 
             container.appendChild(uiContainer);

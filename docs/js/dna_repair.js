@@ -196,10 +196,24 @@
         },
 
         setupInteraction() {
-            let isDragging = false; let lastX = 0; let lastY = 0;
-            this.canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+            let isDragging = false;
+            let lastX = 0;
+            let lastY = 0;
+            let lastTouchDistance = 0;
+
+            const handleStart = (x, y) => { isDragging = true; lastX = x; lastY = y; };
+            const handleMove = (x, y) => {
+                if (!isDragging) return;
+                const dx = x - lastX;
+                const dy = y - lastY;
+                this.state.camera.rotationX += dy * 0.005;
+                this.state.camera.x -= dx * 2;
+                lastX = x; lastY = y;
+            };
+
+            this.canvas.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
             window.addEventListener('mousemove', (e) => {
-                if (isDragging) { const dx = e.clientX - lastX; const dy = e.clientY - lastY; this.state.camera.rotationX += dy * 0.005; this.state.camera.x -= dx * 2; lastX = e.clientX; lastY = e.clientY; return; }
+                if (isDragging) { handleMove(e.clientX, e.clientY); return; }
                 if (window.GreenhouseDNATooltip) {
                     const rect = this.canvas.getBoundingClientRect();
                     const mx = e.clientX - rect.left; const my = e.clientY - rect.top;
@@ -218,7 +232,40 @@
                 }
             });
             window.addEventListener('mouseup', () => { isDragging = false; });
-            this.canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.state.camera.z += e.deltaY * 0.5; this.state.camera.z = Math.min(-100, Math.max(-1500, this.state.camera.z)); });
+
+            // Touch Support
+            this.canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    handleStart(e.touches[0].clientX, e.touches[0].clientY);
+                } else if (e.touches.length === 2) {
+                    isDragging = false;
+                    const dx = e.touches[1].clientX - e.touches[0].clientX;
+                    const dy = e.touches[1].clientY - e.touches[0].clientY;
+                    lastTouchDistance = Math.hypot(dx, dy);
+                }
+            }, { passive: true });
+
+            this.canvas.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1) {
+                    handleMove(e.touches[0].clientX, e.touches[0].clientY);
+                    e.preventDefault();
+                } else if (e.touches.length === 2) {
+                    const dx = e.touches[1].clientX - e.touches[0].clientX;
+                    const dy = e.touches[1].clientY - e.touches[0].clientY;
+                    const dist = Math.hypot(dx, dy);
+                    if (lastTouchDistance > 0) {
+                        const delta = dist - lastTouchDistance;
+                        this.state.camera.z += delta * 2;
+                        this.state.camera.z = Math.min(-100, Math.max(-1500, this.state.camera.z));
+                    }
+                    lastTouchDistance = dist;
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            this.canvas.addEventListener('touchend', () => { isDragging = false; lastTouchDistance = 0; });
+
+            this.canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.state.camera.z += e.deltaY * 0.5; this.state.camera.z = Math.min(-100, Math.max(-1500, this.state.camera.z)); }, { passive: false });
         },
 
         animate() { if (!this.isRunning) return; this.update(); this.render(); requestAnimationFrame(() => this.animate()); },

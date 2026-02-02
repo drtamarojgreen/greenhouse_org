@@ -176,6 +176,67 @@
                 "Y-Axis": "Y-Axis",
                 "Z-Axis": "Z-Axis",
                 "Zoom": "Zoom",
+                // Consent Screen
+                consent_title: "Exploring Neural Plasticity: A CBT & DBT Model",
+                consent_desc: "An interactive simulation to help you visualize how therapeutic practices can change the brain.",
+                disclaimer: "Please Note: This is an educational simulation, not a medical tool.",
+                consent_check: "I acknowledge that this is an educational tool and not a substitute for professional medical advice.",
+                launch_btn: "Launch Simulation",
+                err_loading_models: "Error loading model descriptions. Please try again later.",
+
+                // Simulation Interface
+                edu_banner: "For Educational Purposes: This model simulates conceptual brain activity.",
+
+                // Synapse Items
+                label_vesicle: "Vesicle",
+                label_receptor: "Receptor",
+                label_neurotransmitter: "Neurotransmitter",
+                label_ion_channel: "Ion Channel",
+                label_kinase: "Protein Kinase",
+                label_rna: "mRNA",
+
+                // Metrics
+                metrics_title_synaptic: "Real-Time Metrics (synaptic)",
+                metrics_title_network: "Real-Time Metrics (network)",
+                metric_weight: "Synaptic Weight",
+                metric_neuro: "Neurotransmitters Released",
+                metric_ions: "Ions Crossed",
+                metric_learning: "Learning Metric",
+
+                // Controls
+                controls_title_synaptic: "Simulation Controls (synaptic)",
+                controls_title_network: "Simulation Controls (network)",
+                controls_title_environment: "Environment Controls",
+                controls_title_general: "General Controls",
+
+                label_intensity: "Practice Intensity",
+                label_speed: "Simulation Speed",
+                option_slow: "Slow",
+                option_normal: "Normal",
+                option_fast: "Fast",
+
+                btn_play: "Play",
+                btn_pause: "Pause",
+                btn_reset_plasticity: "Reset Plasticity",
+
+                label_stress: "Environmental Stress",
+                label_support: "Social Support Level",
+                label_genetic: "Genetic Factors",
+                btn_gene_a: "Gene A",
+                btn_gene_b: "Gene B",
+
+                btn_reset_sim: "Reset Simulation",
+                btn_share: "Share View",
+                btn_download: "Download Image",
+                btn_dark_mode: "Toggle Dark Mode",
+                btn_fullscreen: "Full Screen",
+                btn_language: "Español", // Label to switch TO Spanish
+
+                // Shared Simulation Terms
+                "signaling": "Signaling",
+                "scenarios": "Scenarios",
+                "pharmacology": "Pharmacology",
+                "settings": "Settings",
                 "accessibility": "Accessibility",
                 "acetylation_concept": "Acetylation",
                 "acetylation_metaphor": "Opening the Curtains",
@@ -730,6 +791,81 @@
                 "Y-Axis": "Y-Axis",
                 "Z-Axis": "Z-Axis",
                 "Zoom": "Zoom",
+                "Genotype (DNA)": "Genotype (DNA)",
+                "Phenotype (Brain)": "Phenotype (Brain)",
+
+                // Brain Regions
+                "pfc": "Prefrontal Cortex",
+                "parietalLobe": "Parietal Lobe",
+                "occipitalLobe": "Occipital Lobe",
+                "temporalLobe": "Temporal Lobe",
+                "cerebellum": "Cerebellum",
+                "brainstem": "Brainstem",
+                "hippocampus": "Hippocampus",
+                "amygdala": "Amygdala"
+            },
+            es: {
+                // Consent Screen
+                consent_title: "Explorando la Plasticidad Neuronal: Un Modelo de TCC y DBT",
+                consent_desc: "Una simulación interactiva para ayudarte a visualizar cómo las prácticas terapéuticas pueden cambiar el cerebro.",
+                disclaimer: "Nota: Esta es una simulación educativa, no una herramienta médica.",
+                consent_check: "Reconozco que esta es una herramienta educativa y no un sustituto del consejo médico profesional.",
+                launch_btn: "Iniciar Simulación",
+                err_loading_models: "Error al cargar las descripciones de los modelos. Por favor, inténtelo de nuevo más tarde.",
+
+                // Simulation Interface
+                edu_banner: "Para Fines Educativos: Este modelo simula la actividad cerebral conceptual.",
+
+                // Synapse Items
+                label_vesicle: "Vesícula",
+                label_receptor: "Receptor",
+                label_neurotransmitter: "Neurotransmisor",
+                label_ion_channel: "Canal Iónico",
+                label_kinase: "Proteína Quinasa",
+                label_rna: "ARNm",
+
+                // Metrics
+                metrics_title_synaptic: "Métricas en Tiempo Real (sinápticas)",
+                metrics_title_network: "Métricas en Tiempo Real (red)",
+                metric_weight: "Peso Sináptico",
+                metric_neuro: "Neurotransmisores Liberados",
+                metric_ions: "Iones Cruzados",
+                metric_learning: "Métrica de Aprendizaje",
+
+                // Controls
+                controls_title_synaptic: "Controles de Simulación (sinápticos)",
+                controls_title_network: "Controles de Simulación (red)",
+                controls_title_environment: "Controles del Entorno",
+                controls_title_general: "Controles Generales",
+
+                label_intensity: "Intensidad de Práctica",
+                label_speed: "Velocidad de Simulación",
+                option_slow: "Lento",
+                option_normal: "Normal",
+                option_fast: "Rápido",
+
+                btn_play: "Reproducir",
+                btn_pause: "Pausa",
+                btn_reset_plasticity: "Restablecer Plasticidad",
+
+                label_stress: "Estrés Ambiental",
+                label_support: "Nivel de Apoyo Social",
+                label_genetic: "Factores Genéticos",
+                btn_gene_a: "Gen A",
+                btn_gene_b: "Gen B",
+
+                btn_reset_sim: "Restablecer Simulación",
+                btn_share: "Compartir Vista",
+                btn_download: "Descargar Imagen",
+                btn_dark_mode: "Modo Oscuro",
+                btn_fullscreen: "Pantalla Completa",
+                btn_language: "English", // Label to switch TO English
+
+                // Shared Simulation Terms
+                "signaling": "Señalización",
+                "scenarios": "Escenarios",
+                "pharmacology": "Farmacología",
+                "settings": "Ajustes",
                 "accessibility": "Accesibilidad",
                 "acetylation_concept": "Acetilación",
                 "acetylation_metaphor": "Abriendo las Cortinas",

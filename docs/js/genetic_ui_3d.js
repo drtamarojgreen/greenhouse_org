@@ -177,7 +177,7 @@
             controls.innerHTML = `
                 <div style="display: flex; gap: 10px; align-items: center; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px; flex-wrap: wrap;">
                     <button id="gen-pause-btn" class="greenhouse-btn greenhouse-btn-primary" style="font-size: ${isMobile ? '12px' : '14px'}">${t('Pause Evolution')}</button>
-                    <button id="genetic-lang-toggle" class="greenhouse-btn greenhouse-btn-secondary" style="font-size: ${isMobile ? '12px' : '14px'}">${t('btn_language')}</button>
+                    ${isMobile ? `<button id="genetic-lang-toggle" class="greenhouse-btn greenhouse-btn-secondary" style="font-size: 12px">${t('btn_language')}</button>` : ''}
                     <div id="gen-label-container" style="margin-left: ${isMobile ? '0' : 'auto'}; font-weight: bold; color: #2c3e50; font-size: ${isMobile ? '12px' : '14px'}">
                         ${t('gen')}: <span id="gen-counter">0</span> | ${t('fitness')}: <span id="fitness-display">0.00</span>
                     </div>
@@ -195,11 +195,13 @@
             });
 
             const langBtn = controls.querySelector('#genetic-lang-toggle');
-            langBtn.addEventListener('click', () => {
-                if (window.GreenhouseModelsUtil) {
-                    window.GreenhouseModelsUtil.toggleLanguage();
-                }
-            });
+            if (langBtn) {
+                langBtn.addEventListener('click', () => {
+                    if (window.GreenhouseModelsUtil) {
+                        window.GreenhouseModelsUtil.toggleLanguage();
+                    }
+                });
+            }
 
             // Canvas
             this.canvas = document.createElement('canvas');

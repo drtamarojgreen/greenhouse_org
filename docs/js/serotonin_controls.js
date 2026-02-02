@@ -65,66 +65,82 @@
                 name: t('scenarios'),
                 options: [
                     { name: 'Depression', toggle: () => { G.Transport.tphActivity = G.Transport.tphActivity === 1.0 ? 0.3 : 1.0; } },
-                    { name: 'Serotonin Syndrome', toggle: () => {
-                        G.ssActive = !G.ssActive;
-                        if (G.ssActive) {
-                            G.Transport.sertActivity = 0;
-                            G.Transport.maoActivity = 0;
-                        } else {
-                            G.Transport.sertActivity = 1.0;
-                            G.Transport.maoActivity = 1.0;
+                    {
+                        name: 'Serotonin Syndrome', toggle: () => {
+                            G.ssActive = !G.ssActive;
+                            if (G.ssActive) {
+                                G.Transport.sertActivity = 0;
+                                G.Transport.maoActivity = 0;
+                            } else {
+                                G.Transport.sertActivity = 1.0;
+                                G.Transport.maoActivity = 1.0;
+                            }
                         }
-                    }},
-                    { name: 'MDMA Scenario', toggle: () => {
-                        G.mdmaActive = !G.mdmaActive;
-                        if (G.mdmaActive) {
-                            G.Transport.reuptakeRate = -0.5;
-                            G.Transport.vesicle5HT = 0;
-                            for(let i=0; i<50; i++) G.Kinetics.spawnLigand('Serotonin');
-                        } else {
-                            G.Transport.reuptakeRate = 0.05;
+                    },
+                    {
+                        name: 'MDMA Scenario', toggle: () => {
+                            G.mdmaActive = !G.mdmaActive;
+                            if (G.mdmaActive) {
+                                G.Transport.reuptakeRate = -0.5;
+                                G.Transport.vesicle5HT = 0;
+                                for (let i = 0; i < 50; i++) G.Kinetics.spawnLigand('Serotonin');
+                            } else {
+                                G.Transport.reuptakeRate = 0.05;
+                            }
                         }
-                    }},
-                    { name: 'SSRI blockade', toggle: () => {
-                        G.ssriMode = !G.ssriMode;
-                        G.Transport.sertActivity = G.ssriMode ? 0.1 : 1.0;
-                    }},
-                    { name: 'Cocaine', toggle: () => {
-                        G.cocaineMode = !G.cocaineMode;
-                        G.Transport.sertActivity = G.cocaineMode ? 0.05 : 1.0;
-                    }},
-                    { name: 'Methamphetamine', toggle: () => {
-                        G.methMode = !G.methMode;
-                        if (G.methMode) {
-                            G.Transport.reuptakeRate = -0.8; // Strong reversal
-                            for(let i=0; i<30; i++) G.Kinetics.spawnLigand('Serotonin');
-                        } else {
-                            G.Transport.reuptakeRate = 0.05;
+                    },
+                    {
+                        name: 'SSRI blockade', toggle: () => {
+                            G.ssriMode = !G.ssriMode;
+                            G.Transport.sertActivity = G.ssriMode ? 0.1 : 1.0;
                         }
-                    }},
-                    { name: 'Schizophrenia', toggle: () => {
-                        G.schizMode = !G.schizMode;
-                        G.state.receptors.forEach(r => {
-                            if (r.type === '5-HT2A') r.pathwayBias = G.schizMode ? 2.5 : 1.0;
-                        });
-                    }},
-                    { name: 'ADHD', toggle: () => {
-                        G.adhdMode = !G.adhdMode;
-                        G.Transport.tphActivity = G.adhdMode ? 0.5 : 1.0;
-                    }},
-                    { name: 'Migraine / Triptans', toggle: () => {
-                        G.migraineMode = !G.migraineMode;
-                        if (G.migraineMode) {
-                            // Triptans are selective 5-HT1B/1D agonists
+                    },
+                    {
+                        name: 'Cocaine', toggle: () => {
+                            G.cocaineMode = !G.cocaineMode;
+                            G.Transport.sertActivity = G.cocaineMode ? 0.05 : 1.0;
+                        }
+                    },
+                    {
+                        name: 'Methamphetamine', toggle: () => {
+                            G.methMode = !G.methMode;
+                            if (G.methMode) {
+                                G.Transport.reuptakeRate = -0.8; // Strong reversal
+                                for (let i = 0; i < 30; i++) G.Kinetics.spawnLigand('Serotonin');
+                            } else {
+                                G.Transport.reuptakeRate = 0.05;
+                            }
+                        }
+                    },
+                    {
+                        name: 'Schizophrenia', toggle: () => {
+                            G.schizMode = !G.schizMode;
                             G.state.receptors.forEach(r => {
-                                if (r.type === '5-HT1B' || r.type === '5-HT1D') {
-                                    r.state = 'Active';
-                                    r.biasedLigand = 'G-Biased';
-                                }
+                                if (r.type === '5-HT2A') r.pathwayBias = G.schizMode ? 2.5 : 1.0;
                             });
-                            for(let i=0; i<20; i++) G.Kinetics.spawnLigand('Sumatriptan');
                         }
-                    }}
+                    },
+                    {
+                        name: 'ADHD', toggle: () => {
+                            G.adhdMode = !G.adhdMode;
+                            G.Transport.tphActivity = G.adhdMode ? 0.5 : 1.0;
+                        }
+                    },
+                    {
+                        name: 'Migraine / Triptans', toggle: () => {
+                            G.migraineMode = !G.migraineMode;
+                            if (G.migraineMode) {
+                                // Triptans are selective 5-HT1B/1D agonists
+                                G.state.receptors.forEach(r => {
+                                    if (r.type === '5-HT1B' || r.type === '5-HT1D') {
+                                        r.state = 'Active';
+                                        r.biasedLigand = 'G-Biased';
+                                    }
+                                });
+                                for (let i = 0; i < 20; i++) G.Kinetics.spawnLigand('Sumatriptan');
+                            }
+                        }
+                    }
                 ]
             }
         ];
@@ -181,19 +197,21 @@
             document.querySelectorAll('.serotonin-checkbox-modal').forEach(m => m.style.display = 'none');
         });
 
-        // Language Selection (#8)
-        const langDropdown = document.createElement('div');
-        langDropdown.className = 'serotonin-dropdown';
-        const langBtn = document.createElement('button');
-        langBtn.id = 'serotonin-lang-toggle';
-        langBtn.className = 'serotonin-btn';
-        langBtn.innerText = t('btn_language');
-        langBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-        };
-        langDropdown.appendChild(langBtn);
-        controls.appendChild(langDropdown);
+        if (isMobile) {
+            // Language Selection - Mobile Only
+            const langDropdown = document.createElement('div');
+            langDropdown.className = 'serotonin-dropdown';
+            const langBtn = document.createElement('button');
+            langBtn.id = 'serotonin-lang-toggle';
+            langBtn.className = 'serotonin-btn';
+            langBtn.innerText = t('btn_language');
+            langBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+            };
+            langDropdown.appendChild(langBtn);
+            controls.appendChild(langDropdown);
+        }
 
         container.appendChild(controls);
 
@@ -289,10 +307,10 @@
                 G.Receptors.setupReceptorModel();
                 if (env.includes('PFC')) {
                     G.state.receptors = G.state.receptors.filter(r => ['5-HT2A', '5-HT2C', '5-HT1A'].includes(r.type));
-                    for(let k=0; k<5; k++) G.state.receptors.push({...G.Receptors.subtypes['5-HT2A'], type: '5-HT2A', state: 'Inactive', x: Math.random()*200-100, y: 0, z: Math.random()*200-100});
+                    for (let k = 0; k < 5; k++) G.state.receptors.push({ ...G.Receptors.subtypes['5-HT2A'], type: '5-HT2A', state: 'Inactive', x: Math.random() * 200 - 100, y: 0, z: Math.random() * 200 - 100 });
                 } else if (env.includes('Hippocampus')) {
                     G.state.receptors = G.state.receptors.filter(r => ['5-HT1A', '5-HT7'].includes(r.type));
-                    for(let k=0; k<8; k++) G.state.receptors.push({...G.Receptors.subtypes['5-HT1A'], type: '5-HT1A', state: 'Inactive', x: Math.random()*200-100, y: 0, z: Math.random()*200-100});
+                    for (let k = 0; k < 8; k++) G.state.receptors.push({ ...G.Receptors.subtypes['5-HT1A'], type: '5-HT1A', state: 'Inactive', x: Math.random() * 200 - 100, y: 0, z: Math.random() * 200 - 100 });
                 }
             }
             G.lastInteraction = { type: 'environment', name: env, time: G.state.timer };
@@ -375,7 +393,7 @@
     };
 
     // Keyboard Shortcuts (Accessibility #11)
-    G.setupKeyboardShortcuts = function() {
+    G.setupKeyboardShortcuts = function () {
         window.addEventListener('keydown', (e) => {
             const key = e.key.toUpperCase();
             if (key === 'P') G.paused = !G.paused;
@@ -390,7 +408,7 @@
         });
     };
 
-    G.toggleColorBlind = function(type) {
+    G.toggleColorBlind = function (type) {
         const filterMap = {
             'deuteranopia': 'url("#deuteranopia-filter")',
             'protanopia': 'url("#protanopia-filter")',
@@ -409,7 +427,7 @@
     };
 
     const oldRender = G.render;
-    G.render = function() {
+    G.render = function () {
         if (oldRender) oldRender.call(G);
 
         const ctx = G.ctx;
@@ -418,21 +436,21 @@
         if (G.currentView === 'OCD Pathway') {
             ctx.strokeStyle = '#666';
             ctx.lineWidth = 1;
-            ctx.strokeRect(G.width/2 - 100, G.height/2 - 100, 200, 200);
+            ctx.strokeRect(G.width / 2 - 100, G.height / 2 - 100, 200, 200);
             ctx.fillStyle = '#fff';
-            ctx.fillText('CSTC Loop Schematic', G.width/2, G.height/2 - 110);
-            ctx.fillText('OFC -> Striatum -> Thalamus -> OFC', G.width/2, G.height/2);
+            ctx.fillText('CSTC Loop Schematic', G.width / 2, G.height / 2 - 110);
+            ctx.fillText('OFC -> Striatum -> Thalamus -> OFC', G.width / 2, G.height / 2);
         }
 
         // Amygdala feedback loop (Category 8, #72)
         if (G.currentView === 'Amygdala Loop') {
             ctx.strokeStyle = '#ff4d4d';
             ctx.beginPath();
-            ctx.arc(G.width/2, G.height/2, 80, 0, Math.PI * 2);
+            ctx.arc(G.width / 2, G.height / 2, 80, 0, Math.PI * 2);
             ctx.stroke();
             ctx.fillStyle = '#fff';
-            ctx.fillText('Amygdala Feedback (Anxiety modeling)', G.width/2, G.height/2 - 95);
-            ctx.fillText('5-HT1A Autoreceptor Control', G.width/2, G.height/2);
+            ctx.fillText('Amygdala Feedback (Anxiety modeling)', G.width / 2, G.height / 2 - 95);
+            ctx.fillText('5-HT1A Autoreceptor Control', G.width / 2, G.height / 2);
         }
 
         // Serotonin Syndrome visuals (Category 7, #69)
@@ -446,8 +464,8 @@
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(G.width/2, 0);
-            ctx.lineTo(G.width/2, G.height);
+            ctx.moveTo(G.width / 2, 0);
+            ctx.lineTo(G.width / 2, G.height);
             ctx.stroke();
         }
         const w = G.width;

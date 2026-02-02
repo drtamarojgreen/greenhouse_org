@@ -38,12 +38,15 @@
             const t = (k) => this.util.t(k);
 
             const container = GreenhouseModelsUtil.createElement('div', { className: 'greenhouse-landing-container' });
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
             container.innerHTML = `
+                ${isMobile ? `
                 <div style="position: absolute; top: 10px; right: 10px;">
                     <button id="lang-toggle-consent" class="greenhouse-btn greenhouse-btn-secondary" style="padding: 5px 10px; font-size: 16px;">
                         ${t('btn_language')}
                     </button>
                 </div>
+                ` : ''}
                 <h1 class="greenhouse-simulation-title">${t('consent_title')}</h1>
                 <p>${t('consent_desc')}</p>
                 <div class="greenhouse-disclaimer-banner">${t('disclaimer')}</div>
@@ -256,7 +259,7 @@
                         <button class="greenhouse-btn greenhouse-btn-secondary" id="download-btn-general">${t('btn_download')}</button>
                         <button class="greenhouse-btn greenhouse-btn-secondary" id="dark-mode-toggle">${t('btn_dark_mode')}</button>
                         <button class="greenhouse-btn greenhouse-btn-secondary" id="fullscreen-btn-general">${t('btn_fullscreen')}</button>
-                        <button class="greenhouse-btn greenhouse-btn-primary" id="language-btn-general">${t('btn_language')}</button>
+                        ${window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser() ? `<button class="greenhouse-btn greenhouse-btn-primary" id="language-btn-general">${t('btn_language')}</button>` : ''}
                     </div>
                 `;
             }

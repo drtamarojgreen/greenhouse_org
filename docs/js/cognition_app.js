@@ -100,19 +100,21 @@
                 this.refreshUIText();
             });
 
-            // Local Language Toggle for Cognition
-            const langBtn = document.createElement('button');
-            langBtn.id = 'cognition-lang-toggle';
-            langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
-            langBtn.style.cssText = `
-                position: absolute; top: 10px; right: 10px; z-index: 100;
-                background: #4fd1c5; color: white; border: none; padding: 5px 12px;
-                border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
-            `;
-            langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-            };
-            container.appendChild(langBtn);
+            if (isMobile) {
+                // Local Language Toggle for Cognition - Mobile Only
+                const langBtn = document.createElement('button');
+                langBtn.id = 'cognition-lang-toggle';
+                langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
+                langBtn.style.cssText = `
+                    position: absolute; top: 10px; right: 10px; z-index: 100;
+                    background: #4fd1c5; color: white; border: none; padding: 5px 12px;
+                    border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
+                `;
+                langBtn.onclick = () => {
+                    if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+                };
+                container.appendChild(langBtn);
+            }
 
             this.isRunning = true;
             this.startLoop();

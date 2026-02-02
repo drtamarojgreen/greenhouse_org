@@ -59,7 +59,7 @@
                 onSelectMode: (index) => {
                     const modes = ['Neural Network', 'Synaptic Density', 'Burst Patterns'];
                     console.log(`[Mobile Hub] Neuro Mode Selected: ${modes[index]}`);
-                    // Neuro app logic to switch modes could be added here
+                    if (window.GreenhouseNeuroApp) window.GreenhouseNeuroApp.switchMode(index);
                 }
             },
             pathway: {
@@ -216,6 +216,9 @@
             const isNarrow = window.innerWidth <= 1024;
             const ua = navigator.userAgent;
 
+            // 0. Manual override via query parameter for testing
+            if (window.location.search.includes('mobile=true')) return true;
+
             // 1. Specialized detection for iPad Pro (identifies as MacIntel but has multi-touch)
             const isIPadPro = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && !window.MSStream);
 
@@ -349,7 +352,7 @@
                 .gh-mode-indicator.show { opacity: 1; animation: ghPulseScale 0.6s ease-out; }
 
                 .gh-mobile-btn {
-                    background: linear-gradient(135deg, #4ca1af 0%, #2c3e50 100%);
+                    background: linear-gradient(135deg, #2c7a7b 0%, #2c3e50 100%);
                     color: white; text-decoration: none; padding: 14px 35px; border-radius: 18px;
                     font-size: 1.2rem; font-weight: 600; text-align: center; margin: 0 24px 24px;
                 }
@@ -453,7 +456,7 @@
         },
 
         async activateModel(modelId, container) {
-            if (this.activeModels.has(container)) return;
+            if (!container || this.activeModels.has(container)) return;
             const config = this.modelRegistry[modelId];
             if (!config) return;
 
@@ -480,13 +483,13 @@
 
         setupSwipeInteraction(card, modelId) {
             let startY = 0;
-            card.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: true });
-            card.addEventListener('touchend', (e) => {
-                const deltaY = e.changedTouches[0].clientY - startY;
+            const threshold = 60;
+
+            const changeMode = (direction) => {
                 const config = this.modelRegistry[modelId];
-                if (Math.abs(deltaY) > 80 && config && config.modes) {
+                if (config && config.modes) {
                     let index = parseInt(card.dataset.currentModeIndex);
-                    index = (deltaY < 0) ? (index + 1) % config.modes.length : (index - 1 + config.modes.length) % config.modes.length;
+                    index = (direction > 0) ? (index + 1) % config.modes.length : (index - 1 + config.modes.length) % config.modes.length;
                     card.dataset.currentModeIndex = index;
                     if (config.onSelectMode) config.onSelectMode(index);
 
@@ -499,7 +502,23 @@
                         setTimeout(() => indicator.classList.remove('show'), 1200);
                     }
                 }
+            };
+
+            card.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: true });
+            card.addEventListener('touchend', (e) => {
+                const deltaY = e.changedTouches[0].clientY - startY;
+                if (Math.abs(deltaY) > threshold) {
+                    changeMode(deltaY < 0 ? 1 : -1);
+                }
             }, { passive: true });
+
+            card.addEventListener('wheel', (e) => {
+                // If the event target is the canvas, let the canvas handle zoom unless it's a large scroll
+                if (Math.abs(e.deltaY) > 20) {
+                    changeMode(e.deltaY > 0 ? 1 : -1);
+                    e.preventDefault();
+                }
+            }, { passive: false });
         },
 
         setupScrollListener(scroller, dotContainer) {

@@ -82,19 +82,21 @@
 
             this.handleResize();
 
-            // Local Language Toggle for Emotion
-            const langBtn = document.createElement('button');
-            langBtn.id = 'emotion-lang-toggle';
-            langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
-            langBtn.style.cssText = `
-                position: absolute; top: 10px; right: 10px; z-index: 100;
-                background: #ff4d4d; color: white; border: none; padding: 5px 12px;
-                border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
-            `;
-            langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-            };
-            container.appendChild(langBtn);
+            if (isMobile) {
+                // Local Language Toggle for Emotion - Mobile Only
+                const langBtn = document.createElement('button');
+                langBtn.id = 'emotion-lang-toggle';
+                langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
+                langBtn.style.cssText = `
+                    position: absolute; top: 10px; right: 10px; z-index: 100;
+                    background: #ff4d4d; color: white; border: none; padding: 5px 12px;
+                    border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
+                `;
+                langBtn.onclick = () => {
+                    if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+                };
+                container.appendChild(langBtn);
+            }
 
             // Generate Enhanced Brain Mesh (localized to Emotion App)
             if (window.GreenhouseEmotionBrain && window.GreenhouseEmotionBrain.generateEnhancedBrain) {
@@ -432,7 +434,7 @@
                 if (proj.scale > 0 && proj.depth < 0.8) {
                     const dx = proj.x - this.mousePos.x;
                     const dy = proj.y - this.mousePos.y;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const dist = Math.sqrt(dx * dx + dy * dy);
                     if (dist < minDiv) {
                         minDiv = dist;
                         closest = v.region;
