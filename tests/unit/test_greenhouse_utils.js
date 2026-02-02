@@ -11,19 +11,28 @@ const TestFramework = require('../utils/test_framework.js');
 
 // --- Mock Browser Environment ---
 global.window = global;
+global.window.dispatchEvent = () => { };
 global.document = {
     currentScript: null,
     querySelector: () => null,
-    createElement: (tag) => ({
-        tag,
-        className: '',
-        textContent: '',
-        appendChild: () => { },
-        remove: () => { },
-        addEventListener: () => { },
-        style: {},
-        dataset: {}
-    }),
+    createElement: (tag) => {
+        const el = {
+            tag,
+            className: '',
+            textContent: '',
+            appendChild: () => { },
+            remove: () => { },
+            addEventListener: () => { },
+            style: {},
+            dataset: {},
+            set src(val) {
+                if (tag === 'script') {
+                    setTimeout(() => { if (el.onload) el.onload(); }, 0);
+                }
+            }
+        };
+        return el;
+    },
     body: { appendChild: () => { } },
     head: { appendChild: () => { } }
 };
@@ -32,12 +41,7 @@ global.MutationObserver = class {
     observe() { }
     disconnect() { }
 };
-global.console = {
-    log: () => { },
-    error: () => { },
-    warn: () => { },
-    debug: () => { }
-};
+global.console = console;
 global.fetch = () => Promise.resolve({ ok: true, text: () => Promise.resolve('console.log("loaded");') });
 global.Blob = class { };
 global.URL = { createObjectURL: () => 'blob:url', revokeObjectURL: () => { } };

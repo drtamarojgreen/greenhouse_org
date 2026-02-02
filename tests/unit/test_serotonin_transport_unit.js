@@ -59,6 +59,9 @@ TestFramework.describe('Serotonin Transport Logic (Unit)', () => {
         TestFramework.it('tonic firing should release 2 units intermittently', () => {
             T.firingMode = 'tonic';
             T.vesicle5HT = 100;
+            T.tryptophan = 0; // Disable synthesis for clean test
+            T.htp5 = 0;
+            T.degradationRate = 0; // Disable degradation for clean test
             global.window.GreenhouseSerotonin.state.timer = 50; // trigger % 50
             // Force random to 0 to trigger
             const originRand = Math.random;

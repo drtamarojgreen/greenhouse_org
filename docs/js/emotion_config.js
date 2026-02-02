@@ -30,7 +30,7 @@
         // Focused regions for the Emotion model
         regions: {
             prefrontalCortex: {
-                name: 'Prefrontal Cortex',
+                name: 'emotion_reg_pfc_name',
                 color: 'rgba(200, 200, 200, 0.4)',
                 description: 'The PFC regulates emotional responses through cognitive control and reappraisal.',
                 subRegions: ['dlPFC', 'vmPFC', 'OFC'],
@@ -39,7 +39,7 @@
                 clinicalSignificance: 'PFC-Limbic uncoupling is a hallmark of emotional dysregulation disorders.'
             },
             dlPFC: {
-                name: 'Dorsolateral PFC',
+                name: 'emotion_reg_dlpfc_name',
                 color: 'rgba(100, 180, 255, 0.7)',
                 description: 'The dlPFC is the "cool" executive brain, responsible for working memory, goal maintenance, and top-down inhibition of emotional impulses.',
                 subRegions: ['Brodmann Area 9/46'],
@@ -48,7 +48,7 @@
                 clinicalSignificance: 'Target for TMS in depression; hypoactivity linked to impaired emotional regulation.'
             },
             vmPFC: {
-                name: 'Ventromedial PFC',
+                name: 'emotion_reg_vmpfc_name',
                 color: 'rgba(120, 160, 255, 0.7)',
                 description: 'The vmPFC is the "warm" executive brain, integrating emotion and cognition to guide social behavior and value-based decisions.',
                 subRegions: ['Brodmann Area 10/11/32'],
@@ -57,7 +57,7 @@
                 clinicalSignificance: 'Damage results in "acquired sociopathy" and inability to use emotions for decision-making.'
             },
             ofc: {
-                name: 'Orbitofrontal Cortex',
+                name: 'emotion_reg_ofc_name',
                 color: 'rgba(80, 140, 255, 0.7)',
                 description: 'The OFC evaluates the value of rewards and punishments, helping to inhibit inappropriate emotional responses.',
                 subRegions: ['Brodmann Area 11/12'],
@@ -66,7 +66,7 @@
                 clinicalSignificance: 'Linked to impulse control disorders and addiction.'
             },
             amygdala: {
-                name: 'Amygdala',
+                name: 'emotion_reg_amygdala_name',
                 color: 'rgba(255, 50, 50, 0.8)',
                 description: 'The amygdala is the brain\'s primary center for threat detection and emotional processing, particularly fear and aggression.',
                 subRegions: ['Basolateral (BLA)', 'Centromedial (CeA)'],
@@ -75,7 +75,7 @@
                 clinicalSignificance: 'Overactivity linked to GAD and Panic Disorder; underactivity in some psychopathy types.'
             },
             hippocampus: {
-                name: 'Hippocampus',
+                name: 'emotion_reg_hippocampus_name',
                 color: 'rgba(50, 255, 50, 0.8)',
                 description: 'The hippocampus provides emotional context by linking current experiences with past memories.',
                 subRegions: ['Anterior', 'Posterior'],
@@ -84,7 +84,7 @@
                 clinicalSignificance: 'Atrophy observed in chronic stress and Alzheimer\'s Disease; key in PTSD flashback triggers.'
             },
             hypothalamus: {
-                name: 'Hypothalamus',
+                name: 'emotion_reg_hypothalamus_name',
                 color: 'rgba(255, 255, 50, 0.8)',
                 description: 'The hypothalamus triggers physiological responses to emotions, such as increased heart rate or stress hormone release.',
                 subRegions: ['Paraventricular Nucleus (PVN)', 'Suprachiasmatic Nucleus (SCN)'],
@@ -93,7 +93,7 @@
                 clinicalSignificance: 'Dysfunction causes allostatic load imbalance and metabolic disorders.'
             },
             thalamus: {
-                name: 'Thalamus',
+                name: 'emotion_reg_thalamus_name',
                 color: 'rgba(50, 150, 255, 0.8)',
                 description: 'The thalamus acts as a relay station, sending sensory information to the amygdala and cortex for emotional appraisal.',
                 subRegions: ['Mediodorsal', 'Pulvinar'],
@@ -102,7 +102,7 @@
                 clinicalSignificance: 'Sensory gating deficits linked to Schizophrenia and sensory processing sensitivity.'
             },
             brainstem: {
-                name: 'Brainstem',
+                name: 'emotion_reg_brainstem_name',
                 color: 'rgba(150, 100, 255, 0.8)',
                 description: 'The brainstem regulates fundamental autonomic functions and serves as the conduit for the Vagus nerve and major monoamine projections.',
                 subRegions: ['Locus Coeruleus', 'Dorsal Raphe', 'VTA'],
@@ -111,7 +111,7 @@
                 clinicalSignificance: 'Primary target for antidepressants (SSRIs/SNRIs).'
             },
             insula: {
-                name: 'Insula',
+                name: 'emotion_reg_insula_name',
                 color: 'rgba(255, 100, 255, 0.8)',
                 description: 'The insula is involved in interoceptive awareness, sensing internal bodily states and mapping them to emotional feelings.',
                 subRegions: ['Anterior Insula', 'Posterior Insula'],
@@ -120,7 +120,7 @@
                 clinicalSignificance: 'Overactive in anxiety (hyper-awareness of heart rate); underactive in alexithymia.'
             },
             acc: {
-                name: 'Anterior Cingulate Cortex',
+                name: 'emotion_reg_acc_name',
                 color: 'rgba(100, 255, 255, 0.8)',
                 description: 'The ACC monitors conflict between emotional impulses and cognitive goals, and is a target for deep brain stimulation.',
                 subRegions: ['dorsal ACC', 'subgenual ACC'],
@@ -129,7 +129,7 @@
                 clinicalSignificance: 'Hyperactivity in Area 25 is a marker for Treatment-Resistant Depression.'
             },
             subgenualACC: {
-                name: 'Subgenual ACC (Area 25)',
+                name: 'emotion_reg_subacc_name',
                 color: 'rgba(80, 220, 220, 0.7)',
                 description: 'Area 25 is specifically linked to sadness and mood regulation, acting as a bridge between the thinking brain and the emotional brain.',
                 subRegions: ['Brodmann Area 25'],
@@ -138,7 +138,7 @@
                 clinicalSignificance: 'Primary target for Deep Brain Stimulation (DBS) in Treatment-Resistant Depression.'
             },
             striatum: {
-                name: 'Striatum',
+                name: 'emotion_reg_striatum_name',
                 color: 'rgba(200, 100, 255, 0.8)',
                 description: 'The striatum, including the nucleus accumbens, is the core of the brain\'s reward system and mediates motivation and pleasure.',
                 subRegions: ['Caudate', 'Putamen', 'Nucleus Accumbens'],
@@ -147,7 +147,7 @@
                 clinicalSignificance: 'Dysfunction linked to addiction, habit formation, and OCD.'
             },
             nucleusAccumbens: {
-                name: 'Nucleus Accumbens',
+                name: 'emotion_reg_nac_name',
                 color: 'rgba(180, 80, 255, 0.8)',
                 description: 'The "pleasure center" of the brain, the Nucleus Accumbens mediates the rewarding effects of stimuli and the anticipation of pleasure.',
                 subRegions: ['NAc Core', 'NAc Shell'],
@@ -157,12 +157,12 @@
             }
         },
         philosophies: [
-            { id: 'p1', name: 'Stoicism', description: 'Focus on rational control and the dichotomy of control to regulate emotional impulses.', regions: ['dlPFC', 'amygdala'], wellnessFocus: 'Rationality', conditionMapping: 'Emotional Volatility' },
-            { id: 'p2', name: 'Buddhism', description: 'Mindfulness and detachment from craving to reduce suffering and calm the mind.', regions: ['insula', 'vmPFC', 'hippocampus'], wellnessFocus: 'Equanimity', conditionMapping: 'Craving/Attachment' },
-            { id: 'p3', name: 'Existentialism', description: 'Creating individual meaning and exercising radical freedom in an indifferent universe.', regions: ['ofc', 'acc'], wellnessFocus: 'Agency', conditionMapping: 'Existential Dread' },
-            { id: 'p4', name: 'Taoism', description: 'Harmony with the natural flow of the universe (Wu Wei) through balance and non-action.', regions: ['thalamus', 'hypothalamus'], wellnessFocus: 'Harmony', conditionMapping: 'Hyper-striving' },
-            { id: 'p5', name: 'Nihilism', description: 'Recognizing the lack of intrinsic meaning as a form of detachment and freedom from social pressure.', regions: ['striatum', 'prefrontalCortex'], wellnessFocus: 'Detachment', conditionMapping: 'Social Pressure' },
-            { id: 'p6', name: 'Epicureanism', description: 'Pursuit of modest, sustainable pleasures and the complete absence of physical and mental pain.', regions: ['nucleusAccumbens', 'striatum'], wellnessFocus: 'Tranquility', conditionMapping: 'Hedonic Treadmill' }
+            { id: 'p1', name: 'emotion_phil_stoicism_name', description: 'Focus on rational control and the dichotomy of control to regulate emotional impulses.', regions: ['dlPFC', 'amygdala'], wellnessFocus: 'Rationality', conditionMapping: 'Emotional Volatility' },
+            { id: 'p2', name: 'emotion_phil_buddhism_name', description: 'Mindfulness and detachment from craving to reduce suffering and calm the mind.', regions: ['insula', 'vmPFC', 'hippocampus'], wellnessFocus: 'Equanimity', conditionMapping: 'Craving/Attachment' },
+            { id: 'p3', name: 'emotion_phil_existentialism_name', description: 'Creating individual meaning and exercising radical freedom in an indifferent universe.', regions: ['ofc', 'acc'], wellnessFocus: 'Agency', conditionMapping: 'Existential Dread' },
+            { id: 'p4', name: 'emotion_phil_taoism_name', description: 'Harmony with the natural flow of the universe (Wu Wei) through balance and non-action.', regions: ['thalamus', 'hypothalamus'], wellnessFocus: 'Harmony', conditionMapping: 'Hyper-striving' },
+            { id: 'p5', name: 'emotion_phil_nihilism_name', description: 'Recognizing the lack of intrinsic meaning as a form of detachment and freedom from social pressure.', regions: ['striatum', 'prefrontalCortex'], wellnessFocus: 'Detachment', conditionMapping: 'Social Pressure' },
+            { id: 'p6', name: 'emotion_phil_epicureanism_name', description: 'Pursuit of modest, sustainable pleasures and the complete absence of physical and mental pain.', regions: ['nucleusAccumbens', 'striatum'], wellnessFocus: 'Tranquility', conditionMapping: 'Hedonic Treadmill' }
         ]
     };
 

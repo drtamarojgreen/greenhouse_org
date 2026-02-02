@@ -54,6 +54,7 @@
             if (!window.GreenhouseUtils) throw new Error("GreenhouseUtils not found.");
 
             // Load components
+            await window.GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await window.GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await window.GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
             await window.GreenhouseUtils.loadScript('emotion_ui_3d_brain.js', baseUrl);

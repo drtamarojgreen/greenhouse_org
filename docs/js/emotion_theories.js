@@ -8,8 +8,8 @@
     'use strict';
 
     const advancedTheories = [
-        { id: 76, name: 'Gross’s Process Model Stages', description: 'Interactive 5-step timeline: Situation Selection -> Modification -> Attention -> Appraisal -> Response.', regions: ['prefrontalCortex', 'amygdala'], wellnessFocus: 'Proactive Resilience', conditionMapping: 'Dysregulation' },
-        { id: 77, name: 'Polyvagal "Hierarchy of Response"', description: 'Color-coded states: Social Engagement (Green), Fight/Flight (Yellow), Freeze/Shutdown (Red).', regions: ['brainstem', 'hypothalamus', 'prefrontalCortex'], wellnessFocus: 'Hierarchical Regulation', conditionMapping: 'Trauma' },
+        { id: 76, name: 'emotion_theory_gross_name', description: 'emotion_theory_gross_desc', regions: ['prefrontalCortex', 'amygdala'], wellnessFocus: 'Proactive Resilience', conditionMapping: 'Dysregulation' },
+        { id: 77, name: 'emotion_theory_polyvagal_name', description: 'emotion_theory_polyvagal_desc', regions: ['brainstem', 'hypothalamus', 'prefrontalCortex'], wellnessFocus: 'Hierarchical Regulation', conditionMapping: 'Trauma' },
         { id: 78, name: 'Broaden-and-Build Visualization', description: 'Showing how positive emotions expand the "Thought-Action Repertoire" in the Neocortex.', regions: ['prefrontalCortex'], wellnessFocus: 'Expansion', conditionMapping: 'Depression' },
         { id: 79, name: 'Post-Traumatic Growth Pillars', description: 'Modeling growth in areas like Strength, Relationships, and New Possibilities after adversity.', regions: ['prefrontalCortex', 'hippocampus'], wellnessFocus: 'Acceptance', conditionMapping: 'Adjustment' },
         { id: 80, name: 'Yerkes-Dodson Performance Curve', description: 'Interactive graph showing the optimal level of arousal for cognitive performance.', regions: ['hypothalamus'], wellnessFocus: 'Flow State', conditionMapping: 'Performance Anxiety' },

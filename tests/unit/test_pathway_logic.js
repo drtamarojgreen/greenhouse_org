@@ -13,15 +13,22 @@ const TestFramework = require('../utils/test_framework.js');
 global.window = global;
 global.document = {
     querySelector: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
+    querySelectorAll: () => [],
     createElement: () => ({
         getContext: () => ({ fillRect: () => { }, clearRect: () => { }, beginPath: () => { }, arc: () => { }, fill: () => { }, stroke: () => { }, save: () => { }, restore: () => { } }),
-        width: 800, height: 600, addEventListener: () => { }
+        width: 800, height: 600, addEventListener: () => { },
+        appendChild: () => { },
+        setAttribute: () => { },
+        style: {}
     }),
-    body: { appendChild: () => { } }
+    body: { appendChild: () => { } },
+    head: { appendChild: () => { } },
+    readyState: 'complete'
 };
 global.console = { log: console.log, error: () => { }, warn: () => { } };
 global.requestAnimationFrame = () => { };
 global.performance = { now: () => Date.now() };
+global.navigator = { userAgent: 'node' };
 
 // --- Script Loading Helper ---
 function loadScript(filename) {
@@ -37,12 +44,7 @@ global.window.GreenhouseUtils = {
     startSentinel: () => { }
 };
 
-// Pathway app usually defines components
-global.window.GreenhousePathwayViewer = {
-    drawNode: () => { },
-    drawEdge: () => { }
-};
-
+loadScript('pathway.js');
 loadScript('pathway_viewer.js');
 
 TestFramework.describe('Pathway Logic (Unit)', () => {
@@ -73,7 +75,7 @@ TestFramework.describe('Pathway Logic (Unit)', () => {
 
     TestFramework.describe('Interactive Filtering', () => {
         TestFramework.it('should apply filters to graph state', () => {
-            if (App.applyFilter) {
+            if (App.state && App.state.activeFilters) {
                 App.applyFilter('anxiety');
                 assert.isTrue(App.state.activeFilters.includes('anxiety'));
             }

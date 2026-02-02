@@ -246,6 +246,7 @@
         },
 
         createTheorySelector(container) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const selectorDiv = document.createElement('div');
             selectorDiv.className = 'emotion-theory-selector';
             selectorDiv.style.cssText = `
@@ -262,7 +263,7 @@
             const items = this.config[this.currentCategory] || [];
             items.forEach(item => {
                 const btn = document.createElement('button');
-                btn.textContent = item.name;
+                btn.textContent = t(item.name);
                 btn.title = item.name;
                 btn.style.cssText = `
                     background: #1a202c;
@@ -468,12 +469,12 @@
                 regionInfo = this.activeRegion.map(r => {
                     const reg = this.config.regions[r] || { name: r };
                     const color = reg.color || '#ff4d4d';
-                    return `<button onclick="window.GreenhouseEmotionApp.selectRegion('${r}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0; margin-right: 5px;">${reg.name}</button>`;
+                    return `<button onclick="window.GreenhouseEmotionApp.selectRegion('${r}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0; margin-right: 5px;">${t(reg.name)}</button>`;
                 }).join(', ');
             } else if (this.activeRegion) {
                 const reg = this.config.regions[this.activeRegion] || {};
                 const color = reg.color || '#ff4d4d';
-                regionInfo = `<button onclick="window.GreenhouseEmotionApp.selectRegion('${this.activeRegion}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0;">${reg.name || this.activeRegion}</button>: ${reg.description || ''}`;
+                regionInfo = `<button onclick="window.GreenhouseEmotionApp.selectRegion('${this.activeRegion}')" style="background: none; border: none; color: ${color}; cursor: pointer; text-decoration: underline; font-size: 14px; padding: 0;">${t(reg.name) || this.activeRegion}</button>: ${reg.description || ''}`;
             }
 
             const wellnessInfo = this.activeTheory.wellnessFocus ? `
@@ -491,8 +492,8 @@
             this.infoPanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 300px;">
-                        <h3 style="color: #ff4d4d; margin: 0;">${this.activeTheory.name}</h3>
-                        <p style="margin: 10px 0;">${this.activeTheory.description}</p>
+                        <h3 style="color: #ff4d4d; margin: 0;">${t(this.activeTheory.name)}</h3>
+                        <p style="margin: 10px 0;">${t(this.activeTheory.description)}</p>
                         <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px;">
                             <strong>${t('involved_regions')}:</strong> ${regionInfo}
                         </div>
@@ -512,6 +513,7 @@
         },
 
         updateDeepDivePanel() {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             if (!this.deepDivePanel) return;
 
             if (!this.selectedRegion || this.selectedRegion === 'cortex') {
@@ -565,10 +567,10 @@
 
             this.deepDivePanel.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h4 style="color: ${reg.color || '#ff4d4d'}; margin: 0;">${reg.name}</h4>
+                    <h4 style="color: ${reg.color || '#ff4d4d'}; margin: 0;">${t(reg.name)}</h4>
                     <button onclick="window.GreenhouseEmotionApp.selectRegion(null)" style="background: none; border: none; color: #888; cursor: pointer; font-size: 20px;">&times;</button>
                 </div>
-                <p style="font-size: 14px; line-height: 1.5; color: #ccc; margin-bottom: 20px;">${reg.description || ''}</p>
+                <p style="font-size: 14px; line-height: 1.5; color: #ccc; margin-bottom: 20px;">${t(reg.description) || ''}</p>
 
                 ${subRegionsHtml}
                 ${ntHtml}
@@ -706,8 +708,9 @@
 
             // Hover Info
             if (this.hoveredRegion && this.hoveredRegion !== 'cortex') {
-                const regName = this.config.regions && this.config.regions[this.hoveredRegion] ?
+                const regNameKey = this.config.regions && this.config.regions[this.hoveredRegion] ?
                     this.config.regions[this.hoveredRegion].name : this.hoveredRegion;
+                const regName = t(regNameKey);
 
                 ctx.save();
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';

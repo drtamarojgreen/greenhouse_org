@@ -11,6 +11,7 @@ const TestFramework = require('../utils/test_framework.js');
 
 // --- Mock Browser Environment ---
 global.window = global;
+global.HTMLElement = class { };
 global.document = {
     currentScript: null,
     querySelectorAll: (sel) => [],

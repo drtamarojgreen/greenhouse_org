@@ -44,6 +44,7 @@ function loadSource(context) {
     };
 
     files.forEach(file => {
+        console.log("Loading file:", file);
         const code = fs.readFileSync(path.resolve(__dirname, '../../', file), 'utf8');
         const script = new Function('window', 'document', 'navigator', 'console', 'requestAnimationFrame', 'setInterval', 'clearInterval', 'setTimeout', code);
         try {

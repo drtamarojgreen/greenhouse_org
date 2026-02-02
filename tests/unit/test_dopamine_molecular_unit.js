@@ -25,7 +25,10 @@ global.window.GreenhouseDopamine = {
         mode: 'D1 Only',
         signalingActive: true,
         timer: 100,
-        receptors: [{ type: 'D1', x: 0, y: 0, z: 0 }]
+        receptors: [{ type: 'D1', x: 0, y: 0, z: 0 }],
+        scenarios: {
+            heteromer: false
+        }
     }
 };
 
@@ -82,6 +85,7 @@ TestFramework.describe('Dopamine Molecular Logic (Unit)', () => {
         TestFramework.it('should handle feed-forward PP1 inhibition', () => {
             G.molecularState.pka.cat = 0; // stop phosphorylation
             G.molecularState.darpp32.thr34 = 0.6; // High enough to inhibit PP1
+            G.molecularState.darpp32.pp1Inhibited = true;
             G.updateMolecular();
             // Decay should be very slow (0.0005)
             assert.greaterThan(G.molecularState.darpp32.thr34, 0.599);

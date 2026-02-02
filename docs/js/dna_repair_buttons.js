@@ -200,9 +200,10 @@
             info.appendChild(content);
             info.appendChild(stats);
             wrapper.appendChild(info);
-        };
+        }
+    };
 
-        G.updateInfoOverlay = function () {
+    G.updateInfoOverlay = function () {
             const content = document.getElementById('dna-info-content');
             if (!content) return;
 

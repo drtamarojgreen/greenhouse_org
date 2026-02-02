@@ -25,20 +25,20 @@ TestFramework.describe('DNA Mutation Logic (Unit)', () => {
 
     const G = global.window.GreenhouseDNARepair;
 
-    TestFramework.beforeEach(() => {
-        // Reset state for each test
-        G.state = {
-            radiationLevel: 50,
-            basePairs: [
-                { id: 0, base1: 'A', base2: 'T', isDamaged: false },
-                { id: 1, base1: 'C', base2: 'G', isDamaged: false },
-                { id: 2, base1: 'T', base2: 'A', isDamaged: false },
-                { id: 3, base1: 'G', base2: 'C', isDamaged: false }
-            ]
-        };
-    });
-
     TestFramework.describe('Damage Induction', () => {
+        TestFramework.beforeEach(() => {
+            // Reset state for each test
+            G.state = {
+                radiationLevel: 50,
+                basePairs: [
+                    { id: 0, base1: 'A', base2: 'T', isDamaged: false },
+                    { id: 1, base1: 'C', base2: 'G', isDamaged: false },
+                    { id: 2, base1: 'T', base2: 'A', isDamaged: false },
+                    { id: 3, base1: 'G', base2: 'C', isDamaged: false }
+                ]
+            };
+        });
+
         TestFramework.it('should apply UV damage with correct spectrum based on radiation', () => {
             const pair = { isDamaged: false };
             G.applyUVDamage(pair, 90);
