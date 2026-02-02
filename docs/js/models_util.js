@@ -1298,8 +1298,8 @@
                 "Neurotransmitter Response": "Neurotransmitter Response",
                 "New Traits Evolved": "New Traits Evolved",
                 "Next": "Next",
-                "No active medications.": "No hay medicamentos activos.",
-                "No recent sessions recorded.": "No hay sesiones recientes registradas.",
+                "No active medications.": "No active medications.",
+                "No recent sessions recorded.": "No recent sessions recorded.",
                 "Nucleotide Excision": "Nucleotide Excision",
                 "occipitalLobe": "Occipital Lobe",
                 "Pan": "Pan",
@@ -1328,8 +1328,8 @@
                 "NHEJ (Error Prone)": "NHEJ (Error Prone)",
                 "Homologous Recomb": "Homologous Recomb",
 
-                "Burst": "Explosión",
-                "Idioma": "Idioma",
+                "Burst": "Burst",
+                "Language": "Language",
 
                 how_to_title: "How to Use",
                 how_to_synaptic: "Use the controls to see how different parameters affect the strength of neural connections in real-time.",
@@ -1372,17 +1372,17 @@
                 "Prefrontal Cortex": "Prefrontal Cortex",
                 "Previous": "Previous",
                 "Protein Structure": "Protein Structure",
-                "Recent Sessions": "Sesiones Recientes",
-                "No active medications.": "No hay medicamentos activos.",
-                "No recent sessions recorded.": "No hay sesiones recientes registradas.",
-                "Loading...": "Cargando...",
+                "Recent Sessions": "Recent Sessions",
+                "No active medications.": "No active medications.",
+                "No recent sessions recorded.": "No recent sessions recorded.",
+                "Loading...": "Loading...",
 
                 // Alerts & Prompts
-                "Simulation URL copied to clipboard!": "¡URL de la simulación copiada al portapapeles!",
-                "Failed to copy URL. Please copy it manually:\n": "No se pudo copiar la URL. Por favor, cópiela manualmente:\n",
-                "Error attempting to enable full-screen mode: ": "Error al intentar activar el modo de pantalla completa: ",
+                "Simulation URL copied to clipboard!": "Simulation URL copied to clipboard!",
+                "Failed to copy URL. Please copy it manually:\n": "Failed to copy URL. Please copy it manually:\n",
+                "Error attempting to enable full-screen mode: ": "Error attempting to enable full-screen mode: ",
 
-                "Medication": "Medicación",
+                "Medication": "Medication",
 
                 // Hover descriptions for interactive elements
                 "medication_desc": "View active medications and their information.",
@@ -1476,7 +1476,7 @@
                 "select_focus": "Select Focus...",
                 "settings": "Settings",
                 "signaling": "Signaling",
-                "Simulation URL copied to clipboard!": "¡URL de la simulación copiada al portapapeles!",
+                "Simulation URL copied to clipboard!": "Simulation URL copied to clipboard!",
                 "Start Simulation": "Start Simulation",
                 "successful_repairs": "Successful Repairs",
                 "Synapse Created": "Synapse Created",
@@ -1560,11 +1560,11 @@
 
                 // RNA Model
                 "Adenine (A)": "Adenine (A)",
-                "Cytosine (C)": "Citosina (C)",
+                "Cytosine (C)": "Cytosine (C)",
                 "Guanine (G)": "Guanine (G)",
                 "Uracil (U)": "Uracil (U)",
-                "Enzyme": "Enzima",
-                "Methylation": "Metilación",
+                "Enzyme": "Enzyme",
+                "Methylation": "Methylation",
 
                 // Brain Regions
                 "pfc": "Prefrontal Cortex",
@@ -1639,9 +1639,7 @@
                 "scenarios": "Escenarios",
                 "pharmacology": "Farmacología",
                 "settings": "Ajustes",
-                "Zoom": "Zoom"
-            },
-            es: {
+                "Zoom": "Zoom",
                 "cog_ui_on": "Encendido",
                 "cog_ui_off": "Apagado",
                 "btn_language": "Idioma",
