@@ -605,6 +605,7 @@
             const baseUrl = attrBaseUrl || './';
 
             // Load modular simulation components
+            await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('serotonin_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('serotonin_legend.js', baseUrl);

@@ -72,6 +72,7 @@
             const baseUrl = attrBaseUrl || './';
 
             // Sequential loading of all modular components
+            await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('synapse_chemistry.js', baseUrl);
             await GreenhouseUtils.loadScript('synapse_neurotransmitters.js', baseUrl);

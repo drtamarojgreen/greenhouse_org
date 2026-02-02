@@ -4,7 +4,7 @@
  * page structure to be ready, populates promotional text, and then creates a new section to render a testing dashboard.
  * It has no dependency on Velo page code.
  */
-(function() {
+(function () {
     if (!window.GreenhouseUtils) {
         console.error('TechApp: GreenhouseUtils not found. Aborting initialization.');
         return;
@@ -371,7 +371,7 @@
         async runTestCase2() {
             const container = this.dashboardContainer.querySelector('#models-prototype-container');
             const button = this.dashboardContainer.querySelector('#load-models-prototype-btn');
-l
+            l
             if (!container || !button) {
                 console.error('TechApp: Required elements for Test Case 2 not found.');
                 return;
@@ -394,6 +394,7 @@ l
                 const baseUrl = window.GreenhouseUtils.config.githubPagesBaseUrl || 'https://drtamarojgreen.github.io/greenhouse_org/';
                 window._greenhouseModelsAttributes = { baseUrl, targetSelector: '#models-prototype-container' };
 
+                await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
                 await GreenhouseUtils.loadScript('models_util.js', baseUrl);
                 await GreenhouseUtils.loadScript('models_data.js', baseUrl);
                 await GreenhouseUtils.loadScript('models_ui_synapse.js', baseUrl);

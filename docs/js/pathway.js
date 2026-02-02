@@ -21,6 +21,7 @@
                 const base = baseUrl && !baseUrl.endsWith('/') ? baseUrl + '/' : (baseUrl || '');
                 // Define the correct loading order for the native 3D engine and our application
                 const scriptsToLoad = [
+                    'js/models_lang.js',
                     'js/models_util.js',
                     'js/models_3d_math.js',
                     'js/brain_mesh_realistic.js',
