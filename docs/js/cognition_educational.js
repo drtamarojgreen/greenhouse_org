@@ -7,6 +7,8 @@
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseCognitionEducational = {
         init(app) {
             this.app = app;
@@ -23,11 +25,11 @@
             // Header
             ctx.fillStyle = '#f6e05e';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText(`EDUCATIONAL TOOL: ${activeEnhancement.name.toUpperCase()}`, 20, 70);
+            ctx.fillText(`EDUCATIONAL TOOL: ${t(activeEnhancement.name).toUpperCase()}`, 20, 70);
 
             ctx.font = '12px Arial';
             ctx.fillStyle = '#fff';
-            ctx.fillText(`Target Region: ${this.app.config.regions[activeEnhancement.region]?.name || activeEnhancement.region}`, 20, 90);
+            ctx.fillText(`Target Region: ${t(this.app.config.regions[activeEnhancement.region]?.name) || activeEnhancement.region}`, 20, 90);
 
             if (activeEnhancement.id === 176) this.renderKnowledgeChecks(ctx, w, h);
             else if (activeEnhancement.id === 178) this.renderCaseStudies(ctx, w, h);
@@ -53,7 +55,7 @@
             ctx.fillRect(40, 110, w - 80, 130);
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 12px Arial';
-            ctx.fillText('QUESTION: Which layer is the primary input for the cortex?', 50, 130);
+            ctx.fillText(`${t('cog_label_question')}: Which layer is the primary input for the cortex?`, 50, 130);
 
             const options = ['A) Layer II', 'B) Layer IV (Granular)', 'C) Layer VI'];
             options.forEach((opt, i) => {
@@ -71,7 +73,7 @@
 
             ctx.fillStyle = '#ff4d4d';
             ctx.font = 'bold 14px "Courier New"';
-            ctx.fillText('CONFIDENTIAL: PATIENT_HM', 55, 135);
+            ctx.fillText(`${t('cog_label_confidential')}: PATIENT_HM`, 55, 135);
 
             ctx.fillStyle = '#333';
             ctx.font = '10px Arial';
@@ -80,19 +82,19 @@
             ctx.fillText('Insight: Memory is not a single, unitary process.', 55, 185);
 
             ctx.fillStyle = '#4da6ff';
-            ctx.fillText('[VIEW RADIOLOGY]', 55, 220);
+            ctx.fillText(t('cog_label_view_radiology'), 55, 220);
         },
 
         renderGamification(ctx, w, h) {
             ctx.fillStyle = '#fff';
-            ctx.fillText('YOUR LEARNING PROGRESS', 50, 120);
+            ctx.fillText(t('cog_label_learning_progress'), 50, 120);
             ctx.strokeStyle = '#fff';
             ctx.strokeRect(50, 130, 200, 15);
             ctx.fillStyle = '#f6e05e';
             ctx.fillRect(50, 130, 140, 15);
 
-            ctx.fillText('Rank: Neuro-Initiate', 50, 165);
-            ctx.fillText('Badges Earned:', 50, 190);
+            ctx.fillText(`${t('cog_label_rank')}: Neuro-Initiate`, 50, 165);
+            ctx.fillText(`${t('cog_label_badges')}:`, 50, 190);
             for(let i=0; i<3; i++) {
                 ctx.beginPath();
                 ctx.arc(65 + i*40, 215, 15, 0, Math.PI*2);
@@ -105,7 +107,7 @@
 
         renderCYOA(ctx, w, h) {
             ctx.fillStyle = '#fff';
-            ctx.fillText('SCENARIO: The Distracted Student', 50, 120);
+            ctx.fillText(`${t('cog_label_scenario')}: The Distracted Student`, 50, 120);
             ctx.font = 'italic 10px Arial';
             ctx.fillText('You are studying, but your phone buzzes. What do you do?', 50, 140);
 
@@ -153,15 +155,15 @@
 
             ctx.restore();
             ctx.fillStyle = '#fff';
-            ctx.fillText('Click card to flip manually', w/2 - 60, 220);
+            ctx.fillText(t('cog_label_flip_card'), w/2 - 60, 220);
         },
 
         renderMyths(ctx, w, h) {
             ctx.fillStyle = '#ff4d4d';
             ctx.font = 'bold 12px Arial';
-            ctx.fillText('MYTH: We only use 10% of our brain.', 50, 125);
+            ctx.fillText(`${t('cog_label_myth')}: We only use 10% of our brain.`, 50, 125);
             ctx.fillStyle = '#39ff14';
-            ctx.fillText('FACT: Brain imaging shows the entire', 50, 155);
+            ctx.fillText(`${t('cog_label_fact')}: Brain imaging shows the entire`, 50, 155);
             ctx.fillText('brain has a baseline level of activity', 50, 170);
             ctx.fillText('at all times, even during sleep.', 50, 185);
         },
@@ -209,7 +211,7 @@
             ctx.fill();
 
             ctx.fillStyle = '#fff';
-            ctx.fillText('VIDEO: Neural Signal Flow (0:45)', 60, 245);
+            ctx.fillText(t('cog_label_video_signal'), 60, 245);
         },
 
         renderHistoryTimeline(ctx, w, h) {
@@ -228,7 +230,7 @@
                 ctx.fillText(p, x - 15, 180);
             });
             ctx.fillStyle = '#fff';
-            ctx.fillText('Interactive History: The Cognitive Era', 50, 130);
+            ctx.fillText(t('cog_label_interactive_history'), 50, 130);
         },
 
         renderAccessibilityStatus(ctx, w, h) {
@@ -236,7 +238,7 @@
             ctx.fillRect(40, 110, 300, 60);
             ctx.fillStyle = '#39ff14';
             ctx.font = 'bold 12px Arial';
-            ctx.fillText('✓ WCAG 2.1 AA COMPLIANT', 55, 135);
+            ctx.fillText(t('cog_label_wcag_compliant'), 55, 135);
             ctx.fillStyle = '#fff';
             ctx.font = '10px Arial';
             ctx.fillText('Implementation: Screen reader tags, High contrast,', 55, 155);

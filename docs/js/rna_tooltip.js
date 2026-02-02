@@ -4,28 +4,6 @@
     const GreenhouseRNATooltip = {
         tooltipElement: null,
 
-        // Dictionary for Internationalization (i18n)
-        i18n: {
-            'en': {
-                'A': { title: 'Adenine (A)', desc: 'A purine base found in RNA that pairs with Uracil (U).' },
-                'U': { title: 'Uracil (U)', desc: 'A pyrimidine base found in RNA that pairs with Adenine (A). It replaces Thymine found in DNA.' },
-                'C': { title: 'Cytosine (C)', desc: 'A pyrimidine base found in RNA that pairs with Guanine (G).' },
-                'G': { title: 'Guanine (G)', desc: 'A purine base found in RNA that pairs with Cytosine (C).' },
-                'Ligase': { title: 'RNA Ligase', desc: 'An enzyme that repairs breaks in the RNA backbone by joining strand ends.' },
-                'Demethylase': { title: 'Demethylase (AlkB)', desc: 'An enzyme that removes methyl groups from damaged RNA bases via oxidative demethylation.' },
-                'Methylation': { title: 'Methylation Damage', desc: 'Addition of a methyl group to a base, which can interfere with RNA function and translation.' },
-                'Break': { title: 'Strand Break', desc: 'A physical cleavage of the RNA phosphodiester backbone.' }
-            },
-            'es': {
-                'A': { title: 'Adenina (A)', desc: 'Una base de purina en el ARN que se empareja con Uracilo (U).' },
-                'U': { title: 'Uracilo (U)', desc: 'Una base de pirimidina en el ARN que se empareja con Adenina (A).' },
-                'C': { title: 'Citosina (C)', desc: 'Una base de pirimidina en el ARN que se empareja con Guanina (G).' },
-                'G': { title: 'Guanina (G)', desc: 'Una base de purina en el ARN que se empareja con Citosina (C).' }
-            }
-        },
-
-        currentLang: 'en',
-
         initialize() {
             if (this.tooltipElement) return;
 
@@ -34,8 +12,8 @@
             this.tooltipElement.id = 'rna-tooltip';
             this.tooltipElement.style.position = 'absolute';
             this.tooltipElement.style.display = 'none';
-            this.tooltipElement.style.pointerEvents = 'none'; // Don't block mouse
-            this.tooltipElement.style.backgroundColor = 'rgba(20, 30, 40, 0.95)'; // Darker blue-ish for RNA theme
+            this.tooltipElement.style.pointerEvents = 'none'; 
+            this.tooltipElement.style.backgroundColor = 'rgba(20, 30, 40, 0.95)'; 
             this.tooltipElement.style.border = '1px solid #4ECDC4';
             this.tooltipElement.style.padding = '10px 15px';
             this.tooltipElement.style.borderRadius = '8px';
@@ -47,22 +25,45 @@
             this.tooltipElement.style.transition = 'opacity 0.2s';
 
             document.body.appendChild(this.tooltipElement);
+
+            // Listen for language changes
+            window.addEventListener('greenhouseLanguageChanged', () => {
+                this.hide(); // Hide tooltip on language change to avoid inconsistencies
+            });
         },
 
         // Show Tooltip at specific screen coordinates
         show(x, y, key) {
             if (!this.tooltipElement) this.initialize();
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
 
-            // Handle damage/enzyme keys that might be distinct
-            let lookupKey = key;
-            if (key && key.includes('Methylation')) lookupKey = 'Methylation';
+            // Map keys to translation keys
+            const keyMap = {
+                'A': 'rna_base_a',
+                'U': 'rna_base_u',
+                'C': 'rna_base_c',
+                'G': 'rna_base_g',
+                'Ligase': 'rna_ligase',
+                'RtcB': 'rna_ligase',
+                'Demethylase': 'rna_demethylase',
+                'AlkB': 'rna_demethylase',
+                'Methylation': 'rna_methylation',
+                'Break': 'rna_break',
+                'Ribosome': 'rna_ribosome',
+                'Ribosome (Stalled)': 'rna_ribosome_stalled',
+                'Pus1': 'rna_base_u', // Placeholder or add specific
+                'Dcp2': 'rna_break'    // Placeholder or add specific
+            };
 
-            const data = this.i18n[this.currentLang][lookupKey] || this.i18n[this.currentLang][key];
-            if (!data) return;
+            const baseKey = keyMap[key] || key;
+            const title = t(baseKey + '_title');
+            const desc = t(baseKey + '_desc');
+
+            if (title === baseKey + '_title') return; // Key not found
 
             this.tooltipElement.innerHTML = `
-                <div style="font-weight: bold; color: #4ECDC4; margin-bottom: 5px; border-bottom: 1px solid #4ECDC4; padding-bottom: 3px;">${data.title}</div>
-                <div style="font-size: 0.9em; line-height: 1.4; color: #e0e0e0;">${data.desc}</div>
+                <div style="font-weight: bold; color: #4ECDC4; margin-bottom: 5px; border-bottom: 1px solid #4ECDC4; padding-bottom: 3px;">${title}</div>
+                <div style="font-size: 0.9em; line-height: 1.4; color: #e0e0e0;">${desc}</div>
             `;
 
             this.tooltipElement.style.display = 'block';
@@ -73,12 +74,6 @@
         hide() {
             if (this.tooltipElement) {
                 this.tooltipElement.style.display = 'none';
-            }
-        },
-
-        setLanguage(lang) {
-            if (this.i18n[lang]) {
-                this.currentLang = lang;
             }
         }
     };

@@ -759,7 +759,7 @@
 
                     this.ctx.fillStyle = 'white';
                     this.ctx.font = 'bold 10px Arial';
-                    this.ctx.fillText("HnRNP", startBase.x - 45, (startBase.y + endBase.y) / 2);
+                    this.ctx.fillText(t("HnRNP"), startBase.x - 45, (startBase.y + endBase.y) / 2);
                     this.ctx.restore();
                 }
             });
@@ -781,7 +781,7 @@
             this.ctx.fillStyle = 'white';
             this.ctx.globalAlpha = 1;
             this.ctx.font = 'bold 12px Arial';
-            this.ctx.fillText("RIBOSOME", this.ribosome.x, this.ribosome.y + 5);
+            this.ctx.fillText(t("RIBOSOME"), this.ribosome.x, this.ribosome.y + 5);
             this.ctx.restore();
 
             // Draw Enzymes
@@ -811,7 +811,7 @@
 
                 this.ctx.fillStyle = 'white';
                 this.ctx.font = '12px Arial';
-                this.ctx.fillText(enzyme.name, enzyme.x, enzyme.y - enzyme.size - 5);
+                this.ctx.fillText(t(enzyme.name), enzyme.x, enzyme.y - enzyme.size - 5);
 
                 if (enzyme.state === 'repairing' || enzyme.state === 'decaying') {
                     this.ctx.beginPath();
@@ -932,21 +932,19 @@
 
         wrapper.appendChild(canvas);
 
-        if (isMobile) {
-            // Language toggle for RNA - Mobile Only
-            const langBtn = document.createElement('button');
-            langBtn.id = 'rna-lang-toggle';
-            langBtn.textContent = t('btn_language');
-            langBtn.style.cssText = `
-                position: absolute; top: 10px; right: 10px; z-index: 100;
-                background: #732751; color: white; border: none; padding: 5px 10px;
-                border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Quicksand', sans-serif;
-            `;
-            langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-            };
-            wrapper.appendChild(langBtn);
-        }
+        // Language toggle for RNA
+        const langBtn = document.createElement('button');
+        langBtn.id = 'rna-lang-toggle';
+        langBtn.textContent = t('btn_language');
+        langBtn.style.cssText = `
+            position: absolute; top: 10px; right: 10px; z-index: 100;
+            background: #732751; color: white; border: none; padding: 5px 10px;
+            border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Quicksand', sans-serif;
+        `;
+        langBtn.onclick = () => {
+            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+        };
+        wrapper.appendChild(langBtn);
 
         if (isMobile) {
             const staticHeader = document.querySelector('.page-header');

@@ -170,15 +170,15 @@
             this.generateDNA();
             if (this.updateInfoOverlay) this.updateInfoOverlay();
             const titles = {
-                'ber': t("Base Excision"),
-                'mmr': t("Mismatch Repair"),
-                'dsb': t("Double-Strand Break"),
-                'nhej': "Non-Homologous End Joining",
-                'ner': t("Nucleotide Excision"),
-                'hr': "Homologous Recombination",
-                'photo': "Direct Reversal (Photolyase)",
-                'mgmt': "MGMT Repair",
-                'replicate': "DNA Replication"
+                'ber': t("dna_ber_title"),
+                'mmr': t("dna_mmr_title"),
+                'dsb': t("dna_dsb_title"),
+                'nhej': t("dna_mode_nhej"),
+                'ner': t("dna_ner_title"),
+                'hr': t("dna_mode_hr"),
+                'photo': t("dna_mode_photo"),
+                'mgmt': t("dna_mode_mgmt"),
+                'replicate': t("dna_mode_replicate")
             };
             this.currentModeText = titles[mode];
         },
@@ -196,24 +196,10 @@
         },
 
         setupInteraction() {
-            let isDragging = false;
-            let lastX = 0;
-            let lastY = 0;
-            let lastTouchDistance = 0;
-
-            const handleStart = (x, y) => { isDragging = true; lastX = x; lastY = y; };
-            const handleMove = (x, y) => {
-                if (!isDragging) return;
-                const dx = x - lastX;
-                const dy = y - lastY;
-                this.state.camera.rotationX += dy * 0.005;
-                this.state.camera.x -= dx * 2;
-                lastX = x; lastY = y;
-            };
-
-            this.canvas.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
+            let isDragging = false; let lastX = 0; let lastY = 0;
+            this.canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
             window.addEventListener('mousemove', (e) => {
-                if (isDragging) { handleMove(e.clientX, e.clientY); return; }
+                if (isDragging) { const dx = e.clientX - lastX; const dy = e.clientY - lastY; this.state.camera.rotationX += dy * 0.005; this.state.camera.x -= dx * 2; lastX = e.clientX; lastY = e.clientY; return; }
                 if (window.GreenhouseDNATooltip) {
                     const rect = this.canvas.getBoundingClientRect();
                     const mx = e.clientX - rect.left; const my = e.clientY - rect.top;
@@ -232,40 +218,7 @@
                 }
             });
             window.addEventListener('mouseup', () => { isDragging = false; });
-
-            // Touch Support
-            this.canvas.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 1) {
-                    handleStart(e.touches[0].clientX, e.touches[0].clientY);
-                } else if (e.touches.length === 2) {
-                    isDragging = false;
-                    const dx = e.touches[1].clientX - e.touches[0].clientX;
-                    const dy = e.touches[1].clientY - e.touches[0].clientY;
-                    lastTouchDistance = Math.hypot(dx, dy);
-                }
-            }, { passive: true });
-
-            this.canvas.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 1) {
-                    handleMove(e.touches[0].clientX, e.touches[0].clientY);
-                    e.preventDefault();
-                } else if (e.touches.length === 2) {
-                    const dx = e.touches[1].clientX - e.touches[0].clientX;
-                    const dy = e.touches[1].clientY - e.touches[0].clientY;
-                    const dist = Math.hypot(dx, dy);
-                    if (lastTouchDistance > 0) {
-                        const delta = dist - lastTouchDistance;
-                        this.state.camera.z += delta * 2;
-                        this.state.camera.z = Math.min(-100, Math.max(-1500, this.state.camera.z));
-                    }
-                    lastTouchDistance = dist;
-                    e.preventDefault();
-                }
-            }, { passive: false });
-
-            this.canvas.addEventListener('touchend', () => { isDragging = false; lastTouchDistance = 0; });
-
-            this.canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.state.camera.z += e.deltaY * 0.5; this.state.camera.z = Math.min(-100, Math.max(-1500, this.state.camera.z)); }, { passive: false });
+            this.canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.state.camera.z += e.deltaY * 0.5; this.state.camera.z = Math.min(-100, Math.max(-1500, this.state.camera.z)); });
         },
 
         animate() { if (!this.isRunning) return; this.update(); this.render(); requestAnimationFrame(() => this.animate()); },
@@ -286,7 +239,7 @@
                         this.handleHR(st.timer);
                     } else {
                         // Biological constraint: HR requires a sister chromatid, only available in S/G2
-                        this.currentModeText = "HR Blocked (Requires S or G2)";
+                        this.currentModeText = t("dna_hr_blocked");
                     }
                 }
                 else if (m === 'photo' && this.handlePhotolyase) this.handlePhotolyase(st.timer);

@@ -86,6 +86,7 @@
         drawLabels(ctx, projectedNeurons) {
             const util = window.GreenhouseModelsUtil;
             const t = util ? util.t.bind(util) : (k) => k;
+            const canvasWidth = ctx.canvas.width;
 
             if (projectedNeurons.length === 0) return;
 

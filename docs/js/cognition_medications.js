@@ -7,6 +7,8 @@
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseCognitionMedications = {
         init(app) {
             this.app = app;
@@ -23,60 +25,60 @@
             // Header
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText(`MEDICATION MECHANISM: ${activeEnhancement.name.toUpperCase()}`, 20, 70);
+            ctx.fillText(`MEDICATION MECHANISM: ${t(activeEnhancement.name).toUpperCase()}`, 20, 70);
 
             ctx.font = '12px Arial';
             ctx.fillStyle = '#fff';
-            ctx.fillText(`Target Region: ${this.app.config.regions[activeEnhancement.region]?.name || activeEnhancement.region}`, 20, 90);
+            ctx.fillText(`Target Region: ${t(this.app.config.regions[activeEnhancement.region]?.name) || activeEnhancement.region}`, 20, 90);
 
             // Specific logic
             if (activeEnhancement.id === 81) { // SSRI
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#00ff00', 'Serotonin Reuptake Inhibition');
+                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#00ff00', t('cog_label_serotonin_reuptake'));
             }
             if (activeEnhancement.id === 82) { // Dopamine Blockade
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff4d4d', 'D2 Receptor Blockade');
+                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff4d4d', t('cog_label_d2_blockade'));
             }
             if (activeEnhancement.id === 83) { // ADHD Stimulants
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ffff00', 'Increased NE/DA Concentration');
+                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ffff00', t('cog_label_increased_ne_da'));
             }
             if (activeEnhancement.id === 84) { // GABA
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#4da6ff', 'GABAergic Potentiation (Inhibitory)');
+                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#4da6ff', t('cog_label_gaba_potentiation'));
             }
             if (activeEnhancement.id === 85) { // Lithium
-                this.drawStabilization(ctx, w * 0.5, h * 0.5, '#ffffff', 'Intracellular Signal Stabilization');
+                this.drawStabilization(ctx, w * 0.5, h * 0.5, '#ffffff', t('cog_label_signal_stabilization'));
             }
             if (activeEnhancement.id === 86) { // SNRI
-                this.drawSynapseDual(ctx, w * 0.5, h * 0.45, '#00ff00', '#ffff00', 'Dual Action: 5-HT & NE');
+                this.drawSynapseDual(ctx, w * 0.5, h * 0.45, '#00ff00', '#ffff00', t('cog_label_dual_action'));
             }
             if (activeEnhancement.id === 87) { // Ketamine
-                this.drawRapidSynaptogenesis(ctx, w * 0.5, h * 0.5, '#4fd1c5', 'Rapid Synaptogenesis Burst');
+                this.drawRapidSynaptogenesis(ctx, w * 0.5, h * 0.5, '#4fd1c5', t('cog_label_synaptogenesis_burst'));
             }
             if (activeEnhancement.id === 88) { // MAOI
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff9900', 'MAO Enzyme Inhibition');
+                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff9900', t('cog_label_mao_inhibition'));
             }
             if (activeEnhancement.id === 89) { // Acetylcholinesterase
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff9900', 'Inhibiting Enzyme Breakdown (ACh)');
+                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff9900', t('cog_label_ach_inhibition'));
             }
             if (activeEnhancement.id === 90) { // Side Effects
-                this.drawEPS(ctx, w * 0.6, h * 0.6, '#ff4d4d', 'Extrapyramidal Side Effects (EPS)');
+                this.drawEPS(ctx, w * 0.6, h * 0.6, '#ff4d4d', t('cog_label_eps_effects'));
             }
             if (activeEnhancement.id === 91) { // BBB
-                this.drawBBB(ctx, w * 0.5, h * 0.5, '#ffffff', 'Blood-Brain Barrier Permeability');
+                this.drawBBB(ctx, w * 0.5, h * 0.5, '#ffffff', t('cog_label_bbb_permeability'));
             }
             if (activeEnhancement.id === 92) { // Occupancy
-                this.drawOccupancy(ctx, w * 0.5, h * 0.5, '#39ff14', 'Receptor Occupancy: ~70-80%');
+                this.drawOccupancy(ctx, w * 0.5, h * 0.5, '#39ff14', t('cog_label_receptor_occupancy'));
             }
             if (activeEnhancement.id === 93) { // Tolerance
-                this.drawDownregulation(ctx, w * 0.5, h * 0.5, '#ff9900', 'Receptor Down-regulation');
+                this.drawDownregulation(ctx, w * 0.5, h * 0.5, '#ff9900', t('cog_label_receptor_downregulation'));
             }
             if (activeEnhancement.id === 94) { // Withdrawal
-                this.drawRebound(ctx, w * 0.5, h * 0.6, '#ff0000', 'Withdrawal Rebound Effect');
+                this.drawRebound(ctx, w * 0.5, h * 0.6, '#ff0000', t('cog_label_withdrawal_rebound'));
             }
             if (activeEnhancement.id === 95) { // Pharmacogenomic
-                this.drawDNAVariation(ctx, w * 0.5, h * 0.5, '#4da6ff', 'Genetic Metabolism Variation');
+                this.drawDNAVariation(ctx, w * 0.5, h * 0.5, '#4da6ff', t('cog_label_genetic_metabolism'));
             }
             if (activeEnhancement.id === 96) { // Steady State
-                this.drawConcentrationCurve(ctx, w * 0.6, h * 0.3, '#4da6ff', 'Steady-State Concentration Tracking');
+                this.drawConcentrationCurve(ctx, w * 0.6, h * 0.3, '#4da6ff', t('cog_label_steady_state'));
             }
             if (activeEnhancement.id === 97) { // Polypharmacy
                 this.drawInteractions(ctx, w * 0.5, h * 0.5);
@@ -360,7 +362,7 @@
             ctx.lineTo(x - 40, y + 40);
             ctx.stroke();
             ctx.fillStyle = '#ff4d4d';
-            ctx.fillText('Complex Drug Interaction', x - 70, y + 60);
+            ctx.fillText(t('cog_label_complex_interaction'), x - 70, y + 60);
         },
 
         drawNovel(ctx, x, y, color, label) {
@@ -380,7 +382,7 @@
             ctx.beginPath();
             ctx.arc(x, y, 15, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillText('Metabolic Health Impact', x - 70, y + 40);
+            ctx.fillText(t('cog_label_metabolic_impact'), x - 70, y + 40);
         },
 
         drawOfflineSync(ctx, x, y) {
@@ -392,7 +394,7 @@
             ctx.beginPath();
             ctx.arc(x, y, 20, 0, Math.PI * 2);
             ctx.stroke();
-            ctx.fillText('PWA: Local Model Synced', x - 70, y + 40);
+            ctx.fillText(t('cog_label_offline_sync'), x - 70, y + 40);
         }
     };
 

@@ -7,6 +7,8 @@
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseCognitionAnalytics = {
         init(app) {
             this.app = app;
@@ -35,7 +37,7 @@
             const w = this.app.canvas.width;
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('EXPLODED CORTICAL VIEW', 20, 70);
+            ctx.fillText(t('cog_label_exploded_view'), 20, 70);
 
             const layers = ['I. Molecular', 'II. External Granular', 'III. External Pyramidal', 'IV. Internal Granular', 'V. Internal Pyramidal', 'VI. Multiform'];
             layers.forEach((layer, i) => {
@@ -76,7 +78,7 @@
 
             ctx.fillStyle = '#39ff14';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('SIGNAL PROPAGATION PATHWAY', 20, 70);
+            ctx.fillText(t('cog_label_signal_path'), 20, 70);
 
             ctx.strokeStyle = '#39ff14';
             ctx.lineWidth = 2;
@@ -129,18 +131,18 @@
             // System 1
             ctx.fillStyle = '#ff4d4d';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('SYSTEM 1: AUTOMATIC', w * 0.05, 100);
+            ctx.fillText(t('cog_label_system1'), w * 0.05, 100);
             ctx.font = '11px Arial';
             const traits1 = ['• Intuitive', '• Fast', '• Emotional', '• Implicit', '• Reflexive'];
-            traits1.forEach((t, i) => ctx.fillText(t, w * 0.05, 130 + i * 20));
+            traits1.forEach((txt, i) => ctx.fillText(txt, w * 0.05, 130 + i * 20));
 
             // System 2
             ctx.fillStyle = '#4da6ff';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('SYSTEM 2: EFFORTFUL', w * 0.55, 100);
+            ctx.fillText(t('cog_label_system2'), w * 0.55, 100);
             ctx.font = '11px Arial';
             const traits2 = ['• Analytical', '• Slow', '• Logical', '• Explicit', '• Deliberate'];
-            traits2.forEach((t, i) => ctx.fillText(t, w * 0.55, 130 + i * 20));
+            traits2.forEach((txt, i) => ctx.fillText(txt, w * 0.55, 130 + i * 20));
 
             // Central icon
             ctx.strokeStyle = '#fff';
@@ -149,8 +151,8 @@
             ctx.stroke();
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 10px Arial';
-            ctx.fillText('COGNITIVE', w/2 - 25, h/2 - 5);
-            ctx.fillText('CONTROL', w/2 - 22, h/2 + 10);
+            ctx.fillText(t('cog_label_cognitive'), w/2 - 25, h/2 - 5);
+            ctx.fillText(t('cog_label_control'), w/2 - 22, h/2 + 10);
         },
 
         renderAnatomicalTooltips(ctx) {
@@ -158,7 +160,7 @@
             const h = this.app.canvas.height;
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('ANATOMICAL HUD INTERFACE', 20, 70);
+            ctx.fillText(t('cog_label_hud'), 20, 70);
 
             // Connection line
             ctx.strokeStyle = '#4fd1c5';
@@ -175,12 +177,12 @@
 
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 12px Arial';
-            ctx.fillText('IDENTIFIED: Superior Frontal Gyrus', w - 240, 85);
+            ctx.fillText(`${t('cog_label_identified')}: Superior Frontal Gyrus`, w - 240, 85);
             ctx.font = '10px Arial';
             ctx.fillStyle = '#fff';
             ctx.fillText('Brodmann Area: 9/10', w - 240, 105);
-            ctx.fillText('Volume: 14.2 cm³', w - 240, 120);
-            ctx.fillText('Activity Index: 0.82 [HIGH]', w - 240, 135);
+            ctx.fillText(`${t('cog_label_volume')}: 14.2 cm³`, w - 240, 120);
+            ctx.fillText(`${t('cog_label_activity')}: 0.82 [${t('cog_label_high')}]`, w - 240, 135);
         },
 
         renderLesionMode(ctx) {
@@ -188,7 +190,7 @@
             const h = this.app.canvas.height;
             ctx.fillStyle = '#ff4d4d';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('LESION STUDY SIMULATION', 20, 70);
+            ctx.fillText(t('cog_label_lesion_study'), 20, 70);
 
             // Damage area
             ctx.fillStyle = 'rgba(255, 77, 77, 0.3)';
@@ -204,13 +206,13 @@
 
             ctx.fillStyle = '#fff';
             ctx.font = '12px Arial';
-            ctx.fillText('SIMULATED DEFICIT: Retrograde Amnesia', 20, 95);
+            ctx.fillText(`${t('cog_label_deficit')}: Retrograde Amnesia`, 20, 95);
             ctx.fillStyle = '#ff4d4d';
             ctx.fillRect(20, 110, 320, 45);
             ctx.fillStyle = '#000';
             ctx.font = 'bold 11px Arial';
-            ctx.fillText('WARNING: Neural pathway interruption detected.', 30, 130);
-            ctx.fillText('Impact: Hippocampal-Cortical dissociation.', 30, 145);
+            ctx.fillText(`${t('cog_label_warning')}: Neural pathway interruption detected.`, 30, 130);
+            ctx.fillText(`${t('cog_label_impact')}: Hippocampal-Cortical dissociation.`, 30, 145);
         },
 
         renderMeSHLinkage(ctx) {
@@ -218,7 +220,7 @@
             const w = this.app.canvas.width;
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText('MeSH RESEARCH LINKAGE: REAL-TIME TRENDS', 20, 70);
+            ctx.fillText(t('cog_label_mesh_link'), 20, 70);
 
             ctx.fillStyle = 'rgba(0, 40, 40, 0.9)';
             ctx.fillRect(20, 90, 380, 180);
@@ -258,7 +260,7 @@
 
             ctx.font = 'italic 9px Arial';
             ctx.fillStyle = '#fff';
-            ctx.fillText('Data source: PubMed Baseline (scripts/research/mesh/data/discovery_stats.csv)', 30, 260);
+            ctx.fillText(`${t('cog_label_data_source')}: PubMed Baseline (scripts/research/mesh/data/discovery_stats.csv)`, 30, 260);
         },
 
         showMeSHDisclaimer() {
@@ -286,14 +288,12 @@
                 border-radius: 8px;
             `;
             modal.innerHTML = `
-                <h4 style="color: #4fd1c5; margin-top: 0;">Experimental Data Warning</h4>
+                <h4 style="color: #4fd1c5; margin-top: 0;">${t('cog_label_mesh_warn')}</h4>
                 <p style="font-size: 12px; line-height: 1.5;">
-                    The MeSH research linkage displays experimental data derived from PubMed baseline analysis.
-                    These trends are for research simulation purposes and are <strong>not confirmed</strong>
-                    medical or scientific facts.
+                    ${t('cog_label_mesh_warn_text')}
                 </p>
                 <button id="close-mesh-disclaimer" style="background: #4fd1c5; color: #1a202c; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px;">
-                    I UNDERSTAND
+                    ${t('cog_btn_understand')}
                 </button>
             `;
 
@@ -314,7 +314,7 @@
 
             ctx.fillStyle = '#4da6ff';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText(`VISUALIZATION: ${activeEnhancement.name.toUpperCase()}`, 20, 70);
+            ctx.fillText(`VISUALIZATION: ${t(activeEnhancement.name).toUpperCase()}`, 20, 70);
 
             if (activeEnhancement.id === 101) { // 3D Network
                 this.draw3DNetwork(ctx, w, h, time);

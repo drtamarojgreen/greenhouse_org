@@ -7,6 +7,8 @@
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseCognitionInterventions = {
         init(app) {
             this.app = app;
@@ -23,60 +25,60 @@
             // Header
             ctx.fillStyle = '#4fd1c5';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText(`INTERVENTION: ${activeEnhancement.name.toUpperCase()}`, 20, 70);
+            ctx.fillText(`INTERVENTION: ${t(activeEnhancement.name).toUpperCase()}`, 20, 70);
 
             ctx.font = '12px Arial';
             ctx.fillStyle = '#fff';
-            ctx.fillText(`Target Region: ${this.app.config.regions[activeEnhancement.region]?.name || activeEnhancement.region}`, 20, 90);
+            ctx.fillText(`Target Region: ${t(this.app.config.regions[activeEnhancement.region]?.name) || activeEnhancement.region}`, 20, 90);
 
             // Specific logic
             if (activeEnhancement.id === 56) { // CBT
-                this.drawRegulation(ctx, w * 0.4, h * 0.3, w * 0.5, h * 0.5, '#4da6ff', 'PFC Top-Down Regulation');
+                this.drawRegulation(ctx, w * 0.4, h * 0.3, w * 0.5, h * 0.5, '#4da6ff', t('cog_label_topdown_reg'));
             }
             if (activeEnhancement.id === 57) { // Mindfulness
-                this.drawPulse(ctx, w * 0.5, h * 0.45, '#00ffcc', 'Increased ACC/Insula Awareness');
+                this.drawPulse(ctx, w * 0.5, h * 0.45, '#00ffcc', t('cog_label_acc_awareness'));
             }
             if (activeEnhancement.id === 58) { // DBS
-                this.drawElectrode(ctx, w * 0.5, h * 0.4, '#ffff00', 'DBS Area 25 Stimulation');
+                this.drawElectrode(ctx, w * 0.5, h * 0.4, '#ffff00', t('cog_label_dbs_stimulation'));
             }
             if (activeEnhancement.id === 59) { // TMS
-                this.drawTMS(ctx, w * 0.4, h * 0.35, '#39ff14', 'TMS DLPFC Modulation');
+                this.drawTMS(ctx, w * 0.4, h * 0.35, '#39ff14', t('cog_label_tms_modulation'));
             }
             if (activeEnhancement.id === 60) { // Exposure
-                this.drawDesensitization(ctx, w * 0.5, h * 0.5, '#ff4d4d', 'Amygdala Habituation');
+                this.drawDesensitization(ctx, w * 0.5, h * 0.5, '#ff4d4d', t('cog_label_amygdala_habituation'));
             }
             if (activeEnhancement.id === 61) { // Biofeedback
-                this.drawWaves(ctx, w * 0.5, h * 0.5, '#4da6ff', 'Simulated EEG States');
+                this.drawWaves(ctx, w * 0.5, h * 0.5, '#4da6ff', t('cog_label_eeg_states'));
             }
             if (activeEnhancement.id === 62) { // Cognitive Remediation
-                this.drawExercise(ctx, w * 0.35, h * 0.35, '#ffff00', 'Targeted Executive Stimulation');
+                this.drawExercise(ctx, w * 0.35, h * 0.35, '#ffff00', t('cog_label_exec_stimulation'));
             }
             if (activeEnhancement.id === 63) { // EMDR
-                this.drawEMDR(ctx, w * 0.5, h * 0.5, '#ff9900', 'Bilateral Stimulation');
+                this.drawEMDR(ctx, w * 0.5, h * 0.5, '#ff9900', t('cog_label_bilateral_stim'));
             }
             if (activeEnhancement.id === 64) { // BDNF
-                this.drawGrowthFactors(ctx, w * 0.5, h * 0.6, '#00ff00', 'Exercise-Induced BDNF Release');
+                this.drawGrowthFactors(ctx, w * 0.5, h * 0.6, '#00ff00', t('cog_label_bdnf_release'));
             }
             if (activeEnhancement.id === 65) { // Sleep
-                this.drawGlymphatic(ctx, w * 0.5, h * 0.5, '#4da6ff', 'Glymphatic Waste Clearance');
+                this.drawGlymphatic(ctx, w * 0.5, h * 0.5, '#4da6ff', t('cog_label_glymphatic_clearance'));
             }
             if (activeEnhancement.id === 66) { // Social Skills
-                this.drawPulse(ctx, w * 0.6, h * 0.5, '#ff00ff', 'Mirror Neuron & TPJ Strengthening');
+                this.drawPulse(ctx, w * 0.6, h * 0.5, '#ff00ff', t('cog_label_mirror_social'));
             }
             if (activeEnhancement.id === 67) { // ACT
-                this.drawFlexibility(ctx, w * 0.5, h * 0.5, '#4fd1c5', 'Psychological Flexibility Hub');
+                this.drawFlexibility(ctx, w * 0.5, h * 0.5, '#4fd1c5', t('cog_label_flexibility_hub'));
             }
             if (activeEnhancement.id === 68) { // DBT
-                this.drawBalance(ctx, w * 0.5, h * 0.5, '#ff9900', 'Dialectics: Acceptance & Change');
+                this.drawBalance(ctx, w * 0.5, h * 0.5, '#ff9900', t('cog_label_dialectics'));
             }
             if (activeEnhancement.id === 69) { // Art Therapy
                 this.drawColorSplash(ctx, w * 0.5, h * 0.5);
             }
             if (activeEnhancement.id === 70) { // Music Therapy
-                this.drawSoundWaves(ctx, w * 0.5, h * 0.5, '#ff00ff', 'Multi-sensory Resonance');
+                this.drawSoundWaves(ctx, w * 0.5, h * 0.5, '#ff00ff', t('cog_label_multi_resonance'));
             }
             if (activeEnhancement.id === 71) { // ADHD Neurofeedback
-                this.drawFrequencyBars(ctx, w * 0.5, h * 0.5, '#ffff00', 'Theta/Beta Ratio Target');
+                this.drawFrequencyBars(ctx, w * 0.5, h * 0.5, '#ffff00', t('cog_label_theta_beta'));
             }
             if (activeEnhancement.id === 72) { // VR Exposure
                 this.drawVROverlay(ctx, w * 0.5, h * 0.5);
@@ -85,10 +87,10 @@
                 this.drawVagusBreathing(ctx, w * 0.5, h * 0.7);
             }
             if (activeEnhancement.id === 74) { // Narrative
-                this.drawSchema(ctx, w * 0.4, h * 0.4, '#ffffff', 'Re-authoring Self-Schemas');
+                this.drawSchema(ctx, w * 0.4, h * 0.4, '#ffffff', t('cog_label_reauthoring_schema'));
             }
             if (activeEnhancement.id === 75) { // VNS
-                this.drawVNS(ctx, w * 0.5, h * 0.8, '#00ffff', 'Vagus Nerve Stimulation');
+                this.drawVNS(ctx, w * 0.5, h * 0.8, '#00ffff', t('cog_label_vns_stim'));
             }
             if (activeEnhancement.id === 76) { // Social Interaction
                 this.drawOxytocin(ctx, w * 0.5, h * 0.5);
@@ -187,7 +189,7 @@
             ctx.bezierCurveTo(x - 50, y - 100, x + 50, y - 200, x, y - 300);
             ctx.stroke();
             ctx.fillStyle = '#fff';
-            ctx.fillText(scale > 1 ? 'INHALE' : 'EXHALE', x + 20, y - 150);
+            ctx.fillText(scale > 1 ? t('cog_label_vagus_inhale') : t('cog_label_vagus_exhale'), x + 20, y - 150);
         },
 
         drawVNS(ctx, x, y, color, label) {
@@ -370,7 +372,7 @@
             });
             ctx.globalAlpha = 1.0;
             ctx.fillStyle = '#fff';
-            ctx.fillText('Art Therapy: Emotional Expression', x - 80, y + 60);
+            ctx.fillText(t('cog_label_art_expression'), x - 80, y + 60);
         },
 
         drawVROverlay(ctx, x, y) {
@@ -387,9 +389,9 @@
             }
             ctx.fillStyle = '#ff4d4d';
             ctx.font = 'bold 12px Courier New';
-            ctx.fillText('VR_MODE: PHOBIA_EXPOSURE', x - 100, y - 40);
+            ctx.fillText(t('cog_label_vr_phobia'), x - 100, y - 40);
             ctx.fillStyle = '#4da6ff';
-            ctx.fillText('TARGET: AMYGDALA_EXTINCTION', x - 100, y + 40);
+            ctx.fillText(t('cog_label_vr_amygdala'), x - 100, y + 40);
 
             // HUD elements
             ctx.strokeStyle = '#39ff14';
@@ -422,7 +424,7 @@
                 ctx.arc(x + Math.sin(time + i) * 40, y + Math.cos(time + i) * 40, 5, 0, Math.PI * 2);
                 ctx.fill();
             }
-            ctx.fillText('Oxytocin Surge: Social Bonding', x - 70, y + 70);
+            ctx.fillText(t('cog_label_oxytocin_surge'), x - 70, y + 70);
         },
 
         drawSafety(ctx, x, y) {
@@ -432,7 +434,7 @@
             ctx.arc(x, y, 60, 0, Math.PI * 2);
             ctx.stroke();
             ctx.fillStyle = '#4da6ff';
-            ctx.fillText('Safety Boundary: Limbic Calming', x - 80, y + 80);
+            ctx.fillText(t('cog_label_safety_boundary'), x - 80, y + 80);
         },
 
         drawChangeTalk(ctx, x, y) {
@@ -440,7 +442,7 @@
             ctx.font = 'italic 12px Arial';
             ctx.fillText('"I want to change..."', x, y);
             ctx.font = '12px Arial';
-            ctx.fillText('Motivational Interviewing: Change-Talk', x - 50, y + 30);
+            ctx.fillText(t('cog_label_change_talk'), x - 50, y + 30);
         },
 
         drawPlay(ctx, x, y) {
@@ -449,7 +451,7 @@
             ctx.beginPath();
             ctx.arc(x + Math.cos(time) * 30, y + Math.sin(time) * 30, 10, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillText('Play Therapy: Reward & Social Activation', x - 90, y + 60);
+            ctx.fillText(t('cog_label_play_reward'), x - 90, y + 60);
         },
 
         drawArrowLine(ctx, fromx, fromy, tox, toy) {
