@@ -8,11 +8,12 @@ const fs = require('fs');
 const path = require('path');
 
 const JS_DIR = path.join(__dirname, '../docs/js');
+const MODELS_LANG_PATH = path.join(JS_DIR, 'models_lang.js');
 const MODELS_UTIL_PATH = path.join(JS_DIR, 'models_util.js');
 
-// 1. Extract translations from models_util.js
+// 1. Extract translations from models_lang.js
 function getTranslations() {
-    const code = fs.readFileSync(MODELS_UTIL_PATH, 'utf8');
+    const code = fs.readFileSync(MODELS_LANG_PATH, 'utf8');
     const enMatch = code.match(/en: \{([\s\S]*?)\},/);
     const esMatch = code.match(/es: \{([\s\S]*?)\}/);
 
