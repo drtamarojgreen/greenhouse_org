@@ -450,6 +450,7 @@
             const GreenhouseUtils = window.GreenhouseUtils;
 
             // Load modular simulation components
+            await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('dopamine_legend.js', baseUrl);

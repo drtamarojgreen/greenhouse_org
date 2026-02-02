@@ -345,6 +345,7 @@
             const baseUrl = attrBaseUrl || './';
             if (baseUrl !== null) {
                 // Load modular simulation components
+                await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
                 await GreenhouseUtils.loadScript('models_util.js', baseUrl);
                 await GreenhouseUtils.loadScript('dna_repair_mechanisms.js', baseUrl);
                 await GreenhouseUtils.loadScript('dna_repair_mutations.js', baseUrl);

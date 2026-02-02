@@ -89,6 +89,7 @@
             }
 
             // Load the modules sequentially
+            await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_config.js', baseUrl);
