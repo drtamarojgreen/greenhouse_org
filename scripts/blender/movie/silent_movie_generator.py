@@ -353,52 +353,6 @@ class MovieMaster:
         scene01.setup_scene(self)
 
         self.animate_iris(1, 48, mode='IN')
-        self.animate_iris(90, 100, mode='OUT')
-        self.animate_iris(101, 110, mode='IN')
-        self.animate_iris(190, 200, mode='OUT')
-        self.animate_iris(201, 210, mode='IN')
-        self.animate_iris(390, 400, mode='OUT')
-        self.animate_iris(401, 410, mode='IN')
-        self.animate_iris(490, 500, mode='OUT')
-        self.animate_iris(501, 510, mode='IN')
-        self.animate_iris(640, 650, mode='OUT')
-        self.animate_iris(651, 660, mode='IN')
-        self.animate_iris(740, 750, mode='OUT')
-        self.animate_iris(751, 760, mode='IN')
-        self.animate_iris(940, 950, mode='OUT')
-        self.animate_iris(951, 960, mode='IN')
-        self.animate_iris(1040, 1050, mode='OUT')
-        self.animate_iris(1051, 1060, mode='IN')
-        self.animate_iris(1240, 1250, mode='OUT')
-        self.animate_iris(1251, 1260, mode='IN')
-        self.animate_iris(1340, 1350, mode='OUT')
-        self.animate_iris(1351, 1360, mode='IN')
-        self.animate_iris(1490, 1500, mode='OUT')
-        self.animate_iris(1501, 1510, mode='IN')
-        self.animate_iris(1590, 1600, mode='OUT')
-        self.animate_iris(1601, 1610, mode='IN')
-        self.animate_iris(1790, 1800, mode='OUT')
-        self.animate_iris(1801, 1810, mode='IN')
-        self.animate_iris(1890, 1900, mode='OUT')
-        self.animate_iris(1901, 1910, mode='IN')
-        self.animate_iris(2490, 2500, mode='OUT')
-        self.animate_iris(2501, 2510, mode='IN')
-        self.animate_iris(2590, 2600, mode='OUT')
-        self.animate_iris(2601, 2610, mode='IN')
-        self.animate_iris(2890, 2900, mode='OUT')
-        self.animate_iris(2901, 2910, mode='IN')
-        self.animate_iris(2990, 3000, mode='OUT')
-        self.animate_iris(3001, 3010, mode='IN')
-        self.animate_iris(3490, 3500, mode='OUT')
-        self.animate_iris(3501, 3510, mode='IN')
-        self.animate_iris(3590, 3600, mode='OUT')
-        self.animate_iris(3601, 3610, mode='IN')
-        self.animate_iris(3790, 3800, mode='OUT')
-        self.animate_iris(3801, 3810, mode='IN')
-        self.animate_iris(3890, 3900, mode='OUT')
-        self.animate_iris(3901, 3910, mode='IN')
-        self.animate_iris(4490, 4500, mode='OUT')
-        self.animate_iris(4501, 4510, mode='IN')
         self.animate_iris(4990, 5000, mode='OUT')
 
         scene02.setup_scene(self)
@@ -575,45 +529,8 @@ class MovieMaster:
         return spark
 
     def animate_iris(self, frame_start, frame_end, mode='OUT'):
-        """Animates the iris mask and Chemical Burn in the compositor."""
-        if self.mode != 'SILENT_FILM': return
-        tree = self.scene.node_tree
-        iris = tree.nodes.get("IrisMask")
-        burn = tree.nodes.get("BurnMix")
-        if not iris: return
-
-        if mode == 'OUT':
-            iris.width = 1.6
-            iris.height = 1.6
-            iris.keyframe_insert(data_path="width", frame=frame_start)
-            iris.keyframe_insert(data_path="height", frame=frame_start)
-            iris.width = 0.0
-            iris.height = 0.0
-            iris.keyframe_insert(data_path="width", frame=frame_end)
-            iris.keyframe_insert(data_path="height", frame=frame_end)
-            if burn:
-                burn.inputs[0].default_value = 0.0
-                burn.inputs[0].keyframe_insert(data_path="default_value", frame=frame_start)
-                burn.inputs[0].default_value = 0.4
-                burn.inputs[0].keyframe_insert(data_path="default_value", frame=(frame_start+frame_end)//2)
-                burn.inputs[0].default_value = 0.0
-                burn.inputs[0].keyframe_insert(data_path="default_value", frame=frame_end)
-        else:
-            iris.width = 0.4 # Start slightly open for immediate branding visibility
-            iris.height = 0.4
-            iris.keyframe_insert(data_path="width", frame=frame_start)
-            iris.keyframe_insert(data_path="height", frame=frame_start)
-            iris.width = 1.6 # Expand fully beyond frame edges for clear viewing
-            iris.height = 1.6
-            iris.keyframe_insert(data_path="width", frame=frame_end)
-            iris.keyframe_insert(data_path="height", frame=frame_end)
-            if burn:
-                burn.inputs[0].default_value = 0.0
-                burn.inputs[0].keyframe_insert(data_path="default_value", frame=frame_start)
-                burn.inputs[0].default_value = 0.4
-                burn.inputs[0].keyframe_insert(data_path="default_value", frame=(frame_start+frame_end)//2)
-                burn.inputs[0].default_value = 0.0
-                burn.inputs[0].keyframe_insert(data_path="default_value", frame=frame_end)
+        """No longer uses an obstructive mask."""
+        pass
 
     def setup_camera_keyframes(self, cam, target):
         title_loc = (0, -12, 0) # Moved back for better proportion
@@ -691,7 +608,6 @@ class MovieMaster:
         rl = tree.nodes.new('CompositorNodeRLayers')
         composite = tree.nodes.new('CompositorNodeComposite')
         if self.mode == 'SILENT_FILM':
-            bw = tree.nodes.new('CompositorNodeRGBToBW')
             bright = tree.nodes.new('CompositorNodeBrightContrast')
             bright.inputs['Contrast'].default_value = 1.3 # Further lowered to soften the look and prevent crushing
             for f in range(1, 5001, 2):
@@ -712,14 +628,14 @@ class MovieMaster:
             mix_scratches.blend_type = 'MULTIPLY'
             mix_scratches.inputs[0].default_value = 0.1
             mask = tree.nodes.new('CompositorNodeEllipseMask')
-            mask.width, mask.height = 1.5, 1.3 # Increased size for a wider, non-obstructive vignette
+            mask.width, mask.height = 3.0, 2.5 # Far off-canvas
             blur = tree.nodes.new('CompositorNodeBlur')
-            blur.size_x = blur.size_y = 300 # Heavier blur for a softer edge transition
+            blur.size_x = blur.size_y = 600 # Extremely soft transition
             mix_vignette = tree.nodes.new('CompositorNodeMixRGB')
             mix_vignette.blend_type = 'MULTIPLY'
-            mix_vignette.inputs[0].default_value = 0.5 # Reduced factor to make it subtle rather than pure black
-            tree.links.new(rl.outputs['Image'], bw.inputs['Image'])
-            tree.links.new(bw.outputs['Val'], bright.inputs['Image'])
+            mix_vignette.inputs[0].default_value = 0.1 # Barely perceptible edge dimming
+            
+            tree.links.new(rl.outputs['Image'], bright.inputs['Image'])
             tree.links.new(bright.outputs['Image'], mix_grain.inputs[1])
             tree.links.new(noise.outputs['Value'], mix_grain.inputs[2])
             tree.links.new(mix_grain.outputs['Image'], mix_scratches.inputs[1])
@@ -727,29 +643,9 @@ class MovieMaster:
             tree.links.new(mask.outputs['Mask'], blur.inputs['Image'])
             tree.links.new(mix_scratches.outputs['Image'], mix_vignette.inputs[1])
             tree.links.new(blur.outputs['Image'], mix_vignette.inputs[2])
-            iris_mask = tree.nodes.new('CompositorNodeEllipseMask')
-            iris_mask.name = "IrisMask"
-            iris_mask.width = 2.0
-            iris_mask.height = 2.0
-            mix_iris = tree.nodes.new('CompositorNodeMixRGB')
-            mix_iris.blend_type = 'MULTIPLY'
-            mix_iris.inputs[0].default_value = 1.0
-            tree.links.new(mix_vignette.outputs['Image'], mix_iris.inputs[1])
-            tree.links.new(iris_mask.outputs['Mask'], mix_iris.inputs[2])
-            if "ChemicalBurn" not in bpy.data.textures:
-                burn_tex = bpy.data.textures.new("ChemicalBurn", type='MUSGRAVE')
-                burn_tex.noise_scale = 2.0
-            else:
-                burn_tex = bpy.data.textures["ChemicalBurn"]
-            burn_node = tree.nodes.new('CompositorNodeTexture')
-            burn_node.texture = burn_tex
-            mix_burn = tree.nodes.new('CompositorNodeMixRGB')
-            mix_burn.blend_type = 'ADD'
-            mix_burn.inputs[0].default_value = 0.0
-            mix_burn.name = "BurnMix"
-            tree.links.new(mix_iris.outputs['Image'], mix_burn.inputs[1])
-            tree.links.new(burn_node.outputs['Value'], mix_burn.inputs[2])
-            tree.links.new(mix_burn.outputs['Image'], composite.inputs['Image'])
+            
+            # Final output link - completely bypasses the 'iris/keyhole' node chain
+            tree.links.new(mix_vignette.outputs['Image'], composite.inputs['Image'])
         else:
             self.scene.eevee.use_bloom = True
             self.scene.eevee.use_gtao = True
