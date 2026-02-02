@@ -15,7 +15,7 @@
          */
         modelRegistry: {
             genetic: {
-                scripts: ['models_3d_math.js', 'genetic_config.js', 'genetic_camera_controls.js', 'genetic_lighting.js', 'genetic_pip_controls.js', 'genetic_algo.js', 'genetic_ui_3d_geometry.js', 'genetic_ui_3d_dna.js', 'genetic_ui_3d_gene.js', 'genetic_ui_3d_chromosome.js', 'genetic_ui_3d_protein.js', 'genetic_ui_3d_brain.js', 'genetic_ui_3d_stats.js', 'genetic_ui_3d.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'genetic_config.js', 'genetic_camera_controls.js', 'genetic_lighting.js', 'genetic_pip_controls.js', 'genetic_algo.js', 'genetic_ui_3d_geometry.js', 'genetic_ui_3d_dna.js', 'genetic_ui_3d_gene.js', 'genetic_ui_3d_chromosome.js', 'genetic_ui_3d_protein.js', 'genetic_ui_3d_brain.js', 'genetic_ui_3d_stats.js', 'genetic_ui_3d.js'],
                 modes: ['Phenotype Evolution', 'Genotype Mapping', 'Protein Synthesis'],
                 init: (container, baseUrl) => {
                     if (window.GreenhouseGeneticAlgo && window.GreenhouseGeneticUI3D) {
@@ -49,7 +49,7 @@
                 onSelectMode: (modeIndex) => { /* Genetic specific logic */ }
             },
             neuro: {
-                scripts: ['models_3d_math.js', 'neuro_config.js', 'neuro_camera_controls.js', 'neuro_lighting.js', 'neuro_ga.js', 'neuro_ui_3d_geometry.js', 'neuro_ui_3d_brain.js', 'neuro_ui_3d_neuron.js', 'neuro_ui_3d_synapse.js', 'neuro_ui_3d_stats.js', 'neuro_ui_3d_enhanced.js', 'neuro_app.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'neuro_config.js', 'neuro_camera_controls.js', 'neuro_lighting.js', 'neuro_ga.js', 'neuro_ui_3d_geometry.js', 'neuro_ui_3d_brain.js', 'neuro_ui_3d_neuron.js', 'neuro_ui_3d_synapse.js', 'neuro_ui_3d_stats.js', 'neuro_ui_3d_enhanced.js', 'neuro_app.js'],
                 modes: ['Neural Network', 'Synaptic Density', 'Burst Patterns'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'neuro-canvas-' + Math.random().toString(36).substr(2, 9);
@@ -63,7 +63,7 @@
                 }
             },
             pathway: {
-                scripts: ['models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'pathway_ui_3d_geometry.js', 'pathway_camera_controls.js', 'pathway_ui_3d_brain.js', 'pathway_viewer.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'pathway_ui_3d_geometry.js', 'pathway_camera_controls.js', 'pathway_ui_3d_brain.js', 'pathway_viewer.js'],
                 modes: ['Basal Ganglia', 'Dopamine Loop', 'Serotonin Path'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'pathway-canvas-' + Math.random().toString(36).substr(2, 9);
@@ -76,7 +76,7 @@
                 }
             },
             synapse: {
-                scripts: ['synapse_chemistry.js', 'synapse_neurotransmitters.js', 'synapse_sidebar.js', 'synapse_tooltips.js', 'synapse_controls.js', 'synapse_analytics.js', 'synapse_3d.js', 'synapse_molecular.js', 'synapse_app.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'synapse_chemistry.js', 'synapse_neurotransmitters.js', 'synapse_sidebar.js', 'synapse_tooltips.js', 'synapse_controls.js', 'synapse_analytics.js', 'synapse_3d.js', 'synapse_molecular.js', 'synapse_app.js'],
                 modes: ['Clean Signal', 'Inhibited', 'Excited'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'synapse-canvas-' + Math.random().toString(36).substr(2, 9);
@@ -92,7 +92,7 @@
                 }
             },
             dna: {
-                scripts: ['models_3d_math.js', 'dna_repair_mechanisms.js', 'dna_repair_mutations.js', 'dna_repair_buttons.js', 'dna_replication.js', 'dna_tooltip.js', 'dna_repair.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'dna_repair_mechanisms.js', 'dna_repair_mutations.js', 'dna_repair_buttons.js', 'dna_replication.js', 'dna_tooltip.js', 'dna_repair.js'],
                 modes: ['Base Excision', 'Mismatch Repair', 'Nucleotide Excision', 'Double-Strand Break'],
                 init: (container, baseUrl) => {
                     if (window.GreenhouseDNARepair) window.GreenhouseDNARepair.initializeDNARepairSimulation(container);
@@ -103,7 +103,7 @@
                 }
             },
             rna: {
-                scripts: ['rna_repair_atp.js', 'rna_repair_enzymes.js', 'rna_repair_physics.js', 'rna_display.js', 'rna_tooltip.js', 'rna_repair.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'rna_repair_atp.js', 'rna_repair_enzymes.js', 'rna_repair_physics.js', 'rna_display.js', 'rna_tooltip.js', 'rna_repair.js'],
                 modes: ['Ligation', 'Demethylation', 'Pseudouridylation', 'Decapping'],
                 init: (container, baseUrl) => {
                     if (window.RNARepairSimulation) {
@@ -125,7 +125,7 @@
                 }
             },
             dopamine: {
-                scripts: ['models_3d_math.js', 'dopamine_controls.js', 'dopamine_legend.js', 'dopamine_tooltips.js', 'dopamine_molecular.js', 'dopamine_synapse.js', 'dopamine_electrophysiology.js', 'dopamine_circuit.js', 'dopamine_plasticity.js', 'dopamine_clinical.js', 'dopamine_pharmacology.js', 'dopamine_scientific.js', 'dopamine_analytics.js', 'dopamine_ux.js', 'dopamine.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'dopamine_controls.js', 'dopamine_legend.js', 'dopamine_tooltips.js', 'dopamine_molecular.js', 'dopamine_synapse.js', 'dopamine_electrophysiology.js', 'dopamine_circuit.js', 'dopamine_plasticity.js', 'dopamine_clinical.js', 'dopamine_pharmacology.js', 'dopamine_scientific.js', 'dopamine_analytics.js', 'dopamine_ux.js', 'dopamine.js'],
                 modes: ['D1R Signaling', 'D2R Signaling', 'Synaptic Release', 'Circuit Dynamics'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'dopamine-canvas-' + Math.random().toString(36).substr(2, 9);
@@ -141,7 +141,7 @@
                 }
             },
             serotonin: {
-                scripts: ['models_3d_math.js', 'serotonin_controls.js', 'serotonin_legend.js', 'serotonin_tooltips.js', 'serotonin_receptors.js', 'serotonin_kinetics.js', 'serotonin_signaling.js', 'serotonin_transport.js', 'serotonin_analytics.js', 'serotonin.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'serotonin_controls.js', 'serotonin_legend.js', 'serotonin_tooltips.js', 'serotonin_receptors.js', 'serotonin_kinetics.js', 'serotonin_signaling.js', 'serotonin_transport.js', 'serotonin_analytics.js', 'serotonin.js'],
                 modes: ['3D Receptor', '5-HT1A Structural', '2D Closeup', 'Ligand Kinetics'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'serotonin-canvas-' + Math.random().toString(36).substr(2, 9);
@@ -157,7 +157,7 @@
                 }
             },
             emotion: {
-                scripts: ['models_3d_math.js', 'brain_mesh_realistic.js', 'emotion_config.js', 'emotion_diagrams.js', 'emotion_ui_3d_brain.js', 'emotion_app.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'emotion_config.js', 'emotion_diagrams.js', 'emotion_ui_3d_brain.js', 'emotion_app.js'],
                 modes: ['James-Lange', 'Cannon-Bard', 'Schachter-Singer'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'emotion-canvas-' + Math.random().toString(36).substr(2, 9);
@@ -177,7 +177,7 @@
                 }
             },
             cognition: {
-                scripts: ['models_3d_math.js', 'brain_mesh_realistic.js', 'cognition_config.js', 'cognition_analytics.js', 'cognition_app.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'cognition_config.js', 'cognition_analytics.js', 'cognition_app.js'],
                 modes: ['Analytical', 'Executive', 'Memory', 'Attention'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'cognition-canvas-' + Math.random().toString(36).substr(2, 9);
