@@ -197,21 +197,21 @@
             document.querySelectorAll('.serotonin-checkbox-modal').forEach(m => m.style.display = 'none');
         });
 
-        if (isMobile) {
-            // Language Selection - Mobile Only
-            const langDropdown = document.createElement('div');
-            langDropdown.className = 'serotonin-dropdown';
-            const langBtn = document.createElement('button');
-            langBtn.id = 'serotonin-lang-toggle';
-            langBtn.className = 'serotonin-btn';
-            langBtn.innerText = t('btn_language');
-            langBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-            };
-            langDropdown.appendChild(langBtn);
-            controls.appendChild(langDropdown);
-        }
+        // Language Selection - Standardized for both mobile and desktop
+        const langDropdown = document.createElement('div');
+        langDropdown.className = 'serotonin-dropdown';
+        const langBtn = document.createElement('button');
+        langBtn.id = 'serotonin-lang-toggle';
+        langBtn.className = 'serotonin-btn';
+        langBtn.style.width = 'auto !important';
+        langBtn.style.maxWidth = 'fit-content';
+        langBtn.innerText = t('btn_language');
+        langBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+        };
+        langDropdown.appendChild(langBtn);
+        controls.appendChild(langDropdown);
 
         container.appendChild(controls);
 
