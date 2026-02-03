@@ -4,6 +4,8 @@
 (function () {
     'use strict';
 
+    const GENE_SYMBOLS = ["BDNF", "SLC6A4", "DRD2", "HTR2A", "COMT", "DISC1", "NRG1", "DAOA", "GRIN2A", "GRIK2", "HOMER1", "NTRK2", "SHANK3"];
+
     const GreenhouseGeneticUI3D = {
         container: null,
         canvas: null,
@@ -127,7 +129,6 @@
         },
 
         refreshUIText() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const btn = document.getElementById('gen-pause-btn');
             if (btn) {
                 btn.textContent = this.isEvolving ? t("Pause Evolution") : t("Resume Evolution");
@@ -157,7 +158,6 @@
         },
 
         setupDOM() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
 
             if (isMobile) {
@@ -450,7 +450,7 @@
                             type: 'gene',
                             region: regionKey, // Assign the target region to the gene
                             strand: helixData.strandIndex,
-                            label: i % 10 === 0 ? (i % 20 === 0 ? 'BDNF' : '5-HTTLPR') : null,
+                            label: i % 5 === 0 ? GENE_SYMBOLS[(i / 5) % GENE_SYMBOLS.length] : null,
                             baseColor: helixData.strandIndex === 0 ? '#A8DADC' : '#F4A261'
                         };
                     }
@@ -608,8 +608,6 @@
 
         render() {
             if (!this.ctx || !this.canvas) return;
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-
             const ctx = this.ctx;
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -1025,7 +1023,6 @@
             ctx.clip();
             // Draw PiP frame with title
             if (drawPiPFrame) {
-                const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
                 drawPiPFrame(ctx, x, y, w, h, t("pip_dna"));
             }
 

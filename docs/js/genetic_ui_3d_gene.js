@@ -1,6 +1,8 @@
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseGeneticGene = {
         drawMicroView(ctx, x, y, w, h, activeGene, activeGeneIndex, neuronMeshes, drawPiPFrameCallback, cameraState) {
             if (drawPiPFrameCallback) {
@@ -106,7 +108,7 @@
             if (p.label && p.scale > 0.5) {
                 ctx.fillStyle = '#fff';
                 ctx.font = `${10 * p.scale}px Arial`;
-                ctx.fillText(p.label, p.x + size, p.y - size);
+                ctx.fillText(t(p.label), p.x + size, p.y - size);
             }
 
             ctx.restore();
