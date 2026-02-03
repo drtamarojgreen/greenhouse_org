@@ -65,6 +65,7 @@
         },
 
         updateReceptorStates() {
+            if (!G.state.receptors) return;
             G.state.receptors.forEach(r => {
                 // Sodium Allosteric Site (Category 2, #17)
                 // Sodium levels modulate 5-HT1A affinity
