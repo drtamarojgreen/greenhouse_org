@@ -107,19 +107,23 @@ TestFramework.describe('Genetic Labels', () => {
 
         // Check labels
         const genes = ui.neurons3D.filter(n => n.type === 'gene');
-        const expectedGenes = ['BDNF', 'SLC6A4', 'DRD2', 'HTR2A', 'COMT', 'DISC1', 'NRG1', 'DAOA', 'GRIN2A', 'GRIK2', 'HOMER1', 'NTRK2', 'SHANK3'];
+        const expectedGenes = [
+            'BDNF', 'SLC6A4', 'DRD2', 'HTR2A', 'COMT', 'DISC1', 'NRG1', 'DAOA',
+            'GRIN2A', 'GRIK2', 'HOMER1', 'NTRK2', 'SHANK3', 'OXTR', 'MAOA',
+            'CHRNA7', 'GABRA1', 'SYP', 'MBP', 'APOE', 'TREM2', 'CACNA1C', 'FOXP2'
+        ];
 
         // isGenotype is i < nodes.length / 2 (i < 25)
         // i % 5 === 0 -> i = 0, 5, 10, 15, 20
 
         assert.equal(genes[0].label, 'BDNF', 'Gene 0 should be BDNF');
-        assert.equal(genes[5].label, 'SLC6A4', 'Gene 5 should be SLC6A4');
-        assert.equal(genes[10].label, 'DRD2', 'Gene 10 should be DRD2');
-        assert.equal(genes[15].label, 'HTR2A', 'Gene 15 should be HTR2A');
-        assert.equal(genes[20].label, 'COMT', 'Gene 20 should be COMT');
+        assert.equal(genes[1].label, 'SLC6A4', 'Gene 1 should be SLC6A4');
+        assert.equal(genes[2].label, 'DRD2', 'Gene 2 should be DRD2');
+        assert.equal(genes[3].label, 'HTR2A', 'Gene 3 should be HTR2A');
+        assert.equal(genes[4].label, 'COMT', 'Gene 4 should be COMT');
 
-        assert.isNull(genes[1].label, 'Gene 1 should not have a label');
-        assert.isNull(genes[6].label, 'Gene 6 should not have a label');
+        assert.isNotNull(genes[1].label, 'Gene 1 should now have a label');
+        assert.isNotNull(genes[6].label, 'Gene 6 should now have a label');
     });
 
     TestFramework.it('should use translation function for active gene label', () => {
