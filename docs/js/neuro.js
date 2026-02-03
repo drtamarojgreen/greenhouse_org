@@ -115,7 +115,18 @@
 
                     // Render bottom navigation TOC via common utilities
                     if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {
-                        GreenhouseUtils.renderModelsTOC(targetSelector);
+                        // Defer TOC rendering for Neuro simulation to ensure the canvas
+                        // is created first. This prevents the TOC from detecting an empty
+                        // container and applying a large marginTop offset.
+                        const checkCanvas = setInterval(() => {
+                            const container = document.querySelector(targetSelector);
+                            if (container && container.querySelector('canvas')) {
+                                clearInterval(checkCanvas);
+                                GreenhouseUtils.renderModelsTOC(targetSelector);
+                            }
+                        }, 500);
+                        // Fallback to ensure TOC renders even if canvas fails
+                        setTimeout(() => clearInterval(checkCanvas), 10000);
                     }
                 } else {
                     console.warn('Neuro App: No target selector provided, skipping auto-init.');
