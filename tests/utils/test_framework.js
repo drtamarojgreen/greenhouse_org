@@ -415,6 +415,7 @@ testFramework.run = testFramework.run.bind(testFramework);
 // Export for use in tests
 if (typeof module !== 'undefined' && module.exports) {
   testFramework.ResourceReporter = require('./resource_reporter.js');
+  testFramework.TestFramework = TestFramework; // Export class for isolated testing
   module.exports = testFramework;
 }
 
