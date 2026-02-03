@@ -1,6 +1,8 @@
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseGeneticStats = {
         eventLog: [],
 
@@ -34,21 +36,15 @@
         drawOverlayInfo(ctx, canvasWidth, activeGene) {
             if (!activeGene) return;
 
-            const util = window.GreenhouseModelsUtil;
-            const t = util ? util.t.bind(util) : (k) => k;
-
             ctx.fillStyle = '#fff';
             ctx.font = '16px Arial';
             ctx.textAlign = 'center';
             const idStr = (activeGene.id !== undefined) ? String(activeGene.id) : t('Unknown');
-            const labelStr = activeGene.label ? ` (${activeGene.label})` : '';
+            const labelStr = activeGene.label ? ` (${t(activeGene.label)})` : '';
             ctx.fillText(`${t("Active Gene")}: ${idStr}${labelStr}`, canvasWidth / 2, 30);
         },
 
         drawControls(ctx, canvasWidth, canvasHeight) {
-            const util = window.GreenhouseModelsUtil;
-            const t = util ? util.t.bind(util) : (k) => k;
-
             const w = canvasWidth;
             const h = canvasHeight;
             const btnW = 100;
@@ -84,8 +80,6 @@
         },
 
         drawLabels(ctx, projectedNeurons) {
-            const util = window.GreenhouseModelsUtil;
-            const t = util ? util.t.bind(util) : (k) => k;
             const canvasWidth = ctx.canvas.width;
 
             if (projectedNeurons.length === 0) return;

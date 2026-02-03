@@ -1195,6 +1195,21 @@
             "NHEJ (Error Prone)": "NHEJ (Error Prone)",
             "Homologous Recomb": "Homologous Recomb",
 
+            // Grounded Gene Symbols
+        "BDNF": "BDNF",
+        "SLC6A4": "SLC6A4",
+            "DRD2": "DRD2",
+            "HTR2A": "HTR2A",
+            "COMT": "COMT",
+            "DISC1": "DISC1",
+            "NRG1": "NRG1",
+            "DAOA": "DAOA",
+            "GRIN2A": "GRIN2A",
+            "GRIK2": "GRIK2",
+            "HOMER1": "HOMER1",
+            "NTRK2": "NTRK2",
+            "SHANK3": "SHANK3",
+
             "Burst": "Burst",
             "Language": "Language",
 
@@ -3014,6 +3029,21 @@
             "MGMT Repair": "Reparación MGMT",
             "NHEJ (Propenso a Errores)": "NHEJ (Propenso a Errores)",
             "Homologous Recomb": "Recomb. Homóloga",
+
+            // Grounded Gene Symbols
+            "BDNF": "BDNF",
+            "SLC6A4": "SLC6A4",
+            "DRD2": "DRD2",
+            "HTR2A": "HTR2A",
+            "COMT": "COMT",
+            "DISC1": "DISC1",
+            "NRG1": "NRG1",
+            "DAOA": "DAOA",
+            "GRIN2A": "GRIN2A",
+            "GRIK2": "GRIK2",
+            "HOMER1": "HOMER1",
+            "NTRK2": "NTRK2",
+            "SHANK3": "SHANK3",
 
             "Burst": "Explosión",
             "Idioma": "Idioma",
