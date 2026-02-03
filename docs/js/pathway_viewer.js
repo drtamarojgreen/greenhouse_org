@@ -210,7 +210,7 @@
 
             // Handle Re-initialization from GreenhouseUtils
             // GreenhouseUtils calls re-init with (containerElement, selectorString)
-            if (containerSelector instanceof HTMLElement) {
+            if (containerSelector && typeof containerSelector !== 'string') {
                 container = containerSelector;
                 actualSelector = baseUrl; // In re-init, 2nd arg is the selector string
                 baseUrl = this.baseUrl;   // Use previously stored baseUrl
