@@ -226,18 +226,6 @@
                 this.isAnimatingCamera = true;
             };
 
-            const langBtn = document.createElement('button');
-            langBtn.id = 'cognition-lang-toggle';
-            langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
-            langBtn.style.cssText = `
-                background: #4fd1c5; color: white; border: none; padding: 5px 12px;
-                border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;
-                height: 27px; /* Align with other inputs */
-            `;
-            langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-            };
-
             controlsRow.appendChild(categorySelect);
             controlsRow.appendChild(searchInput);
             controlsRow.appendChild(glassToggle);
