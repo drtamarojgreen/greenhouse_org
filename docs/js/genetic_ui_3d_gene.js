@@ -1,8 +1,6 @@
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-
     const GreenhouseGeneticGene = {
         drawMicroView(ctx, x, y, w, h, activeGene, activeGeneIndex, neuronMeshes, drawPiPFrameCallback, cameraState) {
             if (drawPiPFrameCallback) {
@@ -80,6 +78,7 @@
         },
 
         drawNeuron(ctx, p) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             // This is the generic "Gene/Neuron" dot renderer used in Macro View
             if (p.scale <= 0) return;
 
