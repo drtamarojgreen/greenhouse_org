@@ -57,7 +57,7 @@
 
         config: {
             helixLength: 60,
-            radius: 40,
+            radius: 20,
             rise: 14,
             rotationPerPair: 0.5,
             colors: {
