@@ -467,7 +467,7 @@
                 Utils.validateConfiguration();
             }
 
-            const baseUrl = Utils.appState.baseUrl || "https://drtamarojgreen.github.io/greenhouse_org/";
+            const baseUrl = Utils.appState.baseUrl || './';
 
             try {
                 for (const scriptName of config.scripts) {

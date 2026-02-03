@@ -26,16 +26,17 @@
         targetCamera: null,
         isAnimatingCamera: false,
 
-        init(selector, selArg = null) {
-            // Standardize selector argument handling if re-invoked by GreenhouseUtils
-            if (typeof selector !== 'string' && selArg) selector = selArg;
+        init(selectorOrElement, selArg = null) {
+            // Standardize: if re-initialized with (container, selector), we might get varying args.
+            // On re-init, selectorOrElement is the element, and selArg is the selector string.
+            const container = (selectorOrElement instanceof HTMLElement) ? selectorOrElement : document.querySelector(selectorOrElement);
+            const selector = (selectorOrElement instanceof HTMLElement) ? selArg : selectorOrElement;
 
             const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
 
             console.log('CognitionApp: Initializing with selector:', selector);
-            const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!container) {
-                console.error('CognitionApp: Target container not found:', selector);
+                console.error('CognitionApp: Target container not found:', selectorOrElement);
                 return;
             }
 
@@ -106,6 +107,7 @@
 
             if (window.GreenhouseUtils) {
                 window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
+                window.GreenhouseUtils.startSentinel(container, selector, this, 'init');
             }
         },
 

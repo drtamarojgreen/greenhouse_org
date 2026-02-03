@@ -205,11 +205,16 @@
         async init(containerSelector, baseUrl) {
             if (this.isRunning) return;
 
-            const container = document.querySelector(containerSelector);
+            const container = (containerSelector instanceof HTMLElement) ? containerSelector : document.querySelector(containerSelector);
             if (!container) {
-                console.error("Pathway App: Target container not found.");
+                console.error("Pathway App: Target container not found:", containerSelector);
                 return;
             }
+
+            // Standardize: if re-initialized with (container, selector), we might get varying args.
+            // On re-init, containerSelector is the element, and baseUrl is the selector string.
+            const actualSelector = (containerSelector instanceof HTMLElement) ? baseUrl : containerSelector;
+            const actualBaseUrl = (containerSelector instanceof HTMLElement) ? this.baseUrl : (baseUrl || '');
 
             // Polling logic: Wait for the XML to be completely loaded before initiating
             console.log("Pathway App: Waiting for complete KGML data bridge...");
@@ -221,13 +226,13 @@
 
             if (checkCompletion()) {
                 console.log("Pathway App: Data bridge detected. Initiating...");
-                this.executeInitialization(container, containerSelector, baseUrl);
+                this.executeInitialization(container, actualSelector, actualBaseUrl);
             } else {
                 const pollInterval = setInterval(() => {
                     if (checkCompletion()) {
                         clearInterval(pollInterval);
                         console.log("Pathway App: Data bridge completely loaded. Initiating...");
-                        this.executeInitialization(container, containerSelector, baseUrl);
+                        this.executeInitialization(container, actualSelector, actualBaseUrl);
                     }
                 }, 100);
 
@@ -236,7 +241,7 @@
                     if (!this.isRunning) {
                         clearInterval(pollInterval);
                         console.warn("Pathway App: Data bridge timeout. Initiating with standalone generator.");
-                        this.executeInitialization(container, containerSelector, baseUrl);
+                        this.executeInitialization(container, actualSelector, actualBaseUrl);
                     }
                 }, 15000);
             }

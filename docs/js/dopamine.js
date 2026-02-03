@@ -77,8 +77,15 @@
         }
     };
 
-    G.initialize = function (container, selector = null) {
-        if (!container) return;
+    G.initialize = function (containerOrSelector, selector = null) {
+        const container = (containerOrSelector instanceof HTMLElement) ? containerOrSelector : document.querySelector(containerOrSelector);
+        const actualSelector = (containerOrSelector instanceof HTMLElement) ? selector : containerOrSelector;
+
+        if (!container) {
+            console.error('Dopamine App: Target container not found:', containerOrSelector);
+            return;
+        }
+
         // Stop if already running to prevent double loops on re-init
         if (G.isRunning) {
             G.isRunning = false;
@@ -134,8 +141,8 @@
 
         // Resilience using shared GreenhouseUtils
         if (window.GreenhouseUtils) {
-            window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, G, 'initialize');
-            window.GreenhouseUtils.startSentinel(container, selector, G, 'initialize');
+            window.GreenhouseUtils.observeAndReinitializeApplication(container, actualSelector, G, 'initialize');
+            window.GreenhouseUtils.startSentinel(container, actualSelector, G, 'initialize');
         }
     };
 
@@ -470,7 +477,7 @@
             window.Greenhouse = window.Greenhouse || {};
             window.Greenhouse.initializeDopamineSimulation = function (selector) {
                 const container = document.querySelector(selector);
-                if (container) G.initialize(container);
+                if (container) G.initialize(container, selector);
             };
 
             if (targetSelector) {

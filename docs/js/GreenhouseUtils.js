@@ -157,7 +157,7 @@ window.GreenhouseUtils = (function () {
 
         appState.targetSelectorLeft = scriptAttributes['target-selector-left'] || globalAttributes['target-selector-left'];
         appState.targetSelectorRight = scriptAttributes['target-selector-right'] || globalAttributes['target-selector-right'];
-        appState.baseUrl = scriptAttributes['base-url'] || globalAttributes['base-url'];
+        appState.baseUrl = scriptAttributes['base-url'] || globalAttributes['base-url'] || './';
         const view = scriptAttributes['view'] || globalAttributes['view'];
 
         if (!appState.targetSelectorLeft && view !== 'dashboard') { // targetSelectorLeft is required for patient/admin
@@ -166,11 +166,6 @@ window.GreenhouseUtils = (function () {
         }
         if (!appState.targetSelectorLeft && !appState.targetSelectorRight && view === 'dashboard') { // Both required for dashboard
             console.error('GreenhouseUtils: Missing required data-target-selector-left or data-target-selector-right attributes for dashboard view');
-            return false;
-        }
-
-        if (!appState.baseUrl) {
-            console.error('GreenhouseUtils: Missing required data-base-url attribute');
             return false;
         }
 
@@ -514,20 +509,20 @@ window.GreenhouseUtils = (function () {
 
         console.log('[GreenhouseUtils] Preparing bottom navigation TOC...');
 
-        const githubUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
+        const baseUrl = appState.baseUrl || './';
 
         // Load CSS if not present
         if (!document.querySelector('link[href*="models_toc.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = `${githubUrl}css/models_toc.css`;
+            link.href = `${baseUrl}css/models_toc.css`;
             document.head.appendChild(link);
         }
 
         // Load JS if not present
         if (!window.GreenhouseModelsTOC) {
             try {
-                await loadScript('models_toc.js', githubUrl);
+                await loadScript('models_toc.js', baseUrl);
             } catch (e) {
                 console.error('[GreenhouseUtils] Failed to load models_toc.js', e);
                 return;
@@ -663,7 +658,7 @@ window.GreenhouseUtils = (function () {
 
         // Initialize the TOC component inside the new footer container
         if (window.GreenhouseModelsTOC) {
-            window.GreenhouseModelsTOC.init({ target: tocContainer, baseUrl: githubUrl });
+            window.GreenhouseModelsTOC.init({ target: tocContainer, baseUrl: baseUrl });
         }
     }
 
@@ -711,7 +706,7 @@ window.GreenhouseUtils = (function () {
      * @description Fetches model metadata from the central XML repository.
      */
     async function fetchModelDescriptions() {
-        const baseUrl = appState.baseUrl || "https://drtamarojgreen.github.io/greenhouse_org/";
+        const baseUrl = appState.baseUrl || './';
         const xmlUrl = `${baseUrl}endpoints/model_descriptions.xml`;
 
         try {

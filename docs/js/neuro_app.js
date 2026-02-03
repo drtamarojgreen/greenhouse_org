@@ -11,18 +11,19 @@
         intervalId: null,
         resilienceObserver: null,
 
-        init(selector, selArg = null) {
-            // Standardize selector argument handling if re-invoked
-            if (typeof selector !== 'string' && selArg) selector = selArg;
+        init(selectorOrElement, selArg = null) {
+            // Standardize: if re-initialized with (container, selector), we might get varying args.
+            // On re-init, selectorOrElement is the element, and selArg is the selector string.
+            const container = (selectorOrElement instanceof HTMLElement) ? selectorOrElement : document.querySelector(selectorOrElement);
+            const selector = (selectorOrElement instanceof HTMLElement) ? selArg : selectorOrElement;
+
+            if (!container) {
+                console.error('NeuroApp: Target container not found:', selectorOrElement);
+                return;
+            }
 
             console.log('NeuroApp: Initializing...');
             this.lastSelector = selector;
-
-            const container = document.querySelector(selector);
-            if (!container) {
-                console.error('NeuroApp: Target container not found:', selector);
-                return;
-            }
 
             this._delayedInit(container, selector);
         },

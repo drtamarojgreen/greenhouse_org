@@ -66,8 +66,15 @@
             }
         },
 
-        initializeDNARepairSimulation(container, selector = null) {
-            if (!container) return;
+        initializeDNARepairSimulation(containerOrSelector, selector = null) {
+            const container = (containerOrSelector instanceof HTMLElement) ? containerOrSelector : document.querySelector(containerOrSelector);
+            const actualSelector = (containerOrSelector instanceof HTMLElement) ? selector : containerOrSelector;
+
+            if (!container) {
+                console.error('DNA Repair App: Target container not found:', containerOrSelector);
+                return;
+            }
+
             container.innerHTML = '';
             this.injectStyles();
             const wrapper = document.createElement('div');
@@ -109,8 +116,8 @@
 
             // Resilience using shared GreenhouseUtils
             if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'initializeDNARepairSimulation');
-                window.GreenhouseUtils.startSentinel(container, selector, this, 'initializeDNARepairSimulation');
+                window.GreenhouseUtils.observeAndReinitializeApplication(container, actualSelector, this, 'initializeDNARepairSimulation');
+                window.GreenhouseUtils.startSentinel(container, actualSelector, this, 'initializeDNARepairSimulation');
             }
         },
 
@@ -328,7 +335,7 @@
     });
 
     window.Greenhouse = window.Greenhouse || {};
-    window.Greenhouse.initializeDNARepairSimulation = function (selector) { const container = document.querySelector(selector); if (container) G.initializeDNARepairSimulation(container); };
+    window.Greenhouse.initializeDNARepairSimulation = function (selector) { const container = document.querySelector(selector); if (container) G.initializeDNARepairSimulation(container, selector); };
     window.Greenhouse.setDNASimulationMode = function (mode) { G.startSimulation(mode); };
 
     function captureAttributes() {

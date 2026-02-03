@@ -11,18 +11,22 @@ const TestFramework = require('../../../utils/test_framework.js');
 
 // --- Mock Browser Environment ---
 global.window = global;
+global.window.location = { search: '', pathname: '/emotion', hostname: 'localhost' };
 global.window.dispatchEvent = () => {};
 global.window.addEventListener = () => {};
+global.HTMLElement = class { constructor() { this.style = {}; this.innerHTML = ''; } };
 global.CustomEvent = class { constructor(name, detail) { this.name = name; this.detail = detail; } };
 global.MutationObserver = class { constructor() {} observe() {} disconnect() {} };
 
 global.document = {
+    body: { contains: () => true },
     querySelector: () => ({
         innerHTML: '',
         style: {},
         prepend: () => {},
         appendChild: () => {},
-        offsetWidth: 800
+        offsetWidth: 800,
+        querySelector: () => ({})
     }),
     createElement: (tag) => {
         const el = {
@@ -143,4 +147,6 @@ TestFramework.describe('Emotion Page Enhancements', () => {
 });
 
 // Run the tests
-TestFramework.run();
+TestFramework.run().then(results => {
+    process.exit(results.failed > 0 ? 1 : 0);
+});

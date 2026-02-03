@@ -38,13 +38,17 @@
             jitter: 0
         },
 
-        init(selector) {
+        init(selectorOrElement, selArg = null) {
+            // Standardize: if re-initialized with (container, selector), we might get varying args.
+            // On re-init, selectorOrElement is the element, and selArg is the selector string.
+            const container = (selectorOrElement instanceof HTMLElement) ? selectorOrElement : document.querySelector(selectorOrElement);
+            const selector = (selectorOrElement instanceof HTMLElement) ? selArg : selectorOrElement;
+
             console.log('EmotionApp: Initializing:', selector);
             const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
 
-            const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!container) {
-                console.error('EmotionApp: Target container not found:', selector);
+                console.error('EmotionApp: Target container not found:', selectorOrElement);
                 return;
             }
 
@@ -87,10 +91,9 @@
             langBtn.id = 'emotion-lang-toggle';
             langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
             langBtn.style.cssText = `
-                position: absolute; top: 10px; right: 10px; z-index: 100;
                 background: #ff4d4d; color: white; border: none; padding: 5px 12px;
                 border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
-                width: auto !important; max-width: fit-content;
+                width: auto !important; max-width: fit-content; margin: 10px;
             `;
             langBtn.onclick = () => {
                 if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
@@ -150,7 +153,7 @@
         applyResilience(container, selector) {
             if (window.GreenhouseUtils) {
                 window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
-                if (this.startSentinel) {
+                if (window.GreenhouseUtils.startSentinel) {
                     window.GreenhouseUtils.startSentinel(container, selector, this, 'init');
                 }
             }

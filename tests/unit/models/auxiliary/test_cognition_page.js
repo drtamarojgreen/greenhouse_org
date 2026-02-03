@@ -11,15 +11,19 @@ const TestFramework = require('../../../utils/test_framework.js');
 
 // --- Mock Browser Environment ---
 global.window = global;
+global.window.location = { search: '', pathname: '/cognition', hostname: 'localhost' };
+global.HTMLElement = class { constructor() { this.style = {}; this.innerHTML = ''; } };
 global.addEventListener = () => { };
 global.document = {
+    body: { contains: () => true },
     querySelector: () => ({
         appendChild: () => { },
         prepend: () => { },
         style: {},
         innerHTML: '',
         offsetWidth: 800,
-        children: []
+        children: [],
+        querySelector: () => ({})
     }),
     createElement: (tag) => {
         const el = {
@@ -86,7 +90,11 @@ function loadScript(filename) {
 }
 
 // Load dependencies
-global.GreenhouseUtils = { observeAndReinitializeApplication: () => {} };
+global.GreenhouseUtils = {
+    observeAndReinitializeApplication: () => {},
+    isMobileUser: () => false,
+    startSentinel: () => {}
+};
 global.GreenhouseModels3DMath = { project3DTo2D: () => ({x:0, y:0, scale:1, depth:0}), applyDepthFog: () => 1 };
 global.GreenhouseBrainMeshRealistic = { generateRealisticBrain: () => ({ vertices: [], faces: [], regions: {} }) };
 global.GreenhouseNeuroBrain = { drawBrainShell: () => {} };
@@ -145,4 +153,6 @@ TestFramework.describe('Cognition Page Enhancements', () => {
 
 });
 
-TestFramework.run();
+TestFramework.run().then(results => {
+    process.exit(results.failed > 0 ? 1 : 0);
+});
