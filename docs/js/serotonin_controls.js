@@ -11,6 +11,7 @@
     G.createUI = function (container) {
         this.injectStyles();
         const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
         const controls = document.createElement('div');
         controls.className = 'serotonin-controls-modular';
 
@@ -245,7 +246,6 @@
             controls.style.transformOrigin = 'top left';
         };
 
-        const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
         const info = document.createElement('div');
         info.className = 'serotonin-info';
         info.innerHTML = `<strong>${t('neuro_serotonin_title')}</strong><br>${t('neuro_serotonin_desc')}`;

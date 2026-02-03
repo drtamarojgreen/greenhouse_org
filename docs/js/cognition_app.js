@@ -100,6 +100,7 @@
                 this.refreshUIText();
             });
 
+            // Local Language Toggle is now integrated into createEnhancementUI
 
             this.isRunning = true;
             this.startLoop();
@@ -110,7 +111,7 @@
         },
 
         refreshUIText() {
-            
+
             const lBtn = document.getElementById('cognition-lang-toggle');
             if (lBtn) lBtn.textContent = t('btn_language');
 
@@ -152,7 +153,7 @@
         },
 
         createEnhancementUI(container) {
-            
+
             const uiContainer = document.createElement('div');
             uiContainer.style.cssText = `
                 display: flex;
@@ -223,6 +224,18 @@
             resetCamera.onclick = () => {
                 this.targetCamera = { rotationX: 0.2, rotationY: 0, z: -600 };
                 this.isAnimatingCamera = true;
+            };
+
+            const langBtn = document.createElement('button');
+            langBtn.id = 'cognition-lang-toggle';
+            langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
+            langBtn.style.cssText = `
+                background: #4fd1c5; color: white; border: none; padding: 5px 12px;
+                border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;
+                height: 27px; /* Align with other inputs */
+            `;
+            langBtn.onclick = () => {
+                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
             };
 
             controlsRow.appendChild(categorySelect);
@@ -303,7 +316,7 @@
         },
 
         createInfoPanel(container) {
-            
+
             this.infoPanel = document.createElement('div');
             this.infoPanel.style.cssText = `
                 padding: 20px;
@@ -318,7 +331,7 @@
         },
 
         updateInfoPanel() {
-            
+
             const enh = this.activeEnhancement;
             if (!enh) return;
             const region = this.config.regions[this.activeRegion] || {};
@@ -411,7 +424,7 @@
             const listContainer = document.getElementById('enhancement-list');
             if (!listContainer) return;
 
-            
+
             Array.from(listContainer.children).forEach(btn => {
                 if (btn.textContent === t(this.activeEnhancement?.name)) {
                     btn.style.borderColor = '#4fd1c5';
@@ -423,7 +436,7 @@
         },
 
         updateInfoPanelWithRegionOnly(regionId) {
-            
+
             const region = this.config.regions[regionId];
             if (!region) return;
             this.infoPanel.innerHTML = `
@@ -561,7 +574,7 @@
             const w = this.canvas.width;
             const h = this.canvas.height;
 
-            
+
 
             ctx.clearRect(0, 0, w, h);
 
