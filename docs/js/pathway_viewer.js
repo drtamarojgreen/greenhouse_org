@@ -205,7 +205,19 @@
         async init(containerSelector, baseUrl) {
             if (this.isRunning) return;
 
-            const container = document.querySelector(containerSelector);
+            let container;
+            let actualSelector = containerSelector;
+
+            // Handle Re-initialization from GreenhouseUtils
+            // GreenhouseUtils calls re-init with (containerElement, selectorString)
+            if (containerSelector instanceof HTMLElement) {
+                container = containerSelector;
+                actualSelector = baseUrl; // In re-init, 2nd arg is the selector string
+                baseUrl = this.baseUrl;   // Use previously stored baseUrl
+            } else {
+                container = document.querySelector(containerSelector);
+            }
+
             if (!container) {
                 console.error("Pathway App: Target container not found.");
                 return;
@@ -221,13 +233,13 @@
 
             if (checkCompletion()) {
                 console.log("Pathway App: Data bridge detected. Initiating...");
-                this.executeInitialization(container, containerSelector, baseUrl);
+                this.executeInitialization(container, actualSelector, baseUrl);
             } else {
                 const pollInterval = setInterval(() => {
                     if (checkCompletion()) {
                         clearInterval(pollInterval);
                         console.log("Pathway App: Data bridge completely loaded. Initiating...");
-                        this.executeInitialization(container, containerSelector, baseUrl);
+                        this.executeInitialization(container, actualSelector, baseUrl);
                     }
                 }, 100);
 
@@ -236,15 +248,16 @@
                     if (!this.isRunning) {
                         clearInterval(pollInterval);
                         console.warn("Pathway App: Data bridge timeout. Initiating with standalone generator.");
-                        this.executeInitialization(container, containerSelector, baseUrl);
+                        this.executeInitialization(container, actualSelector, baseUrl);
                     }
                 }, 15000);
             }
         },
 
         async executeInitialization(container, containerSelector, baseUrl) {
-            if (this.isRunning) return;
+            if (this.isRunning && this._lastContainer === container) return;
             this.isRunning = true;
+            this._lastContainer = container;
             this.baseUrl = baseUrl || '';
 
             // 1. Resilience Pattern: wipe previous content
