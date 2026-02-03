@@ -4,7 +4,7 @@
 (function () {
     'use strict';
 
-    const GENE_SYMBOLS = ["BDNF", "SLC6A4", "DRD2", "HTR2A", "COMT", "DISC1", "NRG1", "DAOA", "GRIN2A", "GRIK2", "HOMER1", "NTRK2", "SHANK3"];
+    const GENE_SYMBOLS = ["BDNF", "SLC6A4", "DRD2", "HTR2A", "COMT", "DISC1", "NRG1", "DAOA", "GRIN2A", "GRIK2", "HOMER1", "NTRK2", "SHANK3", "OXTR", "MAOA", "CHRNA7", "GABRA1", "SYP", "MBP", "APOE", "TREM2", "CACNA1C", "FOXP2"];
 
     const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
 
@@ -452,7 +452,7 @@
                             type: 'gene',
                             region: regionKey, // Assign the target region to the gene
                             strand: helixData.strandIndex,
-                            label: i % 5 === 0 ? GENE_SYMBOLS[(i / 5) % GENE_SYMBOLS.length] : null,
+                            label: GENE_SYMBOLS[i % GENE_SYMBOLS.length],
                             baseColor: helixData.strandIndex === 0 ? '#A8DADC' : '#F4A261'
                         };
                     }
@@ -670,15 +670,17 @@
                 targetState = window.GreenhouseGeneticPiPControls.getState('target');
             }
 
+            const geneLabel = (activeGene && activeGene.label) ? ` (${t(activeGene.label)})` : "";
+
             // 2. PiP 1: DNA Double Helix - Top Left
-            this.drawDNAHelixPiP(ctx, leftPipX, gap, pipW, pipH, helixState, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_dna')));
+            this.drawDNAHelixPiP(ctx, leftPipX, gap, pipW, pipH, helixState, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_dna') + geneLabel));
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, leftPipX, gap, pipW, pipH, 'helix');
             }
 
             // 3. PiP 2: Micro View (Gene Structure) - Top Right
             this.drawMicroView(ctx, rightPipX, gap, pipW, pipH, activeGene,
-                this.activeGeneIndex, this.neuronMeshes, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_micro')), microState);
+                this.activeGeneIndex, this.neuronMeshes, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_micro') + geneLabel), microState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, gap, pipW, pipH, 'micro');
             }
@@ -686,7 +688,7 @@
             // 4. PiP 3: Protein View - Middle Right
             const proteinY = gap + pipH + gap;
             this.drawProteinView(ctx, rightPipX, proteinY, pipW, pipH, activeGene,
-                this.proteinCache, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_protein')), proteinState);
+                this.proteinCache, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_protein') + geneLabel), proteinState);
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, proteinY, pipW, pipH, 'protein');
             }
@@ -694,7 +696,7 @@
             // 5. PiP 4: Target View (Brain Region) - Bottom Right
             const targetY = gap + pipH + gap + pipH + gap;
             this.drawTargetView(ctx, rightPipX, targetY, pipW, pipH, activeGene,
-                this.activeGeneIndex, this.brainShell, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_target')), { ...targetState, activeGene: activeGene });
+                this.activeGeneIndex, this.brainShell, (ctx, x, y, w, h) => drawPiPFrame(ctx, x, y, w, h, t('pip_target') + geneLabel), { ...targetState, activeGene: activeGene });
             if (window.GreenhouseGeneticPiPControls) {
                 window.GreenhouseGeneticPiPControls.drawControls(ctx, rightPipX, targetY, pipW, pipH, 'target');
             }
@@ -886,11 +888,15 @@
             const btnH = 30;
             const btnGap = 20;
 
+            // Navigation only cycles through 'gene' types (first half of neurons3D)
+            const geneCount = this.neurons3D.filter(n => n.type === 'gene').length;
+            if (geneCount === 0) return;
+
             // Previous Button
             const prevX = w / 2 - btnW - btnGap / 2;
             const prevY = h - 50;
             if (mouseX >= prevX && mouseX <= prevX + btnW && mouseY >= prevY && mouseY <= prevY + btnH) {
-                this.activeGeneIndex = (this.activeGeneIndex - 1 + this.neurons3D.length) % this.neurons3D.length;
+                this.activeGeneIndex = (this.activeGeneIndex - 1 + geneCount) % geneCount;
                 this.autoFollow = true;
                 return;
             }
@@ -899,7 +905,7 @@
             const nextX = w / 2 + btnGap / 2;
             const nextY = h - 50;
             if (mouseX >= nextX && mouseX <= nextX + btnW && mouseY >= nextY && mouseY <= nextY + btnH) {
-                this.activeGeneIndex = (this.activeGeneIndex + 1) % this.neurons3D.length;
+                this.activeGeneIndex = (this.activeGeneIndex + 1) % geneCount;
                 this.autoFollow = true;
                 return;
             }
@@ -1131,13 +1137,14 @@
                     ctx.globalAlpha = 1.0;
                 });
 
-                // Draw label
-                if (dnaGenes[0] && dnaGenes[0].label) {
+                // Draw label for the active gene
+                const currentActiveGene = this.neurons3D[this.activeGeneIndex];
+                if (currentActiveGene && currentActiveGene.type === 'gene' && currentActiveGene.label) {
                     ctx.fillStyle = '#FFD700';
                     ctx.font = 'bold 14px Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(dnaGenes[0].label, w / 2, h - 20);
+                    ctx.fillText(t(currentActiveGene.label), w / 2, h - 20);
                 }
 
                 ctx.restore();
