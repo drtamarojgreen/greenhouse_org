@@ -171,21 +171,25 @@
                     G.Particles.create(w, h, 60, G.config, true);
                 };
                 mobileControls.appendChild(burstBtn);
-
-                const langBtn = document.createElement('button');
-                langBtn.id = 'synapse-lang-toggle';
-                langBtn.textContent = t('btn_language');
-                langBtn.className = 'greenhouse-btn greenhouse-btn-secondary';
-                langBtn.style.fontSize = '16px';
-                langBtn.onclick = () => {
-                    if (window.GreenhouseModelsUtil) {
-                        window.GreenhouseModelsUtil.toggleLanguage();
-                    }
-                };
-                mobileControls.appendChild(langBtn);
-
                 canvasWrapper.appendChild(mobileControls);
             }
+
+            // Standardized Language Toggle - Positioned in canvas area to avoid covering menus
+            const langBtn = document.createElement('button');
+            langBtn.id = 'synapse-lang-toggle';
+            langBtn.textContent = t('btn_language');
+            langBtn.className = 'greenhouse-btn greenhouse-btn-secondary';
+            langBtn.style.cssText = `
+                position: absolute; top: 20px; right: 20px; z-index: 100;
+                width: auto !important; max-width: fit-content;
+                font-size: ${isMobile ? '16px' : '14px'};
+            `;
+            langBtn.onclick = () => {
+                if (window.GreenhouseModelsUtil) {
+                    window.GreenhouseModelsUtil.toggleLanguage();
+                }
+            };
+            canvasWrapper.appendChild(langBtn);
 
             this.tooltip = document.createElement('div');
             this.tooltip.id = 'synapse-tooltip';

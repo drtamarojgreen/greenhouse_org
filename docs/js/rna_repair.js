@@ -932,7 +932,7 @@
 
         wrapper.appendChild(canvas);
 
-        // Language toggle for RNA
+        // Language toggle for RNA - Positioned within relative wrapper
         const langBtn = document.createElement('button');
         langBtn.id = 'rna-lang-toggle';
         langBtn.textContent = t('btn_language');
@@ -940,6 +940,7 @@
             position: absolute; top: 10px; right: 10px; z-index: 100;
             background: #732751; color: white; border: none; padding: 5px 10px;
             border-radius: 20px; cursor: pointer; font-size: 14px; font-family: 'Quicksand', sans-serif;
+            width: auto !important; max-width: fit-content;
         `;
         langBtn.onclick = () => {
             if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();

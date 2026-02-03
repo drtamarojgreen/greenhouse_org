@@ -42,7 +42,7 @@
             container.innerHTML = `
                 ${isMobile ? `
                 <div style="position: absolute; top: 10px; right: 10px;">
-                    <button id="lang-toggle-consent" class="greenhouse-btn greenhouse-btn-secondary" style="padding: 5px 10px; font-size: 16px;">
+                    <button id="lang-toggle-consent" class="greenhouse-btn greenhouse-btn-secondary" style="padding: 5px 10px; font-size: 16px; width: auto !important; max-width: fit-content;">
                         ${t('btn_language')}
                     </button>
                 </div>
@@ -259,7 +259,7 @@
                         <button class="greenhouse-btn greenhouse-btn-secondary" id="download-btn-general">${t('btn_download')}</button>
                         <button class="greenhouse-btn greenhouse-btn-secondary" id="dark-mode-toggle">${t('btn_dark_mode')}</button>
                         <button class="greenhouse-btn greenhouse-btn-secondary" id="fullscreen-btn-general">${t('btn_fullscreen')}</button>
-                        ${window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser() ? `<button class="greenhouse-btn greenhouse-btn-primary" id="language-btn-general">${t('btn_language')}</button>` : ''}
+                        ${window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser() ? `<button class="greenhouse-btn greenhouse-btn-primary" id="language-btn-general" style="width: auto !important; max-width: fit-content;">${t('btn_language')}</button>` : ''}
                     </div>
                 `;
             }

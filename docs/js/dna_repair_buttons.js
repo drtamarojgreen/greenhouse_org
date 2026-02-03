@@ -42,20 +42,20 @@
             controls.appendChild(btn);
         });
 
-        if (isMobile) {
-            // Minimal Language Toggle - Mobile Only
-            const langBtn = document.createElement('button');
-            langBtn.id = 'dna-lang-toggle';
-            langBtn.className = 'dna-control-btn';
-            langBtn.style.background = '#732751';
-            langBtn.innerText = t('btn_language');
-            langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) {
-                    window.GreenhouseModelsUtil.toggleLanguage();
-                }
-            };
-            controls.appendChild(langBtn);
-        }
+        // Minimal Language Toggle - Integrated into controls bar
+        const langBtn = document.createElement('button');
+        langBtn.id = 'dna-lang-toggle';
+        langBtn.className = 'dna-control-btn';
+        langBtn.style.background = '#732751';
+        langBtn.style.width = 'auto !important';
+        langBtn.style.maxWidth = 'fit-content';
+        langBtn.innerText = t('btn_language');
+        langBtn.onclick = () => {
+            if (window.GreenhouseModelsUtil) {
+                window.GreenhouseModelsUtil.toggleLanguage();
+            }
+        };
+        controls.appendChild(langBtn);
 
         if (!isMobile) {
             // Radiation Slider

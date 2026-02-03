@@ -255,18 +255,18 @@
         resetBtn.onclick = () => G.resetToDefault();
         controls.appendChild(resetBtn);
 
-        if (isMobile) {
-            // Language toggle - Mobile Only
-            const langBtn = document.createElement('button');
-            langBtn.id = 'dopamine-lang-toggle';
-            langBtn.className = 'dopamine-btn';
-            langBtn.innerText = t('btn_language');
-            langBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-            };
-            controls.appendChild(langBtn);
-        }
+        // Language toggle - Standardized for both mobile and desktop
+        const langBtn = document.createElement('button');
+        langBtn.id = 'dopamine-lang-toggle';
+        langBtn.className = 'dopamine-btn';
+        langBtn.style.width = 'auto !important';
+        langBtn.style.maxWidth = 'fit-content';
+        langBtn.innerText = t('btn_language');
+        langBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+        };
+        controls.appendChild(langBtn);
 
         container.appendChild(controls);
 

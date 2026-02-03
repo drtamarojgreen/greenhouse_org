@@ -181,21 +181,22 @@
             };
             btnGroup.appendChild(btn);
 
-            if (isMobile) {
-                // Minimal Language Toggle for the model - Mobile Only
-                const langBtn = document.createElement('button');
-                langBtn.id = 'neuro-lang-toggle';
-                langBtn.textContent = t('btn_language');
-                langBtn.className = 'greenhouse-btn greenhouse-btn-secondary';
-                langBtn.style.fontSize = '12px';
-                langBtn.style.padding = '6px 12px';
-                langBtn.onclick = () => {
-                    if (window.GreenhouseModelsUtil) {
-                        window.GreenhouseModelsUtil.toggleLanguage();
-                    }
-                };
-                btnGroup.appendChild(langBtn);
-            }
+            // Minimal Language Toggle for the model
+            const langBtn = document.createElement('button');
+            langBtn.id = 'neuro-lang-toggle';
+            langBtn.textContent = t('btn_language');
+            langBtn.className = 'greenhouse-btn greenhouse-btn-secondary';
+            langBtn.style.fontSize = isMobile ? '12px' : '14px';
+            langBtn.style.padding = '6px 12px';
+            langBtn.style.width = 'auto !important';
+            langBtn.style.maxWidth = 'fit-content';
+            langBtn.onclick = () => {
+                if (window.GreenhouseModelsUtil) {
+                    window.GreenhouseModelsUtil.toggleLanguage();
+                }
+            };
+            btnGroup.appendChild(langBtn);
+
             controls.appendChild(btnGroup);
 
             // Ensure container is relative so absolute positioning works

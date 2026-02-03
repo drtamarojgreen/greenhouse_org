@@ -62,7 +62,7 @@
 
             // Create UI Container (Top)
             this.uiContainer = document.createElement('div');
-            this.uiContainer.style.cssText = 'background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10;';
+            this.uiContainer.style.cssText = 'background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10; position: relative;';
             container.appendChild(this.uiContainer);
 
             // Create Main Content (Canvas + Deep Dive)
@@ -82,7 +82,7 @@
 
             this.handleResize();
 
-            // Local Language Toggle for Emotion
+            // Local Language Toggle for Emotion - Positioned within UI container to avoid covering menus
             const langBtn = document.createElement('button');
             langBtn.id = 'emotion-lang-toggle';
             langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
@@ -90,11 +90,12 @@
                 position: absolute; top: 10px; right: 10px; z-index: 100;
                 background: #ff4d4d; color: white; border: none; padding: 5px 12px;
                 border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold;
+                width: auto !important; max-width: fit-content;
             `;
             langBtn.onclick = () => {
                 if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
             };
-            container.appendChild(langBtn);
+            this.uiContainer.appendChild(langBtn);
 
             // Generate Enhanced Brain Mesh (localized to Emotion App)
             if (window.GreenhouseEmotionBrain && window.GreenhouseEmotionBrain.generateEnhancedBrain) {
