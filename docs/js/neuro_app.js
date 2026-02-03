@@ -43,6 +43,16 @@
                 return;
             }
 
+            // --- Create the protective wrapper div ---
+            const simContainer = document.createElement('div');
+            const simSelector = 'neuro-simulation-wrapper'; // A unique class for the wrapper
+            simContainer.className = simSelector;
+            simContainer.style.width = '100%';
+            simContainer.style.height = '100%';
+            simContainer.style.position = 'relative';
+            container.appendChild(simContainer);
+            // ---
+
             this.ga = new window.NeuroGA();
             this.ui = window.GreenhouseNeuroUI3D;
 
@@ -51,8 +61,8 @@
                 this.refreshUIText();
             });
 
-            // Initialize UI
-            this.ui.init(selector);
+            // Initialize UI inside the new wrapper
+            this.ui.init(`.${simSelector}`);
 
             // Initialize GA
             this.ga.init({
@@ -60,13 +70,13 @@
                 bounds: { x: 500, y: 500, z: 500 }
             });
 
-            // Add control overlay
-            this.createControls(container);
+            // Add control overlay inside the new wrapper
+            this.createControls(simContainer);
 
             // Start simulation automatically
             this.startSimulation();
 
-            // Resilience using shared GreenhouseUtils
+            // Resilience should still observe the main container for removal
             if (window.GreenhouseUtils) {
                 window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
                 window.GreenhouseUtils.startSentinel(container, selector, this, 'init');

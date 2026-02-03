@@ -19,7 +19,7 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def run_v2_pipeline(seed="Mental Health", max_terms=10, min_count=1000):
+def run_v2_pipeline(seed="Mental Health", max_terms=40, min_count=20000):
     client = PubMedClient()
     engine = DiscoveryEngine(client, min_count=min_count)
     visualizer = Visualizer()
