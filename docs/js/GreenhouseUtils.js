@@ -550,17 +550,17 @@ window.GreenhouseUtils = (function () {
                     
                     .models-toc-footer-section {
                         display: block !important;
-                        flex: 0 0 100% !important; /* Force full width in flexbox */
+                        flex: 0 0 auto !important; /* Allow dynamic height in flexbox */
                         width: 100% !important;
                         grid-column: 1 / -1 !important; /* For Grid */
                         order: 9999 !important; /* Push to end in flexbox */
                         background: linear-gradient(to bottom, #000 0%, #0a100a 100%);
                         border-top: 2px solid #1a2a1a;
-                        padding: 80px 20px;
+                        padding: 40px 20px;
                         margin-top: 50px;
                         position: relative;
                         z-index: 10; /* Lower z-index to avoid covering fixed UI */
-                        min-height: 400px;
+                        min-height: 200px;
                         color: #fff;
                         box-shadow: 0 -30px 60px rgba(0, 0, 0, 0.6);
                         clear: both !important;
@@ -649,8 +649,11 @@ window.GreenhouseUtils = (function () {
 
                 // Check if mainApp has no height (likely absolute/fixed)
                 const mainHeight = mainApp.offsetHeight;
-                if (mainHeight < 100) {
-                    // If simulation doesn't take space, simulate some flow offset
+                const mainStyle = window.getComputedStyle(mainApp);
+                const isPositioned = mainStyle.position === 'absolute' || mainStyle.position === 'fixed';
+
+                if (mainHeight < 100 && isPositioned) {
+                    // If simulation doesn't take space and is out of flow, simulate some flow offset
                     tocContainer.style.marginTop = '600px';
                 }
 

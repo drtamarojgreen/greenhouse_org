@@ -15,7 +15,7 @@
 /* Use a class for the container for better flexibility between local and live site */
 .models-toc-container {
   display: block !important;
-  flex: 0 0 100% !important;
+  flex: 0 0 auto !important;
   /* For Flexbox */
   grid-column: 1 / -1 !important;
   /* For Grid */
