@@ -30,6 +30,7 @@ global.document = {
     createTextNode: (text) => text,
     dispatchEvent: () => {}
 };
+global.dispatchEvent = () => {};
 global.CustomEvent = class {
     constructor(name, detail) {
         this.name = name;
@@ -37,7 +38,11 @@ global.CustomEvent = class {
     }
 };
 
-// --- Load Script ---
+// --- Load Scripts ---
+const langPath = path.join(__dirname, '../../docs/js/models_lang.js');
+const langCode = fs.readFileSync(langPath, 'utf8');
+vm.runInThisContext(langCode);
+
 const filePath = path.join(__dirname, '../../docs/js/models_util.js');
 const code = fs.readFileSync(filePath, 'utf8');
 vm.runInThisContext(code);

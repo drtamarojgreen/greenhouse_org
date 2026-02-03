@@ -131,6 +131,10 @@
     }
 
     const GreenhouseModelsUtil = {
+        GreenhouseComponent,
+        GreenhouseSystem,
+        GreenhouseAssetManager,
+
         currentLanguage: 'en',
 
         translations: window.GreenhouseTranslations || {},
