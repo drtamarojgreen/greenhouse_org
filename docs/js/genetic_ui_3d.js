@@ -6,6 +6,8 @@
 
     const GENE_SYMBOLS = ["BDNF", "SLC6A4", "DRD2", "HTR2A", "COMT", "DISC1", "NRG1", "DAOA", "GRIN2A", "GRIK2", "HOMER1", "NTRK2", "SHANK3"];
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseGeneticUI3D = {
         container: null,
         canvas: null,
