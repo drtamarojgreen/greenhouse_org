@@ -148,6 +148,8 @@ function createKeyboardEvent(type, key) {
 
 // Load Modules
 try {
+    loadScript('models_util.js');
+    loadScript('genetic_config.js');
     loadScript('genetic_camera_controls.js');
     loadScript('genetic_pip_controls.js');
     console.log('✓ Modules loaded successfully');

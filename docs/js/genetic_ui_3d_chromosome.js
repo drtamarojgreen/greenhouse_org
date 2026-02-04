@@ -9,22 +9,34 @@
 
             if (!activeGene) return;
 
+            // Calculate locus (0 to 1) along the arm based on gene index
+            // Assuming 23 genes as per recent expansion
+            const geneIndex = activeGene.id % 23;
+            const locus = geneIndex / 23;
+            const activeArm = geneIndex % 2; // Alternating arms
+
             const time = Date.now() * 0.001;
             const rotationY = time * 0.2;
 
             // Use the specific camera for this PiP if provided
             let camera;
             if (cameraState && cameraState.camera) {
-                camera = cameraState.camera;
+                camera = { ...cameraState.camera };
             } else {
                 // Adjusted camera for vertical chromosome
                 camera = {
-                    x: 0, y: 0, z: -250, // Closer for better view
-                    rotationX: 0, // No X rotation for vertical view
+                    x: 0, y: 0, z: -250,
+                    rotationX: 0,
                     rotationY: rotationY,
                     rotationZ: 0,
                     fov: 500
                 };
+            }
+
+            // Adjust camera Y to center on the active locus if auto-following
+            if (!cameraState || !cameraState.camera) {
+                const targetY = (locus - 0.5) * 200; // Map 0-1 to -100 to 100
+                camera.y = -targetY;
             }
 
             const config = window.GreenhouseGeneticConfig;
@@ -96,13 +108,26 @@
                         const baseColor = { r: 150, g: 100, b: 200 };
 
                         let finalColor;
+
+                        // Apply Banding (G-Banding)
+                        // Simple dark/light bands based on t_arm
+                        const bandCount = 10;
+                        const isDarkBand = Math.floor(f.p1.t_arm * bandCount) % 2 === 0;
+                        const bandedColor = isDarkBand ?
+                            { r: 120, g: 80, b: 180 } : // Darker
+                            { r: 180, g: 140, b: 230 }; // Lighter
+
+                        // Highlight Locus
+                        const isLocus = Math.abs(f.p1.t_arm - locus) < 0.05 && f.p1.arm === activeArm;
+                        const drawColor = isLocus ? { r: 255, g: 255, b: 0 } : bandedColor;
+
                         if (lighting && config) {
                             // Apply realistic lighting
                             const material = {
-                                baseColor: baseColor,
+                                baseColor: drawColor,
                                 metallic: 0.3,
                                 roughness: 0.5,
-                                emissive: false,
+                                emissive: isLocus, // Make locus glow
                                 alpha: 0.9
                             };
 
@@ -112,7 +137,7 @@
                             // Fallback: simple depth-based shading
                             const depthAlpha = Math.min(1, Math.max(0.2, 1 - f.z / 1000));
                             const shade = Math.floor(100 + depthAlpha * 100);
-                            finalColor = `rgba(${shade}, ${shade}, ${shade + 50}, ${depthAlpha})`;
+                            finalColor = isLocus ? '#ffff00' : `rgba(${shade}, ${shade}, ${shade + 50}, ${depthAlpha})`;
                         }
 
                         // Draw face

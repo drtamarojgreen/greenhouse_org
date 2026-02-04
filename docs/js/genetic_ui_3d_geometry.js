@@ -29,11 +29,9 @@
         },
 
         generateProteinChain(seed) {
-            // Procedural "Random Walk" to simulate folding
+            // Representative folding with Alpha Helices, Beta Sheets, and Coils
             const vertices = [];
             let cx = 0, cy = 0, cz = 0;
-            const length = 30;
-            const step = 10;
 
             // Simple pseudo-random based on seed string
             const seedStr = String(seed);
@@ -44,14 +42,61 @@
                 return x - Math.floor(x);
             };
 
-            for (let i = 0; i < length; i++) {
-                vertices.push({ x: cx, y: cy, z: cz });
+            // Determine sequence of motifs based on seed
+            const motifCount = 3 + Math.floor(random() * 3); // 3-5 motifs
+            const step = 8;
 
-                // Random direction but biased towards center to keep it compact (globular)
-                cx += (random() - 0.5) * step - (cx * 0.05);
-                cy += (random() - 0.5) * step - (cy * 0.05);
-                cz += (random() - 0.5) * step - (cz * 0.05);
+            for (let m = 0; m < motifCount; m++) {
+                const type = Math.floor(random() * 3); // 0: coil, 1: helix, 2: sheet
+                const motifLen = type === 0 ? 5 + Math.floor(random() * 5) : 10;
+
+                // Direction for this motif
+                const dx = (random() - 0.5) * 2;
+                const dy = (random() - 0.5) * 2;
+                const dz = (random() - 0.5) * 2;
+                const mag = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                const nx = dx / mag, ny = dy / mag, nz = dz / mag;
+
+                for (let i = 0; i < motifLen; i++) {
+                    const t = i / motifLen;
+                    let vx = cx, vy = cy, vz = cz;
+
+                    if (type === 1) { // Alpha Helix (Spiral)
+                        const angle = i * 1.5;
+                        const r = 5;
+                        // Spiral along the direction vector
+                        // This is a simplification: we'll just spiral around Y for now and rotate?
+                        // Actually, easier to just add spiral offset to the cumulative position
+                        vx += Math.cos(angle) * r;
+                        vz += Math.sin(angle) * r;
+                        vy += i * 2;
+                    } else if (type === 2) { // Beta Sheet (Zig-zag)
+                        const zig = (i % 2 === 0 ? 1 : -1) * 4;
+                        vx += zig;
+                        vy += i * 4;
+                    } else { // Coil (Random walk)
+                        cx += (random() - 0.5) * step;
+                        cy += (random() - 0.5) * step;
+                        cz += (random() - 0.5) * step;
+                        vx = cx; vy = cy; vz = cz;
+                    }
+
+                    vertices.push({ x: vx, y: vy, z: vz, type: type });
+
+                    if (type !== 0) {
+                        // For helix and sheet, update center at the end of motif or gradually
+                        if (i === motifLen - 1) {
+                            cx = vx; cy = vy; cz = vz;
+                        }
+                    }
+                }
             }
+
+            // Center the protein
+            const avg = vertices.reduce((acc, v) => ({ x: acc.x + v.x, y: acc.y + v.y, z: acc.z + v.z }), { x: 0, y: 0, z: 0 });
+            avg.x /= vertices.length; avg.y /= vertices.length; avg.z /= vertices.length;
+            vertices.forEach(v => { v.x -= avg.x; v.y -= avg.y; v.z -= avg.z; });
+
             return { vertices };
         },
 
@@ -145,7 +190,7 @@
             const rings = 20;
 
             // Helper to generate a bent capsule (arm)
-            const generateArm = (angleOffset, bendFactor, zOffset) => {
+            const generateArm = (angleOffset, bendFactor, zOffset, armIndex) => {
                 for (let i = 0; i <= rings; i++) {
                     const t = i / rings;
                     const profile = 1.0 + Math.pow(Math.abs(t - 0.5) * 2, 2) * 0.5;
@@ -162,17 +207,26 @@
 
                     x = rx; y = ry;
 
+                    // t_arm ranges from 0 to 1 along the arm
+                    const t_arm = t;
+
                     for (let j = 0; j < segments; j++) {
                         const theta = (j / segments) * Math.PI * 2;
                         const nx = Math.cos(theta);
                         const nz = Math.sin(theta);
-                        vertices.push({ x: x + nx * r, y: y, z: z + nz * r });
+                        vertices.push({
+                            x: x + nx * r,
+                            y: y,
+                            z: z + nz * r,
+                            t_arm: t_arm,
+                            arm: armIndex
+                        });
                     }
                 }
             };
 
-            generateArm(Math.PI / 6, 15, 0);
-            generateArm(-Math.PI / 6, 15, 0);
+            generateArm(Math.PI / 6, 15, 0, 0);
+            generateArm(-Math.PI / 6, 15, 0, 1);
 
             const vertsPerArm = (rings + 1) * segments;
             for (let arm = 0; arm < 2; arm++) {

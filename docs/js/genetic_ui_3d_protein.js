@@ -42,7 +42,7 @@
                 vy = ty; vz = tz;
 
                 const p = GreenhouseModels3DMath.project3DTo2D(vx, vy, vz, proteinCamera, { width: w, height: h, near: 10, far: 5000 });
-                return { x: p.x + x, y: p.y + y, scale: p.scale, depth: p.depth };
+                return { x: p.x + x, y: p.y + y, scale: p.scale, depth: p.depth, type: v.type };
             });
 
             // Draw Chain based on Mode
@@ -51,7 +51,6 @@
 
             if (mode === 'ribbon') {
                 // Ribbon Mode (Thick Line)
-                ctx.lineWidth = 8;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
 
@@ -62,19 +61,29 @@
                     if (p1.scale > 0 && p2.scale > 0) {
                         const avgDepth = (p1.depth + p2.depth) / 2;
                         const alpha = Math.min(1, Math.max(0.2, 1 - avgDepth / 1000));
-                        const width = 8 * ((p1.scale + p2.scale) / 2);
+
+                        // Color based on Secondary Structure
+                        // Helix (Magenta), Sheet (Yellow), Coil (White)
+                        const structureType = p1.type;
+                        let r, g, b;
+                        let widthMultiplier = 1.0;
+
+                        if (structureType === 1) { // Helix
+                            r = 255; g = 0; b = 255;
+                            widthMultiplier = 1.5; // Helices look thicker
+                        } else if (structureType === 2) { // Sheet
+                            r = 255; g = 215; b = 0;
+                            widthMultiplier = 1.2;
+                        } else { // Coil
+                            r = 240; g = 240; b = 240;
+                            widthMultiplier = 0.8;
+                        }
+
+                        const width = 8 * ((p1.scale + p2.scale) / 2) * widthMultiplier;
 
                         ctx.beginPath();
                         ctx.moveTo(p1.x, p1.y);
                         ctx.lineTo(p2.x, p2.y);
-
-                        // Color gradient based on Secondary Structure (Simulated)
-                        // Helix (Magenta), Sheet (Yellow), Coil (White)
-                        const structureType = Math.floor(i / 10) % 3;
-                        let r, g, b;
-                        if (structureType === 0) { r = 255; g = 0; b = 255; } // Helix
-                        else if (structureType === 1) { r = 255; g = 215; b = 0; } // Sheet
-                        else { r = 240; g = 240; b = 240; } // Coil
 
                         ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.lineWidth = width;
@@ -174,8 +183,6 @@
             ctx.font = '10px Arial';
             ctx.textAlign = 'center';
             ctx.fillText("Polypeptide Chain", x + w / 2, y + h - 10);
-
-            ctx.restore(); // Restore context from drawPiPFrame
         },
 
         hitTest(mouseX, mouseY, x, y, w, h, activeGene, proteinCache) {

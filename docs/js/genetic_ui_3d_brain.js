@@ -2,9 +2,9 @@
     'use strict';
 
     const GreenhouseGeneticBrain = {
+        _drawTargetCallCount: 0,
         drawTargetView(ctx, x, y, w, h, activeGene, activeGeneIndex, brainShell, drawPiPFrameCallback, cameraState) {
             // Log every call
-            if (!this._drawTargetCallCount) this._drawTargetCallCount = 0;
             this._drawTargetCallCount++;
 
             if (this._drawTargetCallCount % 60 === 0) {

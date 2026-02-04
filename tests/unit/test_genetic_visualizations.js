@@ -38,6 +38,9 @@ window.GreenhouseGeneticConfig = {
         if (path === 'materials.dna.baseColors') {
             return { A: 'red', T: 'blue', C: 'green', G: 'yellow' };
         }
+        if (path === 'materials.dna') {
+            return { metallic: 0.5, roughness: 0.5, emissive: false, emissiveIntensity: 1, alpha: 1 };
+        }
         return null;
     }
 };
@@ -132,26 +135,32 @@ TestFramework.describe('GreenhouseGeneticProtein', () => {
         const proteinCache = {
             1: {
                 vertices: [
-                    { x: 0, y: 0, z: 0 },
-                    { x: 10, y: 10, z: 10 }
+                    { x: 0, y: 0, z: 0, type: 1 },
+                    { x: 10, y: 10, z: 10, type: 1 }
                 ]
             }
         };
+        const cameraState = {
+            camera: { x: 0, y: 0, z: -150, rotationX: 0, rotationY: 0, fov: 400 }
+        };
 
-        proteinModule.drawProteinView(ctx, 0, 0, 200, 150, activeGene, proteinCache, null, null);
+        proteinModule.drawProteinView(ctx, 0, 0, 200, 150, activeGene, proteinCache, null, cameraState);
         assert.isTrue(true); // Reached here
     });
 
     TestFramework.it('should generate protein if missing', () => {
         // Mock Geometry module
         window.GreenhouseGeneticGeometry = {
-            generateProteinChain: (id) => ({ vertices: [{ x: 0, y: 0, z: 0 }] })
+            generateProteinChain: (id) => ({ vertices: [{ x: 0, y: 0, z: 0, type: 0 }] })
         };
 
         const activeGene = { id: 2 };
         const proteinCache = {};
+        const cameraState = {
+            camera: { x: 0, y: 0, z: -150, rotationX: 0, rotationY: 0, fov: 400 }
+        };
 
-        proteinModule.drawProteinView(ctx, 0, 0, 200, 150, activeGene, proteinCache, null, null);
+        proteinModule.drawProteinView(ctx, 0, 0, 200, 150, activeGene, proteinCache, null, cameraState);
 
         assert.isDefined(proteinCache[2]);
     });
@@ -164,25 +173,44 @@ TestFramework.describe('GreenhouseGeneticBrain', () => {
         restore: () => { },
         translate: () => { },
         beginPath: () => { },
+        moveTo: () => { },
+        lineTo: () => { },
+        stroke: () => { },
+        fill: () => { },
         rect: () => { },
         clip: () => { },
         fillText: () => { },
+        setLineDash: () => { },
         set fillStyle(v) { },
-        set textAlign(v) { }
+        set strokeStyle(v) { },
+        set lineWidth(v) { },
+        set textAlign(v) { },
+        set globalAlpha(v) { },
+        set shadowBlur(v) { },
+        set shadowColor(v) { }
     };
 
     TestFramework.it('should draw target view', () => {
-        // Mock NeuroBrain
-        let drawShellCalled = false;
-        window.GreenhouseNeuroBrain = {
-            drawBrainShell: () => { drawShellCalled = true; }
+        // Mock Models3DMath
+        window.GreenhouseModels3DMath = {
+            project3DTo2D: () => ({ x: 0, y: 0, scale: 1, depth: 0 }),
+            calculateFaceNormal: () => ({ x: 0, y: 1, z: 0 }),
+            applyDepthFog: (a) => a
         };
 
-        const brainShell = { vertices: [] };
+        const brainShell = {
+            vertices: [{ x: 0, y: 0, z: 0 }],
+            faces: [{ indices: [0, 0, 0], region: 'pfc' }],
+            regions: { pfc: { color: 'rgba(255,0,0,1)', vertices: [0] } }
+        };
 
-        brainModule.drawTargetView(ctx, 0, 0, 200, 150, {}, 0, brainShell, null, null);
+        const cameraState = {
+            camera: { x: 0, y: 0, z: -150, rotationX: 0, rotationY: 0, fov: 400 }
+        };
 
-        assert.isTrue(drawShellCalled);
+        brainModule.drawTargetView(ctx, 0, 0, 200, 150, { region: 'pfc' }, 0, brainShell, null, cameraState);
+
+        assert.isTrue(brainModule._drawTargetCallCount > 0);
     });
 });
 

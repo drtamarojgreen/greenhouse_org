@@ -73,8 +73,6 @@
             ctx.fillText("mRNA", cx + length, cy - length * 0.5);
 
             ctx.restore();
-
-            ctx.restore(); // Restore context from drawPiPFrame
         },
 
         drawNeuron(ctx, p) {

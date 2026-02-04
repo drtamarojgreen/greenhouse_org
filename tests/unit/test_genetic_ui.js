@@ -53,6 +53,8 @@ function loadScript(filename) {
 }
 
 // --- Load Dependencies ---
+loadScript('models_util.js');
+loadScript('genetic_ui_3d_stats.js');
 loadScript('genetic_config.js');
 loadScript('genetic_camera_controls.js');
 loadScript('genetic_pip_controls.js');
