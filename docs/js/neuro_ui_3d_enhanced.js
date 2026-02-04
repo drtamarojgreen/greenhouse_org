@@ -32,7 +32,11 @@
         isPlaying: false,
 
         init(containerSelector) {
-            const container = document.querySelector(containerSelector);
+            const container = document.querySelector(containerSelector);            this.canvas.width = container.offsetWidth;
+            this.canvas.height = 600;
+            this.canvas.style.width = '100%';
+            this.canvas.style.height = '600px';
+
             if (!container) {
                 console.error('NeuroUI3D: Container not found', containerSelector);
                 return;
@@ -70,9 +74,9 @@
 
             this.canvas = document.createElement('canvas');
             this.canvas.width = container.offsetWidth;
-            this.canvas.height = Math.max(container.offsetHeight, 600);
+            this.canvas.height = 600;
             this.canvas.style.width = '100%';
-            this.canvas.style.height = '100%';
+            this.canvas.style.height = '600px';
             this.canvas.style.backgroundColor = '#111';
 
             container.appendChild(this.canvas);
@@ -130,9 +134,9 @@
             if (this.canvas && this.canvas.parentElement) {
                 const container = this.canvas.parentElement;
                 this.canvas.width = container.offsetWidth;
-                this.canvas.height = container.offsetHeight;
+                //this.canvas.height = container.offsetHeight;
                 this.projection.width = this.canvas.width;
-                this.projection.height = this.canvas.height;
+                //this.projection.height = this.canvas.height;
             }
         },
 
