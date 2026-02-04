@@ -1227,8 +1227,6 @@
             how_to_synaptic: "Use the controls to see how different parameters affect the strength of neural connections in real-time.",
             how_to_network: "Adjust network parameters to observe how signal intensity and speed influence the pattern of action potentials across different brain regions.",
             how_to_env: "Use the sliders to adjust environmental stress and social support. Click the gene buttons to simulate genetic predispositions.",
-            community_explain: "Higher community support accelerates the rate of synaptic potentiation.",
-            society_explain: "Societal stability influences regional activation balance and reduces synaptic decay.",
             genetics_explain: "Genetics in this model represents a conceptual predisposition that scales synaptic weights, influencing how easily the network potentiates.",
 
             loading: "Loading Simulation...",
@@ -3080,8 +3078,6 @@
             how_to_synaptic: "Usa los controles para ver cómo diferentes parámetros afectan la fuerza de las conexiones neuronales en tiempo real.",
             how_to_network: "Ajusta los parámetros de la red para observar cómo la intensidad y la velocidad de la señal influyen en el patrón de los potenciales de acción en diferentes regiones del cerebro.",
             how_to_env: "Usa los deslizadores para ajustar el estrés ambiental y el apoyo social. Haz clic en los botones de genes para simular predisposiciones genéticas.",
-            community_explain: "Un mayor apoyo comunitario acelera la tasa de potenciación sináptica.",
-            society_explain: "La estabilidad social influye en el equilibrio de activación regional y reduce la degradación sináptica.",
             genetics_explain: "La genética en este modelo representa una predisposición conceptual que escala los pesos sinápticos, influyendo en la facilidad con la que la red se potencia.",
 
             loading: "Cargando Simulación...",

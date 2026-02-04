@@ -28,8 +28,8 @@
 ]
 },
 {
-"id": "interneuron_ref",
-"type": "INTERNEURON",
+            "id": "interneuron",
+            "type": "INTERNEURON",
 "shape": "circle",
 "radius": 8,
 "style": {
