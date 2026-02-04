@@ -74,9 +74,9 @@
             networkLayout: [
                 { x: 100, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'pfc_desc' },
                 { x: 250, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'amygdala_desc' },
-                { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'hippocampus_desc' },
+                { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'INTERNEURON', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'hippocampus_desc' },
                 { x: 400, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'pfc_desc' },
-                { x: 550, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'amygdala_desc' },
+                { x: 550, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'INTERNEURON', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'amygdala_desc' },
                 { x: 450, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'hippocampus_desc' }
             ],
 
@@ -420,21 +420,25 @@
             document.getElementById('intensity-slider-synaptic').value = 50;
             document.getElementById('speed-select-synaptic').value = 'Normal';
             document.getElementById('play-pause-btn-synaptic').textContent = 'Play';
-            document.getElementById('play-pause-btn-synaptic').disabled = true;
+            document.getElementById('play-pause-btn-synaptic').disabled = false;
 
             document.getElementById('intensity-slider-network').value = 50;
             document.getElementById('speed-select-network').value = 'Normal';
             document.getElementById('play-pause-btn-network').textContent = 'Play';
-            document.getElementById('play-pause-btn-network').disabled = true;
+            document.getElementById('play-pause-btn-network').disabled = false;
 
             const playPauseBtnEnv = document.getElementById('play-pause-btn-environment');
             if (playPauseBtnEnv) {
                 playPauseBtnEnv.textContent = 'Play';
-                playPauseBtnEnv.disabled = true;
+                playPauseBtnEnv.disabled = false;
             }
 
             document.getElementById('stress-slider').value = 0.5;
             document.getElementById('support-slider').value = 0.5;
+            document.getElementById('community-slider').value = 0.5;
+            document.getElementById('society-slider').value = 0.5;
+            this.updateGeneticsFeedback();
+
             const envTypeSelect = document.getElementById('environment-type-select');
             if (envTypeSelect) {
                 envTypeSelect.value = 'NEUTRAL';
@@ -486,6 +490,13 @@
             }
         },
 
+        updateGeneticsFeedback() {
+            const display = document.getElementById('genetics-value-display');
+            if (display) {
+                display.textContent = this.state.environment.genetics.toFixed(2);
+            }
+        },
+
         bindEnvironmentControls() {
             const stressSlider = document.getElementById('stress-slider');
             if (stressSlider) {
@@ -501,10 +512,25 @@
                 });
             }
 
+            const communitySlider = document.getElementById('community-slider');
+            if (communitySlider) {
+                communitySlider.addEventListener('input', e => {
+                    this.state.environment.community = parseFloat(e.target.value);
+                });
+            }
+
+            const societySlider = document.getElementById('society-slider');
+            if (societySlider) {
+                societySlider.addEventListener('input', e => {
+                    this.state.environment.society = parseFloat(e.target.value);
+                });
+            }
+
             const geneBtn1 = document.getElementById('gene-btn-1');
             if (geneBtn1) {
                 geneBtn1.addEventListener('click', () => {
                     this.state.environment.genetics = Math.random();
+                    this.updateGeneticsFeedback();
                 });
             }
 
@@ -512,6 +538,7 @@
             if (geneBtn2) {
                 geneBtn2.addEventListener('click', () => {
                     this.state.environment.genetics = Math.random();
+                    this.updateGeneticsFeedback();
                 });
             }
         },

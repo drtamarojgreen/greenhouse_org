@@ -241,13 +241,23 @@
                         <input type="range" min="0" max="1" step="0.01" value="${this.state.environment.support || 0.5}" class="greenhouse-slider" id="support-slider">
                     </div>
                     <div class="control-group">
-                        <label>${t('label_genetic')}</label>
+                        <label>${t('label_community')}</label>
+                        <input type="range" min="0" max="1" step="0.01" value="${this.state.environment.community || 0.5}" class="greenhouse-slider" id="community-slider">
+                    </div>
+                    <div class="control-group">
+                        <label>${t('label_society')}</label>
+                        <input type="range" min="0" max="1" step="0.01" value="${this.state.environment.society || 0.5}" class="greenhouse-slider" id="society-slider">
+                    </div>
+                    <div class="control-group">
+                        <label>${t('label_genetic')} (<span id="genetics-value-display">${(this.state.environment.genetics || 0.5).toFixed(2)}</span>)</label>
                         <div class="button-group">
                             <button class="greenhouse-btn greenhouse-btn-secondary" id="gene-btn-1">${t('btn_gene_a')}</button>
                             <button class="greenhouse-btn greenhouse-btn-secondary" id="gene-btn-2">${t('btn_gene_b')}</button>
                         </div>
+                        <p class="greenhouse-microcopy" style="font-size: 0.85em; margin-top: 5px; color: #666;">${t('genetics_explain')}</p>
                     </div>
                     <div class="button-group" style="margin-top: 15px;">
+                        <button class="greenhouse-btn greenhouse-btn-secondary" id="play-pause-btn-environment">${t('btn_play')}</button>
                         <button class="greenhouse-btn greenhouse-btn-primary" id="toggle-3d-btn">${t('launch_3d')}</button>
                     </div>
                 `;
@@ -282,9 +292,10 @@
 
             if (type === 'synaptic' || type === 'network') {
                 const instructionsPanel = GreenhouseModelsUtil.createElement('div', { className: 'greenhouse-controls-panel' });
+                const instructionKey = type === 'synaptic' ? 'how_to_synaptic' : 'how_to_network';
                 instructionsPanel.innerHTML = `
                     <h3 class="greenhouse-panel-title">${t('how_to_title')}</h3>
-                    <p>${t('how_to_synaptic')}</p>
+                    <p>${t(instructionKey)}</p>
                 `;
                 container.appendChild(instructionsPanel);
             } else if (type === 'environment') {
