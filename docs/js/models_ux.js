@@ -616,14 +616,16 @@
                 return true;
             });
 
-            // Update brain region activations based on environment
+            // Update brain region activations based on environment and society
             const regions = this.state.environment.regions;
+            const societyInfluence = (this.state.environment.society - 0.5) * 0.01;
+
             if (this.state.environment.type === 'POSITIVE') {
-                regions.pfc.activation = Math.min(1, regions.pfc.activation + 0.01);
-                regions.amygdala.activation = Math.max(0, regions.amygdala.activation - 0.01);
+                regions.pfc.activation = Math.min(1, regions.pfc.activation + 0.01 + societyInfluence);
+                regions.amygdala.activation = Math.max(0, regions.amygdala.activation - 0.01 - societyInfluence);
             } else if (this.state.environment.type === 'NEGATIVE') {
-                regions.pfc.activation = Math.max(0, regions.pfc.activation - 0.01);
-                regions.amygdala.activation = Math.min(1, regions.amygdala.activation + 0.01);
+                regions.pfc.activation = Math.max(0, regions.pfc.activation - 0.01 + societyInfluence);
+                regions.amygdala.activation = Math.min(1, regions.amygdala.activation + 0.01 - societyInfluence);
             }
             // Simple model for hippocampus activation based on overall network firing
             const firingNodes = this.state.networkLayout.filter(n => n.state === 'FIRING').length;
@@ -782,7 +784,9 @@
 
                 const communityBoost = this.state.environment.community > this.config.COMMUNITY_BOOST_THRESHOLD ? this.config.COMMUNITY_BOOST_FACTOR : 1;
                 const potentiation = (this.state.synaptic.intensity / 10000) * communityBoost;
-                const decay = 0.0005;
+                // Society reduces decay if high
+                const societyFactor = 1 + (0.5 - this.state.environment.society);
+                const decay = 0.0005 * societyFactor;
                 this.state.synaptic.synapticWeight += potentiation - decay;
                 this.state.synaptic.synapticWeight = Math.max(0.1, Math.min(1.0, this.state.synaptic.synapticWeight));
 
