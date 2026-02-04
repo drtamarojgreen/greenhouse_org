@@ -648,10 +648,30 @@ window.GreenhouseUtils = (function () {
                 } catch (e) { }
 
                 // Check if mainApp has no height (likely absolute/fixed)
-                const mainHeight = mainApp.offsetHeight;
-                if (mainHeight < 100) {
-                    // If simulation doesn't take space, simulate some flow offset
-                    tocContainer.style.marginTop = '600px';
+                const checkHeight = () => {
+                    const mainHeight = mainApp.offsetHeight;
+                    if (mainHeight > 0 && mainHeight < 100) {
+                        // If simulation has minimal height, it might be collapsed
+                        tocContainer.style.marginTop = '20px';
+                    } else if (mainHeight === 0) {
+                        // If height is 0, it might be loading or hidden.
+                        // We use a small margin instead of a massive 600px gap.
+                        tocContainer.style.marginTop = '20px';
+                    } else {
+                        tocContainer.style.marginTop = '50px';
+                    }
+                };
+
+                checkHeight();
+
+                // Use a ResizeObserver if available to adjust margin dynamically as the simulation loads
+                if (window.ResizeObserver) {
+                    const ro = new ResizeObserver(entries => {
+                        for (let entry of entries) {
+                            checkHeight();
+                        }
+                    });
+                    ro.observe(mainApp);
                 }
 
                 // Insert after the main simulation container

@@ -82,7 +82,6 @@
                     }
                 });
             }
-            this.renderTOC(container);
         },
 
         renderSimulationInterface(targetElement) {
@@ -160,7 +159,6 @@
             }
 
             // Re-bind language toggle in general controls (handled in populateControlsPanel)
-            this.renderTOC(targetElement);
         },
 
         _drawLoadingState(ctx, canvas) {

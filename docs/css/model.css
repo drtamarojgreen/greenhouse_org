@@ -36,6 +36,10 @@ a {
     font-weight: bold;
     margin-bottom: 1.5em;
     color: #357438;
+    width: 100%;
+    box-sizing: border-box;
+    flex: 0 0 100%;
+    clear: both;
 }
 
 .greenhouse-btn {
@@ -122,6 +126,8 @@ a {
     padding: 2em;
     max-width: 1600px;
     margin: 0 auto;
+    width: 100%;
+    display: block;
 }
 
 .simulation-content-area {
