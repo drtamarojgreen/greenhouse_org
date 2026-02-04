@@ -227,7 +227,11 @@
             console.log("Pathway App: Waiting for complete KGML data bridge...");
 
             const checkCompletion = () => {
-                const text = container.textContent.trim();
+                let text = container.textContent.trim();
+                if (!text.includes('<pathway')) {
+                    const textBridge = document.getElementById('pathwayText');
+                    if (textBridge) text = textBridge.textContent.trim();
+                }
                 return text.includes('<pathway') && text.includes('</pathway>');
             };
 
@@ -260,8 +264,12 @@
             this._lastContainer = container;
             this.baseUrl = baseUrl || '';
 
-            // 1. Resilience Pattern: wipe previous content
-            const bridgeData = container.textContent.trim();
+            // 1. Resilience Pattern: capture from container or hidden text bridge
+            let bridgeData = container.textContent.trim();
+            if (!bridgeData.includes('<pathway')) {
+                const textBridge = document.getElementById('pathwayText');
+                if (textBridge) bridgeData = textBridge.textContent.trim();
+            }
             container.innerHTML = '';
 
             // 2. Capture and Clean the initial XML Data
@@ -361,18 +369,24 @@
         },
 
         setupDataBridgeObserver(container) {
-            this._bridgeObserver = new MutationObserver(() => {
-                const newData = container.textContent.trim();
+            const handleUpdate = (element) => {
+                const newData = element.textContent.trim();
                 if (newData.startsWith('<') && newData !== this.rawXmlData) {
-                    //console.log("Pathway App: New XML detected in target container bridge.");
                     this.rawXmlData = newData;
-                    // If we've already initialized, try to reload current pathway with this data
                     if (this.initialized) {
                         this.switchPathway(this.currentPathwayId || (this.availablePathways[0] && this.availablePathways[0].id));
                     }
                 }
-            });
+            };
+
+            this._bridgeObserver = new MutationObserver(() => handleUpdate(container));
             this._bridgeObserver.observe(container, { childList: true, characterData: true, subtree: true });
+
+            const textBridge = document.getElementById('pathwayText');
+            if (textBridge) {
+                this._textBridgeObserver = new MutationObserver(() => handleUpdate(textBridge));
+                this._textBridgeObserver.observe(textBridge, { childList: true, characterData: true, subtree: true });
+            }
         },
 
         async loadPathwayMetadata() {
@@ -419,8 +433,9 @@
             if (!pathway) return;
 
             // Show loading status
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const geneSelector = document.getElementById('pathway-selector');
-            if (geneSelector) geneSelector.innerHTML = '<option>Connecting to KEGG...</option>';
+            if (geneSelector) geneSelector.innerHTML = `<option>${t('initializing')}</option>`;
 
             let success = false;
 
@@ -439,11 +454,8 @@
                 success = await this.loadExternalPathway(pathway.source);
             }
 
-            // Priority 2: KEGG Live API
-            if (!success && pathway.kegg_id) {
-                const liveUrl = `https://rest.kegg.jp/get/${pathway.kegg_id}/kgml`;
-                success = await this.loadExternalPathway(liveUrl, true);
-            }
+            // Removed redundant KEGG Live API fallback per architectural optimization.
+            // Local endpoints on GitHub Pages or the Velo bridge are the primary sources.
 
             // Priority 3: Internal Generator
             if (!success) {
