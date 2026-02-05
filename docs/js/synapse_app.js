@@ -41,7 +41,10 @@
             ],
             transporters: [
                 { x: 0.35, y: 0.35, type: 'SERT' },
-                { x: 0.65, y: 0.35, type: 'SERT' }
+                { x: 0.65, y: 0.35, type: 'SERT' },
+                { x: 0.3, y: 0.3, type: 'NET' },
+                { x: 0.45, y: 0.15, type: 'VMAT2' },
+                { x: 0.55, y: 0.18, type: 'VMAT1' }
             ]
         }
     };
@@ -426,6 +429,11 @@
                 G.Molecular.drawLipidBilayer(ctx, w * 0.3, h * 0.44, w * 0.4, false, chol);
                 G.Molecular.drawLipidBilayer(ctx, w * 0.2, surfaceY, w * 0.6, true, chol);
 
+                // Visualize Electrochemical Gradient
+                if (this.frame % 120 < 60) {
+                    G.Molecular.drawElectrochemicalGradient(ctx, w * 0.2, h * 0.5, 1);
+                }
+
                 G.Molecular.drawScaffolding(ctx, w, h, G.Particles.plasticityFactor, G.config.visuals?.showIsoforms);
                 G.Molecular.drawCascades(ctx);
                 G.Molecular.drawRetrograde(ctx, w, h);
@@ -576,6 +584,11 @@
 
                                 for (let k = 0; k < ionsToCreate; k++) {
                                     G.Particles.createIon(rx, ry + 10, p.chemistry.ionEffect);
+
+                                    // Enhancement: Efflux of potassium during ionotropic activation (Repolarization phase)
+                                    if (p.chemistry.ionEffect === 'sodium' && Math.random() > 0.5) {
+                                        G.Particles.createIon(rx, ry - 10, 'potassium');
+                                    }
                                 }
 
                                 receptor.state = 'open';
@@ -647,9 +660,19 @@
             });
 
             G.config.elements.transporters.forEach(tr => {
-                const isActive = G.config.pharmacology?.ssriActive && tr.type === 'SERT';
-                ctx.fillStyle = isActive ? '#ff4444' : '#4CAF50';
+                let color = '#4CAF50';
+                if (tr.type === 'SERT' && G.config.pharmacology?.ssriActive) color = '#ff4444';
+                if (tr.type.startsWith('VMAT')) color = '#9C27B0'; // Purple for VMAT
+                if (tr.type === 'NET') color = '#FF5722'; // Deep Orange for NET
+
+                ctx.fillStyle = color;
                 ctx.fillRect(w * tr.x - 4, h * tr.y - 8, 8, 16);
+
+                // Transmembrane context
+                if (G.frame % 60 < 30) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    ctx.strokeRect(w * tr.x - 6, h * tr.y - 10, 12, 20);
+                }
             });
 
             if (G.Chemistry) {

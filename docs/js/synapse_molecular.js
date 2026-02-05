@@ -63,6 +63,34 @@
                 ctx.lineTo(ox + 2, curY);
                 ctx.stroke();
             }
+
+            // Cell Membrane Label
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = 'italic 9px Arial';
+            ctx.fillText(isPost ? 'POST-SYNAPTIC CELL MEMBRANE' : 'PRE-SYNAPTIC CELL MEMBRANE', x, y + 25);
+            ctx.restore();
+        },
+
+        drawElectrochemicalGradient(ctx, x, y, direction = 1) {
+            ctx.save();
+            const time = Date.now() / 1000;
+            const alpha = 0.3 + Math.sin(time * 3) * 0.2;
+            ctx.strokeStyle = `rgba(0, 242, 255, ${alpha})`;
+            ctx.lineWidth = 2;
+
+            // Draw arrow indicating gradient
+            const arrowY = y + (Math.sin(time * 5) * 10);
+            ctx.beginPath();
+            ctx.moveTo(x, arrowY);
+            ctx.lineTo(x, arrowY + 20 * direction);
+            ctx.lineTo(x - 5, arrowY + 15 * direction);
+            ctx.moveTo(x, arrowY + 20 * direction);
+            ctx.lineTo(x + 5, arrowY + 15 * direction);
+            ctx.stroke();
+
+            ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+            ctx.font = 'bold 8px Arial';
+            ctx.fillText('ELECTROCHEMICAL GRADIENT', x + 10, arrowY + 10);
             ctx.restore();
         },
 
@@ -260,6 +288,15 @@
                 }
             }
             ctx.stroke();
+
+            // Label Termini and transmembrane region
+            ctx.fillStyle = '#fff';
+            ctx.font = '7px Arial';
+            ctx.fillText('N-term', x - 15, y - 15);
+            ctx.fillText('C-term', x - 15, y + 35);
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.fillText('TRANSMEMBRANE HELICES', x + 20, y + 5);
+
             ctx.restore();
         },
 

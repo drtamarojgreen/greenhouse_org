@@ -70,7 +70,27 @@
                 pKa: 9.5,
                 kinetics: { kon: 0.9, koff: 0.5, hill: 1.0 },
                 synthesis: ['Tryptophan', 'Tryptophan Hydroxylase', '5-HTP', 'AADC', 'Serotonin'],
-                nmr: '2.9 ppm (β-CH2), 3.2 ppm (α-CH2), 6.8-7.3 ppm (Indole)'
+                nmr: '2.9 ppm (β-CH2), 3.2 ppm (α-CH2), 6.8-7.3 ppm (Indole)',
+                aromatic_rings: 1, // Indole ring
+                h_bond_acceptors: 2
+            },
+            norepinephrine: {
+                id: 'norepinephrine',
+                name: { en: 'Norepinephrine', es: 'Norepinefrina' },
+                type: 'modulatory',
+                color: '#FF4500', // Orange Red
+                glow: 'rgba(255, 69, 0, 0.6)',
+                targets: ['gpcr'],
+                ionEffect: 'none',
+                reuptakeVia: 'NET',
+                enzyme: 'COMT',
+                molecularWeight: '169.18 g/mol',
+                pKa: 8.6,
+                kinetics: { kon: 0.7, koff: 0.4, hill: 1.0 },
+                synthesis: ['Dopamine', 'Dopamine β-hydroxylase', 'Norepinephrine'],
+                nmr: '2.7 ppm (β-CH2), 3.0 ppm (α-CH2), 6.5-6.7 ppm (Aromatic)',
+                aromatic_rings: 1, // Catechol ring
+                h_bond_acceptors: 3
             }
         },
 
@@ -81,16 +101,25 @@
                 binds: ['glutamate', 'gaba'],
                 stoichiometry: 'Pentameric (α2βγδ)',
                 pdbId: '6X3Z',
-                offTargetAffinities: { serotonin: 0.05 }
+                offTargetAffinities: { serotonin: 0.05 },
+                polypeptide_chains: 5,
+                amino_acids: 2400,
+                hydrophobic_region: 'Transmembrane pore',
+                termini: 'Extracellular N, Intracellular C'
             },
             gpcr: {
                 id: 'gpcr',
                 name: { en: 'GPCR', es: 'Receptor acoplado a proteína G' },
-                binds: ['serotonin', 'dopamine'],
+                binds: ['serotonin', 'dopamine', 'norepinephrine'],
                 stoichiometry: 'Monomeric / Heterodimeric',
                 pdbId: '7E2X',
                 topology: '7TM Helices',
-                offTargetAffinities: { glutamate: 0.02 }
+                offTargetAffinities: { glutamate: 0.02 },
+                polypeptide_chains: 1,
+                amino_acids: 450,
+                hydrophobic_region: '7TM Bundle',
+                transmembrane_helices: 7,
+                termini: 'Extracellular N, Intracellular C'
             },
             autoreceptor: {
                 id: 'autoreceptor',
@@ -166,8 +195,11 @@
         transporters: {
             EAAT: { name: 'Excitatory Amino Acid Transporter', targets: ['glutamate'] },
             GAT: { name: 'GABA Transporter', targets: ['gaba'] },
-            SERT: { name: 'Serotonin Transporter', targets: ['serotonin'] },
-            DAT: { name: 'Dopamine Transporter', targets: ['dopamine'] },
+            SERT: { name: 'Serotonin Transporter', targets: ['serotonin'], transmembrane_helices: 12, polypeptide_chains: 1 },
+            DAT: { name: 'Dopamine Transporter', targets: ['dopamine'], transmembrane_helices: 12, polypeptide_chains: 1 },
+            NET: { name: 'Norepinephrine Transporter', targets: ['norepinephrine'], transmembrane_helices: 12, polypeptide_chains: 1 },
+            VMAT1: { name: 'Vesicular Monoamine Transporter 1', targets: ['serotonin', 'dopamine', 'norepinephrine'] },
+            VMAT2: { name: 'Vesicular Monoamine Transporter 2', targets: ['serotonin', 'dopamine', 'norepinephrine'] },
             ZnT: { name: 'Zinc Transporter', targets: ['zinc'] }
         },
 
@@ -179,6 +211,7 @@
 
         drugs: {
             ssri: { name: 'SSRI', targetTransporter: 'SERT', effect: 'block_reuptake', safetyThreshold: 70 },
+            serotonin_receptor_modulator: { name: '5-HT Receptor Modulator', targetReceptor: 'gpcr', effect: 'modulate', safetyThreshold: 75 },
             antagonist: { name: 'Antagonist', targetReceptor: 'ionotropic_receptor', effect: 'block_binding', safetyThreshold: 60 },
             agonist: { name: 'Agonist', targetReceptor: 'gpcr', effect: 'activate', safetyThreshold: 80 },
             ttx: { name: 'Tetrodotoxin', targetIon: 'sodium', effect: 'block_ion_channel', safetyThreshold: 10 },
@@ -198,6 +231,14 @@
                 color: '#ffd700', // Gold
                 effect: 'depolarize',
                 hydrationRadius: 2.8 // Angstroms
+            },
+            potassium: {
+                id: 'potassium',
+                name: { en: 'Potassium (K+)', es: 'Potasio (K+)' },
+                charge: '+',
+                color: '#ff00ff', // Magenta
+                effect: 'repolarize',
+                hydrationRadius: 3.3
             },
             chloride: {
                 id: 'chloride',
