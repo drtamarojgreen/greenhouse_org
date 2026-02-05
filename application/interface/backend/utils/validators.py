@@ -208,6 +208,19 @@ class Validators:
         
         return True
 
+    @staticmethod
+    def validate_role_id(role_id):
+        """Validate role ID format"""
+        if role_id is None:
+            raise ValidationError("Role ID is required", "role_id")
+
+        try:
+            int(role_id)
+        except (ValueError, TypeError):
+            raise ValidationError("Role ID must be an integer", "role_id")
+
+        return True
+
 
 class BusinessRules:
     """Implementation of business rules from specification"""
