@@ -498,6 +498,17 @@
         },
 
         bindEnvironmentControls() {
+            const playPauseBtnEnv = document.getElementById('play-pause-btn-environment');
+            if (playPauseBtnEnv) {
+                playPauseBtnEnv.addEventListener('click', () => {
+                    this.state.environment.isRunning = !this.state.environment.isRunning;
+                    playPauseBtnEnv.textContent = this.state.environment.isRunning ? window.GreenhouseModelsUtil.t('btn_pause') : window.GreenhouseModelsUtil.t('btn_play');
+                    if (this.state.environment.isRunning) {
+                        this.runEnvironmentSimulation();
+                    }
+                });
+            }
+
             const stressSlider = document.getElementById('stress-slider');
             if (stressSlider) {
                 stressSlider.addEventListener('input', e => {
@@ -618,11 +629,14 @@
 
             // Update brain region activations based on environment
             const regions = this.state.environment.regions;
+            const society = this.state.environment.society;
             if (this.state.environment.type === 'POSITIVE') {
-                regions.pfc.activation = Math.min(1, regions.pfc.activation + 0.01);
+                // Society and support boost PFC
+                regions.pfc.activation = Math.min(1, regions.pfc.activation + 0.01 * society);
                 regions.amygdala.activation = Math.max(0, regions.amygdala.activation - 0.01);
             } else if (this.state.environment.type === 'NEGATIVE') {
-                regions.pfc.activation = Math.max(0, regions.pfc.activation - 0.01);
+                // Society can act as a buffer or exacerbator
+                regions.pfc.activation = Math.max(0, regions.pfc.activation - 0.01 * (1 - society));
                 regions.amygdala.activation = Math.min(1, regions.amygdala.activation + 0.01);
             }
             // Simple model for hippocampus activation based on overall network firing
@@ -651,11 +665,12 @@
             const regions = this.state.environment.regions;
             const stress = this.state.environment.stress;
             const support = this.state.environment.support;
+            const society = this.state.environment.society;
 
-            // Amygdala activation increases with stress, decreases with support
-            regions.amygdala.activation = Math.max(0, Math.min(1, regions.amygdala.activation + (stress - support) * 0.005 + (Math.random() - 0.5) * 0.01));
-            // PFC activation increases with support, decreases with stress
-            regions.pfc.activation = Math.max(0, Math.min(1, regions.pfc.activation + (support - stress) * 0.005 + (Math.random() - 0.5) * 0.01));
+            // Amygdala activation increases with stress, decreases with support and societal stability
+            regions.amygdala.activation = Math.max(0, Math.min(1, regions.amygdala.activation + (stress - (support * 0.5 + society * 0.5)) * 0.005 + (Math.random() - 0.5) * 0.01));
+            // PFC activation increases with support and society, decreases with stress
+            regions.pfc.activation = Math.max(0, Math.min(1, regions.pfc.activation + ((support * 0.5 + society * 0.5) - stress) * 0.005 + (Math.random() - 0.5) * 0.01));
             // Hippocampus activation fluctuates gently
             regions.hippocampus.activation = Math.max(0, Math.min(1, regions.hippocampus.activation + (Math.random() - 0.5) * 0.01));
 
@@ -728,17 +743,6 @@
                 }
 
             });
-
-            const playPauseBtnEnv = document.getElementById('play-pause-btn-environment');
-            if (playPauseBtnEnv) {
-                playPauseBtnEnv.addEventListener('click', () => {
-                    this.state.environment.isRunning = !this.state.environment.isRunning;
-                    playPauseBtnEnv.textContent = this.state.environment.isRunning ? window.GreenhouseModelsUtil.t('btn_pause') : window.GreenhouseModelsUtil.t('btn_play');
-                    if (this.state.environment.isRunning) {
-                        this.runEnvironmentSimulation();
-                    }
-                });
-            }
 
             document.getElementById('reset-btn-synaptic').addEventListener('click', () => {
                 this.state.synaptic.isRunning = false;
