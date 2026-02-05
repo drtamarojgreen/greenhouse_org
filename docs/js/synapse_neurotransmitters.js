@@ -33,7 +33,8 @@
         },
 
         createIon(x, y, ionType) {
-            const ionChem = G.Chemistry.ions[ionType || 'sodium'];
+            const type = ionType || 'sodium';
+            const ionChem = G.Chemistry.ions[type];
             this.ions.push({
                 x: x,
                 y: y,
@@ -43,6 +44,7 @@
                 life: 1.0,
                 color: ionChem.color,
                 charge: ionChem.charge,
+                type: type,
                 hydrationRadius: ionChem.hydrationRadius || 2.0
             });
         },
