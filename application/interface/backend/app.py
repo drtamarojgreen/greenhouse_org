@@ -44,6 +44,19 @@ if not app.config['DEBUG']:
 # Initialize database
 database.init_app(app)
 
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    jti = jwt_payload['jti']
+    db = database.get_db()
+    cur = db.cursor()
+    try:
+        cur.execute("SELECT 1 FROM token_blacklist WHERE jti = %s", (jti,))
+        return cur.fetchone() is not None
+    except Exception:
+        return False
+    finally:
+        cur.close()
+
 # Create logs directory if it doesn't exist
 os.makedirs('logs', exist_ok=True)
 

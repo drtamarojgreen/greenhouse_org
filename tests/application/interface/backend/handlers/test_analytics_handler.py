@@ -32,7 +32,7 @@ class TestAnalyticsHandler(unittest.TestCase):
         mock_cursor = MagicMock()
         mock_get_db.return_value = mock_db
         mock_db.cursor.return_value = mock_cursor
-        mock_cursor.fetchone.return_value = [0]
+        mock_cursor.fetchone.return_value = [0, 0, 0, 0]
         mock_cursor.fetchall.return_value = []
 
         with self.app.test_request_context():

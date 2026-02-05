@@ -325,7 +325,7 @@ def get_dashboard_metrics():
         }), 200
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while fetching analytics dashboard metrics'}), 500
     finally:
         cur.close()
 
@@ -468,7 +468,7 @@ def get_trends():
         }), 200
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while fetching analytics trends'}), 500
     finally:
         cur.close()
 
@@ -565,7 +565,7 @@ def get_performance_metrics():
         return jsonify(metrics), 200
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while fetching performance metrics'}), 500
     finally:
         cur.close()
 
@@ -691,6 +691,6 @@ def generate_report():
         return jsonify(report_data), 200
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while generating report'}), 500
     finally:
         cur.close()

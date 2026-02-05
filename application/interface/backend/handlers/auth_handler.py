@@ -16,10 +16,12 @@ from ..database import get_db
 from ..utils.validators import Validators, ValidationError, validate_request
 from ..utils.audit_logger import audit_logger
 from ..config import get_config
+from ..utils.encryption import FieldEncryption
 
 auth_bp = Blueprint('auth_bp', __name__)
 bcrypt = Bcrypt()
 config = get_config()
+field_encryption = FieldEncryption()
 
 
 @auth_bp.route('/auth/register', methods=['POST'])
@@ -27,7 +29,7 @@ config = get_config()
     'email': {'required': True, 'validator': Validators.validate_email},
     'password': {'required': True, 'validator': lambda p: Validators.validate_password(p, config)},
     'full_name': {'required': True},
-    'role_id': {'required': True}
+    'role_id': {'required': True, 'validator': Validators.validate_role_id}
 })
 def register():
     """
@@ -47,6 +49,11 @@ def register():
     cur = db.cursor()
     
     try:
+        # Validate role_id exists
+        cur.execute('SELECT id FROM roles WHERE id = %s', (data['role_id'],))
+        if not cur.fetchone():
+            return jsonify({'error': 'Invalid role_id'}), 400
+
         # Check if user already exists
         cur.execute('SELECT id FROM users WHERE email = %s', (data['email'],))
         if cur.fetchone():
@@ -66,8 +73,14 @@ def register():
         )
         user = cur.fetchone()
         
-        # Store password hash in separate table (not shown in schema, would need to add)
-        # For now, we'll note this needs to be added to the database schema
+        # Store password hash in separate table
+        cur.execute(
+            """
+            INSERT INTO user_passwords (user_id, password_hash, created_at, is_active)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (user[0], password_hash, datetime.utcnow(), True)
+        )
         
         db.commit()
         
@@ -83,24 +96,53 @@ def register():
         # Generate MFA secret
         mfa_secret = pyotp.random_base32()
         
-        # Store MFA secret (would need mfa_secrets table)
-        # For now, return it to user for enrollment
+        # Encrypt MFA secret
+        encrypted_secret = field_encryption.encrypt(mfa_secret)
+
+        # Store MFA secret
+        cur.execute(
+            """
+            INSERT INTO mfa_secrets (user_id, secret, created_at, is_active)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (user[0], encrypted_secret, datetime.utcnow(), True)
+        )
+        db.commit()
         
+        # Generate QR code for MFA enrollment
+        totp = pyotp.TOTP(mfa_secret)
+        provisioning_uri = totp.provisioning_uri(
+            name=data['email'],
+            issuer_name=config.MFA_ISSUER_NAME
+        )
+
+        # Create QR code image
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(provisioning_uri)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        # Convert to base64
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+
         return jsonify({
-            'message': 'User registered successfully',
+            'message': 'User registered successfully. Please scan QR code with your authenticator app.',
             'user': {
                 'id': user[0],
                 'email': user[1],
                 'full_name': user[2],
                 'role_id': user[3]
             },
-            'mfa_secret': mfa_secret,
+            'qr_code': f'data:image/png;base64,{qr_code_base64}',
             'mfa_required': True
         }), 201
     
     except Exception as e:
         db.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred during registration'}), 500
     finally:
         cur.close()
 
@@ -149,15 +191,33 @@ def login():
             )
             return jsonify({'error': 'Invalid credentials'}), 401
         
-        # Verify password (would need to get password_hash from password table)
-        # For demo purposes, we'll skip actual password verification
-        # In production, you would:
-        # if not bcrypt.check_password_hash(password_hash, data['password']):
-        #     return jsonify({'error': 'Invalid credentials'}), 401
+        # Get password hash from database
+        cur.execute(
+            """
+            SELECT password_hash
+            FROM user_passwords
+            WHERE user_id = %s AND is_active = TRUE
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (user[0],)
+        )
+        password_row = cur.fetchone()
+
+        if not password_row or not bcrypt.check_password_hash(password_row[0], data['password']):
+            audit_logger.log_authentication(
+                user_id=user[0],
+                email=user[1],
+                action='LOGIN',
+                ip_address=request.remote_addr,
+                status='failure',
+                details='Invalid password'
+            )
+            return jsonify({'error': 'Invalid credentials'}), 401
         
         # Create temporary token for MFA
         temp_token = create_access_token(
-            identity=user[0],
+            identity=str(user[0]),
             additional_claims={'mfa_verified': False, 'role': user[4]},
             expires_delta=timedelta(minutes=5)
         )
@@ -178,7 +238,7 @@ def login():
         }), 200
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred during login'}), 500
     finally:
         cur.close()
 
@@ -227,9 +287,20 @@ def verify_mfa():
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
-        # Get MFA secret (would need to query mfa_secrets table)
-        # For demo, we'll use a test secret
-        mfa_secret = 'JBSWY3DPEHPK3PXP'  # Test secret
+        # Get MFA secret
+        cur.execute(
+            """
+            SELECT secret FROM mfa_secrets
+            WHERE user_id = %s AND is_active = TRUE
+            ORDER BY created_at DESC LIMIT 1
+            """,
+            (user_id,)
+        )
+        secret_row = cur.fetchone()
+        if not secret_row:
+            return jsonify({'error': 'MFA not enrolled'}), 400
+
+        mfa_secret = field_encryption.decrypt(secret_row[0])
         
         # Verify MFA code
         totp = pyotp.TOTP(mfa_secret)
@@ -246,15 +317,19 @@ def verify_mfa():
         
         # Create access and refresh tokens
         access_token = create_access_token(
-            identity=user[0],
+            identity=str(user[0]),
             additional_claims={
                 'mfa_verified': True,
                 'role': user[4],
                 'email': user[1]
-            }
+            },
+            expires_delta=timedelta(minutes=15)
         )
         
-        refresh_token = create_refresh_token(identity=user[0])
+        refresh_token = create_refresh_token(
+            identity=str(user[0]),
+            expires_delta=timedelta(days=7)
+        )
         
         # Log successful login
         audit_logger.log_authentication(
@@ -279,7 +354,7 @@ def verify_mfa():
         }), 200
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred during MFA verification'}), 500
     finally:
         cur.close()
 
@@ -308,8 +383,24 @@ def enroll_mfa():
         # Generate MFA secret
         mfa_secret = pyotp.random_base32()
         
-        # Store MFA secret (would need mfa_secrets table)
-        # For now, just return it
+        # Encrypt MFA secret
+        encrypted_secret = field_encryption.encrypt(mfa_secret)
+
+        # Store MFA secret
+        cur.execute(
+            """
+            UPDATE mfa_secrets SET is_active = FALSE WHERE user_id = %s
+            """,
+            (user_id,)
+        )
+        cur.execute(
+            """
+            INSERT INTO mfa_secrets (user_id, secret, created_at, is_active)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (user_id, encrypted_secret, datetime.utcnow(), True)
+        )
+        db.commit()
         
         # Generate QR code
         totp = pyotp.TOTP(mfa_secret)
@@ -331,13 +422,13 @@ def enroll_mfa():
         qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
         
         return jsonify({
-            'mfa_secret': mfa_secret,
+            'message': 'MFA enrollment successful. Please scan QR code with your authenticator app.',
             'qr_code': f'data:image/png;base64,{qr_code_base64}',
             'provisioning_uri': provisioning_uri
         }), 200
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred during MFA enrollment'}), 500
     finally:
         cur.close()
 
@@ -357,7 +448,10 @@ def refresh():
     user_id = get_jwt_identity()
     
     # Create new access token
-    access_token = create_access_token(identity=user_id)
+    access_token = create_access_token(
+        identity=str(user_id),
+        expires_delta=timedelta(minutes=15)
+    )
     
     return jsonify({'access_token': access_token}), 200
 
@@ -367,22 +461,41 @@ def refresh():
 def logout():
     """
     Logout user (invalidate token)
-    
-    Note: In production, you would add the token to a blacklist
     """
     user_id = get_jwt_identity()
     claims = get_jwt()
+    jti = claims['jti']
     
-    # Log logout
-    audit_logger.log_authentication(
-        user_id=user_id,
-        email=claims.get('email', 'unknown'),
-        action='LOGOUT',
-        ip_address=request.remote_addr,
-        status='success'
-    )
+    db = get_db()
+    cur = db.cursor()
     
-    return jsonify({'message': 'Logout successful'}), 200
+    try:
+        # Add token to blacklist
+        cur.execute(
+            """
+            INSERT INTO token_blacklist (jti, user_id, blacklisted_at, expires_at)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (jti, user_id, datetime.utcnow(), datetime.fromtimestamp(claims['exp']))
+        )
+        db.commit()
+
+        # Log logout
+        audit_logger.log_authentication(
+            user_id=user_id,
+            email=claims.get('email', 'unknown'),
+            action='LOGOUT',
+            ip_address=request.remote_addr,
+            status='success',
+            details='User logged out successfully'
+        )
+
+        return jsonify({'message': 'Logout successful'}), 200
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': 'An error occurred during logout'}), 500
+    finally:
+        cur.close()
 
 
 @auth_bp.route('/auth/me', methods=['GET'])
@@ -426,6 +539,6 @@ def get_current_user():
         }), 200
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'An error occurred while fetching user information'}), 500
     finally:
         cur.close()
