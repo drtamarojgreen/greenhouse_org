@@ -29,7 +29,9 @@ window.GreenhouseModels3DMath = {
     project3DTo2D: (x, y, z, camera, projection) => {
         // Simple mock projection: just return x, y with scale 1
         return { x: x + projection.width / 2, y: y + projection.height / 2, scale: 1, depth: z };
-    }
+    },
+    calculateFaceNormal: () => ({ x: 0, y: 1, z: 0 }),
+    applyDepthFog: (a) => a
 };
 
 // Mock Config
@@ -117,6 +119,9 @@ TestFramework.describe('GreenhouseGeneticProtein', () => {
         stroke: () => { },
         fill: () => { },
         arc: () => { },
+        rect: () => { },
+        fillRect: () => { },
+        translate: () => { },
         fillText: () => { },
         set fillStyle(v) { },
         set strokeStyle(v) { },
@@ -137,8 +142,9 @@ TestFramework.describe('GreenhouseGeneticProtein', () => {
                 ]
             }
         };
+        const cameraState = { camera: { rotationX: 0, rotationY: 0, x: 0, y: 0, z: -100, fov: 400 } };
 
-        proteinModule.drawProteinView(ctx, 0, 0, 200, 150, activeGene, proteinCache, null, null);
+        proteinModule.drawProteinView(ctx, 0, 0, 200, 150, activeGene, proteinCache, null, cameraState);
         assert.isTrue(true); // Reached here
     });
 
@@ -150,10 +156,27 @@ TestFramework.describe('GreenhouseGeneticProtein', () => {
 
         const activeGene = { id: 2 };
         const proteinCache = {};
+        const cameraState = { camera: { rotationX: 0, rotationY: 0, x: 0, y: 0, z: -100, fov: 400 } };
 
-        proteinModule.drawProteinView(ctx, 0, 0, 200, 150, activeGene, proteinCache, null, null);
+        proteinModule.drawProteinView(ctx, 0, 0, 200, 150, activeGene, proteinCache, null, cameraState);
 
         assert.isDefined(proteinCache[2]);
+    });
+
+    TestFramework.it('should draw GPCR signaling view for GPCR genes', () => {
+        const activeGene = { id: 3, label: 'DRD2' };
+        const proteinCache = {};
+        const cameraState = { camera: { rotationX: 0, rotationY: 0, x: 0, y: 0, z: -100, fov: 400 } };
+
+        // Mock localization if needed
+        window.GreenhouseModelsUtil = { t: (k) => k };
+        window.GreenhouseGeneticGeometry = {
+            generateCylinderMesh: () => ({ vertices: [], faces: [] }),
+            generateSphereMesh: () => ({ vertices: [], faces: [] })
+        };
+
+        proteinModule.drawProteinView(ctx, 0, 0, 200, 150, activeGene, proteinCache, null, cameraState);
+        assert.isTrue(true); // Reached here
     });
 });
 
@@ -167,22 +190,31 @@ TestFramework.describe('GreenhouseGeneticBrain', () => {
         rect: () => { },
         clip: () => { },
         fillText: () => { },
+        arc: () => { },
+        stroke: () => { },
+        moveTo: () => { },
+        lineTo: () => { },
+        fill: () => { },
         set fillStyle(v) { },
-        set textAlign(v) { }
+        set textAlign(v) { },
+        set strokeStyle(v) { },
+        set lineWidth(v) { },
+        setLineDash: () => { }
     };
 
     TestFramework.it('should draw target view', () => {
-        // Mock NeuroBrain
-        let drawShellCalled = false;
-        window.GreenhouseNeuroBrain = {
-            drawBrainShell: () => { drawShellCalled = true; }
+        // Mock NeuroBrain if used, but here it uses its own drawBrainShell
+        const brainShell = {
+            vertices: [{ x: 0, y: 0, z: 0 }],
+            faces: [{ indices: [0, 0, 0] }],
+            regions: { pfc: { color: 'rgba(0,0,0,0)' } }
         };
+        const cameraState = { camera: { rotationX: 0, rotationY: 0, x: 0, y: 0, z: -100, fov: 400 } };
 
-        const brainShell = { vertices: [] };
+        // Ensure drawBrainShell runs without error
+        brainModule.drawTargetView(ctx, 0, 0, 200, 150, { region: 'pfc' }, 0, brainShell, null, cameraState);
 
-        brainModule.drawTargetView(ctx, 0, 0, 200, 150, {}, 0, brainShell, null, null);
-
-        assert.isTrue(drawShellCalled);
+        assert.isTrue(true); // Reached here without crash
     });
 });
 

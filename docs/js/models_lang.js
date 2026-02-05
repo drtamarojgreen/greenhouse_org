@@ -1183,6 +1183,16 @@
             "pip_micro": "Micro View",
             "pip_protein": "Protein View",
             "pip_target": "Target View",
+            "gpcr_title": "G Protein-Coupled Receptors",
+            "gpcr_7tm": "7-Transmembrane Alpha Helical Structure",
+            "gpcr_gprotein": "Heterotrimeric G Protein",
+            "gpcr_arrestin": "Beta-Arrestin Signaling",
+            "gpcr_kinase": "Kinase",
+            "gpcr_transactivation": "Transactivation",
+            "gpcr_transcriptional_control": "Transcriptional Control",
+            "gpcr_adenyl_cyclase": "Adenyl Cyclase",
+            "gpcr_transcription_factor": "Transcription Factor",
+            "gpcr_gene_expression": "Gene Expression",
 
             // DNA Repair Buttons
             "Base Excision": "Base Excision",
@@ -3048,6 +3058,16 @@
             "pip_micro": "Vista Micro",
             "pip_protein": "Vista de Proteína",
             "pip_target": "Vista de Objetivo",
+            "gpcr_title": "Receptores Acoplados a Proteínas G",
+            "gpcr_7tm": "Estructura de 7 Hélices Alfa Transmembrana",
+            "gpcr_gprotein": "Proteína G Heterotrimérica",
+            "gpcr_arrestin": "Señalización de Beta-Arrestina",
+            "gpcr_kinase": "Quinasa",
+            "gpcr_transactivation": "Transactivación",
+            "gpcr_transcriptional_control": "Control Transcripcional",
+            "gpcr_adenyl_cyclase": "Adenilil Ciclasa",
+            "gpcr_transcription_factor": "Factor de Transcripción",
+            "gpcr_gene_expression": "Expresión Génica",
 
             // DNA Repair Buttons
             "Base Excision": "Escisión de Base",
