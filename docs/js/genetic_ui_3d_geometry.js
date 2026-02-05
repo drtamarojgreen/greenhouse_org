@@ -29,13 +29,12 @@
         },
 
         generateProteinChain(seed) {
-            // Procedural "Random Walk" to simulate folding
+            // Procedural "Random Walk" with Secondary Structure Segments
             const vertices = [];
             let cx = 0, cy = 0, cz = 0;
-            const length = 30;
-            const step = 10;
+            const segments = 4;
+            const step = 8;
 
-            // Simple pseudo-random based on seed string
             const seedStr = String(seed);
             let seedVal = 0;
             for (let i = 0; i < seedStr.length; i++) seedVal += seedStr.charCodeAt(i);
@@ -44,13 +43,56 @@
                 return x - Math.floor(x);
             };
 
-            for (let i = 0; i < length; i++) {
-                vertices.push({ x: cx, y: cy, z: cz });
+            for (let s = 0; s < segments; s++) {
+                const typeRand = random();
+                let type = 'coil';
+                if (typeRand < 0.4) type = 'helix';
+                else if (typeRand < 0.7) type = 'sheet';
 
-                // Random direction but biased towards center to keep it compact (globular)
-                cx += (random() - 0.5) * step - (cx * 0.05);
-                cy += (random() - 0.5) * step - (cy * 0.05);
-                cz += (random() - 0.5) * step - (cz * 0.05);
+                const segLength = 10 + Math.floor(random() * 10);
+
+                // Base direction for the segment
+                let dx = (random() - 0.5);
+                let dy = (random() - 0.5);
+                let dz = (random() - 0.5);
+                const dLen = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+                dx /= dLen; dy /= dLen; dz /= dLen;
+
+                // Perpendicular system for spirals/zigzags
+                let px = 0, py = 1, pz = 0;
+                if (Math.abs(dy) > 0.9) px = 1;
+                let ux = dy * pz - dz * py;
+                let uy = dz * px - dx * pz;
+                let uz = dx * py - dy * px;
+                const uLen = Math.sqrt(ux*ux + uy*uy + uz*uz) || 1;
+                ux /= uLen; uy /= uLen; uz /= uLen;
+                let vx = uy * dz - uz * dy;
+                let vy = uz * dx - ux * dz;
+                let vz = ux * dy - uy * dx;
+
+                for (let i = 0; i < segLength; i++) {
+                    let rx = cx, ry = cy, rz = cz;
+
+                    if (type === 'helix') {
+                        const angle = i * 0.8;
+                        const radius = 5;
+                        rx += (ux * Math.cos(angle) + vx * Math.sin(angle)) * radius;
+                        ry += (uy * Math.cos(angle) + vy * Math.sin(angle)) * radius;
+                        rz += (uz * Math.cos(angle) + vz * Math.sin(angle)) * radius;
+                        cx += dx * 3; cy += dy * 3; cz += dz * 3;
+                    } else if (type === 'sheet') {
+                        const zig = (i % 2 === 0 ? 1 : -1) * 4;
+                        rx += ux * zig; ry += uy * zig; rz += uz * zig;
+                        cx += dx * 5; cy += dy * 5; cz += dz * 5;
+                    } else {
+                        cx += (random() - 0.5) * step;
+                        cy += (random() - 0.5) * step;
+                        cz += (random() - 0.5) * step;
+                        rx = cx; ry = cy; rz = cz;
+                    }
+
+                    vertices.push({ x: rx, y: ry, z: rz, type });
+                }
             }
             return { vertices };
         },
