@@ -134,6 +134,96 @@
             return { vertices, faces };
         },
 
+        generateCylinderMesh(p1, p2, radius, segments) {
+            const vertices = [];
+            const faces = [];
+
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const dz = p2.z - p1.z;
+            const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+            // Orientation vectors
+            let ux = 0, uy = 1, uz = 0;
+            if (Math.abs(dy / len) > 0.9) { ux = 1; uy = 0; }
+
+            // Binormal
+            let bx = dy * uz - dz * uy;
+            let by = dz * ux - dx * uz;
+            let bz = dx * uy - dy * ux;
+            const bLen = Math.sqrt(bx * bx + by * by + bz * bz);
+            bx /= bLen; by /= bLen; bz /= bLen;
+
+            // Normal
+            let nx = by * dz - bz * dy;
+            let ny = bz * dx - bx * dz;
+            let nz = bx * dy - by * dx;
+            const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
+            nx /= nLen; ny /= nLen; nz /= nLen;
+
+            for (let i = 0; i <= 1; i++) {
+                const p = i === 0 ? p1 : p2;
+                for (let j = 0; j < segments; j++) {
+                    const theta = (j / segments) * Math.PI * 2;
+                    const cos = Math.cos(theta);
+                    const sin = Math.sin(theta);
+
+                    vertices.push({
+                        x: p.x + radius * (nx * cos + bx * sin),
+                        y: p.y + radius * (ny * cos + by * sin),
+                        z: p.z + radius * (nz * cos + bz * sin)
+                    });
+                }
+            }
+
+            for (let j = 0; j < segments; j++) {
+                const v1 = j;
+                const v2 = (j + 1) % segments;
+                const v3 = segments + ((j + 1) % segments);
+                const v4 = segments + j;
+
+                faces.push([v1, v2, v3]);
+                faces.push([v1, v3, v4]);
+            }
+
+            return { vertices, faces };
+        },
+
+        generateSphereMesh(center, radius, bands) {
+            const vertices = [];
+            const faces = [];
+
+            for (let lat = 0; lat <= bands; lat++) {
+                const theta = (lat * Math.PI) / bands;
+                const sinT = Math.sin(theta);
+                const cosT = Math.cos(theta);
+
+                for (let lon = 0; lon <= bands; lon++) {
+                    const phi = (lon * 2 * Math.PI) / bands;
+                    const sinP = Math.sin(phi);
+                    const cosP = Math.cos(phi);
+
+                    vertices.push({
+                        x: center.x + radius * cosP * sinT,
+                        y: center.y + radius * cosT,
+                        z: center.z + radius * sinP * sinT
+                    });
+                }
+            }
+
+            for (let lat = 0; lat < bands; lat++) {
+                for (let lon = 0; lon < bands; lon++) {
+                    const first = lat * (bands + 1) + lon;
+                    const second = first + bands + 1;
+
+                    faces.push([first, second, first + 1]);
+                    faces.push([second, second + 1, first + 1]);
+                }
+            }
+
+            return { vertices, faces };
+        },
+
         generateChromosomeMesh() {
             // X-Shaped Chromosome (Two crossed, slightly bent capsules)
             // VERTICAL ORIENTATION for PiP display
