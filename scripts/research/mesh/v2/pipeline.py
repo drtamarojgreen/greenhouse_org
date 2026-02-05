@@ -4,6 +4,14 @@ Main entry point for the Enhanced MeSH Discovery Suite (v2).
 import logging
 import json
 import os
+import argparse
+
+try:
+    import yaml
+except ImportError:
+    print("PyYAML is not installed. Please install it using: pip install pyyaml")
+    exit(1)
+
 try:
     from .core.client import PubMedClient
     from .core.engine import DiscoveryEngine
@@ -15,11 +23,22 @@ except ImportError:
     from analytics.processor import DataProcessor
     from viz.charts import Visualizer
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+CONFIG_PATH = "scripts/research/mesh/v2/config.yaml"
 
-def run_v2_pipeline(seed="Mental Health", max_terms=40, min_count=20000):
+def load_config(config_path):
+    """Loads the configuration from a YAML file."""
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    return config
+
+def setup_logging(logging_config):
+    """Sets up logging based on the configuration."""
+    logging.basicConfig(level=logging_config['level'], format=logging_config['format'])
+
+def run_v2_pipeline(seed, max_terms, min_count, output_path):
+    """Main function to run the MeSH discovery pipeline."""
+    logger = logging.getLogger(__name__)
+    
     client = PubMedClient()
     engine = DiscoveryEngine(client, min_count=min_count)
     visualizer = Visualizer()
@@ -41,7 +60,6 @@ def run_v2_pipeline(seed="Mental Health", max_terms=40, min_count=20000):
     }
 
     # 3. Save Data
-    output_path = "scripts/research/mesh/v2/discovery_v2.json"
     with open(output_path, 'w') as f:
         json.dump(results, f, indent=4)
     logger.info(f"Saved results to {output_path}")
@@ -52,10 +70,20 @@ def run_v2_pipeline(seed="Mental Health", max_terms=40, min_count=20000):
         logger.info("Generated growth comparison plot.")
 
 if __name__ == "__main__":
-    import sys
-    # Support for quick test run
-    terms_limit = 5
-    if len(sys.argv) > 1 and sys.argv[1] == "--test":
-        terms_limit = 1
+    parser = argparse.ArgumentParser(description="Enhanced MeSH Discovery Suite (v2)")
+    parser.add_argument("--config", default=CONFIG_PATH, help="Path to the configuration file.")
+    parser.add_argument("--test", action="store_true", help="Run in test mode.")
+    args = parser.parse_args()
 
-    run_v2_pipeline(max_terms=terms_limit)
+    config = load_config(args.config)
+    setup_logging(config['logging'])
+
+    if args.test:
+        config['max_terms'] = config['test']['max_terms']
+
+    run_v2_pipeline(
+        seed=config['seed_term'],
+        max_terms=config['max_terms'],
+        min_count=config['min_count'],
+        output_path=config['output_path']
+    )
