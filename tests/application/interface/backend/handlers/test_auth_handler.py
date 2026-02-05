@@ -96,6 +96,37 @@ class TestAuthHandler(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('access_token', json.loads(response.data))
 
+    @patch('application.interface.backend.handlers.auth_handler.get_db')
+    @patch('application.interface.backend.handlers.auth_handler.pyotp.TOTP')
+    @patch('application.interface.backend.handlers.auth_handler.field_encryption')
+    def test_verify_mfa_invalid_code(self, mock_encryption, mock_totp, mock_get_db):
+        mock_db = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_db
+        mock_db.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.side_effect = [(1, 'test@example.com', 'Test User', 1, 'patient'), ('encrypted_secret',)]
+        mock_encryption.decrypt.return_value = 'JBSWY3DPEHPK3PXP'
+        mock_totp_instance = MagicMock()
+        mock_totp.return_value = mock_totp_instance
+        mock_totp_instance.verify.return_value = False
+
+        with self.app.test_request_context():
+            from flask_jwt_extended import create_access_token
+            temp_token = create_access_token(identity='1', additional_claims={'mfa_verified': False})
+
+        data = {'mfa_code': '000000'}
+        response = self.client.post('/api/auth/mfa/verify', data=json.dumps(data), content_type='application/json', headers={'Authorization': f'Bearer {temp_token}'})
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(json.loads(response.data)['error'], 'Invalid MFA code')
+
+    @patch('application.interface.backend.handlers.auth_handler.get_db')
+    def test_register_error_sanitization(self, mock_get_db):
+        mock_get_db.side_effect = Exception("Detailed internal database error")
+        data = {'email': 'test@example.com', 'password': 'Password123!', 'full_name': 'Test User', 'role_id': 1}
+        response = self.client.post('/api/auth/register', data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(json.loads(response.data)['error'], 'An error occurred during registration')
+
 
 if __name__ == '__main__':
     unittest.main()

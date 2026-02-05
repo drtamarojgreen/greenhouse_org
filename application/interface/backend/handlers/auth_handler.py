@@ -45,10 +45,12 @@ def register():
         User object and tokens
     """
     data = request.get_json()
-    db = get_db()
-    cur = db.cursor()
+    db = None
+    cur = None
     
     try:
+        db = get_db()
+        cur = db.cursor()
         # Validate role_id exists
         cur.execute('SELECT id FROM roles WHERE id = %s', (data['role_id'],))
         if not cur.fetchone():
@@ -108,7 +110,7 @@ def register():
             (user[0], encrypted_secret, datetime.utcnow(), True)
         )
         db.commit()
-        
+
         # Generate QR code for MFA enrollment
         totp = pyotp.TOTP(mfa_secret)
         provisioning_uri = totp.provisioning_uri(
@@ -141,10 +143,13 @@ def register():
         }), 201
     
     except Exception as e:
-        db.rollback()
+        if db:
+            db.rollback()
+        audit_logger.log_security_event('REGISTRATION_ERROR', None, request.remote_addr, str(e))
         return jsonify({'error': 'An error occurred during registration'}), 500
     finally:
-        cur.close()
+        if cur:
+            cur.close()
 
 
 @auth_bp.route('/auth/login', methods=['POST'])
@@ -164,10 +169,12 @@ def login():
         Temporary token for MFA verification
     """
     data = request.get_json()
-    db = get_db()
-    cur = db.cursor()
+    db = None
+    cur = None
     
     try:
+        db = get_db()
+        cur = db.cursor()
         # Get user by email
         cur.execute(
             """
@@ -238,9 +245,11 @@ def login():
         }), 200
     
     except Exception as e:
+        audit_logger.log_security_event('LOGIN_ERROR', None, request.remote_addr, str(e))
         return jsonify({'error': 'An error occurred during login'}), 500
     finally:
-        cur.close()
+        if cur:
+            cur.close()
 
 
 @auth_bp.route('/auth/mfa/verify', methods=['POST'])
@@ -268,10 +277,12 @@ def verify_mfa():
     if not data.get('mfa_code'):
         return jsonify({'error': 'MFA code is required'}), 400
     
-    db = get_db()
-    cur = db.cursor()
+    db = None
+    cur = None
     
     try:
+        db = get_db()
+        cur = db.cursor()
         # Get user and MFA secret
         cur.execute(
             """
@@ -354,9 +365,11 @@ def verify_mfa():
         }), 200
     
     except Exception as e:
+        audit_logger.log_security_event('MFA_VERIFY_ERROR', user_id, request.remote_addr, str(e))
         return jsonify({'error': 'An error occurred during MFA verification'}), 500
     finally:
-        cur.close()
+        if cur:
+            cur.close()
 
 
 @auth_bp.route('/auth/mfa/enroll', methods=['POST'])
@@ -369,10 +382,12 @@ def enroll_mfa():
         MFA secret and QR code for authenticator app
     """
     user_id = get_jwt_identity()
-    db = get_db()
-    cur = db.cursor()
+    db = None
+    cur = None
     
     try:
+        db = get_db()
+        cur = db.cursor()
         # Get user
         cur.execute('SELECT email FROM users WHERE id = %s', (user_id,))
         user = cur.fetchone()
@@ -428,9 +443,11 @@ def enroll_mfa():
         }), 200
     
     except Exception as e:
+        audit_logger.log_security_event('MFA_ENROLL_ERROR', user_id, request.remote_addr, str(e))
         return jsonify({'error': 'An error occurred during MFA enrollment'}), 500
     finally:
-        cur.close()
+        if cur:
+            cur.close()
 
 
 @auth_bp.route('/auth/refresh', methods=['POST'])
@@ -466,10 +483,13 @@ def logout():
     claims = get_jwt()
     jti = claims['jti']
     
-    db = get_db()
-    cur = db.cursor()
+    db = None
+    cur = None
     
     try:
+        db = get_db()
+        cur = db.cursor()
+
         # Add token to blacklist
         cur.execute(
             """
@@ -492,10 +512,13 @@ def logout():
 
         return jsonify({'message': 'Logout successful'}), 200
     except Exception as e:
-        db.rollback()
+        if db:
+            db.rollback()
+        audit_logger.log_security_event('LOGOUT_ERROR', user_id, request.remote_addr, str(e))
         return jsonify({'error': 'An error occurred during logout'}), 500
     finally:
-        cur.close()
+        if cur:
+            cur.close()
 
 
 @auth_bp.route('/auth/me', methods=['GET'])
@@ -511,10 +534,12 @@ def get_current_user():
         Current user object
     """
     user_id = get_jwt_identity()
-    db = get_db()
-    cur = db.cursor()
+    db = None
+    cur = None
     
     try:
+        db = get_db()
+        cur = db.cursor()
         cur.execute(
             """
             SELECT u.id, u.email, u.full_name, u.role_id, r.role_name, u.created_at
@@ -539,6 +564,8 @@ def get_current_user():
         }), 200
     
     except Exception as e:
+        audit_logger.log_security_event('GET_USER_ERROR', user_id, request.remote_addr, str(e))
         return jsonify({'error': 'An error occurred while fetching user information'}), 500
     finally:
-        cur.close()
+        if cur:
+            cur.close()

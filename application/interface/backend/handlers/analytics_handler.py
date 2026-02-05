@@ -5,7 +5,7 @@ from flask import Blueprint, request, jsonify, g
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timedelta
 from ..database import get_db
-from ..utils.audit_logger import audit_log
+from ..utils.audit_logger import audit_log, audit_logger
 
 analytics_bp = Blueprint('analytics_bp', __name__)
 
@@ -325,6 +325,7 @@ def get_dashboard_metrics():
         }), 200
     
     except Exception as e:
+        audit_logger.log_security_event('ANALYTICS_DASHBOARD_ERROR', user_id, request.remote_addr, str(e))
         return jsonify({'error': 'An error occurred while fetching analytics dashboard metrics'}), 500
     finally:
         cur.close()
@@ -468,6 +469,7 @@ def get_trends():
         }), 200
     
     except Exception as e:
+        audit_logger.log_security_event('ANALYTICS_TRENDS_ERROR', user_id, request.remote_addr, str(e))
         return jsonify({'error': 'An error occurred while fetching analytics trends'}), 500
     finally:
         cur.close()
@@ -565,6 +567,7 @@ def get_performance_metrics():
         return jsonify(metrics), 200
     
     except Exception as e:
+        audit_logger.log_security_event('PERFORMANCE_METRICS_ERROR', None, request.remote_addr, str(e))
         return jsonify({'error': 'An error occurred while fetching performance metrics'}), 500
     finally:
         cur.close()
@@ -691,6 +694,7 @@ def generate_report():
         return jsonify(report_data), 200
     
     except Exception as e:
+        audit_logger.log_security_event('REPORT_GENERATION_ERROR', user_id, request.remote_addr, str(e))
         return jsonify({'error': 'An error occurred while generating report'}), 500
     finally:
         cur.close()
