@@ -18,7 +18,7 @@ class Message:
         }
 
     @staticmethod
-def get_all_for_user(user_id):
+    def get_all_for_user(user_id):
         db = get_db()
         cur = db.cursor()
         cur.execute('SELECT * FROM messages WHERE sender_id = %s OR receiver_id = %s;', (user_id, user_id))
