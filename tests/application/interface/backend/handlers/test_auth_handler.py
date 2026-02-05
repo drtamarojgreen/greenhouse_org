@@ -26,33 +26,41 @@ class TestAuthHandler(unittest.TestCase):
     @patch('application.interface.backend.handlers.auth_handler.get_db')
     @patch('application.interface.backend.handlers.auth_handler.bcrypt')
     @patch('application.interface.backend.handlers.auth_handler.datetime')
-    def test_register(self, mock_datetime, mock_bcrypt, mock_get_db):
+    @patch('application.interface.backend.handlers.auth_handler.field_encryption')
+    def test_register(self, mock_encryption, mock_datetime, mock_bcrypt, mock_get_db):
         mock_db = MagicMock()
         mock_cursor = MagicMock()
         mock_get_db.return_value = mock_db
         mock_db.cursor.return_value = mock_cursor
-        mock_cursor.fetchone.return_value = None
         mock_bcrypt.generate_password_hash.return_value = b'hashed_password'
-        mock_datetime.now.return_value = datetime.now()
+        mock_datetime.utcnow.return_value = datetime.utcnow()
+        mock_encryption.encrypt.return_value = 'encrypted_secret'
 
-        # Mock the return value of the INSERT query
+        # Mock the return values for fetches
         mock_cursor.fetchone.side_effect = [
-            None, # For the initial check if the user exists
-            (1, 'test@example.com', 'Test User', 1, datetime.now()) # For the RETURNING clause
+            (1,), # For role validation
+            None, # For checking if user already exists
+            (1, 'test@example.com', 'Test User', 1, datetime.utcnow()) # For user insertion RETURNING clause
         ]
 
         data = {'email': 'test@example.com', 'password': 'Password123!', 'full_name': 'Test User', 'role_id': 1}
         response = self.client.post('/api/auth/register', data=json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, 201)
-        self.assertIn('mfa_secret', json.loads(response.data))
+        self.assertIn('qr_code', json.loads(response.data))
 
     @patch('application.interface.backend.handlers.auth_handler.get_db')
-    def test_login(self, mock_get_db):
+    @patch('application.interface.backend.handlers.auth_handler.bcrypt')
+    def test_login(self, mock_bcrypt, mock_get_db):
         mock_db = MagicMock()
         mock_cursor = MagicMock()
         mock_get_db.return_value = mock_db
         mock_db.cursor.return_value = mock_cursor
-        mock_cursor.fetchone.return_value = (1, 'test@example.com', 'Test User', 1, 'patient')
+
+        mock_cursor.fetchone.side_effect = [
+            (1, 'test@example.com', 'Test User', 1, 'patient'), # User info
+            ('hashed_password',) # Stored hash
+        ]
+        mock_bcrypt.check_password_hash.return_value = True
 
         data = {'email': 'test@example.com', 'password': 'Password123!'}
         response = self.client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
@@ -61,12 +69,19 @@ class TestAuthHandler(unittest.TestCase):
 
     @patch('application.interface.backend.handlers.auth_handler.get_db')
     @patch('application.interface.backend.handlers.auth_handler.pyotp.TOTP')
-    def test_verify_mfa(self, mock_totp, mock_get_db):
+    @patch('application.interface.backend.handlers.auth_handler.field_encryption')
+    def test_verify_mfa(self, mock_encryption, mock_totp, mock_get_db):
         mock_db = MagicMock()
         mock_cursor = MagicMock()
         mock_get_db.return_value = mock_db
         mock_db.cursor.return_value = mock_cursor
-        mock_cursor.fetchone.return_value = (1, 'test@example.com', 'Test User', 1, 'patient')
+
+        mock_cursor.fetchone.side_effect = [
+            (1, 'test@example.com', 'Test User', 1, 'patient'), # User info
+            ('encrypted_secret',) # MFA secret
+        ]
+
+        mock_encryption.decrypt.return_value = 'JBSWY3DPEHPK3PXP'
 
         mock_totp_instance = MagicMock()
         mock_totp.return_value = mock_totp_instance
@@ -74,7 +89,7 @@ class TestAuthHandler(unittest.TestCase):
 
         with self.app.test_request_context():
             from flask_jwt_extended import create_access_token
-            temp_token = create_access_token(identity=1, additional_claims={'mfa_verified': False})
+            temp_token = create_access_token(identity='1', additional_claims={'mfa_verified': False})
 
         data = {'mfa_code': '123456'}
         response = self.client.post('/api/auth/mfa/verify', data=json.dumps(data), content_type='application/json', headers={'Authorization': f'Bearer {temp_token}'})

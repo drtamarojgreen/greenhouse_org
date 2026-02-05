@@ -217,7 +217,7 @@ def login():
         
         # Create temporary token for MFA
         temp_token = create_access_token(
-            identity=user[0],
+            identity=str(user[0]),
             additional_claims={'mfa_verified': False, 'role': user[4]},
             expires_delta=timedelta(minutes=5)
         )
@@ -317,7 +317,7 @@ def verify_mfa():
         
         # Create access and refresh tokens
         access_token = create_access_token(
-            identity=user[0],
+            identity=str(user[0]),
             additional_claims={
                 'mfa_verified': True,
                 'role': user[4],
@@ -327,7 +327,7 @@ def verify_mfa():
         )
         
         refresh_token = create_refresh_token(
-            identity=user[0],
+            identity=str(user[0]),
             expires_delta=timedelta(days=7)
         )
         
@@ -449,7 +449,7 @@ def refresh():
     
     # Create new access token
     access_token = create_access_token(
-        identity=user_id,
+        identity=str(user_id),
         expires_delta=timedelta(minutes=15)
     )
     
