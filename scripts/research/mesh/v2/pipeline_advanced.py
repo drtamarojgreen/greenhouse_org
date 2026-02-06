@@ -68,16 +68,22 @@ def get_mesh_details(term):
 
         if record["IdList"]:
             mesh_id = record["IdList"][0]
-            handle = Entrez.efetch(db="mesh", id=mesh_id, retmode="xml")
+            # Use esummary instead of efetch for MeSH as it reliably returns XML with Tree Numbers.
+            # Note: MeSH efetch retmode=xml is often unsupported/problematic in standard Entrez.
+            handle = Entrez.esummary(db="mesh", id=mesh_id, retmode="xml")
             mesh_record = Entrez.read(handle)
             handle.close()
             time.sleep(0.3) # Respect NCBI's rate limit
             
             tree_numbers = []
-            if "DescriptorRecord" in mesh_record and "TreeNumberList" in mesh_record["DescriptorRecord"]:
-                tree_numbers = [str(tn) for tn in mesh_record["DescriptorRecord"]["TreeNumberList"]]
-            elif "DescriptorRecordSet" in mesh_record and len(mesh_record["DescriptorRecordSet"]) > 0 and "TreeNumberList" in mesh_record["DescriptorRecordSet"][0]:
-                tree_numbers = [str(tn) for tn in mesh_record["DescriptorRecordSet"][0]["TreeNumberList"]]
+            # esummary returns a list of records (DocSums).
+            # For db="mesh", tree numbers are nested within 'DS_IdxLinks' -> 'TreeNum'.
+            if isinstance(mesh_record, list) and len(mesh_record) > 0:
+                record_data = mesh_record[0]
+                if "DS_IdxLinks" in record_data:
+                    for link in record_data["DS_IdxLinks"]:
+                        if "TreeNum" in link:
+                            tree_numbers.append(str(link["TreeNum"]))
             
             return {"mesh_id": mesh_id, "tree_numbers": tree_numbers}
         return None
@@ -91,8 +97,10 @@ def classify_term(term_details):
         return "concept"  # Default to generic concept if no details
 
     tree_numbers = term_details["tree_numbers"]
+    # G: Biological Sciences
     is_biological_mechanism = any(tn.startswith('G') for tn in tree_numbers)
-    is_intervention = any(tn.startswith('N') for tn in tree_numbers)
+    # N: Health Care, E: Analytical, Diagnostic and Therapeutic Techniques and Equipment
+    is_intervention = any(tn.startswith('N') or tn.startswith('E') for tn in tree_numbers)
 
     if is_biological_mechanism and is_intervention:
         return "mechanism_and_intervention" # Could be both, handle as needed
