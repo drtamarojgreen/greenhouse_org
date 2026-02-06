@@ -27,8 +27,12 @@ def segment_brain(fbx_path, predictions_path, output_blend_path):
 
     # 2. Import Mesh
     clean_scene()
-    # Pass files parameter to avoid Blender 5.0+ AttributeError
-    bpy.ops.import_scene.fbx(filepath=fbx_path, files=[{"name": os.path.basename(fbx_path)}])
+    # Pass directory and files parameters to avoid Blender 5.0+ AttributeError
+    bpy.ops.import_scene.fbx(
+        filepath=fbx_path,
+        directory=os.path.dirname(fbx_path),
+        files=[{"name": os.path.basename(fbx_path)}]
+    )
     # Assume single mesh object imported
     original_obj = bpy.context.selected_objects[0]
     original_obj.name = "Brain_Full"
