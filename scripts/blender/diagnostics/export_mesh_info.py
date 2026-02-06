@@ -22,7 +22,7 @@ def export_mesh_info():
     
     # 3. Import FBX
     print(f"Importing {fbx_path}...")
-    bpy.ops.import_scene.fbx(filepath=fbx_path)
+    bpy.ops.import_scene.fbx(filepath=fbx_path, directory=os.path.dirname(fbx_path), files=[{'name': os.path.basename(fbx_path)}])
     
     # 4. Find the main mesh
     # Just take the first mesh object found

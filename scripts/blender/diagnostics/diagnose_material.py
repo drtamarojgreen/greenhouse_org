@@ -18,7 +18,7 @@ def run_material_diag():
         bpy.data.objects.remove(obj, do_unlink=True)
         
     fbx = os.path.join(script_dir, "brain.fbx")
-    bpy.ops.import_scene.fbx(filepath=fbx)
+    bpy.ops.import_scene.fbx(filepath=fbx, directory=os.path.dirname(fbx), files=[{'name': os.path.basename(fbx)}])
     brain = bpy.context.selected_objects[0]
     brain.name = "BrainModel"
     

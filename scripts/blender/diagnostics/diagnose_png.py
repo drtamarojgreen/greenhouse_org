@@ -23,7 +23,7 @@ def run_isolated_render_test(mode='TURNTABLE_ONLY', use_roi=False):
     
     # Scene Setup
     fbx = os.path.join(script_dir, "brain.fbx")
-    bpy.ops.import_scene.fbx(filepath=fbx)
+    bpy.ops.import_scene.fbx(filepath=fbx, directory=os.path.dirname(fbx), files=[{'name': os.path.basename(fbx)}])
     brain = bpy.context.selected_objects[0]
     brain.name = "BrainModel"
     brain.location = (0, 0, 0)

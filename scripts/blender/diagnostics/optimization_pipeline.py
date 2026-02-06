@@ -55,7 +55,7 @@ def run_pipeline(source_dir, target_dir, config):
         if filename.lower().endswith('.blend'):
             bpy.ops.wm.open_mainfile(filepath=source_path)
         elif filename.lower().endswith('.fbx'):
-            bpy.ops.import_scene.fbx(filepath=source_path)
+            bpy.ops.import_scene.fbx(filepath=source_path, directory=os.path.dirname(source_path), files=[{'name': os.path.basename(source_path)}])
 
         # 2. Run Optimizers
         for obj in bpy.data.objects:

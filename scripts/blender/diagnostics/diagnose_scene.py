@@ -26,7 +26,7 @@ def run_diagnostic():
         bpy.data.objects.remove(obj, do_unlink=True)
     
     print(f"Importing {base_fbx_path}...")
-    bpy.ops.import_scene.fbx(filepath=base_fbx_path)
+    bpy.ops.import_scene.fbx(filepath=base_fbx_path, directory=os.path.dirname(base_fbx_path), files=[{'name': os.path.basename(base_fbx_path)}])
     model = bpy.context.selected_objects[0]
     model.name = "BrainModel"
     model.location = (0, 0, 0)

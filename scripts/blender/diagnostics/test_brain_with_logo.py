@@ -33,7 +33,7 @@ def create_brain_logo_animation(output_path, frame_count=20):
         script_dir = os.path.dirname(os.path.abspath(__file__))
         fbx_path = os.path.join(script_dir, "brain.fbx")
         if os.path.exists(fbx_path):
-            bpy.ops.import_scene.fbx(filepath=fbx_path)
+            bpy.ops.import_scene.fbx(filepath=fbx_path, directory=os.path.dirname(fbx_path), files=[{'name': os.path.basename(fbx_path)}])
             brain_obj = bpy.context.selected_objects[0]
             
             # Ensure origin is centered for proper scaling

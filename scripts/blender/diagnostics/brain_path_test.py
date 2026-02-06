@@ -32,7 +32,7 @@ def render_brain_path_animation():
         print(f"ERROR: FBX not found at {fbx_path}")
         return
         
-    bpy.ops.import_scene.fbx(filepath=fbx_path)
+    bpy.ops.import_scene.fbx(filepath=fbx_path, directory=os.path.dirname(fbx_path), files=[{'name': os.path.basename(fbx_path)}])
     brain = bpy.context.selected_objects[0]
     brain.name = "TargetBrain"
     

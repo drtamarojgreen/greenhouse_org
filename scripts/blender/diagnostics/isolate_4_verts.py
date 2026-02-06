@@ -18,7 +18,7 @@ def isolate_brain_subset():
         print(f"Error: FBX not found at {fbx_path}")
         return
         
-    bpy.ops.import_scene.fbx(filepath=fbx_path)
+    bpy.ops.import_scene.fbx(filepath=fbx_path, directory=os.path.dirname(fbx_path), files=[{'name': os.path.basename(fbx_path)}])
     if not bpy.context.selected_objects:
         print("Error: No objects selected after import.")
         return

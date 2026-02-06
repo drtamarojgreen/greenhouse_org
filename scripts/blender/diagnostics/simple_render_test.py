@@ -20,7 +20,7 @@ try:
     if not os.path.exists(fbx_path):
         print("CRITICAL: brain.fbx not found!")
     else:
-        bpy.ops.import_scene.fbx(filepath=fbx_path)
+        bpy.ops.import_scene.fbx(filepath=fbx_path, directory=os.path.dirname(fbx_path), files=[{'name': os.path.basename(fbx_path)}])
         print("FBX import call completed.")
 
     # --- Improve Lighting ---

@@ -11,7 +11,7 @@ def render_highpoly_animation():
     
     # 2. Import Full Brain (150k verts)
     fbx_path = '/home/tamarojgreen/development/LLM/greenhouse_org/scripts/blender/brain.fbx'
-    bpy.ops.import_scene.fbx(filepath=fbx_path)
+    bpy.ops.import_scene.fbx(filepath=fbx_path, directory=os.path.dirname(fbx_path), files=[{'name': os.path.basename(fbx_path)}])
     brain = bpy.context.selected_objects[0]
     
     # 3. Animate Brain Rotation (10 frames)
