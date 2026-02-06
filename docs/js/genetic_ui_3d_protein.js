@@ -53,7 +53,7 @@
                 vy = ty; vz = tz;
 
                 const p = GreenhouseModels3DMath.project3DTo2D(vx, vy, vz, proteinCamera, { width: w, height: h, near: 10, far: 5000 });
-                return { x: p.x + x, y: p.y + y, scale: p.scale, depth: p.depth };
+                return { x: p.x + x, y: p.y + y, scale: p.scale, depth: p.depth, type: v.type };
             });
 
             // Draw Chain based on Mode
@@ -62,7 +62,6 @@
 
             if (mode === 'ribbon') {
                 // Ribbon Mode (Thick Line)
-                ctx.lineWidth = 8;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
 
@@ -73,28 +72,35 @@
                     if (p1.scale > 0 && p2.scale > 0) {
                         const avgDepth = (p1.depth + p2.depth) / 2;
                         const alpha = Math.min(1, Math.max(0.2, 1 - avgDepth / 1000));
-                        const width = 8 * ((p1.scale + p2.scale) / 2);
+
+                        // Color based on Secondary Structure
+                        const structureType = p1.type || 'coil';
+                        let r, g, b, baseWidth = 8;
+                        if (structureType === 'helix') {
+                            r = 255; g = 0; b = 255; // Helix: Magenta
+                            baseWidth = 12; // Helices are thicker ribbons
+                        } else if (structureType === 'sheet') {
+                            r = 255; g = 215; b = 0; // Sheet: Yellow
+                            baseWidth = 10;
+                        } else {
+                            r = 240; g = 240; b = 240; // Coil: White
+                            baseWidth = 6;
+                        }
+
+                        const width = baseWidth * ((p1.scale + p2.scale) / 2);
 
                         ctx.beginPath();
                         ctx.moveTo(p1.x, p1.y);
                         ctx.lineTo(p2.x, p2.y);
 
-                        // Color gradient based on Secondary Structure (Simulated)
-                        // Helix (Magenta), Sheet (Yellow), Coil (White)
-                        const structureType = Math.floor(i / 10) % 3;
-                        let r, g, b;
-                        if (structureType === 0) { r = 255; g = 0; b = 255; } // Helix
-                        else if (structureType === 1) { r = 255; g = 215; b = 0; } // Sheet
-                        else { r = 240; g = 240; b = 240; } // Coil
-
                         ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.lineWidth = width;
                         ctx.stroke();
 
-                        // Draw "Atom" at joint
+                        // Draw joint for smoothness
                         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.beginPath();
-                        ctx.arc(p2.x, p2.y, width / 1.5, 0, Math.PI * 2);
+                        ctx.arc(p2.x, p2.y, width / 2, 0, Math.PI * 2);
                         ctx.fill();
                     }
                 }
