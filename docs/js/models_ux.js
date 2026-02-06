@@ -72,12 +72,12 @@
             },
 
             networkLayout: [
-                { x: 100, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'pfc' },
-                { x: 250, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'amygdala' },
-                { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'hippocampus' },
-                { x: 400, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'pfc' },
-                { x: 550, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'OLIGODENDROCYTE', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'amygdala' },
-                { x: 450, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'hippocampus' }
+                { x: 100, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'pfc_desc' },
+                { x: 250, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'amygdala_desc' },
+                { x: 150, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'INTERNEURON', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'hippocampus_desc' },
+                { x: 400, y: 100, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'pfc_desc' },
+                { x: 550, y: 150, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'INTERNEURON', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'amygdala_desc' },
+                { x: 450, y: 250, activation: 0, state: 'RESTING', refractoryPeriod: 0, type: 'PYRAMIDAL', geneExpressionLevel: 0.0, transcriptionFactors: 0, label: 'hippocampus_desc' }
             ],
 
             synapses: [],
@@ -420,21 +420,25 @@
             document.getElementById('intensity-slider-synaptic').value = 50;
             document.getElementById('speed-select-synaptic').value = 'Normal';
             document.getElementById('play-pause-btn-synaptic').textContent = 'Play';
-            document.getElementById('play-pause-btn-synaptic').disabled = true;
+            document.getElementById('play-pause-btn-synaptic').disabled = false;
 
             document.getElementById('intensity-slider-network').value = 50;
             document.getElementById('speed-select-network').value = 'Normal';
             document.getElementById('play-pause-btn-network').textContent = 'Play';
-            document.getElementById('play-pause-btn-network').disabled = true;
+            document.getElementById('play-pause-btn-network').disabled = false;
 
             const playPauseBtnEnv = document.getElementById('play-pause-btn-environment');
             if (playPauseBtnEnv) {
                 playPauseBtnEnv.textContent = 'Play';
-                playPauseBtnEnv.disabled = true;
+                playPauseBtnEnv.disabled = false;
             }
 
             document.getElementById('stress-slider').value = 0.5;
             document.getElementById('support-slider').value = 0.5;
+            document.getElementById('community-slider').value = 0.5;
+            document.getElementById('society-slider').value = 0.5;
+            this.updateGeneticsFeedback();
+
             const envTypeSelect = document.getElementById('environment-type-select');
             if (envTypeSelect) {
                 envTypeSelect.value = 'NEUTRAL';
@@ -486,7 +490,25 @@
             }
         },
 
+        updateGeneticsFeedback() {
+            const display = document.getElementById('genetics-value-display');
+            if (display) {
+                display.textContent = this.state.environment.genetics.toFixed(2);
+            }
+        },
+
         bindEnvironmentControls() {
+            const playPauseBtnEnv = document.getElementById('play-pause-btn-environment');
+            if (playPauseBtnEnv) {
+                playPauseBtnEnv.addEventListener('click', () => {
+                    this.state.environment.isRunning = !this.state.environment.isRunning;
+                    playPauseBtnEnv.textContent = this.state.environment.isRunning ? window.GreenhouseModelsUtil.t('btn_pause') : window.GreenhouseModelsUtil.t('btn_play');
+                    if (this.state.environment.isRunning) {
+                        this.runEnvironmentSimulation();
+                    }
+                });
+            }
+
             const stressSlider = document.getElementById('stress-slider');
             if (stressSlider) {
                 stressSlider.addEventListener('input', e => {
@@ -501,10 +523,25 @@
                 });
             }
 
+            const communitySlider = document.getElementById('community-slider');
+            if (communitySlider) {
+                communitySlider.addEventListener('input', e => {
+                    this.state.environment.community = parseFloat(e.target.value);
+                });
+            }
+
+            const societySlider = document.getElementById('society-slider');
+            if (societySlider) {
+                societySlider.addEventListener('input', e => {
+                    this.state.environment.society = parseFloat(e.target.value);
+                });
+            }
+
             const geneBtn1 = document.getElementById('gene-btn-1');
             if (geneBtn1) {
                 geneBtn1.addEventListener('click', () => {
                     this.state.environment.genetics = Math.random();
+                    this.updateGeneticsFeedback();
                 });
             }
 
@@ -512,6 +549,7 @@
             if (geneBtn2) {
                 geneBtn2.addEventListener('click', () => {
                     this.state.environment.genetics = Math.random();
+                    this.updateGeneticsFeedback();
                 });
             }
         },
@@ -591,11 +629,14 @@
 
             // Update brain region activations based on environment
             const regions = this.state.environment.regions;
+            const society = this.state.environment.society;
             if (this.state.environment.type === 'POSITIVE') {
-                regions.pfc.activation = Math.min(1, regions.pfc.activation + 0.01);
+                // Society and support boost PFC
+                regions.pfc.activation = Math.min(1, regions.pfc.activation + 0.01 * society);
                 regions.amygdala.activation = Math.max(0, regions.amygdala.activation - 0.01);
             } else if (this.state.environment.type === 'NEGATIVE') {
-                regions.pfc.activation = Math.max(0, regions.pfc.activation - 0.01);
+                // Society can act as a buffer or exacerbator
+                regions.pfc.activation = Math.max(0, regions.pfc.activation - 0.01 * (1 - society));
                 regions.amygdala.activation = Math.min(1, regions.amygdala.activation + 0.01);
             }
             // Simple model for hippocampus activation based on overall network firing
@@ -624,11 +665,12 @@
             const regions = this.state.environment.regions;
             const stress = this.state.environment.stress;
             const support = this.state.environment.support;
+            const society = this.state.environment.society;
 
-            // Amygdala activation increases with stress, decreases with support
-            regions.amygdala.activation = Math.max(0, Math.min(1, regions.amygdala.activation + (stress - support) * 0.005 + (Math.random() - 0.5) * 0.01));
-            // PFC activation increases with support, decreases with stress
-            regions.pfc.activation = Math.max(0, Math.min(1, regions.pfc.activation + (support - stress) * 0.005 + (Math.random() - 0.5) * 0.01));
+            // Amygdala activation increases with stress, decreases with support and societal stability
+            regions.amygdala.activation = Math.max(0, Math.min(1, regions.amygdala.activation + (stress - (support * 0.5 + society * 0.5)) * 0.005 + (Math.random() - 0.5) * 0.01));
+            // PFC activation increases with support and society, decreases with stress
+            regions.pfc.activation = Math.max(0, Math.min(1, regions.pfc.activation + ((support * 0.5 + society * 0.5) - stress) * 0.005 + (Math.random() - 0.5) * 0.01));
             // Hippocampus activation fluctuates gently
             regions.hippocampus.activation = Math.max(0, Math.min(1, regions.hippocampus.activation + (Math.random() - 0.5) * 0.01));
 
@@ -701,17 +743,6 @@
                 }
 
             });
-
-            const playPauseBtnEnv = document.getElementById('play-pause-btn-environment');
-            if (playPauseBtnEnv) {
-                playPauseBtnEnv.addEventListener('click', () => {
-                    this.state.environment.isRunning = !this.state.environment.isRunning;
-                    playPauseBtnEnv.textContent = this.state.environment.isRunning ? window.GreenhouseModelsUtil.t('btn_pause') : window.GreenhouseModelsUtil.t('btn_play');
-                    if (this.state.environment.isRunning) {
-                        this.runEnvironmentSimulation();
-                    }
-                });
-            }
 
             document.getElementById('reset-btn-synaptic').addEventListener('click', () => {
                 this.state.synaptic.isRunning = false;

@@ -1235,7 +1235,9 @@
 
             how_to_title: "How to Use",
             how_to_synaptic: "Use the controls to see how different parameters affect the strength of neural connections in real-time.",
+            how_to_network: "Adjust network parameters to observe how signal intensity and speed influence the pattern of action potentials across different brain regions.",
             how_to_env: "Use the sliders to adjust environmental stress and social support. Click the gene buttons to simulate genetic predispositions.",
+            genetics_explain: "Genetics in this model represents a conceptual predisposition that scales synaptic weights, influencing how easily the network potentiates.",
 
             loading: "Loading Simulation...",
 
@@ -1509,6 +1511,8 @@
             "label_support": "Therapeutic Support",
             "label_stress": "Environmental Stress",
             "label_genetic": "Genetic Predisposition",
+            label_community: "Community Support",
+            label_society: "Societal Factors",
 
             "option_slow": "Slow",
             "option_normal": "Normal",
@@ -1866,6 +1870,8 @@
 
             label_stress: "Estrés Ambiental",
             label_support: "Nivel de Apoyo Social",
+            label_community: "Apoyo Comunitario",
+            label_society: "Factores Sociales",
             label_genetic: "Factores Genéticos",
             btn_gene_a: "Gen A",
             btn_gene_b: "Gen B",
@@ -3110,7 +3116,9 @@
 
             how_to_title: "Cómo Usar",
             how_to_synaptic: "Usa los controles para ver cómo diferentes parámetros afectan la fuerza de las conexiones neuronales en tiempo real.",
+            how_to_network: "Ajusta los parámetros de la red para observar cómo la intensidad y la velocidad de la señal influyen en el patrón de los potenciales de acción en diferentes regiones del cerebro.",
             how_to_env: "Usa los deslizadores para ajustar el estrés ambiental y el apoyo social. Haz clic en los botones de genes para simular predisposiciones genéticas.",
+            genetics_explain: "La genética en este modelo representa una predisposición conceptual que escala los pesos sinápticos, influyendo en la facilidad con la que la red se potencia.",
 
             loading: "Cargando Simulación...",
 

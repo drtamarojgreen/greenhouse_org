@@ -28,8 +28,8 @@
 ]
 },
 {
-"id": "oligodendrocyte",
-"type": "OLIGODENDROCYTE",
+            "id": "interneuron",
+            "type": "INTERNEURON",
 "shape": "circle",
 "radius": 8,
 "style": {
