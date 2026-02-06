@@ -32,8 +32,7 @@ def clean_scene():
 
 def setup_scene(fbx_path):
     print(f"Importing {fbx_path}...")
-    # Pass files parameter to avoid Blender 5.0+ AttributeError
-    bpy.ops.import_scene.fbx(filepath=fbx_path, files=[{"name": os.path.basename(fbx_path)}])
+    bpy.ops.import_scene.fbx(filepath=fbx_path)
     if not bpy.context.selected_objects:
         raise RuntimeError("FBX Import failed.")
     model = bpy.context.selected_objects[0]

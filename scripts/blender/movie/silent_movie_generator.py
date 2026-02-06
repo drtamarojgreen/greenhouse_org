@@ -179,8 +179,7 @@ class MovieMaster:
         # Load Brain
         brain_path = os.path.join(base_path, "brain.fbx")
         if os.path.exists(brain_path):
-            # Pass files parameter to avoid Blender 5.0+ AttributeError
-            bpy.ops.import_scene.fbx(filepath=brain_path, files=[{"name": os.path.basename(brain_path)}])
+            bpy.ops.import_scene.fbx(filepath=brain_path)
             imported = bpy.context.selected_objects
             self.brain = bpy.data.objects.new("BrainGroup", None)
             bpy.context.scene.collection.objects.link(self.brain)
@@ -199,8 +198,7 @@ class MovieMaster:
         # Load Neuron
         neuron_path = os.path.join(base_path, "neuron.fbx")
         if os.path.exists(neuron_path):
-            # Pass files parameter to avoid Blender 5.0+ AttributeError
-            bpy.ops.import_scene.fbx(filepath=neuron_path, files=[{"name": os.path.basename(neuron_path)}])
+            bpy.ops.import_scene.fbx(filepath=neuron_path)
             imported = bpy.context.selected_objects
             self.neuron = bpy.data.objects.new("NeuronGroup", None)
             bpy.context.scene.collection.objects.link(self.neuron)

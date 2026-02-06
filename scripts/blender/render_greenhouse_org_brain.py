@@ -76,8 +76,7 @@ def import_neuron(fbx_path):
         bpy.ops.mesh.primitive_uv_sphere_add(radius=2, location=(0, 2.5, 0))
         neuron_obj = bpy.context.object
     else:
-        # Pass files parameter to avoid Blender 5.0+ AttributeError
-        bpy.ops.import_scene.fbx(filepath=fbx_path, files=[{"name": os.path.basename(fbx_path)}])
+        bpy.ops.import_scene.fbx(filepath=fbx_path)
         neuron_objs = bpy.context.selected_objects
         if not neuron_objs:
             bpy.ops.mesh.primitive_uv_sphere_add(radius=2, location=(0, 2.5, 0))
