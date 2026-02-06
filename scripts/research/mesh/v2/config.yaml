@@ -1,0 +1,19 @@
+# Configuration for the Enhanced MeSH Discovery Suite (v2)
+
+# Pipeline settings
+seed_term: "Mental Health"
+max_terms: 80
+min_count: 40000
+output_path: "scripts/research/mesh/v2/discovery_v2.json"
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Test settings
+test:
+  max_terms: 1
+
+# Advanced pipeline settings
+advanced_pipeline_output_path: "scripts/research/mesh/v2/mesh_mental_health_tree.json"
