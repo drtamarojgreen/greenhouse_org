@@ -120,7 +120,8 @@ def setup_scene(config):
     bpy.ops.object.delete()
     
     fbx_path = '/home/tamarojgreen/development/LLM/greenhouse_org/scripts/blender/brain.fbx'
-    bpy.ops.import_scene.fbx(filepath=fbx_path)
+    # Pass files parameter to avoid Blender 5.0+ AttributeError
+    bpy.ops.import_scene.fbx(filepath=fbx_path, files=[{"name": os.path.basename(fbx_path)}])
     brain = bpy.context.selected_objects[0]
     
     data_dir = '/home/tamarojgreen/development/LLM/greenhouse_org/scripts/python'

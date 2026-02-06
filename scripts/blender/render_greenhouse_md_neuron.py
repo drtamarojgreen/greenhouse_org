@@ -47,11 +47,13 @@ def import_neurons(fbx_path):
         bpy.ops.mesh.primitive_uv_sphere_add(radius=1, location=(2, 5, 0))
         n2 = bpy.context.object
         return n1, n2
-    bpy.ops.import_scene.fbx(filepath=fbx_path)
+    # Pass files parameter to avoid Blender 5.0+ AttributeError
+    bpy.ops.import_scene.fbx(filepath=fbx_path, files=[{"name": os.path.basename(fbx_path)}])
     n1 = bpy.context.selected_objects[0]
     n1.location = (-1.5, 5, 0)
     n1.rotation_euler = (0, math.radians(90), 0)
-    bpy.ops.import_scene.fbx(filepath=fbx_path)
+    # Pass files parameter to avoid Blender 5.0+ AttributeError
+    bpy.ops.import_scene.fbx(filepath=fbx_path, files=[{"name": os.path.basename(fbx_path)}])
     n2 = [obj for obj in bpy.context.selected_objects if obj != n1][0]
     n2.location = (1.5, 5, 0)
     n2.rotation_euler = (0, math.radians(-90), 0)
