@@ -21,7 +21,15 @@
             ionChannel: { en: 'Ion Channel', es: 'Canal Iónico' },
             gpcr: { en: 'G-protein Coupled Receptor', es: 'Receptor acoplado a proteína G' },
             legendTitle: { en: 'Neural Anatomy', es: 'Anatomía Neuronal' },
-            neurotransmitter: { en: 'Neurotransmitter (Signal)', es: 'Neurotransmisor (Señal)' }
+            neurotransmitter: { en: 'Neurotransmitter (Signal)', es: 'Neurotransmisor (Señal)' },
+            mitochondria: { en: 'Mitochondria (ATP Production)', es: 'Mitocondria (Producción de ATP)' },
+            astrocyte: { en: 'Astrocyte (Glial Support)', es: 'Astrocito (Soporte Glial)' },
+            psd95: { en: 'Post-Synaptic Density (PSD-95)', es: 'Densidad Postsináptica (PSD-95)' },
+            lipidBilayer: { en: 'Lipid Bilayer (Membrane)', es: 'Bicapa Lipídica (Membrana)' },
+            gradient: { en: 'Electrochemical Gradient', es: 'Gradiente Electroquímico' },
+            snare: { en: 'SNARE Complex (Vesicle Fusion)', es: 'Complejo SNARE (Fusión Vesicular)' },
+            ecm: { en: 'Extra-Cellular Matrix', es: 'Matriz Extracelular' },
+            retrograde: { en: 'Endocannabinoid (Retrograde Signal)', es: 'Endocannabinoide (Señal Retrógrada)' }
         },
         elements: {
             vesicles: [
@@ -615,13 +623,57 @@
             const my = this.mouse.y;
             const surfaceY = this.getSurfaceY(h);
 
+            // Terminals
             if (my < h * 0.44 && Math.abs(mx - w * 0.5) < w * 0.16) this.hoveredId = 'preSynapticTerminal';
             else if (my > surfaceY - 10 && Math.abs(mx - w * 0.5) < w * 0.28) this.hoveredId = 'postSynapticTerminal';
 
+            // Vesicles
             G.config.elements.vesicles.forEach(v => {
                 const vx = w * v.x, vy = h * v.y + Math.sin(this.frame * 0.04 + v.offset) * 8;
                 if ((mx - vx) ** 2 + (my - vy) ** 2 < v.r ** 2 * 2) this.hoveredId = 'vesicle';
             });
+
+            // Autoreceptors
+            G.config.elements.autoreceptors.forEach(ar => {
+                const ax = w * ar.x, ay = h * ar.y;
+                if ((mx - ax) ** 2 + (my - ay) ** 2 < 144) this.hoveredId = 'autoreceptor';
+            });
+
+            // Transporters
+            G.config.elements.transporters.forEach(tr => {
+                const tx = w * tr.x, ty = h * tr.y;
+                if (Math.abs(mx - tx) < 12 && Math.abs(my - ty) < 15) this.hoveredId = tr.type;
+            });
+
+            // Receptors
+            G.config.elements.receptors.forEach(r => {
+                const rx = w * r.x, ry = surfaceY - 5;
+                if (Math.abs(mx - rx) < 15 && Math.abs(my - ry) < 20) this.hoveredId = r.type;
+            });
+
+            // Molecular Structures
+            if ((mx - w * 0.4) ** 2 + (my - h * 0.15) ** 2 < 1600) this.hoveredId = 'mitochondria';
+            if ((mx - w * 0.8) ** 2 + (my - h * 0.5) ** 2 < 2500) this.hoveredId = 'astrocyte';
+            if (my > surfaceY && my < surfaceY + 40 && Math.abs(mx - w * 0.5) < w * 0.2) this.hoveredId = 'psd95';
+
+            if (Math.abs(my - h * 0.44) < 10 && Math.abs(mx - w * 0.5) < w * 0.2) this.hoveredId = 'lipidBilayer';
+            if (Math.abs(my - surfaceY) < 10 && Math.abs(mx - w * 0.5) < w * 0.3) this.hoveredId = 'lipidBilayer';
+
+            if (Math.abs(mx - w * 0.2) < 30 && Math.abs(my - h * 0.5) < 40) this.hoveredId = 'gradient';
+            if (Math.abs(mx - w * 0.5) < 25 && Math.abs(my - h * 0.4) < 25) this.hoveredId = 'snare';
+
+            // Particles & Ions
+            if (G.Particles) {
+                G.Particles.ions.forEach(ion => {
+                    if ((mx - ion.x)**2 + (my - ion.y)**2 < 144) this.hoveredId = ion.type || 'sodium';
+                });
+            }
+
+            if (G.Molecular && G.Molecular.retrogradeSignals) {
+                G.Molecular.retrogradeSignals.forEach(s => {
+                    if ((mx - s.x)**2 + (my - s.y)**2 < 144) this.hoveredId = 'retrograde';
+                });
+            }
         },
 
         drawStructure(ctx, w, h) {

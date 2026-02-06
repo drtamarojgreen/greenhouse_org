@@ -184,6 +184,7 @@ global.window.GreenhouseSynapseApp = {
         drawCascades: () => { },
         drawRetrograde: () => { },
         drawMitochondria: () => { },
+        drawElectrochemicalGradient: () => { },
         drawGPCRTopology: () => { },
         drawSolvationShell: () => { },
         drawPatchPipette: () => { }
@@ -239,6 +240,26 @@ TestFramework.describe('Synapse UI Rendering', () => {
         app.mouse.y = 500;
         app.checkHover(800, 600);
         assert.equal(app.hoveredId, 'postSynapticTerminal');
+    });
+
+    TestFramework.it('should detect mitochondria on hover', () => {
+        window.GreenhouseSynapseApp.init('#synapse-container', '/');
+        const app = window.GreenhouseSynapseApp;
+        // Mitochondria at w*0.4, h*0.15 => 320, 90
+        app.mouse.x = 320;
+        app.mouse.y = 90;
+        app.checkHover(800, 600);
+        assert.equal(app.hoveredId, 'mitochondria');
+    });
+
+    TestFramework.it('should detect astrocyte on hover', () => {
+        window.GreenhouseSynapseApp.init('#synapse-container', '/');
+        const app = window.GreenhouseSynapseApp;
+        // Astrocyte at w*0.8, h*0.5 => 640, 300
+        app.mouse.x = 640;
+        app.mouse.y = 300;
+        app.checkHover(800, 600);
+        assert.equal(app.hoveredId, 'astrocyte');
     });
 
     TestFramework.it('should trigger neurotransmitter release on click in active zone', () => {

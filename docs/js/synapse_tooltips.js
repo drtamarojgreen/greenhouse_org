@@ -30,8 +30,40 @@
                         Stoichiometry: ${r.stoichiometry}<br>
                         PDB: ${r.pdbId}
                     </div>`;
+                } else if (chem.transporters[hoveredId]) {
+                    const t = chem.transporters[hoveredId];
+                    label = t.name;
+                    subtext = `<div style="font-size: 10px; color: #aaa; margin-top: 5px;">
+                        Targets: ${t.targets.join(', ')}<br>
+                        Helices: ${t.transmembrane_helices || '12'}
+                    </div>`;
+                } else if (chem.ions[hoveredId]) {
+                    const i = chem.ions[hoveredId];
+                    label = i.name[lang];
+                    subtext = `<div style="font-size: 10px; color: #aaa; margin-top: 5px;">
+                        Charge: ${i.charge}<br>
+                        Effect: ${i.effect}
+                    </div>`;
                 } else if (config.translations[hoveredId]) {
                     label = config.translations[hoveredId][lang] || config.translations[hoveredId];
+                    // Special subtext for specific IDs
+                    if (hoveredId === 'mitochondria') {
+                        subtext = `<div style="font-size: 10px; color: #aaa; margin-top: 5px;">
+                            ATP generation via oxidative<br>phosphorylation.
+                        </div>`;
+                    } else if (hoveredId === 'astrocyte') {
+                        subtext = `<div style="font-size: 10px; color: #aaa; margin-top: 5px;">
+                            Tripartite synapse support &<br>glutamate clearance.
+                        </div>`;
+                    } else if (hoveredId === 'psd95') {
+                        subtext = `<div style="font-size: 10px; color: #aaa; margin-top: 5px;">
+                            Scaffolding protein organizing<br>receptor clusters.
+                        </div>`;
+                    } else if (hoveredId === 'snare') {
+                        subtext = `<div style="font-size: 10px; color: #aaa; margin-top: 5px;">
+                            Molecular machinery for<br>vesicle-membrane fusion.
+                        </div>`;
+                    }
                 } else {
                     label = hoveredId;
                 }
