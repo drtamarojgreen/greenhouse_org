@@ -152,13 +152,7 @@ class SequelMaster:
         g_ranges = [(4501, 5800)]
         set_visibility(gnomes, g_ranges)
 
-        # Scene Setup
-        scene00.setup_scene(self)
-        scene13.setup_scene(self) # Walking
-        scene14.setup_scene(self) # Duel
-        scene12.setup_scene(self) # Credits (at the end)
-
-        # Master Camera
+        # Master Camera setup first so scenes can keyframe it
         bpy.ops.object.camera_add(location=(0, -15, 5))
         cam = bpy.context.object
         self.scene.camera = cam
@@ -166,11 +160,18 @@ class SequelMaster:
         bpy.ops.object.empty_add(type='PLAIN_AXES')
         target = bpy.context.object
         target.name = "CamTarget"
+        target.location = (0, 0, 1.5)
 
         con = cam.constraints.new(type='TRACK_TO')
         con.target = target
         con.track_axis = 'TRACK_NEGATIVE_Z'
         con.up_axis = 'UP_Y'
+
+        # Scene Setup
+        scene00.setup_scene(self)
+        scene13.setup_scene(self) # Walking
+        scene14.setup_scene(self) # Duel
+        scene12.setup_scene(self) # Credits (at the end)
 
     def setup_lighting(self):
         bpy.ops.object.light_add(type='SUN', location=(10,-10,20))

@@ -187,17 +187,39 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     mat_eye = bpy.data.materials.get("CharacterEyeMat") or bpy.data.materials.new(name="CharacterEyeMat")
     mat_eye.use_nodes = True
     mat_eye.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 5.0
-    mat_eye.node_tree.nodes["Principled BSDF"].inputs["Emission Color"].default_value = (1, 1, 1, 1)
+
+    mat_pupil = bpy.data.materials.get("CharacterPupilMat") or bpy.data.materials.new(name="CharacterPupilMat")
+    mat_pupil.use_nodes = True
+    mat_pupil.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0, 0, 0, 1)
 
     for side in [-1, 1]:
+        side_str = 'L' if side < 0 else 'R'
         eye_loc = location + mathutils.Vector((side * head_radius * 0.4, -head_radius * 0.8, torso_height + head_radius * 1.1))
         bpy.ops.mesh.primitive_ico_sphere_add(radius=0.03, subdivisions=3, location=eye_loc)
         eye = bpy.context.object
-        eye.name = f"{name}_Eye_{'L' if side < 0 else 'R'}"
+        eye.name = f"{name}_Eye_{side_str}"
         bpy.ops.object.shade_smooth()
         eye.parent = head
         eye.matrix_parent_inverse = head.matrix_world.inverted()
         eye.data.materials.append(mat_eye)
+
+        # Pupils for more detail
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.01, subdivisions=2, location=eye_loc + mathutils.Vector((0, -0.025, 0)))
+        pupil = bpy.context.object
+        pupil.name = f"{name}_Pupil_{side_str}"
+        pupil.parent = eye
+        pupil.matrix_parent_inverse = eye.matrix_world.inverted()
+        pupil.data.materials.append(mat_pupil)
+
+        # Eyebrows
+        brow_loc = eye_loc + mathutils.Vector((0, -0.01, 0.06))
+        bpy.ops.mesh.primitive_cylinder_add(radius=0.005, depth=0.08, location=brow_loc, rotation=(0, math.radians(90), 0))
+        brow = bpy.context.object
+        brow.name = f"{name}_Brow_{side_str}"
+        bpy.ops.object.shade_smooth()
+        brow.parent = head
+        brow.matrix_parent_inverse = head.matrix_world.inverted()
+        brow.data.materials.append(mat) # Bark mat
 
     # Mouth (Small crevice)
     bpy.ops.mesh.primitive_cube_add(size=0.05, location=location + mathutils.Vector((0, -head_radius * 0.9, torso_height + head_radius * 0.8)))
@@ -258,6 +280,18 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     # Hierarchical parts that need to be parented to torso
     main_parts = [head, left_arm, right_arm, left_leg, right_leg]
 
+    # Facial details for direct linking
+    facial_parts = []
+    for side_str in ['L', 'R']:
+        eye = bpy.data.objects.get(f"{name}_Eye_{side_str}")
+        if eye: facial_parts.append(eye)
+        pupil = bpy.data.objects.get(f"{name}_Pupil_{side_str}")
+        if pupil: facial_parts.append(pupil)
+        brow = bpy.data.objects.get(f"{name}_Brow_{side_str}")
+        if brow: facial_parts.append(brow)
+    mouth = bpy.data.objects.get(f"{name}_Mouth")
+    if mouth: facial_parts.append(mouth)
+
     # Character specific traits
     if "Herbaceous" in name:
         # Reason Staff
@@ -276,7 +310,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
             main_parts.append(plate)
 
     # Collect all parts for linking and material
-    all_parts = main_parts + l_fingers + r_fingers
+    all_parts = main_parts + l_fingers + r_fingers + facial_parts
     for p in all_parts:
         if p.name not in container.objects:
             container.objects.link(p)
@@ -418,6 +452,8 @@ def animate_walk(torso, frame_start, frame_end, step_height=0.1, cycle_length=48
     name = torso.name.split('_')[0]
     l_leg = bpy.data.objects.get(f"{name}_Leg_L")
     r_leg = bpy.data.objects.get(f"{name}_Leg_R")
+    l_arm = bpy.data.objects.get(f"{name}_Arm_L")
+    r_arm = bpy.data.objects.get(f"{name}_Arm_R")
 
     base_z = torso.location.z
 
@@ -444,6 +480,18 @@ def animate_walk(torso, frame_start, frame_end, step_height=0.1, cycle_length=48
             l_leg.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
             r_leg.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
 
+        # Arm swinging (opposite to legs)
+        if l_arm and r_arm:
+            # Simple rotation on X to swing arms
+            l_arm_angle = math.sin(phase * math.pi * 2 + math.pi) * math.radians(15)
+            r_arm_angle = math.sin(phase * math.pi * 2) * math.radians(15)
+
+            l_arm.rotation_euler[0] = l_arm_angle
+            r_arm.rotation_euler[0] = r_arm_angle
+
+            l_arm.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+            r_arm.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+
 def animate_talk(torso, frame_start, frame_end):
     """Animates the mouth to simulate talking."""
     if not torso: return
@@ -459,6 +507,38 @@ def animate_talk(torso, frame_start, frame_end):
     # Reset mouth at the end
     mouth.scale.z = 0.4
     mouth.keyframe_insert(data_path="scale", index=2, frame=frame_end)
+
+def animate_expression(torso, frame, expression='NEUTRAL'):
+    """Sets facial expression by keyframing eyebrows and pupils."""
+    if not torso: return
+    name = torso.name.split('_')[0]
+    brows = [bpy.data.objects.get(f"{name}_Brow_L"), bpy.data.objects.get(f"{name}_Brow_R")]
+    pupils = [bpy.data.objects.get(f"{name}_Pupil_L"), bpy.data.objects.get(f"{name}_Pupil_R")]
+
+    for i, brow in enumerate(brows):
+        if not brow: continue
+        if expression == 'ANGRY':
+            brow.rotation_euler[1] = math.radians(110 if i == 0 else 70) # Tilted down
+            brow.location.z = 0.05
+        elif expression == 'SURPRISED':
+            brow.rotation_euler[1] = math.radians(90)
+            brow.location.z = 0.08 # Raised
+        else: # NEUTRAL
+            brow.rotation_euler[1] = math.radians(90)
+            brow.location.z = 0.06
+
+        brow.keyframe_insert(data_path="rotation_euler", index=1, frame=frame)
+        brow.keyframe_insert(data_path="location", index=2, frame=frame)
+
+    for pupil in pupils:
+        if not pupil: continue
+        if expression == 'SURPRISED':
+            pupil.scale = (1.5, 1.5, 1.5)
+        elif expression == 'ANGRY':
+            pupil.scale = (0.8, 0.8, 0.8)
+        else:
+            pupil.scale = (1, 1, 1)
+        pupil.keyframe_insert(data_path="scale", frame=frame)
 
 if __name__ == "__main__":
     # Clear scene for testing

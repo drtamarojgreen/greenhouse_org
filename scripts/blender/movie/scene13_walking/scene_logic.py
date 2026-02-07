@@ -27,6 +27,29 @@ def setup_scene(master):
         # Talk while walking
         plant_humanoid.animate_talk(master.h1, frame_start + 200, frame_start + 600)
 
+        # Expression change
+        plant_humanoid.animate_expression(master.h1, frame_start + 150, 'SURPRISED')
+        plant_humanoid.animate_expression(master.h1, frame_start + 400, 'NEUTRAL')
+
+    # Zoom in on Herbaceous face during talk
+    cam = master.scene.camera
+    target = bpy.data.objects.get("CamTarget")
+    if cam and target:
+        cam.keyframe_insert(data_path="location", frame=frame_start + 150)
+        target.keyframe_insert(data_path="location", frame=frame_start + 150)
+
+        # Closer shot
+        cam.location = (-1, -8, 2.5)
+        target.location = (-1, 0, 2)
+        cam.keyframe_insert(data_path="location", frame=frame_start + 300)
+        target.keyframe_insert(data_path="location", frame=frame_start + 300)
+
+        # Return
+        cam.location = (0, -15, 5)
+        target.location = (0, 0, 1.5)
+        cam.keyframe_insert(data_path="location", frame=frame_start + 500)
+        target.keyframe_insert(data_path="location", frame=frame_start + 500)
+
     # Animate Arbor walking following
     if master.h2:
         plant_humanoid.animate_walk(master.h2, frame_start + 100, frame_end + 100)

@@ -18,6 +18,7 @@ def setup_scene(master):
     # Plants vs Gnome Duel logic
     if master.h1 and master.gnome:
         # Herbaceous (Plant) attacks
+        plant_humanoid.animate_expression(master.h1, 4600, 'ANGRY')
         master.h1.rotation_euler.y = 0
         master.h1.keyframe_insert(data_path="rotation_euler", index=1, frame=4600)
         master.h1.rotation_euler.y = math.radians(-30)
@@ -54,3 +55,21 @@ def setup_scene(master):
                 bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=4670)
                 bsdf.inputs["Emission Strength"].default_value = 0.5
                 bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=4700)
+
+    # Duel zoom
+    cam = master.scene.camera
+    target = bpy.data.objects.get("CamTarget")
+    if cam and target:
+        # Tense close up during gnome flare
+        cam.keyframe_insert(data_path="location", frame=4640)
+        target.keyframe_insert(data_path="location", frame=4640)
+
+        cam.location = (4, 4, 1.5)
+        target.location = (6, 6, 1)
+        cam.keyframe_insert(data_path="location", frame=4670)
+        target.keyframe_insert(data_path="location", frame=4670)
+
+        cam.location = (0, -15, 5)
+        target.location = (0, 0, 1.5)
+        cam.keyframe_insert(data_path="location", frame=4800)
+        target.keyframe_insert(data_path="location", frame=4800)
