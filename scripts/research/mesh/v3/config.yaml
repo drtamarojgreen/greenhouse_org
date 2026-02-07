@@ -1,0 +1,42 @@
+# MeSH Discovery Suite V3 - Configuration
+
+# Enhancement 24: Seed theme for discovery
+seed_term: "Depression"
+
+# Discovery Settings
+max_terms: 20
+min_count: 500  # Enhancement 17: Filter by publication count
+
+# Enhancement 4: API key rotation (add multiple keys here)
+api_keys: []
+
+# Paths
+viz_output_dir: "scripts/research/mesh/v3/viz_output"
+checkpoint_path: "scripts/research/mesh/v3/checkpoint.json"
+cache_db: "scripts/research/mesh/v3/cache.db"
+
+# Enhancement 10: Structured logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Enhancement 18: Date-range slicing for longitudinal analysis
+date_range:
+  start: 2010
+  end: 2024
+
+# NLP Settings
+nlp:
+  enabled: true
+  top_n_keywords: 10
+  n_topics: 5
+
+# Visualization Settings
+viz:
+  enable_plotly: true
+  enable_networkx: true
+  charts:
+    - "bar"
+    - "sunburst"
+    - "network"
+    - "heatmap"
