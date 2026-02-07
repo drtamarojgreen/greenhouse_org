@@ -313,7 +313,7 @@ class MovieMaster:
                         for kp in fcurve.keyframe_points:
                             kp.interpolation = 'CONSTANT'
 
-        gnomes = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["GloomGnome", "Mouth", "Cloak", "Staff"])]
+        gnomes = [obj for obj in bpy.context.scene.objects if "GloomGnome" in obj.name]
         g_ranges = [(2101, 2500), (2601, 2800)]
         set_visibility(gnomes, g_ranges)
 

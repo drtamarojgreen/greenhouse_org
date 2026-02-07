@@ -199,27 +199,42 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         eye.matrix_parent_inverse = head.matrix_world.inverted()
         eye.data.materials.append(mat_eye)
 
+    # Mouth (Small crevice)
+    bpy.ops.mesh.primitive_cube_add(size=0.05, location=location + mathutils.Vector((0, -head_radius * 0.9, torso_height + head_radius * 0.8)))
+    mouth = bpy.context.object
+    mouth.name = f"{name}_Mouth"
+    mouth.scale = (1.5, 0.2, 0.4)
+    mouth.parent = head
+    mouth.matrix_parent_inverse = head.matrix_world.inverted()
+    mouth.data.materials.append(mat_eye) # Reuse eye material for glow
+
     # Arms (Vines)
     arm_height = torso_height * 0.9
     l_arm_start = location + mathutils.Vector((0.2, 0, arm_height))
     l_arm_end = location + mathutils.Vector((0.8, 0, arm_height - 0.4))
     left_arm = create_vine(l_arm_start, l_arm_end, radius=vine_thickness)
+    left_arm.name = f"{name}_Arm_L"
     l_fingers = create_fingers(l_arm_end, (l_arm_end - l_arm_start).normalized(), radius=vine_thickness)
-    for f in l_fingers:
+    for i, f in enumerate(l_fingers):
+        f.name = f"{name}_Finger_L_{i}"
         f.parent = left_arm
         f.matrix_parent_inverse = left_arm.matrix_world.inverted()
 
     r_arm_start = location + mathutils.Vector((-0.2, 0, arm_height))
     r_arm_end = location + mathutils.Vector((-0.8, 0, arm_height - 0.4))
     right_arm = create_vine(r_arm_start, r_arm_end, radius=vine_thickness)
+    right_arm.name = f"{name}_Arm_R"
     r_fingers = create_fingers(r_arm_end, (r_arm_end - r_arm_start).normalized(), radius=vine_thickness)
-    for f in r_fingers:
+    for i, f in enumerate(r_fingers):
+        f.name = f"{name}_Finger_R_{i}"
         f.parent = right_arm
         f.matrix_parent_inverse = right_arm.matrix_world.inverted()
 
     # Legs (Roots)
     left_leg = create_vine(location + mathutils.Vector((0.1, 0, 0.1)), location + mathutils.Vector((0.3, 0, -0.8)), radius=vine_thickness * 1.5)
+    left_leg.name = f"{name}_Leg_L"
     right_leg = create_vine(location + mathutils.Vector((-0.1, 0, 0.1)), location + mathutils.Vector((-0.3, 0, -0.8)), radius=vine_thickness * 1.5)
+    right_leg.name = f"{name}_Leg_R"
 
     # Add leaves to the head and torso
     leaf_template = create_leaf_mesh()
@@ -396,6 +411,54 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0):
         band.data.materials.append(mat)
 
     return pillar
+
+def animate_walk(torso, frame_start, frame_end, step_height=0.1, cycle_length=48):
+    """Animates a smooth procedural walk cycle for the plant humanoid."""
+    if not torso: return
+    name = torso.name.split('_')[0]
+    l_leg = bpy.data.objects.get(f"{name}_Leg_L")
+    r_leg = bpy.data.objects.get(f"{name}_Leg_R")
+
+    base_z = torso.location.z
+
+    for f in range(frame_start, frame_end + 1, 6): # More keyframes for smoothness
+        # Normalized phase of the cycle (0 to 1)
+        phase = ((f - frame_start) % cycle_length) / cycle_length
+
+        # Torso bobbing (twice per cycle)
+        torso.location.z = base_z + abs(math.sin(phase * math.pi * 2)) * step_height
+        torso.keyframe_insert(data_path="location", index=2, frame=f)
+
+        # Torso swaying
+        torso.rotation_euler[2] = math.sin(phase * math.pi * 2) * math.radians(5)
+        torso.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
+
+        # Leg animation (swinging)
+        if l_leg and r_leg:
+            l_angle = math.sin(phase * math.pi * 2) * math.radians(30)
+            r_angle = math.sin(phase * math.pi * 2 + math.pi) * math.radians(30)
+
+            l_leg.rotation_euler[0] = l_angle
+            r_leg.rotation_euler[0] = r_angle
+
+            l_leg.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+            r_leg.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+
+def animate_talk(torso, frame_start, frame_end):
+    """Animates the mouth to simulate talking."""
+    if not torso: return
+    name = torso.name.split('_')[0]
+    mouth = bpy.data.objects.get(f"{name}_Mouth")
+    if not mouth: return
+
+    for f in range(frame_start, frame_end + 1, 4):
+        # Randomly scale mouth to simulate speech
+        mouth.scale.z = random.uniform(0.1, 1.0)
+        mouth.keyframe_insert(data_path="scale", index=2, frame=f)
+
+    # Reset mouth at the end
+    mouth.scale.z = 0.4
+    mouth.keyframe_insert(data_path="scale", index=2, frame=frame_end)
 
 if __name__ == "__main__":
     # Clear scene for testing
