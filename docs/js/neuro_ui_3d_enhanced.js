@@ -30,6 +30,7 @@
         synapseMeshes: null,
         animationId: null,
         isPlaying: false,
+        tooltipEl: null,
         adhdEffects: {
             activeEnhancements: new Set(),
             noiseParticles: [],
@@ -85,6 +86,25 @@
             container.appendChild(this.canvas);
             this.ctx = this.canvas.getContext('2d');
 
+            // Initialize Tooltip Element
+            this.tooltipEl = document.createElement('div');
+            this.tooltipEl.style.cssText = `
+                position: absolute;
+                display: none;
+                background: rgba(0, 0, 0, 0.85);
+                color: white;
+                padding: 10px;
+                border: 1px solid #4ca1af;
+                border-radius: 4px;
+                pointer-events: none;
+                font-family: 'Quicksand', sans-serif;
+                font-size: 12px;
+                z-index: 1000;
+                max-width: 250px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            `;
+            container.appendChild(this.tooltipEl);
+
             this.projection.width = this.canvas.width;
             this.projection.height = this.canvas.height;
 
@@ -104,6 +124,12 @@
 
             // Setup mouse event handlers for synapse camera
             this.setupSynapseMouseHandlers();
+
+            // Tooltip Move Handler
+            this.canvas.addEventListener('mousemove', (e) => this.handleTooltipMove(e));
+            this.canvas.addEventListener('mouseleave', () => {
+                if (this.tooltipEl) this.tooltipEl.style.display = 'none';
+            });
 
             // Handle Resize
             window.addEventListener('resize', () => {
@@ -852,6 +878,71 @@
             }, { passive: false });
 
             console.log('NeuroUI3D: Synapse mouse handlers initialized');
+        },
+
+        handleTooltipMove(e) {
+            if (!this.tooltipEl || !this.adhdEffects.activeEnhancements.size) return;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const data = window.GreenhouseADHDData;
+            if (!data) return;
+
+            let tooltipContent = "";
+
+            // Check for hits on ADHD specific visualizations
+
+            // Check Synapse View components if in main view
+            if (!tooltipContent && window.GreenhouseNeuroSynapse && this.selectedConnection) {
+                const pipConfig = this.config.get('pip');
+                // If NOT in PiP area, we are in main view
+                if (x < this.canvas.width - pipConfig.width - 20 || y < this.canvas.height - pipConfig.height - 20) {
+                     const synapseCamera = window.GreenhouseNeuroSynapse.synapseCameraController?.getCamera() || {
+                        x: 0, y: 0, z: -200, rotationX: 0.2, rotationY: 0, rotationZ: 0, fov: 400
+                     };
+                     tooltipContent = window.GreenhouseNeuroSynapse.checkSynapseHover(x, y, this.canvas.width, this.canvas.height, synapseCamera, this.adhdEffects.activeEnhancements);
+                }
+            }
+
+            // 1. Noise Particles (SNR - ID 2)
+            if (this.adhdEffects.activeEnhancements.has(2)) {
+                const hitNoise = this.adhdEffects.noiseParticles.find(p => {
+                    return Math.sqrt(Math.pow(p.x - x, 2) + Math.pow(p.y - y, 2)) < 10;
+                });
+                if (hitNoise) {
+                    const info = data.getEnhancementById(2);
+                    tooltipContent = `<strong>${t(`adhd_enh_2_name`)}</strong><br>${t(`adhd_enh_2_desc`)}`;
+                }
+            }
+
+            // 2. Cognitive Fatigue Shader (ID 19) - Show if hovering near dark nodes
+            if (!tooltipContent && this.adhdEffects.activeEnhancements.has(19)) {
+                // This is a global effect, but we can show it when hovering the main view
+                const pipConfig = this.config.get('pip');
+                if (x < this.canvas.width - pipConfig.width - 20) {
+                     const fatigue = window.GreenhouseNeuroApp?.ga?.adhdConfig?.fatigue || 0;
+                     if (fatigue > 0.5) {
+                        tooltipContent = `<strong>${t(`adhd_enh_19_name`)}</strong><br>${t(`adhd_enh_19_desc`)}`;
+                     }
+                }
+            }
+
+            // 3. Vigilance (ID 13) - Oscillating nodes
+            if (!tooltipContent && this.adhdEffects.activeEnhancements.has(13)) {
+                 tooltipContent = `<strong>${t(`adhd_enh_13_name`)}</strong><br>${t(`adhd_enh_13_desc`)}`;
+            }
+
+            if (tooltipContent) {
+                this.tooltipEl.innerHTML = tooltipContent;
+                this.tooltipEl.style.display = 'block';
+                this.tooltipEl.style.left = (e.clientX + 15) + 'px';
+                this.tooltipEl.style.top = (e.clientY + 15) + 'px';
+            } else {
+                this.tooltipEl.style.display = 'none';
+            }
         },
 
         generateSynapseMeshes() {

@@ -73,9 +73,6 @@
             // Add control overlay inside the new wrapper
             this.createControls(simContainer);
 
-            // Initialize ADHD UI
-            this.initADHDUi(simContainer);
-
             // Start simulation automatically
             this.startSimulation();
 
@@ -104,9 +101,20 @@
             if (langBtn) {
                 langBtn.textContent = t('btn_language');
             }
-            const adhdBtn = document.getElementById('neuro-adhd-btn');
-            if (adhdBtn) {
-                adhdBtn.textContent = t('ADHD Lab');
+
+            // Update Scenario Dropdown
+            const scenarioSelect = document.getElementById('neuro-scenario-select');
+            if (scenarioSelect && window.GreenhouseADHDData) {
+                const scenarios = window.GreenhouseADHDData.scenarios;
+                const currentVal = scenarioSelect.value;
+                scenarioSelect.innerHTML = '';
+                Object.keys(scenarios).forEach(key => {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = t(`adhd_scenario_${key}`);
+                    scenarioSelect.appendChild(opt);
+                });
+                scenarioSelect.value = currentVal;
             }
         },
 
@@ -149,101 +157,37 @@
             }
         },
 
-        initADHDUi(container) {
-            const adhdLab = document.createElement('div');
-            adhdLab.id = 'neuro-adhd-lab';
-            adhdLab.style.cssText = `
-                position: absolute;
-                top: 50px;
-                left: 10px;
-                width: 300px;
-                max-height: 80vh;
-                background: rgba(0, 0, 0, 0.9);
-                border: 1px solid #4ca1af;
-                border-radius: 8px;
-                color: white;
-                display: none;
-                flex-direction: column;
-                z-index: 1000;
-                font-family: 'Quicksand', sans-serif;
-            `;
+        setScenario(scenarioId) {
+            const data = window.GreenhouseADHDData;
+            if (!data || !this.ga) return;
 
-            const header = document.createElement('div');
-            header.style.padding = '10px';
-            header.style.borderBottom = '1px solid #4ca1af';
-            header.style.display = 'flex';
-            header.style.justifyContent = 'space-between';
-            header.style.alignItems = 'center';
-            header.innerHTML = `<h3 style="margin:0; font-size:16px;">ADHD Laboratory</h3>`;
+            const scenario = data.scenarios[scenarioId];
+            if (!scenario) return;
 
-            const closeBtn = document.createElement('button');
-            closeBtn.textContent = '×';
-            closeBtn.style.cssText = `background:none; border:none; color:white; font-size:20px; cursor:pointer;`;
-            closeBtn.onclick = () => adhdLab.style.display = 'none';
-            header.appendChild(closeBtn);
-            adhdLab.appendChild(header);
+            // Reset GA adhdConfig properties
+            this.ga.adhdConfig.activeEnhancements.clear();
+            this.ga.adhdConfig.snr = 1.0;
+            this.ga.adhdConfig.sustainedAttention = 1.0;
+            this.ga.adhdConfig.rewardDelayFactor = 1.0;
+            this.ga.adhdConfig.taskSwitchingLatency = 0;
+            this.ga.adhdConfig.impulsivityRate = 0.0;
+            this.ga.adhdConfig.blinkCooldown = 0;
+            this.ga.adhdConfig.fatigue = 0.0;
+            this.ga.adhdConfig.learningRateBoost = 1.0;
 
-            const searchInput = document.createElement('input');
-            searchInput.placeholder = 'Search Enhancements...';
-            searchInput.style.cssText = `
-                margin: 10px;
-                padding: 8px;
-                border-radius: 4px;
-                border: 1px solid #4ca1af;
-                background: #111;
-                color: white;
-            `;
-            adhdLab.appendChild(searchInput);
+            if (this.ui?.adhdEffects) {
+                this.ui.adhdEffects.activeEnhancements.clear();
+            }
 
-            const listContainer = document.createElement('div');
-            listContainer.style.cssText = `overflow-y: auto; flex-grow: 1; padding: 10px;`;
-            adhdLab.appendChild(listContainer);
+            // Set new ones
+            scenario.enhancements.forEach(id => {
+                this.ga.setADHDEnhancement(id, true);
+                if (this.ui?.adhdEffects) {
+                    this.ui.adhdEffects.activeEnhancements.add(id);
+                }
+            });
 
-            const renderList = (filter = '') => {
-                listContainer.innerHTML = '';
-                const data = window.GreenhouseADHDData;
-                if (!data) return;
-
-                Object.keys(data).forEach(cat => {
-                    const catHeader = document.createElement('div');
-                    catHeader.textContent = cat.toUpperCase();
-                    catHeader.style.cssText = `font-weight: bold; margin-top: 10px; color: #4ca1af; border-bottom: 1px solid #333;`;
-                    listContainer.appendChild(catHeader);
-
-                    data[cat].forEach(item => {
-                        if (filter && !item.name.toLowerCase().includes(filter.toLowerCase())) return;
-
-                        const row = document.createElement('div');
-                        row.style.cssText = `display: flex; align-items: center; padding: 5px 0; font-size: 12px;`;
-
-                        const toggle = document.createElement('input');
-                        toggle.type = 'checkbox';
-                        toggle.checked = this.ga?.adhdConfig?.activeEnhancements.has(item.id);
-                        toggle.onchange = (e) => {
-                            this.ga?.setADHDEnhancement(item.id, e.target.checked);
-                            if (this.ui?.adhdEffects) {
-                                if (e.target.checked) this.ui.adhdEffects.activeEnhancements.add(item.id);
-                                else this.ui.adhdEffects.activeEnhancements.delete(item.id);
-                            }
-                        };
-
-                        const label = document.createElement('label');
-                        label.textContent = item.name;
-                        label.style.marginLeft = '8px';
-                        label.title = item.description;
-
-                        row.appendChild(toggle);
-                        row.appendChild(label);
-                        listContainer.appendChild(row);
-                    });
-                });
-            };
-
-            searchInput.oninput = (e) => renderList(e.target.value);
-            renderList();
-
-            container.appendChild(adhdLab);
-            this.adhdLab = adhdLab;
+            console.log(`NeuroApp: Scenario set to -> ${scenario.name}`);
         },
 
         createControls(container) {
@@ -272,6 +216,46 @@
             stats.textContent = t('initializing');
             stats.style.marginBottom = '8px';
             controls.appendChild(stats);
+
+            // Scenario Selection Dropdown
+            const scenarioContainer = document.createElement('div');
+            scenarioContainer.style.marginBottom = '12px';
+
+            const scenarioLabel = document.createElement('div');
+            scenarioLabel.textContent = t('scenarios');
+            scenarioLabel.style.fontSize = '12px';
+            scenarioLabel.style.marginBottom = '4px';
+            scenarioLabel.style.color = '#aaa';
+            scenarioContainer.appendChild(scenarioLabel);
+
+            const scenarioSelect = document.createElement('select');
+            scenarioSelect.id = 'neuro-scenario-select';
+            scenarioSelect.style.cssText = `
+                width: 100%;
+                padding: 6px;
+                border-radius: 4px;
+                background: #222;
+                color: white;
+                border: 1px solid #4ca1af;
+                font-family: 'Quicksand', sans-serif;
+                font-size: ${isMobile ? '11px' : '13px'};
+            `;
+
+            if (window.GreenhouseADHDData) {
+                Object.keys(window.GreenhouseADHDData.scenarios).forEach(key => {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = t(`adhd_scenario_${key}`);
+                    scenarioSelect.appendChild(opt);
+                });
+            }
+
+            scenarioSelect.onchange = (e) => {
+                this.setScenario(e.target.value);
+            };
+
+            scenarioContainer.appendChild(scenarioSelect);
+            controls.appendChild(scenarioContainer);
 
             const btnGroup = document.createElement('div');
             btnGroup.style.display = 'flex';
@@ -310,19 +294,6 @@
                 }
             };
             btnGroup.appendChild(langBtn);
-
-            const adhdBtn = document.createElement('button');
-            adhdBtn.id = 'neuro-adhd-btn';
-            adhdBtn.textContent = t('ADHD Lab');
-            adhdBtn.className = 'greenhouse-btn greenhouse-btn-primary';
-            adhdBtn.style.fontSize = isMobile ? '12px' : '14px';
-            adhdBtn.style.padding = '6px 12px';
-            adhdBtn.onclick = () => {
-                if (this.adhdLab) {
-                    this.adhdLab.style.display = this.adhdLab.style.display === 'none' ? 'flex' : 'none';
-                }
-            };
-            btnGroup.appendChild(adhdBtn);
 
             controls.appendChild(btnGroup);
 

@@ -683,6 +683,62 @@
                     }
                 });
             });
+        },
+
+        /**
+         * Check for hover on synapse-specific components (especially ADHD additions)
+         */
+        checkSynapseHover(x, y, w, h, synapseCamera, adhdActive) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const data = window.GreenhouseADHDData;
+            if (!data) return null;
+
+            // 1. Alpha-2 Gate (Enhancement 31)
+            if (adhdActive.has(31)) {
+                const gatePos = GreenhouseModels3DMath.project3DTo2D(0, -150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                if (gatePos.scale > 0) {
+                    const dist = Math.sqrt(Math.pow(gatePos.x - x, 2) + Math.pow(gatePos.y - y, 2));
+                    if (dist < 80 * gatePos.scale) {
+                        return `<strong>${t('adhd_enh_31_name')}</strong><br>${t('adhd_enh_31_desc')}`;
+                    }
+                }
+            }
+
+            // 2. DAT effects (Enhancement 26 or 51)
+            if (adhdActive.has(26) || adhdActive.has(51)) {
+                const prePos = GreenhouseModels3DMath.project3DTo2D(0, -150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                if (prePos.scale > 0) {
+                    const dist = Math.sqrt(Math.pow(prePos.x - x, 2) + Math.pow(prePos.y - y, 2));
+                    if (dist < 100 * prePos.scale) {
+                        const id = adhdActive.has(26) ? 26 : 51;
+                        return `<strong>${t(`adhd_enh_${id}_name`)}</strong><br>${t(`adhd_enh_${id}_desc`)}`;
+                    }
+                }
+            }
+
+            // 3. VMAT2 Loading (Enhancement 71)
+            if (adhdActive.has(71)) {
+                const preInteriorPos = GreenhouseModels3DMath.project3DTo2D(0, -200, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                if (preInteriorPos.scale > 0) {
+                    const dist = Math.sqrt(Math.pow(preInteriorPos.x - x, 2) + Math.pow(preInteriorPos.y - y, 2));
+                    if (dist < 80 * preInteriorPos.scale) {
+                        return `<strong>${t('adhd_enh_71_name')}</strong><br>${t('adhd_enh_71_desc')}`;
+                    }
+                }
+            }
+
+            // 4. Receptor Imbalance (Enhancement 55)
+            if (adhdActive.has(55)) {
+                const postPos = GreenhouseModels3DMath.project3DTo2D(0, 150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                if (postPos.scale > 0) {
+                    const dist = Math.sqrt(Math.pow(postPos.x - x, 2) + Math.pow(postPos.y - y, 2));
+                    if (dist < 100 * postPos.scale) {
+                        return `<strong>${t('adhd_enh_55_name')}</strong><br>${t('adhd_enh_55_desc')}`;
+                    }
+                }
+            }
+
+            return null;
         }
     };
 
