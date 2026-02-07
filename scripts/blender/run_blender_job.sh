@@ -45,6 +45,9 @@ echo "Starting Blender job: $JOB_NAME"
 echo "Using script: $RENDER_SUITE_PATH"
 echo "----------------------------------------"
 
+# Enable Blender debugging output.
+export BLENDER_DEBUG=1
+
 # Run Blender in the background, passing the Python script and all arguments.
 # The '--' separator is crucial: it tells Blender to pass the subsequent arguments
 # to the Python script instead of interpreting them itself.

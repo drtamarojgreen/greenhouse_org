@@ -23,6 +23,7 @@ Entrez.email = "cito@greenhousemd.org"
 # Configure Entrez to respect NCBI's E-utility usage policies
 # Pause for 1 second between requests
 Entrez.api_key = os.getenv("NCBI_API_KEY") 
+Entrez.timeout = 30 # Set a global timeout for Entrez requests (in seconds)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -60,20 +61,26 @@ class Node:
 
 def get_mesh_details(term):
     """Fetches MeSH details for a given term using Entrez."""
+    logger.info(f"Fetching MeSH details for term: '{term}'")
     try:
+        logger.debug(f"Calling Entrez.esearch for term: '{term}'")
         handle = Entrez.esearch(db="mesh", term=term, retmax="1")
         record = Entrez.read(handle)
         handle.close()
         time.sleep(0.3)  # Respect NCBI's rate limit
+        logger.debug(f"Entrez.esearch returned IdList: {record['IdList']}")
 
         if record["IdList"]:
             mesh_id = record["IdList"][0]
+            logger.debug(f"Found MeSH ID: {mesh_id} for term: '{term}'")
             # Use esummary instead of efetch for MeSH as it reliably returns XML with Tree Numbers.
             # Note: MeSH efetch retmode=xml is often unsupported/problematic in standard Entrez.
+            logger.debug(f"Calling Entrez.esummary for MeSH ID: {mesh_id}")
             handle = Entrez.esummary(db="mesh", id=mesh_id, retmode="xml")
             mesh_record = Entrez.read(handle)
             handle.close()
             time.sleep(0.3) # Respect NCBI's rate limit
+            logger.debug(f"Entrez.esummary returned record for MeSH ID: {mesh_id}")
             
             tree_numbers = []
             # esummary returns a list of records (DocSums).
@@ -84,11 +91,13 @@ def get_mesh_details(term):
                     for link in record_data["DS_IdxLinks"]:
                         if "TreeNum" in link:
                             tree_numbers.append(str(link["TreeNum"]))
+            logger.debug(f"Extracted tree numbers: {tree_numbers} for MeSH ID: {mesh_id}")
             
             return {"mesh_id": mesh_id, "tree_numbers": tree_numbers}
+        logger.info(f"No MeSH ID found for term: '{term}'")
         return None
     except Exception as e:
-        logger.error(f"Error fetching MeSH details for '{term}': {e}")
+        logger.error(f"Error fetching MeSH details for '{term}': {e}", exc_info=True)
         return None
 
 def classify_term(term_details):
@@ -165,6 +174,32 @@ def build_dynamic_mesh_tree(discovery_data, max_depth=2):
 
 # ---------- Export ----------
 
+import urllib.request
+import urllib.error
+
+# ... (rest of the imports)
+
+def test_urllib_timeout(url="https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi", timeout=10):
+    logger.info(f"Testing urllib.request.urlopen to {url} with timeout {timeout}s...")
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            logger.info(f"urllib test successful. Status: {response.status}")
+            # Optionally read a bit of content to ensure full connection
+            # content = response.read(100)
+            # logger.debug(f"Received: {content[:50]}...")
+    except urllib.error.URLError as e:
+        logger.error(f"urllib test failed with URLError: {e}. This might indicate a network or DNS issue.")
+        return False
+    except TimeoutError as e:
+        logger.error(f"urllib test failed with TimeoutError: {e}. Connection timed out.")
+        return False
+    except Exception as e:
+        logger.error(f"urllib test failed with unexpected error: {e}")
+        return False
+    return True
+
+# ... (rest of the file)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Enhanced MeSH Discovery Suite - Advanced Tree Builder")
     parser.add_argument("--config", default=CONFIG_PATH, help="Path to the configuration file.")
@@ -188,9 +223,4 @@ if __name__ == "__main__":
 
     logger.info("Building dynamic MeSH tree...")
     tree = build_dynamic_mesh_tree(discovery_data)
-
-    with open(advanced_output_path, "w", encoding="utf-8") as f:
-        json.dump(tree.to_dict(), f, indent=2)
-
-    logger.info(f"MeSH tree exported to {advanced_output_path}")
 
