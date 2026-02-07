@@ -115,5 +115,22 @@
         ]
     };
 
-    window.GreenhouseADHDData = ADHD_ENHANCEMENTS;
+    const SCENARIOS = {
+        none: { id: 'none', name: "Standard Model", enhancements: [] },
+        adhd_symptoms: { id: 'adhd_symptoms', name: "ADHD: Symptomatic State", enhancements: [1, 2, 3, 5, 7, 11, 12, 13, 14, 19, 23, 24] },
+        adhd_treatment: { id: 'adhd_treatment', name: "ADHD: Clinical Intervention", enhancements: [26, 27, 28, 30, 31, 34, 35, 36, 41, 46, 49] },
+        adhd_pathology: { id: 'adhd_pathology', name: "ADHD: Pathological Profile", enhancements: [51, 52, 53, 54, 57, 58, 61, 65, 71, 72, 73, 74] },
+        adhd_etiology: { id: 'adhd_etiology', name: "ADHD: Etiological Analysis", enhancements: [76, 77, 79, 80, 82, 83, 85, 88, 96, 99, 100] }
+    };
+
+    window.GreenhouseADHDData = {
+        categories: ADHD_ENHANCEMENTS,
+        scenarios: SCENARIOS,
+        getFlatList: function() {
+            return [].concat(...Object.values(ADHD_ENHANCEMENTS));
+        },
+        getEnhancementById: function(id) {
+            return this.getFlatList().find(e => e.id === id);
+        }
+    };
 })();

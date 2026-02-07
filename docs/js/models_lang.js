@@ -2021,7 +2021,12 @@
             "adhd_enh_99_name": "Societal Expectation Filter",
             "adhd_enh_99_desc": "Society slider penalizing high-energy (hyperactive) paths.",
             "adhd_enh_100_name": "Resilience Factor Evolved",
-            "adhd_enh_100_desc": "Highlighting protective connections that persist despite stress."
+            "adhd_enh_100_desc": "Highlighting protective connections that persist despite stress.",
+            "adhd_scenario_none": "Standard Plasticity Model",
+            "adhd_scenario_adhd_symptoms": "ADHD: Untreated Symptoms",
+            "adhd_scenario_adhd_treatment": "ADHD: Clinical Treatment",
+            "adhd_scenario_adhd_pathology": "ADHD: Pathological Profile",
+            "adhd_scenario_adhd_etiology": "ADHD: Etiological Factors"
 
         },
         es: {
@@ -4038,7 +4043,12 @@
             "adhd_enh_99_name": "Filtro de Expectativas Sociales",
             "adhd_enh_99_desc": "Deslizador de sociedad que penaliza rutas de alta energía (hiperactivas).",
             "adhd_enh_100_name": "Factor de Resiliencia Evolucionado",
-            "adhd_enh_100_desc": "Resaltado de conexiones protectoras que persisten a pesar del estrés."
+            "adhd_enh_100_desc": "Resaltado de conexiones protectoras que persisten a pesar del estrés.",
+            "adhd_scenario_none": "Modelo de Plasticidad Estándar",
+            "adhd_scenario_adhd_symptoms": "TDAH: Síntomas no Tratados",
+            "adhd_scenario_adhd_treatment": "TDAH: Tratamiento Clínico",
+            "adhd_scenario_adhd_pathology": "TDAH: Perfil Patológico",
+            "adhd_scenario_adhd_etiology": "TDAH: Factores Etiológicos"
 
         }
     };

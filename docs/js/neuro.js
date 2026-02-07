@@ -95,6 +95,7 @@
             await GreenhouseUtils.loadScript('neuro_config.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_camera_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_lighting.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_adhd_data.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ga.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
