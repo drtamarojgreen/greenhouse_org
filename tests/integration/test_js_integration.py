@@ -9,7 +9,7 @@ async def test_js_integration_page(page, base_url):
     # Add console listener
     page.on('console', lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
     page.on("pageerror", lambda exc: print(f"PAGE ERROR: {exc}"))
-    page.on("requestfailed", lambda request: print(f"REQUEST FAILED: {request.url} {request.failure.error_text}"))
+    page.on("requestfailed", lambda request: print(f"REQUEST FAILED: {request.url} {request.failure}"))
 
     await page.goto(f"{base_url}/tests/pages/schedule_test_page.html")
 
