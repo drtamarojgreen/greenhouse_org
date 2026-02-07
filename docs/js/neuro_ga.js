@@ -13,6 +13,17 @@
             this.bestGenome = null;
             this.bounds = { x: 400, y: 400, z: 400 }; // Simulation bounds
             this.targetPoints = []; // Points neurons try to reach
+            this.adhdConfig = {
+                activeEnhancements: new Set(),
+                snr: 1.0,
+                sustainedAttention: 1.0,
+                rewardDelayFactor: 1.0,
+                taskSwitchingLatency: 0,
+                impulsivityRate: 0.0,
+                blinkCooldown: 0,
+                fatigue: 0.0,
+                learningRateBoost: 1.0
+            };
         }
 
         init(config = {}) {
@@ -21,6 +32,14 @@
 
             this.generateTargetPoints(10); // Create some target connection points
             this.createInitialPopulation();
+        }
+
+        setADHDEnhancement(id, active) {
+            if (active) this.adhdConfig.activeEnhancements.add(id);
+            else this.adhdConfig.activeEnhancements.delete(id);
+
+            // Immediate effect mapping
+            if (id === 46) this.adhdConfig.learningRateBoost = active ? 2.0 : 1.0;
         }
 
         generateTargetPoints(count) {
@@ -86,27 +105,55 @@
             let maxFitness = -Infinity;
             this.bestGenome = null;
 
+            // ADHD: Reward Delay Discounting (Enhancement 5)
+            const delayFactor = this.adhdConfig.activeEnhancements.has(5) ? 0.8 : 1.0;
+
             this.population.forEach(genome => {
                 let fitness = 0;
 
                 // 1. Connectivity Score: Reward connections to target points
-                // (simplified: proximity of neurons to target points)
                 genome.neurons.forEach(neuron => {
-                    this.targetPoints.forEach(target => {
+                    this.targetPoints.forEach((target, tIdx) => {
+                        // ADHD: Salience Network Misalignment (Enhancement 59)
+                        // If enhancement 59 is active, distractors (odd indices) might be rewarded
+                        let targetWeight = 1.0;
+                        if (this.adhdConfig.activeEnhancements.has(59) && tIdx % 2 !== 0) targetWeight = 1.5;
+
                         const dist = Math.sqrt(
                             Math.pow(neuron.x - target.x, 2) +
                             Math.pow(neuron.y - target.y, 2) +
                             Math.pow(neuron.z - target.z, 2)
                         );
                         if (dist < 100) {
-                            fitness += (100 - dist); // Closer is better
+                            fitness += (100 - dist) * targetWeight * delayFactor; // Closer is better
                         }
                     });
                 });
 
+                // ADHD: Distractibility Index (Enhancement 15)
+                if (this.adhdConfig.activeEnhancements.has(15)) {
+                    fitness -= (Math.random() * 20); // Random noise in fitness
+                }
+
+                // ADHD: Pathology - Cortico-Striatal Decoupling (Enhancement 54)
+                if (this.adhdConfig.activeEnhancements.has(54)) {
+                    genome.connections.forEach(c => {
+                        const fromNode = genome.neurons[c.from];
+                        const toNode = genome.neurons[c.to];
+                        if ((fromNode.region === 'pfc' && toNode.region === 'striatum') ||
+                            (fromNode.region === 'striatum' && toNode.region === 'pfc')) {
+                            fitness -= 10; // Penalize connection
+                        }
+                    });
+                }
+
                 // 2. Network Cohesion: Penalize isolated clusters (simplified)
                 // (Not implementing full graph traversal for speed, just rewarding total connections)
-                fitness += genome.connections.length * 5;
+                let cohesionWeight = 5;
+                // ADHD: Pathology - Synaptic Pruning Deficits (Enhancement 57)
+                if (this.adhdConfig.activeEnhancements.has(57)) cohesionWeight = 10; // Reward over-connectivity
+
+                fitness += genome.connections.length * cohesionWeight * this.adhdConfig.learningRateBoost;
 
                 // 3. Spacial Distribution: Penalize neurons being too close to each other
                 for(let i=0; i<genome.neurons.length; i++) {
@@ -130,12 +177,42 @@
         }
 
         step() {
-            // 1. Selection (Elitism + Roulette Wheel would be better, but doing simple tournament/elitism)
+            // ADHD: Attentional Blink (Enhancement 1)
+            if (this.adhdConfig.activeEnhancements.has(1)) {
+                if (this.adhdConfig.blinkCooldown > 0) {
+                    this.adhdConfig.blinkCooldown--;
+                    return this.bestGenome; // Skip processing this generation
+                }
+                if (Math.random() < 0.1) this.adhdConfig.blinkCooldown = 3;
+            }
+
+            // ADHD: Time Perception Distortion (Enhancement 12)
+            if (this.adhdConfig.activeEnhancements.has(12)) {
+                if (Math.random() < 0.2) return this.bestGenome; // Variable lag
+            }
+
+            // 1. Selection
             const newPopulation = [];
 
-            // Keep the best
+            // ADHD: Elitism Rate change (ElitismRate from config would be better)
             if (this.bestGenome) {
                 newPopulation.push(JSON.parse(JSON.stringify(this.bestGenome)));
+            }
+
+            // ADHD: Sustained Attention Decay (Enhancement 7)
+            if (this.adhdConfig.activeEnhancements.has(7)) {
+                this.adhdConfig.sustainedAttention *= 0.999;
+            }
+
+            // ADHD: Cognitive Fatigue (Enhancement 19) / Sleep Deprivation (Enhancement 82)
+            const fatigueInc = this.adhdConfig.activeEnhancements.has(82) ? 0.005 : 0.001;
+            if (this.adhdConfig.activeEnhancements.has(19) || this.adhdConfig.activeEnhancements.has(82)) {
+                this.adhdConfig.fatigue = Math.min(1.0, this.adhdConfig.fatigue + fatigueInc);
+            }
+
+            // ADHD: Treatment - Sleep Hygiene Reset (Enhancement 35)
+            if (this.adhdConfig.activeEnhancements.has(35) && this.generation % 100 === 0) {
+                this.adhdConfig.fatigue = 0;
             }
 
             // Fill the rest
@@ -145,6 +222,15 @@
                 const child = this.crossover(parentA, parentB);
                 this.mutate(child);
                 newPopulation.push(child);
+            }
+
+            // ADHD: Forgetfulness Pruning (Enhancement 23)
+            if (this.adhdConfig.activeEnhancements.has(23) && Math.random() < 0.3) {
+                this.population.forEach(genome => {
+                    if (genome.connections.length > 5) {
+                        genome.connections.splice(Math.floor(Math.random() * genome.connections.length), 1);
+                    }
+                });
             }
 
             this.population = newPopulation;
@@ -202,17 +288,34 @@
         }
 
         mutate(genome) {
+            // ADHD: Genetic Predisposition (Enhancement 76) & BDNF (Enhancement 36/63)
+            let currentMutationRate = this.mutationRate;
+            if (this.adhdConfig.activeEnhancements.has(76)) currentMutationRate *= 1.5;
+            if (this.adhdConfig.activeEnhancements.has(36)) currentMutationRate *= 2.0;
+            if (this.adhdConfig.activeEnhancements.has(63)) currentMutationRate *= 0.5;
+
+            // ADHD: Etiology - Lead Toxicity (Enhancement 79)
+            if (this.adhdConfig.activeEnhancements.has(79) && Math.random() < 0.01) {
+                const killIdx = Math.floor(Math.random() * genome.neurons.length);
+                if (genome.neurons[killIdx].id !== 0) { // Don't kill soma
+                    genome.neurons.splice(killIdx, 1);
+                }
+            }
+
             // Mutate Neurons: Jitter position
             genome.neurons.forEach(n => {
-                if (Math.random() < this.mutationRate) {
+                if (Math.random() < currentMutationRate) {
                     n.x += (Math.random() - 0.5) * 20;
                     n.y += (Math.random() - 0.5) * 20;
                     n.z += (Math.random() - 0.5) * 20;
                 }
             });
 
+            // ADHD: Impulsive Connection Burst (Enhancement 4)
+            const impulsivityBoost = this.adhdConfig.activeEnhancements.has(4) ? 3 : 1;
+
             // Mutate Connections: Add/Remove
-            if (Math.random() < this.mutationRate) {
+            if (Math.random() < currentMutationRate * impulsivityBoost) {
                 // Add connection
                 const from = Math.floor(Math.random() * genome.neurons.length);
                 const to = Math.floor(Math.random() * genome.neurons.length);

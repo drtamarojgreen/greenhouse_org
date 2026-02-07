@@ -494,12 +494,22 @@
                 });
             }
 
+            const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
+
             connection.synapseDetails.particles.forEach((p, i) => {
                 // Brownian Motion + Viscous Drift
                 p.x += (Math.random() - 0.5) * 1.5; // Random jitter X
                 p.z += (Math.random() - 0.5) * 1.5; // Random jitter Z
-                p.y += 1.8 + (Math.random() - 0.5) * 0.5; // Faster drift to reach post-synaptic terminal
-                p.life -= 0.003; // Slower fade for longer transit visibility
+
+                // ADHD: DAT Overexpression (Enhancement 51) / Inhibition (Enhancement 26)
+                let driftY = 1.8;
+                let fadeRate = 0.003;
+
+                if (adhdActive.has(51)) fadeRate *= 2.0; // Rapid disappearance
+                if (adhdActive.has(26)) fadeRate *= 0.5; // Slower disappearance (stimulant)
+
+                p.y += driftY + (Math.random() - 0.5) * 0.5;
+                p.life -= fadeRate;
 
                 const proj = GreenhouseModels3DMath.project3DTo2D(p.x, p.y, p.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
                 if (proj.scale > 0 && p.life > 0) {
@@ -516,10 +526,19 @@
                     }
 
                     const alpha = p.life;
-                    // Color change on binding (Yellow -> Green)
-                    ctx.fillStyle = p.hasBound ? `rgba(50, 255, 50, ${alpha})` : `rgba(255, 255, 100, ${alpha})`;
+                    // ADHD: D1/D2 Receptor Imbalance (Enhancement 55)
+                    let particleColor = p.hasBound ? `rgba(50, 255, 50, ${alpha})` : `rgba(255, 255, 100, ${alpha})`;
+                    if (adhdActive.has(55) && p.hasBound) {
+                        particleColor = `rgba(255, 50, 255, ${alpha})`; // Purple for imbalance
+                    }
+
+                    // ADHD: VMAT2 Loading Deficit (Enhancement 71)
+                    let particleSize = 3;
+                    if (adhdActive.has(71)) particleSize = 1.5;
+
+                    ctx.fillStyle = particleColor;
                     ctx.beginPath();
-                    ctx.arc(proj.x + x, proj.y + y, 3 * proj.scale, 0, Math.PI * 2);
+                    ctx.arc(proj.x + x, proj.y + y, particleSize * proj.scale, 0, Math.PI * 2);
                     ctx.fill();
                 }
             });
@@ -540,6 +559,23 @@
          * @param {Object} synapseCamera - Camera object
          */
         drawSynapticCleft(ctx, x, y, w, h, synapseCamera) {
+            const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
+
+            // ADHD: Alpha-2 Agonist Gating (Enhancement 31)
+            if (adhdActive.has(31)) {
+                // Visual gate strengthening
+                const gatePos = GreenhouseModels3DMath.project3DTo2D(0, -150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                if (gatePos.scale > 0) {
+                    ctx.save();
+                    ctx.strokeStyle = 'cyan';
+                    ctx.lineWidth = 4 * gatePos.scale;
+                    ctx.beginPath();
+                    ctx.arc(gatePos.x + x, gatePos.y + y, 80 * gatePos.scale, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
             // Cleft dimensions
             const cleftWidth = 160;
             const cleftHeight = 300; // Matches terminal gap (-150 to 150)

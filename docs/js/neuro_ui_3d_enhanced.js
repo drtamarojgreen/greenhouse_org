@@ -30,6 +30,13 @@
         synapseMeshes: null,
         animationId: null,
         isPlaying: false,
+        adhdEffects: {
+            activeEnhancements: new Set(),
+            noiseParticles: [],
+            jitterAmount: 0,
+            fatigueLevel: 0,
+            fovMultiplier: 1.0
+        },
 
         init(containerSelector) {
             const container = document.querySelector(containerSelector);
@@ -385,6 +392,42 @@
             const ctx = this.ctx;
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+            // ADHD: Global Jitter (Enhancement 14/40)
+            let shakeX = 0, shakeY = 0;
+            if (this.adhdEffects.activeEnhancements.has(14)) {
+                shakeX = (Math.random() - 0.5) * 5;
+                shakeY = (Math.random() - 0.5) * 5;
+                ctx.save();
+                ctx.translate(shakeX, shakeY);
+            }
+
+            // ADHD: Hyperfocus Tunneling (Enhancement 20)
+            if (this.adhdEffects.activeEnhancements.has(20)) {
+                const grad = ctx.createRadialGradient(this.canvas.width / 2, this.canvas.height / 2, 100, this.canvas.width / 2, this.canvas.height / 2, 400);
+                grad.addColorStop(0, 'rgba(0,0,0,0)');
+                grad.addColorStop(1, 'rgba(0,0,0,0.8)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+
+            // ADHD: Signal-to-Noise Ratio (Enhancement 2)
+            if (this.adhdEffects.activeEnhancements.has(2)) {
+                this.drawNoiseParticles(ctx);
+            }
+
+            // ADHD: Treatment - Therapeutic Alliance Glow (Enhancement 49)
+            if (this.adhdEffects.activeEnhancements.has(49)) {
+                ctx.save();
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = 'gold';
+            }
+
+            // ADHD: Pathology - Neuroinflammation (Enhancement 65)
+            if (this.adhdEffects.activeEnhancements.has(65)) {
+                ctx.fillStyle = 'rgba(100, 50, 0, 0.3)';
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+
             // Draw Main View (Synapse)
             if (this.selectedConnection) {
                 if (window.GreenhouseNeuroSynapse) {
@@ -407,6 +450,42 @@
             const pipY = this.canvas.height - pipH - padding;
 
             this.drawNetworkView(ctx, pipX, pipY, pipW, pipH);
+
+            if (this.adhdEffects.activeEnhancements.has(49)) {
+                ctx.restore();
+            }
+
+            if (this.adhdEffects.activeEnhancements.has(14)) {
+                ctx.restore();
+            }
+        },
+
+        drawNoiseParticles(ctx) {
+            if (this.adhdEffects.noiseParticles.length < 50) {
+                for (let i = 0; i < 50; i++) {
+                    this.adhdEffects.noiseParticles.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: (Math.random() - 0.5) * 2,
+                        alpha: Math.random() * 0.5
+                    });
+                }
+            }
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            this.adhdEffects.noiseParticles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0) p.x = this.canvas.width;
+                if (p.x > this.canvas.width) p.x = 0;
+                if (p.y < 0) p.y = this.canvas.height;
+                if (p.y > this.canvas.height) p.y = 0;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+                ctx.fill();
+            });
         },
 
         drawNetworkView(ctx, x, y, w, h) {
@@ -500,7 +579,25 @@
 
         drawNeuron(ctx, neuron, camera, projection) {
             if (window.GreenhouseNeuroNeuron) {
-                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection);
+                // ADHD: Cognitive Fatigue Shader (Enhancement 19)
+                let colorOverride = null;
+                if (this.adhdEffects.activeEnhancements.has(19)) {
+                    const fatigue = window.GreenhouseNeuroApp?.ga?.adhdConfig?.fatigue || 0;
+                    if (fatigue > 0.5) {
+                        colorOverride = '#333'; // Darken
+                    }
+                }
+
+                // ADHD: Vigilance Waxing/Waning (Enhancement 13)
+                let alphaOverride = 1.0;
+                if (this.adhdEffects.activeEnhancements.has(13)) {
+                    alphaOverride = 0.3 + 0.7 * Math.abs(Math.sin(Date.now() * 0.001));
+                }
+
+                ctx.save();
+                ctx.globalAlpha *= alphaOverride;
+                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, colorOverride);
+                ctx.restore();
             }
         },
 
