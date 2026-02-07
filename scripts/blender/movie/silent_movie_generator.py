@@ -49,6 +49,36 @@ from scene10_futuristic_lab import scene_logic as scene10
 from scene11_nature_sanctuary import scene_logic as scene11
 from scene12_credits import scene_logic as scene12
 
+def patch_fbx_importer():
+    """
+    Patches the Blender 5.0 FBX importer to handle missing 'files' attribute.
+    Fixes AttributeError: 'ImportFBX' object has no attribute 'files'.
+    """
+    try:
+        import sys
+        # Attempt to locate the loaded io_scene_fbx module
+        fbx_module = sys.modules.get('io_scene_fbx')
+        if not fbx_module:
+            try:
+                import io_scene_fbx
+                fbx_module = io_scene_fbx
+            except ImportError:
+                pass
+
+        if fbx_module and hasattr(fbx_module, 'ImportFBX'):
+            ImportFBX = fbx_module.ImportFBX
+            if not getattr(ImportFBX, '_is_patched', False):
+                original_execute = ImportFBX.execute
+                def patched_execute(self, context):
+                    if not hasattr(self, 'files'):
+                        self.files = []
+                    return original_execute(self, context)
+                ImportFBX.execute = patched_execute
+                ImportFBX._is_patched = True
+                print("Patched io_scene_fbx.ImportFBX for Blender 5.0 compatibility.")
+    except Exception as e:
+        print(f"Warning: Failed to patch FBX importer: {e}")
+
 class MovieMaster:
     def __init__(self, mode='SILENT_FILM'):
         self.mode = mode # 'SILENT_FILM' or 'UNITY_PREVIEW'
@@ -76,9 +106,21 @@ class MovieMaster:
 
         if self.mode == 'SILENT_FILM':
             scene.render.engine = 'CYCLES'
-            scene.cycles.device = 'CPU'
+            
+            # Configure for AMD Radeon Vega 8 (HIP)
+            try:
+                prefs = bpy.context.preferences.addons['cycles'].preferences
+                prefs.compute_device_type = 'HIP'
+                prefs.get_devices()
+                for device in prefs.devices:
+                    if device.type == 'HIP':
+                        device.use = True
+            except Exception:
+                pass
+
+            scene.cycles.device = 'GPU'
             scene.cycles.samples = 32
-            scene.cycles.use_denoising = False
+            scene.cycles.use_denoising = True
             scene.world.use_nodes = True
             bg = scene.world.node_tree.nodes.get("Background")
             if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
@@ -92,6 +134,14 @@ class MovieMaster:
         scene.render.resolution_x = 1280
         scene.render.resolution_y = 720
         return scene
+
+    def get_action_curves(self, action):
+        """Helper to get fcurves/curves collection from Action for Blender 5.0+ compatibility."""
+        if hasattr(action, 'fcurves'):
+            return action.fcurves
+        if hasattr(action, 'curves'):
+            return action.curves
+        return []
 
     def create_intertitle(self, text, frame_start, frame_end):
         """Creates a classic silent movie intertitle card."""
@@ -154,7 +204,7 @@ class MovieMaster:
             text_obj.keyframe_insert(data_path="rotation_euler", index=rot_axis, frame=frame_end)
 
             if text_obj.animation_data and text_obj.animation_data.action:
-                for fcurve in text_obj.animation_data.action.fcurves:
+                for fcurve in self.get_action_curves(text_obj.animation_data.action):
                     if fcurve.data_path == "rotation_euler" and fcurve.array_index == rot_axis:
                         for kp in fcurve.keyframe_points:
                             kp.interpolation = 'ELASTIC'
@@ -258,7 +308,7 @@ class MovieMaster:
         # Ensure Boolean keyframes are CONSTANT
         for obj in plants + gh_objs:
             if obj.animation_data and obj.animation_data.action:
-                for fcurve in obj.animation_data.action.fcurves:
+                for fcurve in self.get_action_curves(obj.animation_data.action):
                     if fcurve.data_path == "hide_render":
                         for kp in fcurve.keyframe_points:
                             kp.interpolation = 'CONSTANT'
@@ -473,10 +523,12 @@ class MovieMaster:
             target.animation_data_create()
             target.animation_data.action = bpy.data.actions.new(name="TargetShake")
             for axis in range(3):
-                fcurve = target.animation_data.action.fcurves.new(data_path="location", index=axis)
-                noise = fcurve.modifiers.new(type='NOISE')
-                noise.strength = 0.02
-                noise.scale = 2.0
+                curves = self.get_action_curves(target.animation_data.action)
+                if hasattr(curves, 'new'):
+                    fcurve = curves.new(data_path="location", index=axis)
+                    noise = fcurve.modifiers.new(type='NOISE')
+                    noise.strength = 0.02
+                    noise.scale = 2.0
 
         self.setup_camera_keyframes(cam, target)
 
@@ -603,7 +655,17 @@ class MovieMaster:
 
     def setup_compositor(self):
         self.scene.use_nodes = True
-        tree = self.scene.node_tree
+        
+        # Blender 5.0 compatibility: Check for node_tree safely
+        tree = getattr(self.scene, 'node_tree', None)
+        if tree is None:
+            # Try alternative name if node_tree is missing
+            tree = getattr(self.scene, 'compositing_node_group', None)
+        
+        if tree is None:
+            print(f"Warning: Scene.node_tree missing. Available 'node' attrs: {[a for a in dir(self.scene) if 'node' in a]}")
+            return
+
         for node in tree.nodes: tree.nodes.remove(node)
         rl = tree.nodes.new('CompositorNodeRLayers')
         composite = tree.nodes.new('CompositorNodeComposite')
@@ -695,6 +757,7 @@ def main():
     master = MovieMaster(mode=mode)
     start_frame = int(args[args.index('--start-frame') + 1]) if '--start-frame' in args else None
     end_frame = int(args[args.index('--end-frame') + 1]) if '--end-frame' in args else None
+    patch_fbx_importer()
     master.run()
     if start_frame is not None: master.scene.frame_start = start_frame
     if end_frame is not None: master.scene.frame_end = end_frame
@@ -702,13 +765,9 @@ def main():
     if '--render-output' in args:
         out_path = args[args.index('--render-output') + 1]
         master.scene.render.filepath = out_path
-        if '--frame' not in args:
-            master.scene.render.image_settings.file_format = 'FFMPEG'
-            master.scene.render.ffmpeg.format = 'MPEG4'
-            master.scene.render.ffmpeg.codec = 'H264'
-            master.scene.render.ffmpeg.constant_rate_factor = 'MEDIUM'
-        else:
-            master.scene.render.image_settings.file_format = 'PNG'
+        # Use PNG sequence as FFMPEG is not available in this Blender build
+        master.scene.render.image_settings.file_format = 'PNG'
+
     if '--frame' in args:
         f_num = int(args[args.index('--frame') + 1])
         master.scene.frame_set(f_num)
