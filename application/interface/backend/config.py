@@ -56,8 +56,8 @@ class Config:
     TALISMAN_STRICT_TRANSPORT_SECURITY = True
     TALISMAN_CONTENT_SECURITY_POLICY = {
         'default-src': "'self'",
-        'script-src': "'self' 'unsafe-inline'",
-        'style-src': "'self' 'unsafe-inline'",
+        'script-src': "'self'",
+        'style-src': "'self'",
         'img-src': "'self' data:",
     }
     
@@ -139,11 +139,12 @@ class ProductionConfig(Config):
         
         missing = []
         for setting in required_settings:
-            if not getattr(cls, setting) or getattr(cls, setting).startswith('dev-') or getattr(cls, setting).startswith('jwt-'):
+            val = getattr(cls, setting)
+            if not val or val == '' or val.startswith('dev-') or val.startswith('jwt-') or 'change-in-production' in val:
                 missing.append(setting)
         
         if missing:
-            raise ValueError(f"Missing required production settings: {', '.join(missing)}")
+            raise ValueError(f"CRITICAL SECURITY ERROR: Missing or insecure required production settings: {', '.join(missing)}. Deployment halted.")
 
 
 # Configuration dictionary
