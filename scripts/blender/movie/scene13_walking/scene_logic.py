@@ -2,6 +2,7 @@ import bpy
 import math
 import os
 import sys
+import random
 
 # Ensure assets are importable
 ASSETS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
@@ -26,6 +27,11 @@ def setup_scene(master):
 
         # Talk while walking
         plant_humanoid.animate_talk(master.h1, frame_start + 200, frame_start + 600)
+
+        # Look around while walking
+        for f in range(frame_start, frame_end, 100):
+            master.h1.rotation_euler.z = math.radians(random.uniform(-20, 20))
+            master.h1.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
 
         # Expression change
         plant_humanoid.animate_expression(master.h1, frame_start + 150, 'SURPRISED')

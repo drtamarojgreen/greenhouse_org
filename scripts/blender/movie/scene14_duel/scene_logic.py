@@ -38,6 +38,9 @@ def setup_scene(master):
 
     if master.gnome:
         # Gnome dodge and counter
+        master.gnome.rotation_euler.z = math.radians(180) # Face plants
+        master.gnome.keyframe_insert(data_path="rotation_euler", index=2, frame=4501)
+
         master.gnome.location.y = 5
         master.gnome.keyframe_insert(data_path="location", index=1, frame=4600)
         master.gnome.location.y = 8

@@ -121,8 +121,8 @@ class SequelMaster:
         self.greenhouse = greenhouse_structure.create_greenhouse_structure()
         self.gnome = gnome_antagonist.create_gnome("GloomGnome", mathutils.Vector((5, 5, 0)))
 
-        self.h1 = plant_humanoid.create_plant_humanoid("Herbaceous", mathutils.Vector((-2, 0, 0)), height_scale=0.8, seed=42)
-        self.h2 = plant_humanoid.create_plant_humanoid("Arbor", mathutils.Vector((2, 1, 0)), height_scale=1.3, seed=123)
+        self.h1 = plant_humanoid.create_plant_humanoid("Herbaceous", mathutils.Vector((-2, 0, 0)), height_scale=0.8, seed=42, include_facial_details=True)
+        self.h2 = plant_humanoid.create_plant_humanoid("Arbor", mathutils.Vector((2, 1, 0)), height_scale=1.3, seed=123, include_facial_details=True)
         self.scroll = plant_humanoid.create_scroll(mathutils.Vector((1.8, 1.0, 1.2)))
 
         environment_props.create_stage_floor()

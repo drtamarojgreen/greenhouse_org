@@ -161,7 +161,7 @@ def add_tracking_constraint(obj, target, name="TrackTarget"):
     con.track_axis = 'TRACK_NEGATIVE_Y' # Eyes look forward (-Y)
     con.name = name
 
-def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05, seed=None):
+def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05, seed=None, include_facial_details=False):
     """Generates a humanoid plant character with variety."""
     if seed is not None:
         random.seed(seed)
@@ -203,32 +203,34 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         eye.matrix_parent_inverse = head.matrix_world.inverted()
         eye.data.materials.append(mat_eye)
 
-        # Pupils for more detail
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.01, subdivisions=2, location=eye_loc + mathutils.Vector((0, -0.025, 0)))
-        pupil = bpy.context.object
-        pupil.name = f"{name}_Pupil_{side_str}"
-        pupil.parent = eye
-        pupil.matrix_parent_inverse = eye.matrix_world.inverted()
-        pupil.data.materials.append(mat_pupil)
+        if include_facial_details:
+            # Pupils for more detail
+            bpy.ops.mesh.primitive_ico_sphere_add(radius=0.01, subdivisions=2, location=eye_loc + mathutils.Vector((0, -0.025, 0)))
+            pupil = bpy.context.object
+            pupil.name = f"{name}_Pupil_{side_str}"
+            pupil.parent = eye
+            pupil.matrix_parent_inverse = eye.matrix_world.inverted()
+            pupil.data.materials.append(mat_pupil)
 
-        # Eyebrows
-        brow_loc = eye_loc + mathutils.Vector((0, -0.01, 0.06))
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.005, depth=0.08, location=brow_loc, rotation=(0, math.radians(90), 0))
-        brow = bpy.context.object
-        brow.name = f"{name}_Brow_{side_str}"
-        bpy.ops.object.shade_smooth()
-        brow.parent = head
-        brow.matrix_parent_inverse = head.matrix_world.inverted()
-        brow.data.materials.append(mat) # Bark mat
+            # Eyebrows
+            brow_loc = eye_loc + mathutils.Vector((0, -0.01, 0.06))
+            bpy.ops.mesh.primitive_cylinder_add(radius=0.005, depth=0.08, location=brow_loc, rotation=(0, math.radians(90), 0))
+            brow = bpy.context.object
+            brow.name = f"{name}_Brow_{side_str}"
+            bpy.ops.object.shade_smooth()
+            brow.parent = head
+            brow.matrix_parent_inverse = head.matrix_world.inverted()
+            brow.data.materials.append(mat) # Bark mat
 
-    # Mouth (Small crevice)
-    bpy.ops.mesh.primitive_cube_add(size=0.05, location=location + mathutils.Vector((0, -head_radius * 0.9, torso_height + head_radius * 0.8)))
-    mouth = bpy.context.object
-    mouth.name = f"{name}_Mouth"
-    mouth.scale = (1.5, 0.2, 0.4)
-    mouth.parent = head
-    mouth.matrix_parent_inverse = head.matrix_world.inverted()
-    mouth.data.materials.append(mat_eye) # Reuse eye material for glow
+    if include_facial_details:
+        # Mouth (Small crevice)
+        bpy.ops.mesh.primitive_cube_add(size=0.05, location=location + mathutils.Vector((0, -head_radius * 0.9, torso_height + head_radius * 0.8)))
+        mouth = bpy.context.object
+        mouth.name = f"{name}_Mouth"
+        mouth.scale = (1.5, 0.2, 0.4)
+        mouth.parent = head
+        mouth.matrix_parent_inverse = head.matrix_world.inverted()
+        mouth.data.materials.append(mat_eye) # Reuse eye material for glow
 
     # Arms (Vines)
     arm_height = torso_height * 0.9
