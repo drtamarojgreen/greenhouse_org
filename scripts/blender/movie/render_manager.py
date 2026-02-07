@@ -2,12 +2,12 @@ import subprocess
 import os
 import sys
 
-def render_range(start, end, output_subdir):
+def render_range(start, end, output_subdir, master_script_name="silent_movie_generator.py"):
     """
-    Renders a specific frame range of the GreenhouseMD silent movie.
+    Renders a specific frame range of the GreenhouseMD movie using a specified master script.
     Ensures that no single blender call renders more than 200 frames.
     """
-    master_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "silent_movie_generator.py")
+    master_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), master_script_name)
     render_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "renders", output_subdir)
     os.makedirs(render_dir, exist_ok=True)
 
@@ -16,7 +16,7 @@ def render_range(start, end, output_subdir):
         print(f"Warning: Range {start}-{end} exceeds 200 frames. Sub-dividing...")
         for s in range(start, end + 1, 200):
             e = min(s + 199, end)
-            render_range(s, e, f"{output_subdir}/sub_{s:04d}")
+            render_range(s, e, f"{output_subdir}/sub_{s:04d}", master_script_name=master_script_name)
         return
 
     cmd = [

@@ -296,7 +296,7 @@ class MovieMaster:
                     obj.hide_render = True
                     obj.keyframe_insert(data_path="hide_render", frame=re)
 
-        plant_keywords = ["Herbaceous", "Arbor", "Scroll", "Bush", "Eye", "ShoulderPlate"]
+        plant_keywords = ["Herbaceous", "Arbor", "Scroll", "Bush", "Eye", "Mouth", "Pupil", "Brow", "ShoulderPlate"]
         plants = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in plant_keywords) and "GloomGnome" not in obj.name]
         p_ranges = [(501, 650), (751, 950), (1051, 1250), (1601, 1800), (2101, 2500), (2601, 2800), (2901, 3400), (3901, 4100)]
         set_visibility(plants, p_ranges)
@@ -313,7 +313,7 @@ class MovieMaster:
                         for kp in fcurve.keyframe_points:
                             kp.interpolation = 'CONSTANT'
 
-        gnomes = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["GloomGnome", "Mouth", "Cloak", "Staff"])]
+        gnomes = [obj for obj in bpy.context.scene.objects if "GloomGnome" in obj.name]
         g_ranges = [(2101, 2500), (2601, 2800)]
         set_visibility(gnomes, g_ranges)
 
