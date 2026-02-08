@@ -102,4 +102,24 @@
       <paragraph>The simulation explores key cognitive frameworks such as Information Processing, Dual Process Theory (System 1 vs. System 2), and Cognitive Load. It visualizes how the brain integrates sensory data, manages working memory, and executes complex decision-making processes, emphasizing the fundamental link between cortical architecture and intellectual function.</paragraph>
     </description>
   </model>
+
+  <model id="inflammation">
+    <title>Neuroinflammation Model</title>
+    <url>/inflammation</url>
+    <description>
+      <paragraph>The Neuroinflammation Model explores the conceptual dynamics of the brain’s immune response and its impact on mental health. It focuses on the role of glial activation and cytokine tone in modulating neural signaling efficiency and blood-brain barrier (BBB) permeability.</paragraph>
+      <paragraph>This simulation represents how various triggers—such as chronic stress, poor sleep, or immune challenges—can elevate inflammatory markers within the central nervous system. Users can observe how these factors interact to influence the overall "inflammatory tone" and how recovery interventions like restorative sleep and lifestyle supports can help return the system to equilibrium.</paragraph>
+      <paragraph>By visualizing inflammation as a dynamic system rather than a fixed state, this model helps users understand the biological underpinnings of mental fatigue, "brain fog," and the importance of systemic health in neurological resilience.</paragraph>
+    </description>
+  </model>
+
+  <model id="stress">
+    <title>Stress Dynamics Model</title>
+    <url>/stress</url>
+    <description>
+      <paragraph>The Stress Dynamics Model simulates the physiological and psychological impact of acute and chronic stressors on human functioning. It utilizes a proxy for HPA-axis load to visualize the accumulation of allostatic load over time.</paragraph>
+      <paragraph>The simulation highlights the delicate balance between stressor intensity and the protective buffering of coping skills, social support, and sleep regularity. Users can explore different scenarios, from acute spikes with rapid recovery to chronic overload patterns, and see how autonomic balance (the interplay between sympathetic and parasympathetic activation) shifts accordingly.</paragraph>
+      <paragraph>This model emphasizes the concept of "resilience reserve," showing that mental health is maintained through a continuous cycle of load and recovery. It provides a framework for understanding how consistent support systems and adaptive coping strategies can mitigate the long-term impact of stress.</paragraph>
+    </description>
+  </model>
 </models>

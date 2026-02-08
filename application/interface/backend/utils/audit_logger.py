@@ -5,6 +5,7 @@ Logs all access to PHI and critical system operations
 import logging
 from datetime import datetime, UTC
 from flask import request, g
+from flask_jwt_extended import get_jwt_identity
 from functools import wraps
 from ..database import get_db
 
@@ -182,8 +183,8 @@ def audit_log(action, resource_type):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # Get user ID from session/JWT
-            user_id = getattr(g, 'user_id', None)
+            # Get user ID from JWT identity
+            user_id = get_jwt_identity()
             
             # Get resource ID from kwargs or args
             resource_id = kwargs.get('patient_id') or kwargs.get('user_id') or kwargs.get('id') or 'unknown'

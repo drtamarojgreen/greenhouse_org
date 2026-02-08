@@ -61,6 +61,14 @@
          */
         neuroPagePath: '/neuro',
         /**
+         * The path segment that identifies the inflammation page.
+         */
+        inflammationPagePath: '/inflammation',
+        /**
+         * The path segment that identifies the stress page.
+         */
+        stressPagePath: '/stress',
+        /**
          * The path segment that identifies the synapse page.
          */
         synapsePagePath: '/synapse',
@@ -68,10 +76,6 @@
          * The path segment that identifies the pathway page.
          */
         pathwayPagePath: '/pathway',
-        /**
-         * The path segment that identifies the synapse page.
-         */
-        synapsePagePath: '/synapse',
         /**
          * The path segment that identifies the genetic page.
          */
@@ -131,6 +135,8 @@
             serotonin: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             emotion: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             cognition: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            inflammation: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+            stress: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
             repeaterContainer: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section',
             repeaterLeft: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(1)',
             repeaterRight: '#SITE_PAGES_TRANSITION_GROUP > div > div > div > div > div:nth-child(1) > section.wixui-section > div:nth-child(2) > div > section > div.V5AUxf > div:nth-child(2)'
@@ -157,7 +163,9 @@
             dopamine: 'section.wixui-section',
             serotonin: 'section.wixui-section',
             emotion: 'section.wixui-section',
-            cognition: 'section.wixui-section'
+            cognition: 'section.wixui-section',
+            inflammation: 'section.wixui-section',
+            stress: 'section.wixui-section'
         }
     };
 
@@ -420,6 +428,32 @@
     }
 
     /**
+     * @function loadInflammationApplication
+     * @description Loads the inflammation simulation application.
+     */
+    async function loadInflammationApplication() {
+        await loadApplication(
+            'inflammation',
+            'inflammation.js',
+            config.selectors.inflammation,
+            config.fallbackSelectors.inflammation
+        );
+    }
+
+    /**
+     * @function loadStressApplication
+     * @description Loads the stress simulation application.
+     */
+    async function loadStressApplication() {
+        await loadApplication(
+            'stress',
+            'stress.js',
+            config.selectors.stress,
+            config.fallbackSelectors.stress
+        );
+    }
+
+    /**
     * @function loadGeneticApplication
     * @description Loads the genetic application after ensuring the target element exists.
     */
@@ -601,6 +635,10 @@
             pollAndLoad(config.selectors.emotion, loadEmotionApplication);
         } else if (window.location.pathname.includes(config.cognitionPagePath)) {
             pollAndLoad(config.selectors.cognition, loadCognitionApplication);
+        } else if (window.location.pathname.includes(config.inflammationPagePath)) {
+            pollAndLoad(config.selectors.inflammation, loadInflammationApplication);
+        } else if (window.location.pathname.includes(config.stressPagePath)) {
+            pollAndLoad(config.selectors.stress, loadStressApplication);
         }
     }
 

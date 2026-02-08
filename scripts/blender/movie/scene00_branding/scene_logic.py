@@ -1,10 +1,14 @@
 import bpy
 import math
+import style
 
 def setup_scene(master):
     """Intro Branding Scene."""
     # Frame range: 1 - 100
     master.create_intertitle("GreenhouseMD\nPresents", 1, 100)
+
+    # Apply default/reset grade for branding
+    style.apply_scene_grade(master, 'reset', 1, 100)
 
     # Optional: Specific dramatic lighting for intro
     bpy.ops.object.light_add(type='POINT', location=(0, -5, 2))

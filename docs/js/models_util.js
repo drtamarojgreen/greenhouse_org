@@ -130,10 +130,67 @@
         }
     }
 
+    /**
+     * @class SimulationEngine
+     * Lightweight shared simulation engine for Greenhouse models.
+     * Implements Phase 3: Shared Core with deterministic state and fixed-step updates.
+     */
+    class SimulationEngine {
+        constructor(config = {}) {
+            this.state = {
+                time: 0,
+                factors: config.initialFactors || {},
+                metrics: config.initialMetrics || {},
+                flags: config.initialFlags || {},
+                seed: config.seed || Math.random()
+            };
+            this.updateFn = config.updateFn || ((state, dt) => { });
+            this.tickRate = config.tickRate || 1000 / 60;
+            this.lastTick = null;
+            this.accumulatedTime = 0;
+        }
+
+        /**
+         * Core update loop with fixed-step updates.
+         * @param {number} timestamp
+         */
+        update(timestamp = performance.now()) {
+            if (this.lastTick === null) this.lastTick = timestamp;
+            const deltaTime = timestamp - this.lastTick;
+            this.lastTick = timestamp;
+
+            this.accumulatedTime += deltaTime;
+
+            let updated = false;
+            while (this.accumulatedTime >= this.tickRate) {
+                this.updateFn(this.state, this.tickRate);
+                this.state.time += this.tickRate;
+                this.accumulatedTime -= this.tickRate;
+                updated = true;
+            }
+            return updated;
+        }
+
+        /**
+         * Shared utility for clamping values.
+         */
+        static clamp(val, min, max) {
+            return Math.max(min, Math.min(max, val));
+        }
+
+        /**
+         * Shared utility for smoothing metrics (LERP).
+         */
+        static smooth(current, target, factor) {
+            return current + (target - current) * factor;
+        }
+    }
+
     const GreenhouseModelsUtil = {
         GreenhouseComponent,
         GreenhouseSystem,
         GreenhouseAssetManager,
+        SimulationEngine,
 
         currentLanguage: 'en',
 

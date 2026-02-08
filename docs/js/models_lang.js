@@ -2058,6 +2058,28 @@
             "adhd_enh_112_name": "Acceptance and Commitment Therapy (ACT)",
             "adhd_enh_112_desc": "Enhancing cognitive flexibility and path diversity."
 
+            // Inflammation Model
+            "label_immune_trigger": "Immune Trigger",
+            "label_sleep_quality": "Sleep Quality",
+            "label_diet_support": "Diet/Exercise Support",
+            "label_stress_coload": "Stress Co-load",
+            "metric_inflam_tone": "Inflammatory Tone",
+            "metric_signaling_eff": "Signaling Efficiency",
+            "metric_recovery_mom": "Recovery Momentum",
+            "inflam_sim_title": "Neuroinflammation Simulation: Conceptual Field View",
+
+            // Stress Model
+            "label_stressor_intensity": "Stressor Intensity",
+            "label_coping_skill": "Coping Skill Engagement",
+            "label_sleep_regularity": "Sleep Regularity",
+            "label_social_support": "Social Support",
+            "metric_allostatic_load": "Allostatic Load",
+            "metric_autonomic_balance": "Autonomic Balance",
+            "metric_resilience_reserve": "Resilience Reserve",
+            "state_sympathetic": "Sympathetic",
+            "state_parasympathetic": "Parasympathetic",
+            "state_balanced": "Balanced",
+            "stress_sim_title": "Stress Dynamics: Temporal Load/Recovery Graph"
         },
         es: {
             // Consent Screen
@@ -4110,6 +4132,28 @@
             "adhd_enh_112_name": "Terapia de Aceptación y Compromiso (ACT)",
             "adhd_enh_112_desc": "Mejora de la flexibilidad cognitiva y la diversidad de rutas."
 
+            // Modelo de Inflamación
+            "label_immune_trigger": "Disparador Inmune",
+            "label_sleep_quality": "Calidad del Sueño",
+            "label_diet_support": "Apoyo de Dieta/Ejercicio",
+            "label_stress_coload": "Co-carga de Estrés",
+            "metric_inflam_tone": "Tono Inflamatorio",
+            "metric_signaling_eff": "Eficiencia de Señalización",
+            "metric_recovery_mom": "Impulso de Recuperación",
+            "inflam_sim_title": "Simulación de Neuroinflamación: Vista de Campo Conceptual",
+
+            // Modelo de Estrés
+            "label_stressor_intensity": "Intensidad del Estresor",
+            "label_coping_skill": "Compromiso con Habilidades de Afrontamiento",
+            "label_sleep_regularity": "Regularidad del Sueño",
+            "label_social_support": "Apoyo Social",
+            "metric_allostatic_load": "Carga Alostática",
+            "metric_autonomic_balance": "Equilibrio Autonómico",
+            "metric_resilience_reserve": "Reserva de Resiliencia",
+            "state_sympathetic": "Simpático",
+            "state_parasympathetic": "Parasimpático",
+            "state_balanced": "Equilibrado",
+            "stress_sim_title": "Dinámica del Estrés: Gráfico Temporal de Carga/Recuperación"
         }
     };
     window.GreenhouseTranslations = GreenhouseTranslations;
