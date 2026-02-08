@@ -212,7 +212,7 @@
                 this.synapseCameraController.update();
                 synapseCamera = this.synapseCameraController.getCamera();
             } else {
-                synapseCamera = { x: 0, y: 0, z: -200, rotationX: 0.2, rotationY: Date.now() * 0.001, rotationZ: 0, fov: 400 };
+                synapseCamera = { x: 0, y: 0, z: -200, rotationX: 0.2, rotationY: Date.now() * 0.0003, rotationZ: 0, fov: 400 };
             }
 
             // ADHD: Hyperfocus Tunneling (20)
@@ -294,6 +294,11 @@
             drawMesh(synapseMeshes.pre, -150 + terminalJitter, connectionColor);
             this.drawSynapticCleft(ctx, x, y, w, h, synapseCamera);
             drawMesh(synapseMeshes.post, 150, postColor);
+
+            // Alzheimer's: Amyloid Plaque Accumulation (103)
+            if (adhdActive.has(103)) {
+                this.drawAmyloidPlaques(ctx, x, y, w, h, synapseCamera);
+            }
 
             // ADHD: TBI (88) - Cracks
             if (adhdActive.has(88)) {
@@ -405,6 +410,10 @@
                 if (adhdActive.has(26)) fadeRate *= 0.5;
                 if (adhdActive.has(66)) fadeRate *= 0.3; // Astrocyte (66)
 
+                // ADHD: COMT (69) / MAO-A (70)
+                if (adhdActive.has(69)) fadeRate *= (adhdConfig?.comtRate || 2.0);
+                if (adhdActive.has(70)) fadeRate *= (adhdConfig?.maoActivity || 2.5);
+
                 // ADHD: Social Support (41) - Longer life
                 if (adhdActive.has(41)) fadeRate *= 0.8;
 
@@ -473,6 +482,28 @@
             }
 
             ctx.restore();
+        },
+
+        drawAmyloidPlaques(ctx, x, y, w, h, synapseCamera) {
+            const plaqueCount = 5;
+            ctx.fillStyle = 'rgba(200, 180, 150, 0.7)';
+            for (let i = 0; i < plaqueCount; i++) {
+                const px = Math.sin(i + Date.now() * 0.001) * 40;
+                const py = (i - 2) * 40;
+                const pz = Math.cos(i) * 40;
+                const proj = GreenhouseModels3DMath.project3DTo2D(px, py, pz, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                if (proj.scale > 0) {
+                    ctx.beginPath();
+                    ctx.arc(proj.x + x, proj.y + y, 15 * proj.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Plaque texture
+                    ctx.strokeStyle = 'rgba(100, 80, 50, 0.4)';
+                    ctx.beginPath();
+                    ctx.moveTo(proj.x + x - 5, proj.y + y);
+                    ctx.lineTo(proj.x + x + 5, proj.y + y);
+                    ctx.stroke();
+                }
+            }
         },
 
         drawSynapticCleft(ctx, x, y, w, h, synapseCamera) {

@@ -26,7 +26,7 @@
             
             // Auto-rotate
             this.autoRotate = true;
-            this.autoRotateSpeed = 0.001;
+            this.autoRotateSpeed = 0.0003;
         }
 
         /**

@@ -112,6 +112,22 @@
             { id: 98, name: "Birth Complication Modeling", category: "logic", description: "Low oxygen events during initial network formation." },
             { id: 99, name: "Societal Expectation Filter", category: "ui", description: "Society slider penalizing high-energy (hyperactive) paths." },
             { id: 100, name: "Resilience Factor Evolved", category: "visual", description: "Highlighting protective connections that persist despite stress." }
+        ],
+        conditions: [
+            { id: 101, name: "Schizophrenia: Dopamine Dysregulation", category: "logic", description: "Increased noise and chaotic firing in cortical regions." },
+            { id: 102, name: "Parkinson's: Substantia Nigra Depletion", category: "logic", description: "Global reduction in dopamine-dependent signal velocity." },
+            { id: 103, name: "Alzheimer's: Amyloid Plaque Accumulation", category: "visual", description: "Visual markers blocking signal paths and increasing node death." },
+            { id: 104, name: "MDD: Monoamine Deficiency", category: "logic", description: "Reduced baseline arousal and slower connection growth." },
+            { id: 105, name: "Bipolar: Rhythmic Mood Cycling", category: "logic", description: "Oscillating between hyper-active and hypo-active firing states." },
+            { id: 106, name: "Autism: Hyper-Local Connectivity", category: "logic", description: "High local cluster density with reduced long-range connections." }
+        ],
+        expanded_treatments: [
+            { id: 107, name: "Antipsychotic D2 Blockade", category: "synaptic", description: "Reducing over-activity in striatal dopamine pathways." },
+            { id: 108, name: "L-DOPA Replacement Therapy", category: "logic", description: "Restoring motor signal velocity in Parkinsonian models." },
+            { id: 109, name: "SSRI Serotonin Reuptake Inhibition", category: "synaptic", description: "Increasing signal persistence in affective processing nodes." },
+            { id: 110, name: "Lithium Ion Stabilization", category: "logic", description: "Damping extreme oscillations in Bipolar firing cycles." },
+            { id: 111, name: "Dialectical Behavior Therapy (DBT)", category: "logic", description: "Pruning emotional lability spikes via mindfulness loops." },
+            { id: 112, name: "Acceptance and Commitment Therapy (ACT)", category: "logic", description: "Enhancing cognitive flexibility and path diversity." }
         ]
     };
 
@@ -120,7 +136,13 @@
         adhd_symptoms: { id: 'adhd_symptoms', name: "ADHD: Symptomatic State", enhancements: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25] },
         adhd_treatment: { id: 'adhd_treatment', name: "ADHD: Clinical Intervention", enhancements: [26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50] },
         adhd_pathology: { id: 'adhd_pathology', name: "ADHD: Pathological Profile", enhancements: [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75] },
-        adhd_etiology: { id: 'adhd_etiology', name: "ADHD: Etiological Analysis", enhancements: [76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100] }
+        adhd_etiology: { id: 'adhd_etiology', name: "ADHD: Etiological Analysis", enhancements: [76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100] },
+        schizophrenia: { id: 'schizophrenia', name: "Schizophrenia Spectrum", enhancements: [101, 107, 53, 61, 62] },
+        parkinsons: { id: 'parkinsons', name: "Parkinsonian Model", enhancements: [102, 108, 60, 71] },
+        alzheimers: { id: 'alzheimers', name: "Alzheimer's Disease", enhancements: [103, 63, 64, 66, 72] },
+        depression: { id: 'depression', name: "Major Depressive Disorder", enhancements: [104, 109, 112, 19, 83] },
+        bipolar: { id: 'bipolar', name: "Bipolar Cycling", enhancements: [105, 110, 11, 24] },
+        autism: { id: 'autism', name: "Autism Spectrum", enhancements: [106, 57, 18, 21] }
     };
 
     window.GreenhouseADHDData = {
