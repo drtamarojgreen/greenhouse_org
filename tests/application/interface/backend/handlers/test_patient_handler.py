@@ -3,6 +3,7 @@ import json
 from unittest.mock import patch, MagicMock
 from flask import Flask
 from datetime import datetime
+from flask_jwt_extended import JWTManager, create_access_token
 
 from application.interface.backend.handlers.patient_handler import patient_bp
 from application.interface.backend.models.patient import Patient
@@ -11,15 +12,24 @@ class TestPatientHandler(unittest.TestCase):
 
     def setUp(self):
         self.app = Flask(__name__)
+        self.app.config['JWT_SECRET_KEY'] = 'test-secret'
+        self.app.config['JWT_TOKEN_LOCATION'] = ['headers']
         self.app.register_blueprint(patient_bp, url_prefix='/api')
+        self.jwt = JWTManager(self.app)
         self.client = self.app.test_client()
+
+        with self.app.app_context():
+            self.clinician_token = create_access_token(
+                identity='1',
+                additional_claims={'mfa_verified': True, 'role': 'clinician'}
+            )
 
     @patch('application.interface.backend.models.patient.Patient.get_all')
     def test_get_all_patients(self, mock_get_all):
         mock_patient = Patient(1, 1, datetime.now(), 'Male', datetime.now(), 'Caucasian', '123 Main St', None, 'CA', '12345', 'Anytown')
         mock_get_all.return_value = [mock_patient]
 
-        response = self.client.get('/api/patients')
+        response = self.client.get('/api/patients', headers={'Authorization': f'Bearer {self.clinician_token}'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.data)), 1)
 
@@ -28,7 +38,7 @@ class TestPatientHandler(unittest.TestCase):
         mock_patient = Patient(1, 1, datetime.now(), 'Male', datetime.now(), 'Caucasian', '123 Main St', None, 'CA', '12345', 'Anytown')
         mock_get_by_id.return_value = mock_patient
 
-        response = self.client.get('/api/patients/1')
+        response = self.client.get('/api/patients/1', headers={'Authorization': f'Bearer {self.clinician_token}'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.data)['user_id'], 1)
 
@@ -42,7 +52,10 @@ class TestPatientHandler(unittest.TestCase):
             'date_of_birth': '2000-01-01',
             'gender': 'Other'
         }
-        response = self.client.post('/api/patients', data=json.dumps(data), content_type='application/json')
+        response = self.client.post('/api/patients',
+                                    data=json.dumps(data),
+                                    content_type='application/json',
+                                    headers={'Authorization': f'Bearer {self.clinician_token}'})
         self.assertEqual(response.status_code, 201)
         self.assertEqual(json.loads(response.data)['user_id'], 3)
 

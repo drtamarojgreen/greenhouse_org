@@ -6,6 +6,7 @@ from flask_jwt_extended import (
     create_access_token, create_refresh_token,
     jwt_required, get_jwt_identity, get_jwt
 )
+from functools import wraps
 from flask_bcrypt import Bcrypt
 import pyotp
 import qrcode
@@ -22,6 +23,17 @@ auth_bp = Blueprint('auth_bp', __name__)
 bcrypt = Bcrypt()
 config = get_config()
 field_encryption = FieldEncryption()
+
+
+def mfa_required(f):
+    """Decorator to enforce MFA verification"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        claims = get_jwt()
+        if not claims.get('mfa_verified', False):
+            return jsonify({'error': 'MFA verification required'}), 403
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @auth_bp.route('/auth/register', methods=['POST'])
@@ -51,10 +63,10 @@ def register():
     try:
         db = get_db()
         cur = db.cursor()
-        # Validate role_id exists
-        cur.execute('SELECT id FROM roles WHERE id = %s', (data['role_id'],))
-        if not cur.fetchone():
-            return jsonify({'error': 'Invalid role_id'}), 400
+
+        # Security: Force role_id to 1 (patient) for public registration
+        # to prevent self-service privilege escalation.
+        role_id = 1
 
         # Check if user already exists
         cur.execute('SELECT id FROM users WHERE email = %s', (data['email'],))
@@ -71,7 +83,7 @@ def register():
             VALUES (%s, %s, %s, %s)
             RETURNING id, email, full_name, role_id, created_at
             """,
-            (data['email'], data['full_name'], data['role_id'], datetime.utcnow())
+            (data['email'], data['full_name'], role_id, datetime.utcnow())
         )
         user = cur.fetchone()
         
@@ -374,6 +386,7 @@ def verify_mfa():
 
 @auth_bp.route('/auth/mfa/enroll', methods=['POST'])
 @jwt_required()
+@mfa_required
 def enroll_mfa():
     """
     Enroll in MFA and get QR code
@@ -464,17 +477,47 @@ def refresh():
     """
     user_id = get_jwt_identity()
     
-    # Create new access token
-    access_token = create_access_token(
-        identity=str(user_id),
-        expires_delta=timedelta(minutes=15)
-    )
-    
-    return jsonify({'access_token': access_token}), 200
+    db = None
+    cur = None
+    try:
+        db = get_db()
+        cur = db.cursor()
+        cur.execute(
+            """
+            SELECT u.email, r.role_name
+            FROM users u
+            JOIN roles r ON r.id = u.role_id
+            WHERE u.id = %s
+            """,
+            (user_id,)
+        )
+        user = cur.fetchone()
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Create new access token with preserved claims
+        access_token = create_access_token(
+            identity=str(user_id),
+            additional_claims={
+                'mfa_verified': True,
+                'role': user[1],
+                'email': user[0]
+            },
+            expires_delta=timedelta(minutes=15)
+        )
+
+        return jsonify({'access_token': access_token}), 200
+    except Exception as e:
+        return jsonify({'error': 'An error occurred during token refresh'}), 500
+    finally:
+        if cur:
+            cur.close()
 
 
 @auth_bp.route('/auth/logout', methods=['POST'])
 @jwt_required()
+@mfa_required
 def logout():
     """
     Logout user (invalidate token)
@@ -523,6 +566,7 @@ def logout():
 
 @auth_bp.route('/auth/me', methods=['GET'])
 @jwt_required()
+@mfa_required
 def get_current_user():
     """
     Get current user information

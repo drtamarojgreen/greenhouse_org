@@ -38,7 +38,6 @@ class TestAuthHandler(unittest.TestCase):
 
         # Mock the return values for fetches
         mock_cursor.fetchone.side_effect = [
-            (1,), # For role validation
             None, # For checking if user already exists
             (1, 'test@example.com', 'Test User', 1, datetime.utcnow()) # For user insertion RETURNING clause
         ]
