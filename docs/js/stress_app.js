@@ -121,21 +121,42 @@
             config.factors.forEach(f => {
                 const group = document.createElement('div');
                 const label = document.createElement('label');
-                label.textContent = t(f.label);
                 label.style.display = 'block';
                 label.style.fontSize = '12px';
                 label.style.marginBottom = '5px';
 
                 const slider = document.createElement('input');
                 slider.type = 'range';
-                slider.min = 0;
-                slider.max = 1;
-                slider.step = 0.01;
-                slider.value = this.engine.state.factors[f.id];
                 slider.style.width = '100%';
-                slider.oninput = (e) => {
-                    this.engine.state.factors[f.id] = parseFloat(e.target.value);
-                };
+
+                if (f.id === 'viewMode') {
+                    slider.min = 0;
+                    slider.max = f.options.length - 1;
+                    slider.step = 1;
+                    slider.value = this.engine.state.factors[f.id];
+
+                    const updateLabel = () => {
+                        const opt = f.options[slider.value];
+                        label.innerHTML = `<strong>${t(f.label)}</strong> <span style="color:#4ca1af">${t(opt.label)}</span>`;
+                    };
+                    slider.oninput = (e) => {
+                        this.engine.state.factors[f.id] = parseInt(e.target.value);
+                        updateLabel();
+                    };
+                    updateLabel();
+                } else {
+                    label.innerHTML = `<strong>${t(f.label)}</strong> <span id="val-${f.id}">${Math.round(this.engine.state.factors[f.id] * 100)}%</span>`;
+                    slider.min = 0;
+                    slider.max = 1;
+                    slider.step = 0.01;
+                    slider.value = this.engine.state.factors[f.id];
+                    slider.oninput = (e) => {
+                        const val = parseFloat(e.target.value);
+                        this.engine.state.factors[f.id] = val;
+                        const display = group.querySelector(`#val-${f.id}`);
+                        if (display) display.textContent = `${Math.round(val * 100)}%`;
+                    };
+                }
 
                 group.appendChild(label);
                 group.appendChild(slider);
@@ -181,12 +202,22 @@
 
             ctx.clearRect(0, 0, w, h);
 
-            // 3D Rendering (Background)
+            // 3D Rendering
             if (window.GreenhouseStressUI3D) {
-                window.GreenhouseStressUI3D.renderReserve(ctx, this.engine.state, this.camera, this.projection);
+                window.GreenhouseStressUI3D.render(ctx, this.engine.state, this.camera, this.projection);
             }
 
-            // Draw Graph (2D Overlay)
+            // Draw Graph (2D Overlay) - Only in systemic view
+            if (this.engine.state.factors.viewMode === 2) {
+                this.renderGraph(ctx, w, h, config);
+            }
+
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.font = '12px Arial';
+            ctx.fillText(t('stress_sim_title'), 20, 30);
+        },
+
+        renderGraph(ctx, w, h, config) {
             ctx.beginPath();
             ctx.strokeStyle = 'rgba(255,255,255,0.1)';
             ctx.moveTo(50, 50);
@@ -222,10 +253,6 @@
             ctx.fillRect(w - 150, 80, 10, 10);
             ctx.fillStyle = '#fff';
             ctx.fillText(t('metric_resilience_reserve'), w - 135, 90);
-
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            ctx.font = '12px Arial';
-            ctx.fillText(t('stress_sim_title'), 20, 30);
         }
     };
 

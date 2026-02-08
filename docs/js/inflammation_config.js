@@ -8,6 +8,7 @@
 
     const GreenhouseInflammationConfig = {
         factors: [
+            { id: 'viewMode', label: 'label_view_mode', defaultValue: 0, min: 0, max: 2, step: 1 },
             { id: 'immuneTrigger', label: 'label_immune_trigger', defaultValue: 0.2 },
             { id: 'sleepQuality', label: 'label_sleep_quality', defaultValue: 0.8 },
             { id: 'dietSupport', label: 'label_diet_support', defaultValue: 0.5 },

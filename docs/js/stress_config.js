@@ -8,6 +8,11 @@
 
     const GreenhouseStressConfig = {
         factors: [
+            { id: 'viewMode', label: 'label_view_mode', defaultValue: 2, options: [
+                { value: 0, label: 'option_macro' },
+                { value: 1, label: 'option_pathway' },
+                { value: 2, label: 'option_systemic' }
+            ]},
             { id: 'stressorIntensity', label: 'label_stressor_intensity', defaultValue: 0.3 },
             { id: 'copingSkill', label: 'label_coping_skill', defaultValue: 0.5 },
             { id: 'sleepRegularity', label: 'label_sleep_regularity', defaultValue: 0.7 },
