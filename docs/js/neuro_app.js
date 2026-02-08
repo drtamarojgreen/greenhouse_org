@@ -102,20 +102,25 @@
                 langBtn.textContent = t('btn_language');
             }
 
-            // Update Scenario Dropdown
-            const scenarioSelect = document.getElementById('neuro-scenario-select');
-            if (scenarioSelect && window.GreenhouseADHDData) {
-                const scenarios = window.GreenhouseADHDData.scenarios;
-                const currentVal = scenarioSelect.value;
-                scenarioSelect.innerHTML = '';
-                Object.keys(scenarios).forEach(key => {
-                    const opt = document.createElement('option');
-                    opt.value = key;
-                    opt.textContent = t(`adhd_scenario_${key}`);
-                    scenarioSelect.appendChild(opt);
+            // Update Scenario Labels
+            if (window.GreenhouseADHDData) {
+                Object.keys(window.GreenhouseADHDData.scenarios).forEach(key => {
+                    const label = document.querySelector(`label[for="scenario-check-${key}"]`);
+                    if (label) {
+                        label.textContent = t(`adhd_scenario_${key}`);
+                    }
                 });
-                scenarioSelect.value = currentVal;
             }
+
+            // Update Dosage Label
+            const dosageLabel = document.querySelector('#neuro-control-panel + div div, .neuro-simulation-wrapper > div div:nth-child(3) div');
+            // Better selector for dosage label
+            const allDivs = document.querySelectorAll('.neuro-simulation-wrapper div');
+            allDivs.forEach(div => {
+                if (div.textContent === "Dosage Optimization Slider" || div.textContent === "Deslizador de Optimización de Dosis") {
+                    div.textContent = t('adhd_enh_48_name');
+                }
+            });
         },
 
         startSimulation() {
@@ -157,37 +162,22 @@
             }
         },
 
-        setScenario(scenarioId) {
+        toggleScenario(scenarioId, isActive) {
             const data = window.GreenhouseADHDData;
             if (!data || !this.ga) return;
 
             const scenario = data.scenarios[scenarioId];
             if (!scenario) return;
 
-            // Reset GA adhdConfig properties
-            this.ga.adhdConfig.activeEnhancements.clear();
-            this.ga.adhdConfig.snr = 1.0;
-            this.ga.adhdConfig.sustainedAttention = 1.0;
-            this.ga.adhdConfig.rewardDelayFactor = 1.0;
-            this.ga.adhdConfig.taskSwitchingLatency = 0;
-            this.ga.adhdConfig.impulsivityRate = 0.0;
-            this.ga.adhdConfig.blinkCooldown = 0;
-            this.ga.adhdConfig.fatigue = 0.0;
-            this.ga.adhdConfig.learningRateBoost = 1.0;
-
-            if (this.ui?.adhdEffects) {
-                this.ui.adhdEffects.activeEnhancements.clear();
-            }
-
-            // Set new ones
             scenario.enhancements.forEach(id => {
-                this.ga.setADHDEnhancement(id, true);
+                this.ga.setADHDEnhancement(id, isActive);
                 if (this.ui?.adhdEffects) {
-                    this.ui.adhdEffects.activeEnhancements.add(id);
+                    if (isActive) this.ui.adhdEffects.activeEnhancements.add(id);
+                    else this.ui.adhdEffects.activeEnhancements.delete(id);
                 }
             });
 
-            console.log(`NeuroApp: Scenario set to -> ${scenario.name}`);
+            console.log(`NeuroApp: Scenario ${scenarioId} set to -> ${isActive}`);
         },
 
         createControls(container) {
@@ -217,45 +207,77 @@
             stats.style.marginBottom = '8px';
             controls.appendChild(stats);
 
-            // Scenario Selection Dropdown
+            // Scenario Selection (Additive)
             const scenarioContainer = document.createElement('div');
             scenarioContainer.style.marginBottom = '12px';
+            scenarioContainer.style.maxHeight = isMobile ? '100px' : '200px';
+            scenarioContainer.style.overflowY = 'auto';
+            scenarioContainer.style.border = '1px solid rgba(255,255,255,0.1)';
+            scenarioContainer.style.padding = '5px';
+            scenarioContainer.style.background = 'rgba(0,0,0,0.3)';
 
             const scenarioLabel = document.createElement('div');
             scenarioLabel.textContent = t('scenarios');
             scenarioLabel.style.fontSize = '12px';
-            scenarioLabel.style.marginBottom = '4px';
-            scenarioLabel.style.color = '#aaa';
+            scenarioLabel.style.marginBottom = '8px';
+            scenarioLabel.style.color = '#4ca1af';
+            scenarioLabel.style.fontWeight = 'bold';
             scenarioContainer.appendChild(scenarioLabel);
-
-            const scenarioSelect = document.createElement('select');
-            scenarioSelect.id = 'neuro-scenario-select';
-            scenarioSelect.style.cssText = `
-                width: 100%;
-                padding: 6px;
-                border-radius: 4px;
-                background: #222;
-                color: white;
-                border: 1px solid #4ca1af;
-                font-family: 'Quicksand', sans-serif;
-                font-size: ${isMobile ? '11px' : '13px'};
-            `;
 
             if (window.GreenhouseADHDData) {
                 Object.keys(window.GreenhouseADHDData.scenarios).forEach(key => {
-                    const opt = document.createElement('option');
-                    opt.value = key;
-                    opt.textContent = t(`adhd_scenario_${key}`);
-                    scenarioSelect.appendChild(opt);
+                    if (key === 'none') return;
+                    const item = document.createElement('div');
+                    item.style.display = 'flex';
+                    item.style.alignItems = 'center';
+                    item.style.marginBottom = '4px';
+                    item.style.fontSize = isMobile ? '11px' : '12px';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `scenario-check-${key}`;
+                    checkbox.style.marginRight = '8px';
+                    checkbox.onchange = (e) => {
+                        this.toggleScenario(key, e.target.checked);
+                    };
+
+                    const label = document.createElement('label');
+                    label.htmlFor = `scenario-check-${key}`;
+                    label.textContent = t(`adhd_scenario_${key}`);
+                    label.style.cursor = 'pointer';
+
+                    item.appendChild(checkbox);
+                    item.appendChild(label);
+                    scenarioContainer.appendChild(item);
                 });
             }
 
-            scenarioSelect.onchange = (e) => {
-                this.setScenario(e.target.value);
-            };
-
-            scenarioContainer.appendChild(scenarioSelect);
             controls.appendChild(scenarioContainer);
+
+            // Dosage Slider (48)
+            const dosageContainer = document.createElement('div');
+            dosageContainer.style.marginBottom = '12px';
+
+            const dosageLabel = document.createElement('div');
+            dosageLabel.textContent = t('adhd_enh_48_name');
+            dosageLabel.style.fontSize = '12px';
+            dosageLabel.style.marginBottom = '5px';
+            dosageContainer.appendChild(dosageLabel);
+
+            const dosageSlider = document.createElement('input');
+            dosageSlider.type = 'range';
+            dosageSlider.min = '0.1';
+            dosageSlider.max = '2.0';
+            dosageSlider.step = '0.1';
+            dosageSlider.value = '1.0';
+            dosageSlider.style.width = '100%';
+            dosageSlider.oninput = (e) => {
+                if (this.ga) {
+                    this.ga.adhdConfig.dosagePrecision = parseFloat(e.target.value);
+                }
+            };
+            dosageContainer.appendChild(dosageSlider);
+            controls.appendChild(dosageContainer);
 
             const btnGroup = document.createElement('div');
             btnGroup.style.display = 'flex';

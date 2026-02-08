@@ -34,7 +34,15 @@
                 inflammationLevel: 0,
                 glutamateGabaRatio: 1.0,
                 atpLevel: 1.0,
-                epigeneticLocks: new Set()
+                epigeneticLocks: new Set(),
+                dopamineDepletion: 0,
+                cholinergicLoss: 0,
+                moodCycle: 0,
+                pruningVariance: 0,
+                stimulationHistory: [], // For Receptor Downregulation (68)
+                comtRate: 1.0, // COMT Genetic Variation (69)
+                maoActivity: 1.0, // MAO-A Hyperactivity (70)
+                dosagePrecision: 1.0 // Dosage Optimization Slider (48)
             };
         }
 
@@ -54,6 +62,21 @@
             if (id === 2) this.adhdConfig.snr = active ? 0.5 : 0.0;
             if (id === 34) this.adhdConfig.noiseSmoothing = active ? 0.8 : 0.0; // Mindfulness
             if (id === 46) this.adhdConfig.learningRateBoost = active ? 2.0 : 1.0;
+
+            // New conditions
+            if (id === 69) this.adhdConfig.comtRate = active ? 2.0 : 1.0;
+            if (id === 70) this.adhdConfig.maoActivity = active ? 2.5 : 1.0;
+
+            if (id === 101) this.adhdConfig.snr = active ? 0.9 : 0.0; // Schizophrenia noise
+            if (id === 102) this.adhdConfig.dopamineDepletion = active ? 0.7 : 0.0; // Parkinson's
+            if (id === 103) this.adhdConfig.cholinergicLoss = active ? 0.6 : 0.0; // Alzheimer's
+            if (id === 104) this.adhdConfig.atpLevel = active ? 0.4 : 1.0; // MDD energy drop
+            if (id === 106) this.adhdConfig.pruningVariance = active ? 0.8 : 0.0; // Autism
+
+            // Expanded Treatments
+            if (id === 107) this.adhdConfig.snr = active ? 0.2 : this.adhdConfig.snr; // Antipsychotic dampens noise
+            if (id === 108) this.adhdConfig.dopamineDepletion = active ? 0.1 : this.adhdConfig.dopamineDepletion; // L-DOPA restores
+            if (id === 110) this.adhdConfig.moodCycle = active ? 0.5 : this.adhdConfig.moodCycle; // Lithium stabilizes
         }
 
         generateTargetPoints(count) {
@@ -190,8 +213,20 @@
             // ADHD: Social Support Buffering (Enhancement 41)
             const socialSupport = this.adhdConfig.activeEnhancements.has(41) ? 1.3 : 1.0;
 
+            // Bipolar: Rhythmic Mood Cycling (105)
+            if (this.adhdConfig.activeEnhancements.has(105)) {
+                this.adhdConfig.moodCycle = (Math.sin(this.generation * 0.05) + 1) / 2; // 0 to 1 cycle
+            }
+
             this.population.forEach(genome => {
                 let fitness = 0;
+
+                // ADHD: Receptor Downregulation (Enhancement 68)
+                let responseSensitivity = 1.0;
+                if (this.adhdConfig.activeEnhancements.has(68)) {
+                    const recentStim = this.adhdConfig.stimulationHistory.slice(-10).reduce((a, b) => a + b, 0) / 10;
+                    if (recentStim > 500) responseSensitivity = 0.5; // Diminished response
+                }
 
                 // 1. Connectivity Score: Reward connections to target points
                 genome.neurons.forEach(neuron => {
@@ -241,7 +276,10 @@
                             // ADHD: Evolutionary Adaptation View (Enhancement 93)
                             const noveltyBonus = this.adhdConfig.activeEnhancements.has(93) ? 1.5 : 1.0;
 
-                            fitness += (100 - dist) * targetWeight * delayDiscount * interference * attentionMultiplier * neurofeedbackReward * socialSupport * lcMultiplier * metabolicPlasticity * noveltyBonus;
+                            // ADHD: Dosage Optimization Slider (Enhancement 48) - precision impact
+                            const precision = this.adhdConfig.dosagePrecision;
+
+                            fitness += (100 - dist) * targetWeight * delayDiscount * interference * attentionMultiplier * neurofeedbackReward * socialSupport * lcMultiplier * metabolicPlasticity * noveltyBonus * responseSensitivity * precision;
                         }
 
                         // ADHD: Gamified Focus Tasks (Enhancement 43)
@@ -349,6 +387,27 @@
                     });
                 }
 
+                // Autism: Hyper-Local Connectivity (106)
+                if (this.adhdConfig.activeEnhancements.has(106)) {
+                    genome.connections.forEach(c => {
+                        const n1 = genome.neurons[c.from];
+                        const n2 = genome.neurons[c.to];
+                        const dist = Math.sqrt(Math.pow(n1.x-n2.x,2)+Math.pow(n1.y-n2.y,2)+Math.pow(n1.z-n2.z,2));
+                        if (dist < 50) fitness += 10; // Reward local
+                        else fitness -= 20; // Penalize long-range
+                    });
+                }
+
+                // Parkinson's: Dopamine Depletion (102)
+                if (this.adhdConfig.dopamineDepletion > 0) {
+                    fitness *= (1 - this.adhdConfig.dopamineDepletion * 0.5);
+                }
+
+                // Bipolar: Mood Cycling (105) impact
+                if (this.adhdConfig.activeEnhancements.has(105)) {
+                    fitness *= (0.5 + this.adhdConfig.moodCycle);
+                }
+
                 // ADHD: Relapse Prevention Map (Enhancement 50) / Resilience Factor (100)
                 if ((this.adhdConfig.activeEnhancements.has(50) || this.adhdConfig.activeEnhancements.has(100)) && this.bestGenome) {
                     // Reward similarity to previous generations' best
@@ -384,6 +443,12 @@
 
                 genome.fitness = fitness;
 
+                // Track stimulation history for downregulation
+                if (this.adhdConfig.activeEnhancements.has(68)) {
+                    this.adhdConfig.stimulationHistory.push(fitness);
+                    if (this.adhdConfig.stimulationHistory.length > 50) this.adhdConfig.stimulationHistory.shift();
+                }
+
                 if (fitness > maxFitness) {
                     maxFitness = fitness;
                     this.bestGenome = genome;
@@ -396,6 +461,18 @@
             if (this.adhdConfig.activeEnhancements.has(88) || this.adhdConfig.activeEnhancements.has(98)) {
                 if (Math.random() < 0.001) {
                     this.population.forEach(g => g.fitness *= 0.1);
+                }
+            }
+
+            // Alzheimer's: Cholinergic Loss (103)
+            if (this.adhdConfig.activeEnhancements.has(103)) {
+                if (Math.random() < 0.05) {
+                    // Random node death in population
+                    this.population.forEach(g => {
+                        if (g.neurons.length > 5) {
+                            g.neurons.splice(Math.floor(Math.random() * g.neurons.length), 1);
+                        }
+                    });
                 }
             }
 
@@ -447,6 +524,13 @@
                     return this.bestGenome;
                 }
                 if (Math.random() < 0.05) this.adhdConfig.blinkCooldown = 5;
+            }
+
+            // ADHD: Methylphenidate Pulse (Enhancement 27)
+            if (this.adhdConfig.activeEnhancements.has(27) && this.generation % 50 === 0) {
+                // Periodic normalization: reset some fatigue and noise
+                this.adhdConfig.fatigue *= 0.5;
+                this.adhdConfig.snr *= 0.5;
             }
 
             // 1. Selection
