@@ -298,9 +298,9 @@
                     };
                 }
 
-                const regionKeys = ['pfc', 'parietalLobe', 'occipitalLobe', 'temporalLobe', 'cerebellum', 'brainstem'];
+                const regionKeys = ['pfc', 'parietalLobe', 'occipitalLobe', 'temporalLobe', 'cerebellum', 'brainstem', 'motorCortex'];
                 const regionKey = regionKeys[i % regionKeys.length];
-                const regionVerticesIndices = this.getRegionVertices(regionKey);
+                const regionVerticesIndices = this.getRegionVertices(regionKey === 'motorCortex' ? 'parietalLobe' : regionKey);
                 let x = 0, y = 0, z = 0;
 
                 if (regionVerticesIndices.length > 0) {
@@ -418,13 +418,44 @@
             const ctx = this.ctx;
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+            const ga = window.GreenhouseNeuroApp?.ga;
+            const adhd = ga?.adhdConfig;
+
+            // ADHD: Time Perception Distortion (Enhancement 12)
+            if (adhd?.activeEnhancements.has(12)) {
+                if (Math.random() < 0.05) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                }
+            }
+
+            // ADHD: Sustained Attention Decay (Enhancement 7)
+            if (adhd?.activeEnhancements.has(7)) {
+                ctx.globalAlpha = Math.max(0.3, adhd.sustainedAttention);
+            }
+
+            // ADHD: Attentional Blink (Enhancement 1)
+            if (adhd?.activeEnhancements.has(1) && adhd.blinkCooldown > 0) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                // Skip further rendering to simulate perception "blink"
+                if (adhd.blinkCooldown > 2) return;
+            }
+
             // ADHD: Global Jitter (Enhancement 14/40)
             let shakeX = 0, shakeY = 0;
+            const jitterFactor = adhd?.activeEnhancements.has(40) ? 0.2 : 1.0;
+
             if (this.adhdEffects.activeEnhancements.has(14)) {
-                shakeX = (Math.random() - 0.5) * 5;
-                shakeY = (Math.random() - 0.5) * 5;
+                shakeX = (Math.random() - 0.5) * 5 * jitterFactor;
+                shakeY = (Math.random() - 0.5) * 5 * jitterFactor;
                 ctx.save();
                 ctx.translate(shakeX, shakeY);
+            }
+
+            // ADHD: Task-Switching Latency (Enhancement 6)
+            if (adhd?.activeEnhancements.has(6) && adhd.taskSwitchingLatency > 0) {
+                ctx.filter = 'blur(4px)';
             }
 
             // ADHD: Hyperfocus Tunneling (Enhancement 20)
@@ -449,8 +480,8 @@
             }
 
             // ADHD: Pathology - Neuroinflammation (Enhancement 65)
-            if (this.adhdEffects.activeEnhancements.has(65)) {
-                ctx.fillStyle = 'rgba(100, 50, 0, 0.3)';
+            if (adhd?.activeEnhancements.has(65)) {
+                ctx.fillStyle = 'rgba(100, 50, 0, 0.4)';
                 ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             }
 
@@ -477,6 +508,46 @@
 
             this.drawNetworkView(ctx, pipX, pipY, pipW, pipH);
 
+            // ADHD: Executive Function Gating Visuals (Enhancement 10)
+            if (adhd?.activeEnhancements.has(10)) {
+                this.drawGatingVisuals(ctx, pipX, pipY, pipW, pipH);
+            }
+
+            // ADHD: Emotional Lability Spikes (Enhancement 11)
+            if (adhd?.activeEnhancements.has(11) && Math.random() < 0.1) {
+                this.drawAmygdalaSpike(ctx, pipX, pipY, pipW, pipH);
+            }
+
+            // ADHD: Response Variability Graph (Enhancement 17)
+            if (adhd?.activeEnhancements.has(17)) {
+                this.drawResponseVariabilityGraph(ctx, 20, 20, 150, 60, ga);
+            }
+
+            // ADHD: Distractibility Index (Enhancement 15)
+            if (adhd?.activeEnhancements.has(15)) {
+                this.drawDistractibilityIndex(ctx, 20, 90, ga);
+            }
+
+            // ADHD: Hereditability Tree (Enhancement 92)
+            if (adhd?.activeEnhancements.has(92)) {
+                this.drawHereditabilityTree(ctx, 20, 230, ga);
+            }
+
+            // ADHD: Executive Assistant UI (Enhancement 42)
+            if (adhd?.activeEnhancements.has(42)) {
+                this.drawExecutiveAssistant(ctx, ga);
+            }
+
+            // ADHD: Impulse Inhibition Meter (Enhancement 25)
+            if (adhd?.activeEnhancements.has(25)) {
+                this.drawImpulseInhibitionMeter(ctx, 20, 130, ga);
+            }
+
+            // ADHD: Glutamate/GABA Imbalance Meter (Enhancement 62)
+            if (adhd?.activeEnhancements.has(62)) {
+                this.drawGlutamateGabaMeter(ctx, 20, 180, ga);
+            }
+
             if (this.adhdEffects.activeEnhancements.has(49)) {
                 ctx.restore();
             }
@@ -484,22 +555,236 @@
             if (this.adhdEffects.activeEnhancements.has(14)) {
                 ctx.restore();
             }
+
+            ctx.filter = 'none'; // Reset filter
+        },
+
+        drawTargets(ctx, w, h) {
+            const ga = window.GreenhouseNeuroApp?.ga;
+            if (!ga || !ga.targetPoints) return;
+
+            ga.targetPoints.forEach((target, i) => {
+                const proj = GreenhouseModels3DMath.project3DTo2D(target.x, target.y, target.z, this.camera, { width: w, height: h, near: 10, far: 1000 });
+                if (proj.scale > 0) {
+                    const age = ga.adhdConfig.targetAges[i] || 0;
+
+                    // ADHD: Reward Delay Discounting (Enhancement 5)
+                    // Targets fade from green to red as they age
+                    let r = 0, g = 255, b = 0;
+                    if (ga.adhdConfig.activeEnhancements.has(5)) {
+                        const factor = Math.min(1, age / 100);
+                        r = Math.floor(255 * factor);
+                        g = Math.floor(255 * (1 - factor));
+                    }
+
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, 4 * proj.scale, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Glow for salience
+                    ctx.save();
+                    ctx.shadowBlur = 10 * proj.scale;
+                    ctx.shadowColor = `rgb(${r}, ${g}, ${b})`;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            });
+        },
+
+        drawAmygdalaSpike(ctx, x, y, w, h) {
+            const amygCenter = { x: -30, y: 150, z: 50 }; // Approximate Amygdala world coords
+            const proj = GreenhouseModels3DMath.project3DTo2D(amygCenter.x, amygCenter.y, amygCenter.z, this.camera, { width: w, height: h, near: 10, far: 1000 });
+
+            if (proj.scale > 0) {
+                ctx.save();
+                ctx.translate(x + proj.x, y + proj.y);
+                const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 50 * proj.scale);
+                grad.addColorStop(0, 'rgba(255, 0, 0, 0.8)');
+                grad.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(0, 0, 50 * proj.scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        },
+
+        drawResponseVariabilityGraph(ctx, x, y, w, h, ga) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(0, 0, w, h);
+            ctx.strokeStyle = '#4ca1af';
+            ctx.strokeRect(0, 0, w, h);
+
+            ctx.beginPath();
+            ctx.moveTo(0, h/2);
+            for(let i=0; i<w; i++) {
+                const val = Math.sin(i * 0.1 + Date.now() * 0.01) * 10 * (ga?.adhdConfig?.snr || 1);
+                ctx.lineTo(i, h/2 + val);
+            }
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px Arial';
+            ctx.fillText("Fitness Variance", 5, 12);
+            ctx.restore();
+        },
+
+        drawDistractibilityIndex(ctx, x, y, ga) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(0, 0, 150, 25);
+            ctx.strokeStyle = '#ff9800';
+            ctx.strokeRect(0, 0, 150, 25);
+
+            const index = Math.floor((ga?.adhdConfig?.snr || 0) * 100);
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Arial';
+            ctx.fillText(`Distractibility: ${index}%`, 10, 17);
+            ctx.restore();
+        },
+
+        drawExecutiveAssistant(ctx, ga) {
+            const target = ga?.targetPoints[0];
+            if (!target) return;
+            const proj = GreenhouseModels3DMath.project3DTo2D(target.x, target.y, target.z, this.camera, this.projection);
+            if (proj.scale > 0) {
+                ctx.save();
+                ctx.strokeStyle = '#00e5ff';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, 20 * proj.scale, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillStyle = '#00e5ff';
+                ctx.font = '10px Arial';
+                ctx.fillText("TARGET FOCUS", proj.x + 25, proj.y);
+                ctx.restore();
+            }
+        },
+
+        drawHereditabilityTree(ctx, x, y, ga) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(0, 0, 150, 60);
+            ctx.strokeStyle = '#9c27b0';
+            ctx.strokeRect(0, 0, 150, 60);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px Arial';
+            ctx.fillText("Hereditability Tree", 5, 12);
+
+            // Draw a simple branch
+            ctx.strokeStyle = '#9c27b0';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(75, 55); ctx.lineTo(75, 35);
+            ctx.lineTo(50, 20); ctx.moveTo(75, 35); ctx.lineTo(100, 20);
+            ctx.stroke();
+
+            ctx.fillStyle = '#9c27b0';
+            ctx.beginPath(); ctx.arc(75, 55, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(50, 20, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(100, 20, 3, 0, Math.PI*2); ctx.fill();
+
+            ctx.restore();
+        },
+
+        drawGlutamateGabaMeter(ctx, x, y, ga) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(0, 0, 150, 40);
+            ctx.strokeStyle = '#8bc34a';
+            ctx.strokeRect(0, 0, 150, 40);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px Arial';
+            ctx.fillText("Glutamate / GABA", 5, 12);
+
+            const ratio = ga?.adhdConfig?.glutamateGabaRatio || 1.0;
+            const displayRatio = Math.min(1.0, ratio / 2.0); // Scaled for display
+
+            ctx.fillStyle = '#444';
+            ctx.fillRect(10, 20, 130, 10);
+            ctx.fillStyle = '#8bc34a';
+            ctx.fillRect(10, 20, 130 * displayRatio, 10);
+            ctx.restore();
+        },
+
+        drawImpulseInhibitionMeter(ctx, x, y, ga) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(0, 0, 150, 40);
+            ctx.strokeStyle = '#e91e63';
+            ctx.strokeRect(0, 0, 150, 40);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px Arial';
+            ctx.fillText("Impulse Inhibition", 5, 12);
+
+            // Ratio of gold to silver connections in the network
+            const connections = ga?.population[0]?.connections || [];
+            const excitatory = connections.filter(c => c.weight > 0).length;
+            const inhibitory = connections.filter(c => c.weight < 0).length;
+            const total = (excitatory + inhibitory) || 1;
+            const ratio = inhibitory / total;
+
+            ctx.fillStyle = '#444';
+            ctx.fillRect(10, 20, 130, 10);
+            ctx.fillStyle = '#e91e63';
+            ctx.fillRect(10, 20, 130 * ratio, 10);
+            ctx.restore();
+        },
+
+        drawGatingVisuals(ctx, x, y, w, h) {
+            // Draw a "gate" over the PFC region in the network view
+            const pfcCenter = { x: 50, y: 100, z: 200 }; // Approximate PFC world coords
+            const proj = GreenhouseModels3DMath.project3DTo2D(pfcCenter.x, pfcCenter.y, pfcCenter.z, this.camera, { width: w, height: h, near: 10, far: 1000 });
+
+            if (proj.scale > 0) {
+                ctx.save();
+                ctx.translate(x + proj.x, y + proj.y);
+                ctx.strokeStyle = '#ff3333';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-20, -10); ctx.lineTo(20, -10);
+                ctx.moveTo(-20, 10); ctx.lineTo(20, 10);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(255, 51, 51, 0.3)';
+                ctx.fillRect(-20, -10, 40, 20);
+                ctx.restore();
+            }
         },
 
         drawNoiseParticles(ctx) {
-            if (this.adhdEffects.noiseParticles.length < 50) {
-                for (let i = 0; i < 50; i++) {
+            const ga = window.GreenhouseNeuroApp?.ga;
+            const adhd = ga?.adhdConfig;
+
+            // ADHD: Digital Detox Mode (Enhancement 39)
+            if (adhd?.activeEnhancements.has(39)) return;
+
+            // ADHD: Interference Sensitivity (Enhancement 8)
+            const count = adhd?.activeEnhancements.has(8) ? 150 : 50;
+
+            if (this.adhdEffects.noiseParticles.length < count) {
+                for (let i = 0; i < count; i++) {
                     this.adhdEffects.noiseParticles.push({
                         x: Math.random() * this.canvas.width,
                         y: Math.random() * this.canvas.height,
-                        vx: (Math.random() - 0.5) * 2,
-                        vy: (Math.random() - 0.5) * 2,
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: (Math.random() - 0.5) * 4,
                         alpha: Math.random() * 0.5
                     });
                 }
             }
 
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             this.adhdEffects.noiseParticles.forEach(p => {
                 p.x += p.vx;
                 p.y += p.vy;
@@ -540,6 +825,7 @@
             ctx.fillText("Whole Brain", 10, 20);
 
             this.drawGrid(ctx);
+            this.drawTargets(ctx, w, h);
 
             if (!window.GreenhouseModels3DMath) {
                 ctx.restore();
@@ -584,6 +870,16 @@
             this.brainShell = { vertices: [], faces: [] };
             if (window.GreenhouseNeuroGeometry) {
                 window.GreenhouseNeuroGeometry.initializeBrainShell(this.brainShell);
+
+                // ADHD: PFC Thinning (Enhancement 72)
+                const ga = window.GreenhouseNeuroApp?.ga;
+                if (ga?.adhdConfig?.activeEnhancements.has(72)) {
+                    const pfcIndices = this.getRegionVertices('pfc');
+                    pfcIndices.forEach(idx => {
+                        const v = this.brainShell.vertices[idx];
+                        v.x *= 0.9; v.y *= 0.9; v.z *= 0.9; // Shrink PFC volume
+                    });
+                }
             }
         },
 
@@ -605,13 +901,33 @@
 
         drawNeuron(ctx, neuron, camera, projection) {
             if (window.GreenhouseNeuroNeuron) {
+                const ga = window.GreenhouseNeuroApp?.ga;
+                const adhd = ga?.adhdConfig;
+
+                // ADHD: Hyperactive Firing Mode (Enhancement 3) / Binaural Beat Sync (Enhancement 38)
+                // Pulse speed is handled inside drawNeuron if we pass a frequency
+                let pulseFreq = adhd?.activeEnhancements.has(3) ? 0.01 : 0.005;
+                if (adhd?.activeEnhancements.has(38)) {
+                    pulseFreq = 0.008 + Math.sin(Date.now() * 0.005) * 0.002;
+                }
+
                 // ADHD: Cognitive Fatigue Shader (Enhancement 19)
                 let colorOverride = null;
                 if (this.adhdEffects.activeEnhancements.has(19)) {
-                    const fatigue = window.GreenhouseNeuroApp?.ga?.adhdConfig?.fatigue || 0;
+                    const fatigue = adhd?.fatigue || 0;
                     if (fatigue > 0.5) {
                         colorOverride = '#333'; // Darken
                     }
+                }
+
+                // ADHD: Hypofrontality (52) / Striatal Hyper-Reactivity (53)
+                if (adhd?.activeEnhancements.has(52) && neuron.region === 'pfc') {
+                    ctx.globalAlpha *= 0.4;
+                }
+                if (adhd?.activeEnhancements.has(53) && (neuron.region === 'striatum' || neuron.region === 'brainstem')) {
+                    ctx.save();
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = 'yellow';
                 }
 
                 // ADHD: Vigilance Waxing/Waning (Enhancement 13)
@@ -620,16 +936,52 @@
                     alphaOverride = 0.3 + 0.7 * Math.abs(Math.sin(Date.now() * 0.001));
                 }
 
+                // ADHD: Motor Restlessness Particles (Enhancement 14) / Side Effect Jitters (47)
+                let jitter = 0;
+                if (this.adhdEffects.activeEnhancements.has(14) && neuron.region === 'motorCortex') jitter = 2;
+                if (adhd?.activeEnhancements.has(47)) jitter = 4;
+
+                if (jitter > 0) {
+                    neuron.x += (Math.random() - 0.5) * jitter;
+                    neuron.y += (Math.random() - 0.5) * jitter;
+                }
+
                 ctx.save();
                 ctx.globalAlpha *= alphaOverride;
-                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, colorOverride);
+                window.GreenhouseNeuroNeuron.drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq);
                 ctx.restore();
+
+                if (adhd?.activeEnhancements.has(53) && (neuron.region === 'striatum' || neuron.region === 'brainstem')) {
+                    ctx.restore();
+                }
             }
         },
 
         drawConnections(ctx, w, h) {
             if (window.GreenhouseNeuroSynapse) {
+                const ga = window.GreenhouseNeuroApp?.ga;
+                const adhd = ga?.adhdConfig;
+
+                // ADHD: Basal Ganglia Feedback Error (Enhancement 75)
+                if (adhd?.activeEnhancements.has(75) && Math.random() < 0.02) {
+                    // Draw infinite loops (visual glitch on connections)
+                    ctx.save();
+                    ctx.strokeStyle = 'cyan';
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.arc(w/2, h/2, 50, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // ADHD: White Matter Integrity Loss (Enhancement 56)
+                const whiteMatterLoss = ga?.adhdConfig?.activeEnhancements.has(56);
+                const scale = whiteMatterLoss ? 0.5 : 1.0;
+
+                ctx.save();
+                ctx.scale(scale, scale);
                 window.GreenhouseNeuroSynapse.drawConnections(ctx, this.connections, this.neurons, this.camera, this.projection, w || this.canvas.width, h || this.canvas.height);
+                ctx.restore();
             }
         },
 
@@ -637,12 +989,16 @@
             const util = window.GreenhouseModelsUtil;
             if (!window.GreenhouseModels3DMath) return;
 
+            const ga = window.GreenhouseNeuroApp?.ga;
+            // ADHD: Environmental Scaffolding (Enhancement 45)
+            const scaffolding = ga?.adhdConfig?.activeEnhancements.has(45);
+
             const size = 1000;
-            const step = 200;
+            const step = scaffolding ? 100 : 200;
             const y = 400;
 
-            const gridOpacity = this.config.get('ui.gridOpacity') || 0.05;
-            ctx.strokeStyle = `rgba(255, 255, 255, ${gridOpacity})`;
+            const gridOpacity = scaffolding ? 0.2 : (this.config.get('ui.gridOpacity') || 0.05);
+            ctx.strokeStyle = scaffolding ? '#00bcd4' : `rgba(255, 255, 255, ${gridOpacity})`;
             ctx.lineWidth = 1;
             ctx.fillStyle = this.config.get('ui.labelColor') || 'rgba(255, 255, 255, 0.3)';
             ctx.font = this.config.get('ui.labelFont') || '10px Arial';
@@ -933,6 +1289,19 @@
             // 3. Vigilance (ID 13) - Oscillating nodes
             if (!tooltipContent && this.adhdEffects.activeEnhancements.has(13)) {
                  tooltipContent = `<strong>${t(`adhd_enh_13_name`)}</strong><br>${t(`adhd_enh_13_desc`)}`;
+            }
+
+            // 4. Meters
+            if (!tooltipContent) {
+                if (x > 20 && x < 170) {
+                    if (y > 130 && y < 170 && this.adhdEffects.activeEnhancements.has(25)) {
+                        tooltipContent = `<strong>Impulse Inhibition</strong><br>Ratio of inhibitory to excitatory signals in the network. Low inhibition models impulsive connection bursts.`;
+                    } else if (y > 180 && y < 220 && this.adhdEffects.activeEnhancements.has(62)) {
+                        tooltipContent = `<strong>Glutamate/GABA Balance</strong><br>The primary excitatory/inhibitory chemical balance. Imbalance models hyper-reactivity and sensory overload.`;
+                    } else if (y > 230 && y < 290 && this.adhdEffects.activeEnhancements.has(92)) {
+                        tooltipContent = `<strong>Hereditability Tree</strong><br>Visualizing the genetic lineage of the most successful neural networks across generations.`;
+                    }
+                }
             }
 
             if (tooltipContent) {
