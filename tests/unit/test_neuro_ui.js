@@ -81,7 +81,7 @@ loadScript('neuro_ui_3d_brain.js');
 loadScript('neuro_ui_3d_neuron.js');
 loadScript('neuro_ui_3d_synapse.js');
 loadScript('neuro_ui_3d_stats.js');
-loadScript('neuro_ui_3d.js');
+loadScript('neuro_ui_3d_enhanced.js');
 
 // --- Test Suites ---
 

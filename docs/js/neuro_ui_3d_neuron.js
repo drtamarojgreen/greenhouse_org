@@ -4,7 +4,7 @@
     const GreenhouseNeuroNeuron = {
         neuronMeshes: {}, // Cache for neuron meshes
 
-        drawNeuron(ctx, neuron, camera, projection) {
+        drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq = 0.005) {
             // Project Center for LOD and Culling
             const p = GreenhouseModels3DMath.project3DTo2D(neuron.x, neuron.y, neuron.z, camera, projection);
 
@@ -16,7 +16,7 @@
                 const alpha = GreenhouseModels3DMath.applyDepthFog(1, p.depth);
                 ctx.save();
                 ctx.globalAlpha = alpha;
-                ctx.fillStyle = neuron.baseColor;
+                ctx.fillStyle = colorOverride || neuron.baseColor;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, neuron.radius * p.scale, 0, Math.PI * 2);
                 ctx.fill();
@@ -39,7 +39,7 @@
 
             // Transform vertices to world space (Rotation + Translation)
             const rotX = neuron.x * 0.01;
-            const rotY = neuron.y * 0.01 + Date.now() * 0.0005; // Slow rotation
+            const rotY = neuron.y * 0.01 + Date.now() * (pulseFreq * 0.1); // Scalable rotation
             const rotZ = neuron.z * 0.01;
 
             const transformedVertices = mesh.vertices.map(v => {
@@ -134,7 +134,9 @@
                     }
 
                     // Apply Lighting to Base Color
-                    const colorMatch = (neuron.baseColor || '#ffffff').match(/#([0-9a-f]{6})/i);
+                    const colorStr = (typeof colorOverride === 'string') ? colorOverride :
+                                   (typeof neuron.baseColor === 'string') ? neuron.baseColor : '#ffffff';
+                    const colorMatch = colorStr.match(/#([0-9a-f]{6})/i);
                     let r = 255, g = 255, b = 255;
                     if (colorMatch) {
                         const hex = parseInt(colorMatch[1], 16);
