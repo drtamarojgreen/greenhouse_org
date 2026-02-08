@@ -33,6 +33,7 @@ import futuristic_props
 import greenhouse_structure
 import environment_props
 import unity_exporter
+import style
 
 # Import scene modules
 from scene00_branding import scene_logic as scene00
