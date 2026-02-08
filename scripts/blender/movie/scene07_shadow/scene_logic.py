@@ -1,10 +1,14 @@
 import bpy
 import math
 import random
+import style
 
 def setup_scene(master):
     """The Intrusion of Gloom."""
     master.create_intertitle("The Intrusion of\nGloom", 1801, 1900)
+
+    # Apply shadow grade
+    style.apply_scene_grade(master, 'shadow', 1901, 2500)
 
     # Gnome animation and visibility
     gnome = master.gnome
@@ -44,8 +48,11 @@ def setup_scene(master):
             staff.rotation_euler = (0, 0, 0)
             staff.keyframe_insert(data_path="rotation_euler", frame=2500)
 
-        # Dim the lights
-        for light_name in ["Sun", "FillLight", "RimLight", "Spot"]:
+        # Dim the lights (Overridden by style grade, but we can add flicker here)
+        style.animate_light_flicker("Spot", 1901, 2500, strength=0.3)
+        style.animate_light_flicker("RimLight", 1901, 2500, strength=0.1)
+
+        for light_name in ["Sun", "FillLight"]:
             light = bpy.data.objects.get(light_name)
             if not light: continue
             base_energy = light.data.energy
