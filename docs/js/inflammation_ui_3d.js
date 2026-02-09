@@ -59,40 +59,53 @@
         initMicroData() {
             if (!window.GreenhouseNeuroGeometry) return;
             this.neurons = [];
-            for (let i = 0; i < 3; i++) {
-                const p1 = { x: -150 + i * 100, y: -100, z: (Math.random() - 0.5) * 100 };
-                const p2 = { x: -150 + i * 100, y: 100, z: (Math.random() - 0.5) * 100 };
-                const cp = { x: p1.x + 50, y: 0, z: 50 };
-                const mesh = window.GreenhouseNeuroGeometry.generateTubeMesh(p1, p2, cp, 5, 8);
+            for (let i = 0; i < 6; i++) {
+                const p1 = { x: -250 + i * 100, y: -150 + Math.random() * 100, z: (Math.random() - 0.5) * 200 };
+                const p2 = { x: -250 + i * 100, y: 150 - Math.random() * 100, z: (Math.random() - 0.5) * 200 };
+                const cp = { x: p1.x + (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 50, z: (Math.random() - 0.5) * 100 };
+                const mesh = window.GreenhouseNeuroGeometry.generateTubeMesh(p1, p2, cp, 4, 12);
                 this.neurons.push({ p1, p2, cp, mesh, baseColor: '#4ca1af' });
             }
 
             this.glia = [];
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 15; i++) {
                 this.glia.push({
-                    x: (Math.random() - 0.5) * 400,
-                    y: (Math.random() - 0.5) * 300,
-                    z: (Math.random() - 0.5) * 200,
+                    x: (Math.random() - 0.5) * 500,
+                    y: (Math.random() - 0.5) * 400,
+                    z: (Math.random() - 0.5) * 300,
                     rotationX: Math.random() * Math.PI,
                     rotationY: Math.random() * Math.PI,
-                    size: 15 + Math.random() * 10,
-                    type: Math.random() > 0.5 ? 'astrocyte' : 'microglia'
+                    size: 10 + Math.random() * 12,
+                    type: Math.random() > 0.4 ? 'astrocyte' : 'microglia',
+                    pulseOffset: Math.random() * Math.PI * 2
                 });
+            }
+
+            // Add Axons (inter-neuron connections)
+            this.axons = [];
+            for (let i = 0; i < this.neurons.length - 1; i++) {
+                if (Math.random() > 0.3) {
+                    this.axons.push({
+                        from: i,
+                        to: (i + 1) % this.neurons.length
+                    });
+                }
             }
         },
 
         initMolecularData() {
             this.molecules = [];
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 250; i++) {
                 this.molecules.push({
-                    x: (Math.random() - 0.5) * 600,
-                    y: (Math.random() - 0.5) * 400,
-                    z: (Math.random() - 0.5) * 400,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: (Math.random() - 0.5) * 2,
-                    vz: (Math.random() - 0.5) * 2,
-                    type: Math.random() > 0.7 ? 'cytokine' : 'ion',
-                    size: 2 + Math.random() * 4
+                    x: (Math.random() - 0.5) * 800,
+                    y: (Math.random() - 0.5) * 600,
+                    z: (Math.random() - 0.5) * 600,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: (Math.random() - 0.5) * 1.5,
+                    vz: (Math.random() - 0.5) * 1.5,
+                    type: Math.random() > 0.6 ? 'cytokine' : 'ion',
+                    size: 1 + Math.random() * 3,
+                    history: []
                 });
             }
         },
@@ -168,6 +181,24 @@
         renderMicro(ctx, tone, camera, projection) {
             const Math3D = window.GreenhouseModels3DMath;
 
+            // Draw Axons
+            ctx.setLineDash([5, 15]);
+            ctx.lineWidth = 1;
+            this.axons.forEach(a => {
+                const n1 = this.neurons[a.from];
+                const n2 = this.neurons[a.to];
+                const p1 = Math3D.project3DTo2D(n1.cp.x, n1.cp.y, n1.cp.z, camera, projection);
+                const p2 = Math3D.project3DTo2D(n2.cp.x, n2.cp.y, n2.cp.z, camera, projection);
+                if (p1.scale > 0 && p2.scale > 0) {
+                    ctx.strokeStyle = `rgba(100, 200, 255, ${0.2 * (1 - tone)})`;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+            });
+            ctx.setLineDash([]);
+
             // Draw Neurons
             this.neurons.forEach(n => {
                 const alpha = tone > 0.6 ? 0.3 : 0.8; // Signaling dims as inflammation rises
@@ -194,7 +225,8 @@
                 const p = Math3D.project3DTo2D(g.x, g.y, g.z, camera, projection);
                 if (p.scale <= 0) return;
 
-                const size = g.size * p.scale * (1 + tone);
+                const pulse = Math.sin(Date.now() * 0.002 + g.pulseOffset) * 0.1 + 1;
+                const size = g.size * p.scale * (1 + tone) * pulse;
                 const color = g.type === 'astrocyte'
                     ? `rgba(255, ${Math.round(255 * (1 - tone))}, 100, 0.8)`
                     : `rgba(200, 100, 255, 0.8)`;
@@ -256,12 +288,33 @@
                     }
                 }
             } else if (viewMode === 'macro') {
-                // Simplified region hit detection for brain shell
                 if (this.brainShell && this.brainShell.regions) {
+                    const Math3D = window.GreenhouseModels3DMath;
+                    const Util = window.GreenhouseModelsUtil;
+
                     for (const key in this.brainShell.regions) {
                         const region = this.brainShell.regions[key];
-                        // If we had vertex data we could be more precise, but for now let's skip macro hover
-                        // as it's complex without a proper raycaster.
+                        if (region.centroid) {
+                            const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
+                            const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
+
+                            if (dist < 50 * p.scale && p.depth < 0.7) {
+                                // Map keys to description keys used in models_util.js or models_lang.js
+                                const descKeyMap = {
+                                    prefrontalCortex: 'pfc',
+                                    motorCortex: 'cog_reg_motor',
+                                    somatosensoryCortex: 'cog_reg_somato',
+                                    thalamus: 'cog_reg_thalamus',
+                                    hypothalamus: 'cog_reg_hypothalamus'
+                                };
+                                const mappedKey = descKeyMap[key] || key;
+
+                                return {
+                                    label: region.name,
+                                    description: Util ? (Util.getRegionDescription(mappedKey) || mappedKey) : region.name
+                                };
+                            }
+                        }
                     }
                 }
             }
@@ -271,35 +324,75 @@
         renderMolecular(ctx, tone, camera, projection) {
             const Math3D = window.GreenhouseModels3DMath;
 
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+
             this.molecules.forEach(m => {
                 // Drift
-                m.x += m.vx * (1 + tone);
-                m.y += m.vy * (1 + tone);
-                m.z += m.vz * (1 + tone);
+                const speedMult = 1 + tone * 2;
+                m.x += m.vx * speedMult;
+                m.y += m.vy * speedMult;
+                m.z += m.vz * speedMult;
 
                 // Wrap
-                if (Math.abs(m.x) > 300) m.x *= -0.9;
-                if (Math.abs(m.y) > 200) m.y *= -0.9;
-                if (Math.abs(m.z) > 200) m.z *= -0.9;
+                if (Math.abs(m.x) > 400) m.x *= -0.95;
+                if (Math.abs(m.y) > 300) m.y *= -0.95;
+                if (Math.abs(m.z) > 300) m.z *= -0.95;
 
                 const p = Math3D.project3DTo2D(m.x, m.y, m.z, camera, projection);
                 if (p.scale <= 0) return;
 
-                const alpha = Math3D.applyDepthFog(0.8, p.depth);
+                const alpha = Math3D.applyDepthFog(0.6, p.depth, 0.2, 0.9);
+
+                // History for trails
+                m.history.push({ x: p.x, y: p.y });
+                if (m.history.length > 5) m.history.shift();
+
+                if (m.history.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(m.history[0].x, m.history[0].y);
+                    for (let i = 1; i < m.history.length; i++) {
+                        ctx.lineTo(m.history[i].x, m.history[i].y);
+                    }
+                    ctx.strokeStyle = m.type === 'cytokine'
+                        ? `rgba(255, 100, 0, ${alpha * 0.3})`
+                        : `rgba(100, 200, 255, ${alpha * 0.3})`;
+                    ctx.lineWidth = m.size * p.scale;
+                    ctx.stroke();
+                }
 
                 if (m.type === 'cytokine') {
-                    // Cytokines are orange/red and grow with tone
-                    ctx.fillStyle = `rgba(255, ${Math.round(100 * (1 - tone))}, 0, ${alpha})`;
-                    const s = m.size * (1 + tone);
-                    ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
-                } else {
-                    // Ions are blue
-                    ctx.fillStyle = `rgba(100, 200, 255, ${alpha})`;
+                    // Cytokines are glowing orange/red
+                    const r = 255;
+                    const g = Math.round(150 * (1 - tone));
+                    const b = 50 * (1 - tone);
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+
+                    const s = m.size * p.scale * (1 + tone * 1.5);
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, m.size, 0, Math.PI * 2);
+                    ctx.arc(p.x, p.y, s, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Extra glow
+                    if (tone > 0.3) {
+                        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, s * 3);
+                        grad.addColorStop(0, `rgba(255, 50, 0, ${alpha * 0.4})`);
+                        grad.addColorStop(1, 'transparent');
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, s * 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                } else {
+                    // Ions are blue sparks
+                    ctx.fillStyle = `rgba(150, 230, 255, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, m.size * p.scale, 0, Math.PI * 2);
                     ctx.fill();
                 }
             });
+
+            ctx.restore();
 
             ctx.fillStyle = 'rgba(76, 161, 175, 0.9)';
             ctx.font = 'bold 15px Quicksand, sans-serif';

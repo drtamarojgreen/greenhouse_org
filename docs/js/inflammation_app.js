@@ -17,6 +17,7 @@
         nodes: [],
         camera: { x: 0, y: 0, z: -600, rotationX: 0.2, rotationY: 0, rotationZ: 0, fov: 600 },
         projection: { width: 800, height: 400, near: 10, far: 5000 },
+        interaction: { isDragging: false, isPanning: false, lastX: 0, lastY: 0, lastDist: 0 },
 
         init(selector) {
             console.log("GreenhouseInflammationApp: Initializing on", selector);
@@ -37,6 +38,7 @@
             this.canvas.style.display = 'block';
             container.appendChild(this.canvas);
             this.ctx = this.canvas.getContext('2d');
+            this.canvas.oncontextmenu = (e) => e.preventDefault();
 
             this.projection.width = this.canvas.width;
             this.projection.height = this.canvas.height;
@@ -78,8 +80,19 @@
 
             this.createUI(container);
 
+            this.canvas.onmousedown = (e) => this.handleMouseDown(e);
             this.canvas.onmousemove = (e) => this.handleMouseMove(e);
-            this.canvas.onmouseout = () => { this.tooltip.style.display = 'none'; };
+            this.canvas.onmouseup = () => this.handleMouseUp();
+            this.canvas.onwheel = (e) => this.handleWheel(e);
+            this.canvas.onmouseout = () => {
+                this.tooltip.style.display = 'none';
+                this.handleMouseUp();
+            };
+
+            // Touch events
+            this.canvas.ontouchstart = (e) => this.handleTouchStart(e);
+            this.canvas.ontouchmove = (e) => this.handleTouchMove(e);
+            this.canvas.ontouchend = () => this.handleMouseUp();
 
             this.isRunning = true;
             this.startLoop();
@@ -98,11 +111,91 @@
             this.projection.width = this.canvas.width;
         },
 
+        handleMouseDown(e) {
+            this.interaction.isDragging = e.button === 0;
+            this.interaction.isPanning = e.button === 2 || (e.button === 0 && e.shiftKey);
+            this.interaction.lastX = e.clientX;
+            this.interaction.lastY = e.clientY;
+            if (this.interaction.isPanning) e.preventDefault();
+        },
+
+        handleMouseUp() {
+            this.interaction.isDragging = false;
+            this.interaction.isPanning = false;
+        },
+
+        handleWheel(e) {
+            e.preventDefault();
+            const delta = e.deltaY * 0.5;
+            this.camera.z = Math.min(-100, Math.max(-2000, this.camera.z + delta));
+        },
+
+        handleTouchStart(e) {
+            if (e.touches.length === 1) {
+                this.interaction.isDragging = true;
+                this.interaction.lastX = e.touches[0].clientX;
+                this.interaction.lastY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                this.interaction.isPanning = true;
+                this.interaction.lastX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                this.interaction.lastY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                this.interaction.lastDist = Math.sqrt(dx * dx + dy * dy);
+            }
+        },
+
+        handleTouchMove(e) {
+            if (e.touches.length === 1 && this.interaction.isDragging) {
+                const dx = e.touches[0].clientX - this.interaction.lastX;
+                const dy = e.touches[0].clientY - this.interaction.lastY;
+                this.camera.rotationY += dx * 0.01;
+                this.camera.rotationX += dy * 0.01;
+                this.interaction.lastX = e.touches[0].clientX;
+                this.interaction.lastY = e.touches[0].clientY;
+            } else if (e.touches.length === 2 && this.interaction.isPanning) {
+                const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Zoom
+                const zoomDelta = (dist - this.interaction.lastDist) * 2;
+                this.camera.z = Math.min(-100, Math.max(-2000, this.camera.z + zoomDelta));
+                this.interaction.lastDist = dist;
+
+                // Pan
+                this.camera.x += (cx - this.interaction.lastX) * 0.5;
+                this.camera.y -= (cy - this.interaction.lastY) * 0.5;
+                this.interaction.lastX = cx;
+                this.interaction.lastY = cy;
+            }
+            if (e.cancelable) e.preventDefault();
+        },
+
         handleMouseMove(e) {
-            if (!this.tooltip) return;
             const rect = this.canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
+
+            if (this.interaction.isDragging) {
+                const dx = e.clientX - this.interaction.lastX;
+                const dy = e.clientY - this.interaction.lastY;
+                this.camera.rotationY += dx * 0.01;
+                this.camera.rotationX += dy * 0.01;
+                this.interaction.lastX = e.clientX;
+                this.interaction.lastY = e.clientY;
+            } else if (this.interaction.isPanning) {
+                const dx = e.clientX - this.interaction.lastX;
+                const dy = e.clientY - this.interaction.lastY;
+                this.camera.x += dx * 0.5;
+                this.camera.y -= dy * 0.5;
+                this.interaction.lastX = e.clientX;
+                this.interaction.lastY = e.clientY;
+            }
+
+            if (!this.tooltip) return;
 
             let hoveredItem = null;
             if (window.GreenhouseInflammationUI3D) {
@@ -257,8 +350,10 @@
 
             ctx.clearRect(0, 0, w, h);
 
-            // Rotate camera slightly
-            this.camera.rotationY += 0.002;
+            // Rotate camera slightly if not interacting
+            if (!this.interaction.isDragging && !this.interaction.isPanning) {
+                this.camera.rotationY += 0.002;
+            }
 
             // Background glow
             const grad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w);
