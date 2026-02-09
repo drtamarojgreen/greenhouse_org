@@ -10,6 +10,7 @@ def setup_scene(master):
 
     # Apply sanctuary grade
     style.apply_scene_grade(master, 'sanctuary', 3901, 4100)
+    style.animate_dust_particles(mathutils.Vector((0, 0, 2)), density=40, frame_start=3901, frame_end=4100)
 
     # Dense Foliage
     bushes = []
@@ -18,7 +19,7 @@ def setup_scene(master):
         b = plant_humanoid.create_procedural_bush(loc, name=f"SanctuaryBush_{i}", size=random.uniform(0.5, 2.0))
         bushes.append(b)
 
-    # Visibility and Wind
+    # Visibility and Transitions
     for b in bushes:
         for obj in b.objects:
             obj.hide_render = True
@@ -28,12 +29,11 @@ def setup_scene(master):
             obj.hide_render = True
             obj.keyframe_insert(data_path="hide_render", frame=4101)
 
-        # Apply wind animation
+        style.apply_fade_transition(b.objects, 3901, 4100, mode='IN', duration=20)
         style.animate_foliage_wind(b.objects, strength=0.04, frame_start=3901, frame_end=4100)
 
     # Peaceful characters
-    if master.h1:
-        master.h1.location = (0, 0, 0)
-        master.h1.keyframe_insert(data_path="location", frame=3901)
-        master.h1.rotation_euler = (0, 0, 0)
-        master.h1.keyframe_insert(data_path="rotation_euler", frame=3901)
+    for char in [master.h1, master.h2]:
+        if not char: continue
+        style.insert_looping_noise(char, "rotation_euler", index=2, strength=0.03, scale=20.0, frame_start=3901, frame_end=4100)
+        style.animate_breathing(char, 3901, 4100, amplitude=0.01)

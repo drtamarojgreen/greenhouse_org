@@ -20,44 +20,25 @@ def setup_scene(master):
         gnome.hide_render = True
         gnome.keyframe_insert(data_path="hide_render", frame=2500)
 
+        style.apply_fade_transition([gnome], 2101, 2500, mode='IN', duration=16)
+
         # Entrance movement
         gnome.location = (5, 5, 0)
         gnome.keyframe_insert(data_path="location", frame=2101)
         gnome.location = (2, 2, 0)
         gnome.keyframe_insert(data_path="location", frame=2300)
-        gnome.location = (2, 2, 0) # Pause
+        gnome.location = (2, 2, 0)
         gnome.keyframe_insert(data_path="location", frame=2500)
 
-    # Characters shiver in suspense
+    # Characters shiver and recoil
     for char in [master.h1, master.h2]:
-        if char:
-            base_x = char.location.x
-            for f in range(2101, 2500, 4):
-                char.location.x = base_x + random.uniform(-0.02, 0.02)
-                char.keyframe_insert(data_path="location", frame=f)
-            char.location.x = base_x
-            char.keyframe_insert(data_path="location", frame=2500)
+        if not char: continue
+        style.insert_looping_noise(char, "location", index=0, strength=0.05, scale=2.0, frame_start=2101, frame_end=2500)
+        # Recoil
+        char.location.y = 0
+        char.keyframe_insert(data_path="location", index=1, frame=2101)
+        char.location.y = -0.5
+        char.keyframe_insert(data_path="location", index=1, frame=2200)
 
-        # Staff animation
-        staff = bpy.data.objects.get("GloomGnome_Staff_Container")
-        if staff:
-            staff.rotation_euler = (0, 0, 0)
-            staff.keyframe_insert(data_path="rotation_euler", frame=2101)
-            staff.rotation_euler = (0, math.radians(30), 0)
-            staff.keyframe_insert(data_path="rotation_euler", frame=2300)
-            staff.rotation_euler = (0, 0, 0)
-            staff.keyframe_insert(data_path="rotation_euler", frame=2500)
-
-        # Dim the lights (Overridden by style grade, but we can add flicker here)
-        style.animate_light_flicker("Spot", 1901, 2500, strength=0.3)
-        style.animate_light_flicker("RimLight", 1901, 2500, strength=0.1)
-
-        for light_name in ["Sun", "FillLight"]:
-            light = bpy.data.objects.get(light_name)
-            if not light: continue
-            base_energy = light.data.energy
-            light.data.keyframe_insert(data_path="energy", frame=2100)
-            light.data.energy = base_energy * 0.1
-            light.data.keyframe_insert(data_path="energy", frame=2200)
-            light.data.energy = base_energy
-            light.data.keyframe_insert(data_path="energy", frame=2600)
+    style.animate_light_flicker("Spot", 1901, 2500, strength=0.4)
+    style.animate_light_flicker("RimLight", 1901, 2500, strength=0.2)
