@@ -94,6 +94,11 @@ class MovieMaster:
         self.pedestal = None
         self.flower = None
         self.greenhouse = None
+        # Lights
+        self.sun = None
+        self.fill = None
+        self.rim = None
+        self.spot = None
 
     def setup_engine(self):
         """Initializes the scene based on the desired aesthetic."""
@@ -274,6 +279,7 @@ class MovieMaster:
 
         environment_props.create_stage_floor()
         environment_props.setup_volumetric_haze()
+        style.animate_dust_particles(mathutils.Vector((0,0,2)), density=30)
 
         pillar_locs = [(-8, -8), (8, 8), (-12, 0), (12, 0)]
         for x, y in pillar_locs:
@@ -296,6 +302,8 @@ class MovieMaster:
                     obj.keyframe_insert(data_path="hide_render", frame=rs)
                     obj.hide_render = True
                     obj.keyframe_insert(data_path="hide_render", frame=re)
+                    # New: Smooth Fade-in
+                    style.apply_fade_transition([obj], rs, re, mode='IN', duration=16)
 
         plant_keywords = ["Herbaceous", "Arbor", "Scroll", "Bush", "Eye", "Mouth", "Pupil", "Brow", "ShoulderPlate"]
         plants = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in plant_keywords) and "GloomGnome" not in obj.name]
@@ -390,15 +398,11 @@ class MovieMaster:
             self.h1.rotation_euler[0] = 0
             self.h1.keyframe_insert(data_path="rotation_euler", frame=950, index=0)
 
-        # Lifelike breathing animation
+        # Enhanced character micro-animation
         for char in [self.h1, self.h2]:
             if not char: continue
-            base_z = char.scale.z
-            for f in range(1, 5001, 72): # ~3 seconds per breath
-                char.scale.z = base_z
-                char.keyframe_insert(data_path="scale", frame=f, index=2)
-                char.scale.z = base_z * 1.02
-                char.keyframe_insert(data_path="scale", frame=f + 36, index=2)
+            style.animate_breathing(char, 1, 5000, cycle=64, amplitude=0.02)
+            style.insert_looping_noise(char, "rotation_euler", index=2, strength=0.02, scale=15.0)
 
         scene00.setup_scene(self)
         scene01.setup_scene(self)
@@ -518,9 +522,8 @@ class MovieMaster:
         con.up_axis = 'UP_Y'
 
         if self.mode == 'SILENT_FILM':
-            if not cam.animation_data: cam.animation_data_create()
-            if not cam.animation_data.action: cam.animation_data.action = bpy.data.actions.new(name="CamShake")
-            # Shake the target location slightly instead of rotation for more stable tracking
+            style.apply_camera_shake(cam, 1, 5000, strength=0.02)
+            # Old Target Shake
             target.animation_data_create()
             target.animation_data.action = bpy.data.actions.new(name="TargetShake")
             for axis in range(3):
@@ -528,8 +531,7 @@ class MovieMaster:
                 if hasattr(curves, 'new'):
                     fcurve = curves.new(data_path="location", index=axis)
                     noise = fcurve.modifiers.new(type='NOISE')
-                    noise.strength = 0.02
-                    noise.scale = 2.0
+                    noise.strength, noise.scale = 0.02, 2.0
 
         self.setup_camera_keyframes(cam, target)
 
@@ -586,9 +588,9 @@ class MovieMaster:
         pass
 
     def setup_camera_keyframes(self, cam, target):
-        title_loc = (0, -12, 0) # Moved back for better proportion
+        title_loc = (0, -12, 0)
         origin = (0, 0, 0)
-        high_target = (0, 0, 1.5) # Raised to prevent cutting off heads
+        high_target = (0, 0, 1.5)
 
         def kf(frame, cam_loc, target_loc):
             cam.location = cam_loc
@@ -601,148 +603,126 @@ class MovieMaster:
         kf(100, title_loc, origin)
         kf(101, title_loc, origin)
         kf(200, title_loc, origin)
-        kf(201, (0,-30,8), origin) # Brain focus - Moved back
+        kf(201, (0,-30,8), origin)
         kf(400, (0,-35,10), origin)
         kf(401, title_loc, origin)
         kf(500, title_loc, origin)
-        kf(501, (5,-20,4), (-2, 0, 1.5)) # Garden Action - Raised target, moved back
+        kf(501, (5,-20,4), (-2, 0, 1.5))
         kf(650, (-5,-15,3), (2, 0, 1.5))
         kf(651, title_loc, origin)
         kf(750, title_loc, origin)
-        kf(751, (0,-15,4), high_target) # Socratic Action - Moved back
+        kf(751, (0,-15,4), high_target)
         kf(950, (0,-18,5), high_target)
         kf(951, title_loc, origin)
         kf(1050, title_loc, origin)
-        kf(1051, (6,-12,3), (0, 0, 1.5)) # Exchange Action - Moved back
+        kf(1051, (6,-12,3), (0, 0, 1.5))
         kf(1250, (-6,-12,3), (0, 0, 1.5))
         kf(1251, title_loc, origin)
         kf(1350, title_loc, origin)
-        kf(1351, (0,-15,5), origin) # Forge Action - Moved back
+        kf(1351, (0,-15,5), origin)
         kf(1500, (0,-10,4), origin)
         kf(1501, title_loc, origin)
         kf(1600, title_loc, origin)
-        kf(1601, (20,-30,15), (10, 0, 2)) # Bridge Action - Moved back
+        kf(1601, (20,-30,15), (10, 0, 2))
         kf(1800, (10,-25,10), (10, 0, 2))
         kf(1801, title_loc, origin)
         kf(1900, title_loc, origin)
-        kf(1901, (0,-20,8), origin) # Gloom buildup - Moved back
+        kf(1901, (0,-20,8), origin)
         kf(2100, (0,-15,6), origin)
-        kf(2101, (12, 12, 6), (2, 2, 1.5)) # Gnome Entrance - Moved back, raised target
+        kf(2101, (12, 12, 6), (2, 2, 1.5))
         kf(2300, (8, 8, 4), (2, 2, 1.5))
-        kf(2301, (8, 8, 4), (2, 2, 1.5)) # Confrontation
+        kf(2301, (8, 8, 4), (2, 2, 1.5))
         kf(2500, (6, 6, 3), (2, 2, 1.5))
         kf(2501, title_loc, origin)
         kf(2600, title_loc, origin)
-        kf(2601, (0,-12,4), high_target) # Library Action - Moved back
+        kf(2601, (0,-12,4), high_target)
         kf(2800, (0,-10,3), high_target)
         kf(2801, (0,-20,8), origin)
         kf(2900, (0,-15,5), origin)
         kf(2901, title_loc, origin)
+        # Resonance Action
         kf(3000, title_loc, origin)
-        kf(3001, (0,-25,8), origin) # Resonance Action - Moved back
+        kf(3001, (0,-25,8), origin)
         kf(3500, (0,-20,5), origin)
         kf(3501, title_loc, origin)
+        # Lab Action
         kf(3600, title_loc, origin)
-        kf(3601, (0,-15,4), high_target) # Lab Action - Moved back
+        kf(3601, (0,-15,4), high_target)
         kf(3800, (0,-12,3), high_target)
         kf(3801, title_loc, origin)
+        # Sanctuary Action
         kf(3900, title_loc, origin)
-        kf(3901, (0,-25,10), origin) # Sanctuary Action
+        kf(3901, (0,-25,10), origin)
         kf(4100, (0,-15,5), origin)
-        kf(4101, (0,-40,15), origin) # Finale
+        # Finale
+        kf(4101, (0,-40,15), origin)
         kf(4500, (0,-35,12), origin)
-        kf(4501, (0,-10,0), (0, 0, 5)) # Credits
+        # Credits
+        kf(4501, (0,-10,0), (0, 0, 5))
         kf(5000, (0,-10,0), (0, 0, 15))
 
     def setup_compositor(self):
         self.scene.use_nodes = True
-        
-        # Blender 5.0 compatibility: Check for node_tree safely
-        tree = getattr(self.scene, 'node_tree', None)
-        if tree is None:
-            # Try alternative name if node_tree is missing
-            tree = getattr(self.scene, 'compositing_node_group', None)
-        
-        if tree is None:
-            print(f"Warning: Scene.node_tree missing. Available 'node' attrs: {[a for a in dir(self.scene) if 'node' in a]}")
-            return
+        tree = getattr(self.scene, 'node_tree', None) or getattr(self.scene, 'compositing_node_group', None)
+        if tree is None: return
 
         for node in tree.nodes: tree.nodes.remove(node)
         rl = tree.nodes.new('CompositorNodeRLayers')
         composite = tree.nodes.new('CompositorNodeComposite')
+
         if self.mode == 'SILENT_FILM':
             bright = tree.nodes.new('CompositorNodeBrightContrast')
-            bright.inputs['Contrast'].default_value = 1.3 # Further lowered to soften the look and prevent crushing
+            bright.inputs['Contrast'].default_value = 1.3
             for f in range(1, 5001, 2):
-                bright.inputs['Bright'].default_value = random.uniform(0.0, 0.05) # Increased brightness
+                bright.inputs['Bright'].default_value = random.uniform(0.0, 0.05)
                 bright.inputs['Bright'].keyframe_insert(data_path="default_value", frame=f)
+
+            # Subtler Film Grain & Scratches
+            mix_grain = tree.nodes.new('CompositorNodeMixRGB')
+            mix_grain.blend_type = 'OVERLAY'
+            mix_grain.inputs[0].default_value = 0.1
+
             if "FilmNoise" not in bpy.data.textures: bpy.data.textures.new("FilmNoise", type='NOISE')
             noise = tree.nodes.new('CompositorNodeTexture')
             noise.texture = bpy.data.textures["FilmNoise"]
-            mix_grain = tree.nodes.new('CompositorNodeMixRGB')
-            mix_grain.blend_type = 'OVERLAY'
-            mix_grain.inputs[0].default_value = 0.15
+
+            mix_scratches = tree.nodes.new('CompositorNodeMixRGB')
+            mix_scratches.blend_type = 'MULTIPLY'
+            mix_scratches.inputs[0].default_value = 0.05
+
             if "Scratches" not in bpy.data.textures:
                 stex = bpy.data.textures.new("Scratches", type='MUSGRAVE')
                 stex.noise_scale = 10.0
             scratches = tree.nodes.new('CompositorNodeTexture')
             scratches.texture = bpy.data.textures["Scratches"]
-            mix_scratches = tree.nodes.new('CompositorNodeMixRGB')
-            mix_scratches.blend_type = 'MULTIPLY'
-            mix_scratches.inputs[0].default_value = 0.1
-            mask = tree.nodes.new('CompositorNodeEllipseMask')
-            mask.width, mask.height = 3.0, 2.5 # Far off-canvas
-            blur = tree.nodes.new('CompositorNodeBlur')
-            blur.size_x = blur.size_y = 600 # Extremely soft transition
-            mix_vignette = tree.nodes.new('CompositorNodeMixRGB')
-            mix_vignette.blend_type = 'MULTIPLY'
-            mix_vignette.inputs[0].default_value = 0.1 # Barely perceptible edge dimming
             
             tree.links.new(rl.outputs['Image'], bright.inputs['Image'])
             tree.links.new(bright.outputs['Image'], mix_grain.inputs[1])
             tree.links.new(noise.outputs['Value'], mix_grain.inputs[2])
             tree.links.new(mix_grain.outputs['Image'], mix_scratches.inputs[1])
             tree.links.new(scratches.outputs['Value'], mix_scratches.inputs[2])
-            tree.links.new(mask.outputs['Mask'], blur.inputs['Image'])
-            tree.links.new(mix_scratches.outputs['Image'], mix_vignette.inputs[1])
-            tree.links.new(blur.outputs['Image'], mix_vignette.inputs[2])
-            
-            # Final output link - completely bypasses the 'iris/keyhole' node chain
-            tree.links.new(mix_vignette.outputs['Image'], composite.inputs['Image'])
+            tree.links.new(mix_scratches.outputs['Image'], composite.inputs['Image'])
         else:
             self.scene.eevee.use_bloom = True
-            self.scene.eevee.use_gtao = True
             tree.links.new(rl.outputs['Image'], composite.inputs['Image'])
 
     def setup_lighting(self):
-        """Sets up a robust three-point lighting system with high-contrast character focus."""
-        # Key Light (Sun)
+        """Sets up a robust three-point lighting system."""
+        # Key Light
         bpy.ops.object.light_add(type='SUN', location=(10,-10,20))
-        sun = bpy.context.object
-        sun.name = "Sun"
-        sun.data.energy = 5.0
-        sun.rotation_euler = (math.radians(45), 0, math.radians(45))
+        self.sun = bpy.context.object; self.sun.name = "Sun"; self.sun.data.energy = 5.0
 
-        # Fill Light (Point) - To lift the shadows slightly for texture visibility
+        # Fill Light
         bpy.ops.object.light_add(type='POINT', location=(-10, -10, 10))
-        fill = bpy.context.object
-        fill.name = "FillLight"
-        fill.data.energy = 2000
+        self.fill = bpy.context.object; self.fill.name = "FillLight"; self.fill.data.energy = 2000
 
-        # Rim Light (Area) - To separate characters from the dark background
+        # Rim Light
         bpy.ops.object.light_add(type='AREA', location=(0, 15, 5))
-        rim = bpy.context.object
-        rim.name = "RimLight"
-        rim.scale = (10, 10, 1)
-        rim.data.energy = 5000
-        rim.rotation_euler = (math.radians(-45), 0, 0)
+        self.rim = bpy.context.object; self.rim.name = "RimLight"; self.rim.data.energy = 5000
 
-        # Spot Light for specific focus
+        # Spot Light
         bpy.ops.object.light_add(type='SPOT', location=(0,-15,10))
-        spot = bpy.context.object
-        spot.name = "Spot"
-        spot.data.energy = 10000
-        spot.data.spot_size = math.radians(45)
+        self.spot = bpy.context.object; self.spot.name = "Spot"; self.spot.data.energy = 10000
 
     def run(self):
         self.load_assets()
@@ -766,7 +746,6 @@ def main():
     if '--render-output' in args:
         out_path = args[args.index('--render-output') + 1]
         master.scene.render.filepath = out_path
-        # Use PNG sequence as FFMPEG is not available in this Blender build
         master.scene.render.image_settings.file_format = 'PNG'
 
     if '--frame' in args:

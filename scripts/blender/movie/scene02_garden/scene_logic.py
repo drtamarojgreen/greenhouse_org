@@ -11,16 +11,17 @@ def setup_scene(master):
 
     # Apply scene grade
     style.apply_scene_grade(master, 'garden', 401, 650)
+    style.animate_dust_particles(mathutils.Vector((0, 0, 2)), density=20, frame_start=501, frame_end=650)
 
     # Add extra foliage for vibrancy
     bushes = []
-    random.seed(42) # Deterministic for this scene
+    random.seed(42)
     for i in range(5):
         loc = mathutils.Vector((random.uniform(-5, 5), random.uniform(0, 5), 0))
         b = plant_humanoid.create_procedural_bush(loc, name=f"GardenBush_{i}", size=random.uniform(0.8, 1.5))
         bushes.append(b)
 
-    # Visibility and Wind
+    # Visibility and Transitions
     for b in bushes:
         for obj in b.objects:
             obj.hide_render = True
@@ -30,5 +31,5 @@ def setup_scene(master):
             obj.hide_render = True
             obj.keyframe_insert(data_path="hide_render", frame=651)
 
-        # Apply wind animation
+        style.apply_fade_transition(b.objects, 501, 650, mode='IN', duration=12)
         style.animate_foliage_wind(b.objects, strength=0.03, frame_start=501, frame_end=650)

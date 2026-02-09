@@ -1,5 +1,7 @@
 import bpy
 import random
+import math
+import mathutils
 
 def apply_scene_grade(master, scene_name, frame_start, frame_end):
     """Applies scene mood presets: world tint, light energy/color ratios."""
@@ -54,8 +56,13 @@ def apply_scene_grade(master, scene_name, frame_start, frame_end):
     }
 
     for name, (energy, color) in lights.items():
-        light_obj = bpy.data.objects.get(name)
-        if light_obj:
+        # Map master attributes if they exist
+        attr_map = {"Sun": "sun", "RimLight": "rim", "FillLight": "fill", "Spot": "spot"}
+        light_obj = getattr(master, attr_map.get(name, ""), None)
+        if not light_obj:
+            light_obj = bpy.data.objects.get(name)
+
+        if light_obj and hasattr(light_obj, "data"):
             light_obj.data.energy = energy
             light_obj.data.keyframe_insert(data_path="energy", frame=frame_start)
             if hasattr(light_obj.data, "color"):
@@ -66,36 +73,7 @@ def animate_foliage_wind(objects, strength=0.05, frame_start=1, frame_end=5000):
     """Adds subtle sway to foliage objects within a specific frame range."""
     for obj in objects:
         if obj.type != 'MESH': continue
-        if not obj.animation_data:
-            obj.animation_data_create()
-        if not obj.animation_data.action:
-            obj.animation_data.action = bpy.data.actions.new(name=f"WindSway_{obj.name}")
-
-        # Keyframe current rotation to ensure there's a curve
-        obj.keyframe_insert(data_path="rotation_euler", frame=frame_start)
-
-        curves = obj.animation_data.action.fcurves
-
-        for i in range(3): # X, Y, Z
-            fcurve = None
-            for fc in curves:
-                if fc.data_path == "rotation_euler" and fc.array_index == i:
-                    fcurve = fc
-                    break
-            if not fcurve:
-                fcurve = curves.new(data_path="rotation_euler", index=i)
-
-            modifier = fcurve.modifiers.new(type='NOISE')
-            modifier.strength = strength * (0.5 + random.random())
-            modifier.scale = 10.0 + random.random() * 5.0
-            modifier.phase = random.random() * 100
-
-            # Restrict range to avoid global sway
-            modifier.use_restricted_range = True
-            modifier.frame_start = frame_start
-            modifier.frame_end = frame_end
-            modifier.blend_in = 10
-            modifier.blend_out = 10
+        insert_looping_noise(obj, "rotation_euler", strength=strength, frame_start=frame_start, frame_end=frame_end)
 
 def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed=None):
     """Adds magical flicker to a light within a specific frame range."""
@@ -131,3 +109,134 @@ def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed
     modifier.frame_end = frame_end
     modifier.blend_in = 5
     modifier.blend_out = 5
+
+def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=5000, strength=0.05, scale=10.0, phase=None):
+    """Inserts noise modifier to a data path, ensuring the range is respected."""
+    if not obj.animation_data:
+        obj.animation_data_create()
+    if not obj.animation_data.action:
+        obj.animation_data.action = bpy.data.actions.new(name=f"Noise_{obj.name}_{data_path.replace('.', '_')}")
+
+    action = obj.animation_data.action
+    curves = action.fcurves
+
+    indices = [index] if index >= 0 else [0, 1, 2]
+
+    for idx in indices:
+        fcurve = None
+        for fc in curves:
+            if fc.data_path == data_path and fc.array_index == idx:
+                fcurve = fc
+                break
+        if not fcurve:
+            fcurve = curves.new(data_path=data_path, index=idx)
+
+        if not fcurve.keyframe_points:
+            obj.keyframe_insert(data_path=data_path, index=idx, frame=frame_start)
+
+        modifier = fcurve.modifiers.new(type='NOISE')
+        modifier.strength = strength * (0.8 + random.random() * 0.4)
+        modifier.scale = scale * (0.8 + random.random() * 0.4)
+        modifier.phase = phase if phase is not None else random.random() * 100
+
+        modifier.use_restricted_range = True
+        modifier.frame_start = frame_start
+        modifier.frame_end = frame_end
+        modifier.blend_in = 10
+        modifier.blend_out = 10
+
+def animate_breathing(obj, frame_start, frame_end, axis=2, amplitude=0.03, cycle=72):
+    """Adds a rhythmic scale oscillation to simulate breathing."""
+    if not obj: return
+    base_val = obj.scale[axis]
+    for f in range(frame_start, frame_end + 1, cycle):
+        obj.scale[axis] = base_val
+        obj.keyframe_insert(data_path="scale", index=axis, frame=f)
+        if f + cycle // 2 <= frame_end:
+            obj.scale[axis] = base_val * (1.0 + amplitude)
+            obj.keyframe_insert(data_path="scale", index=axis, frame=f + cycle // 2)
+
+    obj.scale[axis] = base_val
+    obj.keyframe_insert(data_path="scale", index=axis, frame=frame_end)
+
+def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 1, 1, 1), frame_start=1, frame_end=5000):
+    """Creates a group of small drifting motes."""
+    container = bpy.data.collections.get("DustParticles")
+    if not container:
+        container = bpy.data.collections.new("DustParticles")
+        bpy.context.scene.collection.children.link(container)
+
+    mat = bpy.data.materials.get("DustMat")
+    if not mat:
+        mat = bpy.data.materials.new(name="DustMat")
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes["Principled BSDF"]
+        bsdf.inputs["Base Color"].default_value = color
+        bsdf.inputs["Emission Strength"].default_value = 2.0
+        mat.blend_method = 'BLEND'
+
+    for i in range(density):
+        loc = center + mathutils.Vector((
+            random.uniform(-volume_size[0], volume_size[0]),
+            random.uniform(-volume_size[1], volume_size[1]),
+            random.uniform(0, volume_size[2])
+        ))
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.01, location=loc)
+        mote = bpy.context.object
+        mote.name = f"DustMote_{i}"
+        container.objects.link(mote)
+        bpy.context.scene.collection.objects.unlink(mote)
+        mote.data.materials.append(mat)
+
+        insert_looping_noise(mote, "location", strength=0.2, scale=20.0, frame_start=frame_start, frame_end=frame_end)
+
+        mote.hide_render = True
+        mote.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
+        mote.hide_render = False
+        mote.keyframe_insert(data_path="hide_render", frame=frame_start)
+        mote.hide_render = True
+        mote.keyframe_insert(data_path="hide_render", frame=frame_end)
+
+def apply_fade_transition(objs, frame_start, frame_end, mode='IN', duration=12):
+    """Smoothly fades objects in or out using emission strength if they have materials."""
+    for obj in objs:
+        if obj.type != 'MESH': continue
+        for slot in obj.material_slots:
+            mat = slot.material
+            if not mat or not mat.use_nodes: continue
+            bsdf = mat.node_tree.nodes.get("Principled BSDF")
+            if not bsdf: continue
+
+            if mode == 'IN':
+                bsdf.inputs["Emission Strength"].default_value = 0.0
+                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_start)
+                bsdf.inputs["Emission Strength"].default_value = 5.0
+                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_start + duration)
+            else: # OUT
+                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_end - duration)
+                bsdf.inputs["Emission Strength"].default_value = 0.0
+                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_end)
+
+def camera_push_in(cam, target, frame_start, frame_end, distance=5):
+    """Animates camera moving towards target."""
+    direction = (target.location - cam.location).normalized()
+    cam.keyframe_insert(data_path="location", frame=frame_start)
+    cam.location += direction * distance
+    cam.keyframe_insert(data_path="location", frame=frame_end)
+
+def camera_pull_out(cam, target, frame_start, frame_end, distance=5):
+    """Animates camera moving away from target."""
+    camera_push_in(cam, target, frame_start, frame_end, distance=-distance)
+
+def apply_camera_shake(cam, frame_start, frame_end, strength=0.05):
+    """Adds a subtle handheld-style shake."""
+    insert_looping_noise(cam, "location", strength=strength, scale=2.0, frame_start=frame_start, frame_end=frame_end)
+
+def ease_action(obj, data_path, index=-1, interpolation='BEZIER', easing='EASE_IN_OUT'):
+    """Sets easing for all keyframes of a specific data path."""
+    if not obj.animation_data or not obj.animation_data.action: return
+    for fcurve in obj.animation_data.action.fcurves:
+        if fcurve.data_path == data_path and (index == -1 or fcurve.array_index == index):
+            for kp in fcurve.keyframe_points:
+                kp.interpolation = interpolation
+                kp.easing = easing
