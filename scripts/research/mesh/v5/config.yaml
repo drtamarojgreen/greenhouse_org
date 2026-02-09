@@ -1,0 +1,35 @@
+timeline:
+  start_year: 1950
+  end_year: 2025
+  interval_years: 5
+  
+  # Targeted MeSH Terms for Mental Health
+  conditions:
+    - "Attention Deficit Disorder with Hyperactivity"
+    - "Depressive Disorder"
+    - "Anxiety Disorders"
+    - "Bipolar Disorder"
+    - "Schizophrenia"
+    - "Autism Spectrum Disorder"
+    - "Post-Traumatic Stress Disorders"
+    - "Obsessive-Compulsive Disorder"
+    - "Neurodevelopmental Disorders"
+    - "Dementia"
+  
+  # Visualization Settings
+  visualization:
+    template: "timeline_premium"
+    smooth_curves: true
+    show_labels: true
+    output_format: "png"
+    colors:
+      "Attention Deficit Disorder with Hyperactivity": "#FF5733"
+      "Depressive Disorder": "#33FF57"
+      "Anxiety Disorders": "#3357FF"
+      "Bipolar Disorder": "#F333FF"
+      "Schizophrenia": "#FF33A1"
+      "Autism Spectrum Disorder": "#33FFF3"
+      "Post-Traumatic Stress Disorders": "#F3FF33"
+      "Obsessive-Compulsive Disorder": "#FF8633"
+      "Neurodevelopmental Disorders": "#8633FF"
+      "Dementia": "#33FF86"
