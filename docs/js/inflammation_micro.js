@@ -133,12 +133,16 @@
                     l.x += l.vx * (1 - bbb);
                     if (l.x > 500) l.x = -500;
                     const lp = Math3D.project3DTo2D(l.x, l.y, l.z, camera, projection);
-                    if (lp.scale > 0) {
+                    if (lp.scale > 0 && isFinite(lp.x) && isFinite(lp.y)) {
                         ctx.fillStyle = `rgba(255, 255, 255, ${0.8 * (1 - bbb)})`;
                         ctx.beginPath(); ctx.arc(lp.x, lp.y, 5 * lp.scale, 0, Math.PI * 2); ctx.fill();
-                        const glow = ctx.createRadialGradient(lp.x, lp.y, 0, lp.x, lp.y, 10 * lp.scale);
-                        glow.addColorStop(0, 'rgba(255,255,255,0.4)'); glow.addColorStop(1, 'transparent');
-                        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(lp.x, lp.y, 10 * lp.scale, 0, Math.PI * 2); ctx.fill();
+
+                        const r1 = 10 * lp.scale;
+                        if (isFinite(r1) && r1 > 0) {
+                            const glow = ctx.createRadialGradient(lp.x, lp.y, 0, lp.x, lp.y, r1);
+                            glow.addColorStop(0, 'rgba(255,255,255,0.4)'); glow.addColorStop(1, 'transparent');
+                            ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(lp.x, lp.y, r1, 0, Math.PI * 2); ctx.fill();
+                        }
                     }
                 });
             }

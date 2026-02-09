@@ -1,7 +1,7 @@
 /**
  * @file inflammation_macro.js
  * @description Macro-level (Brain) rendering logic for the Neuroinflammation Simulation.
- * Features dynamic heatmapping and elite shader logic.
+ * Implements holographic schematics, orbital triggers, and the Kynurenine pathway (Tryptophan/3HAA).
  */
 
 (function () {
@@ -10,113 +10,154 @@
     const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseInflammationMacro = {
+        orbitalRotation: 0,
+        particles: [],
+
         render(ctx, state, camera, projection, ui3d) {
             if (!ui3d.brainShell) return;
 
             const Math3D = window.GreenhouseModels3DMath;
             const tone = state.metrics.inflammatoryTone || 0.02;
-            const load = state.factors.pathogenLoad || 0;
+            this.orbitalRotation -= 0.005;
 
-            // 1. Dynamic Regional Heatmap
+            // 1. GHOST BRAIN (Blueprint Aesthetic)
             const regions = ui3d.brainShell.regions;
             for (const key in regions) {
                 const k = key.toLowerCase();
-                const isSub = k.includes('thalamus') || k.includes('hypothalamus') || k.includes('basal');
-                const isHippo = k.includes('hippocampus');
-
-                const regionalHeat = Math.min(1.0, tone * 1.5 + load * (isSub ? 0.9 : 0.4));
-
-                if (regionalHeat > 0.15) {
-                    const r = Math.round(130 + regionalHeat * 125);
-                    const g = Math.round(150 * (1 - regionalHeat * 0.8));
-                    const b = Math.round(255 * (1 - regionalHeat));
-                    const a = 0.35 + regionalHeat * 0.45;
-                    regions[key].color = `rgba(${r}, ${g}, ${b}, ${a})`;
-                } else if (isHippo) {
-                    regions[key].color = 'rgba(100, 255, 150, 0.4)';
+                const isHyper = tone > 0.4 && (k.includes('thalamus') || k.includes('insula'));
+                if (isHyper) {
+                    regions[key].color = `rgba(255, 120, 0, ${0.1 + tone * 0.15})`;
                 } else {
-                    regions[key].color = ui3d.originalRegionColors[key] || 'rgba(130, 140, 160, 0.2)';
+                    regions[key].color = 'rgba(100, 180, 220, 0.05)';
                 }
             }
 
-            // 2. ELITE RENDERER OVERRIDE
-            this.drawEliteBrain(ctx, ui3d.brainShell, camera, projection);
+            // 2. ELITE RENDERER (Holographic / Wireframe Detail)
+            this.drawEliteBrain(ctx, ui3d.brainShell, camera, projection, tone, ui3d);
 
-            // 3. BBB Integrity Surface Leakage
-            const bbb = state.metrics.bbbIntegrity || 1.0;
-            if (bbb < 0.98) {
-                ctx.save();
-                ctx.strokeStyle = `rgba(255, 60, 0, ${0.6 * (1 - bbb)})`;
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([2, 5]);
+            // 3. KYNURENINE PATHWAY (Tryptophan -> 3HAA / QUIN)
+            // Visualizing the metabolic shift under inflammation
+            this.drawKynureninePathway(ctx, state, camera, projection, ui3d);
 
-                ui3d.brainShell.vertices.forEach((v, i) => {
-                    if (i % 25 === 0) {
-                        const p = Math3D.project3DTo2D(v.x, -v.y, v.z, camera, projection);
-                        if (p.scale > 0 && p.depth < 0.4) {
-                            ctx.beginPath();
-                            ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
-                            ctx.stroke();
-                        }
-                    }
-                });
-                ctx.restore();
-            }
+            // 4. ORBITAL TRIGGERS (Infiltration Factors)
+            this.drawInflammatoryFactors(ctx, state, camera, projection, ui3d);
 
-            // 4. Anchored Labels
-            if (ui3d.brainShell.regions) {
-                ctx.save();
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
-                const camForward = {
-                    x: Math.sin(camera.rotationY) * Math.cos(camera.rotationX),
-                    y: Math.sin(camera.rotationX),
-                    z: Math.cos(camera.rotationY) * Math.cos(camera.rotationX)
-                };
-
-                for (const key in ui3d.brainShell.regions) {
-                    const region = ui3d.brainShell.regions[key];
-                    if (region.centroid && key !== 'cortex') {
-                        const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
-                        const dot = (region.centroid.x * camForward.x + (-region.centroid.y) * camForward.y + region.centroid.z * camForward.z);
-
-                        if (p.scale > 0 && dot > 0.1) {
-                            const alpha = Math3D.applyDepthFog(0.9, p.depth, 0.4, 0.9);
-                            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-                            ctx.font = 'bold 10px Quicksand, sans-serif';
-                            ctx.shadowBlur = 5;
-                            ctx.shadowColor = 'rgba(0,0,0,1)';
-
-                            // Anchor line for complex subcortical mapping
-                            ctx.beginPath();
-                            ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.3})`;
-                            ctx.moveTo(p.x, p.y);
-                            ctx.lineTo(p.x + (p.x < projection.width / 2 ? -15 : 15), p.y - 10);
-                            ctx.stroke();
-
-                            ctx.fillText(t(region.name).toUpperCase(), p.x + (p.x < projection.width / 2 ? -40 : 40), p.y - 15);
-                        }
-                    }
-                }
-                ctx.restore();
-            }
+            // 5. HUD LABELS
+            this.drawHUDLabels(ctx, ui3d, camera, projection);
         },
 
-        drawEliteBrain(ctx, shell, camera, projection) {
+        drawKynureninePathway(ctx, state, camera, projection, ui3d) {
             const Math3D = window.GreenhouseModels3DMath;
+            const tone = state.metrics.inflammatoryTone || 0;
+            const brainStem = { x: 0, y: -250, z: 0 }; // Baseline entry
+            const thalamus = ui3d.brainShell.regions.thalamus.centroid || { x: 0, y: 0, z: 0 };
+
+            // Emission logic
+            if (this.particles.length < 100) {
+                const isKyn = Math.random() < tone; // High inflammation = more Kynurenine/3HAA
+                this.particles.push({
+                    x: brainStem.x, y: -brainStem.y, z: brainStem.z,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: 2 + Math.random() * 2,
+                    vz: (Math.random() - 0.5) * 1.5,
+                    life: 1.0,
+                    type: isKyn ? '3HAA' : 'TRYP'
+                });
+            }
+
+            ctx.save();
+            this.particles.forEach((p, idx) => {
+                p.x += p.vx; p.y += p.vy; p.z += p.vz;
+                p.life -= 0.006;
+
+                const proj = Math3D.project3DTo2D(p.x, p.y, p.z, camera, projection);
+                if (proj.scale > 0 && p.life > 0) {
+                    // 3HAA (Kynurenine pathway) is toxic/red; Tryptophan is neutral/teal
+                    const color = p.type === '3HAA' ? `rgba(255, 100, 50, ${p.life * 0.8})` : `rgba(100, 255, 200, ${p.life * 0.4})`;
+                    ctx.fillStyle = color;
+                    ctx.shadowBlur = p.type === '3HAA' ? 5 : 0;
+                    ctx.shadowColor = 'red';
+
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, 2 * proj.scale, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (p.life < 0.1 && p.type === '3HAA') {
+                        // "Neurotoxic" burst at end of life
+                        ctx.strokeStyle = `rgba(255, 50, 0, ${p.life * 2})`;
+                        ctx.beginPath(); ctx.arc(proj.x, proj.y, 8 * proj.scale, 0, Math.PI * 2); ctx.stroke();
+                    }
+                } else if (p.life <= 0) {
+                    this.particles.splice(idx, 1);
+                }
+            });
+            ctx.restore();
+        },
+
+        drawInflammatoryFactors(ctx, state, camera, projection, ui3d) {
+            const Math3D = window.GreenhouseModels3DMath;
+            const factors = state.factors;
+            const activeFactors = Object.keys(factors).filter(k => factors[k] === 1 && k !== 'viewMode');
+
+            ctx.save();
+            activeFactors.forEach((fid, idx) => {
+                const angle = (idx / activeFactors.length) * Math.PI * 2 + this.orbitalRotation;
+                const radius = 380;
+
+                const fx = Math.cos(angle) * radius;
+                const fz = Math.sin(angle) * radius;
+                const fy = Math.sin(angle * 1.5) * 150;
+
+                const p = Math3D.project3DTo2D(fx, -fy, fz, camera, projection);
+                if (p.scale > 0) {
+                    const alpha = Math3D.applyDepthFog(0.8, p.depth, 0.2, 0.9);
+
+                    const target = ui3d.brainShell.regions.hypothalamus.centroid || { x: 0, y: 0, z: 0 };
+                    const tp = Math3D.project3DTo2D(target.x, -target.y, target.z, camera, projection);
+
+                    // Infiltration Line
+                    ctx.beginPath();
+                    const grad = ctx.createLinearGradient(p.x, p.y, tp.x, tp.y);
+                    grad.addColorStop(0, fid.includes('patho') || fid.includes('stress') ? `rgba(255, 50, 0, ${alpha})` : `rgba(180, 240, 255, ${alpha})`);
+                    grad.addColorStop(1, `rgba(255, 50, 0, 0)`);
+                    ctx.strokeStyle = grad;
+                    ctx.lineWidth = 1.2;
+                    ctx.setLineDash([10, 5]);
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(tp.x, tp.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Node
+                    const isTrigger = fid.includes('patho') || fid.includes('stress') || fid.includes('Sleep') || fid.includes('Gut');
+                    ctx.fillStyle = isTrigger ? '#ff4d4d' : '#00ffcc';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.beginPath();
+                    ctx.rect(p.x - 5, p.y - 5, 10 * p.scale, 10 * p.scale);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    // Label
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 9px monospace';
+                    ctx.fillText(fid.toUpperCase().replace(/([A-Z])/g, ' $1'), p.x + 15, p.y + 5);
+                }
+            });
+            ctx.restore();
+        },
+
+        drawEliteBrain(ctx, shell, camera, projection, tone, ui3d) {
+            const Math3D = window.GreenhouseModels3DMath;
+            const hovered = ui3d.app.ui.hoveredElement;
             const lightDir = { x: -0.5, y: -0.7, z: 1.0 };
             const len = Math.sqrt(lightDir.x ** 2 + lightDir.y ** 2 + lightDir.z ** 2);
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
             const projected = shell.vertices.map(v => Math3D.project3DTo2D(v.x, -v.y, v.z, camera, projection));
-
             const faces = [];
             shell.faces.forEach((face) => {
-                const p1 = projected[face.indices[0]];
-                const p2 = projected[face.indices[1]];
-                const p3 = projected[face.indices[2]];
-
+                const p1 = projected[face.indices[0]], p2 = projected[face.indices[1]], p3 = projected[face.indices[2]];
                 if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
                     const cp = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
                     if (cp > 0) {
@@ -130,31 +171,73 @@
 
             faces.forEach(f => {
                 const v1 = shell.vertices[f.face.indices[0]];
-                const diffuse = Math.max(0.2, v1.normal.x * lightDir.x + v1.normal.y * lightDir.y + v1.normal.z * lightDir.z);
+                const regionKey = v1.region;
+                const isHovered = hovered && hovered.id === regionKey;
 
-                let r = 160, g = 160, b = 170, a = 0.25;
-                const region = shell.regions[v1.region];
+                const dot = v1.normal.x * lightDir.x + v1.normal.y * lightDir.y + v1.normal.z * lightDir.z;
+                const fresnel = Math.pow(1 - Math.abs(v1.normal.z), 4);
+                const fog = Math3D.applyDepthFog(1.0, f.depth, 0.1, 0.95);
 
-                if (region) {
-                    const match = region.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-                    if (match) {
-                        r = parseInt(match[1]); g = parseInt(match[2]); b = parseInt(match[3]);
-                        a = parseFloat(match[4] || 1);
-                    }
+                let color = `rgba(80, 160, 255, ${0.06 + fresnel * 0.1})`;
+                if (isHovered) {
+                    color = `rgba(255, 255, 255, ${0.15 + Math.sin(Date.now() * 0.01) * 0.05})`;
+                } else if (tone > 0.4 && (regionKey.includes('thalamus') || regionKey.includes('insula'))) {
+                    color = `rgba(255, 80, 0, ${0.08 + tone * 0.12})`;
                 }
 
-                const fog = Math3D.applyDepthFog(a, f.depth, 0.2, 0.95);
-                const litR = Math.min(255, r * (diffuse + 0.3));
-                const litG = Math.min(255, g * (diffuse + 0.3));
-                const litB = Math.min(255, b * (diffuse + 0.3));
-
-                ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
+                ctx.fillStyle = color;
                 ctx.beginPath();
-                ctx.moveTo(f.p1.x, f.p1.y);
-                ctx.lineTo(f.p2.x, f.p2.y);
-                ctx.lineTo(f.p3.x, f.p3.y);
+                ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y);
                 ctx.fill();
+
+                if (f.depth < 0.4) {
+                    // Fine line sulci detail
+                    const sulci = Math.cos(v1.x * 0.04) * Math.sin(v1.z * 0.04) > 0.7;
+                    ctx.strokeStyle = sulci ? `rgba(255, 255, 255, ${0.12 * fog})` : `rgba(180, 230, 255, ${0.03 * fog})`;
+                    ctx.lineWidth = sulci ? 0.8 : 0.4;
+                    ctx.stroke();
+                }
+
+                // BBB Breakdown Flicker
+                if (tone > 0.7 && Math.random() > 0.99) {
+                    ctx.fillStyle = 'rgba(255,0,0,0.5)'; ctx.fill();
+                }
             });
+        },
+
+        drawHUDLabels(ctx, ui3d, camera, projection) {
+            const Math3D = window.GreenhouseModels3DMath;
+            const camForward = {
+                x: Math.sin(camera.rotationY) * Math.cos(camera.rotationX),
+                y: Math.sin(camera.rotationX),
+                z: Math.cos(camera.rotationY) * Math.cos(camera.rotationX)
+            };
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            for (const key in ui3d.brainShell.regions) {
+                const region = ui3d.brainShell.regions[key];
+                if (region.centroid && key !== 'cortex') {
+                    const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
+                    const dot = (region.centroid.x * camForward.x + (-region.centroid.y) * camForward.y + region.centroid.z * camForward.z);
+
+                    if (p.scale > 0 && dot > 0.4) {
+                        const alpha = Math3D.applyDepthFog(0.7, p.depth, 0.4, 0.9);
+                        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                        ctx.font = 'bold 9px monospace';
+
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(100, 200, 255, ${alpha * 0.2})`;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p.x + (p.x < projection.width / 2 ? -40 : 40), p.y - 40);
+                        ctx.lineTo(p.x + (p.x < projection.width / 2 ? -80 : 80), p.y - 40);
+                        ctx.stroke();
+
+                        ctx.fillText(t(region.name).toUpperCase(), p.x + (p.x < projection.width / 2 ? -80 : 80), p.y - 45);
+                    }
+                }
+            }
+            ctx.restore();
         }
     };
 

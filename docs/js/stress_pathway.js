@@ -34,7 +34,7 @@
                 if (n1.scale <= 0 || n2.scale <= 0) continue;
 
                 // Connection thickness reflects stress intensity damped by Pharma
-                const signalStrength = (f.stressorIntensity * 1.5) * (1 - f.gabaModulation * 0.5);
+                const signalStrength = (f.stressorIntensity * 1.5) * (1 - (f.gabaMod || 0) * 0.5);
                 ctx.lineWidth = 2 + signalStrength * 6;
 
                 const grad = ctx.createLinearGradient(n1.x, n1.y, n2.x, n2.y);
@@ -73,7 +73,7 @@
                 ctx.setLineDash([5, 10]);
                 ctx.lineWidth = 1;
                 // Feedback is "broken" or "insensitive" if allostatic load is high
-                const feedbackIntegrity = Math.max(0, 1 - load * 1.2 + f.serotonergicTone * 0.5);
+                const feedbackIntegrity = Math.max(0, 1 - load * 1.2 + (f.cognitiveReframing || 0) * 0.5);
                 ctx.strokeStyle = `rgba(255, 100, 100, ${0.8 * feedbackIntegrity})`;
 
                 // Curve the feedback line to distinguish from cascade
@@ -101,8 +101,8 @@
 
                 ctx.save();
                 // Glow if active
-                const activity = node.id === 'adrenals' ? load : (f.stressorIntensity * (1 - f.gabaModulation));
-                const glowSize = size * (1.2 + activity * 0.8);
+                const activity = node.id === 'adrenals' ? load : (f.stressorIntensity * (1 - (f.gabaMod || 0)));
+                const glowSize = Math.max(0.1, size * (1.2 + activity * 0.8));
                 const g = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowSize);
                 g.addColorStop(0, node.color + '88');
                 g.addColorStop(1, 'transparent');
@@ -121,8 +121,8 @@
                     const ang = (r / receptorCount) * Math.PI * 2 + time * 0.001;
                     const rx = node.x + Math.cos(ang) * size;
                     const ry = node.y + Math.sin(ang) * size;
-                    // Color shifts based on Serotonergic tone (Psych significance)
-                    ctx.fillStyle = f.serotonergicTone > 0.6 ? '#33ffaa' : '#ffffff';
+                    // Color shifts based on cognitive reframing
+                    ctx.fillStyle = (f.cognitiveReframing || 0) > 0.6 ? '#33ffaa' : '#ffffff';
                     ctx.beginPath(); ctx.arc(rx, ry, 2 * node.scale, 0, Math.PI * 2); ctx.fill();
                 }
 

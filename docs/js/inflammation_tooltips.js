@@ -24,7 +24,13 @@
             tnfAlpha: 'Tumor Necrosis Factor alpha: The master orchestrator of the pro-inflammatory response.',
             il10: 'Interleukin 10: A potent anti-inflammatory cytokine that prevents excessive tissue damage.',
             bbbIntegrity: 'The functional status of the Blood-Brain Barrier; lower values indicate leukocyte infiltration.',
-            neuroprotection: 'The composite health score of neurons based on cytokine environment and glial state.'
+            neuroprotection: 'The composite health score of neurons based on cytokine environment and glial state.',
+
+            // Regions
+            thalamus: 'Thalamus: Central relay station; high inflammation here disrupts sensory processing and mood.',
+            hypothalamus: 'Hypothalamus: Regulates systemic homeostasis; primary sensor for circulating inflammatory cytokines.',
+            insula: 'Insula: Monitors the internal state of the body (interoception); key to the "sickness behavior" response.',
+            basal_ganglia: 'Basal Ganglia: Mediates motor control and reward; inflammation here is linked to fatigue and anhedonia.'
         },
 
         draw(ctx, app, x, y) {

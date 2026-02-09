@@ -203,7 +203,7 @@
 
             // 2. Genetic Modifiers
             // Serotonin Transporter short allele increases amygdala reactivity/baseline drive
-            const geneticDrive = (f.serotononinTransporter * 0.15) + (f.comtValMet * 0.1);
+            const geneticDrive = (f.serotoninTransporter * 0.15) + (f.comtValMet * 0.1);
 
             // FKBP5 affects how well the brakes work (HPA sensitivity)
             const hpaImpairment = f.fkbp5Variant * 0.4;

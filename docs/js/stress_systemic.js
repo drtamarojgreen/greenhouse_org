@@ -36,8 +36,9 @@
 
             // Calculate current node positions in 3D
             const currentNodes = this.nodes.map(n => {
-                // Philosophical "weight" pulls the Philo node down in 3D
-                const yOffset = n.id === 'philo' ? -50 * f.existentialWeight : 0;
+                // Mapping new factors or using safe fallbacks (0)
+                const existential = f.financialStrain || 0;
+                const yOffset = n.id === 'philo' ? -50 * existential : 0;
                 // Biological stress makes nodes vibrate
                 const jitter = (n.id === 'bio' ? Math.random() : 0) * load * 10;
 
@@ -79,7 +80,7 @@
 
                 // Pharma modulation creates an outer "shield" glow
                 if (n.id === 'pharma') {
-                    const pharmaSize = 40 * n.scale * (1 + f.gabaModulation);
+                    const pharmaSize = 40 * n.scale * (1 + (f.gabaMod || 0));
                     const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, pharmaSize);
                     grad.addColorStop(0, n.color + '66');
                     grad.addColorStop(1, 'transparent');

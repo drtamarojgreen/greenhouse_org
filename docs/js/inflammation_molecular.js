@@ -57,14 +57,21 @@
                     ctx.fillStyle = `rgba(0, 255, 180, ${safeAlpha})`;
                     const s = m.size * p.scale;
                     ctx.beginPath(); ctx.arc(p.x, p.y, s, 0, Math.PI * 2); ctx.fill();
-                    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, s * 3);
-                    grad.addColorStop(0, `rgba(0, 255, 150, ${safeAlpha * 0.3})`); grad.addColorStop(1, 'transparent');
-                    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(p.x, p.y, s * 3, 0, Math.PI * 2); ctx.fill();
+
+                    const r1 = s * 3;
+                    if (isFinite(p.x) && isFinite(p.y) && isFinite(r1) && r1 > 0) {
+                        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r1);
+                        grad.addColorStop(0, `rgba(0, 255, 150, ${safeAlpha * 0.3})`); grad.addColorStop(1, 'transparent');
+                        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(p.x, p.y, r1, 0, Math.PI * 2); ctx.fill();
+                    }
                 } else {
                     const s = m.size * p.scale;
-                    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, s * 2);
-                    g.addColorStop(0, `rgba(150, 230, 255, ${safeAlpha})`); g.addColorStop(1, 'transparent');
-                    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, s * 2, 0, Math.PI * 2); ctx.fill();
+                    const r1 = s * 2;
+                    if (isFinite(p.x) && isFinite(p.y) && isFinite(r1) && r1 > 0) {
+                        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r1);
+                        g.addColorStop(0, `rgba(150, 230, 255, ${safeAlpha})`); g.addColorStop(1, 'transparent');
+                        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, r1, 0, Math.PI * 2); ctx.fill();
+                    }
                 }
             });
             ctx.restore();

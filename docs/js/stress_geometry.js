@@ -1,7 +1,7 @@
 /**
  * @file stress_geometry.js
- * @description Ultra-HD Brain Model specifically for Stress Dynamics.
- * Features multi-layered noise for realistic cortical folding and refined anatomy.
+ * @description Master-HD Brain Model specifically for Stress Dynamics.
+ * Advanced lobing logic to prevent "golf ball" facets while maintaining anatomical fidelity.
  */
 
 (function () {
@@ -9,21 +9,21 @@
 
     const GreenhouseStressGeometry = {
         initializeBrainShell(brainShell) {
-            console.log("Stress Geometry: Generating Ultra-HD Stress-Centric Model...");
+            console.log("Stress Geometry: Generating Ultra-Smooth Anatomical Model...");
 
             const baseRadius = 200;
-            const latBands = 80; // Higher resolution for premium look
+            const latBands = 80;
             const lonBands = 80;
 
             brainShell.vertices = [];
             brainShell.faces = [];
             brainShell.regions = {
-                pfc: { name: 'Prefrontal Cortex', color: 'rgba(80, 160, 255, 0.7)', vertices: [] },
+                pfc: { name: 'Prefrontal Cortex', color: 'rgba(100, 180, 255, 0.7)', vertices: [] },
                 amygdala: { name: 'Amygdala', color: 'rgba(255, 80, 80, 0.9)', vertices: [] },
-                hippocampus: { name: 'Hippocampus', color: 'rgba(50, 255, 100, 0.7)', vertices: [] },
+                hippocampus: { name: 'Hippocampus', color: 'rgba(80, 255, 120, 0.7)', vertices: [] },
                 hypothalamus: { name: 'Hypothalamus', color: 'rgba(255, 220, 0, 1.0)', vertices: [] },
-                cortex: { name: 'Cortical Ribbon', color: 'rgba(180, 180, 190, 0.3)', vertices: [] },
-                cerebellum: { name: 'Cerebellum', color: 'rgba(50, 200, 200, 0.4)', vertices: [] }
+                cortex: { name: 'Cortical Ribbon', color: 'rgba(180, 180, 200, 0.25)', vertices: [] },
+                cerebellum: { name: 'Cerebellum', color: 'rgba(60, 210, 210, 0.35)', vertices: [] }
             };
 
             for (let lat = 0; lat <= latBands; lat++) {
@@ -36,48 +36,53 @@
                     const sinPhi = Math.sin(phi);
                     const cosPhi = Math.cos(phi);
 
-                    // Base anatomical proportions (Realistic)
-                    let x = cosPhi * sinTheta * 1.0;
-                    let y = cosTheta * 1.18; // Height
-                    let z = sinPhi * sinTheta * 1.12; // Depth
+                    // Smooth Ovoid Base
+                    let x = cosPhi * sinTheta;
+                    let y = cosTheta;
+                    let z = sinPhi * sinTheta;
 
-                    // 1. Longitudinal Fissure (Deep split)
-                    if (y > 0.1) {
-                        const fissureDepth = Math.exp(-Math.abs(x) * 10) * 0.22;
-                        y *= (1 - fissureDepth);
-                    }
+                    // Anatomical Proportions
+                    x *= 0.95;
+                    y *= 1.12;
+                    z *= 1.15;
 
-                    // 2. Multi-layered Cortical Folding (The "WOW" factor)
-                    // We use overlapping sine waves to simulate gyri and sulci
-                    const gyrusLevel1 = Math.sin(x * 14 + z * 10) * Math.cos(y * 12) * 0.06;
-                    const gyrusLevel2 = Math.sin(x * 25 - z * 15) * Math.cos(y * 22) * 0.02;
-                    const gyrusFactor = 1 + gyrusLevel1 + gyrusLevel2;
-
-                    // 3. Region Mapping Logic
                     const nx = x, ny = y, nz = z;
+
+                    // 1. Broad Anatomical Lobing (Low Frequency)
+                    // This creates the large "bumps" of the brain lobes without sharp facets
+                    const lobeX = Math.sin(x * 3.0);
+                    const lobeY = Math.cos(y * 3.5);
+                    const lobeZ = Math.sin(z * 3.2);
+                    const anatomicalScale = 1.0 + (lobeX * lobeY * lobeZ * 0.08);
+
+                    // 2. Fissure (Longitudinal)
+                    const fissureIndent = 1.0 - (Math.exp(-Math.abs(x) * 15) * 0.2);
+
+                    // 3. Subtle Sulci (Fine detail, but very smooth)
+                    const sulci = 1.0 + (Math.sin(x * 12) * Math.cos(z * 12) * 0.012);
+
+                    const finalFactor = anatomicalScale * fissureIndent * sulci;
+
                     let region = 'cortex';
-
                     if (nz > 0.5 && ny > -0.2) region = 'pfc';
-                    else if (Math.abs(nx) > 0.28 && Math.abs(nx) < 0.48 && ny < 0.1 && ny > -0.25 && nz > -0.15 && nz < 0.15) region = 'amygdala';
-                    else if (Math.abs(nx) > 0.38 && ny < -0.05 && ny > -0.35 && nz < -0.05 && nz > -0.45) region = 'hippocampus';
-                    else if (Math.abs(nx) < 0.18 && ny < -0.05 && ny > -0.3 && Math.abs(nz) < 0.18) region = 'hypothalamus';
-                    else if (ny < -0.35 && nz < -0.4) region = 'cerebellum';
-
-                    // 4. Biological Dilation for Stress
-                    // We slightly expand the active centers for visual clarity
-                    let expansion = 1.0;
-                    if (region === 'pfc' || region === 'amygdala') expansion = 1.05;
-
-                    const finalX = x * baseRadius * gyrusFactor * expansion;
-                    const finalY = y * baseRadius * gyrusFactor * expansion;
-                    const finalZ = z * baseRadius * gyrusFactor * expansion;
-
-                    const normal = { x: nx, y: ny, z: nz };
-                    const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
-                    normal.x /= nLen; normal.y /= nLen; normal.z /= nLen;
+                    else if (Math.abs(nx) > 0.3 && Math.abs(nx) < 0.5 && ny < 0.1 && ny > -0.2 && nz > -0.1 && nz < 0.2) region = 'amygdala';
+                    else if (Math.abs(nx) > 0.4 && ny < -0.05 && ny > -0.4 && nz < -0.1 && nz > -0.4) region = 'hippocampus';
+                    else if (Math.abs(nx) < 0.15 && ny < 0.0 && ny > -0.2 && Math.abs(nz) < 0.15) region = 'hypothalamus';
+                    else if (ny < -0.4 && nz < -0.4) region = 'cerebellum';
 
                     const vIdx = brainShell.vertices.length;
-                    brainShell.vertices.push({ x: finalX, y: finalY, z: finalZ, normal, region: region });
+
+                    // The Normal stays strictly the smooth base direction to ensure smooth lighting
+                    const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
+                    const normal = { x: nx / nLen, y: ny / nLen, z: nz / nLen };
+
+                    brainShell.vertices.push({
+                        x: x * baseRadius * finalFactor,
+                        y: y * baseRadius * finalFactor,
+                        z: z * baseRadius * finalFactor,
+                        normal: normal,
+                        region: region
+                    });
 
                     if (brainShell.regions[region]) {
                         brainShell.regions[region].vertices.push(vIdx);
@@ -85,7 +90,6 @@
                 }
             }
 
-            // High-density faces
             for (let lat = 0; lat < latBands; lat++) {
                 for (let lon = 0; lon < lonBands; lon++) {
                     const first = lat * (lonBands + 1) + lon;
@@ -95,7 +99,6 @@
                 }
             }
 
-            // Pre-calculate smoothed centroids
             for (const key in brainShell.regions) {
                 const reg = brainShell.regions[key];
                 if (reg.vertices.length > 0) {
