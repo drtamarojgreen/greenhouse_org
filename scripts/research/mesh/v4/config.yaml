@@ -1,0 +1,48 @@
+# MeSH Discovery Suite V4 - Configuration
+
+# Seed theme for discovery
+seed_term: "Attention-Deficit/Hyperactivity Disorder"
+
+# Discovery Settings
+discovery:
+  max_levels: 4
+  # Minimum publication count required to "expand" a term at each level
+  level_thresholds:
+    1: 20000  # Root/Seed Level
+    2: 10000  # Level 2 (Directly related)
+    3: 5000   # Level 3 (Extended depth)
+    4: 1000   # Level 4 (Exploratory depth)
+  
+  # Safety limits
+  max_children_per_node: 15
+  total_max_terms: 200
+  max_papers_per_term: 50 # Number of IDs to fetch for related term discovery
+
+# API Settings
+api_keys: []
+
+# Paths
+viz_output_dir: "scripts/research/mesh/v4/viz_output"
+checkpoint_path: "scripts/research/mesh/v4/checkpoint.json"
+cache_db: "scripts/research/mesh/v4/cache.db"
+output_json: "scripts/research/mesh/v4/discovery_v4.json"
+
+# Logging Settings
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# NLP Settings
+nlp:
+  enabled: true
+  top_n_keywords: 10
+  n_topics: 5
+
+# Visualization Settings
+viz:
+  enable_plotly: true
+  enable_networkx: true
+  charts:
+    - "tree" # New for v4
+    - "sunburst"
+    - "network"
