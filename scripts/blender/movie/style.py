@@ -240,3 +240,26 @@ def ease_action(obj, data_path, index=-1, interpolation='BEZIER', easing='EASE_I
             for kp in fcurve.keyframe_points:
                 kp.interpolation = interpolation
                 kp.easing = easing
+
+def animate_blink(eye_obj, frame_start, frame_end, interval_range=(60, 180)):
+    """Adds intermittent blinking by scaling the eye on Z."""
+    if not eye_obj: return
+    current_f = frame_start
+    base_z = eye_obj.scale[2]
+
+    while current_f < frame_end:
+        eye_obj.scale[2] = base_z
+        eye_obj.keyframe_insert(data_path="scale", index=2, frame=current_f)
+
+        # Random interval between blinks
+        blink_start = current_f + random.randint(*interval_range)
+        if blink_start + 6 > frame_end: break
+
+        # Blink sequence: Open -> Closed -> Open
+        eye_obj.keyframe_insert(data_path="scale", index=2, frame=blink_start)
+        eye_obj.scale[2] = base_z * 0.1
+        eye_obj.keyframe_insert(data_path="scale", index=2, frame=blink_start + 3)
+        eye_obj.scale[2] = base_z
+        eye_obj.keyframe_insert(data_path="scale", index=2, frame=blink_start + 6)
+
+        current_f = blink_start + 6

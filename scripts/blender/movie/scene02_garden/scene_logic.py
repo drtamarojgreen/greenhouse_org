@@ -12,6 +12,8 @@ def setup_scene(master):
     # Apply scene grade
     style.apply_scene_grade(master, 'garden', 401, 650)
     style.animate_dust_particles(mathutils.Vector((0, 0, 2)), density=20, frame_start=501, frame_end=650)
+    # Pollen particles
+    style.animate_dust_particles(mathutils.Vector((0, 0, 2)), density=30, color=(1, 0.9, 0.2, 1), frame_start=501, frame_end=650)
 
     # Add extra foliage for vibrancy
     bushes = []

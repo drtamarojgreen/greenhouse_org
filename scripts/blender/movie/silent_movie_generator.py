@@ -50,6 +50,24 @@ from scene10_futuristic_lab import scene_logic as scene10
 from scene11_nature_sanctuary import scene_logic as scene11
 from scene12_credits import scene_logic as scene12
 
+SCENE_MAP = {
+    'branding': (1, 100),
+    'intro': (101, 200),
+    'brain': (201, 400),
+    'garden': (401, 650),
+    'socratic': (651, 950),
+    'exchange': (951, 1250),
+    'forge': (1251, 1500),
+    'bridge': (1501, 1800),
+    'shadow': (1801, 2500),
+    'library': (2501, 2800),
+    'resonance': (2801, 3500),
+    'lab': (3501, 3800),
+    'sanctuary': (3801, 4100),
+    'finale': (4101, 4500),
+    'credits': (4501, 5000)
+}
+
 def patch_fbx_importer():
     """
     Patches the Blender 5.0 FBX importer to handle missing 'files' attribute.
@@ -326,6 +344,16 @@ class MovieMaster:
         g_ranges = [(2101, 2500), (2601, 2800)]
         set_visibility(gnomes, g_ranges)
 
+        if self.beam:
+            self.beam.hide_render = True
+            beam_ranges = [(401, 650), (3801, 4100), (4101, 4500)]
+            for rs, re in beam_ranges:
+                self.beam.keyframe_insert(data_path="hide_render", frame=rs-1)
+                self.beam.hide_render = False
+                self.beam.keyframe_insert(data_path="hide_render", frame=rs)
+                self.beam.hide_render = True
+                self.beam.keyframe_insert(data_path="hide_render", frame=re)
+
         if self.neuron:
             self.neuron.hide_render = True
             n_ranges = [(1251, 1500), (1601, 1800), (1901, 2000), (3001, 3500)]
@@ -403,6 +431,14 @@ class MovieMaster:
             if not char: continue
             style.animate_breathing(char, 1, 5000, cycle=64, amplitude=0.02)
             style.insert_looping_noise(char, "rotation_euler", index=2, strength=0.02, scale=15.0)
+
+            # Blinking logic
+            char_name = char.name.split('_')[0]
+            head = bpy.data.objects.get(f"{char_name}_Head")
+            if head:
+                for child in head.children:
+                    if "Eye" in child.name:
+                        style.animate_blink(child, 1, 5000)
 
         scene00.setup_scene(self)
         scene01.setup_scene(self)
@@ -561,22 +597,36 @@ class MovieMaster:
         return scan
 
     def create_thought_spark(self, start_loc, end_loc, frame_start, frame_end):
-        """Creates a small emissive spark that travels."""
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.05, location=start_loc)
+        """Creates a small emissive spark that travels with a motion-trailing ribbon."""
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.06, location=start_loc)
         spark = bpy.context.object
         spark.name = "ThoughtSpark"
+
         mat = bpy.data.materials.new(name="SparkMat")
         mat.use_nodes = True
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
-        bsdf.inputs["Emission Strength"].default_value = 10.0
+        bsdf.inputs["Emission Strength"].default_value = 15.0
         spark.data.materials.append(mat)
-        spark.hide_render = True
-        spark.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
-        spark.hide_render = False
-        spark.keyframe_insert(data_path="hide_render", frame=frame_start)
-        spark.hide_render = True
-        spark.keyframe_insert(data_path="hide_render", frame=frame_end)
+
+        # Ribbon Tail
+        direction = (end_loc - start_loc).normalized()
+        bpy.ops.mesh.primitive_cylinder_add(radius=0.03, depth=0.8, location=(0,0,0))
+        tail = bpy.context.object
+        tail.name = "SparkTail"
+        tail.data.materials.append(mat)
+        tail.parent = spark
+        tail.rotation_euler = direction.to_track_quat('Z', 'Y').to_euler()
+        tail.location = -direction * 0.4 # Offset to follow
+
+        for obj in [spark, tail]:
+            obj.hide_render = True
+            obj.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
+            obj.hide_render = False
+            obj.keyframe_insert(data_path="hide_render", frame=frame_start)
+            obj.hide_render = True
+            obj.keyframe_insert(data_path="hide_render", frame=frame_end)
+
         spark.location = start_loc
         spark.keyframe_insert(data_path="location", frame=frame_start)
         spark.location = end_loc
@@ -707,22 +757,39 @@ class MovieMaster:
             tree.links.new(rl.outputs['Image'], composite.inputs['Image'])
 
     def setup_lighting(self):
-        """Sets up a robust three-point lighting system."""
+        """Sets up a robust three-point lighting system and volumetric shafts."""
         # Key Light
-        bpy.ops.object.light_add(type='SUN', location=(10,-10,20))
-        self.sun = bpy.context.object; self.sun.name = "Sun"; self.sun.data.energy = 5.0
+        bpy.ops.object.light_add(type='SUN', location=(10, -10, 20))
+        self.sun = bpy.context.object
+        self.sun.name = "Sun"
+        self.sun.data.energy = 5.0
 
         # Fill Light
         bpy.ops.object.light_add(type='POINT', location=(-10, -10, 10))
-        self.fill = bpy.context.object; self.fill.name = "FillLight"; self.fill.data.energy = 2000
+        self.fill = bpy.context.object
+        self.fill.name = "FillLight"
+        self.fill.data.energy = 2000
 
         # Rim Light
         bpy.ops.object.light_add(type='AREA', location=(0, 15, 5))
-        self.rim = bpy.context.object; self.rim.name = "RimLight"; self.rim.data.energy = 5000
+        self.rim = bpy.context.object
+        self.rim.name = "RimLight"
+        self.rim.data.energy = 5000
 
         # Spot Light
-        bpy.ops.object.light_add(type='SPOT', location=(0,-15,10))
-        self.spot = bpy.context.object; self.spot.name = "Spot"; self.spot.data.energy = 10000
+        bpy.ops.object.light_add(type='SPOT', location=(0, -15, 10))
+        self.spot = bpy.context.object
+        self.spot.name = "Spot"
+        self.spot.data.energy = 10000
+
+        # Volumetric Light Shaft (Sun Beam)
+        bpy.ops.object.light_add(type='SPOT', location=(0, 10, 15))
+        self.beam = bpy.context.object
+        self.beam.name = "LightShaftBeam"
+        self.beam.data.energy = 80000
+        self.beam.data.spot_size = math.radians(20)
+        self.beam.data.spot_blend = 1.0
+        self.beam.rotation_euler = (math.radians(-60), 0, 0)
 
     def run(self):
         self.load_assets()
@@ -736,8 +803,15 @@ def main():
     mode = 'SILENT_FILM'
     if '--unity' in args: mode = 'UNITY_PREVIEW'
     master = MovieMaster(mode=mode)
+
     start_frame = int(args[args.index('--start-frame') + 1]) if '--start-frame' in args else None
     end_frame = int(args[args.index('--end-frame') + 1]) if '--end-frame' in args else None
+
+    if '--scene' in args:
+        scene_name = args[args.index('--scene') + 1]
+        if scene_name in SCENE_MAP:
+            start_frame, end_frame = SCENE_MAP[scene_name]
+            print(f"Focusing on scene '{scene_name}': frames {start_frame} to {end_frame}")
     patch_fbx_importer()
     master.run()
     if start_frame is not None: master.scene.frame_start = start_frame
