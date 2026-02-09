@@ -14,7 +14,6 @@
         ctx: null,
         isRunning: false,
         nodes: [],
-        particles: [],
         camera: { x: 0, y: 0, z: -600, rotationX: 0.2, rotationY: 0, rotationZ: 0, fov: 600 },
         projection: { width: 800, height: 400, near: 10, far: 5000 },
 
@@ -57,7 +56,11 @@
                 updateFn: (state, dt) => this.updateModel(state, dt)
             });
 
-            this.initNodes();
+            // Initialize 3D UI components
+            if (window.GreenhouseInflammationUI3D) {
+                window.GreenhouseInflammationUI3D.init(this);
+            }
+
             this.createUI(container);
 
             this.isRunning = true;
@@ -75,23 +78,6 @@
         handleResize(container) {
             this.canvas.width = container.offsetWidth;
             this.projection.width = this.canvas.width;
-            this.initNodes();
-        },
-
-        initNodes() {
-            this.nodes = [];
-            const count = 40;
-            for (let i = 0; i < count; i++) {
-                this.nodes.push({
-                    x: (Math.random() - 0.5) * 600,
-                    y: (Math.random() - 0.5) * 400,
-                    z: (Math.random() - 0.5) * 400,
-                    vx: (Math.random() - 0.5) * 0.5,
-                    vy: (Math.random() - 0.5) * 0.5,
-                    vz: (Math.random() - 0.5) * 0.5,
-                    activation: 0
-                });
-            }
         },
 
         updateModel(state, dt) {
@@ -134,15 +120,33 @@
                 label.style.fontSize = '12px';
                 label.style.marginBottom = '5px';
 
+                const valueDisplay = document.createElement('span');
+                valueDisplay.style.fontSize = '10px';
+                valueDisplay.style.marginLeft = '10px';
+                valueDisplay.style.color = 'rgba(255,255,255,0.6)';
+
+                const updateDisplay = (val) => {
+                    if (f.id === 'viewMode') {
+                        const modes = ['option_macro', 'option_micro', 'option_molecular'];
+                        valueDisplay.textContent = t(modes[Math.round(val)]);
+                    } else {
+                        valueDisplay.textContent = (val * 100).toFixed(0) + '%';
+                    }
+                };
+                updateDisplay(this.engine.state.factors[f.id]);
+                label.appendChild(valueDisplay);
+
                 const slider = document.createElement('input');
                 slider.type = 'range';
-                slider.min = 0;
-                slider.max = 1;
-                slider.step = 0.01;
+                slider.min = f.min !== undefined ? f.min : 0;
+                slider.max = f.max !== undefined ? f.max : 1;
+                slider.step = f.step !== undefined ? f.step : 0.01;
                 slider.value = this.engine.state.factors[f.id];
                 slider.style.width = '100%';
                 slider.oninput = (e) => {
-                    this.engine.state.factors[f.id] = parseFloat(e.target.value);
+                    const val = parseFloat(e.target.value);
+                    this.engine.state.factors[f.id] = val;
+                    updateDisplay(val);
                 };
 
                 group.appendChild(label);
@@ -185,7 +189,8 @@
             const ctx = this.ctx;
             const w = this.canvas.width;
             const h = this.canvas.height;
-            const tone = this.engine.state.metrics.inflammatoryTone;
+            const state = this.engine.state;
+            const tone = state.metrics.inflammatoryTone;
 
             ctx.clearRect(0, 0, w, h);
 
@@ -200,7 +205,7 @@
             ctx.fillRect(0, 0, w, h);
 
             if (window.GreenhouseInflammationUI3D) {
-                window.GreenhouseInflammationUI3D.renderField(ctx, this.nodes, this.camera, this.projection, tone);
+                window.GreenhouseInflammationUI3D.render(ctx, state, this.camera, this.projection);
             }
 
             ctx.fillStyle = 'rgba(255,255,255,0.5)';

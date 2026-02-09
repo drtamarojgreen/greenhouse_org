@@ -2066,6 +2066,10 @@
             "metric_inflam_tone": "Inflammatory Tone",
             "metric_signaling_eff": "Signaling Efficiency",
             "metric_recovery_mom": "Recovery Momentum",
+            "label_view_mode": "Visualization Level",
+            "option_macro": "Macro (Brain Regions)",
+            "option_micro": "Micro (Cellular Glia)",
+            "option_molecular": "Molecular (Cytokines)",
             "inflam_sim_title": "Neuroinflammation Simulation: Conceptual Field View",
 
             // Stress Model
@@ -2079,7 +2083,18 @@
             "state_sympathetic": "Sympathetic",
             "state_parasympathetic": "Parasympathetic",
             "state_balanced": "Balanced",
-            "stress_sim_title": "Stress Dynamics: Temporal Load/Recovery Graph"
+            "option_pathway": "Pathway (HPA-Axis)",
+            "option_systemic": "Systemic Dynamics",
+            "stress_sim_title": "Stress Dynamics: Temporal Load/Recovery Graph",
+            "inflam_macro_label": "Macro Level: Brain Regions",
+            "inflam_micro_label": "Micro Level: Cellular Response (Glia)",
+            "inflam_mol_label": "Molecular Level: Cytokine Signaling",
+            "stress_macro_label": "Macro: Regulatory Control (PFC vs Amygdala)",
+            "stress_pathway_label": "Pathway: HPA-Axis (Neuroendocrine Loop)",
+            "stress_systemic_label": "Systemic: Resilience vs Allostatic Load",
+            "label_hypothalamus": "Hypothalamus",
+            "label_pituitary": "Pituitary",
+            "label_adrenal_glands": "Adrenal Glands"
         },
         es: {
             // Consent Screen
@@ -4140,6 +4155,10 @@
             "metric_inflam_tone": "Tono Inflamatorio",
             "metric_signaling_eff": "Eficiencia de Señalización",
             "metric_recovery_mom": "Impulso de Recuperación",
+            "label_view_mode": "Nivel de Visualización",
+            "option_macro": "Macro (Regiones Cerebrales)",
+            "option_micro": "Micro (Glia Celular)",
+            "option_molecular": "Molecular (Citoquinas)",
             "inflam_sim_title": "Simulación de Neuroinflamación: Vista de Campo Conceptual",
 
             // Modelo de Estrés
@@ -4153,7 +4172,18 @@
             "state_sympathetic": "Simpático",
             "state_parasympathetic": "Parasimpático",
             "state_balanced": "Equilibrado",
-            "stress_sim_title": "Dinámica del Estrés: Gráfico Temporal de Carga/Recuperación"
+            "option_pathway": "Vía (Eje HPA)",
+            "option_systemic": "Dinámica Sistémica",
+            "stress_sim_title": "Dinámica del Estrés: Gráfico Temporal de Carga/Recuperación",
+            "inflam_macro_label": "Nivel Macro: Regiones Cerebrales",
+            "inflam_micro_label": "Nivel Micro: Respuesta Celular (Glia)",
+            "inflam_mol_label": "Nivel Molecular: Señalización de Citoquinas",
+            "stress_macro_label": "Macro: Control Regulatorio (PFC vs Amígdala)",
+            "stress_pathway_label": "Vía: Eje HPA (Bucle Neuroendocrino)",
+            "stress_systemic_label": "Sistémico: Resiliencia vs Carga Alostática",
+            "label_hypothalamus": "Hipotálamo",
+            "label_pituitary": "Pituitaria",
+            "label_adrenal_glands": "Glándulas Adrenales"
         }
     };
     window.GreenhouseTranslations = GreenhouseTranslations;
