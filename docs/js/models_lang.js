@@ -2056,7 +2056,7 @@
             "adhd_enh_111_name": "Dialectical Behavior Therapy (DBT)",
             "adhd_enh_111_desc": "Pruning emotional lability spikes via mindfulness loops.",
             "adhd_enh_112_name": "Acceptance and Commitment Therapy (ACT)",
-            "adhd_enh_112_desc": "Enhancing cognitive flexibility and path diversity."
+            "adhd_enh_112_desc": "Enhancing cognitive flexibility and path diversity.",
 
             // Inflammation Model
             "label_immune_trigger": "Immune Trigger",
@@ -4162,7 +4162,7 @@
             "adhd_enh_111_name": "Terapia Dialéctica Conductual (DBT)",
             "adhd_enh_111_desc": "Poda de picos de labilidad emocional a través de bucles de atención plena.",
             "adhd_enh_112_name": "Terapia de Aceptación y Compromiso (ACT)",
-            "adhd_enh_112_desc": "Mejora de la flexibilidad cognitiva y la diversidad de rutas."
+            "adhd_enh_112_desc": "Mejora de la flexibilidad cognitiva y la diversidad de rutas.",
 
             // Modelo de Inflamación
             "label_immune_trigger": "Disparador Inmune",

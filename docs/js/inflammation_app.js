@@ -50,7 +50,7 @@
             this.tooltip.style.borderRadius = '5px';
             this.tooltip.style.pointerEvents = 'none';
             this.tooltip.style.display = 'none';
-            this.tooltip.style.fontSize = '12px';
+            this.tooltip.style.fontSize = '14px';
             this.tooltip.style.zIndex = '1000';
             this.tooltip.style.border = '1px solid #4ca1af';
             container.appendChild(this.tooltip);
@@ -158,13 +158,14 @@
                 const label = document.createElement('label');
                 label.textContent = t(f.label);
                 label.style.display = 'block';
-                label.style.fontSize = '12px';
+                label.style.fontSize = '14px';
+                label.style.fontWeight = '500';
                 label.style.marginBottom = '5px';
 
                 const valueDisplay = document.createElement('span');
-                valueDisplay.style.fontSize = '10px';
+                valueDisplay.style.fontSize = '12px';
                 valueDisplay.style.marginLeft = '10px';
-                valueDisplay.style.color = 'rgba(255,255,255,0.6)';
+                valueDisplay.style.color = 'rgba(255,255,255,0.7)';
 
                 const updateDisplay = (val) => {
                     if (f.id === 'viewMode') {
@@ -196,9 +197,9 @@
                 if (f.description) {
                     const desc = document.createElement('p');
                     desc.textContent = t(f.description);
-                    desc.style.fontSize = '10px';
+                    desc.style.fontSize = '12px';
                     desc.style.margin = '5px 0 0 0';
-                    desc.style.color = 'rgba(255,255,255,0.5)';
+                    desc.style.color = 'rgba(255,255,255,0.6)';
                     group.appendChild(desc);
                 }
 
@@ -219,8 +220,8 @@
             container.appendChild(this.metricsDisplay);
 
             const disclaimer = document.createElement('p');
-            disclaimer.style.fontSize = '10px';
-            disclaimer.style.color = 'rgba(255,255,255,0.4)';
+            disclaimer.style.fontSize = '12px';
+            disclaimer.style.color = 'rgba(255,255,255,0.5)';
             disclaimer.style.margin = '20px';
             disclaimer.style.textAlign = 'center';
             disclaimer.textContent = t('edu_banner');
@@ -271,8 +272,8 @@
             }
 
             // Combine labels to avoid overlapping or move them
-            ctx.fillStyle = 'rgba(255,255,255,0.8)';
-            ctx.font = 'bold 12px Quicksand, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.font = 'bold 16px Quicksand, sans-serif';
             ctx.fillText(t('inflam_sim_title'), 20, 25);
         }
     };
