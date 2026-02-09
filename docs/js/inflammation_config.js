@@ -8,11 +8,11 @@
 
     const GreenhouseInflammationConfig = {
         factors: [
-            { id: 'viewMode', label: 'label_view_mode', defaultValue: 0, min: 0, max: 2, step: 1 },
-            { id: 'immuneTrigger', label: 'label_immune_trigger', defaultValue: 0.2 },
-            { id: 'sleepQuality', label: 'label_sleep_quality', defaultValue: 0.8 },
-            { id: 'dietSupport', label: 'label_diet_support', defaultValue: 0.5 },
-            { id: 'stressLoad', label: 'label_stress_coload', defaultValue: 0.3 }
+            { id: 'viewMode', label: 'label_view_mode', description: 'desc_view_mode', defaultValue: 0, min: 0, max: 2, step: 1 },
+            { id: 'immuneTrigger', label: 'label_immune_trigger', description: 'desc_immune_trigger', defaultValue: 0.2 },
+            { id: 'sleepQuality', label: 'label_sleep_quality', description: 'desc_sleep_quality', defaultValue: 0.8 },
+            { id: 'dietSupport', label: 'label_diet_support', description: 'desc_diet_support', defaultValue: 0.5 },
+            { id: 'stressLoad', label: 'label_stress_coload', description: 'desc_stress_coload', defaultValue: 0.3 }
         ],
         metrics: [
             { id: 'inflammatoryTone', label: 'metric_inflam_tone', unit: '%' },

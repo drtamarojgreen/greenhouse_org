@@ -12,6 +12,7 @@
         engine: null,
         canvas: null,
         ctx: null,
+        tooltip: null,
         isRunning: false,
         nodes: [],
         camera: { x: 0, y: 0, z: -600, rotationX: 0.2, rotationY: 0, rotationZ: 0, fov: 600 },
@@ -40,6 +41,20 @@
             this.projection.width = this.canvas.width;
             this.projection.height = this.canvas.height;
 
+            // Create Tooltip
+            this.tooltip = document.createElement('div');
+            this.tooltip.style.position = 'absolute';
+            this.tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            this.tooltip.style.color = '#fff';
+            this.tooltip.style.padding = '5px 10px';
+            this.tooltip.style.borderRadius = '5px';
+            this.tooltip.style.pointerEvents = 'none';
+            this.tooltip.style.display = 'none';
+            this.tooltip.style.fontSize = '12px';
+            this.tooltip.style.zIndex = '1000';
+            this.tooltip.style.border = '1px solid #4ca1af';
+            container.appendChild(this.tooltip);
+
             const config = window.GreenhouseInflammationConfig;
 
             // Initialize Engine
@@ -63,6 +78,9 @@
 
             this.createUI(container);
 
+            this.canvas.onmousemove = (e) => this.handleMouseMove(e);
+            this.canvas.onmouseout = () => { this.tooltip.style.display = 'none'; };
+
             this.isRunning = true;
             this.startLoop();
 
@@ -78,6 +96,27 @@
         handleResize(container) {
             this.canvas.width = container.offsetWidth;
             this.projection.width = this.canvas.width;
+        },
+
+        handleMouseMove(e) {
+            if (!this.tooltip) return;
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            let hoveredItem = null;
+            if (window.GreenhouseInflammationUI3D) {
+                hoveredItem = window.GreenhouseInflammationUI3D.checkHover(x, y, this.camera, this.projection);
+            }
+
+            if (hoveredItem) {
+                this.tooltip.style.display = 'block';
+                this.tooltip.style.left = (x + 15) + 'px';
+                this.tooltip.style.top = (y + 15) + 'px';
+                this.tooltip.innerHTML = `<strong>${t(hoveredItem.label)}</strong><br>${t(hoveredItem.description || '')}`;
+            } else {
+                this.tooltip.style.display = 'none';
+            }
         },
 
         updateModel(state, dt) {
@@ -104,11 +143,13 @@
 
         createUI(container) {
             const controls = document.createElement('div');
-            controls.style.padding = '20px';
+            controls.className = 'greenhouse-controls-panel';
             controls.style.display = 'grid';
             controls.style.gridTemplateColumns = 'repeat(auto-fit, minmax(200px, 1fr))';
             controls.style.gap = '20px';
-            controls.style.background = 'rgba(255,255,255,0.05)';
+            controls.style.background = 'rgba(0,0,0,0.3)';
+            controls.style.border = 'none';
+            controls.style.borderRadius = '0';
 
             const config = window.GreenhouseInflammationConfig;
 
@@ -138,11 +179,11 @@
 
                 const slider = document.createElement('input');
                 slider.type = 'range';
+                slider.className = 'greenhouse-slider';
                 slider.min = f.min !== undefined ? f.min : 0;
                 slider.max = f.max !== undefined ? f.max : 1;
                 slider.step = f.step !== undefined ? f.step : 0.01;
                 slider.value = this.engine.state.factors[f.id];
-                slider.style.width = '100%';
                 slider.oninput = (e) => {
                     const val = parseFloat(e.target.value);
                     this.engine.state.factors[f.id] = val;
@@ -151,18 +192,39 @@
 
                 group.appendChild(label);
                 group.appendChild(slider);
+
+                if (f.description) {
+                    const desc = document.createElement('p');
+                    desc.textContent = t(f.description);
+                    desc.style.fontSize = '10px';
+                    desc.style.margin = '5px 0 0 0';
+                    desc.style.color = 'rgba(255,255,255,0.5)';
+                    group.appendChild(desc);
+                }
+
                 controls.appendChild(group);
             });
 
             this.metricsDisplay = document.createElement('div');
-            this.metricsDisplay.style.padding = '10px 20px';
-            this.metricsDisplay.style.fontSize = '13px';
-            this.metricsDisplay.style.borderTop = '1px solid rgba(255,255,255,0.1)';
+            this.metricsDisplay.className = 'greenhouse-metrics-panel';
+            this.metricsDisplay.style.background = 'rgba(0,0,0,0.5)';
+            this.metricsDisplay.style.border = 'none';
+            this.metricsDisplay.style.color = '#fff';
             this.metricsDisplay.style.display = 'flex';
+            this.metricsDisplay.style.flexWrap = 'wrap';
             this.metricsDisplay.style.gap = '30px';
+            this.metricsDisplay.style.marginTop = '0';
 
             container.appendChild(controls);
             container.appendChild(this.metricsDisplay);
+
+            const disclaimer = document.createElement('p');
+            disclaimer.style.fontSize = '10px';
+            disclaimer.style.color = 'rgba(255,255,255,0.4)';
+            disclaimer.style.margin = '20px';
+            disclaimer.style.textAlign = 'center';
+            disclaimer.textContent = t('edu_banner');
+            container.appendChild(disclaimer);
         },
 
         updateMetricsUI() {
@@ -208,9 +270,10 @@
                 window.GreenhouseInflammationUI3D.render(ctx, state, this.camera, this.projection);
             }
 
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            ctx.font = '12px Arial';
-            ctx.fillText(t('inflam_sim_title'), 20, 30);
+            // Combine labels to avoid overlapping or move them
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.font = 'bold 12px Quicksand, sans-serif';
+            ctx.fillText(t('inflam_sim_title'), 20, 25);
         }
     };
 

@@ -76,23 +76,25 @@
             const factors = state.factors;
             const metrics = state.metrics;
             const Util = window.GreenhouseModelsUtil;
+            const frameScale = Util.SimulationEngine.clamp((dt || 16.67) / 16.67, 0.25, 4);
 
-            const targetBalance = Util.SimulationEngine.clamp(
-                factors.stressorIntensity * 1.5 - (factors.copingSkill * 0.5 + factors.socialSupport * 0.3),
+            // Higher values represent sympathetic dominance and lower values represent parasympathetic recovery.
+            const sympatheticDrive = Util.SimulationEngine.clamp(
+                factors.stressorIntensity * 1.1 - (factors.copingSkill * 0.45 + factors.socialSupport * 0.3 + factors.sleepRegularity * 0.25),
                 0, 1
             );
-            metrics.autonomicBalance = Util.SimulationEngine.smooth(metrics.autonomicBalance, targetBalance, 0.05);
+            metrics.autonomicBalance = Util.SimulationEngine.smooth(metrics.autonomicBalance, sympatheticDrive, 0.05 * frameScale);
 
-            const accumulation = metrics.autonomicBalance * 0.001;
-            const recovery = (factors.sleepRegularity * 0.6 + factors.copingSkill * 0.4) * 0.0008;
+            const accumulation = metrics.autonomicBalance * 0.001 * frameScale;
+            const recovery = (factors.sleepRegularity * 0.6 + factors.copingSkill * 0.4) * 0.0008 * frameScale;
 
             metrics.allostaticLoad = Util.SimulationEngine.clamp(
                 metrics.allostaticLoad + accumulation - recovery,
                 0.05, 1
             );
 
-            const drain = metrics.allostaticLoad * 0.001;
-            const recharge = (factors.socialSupport * 0.5 + factors.sleepRegularity * 0.5) * 0.0005;
+            const drain = metrics.allostaticLoad * 0.001 * frameScale;
+            const recharge = (factors.socialSupport * 0.5 + factors.sleepRegularity * 0.5) * 0.0005 * frameScale;
             metrics.resilienceReserve = Util.SimulationEngine.clamp(
                 metrics.resilienceReserve - drain + recharge,
                 0, 1
@@ -109,25 +111,41 @@
         },
 
         createUI(container) {
+            const heading = document.createElement('h2');
+            heading.textContent = t('stress_sim_title');
+            heading.style.margin = '16px 20px 0';
+            heading.style.fontSize = '1.1rem';
+
+            const intro = document.createElement('p');
+            intro.textContent = t('stress_model_intro');
+            intro.style.margin = '8px 20px 12px';
+            intro.style.fontSize = '0.9rem';
+            intro.style.color = 'rgba(255,255,255,0.88)';
+
             const controls = document.createElement('div');
-            controls.style.padding = '20px';
+            controls.className = 'greenhouse-controls-panel';
             controls.style.display = 'grid';
             controls.style.gridTemplateColumns = 'repeat(auto-fit, minmax(200px, 1fr))';
             controls.style.gap = '20px';
-            controls.style.background = 'rgba(255,255,255,0.05)';
+            controls.style.background = 'rgba(0,0,0,0.3)';
+            controls.style.border = 'none';
+            controls.style.borderRadius = '0';
 
             const config = window.GreenhouseStressConfig;
 
             config.factors.forEach(f => {
                 const group = document.createElement('div');
                 const label = document.createElement('label');
+                const inputId = `stress-${f.id}`;
                 label.style.display = 'block';
                 label.style.fontSize = '12px';
                 label.style.marginBottom = '5px';
+                label.setAttribute('for', inputId);
 
                 const slider = document.createElement('input');
+                slider.id = inputId;
                 slider.type = 'range';
-                slider.style.width = '100%';
+                slider.className = 'greenhouse-slider';
 
                 if (f.id === 'viewMode') {
                     slider.min = 0;
@@ -155,30 +173,70 @@
                         this.engine.state.factors[f.id] = val;
                         const display = group.querySelector(`#val-${f.id}`);
                         if (display) display.textContent = `${Math.round(val * 100)}%`;
+                        slider.setAttribute('aria-valuetext', `${Math.round(val * 100)}%`);
                     };
+                    slider.setAttribute('aria-valuetext', `${Math.round(this.engine.state.factors[f.id] * 100)}%`);
                 }
 
                 group.appendChild(label);
                 group.appendChild(slider);
+
+                if (f.description) {
+                    const desc = document.createElement('p');
+                    desc.textContent = t(f.description);
+                    desc.style.fontSize = '10px';
+                    desc.style.margin = '5px 0 0 0';
+                    desc.style.color = 'rgba(255,255,255,0.5)';
+                    group.appendChild(desc);
+                }
+
                 controls.appendChild(group);
             });
 
-            this.metricsDisplay = document.createElement('div');
-            this.metricsDisplay.style.padding = '10px 20px';
-            this.metricsDisplay.style.fontSize = '13px';
-            this.metricsDisplay.style.borderTop = '1px solid rgba(255,255,255,0.1)';
-            this.metricsDisplay.style.display = 'flex';
-            this.metricsDisplay.style.gap = '30px';
+            const resetButton = document.createElement('button');
+            resetButton.type = 'button';
+            resetButton.textContent = t('reset_to_default');
+            resetButton.style.padding = '8px 12px';
+            resetButton.style.margin = '0 20px 12px';
+            resetButton.style.width = 'fit-content';
+            resetButton.style.background = '#1f6f7a';
+            resetButton.style.color = '#fff';
+            resetButton.style.border = '1px solid rgba(255,255,255,0.35)';
+            resetButton.style.borderRadius = '6px';
+            resetButton.onclick = () => this.init(container);
 
+            this.metricsDisplay = document.createElement('div');
+            this.metricsDisplay.className = 'greenhouse-metrics-panel';
+            this.metricsDisplay.style.background = 'rgba(0,0,0,0.5)';
+            this.metricsDisplay.style.border = 'none';
+            this.metricsDisplay.style.color = '#fff';
+            this.metricsDisplay.style.display = 'flex';
+            this.metricsDisplay.style.flexWrap = 'wrap';
+            this.metricsDisplay.style.gap = '30px';
+            this.metricsDisplay.style.marginTop = '0';
+            this.metricsDisplay.setAttribute('role', 'status');
+            this.metricsDisplay.setAttribute('aria-live', 'polite');
+
+            container.appendChild(heading);
+            container.appendChild(intro);
             container.appendChild(controls);
+            container.appendChild(resetButton);
             container.appendChild(this.metricsDisplay);
+
+            const disclaimer = document.createElement('p');
+            disclaimer.style.fontSize = '10px';
+            disclaimer.style.color = 'rgba(255,255,255,0.4)';
+            disclaimer.style.margin = '20px';
+            disclaimer.style.textAlign = 'center';
+            disclaimer.textContent = t('edu_banner');
+            container.appendChild(disclaimer);
         },
 
         updateMetricsUI() {
             const m = this.engine.state.metrics;
             this.metricsDisplay.innerHTML = `
                 <span><strong>${t('metric_allostatic_load')}:</strong> ${(m.allostaticLoad * 100).toFixed(1)}%</span>
-                <span><strong>${t('metric_autonomic_balance')}:</strong> ${m.autonomicBalance > 0.6 ? t('state_sympathetic') : m.autonomicBalance < 0.4 ? t('state_parasympathetic') : t('state_balanced')}</span>
+                <span><strong>${t('metric_autonomic_balance')}:</strong> ${m.autonomicBalance > 0.6 ? t('state_sympathetic_dominant') : m.autonomicBalance < 0.4 ? t('state_parasympathetic_dominant') : t('state_balanced')}</span>
                 <span><strong>${t('metric_resilience_reserve')}:</strong> ${(m.resilienceReserve * 100).toFixed(1)}%</span>
             `;
         },

@@ -118,9 +118,9 @@
 
             window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, camera, projection, projection.width, projection.height);
 
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.font = '14px Arial';
-            ctx.fillText(t('inflam_macro_label'), 20, 30);
+            ctx.fillStyle = 'rgba(76, 161, 175, 0.9)';
+            ctx.font = '13px Quicksand, sans-serif';
+            ctx.fillText(t('inflam_macro_label'), 20, 50);
         },
 
         renderMicro(ctx, tone, camera, projection) {
@@ -181,9 +181,49 @@
                 }
             });
 
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.font = '14px Arial';
-            ctx.fillText(t('inflam_micro_label'), 20, 30);
+            ctx.fillStyle = 'rgba(76, 161, 175, 0.9)';
+            ctx.font = '13px Quicksand, sans-serif';
+            ctx.fillText(t('inflam_micro_label'), 20, 50);
+        },
+
+        checkHover(mx, my, camera, projection) {
+            const Math3D = window.GreenhouseModels3DMath;
+            const viewModeVal = this.app.engine.state.factors.viewMode || 0;
+            const viewMode = ['macro', 'micro', 'molecular'][Math.round(viewModeVal)];
+
+            if (viewMode === 'micro') {
+                for (const g of this.glia) {
+                    const p = Math3D.project3DTo2D(g.x, g.y, g.z, camera, projection);
+                    const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
+                    if (dist < 20 * p.scale) {
+                        return {
+                            label: g.type === 'astrocyte' ? 'astrocyte' : 'microglia',
+                            description: g.type === 'astrocyte' ? 'astrocyte_desc' : 'microglia_desc'
+                        };
+                    }
+                }
+            } else if (viewMode === 'molecular') {
+                for (const m of this.molecules) {
+                    const p = Math3D.project3DTo2D(m.x, m.y, m.z, camera, projection);
+                    const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
+                    if (dist < 10 * p.scale) {
+                        return {
+                            label: m.type === 'cytokine' ? 'cytokine' : 'ion',
+                            description: m.type === 'cytokine' ? 'cytokine_desc' : 'ion_desc'
+                        };
+                    }
+                }
+            } else if (viewMode === 'macro') {
+                // Simplified region hit detection for brain shell
+                if (this.brainShell && this.brainShell.regions) {
+                    for (const key in this.brainShell.regions) {
+                        const region = this.brainShell.regions[key];
+                        // If we had vertex data we could be more precise, but for now let's skip macro hover
+                        // as it's complex without a proper raycaster.
+                    }
+                }
+            }
+            return null;
         },
 
         renderMolecular(ctx, tone, camera, projection) {
@@ -219,9 +259,9 @@
                 }
             });
 
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.font = '14px Arial';
-            ctx.fillText(t('inflam_mol_label'), 20, 30);
+            ctx.fillStyle = 'rgba(76, 161, 175, 0.9)';
+            ctx.font = '13px Quicksand, sans-serif';
+            ctx.fillText(t('inflam_mol_label'), 20, 50);
         }
     };
 

@@ -13,10 +13,10 @@
                 { value: 1, label: 'option_pathway' },
                 { value: 2, label: 'option_systemic' }
             ]},
-            { id: 'stressorIntensity', label: 'label_stressor_intensity', defaultValue: 0.3 },
-            { id: 'copingSkill', label: 'label_coping_skill', defaultValue: 0.5 },
-            { id: 'sleepRegularity', label: 'label_sleep_regularity', defaultValue: 0.7 },
-            { id: 'socialSupport', label: 'label_social_support', defaultValue: 0.4 }
+            { id: 'stressorIntensity', label: 'label_stressor_intensity', description: 'desc_stressor_intensity', defaultValue: 0.3 },
+            { id: 'copingSkill', label: 'label_coping_skill', description: 'desc_coping_skill', defaultValue: 0.5 },
+            { id: 'sleepRegularity', label: 'label_sleep_regularity', description: 'desc_sleep_regularity', defaultValue: 0.7 },
+            { id: 'socialSupport', label: 'label_social_support', description: 'desc_social_support', defaultValue: 0.4 }
         ],
         metrics: [
             { id: 'allostaticLoad', label: 'metric_allostatic_load', unit: '%' },
