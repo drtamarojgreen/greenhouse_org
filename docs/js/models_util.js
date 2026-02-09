@@ -194,7 +194,9 @@
 
         currentLanguage: 'en',
 
-        translations: window.GreenhouseTranslations || {},
+        get translations() {
+            return window.GreenhouseTranslations || {};
+        },
 
         createElement(tag, attributes, ...children) {
             const element = document.createElement(tag);
