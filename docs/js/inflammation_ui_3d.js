@@ -1,58 +1,43 @@
 /**
  * @file inflammation_ui_3d.js
- * @description 3D Visualization components for the Neuroinflammation Simulation.
- * Supports Macro (Brain), Micro (Cellular), and Molecular levels.
+ * @description Coordinate 3D Visualization components; delegates to specialized mode modules.
  */
 
 (function () {
     'use strict';
-
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseInflammationUI3D = {
         brainShell: null,
         neurons: [],
         glia: [],
         molecules: [],
+        axons: [],
+        leukocytes: [],
+        synapses: [],
         originalRegionColors: {},
 
         init(app) {
             this.app = app;
-            // Initialize Brain Shell for Macro View
             if (window.GreenhouseNeuroGeometry) {
                 this.brainShell = { vertices: [], faces: [] };
                 window.GreenhouseNeuroGeometry.initializeBrainShell(this.brainShell);
-
-                // Cache original colors for restoration
                 this.originalRegionColors = {};
                 if (this.brainShell.regions) {
                     for (const key in this.brainShell.regions) {
                         const region = this.brainShell.regions[key];
                         this.originalRegionColors[key] = region.color;
-
-                        // Calculate centroid for floating labels
                         if (region.vertices && region.vertices.length > 0) {
                             let cx = 0, cy = 0, cz = 0;
                             region.vertices.forEach(idx => {
                                 const v = this.brainShell.vertices[idx];
-                                cx += v.x;
-                                cy += v.y;
-                                cz += v.z;
+                                cx += v.x; cy += v.y; cz += v.z;
                             });
-                            region.centroid = {
-                                x: cx / region.vertices.length,
-                                y: cy / region.vertices.length,
-                                z: cz / region.vertices.length
-                            };
+                            region.centroid = { x: cx / region.vertices.length, y: cy / region.vertices.length, z: cz / region.vertices.length };
                         }
                     }
                 }
             }
-
-            // Initialize Micro View (Neurons and Glia)
             this.initMicroData();
-
-            // Initialize Molecular View
             this.initMolecularData();
         },
 
@@ -66,198 +51,62 @@
                 const mesh = window.GreenhouseNeuroGeometry.generateTubeMesh(p1, p2, cp, 4, 12);
                 this.neurons.push({ p1, p2, cp, mesh, baseColor: '#4ca1af' });
             }
-
             this.glia = [];
             for (let i = 0; i < 15; i++) {
                 this.glia.push({
-                    x: (Math.random() - 0.5) * 500,
-                    y: (Math.random() - 0.5) * 400,
-                    z: (Math.random() - 0.5) * 300,
-                    rotationX: Math.random() * Math.PI,
-                    rotationY: Math.random() * Math.PI,
-                    size: 10 + Math.random() * 12,
-                    type: Math.random() > 0.4 ? 'astrocyte' : 'microglia',
-                    pulseOffset: Math.random() * Math.PI * 2
+                    x: (Math.random() - 0.5) * 500, y: (Math.random() - 0.5) * 400, z: (Math.random() - 0.5) * 300,
+                    rotationX: Math.random() * Math.PI, rotationY: Math.random() * Math.PI,
+                    size: 10 + Math.random() * 12, type: Math.random() > 0.4 ? 'astrocyte' : 'microglia', pulseOffset: Math.random() * Math.PI * 2
                 });
             }
-
-            // Add Axons (inter-neuron connections)
             this.axons = [];
             for (let i = 0; i < this.neurons.length - 1; i++) {
-                if (Math.random() > 0.3) {
-                    this.axons.push({
-                        from: i,
-                        to: (i + 1) % this.neurons.length
-                    });
-                }
+                if (Math.random() > 0.3) this.axons.push({ from: i, to: (i + 1) % this.neurons.length });
             }
+            this.leukocytes = [];
+            for (let i = 0; i < 10; i++) {
+                this.leukocytes.push({ x: -500, y: (Math.random() - 0.5) * 400, z: (Math.random() - 0.5) * 300, vx: 2 + Math.random() * 2, state: 'rolling' });
+            }
+            this.synapses = [];
+            this.axons.forEach(a => {
+                const n2 = this.neurons[a.to];
+                this.synapses.push({ x: n2.p1.x, y: n2.p1.y, z: n2.p1.z, strength: 1.0 });
+            });
+            this.glia.forEach(g => {
+                g.receptors = [];
+                for (let i = 0; i < 5; i++) {
+                    g.receptors.push({ angle: Math.random() * Math.PI * 2, type: Math.random() > 0.5 ? 'tnf' : 'il10' });
+                }
+            });
         },
 
         initMolecularData() {
             this.molecules = [];
-            for (let i = 0; i < 250; i++) {
+            for (let i = 0; i < 300; i++) {
+                const typeRoll = Math.random();
+                let type = 'ion';
+                if (typeRoll > 0.85) type = 'pro-cytokine';
+                else if (typeRoll > 0.70) type = 'anti-cytokine';
+                else if (typeRoll > 0.50) type = 'neurotransmitter';
                 this.molecules.push({
-                    x: (Math.random() - 0.5) * 800,
-                    y: (Math.random() - 0.5) * 600,
-                    z: (Math.random() - 0.5) * 600,
-                    vx: (Math.random() - 0.5) * 1.5,
-                    vy: (Math.random() - 0.5) * 1.5,
-                    vz: (Math.random() - 0.5) * 1.5,
-                    type: Math.random() > 0.6 ? 'cytokine' : 'ion',
-                    size: 1 + Math.random() * 3,
-                    history: []
+                    x: (Math.random() - 0.5) * 800, y: (Math.random() - 0.5) * 600, z: (Math.random() - 0.5) * 600,
+                    vx: (Math.random() - 0.5) * 1.2, vy: (Math.random() - 0.5) * 1.2, vz: (Math.random() - 0.5) * 1.2,
+                    type: type, size: 1.5 + Math.random() * 2.5, history: []
                 });
             }
         },
 
         render(ctx, state, camera, projection) {
-            const tone = state.metrics.inflammatoryTone;
             const viewModeVal = state.factors.viewMode || 0;
-            const viewModes = ['macro', 'micro', 'molecular'];
-            const viewMode = viewModes[Math.round(viewModeVal)] || 'macro';
+            const viewMode = ['macro', 'micro', 'molecular'][Math.round(viewModeVal)] || 'macro';
 
-            ctx.save();
-            if (viewMode === 'macro') {
-                this.renderMacro(ctx, tone, camera, projection);
-            } else if (viewMode === 'micro') {
-                this.renderMicro(ctx, tone, camera, projection);
-            } else {
-                this.renderMolecular(ctx, tone, camera, projection);
+            if (viewMode === 'macro' && window.GreenhouseInflammationMacro) {
+                window.GreenhouseInflammationMacro.render(ctx, state, camera, projection, this);
+            } else if (viewMode === 'micro' && window.GreenhouseInflammationMicro) {
+                window.GreenhouseInflammationMicro.render(ctx, state, camera, projection, this);
+            } else if (viewMode === 'molecular' && window.GreenhouseInflammationMolecular) {
+                window.GreenhouseInflammationMolecular.render(ctx, state, camera, projection, this);
             }
-            ctx.restore();
-        },
-
-        renderMacro(ctx, tone, camera, projection) {
-            if (!this.brainShell || !window.GreenhouseNeuroBrain) return;
-
-            // Shift colors of regions based on tone
-            const regions = this.brainShell.regions;
-            for (const key in regions) {
-                if (tone > 0.4) {
-                    // Inflame: Redder/more opaque
-                    const r = Math.min(255, 100 + tone * 255);
-                    const g = 150 * (1 - tone);
-                    const b = 255 * (1 - tone);
-                    const a = 0.4 + tone * 0.4;
-                    regions[key].color = `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`;
-                } else {
-                    // Healthy: Restore cached colors
-                    regions[key].color = this.originalRegionColors[key] || 'rgba(100, 150, 255, 0.4)';
-                }
-            }
-
-            window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, camera, projection, projection.width, projection.height);
-
-            ctx.fillStyle = 'rgba(76, 161, 175, 0.9)';
-            ctx.font = 'bold 15px Quicksand, sans-serif';
-            ctx.fillText(t('inflam_macro_label'), 20, 50);
-
-            // Draw Floating Region Labels
-            const Math3D = window.GreenhouseModels3DMath;
-            if (this.brainShell.regions) {
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                for (const key in this.brainShell.regions) {
-                    const region = this.brainShell.regions[key];
-                    if (region.centroid) {
-                        const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
-                        if (p.scale > 0 && p.depth < 0.7) { // Only draw front-ish labels
-                            const alpha = Math3D.applyDepthFog(0.9, p.depth, 0.3, 0.8);
-                            ctx.save();
-                            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-                            ctx.font = 'bold 12px Quicksand, sans-serif';
-                            ctx.shadowBlur = 4;
-                            ctx.shadowColor = 'rgba(0, 0, 0, 1)';
-                            ctx.fillText(t(region.name), p.x, p.y);
-                            ctx.restore();
-                        }
-                    }
-                }
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'alphabetic';
-            }
-        },
-
-        renderMicro(ctx, tone, camera, projection) {
-            const Math3D = window.GreenhouseModels3DMath;
-
-            // Draw Axons
-            ctx.setLineDash([5, 15]);
-            ctx.lineWidth = 1;
-            this.axons.forEach(a => {
-                const n1 = this.neurons[a.from];
-                const n2 = this.neurons[a.to];
-                const p1 = Math3D.project3DTo2D(n1.cp.x, n1.cp.y, n1.cp.z, camera, projection);
-                const p2 = Math3D.project3DTo2D(n2.cp.x, n2.cp.y, n2.cp.z, camera, projection);
-                if (p1.scale > 0 && p2.scale > 0) {
-                    ctx.strokeStyle = `rgba(100, 200, 255, ${0.2 * (1 - tone)})`;
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.stroke();
-                }
-            });
-            ctx.setLineDash([]);
-
-            // Draw Neurons
-            this.neurons.forEach(n => {
-                const alpha = tone > 0.6 ? 0.3 : 0.8; // Signaling dims as inflammation rises
-                ctx.strokeStyle = `rgba(76, 161, 175, ${alpha})`;
-                ctx.lineWidth = 2;
-
-                n.mesh.faces.forEach(face => {
-                    const p1 = Math3D.project3DTo2D(n.mesh.vertices[face[0]].x, n.mesh.vertices[face[0]].y, n.mesh.vertices[face[0]].z, camera, projection);
-                    const p2 = Math3D.project3DTo2D(n.mesh.vertices[face[1]].x, n.mesh.vertices[face[1]].y, n.mesh.vertices[face[1]].z, camera, projection);
-                    const p3 = Math3D.project3DTo2D(n.mesh.vertices[face[2]].x, n.mesh.vertices[face[2]].y, n.mesh.vertices[face[2]].z, camera, projection);
-
-                    if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
-                        ctx.beginPath();
-                        ctx.moveTo(p1.x, p1.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.lineTo(p3.x, p3.y);
-                        ctx.stroke();
-                    }
-                });
-            });
-
-            // Draw Glia
-            this.glia.forEach(g => {
-                const p = Math3D.project3DTo2D(g.x, g.y, g.z, camera, projection);
-                if (p.scale <= 0) return;
-
-                const pulse = Math.sin(Date.now() * 0.002 + g.pulseOffset) * 0.1 + 1;
-                const size = g.size * p.scale * (1 + tone) * pulse;
-                const color = g.type === 'astrocyte'
-                    ? `rgba(255, ${Math.round(255 * (1 - tone))}, 100, 0.8)`
-                    : `rgba(200, 100, 255, 0.8)`;
-
-                ctx.beginPath();
-                // Star shape for astrocyte
-                if (g.type === 'astrocyte') {
-                    const spikes = 6;
-                    for (let i = 0; i < spikes * 2; i++) {
-                        const r = i % 2 === 0 ? size : size * 0.4;
-                        const angle = (i / spikes) * Math.PI + g.rotationY;
-                        const px = p.x + Math.cos(angle) * r;
-                        const py = p.y + Math.sin(angle) * r;
-                        if (i === 0) ctx.moveTo(px, py);
-                        else ctx.lineTo(px, py);
-                    }
-                } else {
-                    ctx.arc(p.x, p.y, size * 0.5, 0, Math.PI * 2);
-                }
-                ctx.fillStyle = color;
-                ctx.fill();
-
-                if (tone > 0.5) {
-                    ctx.shadowBlur = 15 * tone;
-                    ctx.shadowColor = 'red';
-                }
-            });
-
-            ctx.fillStyle = 'rgba(76, 161, 175, 0.9)';
-            ctx.font = 'bold 15px Quicksand, sans-serif';
-            ctx.fillText(t('inflam_micro_label'), 20, 50);
         },
 
         checkHover(mx, my, camera, projection) {
@@ -269,134 +118,47 @@
                 for (const g of this.glia) {
                     const p = Math3D.project3DTo2D(g.x, g.y, g.z, camera, projection);
                     const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
-                    if (dist < 20 * p.scale) {
-                        return {
-                            label: g.type === 'astrocyte' ? 'astrocyte' : 'microglia',
-                            description: g.type === 'astrocyte' ? 'astrocyte_desc' : 'microglia_desc'
-                        };
-                    }
+                    if (dist < 20 * p.scale) return { id: 'glia', label: g.type === 'astrocyte' ? 'Astrocyte' : 'Microglia', description: g.type === 'astrocyte' ? 'Glia that supports neurons and maintains the blood-brain barrier.' : 'Resident immune cell of the brain; becomes amoeboid when activated.', type: '3d' };
                 }
+                for (const s of this.synapses) {
+                    const sp = Math3D.project3DTo2D(s.x, s.y, s.z, camera, projection);
+                    const dist = Math.sqrt((sp.x - mx) ** 2 + (sp.y - my) ** 2);
+                    if (dist < 15 * sp.scale) return { id: 'synapse', label: 'Synapse', description: 'Junction point where neurotransmitters are released to signal the next neuron.', type: '3d' };
+                }
+                if (my > projection.height * 0.35 && my < projection.height * 0.45) return { id: 'vessel', label: 'Blood Vessel', description: 'Endothelial lining representing the source of systemic immune infiltration.', type: '3d' };
             } else if (viewMode === 'molecular') {
+                if (my > projection.height * 0.3 && my < projection.height * 0.5) return { id: 'membrane', label: 'Cell Membrane', description: 'Lipid bilayer barrier separating the intracellular and extracellular milieu.', type: '3d' };
                 for (const m of this.molecules) {
                     const p = Math3D.project3DTo2D(m.x, m.y, m.z, camera, projection);
                     const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
-                    if (dist < 10 * p.scale) {
-                        return {
-                            label: m.type === 'cytokine' ? 'cytokine' : 'ion',
-                            description: m.type === 'cytokine' ? 'cytokine_desc' : 'ion_desc'
-                        };
+                    if (dist < 12 * p.scale) {
+                        let label = 'Ion', desc = 'Charged particle maintaining cellular electrochemical gradients.';
+                        if (m.type === 'pro-cytokine') { label = 'Pro-Cytokine (TNF-α)'; desc = 'Aggressive signaling molecule that promotes inflammatory cascades.'; }
+                        else if (m.type === 'anti-cytokine') { label = 'Anti-Cytokine (IL-10)'; desc = 'Protective molecule that resolves inflammation and prevents tissue damage.'; }
+                        else if (m.type === 'neurotransmitter') { label = 'Neurotransmitter'; desc = 'Chemical messenger released across synapses to signal between neurons.'; }
+                        return { id: 'molecule', label: label, description: desc, type: '3d' };
                     }
                 }
-            } else if (viewMode === 'macro') {
-                if (this.brainShell && this.brainShell.regions) {
-                    const Math3D = window.GreenhouseModels3DMath;
-                    const Util = window.GreenhouseModelsUtil;
-
-                    for (const key in this.brainShell.regions) {
-                        const region = this.brainShell.regions[key];
-                        if (region.centroid) {
-                            const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
-                            const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
-
-                            if (dist < 50 * p.scale && p.depth < 0.7) {
-                                // Map keys to description keys used in models_util.js or models_lang.js
-                                const descKeyMap = {
-                                    prefrontalCortex: 'pfc',
-                                    motorCortex: 'cog_reg_motor',
-                                    somatosensoryCortex: 'cog_reg_somato',
-                                    thalamus: 'cog_reg_thalamus',
-                                    hypothalamus: 'cog_reg_hypothalamus'
-                                };
-                                const mappedKey = descKeyMap[key] || key;
-
-                                return {
-                                    label: region.name,
-                                    description: Util ? (Util.getRegionDescription(mappedKey) || mappedKey) : region.name
-                                };
-                            }
-                        }
+            } else if (viewMode === 'macro' && this.brainShell && this.brainShell.regions) {
+                for (const key in this.brainShell.regions) {
+                    const region = this.brainShell.regions[key];
+                    if (region.centroid) {
+                        const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
+                        const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
+                        if (dist < 50 * p.scale && p.depth < 0.7) return { id: 'brain_region', label: region.name, description: window.GreenhouseModelsUtil ? (window.GreenhouseModelsUtil.getRegionDescription(key) || 'Functional brain region.') : 'Brain Region', type: '3d' };
                     }
                 }
             }
             return null;
         },
 
-        renderMolecular(ctx, tone, camera, projection) {
-            const Math3D = window.GreenhouseModels3DMath;
-
-            ctx.save();
-            ctx.globalCompositeOperation = 'lighter';
-
-            this.molecules.forEach(m => {
-                // Drift
-                const speedMult = 1 + tone * 2;
-                m.x += m.vx * speedMult;
-                m.y += m.vy * speedMult;
-                m.z += m.vz * speedMult;
-
-                // Wrap
-                if (Math.abs(m.x) > 400) m.x *= -0.95;
-                if (Math.abs(m.y) > 300) m.y *= -0.95;
-                if (Math.abs(m.z) > 300) m.z *= -0.95;
-
-                const p = Math3D.project3DTo2D(m.x, m.y, m.z, camera, projection);
-                if (p.scale <= 0) return;
-
-                const alpha = Math3D.applyDepthFog(0.6, p.depth, 0.2, 0.9);
-
-                // History for trails
-                m.history.push({ x: p.x, y: p.y });
-                if (m.history.length > 5) m.history.shift();
-
-                if (m.history.length > 1) {
-                    ctx.beginPath();
-                    ctx.moveTo(m.history[0].x, m.history[0].y);
-                    for (let i = 1; i < m.history.length; i++) {
-                        ctx.lineTo(m.history[i].x, m.history[i].y);
-                    }
-                    ctx.strokeStyle = m.type === 'cytokine'
-                        ? `rgba(255, 100, 0, ${alpha * 0.3})`
-                        : `rgba(100, 200, 255, ${alpha * 0.3})`;
-                    ctx.lineWidth = m.size * p.scale;
-                    ctx.stroke();
-                }
-
-                if (m.type === 'cytokine') {
-                    // Cytokines are glowing orange/red
-                    const r = 255;
-                    const g = Math.round(150 * (1 - tone));
-                    const b = 50 * (1 - tone);
-                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
-
-                    const s = m.size * p.scale * (1 + tone * 1.5);
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, s, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Extra glow
-                    if (tone > 0.3) {
-                        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, s * 3);
-                        grad.addColorStop(0, `rgba(255, 50, 0, ${alpha * 0.4})`);
-                        grad.addColorStop(1, 'transparent');
-                        ctx.fillStyle = grad;
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, s * 3, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                } else {
-                    // Ions are blue sparks
-                    ctx.fillStyle = `rgba(150, 230, 255, ${alpha})`;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, m.size * p.scale, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            });
-
-            ctx.restore();
-
-            ctx.fillStyle = 'rgba(76, 161, 175, 0.9)';
-            ctx.font = 'bold 15px Quicksand, sans-serif';
-            ctx.fillText(t('inflam_mol_label'), 20, 50);
+        roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            ctx.beginPath(); ctx.moveTo(x + radius, y); ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius); ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height); ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius); ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y); ctx.closePath();
+            if (fill) ctx.fill(); if (stroke) ctx.stroke();
         }
     };
 
