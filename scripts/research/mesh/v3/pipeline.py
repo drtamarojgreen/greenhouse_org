@@ -40,9 +40,9 @@ class MeSHPipelineV3:
 
     def _load_config(self, path: str) -> dict:
         default_config = {
-            "seed_term": "Mental Health",
+            "seed_term": "Attention-Deficit/Hyperactivity Disorder",
             "max_terms": 20,
-            "min_count": 100,
+            "min_count": 20000,
             "viz_output_dir": "scripts/research/mesh/v3/viz_output",
             "checkpoint_path": "scripts/research/mesh/v3/checkpoint.json",
             "logging": {"level": "INFO"}
