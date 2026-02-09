@@ -6,73 +6,77 @@
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseInflammationTooltips = {
         definitions: {
-            pathogenLoad: 'Initial immune trigger intensity (Infections, toxins).',
-            stressCortisol: 'Systemic stress load (Increases BBB permeability).',
-            sleepRestoration: 'Clears metabolic waste and restores BBB integrity.',
-            nutrientDensity: 'Provides building blocks for resolving inflammation.',
-            physicalActivity: 'Induces anti-inflammatory myokine release (IL-10).',
-            nsaids: 'Non-steroidal anti-inflammatory drugs (Pain/Fever relief).',
-            corticosteroids: 'Broad immune suppression and glial dampening.',
-            biologics: 'Targeted anti-TNF antibodies for severe flares.',
-            mode_macro: 'View the whole brain and regional heatmaps.',
-            mode_micro: 'View cellular networks, glia, and rolling leukocytes.',
-            mode_mol: 'View cytokines, neurotransmitters, and cell membranes.',
-            metric_tnf: 'Tumor Necrosis Factor alpha: Primary pro-inflammatory driver.',
-            metric_il10: 'Interleukin 10: Primary anti-inflammatory orchestrator.',
-            metric_bbb: 'Blood-Brain Barrier Integrity: Barrier protecting brain from pathogens.',
-            card_0: 'The five classical signs of inflammation in tissue.',
-            card_1: 'Comparison of short-term vs long-term immune responses.',
-            card_2: 'The delicate balance between pro- and anti-inflammatory signals.',
-            card_3: 'How the blood-brain barrier fails during chronic signaling.',
-            card_4: 'The role of cortisol and nutrition in the inflammatory pathway.',
-            card_5: 'Biological mechanisms that actively terminate the inflammatory response.'
+            pathogenActive: 'Detection of invasive pathogens or metabolic toxins in systemic circulation.',
+            chronicStress: 'Durable cortisol elevation which compromises the structural integrity of the BBB.',
+            poorSleep: 'Suppresses the glympathic system, leading to the accumulation of amyloid-beta and cytokines.',
+            leakyGut: 'Translocation of LPS (lipopolysaccharides) from the gut to the bloodstream.',
+            cleanDiet: 'High intake of anti-inflammatory polyphenols and omega-3 fatty acids.',
+            exerciseRegular: 'Stimulates myokine (IL-6) release which induces systemic anti-inflammatory IL-10.',
+            nsaidsApp: 'Cox-1/Cox-2 inhibition; provides rapid reduction of acute inflammatory signaling.',
+            steroidsApp: 'Broad-spectrum glucocorticoid action; stabilizes microglia and suppresses cytokine storms.',
+            tnfInhibitors: 'Specific blockade of TNF-alpha, the primary driver of systemic and central inflammation.',
+
+            // Metrics
+            tnfAlpha: 'Tumor Necrosis Factor alpha: The master orchestrator of the pro-inflammatory response.',
+            il10: 'Interleukin 10: A potent anti-inflammatory cytokine that prevents excessive tissue damage.',
+            bbbIntegrity: 'The functional status of the Blood-Brain Barrier; lower values indicate leukocyte infiltration.',
+            neuroprotection: 'The composite health score of neurons based on cytokine environment and glial state.'
         },
 
         draw(ctx, app, x, y) {
             const el = app.ui.hoveredElement;
             if (!el) return;
 
-            const title = el.label || 'Unknown';
-            const desc = el.description || this.definitions[el.id] || '';
-
-            ctx.font = 'bold 12px sans-serif';
-            const titleMetrics = ctx.measureText(title);
-            ctx.font = '11px sans-serif';
-            const descMetrics = ctx.measureText(desc);
-
-            const padding = 12;
-            const tw = Math.max(titleMetrics.width, descMetrics.width) + padding * 2;
-            const th = desc ? 42 : 28;
-
-            const tx = Math.min(app.canvas.width - tw - 10, x + 15);
-            const ty = y - th - 10;
+            const desc = this.definitions[el.id] || el.description || 'Inflammatory simulation component.';
+            const label = el.label || el.id;
 
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-            ctx.strokeStyle = '#4ca1af';
-            ctx.lineWidth = 1.5;
+            ctx.font = '11px Quicksand, sans-serif';
+            const padding = 15;
+            const maxWidth = 250;
 
-            if (app.roundRect) {
-                app.roundRect(ctx, tx, ty, tw, th, 8, true, true);
-            } else {
-                ctx.fillRect(tx, ty, tw, th);
-                ctx.strokeRect(tx, ty, tw, th);
+            const words = desc.split(' ');
+            let lines = [];
+            let currentLine = words[0];
+
+            for (let i = 1; i < words.length; i++) {
+                let testLine = currentLine + " " + words[i];
+                if (ctx.measureText(testLine).width > maxWidth) {
+                    lines.push(currentLine);
+                    currentLine = words[i];
+                } else {
+                    currentLine = testLine;
+                }
             }
+            lines.push(currentLine);
 
+            const h = 45 + lines.length * 15;
+            const w = maxWidth + padding * 2;
+
+            let tx = x + 15;
+            let ty = y + 15;
+            if (tx + w > app.canvas.width) tx = x - w - 15;
+            if (ty + h > app.canvas.height) ty = y - h - 15;
+
+            ctx.fillStyle = 'rgba(10, 15, 25, 0.95)';
             ctx.shadowBlur = 10;
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            if (app.roundRect) app.roundRect(ctx, tx, ty, w, h, 10, true, false);
 
             ctx.fillStyle = '#4ca1af';
-            ctx.font = 'bold 12px sans-serif';
-            ctx.fillText(title, tx + padding, ty + 18);
+            ctx.font = 'bold 11px Quicksand, sans-serif';
+            ctx.fillText(t(label).toUpperCase(), tx + padding, ty + 25);
 
-            if (desc) {
-                ctx.fillStyle = '#fff';
-                ctx.font = '11px sans-serif';
-                ctx.fillText(desc, tx + padding, ty + 34);
-            }
+            ctx.fillStyle = '#fff';
+            ctx.font = '11px Quicksand, sans-serif';
+            lines.forEach((line, i) => {
+                ctx.fillText(line, tx + padding, ty + 45 + i * 15);
+            });
+
             ctx.restore();
         }
     };

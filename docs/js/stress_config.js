@@ -1,6 +1,7 @@
 /**
  * @file stress_config.js
- * @description Configuration for the Stress Dynamics Simulation.
+ * @description Enhanced Configuration for the Stress Dynamics Simulation.
+ * Reconfigured with binary factors (Checkboxes) for specific stressors and genetic traits.
  */
 
 (function () {
@@ -8,29 +9,45 @@
 
     const GreenhouseStressConfig = {
         factors: [
-            { id: 'viewMode', label: 'label_view_mode', defaultValue: 2, options: [
-                { value: 0, label: 'option_macro' },
-                { value: 1, label: 'option_pathway' },
-                { value: 2, label: 'option_systemic' }
-            ]},
-            { id: 'stressorIntensity', label: 'label_stressor_intensity', description: 'desc_stressor_intensity', defaultValue: 0.3 },
-            { id: 'copingSkill', label: 'label_coping_skill', description: 'desc_coping_skill', defaultValue: 0.5 },
-            { id: 'sleepRegularity', label: 'label_sleep_regularity', description: 'desc_sleep_regularity', defaultValue: 0.7 },
-            { id: 'socialSupport', label: 'label_social_support', description: 'desc_social_support', defaultValue: 0.4 },
-            // Scientific Enhancements (Metaphorical mapping)
-            { id: 'ambientPressure', label: 'label_ambient_temp', description: 'desc_ambient_temp', defaultValue: 25 }, // Celsius
-            { id: 'humidity', label: 'label_relative_humidity', description: 'desc_relative_humidity', defaultValue: 0.6 }, // 60%
-            { id: 'toxicityLevel', label: 'label_salinity_ec', description: 'desc_salinity_ec', defaultValue: 1.5 } // dS/m
+            {
+                id: 'viewMode', label: 'label_view_mode', defaultValue: 0, options: [
+                    { value: 0, label: 'REGULATORY (MACRO)' },
+                    { value: 1, label: 'PATHWAY (HPA)' },
+                    { value: 2, label: 'SYSTEMIC (ADAPTIVE)' }
+                ], type: 'button'
+            },
+
+            // --- ENVIRONMENTAL STRESSORS (Binary) ---
+            { id: 'sleepDeprivation', label: 'Sleep Deprivation', type: 'checkbox', defaultValue: 0, impact: 0.25 },
+            { id: 'noisePollution', label: 'Chronic Noise Pollution', type: 'checkbox', defaultValue: 0, impact: 0.15 },
+            { id: 'financialStrain', label: 'Financial Instability', type: 'checkbox', defaultValue: 0, impact: 0.3 },
+            { id: 'socialIsolation', label: 'Social Isolation', type: 'checkbox', defaultValue: 0, impact: 0.2 },
+            { id: 'workOverload', label: 'Cognitive/Work Overload', type: 'checkbox', defaultValue: 0, impact: 0.25 },
+            { id: 'nutrientDeficit', label: 'Nutrient Deficiency', type: 'checkbox', defaultValue: 0, impact: 0.15 },
+
+            // --- GENETIC FACTORS (Binary) ---
+            { id: 'comtValMet', label: 'COMT Val158Met (Warrior/Worrier)', type: 'checkbox', defaultValue: 0, description: 'Affects dopamine clearance speed in the PFC.' },
+            { id: 'serotoninTransporter', label: '5-HTTLPR (Short Allele)', type: 'checkbox', defaultValue: 1, description: 'Increases amygdala reactivity to environmental cues.' },
+            { id: 'fkbp5Variant', label: 'FKBP5 polymorphism', type: 'checkbox', defaultValue: 0, description: 'Alters glucocorticoid receptor sensitivity and HPA feedback.' },
+
+            // --- PROTECTIVE / MODULATORY ---
+            { id: 'cognitiveReframing', label: 'Cognitive Appraisal', type: 'checkbox', defaultValue: 0, impact: -0.2 },
+            { id: 'socialSupport', label: 'Oxytocin Support', type: 'checkbox', defaultValue: 0, impact: -0.15 },
+            { id: 'gabaMod', label: 'GABAergic Modulation', type: 'checkbox', defaultValue: 0, impact: -0.3, isPharma: true }
         ],
         metrics: [
             { id: 'allostaticLoad', label: 'metric_allostatic_load', unit: '%' },
             { id: 'autonomicBalance', label: 'metric_autonomic_balance', unit: '' },
-            { id: 'resilienceReserve', label: 'metric_resilience_reserve', unit: '%' }
+            { id: 'resilienceReserve', label: 'metric_resilience_reserve', unit: '%' },
+            { id: 'hpaSensitivity', label: 'HPA Sensitivity', unit: '' }
         ],
         visual: {
             maxHistory: 200,
             colors: {
-                load: '#ff4d4d',
+                biologic: '#ff4d4d',
+                pharma: '#64d2ff',
+                psych: '#ffcc00',
+                philo: '#a18cd1',
                 reserve: '#4ca1af'
             }
         }

@@ -18,9 +18,9 @@
 
         init(app) {
             this.app = app;
-            if (window.GreenhouseNeuroGeometry) {
+            if (window.GreenhouseInflammationGeometry) {
                 this.brainShell = { vertices: [], faces: [] };
-                window.GreenhouseNeuroGeometry.initializeBrainShell(this.brainShell);
+                window.GreenhouseInflammationGeometry.initializeBrainShell(this.brainShell);
                 this.originalRegionColors = {};
                 if (this.brainShell.regions) {
                     for (const key in this.brainShell.regions) {

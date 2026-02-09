@@ -1,6 +1,6 @@
 /**
- * @file inflammation_controls.js
- * @description UI Control components (Checkboxes, Buttons) for the Inflammation App.
+ * @file stress_controls.js
+ * @description UI Control components (Checkboxes, Buttons) for the Stress Dynamics App.
  */
 
 (function () {
@@ -8,7 +8,7 @@
 
     const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
 
-    const GreenhouseInflammationControls = {
+    const GreenhouseStressControls = {
         drawCheckbox(ctx, app, c, state) {
             const isActive = state.factors[c.id] === 1;
             const isHovered = app.ui.hoveredElement && app.ui.hoveredElement.id === c.id;
@@ -70,5 +70,5 @@
         }
     };
 
-    window.GreenhouseInflammationControls = GreenhouseInflammationControls;
+    window.GreenhouseStressControls = GreenhouseStressControls;
 })();
