@@ -27,7 +27,24 @@
                 this.originalRegionColors = {};
                 if (this.brainShell.regions) {
                     for (const key in this.brainShell.regions) {
-                        this.originalRegionColors[key] = this.brainShell.regions[key].color;
+                        const region = this.brainShell.regions[key];
+                        this.originalRegionColors[key] = region.color;
+
+                        // Calculate centroid for floating labels
+                        if (region.vertices && region.vertices.length > 0) {
+                            let cx = 0, cy = 0, cz = 0;
+                            region.vertices.forEach(idx => {
+                                const v = this.brainShell.vertices[idx];
+                                cx += v.x;
+                                cy += v.y;
+                                cz += v.z;
+                            });
+                            region.centroid = {
+                                x: cx / region.vertices.length,
+                                y: cy / region.vertices.length,
+                                z: cz / region.vertices.length
+                            };
+                        }
                     }
                 }
             }
@@ -119,8 +136,33 @@
             window.GreenhouseNeuroBrain.drawBrainShell(ctx, this.brainShell, camera, projection, projection.width, projection.height);
 
             ctx.fillStyle = 'rgba(76, 161, 175, 0.9)';
-            ctx.font = '13px Quicksand, sans-serif';
+            ctx.font = 'bold 15px Quicksand, sans-serif';
             ctx.fillText(t('inflam_macro_label'), 20, 50);
+
+            // Draw Floating Region Labels
+            const Math3D = window.GreenhouseModels3DMath;
+            if (this.brainShell.regions) {
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                for (const key in this.brainShell.regions) {
+                    const region = this.brainShell.regions[key];
+                    if (region.centroid) {
+                        const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
+                        if (p.scale > 0 && p.depth < 0.7) { // Only draw front-ish labels
+                            const alpha = Math3D.applyDepthFog(0.9, p.depth, 0.3, 0.8);
+                            ctx.save();
+                            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                            ctx.font = 'bold 12px Quicksand, sans-serif';
+                            ctx.shadowBlur = 4;
+                            ctx.shadowColor = 'rgba(0, 0, 0, 1)';
+                            ctx.fillText(t(region.name), p.x, p.y);
+                            ctx.restore();
+                        }
+                    }
+                }
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'alphabetic';
+            }
         },
 
         renderMicro(ctx, tone, camera, projection) {
@@ -182,7 +224,7 @@
             });
 
             ctx.fillStyle = 'rgba(76, 161, 175, 0.9)';
-            ctx.font = '13px Quicksand, sans-serif';
+            ctx.font = 'bold 15px Quicksand, sans-serif';
             ctx.fillText(t('inflam_micro_label'), 20, 50);
         },
 
@@ -260,7 +302,7 @@
             });
 
             ctx.fillStyle = 'rgba(76, 161, 175, 0.9)';
-            ctx.font = '13px Quicksand, sans-serif';
+            ctx.font = 'bold 15px Quicksand, sans-serif';
             ctx.fillText(t('inflam_mol_label'), 20, 50);
         }
     };
