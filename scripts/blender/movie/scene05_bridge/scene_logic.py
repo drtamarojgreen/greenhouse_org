@@ -43,6 +43,9 @@ def setup_scene(master):
         node.keyframe_insert(data_path="hide_render", frame=end_f)
         nodes.append(node)
 
+        # Synaptic Heartbeat
+        style.animate_pulsing_emission(node, start_f, end_f, base_strength=5.0, pulse_amplitude=10.0, cycle=64)
+
     style.apply_fade_transition(nodes, start_f, end_f, mode='IN', duration=12)
 
     # Create Sparks

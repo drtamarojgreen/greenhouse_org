@@ -11,6 +11,17 @@ def create_greenhouse_iron_mat():
     bsdf.inputs["Base Color"].default_value = (0.106, 0.302, 0.118, 1) # Greenhouse Brand Green
     bsdf.inputs["Metallic"].default_value = 1.0
     bsdf.inputs["Roughness"].default_value = 0.7
+
+    # Mossy Iron (Noise overlay mixed with base color)
+    node_moss = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
+    node_moss.inputs['Scale'].default_value = 20.0
+    node_mix = mat.node_tree.nodes.new(type='ShaderNodeMixRGB')
+    node_mix.blend_type = 'OVERLAY'
+    node_mix.inputs[0].default_value = 0.5
+    node_mix.inputs[1].default_value = (0.106, 0.302, 0.118, 1)
+    mat.node_tree.links.new(node_moss.outputs['Color'], node_mix.inputs[2])
+    mat.node_tree.links.new(node_mix.outputs['Color'], bsdf.inputs['Base Color'])
+
     return mat
 
 def create_greenhouse_glass_mat():
@@ -26,6 +37,12 @@ def create_greenhouse_glass_mat():
     elif "Transmission Weight" in bsdf.inputs:
         bsdf.inputs["Transmission Weight"].default_value = 1.0
     bsdf.inputs["Roughness"].default_value = 0.05
+
+    # Scratched Glass (Musgrave)
+    node_scratches = mat.node_tree.nodes.new(type='ShaderNodeTexMusgrave')
+    node_scratches.inputs['Scale'].default_value = 50.0
+    mat.node_tree.links.new(node_scratches.outputs['Fac'], bsdf.inputs['Roughness'])
+
     mat.blend_method = 'BLEND'
     return mat
 

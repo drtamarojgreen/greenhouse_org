@@ -29,8 +29,20 @@ def setup_scene(master):
             obj.hide_render = True
             obj.keyframe_insert(data_path="hide_render", frame=4101)
 
+            # Time-Lapse Growth (Scale 0 to 1)
+            obj.scale = (0.01, 0.01, 0.01)
+            obj.keyframe_insert(data_path="scale", frame=3901)
+            obj.scale = (1, 1, 1)
+            obj.keyframe_insert(data_path="scale", frame=4100)
+
         style.apply_fade_transition(b.objects, 3901, 4100, mode='IN', duration=20)
         style.animate_foliage_wind(b.objects, strength=0.04, frame_start=3901, frame_end=4100)
+
+    # Falling Petals
+    style.animate_dust_particles(mathutils.Vector((0, 0, 5)), color=(1, 0.8, 0.9, 1), density=20, frame_start=3901, frame_end=4100)
+
+    # Atmospheric Fauna (Glow-bugs)
+    style.animate_dust_particles(mathutils.Vector((0, 0, 1)), color=(0.5, 1, 0.2, 1), density=15, frame_start=3901, frame_end=4100)
 
     # Peaceful characters
     for char in [master.h1, master.h2]:

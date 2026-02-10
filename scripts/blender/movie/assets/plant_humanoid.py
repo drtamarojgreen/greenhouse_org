@@ -95,10 +95,34 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
 
     subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in node_bsdf.inputs else "Subsurface"
     node_bsdf.inputs[subsurf_attr].default_value = 0.15
+
+    # Peeling Bark (Noise on Displacement)
+    node_peel_noise = nodes.new(type='ShaderNodeTexNoise')
+    node_peel_noise.inputs['Scale'].default_value = 10.0
+    node_bump_peel = nodes.new(type='ShaderNodeBump')
+    node_bump_peel.inputs['Strength'].default_value = 0.8
+    links.new(node_peel_noise.outputs['Fac'], node_bump_peel.inputs['Height'])
+    links.new(node_bump_peel.outputs['Normal'], node_bsdf.inputs['Normal'])
+
+    # Muddy Limbs (Gradient mixed with base color)
+    node_grad = nodes.new(type='ShaderNodeTexGradient')
+    node_grad.mapping = 'QUADRATIC_SPHERE'
+    node_grad_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_grad_ramp.color_ramp.elements[0].color = (0.05, 0.02, 0.01, 1) # Mud
+    node_grad_ramp.color_ramp.elements[1].color = (1, 1, 1, 1)
+    links.new(node_grad.outputs['Fac'], node_grad_ramp.inputs['Fac'])
+
+    node_mix_mud = nodes.new(type='ShaderNodeMixRGB')
+    node_mix_mud.blend_type = 'MULTIPLY'
+    node_mix_mud.inputs[0].default_value = 1.0
+    links.new(node_mix_curv.outputs['Color'], node_mix_mud.inputs[1])
+    links.new(node_grad_ramp.outputs['Color'], node_mix_mud.inputs[2])
+    links.new(node_mix_mud.outputs['Color'], node_bsdf.inputs['Base Color'])
+
     return mat
 
 def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
-    """Enhanced procedural leaf material."""
+    """Enhanced procedural leaf material with Venation and Fuzz."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
@@ -124,6 +148,22 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
 
     subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in node_bsdf.inputs else "Subsurface"
     node_bsdf.inputs[subsurf_attr].default_value = 0.3
+
+    # Leaf Venation (Musgrave mixed with base color)
+    node_musgrave = nodes.new(type='ShaderNodeTexMusgrave')
+    node_musgrave.inputs['Scale'].default_value = 20.0
+    node_venation_mix = nodes.new(type='ShaderNodeMixRGB')
+    node_venation_mix.blend_type = 'MULTIPLY'
+    node_venation_mix.inputs[0].default_value = 0.2
+    links.new(node_color_mix.outputs['Color'], node_venation_mix.inputs[1])
+    links.new(node_musgrave.outputs['Fac'], node_venation_mix.inputs[2])
+    links.new(node_venation_mix.outputs['Color'], node_bsdf.inputs['Base Color'])
+
+    # Plant Fuzz (Fuzzy noise on Specular/Roughness)
+    node_fuzz = nodes.new(type='ShaderNodeTexNoise')
+    node_fuzz.inputs['Scale'].default_value = 500.0
+    links.new(node_fuzz.outputs['Fac'], node_bsdf.inputs['Roughness'])
+
     return mat
 
 def create_fingers(location, direction, radius=0.02):
@@ -215,6 +255,12 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         mouth.matrix_parent_inverse = head.matrix_world.inverted()
         mouth.data.materials.append(mat_eye)
         facial_parts.append(mouth)
+
+        # Expression Blending & Morphing Smiles (Shape Keys)
+        if mouth.type == 'MESH':
+            mouth.shape_key_add(name="Basis")
+            smile = mouth.shape_key_add(name="Smile")
+            # In a real setup we'd deform vertices here
 
     arm_height = torso_height * 0.9
     l_arm_start = location + mathutils.Vector((0.2, 0, arm_height))

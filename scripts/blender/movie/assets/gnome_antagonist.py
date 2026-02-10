@@ -107,18 +107,38 @@ def create_gnome(name, location, scale=0.6):
 
     mat_gloom = bpy.data.materials.new(name=f"{name}_MatGloom")
     mat_gloom.use_nodes = True
-    mat_gloom.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0, 0, 0, 1) # Black
-    mat_gloom.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 0.5
-    mat_gloom.node_tree.nodes["Principled BSDF"].inputs["Emission Color"].default_value = (0.1, 0, 0.2, 1)
+    bsdf_gloom = mat_gloom.node_tree.nodes["Principled BSDF"]
+    bsdf_gloom.inputs["Base Color"].default_value = (0, 0, 0, 1) # Black
+    bsdf_gloom.inputs["Emission Strength"].default_value = 0.5
+    bsdf_gloom.inputs["Emission Color"].default_value = (0.1, 0, 0.2, 1)
 
-    # Tattered Cloak (Deformed Plane)
+    # Rusted Staff (Noise/Roughness)
+    node_rust = mat_gloom.node_tree.nodes.new(type='ShaderNodeTexNoise')
+    node_rust.inputs['Scale'].default_value = 50.0
+    mat_gloom.node_tree.links.new(node_rust.outputs['Fac'], bsdf_gloom.inputs['Roughness'])
+
+    # Tattered Cloak (Woven Cloak)
     bpy.ops.mesh.primitive_plane_add(size=1.0, location=location + mathutils.Vector((0, 0.2, 0.5)), rotation=(math.radians(90), 0, 0))
     cloak = bpy.context.object
     cloak.name = f"{name}_Cloak"
     cloak.scale = (0.6, 0.8, 1.0)
     cloak.parent = body
     cloak.matrix_parent_inverse = body.matrix_world.inverted()
-    cloak.data.materials.append(mat_hat)
+
+    mat_cloak = bpy.data.materials.new(name=f"{name}_MatCloak")
+    mat_cloak.use_nodes = True
+    bsdf_cloak = mat_cloak.node_tree.nodes["Principled BSDF"]
+    bsdf_cloak.inputs["Base Color"].default_value = (0.1, 0.05, 0.2, 1)
+
+    # Woven Fabric (Voronoi/Wave with Bump)
+    node_weave = mat_cloak.node_tree.nodes.new(type='ShaderNodeTexWave')
+    node_weave.inputs['Scale'].default_value = 100.0
+    node_bump = mat_cloak.node_tree.nodes.new(type='ShaderNodeBump')
+    node_bump.inputs['Strength'].default_value = 0.3
+    mat_cloak.node_tree.links.new(node_weave.outputs['Fac'], node_bump.inputs['Height'])
+    mat_cloak.node_tree.links.new(node_bump.outputs['Normal'], bsdf_cloak.inputs['Normal'])
+
+    cloak.data.materials.append(mat_cloak)
 
     parts = [(body, mat_body), (hat, mat_hat), (beard, mat_beard), (orb, mat_gloom), (mouth, mat_gnome_eye), (cloak, mat_hat)]
     for p, mat in parts:

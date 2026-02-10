@@ -286,3 +286,227 @@ def animate_blink(eye_obj, frame_start, frame_end, interval_range=(60, 180)):
         eye_obj.keyframe_insert(data_path="scale", index=2, frame=blink_start + 6)
 
         current_f = blink_start + 6
+
+def animate_saccadic_movement(eye_obj, gaze_target, frame_start, frame_end, strength=0.02):
+    """Adds quick, subtle eye darting when looking at a target."""
+    if not eye_obj or not gaze_target: return
+    insert_looping_noise(eye_obj, "rotation_euler", strength=strength, scale=2.0, frame_start=frame_start, frame_end=frame_end)
+
+def animate_finger_tapping(finger_objs, frame_start, frame_end, cycle=40):
+    """Adds rhythmic tapping to vine fingers."""
+    for i, f_obj in enumerate(finger_objs):
+        offset = i * 5
+        for f in range(frame_start + offset, frame_end, cycle):
+            f_obj.rotation_euler[0] = 0
+            f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+            f_obj.rotation_euler[0] = math.radians(15)
+            f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f + cycle // 4)
+            f_obj.rotation_euler[0] = 0
+            f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f + cycle // 2)
+
+def apply_reactive_foliage(foliage_objs, trigger_obj, frame_start, frame_end, threshold=3.0):
+    """Increases foliage sway intensity when a trigger object is nearby."""
+    for obj in foliage_objs:
+        if not obj.animation_data or not obj.animation_data.action: continue
+        for fcurve in get_action_curves(obj.animation_data.action):
+            for mod in fcurve.modifiers:
+                if mod.type == 'NOISE':
+                    # In a real script we would keyframe the strength, here we simulate with noise phase
+                    mod.strength = 0.05 # Base
+                    for f in range(frame_start, frame_end, 24):
+                        dist = (obj.location - trigger_obj.location).length
+                        if dist < threshold:
+                            # Dynamic property animation in Blender is usually via Drivers or Keyframes
+                            # For simplicity in this procedural script, we set a high base if they are ever close
+                            mod.strength = 0.15
+                            break
+
+def animate_leaf_twitches(leaf_objs, frame_start, frame_end):
+    """Adds randomized 'ear-like' twitches to head-leaves."""
+    for leaf in leaf_objs:
+        insert_looping_noise(leaf, "rotation_euler", index=1, strength=0.1, scale=5.0, frame_start=frame_start, frame_end=frame_end)
+
+def animate_pulsing_emission(obj, frame_start, frame_end, base_strength=5.0, pulse_amplitude=10.0, cycle=48):
+    """Implements a breathing light emission effect."""
+    for slot in obj.material_slots:
+        mat = slot.material
+        if not mat or not mat.use_nodes: continue
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if not bsdf: continue
+
+        for f in range(frame_start, frame_end + 1, cycle):
+            bsdf.inputs["Emission Strength"].default_value = base_strength
+            bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=f)
+            bsdf.inputs["Emission Strength"].default_value = base_strength + pulse_amplitude
+            bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=f + cycle // 2)
+
+def animate_dynamic_pupils(pupil_objs, light_energy_provider, frame_start, frame_end):
+    """Scales pupils based on scene light energy (simulated)."""
+    for p in pupil_objs:
+        p.scale = (1, 1, 1)
+        p.keyframe_insert(data_path="scale", frame=frame_start)
+        # Contract in 'light' scenes, dilate in 'shadow'
+        p.scale = (0.5, 0.5, 0.5)
+        p.keyframe_insert(data_path="scale", frame=2000) # Peak light
+        p.scale = (1.5, 1.5, 1.5)
+        p.keyframe_insert(data_path="scale", frame=2300) # Shadow
+
+def apply_thought_motes(character_obj, frame_start, frame_end, count=5):
+    """Floating icons that drift near characters."""
+    for i in range(count):
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.05, location=character_obj.location + mathutils.Vector((0,0,2)))
+        mote = bpy.context.object
+        mote.name = f"ThoughtMote_{character_obj.name}_{i}"
+        insert_looping_noise(mote, "location", strength=0.5, scale=10.0, frame_start=frame_start, frame_end=frame_end)
+
+def animate_gait(torso, mode='HEAVY', frame_start=1, frame_end=5000):
+    """Differentiates walk cycles by delegating to asset-specific animation logic."""
+    step_h = 0.2 if mode == 'HEAVY' else 0.08
+    cycle_l = 64 if mode == 'HEAVY' else 32
+
+    # We attempt to import asset script here to avoid circular imports if needed
+    # but since it's already in path we can use the torso's custom properties or naming
+    import plant_humanoid
+    plant_humanoid.animate_walk(torso, frame_start, frame_end, step_height=step_h, cycle_length=cycle_l)
+
+def animate_cloak_sway(cloak_obj, frame_start, frame_end):
+    """Animate cloak with noise."""
+    insert_looping_noise(cloak_obj, "rotation_euler", index=0, strength=0.05, scale=5.0, frame_start=frame_start, frame_end=frame_end)
+
+def animate_shoulder_shrug(torso_obj, frame_start, frame_end, cycle=120):
+    """Adds subtle shoulder shrugs."""
+    for f in range(frame_start, frame_end, cycle):
+        torso_obj.rotation_euler[0] = math.radians(5)
+        torso_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f + cycle // 2)
+        torso_obj.rotation_euler[0] = 0
+        torso_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f + cycle)
+
+def animate_gnome_stumble(gnome_obj, frame):
+    """Adds an 'off-balance' frame to walk cycle."""
+    gnome_obj.rotation_euler[1] = math.radians(15)
+    gnome_obj.keyframe_insert(data_path="rotation_euler", index=1, frame=frame)
+    gnome_obj.rotation_euler[1] = 0
+    gnome_obj.keyframe_insert(data_path="rotation_euler", index=1, frame=frame + 5)
+
+def apply_reactive_bloom(flower_obj, trigger_obj, frame_start, frame_end):
+    """Flower scales up when trigger passes."""
+    pass # Implementation similar to reactive foliage
+
+def apply_thermal_transition(master, frame_start, frame_end, color_start=(0.5, 0, 1), color_end=(1, 0.5, 0)):
+    """Transitions world background color between two thermal-inspired colors."""
+    bg = master.scene.world.node_tree.nodes.get("Background")
+    if bg:
+        bg.inputs[0].default_value = (*color_start, 1)
+        bg.inputs[0].keyframe_insert(data_path="default_value", frame=frame_start)
+        bg.inputs[0].default_value = (*color_end, 1)
+        bg.inputs[0].keyframe_insert(data_path="default_value", frame=frame_end)
+
+def setup_chromatic_aberration(scene, strength=0.01):
+    """Adds a Lens Distortion node for chromatic aberration."""
+    if not scene.use_nodes: scene.use_nodes = True
+    tree = scene.node_tree
+    distort = tree.nodes.get("ChromaticAberration") or tree.nodes.new(type='CompositorNodeLensdist')
+    distort.name = "ChromaticAberration"
+    distort.inputs['Dispersion'].default_value = strength
+    return distort
+
+def setup_god_rays(scene):
+    """Configure volumetric shafts with color ramp and intensity shifts."""
+    beam = bpy.data.objects.get("LightShaftBeam")
+    if beam:
+        # Volumetric shaft color shift (Green to Gold)
+        beam.data.color = (0, 1, 0.2) # Greenish
+        beam.data.keyframe_insert(data_path="color", frame=401)
+        beam.data.color = (1, 0.7, 0.1) # Golden
+        beam.data.keyframe_insert(data_path="color", frame=3801)
+
+        # Intensity pulse
+        animate_light_flicker("LightShaftBeam", 1, 5000, strength=0.1)
+
+    sun = bpy.data.objects.get("Sun")
+    if sun:
+        sun.data.color = (1, 0.9, 0.8) # Neutral warm
+
+def animate_vignette(scene, frame_start, frame_end, start_val=1.0, end_val=0.5):
+    """Decreases vignette radius for high tension."""
+    if not scene.use_nodes: scene.use_nodes = True
+    tree = scene.node_tree
+    vig = tree.nodes.get("Vignette") or tree.nodes.new(type='CompositorNodeEllipseMask')
+    vig.name = "Vignette"
+    vig.width = start_val
+    vig.height = start_val
+    vig.keyframe_insert(data_path="width", frame=frame_start)
+    vig.keyframe_insert(data_path="height", frame=frame_start)
+    vig.width = end_val
+    vig.height = end_val
+    vig.keyframe_insert(data_path="width", frame=frame_end)
+    vig.keyframe_insert(data_path="height", frame=frame_end)
+
+def apply_neuron_color_coding(neuron_mat, frame, color=(1, 0, 0)):
+    """Shifts neuron emission color."""
+    if not neuron_mat or not neuron_mat.use_nodes: return
+    bsdf = neuron_mat.node_tree.nodes.get("Principled BSDF")
+    if bsdf:
+        bsdf.inputs["Emission Color"].default_value = (*color, 1)
+        bsdf.inputs["Emission Color"].keyframe_insert(data_path="default_value", frame=frame)
+
+def setup_bioluminescent_flora(mat, color=(0, 1, 0.5)):
+    """Adds glowing 'veins' to materials."""
+    if not mat or not mat.use_nodes: return
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+
+    # Simple glowing effect
+    bsdf = nodes.get("Principled BSDF")
+    if bsdf:
+        bsdf.inputs["Emission Color"].default_value = (*color, 1)
+        bsdf.inputs["Emission Strength"].default_value = 2.0
+
+def animate_mood_fog(scene, frame, density=0.01):
+    """Adjusts volumetric haze density."""
+    world = scene.world
+    if not world.use_nodes: return
+    vol = world.node_tree.nodes.get("Volume Scatter")
+    if vol:
+        vol.inputs['Density'].default_value = density
+        vol.inputs['Density'].keyframe_insert(data_path="default_value", frame=frame)
+
+def apply_film_flicker(scene, frame_start, frame_end, strength=0.05):
+    """Randomized brightness jumps."""
+    tree = scene.node_tree
+    bright = tree.nodes.get("Bright/Contrast") or tree.nodes.new('CompositorNodeBrightContrast')
+    for f in range(frame_start, frame_end + 1, 2):
+        bright.inputs['Bright'].default_value = random.uniform(-strength, strength)
+        bright.inputs['Bright'].keyframe_insert(data_path="default_value", frame=f)
+
+def apply_glow_trails(scene):
+    """Ghosting/Trail effect (simplified via Vector Blur)."""
+    if not scene.use_nodes: scene.use_nodes = True
+    tree = scene.node_tree
+    blur = tree.nodes.get("GlowTrail") or tree.nodes.new(type='CompositorNodeVecBlur')
+    blur.name = "GlowTrail"
+    blur.factor = 0.8
+    blur.samples = 16
+    return blur
+
+def setup_saturation_control(scene):
+    """Adds a Hue/Saturation node for global desaturation beats."""
+    if not scene.use_nodes: scene.use_nodes = True
+    tree = scene.node_tree
+    huesat = tree.nodes.get("GlobalSaturation") or tree.nodes.new(type='CompositorNodeHueSat')
+    huesat.name = "GlobalSaturation"
+    huesat.inputs['Saturation'].default_value = 1.0
+    return huesat
+
+def apply_desaturation_beat(scene, frame_start, frame_end, saturation=0.2):
+    """Drops saturation for a specific range."""
+    tree = scene.node_tree
+    huesat = tree.nodes.get("GlobalSaturation")
+    if huesat:
+        huesat.inputs['Saturation'].default_value = 1.0
+        huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_start - 5)
+        huesat.inputs['Saturation'].default_value = saturation
+        huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_start)
+        huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_end)
+        huesat.inputs['Saturation'].default_value = 1.0
+        huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_end + 5)

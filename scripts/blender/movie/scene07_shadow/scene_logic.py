@@ -10,6 +10,15 @@ def setup_scene(master):
     # Apply shadow grade
     style.apply_scene_grade(master, 'shadow', 1901, 2500)
 
+    # Mood-Based Fog (Thick in Shadow)
+    style.animate_mood_fog(master.scene, 1901, density=0.02)
+
+    # Vignette Tightening (Increase tension)
+    style.animate_vignette(master.scene, 1901, 2300, start_val=1.0, end_val=0.4)
+
+    # Desaturation Beats (Drop saturation to 20%)
+    style.apply_desaturation_beat(master.scene, 2300, 2400, saturation=0.2)
+
     # Gnome animation and visibility
     gnome = master.gnome
     if gnome:
@@ -42,3 +51,8 @@ def setup_scene(master):
 
     style.animate_light_flicker("Spot", 1901, 2500, strength=0.4)
     style.animate_light_flicker("RimLight", 1901, 2500, strength=0.2)
+
+    # Subtle Shivers
+    for char in [master.h1, master.h2]:
+        if char:
+            style.insert_looping_noise(char, "location", strength=0.1, scale=1.0, frame_start=1901, frame_end=2500)
