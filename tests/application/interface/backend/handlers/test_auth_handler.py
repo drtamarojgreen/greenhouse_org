@@ -48,6 +48,19 @@ class TestAuthHandler(unittest.TestCase):
         self.assertIn('qr_code', json.loads(response.data))
 
     @patch('application.interface.backend.handlers.auth_handler.get_db')
+    def test_register_user_exists(self, mock_get_db):
+        mock_db = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_db
+        mock_db.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = (1,) # User already exists
+
+        data = {'email': 'test@example.com', 'password': 'Password123!', 'full_name': 'Test User', 'role_id': 1}
+        response = self.client.post('/api/auth/register', data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(json.loads(response.data)['error'], 'User already exists')
+
+    @patch('application.interface.backend.handlers.auth_handler.get_db')
     @patch('application.interface.backend.handlers.auth_handler.bcrypt')
     def test_login(self, mock_bcrypt, mock_get_db):
         mock_db = MagicMock()
@@ -65,6 +78,38 @@ class TestAuthHandler(unittest.TestCase):
         response = self.client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('temp_token', json.loads(response.data))
+
+    @patch('application.interface.backend.handlers.auth_handler.get_db')
+    def test_login_invalid_user(self, mock_get_db):
+        mock_db = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_db
+        mock_db.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = None # No user found
+
+        data = {'email': 'nonexistent@example.com', 'password': 'Password123!'}
+        response = self.client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(json.loads(response.data)['error'], 'Invalid credentials')
+
+    @patch('application.interface.backend.handlers.auth_handler.get_db')
+    @patch('application.interface.backend.handlers.auth_handler.bcrypt')
+    def test_login_wrong_password(self, mock_bcrypt, mock_get_db):
+        mock_db = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_db
+        mock_db.cursor.return_value = mock_cursor
+
+        mock_cursor.fetchone.side_effect = [
+            (1, 'test@example.com', 'Test User', 1, 'patient'),
+            ('hashed_password',)
+        ]
+        mock_bcrypt.check_password_hash.return_value = False # Wrong password
+
+        data = {'email': 'test@example.com', 'password': 'WrongPassword123!'}
+        response = self.client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(json.loads(response.data)['error'], 'Invalid credentials')
 
     @patch('application.interface.backend.handlers.auth_handler.get_db')
     @patch('application.interface.backend.handlers.auth_handler.pyotp.TOTP')
@@ -117,6 +162,117 @@ class TestAuthHandler(unittest.TestCase):
         response = self.client.post('/api/auth/mfa/verify', data=json.dumps(data), content_type='application/json', headers={'Authorization': f'Bearer {temp_token}'})
         self.assertEqual(response.status_code, 401)
         self.assertEqual(json.loads(response.data)['error'], 'Invalid MFA code')
+
+    def test_verify_mfa_missing_code(self):
+        with self.app.test_request_context():
+            from flask_jwt_extended import create_access_token
+            temp_token = create_access_token(identity='1', additional_claims={'mfa_verified': False})
+
+        response = self.client.post('/api/auth/mfa/verify', data=json.dumps({}), content_type='application/json', headers={'Authorization': f'Bearer {temp_token}'})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(json.loads(response.data)['error'], 'MFA code is required')
+
+    def test_verify_mfa_already_verified(self):
+        with self.app.test_request_context():
+            from flask_jwt_extended import create_access_token
+            temp_token = create_access_token(identity='1', additional_claims={'mfa_verified': True})
+
+        data = {'mfa_code': '123456'}
+        response = self.client.post('/api/auth/mfa/verify', data=json.dumps(data), content_type='application/json', headers={'Authorization': f'Bearer {temp_token}'})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(json.loads(response.data)['error'], 'MFA already verified')
+
+    @patch('application.interface.backend.handlers.auth_handler.get_db')
+    def test_verify_mfa_no_enrollment(self, mock_get_db):
+        mock_db = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_db
+        mock_db.cursor.return_value = mock_cursor
+
+        mock_cursor.fetchone.side_effect = [
+            (1, 'test@example.com', 'Test User', 1, 'patient'), # User info found
+            None # MFA secret NOT found
+        ]
+
+        with self.app.test_request_context():
+            from flask_jwt_extended import create_access_token
+            temp_token = create_access_token(identity='1', additional_claims={'mfa_verified': False})
+
+        data = {'mfa_code': '123456'}
+        response = self.client.post('/api/auth/mfa/verify', data=json.dumps(data), content_type='application/json', headers={'Authorization': f'Bearer {temp_token}'})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(json.loads(response.data)['error'], 'MFA not enrolled')
+
+    @patch('application.interface.backend.handlers.auth_handler.get_db')
+    def test_logout_success(self, mock_get_db):
+        mock_db = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_db
+        mock_db.cursor.return_value = mock_cursor
+
+        with self.app.test_request_context():
+            from flask_jwt_extended import create_access_token
+            token = create_access_token(identity='1', additional_claims={'mfa_verified': True, 'role': 'patient', 'email': 'test@example.com'})
+
+        response = self.client.post('/api/auth/logout', headers={'Authorization': f'Bearer {token}'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.data)['message'], 'Logout successful')
+        mock_db.commit.assert_called_once()
+
+    @patch('application.interface.backend.handlers.auth_handler.get_db')
+    def test_get_me_success(self, mock_get_db):
+        mock_db = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_db
+        mock_db.cursor.return_value = mock_cursor
+
+        mock_cursor.fetchone.return_value = (1, 'test@example.com', 'Test User', 1, 'patient', datetime.utcnow())
+
+        with self.app.test_request_context():
+            from flask_jwt_extended import create_access_token
+            token = create_access_token(identity='1', additional_claims={'mfa_verified': True, 'role': 'patient'})
+
+        response = self.client.get('/api/auth/me', headers={'Authorization': f'Bearer {token}'})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertEqual(data['email'], 'test@example.com')
+        self.assertEqual(data['full_name'], 'Test User')
+
+    @patch('application.interface.backend.handlers.auth_handler.get_db')
+    def test_refresh_token_success(self, mock_get_db):
+        mock_db = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_db
+        mock_db.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = ('test@example.com', 'patient')
+
+        with self.app.test_request_context():
+            from flask_jwt_extended import create_refresh_token
+            refresh_token = create_refresh_token(identity='1')
+
+        response = self.client.post('/api/auth/refresh', headers={'Authorization': f'Bearer {refresh_token}'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('access_token', json.loads(response.data))
+
+    @patch('application.interface.backend.handlers.auth_handler.get_db')
+    @patch('application.interface.backend.handlers.auth_handler.field_encryption')
+    @patch('application.interface.backend.handlers.auth_handler.pyotp.random_base32')
+    def test_enroll_mfa_success(self, mock_random, mock_encryption, mock_get_db):
+        mock_db = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_db
+        mock_db.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = ('test@example.com',)
+        mock_random.return_value = 'JBSWY3DPEHPK3PXP'
+        mock_encryption.encrypt.return_value = 'encrypted_secret'
+
+        with self.app.test_request_context():
+            from flask_jwt_extended import create_access_token
+            token = create_access_token(identity='1', additional_claims={'mfa_verified': True})
+
+        response = self.client.post('/api/auth/mfa/enroll', headers={'Authorization': f'Bearer {token}'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('qr_code', json.loads(response.data))
 
     @patch('application.interface.backend.handlers.auth_handler.get_db')
     def test_register_error_sanitization(self, mock_get_db):

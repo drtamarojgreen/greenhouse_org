@@ -25,7 +25,9 @@ class TestPatientHandler(unittest.TestCase):
             )
 
     @patch('application.interface.backend.models.patient.Patient.get_all')
-    def test_get_all_patients(self, mock_get_all):
+    @patch('application.interface.backend.handlers.patient_handler.get_clinician_id')
+    def test_get_all_patients(self, mock_get_clinician_id, mock_get_all):
+        mock_get_clinician_id.return_value = 1
         mock_patient = Patient(1, 1, datetime.now(), 'Male', datetime.now(), 'Caucasian', '123 Main St', None, 'CA', '12345', 'Anytown')
         mock_get_all.return_value = [mock_patient]
 
@@ -34,7 +36,13 @@ class TestPatientHandler(unittest.TestCase):
         self.assertEqual(len(json.loads(response.data)), 1)
 
     @patch('application.interface.backend.models.patient.Patient.get_by_id')
-    def test_get_patient_by_id(self, mock_get_by_id):
+    @patch('application.interface.backend.handlers.patient_handler.get_clinician_id')
+    @patch('application.interface.backend.handlers.patient_handler.get_db')
+    def test_get_patient_by_id(self, mock_get_db, mock_get_clinician_id, mock_get_by_id):
+        mock_get_clinician_id.return_value = 1
+        mock_cursor = MagicMock()
+        mock_get_db.return_value.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = (1,) # Assignment link exists
         mock_patient = Patient(1, 1, datetime.now(), 'Male', datetime.now(), 'Caucasian', '123 Main St', None, 'CA', '12345', 'Anytown')
         mock_get_by_id.return_value = mock_patient
 

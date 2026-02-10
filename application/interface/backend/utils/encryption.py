@@ -186,6 +186,36 @@ class DataMasking:
             return address
         
         return '*' * len(address)
+
+    @staticmethod
+    def mask_dob(dob):
+        """
+        Mask Date of Birth for display
+
+        Args:
+            dob: Date of birth (string or date object)
+
+        Returns:
+            Masked DOB
+        """
+        if not dob:
+            return dob
+        return "****-**-**"
+
+    @staticmethod
+    def mask_generic(value):
+        """
+        Generic mask for sensitive fields
+
+        Args:
+            value: Value to mask
+
+        Returns:
+            Masked value
+        """
+        if not value:
+            return value
+        return "****"
     
     @staticmethod
     def is_phi_field(field_name):

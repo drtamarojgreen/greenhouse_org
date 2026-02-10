@@ -9,6 +9,7 @@ from .config import get_config
 from .handlers.user_handler import user_bp
 from .handlers.patient_handler import patient_bp
 from .handlers.auth_handler import auth_bp
+from .handlers.analytics_handler import analytics_bp
 from . import database
 
 # Get configuration
@@ -64,6 +65,7 @@ os.makedirs('logs', exist_ok=True)
 app.register_blueprint(auth_bp, url_prefix='/api')
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(patient_bp, url_prefix='/api')
+app.register_blueprint(analytics_bp, url_prefix='/api')
 
 # Error handlers
 @app.errorhandler(404)
