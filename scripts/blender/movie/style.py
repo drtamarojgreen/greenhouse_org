@@ -5,6 +5,7 @@ import mathutils
 
 def get_action_curves(action):
     """Helper to get fcurves/curves collection from Action for Blender 5.0+ compatibility."""
+    if not action: return []
     if hasattr(action, 'fcurves'):
         return action.fcurves
     if hasattr(action, 'curves'):
@@ -16,6 +17,79 @@ def get_action_curves(action):
         if hasattr(action.layers[0], 'fcurves'):
             return action.layers[0].fcurves
     return []
+
+def get_eevee_engine_id():
+    """Probes Blender for the correct Eevee engine identifier (EEVEE vs EEVEE_NEXT)."""
+    # Check render engines available in current build
+    # In some 4.2+ builds it is BLENDER_EEVEE_NEXT, in 5.0 it might revert to BLENDER_EEVEE
+    # We probe by checking what the current scene allows
+    try:
+        # Fallback list in order of preference
+        for engine in ['BLENDER_EEVEE_NEXT', 'BLENDER_EEVEE']:
+            if engine in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items:
+                return engine
+    except Exception:
+        pass
+    return 'BLENDER_EEVEE' # Legacy default
+
+def set_principled_socket(mat_or_node, socket_name, value, frame=None):
+    """Guarded setter for Principled BSDF sockets to handle naming drift (e.g. Specular)."""
+    node = mat_or_node
+    if hasattr(mat_or_node, "node_tree"):
+        node = mat_or_node.node_tree.nodes.get("Principled BSDF")
+
+    if not node: return False
+
+    # Mapping of legacy names to modern names
+    mapping = {
+        'Specular': ['Specular', 'Specular IOR Level'],
+        'Transmission': ['Transmission', 'Transmission Weight'],
+        'Emission': ['Emission', 'Emission Color'],
+    }
+
+    target_sockets = mapping.get(socket_name, [socket_name])
+
+    for s in target_sockets:
+        if s in node.inputs:
+            node.inputs[s].default_value = value
+            if frame is not None:
+                node.inputs[s].keyframe_insert(data_path="default_value", frame=frame)
+            return True
+
+    print(f"Warning: Could not find socket {socket_name} (or alternatives) on {node.name}")
+    return False
+
+def patch_fbx_importer():
+    """
+    Patches the Blender 5.0 FBX importer to handle missing 'files' attribute.
+    Centralized utility to avoid redundancy.
+    """
+    try:
+        import sys
+        # Attempt to locate the loaded io_scene_fbx module
+        fbx_module = sys.modules.get('io_scene_fbx')
+        if not fbx_module:
+            try:
+                import io_scene_fbx
+                fbx_module = io_scene_fbx
+            except ImportError:
+                pass
+
+        if fbx_module and hasattr(fbx_module, 'ImportFBX'):
+            ImportFBX = fbx_module.ImportFBX
+            if not getattr(ImportFBX, '_is_patched', False):
+                original_execute = ImportFBX.execute
+                def patched_execute(self, context):
+                    if not hasattr(self, 'files'):
+                        self.files = []
+                    return original_execute(self, context)
+                ImportFBX.execute = patched_execute
+                ImportFBX._is_patched = True
+                print("Patched io_scene_fbx.ImportFBX for Blender 5.0 compatibility.")
+                return True
+    except Exception as e:
+        print(f"Warning: Failed to patch FBX importer: {e}")
+    return False
 
 def apply_scene_grade(master, scene_name, frame_start, frame_end):
     """Applies scene mood presets: world tint, light energy/color ratios."""

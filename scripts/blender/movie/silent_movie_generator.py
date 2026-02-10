@@ -68,36 +68,6 @@ SCENE_MAP = {
     'credits': (4501, 5000)
 }
 
-def patch_fbx_importer():
-    """
-    Patches the Blender 5.0 FBX importer to handle missing 'files' attribute.
-    Fixes AttributeError: 'ImportFBX' object has no attribute 'files'.
-    """
-    try:
-        import sys
-        # Attempt to locate the loaded io_scene_fbx module
-        fbx_module = sys.modules.get('io_scene_fbx')
-        if not fbx_module:
-            try:
-                import io_scene_fbx
-                fbx_module = io_scene_fbx
-            except ImportError:
-                pass
-
-        if fbx_module and hasattr(fbx_module, 'ImportFBX'):
-            ImportFBX = fbx_module.ImportFBX
-            if not getattr(ImportFBX, '_is_patched', False):
-                original_execute = ImportFBX.execute
-                def patched_execute(self, context):
-                    if not hasattr(self, 'files'):
-                        self.files = []
-                    return original_execute(self, context)
-                ImportFBX.execute = patched_execute
-                ImportFBX._is_patched = True
-                print("Patched io_scene_fbx.ImportFBX for Blender 5.0 compatibility.")
-    except Exception as e:
-        print(f"Warning: Failed to patch FBX importer: {e}")
-
 class MovieMaster:
     def __init__(self, mode='SILENT_FILM'):
         self.mode = mode # 'SILENT_FILM' or 'UNITY_PREVIEW'
@@ -149,8 +119,10 @@ class MovieMaster:
             bg = scene.world.node_tree.nodes.get("Background")
             if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
         else: # UNITY_PREVIEW (Eevee)
-            scene.render.engine = 'BLENDER_EEVEE'
-            scene.eevee.taa_render_samples = 64
+            # Probe for Eevee Next vs Legacy
+            scene.render.engine = style.get_eevee_engine_id()
+            if hasattr(scene.eevee, "taa_render_samples"):
+                scene.eevee.taa_render_samples = 64
             scene.world.use_nodes = True
             bg = scene.world.node_tree.nodes.get("Background")
             if bg: bg.inputs[0].default_value = (0.05, 0.05, 0.1, 1)
@@ -160,18 +132,8 @@ class MovieMaster:
         return scene
 
     def get_action_curves(self, action):
-        """Helper to get fcurves/curves collection from Action for Blender 5.0+ compatibility."""
-        if hasattr(action, 'fcurves'):
-            return action.fcurves
-        if hasattr(action, 'curves'):
-            return action.curves
-        # Blender 5.0 / Animation 2025 Layered Action support
-        if hasattr(action, 'layer') and hasattr(action.layer, 'fcurves'):
-            return action.layer.fcurves
-        if hasattr(action, 'layers') and len(action.layers) > 0:
-            if hasattr(action.layers[0], 'fcurves'):
-                return action.layers[0].fcurves
-        return []
+        """Delegates to shared style utility for Blender 5.0 compatibility."""
+        return style.get_action_curves(action)
 
     def create_intertitle(self, text, frame_start, frame_end):
         """Creates a classic silent movie intertitle card."""
@@ -261,6 +223,10 @@ class MovieMaster:
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         self.greenhouse = greenhouse_structure.create_greenhouse_structure()
+
+        # Structural Vine Sway
+        for obj in self.greenhouse.objects:
+            style.insert_looping_noise(obj, "rotation_euler", strength=0.01, scale=50.0, frame_start=1, frame_end=5000)
         self.gnome = gnome_antagonist.create_gnome("GloomGnome", mathutils.Vector((5, 5, 0)))
 
         # Load Brain
@@ -281,6 +247,17 @@ class MovieMaster:
                     bpy.ops.object.shade_smooth()
                     mat = bpy.data.materials.new(name="BrainMat")
                     mat.use_nodes = True
+                    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+
+                    # Brain Vasculature (Musgrave veins)
+                    node_veins = mat.node_tree.nodes.new(type='ShaderNodeTexMusgrave')
+                    node_veins.inputs['Scale'].default_value = 20.0
+                    node_veins_color = mat.node_tree.nodes.new(type='ShaderNodeValToRGB')
+                    node_veins_color.color_ramp.elements[0].color = (1, 0, 0, 1) # Red veins
+                    node_veins_color.color_ramp.elements[1].color = (1, 0.8, 0.8, 1) # Pink tissue
+                    mat.node_tree.links.new(node_veins.outputs['Fac'], node_veins_color.inputs['Fac'])
+                    mat.node_tree.links.new(node_veins_color.outputs['Color'], bsdf.inputs['Base Color'])
+
                     o.data.materials.append(mat)
 
         # Load Neuron
@@ -493,6 +470,13 @@ class MovieMaster:
             staff = bpy.data.objects.get(f"{char_name}_ReasonStaff")
             if staff:
                 style.insert_looping_noise(staff, "rotation_euler", index=0, strength=0.02, scale=10.0, frame_start=1, frame_end=5000)
+
+            # Silent Mumbling
+            style.animate_breathing(char, 1, 5000, axis=2, amplitude=0.01) # Reuse breathing for mouth?
+            mouth = bpy.data.objects.get(f"{char_name}_Mouth")
+            if mouth:
+                # Silent Mumbling (Quick Z-scaling)
+                style.animate_breathing(mouth, 1, 5000, cycle=8, amplitude=0.5)
 
         scene00.setup_scene(self)
         scene01.setup_scene(self)
@@ -883,7 +867,7 @@ def main():
         if scene_name in SCENE_MAP:
             start_frame, end_frame = SCENE_MAP[scene_name]
             print(f"Focusing on scene '{scene_name}': frames {start_frame} to {end_frame}")
-    patch_fbx_importer()
+    style.patch_fbx_importer()
     master.run()
     if start_frame is not None: master.scene.frame_start = start_frame
     if end_frame is not None: master.scene.frame_end = end_frame

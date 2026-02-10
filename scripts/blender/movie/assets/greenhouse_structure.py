@@ -1,6 +1,7 @@
 import bpy
 import math
 import mathutils
+import style
 
 def create_greenhouse_iron_mat():
     mat = bpy.data.materials.get("GH_Iron")
@@ -32,10 +33,10 @@ def create_greenhouse_glass_mat():
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.7, 0.8, 0.9, 1)
     bsdf.inputs["Alpha"].default_value = 0.15
-    if "Transmission" in bsdf.inputs:
-        bsdf.inputs["Transmission"].default_value = 1.0
-    elif "Transmission Weight" in bsdf.inputs:
-        bsdf.inputs["Transmission Weight"].default_value = 1.0
+
+    # Transmission (Guarded for Blender 5.0 naming drift)
+    style.set_principled_socket(bsdf, 'Transmission', 1.0)
+
     bsdf.inputs["Roughness"].default_value = 0.05
 
     # Scratched Glass (Musgrave)

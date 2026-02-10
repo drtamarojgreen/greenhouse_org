@@ -2,6 +2,7 @@ import bpy
 import math
 import random
 import mathutils
+import style
 
 def create_leaf_mesh():
     """Creates a simple leaf mesh if it doesn't exist."""
@@ -93,6 +94,7 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
     node_bsdf.inputs['Roughness'].default_value = 0.9
 
+    # Subsurface (Guarded for Blender 5.0 naming drift)
     subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in node_bsdf.inputs else "Subsurface"
     node_bsdf.inputs[subsurf_attr].default_value = 0.15
 
@@ -146,6 +148,7 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     links.new(node_color_mix.outputs['Color'], node_bsdf.inputs['Base Color'])
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
 
+    # Subsurface (Guarded for Blender 5.0 naming drift)
     subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in node_bsdf.inputs else "Subsurface"
     node_bsdf.inputs[subsurf_attr].default_value = 0.3
 
@@ -209,7 +212,8 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
 
     mat_eye = bpy.data.materials.new(name=f"EyeMat_{name}")
     mat_eye.use_nodes = True
-    mat_eye.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 5.0
+    # Emission (Guarded for Blender 5.0 naming drift)
+    style.set_principled_socket(mat_eye, 'Emission Strength', 5.0)
     mat_eye.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = eye_color + (1,)
 
     mat_pupil = bpy.data.materials.new(name=f"PupilMat_{name}")

@@ -78,6 +78,49 @@ class TestRenderPreparedness(unittest.TestCase):
                 self.log_result(f"Animation: {name}", status, "Animation data present" if has_anim else "NO animation data")
                 self.assertTrue(has_anim)
 
+    def test_05_hierarchy_and_materials(self):
+        """Edge Case: Check if children of complex assets have materials assigned."""
+        parents = ["Herbaceous_Torso", "Arbor_Torso", "GloomGnome_Torso"]
+        for p_name in parents:
+            parent = bpy.data.objects.get(p_name)
+            if parent:
+                for child in parent.children:
+                    if child.type == 'MESH':
+                        with self.subTest(child=child.name):
+                            has_mat = len(child.data.materials) > 0
+                            status = "PASS" if has_mat else "WARNING"
+                            self.log_result(f"Hierarchy: {child.name} material", status, "Material assigned" if has_mat else "Mesh child has NO material")
+                            # We don't assert true because it's a warning level check
+
+    def test_06_engine_mode_switching(self):
+        """Edge Case: Test initialization in UNITY_PREVIEW mode."""
+        unity_master = MovieMaster(mode='UNITY_PREVIEW')
+        engine = unity_master.scene.render.engine
+        status = "PASS" if engine == 'BLENDER_EEVEE' else "FAIL"
+        self.log_result("Mode Switch: UNITY_PREVIEW", status, f"Engine is {engine}")
+        self.assertEqual(engine, 'BLENDER_EEVEE')
+
+    def test_07_volume_scatter_config(self):
+        """Edge Case: Verify volume scatter density is within safe ranges."""
+        world = bpy.context.scene.world
+        vol = world.node_tree.nodes.get("Volume Scatter")
+        if vol:
+            density = vol.inputs['Density'].default_value
+            # Shadow scene usually sets it higher, but global default should be low
+            is_sane = 0.0 < density < 0.1
+            status = "PASS" if is_sane else "WARNING"
+            self.log_result("Volume Density", status, f"Density is {density}")
+        else:
+            self.log_result("Volume Density", "FAIL", "Volume Scatter node MISSING in world")
+
+    def test_08_large_frame_range(self):
+        """Edge Case: Check if scene frame range matches the 5000 frame plan."""
+        scene = bpy.context.scene
+        is_correct = scene.frame_start == 1 and scene.frame_end == 5000
+        status = "PASS" if is_correct else "FAIL"
+        self.log_result("Frame Range", status, f"Range: {scene.frame_start}-{scene.frame_end}")
+        self.assertTrue(is_correct)
+
     @classmethod
     def tearDownClass(cls):
         print("\n" + "="*50)
