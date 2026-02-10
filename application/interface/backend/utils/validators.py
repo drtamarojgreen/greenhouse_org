@@ -221,6 +221,25 @@ class Validators:
 
         return True
 
+    @staticmethod
+    def validate_report_type(report_type):
+        """Validate report type"""
+        valid_types = ['patient_summary', 'clinician_workload', 'assessment_outcomes', 'system_usage']
+        if report_type not in valid_types:
+            raise ValidationError(f"Invalid report type. Allowed: {', '.join(valid_types)}", "report_type")
+        return True
+
+    @staticmethod
+    def validate_iso_date(date_str):
+        """Validate ISO format date"""
+        if not date_str:
+            return True
+        try:
+            datetime.fromisoformat(date_str)
+        except ValueError:
+            raise ValidationError("Invalid date format. Use ISO format.", "date")
+        return True
+
 
 class BusinessRules:
     """Implementation of business rules from specification"""

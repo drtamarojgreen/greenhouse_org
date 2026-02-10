@@ -442,7 +442,7 @@ def get_dashboard_metrics():
         }), 200
     
     except Exception as e:
-        audit_logger.log_security_event('ANALYTICS_DASHBOARD_ERROR', user_id, request.remote_addr, str(e))
+        audit_logger.log_security_event('ANALYTICS_DASHBOARD_ERROR', user_id, request.remote_addr, 'An unexpected error occurred while fetching analytics dashboard metrics')
         return jsonify({'error': 'An error occurred while fetching analytics dashboard metrics'}), 500
     finally:
         cur.close()
@@ -474,7 +474,22 @@ def get_trends():
     
     metric = request.args.get('metric', 'appointments')
     period = request.args.get('period', 'daily')
-    days = int(request.args.get('days', 30))
+
+    # Input validation and clamping
+    allowed_metrics = ['appointments', 'assessments', 'vitals', 'messages']
+    allowed_periods = ['daily', 'weekly', 'monthly']
+
+    if metric not in allowed_metrics:
+        return jsonify({'error': f'Invalid metric. Allowed: {", ".join(allowed_metrics)}'}), 400
+    if period not in allowed_periods:
+        return jsonify({'error': f'Invalid period. Allowed: {", ".join(allowed_periods)}'}), 400
+
+    try:
+        days = int(request.args.get('days', 30))
+        # Clamp days between 1 and 365
+        days = max(1, min(days, 365))
+    except ValueError:
+        return jsonify({'error': 'days must be an integer'}), 400
     
     start_date = datetime.now() - timedelta(days=days)
     
@@ -644,7 +659,7 @@ def get_trends():
         }), 200
     
     except Exception as e:
-        audit_logger.log_security_event('ANALYTICS_TRENDS_ERROR', user_id, request.remote_addr, str(e))
+        audit_logger.log_security_event('ANALYTICS_TRENDS_ERROR', user_id, request.remote_addr, 'An unexpected error occurred while fetching analytics trends')
         return jsonify({'error': 'An error occurred while fetching analytics trends'}), 500
     finally:
         cur.close()
@@ -743,7 +758,7 @@ def get_performance_metrics():
         return jsonify(metrics), 200
     
     except Exception as e:
-        audit_logger.log_security_event('PERFORMANCE_METRICS_ERROR', None, request.remote_addr, str(e))
+        audit_logger.log_security_event('PERFORMANCE_METRICS_ERROR', None, request.remote_addr, 'An unexpected error occurred while fetching performance metrics')
         return jsonify({'error': 'An error occurred while fetching performance metrics'}), 500
     finally:
         cur.close()
@@ -778,10 +793,30 @@ def generate_report():
         return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Request body is required'}), 400
+
     report_type = data.get('report_type')
-    start_date = datetime.fromisoformat(data.get('start_date', (datetime.now() - timedelta(days=30)).isoformat()))
-    end_date = datetime.fromisoformat(data.get('end_date', datetime.now().isoformat()))
+    start_date_str = data.get('start_date', (datetime.now() - timedelta(days=30)).isoformat())
+    end_date_str = data.get('end_date', datetime.now().isoformat())
     filters = data.get('filters', {})
+
+    # Validation
+    allowed_types = ['patient_summary', 'clinician_workload', 'assessment_outcomes', 'system_usage']
+    if report_type not in allowed_types:
+        return jsonify({'error': f'Invalid report type. Allowed: {", ".join(allowed_types)}'}), 400
+
+    try:
+        start_date = datetime.fromisoformat(start_date_str)
+        end_date = datetime.fromisoformat(end_date_str)
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use ISO format.'}), 400
+
+    # Enforce maximum date range (e.g., 1 year)
+    if (end_date - start_date).days > 366:
+        return jsonify({'error': 'Report date range cannot exceed 1 year'}), 400
+    if start_date > end_date:
+        return jsonify({'error': 'start_date must be before end_date'}), 400
     
     db = get_db()
     cur = db.cursor()
@@ -921,7 +956,7 @@ def generate_report():
         return jsonify(report_data), 200
     
     except Exception as e:
-        audit_logger.log_security_event('REPORT_GENERATION_ERROR', user_id, request.remote_addr, str(e))
+        audit_logger.log_security_event('REPORT_GENERATION_ERROR', user_id, request.remote_addr, 'An unexpected error occurred while generating report')
         return jsonify({'error': 'An error occurred while generating report'}), 500
     finally:
         cur.close()

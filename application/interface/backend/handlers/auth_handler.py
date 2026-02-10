@@ -157,7 +157,7 @@ def register():
     except Exception as e:
         if db:
             db.rollback()
-        audit_logger.log_security_event('REGISTRATION_ERROR', None, request.remote_addr, str(e))
+        audit_logger.log_security_event('REGISTRATION_ERROR', None, request.remote_addr, 'An unexpected error occurred during registration')
         return jsonify({'error': 'An error occurred during registration'}), 500
     finally:
         if cur:
@@ -257,7 +257,7 @@ def login():
         }), 200
     
     except Exception as e:
-        audit_logger.log_security_event('LOGIN_ERROR', None, request.remote_addr, str(e))
+        audit_logger.log_security_event('LOGIN_ERROR', None, request.remote_addr, 'An unexpected error occurred during login')
         return jsonify({'error': 'An error occurred during login'}), 500
     finally:
         if cur:
@@ -377,7 +377,7 @@ def verify_mfa():
         }), 200
     
     except Exception as e:
-        audit_logger.log_security_event('MFA_VERIFY_ERROR', user_id, request.remote_addr, str(e))
+        audit_logger.log_security_event('MFA_VERIFY_ERROR', user_id, request.remote_addr, 'An unexpected error occurred during MFA verification')
         return jsonify({'error': 'An error occurred during MFA verification'}), 500
     finally:
         if cur:
@@ -451,12 +451,11 @@ def enroll_mfa():
         
         return jsonify({
             'message': 'MFA enrollment successful. Please scan QR code with your authenticator app.',
-            'qr_code': f'data:image/png;base64,{qr_code_base64}',
-            'provisioning_uri': provisioning_uri
+            'qr_code': f'data:image/png;base64,{qr_code_base64}'
         }), 200
     
     except Exception as e:
-        audit_logger.log_security_event('MFA_ENROLL_ERROR', user_id, request.remote_addr, str(e))
+        audit_logger.log_security_event('MFA_ENROLL_ERROR', user_id, request.remote_addr, 'An unexpected error occurred during MFA enrollment')
         return jsonify({'error': 'An error occurred during MFA enrollment'}), 500
     finally:
         if cur:
@@ -557,7 +556,7 @@ def logout():
     except Exception as e:
         if db:
             db.rollback()
-        audit_logger.log_security_event('LOGOUT_ERROR', user_id, request.remote_addr, str(e))
+        audit_logger.log_security_event('LOGOUT_ERROR', user_id, request.remote_addr, 'An unexpected error occurred during logout')
         return jsonify({'error': 'An error occurred during logout'}), 500
     finally:
         if cur:
@@ -608,7 +607,7 @@ def get_current_user():
         }), 200
     
     except Exception as e:
-        audit_logger.log_security_event('GET_USER_ERROR', user_id, request.remote_addr, str(e))
+        audit_logger.log_security_event('GET_USER_ERROR', user_id, request.remote_addr, 'An unexpected error occurred while fetching user information')
         return jsonify({'error': 'An error occurred while fetching user information'}), 500
     finally:
         if cur:

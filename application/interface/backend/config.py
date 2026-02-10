@@ -14,7 +14,7 @@ class Config:
     """Base configuration class"""
     
     # Flask Configuration
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+    SECRET_KEY = os.environ.get('SECRET_KEY')
     FLASK_APP = os.environ.get('FLASK_APP', 'backend/app.py')
     
     # Database Configuration
@@ -31,7 +31,7 @@ class Config:
     SQLALCHEMY_MAX_OVERFLOW = int(os.environ.get('DATABASE_MAX_OVERFLOW', 10))
     
     # JWT Configuration
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', 3600)))
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(seconds=int(os.environ.get('JWT_REFRESH_TOKEN_EXPIRES', 2592000)))
     JWT_TOKEN_LOCATION = ['headers']
@@ -142,6 +142,14 @@ class ProductionConfig(Config):
             val = getattr(cls, setting)
             if not val or val == '' or val.startswith('dev-') or val.startswith('jwt-') or 'change-in-production' in val:
                 missing.append(setting)
+
+            # Length check for secrets
+            if setting in ['SECRET_KEY', 'JWT_SECRET_KEY'] and val and len(val) < 32:
+                missing.append(f"{setting}_too_short")
+
+        # Rate limiting storage check
+        if cls.RATELIMIT_STORAGE_URL.startswith('memory://'):
+            missing.append('RATELIMIT_STORAGE_URL_INSECURE_DEFAULT')
         
         if missing:
             raise ValueError(f"CRITICAL SECURITY ERROR: Missing or insecure required production settings: {', '.join(missing)}. Deployment halted.")
@@ -159,12 +167,16 @@ config = {
 def get_config(env=None):
     """Get configuration based on environment"""
     if env is None:
-        env = os.environ.get('FLASK_ENV', 'development')
+        env = os.environ.get('FLASK_ENV', 'production')
     
-    config_class = config.get(env, config['default'])
+    config_class = config.get(env, config['production'])
     
-    # Validate production config
+    # Validate configuration
     if env == 'production':
         config_class.validate()
+    else:
+        # Minimal validation for development/testing
+        if not config_class.SECRET_KEY or not config_class.JWT_SECRET_KEY:
+            raise ValueError("SECRET_KEY and JWT_SECRET_KEY must be set in all environments.")
     
     return config_class
