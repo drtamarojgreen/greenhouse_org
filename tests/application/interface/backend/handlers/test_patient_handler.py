@@ -67,6 +67,21 @@ class TestPatientHandler(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(json.loads(response.data)['user_id'], 3)
 
+    @patch('application.interface.backend.models.patient.Patient.get_by_id')
+    @patch('application.interface.backend.handlers.patient_handler.get_clinician_id')
+    @patch('application.interface.backend.handlers.patient_handler.get_db')
+    def test_get_patient_unauthorized(self, mock_get_db, mock_get_clinician_id, mock_get_by_id):
+        mock_get_clinician_id.return_value = 1
+        mock_cursor = MagicMock()
+        mock_get_db.return_value.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = None # Assignment link DOES NOT exist
+
+        mock_patient = Patient(2, 2, datetime.now(), 'Female', datetime.now(), 'Hispanic', '456 Oak Ave', None, 'NY', '54321', 'Somecity')
+        mock_get_by_id.return_value = mock_patient
+
+        response = self.client.get('/api/patients/2', headers={'Authorization': f'Bearer {self.clinician_token}'})
+        self.assertEqual(response.status_code, 403)
+
 
 if __name__ == '__main__':
     unittest.main()

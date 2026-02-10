@@ -49,6 +49,14 @@ class TestDataMasking(unittest.TestCase):
         self.assertEqual(DataMasking.mask_name("John Doe"), "J*** D**")
         self.assertEqual(DataMasking.mask_name("A"), "*")
 
+    def test_mask_dob(self):
+        self.assertEqual(DataMasking.mask_dob("1990-01-01"), "****-**-**")
+        self.assertEqual(DataMasking.mask_dob(None), None)
+
+    def test_mask_generic(self):
+        self.assertEqual(DataMasking.mask_generic("sensitive"), "****")
+        self.assertEqual(DataMasking.mask_generic(None), None)
+
     def test_is_phi_field(self):
         self.assertTrue(DataMasking.is_phi_field('ssn'))
         self.assertTrue(DataMasking.is_phi_field('date_of_birth'))
