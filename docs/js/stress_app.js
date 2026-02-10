@@ -14,6 +14,7 @@
         canvas: null,
         ctx: null,
         isRunning: false,
+        clock: null,
         camera: { x: 0, y: 0, z: -600, rotationX: 0.2, rotationY: 0, rotationZ: 0, fov: 600 },
         projection: { width: 800, height: 600, near: 10, far: 5000 },
         interaction: {
@@ -54,10 +55,14 @@
                     allostaticLoad: 0.15,
                     autonomicBalance: 0.4,
                     resilienceReserve: 0.9,
-                    hpaSensitivity: 1.0
+                    hpaSensitivity: 1.0,
+                    hrv: 65,
+                    vagalTone: 0.7
                 },
                 updateFn: (state, dt) => this.updateModel(state, dt)
             });
+
+            this.clock = new window.GreenhouseModelsUtil.DiurnalClock();
 
             if (window.GreenhouseStressUI3D) window.GreenhouseStressUI3D.init(this);
 
@@ -195,40 +200,100 @@
         updateModel(state, dt) {
             const f = state.factors;
             const m = state.metrics;
+            const h = state.history;
             const Util = window.GreenhouseModelsUtil;
 
-            // 1. Calculate Aggregated Stress Load
+            // 1. Advance Clock
+            if (this.clock) {
+                this.clock.update(dt);
+                f.timeOfDay = this.clock.timeInHours;
+                f.diurnalPhase = this.clock.getPhase();
+            }
+
+            // 2. Calculate Aggregated Stress Load
             const environmentalLoad = (f.sleepDeprivation * 0.3) + (f.noisePollution * 0.15) + (f.financialStrain * 0.4) +
                 (f.socialIsolation * 0.25) + (f.workOverload * 0.3) + (f.nutrientDeficit * 0.2);
 
-            // 2. Genetic Modifiers
-            // Serotonin Transporter short allele increases amygdala reactivity/baseline drive
-            const geneticDrive = (f.serotoninTransporter * 0.15) + (f.comtValMet * 0.1);
+            // 3. Genetic & Epigenetic Modifiers
+            // Epigenetic sensitivity: Cumulative load makes the system more "twitchy"
+            const epigeneticDrive = h.cumulativeLoad * 0.05;
+            const geneticDrive = (f.serotoninTransporter * 0.15) + (f.comtValMet * 0.1) + epigeneticDrive;
 
-            // FKBP5 affects how well the brakes work (HPA sensitivity)
-            const hpaImpairment = f.fkbp5Variant * 0.4;
-            m.hpaSensitivity = Util.SimulationEngine.smooth(m.hpaSensitivity, 1.0 - hpaImpairment - (m.allostaticLoad * 0.5), 0.02);
+            // 4. Diurnal Core Baseline (Cortisol Awakening Response)
+            const circadianDrive = this.clock ? this.clock.getCortisolFactor() * 0.2 : 0;
 
-            // 3. Modulators (Brakes)
-            const damping = (f.cognitiveReframing * 0.3) + (f.socialSupport * 0.2) + (f.gabaMod * 0.6);
+            // 5. Modulators (Brakes) & Gut Health
+            // Gut health affects precursors for GABA/Serotonin
+            const gutEfficiency = f.gutHealth ? 1.0 : 0.6;
+            const damping = ((f.cognitiveReframing * 0.3) + (f.socialSupport * 0.2) + (f.gabaMod * 0.6)) * gutEfficiency;
 
-            // 4. Dynamics
-            const sympatheticDrive = Util.SimulationEngine.clamp((environmentalLoad + geneticDrive) - damping, 0, 1.5);
-            m.autonomicBalance = Util.SimulationEngine.smooth(m.autonomicBalance, sympatheticDrive, 0.05);
+            // 6. Autonomic Dynamics (Vagus Nerve / HRV)
+            const sympatheticTarget = Util.SimulationEngine.clamp((environmentalLoad + geneticDrive + circadianDrive) - damping, 0, 1.5);
+            m.autonomicBalance = Util.SimulationEngine.smooth(m.autonomicBalance, sympatheticTarget, 0.05);
 
-            const drift = 0.0002; // Constant existential drift
+            // HRV Calculation (Inverse of autonomic balance + noise)
+            const hrvBase = 100 - (m.autonomicBalance * 60);
+            m.hrv = Util.SimulationEngine.smooth(m.hrv, hrvBase + (Math.random() - 0.5) * 5, 0.01);
+            m.vagalTone = Util.SimulationEngine.smooth(m.vagalTone, 1.0 - m.autonomicBalance, 0.02);
+
+            // 7. HPA Axis & Glucocorticoid Receptor (GR) Resistance
+            // High cumulative load leads to GR downregulation (Resistance)
+            const grResistance = Util.SimulationEngine.clamp(h.cumulativeLoad * 0.2, 0, 0.8);
+            const fkbp5Impairment = f.fkbp5Variant * 0.4;
+            m.hpaSensitivity = Util.SimulationEngine.smooth(m.hpaSensitivity, 1.0 - fkbp5Impairment - grResistance - (m.allostaticLoad * 0.3), 0.02);
+
+            // 8. Allostatic Load & Resilience Reserve
+            const drift = 0.0002;
             m.allostaticLoad = Util.SimulationEngine.clamp(
                 m.allostaticLoad + (m.autonomicBalance * 0.0015) + drift - (damping * 0.001),
                 0.05, 1.0
             );
 
-            const recovery = (1.0 - f.sleepDeprivation * 0.6) * 0.001;
+            // Recovery is hindered by sleep deprivation but boosted by sleep phase
+            const sleepMultiplier = this.clock ? this.clock.getResilienceRecoveryMultiplier() : 1.0;
+            const recovery = (1.0 - f.sleepDeprivation * 0.6) * 0.001 * sleepMultiplier;
+
             m.resilienceReserve = Util.SimulationEngine.clamp(
                 m.resilienceReserve - (m.allostaticLoad * 0.002) + recovery + (f.socialSupport * 0.0005),
                 0, 1.0
             );
 
-            // Global Intensity Factor for Visuals
+            // 9. Update History (Epigenetics)
+            h.cumulativeLoad += (m.allostaticLoad > 0.7) ? 0.0001 : (m.allostaticLoad < 0.3 ? -0.00005 : 0);
+            h.cumulativeLoad = Util.SimulationEngine.clamp(h.cumulativeLoad, 0, 10.0);
+            h.peakStress = Math.max(h.peakStress, m.allostaticLoad);
+
+            // 10. Neurotransmitter Activity (Comprehensive Coverage)
+            // Precursor availability from gut health affects max rates
+            const precursorFactor = f.gutHealth ? 1.0 : 0.5;
+
+            // Serotonin: Impacted by stress load and genetic transporter status
+            const baseSerotonin = 100 * precursorFactor;
+            const serotoninLoss = (m.allostaticLoad * 40) + (f.serotoninTransporter * 20);
+            m.serotoninLevels = Util.SimulationEngine.smooth(m.serotoninLevels || 100, (baseSerotonin - serotoninLoss), 0.01);
+
+            // Dopamine: Chronic stress reduces D2 sensitivity and density
+            const baseDopamine = 100 * precursorFactor;
+            const dopamineLoss = (m.allostaticLoad * 50) + (f.comtValMet * 15);
+            m.dopamineLevels = Util.SimulationEngine.smooth(m.dopamineLevels || 100, (baseDopamine - dopamineLoss), 0.01);
+
+            // HPA Pulse Strength (CRH -> ACTH -> Cortisol)
+            m.crhDrive = Util.SimulationEngine.smooth(m.crhDrive || 0, (m.autonomicBalance * 100), 0.05);
+            m.acthDrive = Util.SimulationEngine.smooth(m.acthDrive || 0, (m.crhDrive * m.hpaSensitivity), 0.05);
+            m.cortisolLevels = Util.SimulationEngine.smooth(m.cortisolLevels || 10, (m.acthDrive * 0.8), 0.02);
+
+            // 11. Inter-Model Sync
+            if (window.GreenhouseBioStatus) {
+                window.GreenhouseBioStatus.sync('stress', {
+                    load: m.allostaticLoad,
+                    hpa: m.hpaSensitivity,
+                    autonomic: m.autonomicBalance,
+                    serotonin: m.serotoninLevels,
+                    dopamine: m.dopamineLevels,
+                    cortisol: m.cortisolLevels
+                });
+            }
+
             state.factors.stressorIntensity = Util.SimulationEngine.clamp(environmentalLoad * 0.8, 0, 1);
         },
 
@@ -255,14 +320,15 @@
         drawUI(ctx, w, h, state) {
             ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Quicksand, sans-serif'; ctx.fillText('STRESS DYNAMICS ENGINE', 40, 40);
             ctx.fillStyle = '#4ca1af'; ctx.font = 'bold 12px Quicksand, sans-serif';
-            const modeName = state.factors.viewMode === 0 ? 'REGULATORY' : (state.factors.viewMode === 1 ? 'PATHWAY' : 'SYSTEMIC');
+            const modes = ['btn_mode_macro', 'btn_mode_pathway', 'btn_mode_systemic'];
+            const modeName = t(modes[state.factors.viewMode || 0]);
             ctx.fillText(`${modeName} LEVEL: BIOLOGICAL RESPONSE`, 40, 60);
 
             // Column Titles
             ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = 'bold 9px Quicksand, sans-serif';
-            ctx.fillText('ENVIRONMENTAL STRESSORS', 40, 110);
-            ctx.fillText('GENETIC FACTORS', 240, 110);
-            ctx.fillText('SYSTEMIC MODULATORS', 40, 340);
+            ctx.fillText(t('ENVIRONMENTAL STRESSORS'), 40, 110);
+            ctx.fillText(t('GENETIC FACTORS'), 240, 110);
+            ctx.fillText(t('SYSTEMIC MODULATORS'), 40, 340);
 
             // Metrics Bento
             const m = state.metrics;

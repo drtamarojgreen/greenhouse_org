@@ -15,6 +15,7 @@
         particles: [],
         helixRotation: 0,
         waveOffsets: {},
+        neuralSparks: [], // [{x, y, z, region, life}]
 
         render(ctx, state, camera, projection, ui3d) {
             if (!ui3d.brainShell) return;
@@ -53,6 +54,9 @@
 
             // 4. GENETIC SCAFFOLDING (DNA Double Helix)
             this.drawGeneticScaffold(ctx, state, camera, projection);
+
+            // 4a. VASCULAR OVERLAY (Subtle fine-lines)
+            this.drawVascularPulse(ctx, state, camera, projection, ui3d);
 
             // 5. SYSTEMIC FLOW (Cortisol / HPA Pathway)
             this.drawSystemicFlow(ctx, state, camera, projection, ui3d);
@@ -251,6 +255,10 @@
                     color = `rgba(255, 255, 255, ${0.15 + Math.sin(Date.now() * 0.01) * 0.05})`;
                 } else if (regionKey === 'amygdala' && stressIntensity > 0.5) {
                     color = `rgba(255, 80, 0, ${0.1 + stressIntensity * 0.1})`;
+                } else if (regionKey === 'vagus_nerve') {
+                    const vagalTone = ui3d.app.engine.state.metrics.vagalTone || 0.5;
+                    color = `rgba(0, 255, 150, ${0.2 + vagalTone * 0.3})`;
+                    if (Math.random() < vagalTone * 0.1) color = 'rgba(255, 255, 255, 0.8)'; // Nerve firing spark
                 }
 
                 ctx.fillStyle = color;
@@ -266,6 +274,91 @@
                     ctx.stroke();
                 }
             });
+
+            // POINT CLOUD GLOW: Neural Sparks
+            this.drawNeuralSparks(ctx, shell, camera, projection, stressIntensity);
+        },
+
+        drawNeuralSparks(ctx, shell, camera, projection, intensity) {
+            const Math3D = window.GreenhouseModels3DMath;
+
+            // Seed new sparks in active regions
+            for (const key in shell.regions) {
+                const region = shell.regions[key];
+                const activity = (key === 'amygdala') ? intensity : (1 - intensity);
+                if (Math.random() < activity * 0.3 && region.vertices.length > 0) {
+                    const vIdx = region.vertices[Math.floor(Math.random() * region.vertices.length)];
+                    const v = shell.vertices[vIdx];
+                    this.neuralSparks.push({
+                        x: v.x, y: -v.y, z: v.z,
+                        color: region.color || '#fff',
+                        life: 1.0,
+                        size: 1 + Math.random() * 2
+                    });
+                }
+            }
+
+            ctx.save();
+            this.neuralSparks.forEach((s, idx) => {
+                s.life -= 0.02;
+                if (s.life <= 0) {
+                    this.neuralSparks.splice(idx, 1);
+                    return;
+                }
+                const p = Math3D.project3DTo2D(s.x, s.y, s.z, camera, projection);
+                if (p.scale > 0) {
+                    const alpha = Math3D.applyDepthFog(s.life * 0.8, p.depth, 0.1, 0.9);
+                    ctx.fillStyle = s.color;
+                    ctx.globalAlpha = alpha;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, s.size * p.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Optional bloom
+                    if (s.life > 0.8) {
+                        ctx.shadowBlur = 10; ctx.shadowColor = s.color;
+                        ctx.fillRect(p.x, p.y, 1, 1);
+                        ctx.shadowBlur = 0;
+                    }
+                }
+            });
+            ctx.restore();
+        },
+
+        drawVascularPulse(ctx, state, camera, projection, ui3d) {
+            const Math3D = window.GreenhouseModels3DMath;
+            const autonomic = state.metrics.autonomicBalance || 0;
+            const intensity = state.factors.stressorIntensity || 0;
+
+            ctx.save();
+            ctx.strokeStyle = `rgba(255, 50, 50, ${0.05 + autonomic * 0.1})`;
+            ctx.lineWidth = 0.5;
+
+            // Simulate major arteries (Circle of Willis simplified)
+            const brainstem = ui3d.brainShell.regions.brainstem.centroid || { x: 0, y: 0, z: 0 };
+            const arteries = [
+                { start: { x: 0, y: -20, z: 0 }, end: { x: brainstem.x, y: -brainstem.y, z: brainstem.z } }, // Carotid Path to Stem
+                { start: { x: -60, y: -20, z: 40 }, end: { x: 60, y: -20, z: 40 } }, // Connective
+                { start: { x: 0, y: -20, z: 50 }, end: { x: 0, y: 150, z: 120 } } // Anterior Path
+            ];
+
+            arteries.forEach(a => {
+                const p1 = Math3D.project3DTo2D(a.start.x, a.start.y, a.start.z, camera, projection);
+                const p2 = Math3D.project3DTo2D(a.end.x, a.end.y, a.end.z, camera, projection);
+                if (p1.scale > 0 && p2.scale > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+
+                    // Blood flow pulse
+                    const pulse = (Date.now() * 0.002) % 1;
+                    const px = p1.x + (p2.x - p1.x) * pulse;
+                    const py = p1.y + (p2.y - p1.y) * pulse;
+                    ctx.fillStyle = `rgba(255, 100, 100, ${0.3 * (1 - pulse)})`;
+                    ctx.beginPath(); ctx.arc(px, py, 2 * p1.scale, 0, Math.PI * 2); ctx.fill();
+                }
+            });
+            ctx.restore();
         },
 
         drawHUDLabels(ctx, ui3d, camera, projection, state) {
@@ -280,7 +373,7 @@
             ctx.textAlign = 'center';
             for (const key in ui3d.brainShell.regions) {
                 const region = ui3d.brainShell.regions[key];
-                if (region.centroid && key !== 'cortex') {
+                if (region.centroid && key !== 'cortex' && key !== 'brainstem') {
                     const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
                     const dot = (region.centroid.x * camForward.x + (-region.centroid.y) * camForward.y + region.centroid.z * camForward.z);
 

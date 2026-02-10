@@ -23,7 +23,9 @@
                 hippocampus: { name: 'Hippocampus', color: 'rgba(80, 255, 120, 0.7)', vertices: [] },
                 hypothalamus: { name: 'Hypothalamus', color: 'rgba(255, 220, 0, 1.0)', vertices: [] },
                 cortex: { name: 'Cortical Ribbon', color: 'rgba(180, 180, 200, 0.25)', vertices: [] },
-                cerebellum: { name: 'Cerebellum', color: 'rgba(60, 210, 210, 0.35)', vertices: [] }
+                cerebellum: { name: 'Cerebellum', color: 'rgba(60, 210, 210, 0.35)', vertices: [] },
+                brainstem: { name: 'Brainstem', color: 'rgba(120, 120, 140, 0.5)', vertices: [] },
+                vagus_nerve: { name: 'Vagus Nerve', color: 'rgba(0, 255, 128, 0.8)', vertices: [] }
             };
 
             for (let lat = 0; lat <= latBands; lat++) {
@@ -69,6 +71,8 @@
                     else if (Math.abs(nx) > 0.4 && ny < -0.05 && ny > -0.4 && nz < -0.1 && nz > -0.4) region = 'hippocampus';
                     else if (Math.abs(nx) < 0.15 && ny < 0.0 && ny > -0.2 && Math.abs(nz) < 0.15) region = 'hypothalamus';
                     else if (ny < -0.4 && nz < -0.4) region = 'cerebellum';
+                    else if (Math.abs(nx) < 0.12 && ny < -0.2 && ny > -0.8 && nz < -0.1) region = 'brainstem';
+                    else if (Math.abs(nx) < 0.05 && ny < -0.7 && nz < -0.05) region = 'vagus_nerve';
 
                     const vIdx = brainShell.vertices.length;
 

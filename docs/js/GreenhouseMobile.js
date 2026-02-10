@@ -192,6 +192,32 @@
                         if (app.updateTheorySelector) app.updateTheorySelector();
                     }
                 }
+            },
+            stress: {
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'stress_config.js', 'stress_controls.js', 'stress_tooltips.js', 'stress_macro.js', 'stress_pathway.js', 'stress_ui_3d_geometry.js', 'stress_ui_3d.js', 'stress_app.js'],
+                modes: ['REGULATORY', 'PATHWAY', 'SYSTEMIC'],
+                init: (container, baseUrl) => {
+                    const uniqueId = 'stress-canvas-' + Math.random().toString(36).substr(2, 9);
+                    container.id = uniqueId;
+                    if (window.GreenhouseStressApp) window.GreenhouseStressApp.init('#' + uniqueId);
+                },
+                onSelectMode: (index) => {
+                    const app = window.GreenhouseStressApp;
+                    if (app && app.engine) app.engine.state.factors.viewMode = index;
+                }
+            },
+            inflammation: {
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'brain_mesh_realistic.js', 'inflammation_config.js', 'inflammation_controls.js', 'inflammation_tooltips.js', 'inflammation_ui_3d_geometry.js', 'inflammation_ui_3d.js', 'inflammation_app.js'],
+                modes: ['MACRO', 'MICRO', 'MOLECULAR', 'PATHWAY'],
+                init: (container, baseUrl) => {
+                    const uniqueId = 'inflam-canvas-' + Math.random().toString(36).substr(2, 9);
+                    container.id = uniqueId;
+                    if (window.GreenhouseInflammationApp) window.GreenhouseInflammationApp.init('#' + uniqueId);
+                },
+                onSelectMode: (index) => {
+                    const app = window.GreenhouseInflammationApp;
+                    if (app && app.engine) app.engine.state.factors.viewMode = index;
+                }
             }
         },
 

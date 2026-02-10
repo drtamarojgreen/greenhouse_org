@@ -142,6 +142,12 @@
                 factors: config.initialFactors || {},
                 metrics: config.initialMetrics || {},
                 flags: config.initialFlags || {},
+                history: {
+                    cumulativeLoad: 0,
+                    peakStress: 0,
+                    treatmentCycles: 0,
+                    burnoutEpochs: 0
+                },
                 seed: config.seed || Math.random()
             };
             this.updateFn = config.updateFn || ((state, dt) => { });
@@ -186,11 +192,61 @@
         }
     }
 
+    /**
+     * @class DiurnalClock
+     * Simulates 24-hour biological cycle with Cortisol Awakening Response (CAR) and circadian phase.
+     */
+    class DiurnalClock {
+        constructor() {
+            this.timeInHours = 8.0; // Starts at 8:00 AM
+            this.dayCount = 0;
+        }
+
+        update(dtMs) {
+            // For simulation, let's say 1 real second = 1 biological hour.
+            const timeScale = 1 / 1000;
+            this.timeInHours += dtMs * timeScale;
+
+            if (this.timeInHours >= 24) {
+                this.timeInHours -= 24;
+                this.dayCount++;
+            }
+        }
+
+        getPhase() {
+            return this.timeInHours / 24;
+        }
+
+        getCortisolFactor() {
+            const h = this.timeInHours;
+            const baseline = (Math.cos((h - 8) * (Math.PI / 12)) + 1) / 2;
+            const car = (h >= 6 && h <= 9) ? Math.sin((h - 6) * (Math.PI / 3)) * 0.4 : 0;
+            return Math.max(0.1, baseline * 0.6 + car);
+        }
+
+        getResilienceRecoveryMultiplier() {
+            const h = this.timeInHours;
+            const isSleeping = h > 22 || h < 6;
+            return isSleeping ? 2.5 : 1.0;
+        }
+    }
+
+    // Global Bridge for inter-model communication
+    window.GreenhouseBioStatus = {
+        stress: { load: 0, hpa: 0, autonomic: 0 },
+        inflammation: { tone: 0, bbb: 1, microglia: 0 },
+        sync(model, stats) {
+            this[model] = { ...this[model], ...stats };
+            window.dispatchEvent(new CustomEvent('greenhouseBioUpdate', { detail: { model, stats } }));
+        }
+    };
+
     const GreenhouseModelsUtil = {
         GreenhouseComponent,
         GreenhouseSystem,
         GreenhouseAssetManager,
         SimulationEngine,
+        DiurnalClock,
 
         currentLanguage: 'en',
 

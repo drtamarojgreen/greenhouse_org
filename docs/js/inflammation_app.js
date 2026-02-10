@@ -14,6 +14,7 @@
         canvas: null,
         ctx: null,
         isRunning: false,
+        clock: null,
         camera: { x: 0, y: 0, z: -800, rotationX: 0.3, rotationY: 0, rotationZ: 0, fov: 600 },
         projection: { width: 800, height: 600, near: 10, far: 5000 },
         interaction: { isDragging: false, lastX: 0, lastY: 0, mouseX: 0, mouseY: 0 },
@@ -38,9 +39,12 @@
             const config = window.GreenhouseInflammationConfig;
             this.engine = new window.GreenhouseModelsUtil.SimulationEngine({
                 initialFactors: config.factors.reduce((acc, f) => { acc[f.id] = f.defaultValue; return acc; }, {}),
-                initialMetrics: { tnfAlpha: 10, il10: 5, microgliaActivation: 0.1, bbbIntegrity: 1.0, neuroprotection: 1.0 },
+                initialMetrics: { tnfAlpha: 10, il10: 5, microgliaActivation: 0.1, bbbIntegrity: 1.0, neuroprotection: 1.0, stressBurden: 0.15 },
                 updateFn: (state, dt) => this.updateModel(state, dt)
             });
+
+            this.clock = new window.GreenhouseModelsUtil.DiurnalClock();
+            this.clock.timeInHours = 8.0; // Consistently start at 8am
 
             if (window.GreenhouseInflammationUI3D) window.GreenhouseInflammationUI3D.init(this);
             this.setupUI();
@@ -139,27 +143,67 @@
             const m = state.metrics;
             const Util = window.GreenhouseModelsUtil;
 
-            // 1. Pro-inflammatory Drive
-            const trigger = (f.pathogenActive * 0.5) + (f.chronicStress * 0.3) + (f.poorSleep * 0.2) + (f.leakyGut * 0.2);
+            // 1. Advance Clock
+            if (this.clock) {
+                this.clock.update(dt);
+                f.timeOfDay = this.clock.timeInHours;
+            }
+
+            // 2. Inter-Model Stress Bridge
+            // Pull real-time data from Stress simulation via global bridge
+            let externalStress = 0;
+            if (window.GreenhouseBioStatus && window.GreenhouseBioStatus.stress) {
+                externalStress = window.GreenhouseBioStatus.stress.load;
+                m.stressBurden = Util.SimulationEngine.smooth(m.stressBurden, externalStress, 0.01);
+            }
+
+            // 3. Pro-inflammatory Drive
+            // Stress acts as a direct multiplier for inflammation (modeling HMGB1 / Alarmin pathways)
+            const stressImpact = (f.chronicStress * 0.3) + (m.stressBurden * 0.5);
+            const trigger = (f.pathogenActive * 0.5) + stressImpact + (f.poorSleep * 0.2) + (f.leakyGut * 0.2);
             const suppression = (f.nsaidsApp * 0.3) + (f.steroidsApp * 0.6) + (f.tnfInhibitors * 0.8) + (f.cleanDiet * 0.1);
 
             const targetTnf = Util.SimulationEngine.clamp(trigger * 400 * (1 - suppression), 5, 500);
             m.tnfAlpha = Util.SimulationEngine.smooth(m.tnfAlpha, targetTnf, 0.03);
 
-            // 2. Anti-inflammatory
-            const targetIl10 = Util.SimulationEngine.clamp((m.tnfAlpha * 0.1) + (f.exerciseRegular * 15) + (f.cleanDiet * 10), 2, 60);
+            // 4. Anti-inflammatory
+            // Circadian rhythm affects IL-10 synthesis peaks (usually night/early morning)
+            const circadianPeak = this.clock ? (1.0 - this.clock.getCortisolFactor()) * 10 : 0;
+            const targetIl10 = Util.SimulationEngine.clamp((m.tnfAlpha * 0.1) + (f.exerciseRegular * 15) + (f.cleanDiet * 10) + circadianPeak, 2, 60);
             m.il10 = Util.SimulationEngine.smooth(m.il10, targetIl10, 0.02);
 
-            // 3. Glial State
+            // 5. Glial State (M1 vs M2 shift)
             const activation = (m.tnfAlpha / 500) * (1 - (f.steroidsApp * 0.7));
             m.microgliaActivation = Util.SimulationEngine.smooth(m.microgliaActivation, Util.SimulationEngine.clamp(activation, 0, 1), 0.02);
 
-            // 4. Structural Integrity
-            const damage = (m.tnfAlpha * 0.0001) + (f.chronicStress * 0.00005);
+            // 6. Structural Integrity (Stress-induced BBB Permeability)
+            // Excessive cortisol (stressBurden) disrupts tight junctions
+            const stressDamage = m.stressBurden * 0.0002;
+            const damage = (m.tnfAlpha * 0.0001) + stressDamage;
             const repair = (f.cleanDiet * 0.00005) + (1 - f.poorSleep) * 0.0001;
             m.bbbIntegrity = Util.SimulationEngine.clamp(m.bbbIntegrity - damage + repair, 0.2, 1.0);
 
             m.neuroprotection = Util.SimulationEngine.clamp((m.bbbIntegrity * 0.7) + (m.il10 / 100) - (m.microgliaActivation * 0.3), 0, 1);
+
+            // 7. Neurotransmitter Activity (Tryptophan Breakdown)
+            // Inflammatory tone (TNF-alpha) activates IDO enzyme, re-routing Tryptophan to Kynurenine
+            const idoActivation = Util.SimulationEngine.clamp(m.tnfAlpha / 300, 0, 1);
+            m.tryptophanLevels = Util.SimulationEngine.smooth(m.tryptophanLevels || 100, 100 * (1 - idoActivation * 0.7), 0.02);
+            m.kynurenineLevels = Util.SimulationEngine.smooth(m.kynurenineLevels || 10, 10 + (idoActivation * 80), 0.02);
+            m.neurotoxicLoad = m.kynurenineLevels / (m.tryptophanLevels + 1);
+
+            // Sync outcome back to bridge
+            if (window.GreenhouseBioStatus) {
+                window.GreenhouseBioStatus.sync('inflammation', {
+                    tone: m.tnfAlpha / 500,
+                    bbb: m.bbbIntegrity,
+                    microglia: m.microgliaActivation,
+                    tryptophan: m.tryptophanLevels,
+                    kynurenine: m.kynurenineLevels,
+                    neurotoxicLoad: m.neurotoxicLoad
+                });
+            }
+
             state.metrics.inflammatoryTone = m.tnfAlpha / 500;
         },
 
@@ -178,12 +222,13 @@
         drawUI(ctx, w, h, state) {
             ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Quicksand, sans-serif'; ctx.fillText('NEUROINFLAMMATION ENGINE', 40, 40);
             ctx.fillStyle = '#4ca1af'; ctx.font = 'bold 12px Quicksand, sans-serif';
-            const modeName = state.factors.viewMode === 0 ? 'MACRO' : (state.factors.viewMode === 1 ? 'MICRO' : 'MOLECULAR');
+            const modes = ['btn_mode_macro', 'btn_mode_micro', 'btn_mode_molecular', 'btn_mode_pathway'];
+            const modeName = t(modes[state.factors.viewMode || 0]);
             ctx.fillText(`${modeName} LEVEL: IMMUNE STATE`, 40, 60);
 
             ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = 'bold 9px Quicksand, sans-serif';
-            ctx.fillText('IMMUNE TRIGGERS', 40, 110);
-            ctx.fillText('PROTECTIVE & INTERVENTIONAL', 250, 110);
+            ctx.fillText(t('IMMUNE TRIGGERS'), 40, 110);
+            ctx.fillText(t('PROTECTIVE & INTERVENTIONAL'), 250, 110);
 
             // Metrics Bento
             const m = state.metrics;

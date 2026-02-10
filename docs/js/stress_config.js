@@ -41,13 +41,19 @@
             // --- PROTECTIVE / MODULATORY ---
             { id: 'cognitiveReframing', label: 'Cognitive Appraisal', type: 'checkbox', defaultValue: 0, impact: -0.2 },
             { id: 'socialSupport', label: 'Oxytocin Support', type: 'checkbox', defaultValue: 0, impact: -0.15 },
-            { id: 'gabaMod', label: 'GABAergic Modulation', type: 'checkbox', defaultValue: 0, impact: -0.3, isPharma: true }
+            { id: 'gabaMod', label: 'GABAergic Modulation', type: 'checkbox', defaultValue: 0, impact: -0.3, isPharma: true },
+            { id: 'gutHealth', label: 'Gut-Brain Integrity', type: 'checkbox', defaultValue: 1, impact: -0.15, description: 'Microbiome health impacting neurotransmitter precursors.' }
         ],
         metrics: [
             { id: 'allostaticLoad', label: 'metric_allostatic_load', unit: '%' },
             { id: 'autonomicBalance', label: 'metric_autonomic_balance', unit: '' },
             { id: 'resilienceReserve', label: 'metric_resilience_reserve', unit: '%' },
-            { id: 'hpaSensitivity', label: 'HPA Sensitivity', unit: '' }
+            { id: 'hpaSensitivity', label: 'HPA Sensitivity', unit: '' },
+            { id: 'hrv', label: 'Heart Rate Variability', unit: 'ms' },
+            { id: 'vagalTone', label: 'Vagal Tone (Parasym.)', unit: '%' },
+            { id: 'serotoninLevels', label: 'Serotonin Level', unit: '%' },
+            { id: 'dopamineLevels', label: 'Dopamine Level', unit: '%' },
+            { id: 'cortisolLevels', label: 'Cortisol Concentration', unit: 'ug/dL' }
         ],
         visual: {
             maxHistory: 200,
