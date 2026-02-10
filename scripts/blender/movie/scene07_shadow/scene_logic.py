@@ -13,6 +13,9 @@ def setup_scene(master):
     # Mood-Based Fog (Thick in Shadow)
     style.animate_mood_fog(master.scene, 1901, density=0.02)
 
+    # Vignette Tightening (Increase tension)
+    style.animate_vignette(master.scene, 1901, 2300, start_val=1.0, end_val=0.4)
+
     # Desaturation Beats (Drop saturation to 20%)
     style.apply_desaturation_beat(master.scene, 2300, 2400, saturation=0.2)
 

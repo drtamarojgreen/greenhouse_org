@@ -360,11 +360,14 @@ def apply_thought_motes(character_obj, frame_start, frame_end, count=5):
         insert_looping_noise(mote, "location", strength=0.5, scale=10.0, frame_start=frame_start, frame_end=frame_end)
 
 def animate_gait(torso, mode='HEAVY', frame_start=1, frame_end=5000):
-    """Differentiates walk cycles."""
+    """Differentiates walk cycles by delegating to asset-specific animation logic."""
     step_h = 0.2 if mode == 'HEAVY' else 0.08
     cycle_l = 64 if mode == 'HEAVY' else 32
-    # This would call animate_walk with these params
-    pass
+
+    # We attempt to import asset script here to avoid circular imports if needed
+    # but since it's already in path we can use the torso's custom properties or naming
+    import plant_humanoid
+    plant_humanoid.animate_walk(torso, frame_start, frame_end, step_height=step_h, cycle_length=cycle_l)
 
 def animate_cloak_sway(cloak_obj, frame_start, frame_end):
     """Animate cloak with noise."""
@@ -408,13 +411,21 @@ def setup_chromatic_aberration(scene, strength=0.01):
     return distort
 
 def setup_god_rays(scene):
-    """Configure volumetric shafts with color ramp."""
+    """Configure volumetric shafts with color ramp and intensity shifts."""
+    beam = bpy.data.objects.get("LightShaftBeam")
+    if beam:
+        # Volumetric shaft color shift (Green to Gold)
+        beam.data.color = (0, 1, 0.2) # Greenish
+        beam.data.keyframe_insert(data_path="color", frame=401)
+        beam.data.color = (1, 0.7, 0.1) # Golden
+        beam.data.keyframe_insert(data_path="color", frame=3801)
+
+        # Intensity pulse
+        animate_light_flicker("LightShaftBeam", 1, 5000, strength=0.1)
+
     sun = bpy.data.objects.get("Sun")
     if sun:
-        sun.data.color = (0, 1, 0) # Green
-        sun.data.keyframe_insert(data_path="color", frame=401)
-        sun.data.color = (1, 0.8, 0) # Gold
-        sun.data.keyframe_insert(data_path="color", frame=3801)
+        sun.data.color = (1, 0.9, 0.8) # Neutral warm
 
 def animate_vignette(scene, frame_start, frame_end, start_val=1.0, end_val=0.5):
     """Decreases vignette radius for high tension."""
@@ -474,7 +485,8 @@ def apply_glow_trails(scene):
     tree = scene.node_tree
     blur = tree.nodes.get("GlowTrail") or tree.nodes.new(type='CompositorNodeVecBlur')
     blur.name = "GlowTrail"
-    blur.factor = 0.5
+    blur.factor = 0.8
+    blur.samples = 16
     return blur
 
 def setup_saturation_control(scene):

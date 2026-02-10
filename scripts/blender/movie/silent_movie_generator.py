@@ -456,6 +456,11 @@ class MovieMaster:
         # Enhanced character micro-animation (Moved after Gaze Target creation)
         for char in [self.h1, self.h2]:
             if not char: continue
+
+            # Varied Gaits
+            gait_mode = 'HEAVY' if "Arbor" in char.name else 'LIGHT'
+            style.animate_gait(char, mode=gait_mode, frame_start=3901, frame_end=4100) # Walking in Sanctuary
+
             style.animate_breathing(char, 1, 5000, cycle=64, amplitude=0.02)
             style.insert_looping_noise(char, "rotation_euler", index=2, strength=0.02, scale=15.0)
 
@@ -784,6 +789,9 @@ class MovieMaster:
             # Desaturation Beats
             huesat = style.setup_saturation_control(self.scene)
 
+            # Glow Trails
+            blur = style.apply_glow_trails(self.scene)
+
             # Subtler Film Grain & Scratches
             mix_grain = tree.nodes.new('CompositorNodeMixRGB')
             mix_grain.blend_type = 'OVERLAY'
@@ -804,7 +812,8 @@ class MovieMaster:
             scratches.texture = bpy.data.textures["Scratches"]
             
             tree.links.new(rl.outputs['Image'], huesat.inputs['Image'])
-            tree.links.new(huesat.outputs['Image'], distort.inputs['Image'])
+            tree.links.new(huesat.outputs['Image'], blur.inputs['Image'])
+            tree.links.new(blur.outputs['Image'], distort.inputs['Image'])
             tree.links.new(distort.outputs['Image'], bright.inputs['Image'])
             tree.links.new(bright.outputs['Image'], mix_grain.inputs[1])
             tree.links.new(noise.outputs['Value'], mix_grain.inputs[2])

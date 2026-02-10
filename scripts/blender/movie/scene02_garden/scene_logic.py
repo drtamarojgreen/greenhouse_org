@@ -42,3 +42,13 @@ def setup_scene(master):
         butterfly = bpy.context.object
         butterfly.name = f"Butterfly_{i}"
         style.insert_looping_noise(butterfly, "location", strength=1.0, scale=10.0, frame_start=501, frame_end=650)
+
+    # Reactive Blooms
+    if master.flower:
+        # Flower scales up when 'Herbaceous' passes by (simulated)
+        master.flower.scale = (0.5, 0.5, 0.5)
+        master.flower.keyframe_insert(data_path="scale", frame=501)
+        master.flower.scale = (1.5, 1.5, 1.5)
+        master.flower.keyframe_insert(data_path="scale", frame=580)
+        master.flower.scale = (1.0, 1.0, 1.0)
+        master.flower.keyframe_insert(data_path="scale", frame=650)
