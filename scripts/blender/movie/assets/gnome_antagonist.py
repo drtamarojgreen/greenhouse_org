@@ -117,6 +117,16 @@ def create_gnome(name, location, scale=0.6):
     node_rust.inputs['Scale'].default_value = 50.0
     mat_gloom.node_tree.links.new(node_rust.outputs['Fac'], bsdf_gloom.inputs['Roughness'])
 
+    # Engraved Runes (Emissive Musgrave)
+    node_runes = mat_gloom.node_tree.nodes.new(type='ShaderNodeTexMusgrave')
+    node_runes.inputs['Scale'].default_value = 15.0
+    node_runes_color = mat_gloom.node_tree.nodes.new(type='ShaderNodeValToRGB')
+    node_runes_color.color_ramp.elements[0].position = 0.5
+    node_runes_color.color_ramp.elements[0].color = (0, 0, 0, 1)
+    node_runes_color.color_ramp.elements[1].color = (1, 0.2, 0.8, 1) # Pink glow
+    mat_gloom.node_tree.links.new(node_runes.outputs['Fac'], node_runes_color.inputs['Fac'])
+    mat_gloom.node_tree.links.new(node_runes_color.outputs['Color'], bsdf_gloom.inputs['Emission Color'])
+
     # Tattered Cloak (Woven Cloak)
     bpy.ops.mesh.primitive_plane_add(size=1.0, location=location + mathutils.Vector((0, 0.2, 0.5)), rotation=(math.radians(90), 0, 0))
     cloak = bpy.context.object

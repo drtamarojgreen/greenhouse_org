@@ -261,6 +261,10 @@ class MovieMaster:
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         self.greenhouse = greenhouse_structure.create_greenhouse_structure()
+
+        # Structural Vine Sway
+        for obj in self.greenhouse.objects:
+            style.insert_looping_noise(obj, "rotation_euler", strength=0.01, scale=50.0, frame_start=1, frame_end=5000)
         self.gnome = gnome_antagonist.create_gnome("GloomGnome", mathutils.Vector((5, 5, 0)))
 
         # Load Brain
@@ -281,6 +285,17 @@ class MovieMaster:
                     bpy.ops.object.shade_smooth()
                     mat = bpy.data.materials.new(name="BrainMat")
                     mat.use_nodes = True
+                    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+
+                    # Brain Vasculature (Musgrave veins)
+                    node_veins = mat.node_tree.nodes.new(type='ShaderNodeTexMusgrave')
+                    node_veins.inputs['Scale'].default_value = 20.0
+                    node_veins_color = mat.node_tree.nodes.new(type='ShaderNodeValToRGB')
+                    node_veins_color.color_ramp.elements[0].color = (1, 0, 0, 1) # Red veins
+                    node_veins_color.color_ramp.elements[1].color = (1, 0.8, 0.8, 1) # Pink tissue
+                    mat.node_tree.links.new(node_veins.outputs['Fac'], node_veins_color.inputs['Fac'])
+                    mat.node_tree.links.new(node_veins_color.outputs['Color'], bsdf.inputs['Base Color'])
+
                     o.data.materials.append(mat)
 
         # Load Neuron
@@ -493,6 +508,13 @@ class MovieMaster:
             staff = bpy.data.objects.get(f"{char_name}_ReasonStaff")
             if staff:
                 style.insert_looping_noise(staff, "rotation_euler", index=0, strength=0.02, scale=10.0, frame_start=1, frame_end=5000)
+
+            # Silent Mumbling
+            style.animate_breathing(char, 1, 5000, axis=2, amplitude=0.01) # Reuse breathing for mouth?
+            mouth = bpy.data.objects.get(f"{char_name}_Mouth")
+            if mouth:
+                # Silent Mumbling (Quick Z-scaling)
+                style.animate_breathing(mouth, 1, 5000, cycle=8, amplitude=0.5)
 
         scene00.setup_scene(self)
         scene01.setup_scene(self)
