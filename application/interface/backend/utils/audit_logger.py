@@ -220,7 +220,7 @@ def audit_log(action, resource_type):
                     ip_address=ip_address,
                     user_agent=user_agent,
                     status='failure',
-                    details=str(e)
+                    details="An unexpected error occurred during processing"
                 )
                 raise
         
