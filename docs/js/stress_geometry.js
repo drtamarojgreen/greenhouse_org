@@ -71,8 +71,8 @@
                     else if (Math.abs(nx) > 0.4 && ny < -0.05 && ny > -0.4 && nz < -0.1 && nz > -0.4) region = 'hippocampus';
                     else if (Math.abs(nx) < 0.15 && ny < 0.0 && ny > -0.2 && Math.abs(nz) < 0.15) region = 'hypothalamus';
                     else if (ny < -0.4 && nz < -0.4) region = 'cerebellum';
-                    else if (Math.abs(nx) < 0.12 && ny < -0.2 && ny > -0.8 && nz < -0.1) region = 'brainstem';
-                    else if (Math.abs(nx) < 0.05 && ny < -0.7 && nz < -0.05) region = 'vagus_nerve';
+                    else if (Math.abs(nx) < 0.05 && ny < -0.7) region = 'vagus_nerve';
+                    else if (Math.abs(nx) < 0.12 && ny < -0.2 && ny >= -0.7 && nz < -0.1) region = 'brainstem';
 
                     const vIdx = brainShell.vertices.length;
 

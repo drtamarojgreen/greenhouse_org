@@ -63,8 +63,11 @@
             const meta = this.availablePathways.find(p => p.id === id);
             if (!meta) return;
 
-            const source = meta.source || `endpoints/kegg_${id}_raw.xml`;
-            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(source);
+            if (!meta.source) {
+                console.log(`Inflammation UI: No source for pathway ${id}, skipping fetch.`);
+                return;
+            }
+            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source);
 
             if (data) {
                 const nodesWithPos = data.nodes.map((n, i) => {
@@ -98,19 +101,19 @@
         },
 
         initMicroData() {
-            if (!window.GreenhouseNeuroGeometry) return;
+            if (!window.GreenhouseInflammationGeometry) return;
             this.neurons = [];
             for (let i = 0; i < 6; i++) {
                 const p1 = { x: -250 + i * 100, y: -150 + Math.random() * 100, z: (Math.random() - 0.5) * 200 };
                 const p2 = { x: -250 + i * 100, y: 150 - Math.random() * 100, z: (Math.random() - 0.5) * 200 };
                 const cp = { x: p1.x + (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 50, z: (Math.random() - 0.5) * 100 };
-                const mesh = window.GreenhouseNeuroGeometry.generateTubeMesh(p1, p2, cp, 4, 12);
+                const mesh = window.GreenhouseInflammationGeometry.generateTubeMesh(p1, p2, cp, 4, 12);
                 this.neurons.push({ p1, p2, cp, mesh, baseColor: '#4ca1af' });
             }
             this.glia = [];
             for (let i = 0; i < 15; i++) {
                 const type = Math.random() > 0.4 ? 'astrocyte' : 'microglia';
-                const mesh = window.GreenhouseNeuroGeometry.generateGliaMesh(type, 0.5 + Math.random() * 0.5);
+                const mesh = window.GreenhouseInflammationGeometry.generateGliaMesh(type, 0.5 + Math.random() * 0.5);
                 this.glia.push({
                     x: (Math.random() - 0.5) * 600, y: (Math.random() - 0.5) * 500, z: (Math.random() - 0.5) * 400,
                     rotationX: Math.random() * Math.PI, rotationY: Math.random() * Math.PI,
@@ -145,8 +148,8 @@
                 const n1 = this.neurons[a.from];
                 const n2 = this.neurons[a.to];
                 // Detailed 3D Synapse (Pre and Post)
-                const preMesh = window.GreenhouseNeuroGeometry.createSynapseGeometry(15, 8, 'pre');
-                const postMesh = window.GreenhouseNeuroGeometry.createSynapseGeometry(18, 8, 'post');
+                const preMesh = window.GreenhouseInflammationGeometry.createSynapseGeometry(15, 8, 'pre');
+                const postMesh = window.GreenhouseInflammationGeometry.createSynapseGeometry(18, 8, 'post');
                 this.synapses.push({
                     x: n2.p1.x, y: n2.p1.y, z: n2.p1.z,
                     preMesh, postMesh,
@@ -163,8 +166,8 @@
 
         initMolecularData() {
             this.molecules = [];
-            const Geo = window.GreenhouseNeuroGeometry;
-            for (let i = 0; i < 150; i++) { // Reduced count for performance with meshes
+            const Geo = window.GreenhouseInflammationGeometry;
+            for (let i = 0; i < 25; i++) { // Significantly reduced for structural focus
                 const typeRoll = Math.random();
                 let type = 'ion';
                 if (typeRoll > 0.85) type = 'pro-cytokine';

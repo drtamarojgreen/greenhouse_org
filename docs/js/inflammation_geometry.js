@@ -99,6 +99,201 @@
                     reg.centroid = { x: cx / reg.vertices.length, y: cy / reg.vertices.length, z: cz / reg.vertices.length };
                 }
             }
+        },
+
+        generateSphere(radius, segments) {
+            const vertices = [];
+            const faces = [];
+            for (let i = 0; i <= segments; i++) {
+                const lat = (i / segments) * Math.PI;
+                const sinLat = Math.sin(lat);
+                const cosLat = Math.cos(lat);
+                for (let j = 0; j <= segments; j++) {
+                    const lon = (j / segments) * 2 * Math.PI;
+                    const x = radius * sinLat * Math.cos(lon);
+                    const y = radius * cosLat;
+                    const z = radius * sinLat * Math.sin(lon);
+                    vertices.push({ x, y, z, n: { x: x / radius, y: y / radius, z: z / radius } });
+                }
+            }
+            for (let i = 0; i < segments; i++) {
+                for (let j = 0; j < segments; j++) {
+                    const first = i * (segments + 1) + j;
+                    const second = first + segments + 1;
+                    faces.push([first, second, first + 1]);
+                    faces.push([second, second + 1, first + 1]);
+                }
+            }
+            return { vertices, faces };
+        },
+
+        generateMoleculeCluster(type, scale = 1.0) {
+            const vertices = [];
+            const faces = [];
+
+            const atom = (x, y, z, color, r = 4) => {
+                const s = this.generateSphere(r * scale, 6);
+                const offset = vertices.length;
+                s.vertices.forEach(v => {
+                    vertices.push({ x: v.x + x * scale, y: v.y + y * scale, z: v.z + z * scale, color: color });
+                });
+                s.faces.forEach(f => {
+                    faces.push([f[0] + offset, f[1] + offset, f[2] + offset]);
+                });
+            };
+
+            // CPK Colors: C=#333, O=#ff4444, N=#4444ff, H=#eee
+            if (type === 'pro-cytokine' || type === 'tnf') {
+                atom(0, 12, 0, '#ff4444', 5); atom(0, 4, 0, '#333333', 6); atom(-6, -4, 4, '#4444ff', 5);
+                atom(8, -8, 4, '#333333', 6); atom(14, -12, 8, '#ff4444', 5);
+                atom(-8, -8, 4, '#333333', 6); atom(-14, -12, 8, '#ff4444', 5);
+                atom(0, -2, 8, '#eee', 3);
+            } else if (type === 'anti-cytokine' || type === 'il10') {
+                atom(-10, 0, 0, '#44ffaa', 6); atom(-18, 5, 2, '#4444ff', 4); atom(-4, -5, -2, '#ff4444', 4);
+                atom(10, 0, 0, '#44ffaa', 6); atom(18, -5, -2, '#4444ff', 4); atom(4, 5, 2, '#ff4444', 4);
+            } else if (type === 'neurotransmitter') {
+                atom(0, 0, 0, '#333', 5); atom(0, 10, 0, '#4444ff', 5); atom(8, -4, 0, '#ff4444', 5); atom(4, -8, 4, '#ff4444', 4);
+            } else {
+                atom(0, 0, 0, '#64d2ff', 4); atom(5, 5, 0, '#eee', 2); atom(-5, 5, 0, '#eee', 2);
+            }
+            return { vertices, faces };
+        },
+
+        generateLipidBilayerSegment(width, height, subdivisions) {
+            const vertices = [];
+            const faces = [];
+            const stepX = width / subdivisions;
+            const stepY = height / subdivisions;
+
+            for (let i = 0; i <= subdivisions; i++) {
+                for (let j = 0; j <= subdivisions; j++) {
+                    const x = i * stepX - width / 2;
+                    const y = j * stepY - height / 2;
+                    const wave = Math.sin(x * 0.012 + y * 0.008) * 15;
+
+                    const layers = [
+                        { z: wave + 25, type: 'head', color: '#64d2ff' },
+                        { z: wave + 10, type: 'tail', color: '#1a2a3a' },
+                        { z: wave - 10, type: 'tail', color: '#1a2a3a' },
+                        { z: wave - 25, type: 'head', color: '#64d2ff' }
+                    ];
+
+                    layers.forEach(l => {
+                        vertices.push({ x, y, z: l.z, type: l.type, color: l.color });
+                    });
+                }
+            }
+
+            const row = subdivisions + 1;
+            for (let i = 0; i < subdivisions; i++) {
+                for (let j = 0; j < subdivisions; j++) {
+                    const i0 = (i * row + j) * 4;
+                    const i1 = (i * row + (j + 1)) * 4;
+                    const i2 = ((i + 1) * row + (j + 1)) * 4;
+                    const i3 = ((i + 1) * row + j) * 4;
+                    [0, 1, 2, 3].forEach(off => {
+                        faces.push([i0 + off, i1 + off, i2 + off]);
+                        faces.push([i0 + off, i2 + off, i3 + off]);
+                    });
+                }
+            }
+            return { vertices, faces };
+        },
+
+        generateGliaMesh(type, scale = 1.0) {
+            const vertices = [];
+            const faces = [];
+            const branches = type === 'astrocyte' ? 12 : 8;
+            const soma = this.generateSphere(10 * scale, 8);
+            vertices.push(...soma.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff4444' })));
+            faces.push(...soma.faces);
+
+            for (let i = 0; i < branches; i++) {
+                const angle = (i / branches) * Math.PI * 2;
+                const phi = (Math.random() - 0.5) * Math.PI;
+                const p1 = { x: 0, y: 0, z: 0 };
+                const p2 = {
+                    x: Math.cos(angle) * Math.cos(phi) * 60 * scale,
+                    y: Math.sin(phi) * 60 * scale,
+                    z: Math.sin(angle) * Math.cos(phi) * 60 * scale
+                };
+                const cp = { x: p2.x * 0.5 + (Math.random() - 0.5) * 20, y: p2.y * 0.5 + (Math.random() - 0.5) * 20, z: p2.z * 0.5 };
+                const tube = this.generateTubeMesh(p1, p2, cp, 2 * scale, 6);
+                const offset = vertices.length;
+                vertices.push(...tube.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff6666' })));
+                tube.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
+            }
+            return { vertices, faces };
+        },
+
+        generateTubeMesh(p1, p2, cp, radius, segments) {
+            const vertices = [];
+            const faces = [];
+            const steps = 10;
+            const getPoint = (t) => {
+                const mt = 1 - t;
+                return {
+                    x: mt * mt * p1.x + 2 * mt * t * cp.x + t * t * p2.x,
+                    y: mt * mt * p1.y + 2 * mt * t * cp.y + t * t * p2.y,
+                    z: mt * mt * p1.z + 2 * mt * t * cp.z + t * t * p2.z
+                };
+            };
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const p = getPoint(t);
+                const nextP = getPoint(Math.min(1, t + 0.01));
+                let tx = nextP.x - p.x, ty = nextP.y - p.y, tz = nextP.z - p.z;
+                const len = Math.sqrt(tx * tx + ty * ty + tz * tz);
+                tx /= len; ty /= len; tz /= len;
+                let ux = 0, uy = 1, uz = 0;
+                if (Math.abs(ty) > 0.9) { ux = 1; uy = 0; }
+                let bx = ty * uz - tz * uy, by = tz * ux - tx * uz, bz = tx * uy - ty * ux;
+                const bLen = Math.sqrt(bx * bx + by * by + bz * bz);
+                bx /= bLen; by /= bLen; bz /= bLen;
+                let nx = by * tz - bz * ty, ny = bz * tx - bx * tz, nz = bx * ty - by * tx;
+                for (let j = 0; j < segments; j++) {
+                    const theta = (j / segments) * Math.PI * 2;
+                    const sin = Math.sin(theta), cos = Math.cos(theta);
+                    vertices.push({ x: p.x + radius * (nx * cos + bx * sin), y: p.y + radius * (ny * cos + by * sin), z: p.z + radius * (nz * cos + bz * sin) });
+                }
+            }
+            for (let i = 0; i < steps; i++) {
+                for (let j = 0; j < segments; j++) {
+                    const current = i * segments + j, next = current + segments, nextJ = (j + 1) % segments;
+                    faces.push([current, i * segments + nextJ, (i + 1) * segments + nextJ]);
+                    faces.push([current, (i + 1) * segments + nextJ, next]);
+                }
+            }
+            return { vertices, faces };
+        },
+
+        createSynapseGeometry(radius, segments, type) {
+            const vertices = [];
+            const faces = [];
+            for (let i = 0; i <= segments; i++) {
+                const lat = (i / segments) * Math.PI, sinLat = Math.sin(lat), cosLat = Math.cos(lat);
+                for (let j = 0; j <= segments; j++) {
+                    const lon = (j / segments) * Math.PI * 2, sinLon = Math.sin(lon), cosLon = Math.cos(lon);
+                    let r = radius;
+                    if (type === 'pre') {
+                        r *= 1.0 + Math.sin(lat * 3) * 0.1 + Math.cos(lon * 4) * 0.1;
+                        if (cosLat < -0.5) r *= 0.8 + (cosLat + 0.5) * 0.2;
+                        r += Math.sin(lat * 12) * Math.cos(lon * 12) * 0.5;
+                    } else {
+                        if (cosLat > 0) { r *= 1.2; if (cosLat > 0.8) r *= 0.9; }
+                        else { const t = -cosLat; if (t > 0.3) r *= Math.max(0.3, 1.0 - (t - 0.3) * 2); }
+                        r += Math.sin(lat * 8) * 0.5;
+                    }
+                    vertices.push({ x: r * sinLat * cosLon, y: r * cosLat, z: r * sinLat * sinLon });
+                }
+            }
+            for (let i = 0; i < segments; i++) {
+                for (let j = 0; j < segments; j++) {
+                    const first = i * (segments + 1) + j, second = first + segments + 1;
+                    faces.push([first, second, first + 1]); faces.push([second, second + 1, first + 1]);
+                }
+            }
+            return { vertices, faces };
         }
     };
 

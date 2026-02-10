@@ -126,6 +126,16 @@
                                 ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.2})`;
                                 ctx.lineWidth = 0.5;
                                 ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+
+                                // REPAIR PULSE: Dynamic Wow Effect
+                                if (hasVariant && Math.sin(this.helixRotation + i * 0.5) > 0.8) {
+                                    ctx.fillStyle = '#fff';
+                                    ctx.shadowBlur = 15; ctx.shadowColor = '#00ffcc';
+                                    ctx.beginPath();
+                                    ctx.arc(p.x, p.y, 1.5 * p.scale, 0, Math.PI * 2);
+                                    ctx.fill();
+                                    ctx.shadowBlur = 0;
+                                }
                             }
                         }
                     }
@@ -275,6 +285,22 @@
                 }
             });
 
+            // HOLOGRAPHIC SCANLINES
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.03)';
+            ctx.lineWidth = 1;
+            const scanPos = (Date.now() * 0.05) % projection.height;
+            ctx.beginPath();
+            ctx.moveTo(0, scanPos); ctx.lineTo(projection.width, scanPos);
+            ctx.stroke();
+
+            // Vertical scan (aberration)
+            if (stressIntensity > 0.7 && Math.random() > 0.9) {
+                ctx.fillStyle = 'rgba(255, 50, 0, 0.1)';
+                ctx.fillRect(0, scanPos, projection.width, 2);
+            }
+            ctx.restore();
+
             // POINT CLOUD GLOW: Neural Sparks
             this.drawNeuralSparks(ctx, shell, camera, projection, stressIntensity);
         },
@@ -379,13 +405,16 @@
 
                     if (p.scale > 0 && dot > 0.3) {
                         const alpha = Math3D.applyDepthFog(0.7, p.depth, 0.4, 0.9);
-                        const intensity = (key === 'amygdala') ? state.factors.stressorIntensity : (1 - state.factors.stressorIntensity);
+                        const isVagus = key === 'vagus_nerve';
+                        let intensity = (key === 'amygdala') ? state.factors.stressorIntensity : (1 - state.factors.stressorIntensity);
+                        if (isVagus) intensity = state.metrics.vagalTone || 0.5;
 
                         // Technical HUD Line
                         ctx.beginPath();
-                        ctx.strokeStyle = `rgba(100, 200, 255, ${alpha * 0.3})`;
+                        ctx.strokeStyle = isVagus ? `rgba(0, 255, 150, ${alpha * 0.5})` : `rgba(100, 200, 255, ${alpha * 0.3})`;
                         ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p.x + (p.x < projection.width / 2 ? -40 : 40), p.y - 40);
+                        const offsetSide = p.x < projection.width / 2 ? -40 : 40;
+                        ctx.lineTo(p.x + offsetSide, p.y - 40);
                         const endX = p.x + (p.x < projection.width / 2 ? -100 : 100);
                         ctx.lineTo(endX, p.y - 40);
                         ctx.stroke();
@@ -396,6 +425,11 @@
                         ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
                         ctx.font = 'bold 9px monospace';
                         ctx.fillText(t(region.name).toUpperCase(), endX, p.y - 45);
+
+                        if (isVagus) {
+                            ctx.fillStyle = '#00ff99';
+                            ctx.fillText("VAGAL TONE ACTIVE", endX, p.y - 30);
+                        }
                     }
                 }
             }
@@ -420,41 +454,67 @@
             const hovered = ui3d.app.ui.hoveredElement;
             if (!hovered || hovered.type !== 'checkbox') return;
 
-            const w = 220, h = 140;
+            const w = 280, h = 160;
             const x = ui3d.app.canvas.width - w - 40;
             const y = 40;
 
             ctx.save();
-            // Glass Panel
-            ctx.fillStyle = 'rgba(10, 20, 30, 0.85)';
-            ctx.strokeStyle = 'rgba(76, 161, 175, 0.5)';
-            if (ui3d.app.roundRect) ui3d.app.roundRect(ctx, x, y, w, h, 12, true, true);
+            // Premium Glass Panel
+            const boxGrad = ctx.createLinearGradient(x, y, x + w, y + h);
+            boxGrad.addColorStop(0, 'rgba(10, 30, 50, 0.9)');
+            boxGrad.addColorStop(1, 'rgba(5, 10, 20, 0.95)');
+            ctx.fillStyle = boxGrad;
+            ctx.strokeStyle = 'rgba(76, 161, 175, 0.6)';
+            ctx.lineWidth = 1;
+            if (ui3d.app.roundRect) ui3d.app.roundRect(ctx, x, y, w, h, 15, true, true);
 
+            // Header
             ctx.fillStyle = '#4ca1af';
-            ctx.font = 'bold 10px monospace';
-            ctx.fillText("MICRO-MECHANISM ANALYSIS", x + 15, y + 25);
+            ctx.font = 'bold 9px monospace';
+            ctx.fillText("MICRO-MECHANISM ANALYSIS: " + hovered.id.toUpperCase(), x + 20, y + 25);
+            ctx.strokeStyle = 'rgba(76, 161, 175, 0.3)';
+            ctx.beginPath(); ctx.moveTo(x + 20, y + 35); ctx.lineTo(x + w - 20, y + 35); ctx.stroke();
 
-            // Micro Animation (Generic Enzyme logic as placeholder for wow effect)
+            // High-Fidelity Receptor Binding Animation
             const cx = x + w / 2, cy = y + h / 2 + 10;
-            const time = Date.now() * 0.002;
+            const time = Date.now() * 0.003;
+            const intensity = state.factors.stressorIntensity || 0.5;
 
-            // Substrate
-            ctx.fillStyle = '#ffaa00';
-            const sx = cx + Math.cos(time) * 30;
-            const sy = cy + Math.sin(time) * 10;
-            ctx.beginPath(); ctx.arc(sx, sy, 5, 0, Math.PI * 2); ctx.fill();
+            // Draw "Receptor" (G-Protein Coupled style)
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.3)';
+            for (let i = 0; i < 7; i++) {
+                const hx = cx - 70 + i * 20;
+                const hHeight = 50 + Math.sin(time + i) * 8;
+                ctx.beginPath();
+                ctx.moveTo(hx, cy - hHeight / 2);
+                ctx.lineTo(hx, cy + hHeight / 2);
+                ctx.stroke();
+            }
 
-            // Enzyme
-            ctx.strokeStyle = '#00ffcc';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.arc(cx, cy, 20, 0.2 * Math.PI, 1.8 * Math.PI);
-            ctx.stroke();
+            // Animated Ligands
+            const ligandCount = 4;
+            for (let i = 0; i < ligandCount; i++) {
+                const lOffset = (time + i * 1.5) % 8;
+                const lx = cx + 100 - lOffset * 25;
+                const ly = cy + Math.sin(time * 0.5 + i) * 15;
 
-            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                if (lx > cx - 70 && lx < cx + 70) {
+                    ctx.fillStyle = '#fff';
+                    ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
+                    ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fill();
+                    ctx.shadowBlur = 0;
+                } else {
+                    ctx.fillStyle = '#ffaa00';
+                    ctx.beginPath(); ctx.arc(lx, ly, 2, 0, Math.PI * 2); ctx.fill();
+                }
+            }
+
+            ctx.fillStyle = '#aaa';
             ctx.font = '8px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText(hovered.id.toUpperCase(), cx, y + h - 15);
+            ctx.fillText("AFFINITY RATIO: " + (0.8 + intensity * 0.1).toFixed(2), cx, y + h - 15);
+
             ctx.restore();
         }
     };

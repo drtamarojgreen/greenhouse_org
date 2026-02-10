@@ -412,7 +412,6 @@
         }
 
         update(dt) {
-            if (!dt) dt = 16; // Fallback for first frame
             this.simTime += dt * 0.002;
 
             // Modular Physics Updates

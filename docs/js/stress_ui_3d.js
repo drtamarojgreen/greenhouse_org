@@ -80,8 +80,14 @@
             if (!meta) return;
 
             // Determine source: local xml or kegg
-            const source = meta.source || `endpoints/kegg_${id}_raw.xml`; // Simplified fallback
-            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(source);
+            if (!meta.source) {
+                console.log(`Stress UI: No source for pathway ${id}, using default layout.`);
+                // We'll proceed with an empty nodes/edges set which will trigger local generation if needed
+                // or just skip. For now, we avoid the XHR.
+                return;
+            }
+
+            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source);
 
             if (data) {
                 // Apply 3D Layout (Simplified version of PathwayViewer logic)

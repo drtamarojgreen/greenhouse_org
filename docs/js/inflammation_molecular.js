@@ -51,27 +51,25 @@
 
             mesh.faces.forEach(f => {
                 const v1 = mesh.vertices[f[0]], v2 = mesh.vertices[f[1]], v3 = mesh.vertices[f[2]];
-                // Offset the membrane to the bottom center
-                const p1 = Math3D.project3DTo2D(v1.x, v1.y + 300, v1.z, camera, projection);
-                const p2 = Math3D.project3DTo2D(v2.x, v2.y + 300, v2.z, camera, projection);
-                const p3 = Math3D.project3DTo2D(v3.x, v3.y + 300, v3.z, camera, projection);
+                const p1 = Math3D.project3DTo2D(v1.x, v1.y + 400, v1.z, camera, projection);
+                const p2 = Math3D.project3DTo2D(v2.x, v2.y + 400, v2.z, camera, projection);
+                const p3 = Math3D.project3DTo2D(v3.x, v3.y + 400, v3.z, camera, projection);
 
                 if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                    const alpha = Math3D.applyDepthFog(v1.type === 'head' ? 0.2 : 0.05, p1.depth, 0.1, 0.9);
+                    ctx.fillStyle = v1.color || `rgba(100, 200, 255, ${alpha})`;
+                    ctx.globalAlpha = alpha;
                     ctx.beginPath();
-                    const alpha = Math3D.applyDepthFog(0.15, p1.depth, 0.1, 0.9);
-                    ctx.fillStyle = `rgba(100, 200, 255, ${alpha})`;
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.5})`;
                     ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y);
                     ctx.fill();
-                    ctx.stroke();
 
-                    // Add Lipid Head Detail
-                    if (v1.type === 'head' && Math.random() > 0.95) {
-                        ctx.fillStyle = `rgba(200, 240, 255, ${alpha * 2})`;
-                        ctx.beginPath(); ctx.arc(p1.x, p1.y, 3 * p1.scale, 0, Math.PI * 2); ctx.fill();
+                    if (v1.type === 'head') {
+                        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                        ctx.stroke();
                     }
                 }
             });
+            ctx.globalAlpha = 1.0;
             ctx.restore();
         },
 
@@ -84,13 +82,13 @@
                 ctx.fillStyle = color;
                 ctx.globalAlpha = alpha;
 
-                // Project local vertices to screen space relative to center 'proj'
                 ctx.moveTo(proj.x + v1.x * proj.scale, proj.y + v1.y * proj.scale);
                 ctx.lineTo(proj.x + v2.x * proj.scale, proj.y + v2.y * proj.scale);
                 ctx.lineTo(proj.x + v3.x * proj.scale, proj.y + v3.y * proj.scale);
                 ctx.fill();
 
-                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                ctx.lineWidth = 0.5;
                 ctx.stroke();
             });
             ctx.globalAlpha = 1.0;
