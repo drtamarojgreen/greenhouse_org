@@ -117,8 +117,8 @@ def create_gnome(name, location, scale=0.6):
     node_rust.inputs['Scale'].default_value = 50.0
     mat_gloom.node_tree.links.new(node_rust.outputs['Fac'], bsdf_gloom.inputs['Roughness'])
 
-    # Engraved Runes (Emissive Musgrave)
-    node_runes = mat_gloom.node_tree.nodes.new(type='ShaderNodeTexMusgrave')
+    # Engraved Runes (Emissive Noise replacing Musgrave)
+    node_runes = mat_gloom.node_tree.nodes.new(type='ShaderNodeTexNoise')
     node_runes.inputs['Scale'].default_value = 15.0
     node_runes_color = mat_gloom.node_tree.nodes.new(type='ShaderNodeValToRGB')
     node_runes_color.color_ramp.elements[0].position = 0.5

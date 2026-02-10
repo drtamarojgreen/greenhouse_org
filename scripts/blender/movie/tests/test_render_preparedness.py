@@ -6,6 +6,7 @@ import sys
 # Add movie root to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from silent_movie_generator import MovieMaster
+import style
 
 class TestRenderPreparedness(unittest.TestCase):
     @classmethod
@@ -58,7 +59,13 @@ class TestRenderPreparedness(unittest.TestCase):
             self.log_result("Compositor", "FAIL", "use_nodes is FALSE")
             self.fail("Compositor not enabled")
 
-        nodes = bpy.context.scene.node_tree.nodes
+        # Safe access for node tree (Blender 4.x vs 5.0 compatibility)
+        scene = bpy.context.scene
+        tree = style.get_compositor_node_tree(scene)
+        if not tree:
+            # Diagnostic info for debugging Blender 5.0 API shifts
+            self.fail(f"Compositor node tree not found. Scene attributes: {[a for a in dir(scene) if 'node' in a]}")
+        nodes = tree.nodes
         required_nodes = ["ChromaticAberration", "GlobalSaturation", "Bright/Contrast", "GlowTrail", "Vignette"]
         for node_name in required_nodes:
             with self.subTest(node=node_name):
@@ -94,11 +101,18 @@ class TestRenderPreparedness(unittest.TestCase):
 
     def test_06_engine_mode_switching(self):
         """Edge Case: Test initialization in UNITY_PREVIEW mode."""
-        unity_master = MovieMaster(mode='UNITY_PREVIEW')
-        engine = unity_master.scene.render.engine
-        status = "PASS" if engine == 'BLENDER_EEVEE' else "FAIL"
-        self.log_result("Mode Switch: UNITY_PREVIEW", status, f"Engine is {engine}")
-        self.assertEqual(engine, 'BLENDER_EEVEE')
+        # This test is destructive (clears scene). We must restore state for subsequent tests.
+        try:
+            unity_master = MovieMaster(mode='UNITY_PREVIEW')
+            engine = unity_master.scene.render.engine
+            valid_engines = ['BLENDER_EEVEE', 'BLENDER_EEVEE_NEXT']
+            status = "PASS" if engine in valid_engines else "FAIL"
+            self.log_result("Mode Switch: UNITY_PREVIEW", status, f"Engine is {engine}")
+            self.assertIn(engine, valid_engines)
+        finally:
+            # Restore the main scene for remaining tests (e.g. test_07)
+            self.master = MovieMaster(mode='SILENT_FILM')
+            self.master.run()
 
     def test_07_volume_scatter_config(self):
         """Edge Case: Verify volume scatter density is within safe ranges."""
@@ -148,4 +162,8 @@ class TestRenderPreparedness(unittest.TestCase):
         print("="*50 + "\n")
 
 if __name__ == "__main__":
-    unittest.main(exit=False)
+    # Filter out Blender arguments so unittest doesn't fail
+    argv = [sys.argv[0]]
+    if "--" in sys.argv:
+        argv.extend(sys.argv[sys.argv.index("--") + 1:])
+    unittest.main(argv=argv, exit=False)

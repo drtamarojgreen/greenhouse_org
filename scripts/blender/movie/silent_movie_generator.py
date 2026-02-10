@@ -131,9 +131,9 @@ class MovieMaster:
         scene.render.resolution_y = 720
         return scene
 
-    def get_action_curves(self, action):
+    def get_action_curves(self, action, create_if_missing=False):
         """Delegates to shared style utility for Blender 5.0 compatibility."""
-        return style.get_action_curves(action)
+        return style.get_action_curves(action, create_if_missing=create_if_missing)
 
     def create_intertitle(self, text, frame_start, frame_end):
         """Creates a classic silent movie intertitle card."""
@@ -249,8 +249,8 @@ class MovieMaster:
                     mat.use_nodes = True
                     bsdf = mat.node_tree.nodes.get("Principled BSDF")
 
-                    # Brain Vasculature (Musgrave veins)
-                    node_veins = mat.node_tree.nodes.new(type='ShaderNodeTexMusgrave')
+                    # Brain Vasculature (Noise replacing Musgrave in Blender 5.0)
+                    node_veins = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
                     node_veins.inputs['Scale'].default_value = 20.0
                     node_veins_color = mat.node_tree.nodes.new(type='ShaderNodeValToRGB')
                     node_veins_color.color_ramp.elements[0].color = (1, 0, 0, 1) # Red veins
@@ -604,7 +604,7 @@ class MovieMaster:
             target.animation_data_create()
             target.animation_data.action = bpy.data.actions.new(name="TargetShake")
             for axis in range(3):
-                curves = self.get_action_curves(target.animation_data.action)
+                curves = self.get_action_curves(target.animation_data.action, create_if_missing=True)
                 if hasattr(curves, 'new'):
                     fcurve = curves.new(data_path="location", index=axis)
                     noise = fcurve.modifiers.new(type='NOISE')
@@ -753,13 +753,23 @@ class MovieMaster:
         kf(5000, (0,-10,0), (0, 0, 15))
 
     def setup_compositor(self):
-        self.scene.use_nodes = True
-        tree = getattr(self.scene, 'node_tree', None) or getattr(self.scene, 'compositing_node_group', None)
+        tree = style.get_compositor_node_tree(self.scene)
         if tree is None: return
 
         for node in tree.nodes: tree.nodes.remove(node)
-        rl = tree.nodes.new('CompositorNodeRLayers')
-        composite = tree.nodes.new('CompositorNodeComposite')
+        
+        try:
+            rl = tree.nodes.new('CompositorNodeRLayers')
+        except RuntimeError:
+            rl = tree.nodes.new('NodeGroupInput')
+
+        try:
+            composite = tree.nodes.new('CompositorNodeComposite')
+        except RuntimeError:
+            composite = tree.nodes.new('NodeGroupOutput')
+            # Ensure interface exists for Group Output if needed (Blender 4.0+)
+            if hasattr(tree, "interface") and not tree.interface.items_tree:
+                tree.interface.new_socket(name="Image", in_out='OUTPUT', socket_type='NodeSocketColor')
 
         if self.mode == 'SILENT_FILM':
             bright = tree.nodes.new('CompositorNodeBrightContrast')

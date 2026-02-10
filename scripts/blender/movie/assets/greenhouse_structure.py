@@ -39,8 +39,8 @@ def create_greenhouse_glass_mat():
 
     bsdf.inputs["Roughness"].default_value = 0.05
 
-    # Scratched Glass (Musgrave)
-    node_scratches = mat.node_tree.nodes.new(type='ShaderNodeTexMusgrave')
+    # Scratched Glass (Noise replacing Musgrave in Blender 5.0)
+    node_scratches = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
     node_scratches.inputs['Scale'].default_value = 50.0
     mat.node_tree.links.new(node_scratches.outputs['Fac'], bsdf.inputs['Roughness'])
 

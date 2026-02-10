@@ -4,6 +4,9 @@ import random
 import mathutils
 import style
 
+# Ensure FBX importer is patched for Blender 5.0 compatibility
+style.patch_fbx_importer()
+
 def create_leaf_mesh():
     """Creates a simple leaf mesh if it doesn't exist."""
     if "LeafTemplate" in bpy.data.meshes:
@@ -108,7 +111,7 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
 
     # Muddy Limbs (Gradient mixed with base color)
     node_grad = nodes.new(type='ShaderNodeTexGradient')
-    node_grad.mapping = 'QUADRATIC_SPHERE'
+    node_grad.gradient_type = 'QUADRATIC_SPHERE'
     node_grad_ramp = nodes.new(type='ShaderNodeValToRGB')
     node_grad_ramp.color_ramp.elements[0].color = (0.05, 0.02, 0.01, 1) # Mud
     node_grad_ramp.color_ramp.elements[1].color = (1, 1, 1, 1)
@@ -152,8 +155,8 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in node_bsdf.inputs else "Subsurface"
     node_bsdf.inputs[subsurf_attr].default_value = 0.3
 
-    # Leaf Venation (Musgrave mixed with base color)
-    node_musgrave = nodes.new(type='ShaderNodeTexMusgrave')
+    # Leaf Venation (Noise replacing Musgrave)
+    node_musgrave = nodes.new(type='ShaderNodeTexNoise')
     node_musgrave.inputs['Scale'].default_value = 20.0
     node_venation_mix = nodes.new(type='ShaderNodeMixRGB')
     node_venation_mix.blend_type = 'MULTIPLY'

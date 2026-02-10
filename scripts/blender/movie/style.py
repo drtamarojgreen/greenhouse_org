@@ -3,7 +3,7 @@ import random
 import math
 import mathutils
 
-def get_action_curves(action):
+def get_action_curves(action, create_if_missing=False):
     """Helper to get fcurves/curves collection from Action for Blender 5.0+ compatibility."""
     if not action: return []
     if hasattr(action, 'fcurves'):
@@ -13,10 +13,31 @@ def get_action_curves(action):
     # Blender 5.0 / Animation 2025 Layered Action support
     if hasattr(action, 'layer') and hasattr(action.layer, 'fcurves'):
         return action.layer.fcurves
-    if hasattr(action, 'layers') and len(action.layers) > 0:
-        if hasattr(action.layers[0], 'fcurves'):
+    if hasattr(action, 'layers'):
+        if len(action.layers) == 0 and create_if_missing:
+            action.layers.new(name="Layer")
+        if len(action.layers) > 0 and hasattr(action.layers[0], 'fcurves'):
             return action.layers[0].fcurves
     return []
+
+def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
+    """
+    Retrieves or creates an F-Curve, handling legacy and Blender 5.0+ (Layered Action) APIs.
+    ref_obj: The object/datablock the action is assigned to (required for Blender 5.0+ new actions).
+    """
+    curves = get_action_curves(action, create_if_missing=True)
+    
+    # Legacy / Standard Collection Access
+    if not (isinstance(curves, list) and not curves):
+        for fc in curves:
+            if fc.data_path == data_path and fc.array_index == index:
+                return fc
+        return curves.new(data_path=data_path, index=index)
+    
+    # Blender 5.0+ Fallback
+    if hasattr(action, 'fcurve_ensure_for_datablock') and ref_obj:
+        return action.fcurve_ensure_for_datablock(ref_obj, data_path, index=index)
+    return None
 
 def get_eevee_engine_id():
     """Probes Blender for the correct Eevee engine identifier (EEVEE vs EEVEE_NEXT)."""
@@ -31,6 +52,38 @@ def get_eevee_engine_id():
     except Exception:
         pass
     return 'BLENDER_EEVEE' # Legacy default
+
+def get_compositor_node_tree(scene):
+    """Safely retrieves the compositor node tree for Blender 4.x/5.x compatibility."""
+    if hasattr(scene, "use_nodes") and not scene.use_nodes:
+        scene.use_nodes = True
+    
+    tree = getattr(scene, 'node_tree', None) or \
+           getattr(scene, 'compositing_node_group', None) or \
+           getattr(scene, 'compositor_node_tree', None)
+    
+    if not tree and hasattr(bpy.data, "node_groups"):
+        # Fallback: Search for the first available Compositing Node Tree
+        for group in bpy.data.node_groups:
+            if group.type in ('COMPOSITING', 'CompositorNodeTree'):
+                tree = group
+                break
+
+    # Explicit creation if missing (Blender 5.0+ edge case)
+    if not tree and hasattr(bpy.data, "node_groups"):
+        try:
+            tree = bpy.data.node_groups.new(name="Compositing Nodetree", type='CompositorNodeTree')
+        except (TypeError, ValueError):
+            tree = bpy.data.node_groups.new(name="Compositing Nodetree", type='COMPOSITING')
+
+    # Ensure it is assigned to the scene
+    if tree and hasattr(scene, 'compositing_node_group') and not getattr(scene, 'compositing_node_group', None):
+        try:
+            scene.compositing_node_group = tree
+        except Exception:
+            pass
+
+    return tree
 
 def set_principled_socket(mat_or_node, socket_name, value, frame=None):
     """Guarded setter for Principled BSDF sockets to handle naming drift (e.g. Specular)."""
@@ -176,18 +229,10 @@ def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed
     if not light_obj.data.animation_data.action:
         light_obj.data.animation_data.action = bpy.data.actions.new(name=f"Flicker_{light_name}")
 
-    curves = get_action_curves(light_obj.data.animation_data.action)
-    if isinstance(curves, list) and not curves:
+    fcurve = get_or_create_fcurve(light_obj.data.animation_data.action, "energy", ref_obj=light_obj.data)
+    if not fcurve:
         print(f"Warning: Could not access fcurves for light {light_name}")
         return
-
-    fcurve = None
-    for fc in curves:
-        if fc.data_path == "energy":
-            fcurve = fc
-            break
-    if not fcurve:
-        fcurve = curves.new(data_path="energy")
 
     modifier = fcurve.modifiers.new(type='NOISE')
     modifier.strength = light_obj.data.energy * strength
@@ -209,22 +254,14 @@ def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=5000
         obj.animation_data.action = bpy.data.actions.new(name=f"Noise_{obj.name}_{data_path.replace('.', '_')}")
 
     action = obj.animation_data.action
-    curves = get_action_curves(action)
-    
-    if isinstance(curves, list) and not curves:
-        print(f"Warning: Could not access fcurves for {obj.name}. Action attributes: {dir(action)}")
-        return
-
     indices = [index] if index >= 0 else [0, 1, 2]
 
     for idx in indices:
-        fcurve = None
-        for fc in curves:
-            if fc.data_path == data_path and fc.array_index == idx:
-                fcurve = fc
-                break
+        fcurve = get_or_create_fcurve(action, data_path, idx, ref_obj=obj)
+        
         if not fcurve:
-            fcurve = curves.new(data_path=data_path, index=idx)
+            print(f"Warning: Could not access/create fcurve for {obj.name} ({data_path}[{idx}])")
+            continue
 
         if not fcurve.keyframe_points:
             obj.keyframe_insert(data_path=data_path, index=idx, frame=frame_start)
@@ -477,8 +514,8 @@ def apply_thermal_transition(master, frame_start, frame_end, color_start=(0.5, 0
 
 def setup_chromatic_aberration(scene, strength=0.01):
     """Adds a Lens Distortion node for chromatic aberration."""
-    if not scene.use_nodes: scene.use_nodes = True
-    tree = scene.node_tree
+    tree = get_compositor_node_tree(scene)
+    if not tree: return None
     distort = tree.nodes.get("ChromaticAberration") or tree.nodes.new(type='CompositorNodeLensdist')
     distort.name = "ChromaticAberration"
     distort.inputs['Dispersion'].default_value = strength
@@ -503,8 +540,8 @@ def setup_god_rays(scene):
 
 def animate_vignette(scene, frame_start, frame_end, start_val=1.0, end_val=0.5):
     """Decreases vignette radius for high tension."""
-    if not scene.use_nodes: scene.use_nodes = True
-    tree = scene.node_tree
+    tree = get_compositor_node_tree(scene)
+    if not tree: return
     vig = tree.nodes.get("Vignette") or tree.nodes.new(type='CompositorNodeEllipseMask')
     vig.name = "Vignette"
     vig.width = start_val
@@ -547,7 +584,8 @@ def animate_mood_fog(scene, frame, density=0.01):
 
 def apply_film_flicker(scene, frame_start, frame_end, strength=0.05):
     """Randomized brightness jumps."""
-    tree = scene.node_tree
+    tree = get_compositor_node_tree(scene)
+    if not tree: return
     bright = tree.nodes.get("Bright/Contrast") or tree.nodes.new('CompositorNodeBrightContrast')
     for f in range(frame_start, frame_end + 1, 2):
         bright.inputs['Bright'].default_value = random.uniform(-strength, strength)
@@ -555,8 +593,8 @@ def apply_film_flicker(scene, frame_start, frame_end, strength=0.05):
 
 def apply_glow_trails(scene):
     """Ghosting/Trail effect (simplified via Vector Blur)."""
-    if not scene.use_nodes: scene.use_nodes = True
-    tree = scene.node_tree
+    tree = get_compositor_node_tree(scene)
+    if not tree: return None
     blur = tree.nodes.get("GlowTrail") or tree.nodes.new(type='CompositorNodeVecBlur')
     blur.name = "GlowTrail"
     blur.factor = 0.8
@@ -565,8 +603,8 @@ def apply_glow_trails(scene):
 
 def setup_saturation_control(scene):
     """Adds a Hue/Saturation node for global desaturation beats."""
-    if not scene.use_nodes: scene.use_nodes = True
-    tree = scene.node_tree
+    tree = get_compositor_node_tree(scene)
+    if not tree: return None
     huesat = tree.nodes.get("GlobalSaturation") or tree.nodes.new(type='CompositorNodeHueSat')
     huesat.name = "GlobalSaturation"
     huesat.inputs['Saturation'].default_value = 1.0
@@ -574,7 +612,8 @@ def setup_saturation_control(scene):
 
 def apply_desaturation_beat(scene, frame_start, frame_end, saturation=0.2):
     """Drops saturation for a specific range."""
-    tree = scene.node_tree
+    tree = get_compositor_node_tree(scene)
+    if not tree: return
     huesat = tree.nodes.get("GlobalSaturation")
     if huesat:
         huesat.inputs['Saturation'].default_value = 1.0
