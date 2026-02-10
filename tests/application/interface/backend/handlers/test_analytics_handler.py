@@ -23,11 +23,13 @@ class TestAnalyticsHandler(unittest.TestCase):
         self.app_context.pop()
 
     @patch('application.interface.backend.handlers.analytics_handler.get_jwt_identity')
+    @patch('application.interface.backend.handlers.auth_handler.get_jwt')
     @patch('application.interface.backend.handlers.analytics_handler.get_jwt')
     @patch('application.interface.backend.handlers.analytics_handler.get_db')
-    def test_get_dashboard_metrics(self, mock_get_db, mock_get_jwt, mock_get_jwt_identity):
+    def test_get_dashboard_metrics(self, mock_get_db, mock_get_jwt_analytics, mock_get_jwt_auth, mock_get_jwt_identity):
         mock_get_jwt_identity.return_value = 'test_user'
-        mock_get_jwt.return_value = {'role': 'admin'}
+        mock_get_jwt_auth.return_value = {'role': 'admin', 'mfa_verified': True}
+        mock_get_jwt_analytics.return_value = {'role': 'admin', 'mfa_verified': True}
         mock_db = MagicMock()
         mock_cursor = MagicMock()
         mock_get_db.return_value = mock_db
@@ -44,11 +46,13 @@ class TestAnalyticsHandler(unittest.TestCase):
         self.assertIn('metrics', json.loads(response.data))
 
     @patch('application.interface.backend.handlers.analytics_handler.get_jwt_identity')
+    @patch('application.interface.backend.handlers.auth_handler.get_jwt')
     @patch('application.interface.backend.handlers.analytics_handler.get_jwt')
     @patch('application.interface.backend.handlers.analytics_handler.get_db')
-    def test_get_trends(self, mock_get_db, mock_get_jwt, mock_get_jwt_identity):
+    def test_get_trends(self, mock_get_db, mock_get_jwt_analytics, mock_get_jwt_auth, mock_get_jwt_identity):
         mock_get_jwt_identity.return_value = 'test_user'
-        mock_get_jwt.return_value = {'role': 'admin'}
+        mock_get_jwt_auth.return_value = {'role': 'admin', 'mfa_verified': True}
+        mock_get_jwt_analytics.return_value = {'role': 'admin', 'mfa_verified': True}
         mock_db = MagicMock()
         mock_cursor = MagicMock()
         mock_get_db.return_value = mock_db
@@ -64,11 +68,13 @@ class TestAnalyticsHandler(unittest.TestCase):
         self.assertIn('data', json.loads(response.data))
 
     @patch('application.interface.backend.handlers.analytics_handler.get_jwt_identity')
+    @patch('application.interface.backend.handlers.auth_handler.get_jwt')
     @patch('application.interface.backend.handlers.analytics_handler.get_jwt')
     @patch('application.interface.backend.handlers.analytics_handler.get_db')
-    def test_generate_report(self, mock_get_db, mock_get_jwt, mock_get_jwt_identity):
+    def test_generate_report(self, mock_get_db, mock_get_jwt_analytics, mock_get_jwt_auth, mock_get_jwt_identity):
         mock_get_jwt_identity.return_value = 'test_user'
-        mock_get_jwt.return_value = {'role': 'admin'}
+        mock_get_jwt_auth.return_value = {'role': 'admin', 'mfa_verified': True}
+        mock_get_jwt_analytics.return_value = {'role': 'admin', 'mfa_verified': True}
         mock_db = MagicMock()
         mock_cursor = MagicMock()
         mock_get_db.return_value = mock_db

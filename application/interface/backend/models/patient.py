@@ -14,8 +14,10 @@ class Patient:
         self.zip = zip
         self.city = city
 
-    def to_dict(self):
-        return {
+    def to_dict(self, mask=False):
+        from ..utils.encryption import DataMasking
+
+        data = {
             "id": self.id,
             "user_id": self.user_id,
             "date_of_birth": self.date_of_birth.isoformat() if self.date_of_birth else None,
@@ -29,11 +31,30 @@ class Patient:
             "city": self.city
         }
 
+        if mask:
+            data['date_of_birth'] = DataMasking.mask_dob(data['date_of_birth'])
+            data['gender'] = DataMasking.mask_generic(data['gender'])
+            data['ethnicity'] = DataMasking.mask_generic(data['ethnicity'])
+            data['address_line_1'] = DataMasking.mask_address(data['address_line_1'])
+            data['address_line_2'] = DataMasking.mask_address(data['address_line_2'])
+            data['state'] = DataMasking.mask_generic(data['state'])
+            data['zip'] = DataMasking.mask_generic(data['zip'])
+            data['city'] = DataMasking.mask_generic(data['city'])
+
+        return data
+
     @staticmethod
-    def get_all():
+    def get_all(clinician_id=None):
         db = get_db()
         cur = db.cursor()
-        cur.execute('SELECT * FROM patients;')
+        if clinician_id:
+            cur.execute('''
+                SELECT p.* FROM patients p
+                JOIN patient_clinician pc ON pc.patient_id = p.id
+                WHERE pc.clinician_id = %s;
+            ''', (clinician_id,))
+        else:
+            cur.execute('SELECT * FROM patients;')
         patients = cur.fetchall()
         cur.close()
         return [Patient(*patient) for patient in patients]

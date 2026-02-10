@@ -6,12 +6,15 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timedelta
 from ..database import get_db
 from ..utils.audit_logger import audit_log, audit_logger
+from .auth_handler import mfa_required
+from ..utils.auth_utils import get_clinician_id
 
 analytics_bp = Blueprint('analytics_bp', __name__)
 
 
 @analytics_bp.route('/analytics/dashboard', methods=['GET'])
 @jwt_required()
+@mfa_required
 @audit_log('VIEW', 'analytics_dashboard')
 def get_dashboard_metrics():
     """
@@ -27,6 +30,10 @@ def get_dashboard_metrics():
     claims = get_jwt()
     role = claims.get('role', 'patient')
     time_range = request.args.get('time_range', 'month')
+
+    clinician_id = None
+    if role == 'clinician':
+        clinician_id = get_clinician_id(user_id)
     
     # Calculate date range
     end_date = datetime.now()
@@ -48,39 +55,73 @@ def get_dashboard_metrics():
         # Patient Overview Metrics
         if role in ['admin', 'clinician']:
             # Total patients
-            cur.execute('SELECT COUNT(*) FROM patients')
+            if role == 'admin':
+                cur.execute('SELECT COUNT(*) FROM patients')
+            else:
+                cur.execute('SELECT COUNT(*) FROM patient_clinician WHERE clinician_id = %s', (clinician_id,))
             metrics['total_patients'] = cur.fetchone()[0]
             
             # New patients in time range
-            cur.execute(
-                'SELECT COUNT(*) FROM patients WHERE created_at >= %s',
-                (start_date,)
-            )
+            if role == 'admin':
+                cur.execute(
+                    'SELECT COUNT(*) FROM patients WHERE created_at >= %s',
+                    (start_date,)
+                )
+            else:
+                cur.execute(
+                    '''
+                    SELECT COUNT(*) FROM patients p
+                    JOIN patient_clinician pc ON pc.patient_id = p.id
+                    WHERE pc.clinician_id = %s AND p.created_at >= %s
+                    ''',
+                    (clinician_id, start_date)
+                )
             metrics['new_patients'] = cur.fetchone()[0]
             
             # Active patients (with recent activity)
-            cur.execute(
-                """
-                SELECT COUNT(DISTINCT patient_id) 
-                FROM appointments 
-                WHERE appointment_time >= %s
-                """,
-                (start_date,)
-            )
+            if role == 'admin':
+                cur.execute(
+                    """
+                    SELECT COUNT(DISTINCT patient_id)
+                    FROM appointments
+                    WHERE appointment_time >= %s
+                    """,
+                    (start_date,)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT COUNT(DISTINCT patient_id)
+                    FROM appointments
+                    WHERE appointment_time >= %s AND clinician_id = %s
+                    """,
+                    (start_date, clinician_id)
+                )
             metrics['active_patients'] = cur.fetchone()[0]
         
         # Appointment Metrics
         if role in ['admin', 'clinician']:
             # Total appointments
-            cur.execute(
-                """
-                SELECT COUNT(*), status
-                FROM appointments
-                WHERE appointment_time >= %s
-                GROUP BY status
-                """,
-                (start_date,)
-            )
+            if role == 'admin':
+                cur.execute(
+                    """
+                    SELECT COUNT(*), status
+                    FROM appointments
+                    WHERE appointment_time >= %s
+                    GROUP BY status
+                    """,
+                    (start_date,)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT COUNT(*), status
+                    FROM appointments
+                    WHERE appointment_time >= %s AND clinician_id = %s
+                    GROUP BY status
+                    """,
+                    (start_date, clinician_id)
+                )
             appointment_stats = cur.fetchall()
             metrics['appointments'] = {
                 'total': sum(row[0] for row in appointment_stats),
@@ -88,34 +129,62 @@ def get_dashboard_metrics():
             }
             
             # Upcoming appointments
-            cur.execute(
-                """
-                SELECT COUNT(*)
-                FROM appointments
-                WHERE appointment_time > %s AND status = 'scheduled'
-                """,
-                (datetime.now(),)
-            )
+            if role == 'admin':
+                cur.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM appointments
+                    WHERE appointment_time > %s AND status = 'scheduled'
+                    """,
+                    (datetime.now(),)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM appointments
+                    WHERE appointment_time > %s AND status = 'scheduled' AND clinician_id = %s
+                    """,
+                    (datetime.now(), clinician_id)
+                )
             metrics['upcoming_appointments'] = cur.fetchone()[0]
         
         # Assessment Metrics
         if role in ['admin', 'clinician']:
             # Assessment completion rate
-            cur.execute(
-                """
-                SELECT 
-                    si.instrument_code,
-                    si.name,
-                    COUNT(*) as total_assessments,
-                    AVG(CASE WHEN p.id IS NOT NULL THEN 1 ELSE 0 END) as completion_rate
-                FROM scale_instruments si
-                LEFT JOIN psyconnect p ON p.assessment_type = si.instrument_code
-                    AND p.assessed_at >= %s
-                WHERE si.active = true
-                GROUP BY si.instrument_code, si.name
-                """,
-                (start_date,)
-            )
+            if role == 'admin':
+                cur.execute(
+                    """
+                    SELECT
+                        si.instrument_code,
+                        si.name,
+                        COUNT(p.id) as total_assessments,
+                        AVG(CASE WHEN p.id IS NOT NULL THEN 1 ELSE 0 END) as completion_rate
+                    FROM scale_instruments si
+                    LEFT JOIN psyconnect p ON p.assessment_type = si.instrument_code
+                        AND p.assessed_at >= %s
+                    WHERE si.active = true
+                    GROUP BY si.instrument_code, si.name
+                    """,
+                    (start_date,)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT
+                        si.instrument_code,
+                        si.name,
+                        COUNT(p.id) as total_assessments,
+                        AVG(CASE WHEN p.id IS NOT NULL THEN 1 ELSE 0 END) as completion_rate
+                    FROM scale_instruments si
+                    LEFT JOIN psyconnect p ON p.assessment_type = si.instrument_code
+                        AND p.assessed_at >= %s
+                        AND p.patient_id IN (SELECT patient_id FROM patient_clinician WHERE clinician_id = %s)
+                    WHERE si.active = true
+                    GROUP BY si.instrument_code, si.name
+                    """,
+                    (start_date, clinician_id)
+                )
             assessment_stats = cur.fetchall()
             metrics['assessments'] = [
                 {
@@ -130,15 +199,26 @@ def get_dashboard_metrics():
         # Therapy Session Metrics
         if role in ['admin', 'clinician']:
             # Total sessions
-            cur.execute(
-                """
-                SELECT COUNT(*), AVG(duration_minutes)
-                FROM therapy_sessions ts
-                JOIN appointments a ON a.id = ts.appointment_id
-                WHERE a.appointment_time >= %s
-                """,
-                (start_date,)
-            )
+            if role == 'admin':
+                cur.execute(
+                    """
+                    SELECT COUNT(*), AVG(duration_minutes)
+                    FROM therapy_sessions ts
+                    JOIN appointments a ON a.id = ts.appointment_id
+                    WHERE a.appointment_time >= %s
+                    """,
+                    (start_date,)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT COUNT(*), AVG(duration_minutes)
+                    FROM therapy_sessions ts
+                    JOIN appointments a ON a.id = ts.appointment_id
+                    WHERE a.appointment_time >= %s AND a.clinician_id = %s
+                    """,
+                    (start_date, clinician_id)
+                )
             session_data = cur.fetchone()
             metrics['therapy_sessions'] = {
                 'total': session_data[0],
@@ -146,16 +226,29 @@ def get_dashboard_metrics():
             }
             
             # Homework completion rate
-            cur.execute(
-                """
-                SELECT 
-                    COUNT(*) as total,
-                    SUM(CASE WHEN completed = true THEN 1 ELSE 0 END) as completed
-                FROM therapy_homework
-                WHERE assigned_at >= %s
-                """,
-                (start_date,)
-            )
+            if role == 'admin':
+                cur.execute(
+                    """
+                    SELECT
+                        COUNT(*) as total,
+                        SUM(CASE WHEN completed = true THEN 1 ELSE 0 END) as completed
+                    FROM therapy_homework
+                    WHERE assigned_at >= %s
+                    """,
+                    (start_date,)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT
+                        COUNT(*) as total,
+                        SUM(CASE WHEN completed = true THEN 1 ELSE 0 END) as completed
+                    FROM therapy_homework
+                    WHERE assigned_at >= %s
+                    AND patient_id IN (SELECT patient_id FROM patient_clinician WHERE clinician_id = %s)
+                    """,
+                    (start_date, clinician_id)
+                )
             homework_data = cur.fetchone()
             total_hw = homework_data[0] or 0
             completed_hw = homework_data[1] or 0
@@ -164,16 +257,29 @@ def get_dashboard_metrics():
         # Vitals Metrics
         if role in ['admin', 'clinician']:
             # Average vitals
-            cur.execute(
-                """
-                SELECT 
-                    AVG(heart_rate) as avg_hr,
-                    COUNT(*) as total_readings
-                FROM vitals
-                WHERE recorded_at >= %s AND heart_rate IS NOT NULL
-                """,
-                (start_date,)
-            )
+            if role == 'admin':
+                cur.execute(
+                    """
+                    SELECT
+                        AVG(heart_rate) as avg_hr,
+                        COUNT(*) as total_readings
+                    FROM vitals
+                    WHERE recorded_at >= %s AND heart_rate IS NOT NULL
+                    """,
+                    (start_date,)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT
+                        AVG(heart_rate) as avg_hr,
+                        COUNT(*) as total_readings
+                    FROM vitals
+                    WHERE recorded_at >= %s AND heart_rate IS NOT NULL
+                    AND patient_id IN (SELECT patient_id FROM patient_clinician WHERE clinician_id = %s)
+                    """,
+                    (start_date, clinician_id)
+                )
             vitals_data = cur.fetchone()
             metrics['vitals'] = {
                 'avg_heart_rate': float(vitals_data[0]) if vitals_data[0] else 0,
@@ -183,14 +289,25 @@ def get_dashboard_metrics():
         # Messaging Metrics
         if role in ['admin', 'clinician']:
             # Message volume
-            cur.execute(
-                """
-                SELECT COUNT(*)
-                FROM messages
-                WHERE sent_at >= %s
-                """,
-                (start_date,)
-            )
+            if role == 'admin':
+                cur.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM messages
+                    WHERE sent_at >= %s
+                    """,
+                    (start_date,)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM messages
+                    WHERE sent_at >= %s
+                    AND (sender_id = %s OR recipient_id = %s)
+                    """,
+                    (start_date, user_id, user_id)
+                )
             metrics['messages_sent'] = cur.fetchone()[0]
         
         # Clinician Metrics
@@ -333,6 +450,7 @@ def get_dashboard_metrics():
 
 @analytics_bp.route('/analytics/trends', methods=['GET'])
 @jwt_required()
+@mfa_required
 @audit_log('VIEW', 'analytics_trends')
 def get_trends():
     """
@@ -349,6 +467,10 @@ def get_trends():
     user_id = get_jwt_identity()
     claims = get_jwt()
     role = claims.get('role', 'patient')
+
+    clinician_id = None
+    if role == 'clinician':
+        clinician_id = get_clinician_id(user_id)
     
     metric = request.args.get('metric', 'appointments')
     period = request.args.get('period', 'daily')
@@ -371,17 +493,30 @@ def get_trends():
         trend_data = []
         
         if metric == 'appointments' and role in ['admin', 'clinician']:
-            query = f"""
-                SELECT 
-                    {date_trunc.replace('%s', 'appointment_time')} as period,
-                    COUNT(*) as count,
-                    status
-                FROM appointments
-                WHERE appointment_time >= %s
-                GROUP BY period, status
-                ORDER BY period
-            """
-            cur.execute(query, (start_date,))
+            if role == 'admin':
+                query = f"""
+                    SELECT
+                        {date_trunc.replace('%s', 'appointment_time')} as period,
+                        COUNT(*) as count,
+                        status
+                    FROM appointments
+                    WHERE appointment_time >= %s
+                    GROUP BY period, status
+                    ORDER BY period
+                """
+                cur.execute(query, (start_date,))
+            else:
+                query = f"""
+                    SELECT
+                        {date_trunc.replace('%s', 'appointment_time')} as period,
+                        COUNT(*) as count,
+                        status
+                    FROM appointments
+                    WHERE appointment_time >= %s AND clinician_id = %s
+                    GROUP BY period, status
+                    ORDER BY period
+                """
+                cur.execute(query, (start_date, clinician_id))
             results = cur.fetchall()
             
             # Group by period
@@ -396,17 +531,31 @@ def get_trends():
             trend_data = list(period_data.values())
         
         elif metric == 'assessments' and role in ['admin', 'clinician']:
-            query = f"""
-                SELECT 
-                    {date_trunc.replace('%s', 'assessed_at')} as period,
-                    COUNT(*) as count,
-                    assessment_type
-                FROM psyconnect
-                WHERE assessed_at >= %s
-                GROUP BY period, assessment_type
-                ORDER BY period
-            """
-            cur.execute(query, (start_date,))
+            if role == 'admin':
+                query = f"""
+                    SELECT
+                        {date_trunc.replace('%s', 'assessed_at')} as period,
+                        COUNT(*) as count,
+                        assessment_type
+                    FROM psyconnect
+                    WHERE assessed_at >= %s
+                    GROUP BY period, assessment_type
+                    ORDER BY period
+                """
+                cur.execute(query, (start_date,))
+            else:
+                query = f"""
+                    SELECT
+                        {date_trunc.replace('%s', 'assessed_at')} as period,
+                        COUNT(*) as count,
+                        assessment_type
+                    FROM psyconnect
+                    WHERE assessed_at >= %s
+                    AND patient_id IN (SELECT patient_id FROM patient_clinician WHERE clinician_id = %s)
+                    GROUP BY period, assessment_type
+                    ORDER BY period
+                """
+                cur.execute(query, (start_date, clinician_id))
             results = cur.fetchall()
             
             period_data = {}
@@ -420,17 +569,31 @@ def get_trends():
             trend_data = list(period_data.values())
         
         elif metric == 'vitals' and role in ['admin', 'clinician']:
-            query = f"""
-                SELECT 
-                    {date_trunc.replace('%s', 'recorded_at')} as period,
-                    AVG(heart_rate) as avg_hr,
-                    COUNT(*) as count
-                FROM vitals
-                WHERE recorded_at >= %s AND heart_rate IS NOT NULL
-                GROUP BY period
-                ORDER BY period
-            """
-            cur.execute(query, (start_date,))
+            if role == 'admin':
+                query = f"""
+                    SELECT
+                        {date_trunc.replace('%s', 'recorded_at')} as period,
+                        AVG(heart_rate) as avg_hr,
+                        COUNT(*) as count
+                    FROM vitals
+                    WHERE recorded_at >= %s AND heart_rate IS NOT NULL
+                    GROUP BY period
+                    ORDER BY period
+                """
+                cur.execute(query, (start_date,))
+            else:
+                query = f"""
+                    SELECT
+                        {date_trunc.replace('%s', 'recorded_at')} as period,
+                        AVG(heart_rate) as avg_hr,
+                        COUNT(*) as count
+                    FROM vitals
+                    WHERE recorded_at >= %s AND heart_rate IS NOT NULL
+                    AND patient_id IN (SELECT patient_id FROM patient_clinician WHERE clinician_id = %s)
+                    GROUP BY period
+                    ORDER BY period
+                """
+                cur.execute(query, (start_date, clinician_id))
             results = cur.fetchall()
             
             trend_data = [
@@ -443,16 +606,28 @@ def get_trends():
             ]
         
         elif metric == 'messages' and role in ['admin', 'clinician']:
-            query = f"""
-                SELECT 
-                    {date_trunc.replace('%s', 'sent_at')} as period,
-                    COUNT(*) as count
-                FROM messages
-                WHERE sent_at >= %s
-                GROUP BY period
-                ORDER BY period
-            """
-            cur.execute(query, (start_date,))
+            if role == 'admin':
+                query = f"""
+                    SELECT
+                        {date_trunc.replace('%s', 'sent_at')} as period,
+                        COUNT(*) as count
+                    FROM messages
+                    WHERE sent_at >= %s
+                    GROUP BY period
+                    ORDER BY period
+                """
+                cur.execute(query, (start_date,))
+            else:
+                query = f"""
+                    SELECT
+                        {date_trunc.replace('%s', 'sent_at')} as period,
+                        COUNT(*) as count
+                    FROM messages
+                    WHERE sent_at >= %s AND (sender_id = %s OR recipient_id = %s)
+                    GROUP BY period
+                    ORDER BY period
+                """
+                cur.execute(query, (start_date, user_id, user_id))
             results = cur.fetchall()
             
             trend_data = [
@@ -477,6 +652,7 @@ def get_trends():
 
 @analytics_bp.route('/analytics/performance', methods=['GET'])
 @jwt_required()
+@mfa_required
 @audit_log('VIEW', 'analytics_performance')
 def get_performance_metrics():
     """
@@ -575,6 +751,7 @@ def get_performance_metrics():
 
 @analytics_bp.route('/analytics/reports/generate', methods=['POST'])
 @jwt_required()
+@mfa_required
 @audit_log('CREATE', 'analytics_report')
 def generate_report():
     """
@@ -592,6 +769,10 @@ def generate_report():
     user_id = get_jwt_identity()
     claims = get_jwt()
     role = claims.get('role', 'patient')
+
+    clinician_id = None
+    if role == 'clinician':
+        clinician_id = get_clinician_id(user_id)
     
     if role not in ['admin', 'clinician']:
         return jsonify({'error': 'Unauthorized'}), 403
@@ -619,26 +800,50 @@ def generate_report():
         
         if report_type == 'patient_summary':
             # Patient summary report
-            query = """
-                SELECT 
-                    p.id,
-                    u.full_name,
-                    p.date_of_birth,
-                    p.gender,
-                    COUNT(DISTINCT a.id) as appointment_count,
-                    COUNT(DISTINCT ts.id) as session_count,
-                    COUNT(DISTINCT pc.id) as assessment_count
-                FROM patients p
-                JOIN users u ON u.id = p.user_id
-                LEFT JOIN appointments a ON a.patient_id = p.id 
-                    AND a.appointment_time BETWEEN %s AND %s
-                LEFT JOIN therapy_sessions ts ON ts.appointment_id = a.id
-                LEFT JOIN psyconnect pc ON pc.patient_id = p.id 
-                    AND pc.assessed_at BETWEEN %s AND %s
-                GROUP BY p.id, u.full_name, p.date_of_birth, p.gender
-                ORDER BY appointment_count DESC
-            """
-            cur.execute(query, (start_date, end_date, start_date, end_date))
+            if role == 'admin':
+                query = """
+                    SELECT
+                        p.id,
+                        u.full_name,
+                        p.date_of_birth,
+                        p.gender,
+                        COUNT(DISTINCT a.id) as appointment_count,
+                        COUNT(DISTINCT ts.id) as session_count,
+                        COUNT(DISTINCT pc.id) as assessment_count
+                    FROM patients p
+                    JOIN users u ON u.id = p.user_id
+                    LEFT JOIN appointments a ON a.patient_id = p.id
+                        AND a.appointment_time BETWEEN %s AND %s
+                    LEFT JOIN therapy_sessions ts ON ts.appointment_id = a.id
+                    LEFT JOIN psyconnect pc ON pc.patient_id = p.id
+                        AND pc.assessed_at BETWEEN %s AND %s
+                    GROUP BY p.id, u.full_name, p.date_of_birth, p.gender
+                    ORDER BY appointment_count DESC
+                """
+                cur.execute(query, (start_date, end_date, start_date, end_date))
+            else:
+                query = """
+                    SELECT
+                        p.id,
+                        u.full_name,
+                        p.date_of_birth,
+                        p.gender,
+                        COUNT(DISTINCT a.id) as appointment_count,
+                        COUNT(DISTINCT ts.id) as session_count,
+                        COUNT(DISTINCT pc.id) as assessment_count
+                    FROM patients p
+                    JOIN users u ON u.id = p.user_id
+                    JOIN patient_clinician pcl ON pcl.patient_id = p.id
+                    LEFT JOIN appointments a ON a.patient_id = p.id
+                        AND a.appointment_time BETWEEN %s AND %s
+                    LEFT JOIN therapy_sessions ts ON ts.appointment_id = a.id
+                    LEFT JOIN psyconnect pc ON pc.patient_id = p.id
+                        AND pc.assessed_at BETWEEN %s AND %s
+                    WHERE pcl.clinician_id = %s
+                    GROUP BY p.id, u.full_name, p.date_of_birth, p.gender
+                    ORDER BY appointment_count DESC
+                """
+                cur.execute(query, (start_date, end_date, start_date, end_date, clinician_id))
             results = cur.fetchall()
             
             report_data['data'] = [
@@ -656,26 +861,48 @@ def generate_report():
         
         elif report_type == 'clinician_workload':
             # Clinician workload report
-            query = """
-                SELECT 
-                    c.id,
-                    u.full_name,
-                    c.specialty,
-                    COUNT(DISTINCT pc.patient_id) as patient_count,
-                    COUNT(DISTINCT a.id) as appointment_count,
-                    COUNT(DISTINCT ts.id) as session_count,
-                    AVG(ts.duration_minutes) as avg_session_duration
-                FROM clinicians c
-                JOIN users u ON u.id = c.user_id
-                LEFT JOIN patient_clinician pc ON pc.clinician_id = c.id
-                LEFT JOIN appointments a ON a.clinician_id = c.id 
-                    AND a.appointment_time BETWEEN %s AND %s
-                LEFT JOIN therapy_sessions ts ON ts.appointment_id = a.id
-                WHERE c.active = true
-                GROUP BY c.id, u.full_name, c.specialty
-                ORDER BY appointment_count DESC
-            """
-            cur.execute(query, (start_date, end_date))
+            if role == 'admin':
+                query = """
+                    SELECT
+                        c.id,
+                        u.full_name,
+                        c.specialty,
+                        COUNT(DISTINCT pc.patient_id) as patient_count,
+                        COUNT(DISTINCT a.id) as appointment_count,
+                        COUNT(DISTINCT ts.id) as session_count,
+                        AVG(ts.duration_minutes) as avg_session_duration
+                    FROM clinicians c
+                    JOIN users u ON u.id = c.user_id
+                    LEFT JOIN patient_clinician pc ON pc.clinician_id = c.id
+                    LEFT JOIN appointments a ON a.clinician_id = c.id
+                        AND a.appointment_time BETWEEN %s AND %s
+                    LEFT JOIN therapy_sessions ts ON ts.appointment_id = a.id
+                    WHERE c.active = true
+                    GROUP BY c.id, u.full_name, c.specialty
+                    ORDER BY appointment_count DESC
+                """
+                cur.execute(query, (start_date, end_date))
+            else:
+                query = """
+                    SELECT
+                        c.id,
+                        u.full_name,
+                        c.specialty,
+                        COUNT(DISTINCT pc.patient_id) as patient_count,
+                        COUNT(DISTINCT a.id) as appointment_count,
+                        COUNT(DISTINCT ts.id) as session_count,
+                        AVG(ts.duration_minutes) as avg_session_duration
+                    FROM clinicians c
+                    JOIN users u ON u.id = c.user_id
+                    LEFT JOIN patient_clinician pc ON pc.clinician_id = c.id
+                    LEFT JOIN appointments a ON a.clinician_id = c.id
+                        AND a.appointment_time BETWEEN %s AND %s
+                    LEFT JOIN therapy_sessions ts ON ts.appointment_id = a.id
+                    WHERE c.active = true AND c.id = %s
+                    GROUP BY c.id, u.full_name, c.specialty
+                    ORDER BY appointment_count DESC
+                """
+                cur.execute(query, (start_date, end_date, clinician_id))
             results = cur.fetchall()
             
             report_data['data'] = [

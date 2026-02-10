@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from .auth_handler import mfa_required
 from ..models.user import User
+from ..utils.audit_logger import audit_log
 
 user_bp = Blueprint('user_bp', __name__)
 
@@ -35,6 +36,7 @@ def get_user(user_id):
 @user_bp.route('/users', methods=['POST'])
 @jwt_required()
 @mfa_required
+@audit_log('CREATE', 'user')
 def create_user():
     claims = get_jwt()
     if claims.get('role') != 'admin':

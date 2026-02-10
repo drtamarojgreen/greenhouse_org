@@ -21,7 +21,23 @@ class TestPatientModel(unittest.TestCase):
         patients = Patient.get_all()
         self.assertEqual(len(patients), 2)
         self.assertEqual(patients[0].user_id, 1)
-        mock_cursor.execute.assert_called_once_with('SELECT * FROM patients;')
+        mock_cursor.execute.assert_any_call('SELECT * FROM patients;')
+
+    @patch('application.interface.backend.models.patient.get_db')
+    def test_get_all_patients_scoped(self, mock_get_db):
+        mock_db = MagicMock()
+        mock_cursor = MagicMock()
+        mock_get_db.return_value = mock_db
+        mock_db.cursor.return_value = mock_cursor
+
+        mock_cursor.fetchall.return_value = [
+            (1, 1, datetime.now(), 'Male', datetime.now(), 'Caucasian', '123 Main St', None, 'CA', '12345', 'Anytown')
+        ]
+
+        patients = Patient.get_all(clinician_id=5)
+        self.assertEqual(len(patients), 1)
+        self.assertIn('pc.clinician_id = %s', mock_cursor.execute.call_args[0][0])
+        self.assertEqual(mock_cursor.execute.call_args[0][1], (5,))
 
     @patch('application.interface.backend.models.patient.get_db')
     def test_get_patient_by_id(self, mock_get_db):
@@ -76,6 +92,22 @@ class TestPatientModel(unittest.TestCase):
 
         mock_cursor.execute.assert_called_with('DELETE FROM patients WHERE id = %s;', (patient.id,))
         mock_db.commit.assert_called_once()
+
+    def test_to_dict_masking(self):
+        patient = Patient(1, 1, datetime(1990, 1, 1), 'Male', datetime.now(), 'Caucasian', '123 Main St', None, 'CA', '12345', 'Anytown')
+
+        # Test without masking
+        data = patient.to_dict(mask=False)
+        self.assertEqual(data['date_of_birth'], '1990-01-01T00:00:00')
+        self.assertEqual(data['gender'], 'Male')
+        self.assertEqual(data['address_line_1'], '123 Main St')
+
+        # Test with masking
+        masked_data = patient.to_dict(mask=True)
+        self.assertEqual(masked_data['date_of_birth'], '****-**-**')
+        self.assertEqual(masked_data['gender'], '****')
+        self.assertEqual(masked_data['ethnicity'], '****')
+        self.assertTrue(all(c == '*' for c in masked_data['address_line_1']))
 
 
 if __name__ == '__main__':
