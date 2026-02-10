@@ -57,5 +57,18 @@ class TestBlender50Features(unittest.TestCase):
             # This is more of an exploration test
             print(f"DEBUG: Eevee settings: {dir(scene.eevee)}")
 
+    def test_engine_id_probing(self):
+        """Verify the Eevee engine ID probing logic."""
+        engine_id = style.get_eevee_engine_id()
+        self.assertIn(engine_id, ['BLENDER_EEVEE_NEXT', 'BLENDER_EEVEE'])
+
+    def test_socket_guarded_setter(self):
+        """Verify set_principled_socket handles drift."""
+        mat = bpy.data.materials.new(name="TestSocketDrift")
+        mat.use_nodes = True
+        # Testing a known drifting socket
+        success = style.set_principled_socket(mat, 'Specular', 0.5)
+        self.assertTrue(success, "Failed to set Specular socket via guarded helper")
+
 if __name__ == "__main__":
     unittest.main(exit=False)

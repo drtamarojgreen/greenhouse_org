@@ -1,6 +1,7 @@
 import bpy
 import math
 import mathutils
+import style
 
 def create_marble_floor_mat():
     mat = bpy.data.materials.get("CheckeredMarble")
@@ -36,8 +37,8 @@ def create_marble_floor_mat():
     node_bsdf.inputs['Roughness'].default_value = 0.05
     node_bsdf.inputs['Metallic'].default_value = 0.1
 
-    # Wet Surface Gloss
-    node_bsdf.inputs['Specular'].default_value = 1.0
+    # Wet Surface Gloss (Guarded for Blender 5.0 naming drift)
+    style.set_principled_socket(node_bsdf, 'Specular', 1.0)
 
     # Organic Floor Craters (Noise for Displacement)
     node_disp_noise = nodes.new(type='ShaderNodeTexNoise')

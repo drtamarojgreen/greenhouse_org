@@ -30,41 +30,13 @@ import plant_humanoid
 import gnome_antagonist
 import greenhouse_structure
 import environment_props
+import style
 
 # Import scene modules
 from scene00_branding import scene_logic as scene00
 from scene12_credits import scene_logic as scene12
 from scene13_walking import scene_logic as scene13
 from scene14_duel import scene_logic as scene14
-
-def patch_fbx_importer():
-    """
-    Patches the Blender 5.0 FBX importer to handle missing 'files' attribute.
-    Fixes AttributeError: 'ImportFBX' object has no attribute 'files'.
-    """
-    try:
-        import sys
-        fbx_module = sys.modules.get('io_scene_fbx')
-        if not fbx_module:
-            try:
-                import io_scene_fbx
-                fbx_module = io_scene_fbx
-            except ImportError:
-                pass
-
-        if fbx_module and hasattr(fbx_module, 'ImportFBX'):
-            ImportFBX = fbx_module.ImportFBX
-            if not getattr(ImportFBX, '_is_patched', False):
-                original_execute = ImportFBX.execute
-                def patched_execute(self, context):
-                    if not hasattr(self, 'files'):
-                        self.files = []
-                    return original_execute(self, context)
-                ImportFBX.execute = patched_execute
-                ImportFBX._is_patched = True
-                print("Patched io_scene_fbx.ImportFBX for Blender 5.0 compatibility.")
-    except Exception as e:
-        print(f"Warning: Failed to patch FBX importer: {e}")
 
 class SequelMaster:
     def __init__(self, mode='SILENT_FILM'):
@@ -100,7 +72,7 @@ class SequelMaster:
             bg = scene.world.node_tree.nodes.get("Background")
             if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
         else:
-            scene.render.engine = 'BLENDER_EEVEE'
+            scene.render.engine = style.get_eevee_engine_id()
             scene.world.use_nodes = True
             bg = scene.world.node_tree.nodes.get("Background")
             if bg: bg.inputs[0].default_value = (0.05, 0.05, 0.1, 1)
@@ -110,9 +82,8 @@ class SequelMaster:
         return scene
 
     def get_action_curves(self, action):
-        if hasattr(action, 'fcurves'): return action.fcurves
-        if hasattr(action, 'curves'): return action.curves
-        return []
+        """Delegates to shared style utility for Blender 5.0 compatibility."""
+        return style.get_action_curves(action)
 
     def load_assets(self):
         """Loads models and characters."""
@@ -192,7 +163,7 @@ def main():
     argv = sys.argv
     args = argv[argv.index("--") + 1:] if "--" in argv else []
     master = SequelMaster(mode='SILENT_FILM')
-    patch_fbx_importer()
+    style.patch_fbx_importer()
     master.run()
 
     if '--render-anim' in args:
