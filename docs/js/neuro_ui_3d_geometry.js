@@ -2,6 +2,132 @@
     'use strict';
 
     const GreenhouseNeuroGeometry = {
+        // Cache for expensive geometries
+        cache: new Map(),
+
+        generateSphere(radius, segments) {
+            const vertices = [];
+            const faces = [];
+            for (let i = 0; i <= segments; i++) {
+                const lat = (i / segments) * Math.PI;
+                const sinLat = Math.sin(lat);
+                const cosLat = Math.cos(lat);
+                for (let j = 0; j <= segments; j++) {
+                    const lon = (j / segments) * 2 * Math.PI;
+                    const x = radius * sinLat * Math.cos(lon);
+                    const y = radius * cosLat;
+                    const z = radius * sinLat * Math.sin(lon);
+                    vertices.push({ x, y, z, n: { x: x / radius, y: y / radius, z: z / radius } });
+                }
+            }
+            for (let i = 0; i < segments; i++) {
+                for (let j = 0; j < segments; j++) {
+                    const first = i * (segments + 1) + j;
+                    const second = first + segments + 1;
+                    faces.push([first, second, first + 1]);
+                    faces.push([second, second + 1, first + 1]);
+                }
+            }
+            return { vertices, faces };
+        },
+
+        generateMoleculeCluster(type, scale = 1.0) {
+            const vertices = [];
+            const faces = [];
+            const centers = [];
+
+            // Pro-inflammatory (TNF): Trimeric/Complex shape
+            if (type === 'tnf' || type === 'pro-cytokine') {
+                centers.push({ x: 0, y: 10, z: 0, color: '#ff4444' });
+                centers.push({ x: -8, y: -5, z: 5, color: '#ff8844' });
+                centers.push({ x: 8, y: -5, z: 5, color: '#ff8844' });
+            } else if (type === 'il10' || type === 'anti-cytokine') {
+                // IL-10: Dimeric/Oval shape
+                centers.push({ x: -6, y: 0, z: 0, color: '#44ffaa' });
+                centers.push({ x: 6, y: 0, z: 0, color: '#44ffaa' });
+            } else {
+                // Generic small cluster
+                centers.push({ x: 0, y: 0, z: 0, color: '#ffffff' });
+            }
+
+            centers.forEach(c => {
+                const s = this.generateSphere(5 * scale, 8);
+                const offset = vertices.length;
+                s.vertices.forEach(v => {
+                    vertices.push({ x: v.x + c.x * scale, y: v.y + c.y * scale, z: v.z + c.z * scale, color: c.color });
+                });
+                s.faces.forEach(f => {
+                    faces.push([f[0] + offset, f[1] + offset, f[2] + offset]);
+                });
+            });
+            return { vertices, faces };
+        },
+
+        generateLipidBilayerSegment(width, height, subdivisions) {
+            const vertices = [];
+            const faces = [];
+            const stepX = width / subdivisions;
+            const stepY = height / subdivisions;
+
+            for (let i = 0; i <= subdivisions; i++) {
+                for (let j = 0; j <= subdivisions; j++) {
+                    const x = i * stepX - width / 2;
+                    const y = j * stepY - height / 2;
+                    const z = Math.sin(x * 0.02) * Math.cos(y * 0.02) * 5; // Slight wave
+
+                    // Top Layer (Heads)
+                    vertices.push({ x, y, z: z + 5, type: 'head' });
+                    // Bottom Layer (Heads)
+                    vertices.push({ x, y, z: z - 5, type: 'head' });
+                }
+            }
+
+            for (let i = 0; i < subdivisions; i++) {
+                for (let j = 0; j < subdivisions; j++) {
+                    const row = subdivisions + 1;
+                    const i0 = (i * row + j) * 2;
+                    const i1 = (i * row + j + 1) * 2;
+                    const i2 = ((i + 1) * row + j + 1) * 2;
+                    const i3 = ((i + 1) * row + j) * 2;
+
+                    // Top Faces
+                    faces.push([i0, i1, i2]); faces.push([i0, i2, i3]);
+                    // Bottom Faces
+                    faces.push([i0 + 1, i3 + 1, i2 + 1]); faces.push([i0 + 1, i2 + 1, i1 + 1]);
+                }
+            }
+            return { vertices, faces };
+        },
+
+        generateGliaMesh(type, scale = 1.0) {
+            const vertices = [];
+            const faces = [];
+            const branches = type === 'astrocyte' ? 12 : 8;
+
+            // Central Soma
+            const soma = this.generateSphere(10 * scale, 8);
+            vertices.push(...soma.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff4444' })));
+            faces.push(...soma.faces);
+
+            // Processes (Dendrite-like branches)
+            for (let i = 0; i < branches; i++) {
+                const angle = (i / branches) * Math.PI * 2;
+                const phi = (Math.random() - 0.5) * Math.PI;
+                const p1 = { x: 0, y: 0, z: 0 };
+                const p2 = {
+                    x: Math.cos(angle) * Math.cos(phi) * 60 * scale,
+                    y: Math.sin(phi) * 60 * scale,
+                    z: Math.sin(angle) * Math.cos(phi) * 60 * scale
+                };
+                const cp = { x: p2.x * 0.5 + (Math.random() - 0.5) * 20, y: p2.y * 0.5 + (Math.random() - 0.5) * 20, z: p2.z * 0.5 };
+
+                const tube = this.generateTubeMesh(p1, p2, cp, 2 * scale, 6);
+                const offset = vertices.length;
+                vertices.push(...tube.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff6666' })));
+                tube.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
+            }
+            return { vertices, faces };
+        },
 
         initializeBrainShell(brainShell) {
             // Use realistic brain mesh if available
