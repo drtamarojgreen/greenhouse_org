@@ -597,8 +597,10 @@ def apply_glow_trails(scene):
     if not tree: return None
     blur = tree.nodes.get("GlowTrail") or tree.nodes.new(type='CompositorNodeVecBlur')
     blur.name = "GlowTrail"
-    blur.factor = 0.8
-    blur.samples = 16
+    if hasattr(blur, 'factor'):
+        blur.factor = 0.8
+    if hasattr(blur, 'samples'):
+        blur.samples = 16
     return blur
 
 def setup_saturation_control(scene):
