@@ -1,12 +1,10 @@
 /**
  * @file stress_systemic.js
- * @description Advanced Systemic Visualization: Mapping Biological, Logical, Pharmacological, Psychological, and Philosophical stress.
+ * @description Advanced Systemic Visualization: Featuring a central 3D Resilience geometry.
  */
 
 (function () {
     'use strict';
-
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseStressSystemic = {
         nodes: [
@@ -16,119 +14,94 @@
             { id: 'psych', label: 'PSYCH: COGNITION', color: '#00ff99', angle: (3 * Math.PI * 2) / 5 },
             { id: 'philo', label: 'PHILO: EXISTENCE', color: '#a18cd1', angle: (4 * Math.PI * 2) / 5 }
         ],
+        crystalMesh: null,
 
         render(ctx, state, camera, projection, ui3d) {
             const Math3D = window.GreenhouseModels3DMath;
-            if (!Math3D) return;
+            const Geo = window.GreenhouseNeuroGeometry;
+            if (!this.crystalMesh && Geo) this.crystalMesh = Geo.generateSphere(80, 8); // Low-poly crystal look
 
             const m = state.metrics;
             const f = state.factors;
-            const reserve = m.resilienceReserve;
-            const load = m.allostaticLoad;
+            const reserve = m.resilienceReserve || 1.0;
+            const load = m.allostaticLoad || 0;
             const time = state.time || 0;
 
-            ctx.save();
-            camera.rotationY += 0.003; // Slow, deliberate rotation
+            camera.rotationY += 0.003;
 
-            const radius = 150 * (0.8 + reserve * 0.4);
-            const center3D = { x: 0, y: 0, z: 0 };
-            const center2D = Math3D.project3DTo2D(center3D.x, center3D.y, center3D.z, camera, projection);
+            // 1. Central 3D Resilience Crystal
+            const cp = Math3D.project3DTo2D(0, 0, 0, camera, projection);
+            if (cp.scale > 0 && this.crystalMesh) {
+                this.drawCrystal(ctx, this.crystalMesh, cp, reserve, load);
+            }
 
-            // Calculate current node positions in 3D
+            // 2. Orbital Factor Nodes
+            const radius = 220 * (0.7 + reserve * 0.3);
             const currentNodes = this.nodes.map(n => {
-                // Mapping new factors or using safe fallbacks (0)
                 const existential = f.financialStrain || 0;
                 const yOffset = n.id === 'philo' ? -50 * existential : 0;
-                // Biological stress makes nodes vibrate
                 const jitter = (n.id === 'bio' ? Math.random() : 0) * load * 10;
 
-                const x = Math.cos(n.angle + time * 0.0005) * radius + jitter;
-                const y = Math.sin(n.angle + time * 0.0005) * (radius * 0.5) + yOffset;
-                const z = Math.sin(n.angle + time * 0.0005) * radius;
-
+                const angle = n.angle + time * 0.0005;
+                const x = Math.cos(angle) * radius + jitter;
+                const y = Math.sin(angle) * (radius * 0.4) + yOffset;
+                const z = Math.sin(angle) * radius;
                 const p = Math3D.project3DTo2D(x, y, z, camera, projection);
-                return { ...n, ...p, x3: x, y3: y, z3: z };
+                return { ...n, ...p };
             });
 
-            // 1. Draw Logical Interconnects (The Web of Being)
-            ctx.lineWidth = 1.5;
+            // Logical Interconnects
+            ctx.save();
+            ctx.lineWidth = 1.0;
             for (let i = 0; i < currentNodes.length; i++) {
                 for (let j = i + 1; j < currentNodes.length; j++) {
-                    const n1 = currentNodes[i];
-                    const n2 = currentNodes[j];
+                    const n1 = currentNodes[i], n2 = currentNodes[j];
                     if (n1.scale <= 0 || n2.scale <= 0) continue;
-
-                    ctx.beginPath();
-                    ctx.moveTo(n1.x, n1.y);
-                    ctx.lineTo(n2.x, n2.y);
-
-                    // Threads "fray" (become dotted) if resilience is low
-                    if (reserve < 0.3) ctx.setLineDash([2, 4]);
-                    else ctx.setLineDash([]);
-
-                    // Tension color (Logically map stress to thread heat)
-                    const tension = (load * 0.8) + (Math.random() * 0.2 * load);
-                    ctx.strokeStyle = `rgba(${255 * tension}, ${Math.round(200 * (1 - tension))}, 255, ${0.4 * n1.scale})`;
+                    ctx.beginPath(); ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y);
+                    ctx.strokeStyle = `rgba(100, 200, 255, ${0.2 * n1.scale})`;
                     ctx.stroke();
                 }
             }
-            ctx.setLineDash([]);
+            ctx.restore();
 
-            // 2. Draw Nodes (Biological & Pharmacological centers)
+            // Render Nodes
             currentNodes.forEach(n => {
                 if (n.scale <= 0) return;
-
-                // Pharma modulation creates an outer "shield" glow
-                if (n.id === 'pharma') {
-                    const pharmaSize = 40 * n.scale * (1 + (f.gabaMod || 0));
-                    const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, pharmaSize);
-                    grad.addColorStop(0, n.color + '66');
-                    grad.addColorStop(1, 'transparent');
-                    ctx.fillStyle = grad;
-                    ctx.beginPath(); ctx.arc(n.x, n.y, pharmaSize, 0, Math.PI * 2); ctx.fill();
-                }
-
-                const size = 15 * n.scale * (1 + load * 0.5);
-                ctx.beginPath();
                 ctx.fillStyle = n.color;
-                ctx.arc(n.x, n.y, size, 0, Math.PI * 2);
+                ctx.beginPath(); ctx.arc(n.x, n.y, 8 * n.scale, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+                ctx.fillText(n.label, n.x, n.y + 20 * n.scale);
+            });
+        },
+
+        drawCrystal(ctx, mesh, proj, reserve, load) {
+            ctx.save();
+            ctx.translate(proj.x, proj.y);
+
+            const scale = proj.scale * (0.8 + reserve * 0.4);
+            mesh.faces.forEach(f => {
+                const v1 = mesh.vertices[f[0]], v2 = mesh.vertices[f[1]], v3 = mesh.vertices[f[2]];
+
+                // Jitter effect for high load
+                const jitter = (Math.random() - 0.5) * load * 5;
+
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(100, 255, 230, ${0.15 + reserve * 0.2})`;
+                ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 + reserve * 0.3})`;
+                ctx.moveTo((v1.x + jitter) * scale, (v1.y + jitter) * scale);
+                ctx.lineTo((v2.x + jitter) * scale, (v2.y + jitter) * scale);
+                ctx.lineTo((v3.x + jitter) * scale, (v3.y + jitter) * scale);
                 ctx.fill();
-
-                // Logical pulse
-                if (Math.random() > 0.95) {
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.arc(n.x, n.y, size * 1.5, 0, Math.PI * 2); ctx.stroke();
-                }
-
-                // Labels
-                ctx.fillStyle = '#fff';
-                ctx.font = `bold ${Math.round(9 * n.scale)}px Quicksand, sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.fillText(n.label, n.x, n.y + size + 15);
+                ctx.stroke();
             });
 
-            // 3. Central "Allostatic Homeostasis" Pulse
-            if (center2D.scale > 0) {
-                const pulse = Math.sin(time * 0.002) * 20 + 40;
-                const grad = ctx.createRadialGradient(center2D.x, center2D.y, 0, center2D.x, center2D.y, pulse * center2D.scale);
-                grad.addColorStop(0, `rgba(255, 255, 255, ${0.1 * (1 - load)})`);
-                grad.addColorStop(1, 'transparent');
-                ctx.fillStyle = grad;
-                ctx.beginPath(); ctx.arc(center2D.x, center2D.y, pulse * center2D.scale, 0, Math.PI * 2); ctx.fill();
-            }
-
-            // 4. Philosophical Decay (Particles falling from the Philo node)
-            if (f.existentialWeight > 0.4) {
-                const philo = currentNodes.find(n => n.id === 'philo');
-                if (philo && philo.scale > 0) {
-                    for (let p = 0; p < 3; p++) {
-                        const dripY = philo.y + (time * 0.1 + p * 20) % 100;
-                        ctx.fillStyle = `rgba(161, 140, 209, ${0.5 * (1 - ((dripY - philo.y) / 100))})`;
-                        ctx.beginPath(); ctx.arc(philo.x + Math.sin(time * 0.01 + p) * 10, dripY, 2, 0, Math.PI * 2); ctx.fill();
-                    }
-                }
-            }
+            // Core Pulse
+            const pulse = 1.0 + Math.sin(Date.now() * 0.002) * 0.1;
+            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 60 * scale * pulse);
+            grad.addColorStop(0, `rgba(255, 255, 255, ${0.3 * reserve})`);
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(0, 0, 60 * scale * pulse, 0, Math.PI * 2); ctx.fill();
 
             ctx.restore();
         }

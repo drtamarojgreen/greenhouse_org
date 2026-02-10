@@ -53,10 +53,13 @@
             }
             this.glia = [];
             for (let i = 0; i < 15; i++) {
+                const type = Math.random() > 0.4 ? 'astrocyte' : 'microglia';
+                const mesh = window.GreenhouseNeuroGeometry.generateGliaMesh(type, 0.5 + Math.random() * 0.5);
                 this.glia.push({
-                    x: (Math.random() - 0.5) * 500, y: (Math.random() - 0.5) * 400, z: (Math.random() - 0.5) * 300,
+                    x: (Math.random() - 0.5) * 600, y: (Math.random() - 0.5) * 500, z: (Math.random() - 0.5) * 400,
                     rotationX: Math.random() * Math.PI, rotationY: Math.random() * Math.PI,
-                    size: 10 + Math.random() * 12, type: Math.random() > 0.4 ? 'astrocyte' : 'microglia', pulseOffset: Math.random() * Math.PI * 2
+                    size: 15 + Math.random() * 15, type: type, pulseOffset: Math.random() * Math.PI * 2,
+                    mesh: mesh
                 });
             }
             this.axons = [];
@@ -69,8 +72,16 @@
             }
             this.synapses = [];
             this.axons.forEach(a => {
+                const n1 = this.neurons[a.from];
                 const n2 = this.neurons[a.to];
-                this.synapses.push({ x: n2.p1.x, y: n2.p1.y, z: n2.p1.z, strength: 1.0 });
+                // Detailed 3D Synapse (Pre and Post)
+                const preMesh = window.GreenhouseNeuroGeometry.createSynapseGeometry(15, 8, 'pre');
+                const postMesh = window.GreenhouseNeuroGeometry.createSynapseGeometry(18, 8, 'post');
+                this.synapses.push({
+                    x: n2.p1.x, y: n2.p1.y, z: n2.p1.z,
+                    preMesh, postMesh,
+                    rotationX: Math.random() * Math.PI, rotationY: Math.random() * Math.PI
+                });
             });
             this.glia.forEach(g => {
                 g.receptors = [];
@@ -82,18 +93,23 @@
 
         initMolecularData() {
             this.molecules = [];
-            for (let i = 0; i < 300; i++) {
+            const Geo = window.GreenhouseNeuroGeometry;
+            for (let i = 0; i < 150; i++) { // Reduced count for performance with meshes
                 const typeRoll = Math.random();
                 let type = 'ion';
                 if (typeRoll > 0.85) type = 'pro-cytokine';
                 else if (typeRoll > 0.70) type = 'anti-cytokine';
                 else if (typeRoll > 0.50) type = 'neurotransmitter';
+
+                const mesh = Geo.generateMoleculeCluster(type, 1.0);
                 this.molecules.push({
-                    x: (Math.random() - 0.5) * 800, y: (Math.random() - 0.5) * 600, z: (Math.random() - 0.5) * 600,
-                    vx: (Math.random() - 0.5) * 1.2, vy: (Math.random() - 0.5) * 1.2, vz: (Math.random() - 0.5) * 1.2,
-                    type: type, size: 1.5 + Math.random() * 2.5, history: []
+                    x: (Math.random() - 0.5) * 1000, y: (Math.random() - 0.5) * 800, z: (Math.random() - 0.5) * 800,
+                    vx: (Math.random() - 0.5) * 1.5, vy: (Math.random() - 0.5) * 1.5, vz: (Math.random() - 0.5) * 1.5,
+                    type, mesh, history: []
                 });
             }
+            // 3D Membrane Segment
+            this.membrane = Geo.generateLipidBilayerSegment(1200, 800, 15);
         },
 
         render(ctx, state, camera, projection) {

@@ -43,11 +43,12 @@
                 }
             }
 
-            // Initialize HPA Pathway nodes
+            // Initialize HPA Pathway nodes with meshes
+            const Geo = window.GreenhouseNeuroGeometry;
             this.hpaNodes = [
-                { id: 'hypothalamus', label: 'label_hypothalamus', x: 0, y: 50, z: 0, color: '#ffcc00' },
-                { id: 'pituitary', label: 'label_pituitary', x: 0, y: -20, z: 40, color: '#ff9900' },
-                { id: 'adrenals', label: 'label_adrenal_glands', x: 0, y: -180, z: -20, color: '#ff3300' }
+                { id: 'hypothalamus', label: 'label_hypothalamus', x: 0, y: 50, z: 0, color: '#ffcc00', mesh: Geo.generateSphere(25, 12) },
+                { id: 'pituitary', label: 'label_pituitary', x: 0, y: -20, z: 40, color: '#ff9900', mesh: Geo.generateSphere(20, 12) },
+                { id: 'adrenals', label: 'label_adrenal_glands', x: 0, y: -180, z: -20, color: '#ff3300', mesh: Geo.generateSphere(35, 12) }
             ];
         },
 
