@@ -3,6 +3,20 @@ import random
 import math
 import mathutils
 
+def get_action_curves(action):
+    """Helper to get fcurves/curves collection from Action for Blender 5.0+ compatibility."""
+    if hasattr(action, 'fcurves'):
+        return action.fcurves
+    if hasattr(action, 'curves'):
+        return action.curves
+    # Blender 5.0 / Animation 2025 Layered Action support
+    if hasattr(action, 'layer') and hasattr(action.layer, 'fcurves'):
+        return action.layer.fcurves
+    if hasattr(action, 'layers') and len(action.layers) > 0:
+        if hasattr(action.layers[0], 'fcurves'):
+            return action.layers[0].fcurves
+    return []
+
 def apply_scene_grade(master, scene_name, frame_start, frame_end):
     """Applies scene mood presets: world tint, light energy/color ratios."""
     scene = master.scene
@@ -88,7 +102,10 @@ def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed
     if not light_obj.data.animation_data.action:
         light_obj.data.animation_data.action = bpy.data.actions.new(name=f"Flicker_{light_name}")
 
-    curves = light_obj.data.animation_data.action.fcurves
+    curves = get_action_curves(light_obj.data.animation_data.action)
+    if isinstance(curves, list) and not curves:
+        print(f"Warning: Could not access fcurves for light {light_name}")
+        return
 
     fcurve = None
     for fc in curves:
@@ -118,7 +135,11 @@ def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=5000
         obj.animation_data.action = bpy.data.actions.new(name=f"Noise_{obj.name}_{data_path.replace('.', '_')}")
 
     action = obj.animation_data.action
-    curves = action.fcurves
+    curves = get_action_curves(action)
+    
+    if isinstance(curves, list) and not curves:
+        print(f"Warning: Could not access fcurves for {obj.name}. Action attributes: {dir(action)}")
+        return
 
     indices = [index] if index >= 0 else [0, 1, 2]
 
@@ -185,7 +206,9 @@ def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 
         mote = bpy.context.object
         mote.name = f"DustMote_{i}"
         container.objects.link(mote)
-        bpy.context.scene.collection.objects.unlink(mote)
+        for col in mote.users_collection:
+            if col != container:
+                col.objects.unlink(mote)
         mote.data.materials.append(mat)
 
         insert_looping_noise(mote, "location", strength=0.2, scale=20.0, frame_start=frame_start, frame_end=frame_end)
@@ -235,7 +258,7 @@ def apply_camera_shake(cam, frame_start, frame_end, strength=0.05):
 def ease_action(obj, data_path, index=-1, interpolation='BEZIER', easing='EASE_IN_OUT'):
     """Sets easing for all keyframes of a specific data path."""
     if not obj.animation_data or not obj.animation_data.action: return
-    for fcurve in obj.animation_data.action.fcurves:
+    for fcurve in get_action_curves(obj.animation_data.action):
         if fcurve.data_path == data_path and (index == -1 or fcurve.array_index == index):
             for kp in fcurve.keyframe_points:
                 kp.interpolation = interpolation

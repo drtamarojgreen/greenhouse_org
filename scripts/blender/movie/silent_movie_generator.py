@@ -165,6 +165,12 @@ class MovieMaster:
             return action.fcurves
         if hasattr(action, 'curves'):
             return action.curves
+        # Blender 5.0 / Animation 2025 Layered Action support
+        if hasattr(action, 'layer') and hasattr(action.layer, 'fcurves'):
+            return action.layer.fcurves
+        if hasattr(action, 'layers') and len(action.layers) > 0:
+            if hasattr(action.layers[0], 'fcurves'):
+                return action.layers[0].fcurves
         return []
 
     def create_intertitle(self, text, frame_start, frame_end):

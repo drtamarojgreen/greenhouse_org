@@ -358,7 +358,9 @@ def create_flower(location, name="MentalBloom", scale=0.2):
     core = bpy.context.object
     core.name = f"{name}_Core"
     container.objects.link(core)
-    bpy.context.scene.collection.objects.unlink(core)
+    for col in core.users_collection:
+        if col != container:
+            col.objects.unlink(core)
     mat_petal = bpy.data.materials.new(name=f"{name}_MatPetal")
     mat_petal.use_nodes = True
     mat_petal.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.2, 0.5, 1)
@@ -372,7 +374,9 @@ def create_flower(location, name="MentalBloom", scale=0.2):
         p.matrix_parent_inverse = core.matrix_world.inverted()
         p.data.materials.append(mat_petal)
         container.objects.link(p)
-        bpy.context.scene.collection.objects.unlink(p)
+        for col in p.users_collection:
+            if col != container:
+                col.objects.unlink(p)
     core.scale = (0.01, 0.01, 0.01)
     return core
 
