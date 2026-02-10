@@ -30,7 +30,13 @@
             thalamus: 'Thalamus: Central relay station; high inflammation here disrupts sensory processing and mood.',
             hypothalamus: 'Hypothalamus: Regulates systemic homeostasis; primary sensor for circulating inflammatory cytokines.',
             insula: 'Insula: Monitors the internal state of the body (interoception); key to the "sickness behavior" response.',
-            basal_ganglia: 'Basal Ganglia: Mediates motor control and reward; inflammation here is linked to fatigue and anhedonia.'
+            basal_ganglia: 'Basal Ganglia: Mediates motor control and reward; inflammation here is linked to fatigue and anhedonia.',
+
+            // NVU components
+            bbb: 'Blood-Brain Barrier (BBB): A highly selective semipermeable border that prevents solutes in the circulating blood from non-selectively crossing into the CNS.',
+            vessel: 'Microcapillary: The primary site of nutrient exchange and immune cell trafficking in the brain.',
+            glia_m1: 'M1 Microglia: The "classicially activated" pro-inflammatory phenotype; releases TNF-α and IL-1β.',
+            glia_m2: 'M2 Microglia: The "alternatively activated" anti-inflammatory phenotype; involved in tissue repair and resolution.'
         },
 
         draw(ctx, app, x, y) {

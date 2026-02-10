@@ -67,8 +67,22 @@
                 if (Math.random() > 0.3) this.axons.push({ from: i, to: (i + 1) % this.neurons.length });
             }
             this.leukocytes = [];
-            for (let i = 0; i < 10; i++) {
-                this.leukocytes.push({ x: -500, y: (Math.random() - 0.5) * 400, z: (Math.random() - 0.5) * 300, vx: 2 + Math.random() * 2, state: 'rolling' });
+            for (let i = 0; i < 12; i++) {
+                this.leukocytes.push({
+                    x: -500 + Math.random() * 1000,
+                    y: 300, // Inside the vessel at bottom
+                    z: (Math.random() - 0.5) * 100,
+                    vx: 3 + Math.random() * 2,
+                    state: 'circulating'
+                });
+            }
+            // 3D Capillary/Vessel Segment (Cylinder)
+            this.vesselEndothelium = [];
+            for (let i = 0; i < 20; i++) {
+                this.vesselEndothelium.push({
+                    x: -600 + i * 60, y: 300, z: 0,
+                    size: 30, rotationX: Math.PI / 2
+                });
             }
             this.synapses = [];
             this.axons.forEach(a => {
@@ -134,14 +148,9 @@
                 for (const g of this.glia) {
                     const p = Math3D.project3DTo2D(g.x, g.y, g.z, camera, projection);
                     const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
-                    if (dist < 20 * p.scale) return { id: 'glia', label: g.type === 'astrocyte' ? 'Astrocyte' : 'Microglia', description: g.type === 'astrocyte' ? 'Glia that supports neurons and maintains the blood-brain barrier.' : 'Resident immune cell of the brain; becomes amoeboid when activated.', type: '3d' };
+                    if (dist < 25 * p.scale) return { id: 'glia', label: g.type === 'astrocyte' ? 'Astrocyte' : 'Microglia', description: g.type === 'astrocyte' ? 'Glia that supports neurons and maintains the blood-brain barrier via endfeet.' : 'Resident immune cell; M1 (reactive) or M2 (resolving) phenotypes.', type: '3d' };
                 }
-                for (const s of this.synapses) {
-                    const sp = Math3D.project3DTo2D(s.x, s.y, s.z, camera, projection);
-                    const dist = Math.sqrt((sp.x - mx) ** 2 + (sp.y - my) ** 2);
-                    if (dist < 15 * sp.scale) return { id: 'synapse', label: 'Synapse', description: 'Junction point where neurotransmitters are released to signal the next neuron.', type: '3d' };
-                }
-                if (my > projection.height * 0.35 && my < projection.height * 0.45) return { id: 'vessel', label: 'Blood Vessel', description: 'Endothelial lining representing the source of systemic immune infiltration.', type: '3d' };
+                if (my > projection.height * 0.7) return { id: 'bbb', label: 'Blood-Brain Barrier', description: 'Endothelial lining and basement membrane; regulates leukocyte infiltration.', type: '3d' };
             } else if (viewMode === 'molecular') {
                 if (my > projection.height * 0.3 && my < projection.height * 0.5) return { id: 'membrane', label: 'Cell Membrane', description: 'Lipid bilayer barrier separating the intracellular and extracellular milieu.', type: '3d' };
                 for (const m of this.molecules) {

@@ -43,12 +43,15 @@
                 }
             }
 
-            // Initialize HPA Pathway nodes with meshes
+            // Initialize HPA Pathway nodes with meshes and regulators
             const Geo = window.GreenhouseNeuroGeometry;
             this.hpaNodes = [
-                { id: 'hypothalamus', label: 'label_hypothalamus', x: 0, y: 50, z: 0, color: '#ffcc00', mesh: Geo.generateSphere(25, 12) },
-                { id: 'pituitary', label: 'label_pituitary', x: 0, y: -20, z: 40, color: '#ff9900', mesh: Geo.generateSphere(20, 12) },
-                { id: 'adrenals', label: 'label_adrenal_glands', x: 0, y: -180, z: -20, color: '#ff3300', mesh: Geo.generateSphere(35, 12) }
+                { id: 'pfc', label: 'label_pfc', x: -80, y: 180, z: 20, color: '#44aaff', type: 'regulator', function: 'inhibitor', mesh: Geo.generateSphere(25, 12) },
+                { id: 'amygdala', label: 'label_amygdala', x: 80, y: 150, z: 0, color: '#ff4444', type: 'regulator', function: 'excitor', mesh: Geo.generateSphere(20, 12) },
+                { id: 'hippocampus', label: 'label_hippocampus', x: -60, y: 100, z: -40, color: '#44ffaa', type: 'regulator', function: 'inhibitor', mesh: Geo.generateSphere(22, 12) },
+                { id: 'hypothalamus', label: 'label_hypothalamus', x: 0, y: 50, z: 0, color: '#ffcc00', type: 'core', mesh: Geo.generateSphere(25, 12) },
+                { id: 'pituitary', label: 'label_pituitary', x: 0, y: -20, z: 40, color: '#ff9900', type: 'core', mesh: Geo.generateSphere(18, 12) },
+                { id: 'adrenals', label: 'label_adrenal_glands', x: 0, y: -200, z: -20, color: '#ff3300', type: 'core', mesh: Geo.generateSphere(35, 12) }
             ];
         },
 
