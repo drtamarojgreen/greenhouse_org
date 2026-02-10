@@ -12,6 +12,10 @@
         brainShell: null,
         hpaNodes: [],
         originalRegionColors: {},
+        pathwayCache: {},
+        currentPathwayNodes: [],
+        currentPathwayEdges: [],
+        currentPathwayId: null,
 
         init(app) {
             this.app = app;
@@ -53,16 +57,75 @@
                 { id: 'pituitary', label: 'label_pituitary', x: 0, y: -20, z: 40, color: '#ff9900', type: 'core', mesh: Geo.generateSphere(18, 12) },
                 { id: 'adrenals', label: 'label_adrenal_glands', x: 0, y: -200, z: -20, color: '#ff3300', type: 'core', mesh: Geo.generateSphere(35, 12) }
             ];
+
+            // Load pathway metadata and pre-cache HPA
+            this.loadPathways();
+        },
+
+        async loadPathways() {
+            const data = await window.GreenhouseModelsUtil.PathwayService.loadMetadata();
+            this.availablePathways = data.pathways;
+            // Pre-load HPA for seamless start
+            await this.fetchPathway('hpa');
+        },
+
+        async fetchPathway(id) {
+            if (this.pathwayCache[id]) {
+                this.currentPathwayNodes = this.pathwayCache[id].nodes;
+                this.currentPathwayEdges = this.pathwayCache[id].edges;
+                this.currentPathwayId = id;
+                return;
+            }
+            const meta = this.availablePathways.find(p => p.id === id);
+            if (!meta) return;
+
+            // Determine source: local xml or kegg
+            const source = meta.source || `endpoints/kegg_${id}_raw.xml`; // Simplified fallback
+            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(source);
+
+            if (data) {
+                // Apply 3D Layout (Simplified version of PathwayViewer logic)
+                const nodesWithPos = data.nodes.map((n, i) => {
+                    const anatomicalMap = {
+                        'pfc': { x: 0, y: 80, z: 140 },
+                        'striatum': { x: 80, y: 20, z: 40 },
+                        'vta': { x: 0, y: -40, z: -20 },
+                        'sn': { x: 30, y: -40, z: -10 },
+                        'hypothalamus': { x: 0, y: -20, z: 20 },
+                        'pituitary': { x: 0, y: -80, z: 60 },
+                        'adrenals': { x: 50, y: -180, z: -20 },
+                        'gut': { x: 0, y: -300, z: 20 },
+                        'blood_stream': { x: -80, y: -150, z: 0 }
+                    };
+                    const base = anatomicalMap[n.region] || anatomicalMap[meta.regions[0]] || { x: 0, y: 0, z: 0 };
+                    return {
+                        ...n,
+                        x: base.x + (Math.sin(i) * 20),
+                        y: base.y + (Math.cos(i) * 20),
+                        z: base.z + (Math.sin(i * 0.5) * 10)
+                    };
+                });
+                this.pathwayCache[id] = { nodes: nodesWithPos, edges: data.edges };
+                this.currentPathwayNodes = nodesWithPos;
+                this.currentPathwayEdges = data.edges;
+                this.currentPathwayId = id;
+            }
         },
 
         render(ctx, state, camera, projection) {
             const viewModeVal = state.factors.viewMode || 0;
             const viewMode = ['macro', 'pathway', 'systemic'][Math.round(viewModeVal)] || 'systemic';
+            const activePathId = state.factors.activePathway || 'hpa';
 
-            if (viewMode === 'macro' && window.GreenhouseStressMacro) {
+            if (viewMode === 'pathway') {
+                if (this.currentPathwayId !== activePathId) {
+                    this.fetchPathway(activePathId);
+                }
+                if (window.GreenhouseStressPathway) {
+                    window.GreenhouseStressPathway.render(ctx, state, camera, projection, this);
+                }
+            } else if (viewMode === 'macro' && window.GreenhouseStressMacro) {
                 window.GreenhouseStressMacro.render(ctx, state, camera, projection, this);
-            } else if (viewMode === 'pathway' && window.GreenhouseStressPathway) {
-                window.GreenhouseStressPathway.render(ctx, state, camera, projection, this);
             } else if (viewMode === 'systemic' && window.GreenhouseStressSystemic) {
                 window.GreenhouseStressSystemic.render(ctx, state, camera, projection, this);
             }

@@ -9,7 +9,20 @@
 
     const GreenhouseInflammationConfig = {
         factors: [
-            { id: 'viewMode', label: 'label_view_mode', defaultValue: 0, min: 0, max: 2, step: 1, type: 'button' },
+            {
+                id: 'viewMode', label: 'label_view_mode', defaultValue: 0, options: [
+                    { value: 0, label: 'REGULATORY (MACRO)' },
+                    { value: 1, label: 'CELLULAR (MICRO)' },
+                    { value: 2, label: 'MOLECULAR' },
+                    { value: 3, label: 'PATHWAY (KEGG)' }
+                ], type: 'button'
+            },
+            {
+                id: 'activePathway', label: 'Select Specialized Pathway', defaultValue: 'tryptophan', options: [
+                    { value: 'tryptophan', label: 'Tryptophan-Kynurenine' },
+                    { value: 'protein_kinase', label: 'Signal Cascade (MAPK)' }
+                ], type: 'select'
+            },
 
             // --- TRIGGERS ---
             { id: 'pathogenActive', label: 'Pathogen Presence', type: 'checkbox', defaultValue: 0, impact: 0.4 },

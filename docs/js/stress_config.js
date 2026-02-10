@@ -16,6 +16,14 @@
                     { value: 2, label: 'SYSTEMIC (ADAPTIVE)' }
                 ], type: 'button'
             },
+            {
+                id: 'activePathway', label: 'Select Specialized Pathway', defaultValue: 'hpa', options: [
+                    { value: 'hpa', label: 'HPA Axis' },
+                    { value: 'tryptophan', label: 'Tryptophan-Kynurenine' },
+                    { value: 'dopaminergic', label: 'Dopaminergic System' },
+                    { value: 'serotonergeric', label: 'Serotonergic System' }
+                ], type: 'select'
+            },
 
             // --- ENVIRONMENTAL STRESSORS (Binary) ---
             { id: 'sleepDeprivation', label: 'Sleep Deprivation', type: 'checkbox', defaultValue: 0, impact: 0.25 },

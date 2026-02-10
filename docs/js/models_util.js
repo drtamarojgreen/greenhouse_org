@@ -287,6 +287,50 @@
                 }
             }
             context.fillText(line, x, y);
+        },
+
+        PathwayService: {
+            async loadMetadata(baseUrl = '') {
+                try {
+                    const response = await fetch(baseUrl + 'endpoints/models_pathways.json');
+                    return await response.json();
+                } catch (e) { return { pathways: [] }; }
+            },
+            async loadPathway(url, baseUrl = '') {
+                try {
+                    const response = await fetch(baseUrl + url);
+                    if (!response.ok) return null;
+                    const xmlText = await response.text();
+                    return this.parseKGML(xmlText);
+                } catch (e) { return null; }
+            },
+            parseKGML(xmlText) {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+                const nodes = [];
+                const entries = xmlDoc.getElementsByTagName("entry");
+                for (let i = 0; i < entries.length; i++) {
+                    const entry = entries[i];
+                    const graphics = entry.getElementsByTagName("graphics")[0];
+                    if (graphics) {
+                        nodes.push({
+                            id: entry.getAttribute("id"),
+                            name: graphics.getAttribute("name"),
+                            type: entry.getAttribute("type"),
+                            x: parseInt(graphics.getAttribute("x"), 10),
+                            y: parseInt(graphics.getAttribute("y"), 10),
+                            region: entry.getAttribute("region") || null
+                        });
+                    }
+                }
+                const edges = [];
+                const relations = xmlDoc.getElementsByTagName("relation");
+                for (let i = 0; i < relations.length; i++) {
+                    const rel = relations[i];
+                    edges.push({ source: rel.getAttribute("entry1"), target: rel.getAttribute("entry2") });
+                }
+                return { nodes, edges };
+            }
         }
     };
 

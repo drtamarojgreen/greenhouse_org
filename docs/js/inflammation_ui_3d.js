@@ -15,6 +15,10 @@
         leukocytes: [],
         synapses: [],
         originalRegionColors: {},
+        pathwayCache: {},
+        currentPathwayNodes: [],
+        currentPathwayEdges: [],
+        currentPathwayId: null,
 
         init(app) {
             this.app = app;
@@ -39,6 +43,58 @@
             }
             this.initMicroData();
             this.initMolecularData();
+            this.loadPathways();
+        },
+
+        async loadPathways() {
+            const data = await window.GreenhouseModelsUtil.PathwayService.loadMetadata();
+            this.availablePathways = data.pathways;
+            // Pre-load default pathway for inflammation
+            await this.fetchPathway('tryptophan');
+        },
+
+        async fetchPathway(id) {
+            if (this.pathwayCache[id]) {
+                this.currentPathwayNodes = this.pathwayCache[id].nodes;
+                this.currentPathwayEdges = this.pathwayCache[id].edges;
+                this.currentPathwayId = id;
+                return;
+            }
+            const meta = this.availablePathways.find(p => p.id === id);
+            if (!meta) return;
+
+            const source = meta.source || `endpoints/kegg_${id}_raw.xml`;
+            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(source);
+
+            if (data) {
+                const nodesWithPos = data.nodes.map((n, i) => {
+                    const map = {
+                        'pfc': { x: 0, y: 80, z: 140 },
+                        'striatum': { x: 80, y: 20, z: 40 },
+                        'vta': { x: 0, y: -40, z: -20 },
+                        'sn': { x: 30, y: -40, z: -10 },
+                        'hypothalamus': { x: 0, y: -20, z: 20 },
+                        'pituitary': { x: 0, y: -80, z: 60 },
+                        'adrenals': { x: 50, y: -180, z: -20 },
+                        'gut': { x: 0, y: -300, z: 20 },
+                        'blood_stream': { x: -80, y: -150, z: 0 },
+                        'synapse': { x: 0, y: 150, z: 150 },
+                        'cytosol': { x: 0, y: 160, z: 150 },
+                        'nucleus': { x: 0, y: 170, z: 150 }
+                    };
+                    const base = map[n.region] || map[meta.regions[0]] || { x: 0, y: 0, z: 0 };
+                    return {
+                        ...n,
+                        x: base.x + (Math.sin(i) * 20),
+                        y: base.y + (Math.cos(i) * 20),
+                        z: base.z + (Math.sin(i * 0.5) * 10)
+                    };
+                });
+                this.pathwayCache[id] = { nodes: nodesWithPos, edges: data.edges };
+                this.currentPathwayNodes = nodesWithPos;
+                this.currentPathwayEdges = data.edges;
+                this.currentPathwayId = id;
+            }
         },
 
         initMicroData() {
@@ -128,9 +184,18 @@
 
         render(ctx, state, camera, projection) {
             const viewModeVal = state.factors.viewMode || 0;
-            const viewMode = ['macro', 'micro', 'molecular'][Math.round(viewModeVal)] || 'macro';
+            const viewMode = ['macro', 'micro', 'molecular', 'pathway'][Math.round(viewModeVal)] || 'macro';
+            const activePathId = state.factors.activePathway || 'tryptophan';
 
-            if (viewMode === 'macro' && window.GreenhouseInflammationMacro) {
+            if (viewMode === 'pathway') {
+                if (this.currentPathwayId !== activePathId) {
+                    this.fetchPathway(activePathId);
+                }
+                // We'll reuse Stress's Pathway module if possible, or create a specific one
+                if (window.GreenhouseStressPathway) {
+                    window.GreenhouseStressPathway.render(ctx, state, camera, projection, this);
+                }
+            } else if (viewMode === 'macro' && window.GreenhouseInflammationMacro) {
                 window.GreenhouseInflammationMacro.render(ctx, state, camera, projection, this);
             } else if (viewMode === 'micro' && window.GreenhouseInflammationMicro) {
                 window.GreenhouseInflammationMicro.render(ctx, state, camera, projection, this);
