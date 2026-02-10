@@ -36,6 +36,16 @@ def create_marble_floor_mat():
     node_bsdf.inputs['Roughness'].default_value = 0.05
     node_bsdf.inputs['Metallic'].default_value = 0.1
 
+    # Wet Surface Gloss
+    node_bsdf.inputs['Specular'].default_value = 1.0
+
+    # Organic Floor Craters (Noise for Displacement)
+    node_disp_noise = nodes.new(type='ShaderNodeTexNoise')
+    node_disp_noise.inputs['Scale'].default_value = 2.0
+    node_disp = nodes.new(type='ShaderNodeDisplacement')
+    links.new(node_disp_noise.outputs['Fac'], node_disp.inputs['Height'])
+    links.new(node_disp.outputs['Displacement'], node_out.inputs['Displacement'])
+
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
     return mat
 

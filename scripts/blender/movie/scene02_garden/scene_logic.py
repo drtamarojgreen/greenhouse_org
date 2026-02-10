@@ -35,3 +35,10 @@ def setup_scene(master):
 
         style.apply_fade_transition(b.objects, 501, 650, mode='IN', duration=12)
         style.animate_foliage_wind(b.objects, strength=0.03, frame_start=501, frame_end=650)
+
+    # Atmospheric Fauna (Butterflies)
+    for i in range(5):
+        bpy.ops.mesh.primitive_plane_add(size=0.1, location=(random.uniform(-3, 3), random.uniform(0, 3), 2))
+        butterfly = bpy.context.object
+        butterfly.name = f"Butterfly_{i}"
+        style.insert_looping_noise(butterfly, "location", strength=1.0, scale=10.0, frame_start=501, frame_end=650)

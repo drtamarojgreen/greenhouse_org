@@ -190,9 +190,15 @@ class MovieMaster:
         mat.use_nodes = True
         bsdf = mat.node_tree.nodes.get("Principled BSDF")
         if bsdf:
-            bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
+            # Sepia-Toned Titles (#704214 parchment hue)
+            bsdf.inputs["Base Color"].default_value = (0.439, 0.259, 0.078, 1) # #704214
             bsdf.inputs["Emission Strength"].default_value = 5.0
         text_obj.data.materials.append(mat)
+
+        # Twirling Intertitles (360-degree Y-axis spin)
+        text_obj.keyframe_insert(data_path="rotation_euler", index=1, frame=frame_start)
+        text_obj.rotation_euler[1] += math.radians(360)
+        text_obj.keyframe_insert(data_path="rotation_euler", index=1, frame=frame_start + 24)
 
         text_obj.hide_render = True
         text_obj.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
@@ -202,12 +208,13 @@ class MovieMaster:
         text_obj.keyframe_insert(data_path="hide_render", frame=frame_end)
 
     def create_spinning_logo(self, text_content, frame_start, frame_end):
-        """Creates ELASTIC spinning 3D letters for branding."""
+        """Creates ELASTIC spinning 3D letters for branding with Logo Bloom."""
         mat = bpy.data.materials.new(name="GH_Logo_Mat")
         mat.use_nodes = True
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
-        bsdf.inputs["Emission Strength"].default_value = 5.0
+        # Logo Bloom: Increased emission
+        bsdf.inputs["Emission Strength"].default_value = 15.0
 
         char_spacing = 0.8
         start_x = -((len(text_content) - 1) * char_spacing) / 2
@@ -314,6 +321,14 @@ class MovieMaster:
     def animate_master(self):
         """Global animation and scene visibility logic."""
         if self.gnome:
+            # Gnome Stumbles
+            style.animate_gnome_stumble(self.gnome, 2200)
+
+            # Cloak Sway
+            cloak = bpy.data.objects.get("GloomGnome_Cloak")
+            if cloak:
+                style.animate_cloak_sway(cloak, 1, 5000)
+
             self.gnome.location = (2, 2, 0)
             self.gnome.keyframe_insert(data_path="location", frame=2600)
             self.gnome.location = (10, 10, 0)
@@ -401,10 +416,14 @@ class MovieMaster:
         self.create_spinning_logo("GreenhouseMD", 1, 100)
 
         if self.brain:
+            # Pulsing Brain Core
+            style.animate_pulsing_emission(self.brain, 1, 5000, base_strength=1.0, pulse_amplitude=2.0)
+
             b_loc = self.brain.location
             self.create_diagnostic_highlight("Thalamus", b_loc + mathutils.Vector((0, 0.5, 0.5)), 3620, 3680, color=(0, 0.5, 1, 1))
             self.create_diagnostic_highlight("Hypothalamus", b_loc + mathutils.Vector((0, -0.5, 0)), 3700, 3760, color=(1, 0.5, 0, 1))
 
+        # Gaze Target (Create before use in micro-animation)
         bpy.ops.object.empty_add(type='PLAIN_AXES')
         gaze = bpy.context.object
         gaze.name = "GazeTarget"
@@ -434,19 +453,41 @@ class MovieMaster:
             self.h1.rotation_euler[0] = 0
             self.h1.keyframe_insert(data_path="rotation_euler", frame=950, index=0)
 
-        # Enhanced character micro-animation
+        # Enhanced character micro-animation (Moved after Gaze Target creation)
         for char in [self.h1, self.h2]:
             if not char: continue
             style.animate_breathing(char, 1, 5000, cycle=64, amplitude=0.02)
             style.insert_looping_noise(char, "rotation_euler", index=2, strength=0.02, scale=15.0)
 
+            # Dynamic Sky Gradient (Dawn to Twilight)
+            style.apply_thermal_transition(self, 1, 5000, color_start=(0.4, 0.5, 0.8), color_end=(0.1, 0.05, 0.2))
+
             # Blinking logic
             char_name = char.name.split('_')[0]
             head = bpy.data.objects.get(f"{char_name}_Head")
             if head:
+                leaves = [c for c in head.children if "Leaf" in c.name]
+                style.animate_leaf_twitches(leaves, 1, 5000)
+
                 for child in head.children:
                     if "Eye" in child.name:
                         style.animate_blink(child, 1, 5000)
+                        style.animate_saccadic_movement(child, gaze, 1, 5000)
+                    if "Pupil" in child.name:
+                        style.animate_dynamic_pupils([child], None, 1, 5000)
+
+            # Shoulder Shrugs
+            style.animate_shoulder_shrug(char, 1, 5000)
+
+            # Finger Tapping for Arbor
+            if "Arbor" in char.name:
+                fingers = [c for c in char.children if "Finger" in c.name or "Vine" in c.name]
+                style.animate_finger_tapping(fingers, 1, 5000)
+
+            # Staff Sway
+            staff = bpy.data.objects.get(f"{char_name}_ReasonStaff")
+            if staff:
+                style.insert_looping_noise(staff, "rotation_euler", index=0, strength=0.02, scale=10.0, frame_start=1, frame_end=5000)
 
         scene00.setup_scene(self)
         scene01.setup_scene(self)
@@ -506,6 +547,9 @@ class MovieMaster:
                 char.keyframe_insert(data_path="rotation_euler", frame=re, index=2)
 
         if self.brain:
+            # Floating Brain (Z-location sine wave)
+            style.insert_looping_noise(self.brain, "location", index=2, strength=0.1, scale=50.0, frame_start=1, frame_end=5000)
+
             self.brain.hide_render = True
             self.brain.rotation_euler[2] = 0
             self.brain.keyframe_insert(data_path="rotation_euler", frame=1, index=2)
@@ -731,9 +775,14 @@ class MovieMaster:
         if self.mode == 'SILENT_FILM':
             bright = tree.nodes.new('CompositorNodeBrightContrast')
             bright.inputs['Contrast'].default_value = 1.3
-            for f in range(1, 5001, 2):
-                bright.inputs['Bright'].default_value = random.uniform(0.0, 0.05)
-                bright.inputs['Bright'].keyframe_insert(data_path="default_value", frame=f)
+            # Film Reel Flicker
+            style.apply_film_flicker(self.scene, 1, 5000, strength=0.05)
+
+            # Lab Chromatic Aberration
+            distort = style.setup_chromatic_aberration(self.scene, strength=0.02)
+
+            # Desaturation Beats
+            huesat = style.setup_saturation_control(self.scene)
 
             # Subtler Film Grain & Scratches
             mix_grain = tree.nodes.new('CompositorNodeMixRGB')
@@ -754,7 +803,9 @@ class MovieMaster:
             scratches = tree.nodes.new('CompositorNodeTexture')
             scratches.texture = bpy.data.textures["Scratches"]
             
-            tree.links.new(rl.outputs['Image'], bright.inputs['Image'])
+            tree.links.new(rl.outputs['Image'], huesat.inputs['Image'])
+            tree.links.new(huesat.outputs['Image'], distort.inputs['Image'])
+            tree.links.new(distort.outputs['Image'], bright.inputs['Image'])
             tree.links.new(bright.outputs['Image'], mix_grain.inputs[1])
             tree.links.new(noise.outputs['Value'], mix_grain.inputs[2])
             tree.links.new(mix_grain.outputs['Image'], mix_scratches.inputs[1])
@@ -771,6 +822,9 @@ class MovieMaster:
         self.sun = bpy.context.object
         self.sun.name = "Sun"
         self.sun.data.energy = 5.0
+
+        # Dynamic God Rays (After Sun is created)
+        style.setup_god_rays(self.scene)
 
         # Fill Light
         bpy.ops.object.light_add(type='POINT', location=(-10, -10, 10))
