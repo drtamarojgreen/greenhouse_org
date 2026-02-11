@@ -85,6 +85,46 @@ def get_compositor_node_tree(scene):
 
     return tree
 
+def create_mix_node(tree, node_type_legacy, node_type_modern, blend_type='MIX', data_type='RGBA'):
+    """Creates a Mix node handling version differences (MixRGB vs Mix Node)."""
+    node = None
+    # Try legacy, then modern, then generic ShaderNodeMix (unified in 4.0+)
+    types_to_try = [node_type_legacy, node_type_modern, 'ShaderNodeMix']
+    
+    for n_type in types_to_try:
+        try:
+            node = tree.nodes.new(n_type)
+            break
+        except RuntimeError:
+            continue
+            
+    if node is None:
+        raise RuntimeError(f"Could not create Mix node. Tried: {types_to_try}")
+
+    if hasattr(node, 'data_type'):
+        node.data_type = data_type
+    
+    if hasattr(node, 'blend_type'):
+        try:
+            node.blend_type = blend_type
+        except (TypeError, AttributeError, ValueError):
+            pass
+            
+    return node
+
+def get_mix_sockets(node):
+    """Returns (Factor, Input1, Input2) sockets for a Mix node."""
+    inputs = node.inputs
+    # Modern Mix Node (Blender 3.4+)
+    if 'A' in inputs and 'B' in inputs:
+        return inputs['Factor'], inputs['A'], inputs['B']
+    # Legacy MixRGB
+    return inputs[0], inputs[1], inputs[2]
+
+def get_mix_output(node):
+    """Returns the main output socket for a Mix node."""
+    return node.outputs.get('Result') or node.outputs.get('Image') or node.outputs.get('Color') or node.outputs[0]
+
 def set_principled_socket(mat_or_node, socket_name, value, frame=None):
     """Guarded setter for Principled BSDF sockets to handle naming drift (e.g. Specular)."""
     node = mat_or_node
@@ -586,7 +626,15 @@ def apply_film_flicker(scene, frame_start, frame_end, strength=0.05):
     """Randomized brightness jumps."""
     tree = get_compositor_node_tree(scene)
     if not tree: return
-    bright = tree.nodes.get("Bright/Contrast") or tree.nodes.new('CompositorNodeBrightContrast')
+    
+    bright = tree.nodes.get("Bright/Contrast")
+    if not bright:
+        try:
+            bright = tree.nodes.new('CompositorNodeBrightContrast')
+            bright.name = "Bright/Contrast"
+        except RuntimeError:
+            return
+
     for f in range(frame_start, frame_end + 1, 2):
         bright.inputs['Bright'].default_value = random.uniform(-strength, strength)
         bright.inputs['Bright'].keyframe_insert(data_path="default_value", frame=f)

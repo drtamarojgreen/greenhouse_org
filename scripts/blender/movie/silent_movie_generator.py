@@ -773,8 +773,13 @@ class MovieMaster:
 
         if self.mode == 'SILENT_FILM':
             bright = tree.nodes.new('CompositorNodeBrightContrast')
-            bright.inputs['Contrast'].default_value = 1.3
-            # Film Reel Flicker
+            try:
+                bright = tree.nodes.new('CompositorNodeBrightContrast')
+                bright.name = "Bright/Contrast"
+                bright.inputs['Contrast'].default_value = 1.3
+            except RuntimeError:
+                bright = None
+
             style.apply_film_flicker(self.scene, 1, 5000, strength=0.05)
 
             # Lab Chromatic Aberration
@@ -787,35 +792,54 @@ class MovieMaster:
             blur = style.apply_glow_trails(self.scene)
 
             # Subtler Film Grain & Scratches
-            mix_grain = tree.nodes.new('CompositorNodeMixRGB')
-            mix_grain.blend_type = 'OVERLAY'
-            mix_grain.inputs[0].default_value = 0.1
+            mix_grain = style.create_mix_node(tree, 'CompositorNodeMixRGB', 'CompositorNodeMix', blend_type='OVERLAY')
+            fac_g, inp1_g, inp2_g = style.get_mix_sockets(mix_grain)
+            fac_g.default_value = 0.1
 
             if "FilmNoise" not in bpy.data.textures: bpy.data.textures.new("FilmNoise", type='NOISE')
-            noise = tree.nodes.new('CompositorNodeTexture')
-            noise.texture = bpy.data.textures["FilmNoise"]
+            try:
+                noise = tree.nodes.new('CompositorNodeTexture')
+                noise.texture = bpy.data.textures["FilmNoise"]
+            except RuntimeError:
+                noise = None
+                fac_g.default_value = 0.0 # Disable grain if node missing
 
-            mix_scratches = tree.nodes.new('CompositorNodeMixRGB')
-            mix_scratches.blend_type = 'MULTIPLY'
-            mix_scratches.inputs[0].default_value = 0.05
+            mix_scratches = style.create_mix_node(tree, 'CompositorNodeMixRGB', 'CompositorNodeMix', blend_type='MULTIPLY')
+            fac_s, inp1_s, inp2_s = style.get_mix_sockets(mix_scratches)
+            fac_s.default_value = 0.05
 
             if "Scratches" not in bpy.data.textures:
                 stex = bpy.data.textures.new("Scratches", type='MUSGRAVE')
                 stex.noise_scale = 10.0
-            scratches = tree.nodes.new('CompositorNodeTexture')
-            scratches.texture = bpy.data.textures["Scratches"]
+            try:
+                scratches = tree.nodes.new('CompositorNodeTexture')
+                scratches.texture = bpy.data.textures["Scratches"]
+            except RuntimeError:
+                scratches = None
+                fac_s.default_value = 0.0 # Disable scratches
             
             tree.links.new(rl.outputs['Image'], huesat.inputs['Image'])
             tree.links.new(huesat.outputs['Image'], blur.inputs['Image'])
             tree.links.new(blur.outputs['Image'], distort.inputs['Image'])
-            tree.links.new(distort.outputs['Image'], bright.inputs['Image'])
-            tree.links.new(bright.outputs['Image'], mix_grain.inputs[1])
-            tree.links.new(noise.outputs['Value'], mix_grain.inputs[2])
-            tree.links.new(mix_grain.outputs['Image'], mix_scratches.inputs[1])
-            tree.links.new(scratches.outputs['Value'], mix_scratches.inputs[2])
-            tree.links.new(mix_scratches.outputs['Image'], composite.inputs['Image'])
+            
+            if bright:
+                tree.links.new(distort.outputs['Image'], bright.inputs['Image'])
+                tree.links.new(bright.outputs['Image'], inp1_g)
+            else:
+                tree.links.new(distort.outputs['Image'], inp1_g)
+            if noise:
+                tree.links.new(noise.outputs['Value'], inp2_g)
+            
+            out_g = style.get_mix_output(mix_grain)
+            tree.links.new(out_g, inp1_s)
+            if scratches:
+                tree.links.new(scratches.outputs['Value'], inp2_s)
+            
+            out_s = style.get_mix_output(mix_scratches)
+            tree.links.new(out_s, composite.inputs['Image'])
         else:
-            self.scene.eevee.use_bloom = True
+            if hasattr(self.scene.eevee, "use_bloom"):
+                self.scene.eevee.use_bloom = True
             tree.links.new(rl.outputs['Image'], composite.inputs['Image'])
 
     def setup_lighting(self):
