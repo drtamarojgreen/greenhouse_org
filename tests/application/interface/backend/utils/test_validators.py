@@ -123,5 +123,17 @@ class TestValidators(unittest.TestCase):
         with self.assertRaises(ValidationError):
             Validators.validate_duration("60")
 
+    def test_validate_report_type(self):
+        self.assertTrue(Validators.validate_report_type('patient_summary'))
+        self.assertTrue(Validators.validate_report_type('clinician_workload'))
+        with self.assertRaises(ValidationError):
+            Validators.validate_report_type('invalid_report')
+
+    def test_validate_iso_date(self):
+        self.assertTrue(Validators.validate_iso_date('2026-02-10T12:00:00'))
+        self.assertTrue(Validators.validate_iso_date(None))
+        with self.assertRaises(ValidationError):
+            Validators.validate_iso_date('not-a-date')
+
 if __name__ == '__main__':
     unittest.main()
