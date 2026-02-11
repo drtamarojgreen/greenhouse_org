@@ -48,7 +48,7 @@
         },
 
         drawButton(ctx, app, b, state) {
-            const isActive = Math.round(state.factors.viewMode) === b.val;
+            const isActive = b.pathwayId ? (state.factors.activePathway === b.pathwayId) : (Math.round(state.factors.viewMode) === b.val);
             const isHovered = app.ui.hoveredElement && app.ui.hoveredElement.id === b.id;
 
             ctx.save();

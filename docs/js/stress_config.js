@@ -21,7 +21,8 @@
                     { value: 'hpa', label: 'HPA Axis' },
                     { value: 'tryptophan', label: 'Tryptophan-Kynurenine' },
                     { value: 'dopaminergic', label: 'Dopaminergic System' },
-                    { value: 'serotonergeric', label: 'Serotonergic System' }
+                    { value: 'serotonergeric', label: 'Serotonergic System' },
+                    { value: 'nitric_oxide', label: 'Nitric Oxide Pathway' }
                 ], type: 'select'
             },
 

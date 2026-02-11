@@ -89,6 +89,20 @@
                 "cytosol",
                 "nucleus"
             ]
+        },
+        {
+            "id": "nitric_oxide",
+            "name": "Nitric Oxide (ADHD)",
+            "kegg_id": null,
+            "description": "L-arginine/nitric oxide pathway and its role in dopamine homeostasis and ADHD.",
+            "source": "endpoints/kegg_nitric_oxide.xml",
+            "regions": [
+                "pfc",
+                "striatum",
+                "blood_stream",
+                "neuronal",
+                "immune_cells"
+            ]
         }
     ]
 }

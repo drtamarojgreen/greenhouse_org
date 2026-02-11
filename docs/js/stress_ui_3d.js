@@ -101,7 +101,9 @@
                         'pituitary': { x: 0, y: -80, z: 60 },
                         'adrenals': { x: 50, y: -180, z: -20 },
                         'gut': { x: 0, y: -300, z: 20 },
-                        'blood_stream': { x: -80, y: -150, z: 0 }
+                        'blood_stream': { x: -80, y: -150, z: 0 },
+                        'neuronal': { x: -20, y: 150, z: 100 },
+                        'immune_cells': { x: -100, y: -350, z: 50 }
                     };
                     const base = anatomicalMap[n.region] || anatomicalMap[meta.regions[0]] || { x: 0, y: 0, z: 0 };
                     return {
