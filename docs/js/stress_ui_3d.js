@@ -164,6 +164,11 @@
                     }
                 }
             } else if (viewMode === 'systemic') {
+                if (window.GreenhouseStressSystemic && window.GreenhouseStressSystemic.checkHit) {
+                    const hit = window.GreenhouseStressSystemic.checkHit(mx, my, camera, projection);
+                    if (hit) return hit;
+                }
+                // Fallback / Crystal Check
                 const p = Math3D.project3DTo2D(0, 0, 0, camera, projection);
                 const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
                 if (dist < 100 * p.scale) {

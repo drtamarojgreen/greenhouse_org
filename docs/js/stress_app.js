@@ -36,7 +36,7 @@
 
             this.canvas = document.createElement('canvas');
             this.canvas.width = container.offsetWidth || 1000;
-            this.canvas.height = 750; // Increased for more checkboxes
+            this.canvas.height = 750;
             this.canvas.style.display = 'block';
             container.appendChild(this.canvas);
             this.ctx = this.canvas.getContext('2d');
@@ -66,6 +66,14 @@
 
             if (window.GreenhouseStressUI3D) window.GreenhouseStressUI3D.init(this);
 
+            // Initialize Category State (Collapsed by default except maybe one)
+            this.ui.categories = [
+                { id: 'env', label: 'ENVIRONMENTAL', x: 20, y: 110, w: 200, h: 25, isOpen: true },
+                { id: 'psych', label: 'PSYCHOLOGICAL', x: 240, y: 110, w: 200, h: 25, isOpen: false },
+                { id: 'philo', label: 'PHILOSOPHICAL', x: 460, y: 110, w: 200, h: 25, isOpen: false },
+                { id: 'research', label: 'RESEARCH / BIO', x: 680, y: 110, w: 200, h: 25, isOpen: false }
+            ];
+
             this.setupUI();
 
             this.canvas.onmousedown = (e) => this.handleMouseDown(e);
@@ -87,34 +95,15 @@
             const config = window.GreenhouseStressConfig;
             this.ui.checkboxes = [];
 
-            // Organize factors into columns
-            let envCount = 0;
-            let genCount = 0;
-            let modCount = 0;
-
+            // Group factors by category for easier rendering logic
+            // We just prepare them here; drawUI determines position based on collapse state
             config.factors.forEach(f => {
                 if (f.type !== 'checkbox') return;
-
-                let x = 40;
-                let y = 0;
-
-                // Categorization logic based on ID or metadata
-                if (f.id === 'comtValMet' || f.id === 'serotoninTransporter' || f.id === 'fkbp5Variant') {
-                    x = 240; // Genetic Column
-                    y = 120 + genCount * 30;
-                    genCount++;
-                } else if (f.id === 'cognitiveReframing' || f.id === 'socialSupport' || f.id === 'gabaMod') {
-                    x = 40;
-                    y = 350 + modCount * 30; // Modulators at bottom
-                    modCount++;
-                } else {
-                    x = 40; // Environmental stressors
-                    y = 120 + envCount * 30;
-                    envCount++;
-                }
-
+                let category = f.category || 'other';
                 this.ui.checkboxes.push({
-                    id: f.id, label: f.label, x, y, w: 180, h: 22
+                    id: f.id, label: f.label, category: category,
+                    w: 180, h: 20,
+                    // x, y calculated at draw time
                 });
             });
 
@@ -130,15 +119,30 @@
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
 
-            // Toggle Checkboxes
-            for (const c of this.ui.checkboxes) {
-                if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
-                    this.engine.state.factors[c.id] = this.engine.state.factors[c.id] === 1 ? 0 : 1;
+            // 1. Check Category Headers
+            for (const cat of this.ui.categories) {
+                if (mx >= cat.x && mx <= cat.x + cat.w && my >= cat.y && my <= cat.y + cat.h) {
+                    // Close others (accordion style) or just toggle? User asked for accessible dropdowns
+                    // Let's toggle individually for now, or accordion if space is tight.
+                    // Let's do Accordion behavior (one open at a time) for cleanliness
+                    this.ui.categories.forEach(c => {
+                        if (c.id !== cat.id) c.isOpen = false;
+                    });
+                    cat.isOpen = !cat.isOpen;
                     return;
                 }
             }
 
-            // View Mode Buttons
+            // 2. Check Visible Checkboxes
+            // We need to know where they were drawn. Since we calculate positions in drawUI,
+            // we should ideally store them there. But for now, let's re-simulate the layout check.
+            const hit = this.hitTestCheckboxes(mx, my);
+            if (hit) {
+                this.engine.state.factors[hit.id] = this.engine.state.factors[hit.id] === 1 ? 0 : 1;
+                return;
+            }
+
+            // 3. View Mode Buttons
             for (const b of this.ui.buttons) {
                 if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
                     this.engine.state.factors.viewMode = b.val; return;
@@ -150,6 +154,30 @@
             this.interaction.lastY = e.clientY;
         },
 
+        hitTestCheckboxes(mx, my) {
+            // Re-run simple layout logic to find hit
+            let startY = 140; // Below headers
+
+            for (const cat of this.ui.categories) {
+                if (!cat.isOpen) continue; // Skip collapsed
+
+                // Filter checkboxes for this category
+                const catBoxes = this.ui.checkboxes.filter(c => c.category === cat.id);
+                for (let i = 0; i < catBoxes.length; i++) {
+                    // 2 columns per category dropdown for density
+                    const col = i % 2;
+                    const row = Math.floor(i / 2);
+                    const bx = cat.x + 10 + (col * 190); // Shift X based on category X
+                    const by = cat.y + 30 + (row * 22);
+
+                    if (mx >= bx && mx <= bx + 180 && my >= by && my <= by + 20) {
+                        return catBoxes[i];
+                    }
+                }
+            }
+            return null;
+        },
+
         handleMouseMove(e) {
             const rect = this.canvas.getBoundingClientRect();
             const mx = e.clientX - rect.left;
@@ -158,11 +186,28 @@
             this.interaction.mouseY = my;
 
             this.ui.hoveredElement = null;
-            for (const c of this.ui.checkboxes) {
-                if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
-                    this.ui.hoveredElement = { ...c, type: 'checkbox' }; break;
+
+            // Header Hover
+            for (const cat of this.ui.categories) {
+                if (mx >= cat.x && mx <= cat.x + cat.w && my >= cat.y && my <= cat.y + cat.h) {
+                    this.ui.hoveredElement = { ...cat, type: 'header' };
+                    cat.isHovered = true;
+                } else {
+                    cat.isHovered = false;
                 }
             }
+
+            if (!this.ui.hoveredElement) {
+                // Checkbox Hover
+                const hit = this.hitTestCheckboxes(mx, my);
+                if (hit) {
+                    // We need to pass the temporary computed x/y to the drawer if needed,
+                    // but the controls just need ID. 
+                    // Let's pass a proxy object with ID
+                    this.ui.hoveredElement = { ...hit, type: 'checkbox' };
+                }
+            }
+
             if (!this.ui.hoveredElement) {
                 for (const b of this.ui.buttons) {
                     if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
@@ -210,9 +255,24 @@
                 f.diurnalPhase = this.clock.getPhase();
             }
 
-            // 2. Calculate Aggregated Stress Load
-            const environmentalLoad = (f.sleepDeprivation * 0.3) + (f.noisePollution * 0.15) + (f.financialStrain * 0.4) +
-                (f.socialIsolation * 0.25) + (f.workOverload * 0.3) + (f.nutrientDeficit * 0.2);
+            // 2. Calculate Aggregated Stress Load (Based on 100 factors)
+            // Categorize sum of active inputs
+            let scoreEnv = 0, scorePsych = 0, scorePhilo = 0, scoreRes = 0;
+
+            const config = window.GreenhouseStressConfig;
+            config.factors.forEach(fact => {
+                if (f[fact.id] === 1) { // If active
+                    if (fact.category === 'env') scoreEnv++;
+                    else if (fact.category === 'psych') scorePsych++;
+                    else if (fact.category === 'philo') scorePhilo++;
+                    else if (fact.category === 'research') scoreRes++;
+                }
+            });
+
+            // Normalized Loads (0.0 - 1.0 range approx)
+            // Environment adds load. Psych/Philo/Research buffer it.
+            const environmentalLoad = (scoreEnv * 0.05) + (f.sleepDeprivation ? 0.3 : 0);
+            const copingBuffer = (scorePsych * 0.04) + (scorePhilo * 0.03) + (scoreRes * 0.02);
 
             // 3. Genetic & Epigenetic Modifiers
             // Epigenetic sensitivity: Cumulative load makes the system more "twitchy"
@@ -225,7 +285,7 @@
             // 5. Modulators (Brakes) & Gut Health
             // Gut health affects precursors for GABA/Serotonin
             const gutEfficiency = f.gutHealth ? 1.0 : 0.6;
-            const damping = ((f.cognitiveReframing * 0.3) + (f.socialSupport * 0.2) + (f.gabaMod * 0.6)) * gutEfficiency;
+            const damping = copingBuffer * gutEfficiency;
 
             // 6. Autonomic Dynamics (Vagus Nerve / HRV)
             const sympatheticTarget = Util.SimulationEngine.clamp((environmentalLoad + geneticDrive + circadianDrive) - damping, 0, 1.5);
@@ -324,12 +384,6 @@
             const modeName = t(modes[state.factors.viewMode || 0]);
             ctx.fillText(`${modeName} LEVEL: BIOLOGICAL RESPONSE`, 40, 60);
 
-            // Column Titles
-            ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = 'bold 9px Quicksand, sans-serif';
-            ctx.fillText(t('ENVIRONMENTAL STRESSORS'), 40, 110);
-            ctx.fillText(t('GENETIC FACTORS'), 240, 110);
-            ctx.fillText(t('SYSTEMIC MODULATORS'), 40, 340);
-
             // Metrics Bento
             const m = state.metrics;
             const mLabels = [
@@ -347,9 +401,44 @@
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 13px Quicksand, sans-serif'; ctx.fillText(ml.v, bx + 10, h - 45);
             });
 
-            this.ui.checkboxes.forEach(c => window.GreenhouseStressControls && window.GreenhouseStressControls.drawCheckbox(ctx, this, c, state));
+            // Draw Category Headers & Expanded Content
+            if (this.ui.categories) {
+                this.ui.categories.forEach(cat => {
+                    // Draw Header
+                    if (window.GreenhouseStressControls && window.GreenhouseStressControls.drawCategoryHeader) {
+                        window.GreenhouseStressControls.drawCategoryHeader(ctx, cat);
+                    }
+
+                    // Draw Checkboxes if open
+                    if (cat.isOpen) {
+                        const catBoxes = this.ui.checkboxes.filter(c => c.category === cat.id);
+                        catBoxes.forEach((c, i) => {
+                            // Layout Logic (Matches HitTest)
+                            const col = i % 2;
+                            const row = Math.floor(i / 2);
+                            c.x = cat.x + 10 + (col * 190);
+                            c.y = cat.y + 30 + (row * 22);
+
+                            if (window.GreenhouseStressControls) {
+                                window.GreenhouseStressControls.drawCheckbox(ctx, this, c, state);
+                            }
+                        });
+
+                        // Draw Background Panel for Dropdown
+                        ctx.save();
+                        ctx.globalCompositeOperation = 'destination-over';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                        const height = Math.ceil(catBoxes.length / 2) * 22 + 40;
+                        ctx.fillRect(cat.x, cat.y + 25, 400, height);
+                        ctx.restore();
+                    }
+                });
+            }
+
             this.ui.buttons.forEach(b => window.GreenhouseStressControls && window.GreenhouseStressControls.drawButton(ctx, this, b, state));
-            if (this.ui.hoveredElement && window.GreenhouseStressTooltips) window.GreenhouseStressTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
+            if (this.ui.hoveredElement && window.GreenhouseStressTooltips && this.ui.hoveredElement.type !== 'header') {
+                window.GreenhouseStressTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
+            }
         },
 
         roundRect(ctx, x, y, width, height, radius, fill, stroke) {
