@@ -1,0 +1,16 @@
+"Mental Health",1,[2,3,4,5],100,1
+"Stress",2,[1,6,7],80,2
+"Resilience",3,[1,8,9],90,3
+"Community",4,[1,10],70,4
+"Environment",5,[1,11],75,5
+"Cortisol",6,[2,12],60,2
+"HPA Axis",7,[2,6],65,2
+"Sleep",8,[3,13],55,3
+"Exercise",9,[3,14],50,3
+"Family",10,[4,15],45,4
+"Nature",11,[5,16],40,5
+"Physiology",12,[6,7],35,2
+"Recovery",13,[8,9],30,3
+"Neurogenesis",14,[9,13],25,3
+"Support",15,[10,1],20,4
+"Pollution",16,[11,5],15,5

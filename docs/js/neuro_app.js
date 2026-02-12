@@ -10,12 +10,18 @@
         isRunning: false,
         intervalId: null,
         resilienceObserver: null,
+        baseUrl: '',
 
-        init(selector, selArg = null) {
+        init(selector, baseUrl = '', selArg = null) {
             // Standardize selector argument handling if re-invoked
+            if (typeof selector !== 'string' && baseUrl && typeof baseUrl === 'string' && baseUrl.startsWith('#')) {
+                selArg = baseUrl;
+                baseUrl = '';
+            }
             if (typeof selector !== 'string' && selArg) selector = selArg;
 
             console.log('NeuroApp: Initializing...');
+            this.baseUrl = baseUrl || '';
             this.lastSelector = selector;
 
             const container = document.querySelector(selector);

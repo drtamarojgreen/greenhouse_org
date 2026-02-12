@@ -14,11 +14,19 @@
 
         /**
          * Initialize and load the graph data, keeping only top N nodes by weight.
-         * @param {string} url - URL to csv
+         * @param {string} url - URL to csv or relative path
          * @param {number} limit - Number of top nodes to keep
+         * @param {string} baseUrl - Base URL for relative paths
          */
-        init: function (url, limit = 50) {
-            const dataUrl = url || 'endpoints/graph.csv';
+        init: function (url, limit = 50, baseUrl = '') {
+            let dataUrl = url || 'endpoints/graph.csv';
+
+            // If it's a relative path (doesn't start with http/https or /), prepend baseUrl
+            if (baseUrl && !dataUrl.startsWith('http') && !dataUrl.startsWith('/')) {
+                const base = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+                dataUrl = base + dataUrl;
+            }
+
             console.log(`GreenhouseGraphParser: Fetching graph data from ${dataUrl} (Limit: ${limit})...`);
 
             return fetch(dataUrl)

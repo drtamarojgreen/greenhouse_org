@@ -72,7 +72,7 @@
             await window.GreenhouseUtils.loadScript('inflammation_app.js', baseUrl);
 
             if (window.GreenhouseInflammationApp) {
-                window.GreenhouseInflammationApp.init(targetSelector);
+                window.GreenhouseInflammationApp.init(targetSelector, baseUrl);
 
                 if (window.GreenhouseUtils.renderModelsTOC) {
                     window.GreenhouseUtils.renderModelsTOC(targetSelector);

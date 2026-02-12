@@ -14,11 +14,19 @@
 
         /**
          * Initialize and load the graph data
-         * @param {string} url - Optional URL to csv, defaults to 'endpoints/graph.csv'
+         * @param {string} url - Optional URL to csv or relative path
+         * @param {string} baseUrl - Base URL for relative paths
          * @returns {Promise} Resolves with the graph data
          */
-        init: function (url) {
-            const dataUrl = url || 'endpoints/graph.csv';
+        init: function (url, baseUrl = '') {
+            let dataUrl = url || 'endpoints/graph.csv';
+
+            // If it's a relative path, prepend baseUrl
+            if (baseUrl && !dataUrl.startsWith('http') && !dataUrl.startsWith('/')) {
+                const base = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+                dataUrl = base + dataUrl;
+            }
+
             console.log(`GreenhouseModelsGraph: Fetching graph data from ${dataUrl}...`);
 
             return fetch(dataUrl)

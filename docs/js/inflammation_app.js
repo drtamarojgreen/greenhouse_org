@@ -19,9 +19,11 @@
         projection: { width: 800, height: 600, near: 10, far: 5000 },
         interaction: { isDragging: false, lastX: 0, lastY: 0, mouseX: 0, mouseY: 0 },
         ui: { hoveredElement: null, checkboxes: [], buttons: [] },
+        baseUrl: '',
 
-        init(selector) {
+        init(selector, baseUrl = '') {
             console.log("GreenhouseInflammationApp: Initializing Checkbox-Driven UI...");
+            this.baseUrl = baseUrl || '';
             const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!container) return;
 

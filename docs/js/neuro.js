@@ -112,7 +112,7 @@
                 // Initialize the application
                 // Use the selector captured from attributes
                 if (targetSelector) {
-                    window.GreenhouseNeuroApp.init(targetSelector);
+                    window.GreenhouseNeuroApp.init(targetSelector, baseUrl);
 
                     // Render bottom navigation TOC via common utilities
                     if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {

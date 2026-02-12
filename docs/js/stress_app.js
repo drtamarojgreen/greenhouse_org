@@ -24,9 +24,11 @@
             hoveredElement: null,
             checkboxes: [], buttons: [], metrics: []
         },
+        baseUrl: '',
 
-        init(selector) {
+        init(selector, baseUrl = '') {
             console.log("GreenhouseStressApp: Initializing Checkbox-Driven UI...");
+            this.baseUrl = baseUrl || '';
             const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!container) return;
 
