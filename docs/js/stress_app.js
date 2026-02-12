@@ -75,6 +75,7 @@
             ];
 
             this.setupUI();
+            this.setupPathwayUI();
 
             this.canvas.onmousedown = (e) => this.handleMouseDown(e);
             this.canvas.onmousemove = (e) => this.handleMouseMove(e);
@@ -114,6 +115,27 @@
             ];
         },
 
+        setupPathwayUI() {
+            this.ui.pathwayButtons = [];
+            const ui3d = window.GreenhouseStressUI3D;
+            if (ui3d && ui3d.availablePathways) {
+                ui3d.availablePathways.forEach((p, i) => {
+                    this.ui.pathwayButtons.push({
+                        id: 'pathway_' + p.id,
+                        label: p.name.toUpperCase(),
+                        x: 40 + (i * 115),
+                        y: 100,
+                        w: 110,
+                        h: 22,
+                        pathwayId: p.id
+                    });
+                });
+            } else {
+                // Retry in 500ms if pathways not loaded yet
+                setTimeout(() => this.setupPathwayUI(), 500);
+            }
+        },
+
         handleMouseDown(e) {
             const rect = this.canvas.getBoundingClientRect();
             const mx = e.clientX - rect.left;
@@ -149,6 +171,15 @@
                 }
             }
 
+            // 4. Pathway Selection Buttons (Only if in Pathway Mode)
+            if (Math.round(this.engine.state.factors.viewMode) === 1 && this.ui.pathwayButtons) {
+                for (const b of this.ui.pathwayButtons) {
+                    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                        this.engine.state.factors.activePathway = b.pathwayId; return;
+                    }
+                }
+            }
+
             this.interaction.isDragging = true;
             this.interaction.lastX = e.clientX;
             this.interaction.lastY = e.clientY;
@@ -175,6 +206,7 @@
                     }
                 }
             }
+
             return null;
         },
 
@@ -436,6 +468,12 @@
             }
 
             this.ui.buttons.forEach(b => window.GreenhouseStressControls && window.GreenhouseStressControls.drawButton(ctx, this, b, state));
+
+            // Draw Pathway Buttons if in mode 1
+            if (Math.round(state.factors.viewMode) === 1 && this.ui.pathwayButtons) {
+                this.ui.pathwayButtons.forEach(b => window.GreenhouseStressControls && window.GreenhouseStressControls.drawButton(ctx, this, b, state));
+            }
+
             if (this.ui.hoveredElement && window.GreenhouseStressTooltips && this.ui.hoveredElement.type !== 'header') {
                 window.GreenhouseStressTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
             }
