@@ -1,7 +1,7 @@
 /**
  * @file inflammation_app.js
  * @description Main application logic for the Neuroinflammation Simulation.
- * Reconfigured for binary factor control (Checkboxes).
+ * Implements binary factor logic (Checkboxes) and updated physiological equations.
  */
 
 (function () {
@@ -15,10 +15,15 @@
         ctx: null,
         isRunning: false,
         clock: null,
-        camera: { x: 0, y: 0, z: -800, rotationX: 0.3, rotationY: 0, rotationZ: 0, fov: 600 },
+        camera: { x: 0, y: 0, z: -600, rotationX: 0.2, rotationY: 0, rotationZ: 0, fov: 600 },
         projection: { width: 800, height: 600, near: 10, far: 5000 },
-        interaction: { isDragging: false, lastX: 0, lastY: 0, mouseX: 0, mouseY: 0 },
-        ui: { hoveredElement: null, checkboxes: [], buttons: [] },
+        interaction: {
+            isDragging: false, lastX: 0, lastY: 0, mouseX: 0, mouseY: 0
+        },
+        ui: {
+            hoveredElement: null,
+            checkboxes: [], buttons: [], metrics: []
+        },
         baseUrl: '',
 
         init(selector, baseUrl = '') {
@@ -28,9 +33,12 @@
             if (!container) return;
 
             container.innerHTML = '';
+            container.style.backgroundColor = '#000';
+            container.style.position = 'relative';
+
             this.canvas = document.createElement('canvas');
             this.canvas.width = container.offsetWidth || 1000;
-            this.canvas.height = 700;
+            this.canvas.height = 750;
             this.canvas.style.display = 'block';
             container.appendChild(this.canvas);
             this.ctx = this.canvas.getContext('2d');
@@ -39,16 +47,35 @@
             this.projection.height = this.canvas.height;
 
             const config = window.GreenhouseInflammationConfig;
+
             this.engine = new window.GreenhouseModelsUtil.SimulationEngine({
-                initialFactors: config.factors.reduce((acc, f) => { acc[f.id] = f.defaultValue; return acc; }, {}),
-                initialMetrics: { tnfAlpha: 10, il10: 5, microgliaActivation: 0.1, bbbIntegrity: 1.0, neuroprotection: 1.0, stressBurden: 0.15 },
+                initialFactors: config.factors.reduce((acc, f) => {
+                    acc[f.id] = f.defaultValue;
+                    return acc;
+                }, {}),
+                initialMetrics: {
+                    allostaticLoad: 0.1,
+                    bbbIntegrity: 1.0,
+                    microgliaActivation: 0.05,
+                    neuroInflammation: 0.1,
+                    cytokineTone: 0.05,
+                    glialResponsiveness: 0.7
+                },
                 updateFn: (state, dt) => this.updateModel(state, dt)
             });
 
             this.clock = new window.GreenhouseModelsUtil.DiurnalClock();
-            this.clock.timeInHours = 8.0; // Consistently start at 8am
 
             if (window.GreenhouseInflammationUI3D) window.GreenhouseInflammationUI3D.init(this);
+
+            // Initialize Category State (Collapsed by default except maybe one)
+            this.ui.categories = [
+                { id: 'env', label: 'ENVIRONMENTAL', x: 20, y: 175, w: 200, h: 25, isOpen: true },
+                { id: 'psych', label: 'PSYCHOLOGICAL', x: 240, y: 175, w: 200, h: 25, isOpen: false },
+                { id: 'philo', label: 'PHILOSOPHICAL', x: 460, y: 175, w: 200, h: 25, isOpen: false },
+                { id: 'research', label: 'RESEARCH / BIO', x: 680, y: 175, w: 200, h: 25, isOpen: false }
+            ];
+
             this.setupUI();
 
             this.canvas.onmousedown = (e) => this.handleMouseDown(e);
@@ -58,29 +85,32 @@
 
             this.isRunning = true;
             this.startLoop();
+
+            window.addEventListener('resize', () => {
+                this.canvas.width = container.offsetWidth;
+                this.projection.width = this.canvas.width;
+                this.setupUI();
+            });
         },
 
         setupUI() {
             const config = window.GreenhouseInflammationConfig;
             this.ui.checkboxes = [];
-            let triggerCount = 0;
-            let modCount = 0;
 
+            // Group factors by category for easier rendering logic
             config.factors.forEach(f => {
                 if (f.type !== 'checkbox') return;
-                const isProtective = f.impact < 0;
+                let category = f.category || 'other';
                 this.ui.checkboxes.push({
-                    id: f.id, label: f.label,
-                    x: isProtective ? 250 : 40,
-                    y: 120 + (isProtective ? modCount++ : triggerCount++) * 32,
-                    w: 200, h: 24
+                    id: f.id, label: f.label, category: category,
+                    w: 180, h: 20
                 });
             });
 
             this.ui.buttons = [
                 { id: 'mode_macro', label: 'MACRO', x: 40, y: 70, w: 60, h: 22, val: 0 },
-                { id: 'mode_micro', label: 'MICRO', x: 105, y: 70, w: 60, h: 22, val: 1 },
-                { id: 'mode_molecular', label: 'MOLECULAR', x: 170, y: 70, w: 80, h: 22, val: 2 }
+                { id: 'mode_micro', label: 'MICRO', x: 105, y: 70, w: 65, h: 22, val: 1 },
+                { id: 'mode_molecular', label: 'MOLECULAR', x: 175, y: 70, w: 85, h: 22, val: 2 }
             ];
         },
 
@@ -89,20 +119,53 @@
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
 
-            for (const c of this.ui.checkboxes) {
-                if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
-                    this.engine.state.factors[c.id] = this.engine.state.factors[c.id] === 1 ? 0 : 1;
+            // 1. Check Category Headers
+            for (const cat of this.ui.categories) {
+                if (mx >= cat.x && mx <= cat.x + cat.w && my >= cat.y && my <= cat.y + cat.h) {
+                    this.ui.categories.forEach(c => {
+                        if (c.id !== cat.id) c.isOpen = false;
+                    });
+                    cat.isOpen = !cat.isOpen;
                     return;
                 }
             }
+
+            // 2. Check Visible Checkboxes
+            const hit = this.hitTestCheckboxes(mx, my);
+            if (hit) {
+                this.engine.state.factors[hit.id] = this.engine.state.factors[hit.id] === 1 ? 0 : 1;
+                return;
+            }
+
+            // 3. View Mode Buttons
             for (const b of this.ui.buttons) {
                 if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
                     this.engine.state.factors.viewMode = b.val; return;
                 }
             }
+
             this.interaction.isDragging = true;
             this.interaction.lastX = e.clientX;
             this.interaction.lastY = e.clientY;
+        },
+
+        hitTestCheckboxes(mx, my) {
+            for (const cat of this.ui.categories) {
+                if (!cat.isOpen) continue;
+
+                const catBoxes = this.ui.checkboxes.filter(c => c.category === cat.id);
+                for (let i = 0; i < catBoxes.length; i++) {
+                    const col = i % 2;
+                    const row = Math.floor(i / 2);
+                    const bx = cat.x + 10 + (col * 190);
+                    const by = cat.y + 30 + (row * 22);
+
+                    if (mx >= bx && mx <= bx + 180 && my >= by && my <= by + 20) {
+                        return catBoxes[i];
+                    }
+                }
+            }
+            return null;
         },
 
         handleMouseMove(e) {
@@ -113,11 +176,21 @@
             this.interaction.mouseY = my;
 
             this.ui.hoveredElement = null;
-            for (const c of this.ui.checkboxes) {
-                if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
-                    this.ui.hoveredElement = { ...c, type: 'checkbox' }; break;
+
+            for (const cat of this.ui.categories) {
+                if (mx >= cat.x && mx <= cat.x + cat.w && my >= cat.y && my <= cat.y + cat.h) {
+                    this.ui.hoveredElement = { ...cat, type: 'header' };
+                    cat.isHovered = true;
+                } else {
+                    cat.isHovered = false;
                 }
             }
+
+            if (!this.ui.hoveredElement) {
+                const hit = this.hitTestCheckboxes(mx, my);
+                if (hit) this.ui.hoveredElement = { ...hit, type: 'checkbox' };
+            }
+
             if (!this.ui.hoveredElement) {
                 for (const b of this.ui.buttons) {
                     if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
@@ -125,6 +198,7 @@
                     }
                 }
             }
+
             if (!this.ui.hoveredElement && window.GreenhouseInflammationUI3D) {
                 this.ui.hoveredElement = window.GreenhouseInflammationUI3D.checkHover(mx, my, this.camera, this.projection);
             }
@@ -138,107 +212,82 @@
         },
 
         handleMouseUp() { this.interaction.isDragging = false; },
-        handleWheel(e) { e.preventDefault(); this.camera.z = Math.min(-100, Math.max(-2000, this.camera.z + e.deltaY * 0.8)); },
+        handleWheel(e) { e.preventDefault(); this.camera.z = Math.min(-100, Math.max(-2000, this.camera.z + e.deltaY * 0.5)); },
 
         updateModel(state, dt) {
             const f = state.factors;
             const m = state.metrics;
+            const h = state.history;
             const Util = window.GreenhouseModelsUtil;
 
-            // 1. Advance Clock
             if (this.clock) {
                 this.clock.update(dt);
                 f.timeOfDay = this.clock.timeInHours;
             }
 
-            // 2. Inter-Model Stress Bridge
-            // Pull real-time data from Stress simulation via global bridge
-            let externalStress = 0;
-            if (window.GreenhouseBioStatus && window.GreenhouseBioStatus.stress) {
-                externalStress = window.GreenhouseBioStatus.stress.load;
-                m.stressBurden = Util.SimulationEngine.smooth(m.stressBurden, externalStress, 0.01);
-            }
+            let scoreEnv = 0, scorePsych = 0, scorePhilo = 0, scoreRes = 0;
+            const config = window.GreenhouseInflammationConfig;
+            config.factors.forEach(fact => {
+                if (f[fact.id] === 1) {
+                    if (fact.category === 'env') scoreEnv++;
+                    else if (fact.category === 'psych') scorePsych++;
+                    else if (fact.category === 'philo') scorePhilo++;
+                    else if (fact.category === 'research') scoreRes++;
+                }
+            });
 
-            // 3. Pro-inflammatory Drive
-            // Stress acts as a direct multiplier for inflammation (modeling HMGB1 / Alarmin pathways)
-            const stressImpact = (f.chronicStress * 0.3) + (m.stressBurden * 0.5);
-            const trigger = (f.pathogenActive * 0.5) + stressImpact + (f.poorSleep * 0.2) + (f.leakyGut * 0.2);
-            const suppression = (f.nsaidsApp * 0.3) + (f.steroidsApp * 0.6) + (f.tnfInhibitors * 0.8) + (f.cleanDiet * 0.1);
+            const stressSync = window.GreenhouseBioStatus ? window.GreenhouseBioStatus.stress.load : 0.2;
+            const inflammatoryDrive = (scoreEnv * 0.08) + (stressSync * 0.3) + (f.pollutionExposure ? 0.2 : 0);
+            const neuroProtection = (scorePsych * 0.04) + (scorePhilo * 0.03) + (scoreRes * 0.05) + (f.antioxidants ? 0.15 : 0);
 
-            const targetTnf = Util.SimulationEngine.clamp(trigger * 400 * (1 - suppression), 5, 500);
-            m.tnfAlpha = Util.SimulationEngine.smooth(m.tnfAlpha, targetTnf, 0.03);
+            m.cytokineTone = Util.SimulationEngine.smooth(m.cytokineTone, Util.SimulationEngine.clamp(inflammatoryDrive - neuroProtection * 0.5, 0.02, 1.0), 0.05);
+            m.bbbIntegrity = Util.SimulationEngine.smooth(m.bbbIntegrity, Util.SimulationEngine.clamp(1.0 - (m.cytokineTone * 0.6) - (f.leakyGut ? 0.15 : 0), 0.1, 1.0), 0.02);
+            m.microgliaActivation = Util.SimulationEngine.smooth(m.microgliaActivation, Util.SimulationEngine.clamp((m.cytokineTone * 0.8) + (1.0 - m.bbbIntegrity) * 0.4, 0.01, 1.0), 0.03);
+            m.neuroInflammation = Util.SimulationEngine.smooth(m.neuroInflammation, (m.microgliaActivation * 0.7) + (m.cytokineTone * 0.3), 0.05);
 
-            // 4. Anti-inflammatory
-            // Circadian rhythm affects IL-10 synthesis peaks (usually night/early morning)
-            const circadianPeak = this.clock ? (1.0 - this.clock.getCortisolFactor()) * 10 : 0;
-            const targetIl10 = Util.SimulationEngine.clamp((m.tnfAlpha * 0.1) + (f.exerciseRegular * 15) + (f.cleanDiet * 10) + circadianPeak, 2, 60);
-            m.il10 = Util.SimulationEngine.smooth(m.il10, targetIl10, 0.02);
-
-            // 5. Glial State (M1 vs M2 shift)
-            const activation = (m.tnfAlpha / 500) * (1 - (f.steroidsApp * 0.7));
-            m.microgliaActivation = Util.SimulationEngine.smooth(m.microgliaActivation, Util.SimulationEngine.clamp(activation, 0, 1), 0.02);
-
-            // 6. Structural Integrity (Stress-induced BBB Permeability)
-            // Excessive cortisol (stressBurden) disrupts tight junctions
-            const stressDamage = m.stressBurden * 0.0002;
-            const damage = (m.tnfAlpha * 0.0001) + stressDamage;
-            const repair = (f.cleanDiet * 0.00005) + (1 - f.poorSleep) * 0.0001;
-            m.bbbIntegrity = Util.SimulationEngine.clamp(m.bbbIntegrity - damage + repair, 0.2, 1.0);
-
-            m.neuroprotection = Util.SimulationEngine.clamp((m.bbbIntegrity * 0.7) + (m.il10 / 100) - (m.microgliaActivation * 0.3), 0, 1);
-
-            // 7. Neurotransmitter Activity (Tryptophan Breakdown)
-            // Inflammatory tone (TNF-alpha) activates IDO enzyme, re-routing Tryptophan to Kynurenine
-            const idoActivation = Util.SimulationEngine.clamp(m.tnfAlpha / 300, 0, 1);
-            m.tryptophanLevels = Util.SimulationEngine.smooth(m.tryptophanLevels || 100, 100 * (1 - idoActivation * 0.7), 0.02);
-            m.kynurenineLevels = Util.SimulationEngine.smooth(m.kynurenineLevels || 10, 10 + (idoActivation * 80), 0.02);
-            m.neurotoxicLoad = m.kynurenineLevels / (m.tryptophanLevels + 1);
-
-            // Sync outcome back to bridge
             if (window.GreenhouseBioStatus) {
                 window.GreenhouseBioStatus.sync('inflammation', {
-                    tone: m.tnfAlpha / 500,
+                    tone: m.cytokineTone,
                     bbb: m.bbbIntegrity,
                     microglia: m.microgliaActivation,
-                    tryptophan: m.tryptophanLevels,
-                    kynurenine: m.kynurenineLevels,
-                    neurotoxicLoad: m.neurotoxicLoad
+                    neuro: m.neuroInflammation
                 });
             }
-
-            state.metrics.inflammatoryTone = m.tnfAlpha / 500;
         },
 
         startLoop() {
-            const loop = (t) => { if (this.isRunning) { this.engine.update(t); this.render(); requestAnimationFrame(loop); } };
+            const loop = (t) => {
+                if (!this.isRunning) return;
+                this.engine.update(t);
+                this.render();
+                requestAnimationFrame(loop);
+            };
             requestAnimationFrame(loop);
         },
 
         render() {
             const ctx = this.ctx, w = this.canvas.width, h = this.canvas.height, state = this.engine.state;
-            ctx.fillStyle = '#050710'; ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = '#050510'; ctx.fillRect(0, 0, w, h);
+
+            if (!this.interaction.isDragging) this.camera.rotationY += 0.001;
             if (window.GreenhouseInflammationUI3D) window.GreenhouseInflammationUI3D.render(ctx, state, this.camera, this.projection);
+
             this.drawUI(ctx, w, h, state);
         },
 
         drawUI(ctx, w, h, state) {
             ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Quicksand, sans-serif'; ctx.fillText('NEUROINFLAMMATION ENGINE', 40, 40);
             ctx.fillStyle = '#4ca1af'; ctx.font = 'bold 12px Quicksand, sans-serif';
-            const modes = ['btn_mode_macro', 'btn_mode_micro', 'btn_mode_molecular', 'btn_mode_pathway'];
+            const modes = ['btn_mode_macro', 'btn_mode_micro', 'btn_mode_molecular'];
             const modeName = t(modes[state.factors.viewMode || 0]);
-            ctx.fillText(`${modeName} LEVEL: IMMUNE STATE`, 40, 60);
+            ctx.fillText(`${modeName} LEVEL: IMMUNE RESPONSE`, 40, 60);
 
-            ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = 'bold 9px Quicksand, sans-serif';
-            ctx.fillText(t('IMMUNE TRIGGERS'), 40, 110);
-            ctx.fillText(t('PROTECTIVE & INTERVENTIONAL'), 250, 110);
-
-            // Metrics Bento
             const m = state.metrics;
             const mLabels = [
-                { l: 'TNF-α', v: Math.round(m.tnfAlpha) + ' pg/mL', c: '#ff4444' },
-                { l: 'IL-10', v: Math.round(m.il10) + ' pg/mL', c: '#44ffaa' },
-                { l: 'BBB INTEGRITY', v: Math.round(m.bbbIntegrity * 100) + '%', c: '#44aaff' },
-                { l: 'NEUROPROTECTION', v: Math.round(m.neuroprotection * 100) + '%', c: '#ffaa44' }
+                { l: 'CYTOKINE TONE', v: (m.cytokineTone * 100).toFixed(1) + '%', c: '#ff5533' },
+                { l: 'BBB INTEGRITY', v: (m.bbbIntegrity * 100).toFixed(0) + '%', c: '#00ff99' },
+                { l: 'MICROGLIA', v: m.microgliaActivation > 0.6 ? 'REACTIVE' : 'SURVEILLANCE', c: '#ffff66' },
+                { l: 'NEURO-INFLAM', v: (m.neuroInflammation * 100).toFixed(1) + '%', c: '#ff9900' }
             ];
             mLabels.forEach((ml, i) => {
                 const bx = 40 + i * 110;
@@ -249,9 +298,32 @@
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 13px Quicksand, sans-serif'; ctx.fillText(ml.v, bx + 10, h - 45);
             });
 
-            this.ui.checkboxes.forEach(c => window.GreenhouseInflammationControls && window.GreenhouseInflammationControls.drawCheckbox(ctx, this, c, state));
+            if (this.ui.categories) {
+                this.ui.categories.forEach(cat => {
+                    if (cat.isOpen) {
+                        const catBoxes = this.ui.checkboxes.filter(c => c.category === cat.id);
+                        catBoxes.forEach((c, i) => {
+                            const col = i % 2;
+                            const row = Math.floor(i / 2);
+                            c.x = cat.x + 10 + (col * 190);
+                            c.y = cat.y + 30 + (row * 22);
+                            if (window.GreenhouseInflammationControls) window.GreenhouseInflammationControls.drawCheckbox(ctx, this, c, state);
+                        });
+                        ctx.save();
+                        ctx.globalCompositeOperation = 'destination-over';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                        const height = Math.ceil(catBoxes.length / 2) * 22 + 40;
+                        ctx.fillRect(cat.x, cat.y + 25, 400, height);
+                        ctx.restore();
+                    }
+                });
+            }
+
             this.ui.buttons.forEach(b => window.GreenhouseInflammationControls && window.GreenhouseInflammationControls.drawButton(ctx, this, b, state));
-            if (this.ui.hoveredElement && window.GreenhouseInflammationTooltips) window.GreenhouseInflammationTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
+
+            if (this.ui.hoveredElement && window.GreenhouseInflammationTooltips && this.ui.hoveredElement.type !== 'header') {
+                window.GreenhouseInflammationTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
+            }
         },
 
         roundRect(ctx, x, y, width, height, radius, fill, stroke) {

@@ -14,36 +14,38 @@
 
         /**
          * Initialize and load the graph data, keeping only top N nodes by weight.
-         * @param {string} url - URL to csv or relative path
+         * @param {string} url - URL to csv
          * @param {number} limit - Number of top nodes to keep
-         * @param {string} baseUrl - Base URL for relative paths
          */
         init: function (url, limit = 50, baseUrl = '') {
-            let dataUrl = url || 'endpoints/graph.csv';
+            const base = baseUrl ? (baseUrl.endsWith('/') ? baseUrl : baseUrl + '/') : '';
+            const path = url || 'endpoints/graph.csv';
+            const dataUrl = (path.startsWith('http') || path.startsWith('/')) ? path : base + path;
 
-            // If it's a relative path (doesn't start with http/https or /), prepend baseUrl
-            if (baseUrl && !dataUrl.startsWith('http') && !dataUrl.startsWith('/')) {
-                const base = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
-                dataUrl = base + dataUrl;
-            }
+            console.log(`GreenhouseGraphParser: Checking availability of graph data at ${dataUrl}...`);
 
-            console.log(`GreenhouseGraphParser: Fetching graph data from ${dataUrl} (Limit: ${limit})...`);
-
-            return fetch(dataUrl)
+            // Phase 1: Dynamic availability check before full load
+            return fetch(dataUrl, { method: 'HEAD' })
                 .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return response.text();
+                    if (!response.ok) {
+                        console.log("GreenhouseGraphParser: Graph data unavailable (404/HEAD), feature disabled.");
+                        this.isLoaded = false;
+                        return null;
+                    }
+
+                    console.log(`GreenhouseGraphParser: Data found, fetching full content (Limit: ${limit})...`);
+                    return fetch(dataUrl).then(res => res.text());
                 })
                 .then(csvText => {
+                    if (!csvText) return null;
                     this.parseCSV(csvText, limit);
                     this.isLoaded = true;
-                    console.log(`GreenhouseGraphParser: Loaded top ${this.data.nodes.length} nodes.`);
+                    console.log(`GreenhouseGraphParser: Successfully loaded top ${this.data.nodes.length} nodes.`);
                     this.notifySubscribers();
                     return this.data;
                 })
                 .catch(err => {
-                    console.log("GreenhouseGraphParser: Graph data unavailable, feature disabled.");
-                    // Don't re-throw - allow the app to continue without graph feature
+                    console.log("GreenhouseGraphParser: Graph data unavailable or error during check.");
                     this.isLoaded = false;
                     return null;
                 });
