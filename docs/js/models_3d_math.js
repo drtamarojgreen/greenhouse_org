@@ -224,6 +224,7 @@
          * @returns {number} Modified alpha value
          */
         applyDepthFog(baseAlpha, depth, fogStart = 0.7, fogEnd = 1.0) {
+            if (isNaN(depth)) return 0;
             if (depth < fogStart) return baseAlpha;
             if (depth > fogEnd) return 0;
             const fogFactor = (depth - fogStart) / (fogEnd - fogStart);

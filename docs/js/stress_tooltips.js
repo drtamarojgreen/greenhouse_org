@@ -26,7 +26,7 @@
 
             // Modulators
             cognitiveReframing: 'The active psychological process of reappraising a threat as a manageable challenge.',
-            socialSupport: 'Oxytocin-mediated regulation of the paraventricular nucleus (PVN) in the hypothalamus.',
+            psych_support: 'Oxytocin-mediated regulation of the paraventricular nucleus (PVN) in the hypothalamus.',
             gabaMod: 'Chemical stabilization of the nervous system via inhibitory neurotransmission.',
 
             // Metrics

@@ -181,6 +181,7 @@
          * Shared utility for clamping values.
          */
         static clamp(val, min, max) {
+            if (isNaN(val)) return min;
             return Math.max(min, Math.min(max, val));
         }
 
@@ -188,6 +189,7 @@
          * Shared utility for smoothing metrics (LERP).
          */
         static smooth(current, target, factor) {
+            if (isNaN(target)) return current;
             return current + (target - current) * factor;
         }
     }
