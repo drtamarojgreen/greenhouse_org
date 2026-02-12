@@ -396,7 +396,7 @@
             const recovery = (1.0 - f.sleepDeprivation * 0.6) * 0.001 * sleepMultiplier;
 
             m.resilienceReserve = Util.SimulationEngine.clamp(
-                m.resilienceReserve - (m.allostaticLoad * 0.002) + recovery + (f.socialSupport * 0.0005),
+                m.resilienceReserve - (m.allostaticLoad * 0.002) + recovery + ((f.psych_support || 0) * 0.0005),
                 0, 1.0
             );
 

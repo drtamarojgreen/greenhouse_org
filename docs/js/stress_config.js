@@ -55,6 +55,7 @@
             { id: 'env_ergo', label: 'Ergonomic Stress', category: 'env', type: 'checkbox', defaultValue: 1 },
             { id: 'env_odor', label: 'Malodors', category: 'env', type: 'checkbox', defaultValue: 0 },
             { id: 'env_walk', label: 'Poor Walkability', category: 'env', type: 'checkbox', defaultValue: 0 },
+            { id: 'sleepDeprivation', label: 'Sleep Deprivation', category: 'env', type: 'checkbox', defaultValue: 0 },
 
             // II. PSYCHOLOGICAL THEORIES (Buffers/Modulators)
             { id: 'psych_trans', label: 'Transactional Model', category: 'psych', type: 'checkbox', defaultValue: 1 },
