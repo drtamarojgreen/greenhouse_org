@@ -63,7 +63,8 @@
         },
 
         async loadPathways() {
-            const data = await window.GreenhouseModelsUtil.PathwayService.loadMetadata();
+            const baseUrl = (this.app && this.app.baseUrl) ? this.app.baseUrl : '';
+            const data = await window.GreenhouseModelsUtil.PathwayService.loadMetadata(baseUrl);
             this.availablePathways = data.pathways;
             // Pre-load HPA for seamless start
             await this.fetchPathway('hpa');
@@ -87,7 +88,8 @@
                 return;
             }
 
-            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source);
+            const baseUrl = (this.app && this.app.baseUrl) ? this.app.baseUrl : '';
+            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, baseUrl);
 
             if (data) {
                 // Apply 3D Layout (Simplified version of PathwayViewer logic)
