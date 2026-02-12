@@ -68,10 +68,10 @@
 
             // Initialize Category State (Collapsed by default except maybe one)
             this.ui.categories = [
-                { id: 'env', label: 'ENVIRONMENTAL', x: 20, y: 110, w: 200, h: 25, isOpen: true },
-                { id: 'psych', label: 'PSYCHOLOGICAL', x: 240, y: 110, w: 200, h: 25, isOpen: false },
-                { id: 'philo', label: 'PHILOSOPHICAL', x: 460, y: 110, w: 200, h: 25, isOpen: false },
-                { id: 'research', label: 'RESEARCH / BIO', x: 680, y: 110, w: 200, h: 25, isOpen: false }
+                { id: 'env', label: 'ENVIRONMENTAL', x: 20, y: 175, w: 200, h: 25, isOpen: true },
+                { id: 'psych', label: 'PSYCHOLOGICAL', x: 240, y: 175, w: 200, h: 25, isOpen: false },
+                { id: 'philo', label: 'PHILOSOPHICAL', x: 460, y: 175, w: 200, h: 25, isOpen: false },
+                { id: 'research', label: 'RESEARCH / BIO', x: 680, y: 175, w: 200, h: 25, isOpen: false }
             ];
 
             this.setupUI();
@@ -119,14 +119,26 @@
             this.ui.pathwayButtons = [];
             const ui3d = window.GreenhouseStressUI3D;
             if (ui3d && ui3d.availablePathways) {
+                // Organize pathways in a 2-row grid for better space utilization
+                const buttonsPerRow = 4;
+                const buttonWidth = 180;
+                const buttonHeight = 24;
+                const horizontalSpacing = 195;
+                const verticalSpacing = 30;
+                const startX = 40;
+                const startY = 105;
+
                 ui3d.availablePathways.forEach((p, i) => {
+                    const row = Math.floor(i / buttonsPerRow);
+                    const col = i % buttonsPerRow;
+
                     this.ui.pathwayButtons.push({
                         id: 'pathway_' + p.id,
                         label: p.name.toUpperCase(),
-                        x: 40 + (i * 115),
-                        y: 100,
-                        w: 110,
-                        h: 22,
+                        x: startX + (col * horizontalSpacing),
+                        y: startY + (row * verticalSpacing),
+                        w: buttonWidth,
+                        h: buttonHeight,
                         pathwayId: p.id
                     });
                 });
@@ -263,6 +275,15 @@
                 for (const b of this.ui.buttons) {
                     if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
                         this.ui.hoveredElement = { ...b, type: 'button' }; break;
+                    }
+                }
+            }
+
+            // Check Pathway Buttons (when in pathway mode)
+            if (!this.ui.hoveredElement && this.ui.pathwayButtons) {
+                for (const b of this.ui.pathwayButtons) {
+                    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                        this.ui.hoveredElement = { ...b, type: 'pathway_button' }; break;
                     }
                 }
             }
@@ -495,6 +516,11 @@
 
             // Draw Pathway Buttons if in mode 1
             if (Math.round(state.factors.viewMode) === 1 && this.ui.pathwayButtons) {
+                // Add section label
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.font = 'bold 11px Quicksand, sans-serif';
+                ctx.fillText('SELECT PATHWAY:', 40, 95);
+
                 this.ui.pathwayButtons.forEach(b => window.GreenhouseStressControls && window.GreenhouseStressControls.drawButton(ctx, this, b, state));
             }
 

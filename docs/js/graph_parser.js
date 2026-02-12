@@ -34,8 +34,10 @@
                     return this.data;
                 })
                 .catch(err => {
-                    console.error("GreenhouseGraphParser: Error loading CSV", err);
-                    throw err;
+                    console.log("GreenhouseGraphParser: Graph data unavailable, feature disabled.");
+                    // Don't re-throw - allow the app to continue without graph feature
+                    this.isLoaded = false;
+                    return null;
                 });
         },
 
