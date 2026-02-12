@@ -25,6 +25,9 @@
                     { value: 'nitric_oxide', label: 'Nitric Oxide Pathway' }
                 ], type: 'select'
             },
+            {
+                id: 'showGraphView', label: 'Show Topic Graph', defaultValue: 0, type: 'hidden'
+            },
 
             // I. ENVIRONMENTAL FACTORS (Stressors)
             { id: 'env_noise', label: 'Noise Pollution', category: 'env', type: 'checkbox', defaultValue: 1 },

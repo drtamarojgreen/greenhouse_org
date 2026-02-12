@@ -159,8 +159,16 @@
                 window.GreenhouseModelsUX.addEnvironmentListeners();
             }
 
+
+
             // Re-bind language toggle in general controls (handled in populateControlsPanel)
             //this.renderTOC(targetElement);
+        },
+
+        toggleGraphView() {
+            // Feature moved to Stress Pathways Tab. 
+            // Implementation removed to prevent Models page clutter.
+            console.log("Graph View is now integrated into the Stress Pathways tab.");
         },
 
         _drawLoadingState(ctx, canvas) {

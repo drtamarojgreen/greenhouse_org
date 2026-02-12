@@ -23,6 +23,39 @@
 
             camera.rotationY += 0.001;
 
+            // --- GRAPH VISUALIZATION INTEGRATION ---
+            // If the Graph Viewer is available and active, render it INSTEAD or ON TOP
+            // We'll add a toggle in the UI section below.
+            const GraphViewer = window.GreenhouseModelGraphViewer;
+
+            // Auto-load data if present but not initialized
+            if (GraphViewer && (!GraphViewer.graphData) && window.GreenhouseGraphParser) {
+                if (typeof GraphViewer.initDataOnly === 'function') GraphViewer.initDataOnly();
+                // Ensure data is fetching if not already started
+                if (!window.GreenhouseGraphParser.isLoaded) {
+                    if (!window.GreenhouseGraphParser._setupStarted) {
+                        window.GreenhouseGraphParser._setupStarted = true;
+                        window.GreenhouseGraphParser.init('endpoints/graph.csv', 50);
+                    }
+                }
+            }
+
+            // Check State for Graph Mode (Default to false)
+            if (f.showGraphView && GraphViewer && GraphViewer.graphData) {
+                // Update Physics (with current canvas size)
+                GraphViewer.updatePhysics();
+
+                // Render Graph (Pass 3D Camera/Projection)
+                // render(ctx, width, height, camera, projection)
+                GraphViewer.render(ctx, projection.width, projection.height, camera, projection);
+
+                // Draw a "Exit Graph" button or similar overlay
+                this.drawGraphControls(ctx, projection);
+
+                return; // Skip standard pathway rendering
+            }
+            // ----------------------------------------
+
             const nodes = sourceNodes.map(node => {
                 const p = Math3D.project3DTo2D(node.x, node.y, node.z, camera, projection);
                 let throb = 1.0;
@@ -90,6 +123,46 @@
                     ctx.fillText(displayLabel, n.x, n.y + 18 * n.scale);
                 }
             });
+
+            // Draw Toggle for Graph View
+            this.drawGraphControls(ctx, projection, false);
+        },
+
+        drawGraphControls(ctx, projection, isGraphActive = true) {
+            // Draw a button in top-right or similar
+            const x = projection.width - 140;
+            const y = 80; // Below main nav
+            const w = 120;
+            const h = 30;
+
+            // Check Interaction
+            // We need access to mouse position. Usually passed via state or gathered.
+            // stress_app.js has `this.interaction`. ui3d has access to app.
+            // We can check `window.GreenhouseStressApp.interaction` if global, or pass it.
+            // Simplest: Just draw it, and handle click in a global handler or app handler.
+            // For now, let's just draw.
+
+            ctx.fillStyle = 'rgba(50, 50, 70, 0.8)';
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#4ca1af';
+            ctx.strokeRect(x, y, w, h);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Quicksand';
+            ctx.textAlign = 'center';
+            ctx.fillText(isGraphActive ? "EXIT GRAPH VIEW" : "TOPIC GRAPH", x + w / 2, y + 19);
+
+            // Store button bounds for click handling (GLOBAL HACK for quick integration)
+            if (!window.GreenhouseStressPathwayButtons) window.GreenhouseStressPathwayButtons = [];
+            // Clear previous button definition for this frame to avoid dupes? 
+            // Actually just overwrite.
+            window.GreenhouseStressPathwayButtons = [{
+                id: 'toggle_graph',
+                x: x, y: y, w: w, h: h,
+                action: (state) => {
+                    state.factors.showGraphView = !state.factors.showGraphView;
+                }
+            }];
         },
 
         triggerBurst(n1, n2, type) {

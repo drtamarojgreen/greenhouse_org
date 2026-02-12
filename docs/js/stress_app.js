@@ -180,6 +180,27 @@
                 }
             }
 
+            // 5. Check 3D Interactions (Systemic View)
+            if (window.GreenhouseStressUI3D) {
+                const hit3D = window.GreenhouseStressUI3D.checkHover(mx, my, this.camera, this.projection);
+                if (hit3D && hit3D.type === 'category_node') {
+                    const catId = hit3D.id.replace('cat_', '');
+                    this.ui.categories.forEach(c => c.isOpen = (c.id === catId));
+                    return;
+                }
+            }
+
+            // 6. Check Pathway Overlay Buttons (Graph Toggle)
+            if (window.GreenhouseStressPathwayButtons) {
+                const buttons = window.GreenhouseStressPathwayButtons;
+                for (const b of buttons) {
+                    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                        if (typeof b.action === 'function') b.action(this.engine.state);
+                        return;
+                    }
+                }
+            }
+
             this.interaction.isDragging = true;
             this.interaction.lastX = e.clientX;
             this.interaction.lastY = e.clientY;
@@ -187,8 +208,6 @@
 
         hitTestCheckboxes(mx, my) {
             // Re-run simple layout logic to find hit
-            let startY = 140; // Below headers
-
             for (const cat of this.ui.categories) {
                 if (!cat.isOpen) continue; // Skip collapsed
 
@@ -244,6 +263,16 @@
                 for (const b of this.ui.buttons) {
                     if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
                         this.ui.hoveredElement = { ...b, type: 'button' }; break;
+                    }
+                }
+            }
+
+            // Check Pathway Overlay Buttons (Graph Toggle)
+            if (!this.ui.hoveredElement && window.GreenhouseStressPathwayButtons) {
+                const buttons = window.GreenhouseStressPathwayButtons;
+                for (const b of buttons) {
+                    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                        this.ui.hoveredElement = { ...b, type: 'button_overlay' }; break;
                     }
                 }
             }
@@ -436,12 +465,7 @@
             // Draw Category Headers & Expanded Content
             if (this.ui.categories) {
                 this.ui.categories.forEach(cat => {
-                    // Draw Header
-                    if (window.GreenhouseStressControls && window.GreenhouseStressControls.drawCategoryHeader) {
-                        window.GreenhouseStressControls.drawCategoryHeader(ctx, cat);
-                    }
-
-                    // Draw Checkboxes if open
+                    // Checkboxes if open (Panel first)
                     if (cat.isOpen) {
                         const catBoxes = this.ui.checkboxes.filter(c => c.category === cat.id);
                         catBoxes.forEach((c, i) => {

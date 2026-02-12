@@ -12,10 +12,10 @@
 
         // Category Definitions for Visuals
         categories: {
-            'env': { label: 'ENVIRONMENTAL LOAD', color: '#ff4d4d', orbit: 180, speed: 0.0005 },
-            'psych': { label: 'PSYCHOLOGICAL BUFFER', color: '#ffcc00', orbit: 260, speed: -0.0003 },
-            'philo': { label: 'PHILOSOPHICAL RESERVE', color: '#a18cd1', orbit: 340, speed: 0.0002 },
-            'research': { label: 'BIOLOGICAL DEFENSE', color: '#64d2ff', orbit: 420, speed: -0.0004 }
+            'env': { label: 'ENVIRONMENTAL LOAD', color: '#ff4d4d', orbit: 160, speed: 0.0005 },
+            'psych': { label: 'PSYCHOLOGICAL BUFFER', color: '#ffcc00', orbit: 220, speed: -0.0003 },
+            'philo': { label: 'PHILOSOPHICAL RESERVE', color: '#a18cd1', orbit: 280, speed: 0.0002 },
+            'research': { label: 'BIOLOGICAL DEFENSE', color: '#64d2ff', orbit: 340, speed: -0.0004 }
         },
 
         render(ctx, state, camera, projection, ui3d) {

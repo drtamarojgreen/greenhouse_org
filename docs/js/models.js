@@ -88,6 +88,10 @@
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ui_3d.js', baseUrl);
 
+            // Load Graph modules
+            await GreenhouseUtils.loadScript('models_graph.js', baseUrl);
+            await GreenhouseUtils.loadScript('model_graph_viewer.js', baseUrl);
+
             await GreenhouseUtils.loadScript('models_ui.js', baseUrl);
             await GreenhouseUtils.loadScript('models_ux.js', baseUrl);
 

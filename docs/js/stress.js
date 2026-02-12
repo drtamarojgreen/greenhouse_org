@@ -61,6 +61,11 @@
             await window.GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
             await window.GreenhouseUtils.loadScript('stress_geometry.js', baseUrl);
             await window.GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
+
+            // Graph Visualization Modules
+            await window.GreenhouseUtils.loadScript('graph_parser.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('model_graph_viewer.js', baseUrl);
+
             await window.GreenhouseUtils.loadScript('stress_config.js', baseUrl);
             await window.GreenhouseUtils.loadScript('stress_ui_3d.js', baseUrl);
             await window.GreenhouseUtils.loadScript('stress_macro.js', baseUrl);
