@@ -502,16 +502,6 @@ window.GreenhouseUtils = (function () {
      * @param {string} [targetSelector] - Optional selector for placement. If not provided, appends to the bottom of the body.
      */
     async function renderModelsTOC(targetSelector = null) {
-        // Avoid rendering on local documentation/test HTML files as per user preference
-        const isLocalHtml = window.location.pathname.endsWith('.html') ||
-            window.location.hostname === 'localhost' ||
-            window.location.hostname === '127.0.0.1';
-
-        if (isLocalHtml) {
-            console.log('[GreenhouseUtils] TOC rendering skipped on local/docs HTML file.');
-            return;
-        }
-
         console.log('[GreenhouseUtils] Preparing bottom navigation TOC...');
 
         const githubUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
