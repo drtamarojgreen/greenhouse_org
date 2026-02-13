@@ -1,0 +1,14 @@
+discovery:
+  max_concurrency: 5
+  top_nodes_limit: 50
+  cache_db: "scripts/research/mesh/v6/cache.db"
+  default_csv_path: "docs/endpoints/graph.csv"
+  default_output_path: "discovery_graph_output.json"
+
+apis:
+  pubmed:
+    base_url: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+  clinical_trials:
+    base_url: "https://clinicaltrials.gov/api/v2/studies"
+  openfda:
+    base_url: "https://api.fda.gov/drug/label.json"
