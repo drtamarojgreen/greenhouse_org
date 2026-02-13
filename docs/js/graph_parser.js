@@ -17,7 +17,7 @@
          * @param {string} url - URL to csv
          * @param {number} limit - Number of top nodes to keep
          */
-        init: function (url, limit = 50, baseUrl = '') {
+        init: function (url, limit = 50, baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/') {
             const base = baseUrl ? (baseUrl.endsWith('/') ? baseUrl : baseUrl + '/') : '';
             const path = url || 'endpoints/graph.csv';
             const dataUrl = (path.startsWith('http') || path.startsWith('/')) ? path : base + path;

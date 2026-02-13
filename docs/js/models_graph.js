@@ -17,7 +17,7 @@
          * @param {string} url - Optional URL to csv, defaults to 'endpoints/graph.csv'
          * @returns {Promise} Resolves with the graph data
          */
-        init: function (url = '', baseUrl = '') {
+        init: function (url = '', baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/') {
             const base = baseUrl ? (baseUrl.endsWith('/') ? baseUrl : baseUrl + '/') : '';
             const path = url || 'endpoints/graph.csv';
             const dataUrl = (path.startsWith('http') || path.startsWith('/')) ? path : base + path;

@@ -346,13 +346,13 @@
         },
 
         PathwayService: {
-            async loadMetadata(baseUrl = '') {
+            async loadMetadata(baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/') {
                 try {
                     const response = await fetch(baseUrl + 'endpoints/models_pathways.json');
                     return await response.json();
                 } catch (e) { return { pathways: [] }; }
             },
-            async loadPathway(url, baseUrl = '') {
+            async loadPathway(url, baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/') {
                 try {
                     const response = await fetch(baseUrl + url);
                     if (!response.ok) return null;
