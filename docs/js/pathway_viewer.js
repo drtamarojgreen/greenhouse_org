@@ -420,7 +420,7 @@
 
             // Show loading status
             const geneSelector = document.getElementById('pathway-selector');
-            if (geneSelector) geneSelector.innerHTML = '<option>Connecting to KEGG...</option>';
+            if (geneSelector) geneSelector.innerHTML = '<option>Loading pathway data...</option>';
 
             let success = false;
 
@@ -437,12 +437,6 @@
             // Priority 2: Remote fetch
             if (!success && pathway.source) {
                 success = await this.loadExternalPathway(pathway.source);
-            }
-
-            // Priority 2: KEGG Live API
-            if (!success && pathway.kegg_id) {
-                const liveUrl = `https://rest.kegg.jp/get/${pathway.kegg_id}/kgml`;
-                success = await this.loadExternalPathway(liveUrl, true);
             }
 
             // Priority 3: Internal Generator
@@ -723,7 +717,7 @@
                 ctx.fillStyle = '#555';
                 ctx.textAlign = 'center';
                 ctx.font = '14px Arial';
-                ctx.fillText("Connecting to KEGG / Loading data...", w / 2, h / 2);
+                ctx.fillText("Loading pathway data...", w / 2, h / 2);
             }
 
             // Draw Interaction PiP if a node is selected
