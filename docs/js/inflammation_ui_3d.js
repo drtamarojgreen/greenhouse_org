@@ -19,6 +19,7 @@
         currentPathwayNodes: [],
         currentPathwayEdges: [],
         currentPathwayId: null,
+        clippingVolume: 1.0,
 
         init(app) {
             this.app = app;
@@ -186,6 +187,7 @@
         },
 
         render(ctx, state, camera, projection) {
+            const performanceMode = state.factors.performanceMode === 1;
             const viewModeVal = state.factors.viewMode || 0;
             const viewMode = ['macro', 'micro', 'molecular', 'pathway'][Math.round(viewModeVal)] || 'macro';
             const activePathId = state.factors.activePathway || 'tryptophan';
@@ -200,6 +202,7 @@
                 }
             } else if (viewMode === 'macro' && window.GreenhouseInflammationMacro) {
                 window.GreenhouseInflammationMacro.render(ctx, state, camera, projection, this);
+                this.drawRegionConfidence(ctx, state, camera, projection);
             } else if (viewMode === 'micro' && window.GreenhouseInflammationMicro) {
                 window.GreenhouseInflammationMicro.render(ctx, state, camera, projection, this);
             } else if (viewMode === 'molecular' && window.GreenhouseInflammationMolecular) {
@@ -243,6 +246,34 @@
                 }
             }
             return null;
+        },
+
+        drawRegionConfidence(ctx, state, camera, projection) {
+            const Math3D = window.GreenhouseModels3DMath;
+            if (!this.brainShell || !this.brainShell.regions) return;
+
+            ctx.save();
+            for (const key in this.brainShell.regions) {
+                const region = this.brainShell.regions[key];
+                if (region.centroid && key !== 'cortex') {
+                    const p = Math3D.project3DTo2D(region.centroid.x, -region.centroid.y, region.centroid.z, camera, projection);
+                    if (p.scale > 0 && p.depth < 0.6) {
+                        const confidence = (state.metrics.regionConfidence || 0.85) * 100;
+                        ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
+                        ctx.font = '8px monospace';
+                        ctx.fillText(`CONF: ${confidence.toFixed(0)}%`, p.x - 20, p.y + 15);
+
+                        // Hover Halo (Enhancement #11)
+                        if (this.app.ui.hoveredElement && this.app.ui.hoveredElement.label === region.name) {
+                            ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, 40 * p.scale * (1 + Math.sin(Date.now() * 0.005) * 0.2), 0, Math.PI * 2);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+            ctx.restore();
         },
 
         roundRect(ctx, x, y, width, height, radius, fill, stroke) {

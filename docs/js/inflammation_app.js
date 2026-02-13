@@ -22,7 +22,12 @@
         },
         ui: {
             hoveredElement: null,
-            checkboxes: [], buttons: [], metrics: []
+            checkboxes: [], buttons: [], metrics: [],
+            isIsolated: false,
+            lockedRegion: null,
+            showLeftHemisphere: true,
+            showRightHemisphere: true,
+            showDeepStructures: true
         },
         baseUrl: '',
 
@@ -82,6 +87,7 @@
             this.canvas.onmousemove = (e) => this.handleMouseMove(e);
             this.canvas.onmouseup = () => this.handleMouseUp();
             this.canvas.onwheel = (e) => this.handleWheel(e);
+            window.onkeydown = (e) => this.handleKeyDown(e);
 
             this.isRunning = true;
             this.startLoop();
@@ -109,7 +115,10 @@
             this.ui.buttons = [
                 { id: 'mode_macro', label: 'MACRO', x: 40, y: 70, w: 60, h: 22, val: 0 },
                 { id: 'mode_micro', label: 'MICRO', x: 105, y: 70, w: 65, h: 22, val: 1 },
-                { id: 'mode_molecular', label: 'MOLECULAR', x: 175, y: 70, w: 85, h: 22, val: 2 }
+                { id: 'mode_molecular', label: 'MOLECULAR', x: 175, y: 70, w: 85, h: 22, val: 2 },
+                { id: 'toggle_left', label: 'L-HEMI', x: 270, y: 70, w: 60, h: 22, type: 'toggle' },
+                { id: 'toggle_right', label: 'R-HEMI', x: 335, y: 70, w: 60, h: 22, type: 'toggle' },
+                { id: 'toggle_deep', label: 'DEEP', x: 400, y: 70, w: 50, h: 22, type: 'toggle' }
             ];
         },
 
@@ -136,7 +145,14 @@
 
             for (const b of this.ui.buttons) {
                 if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
-                    this.engine.state.factors.viewMode = b.val; return;
+                    if (b.type === 'toggle') {
+                        if (b.id === 'toggle_left') this.ui.showLeftHemisphere = !this.ui.showLeftHemisphere;
+                        if (b.id === 'toggle_right') this.ui.showRightHemisphere = !this.ui.showRightHemisphere;
+                        if (b.id === 'toggle_deep') this.ui.showDeepStructures = !this.ui.showDeepStructures;
+                    } else {
+                        this.engine.state.factors.viewMode = b.val;
+                    }
+                    return;
                 }
             }
 
@@ -197,6 +213,9 @@
 
             if (!this.ui.hoveredElement && window.GreenhouseInflammationUI3D) {
                 this.ui.hoveredElement = window.GreenhouseInflammationUI3D.checkHover(mx, my, this.camera, this.projection);
+                if (this.ui.hoveredElement && this.ui.hoveredElement.id === 'brain_region') {
+                    this.ui.currentRegion = this.ui.hoveredElement.label;
+                }
             }
 
             if (this.interaction.isDragging) {
@@ -209,6 +228,31 @@
 
         handleMouseUp() { this.interaction.isDragging = false; },
         handleWheel(e) { e.preventDefault(); this.camera.z = Math.min(-100, Math.max(-2000, this.camera.z + e.deltaY * 0.5)); },
+
+        handleKeyDown(e) {
+            if (e.key === '1') this.engine.state.factors.viewMode = 0;
+            if (e.key === '2') this.engine.state.factors.viewMode = 1;
+            if (e.key === '3') this.engine.state.factors.viewMode = 2;
+            if (e.key === 'h') this.ui.showLeftHemisphere = !this.ui.showLeftHemisphere;
+            if (e.key === 'r') this.exportData();
+        },
+
+        applyPreset(id) {
+            const config = window.GreenhouseInflammationConfig;
+            const preset = config.diseasePresets[id];
+            if (preset) {
+                config.factors.forEach(f => {
+                    if (f.type === 'checkbox') this.engine.state.factors[f.id] = 0;
+                });
+                preset.factors.forEach(fid => this.engine.state.factors[fid] = 1);
+            }
+        },
+
+        exportData() {
+            if (window.GreenhouseInflammationAnalysis) {
+                window.GreenhouseInflammationAnalysis.exportToJSON(this.engine.state);
+            }
+        },
 
         updateModel(state, dt) {
             const f = state.factors;
@@ -233,8 +277,13 @@
 
             const stressSync = window.GreenhouseBioStatus ? window.GreenhouseBioStatus.stress.load : 0.2;
 
-            const inflammatoryDrive = (scoreEnv * 0.1) + (stressSync * 0.3) + (f.leakyGut ? 0.15 : 0);
-            const antiInflammatoryReserve = (scorePsych * 0.08) + (scorePhilo * 0.05) + (f.exerciseRegular ? 0.15 : 0);
+            const ageImpact = f.agePreset ? 0.15 : 0;
+            const sexImpact = f.sexSpecific ? 0.05 : 0;
+            const diabetesImpact = f.comorbidityDiabetes ? 0.2 : 0;
+            const totalClinicalBurden = ageImpact + sexImpact + diabetesImpact;
+
+            const inflammatoryDrive = (scoreEnv * 0.1) + (stressSync * 0.3) + (f.leakyGut ? 0.15 : 0) + totalClinicalBurden;
+            const antiInflammatoryReserve = (scorePsych * 0.08) + (scorePhilo * 0.05) + (f.exerciseRegular ? 0.15 : 0) + (f.medicationEffect ? 0.25 : 0);
 
             m.tnfAlpha = Util.SimulationEngine.smooth(m.tnfAlpha, Util.SimulationEngine.clamp(inflammatoryDrive - (antiInflammatoryReserve * 0.4), 0.02, 1.0), 0.05);
             m.il10 = Util.SimulationEngine.smooth(m.il10, Util.SimulationEngine.clamp(antiInflammatoryReserve + (m.tnfAlpha * 0.1), 0.05, 1.0), 0.02);
@@ -331,7 +380,26 @@
                 });
             }
 
-            this.ui.buttons.forEach(b => window.GreenhouseInflammationControls && window.GreenhouseInflammationControls.drawButton(ctx, this, b, state));
+            this.ui.buttons.forEach(b => {
+                if (window.GreenhouseInflammationControls) {
+                    const btnState = JSON.parse(JSON.stringify(state));
+                    if (b.id === 'toggle_left' && this.ui.showLeftHemisphere) btnState.factors.viewMode = b.val;
+                    if (b.id === 'toggle_right' && this.ui.showRightHemisphere) btnState.factors.viewMode = b.val;
+                    if (b.id === 'toggle_deep' && this.ui.showDeepStructures) btnState.factors.viewMode = b.val;
+                    window.GreenhouseInflammationControls.drawButton(ctx, this, b, btnState);
+                }
+            });
+
+            if (window.GreenhouseInflammationControls) {
+                const config = window.GreenhouseInflammationConfig;
+                window.GreenhouseInflammationControls.drawAtlasLegend(ctx, this, config);
+                window.GreenhouseInflammationControls.drawMiniMap(ctx, this, w, h);
+                window.GreenhouseInflammationControls.drawBreadcrumbs(ctx, this, this.ui.currentRegion);
+            }
+
+            if (window.GreenhouseInflammationAnalysis) {
+                window.GreenhouseInflammationAnalysis.render(ctx, this, state);
+            }
 
             if (this.ui.hoveredElement && window.GreenhouseInflammationTooltips && this.ui.hoveredElement.type !== 'header') {
                 window.GreenhouseInflammationTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
