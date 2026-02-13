@@ -110,7 +110,15 @@
     </div>
 
     <!-- The Target Selector Container -->
-    <div id="app-container"></div>
+    <!-- Tab Navigation -->
+    <div style="position: absolute; top: 50px; left: 10px; z-index: 1001; display: flex; gap: 5px;">
+        <button id="tab-pathway" onclick="switchTab('pathway')" style="background: #4ca1af; color: white; border: none; padding: 6px 12px; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 12px; font-weight: bold;">Pathway Viewer</button>
+        <button id="tab-discovery" onclick="switchTab('discovery')" style="background: #333; color: #aaa; border: none; padding: 6px 12px; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 12px; font-weight: bold;">Discovery Graph (v8)</button>
+    </div>
+
+    <!-- The Target Selector Container -->
+    <div id="app-container" style="display: block;"></div>
+    <div id="discovery-container" style="display: none; width: 100vw; height: 100vh;"></div>
 
     <!-- Rigorous Test Overlay -->
     <div id="test-controls">
@@ -176,8 +184,44 @@
     <script src="js/models_lang.js"></script>
     <script src="js/models_util.js"></script>
     <script src="js/pathway.js"></script>
+    <script src="../apps/frontend/v8_graph_renderer/V8GraphRenderer.js"></script>
 
     <script>
+        function switchTab(tab) {
+            const pathwayBtn = document.getElementById('tab-pathway');
+            const discoveryBtn = document.getElementById('tab-discovery');
+            const pathwayCont = document.getElementById('app-container');
+            const discoveryCont = document.getElementById('discovery-container');
+
+            if (tab === 'pathway') {
+                pathwayBtn.style.background = '#4ca1af';
+                pathwayBtn.style.color = 'white';
+                discoveryBtn.style.background = '#333';
+                discoveryBtn.style.color = '#aaa';
+                pathwayCont.style.display = 'block';
+                discoveryCont.style.display = 'none';
+                log("Switched to Pathway Viewer");
+                if (window.V8GraphRenderer) window.V8GraphRenderer.stopSimulation();
+            } else {
+                discoveryBtn.style.background = '#4ca1af';
+                discoveryBtn.style.color = 'white';
+                pathwayBtn.style.background = '#333';
+                pathwayBtn.style.color = '#aaa';
+                pathwayCont.style.display = 'none';
+                discoveryCont.style.display = 'block';
+                log("Switched to Discovery Graph");
+
+                if (window.V8GraphRenderer) {
+                    if (!window.V8GraphRenderer.initialized) {
+                        window.V8GraphRenderer.init('#discovery-container', '../');
+                        window.V8GraphRenderer.initialized = true;
+                    } else {
+                        window.V8GraphRenderer.startSimulation();
+                    }
+                }
+            }
+        }
+
         const logEl = document.getElementById('test-log');
         const container = document.getElementById('app-container');
 

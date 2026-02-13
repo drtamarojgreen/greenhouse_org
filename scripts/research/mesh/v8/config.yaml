@@ -1,0 +1,14 @@
+# Configuration for v8 Discovery Pipeline
+pipeline:
+  disorder: "Alzheimer's Disease"
+  output_csv: "scripts/research/mesh/v8/graph.csv"
+  cache_db: "scripts/research/mesh/v8/cache.db"
+
+api_keys:
+  pubmed: null
+  disgenet: null
+  drugbank: null
+
+limits:
+  pubmed_retmax: 10
+  clinical_trials_pagesize: 10
