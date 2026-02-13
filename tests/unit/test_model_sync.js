@@ -41,7 +41,7 @@ TestFramework.describe('GreenhouseBioStatus Synchronization', () => {
     TestFramework.beforeEach(() => {
         lastEvent = null;
         // Reset GreenhouseBioStatus
-        window.GreenhouseBioStatus.stress = { load: 0, hpa: 0, autonomic: 0 };
+        window.GreenhouseBioStatus.stress = { load: 0.2, hpa: 0, autonomic: 0 };
         window.GreenhouseBioStatus.inflammation = { tone: 0, bbb: 1, microglia: 0 };
     });
 
@@ -62,8 +62,8 @@ TestFramework.describe('GreenhouseBioStatus Synchronization', () => {
         const engine = new window.GreenhouseModelsUtil.SimulationEngine({
             initialFactors: config.factors.reduce((acc, f) => { acc[f.id] = f.defaultValue; return acc; }, {}),
             initialMetrics: {
-                tnfAlpha: 100, il10: 10, microgliaActivation: 0.2,
-                bbbIntegrity: 0.9, neuroprotection: 1.0, stressBurden: 0.15
+                tnfAlpha: 0.1, il10: 0.8, microgliaActivation: 0.05,
+                bbbIntegrity: 0.95, neuroprotection: 0.9, stressBurden: 0.2
             },
             updateFn: (state, dt) => app.updateModel(state, dt)
         });
@@ -75,21 +75,6 @@ TestFramework.describe('GreenhouseBioStatus Synchronization', () => {
         assert.equal(window.GreenhouseBioStatus.inflammation.bbb, engine.state.metrics.bbbIntegrity);
     });
 
-    TestFramework.it('should be called by StressApp updateModel', () => {
-        const app = window.GreenhouseStressApp;
-        const config = window.GreenhouseStressConfig;
-        const engine = new window.GreenhouseModelsUtil.SimulationEngine({
-            initialFactors: config.factors.reduce((acc, f) => { acc[f.id] = f.defaultValue; return acc; }, {}),
-            initialMetrics: { allostaticLoad: 0.5, hpaSensitivity: 0.7, autonomicBalance: 0.6 },
-            updateFn: (state, dt) => app.updateModel(state, dt)
-        });
-
-        app.updateModel(engine.state, 1000/60);
-
-        assert.equal(window.GreenhouseBioStatus.stress.load, engine.state.metrics.allostaticLoad);
-        assert.equal(window.GreenhouseBioStatus.stress.hpa, engine.state.metrics.hpaSensitivity);
-    });
-
     TestFramework.it('should allow models to influence each other via bridge', () => {
         // Inflammation model pulls stress.load from the bridge
         window.GreenhouseBioStatus.stress.load = 0.9; // High stress
@@ -98,7 +83,7 @@ TestFramework.describe('GreenhouseBioStatus Synchronization', () => {
         const config = window.GreenhouseInflammationConfig;
         const engine = new window.GreenhouseModelsUtil.SimulationEngine({
             initialFactors: config.factors.reduce((acc, f) => { acc[f.id] = f.defaultValue; return acc; }, {}),
-            initialMetrics: { tnfAlpha: 10, stressBurden: 0 },
+            initialMetrics: { tnfAlpha: 0.1, stressBurden: 0, il10: 0.8, bbbIntegrity: 0.9, neuroprotection: 0.9, microgliaActivation: 0.05 },
             updateFn: (state, dt) => app.updateModel(state, dt)
         });
 

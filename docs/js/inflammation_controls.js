@@ -67,6 +67,34 @@
             ctx.textAlign = 'center';
             ctx.fillText(b.label, b.x + b.w / 2, b.y + b.h / 2 + 4);
             ctx.restore();
+        },
+
+        drawCategoryHeader(ctx, header) {
+            const isHovered = header.isHovered;
+            const isOpen = header.isOpen;
+
+            ctx.save();
+
+            // Background
+            ctx.fillStyle = isHovered ? 'rgba(76, 161, 175, 0.3)' : 'rgba(255, 255, 255, 0.05)';
+            ctx.strokeStyle = isHovered ? '#4ca1af' : 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+
+            ctx.fillRect(header.x, header.y, header.w, header.h);
+            ctx.strokeRect(header.x, header.y, header.w, header.h);
+
+            // Text
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px Quicksand, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(header.label, header.x + 10, header.y + 18);
+
+            // Indicator (+/-)
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 14px monospace';
+            ctx.fillText(isOpen ? '-' : '+', header.x + header.w - 10, header.y + 19);
+
+            ctx.restore();
         }
     };
 
