@@ -1,0 +1,38 @@
+{
+  "compartments": [
+    { "id": "gut", "label": "Gut Lumen", "anchorRegion": "gut", "renderBounds": { "x": 0, "y": -300, "z": 20 } },
+    { "id": "blood", "label": "Systemic Blood", "anchorRegion": "blood_stream", "renderBounds": { "x": -80, "y": -150, "z": 0 } },
+    { "id": "bbb", "label": "Blood-Brain Barrier", "anchorRegion": "brain_stem", "renderBounds": { "x": 0, "y": -200, "z": 0 } },
+    { "id": "brain_isf", "label": "Brain ISF", "anchorRegion": "thalamus", "renderBounds": { "x": 0, "y": 0, "z": 0 } },
+    { "id": "microglia", "label": "Microglia", "anchorRegion": "hippocampus", "renderBounds": { "x": -50, "y": 50, "z": -50 } },
+    { "id": "astrocyte", "label": "Astrocyte", "anchorRegion": "thalamus", "renderBounds": { "x": 50, "y": 50, "z": 50 } },
+    { "id": "synapse", "label": "Synapse", "anchorRegion": "pfc", "renderBounds": { "x": 0, "y": 150, "z": 150 } }
+  ],
+  "molecules": [
+    { "id": "TRP", "class": "metabolite", "color": "#64FFC8", "defaultRadius": 2, "label": "Tryptophan" },
+    { "id": "KYN", "class": "metabolite", "color": "#FFD264", "defaultRadius": 2, "label": "Kynurenine" },
+    { "id": "3HAA", "class": "metabolite", "color": "#FF6432", "defaultRadius": 2, "label": "3-HAA" },
+    { "id": "QUIN", "class": "metabolite", "color": "#FF3200", "defaultRadius": 3, "label": "Quinolinic Acid" },
+    { "id": "KYNA", "class": "metabolite", "color": "#32FF64", "defaultRadius": 2, "label": "Kynurenic Acid" },
+    { "id": "5HT", "class": "neurotransmitter", "color": "#64C8FF", "defaultRadius": 3, "label": "Serotonin" },
+    { "id": "DA", "class": "neurotransmitter", "color": "#C864FF", "defaultRadius": 3, "label": "Dopamine" },
+    { "id": "GLU", "class": "neurotransmitter", "color": "#FFFFFF", "defaultRadius": 2, "label": "Glutamate" },
+    { "id": "TNF", "class": "cytokine", "color": "#FF0000", "defaultRadius": 4, "label": "TNF-α" },
+    { "id": "IL10", "class": "cytokine", "color": "#00FF99", "defaultRadius": 4, "label": "IL-10" }
+  ],
+  "reactions": [
+    { "id": "gut_to_blood", "fromCompartment": "gut", "toCompartment": "blood", "substrate": "TRP", "product": "TRP", "catalyst": "Absorption", "type": "transport" },
+    { "id": "trp_bbb_crossing", "fromCompartment": "blood", "toCompartment": "brain_isf", "substrate": "TRP", "product": "TRP", "catalyst": "LAT1", "type": "transport" },
+    { "id": "trp_to_kyn", "fromCompartment": "brain_isf", "toCompartment": "brain_isf", "substrate": "TRP", "product": "KYN", "catalyst": "IDO/TDO", "type": "metabolism" },
+    { "id": "kyn_to_3haa", "fromCompartment": "brain_isf", "toCompartment": "microglia", "substrate": "KYN", "product": "3HAA", "catalyst": "KMO", "type": "metabolism" },
+    { "id": "3haa_to_quin", "fromCompartment": "microglia", "toCompartment": "brain_isf", "substrate": "3HAA", "product": "QUIN", "catalyst": "KYNU", "type": "metabolism" },
+    { "id": "kyn_to_kyna", "fromCompartment": "brain_isf", "toCompartment": "astrocyte", "substrate": "KYN", "product": "KYNA", "catalyst": "KAT", "type": "metabolism" },
+    { "id": "trp_to_5ht", "fromCompartment": "brain_isf", "toCompartment": "synapse", "substrate": "TRP", "product": "5HT", "catalyst": "TPH", "type": "metabolism" },
+    { "id": "quin_to_nmda", "fromCompartment": "brain_isf", "toCompartment": "synapse", "substrate": "QUIN", "product": "QUIN", "catalyst": "NMDA Binding", "type": "signaling" },
+    { "id": "tnf_to_brain", "fromCompartment": "blood", "toCompartment": "brain_isf", "substrate": "TNF", "product": "TNF", "catalyst": "BBB Leak", "type": "transport" }
+  ],
+  "labels": [
+    { "id": "lbl_lat1", "text": "LAT1 Transporter", "targetType": "reaction", "targetId": "trp_bbb_crossing" },
+    { "id": "lbl_ido", "text": "IDO (Induced by TNF-α)", "targetType": "reaction", "targetId": "trp_to_kyn" }
+  ]
+}

@@ -41,6 +41,9 @@
 
             // --- RESEARCH / PHARMA ---
             { id: 'leakyGut', label: 'Intestinal Permeability', type: 'checkbox', defaultValue: 0, impact: 0.15, category: 'research' },
+            { id: 'showMoleculeLabels', label: 'Show Molecule Labels', type: 'checkbox', defaultValue: 1, category: 'research' },
+            { id: 'showMechanismLabels', label: 'Show Mechanism Labels', type: 'checkbox', defaultValue: 0, category: 'research' },
+            { id: 'showCompartmentLabels', label: 'Show Compartment Labels', type: 'checkbox', defaultValue: 0, category: 'research' },
             { id: 'antioxidants', label: 'N-Acetylcysteine (NAC)', type: 'checkbox', defaultValue: 0, impact: -0.15, category: 'research' },
             { id: 'nsaidsApp', label: 'COX Inhibition (NSAIDs)', type: 'checkbox', defaultValue: 0, impact: -0.25, category: 'research' },
             { id: 'steroidsApp', label: 'Glucocorticoids', type: 'checkbox', defaultValue: 0, impact: -0.5, category: 'research' },
@@ -64,7 +67,10 @@
             'microglia': { region: 'hippocampus CA1', color: '#ff4444' },
             'astrocyte': { region: 'thalamus', color: '#ffcc00' },
             'tnfAlpha': { region: 'basal ganglia', color: '#ff5533' },
-            'il10': { region: 'prefrontal cortex', color: '#00ff99' }
+            'il10': { region: 'prefrontal cortex', color: '#00ff99' },
+            'trp': { region: 'gut/blood', color: '#64FFC8' },
+            'kyn': { region: 'brain_isf', color: '#FFD264' },
+            'quin': { region: 'neurotoxic', color: '#FF3200' }
         },
         diseasePresets: {
             'AD': { factors: ['chronicStress', 'poorSleep'], regions: ['hippocampus', 'pfc'] },

@@ -29,12 +29,46 @@
             for (const scenario of this.scenarios) {
                 console.log(`Executing Scenario: ${scenario.name}`);
                 this.applyScenario(app, scenario);
-                await new Promise(r => setTimeout(r, 2000)); // Wait for stabilization
+                await new Promise(r => setTimeout(r, 5000)); // Wait for stabilization
                 this.verifyMetrics(app, scenario);
             }
 
             this.verifyEnhancementCoverage(app);
+            this.verifyGraphIntegrity(app);
             console.log("--- TEST HARNESS COMPLETE ---");
+        },
+
+        verifyGraphIntegrity(app) {
+            console.log("Verifying Pathway Graph Integrity...");
+            const ui3d = window.GreenhouseInflammationUI3D;
+            const graph = ui3d ? ui3d.pathwayCache['tryptophan'] : null;
+            if (!graph) {
+                console.warn("[FAIL] Pathway graph not loaded.");
+                return;
+            }
+
+            let errors = 0;
+            const compIds = graph.compartments.map(c => c.id);
+            graph.reactions.forEach(r => {
+                if (!compIds.includes(r.fromCompartment)) {
+                    console.error(`[FAIL] Reaction ${r.id} has invalid fromCompartment: ${r.fromCompartment}`);
+                    errors++;
+                }
+                if (!compIds.includes(r.toCompartment)) {
+                    console.error(`[FAIL] Reaction ${r.id} has invalid toCompartment: ${r.toCompartment}`);
+                    errors++;
+                }
+            });
+
+            const molIds = graph.molecules.map(m => m.id);
+            graph.reactions.forEach(r => {
+                if (!molIds.includes(r.substrate)) {
+                    console.error(`[FAIL] Reaction ${r.id} has invalid substrate: ${r.substrate}`);
+                    errors++;
+                }
+            });
+
+            console.log(errors === 0 ? "[PASS] Graph Integrity Verified." : `[FAIL] Graph Integrity has ${errors} errors.`);
         },
 
         applyScenario(app, scenario) {

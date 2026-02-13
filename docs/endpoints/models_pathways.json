@@ -6,7 +6,7 @@
             "name": "Tryptophan-Kynurenine",
             "kegg_id": "hsa00380",
             "description": "Metabolic pathway linking the gut-brain axis and immune response.",
-            "source": null,
+            "source": "endpoints/inflammation_pathway_graph.json",
             "regions": [
                 "gut",
                 "blood_stream",

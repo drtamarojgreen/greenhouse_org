@@ -45,9 +45,8 @@
             this.drawLobeBoundaries(ctx, ui3d, camera, projection);
             this.drawInflammationOverlays(ctx, state, camera, projection, ui3d);
 
-            // 3. KYNURENINE PATHWAY (Tryptophan -> 3HAA / QUIN)
-            // Visualizing the metabolic shift under inflammation
-            this.drawKynureninePathway(ctx, state, camera, projection, ui3d);
+            // 3. COMPARTMENT FLOW NETWORK (Data-Driven Anatomical Routes)
+            this.drawCompartmentFlowNetwork(ctx, state, camera, projection, ui3d);
 
             // 4. ORBITAL TRIGGERS (Infiltration Factors)
             this.drawInflammatoryFactors(ctx, state, camera, projection, ui3d);
@@ -56,51 +55,145 @@
             this.drawHUDLabels(ctx, ui3d, camera, projection);
         },
 
-        drawKynureninePathway(ctx, state, camera, projection, ui3d) {
+        drawCompartmentFlowNetwork(ctx, state, camera, projection, ui3d) {
             const Math3D = window.GreenhouseModels3DMath;
-            const tone = state.metrics.inflammatoryTone || 0;
-            const brainStem = { x: 0, y: -250, z: 0 }; // Baseline entry
-            const thalamus = ui3d.brainShell.regions.thalamus.centroid || { x: 0, y: 0, z: 0 };
+            const graph = ui3d.pathwayCache['tryptophan'];
+            if (!graph || !graph.compartments || !graph.reactions) return;
+
+            const tone = state.metrics.tnfAlpha || 0;
+            const showLabels = state.factors.showMoleculeLabels === 1;
+            const showMechs = state.factors.showMechanismLabels === 1;
+            const showComps = state.factors.showCompartmentLabels === 1;
 
             // Emission logic
-            if (this.particles.length < 100) {
-                const isKyn = Math.random() < tone; // High inflammation = more Kynurenine/3HAA
-                this.particles.push({
-                    x: brainStem.x, y: -brainStem.y, z: brainStem.z,
-                    vx: (Math.random() - 0.5) * 1.5,
-                    vy: 2 + Math.random() * 2,
-                    vz: (Math.random() - 0.5) * 1.5,
-                    life: 1.0,
-                    type: isKyn ? '3HAA' : 'TRYP'
-                });
+            if (this.particles.length < 150) {
+                // TRP entry from Gut
+                if (Math.random() < 0.05) {
+                    const reaction = graph.reactions.find(r => r.id === 'gut_to_blood');
+                    const mol = graph.molecules.find(m => m.id === reaction.substrate);
+                    this.particles.push({
+                        reactionId: reaction.id,
+                        molId: mol.id,
+                        progress: 0,
+                        speed: 0.005 + Math.random() * 0.005,
+                        color: mol.color,
+                        radius: mol.defaultRadius,
+                        label: mol.label
+                    });
+                }
+
+                // Inflammatory signaling
+                if (tone > 0.4 && Math.random() < tone * 0.03) {
+                    const reaction = graph.reactions.find(r => r.id === 'tnf_to_brain');
+                    const mol = graph.molecules.find(m => m.id === reaction.substrate);
+                    this.particles.push({
+                        reactionId: reaction.id,
+                        molId: mol.id,
+                        progress: 0,
+                        speed: 0.008 + Math.random() * 0.004,
+                        color: mol.color,
+                        radius: mol.defaultRadius,
+                        label: mol.label
+                    });
+                }
             }
 
             ctx.save();
             this.particles.forEach((p, idx) => {
-                p.x += p.vx; p.y += p.vy; p.z += p.vz;
-                p.life -= 0.006;
+                const reaction = graph.reactions.find(r => r.id === p.reactionId);
+                const fromComp = graph.compartments.find(c => c.id === reaction.fromCompartment);
+                const toComp = graph.compartments.find(c => c.id === reaction.toCompartment);
 
-                const proj = Math3D.project3DTo2D(p.x, p.y, p.z, camera, projection);
-                if (proj.scale > 0 && p.life > 0) {
-                    // 3HAA (Kynurenine pathway) is toxic/red; Tryptophan is neutral/teal
-                    const color = p.type === '3HAA' ? `rgba(255, 100, 50, ${p.life * 0.8})` : `rgba(100, 255, 200, ${p.life * 0.4})`;
-                    ctx.fillStyle = color;
-                    ctx.shadowBlur = p.type === '3HAA' ? 5 : 0;
+                p.progress += p.speed;
+
+                // Interpolate 3D position
+                const x = fromComp.renderBounds.x + (toComp.renderBounds.x - fromComp.renderBounds.x) * p.progress;
+                const y = fromComp.renderBounds.y + (toComp.renderBounds.y - fromComp.renderBounds.y) * p.progress;
+                const z = fromComp.renderBounds.z + (toComp.renderBounds.z - fromComp.renderBounds.z) * p.progress;
+
+                const proj = Math3D.project3DTo2D(x, -y, z, camera, projection);
+                if (proj.scale > 0 && p.progress <= 1.0) {
+                    ctx.fillStyle = p.color;
+                    ctx.shadowBlur = p.molId === 'QUIN' ? 8 : 0;
                     ctx.shadowColor = 'red';
-
                     ctx.beginPath();
-                    ctx.arc(proj.x, proj.y, 2 * proj.scale, 0, Math.PI * 2);
+                    ctx.arc(proj.x, proj.y, p.radius * proj.scale, 0, Math.PI * 2);
                     ctx.fill();
+                    ctx.shadowBlur = 0;
 
-                    if (p.life < 0.1 && p.type === '3HAA') {
-                        // "Neurotoxic" burst at end of life
-                        ctx.strokeStyle = `rgba(255, 50, 0, ${p.life * 2})`;
-                        ctx.beginPath(); ctx.arc(proj.x, proj.y, 8 * proj.scale, 0, Math.PI * 2); ctx.stroke();
+                    if (showLabels && p.progress > 0.4 && p.progress < 0.6) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.font = '8px monospace';
+                        ctx.fillText(p.label, proj.x + 8, proj.y);
                     }
-                } else if (p.life <= 0) {
-                    this.particles.splice(idx, 1);
+
+                    if (p.molId === 'QUIN' && p.progress > 0.9) {
+                        // Excitotoxic visualization
+                        ctx.strokeStyle = `rgba(255, 50, 0, ${(1.0 - p.progress) * 10})`;
+                        ctx.beginPath(); ctx.arc(proj.x, proj.y, 12 * proj.scale, 0, Math.PI * 2); ctx.stroke();
+                    }
+                }
+
+                if (p.progress >= 1.0) {
+                    // Decide next step in the chain
+                    const nextReactions = graph.reactions.filter(r => r.fromCompartment === reaction.toCompartment && r.substrate === p.molId);
+
+                    // Biological Logic: IDO induction by tone
+                    const idoRoll = Math.random() < (0.2 + tone * 0.6);
+                    let selected = null;
+
+                    if (p.molId === 'TRP' && reaction.toCompartment === 'brain_isf') {
+                        selected = graph.reactions.find(r => r.id === (idoRoll ? 'trp_to_kyn' : 'trp_to_5ht'));
+                    } else if (nextReactions.length > 0) {
+                        selected = nextReactions[Math.floor(Math.random() * nextReactions.length)];
+                    }
+
+                    if (selected) {
+                        const nextMol = graph.molecules.find(m => m.id === selected.product);
+                        p.reactionId = selected.id;
+                        p.molId = nextMol.id;
+                        p.progress = 0;
+                        p.color = nextMol.color;
+                        p.radius = nextMol.defaultRadius;
+                        p.label = nextMol.label;
+                    } else {
+                        this.particles.splice(idx, 1);
+                    }
                 }
             });
+
+            // Compartment Labels
+            if (showComps) {
+                graph.compartments.forEach(c => {
+                    const p = Math3D.project3DTo2D(c.renderBounds.x, -c.renderBounds.y, c.renderBounds.z, camera, projection);
+                    if (p.scale > 0) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                        ctx.font = 'bold 9px Quicksand';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(c.label.toUpperCase(), p.x, p.y + 25 * p.scale);
+                    }
+                });
+            }
+
+            // Mechanism Labels
+            if (showMechs) {
+                graph.labels.forEach(lbl => {
+                    if (lbl.targetType === 'reaction') {
+                        const r = graph.reactions.find(react => react.id === lbl.targetId);
+                        const f = graph.compartments.find(c => c.id === r.fromCompartment);
+                        const t = graph.compartments.find(c => c.id === r.toCompartment);
+                        const mx = (f.renderBounds.x + t.renderBounds.x) / 2;
+                        const my = (f.renderBounds.y + t.renderBounds.y) / 2;
+                        const mz = (f.renderBounds.z + t.renderBounds.z) / 2;
+                        const p = Math3D.project3DTo2D(mx, -my, mz, camera, projection);
+                        if (p.scale > 0) {
+                            ctx.fillStyle = '#4ca1af';
+                            ctx.font = 'italic 8px monospace';
+                            ctx.fillText(lbl.text, p.x + 10, p.y);
+                        }
+                    }
+                });
+            }
             ctx.restore();
         },
 

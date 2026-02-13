@@ -102,8 +102,8 @@
             const y = 100;
             ctx.save();
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            if (app.roundRect) app.roundRect(ctx, x, y, 200, 100, 8, true, true);
-            else ctx.fillRect(x, y, 200, 100);
+            if (app.roundRect) app.roundRect(ctx, x, y, 200, 180, 8, true, true);
+            else ctx.fillRect(x, y, 200, 180);
 
             ctx.fillStyle = '#4ca1af';
             ctx.font = 'bold 11px Quicksand, sans-serif';
