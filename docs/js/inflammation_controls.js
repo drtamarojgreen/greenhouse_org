@@ -95,6 +95,74 @@
             ctx.fillText(isOpen ? '-' : '+', header.x + header.w - 10, header.y + 19);
 
             ctx.restore();
+        },
+
+        drawAtlasLegend(ctx, app, config) {
+            const x = 40;
+            const y = 100;
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            if (app.roundRect) app.roundRect(ctx, x, y, 200, 100, 8, true, true);
+            else ctx.fillRect(x, y, 200, 100);
+
+            ctx.fillStyle = '#4ca1af';
+            ctx.font = 'bold 11px Quicksand, sans-serif';
+            ctx.fillText('ANATOMICAL ATLAS LEGEND', x + 15, y + 25);
+
+            let i = 0;
+            for (const [key, val] of Object.entries(config.atlasLegend || {})) {
+                ctx.fillStyle = val.color;
+                ctx.beginPath();
+                ctx.arc(x + 20, y + 45 + i * 18, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '9px monospace';
+                ctx.fillText(`${key.toUpperCase()} → ${val.region.toUpperCase()}`, x + 35, y + 48 + i * 18);
+                i++;
+            }
+            ctx.restore();
+        },
+
+        drawMiniMap(ctx, app, w, h) {
+            const mx = w - 140;
+            const my = 40;
+            const mw = 100;
+            const mh = 80;
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.strokeStyle = '#4ca1af';
+            if (app.roundRect) app.roundRect(ctx, mx, my, mw, mh, 5, true, true);
+
+            ctx.fillStyle = 'rgba(76, 161, 175, 0.2)';
+            ctx.beginPath();
+            ctx.ellipse(mx + mw/2, my + mh/2, 25, 35, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Camera Indicator
+            const camRot = app.camera.rotationY || 0;
+            ctx.strokeStyle = '#ffcc00';
+            ctx.beginPath();
+            ctx.moveTo(mx + mw/2, my + mh/2);
+            ctx.lineTo(mx + mw/2 + Math.sin(camRot) * 20, my + mh/2 + Math.cos(camRot) * 20);
+            ctx.stroke();
+
+            ctx.fillStyle = '#4ca1af';
+            ctx.font = '9px Quicksand';
+            ctx.textAlign = 'center';
+            ctx.fillText('ORIENTATION', mx + mw/2, my + mh - 5);
+            ctx.restore();
+        },
+
+        drawBreadcrumbs(ctx, app, region) {
+            const x = 300;
+            const y = 35;
+            ctx.save();
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = '9px monospace';
+            const breadcrumb = `BRAIN > ${region ? region.toUpperCase() : 'WHOLE SYSTEM'}`;
+            ctx.fillText(breadcrumb, x, y);
+            ctx.restore();
         }
     };
 

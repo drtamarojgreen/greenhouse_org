@@ -69,6 +69,8 @@
             await window.GreenhouseUtils.loadScript('inflammation_molecular.js', baseUrl);
             await window.GreenhouseUtils.loadScript('inflammation_tooltips.js', baseUrl);
             await window.GreenhouseUtils.loadScript('inflammation_controls.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation_analysis.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation_test_harness.js', baseUrl);
             await window.GreenhouseUtils.loadScript('inflammation_app.js', baseUrl);
 
             if (window.GreenhouseInflammationApp) {

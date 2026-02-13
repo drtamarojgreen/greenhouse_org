@@ -22,8 +22,14 @@
 
             // 1. GHOST BRAIN (Blueprint Aesthetic)
             const regions = ui3d.brainShell.regions;
+            const deepKeys = ['thalamus', 'hypothalamus', 'hippocampus', 'amygdala', 'basal_ganglia', 'insula'];
             for (const key in regions) {
                 const k = key.toLowerCase();
+                const isDeep = deepKeys.includes(k);
+                if (isDeep && !ui3d.app.ui.showDeepStructures) {
+                    regions[key].color = 'rgba(0,0,0,0)';
+                    continue;
+                }
                 const isHyper = tone > 0.4 && (k.includes('thalamus') || k.includes('insula'));
                 if (isHyper) {
                     regions[key].color = `rgba(255, 120, 0, ${0.1 + tone * 0.15})`;
@@ -34,6 +40,10 @@
 
             // 2. ELITE RENDERER (Holographic / Wireframe Detail)
             this.drawEliteBrain(ctx, ui3d.brainShell, camera, projection, tone, ui3d);
+
+            // 2.5 LOBE BOUNDARIES & OVERLAYS
+            this.drawLobeBoundaries(ctx, ui3d, camera, projection);
+            this.drawInflammationOverlays(ctx, state, camera, projection, ui3d);
 
             // 3. KYNURENINE PATHWAY (Tryptophan -> 3HAA / QUIN)
             // Visualizing the metabolic shift under inflammation
@@ -169,10 +179,17 @@
 
             faces.sort((a, b) => b.depth - a.depth);
 
+            const deepKeys = ['thalamus', 'hypothalamus', 'hippocampus', 'amygdala', 'basal_ganglia', 'insula'];
             faces.forEach(f => {
                 const v1 = shell.vertices[f.face.indices[0]];
                 const regionKey = v1.region;
-                const isHovered = hovered && hovered.id === regionKey;
+                const hemi = v1.hemisphere;
+
+                if (hemi === 'left' && !ui3d.app.ui.showLeftHemisphere) return;
+                if (hemi === 'right' && !ui3d.app.ui.showRightHemisphere) return;
+                if (deepKeys.includes(regionKey) && !ui3d.app.ui.showDeepStructures) return;
+
+                const isHovered = hovered && (hovered.id === regionKey || (hovered.type === '3d' && hovered.label === ui3d.brainShell.regions[regionKey].name));
 
                 const dot = v1.normal.x * lightDir.x + v1.normal.y * lightDir.y + v1.normal.z * lightDir.z;
                 const fresnel = Math.pow(1 - Math.abs(v1.normal.z), 4);
@@ -238,6 +255,67 @@
                 }
             }
             ctx.restore();
+        },
+
+        drawLobeBoundaries(ctx, ui3d, camera, projection) {
+            const Math3D = window.GreenhouseModels3DMath;
+            const config = window.GreenhouseInflammationConfig;
+            if (!config || !config.lobes) return;
+
+            ctx.save();
+            config.lobes.forEach(lobe => {
+                // Find centroid of vertices belonging to this lobe
+                let lx=0, ly=0, lz=0, count=0;
+                ui3d.brainShell.vertices.forEach(v => {
+                    if (v.lobe === lobe.id) {
+                        lx += v.x; ly += v.y; lz += v.z; count++;
+                    }
+                });
+                if (count > 0) {
+                    const cp = Math3D.project3DTo2D(lx/count, -(ly/count), lz/count, camera, projection);
+                    if (cp.scale > 0) {
+                        ctx.strokeStyle = lobe.color.replace('0.2', '0.5');
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.arc(cp.x, cp.y, 60 * cp.scale, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                        ctx.font = '8px Quicksand';
+                        // Adjust Y to avoid overlap
+                        ctx.fillText(lobe.label.toUpperCase(), cp.x - 20, cp.y - 60 * cp.scale);
+                    }
+                }
+            });
+            ctx.restore();
+        },
+
+        drawInflammationOverlays(ctx, state, camera, projection, ui3d) {
+            const Math3D = window.GreenhouseModels3DMath;
+            const tone = state.metrics.tnfAlpha || 0;
+
+            if (tone > 0.5) {
+                // BBB Leakage (Enhancement #28)
+                ctx.save();
+                ctx.strokeStyle = `rgba(255, 0, 0, ${tone * 0.3})`;
+                ctx.lineWidth = 2;
+                const regions = ['thalamus', 'insula', 'hippocampus'];
+                regions.forEach(r => {
+                    const reg = ui3d.brainShell.regions[r];
+                    if (reg && reg.centroid) {
+                        const p = Math3D.project3DTo2D(reg.centroid.x, -reg.centroid.y, reg.centroid.z, camera, projection);
+                        if (p.scale > 0) {
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, 30 * p.scale, 0, Math.PI * 2);
+                            ctx.stroke();
+                            ctx.fillStyle = `rgba(255, 0, 0, ${tone * 0.1})`;
+                            ctx.fill();
+                        }
+                    }
+                });
+                ctx.restore();
+            }
         }
     };
 

@@ -23,6 +23,11 @@
                 thalamus: { name: 'Thalamus', color: 'rgba(230, 100, 255, 0.8)', vertices: [] },
                 insula: { name: 'Insula', color: 'rgba(255, 120, 60, 0.7)', vertices: [] },
                 basal_ganglia: { name: 'Basal Ganglia', color: 'rgba(80, 220, 220, 0.6)', vertices: [] },
+                amygdala: { name: 'Amygdala', color: 'rgba(255, 0, 150, 0.8)', vertices: [] },
+                frontal: { name: 'Frontal Lobe', color: 'rgba(255, 100, 100, 0.2)', vertices: [] },
+                parietal: { name: 'Parietal Lobe', color: 'rgba(100, 255, 100, 0.2)', vertices: [] },
+                temporal: { name: 'Temporal Lobe', color: 'rgba(100, 100, 255, 0.2)', vertices: [] },
+                occipital: { name: 'Occipital Lobe', color: 'rgba(255, 255, 100, 0.2)', vertices: [] },
                 cortex: { name: 'Cortex', color: 'rgba(180, 180, 200, 0.25)', vertices: [] }
             };
 
@@ -53,11 +58,27 @@
                     const finalFactor = lobeScale * sulci * fissure;
 
                     let region = 'cortex';
+                    let lobe = 'frontal';
+                    let brodmann = null;
+
+                    // Region Assignment
                     if (Math.abs(nx) < 0.2 && ny < 0.2 && ny > -0.1 && Math.abs(nz) < 0.2) region = 'thalamus';
                     else if (Math.abs(nx) < 0.18 && ny <= -0.1 && ny > -0.3 && Math.abs(nz) < 0.18) region = 'hypothalamus';
                     else if (Math.abs(nx) > 0.2 && Math.abs(nx) < 0.4 && ny < 0.15 && ny > -0.2 && Math.abs(nz) < 0.3) region = 'basal_ganglia';
                     else if (Math.abs(nx) > 0.45 && ny < 0.1 && ny > -0.3 && nz > -0.1 && nz < 0.25) region = 'insula';
                     else if (Math.abs(nx) > 0.35 && ny < 0.0 && ny > -0.35 && nz < -0.2 && nz > -0.5) region = 'hippocampus';
+                    else if (Math.abs(nx) > 0.3 && ny < -0.3 && ny > -0.5 && nz < -0.1 && nz > -0.3) region = 'amygdala';
+
+                    // Lobe Assignment
+                    if (nz > 0.3) lobe = 'frontal';
+                    else if (nz < -0.6) lobe = 'occipital';
+                    else if (ny > 0.2) lobe = 'parietal';
+                    else if (Math.abs(nx) > 0.6) lobe = 'temporal';
+                    else if (Math.abs(nx) < 0.3 && ny < 0.2 && ny > -0.2) lobe = 'insular';
+
+                    // Brodmann Area Assignment (Simplified)
+                    if (lobe === 'frontal' && nx > 0.1 && ny > 0.4) brodmann = 'BA9';
+                    if (lobe === 'frontal' && Math.abs(nx) < 0.1 && ny < 0.3 && ny > 0.1) brodmann = 'BA24';
 
                     const vIdx = brainShell.vertices.length;
 
@@ -70,7 +91,10 @@
                         y: y * baseRadius * finalFactor,
                         z: z * baseRadius * finalFactor,
                         normal: normal,
-                        region: region
+                        region: region,
+                        lobe: lobe,
+                        brodmann: brodmann,
+                        hemisphere: nx > 0 ? 'right' : 'left'
                     });
 
                     if (brainShell.regions[region]) {
