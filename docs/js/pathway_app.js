@@ -10,12 +10,18 @@
         canvas: null,
         ctx: null,
         container: null,
+        baseUrl: '',
 
-        init(targetSelector, selector = null) {
+        init(targetSelector, baseUrl = '', selector = null) {
             // handle both (selector) and (container, selector) call styles if needed, 
             // but here init takes targetSelector string mostly.
             // Let's standardize: init(container, selector) or just init(selector) if container logic is inside.
             // The current code takes targetSelector string.
+
+            if (typeof targetSelector !== 'string' && baseUrl && typeof baseUrl === 'string' && baseUrl.startsWith('#')) {
+                selector = baseUrl;
+                baseUrl = '';
+            }
 
             if (typeof targetSelector !== 'string' && selector) {
                 // Called via re-init with (container, selector)
@@ -23,6 +29,7 @@
             }
 
             console.log(`Pathway App: Initializing in container: ${targetSelector}`);
+            this.baseUrl = baseUrl || '';
             this.lastSelector = targetSelector;
 
             this.container = document.querySelector(targetSelector);

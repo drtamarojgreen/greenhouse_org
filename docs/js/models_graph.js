@@ -17,16 +17,26 @@
          * @param {string} url - Optional URL to csv, defaults to 'endpoints/graph.csv'
          * @returns {Promise} Resolves with the graph data
          */
-        init: function (url) {
-            const dataUrl = url || 'endpoints/graph.csv';
-            console.log(`GreenhouseModelsGraph: Fetching graph data from ${dataUrl}...`);
+        init: function (url = '', baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/') {
+            const base = baseUrl ? (baseUrl.endsWith('/') ? baseUrl : baseUrl + '/') : '';
+            const path = url || 'endpoints/graph.csv';
+            const dataUrl = (path.startsWith('http') || path.startsWith('/')) ? path : base + path;
 
-            return fetch(dataUrl)
+            console.log(`GreenhouseModelsGraph: Checking availability of graph data at ${dataUrl}...`);
+
+            // Dynamic availability check
+            return fetch(dataUrl, { method: 'HEAD' })
                 .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return response.text();
+                    if (!response.ok) {
+                        console.warn("GreenhouseModelsGraph: Graph data unavailable (404/HEAD).");
+                        this.isLoaded = false;
+                        return null;
+                    }
+                    console.log(`GreenhouseModelsGraph: Data found, fetching full content...`);
+                    return fetch(dataUrl).then(res => res.text());
                 })
                 .then(csvText => {
+                    if (!csvText) return null;
                     this.parseCSV(csvText);
                     this.isLoaded = true;
                     console.log(`GreenhouseModelsGraph: Loaded ${this.data.nodes.length} nodes and ${this.data.edges.length} edges.`);
@@ -35,7 +45,8 @@
                 })
                 .catch(err => {
                     console.error("GreenhouseModelsGraph: Error loading CSV", err);
-                    throw err;
+                    this.isLoaded = false;
+                    return null;
                 });
         },
 

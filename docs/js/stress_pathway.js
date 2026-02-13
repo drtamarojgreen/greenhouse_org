@@ -35,7 +35,8 @@
                 if (!window.GreenhouseGraphParser.isLoaded) {
                     if (!window.GreenhouseGraphParser._setupStarted) {
                         window.GreenhouseGraphParser._setupStarted = true;
-                        window.GreenhouseGraphParser.init('endpoints/graph.csv', 50);
+                        const baseUrl = (ui3d.app && ui3d.app.baseUrl) ? ui3d.app.baseUrl : '';
+                        window.GreenhouseGraphParser.init('endpoints/graph.csv', 50, baseUrl);
                     }
                 }
             }

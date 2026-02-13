@@ -76,7 +76,7 @@
             await window.GreenhouseUtils.loadScript('stress_app.js', baseUrl);
 
             if (window.GreenhouseStressApp) {
-                window.GreenhouseStressApp.init(targetSelector);
+                window.GreenhouseStressApp.init(targetSelector, baseUrl);
 
                 if (window.GreenhouseUtils.renderModelsTOC) {
                     window.GreenhouseUtils.renderModelsTOC(targetSelector);
