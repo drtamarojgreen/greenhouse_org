@@ -48,7 +48,7 @@
         },
 
         async loadPathways() {
-            const data = await window.GreenhouseModelsUtil.PathwayService.loadMetadata();
+            const data = await window.GreenhouseModelsUtil.PathwayService.loadMetadata(this.app.baseUrl);
             this.availablePathways = data.pathways;
             // Pre-load default pathway for inflammation
             await this.fetchPathway('tryptophan');
@@ -68,7 +68,21 @@
                 console.log(`Inflammation UI: No source for pathway ${id}, skipping fetch.`);
                 return;
             }
-            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source);
+
+            let data;
+            if (meta.source.endsWith('.json')) {
+                data = await window.GreenhouseModelsUtil.PathwayService.loadJSONPathway(meta.source, this.app.baseUrl);
+                if (data) {
+                    // JSON format might already have compartments/nodes
+                    this.pathwayCache[id] = data;
+                    this.currentPathwayNodes = data.nodes || data.compartments;
+                    this.currentPathwayEdges = data.edges || data.reactions;
+                    this.currentPathwayId = id;
+                    return;
+                }
+            } else {
+                data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, this.app.baseUrl);
+            }
 
             if (data) {
                 const nodesWithPos = data.nodes.map((n, i) => {

@@ -362,6 +362,13 @@
                     return this.parseKGML(xmlText);
                 } catch (e) { return null; }
             },
+            async loadJSONPathway(url, baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/') {
+                try {
+                    const response = await fetch(baseUrl + url);
+                    if (!response.ok) return null;
+                    return await response.json();
+                } catch (e) { return null; }
+            },
             parseKGML(xmlText) {
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, "application/xml");

@@ -19,6 +19,19 @@
             nsaidsApp: 'Cox-1/Cox-2 inhibition; provides rapid reduction of acute inflammatory signaling.',
             steroidsApp: 'Broad-spectrum glucocorticoid action; stabilizes microglia and suppresses cytokine storms.',
             tnfInhibitors: 'Specific blockade of TNF-alpha, the primary driver of systemic and central inflammation.',
+            showMoleculeLabels: 'Toggle visibility of individual molecule names in the flow animation.',
+            showMechanismLabels: 'Toggle visibility of metabolic enzymes and transporters (e.g., IDO, LAT1).',
+            showCompartmentLabels: 'Toggle visibility of anatomical compartment boundaries and names.',
+
+            // Molecules
+            TRP: 'Tryptophan: An essential amino acid and precursor to serotonin and kynurenine.',
+            KYN: 'Kynurenine: A central metabolite in the tryptophan pathway; shifts toward QUIN under inflammation.',
+            '3HAA': '3-Hydroxyanthranilic acid: A kynurenine metabolite that can be both immunomodulatory and neurotoxic.',
+            QUIN: 'Quinolinic Acid: A potent NMDA receptor agonist and neurotoxin produced by activated microglia.',
+            KYNA: 'Kynurenic Acid: An NMDA receptor antagonist produced by astrocytes; generally neuroprotective.',
+            '5HT': 'Serotonin (5-Hydroxytryptamine): A key neurotransmitter for mood; synthesis drops during inflammation.',
+            DA: 'Dopamine: A neurotransmitter critical for reward and motor control; affected by neuroinflammation.',
+            GLU: 'Glutamate: The primary excitatory neurotransmitter; excess leads to excitotoxicity.',
 
             // Metrics
             tnfAlpha: 'Tumor Necrosis Factor alpha: The master orchestrator of the pro-inflammatory response.',
