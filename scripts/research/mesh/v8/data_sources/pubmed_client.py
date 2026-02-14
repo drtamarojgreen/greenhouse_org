@@ -101,16 +101,26 @@ class PubMedClient:
                 title_el = article.find(".//ArticleTitle")
                 title = title_el.text if title_el is not None else "No Title"
                 authors = []
+                institutions = []
                 for author in article.findall(".//Author"):
                     last_name = author.find("LastName")
                     fore_name = author.find("ForeName")
                     if last_name is not None and fore_name is not None:
-                        authors.append(f"{fore_name.text} {last_name.text}")
+                        full_name = f"{fore_name.text} {last_name.text}"
+                        authors.append(full_name)
+
+                        aff_el = author.find(".//Affiliation")
+                        if aff_el is not None:
+                            institutions.append({
+                                "author": full_name,
+                                "name": aff_el.text
+                            })
 
                 articles.append({
                     "pmid": pmid,
                     "title": title,
-                    "authors": authors
+                    "authors": authors,
+                    "institutions": institutions
                 })
         except Exception as e:
             logger.error(f"Error parsing PubMed XML: {e}")

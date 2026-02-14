@@ -16,9 +16,20 @@ window.V8GraphRenderer = (function() {
         height: 600,
         baseUrl: '',
 
-        init: async function(containerId, baseUrl = '') {
+        init: async function(containerId, baseUrl) {
             console.log("Initializing V8GraphRenderer (Canvas)...");
+
+            // Robust Base URL determination
             this.baseUrl = baseUrl;
+            if (!this.baseUrl && window.GreenhouseUtils && window.GreenhouseUtils.appState && window.GreenhouseUtils.appState.baseUrl) {
+                this.baseUrl = window.GreenhouseUtils.appState.baseUrl;
+            }
+            if (!this.baseUrl) {
+                this.baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
+            }
+
+            if (!this.baseUrl.endsWith('/')) this.baseUrl += '/';
+
             const container = (typeof containerId === 'string') ? document.querySelector(containerId) : containerId;
             if (!container) {
                 console.error("V8GraphRenderer: Container not found", containerId);
@@ -39,10 +50,10 @@ window.V8GraphRenderer = (function() {
             window.addEventListener('resize', () => this.resize());
             this.resize();
 
-            const csvPath = (this.baseUrl || '') + 'endpoints/graph.csv';
+            const csvPath = this.baseUrl + 'endpoints/graph.csv';
 
             try {
-                console.log(`V8GraphRenderer: Fetching data from ${csvPath}`);
+                console.log(`V8GraphRenderer: Fetching discovery graph from ${csvPath}`);
                 this.data = await this.loadData(csvPath);
                 if (this.data.nodes.length > 0) {
                     this.initializePhysics();

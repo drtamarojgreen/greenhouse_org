@@ -151,6 +151,11 @@
     <script src="js/pathway.js"></script>
 
     <script>
+        // Initialize the main app on load to ensure dependencies (like V8GraphRenderer) are fetched
+        window.addEventListener('load', () => {
+            initApp();
+        });
+
         function switchTab(tab) {
             document.body.className = 'tab-' + tab;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -163,7 +168,9 @@
             } else {
                 if (window.V8GraphRenderer) {
                     if (!window.V8GraphRenderer.initialized) {
-                        const base = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '' : 'https://drtamarojgreen.github.io/greenhouse_org/';
+                        const base = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ?
+                            window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1) :
+                            'https://drtamarojgreen.github.io/greenhouse_org/';
                         window.V8GraphRenderer.init('#discovery-container', base);
                         window.V8GraphRenderer.initialized = true;
                     } else {

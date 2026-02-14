@@ -27,17 +27,34 @@ class GraphBuilder:
             self.nodes[source_id]["Connections"].add(target_id)
             self.nodes[target_id]["Connections"].add(source_id)
 
-    def build_from_data(self, disorder_name: str, drug_data: List[Dict], trial_data: List[Dict], article_data: List[Dict]):
+    def build_from_data(self, disorder_name: str, drug_data: List[Dict], trial_data: List[Dict], article_data: List[Dict], disgenet_data: List[Dict] = None, opentargets_data: List[Dict] = None):
         """
         Populates nodes and edges from raw data.
         """
         disorder_id = f"DISORDER_{disorder_name.upper().replace(' ', '_')}"
         self.add_node(disorder_id, disorder_name, "Disorder", weight=10.0)
 
-        for drug in drug_data:
-            drug_id = f"DRUG_{drug['id']}" if drug.get('id') else f"DRUG_{drug['name'].upper().replace(' ', '_')}"
+        # Merge drugs from drug_data and opentargets_data
+        all_drugs = {d['name'].upper(): d for d in drug_data}
+        if opentargets_data:
+            for d in opentargets_data:
+                name_upper = d['name'].upper()
+                if name_upper not in all_drugs:
+                    all_drugs[name_upper] = d
+
+        for name, drug in all_drugs.items():
+            drug_id = f"DRUG_{drug['id']}" if drug.get('id') else f"DRUG_{name.replace(' ', '_')}"
             self.add_node(drug_id, drug['name'], "Drug", weight=5.0)
             self.add_edge(disorder_id, drug_id)
+
+        # Handle Genes from DisGeNET
+        if disgenet_data:
+            for item in disgenet_data:
+                gene_symbol = item.get('gene_symbol')
+                if not gene_symbol: continue
+                gene_id = f"GENE_{gene_symbol.upper()}"
+                self.add_node(gene_id, gene_symbol, "Gene", weight=4.0)
+                self.add_edge(disorder_id, gene_id)
 
         for trial in trial_data:
             trial_id = trial['nct_id']
@@ -59,6 +76,13 @@ class GraphBuilder:
                 author_id = f"AUTHOR_{author.upper().replace(' ', '_')}"
                 self.add_node(author_id, author, "Author", weight=1.0)
                 self.add_edge(article_id, author_id)
+
+            for inst in article.get('institutions', []):
+                inst_name = inst['name']
+                inst_id = f"INST_{inst_name.upper().replace(' ', '_')[:50]}"
+                self.add_node(inst_id, inst_name[:50] + "...", "Institution", weight=1.0)
+                author_id = f"AUTHOR_{inst['author'].upper().replace(' ', '_')}"
+                self.add_edge(author_id, inst_id)
 
     def export_to_csv(self, filepath: str):
         cache_dir = os.path.dirname(filepath)
