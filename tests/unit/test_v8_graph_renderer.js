@@ -53,7 +53,7 @@ global.fetch = () => Promise.resolve({
 global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
 
 // --- Load Script ---
-const filePath = path.join(__dirname, '../../apps/frontend/v8_graph_renderer/V8GraphRenderer.js');
+const filePath = path.join(__dirname, '../../docs/js/V8GraphRenderer.js');
 const code = fs.readFileSync(filePath, 'utf8');
 vm.runInThisContext(code);
 

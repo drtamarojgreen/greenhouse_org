@@ -28,7 +28,8 @@
                     'js/pathway_ui_3d_geometry.js',
                     'js/pathway_camera_controls.js',
                     'js/pathway_ui_3d_brain.js',
-                    'js/pathway_viewer.js'
+                    'js/pathway_viewer.js',
+                    'js/V8GraphRenderer.js'
                 ];
 
                 for (const script of scriptsToLoad) {

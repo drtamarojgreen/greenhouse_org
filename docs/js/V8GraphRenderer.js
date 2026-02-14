@@ -39,8 +39,10 @@ window.V8GraphRenderer = (function() {
             window.addEventListener('resize', () => this.resize());
             this.resize();
 
-            const csvPath = this.baseUrl + 'scripts/research/mesh/v8/graph.csv';
+            const csvPath = (this.baseUrl || '') + 'endpoints/graph.csv';
+
             try {
+                console.log(`V8GraphRenderer: Fetching data from ${csvPath}`);
                 this.data = await this.loadData(csvPath);
                 if (this.data.nodes.length > 0) {
                     this.initializePhysics();

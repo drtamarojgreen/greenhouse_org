@@ -1,7 +1,7 @@
 # Configuration for v8 Discovery Pipeline
 pipeline:
   disorder: "Alzheimer's Disease"
-  output_csv: "scripts/research/mesh/v8/graph.csv"
+  output_csv: "docs/endpoints/graph.csv"
   cache_db: "scripts/research/mesh/v8/cache.db"
 
 api_keys:
