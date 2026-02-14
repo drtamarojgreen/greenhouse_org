@@ -1,7 +1,8 @@
 # Configuration for v8 Discovery Pipeline
 pipeline:
   disorder: "Alzheimer's Disease"
-  output_csv: "scripts/research/mesh/v8/graph.csv"
+  efo_id: "MONDO_0004975"
+  output_csv: "docs/endpoints/graph.csv"
   cache_db: "scripts/research/mesh/v8/cache.db"
 
 api_keys:

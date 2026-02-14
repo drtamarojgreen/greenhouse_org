@@ -10,14 +10,14 @@
         html {
             margin: 0;
             padding: 0;
-            overflow: hidden;
             background: #000;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
         }
 
-        #app-container {
+        #app-container, #discovery-container {
             width: 100vw;
-            height: 100vh;
+            min-height: 100vh;
         }
 
         #test-controls {
@@ -65,6 +65,28 @@
             border-color: #4ca1af;
         }
 
+        .tab-btn {
+            background: #333;
+            color: #aaa;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: #4ca1af;
+            color: white;
+        }
+
+        /* Use body classes for robust tab switching */
+        body.tab-pathway #discovery-container { display: none; }
+        body.tab-discovery #app-container { display: none; }
+        body.tab-discovery #greenhouse-models-footer-toc { display: none !important; }
+
         .status-box {
             font-size: 11px;
             background: #111;
@@ -76,144 +98,80 @@
             max-height: 100px;
             overflow-y: auto;
         }
-
-        .badge {
-            display: inline-block;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: bold;
-            margin-right: 5px;
-        }
-
-        .badge-velo {
-            background: #6b4ca1;
-            color: white;
-        }
-
-        .badge-local {
-            background: #4ca177;
-            color: white;
-        }
-
-        .badge-gen {
-            background: #a17c4c;
-            color: white;
-        }
     </style>
 </head>
 
-<body>
+<body class="tab-pathway">
     <div style="position: absolute; top: 10px; left: 10px; z-index: 1001; display: flex; gap: 10px; align-items: center;">
         <h1 data-t="pathway_viewer_title" style="color: white; font-size: 18px; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Pathway Viewer</h1>
         <button onclick="window.GreenhouseModelsUtil.toggleLanguage()" data-t="btn_language" style="background: rgba(76, 161, 175, 0.2); color: #4ca1af; border: 1px solid #4ca1af; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; backdrop-filter: blur(5px);">Español</button>
     </div>
 
-    <!-- The Target Selector Container -->
     <!-- Tab Navigation -->
     <div style="position: absolute; top: 50px; left: 10px; z-index: 1001; display: flex; gap: 5px;">
-        <button id="tab-pathway" onclick="switchTab('pathway')" style="background: #4ca1af; color: white; border: none; padding: 6px 12px; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 12px; font-weight: bold;">Pathway Viewer</button>
-        <button id="tab-discovery" onclick="switchTab('discovery')" style="background: #333; color: #aaa; border: none; padding: 6px 12px; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 12px; font-weight: bold;">Discovery Graph (v8)</button>
+        <button id="tab-pathway" class="tab-btn active" onclick="switchTab('pathway')">Pathway Viewer</button>
+        <button id="tab-discovery" class="tab-btn" onclick="switchTab('discovery')">Discovery Graph (v8)</button>
     </div>
 
-    <!-- The Target Selector Container -->
-    <div id="app-container" style="display: block;"></div>
-    <div id="discovery-container" style="display: none; width: 100vw; height: 100vh;"></div>
+    <div id="app-container"></div>
+    <div id="discovery-container"></div>
 
     <!-- Rigorous Test Overlay -->
     <div id="test-controls">
         <h3>Pathway Test Harness</h3>
 
         <div class="test-group">
-            <div class="test-label">1. Bridge & Timing</div>
+            <div style="font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 4px;">1. Bridge & Timing</div>
             <button class="test-btn" onclick="simulatePreFetch()">Pre-Init Bridge (Dopamine)</button>
             <button class="test-btn" onclick="simulateLateFetch()">Late Bridge (+3s HPA)</button>
         </div>
 
         <div class="test-group">
-            <div class="test-label">2. Robustness Checks</div>
-            <button class="test-btn btn-warn" onclick="simulateJunkXml()">Inject XML with Junk</button>
-            <button class="test-btn btn-warn" onclick="simulateDoubleInit()">Simulate Double Init</button>
+            <div style="font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 4px;">2. Robustness Checks</div>
+            <button class="test-btn" onclick="simulateJunkXml()">Inject XML with Junk</button>
+            <button class="test-btn" onclick="simulateDoubleInit()">Simulate Double Init</button>
         </div>
 
         <div class="test-group">
-            <div class="test-label">3. Fallbacks</div>
+            <div style="font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 4px;">3. Fallbacks</div>
             <button class="test-btn" onclick="simulateEmptyInit()">Generator Fallback</button>
-            <button class="test-btn btn-err" onclick="reloadPage()">Hard Reset</button>
+            <button class="test-btn" onclick="location.reload()">Hard Reset</button>
         </div>
 
         <div style="margin-top:15px; font-size:11px; border-top: 1px solid #333; padding-top:10px;">
             <div id="system-status" style="color: #4ca1af; margin-bottom: 5px;">Trace Log:</div>
-            <div id="test-log" class="status-box">Harness Loaded.</div>
+            <div id="test-log" class="status-box">Harness Ready.</div>
         </div>
     </div>
-
-    <!-- Harness Styles -->
-    <style>
-        .test-group {
-            margin-bottom: 12px;
-        }
-
-        .test-label {
-            font-size: 10px;
-            color: #666;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-            letter-spacing: 1px;
-        }
-
-        .btn-warn {
-            border-color: #a17c4c !important;
-        }
-
-        .btn-warn:hover {
-            background: #453521 !important;
-        }
-
-        .btn-err {
-            border-color: #a14c4c !important;
-        }
-
-        .btn-err:hover {
-            background: #452121 !important;
-        }
-    </style>
 
     <script src="js/GreenhouseUtils.js"></script>
     <script src="js/GreenhouseMobile.js"></script>
     <script src="js/models_lang.js"></script>
     <script src="js/models_util.js"></script>
     <script src="js/pathway.js"></script>
-    <script src="../apps/frontend/v8_graph_renderer/V8GraphRenderer.js"></script>
 
     <script>
+        // Initialize the main app on load to ensure dependencies (like V8GraphRenderer) are fetched
+        window.addEventListener('load', () => {
+            initApp();
+        });
+
         function switchTab(tab) {
-            const pathwayBtn = document.getElementById('tab-pathway');
-            const discoveryBtn = document.getElementById('tab-discovery');
-            const pathwayCont = document.getElementById('app-container');
-            const discoveryCont = document.getElementById('discovery-container');
+            document.body.className = 'tab-' + tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+
+            log("Switched to " + tab);
 
             if (tab === 'pathway') {
-                pathwayBtn.style.background = '#4ca1af';
-                pathwayBtn.style.color = 'white';
-                discoveryBtn.style.background = '#333';
-                discoveryBtn.style.color = '#aaa';
-                pathwayCont.style.display = 'block';
-                discoveryCont.style.display = 'none';
-                log("Switched to Pathway Viewer");
                 if (window.V8GraphRenderer) window.V8GraphRenderer.stopSimulation();
             } else {
-                discoveryBtn.style.background = '#4ca1af';
-                discoveryBtn.style.color = 'white';
-                pathwayBtn.style.background = '#333';
-                pathwayBtn.style.color = '#aaa';
-                pathwayCont.style.display = 'none';
-                discoveryCont.style.display = 'block';
-                log("Switched to Discovery Graph");
-
                 if (window.V8GraphRenderer) {
                     if (!window.V8GraphRenderer.initialized) {
-                        window.V8GraphRenderer.init('#discovery-container', '../');
+                        const base = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ?
+                            window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1) :
+                            'https://drtamarojgreen.github.io/greenhouse_org/';
+                        window.V8GraphRenderer.init('#discovery-container', base);
                         window.V8GraphRenderer.initialized = true;
                     } else {
                         window.V8GraphRenderer.startSimulation();
@@ -222,34 +180,18 @@
             }
         }
 
-        const logEl = document.getElementById('test-log');
-        const container = document.getElementById('app-container');
-
         function log(msg, type = 'info') {
             const time = new Date().toLocaleTimeString().split(' ')[0];
-            const color = type === 'warn' ? '#a17c4c' : (type === 'err' ? '#ff4d4d' : '#888');
-            logEl.innerHTML = `<span style="color:${color}">[${time}] ${msg}</span><br>` + logEl.innerHTML;
+            const logEl = document.getElementById('test-log');
+            if (logEl) logEl.innerHTML = `[${time}] ${msg}<br>` + logEl.innerHTML;
         }
 
-        // Mock XML data for HPA Axis
-        const mockHpa = `<?xml version="1.0"?>
-        <pathway name="path:hsa04921" title="HPA Axis Response">
-            <entry id="1" name="cpd:C00001" type="compound" region="hypothalamus"><graphics name="CRH" x="200" y="50"/></entry>
-            <entry id="2" name="cpd:C00002" type="compound" region="pituitary"><graphics name="ACTH" x="200" y="250"/></entry>
-            <entry id="3" name="cpd:C00003" type="compound" region="adrenals"><graphics name="Cortisol" x="200" y="450"/></entry>
-            <relation entry1="1" entry2="2" type="PPrel"/>
-            <relation entry1="2" entry2="3" type="PPrel"/>
-        </pathway>`;
-
-        async function simulatePreFetch() {
+        function simulatePreFetch() {
             log("Simulating Velo pre-fetch...");
-            try {
-                const res = await fetch('endpoints/kegg_dopaminergic_raw.xml');
-                const xml = await res.text();
-                container.textContent = xml;
-                log("XML written to container.", 'success');
+            fetch('endpoints/kegg_dopaminergic_raw.xml').then(r => r.text()).then(xml => {
+                document.getElementById('app-container').textContent = xml;
                 initApp();
-            } catch (e) { log("Fetch failed: " + e.message, 'err'); }
+            });
         }
 
         function simulateLateFetch() {
@@ -257,55 +199,32 @@
             initApp();
             setTimeout(() => {
                 log("Injecting HPA data...");
-                container.textContent = mockHpa;
+                document.getElementById('app-container').textContent = "<pathway name='hpa'></pathway>";
             }, 3000);
         }
 
         function simulateJunkXml() {
-            log("Injecting XML with trailing junk...", 'warn');
-            const junkXml = mockHpa + "\n\n<!-- Trailing junk from Velo bridge -->\n<div class='extra-label'>KEGG Data Loaded</div>";
-            container.textContent = junkXml;
+            log("Injecting XML with junk...");
+            document.getElementById('app-container').textContent = "<pathway name='junk'></pathway> <!-- junk -->";
             initApp();
         }
 
         function simulateDoubleInit() {
-            log("Triggering double initialization...", 'warn');
+            log("Simulating Double Init...");
             initApp();
-            setTimeout(() => {
-                log("Attempting second init call...");
-                initApp();
-            }, 500);
+            initApp();
         }
 
         function simulateEmptyInit() {
-            log("Simulating Pure Generator Init...");
-            container.textContent = "";
+            log("Simulating Generator Fallback...");
+            document.getElementById('app-container').textContent = "";
             initApp();
         }
 
         function initApp() {
-            if (window.GreenhousePathwayApp) {
-                log("Calling GreenhousePathwayApp.init()...");
-                window.GreenhousePathwayApp.init('#app-container', 'https://drtamarojgreen.github.io/greenhouse_org/');
-            } else {
-                log("PathwayApp not found in global scope.", 'err');
-            }
+            const base = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '' : 'https://drtamarojgreen.github.io/greenhouse_org/';
+            window.GreenhousePathwayApp.init('#app-container', base);
         }
-
-        function reloadPage() {
-            window.location.reload();
-        }
-
-        window.onload = () => {
-            log("Harness Ready.");
-            // Check if attributes were captured by checking the script element
-            const script = document.querySelector('script[src*="pathway.js"]');
-            if (script && script.getAttribute('data-target-selector-left')) {
-                log("Configuration attributes detected.", 'info');
-            } else {
-                log("No static attributes found on script tag.", 'warn');
-            }
-        };
     </script>
 </body>
 

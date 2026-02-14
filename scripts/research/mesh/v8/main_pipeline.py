@@ -43,20 +43,24 @@ async def run_pipeline(config_path: str):
         # Fetch data concurrently
         logger.info("Fetching data from multiple sources...")
         drug_task = drugbank.get_drugs_for_disorder(session, disorder)
+        disgenet_task = disgenet.get_associations_for_disorder(session, disorder)
+        opentargets_task = opentargets.get_drugs_for_disease(session, config['pipeline'].get('efo_id', 'EFO_0000249'))
         trial_task = clinicaltrials.get_trials_for_disorder(session, disorder)
         pmids_task = pubmed.search_articles(session, disorder, retmax=config['limits'].get('pubmed_retmax', 10))
 
-        drugs, trials, pmids = await asyncio.gather(drug_task, trial_task, pmids_task)
+        drugs, disgenet_data, opentargets_data, trials, pmids = await asyncio.gather(
+            drug_task, disgenet_task, opentargets_task, trial_task, pmids_task
+        )
 
         # Fetch article details
         articles = await pubmed.get_article_details(session, pmids)
 
-        logger.info(f"Discovered {len(drugs)} drugs, {len(trials)} trials, and {len(articles)} research articles.")
+        logger.info(f"Discovered {len(drugs)} (DrugBank) and {len(opentargets_data)} (OpenTargets) drugs, {len(disgenet_data)} gene associations, {len(trials)} trials, and {len(articles)} articles.")
 
         # Build graph
         logger.info("Building graph...")
         builder = GraphBuilder()
-        builder.build_from_data(disorder, drugs, trials, articles)
+        builder.build_from_data(disorder, drugs, trials, articles, disgenet_data, opentargets_data)
 
         # Export to CSV
         builder.export_to_csv(output_csv)
