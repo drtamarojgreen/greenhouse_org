@@ -49,7 +49,10 @@
             bbb: 'Blood-Brain Barrier (BBB): A highly selective semipermeable border that prevents solutes in the circulating blood from non-selectively crossing into the CNS.',
             vessel: 'Microcapillary: The primary site of nutrient exchange and immune cell trafficking in the brain.',
             glia_m1: 'M1 Microglia: The "classicially activated" pro-inflammatory phenotype; releases TNF-α and IL-1β.',
-            glia_m2: 'M2 Microglia: The "alternatively activated" anti-inflammatory phenotype; involved in tissue repair and resolution.'
+            glia_m2: 'M2 Microglia: The "alternatively activated" anti-inflammatory phenotype; involved in tissue repair and resolution.',
+            mast_cell: 'Mast Cell: Immune cell residing near vessels; contains granules with histamine and TNF-α that can rapidly trigger inflammation.',
+            astrocyte: 'Astrocyte: Star-shaped glial cell that maintains the blood-brain barrier via endfeet and regulates the chemical environment.',
+            microglia: 'Microglia: The resident immune cells of the CNS, acting as the first and main form of active immune defense.'
         },
 
         draw(ctx, app, x, y) {
