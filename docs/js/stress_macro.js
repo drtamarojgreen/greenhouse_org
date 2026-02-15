@@ -8,7 +8,7 @@
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => (window.GreenhouseModelsUtil && window.GreenhouseModelsUtil.t) ? window.GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseStressMacro = {
         orbitalRotation: 0,
@@ -219,7 +219,7 @@
                     ctx.beginPath(); ctx.arc(p.x, p.y, 5 * p.scale, 0, Math.PI * 2); ctx.fill();
                     ctx.shadowBlur = 0;
 
-                    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+                    const t = (k) => (window.GreenhouseModelsUtil && window.GreenhouseModelsUtil.t) ? window.GreenhouseModelsUtil.t(k) : k;
                     const config = window.GreenhouseStressConfig;
                     const factorMeta = config ? config.factors.find(f => f.id === fid) : null;
                     const label = factorMeta ? t(factorMeta.label) : fid.toUpperCase().replace(/([A-Z])/g, ' $1');

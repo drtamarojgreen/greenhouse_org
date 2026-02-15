@@ -21,7 +21,7 @@
                     { value: 'hpa', label: 'stress_path_hpa' },
                     { value: 'tryptophan', label: 'stress_path_tryptophan' },
                     { value: 'dopaminergic', label: 'stress_path_dopaminergic' },
-                    { value: 'serotonergeric', label: 'stress_path_serotonergic' },
+                    { value: 'serotonergic', label: 'stress_path_serotonergic' },
                     { value: 'nitric_oxide', label: 'stress_path_nitric_oxide' }
                 ], type: 'select'
             },

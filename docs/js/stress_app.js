@@ -7,7 +7,7 @@
 (function () {
     'use strict';
 
-    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const t = (k) => (window.GreenhouseModelsUtil && window.GreenhouseModelsUtil.t) ? window.GreenhouseModelsUtil.t(k) : k;
 
     const GreenhouseStressApp = {
         engine: null,

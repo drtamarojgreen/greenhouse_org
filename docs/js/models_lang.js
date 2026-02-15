@@ -2169,7 +2169,10 @@
             "stress_path_tryptophan": "Tryptophan-Kynurenine",
             "stress_path_dopaminergic": "Dopaminergic System",
             "stress_path_serotonergic": "Serotonergic System",
-            "stress_path_nitric_oxide": "Nitric Oxide Pathway"
+            "stress_path_nitric_oxide": "Nitric Oxide Pathway",
+            "stress_path_circadian": "Circadian Rhythm",
+            "stress_path_noradrenergic": "Noradrenergic System",
+            "stress_path_protein_kinase": "Protein Kinase (MAPK)"
         },
         es: {
             // Consent Screen
@@ -4333,7 +4336,10 @@
             "stress_path_tryptophan": "Triptófano-Kinurenina",
             "stress_path_dopaminergic": "Sistema Dopaminérgico",
             "stress_path_serotonergic": "Sistema Serotoninérgico",
-            "stress_path_nitric_oxide": "Vía del Óxido Nítrico"
+            "stress_path_nitric_oxide": "Vía del Óxido Nítrico",
+            "stress_path_circadian": "Ritmo Circadiano",
+            "stress_path_noradrenergic": "Sistema Noradrenérgico",
+            "stress_path_protein_kinase": "Proteína Kinasa (MAPK)"
         }
     };
     window.GreenhouseTranslations = GreenhouseTranslations;

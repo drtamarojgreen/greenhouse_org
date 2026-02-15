@@ -351,6 +351,7 @@
             async loadMetadata(baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/') {
                 try {
                     const response = await fetch(baseUrl + 'endpoints/models_pathways.json');
+                    if (!response.ok) return { pathways: [] };
                     return await response.json();
                 } catch (e) { return { pathways: [] }; }
             },
@@ -358,6 +359,8 @@
                 try {
                     const response = await fetch(baseUrl + url);
                     if (!response.ok) return null;
+                    const contentType = response.headers.get('Content-Type');
+                    if (contentType && contentType.includes('text/html')) return null;
                     const xmlText = await response.text();
                     return this.parseKGML(xmlText);
                 } catch (e) { return null; }
@@ -366,6 +369,8 @@
                 try {
                     const response = await fetch(baseUrl + url);
                     if (!response.ok) return null;
+                    const contentType = response.headers.get('Content-Type');
+                    if (contentType && contentType.includes('text/html')) return null;
                     return await response.json();
                 } catch (e) { return null; }
             },

@@ -62,7 +62,7 @@
 
             if (app.roundRect) app.roundRect(ctx, b.x, b.y, b.w, b.h, 6, true);
 
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => (window.GreenhouseModelsUtil && window.GreenhouseModelsUtil.t) ? window.GreenhouseModelsUtil.t(k) : k;
             ctx.fillStyle = isActive ? '#fff' : (isHovered ? '#fff' : 'rgba(255,255,255,0.6)');
             ctx.font = 'bold 10px Quicksand, sans-serif';
             ctx.textAlign = 'center';
@@ -71,7 +71,7 @@
         },
 
         drawCategoryHeader(ctx, app, header) {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const t = (k) => (window.GreenhouseModelsUtil && window.GreenhouseModelsUtil.t) ? window.GreenhouseModelsUtil.t(k) : k;
             const isHovered = header.isHovered;
             const isOpen = header.isOpen;
 
