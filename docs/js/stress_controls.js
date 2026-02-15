@@ -62,14 +62,16 @@
 
             if (app.roundRect) app.roundRect(ctx, b.x, b.y, b.w, b.h, 6, true);
 
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             ctx.fillStyle = isActive ? '#fff' : (isHovered ? '#fff' : 'rgba(255,255,255,0.6)');
             ctx.font = 'bold 10px Quicksand, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(b.label, b.x + b.w / 2, b.y + b.h / 2 + 4);
+            ctx.fillText(t(b.label).toUpperCase(), b.x + b.w / 2, b.y + b.h / 2 + 4);
             ctx.restore();
         },
 
         drawCategoryHeader(ctx, app, header) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const isHovered = header.isHovered;
             const isOpen = header.isOpen;
 
@@ -94,7 +96,7 @@
             ctx.textAlign = 'left';
             ctx.shadowBlur = 4;
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
-            ctx.fillText(header.label.toUpperCase(), header.x + 10, header.y + 17);
+            ctx.fillText(t(header.label).toUpperCase(), header.x + 10, header.y + 17);
 
             // Indicator (+/-)
             ctx.textAlign = 'right';

@@ -70,10 +70,10 @@
 
             // Initialize Category State (Collapsed by default except maybe one)
             this.ui.categories = [
-                { id: 'env', label: 'ENVIRONMENTAL', x: 20, y: 175, w: 200, h: 25, isOpen: true },
-                { id: 'psych', label: 'PSYCHOLOGICAL', x: 240, y: 175, w: 200, h: 25, isOpen: false },
-                { id: 'philo', label: 'PHILOSOPHICAL', x: 460, y: 175, w: 200, h: 25, isOpen: false },
-                { id: 'research', label: 'RESEARCH / BIO', x: 680, y: 175, w: 200, h: 25, isOpen: false }
+                { id: 'env', label: 'stress_cat_env', x: 20, y: 175, w: 200, h: 25, isOpen: true },
+                { id: 'psych', label: 'stress_cat_psych', x: 240, y: 175, w: 200, h: 25, isOpen: false },
+                { id: 'philo', label: 'stress_cat_philo', x: 460, y: 175, w: 200, h: 25, isOpen: false },
+                { id: 'research', label: 'stress_cat_research', x: 680, y: 175, w: 200, h: 25, isOpen: false }
             ];
 
             this.setupUI();
