@@ -41,7 +41,7 @@
                 if (graphics) {
                     nodes.push({
                         id: entry.getAttribute("id"),
-                        name: entry.getAttribute("name"),
+                        name: graphics.getAttribute("name") || entry.getAttribute("name"),
                         type: entry.getAttribute("type"),
                         x: parseInt(graphics.getAttribute("x"), 10),
                         y: parseInt(graphics.getAttribute("y"), 10),
@@ -199,6 +199,8 @@
     const GreenhousePathwayViewer = {
         canvas: null, ctx: null, camera: null, projection: null, cameraControls: null,
         pathwayData: null, pathwayEdges: null, brainShell: null, torsoShell: null, highlightedNodeId: null,
+        hoveredNodeId: null, // Item 12
+        animationTime: 0, // Item 11
         availablePathways: [], currentPathwayId: null, baseUrl: '', initialized: false,
         rawXmlData: null, // Bridge storage
 
@@ -447,6 +449,7 @@
             }
 
             this.updateGeneSelector();
+            this.updateLegend();
         },
 
         setupUI(container) {
@@ -570,6 +573,19 @@
             btnGroup.appendChild(langBtn);
             uiContainer.appendChild(btnGroup);
 
+            // Item 16: Dynamic Legend Container
+            const legend = document.createElement('div');
+            legend.id = 'pathway-legend';
+            legend.style.cssText = `
+                margin-top: 15px;
+                padding-top: 10px;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            `;
+            uiContainer.appendChild(legend);
+
             container.appendChild(uiContainer);
         },
 
@@ -580,6 +596,42 @@
             this.canvas.style.display = 'block';
             this.ctx = this.canvas.getContext('2d');
             container.appendChild(this.canvas);
+
+            // Item 12: Mouse Interaction for Tooltips
+            this.canvas.addEventListener('mousemove', (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                this.checkHover(mx, my);
+            });
+
+            this.canvas.addEventListener('click', (e) => {
+                if (this.hoveredNodeId) {
+                    this.highlightedNodeId = this.hoveredNodeId;
+                    const selector = document.getElementById('pathway-selector');
+                    if (selector) selector.value = this.highlightedNodeId;
+                }
+            });
+        },
+
+        checkHover(mx, my) {
+            if (!this.pathwayData || !window.GreenhouseModels3DMath) return;
+
+            let foundId = null;
+            for (const node of this.pathwayData) {
+                const proj = GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection);
+                if (proj.scale > 0) {
+                    const dx = proj.x - mx;
+                    const dy = proj.y - my;
+                    const radius = 10 * proj.scale;
+                    if (Math.sqrt(dx * dx + dy * dy) < radius) {
+                        foundId = node.id;
+                        break;
+                    }
+                }
+            }
+            this.hoveredNodeId = foundId;
+            this.canvas.style.cursor = foundId ? 'pointer' : 'default';
         },
 
         initializeGeometry() {
@@ -595,6 +647,30 @@
         async loadExternalPathway(url, isLive = false) {
             try {
                 const fetchUrl = isLive ? url : (this.baseUrl + url);
+
+                // Handle JSON sources (Native Greenhouse format)
+                if (fetchUrl.endsWith('.json')) {
+                    const response = await fetch(fetchUrl);
+                    const data = await response.json();
+
+                    if (data.molecules && data.reactions) {
+                        const nodes = data.molecules.map(m => ({
+                            id: m.id,
+                            name: m.label,
+                            type: (m.class === 'metabolite' || m.class === 'neurotransmitter') ? 'compound' : 'gene',
+                            region: this.mapMoleculeToRegion(m, data)
+                        }));
+                        const edges = data.reactions.map(r => ({
+                            source: r.substrate,
+                            target: r.product
+                        }));
+                        this.pathwayData = PathwayLayout.generate3DLayout({ nodes });
+                        this.pathwayEdges = edges;
+                        return true;
+                    }
+                }
+
+                // Handle XML sources (KEGG format)
                 const parsedData = await KeggParser.parse(fetchUrl);
 
                 if (parsedData.nodes.length > 0) {
@@ -609,6 +685,16 @@
                 console.error('Pathway App: External load error.', err);
             }
             return false;
+        },
+
+        mapMoleculeToRegion(molecule, data) {
+            const reaction = data.reactions.find(r => r.substrate === molecule.id || r.product === molecule.id);
+            if (reaction) {
+                const compId = (reaction.substrate === molecule.id) ? reaction.fromCompartment : reaction.toCompartment;
+                const compartment = data.compartments.find(c => c.id === compId);
+                if (compartment) return compartment.anchorRegion;
+            }
+            return 'pfc';
         },
 
         mapKeggNodeToRegion(node, pathwayId) {
@@ -655,6 +741,7 @@
 
             this.updateGeneSelector();
             this.populatePathwaySelector();
+            this.updateLegend(); // Item 16
         },
 
         updateGeneSelector() {
@@ -673,13 +760,48 @@
             }
         },
 
+        updateLegend() {
+            const legend = document.getElementById('pathway-legend');
+            if (!legend || !this.pathwayData) return;
+
+            const types = new Set(this.pathwayData.map(n => n.type));
+            legend.innerHTML = '';
+
+            const typeMeta = {
+                'gene': { color: '#00ffcc', label: 'Gene/Protein' },
+                'compound': { color: '#3498db', label: 'Compound/Metabolite' },
+                'map': { color: '#f1c40f', label: 'Pathway Map' }
+            };
+
+            types.forEach(type => {
+                const meta = typeMeta[type] || { color: '#888', label: type };
+                const item = document.createElement('div');
+                item.style.cssText = `display: flex; align-items: center; gap: 5px; font-size: 11px; color: #ccc;`;
+
+                const dot = document.createElement('span');
+                dot.style.cssText = `width: 8px; height: 8px; border-radius: 50%; background: ${meta.color}; box-shadow: 0 0 5px ${meta.color};`;
+
+                const label = document.createElement('span');
+                label.textContent = meta.label;
+
+                item.appendChild(dot);
+                item.appendChild(label);
+                legend.appendChild(item);
+            });
+        },
+
         startAnimation() {
-            const animate = () => {
+            let lastTime = performance.now();
+            const animate = (time) => {
+                const dt = time - lastTime;
+                lastTime = time;
+                this.animationTime += dt * 0.001; // In seconds
+
                 if (this.cameraControls) this.cameraControls.update();
                 this.render();
                 requestAnimationFrame(animate);
             };
-            animate();
+            requestAnimationFrame(animate);
         },
 
         render() {
@@ -713,6 +835,7 @@
 
             if (this.pathwayData) {
                 this.drawPathwayGraph();
+                this.drawTooltip(ctx, w, h); // Item 12
             } else {
                 ctx.fillStyle = '#555';
                 ctx.textAlign = 'center';
@@ -772,6 +895,74 @@
             ctx.stroke();
         },
 
+        drawTooltip(ctx, w, h) {
+            if (!this.hoveredNodeId || !this.pathwayData) return;
+            const node = this.pathwayData.find(n => n.id === this.hoveredNodeId);
+            if (!node) return;
+
+            const proj = GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection);
+            if (proj.scale <= 0) return;
+
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
+            ctx.save();
+            const tw = 180;
+            const th = 65;
+            let tx = proj.x + 15;
+            let ty = proj.y - th - 15;
+
+            // Flip if too close to edges
+            if (tx + tw > w) tx = proj.x - tw - 15;
+            if (ty < 0) ty = proj.y + 15;
+
+            ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
+            ctx.strokeStyle = '#4ca1af';
+            ctx.lineWidth = 1;
+
+            // Rounded rect for tooltip
+            this.drawRoundRect(ctx, tx, ty, tw, th, 8, true, true);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText(t(node.name), tx + 10, ty + 20);
+
+            ctx.fillStyle = '#aaa';
+            ctx.font = '10px Arial';
+            ctx.fillText(`${t('type')}: ${node.type}`, tx + 10, ty + 35);
+            ctx.fillText(`${t('region')}: ${t(node.region)}`, tx + 10, ty + 50);
+
+            ctx.restore();
+        },
+
+        drawRoundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) ctx.fill();
+            if (stroke) ctx.stroke();
+        },
+
+        drawFlowArrow(ctx, p1, p2) {
+            const speed = 0.5; // Paths per second
+            const t = (this.animationTime * speed) % 1;
+
+            const ax = p1.x + (p2.x - p1.x) * t;
+            const ay = p1.y + (p2.y - p1.y) * t;
+
+            ctx.fillStyle = 'rgba(0, 255, 204, 0.6)';
+            ctx.beginPath();
+            ctx.arc(ax, ay, 2 * p1.scale, 0, Math.PI * 2);
+            ctx.fill();
+        },
+
         drawPathwayGraph() {
             if (!this.pathwayData || !window.GreenhouseModels3DMath) return;
 
@@ -791,6 +982,9 @@
                     this.ctx.moveTo(source.projected.x, source.projected.y);
                     this.ctx.lineTo(target.projected.x, target.projected.y);
                     this.ctx.stroke();
+
+                    // Item 11: Animated Flow Arrows
+                    this.drawFlowArrow(this.ctx, source.projected, target.projected);
                 }
             });
 
@@ -817,7 +1011,7 @@
                             break;
                     }
 
-                    if (node.id === this.highlightedNodeId) {
+                    if (node.id === this.highlightedNodeId || node.id === this.hoveredNodeId) {
                         color = '#39ff14'; // Neon Green
                         glow = 'rgba(57, 255, 20, 0.8)';
                         radius *= 2.5;
