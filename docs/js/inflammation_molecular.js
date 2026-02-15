@@ -48,6 +48,11 @@
                 });
             }
 
+            // 4. Advanced Signaling Overlays (Enhancements 4-40)
+            if (window.GreenhouseInflammationSignaling) {
+                window.GreenhouseInflammationSignaling.render(ctx, ui3d.app, state, projection, ui3d);
+            }
+
             ctx.restore();
 
             // Legend
@@ -152,7 +157,8 @@
                 { c: '#44ffaa', l: 'Anti-Cytokine (IL-10)' },
                 { c: '#ffb6c1', l: 'Mast Cell (Granular)' },
                 { c: '#ffcc00', l: 'Astrocyte (Endfeet)' },
-                { c: '#4ca1af', l: 'Microglia (Reactive)' }
+                { c: '#4ca1af', l: 'Microglia (Reactive)' },
+                { c: '#00ffcc', l: 'Signaling Trace (Active)' }
             ];
             items.forEach((item, i) => {
                 ctx.fillStyle = item.c; ctx.beginPath(); ctx.arc(lx + 15, ly + 20 + i * 20, 5, 0, Math.PI * 2); ctx.fill();

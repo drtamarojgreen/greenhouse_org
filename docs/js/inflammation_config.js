@@ -53,7 +53,13 @@
             { id: 'agePreset', label: 'Developmental Age (Vulnerability)', type: 'checkbox', defaultValue: 0, impact: 0.1, category: 'clinical' },
             { id: 'sexSpecific', label: 'Sex-Specific Response', type: 'checkbox', defaultValue: 0, impact: 0.05, category: 'clinical' },
             { id: 'comorbidityDiabetes', label: 'Comorbidity: Diabetes', type: 'checkbox', defaultValue: 0, impact: 0.2, category: 'clinical' },
-            { id: 'medicationEffect', label: 'Expected Medication Response', type: 'checkbox', defaultValue: 0, impact: -0.3, category: 'clinical' }
+            { id: 'medicationEffect', label: 'Expected Medication Response', type: 'checkbox', defaultValue: 0, impact: -0.3, category: 'clinical' },
+
+            // --- ADVANCED SIGNALING CONTROLS (Enhancements 4-40) ---
+            { id: 'showSignalingNetwork', label: 'Ligand-Receptor Network', type: 'checkbox', defaultValue: 1, category: 'research' },
+            { id: 'toggleIL6Mode', label: 'IL-6: Trans-Signaling Mode', type: 'checkbox', defaultValue: 0, category: 'research' },
+            { id: 'showTranscriptionOverlays', label: 'TF Activity Overlays (NF-κB/AP-1)', type: 'checkbox', defaultValue: 1, category: 'research' },
+            { id: 'toggleEpigeneticBalance', label: 'HDAC/HAT Balance (Plasticity)', type: 'checkbox', defaultValue: 0, category: 'research' }
         ],
         metrics: [
             { id: 'tnfAlpha', label: 'Pro-Inflammatory Tone (TNF-α)', unit: '%' },
@@ -61,7 +67,20 @@
             { id: 'neuroprotection', label: 'Neuroprotection Index', unit: '%' },
             { id: 'stressBurden', label: 'Allostatic Load (Stress)', unit: '%' },
             { id: 'regionConfidence', label: 'Region Confidence Score', unit: '%' },
-            { id: 'riskLevel', label: 'Risk Stratification', unit: 'lvl' }
+            { id: 'riskLevel', label: 'Risk Stratification', unit: 'lvl' },
+
+            // Molecular Signaling Metrics (4-40)
+            { id: 'tryptase', label: 'Tryptase (Mast Release)', unit: 'ng' },
+            { id: 'chymase', label: 'Chymase (Protease)', unit: 'ng' },
+            { id: 'nfkbActivation', label: 'NF-κB Translocation', unit: '%' },
+            { id: 'atp', label: 'Extracellular ATP', unit: 'uM' },
+            { id: 'ros', label: 'Reactive Oxygen Species', unit: '%' },
+            { id: 'calcium', label: 'Cytosolic Calcium [Ca2+]', unit: 'nM' },
+            { id: 'nlrp3State', label: 'NLRP3 Inflammasome', unit: 'act' },
+            { id: 'jakStat', label: 'JAK/STAT Activation', unit: '%' },
+            { id: 'mapk', label: 'MAPK (p38/JNK/ERK)', unit: '%' },
+            { id: 'pi3kAkt', label: 'PI3K/AKT Pathway', unit: '%' },
+            { id: 'campPka', label: 'cAMP/PKA (Checkpoint)', unit: '%' }
         ],
         atlasLegend: {
             'microglia': { region: 'hippocampus CA1', color: '#ff4444' },
