@@ -135,6 +135,32 @@ class TestRenderPreparedness(unittest.TestCase):
         self.log_result("Frame Range", status, f"Range: {scene.frame_start}-{scene.frame_end}")
         self.assertTrue(is_correct)
 
+    def test_09_credits_orientation(self):
+        """Verify credits text object is rotated correctly (not upside down)."""
+        credits = bpy.data.objects.get("CreditsText")
+        if credits:
+            # We expect a 90 degree rotation on X
+            rot_x = math.degrees(credits.rotation_euler[0])
+            is_correct = abs(rot_x - 90.0) < 0.1
+            status = "PASS" if is_correct else "FAIL"
+            self.log_result("Credits Orientation", status, f"Rotation X: {rot_x:.2f}")
+            self.assertTrue(is_correct)
+        else:
+            self.log_result("Credits Orientation", "FAIL", "CreditsText NOT found")
+
+    def test_10_interaction_scene_logic(self):
+        """Verify the interaction scene is registered and has content."""
+        from silent_movie_generator import SCENE_MAP
+        exists = 'interaction' in SCENE_MAP
+        if exists:
+            start, end = SCENE_MAP['interaction']
+            is_correct = start == 4501 and end == 9500
+            status = "PASS" if is_correct else "FAIL"
+            self.log_result("Interaction Scene Map", status, f"Range: {start}-{end}")
+            self.assertTrue(is_correct)
+        else:
+            self.log_result("Interaction Scene Map", "FAIL", "interaction NOT in SCENE_MAP")
+
     @classmethod
     def tearDownClass(cls):
         print("\n" + "="*50)
