@@ -241,6 +241,8 @@ window.V8GraphRenderer = (function() {
             ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, this.width, this.height);
 
+            this.drawAnatomicalBackdrop();
+
             // Draw links
             ctx.strokeStyle = 'rgba(76, 161, 175, 0.15)';
             ctx.lineWidth = 1;
@@ -320,6 +322,45 @@ window.V8GraphRenderer = (function() {
             this.ctx.fillStyle = '#ff4d4d';
             this.ctx.textAlign = 'center';
             this.ctx.fillText("Error: " + msg, this.width/2, this.height/2);
+        },
+
+        drawAnatomicalBackdrop: function() {
+            const ctx = this.ctx;
+            const w = this.width;
+            const h = this.height;
+            const scale = Math.min(w, h) / 800;
+
+            ctx.save();
+            ctx.translate(w / 2, h / 2);
+            ctx.scale(scale, scale);
+            ctx.translate(-400, -300);
+
+            ctx.strokeStyle = 'rgba(76, 161, 175, 0.08)';
+            ctx.lineWidth = 2;
+
+            // Stylized Sagittal Brain Profile
+            ctx.beginPath();
+            // Outer Cortex
+            ctx.moveTo(400, 100);
+            ctx.bezierCurveTo(600, 100, 750, 250, 750, 450); // Occipital/Parietal
+            ctx.bezierCurveTo(750, 550, 650, 600, 500, 600); // Cerebellum/Stem base
+            ctx.bezierCurveTo(350, 600, 250, 550, 200, 450); // Frontal base
+            ctx.bezierCurveTo(150, 350, 250, 100, 400, 100); // PFC Top
+            ctx.stroke();
+
+            // Inner Structures (Limbic/Stem)
+            ctx.setLineDash([5, 10]);
+            ctx.beginPath();
+            ctx.ellipse(450, 350, 80, 50, 0, 0, Math.PI * 2); // Thalamus area
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(450, 400);
+            ctx.quadraticCurveTo(500, 500, 480, 600); // Brainstem line
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+            ctx.restore();
         }
     };
 })();

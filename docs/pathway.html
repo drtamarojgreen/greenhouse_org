@@ -102,6 +102,7 @@
 </head>
 
 <body class="tab-pathway">
+    <!-- Header Controls -->
     <div style="position: absolute; top: 10px; left: 10px; z-index: 1001; display: flex; gap: 10px; align-items: center;">
         <h1 data-t="pathway_viewer_title" style="color: white; font-size: 18px; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Pathway Viewer</h1>
         <button onclick="window.GreenhouseModelsUtil.toggleLanguage()" data-t="btn_language" style="background: rgba(76, 161, 175, 0.2); color: #4ca1af; border: 1px solid #4ca1af; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; backdrop-filter: blur(5px);">Español</button>
@@ -114,38 +115,10 @@
     </div>
 
     <div id="app-container">
-        <!-- Data Bridge Indicator for Immediate Load -->
-        <span style="display:none">&lt;pathway&gt;&lt;/pathway&gt;</span>
+        <!-- Data Bridge Indicator for Immediate Load (Supports JSON/XML detection) -->
+        <span style="display:none">&lt;pathway&gt;{}&lt;/pathway&gt;</span>
     </div>
     <div id="discovery-container"></div>
-
-    <!-- Rigorous Test Overlay -->
-    <div id="test-controls">
-        <h3>Pathway Test Harness</h3>
-
-        <div class="test-group">
-            <div style="font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 4px;">1. Bridge & Timing</div>
-            <button class="test-btn" onclick="simulatePreFetch()">Pre-Init Bridge (Dopamine)</button>
-            <button class="test-btn" onclick="simulateLateFetch()">Late Bridge (+3s HPA)</button>
-        </div>
-
-        <div class="test-group">
-            <div style="font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 4px;">2. Robustness Checks</div>
-            <button class="test-btn" onclick="simulateJunkXml()">Inject XML with Junk</button>
-            <button class="test-btn" onclick="simulateDoubleInit()">Simulate Double Init</button>
-        </div>
-
-        <div class="test-group">
-            <div style="font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 4px;">3. Fallbacks</div>
-            <button class="test-btn" onclick="simulateEmptyInit()">Generator Fallback</button>
-            <button class="test-btn" onclick="location.reload()">Hard Reset</button>
-        </div>
-
-        <div style="margin-top:15px; font-size:11px; border-top: 1px solid #333; padding-top:10px;">
-            <div id="system-status" style="color: #4ca1af; margin-bottom: 5px;">Trace Log:</div>
-            <div id="test-log" class="status-box">Harness Ready.</div>
-        </div>
-    </div>
 
     <!-- Utility Scripts (Essential for Layout/Mobile) -->
     <script src="js/GreenhouseUtils.js"></script>

@@ -421,24 +421,35 @@
         },
 
         async switchPathway(pathwayId) {
-            //console.log(`Pathway App: Switching to ${pathwayId}`);
             this.currentPathwayId = pathwayId;
             const pathway = this.availablePathways.find(p => p.id === pathwayId);
             if (!pathway) return;
 
-            // Show loading status
             const geneSelector = document.getElementById('pathway-selector');
             if (geneSelector) geneSelector.innerHTML = '<option>Loading pathway data...</option>';
 
             let success = false;
 
-            // Priority 1: Use bridged data from Velo if available
+            // Priority 1: Use bridged data from Velo (Supports JSON & XML)
             if (this.rawXmlData) {
-                const parsed = await KeggParser.parse(this.rawXmlData, true);
-                if (parsed.nodes.length > 0) {
-                    this.pathwayData = PathwayLayout.generate3DLayout(parsed);
-                    this.pathwayEdges = parsed.edges;
-                    success = true;
+                const cleanData = this.rawXmlData.replace(/<pathway.*?>/g, '').replace(/<\/pathway>/g, '').trim();
+
+                // Attempt JSON Parse first (Native Greenhouse Format)
+                try {
+                    const jsonData = JSON.parse(cleanData);
+                    if (jsonData && (jsonData.molecules || jsonData.nodes)) {
+                        console.log("Pathway App: Parsed JSON from bridge.");
+                        success = this.processJsonData(jsonData);
+                    }
+                } catch (e) {
+                    // Fallback to XML Parse (KGML)
+                    const parsed = await KeggParser.parse(this.rawXmlData, true);
+                    if (parsed && parsed.nodes && parsed.nodes.length > 0) {
+                        console.log("Pathway App: Parsed XML from bridge.");
+                        this.pathwayData = PathwayLayout.generate3DLayout(parsed);
+                        this.pathwayEdges = parsed.edges;
+                        success = true;
+                    }
                 }
             }
 
@@ -677,26 +688,10 @@
             try {
                 const fetchUrl = isLive ? url : (this.baseUrl + url);
 
-                // Handle JSON sources (Native Greenhouse format)
                 if (fetchUrl.endsWith('.json')) {
                     const response = await fetch(fetchUrl);
                     const data = await response.json();
-
-                    if (data.molecules && data.reactions) {
-                        const nodes = data.molecules.map(m => ({
-                            id: m.id,
-                            name: m.label,
-                            type: (m.class === 'metabolite' || m.class === 'neurotransmitter') ? 'compound' : 'gene',
-                            region: this.mapMoleculeToRegion(m, data)
-                        }));
-                        const edges = data.reactions.map(r => ({
-                            source: r.substrate,
-                            target: r.product
-                        }));
-                        this.pathwayData = PathwayLayout.generate3DLayout({ nodes });
-                        this.pathwayEdges = edges;
-                        return true;
-                    }
+                    return this.processJsonData(data);
                 }
 
                 // Handle XML sources (KEGG format)
@@ -712,6 +707,25 @@
                 }
             } catch (err) {
                 console.error('Pathway App: External load error.', err);
+            }
+            return false;
+        },
+
+        processJsonData(data) {
+            if (data.molecules && data.reactions) {
+                const nodes = data.molecules.map(m => ({
+                    id: m.id,
+                    name: m.label,
+                    type: (m.class === 'metabolite' || m.class === 'neurotransmitter') ? 'compound' : (m.class === 'cytokine' ? 'map' : 'gene'),
+                    region: this.mapMoleculeToRegion(m, data)
+                }));
+                const edges = data.reactions.map(r => ({
+                    source: r.substrate,
+                    target: r.product
+                }));
+                this.pathwayData = PathwayLayout.generate3DLayout({ nodes });
+                this.pathwayEdges = edges;
+                return true;
             }
             return false;
         },
@@ -882,6 +896,9 @@
             // Draw Subtle Grid for spatial orientation
             this.drawReferenceGrid(ctx, w, h);
 
+            // Item 1: High-Fidelity Anatomical Context (2D Sagittal Backdrop)
+            this.drawAnatomicalBackdrop(ctx, w, h);
+
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const highlightedNode = this.pathwayData ? this.pathwayData.find(n => n.id === this.highlightedNodeId) : null;
             const activeRegion = highlightedNode ? highlightedNode.region : null;
@@ -967,6 +984,34 @@
                 ctx.moveTo(0, y); ctx.lineTo(w, y);
             }
             ctx.stroke();
+        },
+
+        drawAnatomicalBackdrop(ctx, w, h) {
+            const scale = Math.min(w, h) / 1000;
+            ctx.save();
+            ctx.translate(w / 2, h / 2 - 100); // Centered on brain area
+            ctx.scale(scale, scale);
+            ctx.translate(-400, -300);
+
+            ctx.strokeStyle = 'rgba(76, 161, 175, 0.05)';
+            ctx.lineWidth = 3;
+
+            // Sagittal Profile
+            ctx.beginPath();
+            ctx.moveTo(400, 50);
+            ctx.bezierCurveTo(650, 50, 850, 250, 850, 500);
+            ctx.bezierCurveTo(850, 650, 700, 750, 500, 750);
+            ctx.bezierCurveTo(300, 750, 150, 650, 50, 500);
+            ctx.bezierCurveTo(50, 250, 250, 50, 400, 50);
+            ctx.stroke();
+
+            // Inner regions suggestively
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.ellipse(450, 450, 120, 80, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.restore();
         },
 
         /**
@@ -1096,10 +1141,28 @@
             const ax = p1.x + (p2.x - p1.x) * t;
             const ay = p1.y + (p2.y - p1.y) * t;
 
-            ctx.fillStyle = 'rgba(0, 255, 204, 0.6)';
+            // Advanced Visual Feedback: Glow and Trail (Enhancement #16)
+            const trailLength = 5;
+            for (let i = 0; i < trailLength; i++) {
+                const trailT = Math.max(0, t - (i * 0.05));
+                const tx = p1.x + (p2.x - p1.x) * trailT;
+                const ty = p1.y + (p2.y - p1.y) * trailT;
+                const alpha = 0.6 * (1 - i / trailLength);
+
+                ctx.fillStyle = `rgba(0, 255, 204, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(tx, ty, (2 - i * 0.2) * p1.scale, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Glow
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(0, 255, 204, 0.8)';
+            ctx.fillStyle = 'rgba(0, 255, 204, 0.9)';
             ctx.beginPath();
             ctx.arc(ax, ay, 2 * p1.scale, 0, Math.PI * 2);
             ctx.fill();
+            ctx.shadowBlur = 0;
         },
 
         drawPathwayGraph() {
@@ -1128,9 +1191,13 @@
             });
 
             // Draw nodes
+            const pulse = Math.sin(this.animationTime * 3) * 0.2 + 1.0;
+
             projectedNodes.forEach(node => {
                 if (node.projected.scale > 0) {
                     let radius = 4 * node.projected.scale;
+                    if (node.type === 'map') radius *= pulse; // Map nodes pulse
+
                     let color = '#4ca1af';
                     let glow = 'rgba(76, 161, 175, 0.4)';
 
