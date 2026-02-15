@@ -250,7 +250,7 @@ def apply_scene_grade(master, scene_name, frame_start, frame_end):
                 light_obj.data.color = color[:3]
                 light_obj.data.keyframe_insert(data_path="color", frame=frame_start)
 
-def animate_foliage_wind(objects, strength=0.05, frame_start=1, frame_end=5000):
+def animate_foliage_wind(objects, strength=0.05, frame_start=1, frame_end=10000):
     """Adds subtle sway to foliage objects within a specific frame range."""
     for obj in objects:
         if obj.type != 'MESH': continue
@@ -286,7 +286,7 @@ def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed
     modifier.blend_in = 5
     modifier.blend_out = 5
 
-def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=5000, strength=0.05, scale=10.0, phase=None):
+def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=10000, strength=0.05, scale=10.0, phase=None):
     """Inserts noise modifier to a data path, ensuring the range is respected."""
     if not obj.animation_data:
         obj.animation_data_create()
@@ -331,7 +331,7 @@ def animate_breathing(obj, frame_start, frame_end, axis=2, amplitude=0.03, cycle
     obj.scale[axis] = base_val
     obj.keyframe_insert(data_path="scale", index=axis, frame=frame_end)
 
-def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 1, 1, 1), frame_start=1, frame_end=5000):
+def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 1, 1, 1), frame_start=1, frame_end=10000):
     """Creates a group of small drifting motes."""
     container = bpy.data.collections.get("DustParticles")
     if not container:
@@ -510,7 +510,7 @@ def apply_thought_motes(character_obj, frame_start, frame_end, count=5):
         mote.name = f"ThoughtMote_{character_obj.name}_{i}"
         insert_looping_noise(mote, "location", strength=0.5, scale=10.0, frame_start=frame_start, frame_end=frame_end)
 
-def animate_gait(torso, mode='HEAVY', frame_start=1, frame_end=5000):
+def animate_gait(torso, mode='HEAVY', frame_start=1, frame_end=10000):
     """Differentiates walk cycles by delegating to asset-specific animation logic."""
     step_h = 0.2 if mode == 'HEAVY' else 0.08
     cycle_l = 64 if mode == 'HEAVY' else 32
@@ -572,7 +572,7 @@ def setup_god_rays(scene):
         beam.data.keyframe_insert(data_path="color", frame=3801)
 
         # Intensity pulse
-        animate_light_flicker("LightShaftBeam", 1, 5000, strength=0.1)
+        animate_light_flicker("LightShaftBeam", 1, 10000, strength=0.1)
 
     sun = bpy.data.objects.get("Sun")
     if sun:

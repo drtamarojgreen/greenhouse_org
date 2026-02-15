@@ -6,7 +6,7 @@ import sys
 def render_full_movie(sequel=False):
     script_name = "sequel_generator.py" if sequel else "silent_movie_generator.py"
     title = "Sequel" if sequel else "Full Movie"
-    total_frames = 6000 if sequel else 5000
+    total_frames = 6000 if sequel else 10000
     chunk_size = 200
 
     print(f"Starting {title} Render ({total_frames} frames) using {script_name}...")

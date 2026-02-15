@@ -128,9 +128,9 @@ class TestRenderPreparedness(unittest.TestCase):
             self.log_result("Volume Density", "FAIL", "Volume Scatter node MISSING in world")
 
     def test_08_large_frame_range(self):
-        """Edge Case: Check if scene frame range matches the 5000 frame plan."""
+        """Edge Case: Check if scene frame range matches the 10000 frame plan."""
         scene = bpy.context.scene
-        is_correct = scene.frame_start == 1 and scene.frame_end == 5000
+        is_correct = scene.frame_start == 1 and scene.frame_end == 10000
         status = "PASS" if is_correct else "FAIL"
         self.log_result("Frame Range", status, f"Range: {scene.frame_start}-{scene.frame_end}")
         self.assertTrue(is_correct)
