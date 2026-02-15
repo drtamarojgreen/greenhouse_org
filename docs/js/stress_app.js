@@ -488,6 +488,11 @@
             // Draw Category Headers & Expanded Content
             if (this.ui.categories) {
                 this.ui.categories.forEach(cat => {
+                    // Draw Header (the actual clickable accordion part)
+                    if (window.GreenhouseStressControls) {
+                        window.GreenhouseStressControls.drawCategoryHeader(ctx, this, cat);
+                    }
+
                     // Checkboxes if open (Panel first)
                     if (cat.isOpen) {
                         const catBoxes = this.ui.checkboxes.filter(c => c.category === cat.id);
