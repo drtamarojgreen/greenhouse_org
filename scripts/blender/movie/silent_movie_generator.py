@@ -347,24 +347,14 @@ class MovieMaster:
         set_visibility(gnomes, g_ranges)
 
         if self.beam:
-            self.beam.hide_render = True
             beam_ranges = [(401, 650), (3801, 4100), (4101, 4500)]
-            for rs, re in beam_ranges:
-                self.beam.keyframe_insert(data_path="hide_render", frame=rs-1)
-                self.beam.hide_render = False
-                self.beam.keyframe_insert(data_path="hide_render", frame=rs)
-                self.beam.hide_render = True
-                self.beam.keyframe_insert(data_path="hide_render", frame=re)
+            set_visibility([self.beam], beam_ranges)
 
         if self.neuron:
-            self.neuron.hide_render = True
+            # Apply visibility to entire group (Parent + Children)
+            neuron_objs = [self.neuron] + list(self.neuron.children_recursive)
             n_ranges = [(1251, 1500), (1601, 1800), (1901, 2000), (3001, 3500)]
-            for rs, re in n_ranges:
-                self.neuron.keyframe_insert(data_path="hide_render", frame=rs-1)
-                self.neuron.hide_render = False
-                self.neuron.keyframe_insert(data_path="hide_render", frame=rs)
-                self.neuron.hide_render = True
-                self.neuron.keyframe_insert(data_path="hide_render", frame=re)
+            set_visibility(neuron_objs, n_ranges)
 
             self.neuron.scale = (1, 1, 1)
             self.neuron.keyframe_insert(data_path="scale", frame=1251)
@@ -542,19 +532,15 @@ class MovieMaster:
             # Floating Brain (Z-location sine wave)
             style.insert_looping_noise(self.brain, "location", index=2, strength=0.1, scale=50.0, frame_start=1, frame_end=10000)
 
-            self.brain.hide_render = True
             self.brain.rotation_euler[2] = 0
             self.brain.keyframe_insert(data_path="rotation_euler", frame=1, index=2)
             self.brain.rotation_euler[2] = math.radians(360 * (10000 / 400))
             self.brain.keyframe_insert(data_path="rotation_euler", frame=10000, index=2)
 
+            # Apply visibility to entire group (Parent + Children)
+            brain_objs = [self.brain] + list(self.brain.children_recursive)
             ranges = [(201, 400), (751, 950), (1351, 1500), (1601, 1800), (3001, 3500)]
-            for rs, re in ranges:
-                self.brain.keyframe_insert(data_path="hide_render", frame=rs-1)
-                self.brain.hide_render = False
-                self.brain.keyframe_insert(data_path="hide_render", frame=rs)
-                self.brain.hide_render = True
-                self.brain.keyframe_insert(data_path="hide_render", frame=re)
+            set_visibility(brain_objs, ranges)
 
             mat = bpy.data.materials.get("BrainMat")
             if mat:
@@ -782,7 +768,6 @@ class MovieMaster:
                 tree.interface.new_socket(name="Image", in_out='OUTPUT', socket_type='NodeSocketColor')
 
         if self.mode == 'SILENT_FILM':
-            bright = tree.nodes.new('CompositorNodeBrightContrast')
             try:
                 bright = tree.nodes.new('CompositorNodeBrightContrast')
                 bright.name = "Bright/Contrast"
