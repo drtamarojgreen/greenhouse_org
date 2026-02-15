@@ -22,6 +22,7 @@
         },
         ui: {
             hoveredElement: null,
+            lockedTooltip: null,
             checkboxes: [], buttons: [], metrics: []
         },
         baseUrl: '',
@@ -68,12 +69,16 @@
 
             if (window.GreenhouseStressUI3D) window.GreenhouseStressUI3D.init(this);
 
-            // Initialize Category State (Collapsed by default except maybe one)
+            // Initialize Category State (8-node hierarchy)
             this.ui.categories = [
-                { id: 'env', label: 'stress_cat_env', x: 20, y: 175, w: 200, h: 25, isOpen: true },
-                { id: 'psych', label: 'stress_cat_psych', x: 240, y: 175, w: 200, h: 25, isOpen: false },
-                { id: 'philo', label: 'stress_cat_philo', x: 460, y: 175, w: 200, h: 25, isOpen: false },
-                { id: 'research', label: 'stress_cat_research', x: 680, y: 175, w: 200, h: 25, isOpen: false }
+                { id: 'hpa', label: 'stress_cat_hpa', x: 20, y: 175, w: 120, h: 25, isOpen: false },
+                { id: 'env', label: 'stress_cat_env', x: 145, y: 175, w: 120, h: 25, isOpen: true },
+                { id: 'limbic', label: 'stress_cat_limbic', x: 270, y: 175, w: 110, h: 25, isOpen: false },
+                { id: 'psych', label: 'stress_cat_psych', x: 385, y: 175, w: 120, h: 25, isOpen: false },
+                { id: 'cortical', label: 'stress_cat_cortical', x: 510, y: 175, w: 110, h: 25, isOpen: false },
+                { id: 'philo', label: 'stress_cat_philo', x: 625, y: 175, w: 120, h: 25, isOpen: false },
+                { id: 'brainstem', label: 'stress_cat_autonomic', x: 750, y: 175, w: 110, h: 25, isOpen: false },
+                { id: 'research', label: 'stress_cat_biological_defense', x: 865, y: 175, w: 115, h: 25, isOpen: false }
             ];
 
             this.setupUI();
@@ -155,6 +160,20 @@
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
 
+            // 0. Check Systemic Scrubber Interaction
+            if (Math.round(this.engine.state.factors.viewMode) === 2 && window.GreenhouseStressSystemic) {
+                const sw = this.canvas.width;
+                const sh = this.canvas.height;
+                const scrubberW = 400;
+                const scrubberX = (sw - scrubberW) / 2;
+                const scrubberY = sh - 40;
+                if (mx >= scrubberX && mx <= scrubberX + scrubberW && my >= scrubberY - 10 && my <= scrubberY + 20) {
+                    window.GreenhouseStressSystemic.timelineT = (mx - scrubberX) / scrubberW;
+                    this.interaction.isScrubbing = true;
+                    return;
+                }
+            }
+
             // 1. Check Category Headers
             for (const cat of this.ui.categories) {
                 if (mx >= cat.x && mx <= cat.x + cat.w && my >= cat.y && my <= cat.y + cat.h) {
@@ -200,9 +219,18 @@
                 if (hit3D && hit3D.type === 'category_node') {
                     const catId = hit3D.id.replace('cat_', '');
                     this.ui.categories.forEach(c => c.isOpen = (c.id === catId));
+
+                    // Item 3: Click-to-lock category tooltip
+                    if (this.ui.lockedTooltip && this.ui.lockedTooltip.id === hit3D.id) {
+                        this.ui.lockedTooltip = null; // Toggle off if same
+                    } else {
+                        this.ui.lockedTooltip = { ...hit3D, x: mx, y: my };
+                    }
                     return;
                 }
             }
+
+            this.ui.lockedTooltip = null; // Clear lock on clicking elsewhere
 
             // 6. Check Pathway Overlay Buttons (Graph Toggle)
             if (window.GreenhouseStressPathwayButtons) {
@@ -251,6 +279,15 @@
             this.interaction.mouseY = my;
 
             this.ui.hoveredElement = null;
+            this.canvas.style.cursor = 'default';
+
+            if (this.interaction.isScrubbing && window.GreenhouseStressSystemic) {
+                const sw = this.canvas.width;
+                const scrubberW = 400;
+                const scrubberX = (sw - scrubberW) / 2;
+                window.GreenhouseStressSystemic.timelineT = Math.min(1, Math.max(0, (mx - scrubberX) / scrubberW));
+                return;
+            }
 
             // Header Hover
             for (const cat of this.ui.categories) {
@@ -323,7 +360,10 @@
             }
         },
 
-        handleMouseUp() { this.interaction.isDragging = false; },
+        handleMouseUp() {
+            this.interaction.isDragging = false;
+            this.interaction.isScrubbing = false;
+        },
         handleWheel(e) { e.preventDefault(); this.camera.z = Math.min(-100, Math.max(-2000, this.camera.z + e.deltaY * 0.5)); },
 
         updateModel(state, dt) {
@@ -339,24 +379,21 @@
                 f.diurnalPhase = this.clock.getPhase();
             }
 
-            // 2. Calculate Aggregated Stress Load (Based on 100 factors)
-            // Categorize sum of active inputs
-            let scoreEnv = 0, scorePsych = 0, scorePhilo = 0, scoreRes = 0;
+            // 2. Calculate Aggregated Stress Load (8-Node Hierarchy)
+            let scores = { env: 0, psych: 0, philo: 0, research: 0, hpa: 0, limbic: 0, cortical: 0, brainstem: 0 };
 
             const config = window.GreenhouseStressConfig;
             config.factors.forEach(fact => {
                 if (f[fact.id] === 1) { // If active
-                    if (fact.category === 'env') scoreEnv++;
-                    else if (fact.category === 'psych') scorePsych++;
-                    else if (fact.category === 'philo') scorePhilo++;
-                    else if (fact.category === 'research') scoreRes++;
+                    if (scores[fact.category] !== undefined) scores[fact.category]++;
                 }
             });
 
             // Normalized Loads (0.0 - 1.0 range approx)
-            // Environment adds load. Psych/Philo/Research buffer it.
-            const environmentalLoad = (scoreEnv * 0.05) + (f.sleepDeprivation ? 0.3 : 0);
-            const copingBuffer = (scorePsych * 0.04) + (scorePhilo * 0.03) + (scoreRes * 0.02);
+            // High environmental, hpa, limbic, brainstem scores increase load.
+            // Psych, Philo, Cortical, Research buffer it.
+            const environmentalLoad = (scores.env * 0.05) + (scores.hpa * 0.03) + (scores.limbic * 0.02) + (scores.brainstem * 0.02) + (f.sleepDeprivation ? 0.3 : 0);
+            const copingBuffer = (scores.psych * 0.04) + (scores.philo * 0.03) + (scores.cortical * 0.04) + (scores.research * 0.02);
 
             // 3. Genetic & Epigenetic Modifiers
             // Epigenetic sensitivity: Cumulative load makes the system more "twitchy"
@@ -411,20 +448,25 @@
             // Precursor availability from gut health affects max rates
             const precursorFactor = f.gutHealth ? 1.0 : 0.5;
 
-            // Serotonin: Impacted by stress load and genetic transporter status
+            // Serotonin: Impacted by stress load, genetic status, and bio factors
             const baseSerotonin = 100 * precursorFactor;
-            const serotoninLoss = (m.allostaticLoad * 40) + (f.serotoninTransporter * 20);
+            const serotoninLoss = (m.allostaticLoad * 40) + (f.serotoninTransporter * 20) - (f.bio_sero ? 30 : 0);
             m.serotoninLevels = Util.SimulationEngine.smooth(m.serotoninLevels || 100, (baseSerotonin - serotoninLoss), 0.01);
 
-            // Dopamine: Chronic stress reduces D2 sensitivity and density
+            // Dopamine: Chronic stress reduces D2 sensitivity; bio factors can override
             const baseDopamine = 100 * precursorFactor;
-            const dopamineLoss = (m.allostaticLoad * 50) + (f.comtValMet * 15);
+            const dopamineLoss = (m.allostaticLoad * 50) + (f.comtValMet * 15) - (f.bio_dopa ? 30 : 0);
             m.dopamineLevels = Util.SimulationEngine.smooth(m.dopamineLevels || 100, (baseDopamine - dopamineLoss), 0.01);
 
             // HPA Pulse Strength (CRH -> ACTH -> Cortisol)
-            m.crhDrive = Util.SimulationEngine.smooth(m.crhDrive || 0, (m.autonomicBalance * 100), 0.05);
-            m.acthDrive = Util.SimulationEngine.smooth(m.acthDrive || 0, (m.crhDrive * m.hpaSensitivity), 0.05);
-            m.cortisolLevels = Util.SimulationEngine.smooth(m.cortisolLevels || 10, (m.acthDrive * 0.8), 0.02);
+            const crhTarget = (m.autonomicBalance * 100) + (f.bio_crh ? 50 : 0);
+            m.crhDrive = Util.SimulationEngine.smooth(m.crhDrive || 0, crhTarget, 0.05);
+
+            const acthTarget = (m.crhDrive * m.hpaSensitivity) + (f.bio_acth ? 50 : 0);
+            m.acthDrive = Util.SimulationEngine.smooth(m.acthDrive || 0, acthTarget, 0.05);
+
+            const cortisolTarget = (m.acthDrive * 0.8) + (f.bio_cortisol ? 20 : 0);
+            m.cortisolLevels = Util.SimulationEngine.smooth(m.cortisolLevels || 10, cortisolTarget, 0.02);
 
             // 11. Inter-Model Sync
             if (window.GreenhouseBioStatus) {
@@ -439,6 +481,16 @@
             }
 
             state.factors.stressorIntensity = Util.SimulationEngine.clamp(environmentalLoad * 0.8, 0, 1);
+
+            // 12. Biological Factor Refinements
+            if (f.bio_hrv) m.hrv = Util.SimulationEngine.smooth(m.hrv, m.hrv + 15, 0.05);
+            if (f.bio_il6 || f.bio_tnf || f.bio_crp) m.allostaticLoad += 0.0005;
+            if (f.bio_bdnf) m.resilienceReserve += 0.0002;
+            if (f.bio_oxy) m.autonomicBalance = Util.SimulationEngine.smooth(m.autonomicBalance, m.autonomicBalance * 0.8, 0.02);
+
+            // Final safety clamp
+            m.allostaticLoad = Util.SimulationEngine.clamp(m.allostaticLoad, 0.05, 1.0);
+            m.resilienceReserve = Util.SimulationEngine.clamp(m.resilienceReserve, 0.0, 1.0);
         },
 
         startLoop() {
@@ -462,19 +514,19 @@
         },
 
         drawUI(ctx, w, h, state) {
-            ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Quicksand, sans-serif'; ctx.fillText('STRESS DYNAMICS ENGINE', 40, 40);
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Quicksand, sans-serif'; ctx.fillText(t('stress_ui_engine_title'), 40, 40);
             ctx.fillStyle = '#4ca1af'; ctx.font = 'bold 12px Quicksand, sans-serif';
             const modes = ['btn_mode_macro', 'btn_mode_pathway', 'btn_mode_systemic'];
             const modeName = t(modes[state.factors.viewMode || 0]);
-            ctx.fillText(`${modeName} LEVEL: BIOLOGICAL RESPONSE`, 40, 60);
+            ctx.fillText(`${modeName} LEVEL: ${t('stress_ui_biological_response')}`, 40, 60);
 
             // Metrics Bento
             const m = state.metrics;
             const mLabels = [
-                { l: 'ALLOSTATIC LOAD', v: (m.allostaticLoad * 100).toFixed(1) + '%', c: '#ff5533' },
-                { l: 'AUTONOMIC', v: m.autonomicBalance > 0.8 ? 'SYMPATHETIC' : (m.autonomicBalance < 0.3 ? 'PARA' : 'BALANCED'), c: '#ffff66' },
-                { l: 'RESILIENCE', v: (m.resilienceReserve * 100).toFixed(0) + '%', c: '#00ff99' },
-                { l: 'HPA FEEDBACK', v: (m.hpaSensitivity * 100).toFixed(0) + '%', c: '#ff9900' }
+                { l: t('stress_ui_allostatic_load'), v: (m.allostaticLoad * 100).toFixed(1) + '%', c: '#ff5533' },
+                { l: t('stress_ui_autonomic'), v: m.autonomicBalance > 0.8 ? t('stress_ui_sympathetic') : (m.autonomicBalance < 0.3 ? t('stress_ui_para') : t('stress_ui_balanced')), c: '#ffff66' },
+                { l: t('stress_ui_resilience'), v: (m.resilienceReserve * 100).toFixed(0) + '%', c: '#00ff99' },
+                { l: t('stress_ui_hpa_feedback'), v: (m.hpaSensitivity * 100).toFixed(0) + '%', c: '#ff9900' }
             ];
             mLabels.forEach((ml, i) => {
                 const bx = 40 + i * 110;
@@ -526,13 +578,18 @@
                 // Add section label
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
                 ctx.font = 'bold 11px Quicksand, sans-serif';
-                ctx.fillText('SELECT PATHWAY:', 40, 95);
+                ctx.fillText(t('stress_ui_select_pathway_caps'), 40, 95);
 
                 this.ui.pathwayButtons.forEach(b => window.GreenhouseStressControls && window.GreenhouseStressControls.drawButton(ctx, this, b, state));
             }
 
-            if (this.ui.hoveredElement && window.GreenhouseStressTooltips && this.ui.hoveredElement.type !== 'header') {
-                window.GreenhouseStressTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
+            // Tooltips (Item 3: Locked or Hovered)
+            if (window.GreenhouseStressTooltips) {
+                if (this.ui.lockedTooltip) {
+                    window.GreenhouseStressTooltips.draw(ctx, this, this.ui.lockedTooltip.x, this.ui.lockedTooltip.y, true);
+                } else if (this.ui.hoveredElement && this.ui.hoveredElement.type !== 'header') {
+                    window.GreenhouseStressTooltips.draw(ctx, this, this.interaction.mouseX, this.interaction.mouseY);
+                }
             }
         },
 

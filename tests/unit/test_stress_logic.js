@@ -101,6 +101,11 @@ TestFramework.describe('GreenhouseStressApp Logic', () => {
     });
 
     TestFramework.it('should decrease resilienceReserve when allostaticLoad is high', () => {
+        // Disable protective factors for a clean test
+        engine.state.factors.psych_support = 0;
+        engine.state.factors.bio_bdnf = 0;
+        engine.state.factors.bio_gaba = 0;
+
         engine.state.metrics.allostaticLoad = 0.8;
         const initialState = JSON.parse(JSON.stringify(engine.state));
 

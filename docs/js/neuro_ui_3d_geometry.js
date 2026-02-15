@@ -31,6 +31,33 @@
             return { vertices, faces };
         },
 
+        generateBox(size) {
+            const s = size / 2;
+            const vertices = [
+                { x: -s, y: -s, z: -s }, { x: s, y: -s, z: -s }, { x: s, y: s, z: -s }, { x: -s, y: s, z: -s },
+                { x: -s, y: -s, z: s }, { x: s, y: -s, z: s }, { x: s, y: s, z: s }, { x: -s, y: s, z: s }
+            ];
+            const faces = [
+                [0, 1, 2], [0, 2, 3], [4, 5, 6], [4, 6, 7],
+                [0, 1, 5], [0, 5, 4], [2, 3, 7], [2, 7, 6],
+                [0, 3, 7], [0, 7, 4], [1, 2, 6], [1, 6, 5]
+            ];
+            return { vertices, faces };
+        },
+
+        generateOctahedron(size) {
+            const s = size;
+            const vertices = [
+                { x: s, y: 0, z: 0 }, { x: -s, y: 0, z: 0 }, { x: 0, y: s, z: 0 },
+                { x: 0, y: -s, z: 0 }, { x: 0, y: 0, z: s }, { x: 0, y: 0, z: -s }
+            ];
+            const faces = [
+                [0, 2, 4], [0, 4, 3], [0, 3, 5], [0, 5, 2],
+                [1, 2, 5], [1, 5, 3], [1, 3, 4], [1, 4, 2]
+            ];
+            return { vertices, faces };
+        },
+
         generateMoleculeCluster(type, scale = 1.0) {
             const vertices = [];
             const faces = [];
