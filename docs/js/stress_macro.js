@@ -219,9 +219,14 @@
                     ctx.beginPath(); ctx.arc(p.x, p.y, 5 * p.scale, 0, Math.PI * 2); ctx.fill();
                     ctx.shadowBlur = 0;
 
+                    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+                    const config = window.GreenhouseStressConfig;
+                    const factorMeta = config ? config.factors.find(f => f.id === fid) : null;
+                    const label = factorMeta ? t(factorMeta.label) : fid.toUpperCase().replace(/([A-Z])/g, ' $1');
+
                     ctx.fillStyle = '#fff';
                     ctx.font = 'bold 10px Quicksand, sans-serif';
-                    ctx.fillText(fid.toUpperCase().replace(/([A-Z])/g, ' $1'), p.x + 10, p.y);
+                    ctx.fillText(label.toUpperCase(), p.x + 10, p.y);
                 }
             });
             ctx.restore();

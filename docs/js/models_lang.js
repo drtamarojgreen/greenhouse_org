@@ -2160,7 +2160,16 @@
             "stress_systemic_label": "Systemic: Resilience vs Allostatic Load",
             "label_hypothalamus": "Hypothalamus",
             "label_pituitary": "Pituitary",
-            "label_adrenal_glands": "Adrenal Glands"
+            "label_adrenal_glands": "Adrenal Glands",
+            "stress_cat_env": "Environmental Stressors",
+            "stress_cat_psych": "Psychological Modulators",
+            "stress_cat_philo": "Philosophical Perspectives",
+            "stress_cat_research": "Emerging Research",
+            "stress_path_hpa": "HPA Axis",
+            "stress_path_tryptophan": "Tryptophan-Kynurenine",
+            "stress_path_dopaminergic": "Dopaminergic System",
+            "stress_path_serotonergic": "Serotonergic System",
+            "stress_path_nitric_oxide": "Nitric Oxide Pathway"
         },
         es: {
             // Consent Screen
@@ -4315,7 +4324,16 @@
             "stress_systemic_label": "Sistémico: Resiliencia vs Carga Alostática",
             "label_hypothalamus": "Hipotálamo",
             "label_pituitary": "Pituitaria",
-            "label_adrenal_glands": "Glándulas Adrenales"
+            "label_adrenal_glands": "Glándulas Adrenales",
+            "stress_cat_env": "Estresores Ambientales",
+            "stress_cat_psych": "Moduladores Psicológicos",
+            "stress_cat_philo": "Perspectivas Filosóficas",
+            "stress_cat_research": "Investigación Emergente",
+            "stress_path_hpa": "Eje HPA",
+            "stress_path_tryptophan": "Triptófano-Kinurenina",
+            "stress_path_dopaminergic": "Sistema Dopaminérgico",
+            "stress_path_serotonergic": "Sistema Serotoninérgico",
+            "stress_path_nitric_oxide": "Vía del Óxido Nítrico"
         }
     };
     window.GreenhouseTranslations = GreenhouseTranslations;
