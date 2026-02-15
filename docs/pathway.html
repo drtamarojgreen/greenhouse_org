@@ -147,14 +147,15 @@
         </div>
     </div>
 
+    <!-- Utility Scripts (Essential for Layout/Mobile) -->
     <script src="js/GreenhouseUtils.js"></script>
     <script src="js/GreenhouseMobile.js"></script>
-    <script src="js/models_lang.js"></script>
-    <script src="js/models_util.js"></script>
+
+    <!-- App Loader (Handles dynamic loading of models_lang, models_util, and pathway_viewer) -->
     <script src="js/pathway.js"></script>
 
     <script>
-        // Initialize the main app on load to ensure dependencies (like V8GraphRenderer) are fetched
+        // Initialize the main app on load to ensure dependencies are fetched relative to page location
         window.addEventListener('load', () => {
             initApp();
         });
@@ -171,9 +172,9 @@
             } else {
                 if (window.V8GraphRenderer) {
                     if (!window.V8GraphRenderer.initialized) {
-                        const base = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ?
-                            window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1) :
-                            'https://drtamarojgreen.github.io/greenhouse_org/';
+                        const path = window.location.pathname;
+                        const directory = path.substring(0, path.lastIndexOf('/') + 1);
+                        const base = window.location.origin + directory;
                         window.V8GraphRenderer.init('#discovery-container', base);
                         window.V8GraphRenderer.initialized = true;
                     } else {
@@ -224,10 +225,17 @@
             initApp();
         }
 
+        /**
+         * Resolves the base URL dynamically to ensure compatibility with local development
+         * and production environments (e.g., GitHub Pages).
+         */
         function initApp() {
-            const base = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ?
-                window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1) :
-                'https://drtamarojgreen.github.io/greenhouse_org/';
+            // Robust base URL detection: directory of the current pathway.html
+            const path = window.location.pathname;
+            const directory = path.substring(0, path.lastIndexOf('/') + 1);
+            const base = window.location.origin + directory;
+
+            console.log('Pathway App: Initializing with base URL:', base);
             window.GreenhousePathwayApp.init('#app-container', base);
         }
     </script>

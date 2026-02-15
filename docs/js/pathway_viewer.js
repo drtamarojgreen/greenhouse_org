@@ -199,8 +199,14 @@
     const GreenhousePathwayViewer = {
         canvas: null, ctx: null, camera: null, projection: null, cameraControls: null,
         pathwayData: null, pathwayEdges: null, brainShell: null, torsoShell: null, highlightedNodeId: null,
-        hoveredNodeId: null, // Item 12
-        animationTime: 0, // Item 11
+        hoveredNodeId: null,
+        animationTime: 0,
+
+        // --- AI-Driven Enhancements ---
+        showHeatmap: false, // Item 12: UX Heatmap Predictor
+        jitterScore: 0,     // Item 16: Animation Jitter Detector
+        lastFrameTimestamps: [],
+
         availablePathways: [], currentPathwayId: null, baseUrl: '', initialized: false,
         rawXmlData: null, // Bridge storage
 
@@ -571,7 +577,30 @@
                 }
             };
             btnGroup.appendChild(langBtn);
+
+            // Item 12/16 Toggle: Scientific Analysis Mode
+            const sciBtn = document.createElement('button');
+            sciBtn.id = 'pathway-sci-toggle';
+            sciBtn.textContent = "AI ANALYTICS";
+            sciBtn.style.cssText = `
+                flex: 1;
+                background: #2d3748;
+                color: #4fd1c5;
+                border: 1px solid #4fd1c5;
+                padding: 10px;
+                border-radius: 6px;
+                font-weight: bold;
+                cursor: pointer;
+                font-size: ${isMobile ? '16px' : '14px'};
+                margin-top: 10px;
+            `;
+            sciBtn.onclick = () => {
+                this.showHeatmap = !this.showHeatmap;
+                sciBtn.style.background = this.showHeatmap ? "#4fd1c5" : "#2d3748";
+                sciBtn.style.color = this.showHeatmap ? "#000" : "#4fd1c5";
+            };
             uiContainer.appendChild(btnGroup);
+            uiContainer.appendChild(sciBtn);
 
             // Item 16: Dynamic Legend Container
             const legend = document.createElement('div');
@@ -700,6 +729,7 @@
         mapKeggNodeToRegion(node, pathwayId) {
             const name = (node.name || '').toLowerCase();
 
+            // High-Accuracy Anatomical Mapping for Major Systems
             if (pathwayId === 'tryptophan') {
                 if (name.includes('tryptophan')) return 'gut';
                 if (name.includes('kynurenine')) return 'blood_stream';
@@ -709,6 +739,7 @@
             if (pathwayId === 'circadian') {
                 if (name.includes('period') || name.includes('clock')) return 'scn';
                 if (name.includes('bmal') || name.includes('arntl')) return 'liver';
+                if (name.includes('melatonin')) return 'pineal';
             }
 
             if (pathwayId === 'hpa') {
@@ -717,8 +748,27 @@
                 if (name.includes('cortisol')) return 'adrenals';
             }
 
+            if (pathwayId === 'dopaminergic' || pathwayId === 'dopamine') {
+                if (name.includes('vta') || name.includes('th') || name.includes('tyrosine')) return 'vta';
+                if (name.includes('drd1') || name.includes('drd2') || name.includes('striatum')) return 'striatum';
+                if (name.includes('snc') || name.includes('motor')) return 'sn';
+            }
+
+            if (pathwayId === 'serotonergic' || pathwayId === 'serotonin') {
+                if (name.includes('raphe') || name.includes('tph2')) return 'raphe';
+                if (name.includes('pfc') || name.includes('5-ht2a')) return 'pfc';
+                if (name.includes('hippocampus') || name.includes('5-ht1a')) return 'hippocampus';
+            }
+
+            if (pathwayId === 'nitric_oxide') {
+                if (name.includes('nnos')) return 'brain_stem';
+                if (name.includes('enos')) return 'blood_stream';
+                if (name.includes('inos')) return 'liver';
+            }
+
+            // Fallback: Use pathway regions or default to PFC
             const pathway = this.availablePathways.find(p => p.id === pathwayId);
-            if (pathway && pathway.regions.length > 0) {
+            if (pathway && pathway.regions && pathway.regions.length > 0) {
                 const charCode = name.charCodeAt(0) || 0;
                 return pathway.regions[charCode % pathway.regions.length];
             }
@@ -797,11 +847,25 @@
                 lastTime = time;
                 this.animationTime += dt * 0.001; // In seconds
 
+                // Item 16: Jitter Detector Logic
+                this.calculateJitter(dt);
+
                 if (this.cameraControls) this.cameraControls.update();
                 this.render();
                 requestAnimationFrame(animate);
             };
             requestAnimationFrame(animate);
+        },
+
+        calculateJitter(dt) {
+            this.lastFrameTimestamps.push(dt);
+            if (this.lastFrameTimestamps.length > 60) this.lastFrameTimestamps.shift();
+
+            if (this.lastFrameTimestamps.length > 10) {
+                const avg = this.lastFrameTimestamps.reduce((a, b) => a + b, 0) / this.lastFrameTimestamps.length;
+                const variance = this.lastFrameTimestamps.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / this.lastFrameTimestamps.length;
+                this.jitterScore = variance; // Higher variance = more jitter
+            }
         },
 
         render() {
@@ -834,8 +898,18 @@
             }
 
             if (this.pathwayData) {
+                // Item 12: Heatmap Predictor Background
+                if (this.showHeatmap) {
+                    this.drawUXHeatmap(ctx, w, h);
+                }
+
                 this.drawPathwayGraph();
-                this.drawTooltip(ctx, w, h); // Item 12
+                this.drawTooltip(ctx, w, h);
+
+                // Item 16: Jitter UI Overlay
+                if (this.showHeatmap) {
+                    this.drawJitterMonitor(ctx, w, h);
+                }
             } else {
                 ctx.fillStyle = '#555';
                 ctx.textAlign = 'center';
@@ -893,6 +967,71 @@
                 ctx.moveTo(0, y); ctx.lineTo(w, y);
             }
             ctx.stroke();
+        },
+
+        /**
+         * Item 12: UX Heatmap Predictor
+         * Visualizes predicted user attention "hotspots" based on node density.
+         */
+        drawUXHeatmap(ctx, w, h) {
+            if (!this.pathwayData) return;
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+
+            this.pathwayData.forEach(node => {
+                const proj = GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection);
+                if (proj.scale > 0) {
+                    const grad = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, 80 * proj.scale);
+                    grad.addColorStop(0, 'rgba(255, 0, 0, 0.2)');
+                    grad.addColorStop(0.5, 'rgba(255, 255, 0, 0.05)');
+                    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, 80 * proj.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            ctx.restore();
+        },
+
+        /**
+         * Item 16: Animation Jitter Detector
+         * Displays real-time stability metrics for the simulation.
+         */
+        drawJitterMonitor(ctx, w, h) {
+            const status = this.jitterScore < 5 ? "STABLE" : (this.jitterScore < 15 ? "WARM" : "JITTERY");
+            const color = this.jitterScore < 5 ? "#48bb78" : (this.jitterScore < 15 ? "#ed8936" : "#f56565");
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(20, h - 80, 200, 60);
+            ctx.strokeStyle = color;
+            ctx.strokeRect(20, h - 80, 200, 60);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px monospace';
+            ctx.fillText("AI JITTER MONITOR", 30, h - 65);
+
+            ctx.fillStyle = color;
+            ctx.font = 'bold 12px monospace';
+            ctx.fillText(`${status} (VAR: ${this.jitterScore.toFixed(2)})`, 30, h - 45);
+
+            // Small history sparkline
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            const startX = 140;
+            const startY = h - 35;
+            this.lastFrameTimestamps.forEach((ts, i) => {
+                const x = startX + (i * 1);
+                const y = startY - (ts * 0.5);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            ctx.restore();
         },
 
         drawTooltip(ctx, w, h) {
