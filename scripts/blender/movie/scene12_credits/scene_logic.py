@@ -3,9 +3,9 @@ import math
 
 def setup_scene(master):
     """Scrolling Credits Scene."""
-    # Frame range: 4501 - 5000
-    start_frame = 4501
-    end_frame = 5000
+    # Frame range: 9501 - 10000
+    start_frame = 9501
+    end_frame = 10000
 
     credits_text = (
         "GreenhouseMD Silent Movie\n\n"
@@ -21,7 +21,7 @@ def setup_scene(master):
         "Final Resolution of logos achieved."
     )
 
-    bpy.ops.object.text_add(location=(0, 0, -5))
+    bpy.ops.object.text_add(location=(0, 0, -5), rotation=(math.radians(90), 0, 0))
     text_obj = bpy.context.object
     text_obj.name = "CreditsText"
     text_obj.data.body = credits_text

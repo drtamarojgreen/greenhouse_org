@@ -12,10 +12,10 @@ def run_audit():
     os.makedirs(audit_dir, exist_ok=True)
 
     print(f"--- Greenhouse Silent Movie Audit ---")
-    print(f"Goal: Render every 100th frame from 1 to 5000.")
+    print(f"Goal: Render every 100th frame from 1 to 10000.")
     print(f"Target Directory: {audit_dir}\n")
 
-    for frame in range(1, 5001, 100):
+    for frame in range(1, 10001, 100):
         # We use a unique prefix for each frame to keep them organized
         # blender -b <script> -- [args]
         output_path = os.path.join(audit_dir, f"audit_frame_{frame:04d}_")
@@ -37,7 +37,7 @@ def run_audit():
             print(f"ERROR: Failed to render frame {frame}. Command: {' '.join(cmd)}")
             continue
     
-    print(f"\nAudit complete. {len(range(1, 5001, 100))} stills generated in {audit_dir}.")
+    print(f"\nAudit complete. {len(range(1, 10001, 100))} stills generated in {audit_dir}.")
 
 if __name__ == "__main__":
     run_audit()
