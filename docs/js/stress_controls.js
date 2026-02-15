@@ -69,30 +69,37 @@
             ctx.restore();
         },
 
-        drawCategoryHeader(ctx, header) {
+        drawCategoryHeader(ctx, app, header) {
             const isHovered = header.isHovered;
             const isOpen = header.isOpen;
 
             ctx.save();
 
             // Background
-            ctx.fillStyle = isHovered ? 'rgba(76, 161, 175, 0.3)' : 'rgba(255, 255, 255, 0.05)';
-            ctx.strokeStyle = isHovered ? '#4ca1af' : 'rgba(255, 255, 255, 0.2)';
-            ctx.lineWidth = 1;
+            ctx.fillStyle = isHovered ? 'rgba(76, 161, 175, 0.6)' : 'rgba(76, 161, 175, 0.2)';
+            ctx.strokeStyle = '#4ca1af';
+            ctx.lineWidth = 2;
 
-            ctx.fillRect(header.x, header.y, header.w, header.h);
-            ctx.strokeRect(header.x, header.y, header.w, header.h);
+            // Use roundRect if available on ctx or passed app
+            if (app && app.roundRect) {
+                app.roundRect(ctx, header.x, header.y, header.w, header.h, 6, true, true);
+            } else {
+                ctx.fillRect(header.x, header.y, header.w, header.h);
+                ctx.strokeRect(header.x, header.y, header.w, header.h);
+            }
 
             // Text
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 11px Quicksand, sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 12px Quicksand, sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText(header.label, header.x + 10, header.y + 18);
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.fillText(header.label.toUpperCase(), header.x + 10, header.y + 17);
 
             // Indicator (+/-)
             ctx.textAlign = 'right';
             ctx.font = 'bold 14px monospace';
-            ctx.fillText(isOpen ? '-' : '+', header.x + header.w - 10, header.y + 19);
+            ctx.fillText(isOpen ? '−' : '+', header.x + header.w - 10, header.y + 18);
 
             ctx.restore();
         }
