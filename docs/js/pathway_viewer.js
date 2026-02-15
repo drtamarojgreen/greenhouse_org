@@ -202,9 +202,9 @@
         hoveredNodeId: null,
         animationTime: 0,
 
-        // --- AI-Driven Enhancements ---
-        showHeatmap: false, // Item 12: UX Heatmap Predictor
-        jitterScore: 0,     // Item 16: Animation Jitter Detector
+        // --- Simulation Updates & AI Metrics ---
+        showHeatmap: false, // UX Heatmap Predictor
+        jitterScore: 0,     // Animation Jitter Detector
         lastFrameTimestamps: [],
 
         availablePathways: [], currentPathwayId: null, baseUrl: '', initialized: false,
@@ -216,12 +216,10 @@
             let container;
             let actualSelector = containerSelector;
 
-            // Handle Re-initialization from GreenhouseUtils
-            // GreenhouseUtils calls re-init with (containerElement, selectorString)
             if (containerSelector && typeof containerSelector !== 'string') {
                 container = containerSelector;
-                actualSelector = baseUrl; // In re-init, 2nd arg is the selector string
-                baseUrl = this.baseUrl;   // Use previously stored baseUrl
+                actualSelector = baseUrl;
+                baseUrl = this.baseUrl;
             } else {
                 container = document.querySelector(containerSelector);
             }
@@ -231,31 +229,24 @@
                 return;
             }
 
-            // Polling logic: Wait for the XML to be completely loaded before initiating
-            console.log("Pathway App: Waiting for complete KGML data bridge...");
-
             const checkCompletion = () => {
                 const text = container.textContent.trim();
                 return text.includes('<pathway') && text.includes('</pathway>');
             };
 
             if (checkCompletion()) {
-                console.log("Pathway App: Data bridge detected. Initiating...");
                 this.executeInitialization(container, actualSelector, baseUrl);
             } else {
                 const pollInterval = setInterval(() => {
                     if (checkCompletion()) {
                         clearInterval(pollInterval);
-                        console.log("Pathway App: Data bridge completely loaded. Initiating...");
                         this.executeInitialization(container, actualSelector, baseUrl);
                     }
                 }, 100);
 
-                // Safety timeout: If no data after 15s, initiate with generator fallback
                 setTimeout(() => {
                     if (!this.isRunning) {
                         clearInterval(pollInterval);
-                        console.warn("Pathway App: Data bridge timeout. Initiating with standalone generator.");
                         this.executeInitialization(container, actualSelector, baseUrl);
                     }
                 }, 15000);
@@ -268,59 +259,29 @@
             this._lastContainer = container;
             this.baseUrl = baseUrl || '';
 
-            // 1. Resilience Pattern: wipe previous content
             const bridgeData = container.textContent.trim();
             container.innerHTML = '';
 
-            // 2. Capture and Clean the initial XML Data
             if (bridgeData.includes('<pathway')) {
                 const start = bridgeData.indexOf('<pathway');
                 const end = bridgeData.lastIndexOf('</pathway>') + 10;
                 this.rawXmlData = bridgeData.substring(start, end);
-                console.log("Pathway App: Clean XML captured from bridge.");
             }
 
-            // The targetSelector element is the data bridge for future updates.
             this.setupDataBridgeObserver(container);
-
             this.setupUI(container);
             this.setupCanvas(container);
 
-            // Correct Camera settings for the 3D Engine
-            this.camera = {
-                x: 0,
-                y: 0,
-                z: -1000, // Pulled back to see torso
-                rotationX: 0,
-                rotationY: 0,
-                rotationZ: 0,
-                fov: 600
-            };
-
-            this.projection = {
-                width: this.canvas.width,
-                height: this.canvas.height,
-                near: 1,
-                far: 5000,
-                fov: 600
-            };
+            this.camera = { x: 0, y: 0, z: -1000, rotationX: 0, rotationY: 0, rotationZ: 0, fov: 600 };
+            this.projection = { width: this.canvas.width, height: this.canvas.height, near: 1, far: 5000, fov: 600 };
 
             const fullConfig = {
                 camera: {
                     initial: { ...this.camera },
                     controls: {
-                        enablePan: true,
-                        enableZoom: true,
-                        enableRotate: true,
-                        autoRotate: true,
-                        autoRotateSpeed: 0.0005,
-                        panSpeed: 0.002,
-                        zoomSpeed: 0.1,
-                        rotateSpeed: 0.005,
-                        inertia: true,
-                        inertiaDamping: 0.95,
-                        minZoom: -50,
-                        maxZoom: -8000
+                        enablePan: true, enableZoom: true, enableRotate: true, autoRotate: true,
+                        autoRotateSpeed: 0.0005, panSpeed: 0.002, zoomSpeed: 0.1, rotateSpeed: 0.005,
+                        inertia: true, inertiaDamping: 0.95, minZoom: -50, maxZoom: -8000
                     }
                 },
                 get(path) {
@@ -351,7 +312,6 @@
 
             this.initializeGeometry();
 
-            // Handle Language Change
             window.addEventListener('greenhouseLanguageChanged', () => {
                 this.refreshUIText();
             });
@@ -359,7 +319,9 @@
             await this.loadPathwayMetadata();
             this.initialized = true;
 
-            // 3. Resilience Pattern: Enable shared GreenhouseUtils recovery
+            const status = document.getElementById('app-status');
+            if (status) status.textContent = "Simulation Ready";
+
             if (window.GreenhouseUtils) {
                 window.GreenhouseUtils.observeAndReinitializeApplication(container, containerSelector, this, 'init');
                 window.GreenhouseUtils.startSentinel(container, containerSelector, this, 'init');
@@ -372,9 +334,7 @@
             this._bridgeObserver = new MutationObserver(() => {
                 const newData = container.textContent.trim();
                 if (newData.startsWith('<') && newData !== this.rawXmlData) {
-                    //console.log("Pathway App: New XML detected in target container bridge.");
                     this.rawXmlData = newData;
-                    // If we've already initialized, try to reload current pathway with this data
                     if (this.initialized) {
                         this.switchPathway(this.currentPathwayId || (this.availablePathways[0] && this.availablePathways[0].id));
                     }
@@ -390,16 +350,12 @@
                 this.availablePathways = data.pathways;
                 this.populatePathwaySelector();
 
-                // Match bridge data to a pathway if possible
                 if (this.availablePathways.length > 0) {
                     let startId = this.availablePathways[0].id;
-
-                    // If bridge has data, see if it mentions a specific pathway
                     if (this.rawXmlData) {
                         const match = this.availablePathways.find(p => this.rawXmlData.toLowerCase().includes(p.name.toLowerCase()));
                         if (match) startId = match.id;
                     }
-
                     await this.switchPathway(startId);
                 }
             } catch (err) {
@@ -426,26 +382,21 @@
             if (!pathway) return;
 
             const geneSelector = document.getElementById('pathway-selector');
-            if (geneSelector) geneSelector.innerHTML = '<option>Loading pathway data...</option>';
+            if (geneSelector) geneSelector.innerHTML = '<option>Loading...</option>';
 
             let success = false;
 
-            // Priority 1: Use bridged data from Velo (Supports JSON & XML)
             if (this.rawXmlData) {
                 const cleanData = this.rawXmlData.replace(/<pathway.*?>/g, '').replace(/<\/pathway>/g, '').trim();
 
-                // Attempt JSON Parse first (Native Greenhouse Format)
                 try {
                     const jsonData = JSON.parse(cleanData);
                     if (jsonData && (jsonData.molecules || jsonData.nodes)) {
-                        console.log("Pathway App: Parsed JSON from bridge.");
                         success = this.processJsonData(jsonData);
                     }
                 } catch (e) {
-                    // Fallback to XML Parse (KGML)
                     const parsed = await KeggParser.parse(this.rawXmlData, true);
                     if (parsed && parsed.nodes && parsed.nodes.length > 0) {
-                        console.log("Pathway App: Parsed XML from bridge.");
                         this.pathwayData = PathwayLayout.generate3DLayout(parsed);
                         this.pathwayEdges = parsed.edges;
                         success = true;
@@ -453,12 +404,10 @@
                 }
             }
 
-            // Priority 2: Remote fetch
             if (!success && pathway.source) {
                 success = await this.loadExternalPathway(pathway.source);
             }
 
-            // Priority 3: Internal Generator
             if (!success) {
                 const generated = PathwayDataGenerator.generate(pathwayId, pathway.regions);
                 this.pathwayData = PathwayLayout.generate3DLayout(generated);
@@ -472,158 +421,52 @@
         setupUI(container) {
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
-            if (isMobile) {
-                const testControls = document.getElementById('test-controls');
-                if (testControls) testControls.style.display = 'none';
-            }
             const uiContainer = document.createElement('div');
             uiContainer.style.cssText = `
-                position: absolute; 
-                top: ${isMobile ? 'auto' : '20px'};
-                bottom: ${isMobile ? '20px' : 'auto'};
-                left: 20px; 
-                right: ${isMobile ? '20px' : 'auto'};
-                z-index: 100; 
-                background: rgba(18, 18, 18, 0.85); 
-                padding: ${isMobile ? '10px' : '15px'};
-                border-radius: 12px; 
-                color: #e0e0e0; 
-                font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                backdrop-filter: blur(10px);
-                box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-                min-width: ${isMobile ? 'auto' : '220px'};
-                display: ${isMobile ? 'flex' : 'block'};
-                flex-direction: column;
-                gap: 5px;
+                position: absolute; top: ${isMobile ? 'auto' : '20px'}; bottom: ${isMobile ? '20px' : 'auto'};
+                left: 20px; right: ${isMobile ? '20px' : 'auto'}; z-index: 100; background: rgba(18, 18, 18, 0.85);
+                padding: 15px; border-radius: 12px; color: #e0e0e0; font-family: 'Segoe UI', sans-serif;
+                border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); min-width: 220px;
             `;
             container.style.position = 'relative';
 
             const header = document.createElement('div');
-            header.style.cssText = `font-weight: bold; margin-bottom: ${isMobile ? '5px' : '10px'}; font-size: ${isMobile ? '16px' : '14px'}; color: #4ca1af; text-transform: uppercase; letter-spacing: 1px;`;
+            header.style.cssText = `font-weight: bold; margin-bottom: 10px; font-size: 14px; color: #4ca1af; text-transform: uppercase;`;
             header.textContent = t('pathway_control');
-            if (!isMobile) uiContainer.appendChild(header);
+            uiContainer.appendChild(header);
 
-            const pathwayGroup = document.createElement('div');
-            pathwayGroup.style.marginBottom = isMobile ? '5px' : '15px';
-            const pLabel = document.createElement('label');
-            pLabel.id = 'pathway-systemic-label';
-            pLabel.textContent = t('systemic_pathway');
-            pLabel.style.cssText = `display: block; font-size: ${isMobile ? '16px' : '12px'}; margin-bottom: 5px; color: #aaa;`;
-            if (!isMobile) pathwayGroup.appendChild(pLabel);
             const pSelect = document.createElement('select');
             pSelect.id = 'master-pathway-selector';
-            pSelect.style.cssText = `
-                width: 100%; background: #2a2a2a; color: #4ca1af; border: 1px solid #444; 
-                padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: ${isMobile ? '16px' : '14px'};
-            `;
-            pathwayGroup.appendChild(pSelect);
-            uiContainer.appendChild(pathwayGroup);
-
-            const selectGroup = document.createElement('div');
-            selectGroup.style.marginBottom = isMobile ? '5px' : '10px';
-
-            const label = document.createElement('label');
-            label.id = 'pathway-component-label';
-            label.textContent = t('component_gene');
-            label.style.cssText = `display: block; font-size: ${isMobile ? '16px' : '12px'}; margin-bottom: 5px; color: #aaa;`;
-            if (!isMobile) selectGroup.appendChild(label);
+            pSelect.style.cssText = `width: 100%; background: #2a2a2a; color: #4ca1af; border: 1px solid #444; padding: 8px; border-radius: 6px; margin-bottom: 10px;`;
+            uiContainer.appendChild(pSelect);
 
             const select = document.createElement('select');
             select.id = 'pathway-selector';
-            select.style.cssText = `
-                width: 100%; 
-                background: #2a2a2a; 
-                color: white; 
-                border: 1px solid #444; 
-                padding: 8px; 
-                border-radius: 6px;
-                outline: none;
-                font-size: ${isMobile ? '16px' : '13px'};
-                cursor: pointer;
-            `;
-            selectGroup.appendChild(select);
-            uiContainer.appendChild(selectGroup);
+            select.style.cssText = `width: 100%; background: #2a2a2a; color: white; border: 1px solid #444; padding: 8px; border-radius: 6px; margin-bottom: 10px;`;
+            uiContainer.appendChild(select);
 
             const btnGroup = document.createElement('div');
-            btnGroup.style.display = 'flex';
-            btnGroup.style.gap = '10px';
+            btnGroup.style.display = 'flex'; btnGroup.style.gap = '10px';
 
             const button = document.createElement('button');
             button.id = 'highlight-gene-btn';
             button.textContent = t('highlight_pathway');
-            button.style.cssText = `
-                flex: 1;
-                background: linear-gradient(135deg, #4ca1af, #2c3e50); 
-                color: white; 
-                border: none; 
-                padding: 10px; 
-                border-radius: 6px; 
-                font-weight: bold; 
-                cursor: pointer;
-                font-size: ${isMobile ? '16px' : '14px'};
-            `;
-            button.onclick = () => {
-                this.highlightedNodeId = select.value;
-            };
+            button.style.cssText = `flex: 1; background: linear-gradient(135deg, #4ca1af, #2c3e50); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold;`;
+            button.onclick = () => { this.highlightedNodeId = select.value; };
             btnGroup.appendChild(button);
 
-            const langBtn = document.createElement('button');
-            langBtn.id = 'pathway-lang-toggle';
-            langBtn.textContent = t('btn_language');
-            langBtn.style.cssText = `
-                flex: 0 0 auto;
-                background: #732751;
-                color: white;
-                border: none;
-                padding: 10px;
-                border-radius: 6px;
-                font-weight: bold;
-                cursor: pointer;
-                font-size: ${isMobile ? '16px' : '14px'};
-            `;
-            langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) {
-                    window.GreenhouseModelsUtil.toggleLanguage();
-                }
-            };
-            btnGroup.appendChild(langBtn);
-
-            // Item 12/16 Toggle: Scientific Analysis Mode
+            // AI ANALYTICS Toggle
             const sciBtn = document.createElement('button');
-            sciBtn.id = 'pathway-sci-toggle';
             sciBtn.textContent = "AI ANALYTICS";
-            sciBtn.style.cssText = `
-                flex: 1;
-                background: #2d3748;
-                color: #4fd1c5;
-                border: 1px solid #4fd1c5;
-                padding: 10px;
-                border-radius: 6px;
-                font-weight: bold;
-                cursor: pointer;
-                font-size: ${isMobile ? '16px' : '14px'};
-                margin-top: 10px;
-            `;
-            sciBtn.onclick = () => {
-                this.showHeatmap = !this.showHeatmap;
-                sciBtn.style.background = this.showHeatmap ? "#4fd1c5" : "#2d3748";
-                sciBtn.style.color = this.showHeatmap ? "#000" : "#4fd1c5";
-            };
+            sciBtn.style.cssText = `flex: 1; background: #2d3748; color: #4fd1c5; border: 1px solid #4fd1c5; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold;`;
+            sciBtn.onclick = () => { this.showHeatmap = !this.showHeatmap; sciBtn.style.background = this.showHeatmap ? "#4fd1c5" : "#2d3748"; sciBtn.style.color = this.showHeatmap ? "#000" : "#4fd1c5"; };
+
             uiContainer.appendChild(btnGroup);
             uiContainer.appendChild(sciBtn);
 
-            // Item 16: Dynamic Legend Container
             const legend = document.createElement('div');
             legend.id = 'pathway-legend';
-            legend.style.cssText = `
-                margin-top: 15px;
-                padding-top: 10px;
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-            `;
+            legend.style.cssText = `margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-wrap: wrap; gap: 8px;`;
             uiContainer.appendChild(legend);
 
             container.appendChild(uiContainer);
@@ -637,7 +480,6 @@
             this.ctx = this.canvas.getContext('2d');
             container.appendChild(this.canvas);
 
-            // Item 12: Mouse Interaction for Tooltips
             this.canvas.addEventListener('mousemove', (e) => {
                 const rect = this.canvas.getBoundingClientRect();
                 const mx = e.clientX - rect.left;
@@ -645,7 +487,7 @@
                 this.checkHover(mx, my);
             });
 
-            this.canvas.addEventListener('click', (e) => {
+            this.canvas.addEventListener('click', () => {
                 if (this.hoveredNodeId) {
                     this.highlightedNodeId = this.hoveredNodeId;
                     const selector = document.getElementById('pathway-selector');
@@ -656,18 +498,12 @@
 
         checkHover(mx, my) {
             if (!this.pathwayData || !window.GreenhouseModels3DMath) return;
-
             let foundId = null;
             for (const node of this.pathwayData) {
                 const proj = GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection);
                 if (proj.scale > 0) {
-                    const dx = proj.x - mx;
-                    const dy = proj.y - my;
-                    const radius = 10 * proj.scale;
-                    if (Math.sqrt(dx * dx + dy * dy) < radius) {
-                        foundId = node.id;
-                        break;
-                    }
+                    const dx = proj.x - mx, dy = proj.y - my;
+                    if (Math.sqrt(dx * dx + dy * dy) < 10 * proj.scale) { foundId = node.id; break; }
                 }
             }
             this.hoveredNodeId = foundId;
@@ -677,7 +513,6 @@
         initializeGeometry() {
             this.brainShell = { vertices: [], faces: [] };
             this.torsoShell = { vertices: [], faces: [] };
-
             if (window.GreenhousePathwayGeometry) {
                 window.GreenhousePathwayGeometry.initializeBrainShell(this.brainShell);
                 window.GreenhousePathwayGeometry.initializeTorsoShell(this.torsoShell);
@@ -687,42 +522,28 @@
         async loadExternalPathway(url, isLive = false) {
             try {
                 const fetchUrl = isLive ? url : (this.baseUrl + url);
-
                 if (fetchUrl.endsWith('.json')) {
                     const response = await fetch(fetchUrl);
-                    const data = await response.json();
-                    return this.processJsonData(data);
+                    return this.processJsonData(await response.json());
                 }
-
-                // Handle XML sources (KEGG format)
                 const parsedData = await KeggParser.parse(fetchUrl);
-
                 if (parsedData.nodes.length > 0) {
-                    parsedData.nodes.forEach(node => {
-                        node.region = this.mapKeggNodeToRegion(node, this.currentPathwayId);
-                    });
+                    parsedData.nodes.forEach(node => { node.region = this.mapKeggNodeToRegion(node, this.currentPathwayId); });
                     this.pathwayData = PathwayLayout.generate3DLayout({ nodes: parsedData.nodes });
                     this.pathwayEdges = parsedData.edges;
                     return true;
                 }
-            } catch (err) {
-                console.error('Pathway App: External load error.', err);
-            }
+            } catch (err) { console.error('Pathway App: External load error.', err); }
             return false;
         },
 
         processJsonData(data) {
             if (data.molecules && data.reactions) {
                 const nodes = data.molecules.map(m => ({
-                    id: m.id,
-                    name: m.label,
-                    type: (m.class === 'metabolite' || m.class === 'neurotransmitter') ? 'compound' : (m.class === 'cytokine' ? 'map' : 'gene'),
-                    region: this.mapMoleculeToRegion(m, data)
+                    id: m.id, name: m.label, region: this.mapMoleculeToRegion(m, data),
+                    type: (m.class === 'metabolite' || m.class === 'neurotransmitter') ? 'compound' : (m.class === 'cytokine' ? 'map' : 'gene')
                 }));
-                const edges = data.reactions.map(r => ({
-                    source: r.substrate,
-                    target: r.product
-                }));
+                const edges = data.reactions.map(r => ({ source: r.substrate, target: r.product }));
                 this.pathwayData = PathwayLayout.generate3DLayout({ nodes });
                 this.pathwayEdges = edges;
                 return true;
@@ -742,114 +563,58 @@
 
         mapKeggNodeToRegion(node, pathwayId) {
             const name = (node.name || '').toLowerCase();
-
-            // High-Accuracy Anatomical Mapping for Major Systems
             if (pathwayId === 'tryptophan') {
                 if (name.includes('tryptophan')) return 'gut';
                 if (name.includes('kynurenine')) return 'blood_stream';
                 if (name.includes('ido') || name.includes('tdo')) return 'liver';
             }
-
-            if (pathwayId === 'circadian') {
-                if (name.includes('period') || name.includes('clock')) return 'scn';
-                if (name.includes('bmal') || name.includes('arntl')) return 'liver';
-                if (name.includes('melatonin')) return 'pineal';
-            }
-
-            if (pathwayId === 'hpa') {
-                if (name.includes('crh')) return 'hypothalamus';
-                if (name.includes('acth')) return 'pituitary';
-                if (name.includes('cortisol')) return 'adrenals';
-            }
-
             if (pathwayId === 'dopaminergic' || pathwayId === 'dopamine') {
-                if (name.includes('vta') || name.includes('th') || name.includes('tyrosine')) return 'vta';
-                if (name.includes('drd1') || name.includes('drd2') || name.includes('striatum')) return 'striatum';
-                if (name.includes('snc') || name.includes('motor')) return 'sn';
+                if (name.includes('vta') || name.includes('th')) return 'vta';
+                if (name.includes('drd1') || name.includes('drd2')) return 'striatum';
             }
-
             if (pathwayId === 'serotonergic' || pathwayId === 'serotonin') {
-                if (name.includes('raphe') || name.includes('tph2')) return 'raphe';
-                if (name.includes('pfc') || name.includes('5-ht2a')) return 'pfc';
-                if (name.includes('hippocampus') || name.includes('5-ht1a')) return 'hippocampus';
+                if (name.includes('raphe')) return 'raphe';
+                if (name.includes('pfc')) return 'pfc';
             }
-
-            if (pathwayId === 'nitric_oxide') {
-                if (name.includes('nnos')) return 'brain_stem';
-                if (name.includes('enos')) return 'blood_stream';
-                if (name.includes('inos')) return 'liver';
-            }
-
-            // Fallback: Use pathway regions or default to PFC
             const pathway = this.availablePathways.find(p => p.id === pathwayId);
-            if (pathway && pathway.regions && pathway.regions.length > 0) {
-                const charCode = name.charCodeAt(0) || 0;
-                return pathway.regions[charCode % pathway.regions.length];
+            if (pathway && pathway.regions.length > 0) {
+                return pathway.regions[name.charCodeAt(0) % pathway.regions.length];
             }
             return 'pfc';
         },
 
         refreshUIText() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-            const pLabel = document.getElementById('pathway-systemic-label');
-            if (pLabel) pLabel.textContent = t('systemic_pathway');
-
-            const cLabel = document.getElementById('pathway-component-label');
-            if (cLabel) cLabel.textContent = t('component_gene');
-
-            const hBtn = document.getElementById('highlight-gene-btn');
-            if (hBtn) hBtn.textContent = t('highlight_pathway');
-
-            const lBtn = document.getElementById('pathway-lang-toggle');
-            if (lBtn) lBtn.textContent = t('btn_language');
-
             this.updateGeneSelector();
             this.populatePathwaySelector();
-            this.updateLegend(); // Item 16
+            this.updateLegend();
         },
 
         updateGeneSelector() {
             const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const selector = document.getElementById('pathway-selector');
             if (selector && this.pathwayData) {
-                const currentVal = selector.value;
                 selector.innerHTML = `<option value="">${t('select_focus')}</option>`;
                 this.pathwayData.forEach(node => {
                     const option = document.createElement('option');
-                    option.value = node.id;
-                    option.textContent = node.name;
+                    option.value = node.id; option.textContent = node.name;
                     selector.appendChild(option);
                 });
-                selector.value = currentVal;
             }
         },
 
         updateLegend() {
             const legend = document.getElementById('pathway-legend');
             if (!legend || !this.pathwayData) return;
-
             const types = new Set(this.pathwayData.map(n => n.type));
             legend.innerHTML = '';
-
-            const typeMeta = {
-                'gene': { color: '#00ffcc', label: 'Gene/Protein' },
-                'compound': { color: '#3498db', label: 'Compound/Metabolite' },
-                'map': { color: '#f1c40f', label: 'Pathway Map' }
-            };
-
+            const typeMeta = { 'gene': '#00ffcc', 'compound': '#3498db', 'map': '#f1c40f' };
             types.forEach(type => {
-                const meta = typeMeta[type] || { color: '#888', label: type };
                 const item = document.createElement('div');
                 item.style.cssText = `display: flex; align-items: center; gap: 5px; font-size: 11px; color: #ccc;`;
-
                 const dot = document.createElement('span');
-                dot.style.cssText = `width: 8px; height: 8px; border-radius: 50%; background: ${meta.color}; box-shadow: 0 0 5px ${meta.color};`;
-
-                const label = document.createElement('span');
-                label.textContent = meta.label;
-
-                item.appendChild(dot);
-                item.appendChild(label);
+                dot.style.cssText = `width: 8px; height: 8px; border-radius: 50%; background: ${typeMeta[type] || '#888'};`;
+                const label = document.createElement('span'); label.textContent = type.toUpperCase();
+                item.appendChild(dot); item.appendChild(label);
                 legend.appendChild(item);
             });
         },
@@ -857,13 +622,9 @@
         startAnimation() {
             let lastTime = performance.now();
             const animate = (time) => {
-                const dt = time - lastTime;
-                lastTime = time;
-                this.animationTime += dt * 0.001; // In seconds
-
-                // Item 16: Jitter Detector Logic
+                const dt = time - lastTime; lastTime = time;
+                this.animationTime += dt * 0.001;
                 this.calculateJitter(dt);
-
                 if (this.cameraControls) this.cameraControls.update();
                 this.render();
                 requestAnimationFrame(animate);
@@ -874,380 +635,106 @@
         calculateJitter(dt) {
             this.lastFrameTimestamps.push(dt);
             if (this.lastFrameTimestamps.length > 60) this.lastFrameTimestamps.shift();
-
             if (this.lastFrameTimestamps.length > 10) {
                 const avg = this.lastFrameTimestamps.reduce((a, b) => a + b, 0) / this.lastFrameTimestamps.length;
-                const variance = this.lastFrameTimestamps.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / this.lastFrameTimestamps.length;
-                this.jitterScore = variance; // Higher variance = more jitter
+                this.jitterScore = this.lastFrameTimestamps.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / this.lastFrameTimestamps.length;
             }
         },
 
         render() {
-            const ctx = this.ctx;
-            const w = this.canvas.width;
-            const h = this.canvas.height;
-
-            ctx.clearRect(0, 0, w, h);
-            ctx.fillStyle = '#0a0a0a';
-            ctx.fillRect(0, 0, w, h);
-
+            const ctx = this.ctx, w = this.canvas.width, h = this.canvas.height;
+            ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, w, h);
             if (!this.initialized) return;
-
-            // Draw Subtle Grid for spatial orientation
-            this.drawReferenceGrid(ctx, w, h);
-
-            // Item 1: High-Fidelity Anatomical Context (2D Sagittal Backdrop)
             this.drawAnatomicalBackdrop(ctx, w, h);
-
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const highlightedNode = this.pathwayData ? this.pathwayData.find(n => n.id === this.highlightedNodeId) : null;
             const activeRegion = highlightedNode ? highlightedNode.region : null;
-
-            // Draw Connection Pillar (Spinal Cord base)
             this.drawCentralNervousSystemPillar(ctx, w, h);
-
-            if (this.brainShell && window.GreenhousePathwayBrain) {
-                window.GreenhousePathwayBrain.drawBrain(ctx, this.brainShell, this.camera, this.projection, w, h, { activeRegion });
-            }
-
-            if (this.torsoShell && window.GreenhousePathwayBrain) {
-                window.GreenhousePathwayBrain.drawTorso(ctx, this.torsoShell, this.camera, this.projection, w, h, { activeRegion });
-            }
-
+            if (this.brainShell && window.GreenhousePathwayBrain) { window.GreenhousePathwayBrain.drawBrain(ctx, this.brainShell, this.camera, this.projection, w, h, { activeRegion }); }
+            if (this.torsoShell && window.GreenhousePathwayBrain) { window.GreenhousePathwayBrain.drawTorso(ctx, this.torsoShell, this.camera, this.projection, w, h, { activeRegion }); }
             if (this.pathwayData) {
-                // Item 12: Heatmap Predictor Background
-                if (this.showHeatmap) {
-                    this.drawUXHeatmap(ctx, w, h);
-                }
-
-                this.drawPathwayGraph();
+                if (this.showHeatmap) this.drawUXHeatmap(ctx, w, h);
+                this.drawPathwayGraph(ctx);
                 this.drawTooltip(ctx, w, h);
-
-                // Item 16: Jitter UI Overlay
-                if (this.showHeatmap) {
-                    this.drawJitterMonitor(ctx, w, h);
-                }
-            } else {
-                ctx.fillStyle = '#555';
-                ctx.textAlign = 'center';
-                ctx.font = '14px Arial';
-                ctx.fillText("Loading pathway data...", w / 2, h / 2);
+                if (this.showHeatmap) this.drawJitterMonitor(ctx, w, h);
             }
-
-            // Draw Interaction PiP if a node is selected
-            if (highlightedNode && window.GreenhousePathwayBrain) {
-                const pipW = 300;
-                const pipH = 250;
-                const pipX = w - pipW - 20;
-                const pipY = h - pipH - 20;
-
-                ctx.save();
-                ctx.translate(pipX, pipY);
-                ctx.beginPath();
-                ctx.rect(0, 0, pipW, pipH);
-                ctx.clip(); // Ensure PiP content stays inside bounds
-
-                window.GreenhousePathwayBrain.drawInteractionPiP(ctx, pipW, pipH, t(highlightedNode.name));
-
-                ctx.restore();
-            }
-        },
-
-        drawCentralNervousSystemPillar(ctx, w, h) {
-            // Draws a glowing vertical pillar to suggest anatomical connection
-            const steps = 10;
-            const p1 = GreenhouseModels3DMath.project3DTo2D(0, -180, 0, this.camera, this.projection);
-            const p2 = GreenhouseModels3DMath.project3DTo2D(0, -380, 0, this.camera, this.projection);
-
-            if (p1.scale > 0 && p2.scale > 0) {
-                const grad = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
-                grad.addColorStop(0, 'rgba(0, 242, 255, 0.2)');
-                grad.addColorStop(1, 'rgba(0, 242, 255, 0.05)');
-                ctx.strokeStyle = grad;
-                ctx.lineWidth = 15 * p1.scale;
-                ctx.beginPath();
-                ctx.moveTo(p1.x, p1.y);
-                ctx.lineTo(p2.x, p2.y);
-                ctx.stroke();
-            }
-        },
-
-        drawReferenceGrid(ctx, w, h) {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-            ctx.lineWidth = 1;
-            const step = 50;
-            ctx.beginPath();
-            for (let x = 0; x <= w; x += step) {
-                ctx.moveTo(x, 0); ctx.lineTo(x, h);
-            }
-            for (let y = 0; y <= h; y += step) {
-                ctx.moveTo(0, y); ctx.lineTo(w, y);
-            }
-            ctx.stroke();
         },
 
         drawAnatomicalBackdrop(ctx, w, h) {
             const scale = Math.min(w, h) / 1000;
-            ctx.save();
-            ctx.translate(w / 2, h / 2 - 100); // Centered on brain area
-            ctx.scale(scale, scale);
-            ctx.translate(-400, -300);
-
-            ctx.strokeStyle = 'rgba(76, 161, 175, 0.05)';
-            ctx.lineWidth = 3;
-
-            // Sagittal Profile
-            ctx.beginPath();
-            ctx.moveTo(400, 50);
-            ctx.bezierCurveTo(650, 50, 850, 250, 850, 500);
-            ctx.bezierCurveTo(850, 650, 700, 750, 500, 750);
-            ctx.bezierCurveTo(300, 750, 150, 650, 50, 500);
-            ctx.bezierCurveTo(50, 250, 250, 50, 400, 50);
-            ctx.stroke();
-
-            // Inner regions suggestively
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.ellipse(450, 450, 120, 80, 0, 0, Math.PI * 2);
-            ctx.stroke();
-
-            ctx.restore();
+            ctx.save(); ctx.translate(w / 2, h / 2 - 100); ctx.scale(scale, scale);
+            ctx.strokeStyle = 'rgba(76, 161, 175, 0.05)'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(0, -250); ctx.bezierCurveTo(250, -250, 450, -50, 450, 200);
+            ctx.bezierCurveTo(450, 350, 300, 450, 100, 450); ctx.bezierCurveTo(-100, 450, -250, 350, -350, 200);
+            ctx.bezierCurveTo(-350, -50, -150, -250, 0, -250); ctx.stroke(); ctx.restore();
         },
 
-        /**
-         * Item 12: UX Heatmap Predictor
-         * Visualizes predicted user attention "hotspots" based on node density.
-         */
+        drawCentralNervousSystemPillar(ctx, w, h) {
+            const p1 = GreenhouseModels3DMath.project3DTo2D(0, -180, 0, this.camera, this.projection);
+            const p2 = GreenhouseModels3DMath.project3DTo2D(0, -380, 0, this.camera, this.projection);
+            if (p1.scale > 0 && p2.scale > 0) {
+                const grad = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
+                grad.addColorStop(0, 'rgba(0, 242, 255, 0.2)'); grad.addColorStop(1, 'rgba(0, 242, 255, 0.05)');
+                ctx.strokeStyle = grad; ctx.lineWidth = 15 * p1.scale;
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+            }
+        },
+
         drawUXHeatmap(ctx, w, h) {
-            if (!this.pathwayData) return;
-
-            ctx.save();
-            ctx.globalCompositeOperation = 'screen';
-
+            ctx.save(); ctx.globalCompositeOperation = 'screen';
             this.pathwayData.forEach(node => {
                 const proj = GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection);
                 if (proj.scale > 0) {
                     const grad = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, 80 * proj.scale);
-                    grad.addColorStop(0, 'rgba(255, 0, 0, 0.2)');
-                    grad.addColorStop(0.5, 'rgba(255, 255, 0, 0.05)');
-                    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                    ctx.fillStyle = grad;
-                    ctx.beginPath();
-                    ctx.arc(proj.x, proj.y, 80 * proj.scale, 0, Math.PI * 2);
-                    ctx.fill();
+                    grad.addColorStop(0, 'rgba(255, 0, 0, 0.2)'); grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(proj.x, proj.y, 80 * proj.scale, 0, Math.PI * 2); ctx.fill();
                 }
             });
             ctx.restore();
         },
 
-        /**
-         * Item 16: Animation Jitter Detector
-         * Displays real-time stability metrics for the simulation.
-         */
         drawJitterMonitor(ctx, w, h) {
-            const status = this.jitterScore < 5 ? "STABLE" : (this.jitterScore < 15 ? "WARM" : "JITTERY");
-            const color = this.jitterScore < 5 ? "#48bb78" : (this.jitterScore < 15 ? "#ed8936" : "#f56565");
-
-            ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(20, h - 80, 200, 60);
-            ctx.strokeStyle = color;
-            ctx.strokeRect(20, h - 80, 200, 60);
-
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 10px monospace';
-            ctx.fillText("AI JITTER MONITOR", 30, h - 65);
-
-            ctx.fillStyle = color;
-            ctx.font = 'bold 12px monospace';
-            ctx.fillText(`${status} (VAR: ${this.jitterScore.toFixed(2)})`, 30, h - 45);
-
-            // Small history sparkline
-            ctx.beginPath();
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 1;
-            const startX = 140;
-            const startY = h - 35;
-            this.lastFrameTimestamps.forEach((ts, i) => {
-                const x = startX + (i * 1);
-                const y = startY - (ts * 0.5);
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            });
-            ctx.stroke();
-
-            ctx.restore();
+            ctx.save(); ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(w - 220, 20, 200, 40);
+            ctx.fillStyle = this.jitterScore < 5 ? '#48bb78' : '#f56565'; ctx.font = 'bold 10px monospace';
+            ctx.fillText(`STABILITY: ${this.jitterScore.toFixed(2)}`, w - 210, 45); ctx.restore();
         },
 
         drawTooltip(ctx, w, h) {
-            if (!this.hoveredNodeId || !this.pathwayData) return;
+            if (!this.hoveredNodeId) return;
             const node = this.pathwayData.find(n => n.id === this.hoveredNodeId);
-            if (!node) return;
-
             const proj = GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection);
             if (proj.scale <= 0) return;
-
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-
-            ctx.save();
-            const tw = 180;
-            const th = 65;
-            let tx = proj.x + 15;
-            let ty = proj.y - th - 15;
-
-            // Flip if too close to edges
-            if (tx + tw > w) tx = proj.x - tw - 15;
-            if (ty < 0) ty = proj.y + 15;
-
-            ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
-            ctx.strokeStyle = '#4ca1af';
-            ctx.lineWidth = 1;
-
-            // Rounded rect for tooltip
-            this.drawRoundRect(ctx, tx, ty, tw, th, 8, true, true);
-
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 12px Arial';
-            ctx.fillText(t(node.name), tx + 10, ty + 20);
-
-            ctx.fillStyle = '#aaa';
-            ctx.font = '10px Arial';
-            ctx.fillText(`${t('type')}: ${node.type}`, tx + 10, ty + 35);
-            ctx.fillText(`${t('region')}: ${t(node.region)}`, tx + 10, ty + 50);
-
-            ctx.restore();
+            ctx.fillStyle = 'rgba(20,20,20,0.9)'; ctx.strokeStyle = '#4ca1af';
+            ctx.fillRect(proj.x + 10, proj.y - 40, 150, 40); ctx.strokeRect(proj.x + 10, proj.y - 40, 150, 40);
+            ctx.fillStyle = '#fff'; ctx.font = '12px Arial'; ctx.fillText(node.name, proj.x + 15, proj.y - 25);
+            ctx.fillStyle = '#aaa'; ctx.font = '10px Arial'; ctx.fillText(node.type.toUpperCase(), proj.x + 15, proj.y - 10);
         },
 
-        drawRoundRect(ctx, x, y, width, height, radius, fill, stroke) {
-            ctx.beginPath();
-            ctx.moveTo(x + radius, y);
-            ctx.lineTo(x + width - radius, y);
-            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-            ctx.lineTo(x + width, y + height - radius);
-            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-            ctx.lineTo(x + radius, y + height);
-            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-            ctx.lineTo(x, y + radius);
-            ctx.quadraticCurveTo(x, y, x + radius, y);
-            ctx.closePath();
-            if (fill) ctx.fill();
-            if (stroke) ctx.stroke();
-        },
-
-        drawFlowArrow(ctx, p1, p2) {
-            const speed = 0.5; // Paths per second
-            const t = (this.animationTime * speed) % 1;
-
-            const ax = p1.x + (p2.x - p1.x) * t;
-            const ay = p1.y + (p2.y - p1.y) * t;
-
-            // Advanced Visual Feedback: Glow and Trail (Enhancement #16)
-            const trailLength = 5;
-            for (let i = 0; i < trailLength; i++) {
-                const trailT = Math.max(0, t - (i * 0.05));
-                const tx = p1.x + (p2.x - p1.x) * trailT;
-                const ty = p1.y + (p2.y - p1.y) * trailT;
-                const alpha = 0.6 * (1 - i / trailLength);
-
-                ctx.fillStyle = `rgba(0, 255, 204, ${alpha})`;
-                ctx.beginPath();
-                ctx.arc(tx, ty, (2 - i * 0.2) * p1.scale, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // Glow
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = 'rgba(0, 255, 204, 0.8)';
-            ctx.fillStyle = 'rgba(0, 255, 204, 0.9)';
-            ctx.beginPath();
-            ctx.arc(ax, ay, 2 * p1.scale, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        },
-
-        drawPathwayGraph() {
+        drawPathwayGraph(ctx) {
             if (!this.pathwayData || !window.GreenhouseModels3DMath) return;
-
-            const projectedNodes = this.pathwayData.map(node => ({
-                ...node,
-                projected: GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection)
-            }));
-
-            // Draw edges
-            this.ctx.strokeStyle = 'rgba(76, 161, 175, 0.3)';
-            this.ctx.lineWidth = 1.5;
+            const projectedNodes = this.pathwayData.map(node => ({ ...node, projected: GreenhouseModels3DMath.project3DTo2D(node.position3D.x, node.position3D.y, node.position3D.z, this.camera, this.projection) }));
+            ctx.strokeStyle = 'rgba(76, 161, 175, 0.3)'; ctx.lineWidth = 1.5;
             this.pathwayEdges.forEach(edge => {
-                const source = projectedNodes.find(n => n.id === edge.source);
-                const target = projectedNodes.find(n => n.id === edge.target);
-                if (source && target && source.projected.scale > 0 && target.projected.scale > 0) {
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(source.projected.x, source.projected.y);
-                    this.ctx.lineTo(target.projected.x, target.projected.y);
-                    this.ctx.stroke();
-
-                    // Item 11: Animated Flow Arrows
-                    this.drawFlowArrow(this.ctx, source.projected, target.projected);
+                const s = projectedNodes.find(n => n.id === edge.source), t = projectedNodes.find(n => n.id === edge.target);
+                if (s && t && s.projected.scale > 0 && t.projected.scale > 0) {
+                    ctx.beginPath(); ctx.moveTo(s.projected.x, s.projected.y); ctx.lineTo(t.projected.x, t.projected.y); ctx.stroke();
+                    this.drawFlowArrow(s.projected, t.projected);
                 }
             });
-
-            // Draw nodes
-            const pulse = Math.sin(this.animationTime * 3) * 0.2 + 1.0;
-
             projectedNodes.forEach(node => {
                 if (node.projected.scale > 0) {
-                    let radius = 4 * node.projected.scale;
-                    if (node.type === 'map') radius *= pulse; // Map nodes pulse
-
-                    let color = '#4ca1af';
-                    let glow = 'rgba(76, 161, 175, 0.4)';
-
-                    switch (node.type) {
-                        case 'gene':
-                            color = '#00ffcc';
-                            glow = 'rgba(0, 255, 204, 0.4)';
-                            break;
-                        case 'compound':
-                            color = '#3498db';
-                            glow = 'rgba(52, 152, 219, 0.4)';
-                            break;
-                        case 'map':
-                            color = '#f1c40f';
-                            radius = 8 * node.projected.scale;
-                            glow = 'rgba(241, 196, 15, 0.4)';
-                            break;
-                    }
-
-                    if (node.id === this.highlightedNodeId || node.id === this.hoveredNodeId) {
-                        color = '#39ff14'; // Neon Green
-                        glow = 'rgba(57, 255, 20, 0.8)';
-                        radius *= 2.5;
-
-                        // Draw background box for label
-                        const label = t(node.name).toUpperCase();
-                        this.ctx.font = 'bold 11px "Courier New", Courier, monospace';
-                        const textWidth = this.ctx.measureText(label).width;
-                        this.ctx.fillStyle = 'rgba(0,0,0,0.8)';
-                        this.ctx.fillRect(node.projected.x - textWidth / 2 - 5, node.projected.y - radius - 25, textWidth + 10, 20);
-                        this.ctx.strokeStyle = '#39ff14';
-                        this.ctx.strokeRect(node.projected.x - textWidth / 2 - 5, node.projected.y - radius - 25, textWidth + 10, 20);
-
-                        this.ctx.fillStyle = '#39ff14';
-                        this.ctx.textAlign = 'center';
-                        this.ctx.fillText(label, node.projected.x, node.projected.y - radius - 11);
-                    }
-
-                    // Shadow / Glow
-                    this.ctx.shadowBlur = 10;
-                    this.ctx.shadowColor = glow;
-
-                    this.ctx.beginPath();
-                    this.ctx.arc(node.projected.x, node.projected.y, radius, 0, Math.PI * 2);
-                    this.ctx.fillStyle = color;
-                    this.ctx.fill();
-
-                    this.ctx.shadowBlur = 0; // Reset
+                    let r = 4 * node.projected.scale, c = '#4ca1af';
+                    if (node.type === 'gene') c = '#00ffcc'; else if (node.type === 'compound') c = '#3498db'; else if (node.type === 'map') { c = '#f1c40f'; r = 8 * node.projected.scale * (Math.sin(this.animationTime * 3) * 0.2 + 1); }
+                    if (node.id === this.highlightedNodeId || node.id === this.hoveredNodeId) { c = '#39ff14'; r *= 2; }
+                    ctx.beginPath(); ctx.arc(node.projected.x, node.projected.y, r, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill();
                 }
             });
+        },
+
+        drawFlowArrow(p1, p2) {
+            const t = (this.animationTime * 0.5) % 1;
+            const ax = p1.x + (p2.x - p1.x) * t, ay = p1.y + (p2.y - p1.y) * t;
+            this.ctx.fillStyle = 'rgba(0, 255, 204, 0.8)'; this.ctx.beginPath();
+            this.ctx.arc(ax, ay, 2 * p1.scale, 0, Math.PI * 2); this.ctx.fill();
         }
     };
 
