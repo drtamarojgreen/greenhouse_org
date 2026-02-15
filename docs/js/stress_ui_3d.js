@@ -80,6 +80,9 @@
             const meta = this.availablePathways.find(p => p.id === id);
             if (!meta) return;
 
+            // Prevent infinite re-fetching from the render loop while this is async
+            this.currentPathwayId = id;
+
             // Determine source: local xml or kegg
             if (!meta.source) {
                 console.log(`Stress UI: No source for pathway ${id}, using default layout.`);
@@ -89,7 +92,10 @@
             }
 
             const baseUrl = (this.app && this.app.baseUrl) ? this.app.baseUrl : '';
-            const data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, baseUrl);
+            const isJSON = meta.source.toLowerCase().endsWith('.json');
+            const data = isJSON ?
+                await window.GreenhouseModelsUtil.PathwayService.loadJSONPathway(meta.source, baseUrl) :
+                await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, baseUrl);
 
             if (data) {
                 // Apply 3D Layout (Simplified version of PathwayViewer logic)
