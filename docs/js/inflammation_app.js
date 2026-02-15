@@ -64,7 +64,19 @@
                     neuroprotection: 0.9,
                     stressBurden: 0.2,
                     bbbIntegrity: 0.95,
-                    microgliaActivation: 0.05
+                    microgliaActivation: 0.05,
+                    // Advanced Signaling (4-40)
+                    tryptase: 0.0,
+                    chymase: 0.0,
+                    atp: 0.1,
+                    ros: 0.05,
+                    calcium: 100,
+                    nfkbActivation: 0.1,
+                    nlrp3State: 0.0,
+                    jakStat: 0.1,
+                    mapk: 0.1,
+                    pi3kAkt: 0.8,
+                    campPka: 0.7
                 },
                 updateFn: (state, dt) => this.updateModel(state, dt)
             });
@@ -294,6 +306,33 @@
             const neuroTarget = Util.SimulationEngine.clamp(1.0 - (m.tnfAlpha * 0.7) + (m.il10 * 0.3), 0.1, 1.0);
             m.neuroprotection = Util.SimulationEngine.smooth(m.neuroprotection, neuroTarget, 0.03);
             m.stressBurden = Util.SimulationEngine.smooth(m.stressBurden, Util.SimulationEngine.clamp(stressSync + (m.tnfAlpha * 0.5) - (scorePhilo * 0.1), 0.01, 1.0), 0.05);
+
+            // --- ADVANCED SIGNALING DYNAMICS (Enhancements 4-40) ---
+
+            // Protease release from activated Mast Cells
+            const mastActivity = Util.SimulationEngine.clamp(m.tnfAlpha * 1.5 + (f.pathogenActive ? 0.3 : 0), 0, 1);
+            m.tryptase = Util.SimulationEngine.smooth(m.tryptase, mastActivity * 50, 0.1);
+            m.chymase = Util.SimulationEngine.smooth(m.chymase, mastActivity * 30, 0.08);
+
+            // Purinergic Signaling (ATP release from stress)
+            m.atp = Util.SimulationEngine.smooth(m.atp, 0.1 + (m.stressBurden * 5.0), 0.05);
+
+            // Inflammasome (NLRP3) - Driven by ATP and ROS
+            m.ros = Util.SimulationEngine.smooth(m.ros, Util.SimulationEngine.clamp((m.tnfAlpha * 0.6) + (m.microgliaActivation * 0.4), 0.02, 1.0), 0.05);
+            const nlrp3Target = Util.SimulationEngine.clamp((m.atp > 2.0 ? 0.4 : 0) + (m.ros > 0.5 ? 0.6 : 0), 0, 1);
+            m.nlrp3State = Util.SimulationEngine.smooth(m.nlrp3State, nlrp3Target, 0.04);
+
+            // Intracellular Cascades
+            m.nfkbActivation = Util.SimulationEngine.smooth(m.nfkbActivation, Util.SimulationEngine.clamp(m.tnfAlpha * 1.2 + (m.nlrp3State * 0.5), 0, 1), 0.06);
+            m.mapk = Util.SimulationEngine.smooth(m.mapk, Util.SimulationEngine.clamp(m.tnfAlpha * 0.8 + m.stressBurden * 0.4, 0, 1), 0.05);
+            m.jakStat = Util.SimulationEngine.smooth(m.jakStat, Util.SimulationEngine.clamp(m.tnfAlpha * 0.5 + (f.toggleIL6Mode ? 0.4 : 0), 0, 1), 0.03);
+
+            // Calcium dynamics (steady-state representation)
+            m.calcium = Util.SimulationEngine.smooth(m.calcium, 100 + (m.nfkbActivation * 400), 0.1);
+
+            // Counter-regulatory Signaling
+            m.pi3kAkt = Util.SimulationEngine.smooth(m.pi3kAkt, Util.SimulationEngine.clamp(1.0 - (m.tnfAlpha * 0.5) + (m.il10 * 0.3), 0.1, 1.0), 0.02);
+            m.campPka = Util.SimulationEngine.smooth(m.campPka, Util.SimulationEngine.clamp(m.il10 * 0.7 + (scorePhilo * 0.2), 0.05, 1.0), 0.04);
 
             if (window.GreenhouseBioStatus) {
                 window.GreenhouseBioStatus.sync('inflammation', {

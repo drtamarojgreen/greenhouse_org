@@ -224,12 +224,60 @@
             return { vertices, faces };
         },
 
+        generateMastCellMesh(scale = 1.0) {
+            const vertices = [];
+            const faces = [];
+            const somaRadius = 18 * scale;
+            const soma = this.generateSphere(somaRadius, 12);
+            vertices.push(...soma.vertices.map(v => ({ ...v, color: '#ffb6c1' }))); // Light Pink soma
+            faces.push(...soma.faces);
+
+            // Internal granules (hallmark of mast cells)
+            for (let i = 0; i < 15; i++) {
+                const r = somaRadius * 0.6;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+                const x = r * Math.sin(phi) * Math.cos(theta);
+                const y = r * Math.cos(phi);
+                const z = r * Math.sin(phi) * Math.sin(theta);
+
+                const granule = this.generateSphere(5 * scale, 6);
+                const offset = vertices.length;
+                vertices.push(...granule.vertices.map(v => ({
+                    x: v.x + x, y: v.y + y, z: v.z + z, color: '#990033' // Deep purple/red granules
+                })));
+                granule.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
+            }
+
+            // Surface IgE Receptors
+            for (let i = 0; i < 20; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+                const x = somaRadius * Math.sin(phi) * Math.cos(theta);
+                const y = somaRadius * Math.cos(phi);
+                const z = somaRadius * Math.sin(phi) * Math.sin(theta);
+
+                const receptor = this.generateSphere(2 * scale, 4);
+                const offset = vertices.length;
+                vertices.push(...receptor.vertices.map(v => ({
+                    x: v.x + x, y: v.y + y, z: v.z + z, color: '#4169e1' // Royal Blue receptors
+                })));
+                receptor.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
+            }
+            return { vertices, faces };
+        },
+
         generateGliaMesh(type, scale = 1.0) {
             const vertices = [];
             const faces = [];
-            const branches = type === 'astrocyte' ? 12 : 8;
-            const soma = this.generateSphere(10 * scale, 8);
-            vertices.push(...soma.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff4444' })));
+            const isAstro = type === 'astrocyte';
+            const branches = isAstro ? 16 : 10;
+            const somaRadius = (isAstro ? 12 : 8) * scale;
+            const soma = this.generateSphere(somaRadius, 10);
+
+            // Astrocytes: Gold/Yellow; Microglia: Cyan/Blue-ish (Resting) or Red (Active)
+            const baseColor = isAstro ? '#ffcc00' : '#4ca1af';
+            vertices.push(...soma.vertices.map(v => ({ ...v, color: baseColor })));
             faces.push(...soma.faces);
 
             for (let i = 0; i < branches; i++) {
@@ -237,15 +285,27 @@
                 const phi = (Math.random() - 0.5) * Math.PI;
                 const p1 = { x: 0, y: 0, z: 0 };
                 const p2 = {
-                    x: Math.cos(angle) * Math.cos(phi) * 60 * scale,
-                    y: Math.sin(phi) * 60 * scale,
-                    z: Math.sin(angle) * Math.cos(phi) * 60 * scale
+                    x: Math.cos(angle) * Math.cos(phi) * 80 * scale,
+                    y: Math.sin(phi) * 80 * scale,
+                    z: Math.sin(angle) * Math.cos(phi) * 80 * scale
                 };
-                const cp = { x: p2.x * 0.5 + (Math.random() - 0.5) * 20, y: p2.y * 0.5 + (Math.random() - 0.5) * 20, z: p2.z * 0.5 };
-                const tube = this.generateTubeMesh(p1, p2, cp, 2 * scale, 6);
+                const cp = { x: p2.x * 0.5 + (Math.random() - 0.5) * 30, y: p2.y * 0.5 + (Math.random() - 0.5) * 30, z: p2.z * 0.5 };
+
+                const hasEndfoot = isAstro && Math.random() > 0.6;
+                const radius = (isAstro ? 3 : 2) * scale;
+                const tube = this.generateTubeMesh(p1, p2, cp, radius, 6);
                 const offset = vertices.length;
-                vertices.push(...tube.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff6666' })));
+                vertices.push(...tube.vertices.map(v => ({ ...v, color: baseColor })));
                 tube.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
+
+                if (hasEndfoot) {
+                    const foot = this.generateSphere(8 * scale, 6);
+                    const fOffset = vertices.length;
+                    vertices.push(...foot.vertices.map(v => ({
+                        x: v.x + p2.x, y: v.y + p2.y, z: v.z + p2.z, color: '#ffea00'
+                    })));
+                    foot.faces.forEach(f => faces.push([f[0] + fOffset, f[1] + fOffset, f[2] + fOffset]));
+                }
             }
             return { vertices, faces };
         },

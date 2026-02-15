@@ -12,9 +12,11 @@
             const w = app.canvas.width;
             const h = app.canvas.height;
 
-            if (state.factors.viewMode === 0) { // Only in Macro for now
+            if (state.factors.viewMode === 0) { // Macro
                 this.drawMatrix(ctx, w, h, state);
-                this.drawTimeline(ctx, w, h);
+                this.drawTimeline(ctx, w, h, state);
+            } else if (state.factors.viewMode === 2) { // Molecular
+                this.drawTimeline(ctx, w, h, state);
             }
         },
 
@@ -51,27 +53,48 @@
             ctx.restore();
         },
 
-        drawTimeline(ctx, w, h) {
+        drawTimeline(ctx, w, h, state) {
             const x = w - 180;
             const y = h - 120;
+            const m = state.metrics;
             ctx.save();
             ctx.fillStyle = 'rgba(0,0,0,0.7)';
-            ctx.fillRect(x - 10, y - 20, 160, 60);
+            ctx.fillRect(x - 10, y - 20, 160, 80);
             ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-            ctx.strokeRect(x - 10, y - 20, 160, 60);
+            ctx.strokeRect(x - 10, y - 20, 160, 80);
 
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 9px Quicksand';
             ctx.fillText('TEMPORAL TRAJECTORY', x, y - 5);
 
-            ctx.strokeStyle = '#00ff99';
+            // TNF (Base line)
+            this.drawTrace(ctx, x, y + 25, 140, 20, '#ff5533', m.tnfAlpha, 'TNF');
+
+            // Calcium (Item 27)
+            this.drawTrace(ctx, x, y + 45, 140, 20, '#00ffcc', (m.calcium - 100) / 400, 'Ca2+');
+
+            // NF-κB (Item 39)
+            this.drawTrace(ctx, x, y + 65, 140, 20, '#ffcc00', m.nfkbActivation, 'NF-κB');
+
+            ctx.restore();
+        },
+
+        drawTrace(ctx, x, y, w, h, color, val, label) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.8;
             ctx.beginPath();
-            ctx.moveTo(x, y + 25);
-            for(let i=0; i<140; i++) {
-                ctx.lineTo(x + i, y + 25 + Math.sin(i * 0.1 + Date.now() * 0.002) * 10);
+            ctx.moveTo(x, y);
+            for(let i=0; i<w; i++) {
+                const tv = val * (0.8 + Math.sin(i * 0.1 + Date.now() * 0.002) * 0.2);
+                ctx.lineTo(x + i, y - tv * (h - 5));
             }
             ctx.stroke();
-            ctx.restore();
+
+            ctx.fillStyle = color;
+            ctx.font = '7px monospace';
+            ctx.fillText(label, x + w - 25, y + 5);
+            ctx.globalAlpha = 1.0;
         },
 
         exportToJSON(state) {

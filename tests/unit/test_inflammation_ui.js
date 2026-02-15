@@ -89,7 +89,7 @@ TestFramework.describe('GreenhouseInflammationApp UI', () => {
     TestFramework.it('should setup UI elements from config with categories', () => {
         assert.greaterThan(app.ui.checkboxes.length, 0);
         assert.isDefined(app.ui.checkboxes[0].category);
-        assert.equal(app.ui.buttons.length, 3);
+        assert.equal(app.ui.buttons.length, 6);
     });
 
     TestFramework.it('should toggle factor on checkbox click when category is open', () => {

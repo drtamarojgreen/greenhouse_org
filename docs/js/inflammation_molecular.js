@@ -38,10 +38,58 @@
                 this.drawMoleculeMesh(ctx, m.mesh, p, alpha);
             });
 
+            // 3. Render 3D Cells
+            if (ui3d.molecularCells) {
+                ui3d.molecularCells.forEach(c => {
+                    const p = Math3D.project3DTo2D(c.x, c.y, c.z, camera, projection);
+                    if (p.scale <= 0) return;
+                    const alpha = Math3D.applyDepthFog(0.6, p.depth, 0.1, 0.9);
+                    this.drawCellMesh(ctx, c, p, alpha);
+                });
+            }
+
+            // 4. Advanced Signaling Overlays (Enhancements 4-40)
+            if (window.GreenhouseInflammationSignaling) {
+                window.GreenhouseInflammationSignaling.render(ctx, ui3d.app, state, projection, ui3d);
+            }
+
             ctx.restore();
 
             // Legend
             this.drawLegend(ctx, projection);
+        },
+
+        drawCellMesh(ctx, cell, proj, alpha) {
+            const mesh = cell.mesh;
+            const ry = cell.rotationY + Date.now() * 0.0005;
+            const rx = cell.rotationX;
+
+            const rot = (v, ax, ay) => {
+                let x1 = v.x * Math.cos(ay) - v.z * Math.sin(ay);
+                let z1 = v.x * Math.sin(ay) + v.z * Math.cos(ay);
+                let y2 = v.y * Math.cos(ax) - z1 * Math.sin(ax);
+                let z2 = v.y * Math.sin(ax) + z1 * Math.cos(ax);
+                return { x: x1, y: y2, z: z2 };
+            };
+
+            mesh.faces.forEach(f => {
+                const v1 = mesh.vertices[f[0]], v2 = mesh.vertices[f[1]], v3 = mesh.vertices[f[2]];
+                const r1 = rot(v1, rx, ry), r2 = rot(v2, rx, ry), r3 = rot(v3, rx, ry);
+
+                ctx.beginPath();
+                ctx.fillStyle = v1.color || '#fff';
+                ctx.globalAlpha = alpha;
+
+                ctx.moveTo(proj.x + r1.x * proj.scale, proj.y + r1.y * proj.scale);
+                ctx.lineTo(proj.x + r2.x * proj.scale, proj.y + r2.y * proj.scale);
+                ctx.lineTo(proj.x + r3.x * proj.scale, proj.y + r3.y * proj.scale);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                ctx.lineWidth = 0.3;
+                ctx.stroke();
+            });
+            ctx.globalAlpha = 1.0;
         },
 
         drawMembrane(ctx, mesh, camera, projection, tone) {
@@ -105,10 +153,12 @@
             ctx.fill(); ctx.stroke();
 
             const items = [
-                { c: '#ff4444', l: 'Pro-Cytokine (3D Trimer)' },
-                { c: '#44ffaa', l: 'Anti-Cytokine (3D Dimer)' },
-                { c: '#ffffff', l: 'Small Molecules' },
-                { c: '#64d2ff', l: 'Lipid Bilayer (3D Segment)' }
+                { c: '#ff4444', l: 'Pro-Cytokine (TNF-α)' },
+                { c: '#44ffaa', l: 'Anti-Cytokine (IL-10)' },
+                { c: '#ffb6c1', l: 'Mast Cell (Granular)' },
+                { c: '#ffcc00', l: 'Astrocyte (Endfeet)' },
+                { c: '#4ca1af', l: 'Microglia (Reactive)' },
+                { c: '#00ffcc', l: 'Signaling Trace (Active)' }
             ];
             items.forEach((item, i) => {
                 ctx.fillStyle = item.c; ctx.beginPath(); ctx.arc(lx + 15, ly + 20 + i * 20, 5, 0, Math.PI * 2); ctx.fill();

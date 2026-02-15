@@ -198,6 +198,33 @@
             }
             // 3D Membrane Segment
             this.membrane = Geo.generateLipidBilayerSegment(1200, 800, 15);
+
+            // Anatomically accurate Cells for Molecular View
+            this.molecularCells = [];
+            // Mast Cell near the membrane
+            this.molecularCells.push({
+                x: -350, y: 100, z: 200,
+                type: 'mast_cell',
+                mesh: Geo.generateMastCellMesh(2.0),
+                rotationX: 0.5, rotationY: 0.8,
+                pulseOffset: Math.random() * Math.PI
+            });
+            // Astrocyte with endfeet
+            this.molecularCells.push({
+                x: 400, y: -200, z: -100,
+                type: 'astrocyte',
+                mesh: Geo.generateGliaMesh('astrocyte', 1.5),
+                rotationX: -0.3, rotationY: 1.2,
+                pulseOffset: Math.random() * Math.PI
+            });
+            // Reactive Microglia
+            this.molecularCells.push({
+                x: 50, y: 300, z: -300,
+                type: 'microglia',
+                mesh: Geo.generateGliaMesh('microglia', 1.2),
+                rotationX: 1.0, rotationY: 0.5,
+                pulseOffset: Math.random() * Math.PI
+            });
         },
 
         render(ctx, state, camera, projection) {
@@ -238,6 +265,21 @@
                 if (my > projection.height * 0.7) return { id: 'bbb', label: 'Blood-Brain Barrier', description: 'Endothelial lining and basement membrane; regulates leukocyte infiltration.', type: '3d' };
             } else if (viewMode === 'molecular') {
                 if (my > projection.height * 0.3 && my < projection.height * 0.5) return { id: 'membrane', label: 'Cell Membrane', description: 'Lipid bilayer barrier separating the intracellular and extracellular milieu.', type: '3d' };
+
+                if (this.molecularCells) {
+                    for (const c of this.molecularCells) {
+                        const p = Math3D.project3DTo2D(c.x, c.y, c.z, camera, projection);
+                        const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
+                        if (dist < 40 * p.scale) {
+                            let label = 'Cell', desc = 'A biological cell.';
+                            if (c.type === 'mast_cell') { label = 'Mast Cell'; desc = 'Immune cell containing granules rich in histamine and cytokines.'; }
+                            else if (c.type === 'astrocyte') { label = 'Astrocyte'; desc = 'Star-shaped glial cell that provides structural and metabolic support.'; }
+                            else if (c.type === 'microglia') { label = 'Microglia'; desc = 'Resident immune cell of the CNS; monitors and responds to injury.'; }
+                            return { id: c.type, label: label, description: desc, type: '3d' };
+                        }
+                    }
+                }
+
                 for (const m of this.molecules) {
                     const p = Math3D.project3DTo2D(m.x, m.y, m.z, camera, projection);
                     const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);

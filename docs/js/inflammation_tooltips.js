@@ -38,6 +38,21 @@
             il10: 'Interleukin 10: A potent anti-inflammatory cytokine that prevents excessive tissue damage.',
             bbbIntegrity: 'The functional status of the Blood-Brain Barrier; lower values indicate leukocyte infiltration.',
             neuroprotection: 'The composite health score of neurons based on cytokine environment and glial state.',
+            tryptase: 'Tryptase: A serine protease released by mast cells; activates PAR2 on glia to promote inflammation.',
+            chymase: 'Chymase: A mast cell protease that cleaves substrates to modulate glial activation and ECM remodeling.',
+            atp: 'Extracellular ATP: Released by stressed cells as a DAMP; activates purinergic receptors (P2X7) on glia.',
+            ros: 'Reactive Oxygen Species: Chemically reactive molecules that cause oxidative stress and prime the inflammasome.',
+            calcium: 'Cytosolic Calcium: A universal signaling messenger; spikes during cell activation and stress.',
+            nfkbActivation: 'NF-κB: A master transcription factor that translocates to the nucleus to trigger pro-inflammatory gene expression.',
+            nlrp3State: 'NLRP3 Inflammasome: A multiprotein complex that processes pro-IL-1β into its active, secreted form.',
+            jakStat: 'JAK/STAT: A signaling pathway primarily driven by cytokines like IL-6; regulates immune cell phenotypes.',
+            mapk: 'MAPK: Mitogen-Activated Protein Kinase pathways (p38, JNK, ERK) that relay extracellular signals to the nucleus.',
+            pi3kAkt: 'PI3K/AKT: A critical survival and growth signaling pathway that is often suppressed during chronic inflammation.',
+            campPka: 'cAMP/PKA: An anti-inflammatory signaling checkpoint that suppresses NF-κB and promotes resolution.',
+            showSignalingNetwork: 'Overlay representing ligand-receptor exchange pairs and signaling directionality.',
+            toggleIL6Mode: 'Switch between classic signaling and trans-signaling (sIL-6R) modes for IL-6.',
+            showTranscriptionOverlays: 'Visualize transcription factor activity curves (NF-κB, AP-1) near cell nuclei.',
+            toggleEpigeneticBalance: 'Adjust the balance between HDAC and HAT activity, affecting chromatin accessibility.',
 
             // Regions
             thalamus: 'Thalamus: Central relay station; high inflammation here disrupts sensory processing and mood.',
@@ -49,7 +64,10 @@
             bbb: 'Blood-Brain Barrier (BBB): A highly selective semipermeable border that prevents solutes in the circulating blood from non-selectively crossing into the CNS.',
             vessel: 'Microcapillary: The primary site of nutrient exchange and immune cell trafficking in the brain.',
             glia_m1: 'M1 Microglia: The "classicially activated" pro-inflammatory phenotype; releases TNF-α and IL-1β.',
-            glia_m2: 'M2 Microglia: The "alternatively activated" anti-inflammatory phenotype; involved in tissue repair and resolution.'
+            glia_m2: 'M2 Microglia: The "alternatively activated" anti-inflammatory phenotype; involved in tissue repair and resolution.',
+            mast_cell: 'Mast Cell: Immune cell residing near vessels; contains granules with histamine and TNF-α that can rapidly trigger inflammation.',
+            astrocyte: 'Astrocyte: Star-shaped glial cell that maintains the blood-brain barrier via endfeet and regulates the chemical environment.',
+            microglia: 'Microglia: The resident immune cells of the CNS, acting as the first and main form of active immune defense.'
         },
 
         draw(ctx, app, x, y) {
