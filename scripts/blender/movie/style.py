@@ -6,13 +6,10 @@ import mathutils
 def get_action_curves(action, create_if_missing=False):
     """Helper to get fcurves/curves collection from Action for Blender 5.0+ compatibility."""
     if not action: return []
-    
-    # Check legacy fcurves first, but only return if populated
-    if hasattr(action, 'fcurves') and len(action.fcurves) > 0:
+    if hasattr(action, 'fcurves'):
         return action.fcurves
-    if hasattr(action, 'curves') and len(action.curves) > 0:
+    if hasattr(action, 'curves'):
         return action.curves
-        
     # Blender 5.0 / Animation 2025 Layered Action support
     if hasattr(action, 'layer') and hasattr(action.layer, 'fcurves'):
         return action.layer.fcurves
