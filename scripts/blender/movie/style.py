@@ -250,7 +250,7 @@ def apply_scene_grade(master, scene_name, frame_start, frame_end):
                 light_obj.data.color = color[:3]
                 light_obj.data.keyframe_insert(data_path="color", frame=frame_start)
 
-def animate_foliage_wind(objects, strength=0.05, frame_start=1, frame_end=10000):
+def animate_foliage_wind(objects, strength=0.05, frame_start=1, frame_end=15000):
     """Adds subtle sway to foliage objects within a specific frame range."""
     for obj in objects:
         if obj.type != 'MESH': continue
@@ -286,7 +286,7 @@ def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed
     modifier.blend_in = 5
     modifier.blend_out = 5
 
-def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=10000, strength=0.05, scale=10.0, phase=None):
+def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=15000, strength=0.05, scale=10.0, phase=None):
     """Inserts noise modifier to a data path, ensuring the range is respected."""
     if not obj.animation_data:
         obj.animation_data_create()
@@ -331,7 +331,7 @@ def animate_breathing(obj, frame_start, frame_end, axis=2, amplitude=0.03, cycle
     obj.scale[axis] = base_val
     obj.keyframe_insert(data_path="scale", index=axis, frame=frame_end)
 
-def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 1, 1, 1), frame_start=1, frame_end=10000):
+def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 1, 1, 1), frame_start=1, frame_end=15000):
     """Creates a group of small drifting motes."""
     container = bpy.data.collections.get("DustParticles")
     if not container:
@@ -510,7 +510,7 @@ def apply_thought_motes(character_obj, frame_start, frame_end, count=5):
         mote.name = f"ThoughtMote_{character_obj.name}_{i}"
         insert_looping_noise(mote, "location", strength=0.5, scale=10.0, frame_start=frame_start, frame_end=frame_end)
 
-def animate_gait(torso, mode='HEAVY', frame_start=1, frame_end=10000):
+def animate_gait(torso, mode='HEAVY', frame_start=1, frame_end=15000):
     """Differentiates walk cycles by delegating to asset-specific animation logic."""
     step_h = 0.2 if mode == 'HEAVY' else 0.08
     cycle_l = 64 if mode == 'HEAVY' else 32
@@ -572,7 +572,7 @@ def setup_god_rays(scene):
         beam.data.keyframe_insert(data_path="color", frame=3801)
 
         # Intensity pulse
-        animate_light_flicker("LightShaftBeam", 1, 10000, strength=0.1)
+        animate_light_flicker("LightShaftBeam", 1, 15000, strength=0.1)
 
     sun = bpy.data.objects.get("Sun")
     if sun:
@@ -673,3 +673,63 @@ def apply_desaturation_beat(scene, frame_start, frame_end, saturation=0.2):
         huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_end)
         huesat.inputs['Saturation'].default_value = 1.0
         huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_end + 5)
+
+def animate_dialogue_v2(mouth_obj, frame_start, frame_end, intensity=1.0, speed=1.0):
+    """Enhanced procedural mouth movement with variable intensity and speed."""
+    if not mouth_obj: return
+
+    current_f = frame_start
+    while current_f < frame_end:
+        # Randomized open/close cycles
+        cycle_len = random.randint(4, 12) / speed
+        open_amount = random.uniform(0.5, 1.5) * intensity
+
+        mouth_obj.scale[2] = 0.4 # Neutral
+        mouth_obj.keyframe_insert(data_path="scale", index=2, frame=current_f)
+
+        mid_f = current_f + cycle_len / 2
+        if mid_f < frame_end:
+            mouth_obj.scale[2] = open_amount
+            mouth_obj.keyframe_insert(data_path="scale", index=2, frame=mid_f)
+
+        current_f += cycle_len
+
+    mouth_obj.scale[2] = 0.4
+    mouth_obj.keyframe_insert(data_path="scale", index=2, frame=frame_end)
+
+def animate_expression_blend(character_name, frame, expression='NEUTRAL', duration=12):
+    """Smoothly transitions between facial expression presets."""
+    import plant_humanoid
+    # Since plant_humanoid handles the actual keyframing of parts, we wrap it
+    # and ensure multiple frames are keyed for a smooth transition if duration > 0.
+    # For now, we'll implement a simple version that uses plant_humanoid's logic.
+    torso = bpy.data.objects.get(f"{character_name}_Torso")
+    if not torso: return
+
+    if duration > 0:
+        # Key current state before change
+        plant_humanoid.animate_expression(torso, frame - duration, expression=None) # Keeps current
+
+    plant_humanoid.animate_expression(torso, frame, expression=expression)
+
+def animate_reaction_shot(character_name, frame_start, frame_end):
+    """Adds listener micro-movements: blinks, eye shifts, subtle nods."""
+    char_name = character_name.split('_')[0]
+    head = bpy.data.objects.get(f"{char_name}_Head")
+    if not head: return
+
+    # Blinks
+    for child in head.children:
+        if "Eye" in child.name:
+            animate_blink(child, frame_start, frame_end, interval_range=(40, 100))
+
+    # Subtle nods (X-axis rotation)
+    torso = bpy.data.objects.get(f"{char_name}_Torso")
+    if torso:
+        for f in range(frame_start, frame_end, 60):
+            torso.rotation_euler[0] = 0
+            torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+            torso.rotation_euler[0] = math.radians(random.uniform(1, 3))
+            torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 30)
+            torso.rotation_euler[0] = 0
+            torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 60)

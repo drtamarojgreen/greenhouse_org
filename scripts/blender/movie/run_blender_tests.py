@@ -10,7 +10,8 @@ def run_tests():
         "test_render_preparedness.py",
         "test_blender_5_0_features.py",
         "test_interaction_scene.py",
-        "test_asset_details.py"
+        "test_asset_details.py",
+        "test_timeline_extension.py"
     ]
 
     print(f"--- Running Greenhouse Blender Movie Test Suite ---")

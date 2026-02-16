@@ -1,0 +1,38 @@
+import bpy
+import math
+import random
+import os
+import sys
+import mathutils
+
+# Ensure assets are importable
+MOVIE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ASSETS_PATH = os.path.join(MOVIE_ROOT, "assets")
+if ASSETS_PATH not in sys.path:
+    sys.path.append(ASSETS_PATH)
+
+import plant_humanoid
+import style
+
+def setup_scene(master):
+    """Dialogue scene 21."""
+    # Frame range: 13001 - 13700
+    start_frame = 13001
+    end_frame = 13700
+
+    if not master.h1 or not master.h2 or not master.gnome:
+        return
+
+    # Metadata
+    # Shot ID: S21_01
+    # Intent: Breakthrough. Gnome is defeated by reason.
+
+    style.animate_dialogue_v2(bpy.data.objects.get("Arbor_Mouth"), start_frame + 24, start_frame + 300, intensity=1.0)
+    style.animate_expression_blend("Arbor", start_frame + 50, expression='NEUTRAL')
+
+    # Gnome retreats a few steps
+    master.gnome.location.x = 2
+    master.gnome.keyframe_insert(data_path="location", index=0, frame=start_frame)
+    master.gnome.location.x = 4
+    master.gnome.keyframe_insert(data_path="location", index=0, frame=end_frame)
+    style.animate_expression_blend("GloomGnome", start_frame + 100, expression='SURPRISED')
