@@ -75,6 +75,7 @@ loadScript('models_util.js');
 loadScript('stress_config.js');
 loadScript('stress_geometry.js');
 loadScript('stress_app.js');
+loadScript('stress_systemic.js');
 loadScript('stress_ui_3d.js');
 
 TestFramework.describe('GreenhouseStressApp UI', () => {
@@ -92,15 +93,15 @@ TestFramework.describe('GreenhouseStressApp UI', () => {
     });
 
     TestFramework.it('should toggle category isOpen on header click', () => {
-        const cat = app.ui.categories[1]; // Typically 'psych', closed by default
+        const cat = app.ui.categories[0]; // 'hpa', closed by default
         assert.isFalse(cat.isOpen);
 
         const event = { clientX: cat.x + 5, clientY: cat.y + 5 };
         app.handleMouseDown(event);
 
         assert.isTrue(cat.isOpen);
-        // Accordion check: 'env' should now be closed
-        assert.isFalse(app.ui.categories[0].isOpen);
+        // Accordion check: 'env' (index 1) should now be closed
+        assert.isFalse(app.ui.categories[1].isOpen);
     });
 
     TestFramework.it('should toggle factor on checkbox click when category is open', () => {
@@ -134,12 +135,12 @@ TestFramework.describe('GreenhouseStressApp UI', () => {
 
     TestFramework.it('should detect 3D node hover in systemic view', () => {
         app.engine.state.factors.viewMode = 2; // Systemic
-        // Crystal is at 0,0,0
-        const event = { clientX: 500, clientY: 375 };
+        // HPA node (index 0) at time=0: angle=0, orbit=120 -> x=120, y=0 -> Projected: 620, 375
+        const event = { clientX: 620, clientY: 375 };
         app.handleMouseMove(event);
 
         assert.isNotNull(app.ui.hoveredElement);
-        assert.equal(app.ui.hoveredElement.id, 'crystal');
+        assert.equal(app.ui.hoveredElement.id, 'cat_hpa');
     });
 
     TestFramework.it('should correctly implement hitTestCheckboxes', () => {
