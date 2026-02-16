@@ -69,19 +69,24 @@
 
             if (window.GreenhouseStressUI3D) window.GreenhouseStressUI3D.init(this);
 
-            // Initialize Category State (8-node hierarchy)
+            // Initialize Category State (Expanded 12-node hierarchy)
             this.ui.categories = [
-                { id: 'hpa', label: 'stress_cat_hpa', x: 20, y: 175, w: 120, h: 25, isOpen: false },
-                { id: 'env', label: 'stress_cat_env', x: 145, y: 175, w: 120, h: 25, isOpen: true },
-                { id: 'limbic', label: 'stress_cat_limbic', x: 270, y: 175, w: 110, h: 25, isOpen: false },
-                { id: 'psych', label: 'stress_cat_psych', x: 385, y: 175, w: 120, h: 25, isOpen: false },
-                { id: 'cortical', label: 'stress_cat_cortical', x: 510, y: 175, w: 110, h: 25, isOpen: false },
-                { id: 'philo', label: 'stress_cat_philo', x: 625, y: 175, w: 120, h: 25, isOpen: false },
-                { id: 'brainstem', label: 'stress_cat_autonomic', x: 750, y: 175, w: 110, h: 25, isOpen: false },
-                { id: 'research', label: 'stress_cat_biological_defense', x: 865, y: 175, w: 115, h: 25, isOpen: false }
+                { id: 'hpa', label: 'stress_cat_hpa', w: 180, h: 25, isOpen: false },
+                { id: 'env', label: 'stress_cat_env', w: 180, h: 25, isOpen: true },
+                { id: 'limbic', label: 'stress_cat_limbic', w: 180, h: 25, isOpen: false },
+                { id: 'psych', label: 'stress_cat_psych', w: 180, h: 25, isOpen: false },
+                { id: 'cortical', label: 'stress_cat_cortical', w: 180, h: 25, isOpen: false },
+                { id: 'philo', label: 'stress_cat_philo', w: 180, h: 25, isOpen: false },
+                { id: 'brainstem', label: 'stress_cat_autonomic', w: 180, h: 25, isOpen: false },
+                { id: 'research', label: 'stress_cat_biological_defense', w: 180, h: 25, isOpen: false },
+                { id: 'interv', label: 'stress_cat_interv', w: 180, h: 25, isOpen: false },
+                { id: 'therapy', label: 'stress_cat_therapy', w: 180, h: 25, isOpen: false },
+                { id: 'lifestyle', label: 'stress_cat_lifestyle', w: 180, h: 25, isOpen: false },
+                { id: 'system', label: 'stress_cat_system', w: 180, h: 25, isOpen: false }
             ];
 
             this.setupUI();
+            this.updateCategoryPositions();
             this.setupPathwayUI();
 
             this.canvas.onmousedown = (e) => this.handleMouseDown(e);
@@ -97,6 +102,30 @@
                 this.projection.width = this.canvas.width;
                 this.setupUI();
             });
+        },
+
+        updateCategoryPositions() {
+            const col1 = ['hpa', 'env', 'limbic', 'psych', 'cortical', 'philo'];
+            const col2 = ['brainstem', 'research', 'interv', 'therapy', 'lifestyle', 'system'];
+
+            const processCol = (ids, x) => {
+                let currentY = 175;
+                ids.forEach(id => {
+                    const cat = this.ui.categories.find(c => c.id === id);
+                    if (!cat) return;
+                    cat.x = x;
+                    cat.y = currentY;
+                    currentY += cat.h + 5;
+                    if (cat.isOpen) {
+                        const catBoxes = this.ui.checkboxes.filter(c => c.category === cat.id);
+                        const height = Math.ceil(catBoxes.length / 2) * 22 + 40;
+                        currentY += height;
+                    }
+                });
+            };
+
+            processCol(col1, 20);
+            processCol(col2, 510);
         },
 
         setupUI() {
@@ -156,6 +185,7 @@
         },
 
         handleMouseDown(e) {
+            this.updateCategoryPositions();
             const rect = this.canvas.getBoundingClientRect();
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
@@ -177,13 +207,12 @@
             // 1. Check Category Headers
             for (const cat of this.ui.categories) {
                 if (mx >= cat.x && mx <= cat.x + cat.w && my >= cat.y && my <= cat.y + cat.h) {
-                    // Close others (accordion style) or just toggle? User asked for accessible dropdowns
-                    // Let's toggle individually for now, or accordion if space is tight.
-                    // Let's do Accordion behavior (one open at a time) for cleanliness
-                    this.ui.categories.forEach(c => {
-                        if (c.id !== cat.id) c.isOpen = false;
-                    });
-                    cat.isOpen = !cat.isOpen;
+                    const wasOpen = cat.isOpen;
+                    // Accordion behavior: close others in the same column?
+                    // Actually, let's keep it simple: one open at a time globally for layout clarity.
+                    this.ui.categories.forEach(c => c.isOpen = false);
+                    cat.isOpen = !wasOpen;
+                    this.updateCategoryPositions();
                     return;
                 }
             }
@@ -379,21 +408,50 @@
                 f.diurnalPhase = this.clock.getPhase();
             }
 
-            // 2. Calculate Aggregated Stress Load (8-Node Hierarchy)
-            let scores = { env: 0, psych: 0, philo: 0, research: 0, hpa: 0, limbic: 0, cortical: 0, brainstem: 0 };
+            // 2. Calculate Aggregated Stress Load (12-Node Hierarchy)
+            let scores = {
+                env: 0, psych: 0, philo: 0, research: 0, hpa: 0, limbic: 0, cortical: 0, brainstem: 0,
+                interv: 0, therapy: 0, lifestyle: 0, system: 0
+            };
 
             const config = window.GreenhouseStressConfig;
             config.factors.forEach(fact => {
                 if (f[fact.id] === 1) { // If active
-                    if (scores[fact.category] !== undefined) scores[fact.category]++;
+                    if (scores[fact.category] !== undefined) {
+                        // Exclude meta-modulators from direct count to avoid double-counting in damping
+                        const meta = ['stress_interv_adherence', 'stress_interv_persistence', 'stress_therapy_alliance', 'stress_therapy_homework', 'stress_system_access', 'stress_system_capacity', 'stress_system_wait_times'];
+                        if (!meta.includes(fact.id)) scores[fact.category]++;
+                    }
                 }
             });
+
+            // Clinical Interventions & Adherence (Items 73, 75, 78, 79)
+            const adherence = (f.stress_interv_adherence ? 1.0 : 0.4) * (f.stress_interv_persistence ? 1.0 : 0.5);
+            const therapyAlliance = (f.stress_therapy_alliance ? 1.2 : 0.8) * (f.stress_therapy_homework ? 1.1 : 0.9);
+
+            // System Constraints (Items 83, 84)
+            const systemEfficiency = (f.stress_system_access ? 1.0 : 0.5) * (f.stress_system_capacity ? 1.0 : 0.7) * (f.stress_system_wait_times ? 0.8 : 1.0);
 
             // Normalized Loads (0.0 - 1.0 range approx)
             // High environmental, hpa, limbic, brainstem scores increase load.
             // Psych, Philo, Cortical, Research buffer it.
             const environmentalLoad = (scores.env * 0.05) + (scores.hpa * 0.03) + (scores.limbic * 0.02) + (scores.brainstem * 0.02) + (f.sleepDeprivation ? 0.3 : 0);
+
+            // Calculate Advanced Damping (Items 74, 80, 81, 82)
+            let clinicalDamping = (scores.interv * 0.05 + scores.therapy * 0.06 * therapyAlliance) * adherence * systemEfficiency;
+            const lifestyleBuffer = (scores.lifestyle * 0.04);
             const copingBuffer = (scores.psych * 0.04) + (scores.philo * 0.03) + (scores.cortical * 0.04) + (scores.research * 0.02);
+
+            // Stepped-Care Escalation (Item 76)
+            if (m.allostaticLoad > 0.7 && f.stress_system_stepped_care) clinicalDamping *= 1.25;
+
+            // Multimodal Synergy (Item 79)
+            let synergy = 1.0;
+            if (scores.interv > 0 && scores.therapy > 0 && scores.lifestyle > 0) synergy = 1.35;
+            else if ((scores.interv > 0 && scores.therapy > 0) || (scores.therapy > 0 && scores.lifestyle > 0)) synergy = 1.15;
+
+            const gutEfficiency = f.gutHealth ? 1.0 : 0.6;
+            const damping = (copingBuffer + clinicalDamping + lifestyleBuffer) * synergy * gutEfficiency;
 
             // 3. Genetic & Epigenetic Modifiers
             // Epigenetic sensitivity: Cumulative load makes the system more "twitchy"
@@ -404,12 +462,16 @@
             const circadianDrive = this.clock ? this.clock.getCortisolFactor() * 0.2 : 0;
 
             // 5. Modulators (Brakes) & Gut Health
-            // Gut health affects precursors for GABA/Serotonin
-            const gutEfficiency = f.gutHealth ? 1.0 : 0.6;
-            const damping = copingBuffer * gutEfficiency;
+            // Gut health already incorporated into damping above
 
             // 6. Autonomic Dynamics (Vagus Nerve / HRV)
-            const sympatheticTarget = Util.SimulationEngine.clamp((environmentalLoad + geneticDrive + circadianDrive) - damping, 0, 1.5);
+            let sympatheticTarget = Util.SimulationEngine.clamp((environmentalLoad + geneticDrive + circadianDrive) - damping, 0, 1.5);
+
+            // Crisis Pathway (Item 77): Acute deterioration without safety planning
+            if (m.allostaticLoad > 0.85 && !f.stress_system_crisis_plan) {
+                sympatheticTarget += 0.4; // Crisis spike
+            }
+
             m.autonomicBalance = Util.SimulationEngine.smooth(m.autonomicBalance, sympatheticTarget, 0.05);
 
             // HRV Calculation (Inverse of autonomic balance + noise)
@@ -440,7 +502,10 @@
             );
 
             // 9. Update History (Epigenetics)
-            h.cumulativeLoad += (m.allostaticLoad > 0.7) ? 0.0001 : (m.allostaticLoad < 0.3 ? -0.00005 : 0);
+            const relapsePrevention = f.stress_interv_relapse_prev ? 1.5 : 1.0;
+            const historyRecovery = (m.allostaticLoad < 0.3 ? -0.00005 * relapsePrevention : 0);
+
+            h.cumulativeLoad += (m.allostaticLoad > 0.7) ? 0.0001 : historyRecovery;
             h.cumulativeLoad = Util.SimulationEngine.clamp(h.cumulativeLoad, 0, 10.0);
             h.peakStress = Math.max(h.peakStress, m.allostaticLoad);
 
@@ -467,6 +532,13 @@
 
             const cortisolTarget = (m.acthDrive * 0.8) + (f.bio_cortisol ? 20 : 0);
             m.cortisolLevels = Util.SimulationEngine.smooth(m.cortisolLevels || 10, cortisolTarget, 0.02);
+
+            // Risk Monitoring (Item 85): Real-time threshold alerts simulation
+            if (f.stress_system_risk_monitor && m.allostaticLoad > 0.9) {
+                h.riskAlertActive = true;
+            } else {
+                h.riskAlertActive = false;
+            }
 
             // 11. Inter-Model Sync
             if (window.GreenhouseBioStatus) {
