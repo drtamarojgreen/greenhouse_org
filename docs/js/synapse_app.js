@@ -29,7 +29,11 @@
             gradient: { en: 'Electrochemical Gradient', es: 'Gradiente Electroquímico' },
             snare: { en: 'SNARE Complex (Vesicle Fusion)', es: 'Complejo SNARE (Fusión Vesicular)' },
             ecm: { en: 'Extra-Cellular Matrix', es: 'Matriz Extracelular' },
-            retrograde: { en: 'Endocannabinoid (Retrograde Signal)', es: 'Endocannabinoide (Señal Retrógrada)' }
+            retrograde: { en: 'Endocannabinoid (Retrograde Signal)', es: 'Endocannabinoide (Señal Retrógrada)' },
+            ampar: { en: 'AMPA Receptor', es: 'Receptor AMPA' },
+            nmdar: { en: 'NMDA Receptor', es: 'Receptor NMDA' },
+            tlr4: { en: 'Toll-like Receptor 4', es: 'Receptor Toll-like 4' },
+            lps: { en: 'LPS (Pathogen Signal)', es: 'LPS (Señal de Patógeno)' }
         },
         elements: {
             vesicles: [
@@ -38,10 +42,11 @@
                 { id: 'vesicle', x: 0.5, y: 0.22, r: 10, offset: 4 }
             ],
             receptors: [
-                { x: 0.38, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
-                { x: 0.46, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
-                { x: 0.54, type: 'gpcr', state: 'idle', activationCount: 0 },
-                { x: 0.62, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 }
+                { x: 0.32, type: 'ampar', state: 'closed', activationCount: 0 },
+                { x: 0.40, type: 'nmdar', state: 'closed', activationCount: 0 },
+                { x: 0.48, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                { x: 0.56, type: 'gpcr', state: 'idle', activationCount: 0 },
+                { x: 0.64, type: 'tlr4', state: 'idle', activationCount: 0 }
             ],
             autoreceptors: [
                 { x: 0.42, y: 0.4, type: 'autoreceptor' },
@@ -333,10 +338,11 @@
                     { id: 'vesicle', x: 0.5, y: 0.22, r: 10, offset: 4 }
                 ];
                 G.config.elements.receptors = [
-                    { x: 0.38, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
-                    { x: 0.46, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
-                    { x: 0.54, type: 'gpcr', state: 'idle', activationCount: 0 },
-                    { x: 0.62, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 }
+                    { x: 0.32, type: 'ampar', state: 'closed', activationCount: 0 },
+                    { x: 0.40, type: 'nmdar', state: 'closed', activationCount: 0 },
+                    { x: 0.48, type: 'ionotropic_receptor', state: 'closed', activationCount: 0 },
+                    { x: 0.56, type: 'gpcr', state: 'idle', activationCount: 0 },
+                    { x: 0.64, type: 'tlr4', state: 'idle', activationCount: 0 }
                 ];
             }
         },
@@ -584,10 +590,10 @@
                                 if (Math.random() > 0.5) return;
                             }
 
-                            if (receptor.type === 'ionotropic_receptor' && p.chemistry.ionEffect !== 'none') {
+                            if ((receptor.type === 'ionotropic_receptor' || receptor.type === 'ampar') && p.chemistry.ionEffect !== 'none') {
                                 if (pharm.ttxActive && p.chemistry.ionEffect === 'sodium') return;
 
-                                let ionsToCreate = 1;
+                                let ionsToCreate = (receptor.type === 'ampar') ? 2 : 1;
                                 if (pharm.benzodiazepineActive && p.chemistry.id === 'gaba') ionsToCreate = 3;
 
                                 for (let k = 0; k < ionsToCreate; k++) {
@@ -606,9 +612,23 @@
                                     if (G.Molecular) G.Molecular.triggerRetrograde(rx, ry);
                                 }
 
-                            } else if (receptor.type === 'gpcr') {
+                            } else if (receptor.type === 'nmdar') {
+                                // NMDA specific: requires depolarization > -30 (Mg2+ block release)
+                                const depol = G.Analytics?.state?.depolarization || -70;
+                                if (depol > -30) {
+                                    G.Particles.createIon(rx, ry + 10, 'calcium');
+                                    receptor.state = 'open';
+                                    setTimeout(() => { if (receptor.state === 'open') receptor.state = 'closed'; }, 300);
+                                } else {
+                                    receptor.state = 'blocked';
+                                    setTimeout(() => { if (receptor.state === 'blocked') receptor.state = 'closed'; }, 200);
+                                }
+                            } else if (receptor.type === 'gpcr' || receptor.type === 'tlr4') {
                                 receptor.state = 'active';
-                                if (G.Molecular) G.Molecular.triggerCascade(rx, ry + 20);
+                                if (G.Molecular) {
+                                    const color = receptor.type === 'tlr4' ? 'rgba(255, 68, 68, ' : 'rgba(255, 100, 255, ';
+                                    G.Molecular.triggerCascade(rx, ry + 20, color);
+                                }
                                 setTimeout(() => { if (receptor.state === 'active') receptor.state = 'idle'; }, 500);
                             }
                         }
@@ -749,6 +769,24 @@
                 if (r.type === 'ionotropic_receptor') {
                     ctx.fillStyle = r.state === 'open' ? '#fff' : (r.state === 'desensitized' ? '#555' : '#4DB6AC');
                     ctx.fillRect(rx - 6, ry, 4, 12); ctx.fillRect(rx + 2, ry, 4, 12);
+                } else if (r.type === 'ampar') {
+                    ctx.fillStyle = r.state === 'open' ? '#fff' : (r.state === 'desensitized' ? '#555' : '#FFD54F');
+                    // Tetrameric representation
+                    ctx.fillRect(rx - 8, ry, 3, 12); ctx.fillRect(rx - 4, ry, 3, 12);
+                    ctx.fillRect(rx + 1, ry, 3, 12); ctx.fillRect(rx + 5, ry, 3, 12);
+                } else if (r.type === 'nmdar') {
+                    ctx.fillStyle = r.state === 'open' ? '#fff' : (r.state === 'desensitized' ? '#555' : '#9575CD');
+                    ctx.fillRect(rx - 8, ry, 16, 12);
+                    if (r.state === 'blocked' || r.state === 'closed') {
+                        ctx.fillStyle = '#ff4444'; // Mg2+ block color
+                        ctx.beginPath(); ctx.arc(rx, ry + 6, 3, 0, Math.PI * 2); ctx.fill();
+                    }
+                } else if (r.type === 'tlr4') {
+                    ctx.strokeStyle = r.state === 'active' ? '#fff' : '#E57373';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(rx, ry + 6, 10, Math.PI, 0); // Crescent
+                    ctx.stroke();
                 }
             });
         },

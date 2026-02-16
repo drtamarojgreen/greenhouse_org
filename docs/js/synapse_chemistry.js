@@ -91,6 +91,16 @@
                 nmr: '2.7 ppm (β-CH2), 3.0 ppm (α-CH2), 6.5-6.7 ppm (Aromatic)',
                 aromatic_rings: 1, // Catechol ring
                 h_bond_acceptors: 3
+            },
+            lps: {
+                id: 'lps',
+                name: { en: 'LPS (Lipopolysaccharide)', es: 'LPS (Lipopolisacárido)' },
+                type: 'inflammatory',
+                color: '#FF4444',
+                glow: 'rgba(255, 68, 68, 0.6)',
+                targets: ['tlr4'],
+                ionEffect: 'none',
+                molecularWeight: 'Approx. 10 kDa'
             }
         },
 
@@ -127,6 +137,41 @@
                 binds: ['serotonin', 'dopamine', 'glutamate', 'gaba'],
                 stoichiometry: 'Monomeric',
                 pdbId: '6VMS'
+            },
+            ampar: {
+                id: 'ampar',
+                name: { en: 'AMPA Receptor', es: 'Receptor AMPA' },
+                binds: ['glutamate'],
+                stoichiometry: 'Tetrameric (GluA1-4)',
+                pdbId: '3KG2',
+                polypeptide_chains: 4,
+                amino_acids: 3600,
+                hydrophobic_region: 'Transmembrane segments',
+                termini: 'Extracellular N, Intracellular C'
+            },
+            nmdar: {
+                id: 'nmdar',
+                name: { en: 'NMDA Receptor', es: 'Receptor NMDA' },
+                binds: ['glutamate'],
+                stoichiometry: 'Heterotetrameric (GluN1/N2)',
+                pdbId: '4PE5',
+                polypeptide_chains: 4,
+                amino_acids: 3800,
+                hydrophobic_region: 'Transmembrane segments',
+                termini: 'Extracellular N, Intracellular C',
+                special: 'Voltage-dependent Mg2+ block'
+            },
+            tlr4: {
+                id: 'tlr4',
+                name: { en: 'Toll-like Receptor 4', es: 'Receptor Toll-like 4' },
+                binds: ['lps'],
+                stoichiometry: 'Homodimeric (TLR4/MD-2)',
+                pdbId: '3FXI',
+                topology: 'Leucine-rich repeats',
+                polypeptide_chains: 2,
+                amino_acids: 1600,
+                hydrophobic_region: 'Single TM helix',
+                termini: 'Extracellular N, Intracellular C'
             }
         },
 
