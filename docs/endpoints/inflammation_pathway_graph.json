@@ -9,8 +9,8 @@
     { "id": "synapse", "label": "Synapse", "anchorRegion": "pfc", "renderBounds": { "x": 0, "y": 150, "z": 150 } }
   ],
   "molecules": [
-    { "id": "TRP", "class": "metabolite", "color": "#64FFC8", "defaultRadius": 2, "label": "Tryptophan" },
-    { "id": "KYN", "class": "metabolite", "color": "#FFD264", "defaultRadius": 2, "label": "Kynurenine" },
+    { "id": "TRP", "class": "metabolite", "color": "#64FFC8", "defaultRadius": 2, "label": "Tryptophan", "link": "https://en.wikipedia.org/wiki/Tryptophan" },
+    { "id": "KYN", "class": "metabolite", "color": "#FFD264", "defaultRadius": 2, "label": "Kynurenine", "link": "https://en.wikipedia.org/wiki/Kynurenine" },
     { "id": "3HAA", "class": "metabolite", "color": "#FF6432", "defaultRadius": 2, "label": "3-HAA" },
     { "id": "QUIN", "class": "metabolite", "color": "#FF3200", "defaultRadius": 3, "label": "Quinolinic Acid" },
     { "id": "KYNA", "class": "metabolite", "color": "#32FF64", "defaultRadius": 2, "label": "Kynurenic Acid" },

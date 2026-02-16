@@ -85,7 +85,7 @@
             });
         },
 
-        drawInteractionPiP(ctx, w, h, moleculeName) {
+        drawInteractionPiP(ctx, w, h, moleculeName, sourceUrl) {
             // Simplified 3D stylized view of a receptor interaction
             const mapName = (moleculeName || 'Dopamine').toLowerCase();
             let color = { r: 0, g: 153, b: 255 }; // Default Blue (Dopamine)
@@ -143,6 +143,15 @@
             ctx.fillStyle = '#555';
             for (let i = -1; i <= 1; i++) {
                 ctx.fillRect(centerX + i * 20 - 5, centerY + 30, 10, 10);
+            }
+
+            // Draw Source/Provenance if available
+            if (sourceUrl) {
+                ctx.fillStyle = 'rgba(76, 161, 175, 0.8)';
+                ctx.font = 'italic 10px Arial';
+                ctx.textAlign = 'center';
+                const displayUrl = sourceUrl.length > 40 ? sourceUrl.substring(0, 37) + '...' : sourceUrl;
+                ctx.fillText("Source: " + displayUrl, w / 2, h - 15);
             }
         }
     };
