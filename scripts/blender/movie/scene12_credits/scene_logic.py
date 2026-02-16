@@ -3,9 +3,9 @@ import math
 
 def setup_scene(master):
     """Scrolling Credits Scene."""
-    # Frame range: 9501 - 10000
-    start_frame = 9501
-    end_frame = 10000
+    # Frame range: 14501 - 15000
+    start_frame = 14501
+    end_frame = 15000
 
     credits_text = (
         "GreenhouseMD Silent Movie\n\n"

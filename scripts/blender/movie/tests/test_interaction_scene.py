@@ -21,7 +21,7 @@ class TestInteractionScene(unittest.TestCase):
         scene = bpy.context.scene
         # The interaction scene is part of the master timeline
         self.assertEqual(scene.frame_start, 1)
-        self.assertEqual(scene.frame_end, 10000)
+        self.assertEqual(scene.frame_end, 15000)
 
     def test_herbaceous_interaction_animation(self):
         """Check Herbaceous animation in the interaction phase."""

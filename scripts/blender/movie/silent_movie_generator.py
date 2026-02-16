@@ -50,6 +50,17 @@ from scene10_futuristic_lab import scene_logic as scene10
 from scene11_nature_sanctuary import scene_logic as scene11
 from scene12_credits import scene_logic as scene12
 from scene15_interaction import scene_logic as scene15
+# New scenes 16-22
+try:
+    from scene16_dialogue import scene_logic as scene16
+    from scene17_dialogue import scene_logic as scene17
+    from scene18_dialogue import scene_logic as scene18
+    from scene19_dialogue import scene_logic as scene19
+    from scene20_dialogue import scene_logic as scene20
+    from scene21_dialogue import scene_logic as scene21
+    from scene22_retreat import scene_logic as scene22
+except ImportError:
+    scene16 = scene17 = scene18 = scene19 = scene20 = scene21 = scene22 = None
 
 SCENE_MAP = {
     'branding': (1, 100),
@@ -67,7 +78,14 @@ SCENE_MAP = {
     'sanctuary': (3801, 4100),
     'finale': (4101, 4500),
     'interaction': (4501, 9500),
-    'credits': (9501, 10000)
+    'scene16': (9501, 10200),
+    'scene17': (10201, 10900),
+    'scene18': (10901, 11600),
+    'scene19': (11601, 12300),
+    'scene20': (12301, 13000),
+    'scene21': (13001, 13700),
+    'scene22': (13701, 14500),
+    'credits': (14501, 15000)
 }
 
 class MovieMaster:
@@ -97,7 +115,7 @@ class MovieMaster:
 
         scene = bpy.context.scene
         scene.frame_start = 1
-        scene.frame_end = 10000
+        scene.frame_end = 15000
         scene.render.fps = 24
 
         if self.mode == 'SILENT_FILM':
@@ -228,7 +246,7 @@ class MovieMaster:
 
         # Structural Vine Sway
         for obj in self.greenhouse.objects:
-            style.insert_looping_noise(obj, "rotation_euler", strength=0.01, scale=50.0, frame_start=1, frame_end=10000)
+            style.insert_looping_noise(obj, "rotation_euler", strength=0.01, scale=50.0, frame_start=1, frame_end=15000)
         self.gnome = gnome_antagonist.create_gnome("GloomGnome", mathutils.Vector((5, 5, 0)))
 
         # Load Brain
@@ -306,7 +324,7 @@ class MovieMaster:
             # Cloak Sway
             cloak = bpy.data.objects.get("GloomGnome_Cloak")
             if cloak:
-                style.animate_cloak_sway(cloak, 1, 10000)
+                style.animate_cloak_sway(cloak, 1, 15000)
 
             self.gnome.location = (2, 2, 0)
             self.gnome.keyframe_insert(data_path="location", frame=2600)
@@ -327,11 +345,11 @@ class MovieMaster:
 
         plant_keywords = ["Herbaceous", "Arbor", "Scroll", "Bush", "Eye", "Mouth", "Pupil", "Brow", "ShoulderPlate"]
         plants = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in plant_keywords) and "GloomGnome" not in obj.name]
-        p_ranges = [(501, 650), (751, 950), (1051, 1250), (1601, 1800), (2101, 2500), (2601, 2800), (2901, 3400), (3901, 4100)]
+        p_ranges = [(501, 650), (751, 950), (1051, 1250), (1601, 1800), (2101, 2500), (2601, 2800), (2901, 3400), (3901, 4100), (4501, 14500)]
         set_visibility(plants, p_ranges)
 
         gh_objs = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["GH_", "Greenhouse_Structure", "Pane"])]
-        gh_ranges = [(401, 650), (2901, 3500), (3901, 4100)]
+        gh_ranges = [(401, 650), (2901, 3500), (3901, 4100), (9501, 14500)]
         set_visibility(gh_objs, gh_ranges)
 
         # Ensure Boolean keyframes are CONSTANT
@@ -343,7 +361,7 @@ class MovieMaster:
                             kp.interpolation = 'CONSTANT'
 
         gnomes = [obj for obj in bpy.context.scene.objects if "GloomGnome" in obj.name]
-        g_ranges = [(2101, 2500), (2601, 2800)]
+        g_ranges = [(2101, 2500), (2601, 2800), (10901, 14500)]
         set_visibility(gnomes, g_ranges)
 
         if self.beam:
@@ -396,7 +414,7 @@ class MovieMaster:
 
         if self.brain:
             # Pulsing Brain Core
-            style.animate_pulsing_emission(self.brain, 1, 10000, base_strength=1.0, pulse_amplitude=2.0)
+            style.animate_pulsing_emission(self.brain, 1, 15000, base_strength=1.0, pulse_amplitude=2.0)
 
             b_loc = self.brain.location
             self.create_diagnostic_highlight("Thalamus", b_loc + mathutils.Vector((0, 0.5, 0.5)), 3620, 3680, color=(0, 0.5, 1, 1))
@@ -440,51 +458,51 @@ class MovieMaster:
             gait_mode = 'HEAVY' if "Arbor" in char.name else 'LIGHT'
             style.animate_gait(char, mode=gait_mode, frame_start=3901, frame_end=4100) # Walking in Sanctuary
 
-            style.animate_breathing(char, 1, 10000, cycle=64, amplitude=0.02)
+            style.animate_breathing(char, 1, 15000, cycle=64, amplitude=0.02)
             style.insert_looping_noise(char, "rotation_euler", index=2, strength=0.02, scale=15.0)
 
             # Dynamic Sky Gradient (Dawn to Twilight)
-            style.apply_thermal_transition(self, 1, 10000, color_start=(0.4, 0.5, 0.8), color_end=(0.1, 0.05, 0.2))
+            style.apply_thermal_transition(self, 1, 15000, color_start=(0.4, 0.5, 0.8), color_end=(0.1, 0.05, 0.2))
 
             # Blinking logic
             char_name = char.name.split('_')[0]
             head = bpy.data.objects.get(f"{char_name}_Head")
             if head:
                 leaves = [c for c in head.children if "Leaf" in c.name]
-                style.animate_leaf_twitches(leaves, 1, 10000)
+                style.animate_leaf_twitches(leaves, 1, 15000)
 
                 for child in head.children:
                     if "Eye" in child.name:
-                        style.animate_blink(child, 1, 10000)
-                        style.animate_saccadic_movement(child, gaze, 1, 10000)
+                        style.animate_blink(child, 1, 15000)
+                        style.animate_saccadic_movement(child, gaze, 1, 15000)
                     if "Pupil" in child.name:
-                        style.animate_dynamic_pupils([child], None, 1, 10000)
+                        style.animate_dynamic_pupils([child], None, 1, 15000)
 
             # Shoulder Shrugs
-            style.animate_shoulder_shrug(char, 1, 10000)
+            style.animate_shoulder_shrug(char, 1, 15000)
 
             # Finger Tapping for Arbor
             if "Arbor" in char.name:
                 fingers = [c for c in char.children if "Finger" in c.name or "Vine" in c.name]
-                style.animate_finger_tapping(fingers, 1, 10000)
+                style.animate_finger_tapping(fingers, 1, 15000)
 
             # Staff Sway
             staff = bpy.data.objects.get(f"{char_name}_ReasonStaff")
             if staff:
-                style.insert_looping_noise(staff, "rotation_euler", index=0, strength=0.02, scale=10.0, frame_start=1, frame_end=10000)
+                style.insert_looping_noise(staff, "rotation_euler", index=0, strength=0.02, scale=10.0, frame_start=1, frame_end=15000)
 
             # Silent Mumbling
-            style.animate_breathing(char, 1, 10000, axis=2, amplitude=0.01) # Reuse breathing for mouth?
+            style.animate_breathing(char, 1, 15000, axis=2, amplitude=0.01) # Reuse breathing for mouth?
             mouth = bpy.data.objects.get(f"{char_name}_Mouth")
             if mouth:
                 # Silent Mumbling (Quick Z-scaling)
-                style.animate_breathing(mouth, 1, 10000, cycle=8, amplitude=0.5)
+                style.animate_breathing(mouth, 1, 15000, cycle=8, amplitude=0.5)
 
         scene00.setup_scene(self)
         scene01.setup_scene(self)
 
         self.animate_iris(1, 48, mode='IN')
-        self.animate_iris(9990, 10000, mode='OUT')
+        self.animate_iris(14490, 14500, mode='OUT')
 
         scene02.setup_scene(self)
         scene03.setup_scene(self)
@@ -497,6 +515,16 @@ class MovieMaster:
         scene10.setup_scene(self)
         scene11.setup_scene(self)
         scene15.setup_scene(self)
+
+        # Setup new scenes
+        if scene16: scene16.setup_scene(self)
+        if scene17: scene17.setup_scene(self)
+        if scene18: scene18.setup_scene(self)
+        if scene19: scene19.setup_scene(self)
+        if scene20: scene20.setup_scene(self)
+        if scene21: scene21.setup_scene(self)
+        if scene22: scene22.setup_scene(self)
+
         scene12.setup_scene(self)
 
         if self.flower:
@@ -540,13 +568,13 @@ class MovieMaster:
 
         if self.brain:
             # Floating Brain (Z-location sine wave)
-            style.insert_looping_noise(self.brain, "location", index=2, strength=0.1, scale=50.0, frame_start=1, frame_end=10000)
+            style.insert_looping_noise(self.brain, "location", index=2, strength=0.1, scale=50.0, frame_start=1, frame_end=15000)
 
             self.brain.hide_render = True
             self.brain.rotation_euler[2] = 0
             self.brain.keyframe_insert(data_path="rotation_euler", frame=1, index=2)
-            self.brain.rotation_euler[2] = math.radians(360 * (10000 / 400))
-            self.brain.keyframe_insert(data_path="rotation_euler", frame=10000, index=2)
+            self.brain.rotation_euler[2] = math.radians(360 * (15000 / 400))
+            self.brain.keyframe_insert(data_path="rotation_euler", frame=15000, index=2)
 
             ranges = [(201, 400), (751, 950), (1351, 1500), (1601, 1800), (3001, 3500)]
             for rs, re in ranges:
@@ -602,7 +630,7 @@ class MovieMaster:
         con.up_axis = 'UP_Y'
 
         if self.mode == 'SILENT_FILM':
-            style.apply_camera_shake(cam, 1, 10000, strength=0.02)
+            style.apply_camera_shake(cam, 1, 15000, strength=0.02)
             # Old Target Shake
             target.animation_data_create()
             target.animation_data.action = bpy.data.actions.new(name="TargetShake")
@@ -751,16 +779,23 @@ class MovieMaster:
         # Finale
         kf(4101, (0,-40,15), origin)
         kf(4500, (0,-35,12), origin)
-        # Interaction (New 5000 frames)
+        # Interaction (4501 - 9500)
         kf(4501, (0,-15,4), (-3, 0, 1.5))
         kf(6000, (5,-12,3), (2, 0, 1.5))
         kf(6200, (1,-5,2), (0, 0, 1.5))
         kf(6800, (-1,-5,2.5), (-2, 0, 1.8))
         kf(9500, (0,-20,8), (0, 0, 1))
 
-        # Credits
-        kf(9501, (0,-10,0), (0, 0, 5))
-        kf(10000, (0,-10,0), (0, 0, 15))
+        # New Scenes (9501 - 14500)
+        kf(9501, (0,-15,4), (0, 0, 1.5)) # Scene 16 start
+        kf(10900, (5,-15,4), (2, 0, 1.5)) # Scene 17 end
+        kf(12300, (-5,-15,4), (-2, 0, 1.5)) # Scene 19 end
+        kf(13700, (0,-20,5), (0, 0, 2)) # Scene 21 end
+        kf(14500, (0,-30,8), (0, 0, 1)) # Scene 22 end
+
+        # Credits (14501 - 15000)
+        kf(14501, (0,-10,0), (0, 0, 5))
+        kf(15000, (0,-10,0), (0, 0, 15))
 
     def setup_compositor(self):
         tree = style.get_compositor_node_tree(self.scene)
@@ -790,7 +825,7 @@ class MovieMaster:
             except RuntimeError:
                 bright = None
 
-            style.apply_film_flicker(self.scene, 1, 10000, strength=0.05)
+            style.apply_film_flicker(self.scene, 1, 15000, strength=0.05)
 
             # Lab Chromatic Aberration
             distort = style.setup_chromatic_aberration(self.scene, strength=0.02)
