@@ -64,7 +64,8 @@ function loadScript(filename) {
 
 // Mock 3D Math and Geometry
 global.window.GreenhouseModels3DMath = {
-    project3DTo2D: (x, y, z) => ({ x: x + 500, y: y + 375, scale: 1, depth: z })
+    // Offset Y to 450 to avoid overlap with category headers in unit tests
+    project3DTo2D: (x, y, z) => ({ x: x + 500, y: y + 450, scale: 1, depth: z })
 };
 global.window.GreenhouseNeuroGeometry = {
     generateSphere: () => ({ vertices: [], faces: [] })
@@ -105,17 +106,17 @@ TestFramework.describe('GreenhouseStressApp UI', () => {
     });
 
     TestFramework.it('should toggle factor on checkbox click when category is open', () => {
-        const cat = app.ui.categories[0]; // 'env' is open by default
+        const cat = app.ui.categories[0]; // 'hpa'
         cat.isOpen = true;
 
         // Find a checkbox in this category
         const checkbox = app.ui.checkboxes.find(c => c.category === cat.id);
         const initialVal = app.engine.state.factors[checkbox.id];
 
-        // hitTestCheckboxes uses layout: bx = cat.x + 10 + (col * 190); by = cat.y + 30 + (row * 22);
-        // For the first one: col=0, row=0 -> bx = cat.x + 10, by = cat.y + 30
+        // hitTestCheckboxes uses updated layout: bx = cat.x + 10 + (col * 190); by = cat.y + 40 + (row * 25);
+        // For the first one: col=0, row=0 -> bx = cat.x + 10, by = cat.y + 40
         const mx = cat.x + 15;
-        const my = cat.y + 35;
+        const my = cat.y + 45;
 
         const event = { clientX: mx, clientY: my };
         app.handleMouseDown(event);
@@ -135,8 +136,8 @@ TestFramework.describe('GreenhouseStressApp UI', () => {
 
     TestFramework.it('should detect 3D node hover in systemic view', () => {
         app.engine.state.factors.viewMode = 2; // Systemic
-        // HPA node (index 0) at time=0: angle=0, orbit=120 -> x=120, y=0 -> Projected: 620, 375
-        const event = { clientX: 620, clientY: 375 };
+        // HPA node (index 0) at time=0: angle=0, orbit=120 -> x=120, y=0 -> Projected: 620, 450
+        const event = { clientX: 620, clientY: 450 };
         app.handleMouseMove(event);
 
         assert.isNotNull(app.ui.hoveredElement);
@@ -149,18 +150,18 @@ TestFramework.describe('GreenhouseStressApp UI', () => {
         const catBoxes = app.ui.checkboxes.filter(c => c.category === cat.id);
 
         // Test first checkbox (col 0, row 0)
-        let hit = app.hitTestCheckboxes(cat.x + 15, cat.y + 35);
+        let hit = app.hitTestCheckboxes(cat.x + 15, cat.y + 45);
         assert.equal(hit.id, catBoxes[0].id);
 
         // Test second checkbox (col 1, row 0) if exists
         if (catBoxes.length > 1) {
-            hit = app.hitTestCheckboxes(cat.x + 205, cat.y + 35);
+            hit = app.hitTestCheckboxes(cat.x + 205, cat.y + 45);
             assert.equal(hit.id, catBoxes[1].id);
         }
 
         // Test third checkbox (col 0, row 1) if exists
         if (catBoxes.length > 2) {
-            hit = app.hitTestCheckboxes(cat.x + 15, cat.y + 57);
+            hit = app.hitTestCheckboxes(cat.x + 15, cat.y + 70); // 45 + 25
             assert.equal(hit.id, catBoxes[2].id);
         }
     });

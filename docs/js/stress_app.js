@@ -108,24 +108,26 @@
             const col1 = ['hpa', 'env', 'limbic', 'psych', 'cortical', 'philo'];
             const col2 = ['brainstem', 'research', 'interv', 'therapy', 'lifestyle', 'system'];
 
-            const processCol = (ids, x) => {
-                let currentY = 175;
+            const processCol = (ids, x, startY = 175) => {
+                let currentY = startY;
                 ids.forEach(id => {
                     const cat = this.ui.categories.find(c => c.id === id);
                     if (!cat) return;
                     cat.x = x;
                     cat.y = currentY;
-                    currentY += cat.h + 5;
+                    currentY += cat.h + 10; // Increased header gap
                     if (cat.isOpen) {
                         const catBoxes = this.ui.checkboxes.filter(c => c.category === cat.id);
-                        const height = Math.ceil(catBoxes.length / 2) * 22 + 40;
-                        currentY += height;
+                        const rowCount = Math.ceil(catBoxes.length / 2);
+                        const height = rowCount * 25 + 45; // Updated height calculation
+                        currentY += height + 10;
                     }
                 });
             };
 
             processCol(col1, 20);
-            processCol(col2, 510);
+            const col2X = Math.max(795, this.canvas.width - 405);
+            processCol(col2, col2X, 280); // Responsive right alignment, below telemetry
         },
 
         setupUI() {
@@ -289,7 +291,7 @@
                     const col = i % 2;
                     const row = Math.floor(i / 2);
                     const bx = cat.x + 10 + (col * 190); // Shift X based on category X
-                    const by = cat.y + 30 + (row * 22);
+                    const by = cat.y + 40 + (row * 25); // Matched with updated drawUI spacing
 
                     if (mx >= bx && mx <= bx + 180 && my >= by && my <= by + 20) {
                         return catBoxes[i];
@@ -620,25 +622,33 @@
                     // Checkboxes if open (Panel first)
                     if (cat.isOpen) {
                         const catBoxes = this.ui.checkboxes.filter(c => c.category === cat.id);
+                        const rowCount = Math.ceil(catBoxes.length / 2);
+                        const height = rowCount * 25 + 45;
+
+                        // Draw Background Panel for Dropdown
+                        ctx.save();
+                        ctx.fillStyle = 'rgba(5, 10, 20, 0.95)'; // Slightly darker and more opaque
+                        ctx.strokeStyle = 'rgba(100, 210, 255, 0.4)';
+                        ctx.lineWidth = 1;
+                        if (this.roundRect) {
+                            this.roundRect(ctx, cat.x - 5, cat.y + 25, 400, height, 8, true, true);
+                        } else {
+                            ctx.fillRect(cat.x - 5, cat.y + 25, 400, height);
+                            ctx.strokeRect(cat.x - 5, cat.y + 25, 400, height);
+                        }
+                        ctx.restore();
+
                         catBoxes.forEach((c, i) => {
                             // Layout Logic (Matches HitTest)
                             const col = i % 2;
                             const row = Math.floor(i / 2);
                             c.x = cat.x + 10 + (col * 190);
-                            c.y = cat.y + 30 + (row * 22);
+                            c.y = cat.y + 40 + (row * 25); // Increased spacing
 
                             if (window.GreenhouseStressControls) {
                                 window.GreenhouseStressControls.drawCheckbox(ctx, this, c, state);
                             }
                         });
-
-                        // Draw Background Panel for Dropdown
-                        ctx.save();
-                        ctx.globalCompositeOperation = 'destination-over';
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                        const height = Math.ceil(catBoxes.length / 2) * 22 + 40;
-                        ctx.fillRect(cat.x, cat.y + 25, 400, height);
-                        ctx.restore();
                     }
                 });
             }
