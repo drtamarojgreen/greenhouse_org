@@ -12,6 +12,7 @@
             atp: 100.0,    // %
             health: 100.0,
             membraneCurrent: 0.0, // pA
+            depolarization: 0.0, // -70 to +30 mV proxy
             doseResponse: [],
             sensitivity: 1.0,
             history: [],
@@ -80,6 +81,11 @@
             if (this.state.calcium > 2.0) this.state.calcium = 2.0;
 
             this.state.membraneCurrent = (activeReceptors * 1.5) + (ionCount * 0.8);
+
+            // Simulation of membrane potential: -70 (resting) to +30 (spike)
+            // Depolarization proxy based on current activity
+            const targetDepol = Math.min(30, -70 + (this.state.membraneCurrent * 2));
+            this.state.depolarization += (targetDepol - this.state.depolarization) * 0.1;
 
             this.state.sensitivity = G.Particles.plasticityFactor;
 

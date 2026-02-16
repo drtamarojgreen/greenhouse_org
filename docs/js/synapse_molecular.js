@@ -300,8 +300,8 @@
             ctx.restore();
         },
 
-        triggerCascade(x, y) {
-            this.cascades.push({ x, y, r: 5, alpha: 1.0 });
+        triggerCascade(x, y, color = 'rgba(255, 100, 255, ') {
+            this.cascades.push({ x, y, r: 5, alpha: 1.0, color });
         },
 
         drawCascades(ctx) {
@@ -315,7 +315,8 @@
                 if (c.alpha <= 0) {
                     this.cascades.splice(i, 1);
                 } else {
-                    ctx.strokeStyle = `rgba(255, 100, 255, ${c.alpha})`;
+                    const colorStr = c.color.endsWith(',') ? `${c.color}${c.alpha})` : c.color;
+                    ctx.strokeStyle = colorStr;
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
