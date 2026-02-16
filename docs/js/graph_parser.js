@@ -72,18 +72,27 @@
             // 1. First Pass: Parse all Valid Lines
             lines.forEach((line, index) => {
                 line = line.trim();
-                // Regex matches: "Label",ID,[1,2,3],Weight,Group
-                // Note: Weight is index 4, Group is index 5 in match array (0 is full string)
-                const match = line.match(/^"(.*)",(\d+),(\[.*?\]),(\d+),(\d+)$/);
+                if (!line || index === 0) return; // Skip header
+
+                // Regex matches: "Label",ID,"[Connections]",Weight,Group
+                // Handles optional quotes, string IDs, and float weights.
+                const match = line.match(/^(".*?"|[^,]+),(".*?"|[^,]+),("\[.*\]"),([\d.]+),(".*?"|[^,]+)$/);
 
                 if (match) {
-                    const label = match[1];
-                    const id = parseInt(match[2], 10);
-                    const weight = parseInt(match[4], 10);
-                    const group = parseInt(match[5], 10);
+                    let label = match[1].replace(/^"|"$/g, '');
+                    let id = match[2].replace(/^"|"$/g, '');
+                    let weight = parseFloat(match[4]);
+                    let groupStr = match[5].replace(/^"|"$/g, '');
+
+                    // Group Mapping (Map string groups to integers for visualization)
+                    const groupMap = { 'Disorder': 0, 'Drug': 1, 'ClinicalTrial': 2, 'Intervention': 3, 'Publication': 4 };
+                    let group = groupMap[groupStr] !== undefined ? groupMap[groupStr] : 5;
+
                     let connections = [];
                     try {
-                        connections = JSON.parse(match[3]);
+                        // Handle CSV-escaped quotes in JSON string ("" -> ")
+                        let jsonStr = match[3].replace(/^"|"$/g, '').replace(/""/g, '"');
+                        connections = JSON.parse(jsonStr);
                     } catch (e) { }
 
                     nodes.push({ id, label, weight, group, connections });
@@ -101,7 +110,7 @@
             const phi = Math.PI * (3 - Math.sqrt(5)); // Golden Angle
 
             nodes.forEach((node, i) => {
-                const y = 1 - (i / (nodes.length - 1)) * 2; // y goes from 1 to -1
+                const y = (nodes.length > 1) ? 1 - (i / (nodes.length - 1)) * 2 : 0; // y goes from 1 to -1
                 const radiusAtY = Math.sqrt(1 - y * y); // Radius at y
 
                 const theta = phi * i; // Golden angle increment
