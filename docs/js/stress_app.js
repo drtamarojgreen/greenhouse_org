@@ -126,8 +126,9 @@
             };
 
             processCol(col1, 20);
-            const col2X = Math.max(795, this.canvas.width - 405);
-            processCol(col2, col2X, 280); // Responsive right alignment, below telemetry
+            // Responsive right alignment, ensuring no overlap with telemetry dashboard (starts at sw - 220)
+            const col2X = Math.max(400, this.canvas.width - 630);
+            processCol(col2, col2X, 280);
         },
 
         setupUI() {
