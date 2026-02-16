@@ -11,7 +11,16 @@ def run_tests():
         "test_blender_5_0_features.py",
         "test_interaction_scene.py",
         "test_asset_details.py",
-        "test_timeline_extension.py"
+        "test_timeline_extension.py",
+        "test_scene_modules.py",
+        "test_mouth_rig.py",
+        "test_expression_rig.py",
+        "test_gnome_retreat.py",
+        "test_camera_choreography.py",
+        "test_lighting_integrity.py",
+        "test_mesh_integrity_visibility.py",
+        "test_render_management.py",
+        "test_final_release_gate.py"
     ]
 
     print(f"--- Running Greenhouse Blender Movie Test Suite ---")
