@@ -32,12 +32,13 @@ global.document = {
                     save: () => {},
                     restore: () => {},
                     rect: () => {},
-                    strokeRect: () => {}
+                    strokeRect: () => {},
+                    createRadialGradient: () => ({ addColorStop: () => {} })
                 }),
-                width: 1000,
-                height: 750,
+                width: 1440,
+                height: 900,
                 style: {},
-                getBoundingClientRect: () => ({ left: 0, top: 0, width: 1000, height: 750 }),
+                getBoundingClientRect: () => ({ left: 0, top: 0, width: 1440, height: 900 }),
                 addEventListener: () => {}
             };
         }
@@ -46,8 +47,8 @@ global.document = {
     querySelector: () => ({
         appendChild: () => {},
         innerHTML: '',
-        offsetWidth: 1000,
-        offsetHeight: 750,
+        offsetWidth: 1440,
+        offsetHeight: 900,
         style: {}
     })
 };
@@ -64,7 +65,8 @@ function loadScript(filename) {
 
 // Mock 3D Math and Geometry
 global.window.GreenhouseModels3DMath = {
-    project3DTo2D: (x, y, z) => ({ x: x + 500, y: y + 375, scale: 1, depth: z })
+    // Offset Y to 450 to avoid overlap with category headers in unit tests
+    project3DTo2D: (x, y, z) => ({ x: x + 720, y: y + 450, scale: 1, depth: z })
 };
 global.window.GreenhouseNeuroGeometry = {
     generateSphere: () => ({ vertices: [], faces: [] })
@@ -105,17 +107,15 @@ TestFramework.describe('GreenhouseStressApp UI', () => {
     });
 
     TestFramework.it('should toggle factor on checkbox click when category is open', () => {
-        const cat = app.ui.categories[0]; // 'env' is open by default
+        const cat = app.ui.categories[0]; // 'hpa'
         cat.isOpen = true;
 
         // Find a checkbox in this category
         const checkbox = app.ui.checkboxes.find(c => c.category === cat.id);
         const initialVal = app.engine.state.factors[checkbox.id];
 
-        // hitTestCheckboxes uses layout: bx = cat.x + 10 + (col * 190); by = cat.y + 30 + (row * 22);
-        // For the first one: col=0, row=0 -> bx = cat.x + 10, by = cat.y + 30
         const mx = cat.x + 15;
-        const my = cat.y + 35;
+        const my = cat.y + 45;
 
         const event = { clientX: mx, clientY: my };
         app.handleMouseDown(event);
@@ -135,8 +135,8 @@ TestFramework.describe('GreenhouseStressApp UI', () => {
 
     TestFramework.it('should detect 3D node hover in systemic view', () => {
         app.engine.state.factors.viewMode = 2; // Systemic
-        // HPA node (index 0) at time=0: angle=0, orbit=120 -> x=120, y=0 -> Projected: 620, 375
-        const event = { clientX: 620, clientY: 375 };
+        // HPA node (index 0) at time=0: angle=0, orbit=110 -> x=110, y=0 -> Projected: 720+110=830, 450
+        const event = { clientX: 830, clientY: 450 };
         app.handleMouseMove(event);
 
         assert.isNotNull(app.ui.hoveredElement);
@@ -148,21 +148,60 @@ TestFramework.describe('GreenhouseStressApp UI', () => {
         cat.isOpen = true;
         const catBoxes = app.ui.checkboxes.filter(c => c.category === cat.id);
 
-        // Test first checkbox (col 0, row 0)
-        let hit = app.hitTestCheckboxes(cat.x + 15, cat.y + 35);
+        let hit = app.hitTestCheckboxes(cat.x + 15, cat.y + 45);
         assert.equal(hit.id, catBoxes[0].id);
 
-        // Test second checkbox (col 1, row 0) if exists
         if (catBoxes.length > 1) {
-            hit = app.hitTestCheckboxes(cat.x + 205, cat.y + 35);
+            hit = app.hitTestCheckboxes(cat.x + 205, cat.y + 45);
             assert.equal(hit.id, catBoxes[1].id);
         }
 
-        // Test third checkbox (col 0, row 1) if exists
         if (catBoxes.length > 2) {
-            hit = app.hitTestCheckboxes(cat.x + 15, cat.y + 57);
+            hit = app.hitTestCheckboxes(cat.x + 15, cat.y + 70);
             assert.equal(hit.id, catBoxes[2].id);
         }
+    });
+
+    TestFramework.it('should ensure no overlap between categories and telemetry dashboard', () => {
+        const dashboardLeft = app.canvas.width - 220; // Exact dashboard left edge per code
+
+        app.ui.categories.forEach(cat => {
+            // Check header (width is 390 based on code/panel logic)
+            // Note: Header w is 180 in the ui object but it draws a wider panel in drawUI?
+            // Actually GreenhouseStressControls.drawCategoryHeader uses cat.w which is 180.
+            // But the dropdown panel is 400 wide.
+            const panelWidth = 400;
+            assert.isTrue(cat.x + panelWidth <= dashboardLeft, `Category ${cat.id} panel overlaps dashboard: ${cat.x + panelWidth} > ${dashboardLeft}`);
+
+            const wasOpen = cat.isOpen;
+            cat.isOpen = true;
+            app.updateCategoryPositions();
+
+            const catBoxes = app.ui.checkboxes.filter(c => c.category === cat.id);
+            catBoxes.forEach(box => {
+                const boxRight = cat.x + 10 + (box.col || 0) * 190 + 180;
+                // col is calculated at runtime in hitTestCheckboxes and drawUI
+            });
+            cat.isOpen = wasOpen;
+        });
+    });
+
+    TestFramework.it('should ensure all systemic nodes are within canvas bounds', () => {
+        const systemic = window.GreenhouseStressSystemic;
+        systemic.initVisuals();
+        [0, 1000, 5000].forEach(time => {
+            app.engine.state.time = time;
+            Object.keys(systemic.categories).forEach((catKey, i) => {
+                const cat = systemic.categories[catKey];
+                const angle = time * cat.speed + (i * Math.PI / 6);
+                const x = Math.cos(angle) * cat.orbit;
+                const z = Math.sin(angle) * cat.orbit;
+                const y = Math.sin(angle * 2) * 30;
+                const p = window.GreenhouseModels3DMath.project3DTo2D(x, y, z);
+                assert.isTrue(p.x >= 0 && p.x <= app.canvas.width, `Node ${catKey} x out of bounds at t=${time}: ${p.x}`);
+                assert.isTrue(p.y >= 0 && p.y <= app.canvas.height, `Node ${catKey} y out of bounds at t=${time}: ${p.y}`);
+            });
+        });
     });
 
 });

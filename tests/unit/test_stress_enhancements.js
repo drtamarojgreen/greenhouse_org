@@ -140,6 +140,59 @@ TestFramework.describe('GreenhouseStressApp Enhancements', () => {
         assert.isTrue(true);
     });
 
+    TestFramework.it('should calculate multimodal synergy and adherence effects', () => {
+        const state = app.engine.state;
+        const f = state.factors;
+        const m = state.metrics;
+
+        // Scenario 1: Low adherence/persistence
+        f.stress_interv_adherence = 0;
+        f.stress_interv_persistence = 0;
+        f.stress_therapy_cbt = 1;
+        f.stress_interv_multimodal = 1;
+
+        m.allostaticLoad = 0.5;
+        app.updateModel(state, 100);
+        const load1 = m.allostaticLoad;
+
+        // Scenario 2: High adherence/persistence + synergy
+        f.stress_interv_adherence = 1;
+        f.stress_interv_persistence = 1;
+        f.stress_lifestyle_exercise = 1; // High synergy bonus
+
+        m.allostaticLoad = 0.5;
+        app.updateModel(state, 100);
+        const load2 = m.allostaticLoad;
+
+        // Higher adherence and synergy should lead to lower allostatic load (more damping)
+        assert.isTrue(load2 < load1, "High adherence and synergy should reduce allostatic load more effectively");
+    });
+
+    TestFramework.it('should simulate health system capacity bottlenecks', () => {
+        const state = app.engine.state;
+        const f = state.factors;
+        const m = state.metrics;
+
+        // Scenario: Poor system access and capacity
+        f.stress_system_access = 0;
+        f.stress_system_capacity = 0;
+        f.stress_therapy_cbt = 1;
+
+        m.allostaticLoad = 0.5;
+        app.updateModel(state, 100);
+        const loadBlocked = m.allostaticLoad;
+
+        // Scenario: Good system access
+        f.stress_system_access = 1;
+        f.stress_system_capacity = 1;
+
+        m.allostaticLoad = 0.5;
+        app.updateModel(state, 100);
+        const loadFree = m.allostaticLoad;
+
+        assert.isTrue(loadFree < loadBlocked, "System bottlenecks should impair the effectiveness of clinical interventions");
+    });
+
 });
 
 TestFramework.run().then(results => {

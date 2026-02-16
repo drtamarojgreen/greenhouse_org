@@ -21,14 +21,18 @@
         // Category Definitions for Visuals (Enhancement 1: Neural regions added)
         // Note: All nodes are spheres per explicit user request.
         categories: {
-            'hpa': { label: 'stress_cat_hpa', color: '#ff9500', orbit: 120, speed: 0.0001, total: 5, shape: 'sphere' },
-            'env': { label: 'stress_cat_env', color: '#ff4d4d', orbit: 170, speed: 0.0002, total: 26, shape: 'sphere' },
-            'limbic': { label: 'stress_cat_limbic', color: '#ff2d55', orbit: 220, speed: -0.00015, total: 6, shape: 'sphere' },
-            'psych': { label: 'stress_cat_psych', color: '#ffcc00', orbit: 270, speed: -0.0001, total: 25, shape: 'sphere' },
-            'cortical': { label: 'stress_cat_cortical', color: '#5856d6', orbit: 320, speed: 0.00008, total: 3, shape: 'sphere' },
-            'philo': { label: 'stress_cat_philo', color: '#a18cd1', orbit: 370, speed: 0.00005, total: 25, shape: 'sphere' },
-            'brainstem': { label: 'stress_cat_autonomic', color: '#4cd964', orbit: 420, speed: -0.00012, total: 10, shape: 'sphere' },
-            'research': { label: 'stress_cat_biological_defense', color: '#64d2ff', orbit: 470, speed: -0.0002, total: 30, shape: 'sphere' }
+            'hpa': { label: 'stress_cat_hpa', color: '#ff9500', orbit: 110, speed: 0.0001, total: 5, shape: 'sphere' },
+            'env': { label: 'stress_cat_env', color: '#ff4d4d', orbit: 140, speed: 0.0002, total: 26, shape: 'sphere' },
+            'limbic': { label: 'stress_cat_limbic', color: '#ff2d55', orbit: 170, speed: -0.00015, total: 6, shape: 'sphere' },
+            'psych': { label: 'stress_cat_psych', color: '#ffcc00', orbit: 200, speed: -0.0001, total: 25, shape: 'sphere' },
+            'cortical': { label: 'stress_cat_cortical', color: '#5856d6', orbit: 230, speed: 0.00008, total: 3, shape: 'sphere' },
+            'philo': { label: 'stress_cat_philo', color: '#a18cd1', orbit: 260, speed: 0.00005, total: 25, shape: 'sphere' },
+            'brainstem': { label: 'stress_cat_autonomic', color: '#4cd964', orbit: 290, speed: -0.00012, total: 10, shape: 'sphere' },
+            'research': { label: 'stress_cat_biological_defense', color: '#64d2ff', orbit: 320, speed: -0.0002, total: 30, shape: 'sphere' },
+            'interv': { label: 'stress_cat_interv', color: '#30b0c7', orbit: 350, speed: 0.00015, total: 4, shape: 'sphere' },
+            'therapy': { label: 'stress_cat_therapy', color: '#00c7be', orbit: 380, speed: -0.00018, total: 8, shape: 'sphere' },
+            'lifestyle': { label: 'stress_cat_lifestyle', color: '#a2845e', orbit: 410, speed: 0.00012, total: 7, shape: 'sphere' },
+            'system': { label: 'stress_cat_system', color: '#8e8e93', orbit: 440, speed: -0.0001, total: 6, shape: 'sphere' }
         },
 
         initVisuals() {
@@ -197,13 +201,15 @@
 
             // 3. Render Category Nodes (Planetary Orbitals)
             const nodePositions = {};
+            const renderedLabels = []; // Store label bounds to prevent overlap (Item 74 enhancement)
+
             Object.keys(this.categories).forEach((catKey, i) => {
                 const cat = this.categories[catKey];
                 const score = scores[catKey];
                 const count = score; // Raw count for display
 
-                // Orbit Logic (8 nodes spaced by PI/4)
-                const angle = time * cat.speed + (i * Math.PI / 4);
+                // Orbit Logic (12 nodes spaced by PI/6)
+                const angle = time * cat.speed + (i * Math.PI / 6);
                 const x = Math.cos(angle) * cat.orbit;
                 const z = Math.sin(angle) * cat.orbit;
                 const y = Math.sin(angle * 2) * 30; // Mild wave
@@ -274,15 +280,30 @@
                     ctx.lineWidth = isHovered ? 2 : 1;
                     ctx.stroke(); ctx.shadowBlur = 0;
 
-                    // Label & Count (Enhanced with Percentage)
+                    // Label & Count (Enhanced with Percentage & Overlap Prevention)
                     const total = cat.total || 25;
                     const percent = Math.round((score / total) * 100);
+
                     ctx.fillStyle = '#fff';
                     ctx.font = `bold ${10 * p.scale}px Quicksand, sans-serif`;
                     ctx.textAlign = 'center';
-                    ctx.fillText(window.GreenhouseModelsUtil.t(cat.label), p.x, p.y - radius - 8);
+
+                    let labelY = p.y - radius - 8;
+                    let countY = p.y + radius + 15;
+
+                    // Simple Collision Check
+                    renderedLabels.forEach(other => {
+                        const dx = Math.abs(p.x - other.x);
+                        const dy = Math.abs(labelY - other.y);
+                        if (dx < 80 * p.scale && dy < 25 * p.scale) {
+                            labelY -= 20 * p.scale; // Shift up if overlapping
+                        }
+                    });
+                    renderedLabels.push({ x: p.x, y: labelY });
+
+                    ctx.fillText(window.GreenhouseModelsUtil.t(cat.label), p.x, labelY);
                     ctx.font = `${11 * p.scale}px monospace`;
-                    ctx.fillText(`${score}/${total} (${percent}%)`, p.x, p.y + radius + 15);
+                    ctx.fillText(`${score}/${total} (${percent}%)`, p.x, countY);
 
                     nodePositions[catKey] = { x: p.x, y: p.y, scale: p.scale, color: cat.color, score: score };
                 }
@@ -291,7 +312,8 @@
             // 3.5 Animated Signaling Flow (Enhancement 6 & 14)
             const flow = [
                 ['env', 'brainstem'], ['brainstem', 'limbic'], ['limbic', 'hpa'], ['hpa', 'cortical'],
-                ['psych', 'cortical'], ['philo', 'cortical'], ['research', 'cortical']
+                ['psych', 'cortical'], ['philo', 'cortical'], ['research', 'cortical'],
+                ['interv', 'cortical'], ['therapy', 'cortical'], ['lifestyle', 'cortical'], ['system', 'interv']
             ];
             flow.forEach(([from, to]) => {
                 const p1 = nodePositions[from];
@@ -446,7 +468,7 @@
                     if (state.factors[fact.id] === 1 && fact.category === catKey) score++;
                 });
 
-                const angle = time * cat.speed + (i * Math.PI / 4);
+                const angle = time * cat.speed + (i * Math.PI / 6);
                 const x = Math.cos(angle) * cat.orbit;
                 const z = Math.sin(angle) * cat.orbit;
                 const y = Math.sin(angle * 2) * 30;
