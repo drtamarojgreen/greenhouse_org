@@ -5,15 +5,31 @@
     'use strict';
 
     const KeggParser = {
-        async parse(url) {
+        async parse(source, isRaw = false) {
             try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch KGML data: ${response.statusText}`);
+                let text;
+                if (isRaw) {
+                    text = source;
+                } else {
+                    const response = await fetch(source);
+                    if (!response.ok) {
+                        return { nodes: [], edges: [] };
+                    }
+                    text = await response.text();
                 }
-                const xmlText = await response.text();
+
+                // Support JSON format
+                if (text.trim().startsWith('{')) {
+                    try {
+                        return this.parseJSON(JSON.parse(text));
+                    } catch (e) {
+                        console.error("Pathway App: Failed to parse JSON data", e);
+                        return { nodes: [], edges: [] };
+                    }
+                }
+
                 const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+                const xmlDoc = parser.parseFromString(text, "application/xml");
 
                 const nodes = this.extractEntries(xmlDoc);
                 const edges = this.extractRelations(xmlDoc);
@@ -23,6 +39,42 @@
                 console.error("Error parsing KGML data:", error);
                 return { nodes: [], edges: [] };
             }
+        },
+
+        parseJSON(data) {
+            const nodes = [];
+            const edges = [];
+
+            if (data.molecules) {
+                data.molecules.forEach(m => {
+                    nodes.push({
+                        id: m.id,
+                        name: m.label || m.id,
+                        type: m.class || 'compound',
+                        link: m.link || m.source,
+                        x: m.x || 400,
+                        y: m.y || 400,
+                        color: m.color,
+                        radius: m.defaultRadius
+                    });
+                });
+            }
+
+            if (data.reactions) {
+                data.reactions.forEach(r => {
+                    if (r.substrate && r.product) {
+                        edges.push({
+                            source: r.substrate,
+                            target: r.product,
+                            type: r.type,
+                            catalyst: r.catalyst,
+                            metadata: r
+                        });
+                    }
+                });
+            }
+
+            return { nodes, edges };
         },
 
         extractEntries(xmlDoc) {

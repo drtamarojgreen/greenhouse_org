@@ -4,22 +4,33 @@
 (function () {
     'use strict';
 
-    // Internal helper for parsing KGML data
+    // Internal helper for parsing KGML data and JSON-based pathways
     const KeggParser = {
         async parse(source, isRaw = false) {
             try {
-                let xmlText;
+                let text;
                 if (isRaw) {
-                    xmlText = source;
+                    text = source;
                 } else {
                     const response = await fetch(source);
                     if (!response.ok) {
                         return { nodes: [], edges: [] };
                     }
-                    xmlText = await response.text();
+                    text = await response.text();
                 }
+
+                // Detect JSON format
+                if (text.trim().startsWith('{')) {
+                    try {
+                        return this.parseJSON(JSON.parse(text));
+                    } catch (e) {
+                        console.error("Pathway App: Failed to parse JSON data", e);
+                        return { nodes: [], edges: [] };
+                    }
+                }
+
                 const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+                const xmlDoc = parser.parseFromString(text, "application/xml");
 
                 const nodes = this.extractEntries(xmlDoc);
                 const edges = this.extractRelations(xmlDoc);
@@ -28,6 +39,42 @@
             } catch (error) {
                 return { nodes: [], edges: [] };
             }
+        },
+
+        parseJSON(data) {
+            const nodes = [];
+            const edges = [];
+
+            if (data.molecules) {
+                data.molecules.forEach(m => {
+                    nodes.push({
+                        id: m.id,
+                        name: m.label || m.id,
+                        type: m.class || 'compound',
+                        link: m.link || m.source,
+                        x: m.x || 400,
+                        y: m.y || 400,
+                        color: m.color,
+                        radius: m.defaultRadius
+                    });
+                });
+            }
+
+            if (data.reactions) {
+                data.reactions.forEach(r => {
+                    if (r.substrate && r.product) {
+                        edges.push({
+                            source: r.substrate,
+                            target: r.product,
+                            type: r.type,
+                            catalyst: r.catalyst,
+                            metadata: r
+                        });
+                    }
+                });
+            }
+
+            return { nodes, edges };
         },
 
         extractEntries(xmlDoc) {
@@ -43,6 +90,7 @@
                         id: entry.getAttribute("id"),
                         name: entry.getAttribute("name"),
                         type: entry.getAttribute("type"),
+                        link: entry.getAttribute("link"),
                         x: parseInt(graphics.getAttribute("x"), 10),
                         y: parseInt(graphics.getAttribute("y"), 10),
                     });
@@ -713,6 +761,8 @@
 
             if (this.pathwayData) {
                 this.drawPathwayGraph();
+                this.drawLegend(ctx, w, h);
+                this.drawMinimap(ctx, w, h);
             } else {
                 ctx.fillStyle = '#555';
                 ctx.textAlign = 'center';
@@ -733,7 +783,7 @@
                 ctx.rect(0, 0, pipW, pipH);
                 ctx.clip(); // Ensure PiP content stays inside bounds
 
-                window.GreenhousePathwayBrain.drawInteractionPiP(ctx, pipW, pipH, t(highlightedNode.name));
+                window.GreenhousePathwayBrain.drawInteractionPiP(ctx, pipW, pipH, t(highlightedNode.name), highlightedNode.link);
 
                 ctx.restore();
             }
@@ -772,8 +822,120 @@
             ctx.stroke();
         },
 
+        drawMinimap(ctx, w, h) {
+            if (!this.pathwayData || this.pathwayData.length === 0) return;
+
+            const mmSize = 120;
+            const mmX = w - mmSize - 20;
+            const mmY = 80;
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(25, 25, 25, 0.9)';
+            ctx.strokeStyle = 'rgba(76, 161, 175, 0.6)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.rect(mmX, mmY, mmSize, mmSize);
+            ctx.fill();
+            ctx.stroke();
+
+            // Calculate Bounds
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            this.pathwayData.forEach(n => {
+                minX = Math.min(minX, n.position3D.x);
+                maxX = Math.max(maxX, n.position3D.x);
+                minY = Math.min(minY, n.position3D.y);
+                maxY = Math.max(maxY, n.position3D.y);
+            });
+
+            const rangeX = (maxX - minX) || 100;
+            const rangeY = (maxY - minY) || 100;
+            const scale = (mmSize - 20) / Math.max(rangeX, rangeY);
+            const offsetX = mmX + 10 - minX * scale;
+            const offsetY = mmY + 10 - minY * scale;
+
+            // Draw Edges in Minimap
+            ctx.strokeStyle = 'rgba(76, 161, 175, 0.2)';
+            ctx.lineWidth = 0.5;
+            this.pathwayEdges.forEach(edge => {
+                const s = this.pathwayData.find(n => n.id === edge.source);
+                const t = this.pathwayData.find(n => n.id === edge.target);
+                if (s && t) {
+                    ctx.beginPath();
+                    ctx.moveTo(s.position3D.x * scale + offsetX, s.position3D.y * scale + offsetY);
+                    ctx.lineTo(t.position3D.x * scale + offsetX, t.position3D.y * scale + offsetY);
+                    ctx.stroke();
+                }
+            });
+
+            // Draw Nodes in Minimap
+            this.pathwayData.forEach(n => {
+                ctx.fillStyle = (n.id === this.highlightedNodeId) ? '#39ff14' : '#4ca1af';
+                ctx.beginPath();
+                ctx.arc(n.position3D.x * scale + offsetX, n.position3D.y * scale + offsetY, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw View Indicator (Center dot)
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(mmX + mmSize/2, mmY + mmSize/2, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        },
+
+        drawLegend(ctx, w, h) {
+            if (!this.pathwayData) return;
+
+            const types = [...new Set(this.pathwayData.map(n => n.type))];
+            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+            const legendX = 20;
+            const legendY = isMobile ? 120 : h - (types.length * 25) - 80;
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(25, 25, 25, 0.9)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+
+            const padding = 12;
+            const itemHeight = 22;
+            const rectW = 160;
+            const rectH = (types.length * itemHeight) + padding * 2;
+
+            ctx.beginPath();
+            ctx.rect(legendX, legendY, rectW, rectH);
+            ctx.fill();
+            ctx.stroke();
+
+            const typeColors = {
+                'gene': '#00ffcc',
+                'compound': '#3498db',
+                'map': '#f1c40f',
+                'metabolite': '#64FFC8',
+                'neurotransmitter': '#C864FF',
+                'cytokine': '#FF0000'
+            };
+
+            types.forEach((type, i) => {
+                const color = typeColors[type] || '#4ca1af';
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(legendX + 20, legendY + padding + 10 + i * itemHeight, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ddd';
+                ctx.font = 'bold 10px "Segoe UI", Roboto, Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(type.toUpperCase(), legendX + 35, legendY + padding + 14 + i * itemHeight);
+            });
+            ctx.restore();
+        },
+
         drawPathwayGraph() {
             if (!this.pathwayData || !window.GreenhouseModels3DMath) return;
+
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+            const time = Date.now() * 0.001; // Animation clock
 
             const projectedNodes = this.pathwayData.map(node => ({
                 ...node,
@@ -787,10 +949,27 @@
                 const source = projectedNodes.find(n => n.id === edge.source);
                 const target = projectedNodes.find(n => n.id === edge.target);
                 if (source && target && source.projected.scale > 0 && target.projected.scale > 0) {
+                    // Base line
                     this.ctx.beginPath();
                     this.ctx.moveTo(source.projected.x, source.projected.y);
                     this.ctx.lineTo(target.projected.x, target.projected.y);
                     this.ctx.stroke();
+
+                    // Animated Flow Particle
+                    const flowPos = (time % 1);
+                    const fx = source.projected.x + (target.projected.x - source.projected.x) * flowPos;
+                    const fy = source.projected.y + (target.projected.y - source.projected.y) * flowPos;
+
+                    this.ctx.fillStyle = 'rgba(0, 255, 204, 0.8)';
+                    this.ctx.beginPath();
+                    this.ctx.arc(fx, fy, 2.5 * source.projected.scale, 0, Math.PI * 2);
+                    this.ctx.fill();
+
+                    // Add a small glow to the particle
+                    this.ctx.shadowBlur = 5;
+                    this.ctx.shadowColor = 'rgba(0, 255, 204, 0.5)';
+                    this.ctx.fill();
+                    this.ctx.shadowBlur = 0;
                 }
             });
 
@@ -817,23 +996,35 @@
                             break;
                     }
 
-                    if (node.id === this.highlightedNodeId) {
+                    const isHighlighted = node.id === this.highlightedNodeId;
+                    const semanticZoomThreshold = 0.5;
+                    const showLabel = isHighlighted || node.projected.scale > semanticZoomThreshold;
+
+                    if (isHighlighted) {
                         color = '#39ff14'; // Neon Green
                         glow = 'rgba(57, 255, 20, 0.8)';
                         radius *= 2.5;
+                    }
 
+                    if (showLabel) {
                         // Draw background box for label
                         const label = t(node.name).toUpperCase();
-                        this.ctx.font = 'bold 11px "Courier New", Courier, monospace';
+                        this.ctx.font = isHighlighted ? 'bold 11px "Courier New", Courier, monospace' : 'bold 9px Arial';
                         const textWidth = this.ctx.measureText(label).width;
-                        this.ctx.fillStyle = 'rgba(0,0,0,0.8)';
-                        this.ctx.fillRect(node.projected.x - textWidth / 2 - 5, node.projected.y - radius - 25, textWidth + 10, 20);
-                        this.ctx.strokeStyle = '#39ff14';
-                        this.ctx.strokeRect(node.projected.x - textWidth / 2 - 5, node.projected.y - radius - 25, textWidth + 10, 20);
 
-                        this.ctx.fillStyle = '#39ff14';
+                        this.ctx.fillStyle = isHighlighted ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.4)';
+                        this.ctx.fillRect(node.projected.x - textWidth / 2 - 4, node.projected.y - radius - 18, textWidth + 8, 14);
+
+                        if (isHighlighted) {
+                            this.ctx.strokeStyle = '#39ff14';
+                            this.ctx.strokeRect(node.projected.x - textWidth / 2 - 4, node.projected.y - radius - 18, textWidth + 8, 14);
+                            this.ctx.fillStyle = '#39ff14';
+                        } else {
+                            this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                        }
+
                         this.ctx.textAlign = 'center';
-                        this.ctx.fillText(label, node.projected.x, node.projected.y - radius - 11);
+                        this.ctx.fillText(label, node.projected.x, node.projected.y - radius - 7);
                     }
 
                     // Shadow / Glow
