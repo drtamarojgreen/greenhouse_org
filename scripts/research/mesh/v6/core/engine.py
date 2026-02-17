@@ -3,6 +3,7 @@ import json
 import logging
 import asyncio
 import aiohttp
+import os # Added os import
 from typing import List, Dict, Any
 from .api_clients import DiscoveryClientV6
 
@@ -88,29 +89,59 @@ class DiscoveryEngineV6:
 
     async def run(self, csv_path: str, num_nodes: int, output_path: str):
         """
-        Executes the discovery pipeline.
+        Executes the discovery pipeline using top nodes from v7 analysis.
         """
-        all_nodes = self.parse_graph_csv(csv_path)
-        # Sort by composite score (descending), then by weight (descending)
-        sorted_nodes = sorted(all_nodes, key=lambda x: (x['composite_score'], x['weight']), reverse=True)
+        v7_top_nodes_json_path = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), "../../../v7/top_50_nodes.json"
+        ))
 
-        top_nodes = []
-        seen_names = set()
-        for node in sorted_nodes:
-            if node['name'] not in seen_names:
-                top_nodes.append(node['name'])
-                seen_names.add(node['name'])
-            if len(top_nodes) >= num_nodes:
-                break
+        top_nodes_from_json = []
+        if os.path.exists(v7_top_nodes_json_path):
+            try:
+                with open(v7_top_nodes_json_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    # Extract node names (or IDs) from the JSON data
+                    # Assuming the JSON has a list of dicts, each with a 'node' key
+                    top_nodes_from_json = [str(item['node']) for item in data]
+                logger.info(f"Loaded {len(top_nodes_from_json)} top nodes from {v7_top_nodes_json_path}")
+            except Exception as e:
+                logger.error(f"Error loading top nodes from JSON file: {e}")
+                # Fallback to CSV parsing if JSON fails
+                all_nodes = self.parse_graph_csv(csv_path)
+                sorted_nodes = sorted(all_nodes, key=lambda x: (x['composite_score'], x['weight']), reverse=True)
+                top_nodes_from_json = []
+                seen_names = set()
+                for node in sorted_nodes:
+                    if node['name'] not in seen_names:
+                        top_nodes_from_json.append(node['name'])
+                        seen_names.add(node['name'])
+                    if len(top_nodes_from_json) >= num_nodes:
+                        break
+                logger.warning("Falling back to internal CSV parsing for top nodes.")
+        else:
+            logger.warning(f"v7 top nodes JSON not found at {v7_top_nodes_json_path}. Falling back to internal CSV parsing for top nodes.")
+            # Fallback to CSV parsing if JSON not found
+            all_nodes = self.parse_graph_csv(csv_path)
+            sorted_nodes = sorted(all_nodes, key=lambda x: (x['composite_score'], x['weight']), reverse=True)
+            top_nodes_from_json = []
+            seen_names = set()
+            for node in sorted_nodes:
+                if node['name'] not in seen_names:
+                    top_nodes_from_json.append(node['name'])
+                    seen_names.add(node['name'])
+                if len(top_nodes_from_json) >= num_nodes:
+                    break
+            
+        top_nodes_to_process = top_nodes_from_json # Renamed for clarity
 
-        if not top_nodes:
+        if not top_nodes_to_process:
             logger.warning("No nodes found to process.")
             return []
 
-        logger.info(f"Identified {len(top_nodes)} top nodes for discovery.")
+        logger.info(f"Identified {len(top_nodes_to_process)} top nodes for discovery.")
 
         async with aiohttp.ClientSession() as session:
-            tasks = [self.process_node(session, name) for name in top_nodes]
+            tasks = [self.process_node(session, name) for name in top_nodes_to_process]
             results = await asyncio.gather(*tasks)
 
         with open(output_path, 'w', encoding='utf-8') as f:
