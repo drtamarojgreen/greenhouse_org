@@ -143,8 +143,8 @@
                 ro.observe(container);
             }
 
-            // Add Explanations
-            this.addExplanation(container);
+            // Add Explanations (Moved to Canvas UI in neuro_app.js for better quality)
+            // this.addExplanation(container);
 
             // Add Start Overlay
             this.addStartOverlay(container);
