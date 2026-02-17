@@ -557,6 +557,11 @@
             }
 
             ctx.filter = 'none'; // Reset filter
+
+            // --- Draw UI Overlay (High Quality Canvas UI) ---
+            if (window.GreenhouseNeuroApp && window.GreenhouseNeuroApp.drawUI) {
+                window.GreenhouseNeuroApp.drawUI(ctx, this.canvas.width, this.canvas.height);
+            }
         },
 
         drawTargets(ctx, w, h) {
@@ -1312,6 +1317,19 @@
             } else {
                 this.tooltipEl.style.display = 'none';
             }
+        },
+
+        resetCamera() {
+            if (this.cameraControls) this.cameraControls.resetCamera();
+            console.log("NeuroUI3D: Camera Reset");
+        },
+
+        toggleAutoRotate() {
+            if (this.cameraControls) {
+                this.cameraControls.toggleAutoRotate();
+                this.autoRotate = this.config.get('camera.controls.autoRotate');
+            }
+            console.log("NeuroUI3D: Auto-Rotate", this.autoRotate);
         },
 
         generateSynapseMeshes() {
