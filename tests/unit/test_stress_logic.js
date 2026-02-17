@@ -176,6 +176,108 @@ TestFramework.describe('GreenhouseStressApp Logic', () => {
         assert.lessThan(engine.state.metrics.hpaSensitivity, initialState.metrics.hpaSensitivity);
     });
 
+    TestFramework.it('should verify Diurnal Phase Logic', () => {
+        // Mock clock to a specific time
+        app.clock.timeInHours = 8; // Morning
+        app.updateModel(engine.state, 1000/60);
+        const morningCortisol = engine.state.metrics.cortisolLevels;
+
+        app.clock.timeInHours = 23; // Night
+        app.updateModel(engine.state, 1000/60);
+        const nightCortisol = engine.state.metrics.cortisolLevels;
+
+        // Morning cortisol (CAR) should be generally higher than night
+        // Note: Simulation uses smoothing, so we might need multiple updates
+        for(let i=0; i<100; i++) {
+            app.clock.timeInHours = 8;
+            app.updateModel(engine.state, 1000/60);
+        }
+        const morningStable = engine.state.metrics.cortisolLevels;
+
+        for(let i=0; i<100; i++) {
+            app.clock.timeInHours = 23;
+            app.updateModel(engine.state, 1000/60);
+        }
+        const nightStable = engine.state.metrics.cortisolLevels;
+
+        assert.greaterThan(morningStable, nightStable);
+    });
+
+    TestFramework.it('should verify Stepped-Care Escalation', () => {
+        // Setup initial conditions
+        const resetState = () => {
+            for (let id in engine.state.factors) engine.state.factors[id] = 0;
+            for (let id in engine.state.metrics) engine.state.metrics[id] = 0.5;
+            engine.state.metrics.allostaticLoad = 0.8;
+            engine.state.metrics.autonomicBalance = 0.4;
+            engine.state.history.cumulativeLoad = 0;
+            engine.state.factors.stress_interv_relapse_prev = 1;
+            // Also need these for damping to be non-zero
+            engine.state.factors.stress_interv_adherence = 1;
+            engine.state.factors.stress_system_access = 1;
+            engine.state.factors.stress_system_capacity = 1;
+        };
+
+        // Scenario 1: With Stepped Care
+        resetState();
+        engine.state.factors.stress_system_stepped_care = 1;
+        app.updateModel(engine.state, 1000/60);
+        const balanceWithSteppedCare = engine.state.metrics.autonomicBalance;
+
+        // Reset and Scenario 2: Without Stepped Care
+        resetState();
+        engine.state.factors.stress_system_stepped_care = 0;
+        app.updateModel(engine.state, 1000/60);
+        const balanceWithoutSteppedCare = engine.state.metrics.autonomicBalance;
+
+        assert.lessThan(balanceWithSteppedCare, balanceWithoutSteppedCare);
+    });
+
+    TestFramework.it('should verify Crisis Pathway spike', () => {
+        engine.state.metrics.allostaticLoad = 0.9;
+        engine.state.factors.stress_system_crisis_plan = 0;
+
+        const initialState = JSON.parse(JSON.stringify(engine.state));
+        app.updateModel(engine.state, 1000/60);
+        const spikeBalance = engine.state.metrics.autonomicBalance;
+
+        engine.state.factors.stress_system_crisis_plan = 1;
+        engine.state.metrics.autonomicBalance = initialState.metrics.autonomicBalance;
+        app.updateModel(engine.state, 1000/60);
+        const safeBalance = engine.state.metrics.autonomicBalance;
+
+        assert.greaterThan(spikeBalance, safeBalance);
+    });
+
+    TestFramework.it('should verify Risk Monitoring activation', () => {
+        engine.state.factors.stress_system_risk_monitor = 1;
+        engine.state.metrics.allostaticLoad = 0.95;
+
+        app.updateModel(engine.state, 1000/60);
+        assert.isTrue(engine.state.history.riskAlertActive);
+
+        engine.state.metrics.allostaticLoad = 0.5;
+        app.updateModel(engine.state, 1000/60);
+        assert.isFalse(engine.state.history.riskAlertActive);
+    });
+
+    TestFramework.it('should verify Gut Health Efficiency impact', () => {
+        engine.state.factors.gutHealth = 0; // Poor gut health
+        engine.state.factors.env_noise = 1; // Some stressor
+
+        app.updateModel(engine.state, 1000/60);
+        const poorGutDopamine = engine.state.metrics.dopamineLevels;
+
+        engine.state.factors.gutHealth = 1;
+        // Reset metrics to baseline for comparison
+        engine.state.metrics.dopamineLevels = 100;
+
+        app.updateModel(engine.state, 1000/60);
+        const goodGutDopamine = engine.state.metrics.dopamineLevels;
+
+        assert.greaterThan(goodGutDopamine, poorGutDopamine);
+    });
+
 });
 
 TestFramework.run().then(results => {

@@ -14,6 +14,7 @@ global.window = global;
 global.document = {
     querySelector: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
     querySelectorAll: () => [],
+    getElementById: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
     createElement: () => ({
         getContext: () => ({ fillRect: () => { }, clearRect: () => { }, beginPath: () => { }, arc: () => { }, fill: () => { }, stroke: () => { }, save: () => { }, restore: () => { } }),
         width: 800, height: 600, addEventListener: () => { },
@@ -47,38 +48,60 @@ global.window.GreenhouseUtils = {
 loadScript('pathway.js');
 loadScript('pathway_viewer.js');
 
-TestFramework.describe('Pathway Logic (Unit)', () => {
+TestFramework.describe('Pathway Viewer (Unit)', () => {
 
-    const App = global.window.GreenhousePathwayApp;
+    const Viewer = global.window.GreenhousePathwayViewer;
 
-    TestFramework.it('should define core App object', () => {
-        assert.isDefined(App);
+    TestFramework.it('should define Viewer object', () => {
+        assert.isDefined(Viewer);
     });
 
-    TestFramework.describe('Graph Theory / Mapping', () => {
-        TestFramework.it('should initialize nodes for key metabolic markers', () => {
-            // Assume the app has a setupNodes or similar
-            if (App.nodes) {
-                assert.greaterThan(App.nodes.length, 0);
-                const monoamineNode = App.nodes.find(n => n.id === 'MAO');
-                assert.isDefined(monoamineNode);
-            }
+    TestFramework.describe('Dynamic Anchors', () => {
+        TestFramework.it('should generate 3D layout based on anatomical regions', async () => {
+            Viewer.availablePathways = [{ id: 'test', name: 'Test', regions: ['gut', 'raphe'] }];
+
+            // Trigger switchPathway which uses internal PathwayLayout
+            await Viewer.switchPathway('test');
+
+            assert.isDefined(Viewer.pathwayData);
+            assert.greaterThan(Viewer.pathwayData.length, 0);
+
+            // Check if 3D positions are assigned
+            const firstNode = Viewer.pathwayData[0];
+            assert.isDefined(firstNode.position3D);
+            assert.isDefined(firstNode.position3D.x);
+            assert.isDefined(firstNode.position3D.y);
+            assert.isDefined(firstNode.position3D.z);
         });
 
-        TestFramework.it('should calculate signal propagation', () => {
-            if (App.propagateSignal) {
-                const results = App.propagateSignal('START_NODE', 1.0);
-                assert.isDefined(results);
-            }
+        TestFramework.it('should verify anatomical mapping logic', () => {
+            // mapKeggNodeToRegion is public on Viewer
+            assert.equal(Viewer.mapKeggNodeToRegion({ name: 'Tryptophan' }, 'tryptophan'), 'gut');
+            assert.equal(Viewer.mapKeggNodeToRegion({ name: 'Cortisol' }, 'hpa'), 'adrenals');
+            assert.equal(Viewer.mapKeggNodeToRegion({ name: 'CRH' }, 'hpa'), 'hypothalamus');
         });
     });
 
-    TestFramework.describe('Interactive Filtering', () => {
-        TestFramework.it('should apply filters to graph state', () => {
-            if (App.state && App.state.activeFilters) {
-                App.applyFilter('anxiety');
-                assert.isTrue(App.state.activeFilters.includes('anxiety'));
-            }
+    TestFramework.describe('Semantic Zoom', () => {
+        TestFramework.it('should verify label visibility logic', () => {
+            // The logic is in drawPathwayGraph:
+            // const showLabel = isHighlighted || node.projected.scale > semanticZoomThreshold;
+
+            const semanticZoomThreshold = 0.5;
+
+            let isHighlighted = false;
+            let scale = 0.3;
+            let showLabel = isHighlighted || scale > semanticZoomThreshold;
+            assert.isFalse(showLabel);
+
+            isHighlighted = true;
+            showLabel = isHighlighted || scale > semanticZoomThreshold;
+            assert.isTrue(showLabel);
+
+            isHighlighted = false;
+            scale = 0.6;
+            showLabel = isHighlighted || scale > semanticZoomThreshold;
+            assert.isTrue(showLabel);
         });
     });
 

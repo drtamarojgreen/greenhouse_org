@@ -93,6 +93,25 @@ TestFramework.describe('GreenhouseBioStatus Synchronization', () => {
         assert.greaterThan(engine.state.metrics.stressBurden, 0);
     });
 
+    TestFramework.it('should be called by StressApp updateModel', () => {
+        const app = window.GreenhouseStressApp;
+        const config = window.GreenhouseStressConfig;
+        const engine = new window.GreenhouseModelsUtil.SimulationEngine({
+            initialFactors: config.factors.reduce((acc, f) => { acc[f.id] = f.defaultValue; return acc; }, {}),
+            initialMetrics: {
+                allostaticLoad: 0.5, hpaSensitivity: 0.8, autonomicBalance: 0.5,
+                hrv: 60, vagalTone: 0.6
+            },
+            updateFn: (state, dt) => app.updateModel(state, dt)
+        });
+
+        app.updateModel(engine.state, 1000/60);
+
+        // Check if GreenhouseBioStatus was updated by StressApp
+        assert.equal(window.GreenhouseBioStatus.stress.load, engine.state.metrics.allostaticLoad);
+        assert.equal(window.GreenhouseBioStatus.stress.hpa, engine.state.metrics.hpaSensitivity);
+    });
+
 });
 
 TestFramework.run().then(results => {
