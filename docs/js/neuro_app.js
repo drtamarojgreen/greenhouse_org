@@ -1,149 +1,331 @@
 // docs/js/neuro_app.js
-// Main Application Entry Point for Neuro Simulation
+// Main Application Entry Point for Neuro Simulation - Refactored for High Quality Canvas UI
 
 (function () {
     'use strict';
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     const GreenhouseNeuroApp = {
         ga: null,
-        ui: null,
+        ui3d: null,
         isRunning: false,
         intervalId: null,
-        resilienceObserver: null,
         baseUrl: '',
 
-        init(selector, baseUrl = '', selArg = null) {
-            // Standardize selector argument handling if re-invoked
-            if (typeof selector !== 'string' && baseUrl && typeof baseUrl === 'string' && baseUrl.startsWith('#')) {
-                selArg = baseUrl;
-                baseUrl = '';
-            }
-            if (typeof selector !== 'string' && selArg) selector = selArg;
-
-            console.log('NeuroApp: Initializing...');
-            this.baseUrl = baseUrl || '';
-            this.lastSelector = selector;
-
-            const container = document.querySelector(selector);
-            if (!container) {
-                console.error('NeuroApp: Target container not found:', selector);
-                return;
-            }
-
-            this._delayedInit(container, selector);
+        state: {
+            viewMode: 0, // 0: Neural, 1: Synaptic, 2: Burst
+            dosage: 1.0,
+            activeScenarios: new Set()
         },
 
-        _delayedInit(container, selector) {
-            // Clear existing content to ensure we replace rather than append
-            container.innerHTML = '';
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
+        ui: {
+            hoveredElement: null,
+            buttons: [],
+            checkboxes: [],
+            sliders: [],
+            actionButtons: []
+        },
 
-            if (isMobile) {
-                const staticTitle = document.querySelector('h1');
-                if (staticTitle) staticTitle.style.display = 'none';
-            }
+        init(selector, baseUrl = '') {
+            console.log('NeuroApp: Initializing High Quality Canvas UI...');
+            this.baseUrl = baseUrl || '';
+
+            const container = document.querySelector(selector);
+            if (!container) return;
+
+            container.innerHTML = '';
+            container.style.backgroundColor = '#000';
+            container.style.position = 'relative';
 
             // Check dependencies
-            if (!window.NeuroGA || !window.GreenhouseNeuroUI3D || !window.GreenhouseModels3DMath) {
-                console.error('NeuroApp: Missing dependencies. Ensure NeuroGA, GreenhouseNeuroUI3D, and GreenhouseModels3DMath are loaded.');
+            if (!window.NeuroGA || !window.GreenhouseNeuroUI3D) {
+                console.error('NeuroApp: Missing GA or UI3D dependencies.');
                 return;
             }
 
-            // --- Create the protective wrapper div ---
-            const simContainer = document.createElement('div');
-            const simSelector = 'neuro-simulation-wrapper'; // A unique class for the wrapper
-            simContainer.className = simSelector;
-            simContainer.style.width = '100%';
-            simContainer.style.height = '100%';
-            simContainer.style.position = 'relative';
-            container.appendChild(simContainer);
-            // ---
-
             this.ga = new window.NeuroGA();
-            this.ui = window.GreenhouseNeuroUI3D;
-
-            // Handle Language Change
-            window.addEventListener('greenhouseLanguageChanged', () => {
-                this.refreshUIText();
-            });
-
-            // Initialize UI inside the new wrapper
-            this.ui.init(`.${simSelector}`);
-
-            // Initialize GA
             this.ga.init({
                 populationSize: 50,
                 bounds: { x: 500, y: 500, z: 500 }
             });
 
-            // Add control overlay inside the new wrapper
-            this.createControls(simContainer);
+            this.setupUIComponents();
 
-            // Start simulation automatically
+            this.ui3d = window.GreenhouseNeuroUI3D;
+            this.ui3d.init(selector); // This creates the canvas
+
+            this.bindEvents();
+
+            // Start simulation
             this.startSimulation();
 
-            // Resilience should still observe the main container for removal
-            if (window.GreenhouseUtils) {
-                window.GreenhouseUtils.observeAndReinitializeApplication(container, selector, this, 'init');
-                window.GreenhouseUtils.startSentinel(container, selector, this, 'init');
+            if (window.GreenhouseUtils && window.GreenhouseUtils.renderModelsTOC) {
+                window.GreenhouseUtils.renderModelsTOC(selector);
             }
         },
 
-        refreshUIText() {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-            const btn = document.getElementById('neuro-pause-btn');
-            if (btn) {
-                btn.textContent = this.isRunning ? t('btn_pause') : t('btn_play');
-            }
-            const statsEl = document.getElementById('neuro-stats');
-            if (statsEl && this.ga) {
-                if (this.ga.generation === 0) {
-                    statsEl.textContent = t('initializing');
-                } else {
-                    statsEl.textContent = `${t('gen')}: ${this.ga.generation} | ${t('best_fitness')}: ${Math.round(this.ga.bestGenome.fitness)}`;
-                }
-            }
-            const langBtn = document.getElementById('neuro-lang-toggle');
-            if (langBtn) {
-                langBtn.textContent = t('btn_language');
-            }
+        setupUIComponents() {
+            // Mode Buttons
+            this.ui.buttons = [
+                { id: 'mode_neural', label: t('mode_neural'), val: 0, x: 40, y: 110, w: 100, h: 25 },
+                { id: 'mode_synaptic', label: t('mode_synaptic'), val: 1, x: 145, y: 110, w: 110, h: 25 },
+                { id: 'mode_burst', label: t('mode_burst'), val: 2, x: 260, y: 110, w: 100, h: 25 }
+            ];
 
-            // Update Scenario Labels
+            // ADHD Scenarios (from Data)
             if (window.GreenhouseADHDData) {
-                Object.keys(window.GreenhouseADHDData.scenarios).forEach(key => {
-                    const label = document.querySelector(`label[for="scenario-check-${key}"]`);
-                    if (label) {
-                        label.textContent = t(`adhd_scenario_${key}`);
-                    }
+                let startY = 180;
+                let visibleIndex = 0;
+                Object.keys(window.GreenhouseADHDData.scenarios).forEach((key) => {
+                    if (key === 'none') return;
+                    this.ui.checkboxes.push({
+                        id: `scenario_${key}`,
+                        scenarioId: key,
+                        labelKey: `adhd_scenario_${key}`,
+                        x: 40,
+                        y: startY + visibleIndex * 25,
+                        w: 200,
+                        h: 20
+                    });
+                    visibleIndex++;
                 });
             }
 
-            // Update Dosage Label
-            const dosageLabel = document.querySelector('#neuro-control-panel + div div, .neuro-simulation-wrapper > div div:nth-child(3) div');
-            // Better selector for dosage label
-            const allDivs = document.querySelectorAll('.neuro-simulation-wrapper div');
-            allDivs.forEach(div => {
-                if (div.textContent === "Dosage Optimization Slider" || div.textContent === "Deslizador de Optimización de Dosis") {
-                    div.textContent = t('adhd_enh_48_name');
+            // Dosage Slider
+            this.ui.sliders = [
+                { id: 'dosage_slider', x: 40, y: 480, w: 280, h: 30, min: 0.1, max: 2.0 }
+            ];
+
+            // System Buttons
+            this.ui.actionButtons = [
+                { id: 'btn_pause', label: t('btn_pause'), x: 40, y: 530, w: 100, h: 35, action: 'pause' },
+                { id: 'btn_lang', label: t('btn_language'), x: 150, y: 530, w: 100, h: 35, action: 'lang' }
+            ];
+
+            // Camera Controls (Standardized)
+            this.ui.cameraButtons = [
+                { id: 'reset_camera', label: t('reset_camera'), x: 400, y: 60, w: 110, h: 25, action: 'reset' },
+                { id: 'auto_rotate', label: t('auto_rotate'), x: 515, y: 60, w: 110, h: 25, action: 'rotate' }
+            ];
+        },
+
+        bindEvents() {
+            if (this.ui3d && this.ui3d.canvas) {
+                // Use capturing phase (true) to ensure UI handles clicks before the 3D scene
+                this.ui3d.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e), true);
+                this.ui3d.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e), true);
+            }
+        },
+
+        handleMouseDown(e) {
+            if (!this.ui3d || !this.ui3d.canvas) return;
+            const rect = this.ui3d.canvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left) * (this.ui3d.canvas.width / rect.width);
+            const my = (e.clientY - rect.top) * (this.ui3d.canvas.height / rect.height);
+
+            let hit = false;
+
+            // 1. Buttons (Modes)
+            for (const b of this.ui.buttons) {
+                if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                    this.state.viewMode = b.val;
+                    this.switchMode(b.val);
+                    hit = true; break;
                 }
+            }
+
+            // 2. Checkboxes (Scenarios)
+            if (!hit) {
+                for (const c of this.ui.checkboxes) {
+                    if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
+                        if (this.state.activeScenarios.has(c.scenarioId)) {
+                            this.state.activeScenarios.delete(c.scenarioId);
+                            this.toggleScenario(c.scenarioId, false);
+                        } else {
+                            this.state.activeScenarios.add(c.scenarioId);
+                            this.toggleScenario(c.scenarioId, true);
+                        }
+                        hit = true; break;
+                    }
+                }
+            }
+
+            // 3. Slider (Dosage)
+            if (!hit) {
+                const s = this.ui.sliders[0];
+                if (mx >= s.x && mx <= s.x + s.w && my >= s.y && my <= s.y + s.h) {
+                    this.updateSlider(mx, s);
+                    this.isDraggingSlider = true;
+                    hit = true;
+                }
+            }
+
+            // 4. Action Buttons
+            if (!hit) {
+                for (const b of this.ui.actionButtons) {
+                    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                        if (b.action === 'pause') {
+                            if (this.isRunning) this.stopSimulation();
+                            else this.startSimulation();
+                            b.label = this.isRunning ? t('btn_pause') : t('btn_play');
+                        } else if (b.action === 'lang') {
+                            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
+                            this.refreshUIText();
+                        }
+                        hit = true; break;
+                    }
+                }
+            }
+
+            // 5. Camera Buttons
+            if (!hit) {
+                for (const b of this.ui.cameraButtons) {
+                    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                        if (b.action === 'reset') {
+                            if (this.ui3d) this.ui3d.resetCamera();
+                        } else if (b.action === 'rotate') {
+                            if (this.ui3d) this.ui3d.toggleAutoRotate();
+                        }
+                        hit = true; break;
+                    }
+                }
+            }
+
+            if (hit) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+            }
+
+            window.addEventListener('mouseup', () => this.isDraggingSlider = false, { once: true });
+        },
+
+        handleMouseMove(e) {
+            if (!this.ui3d || !this.ui3d.canvas) return;
+            const rect = this.ui3d.canvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left) * (this.ui3d.canvas.width / rect.width);
+            const my = (e.clientY - rect.top) * (this.ui3d.canvas.height / rect.height);
+
+            if (this.isDraggingSlider) {
+                this.updateSlider(mx, this.ui.sliders[0]);
+                return;
+            }
+
+            this.ui.hoveredElement = null;
+
+            // Simple hit test for all components
+            const all = [
+                ...this.ui.buttons,
+                ...this.ui.checkboxes,
+                ...this.ui.sliders,
+                ...this.ui.actionButtons,
+                ...this.ui.cameraButtons
+            ];
+
+            for (const el of all) {
+                if (mx >= el.x && mx <= el.x + el.w && my >= el.y && my <= el.y + el.h) {
+                    this.ui.hoveredElement = el;
+                    this.ui3d.canvas.style.cursor = 'pointer';
+                    return;
+                }
+            }
+            // If mouse didn't hit UI, let UI3D handle it or reset cursor
+            // (UI3D handles region hovers in its own mousemove)
+        },
+
+        updateSlider(mx, s) {
+            let pct = (mx - s.x) / s.w;
+            pct = Math.max(0, Math.min(1, pct));
+            this.state.dosage = s.min + pct * (s.max - s.min);
+            if (this.ga) this.ga.adhdConfig.dosagePrecision = this.state.dosage;
+        },
+
+        refreshUIText() {
+            // Update labels based on current language
+            this.ui.buttons.forEach(b => b.label = t(b.id));
+            this.ui.actionButtons.forEach(b => {
+                if (b.action === 'pause') b.label = this.isRunning ? t('btn_pause') : t('btn_play');
+                else b.label = t('btn_language');
             });
+            this.ui.cameraButtons.forEach(b => b.label = t(b.id));
+        },
+
+        drawUI(ctx, w, h) {
+            const Controls = window.GreenhouseNeuroControls;
+            if (!Controls) return;
+
+            // 1. Draw Main Control Panel Background
+            Controls.drawPanel(ctx, this, 20, 20, 350, 580, t('Simulation Controls'));
+
+            // 2. Stats Section
+            ctx.fillStyle = '#4ca1af';
+            ctx.font = '800 10px Quicksand';
+            ctx.fillText(t('simulation_stats').toUpperCase(), 40, 60);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '500 13px Quicksand';
+            const statsText = this.ga ? `${t('gen')}: ${this.ga.generation} | ${t('best_fitness')}: ${Math.round(this.ga.bestGenome?.fitness || 0)}` : t('initializing');
+            ctx.fillText(statsText, 40, 80);
+
+            // 3. Mode Section
+            ctx.fillStyle = '#4ca1af';
+            ctx.font = '800 10px Quicksand';
+            ctx.fillText(t('simulation_mode').toUpperCase(), 40, 100);
+            this.ui.buttons.forEach(b => Controls.drawButton(ctx, this, b, this.state.viewMode === b.val));
+
+            // 4. Scenarios Section
+            ctx.fillStyle = '#4ca1af';
+            ctx.font = '800 10px Quicksand';
+            ctx.fillText(t('adhd_scenarios').toUpperCase(), 40, 155);
+
+            // Draw Scenarios list with scroll simulation (or just clipping)
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(30, 165, 300, 280);
+            ctx.clip();
+            this.ui.checkboxes.forEach(c => Controls.drawCheckbox(ctx, this, c, this.state.activeScenarios.has(c.scenarioId)));
+            ctx.restore();
+
+            // 5. Dosage Section
+            ctx.fillStyle = '#4ca1af';
+            ctx.font = '800 10px Quicksand';
+            ctx.fillText(t('dosage_optimization').toUpperCase(), 40, 470);
+            Controls.drawSlider(ctx, this, this.ui.sliders[0], this.state.dosage);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px Quicksand';
+            ctx.fillText(this.state.dosage.toFixed(2), 330, 498);
+
+            // 6. Action Buttons
+            this.ui.actionButtons.forEach(b => Controls.drawButton(ctx, this, b, false));
+
+            // 7. Camera Controls Panel (Right Side, Responsive)
+            const camPanelX = Math.max(380, w - 260);
+            Controls.drawPanel(ctx, this, camPanelX, 20, 240, 80, t('3d_view_title'));
+
+            this.ui.cameraButtons.forEach(b => {
+                // Reposition based on panel
+                if (b.action === 'reset') b.x = camPanelX + 15;
+                else b.x = camPanelX + 130;
+                b.y = 60;
+                const isActive = (b.action === 'rotate' && this.ui3d?.autoRotate);
+                Controls.drawButton(ctx, this, b, isActive);
+            });
+
+            // 8. Credits / Help hint at bottom
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '9px Quicksand';
+            ctx.fillText('NAVIGATE: DRAG TO ROTATE • WHEEL TO ZOOM', 40, 585);
         },
 
         startSimulation() {
             if (this.isRunning) return;
             this.isRunning = true;
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-
             this.intervalId = setInterval(() => {
-                const bestGenome = this.ga.step();
-                this.ui.updateData(bestGenome);
-
-                // Update stats
-                const statsEl = document.getElementById('neuro-stats');
-                if (statsEl) {
-                    statsEl.textContent = `${t('gen')}: ${this.ga.generation} | ${t('best_fitness')}: ${Math.round(this.ga.bestGenome.fitness)}`;
+                if (this.ga) {
+                    const bestGenome = this.ga.step();
+                    if (this.ui3d) this.ui3d.updateData(bestGenome);
                 }
-            }, 100); // 10 generations per second
+            }, 100);
         },
 
         stopSimulation() {
@@ -153,18 +335,13 @@
 
         switchMode(index) {
             if (!this.ga) return;
-            // 0: Neural Network (Default), 1: Synaptic Density (Enhanced weights), 2: Burst Patterns (High activity)
             if (index === 1) {
                 this.ga.populationSize = 80;
-                console.log('NeuroApp: Mode -> Synaptic Density');
             } else if (index === 2) {
-                this.ga.config = this.ga.config || {};
-                this.ga.config.burstMode = true;
-                console.log('NeuroApp: Mode -> Burst Patterns');
+                this.ga.adhdConfig.burstMode = true; // Use config instead of direct ga property for consistency
             } else {
                 this.ga.populationSize = 50;
-                if (this.ga.config) this.ga.config.burstMode = false;
-                console.log('NeuroApp: Mode -> Neural Network');
+                this.ga.adhdConfig.burstMode = false;
             }
         },
 
@@ -177,160 +354,16 @@
 
             scenario.enhancements.forEach(id => {
                 this.ga.setADHDEnhancement(id, isActive);
-                if (this.ui?.adhdEffects) {
-                    if (isActive) this.ui.adhdEffects.activeEnhancements.add(id);
-                    else this.ui.adhdEffects.activeEnhancements.delete(id);
-                }
             });
-
-            console.log(`NeuroApp: Scenario ${scenarioId} set to -> ${isActive}`);
         },
 
-        createControls(container) {
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
-            const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
-            const controls = document.createElement('div');
-
-            // Reduced layout for mobile: show controls but minimal
-            controls.style.cssText = `
-                position: absolute;
-                top: 10px;
-                right: 10px;
-                background: rgba(0, 0, 0, 0.8);
-                padding: ${isMobile ? '8px' : '15px'};
-                border-radius: 12px;
-                color: white;
-                font-family: 'Quicksand', sans-serif;
-                z-index: 100;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-                border: 1px solid rgba(255,255,255,0.1);
-                font-size: ${isMobile ? '12px' : '14px'};
-            `;
-
-            const stats = document.createElement('div');
-            stats.id = 'neuro-stats';
-            stats.textContent = t('initializing');
-            stats.style.marginBottom = '8px';
-            controls.appendChild(stats);
-
-            // Scenario Selection (Additive)
-            const scenarioContainer = document.createElement('div');
-            scenarioContainer.style.marginBottom = '12px';
-            scenarioContainer.style.maxHeight = isMobile ? '100px' : '200px';
-            scenarioContainer.style.overflowY = 'auto';
-            scenarioContainer.style.border = '1px solid rgba(255,255,255,0.1)';
-            scenarioContainer.style.padding = '5px';
-            scenarioContainer.style.background = 'rgba(0,0,0,0.3)';
-
-            const scenarioLabel = document.createElement('div');
-            scenarioLabel.textContent = t('scenarios');
-            scenarioLabel.style.fontSize = '12px';
-            scenarioLabel.style.marginBottom = '8px';
-            scenarioLabel.style.color = '#4ca1af';
-            scenarioLabel.style.fontWeight = 'bold';
-            scenarioContainer.appendChild(scenarioLabel);
-
-            if (window.GreenhouseADHDData) {
-                Object.keys(window.GreenhouseADHDData.scenarios).forEach(key => {
-                    if (key === 'none') return;
-                    const item = document.createElement('div');
-                    item.style.display = 'flex';
-                    item.style.alignItems = 'center';
-                    item.style.marginBottom = '4px';
-                    item.style.fontSize = isMobile ? '11px' : '12px';
-
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.id = `scenario-check-${key}`;
-                    checkbox.style.marginRight = '8px';
-                    checkbox.onchange = (e) => {
-                        this.toggleScenario(key, e.target.checked);
-                    };
-
-                    const label = document.createElement('label');
-                    label.htmlFor = `scenario-check-${key}`;
-                    label.textContent = t(`adhd_scenario_${key}`);
-                    label.style.cursor = 'pointer';
-
-                    item.appendChild(checkbox);
-                    item.appendChild(label);
-                    scenarioContainer.appendChild(item);
-                });
-            }
-
-            controls.appendChild(scenarioContainer);
-
-            // Dosage Slider (48)
-            const dosageContainer = document.createElement('div');
-            dosageContainer.style.marginBottom = '12px';
-
-            const dosageLabel = document.createElement('div');
-            dosageLabel.textContent = t('adhd_enh_48_name');
-            dosageLabel.style.fontSize = '12px';
-            dosageLabel.style.marginBottom = '5px';
-            dosageContainer.appendChild(dosageLabel);
-
-            const dosageSlider = document.createElement('input');
-            dosageSlider.type = 'range';
-            dosageSlider.min = '0.1';
-            dosageSlider.max = '2.0';
-            dosageSlider.step = '0.1';
-            dosageSlider.value = '1.0';
-            dosageSlider.style.width = '100%';
-            dosageSlider.oninput = (e) => {
-                if (this.ga) {
-                    this.ga.adhdConfig.dosagePrecision = parseFloat(e.target.value);
-                }
-            };
-            dosageContainer.appendChild(dosageSlider);
-            controls.appendChild(dosageContainer);
-
-            const btnGroup = document.createElement('div');
-            btnGroup.style.display = 'flex';
-            btnGroup.style.flexDirection = isMobile ? 'row' : 'column';
-            btnGroup.style.gap = '8px';
-
-            const btn = document.createElement('button');
-            btn.id = 'neuro-pause-btn';
-            btn.textContent = t('btn_pause');
-            btn.className = 'greenhouse-btn greenhouse-btn-primary';
-            btn.style.fontSize = isMobile ? '12px' : '14px';
-            btn.style.padding = '6px 12px';
-            btn.onclick = () => {
-                if (this.isRunning) {
-                    this.stopSimulation();
-                    btn.textContent = t('btn_play');
-                } else {
-                    this.startSimulation();
-                    btn.textContent = t('btn_pause');
-                }
-            };
-            btnGroup.appendChild(btn);
-
-            // Minimal Language Toggle for the model
-            const langBtn = document.createElement('button');
-            langBtn.id = 'neuro-lang-toggle';
-            langBtn.textContent = t('btn_language');
-            langBtn.className = 'greenhouse-btn greenhouse-btn-secondary';
-            langBtn.style.fontSize = isMobile ? '12px' : '14px';
-            langBtn.style.padding = '6px 12px';
-            langBtn.style.width = 'auto !important';
-            langBtn.style.maxWidth = 'fit-content';
-            langBtn.onclick = () => {
-                if (window.GreenhouseModelsUtil) {
-                    window.GreenhouseModelsUtil.toggleLanguage();
-                }
-            };
-            btnGroup.appendChild(langBtn);
-
-            controls.appendChild(btnGroup);
-
-            // Ensure container is relative so absolute positioning works
-            if (getComputedStyle(container).position === 'static') {
-                container.style.position = 'relative';
-            }
-
-            container.appendChild(controls);
+        roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            ctx.beginPath(); ctx.moveTo(x + radius, y); ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius); ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height); ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius); ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y); ctx.closePath();
+            if (fill) ctx.fill(); if (stroke) ctx.stroke();
         }
     };
 

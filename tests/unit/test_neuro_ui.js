@@ -33,9 +33,12 @@ global.document = {
             fillRect: () => { },
             strokeRect: () => { },
             closePath: () => { },
+            quadraticCurveTo: () => { }, // Added quadraticCurveTo
+            bezierCurveTo: () => { }, // Added bezierCurveTo
+            arcTo: () => { }, // Added arcTo
             arc: () => { }, // Added arc
-            ellipse: () => {}, // Added ellipse
-            setLineDash: () => {}, // Added setLineDash
+            ellipse: () => { }, // Added ellipse
+            setLineDash: () => { }, // Added setLineDash
             set fillStyle(v) { },
             set strokeStyle(v) { },
             set lineWidth(v) { },
@@ -58,6 +61,8 @@ global.document = {
 };
 global.console = console;
 global.requestAnimationFrame = (cb) => { }; // No auto-loop
+global.setInterval = (cb) => { return 1; }; // Mock setInterval
+global.clearInterval = (id) => { };
 global.addEventListener = () => { };
 
 // --- Helper to Load Scripts ---
@@ -82,6 +87,10 @@ loadScript('neuro_ui_3d_neuron.js');
 loadScript('neuro_ui_3d_synapse.js');
 loadScript('neuro_ui_3d_stats.js');
 loadScript('neuro_ui_3d_enhanced.js');
+loadScript('neuro_ui_3d.js');
+loadScript('neuro_controls.js');
+loadScript('neuro_ga.js');
+loadScript('neuro_app.js');
 
 // --- Test Suites ---
 
@@ -102,6 +111,10 @@ TestFramework.describe('GreenhouseNeuroUI3D', () => {
             generation: 1
         };
         global.document.querySelector = () => mockContainer;
+
+        // Also init the app since UI3D depends on it for drawUI
+        window.GreenhouseNeuroApp.init('div');
+
         ui.init('div'); // Corrected init signature
         ui.updateData(mockAlgo.bestNetwork); // Pre-load data
     });
@@ -124,6 +137,47 @@ TestFramework.describe('GreenhouseNeuroUI3D', () => {
         ui.ctx = document.createElement('canvas').getContext('2d');
         ui.render();
         assert.isTrue(true); // Reached here without error
+    });
+});
+
+TestFramework.describe('GreenhouseNeuroApp', () => {
+    let app;
+    TestFramework.beforeEach(() => {
+        app = window.GreenhouseNeuroApp;
+        app.init('div');
+    });
+
+    TestFramework.it('should initialize app state', () => {
+        assert.isDefined(app.ga);
+        assert.isDefined(app.ui);
+        assert.equal(app.state.viewMode, 0);
+    });
+
+    TestFramework.it('should handle mode switching', () => {
+        app.switchMode(1);
+        assert.equal(app.ga.populationSize, 80);
+    });
+});
+
+TestFramework.describe('GreenhouseNeuroControls', () => {
+    const controls = window.GreenhouseNeuroControls;
+    const ctx = document.createElement('canvas').getContext('2d');
+    const mockApp = {
+        ui: {
+            hoveredElement: null,
+            sliders: [{ min: 0, max: 1, x: 0, y: 0, w: 100, h: 10 }]
+        },
+        roundRect: () => { }
+    };
+
+    TestFramework.it('should draw panel', () => {
+        controls.drawPanel(ctx, mockApp, 0, 0, 100, 100, 'Test');
+        assert.isTrue(true);
+    });
+
+    TestFramework.it('should draw buttons', () => {
+        controls.drawButton(ctx, mockApp, { x: 0, y: 0, w: 50, h: 20, label: 'btn' }, false);
+        assert.isTrue(true);
     });
 });
 

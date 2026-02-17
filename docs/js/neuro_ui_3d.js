@@ -30,8 +30,13 @@
             far: 5000
         },
         isActive: false,
-
-        // ... (rest of state)
+        neurons: [],
+        connections: [],
+        newConnections: [],
+        autoRotate: true,
+        rotationSpeed: 0.002,
+        viewMode: 'network',
+        selectedConnection: null,
 
         init(containerSelector) {
             const container = document.querySelector(containerSelector);
@@ -57,47 +62,43 @@
                 this.synapseCameraController.autoRotate = true;
             }
 
-            console.log('NeuroUI3D: Canvas build delayed by 5 seconds.');
+            console.log('NeuroUI3D: Initializing Canvas...');
 
-            setTimeout(() => {
-                this.canvas = document.createElement('canvas');
-                this.canvas.width = container.offsetWidth;
-                this.canvas.height = 600;
-                this.canvas.style.width = '100%';
-                this.canvas.style.height = '600px';
-                this.canvas.style.backgroundColor = '#111';
+            this.canvas = document.createElement('canvas');
+            this.canvas.width = container.offsetWidth || 1000;
+            this.canvas.height = 750;
+            this.canvas.style.width = '100%';
+            this.canvas.style.height = '100%';
+            this.canvas.style.backgroundColor = '#050510';
+            this.canvas.style.display = 'block';
 
-                container.appendChild(this.canvas);
-                this.ctx = this.canvas.getContext('2d');
+            container.appendChild(this.canvas);
+            this.ctx = this.canvas.getContext('2d');
 
-                this.projection.width = this.canvas.width;
-                this.projection.height = this.canvas.height;
+            this.projection.width = this.canvas.width;
+            this.projection.height = this.canvas.height;
 
-                // Handle Resize
-                window.addEventListener('resize', () => {
-                    if (this.canvas) {
-                        this.canvas.width = container.offsetWidth;
-                        this.canvas.height = container.offsetHeight;
-                        this.projection.width = this.canvas.width;
-                        this.projection.height = this.canvas.height;
-                    }
-                });
+            // Handle Resize
+            window.addEventListener('resize', () => {
+                if (this.canvas && container) {
+                    this.canvas.width = container.offsetWidth;
+                    this.canvas.height = 750;
+                    this.projection.width = this.canvas.width;
+                    this.projection.height = this.canvas.height;
+                }
+            });
 
-                // Setup Interaction (Mouse/Wheel)
-                this.setupInteraction();
+            // Setup Interaction (Mouse/Wheel)
+            this.setupInteraction();
 
-                // Add Explanations
-                this.addExplanation(container);
+            // Add Start Overlay
+            this.addStartOverlay(container);
 
-                // Add Start Overlay
-                this.addStartOverlay(container);
+            // Start Animation Loop
+            this.startAnimation();
 
-                // Start Animation Loop
-                this.startAnimation();
-
-                // Initialize Synapse Meshes
-                this.synapseMeshes = this.generateSynapseMeshes();
-            }, 5000);
+            // Initialize Synapse Meshes
+            this.synapseMeshes = this.generateSynapseMeshes();
         },
 
         setupInteraction() {
@@ -413,7 +414,9 @@
             if (!this.ctx || !this.canvas) return;
 
             const ctx = this.ctx;
-            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+            ctx.clearRect(0, 0, w, h);
 
             // Update Controllers (Physics & Auto-Rotate)
             if (this.networkCameraController) this.networkCameraController.update();
@@ -469,6 +472,11 @@
             const pipY = this.canvas.height - pipH - padding;
 
             this.drawNetworkView(ctx, pipX, pipY, pipW, pipH);
+
+            // --- Draw UI Overlay ---
+            if (window.GreenhouseNeuroApp && window.GreenhouseNeuroApp.drawUI) {
+                window.GreenhouseNeuroApp.drawUI(ctx, w, h);
+            }
         },
 
         drawNetworkView(ctx, x, y, w, h) {
@@ -595,7 +603,14 @@
             }
         },
 
-
+        roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            ctx.beginPath(); ctx.moveTo(x + radius, y); ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius); ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height); ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius); ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y); ctx.closePath();
+            if (fill) ctx.fill(); if (stroke) ctx.stroke();
+        },
 
         drawGrid(ctx) {
             // ... (existing grid code, maybe lower opacity)
@@ -911,6 +926,19 @@
                     this.pipProgress = 0;
                 }
             }
+        },
+
+        resetCamera() {
+            if (this.networkCameraController) this.networkCameraController.resetCamera();
+            if (this.synapseCameraController) this.synapseCameraController.resetCamera();
+            console.log("NeuroUI3D: Camera Reset");
+        },
+
+        toggleAutoRotate() {
+            this.autoRotate = !this.autoRotate;
+            if (this.networkCameraController) this.networkCameraController.autoRotate = this.autoRotate;
+            if (this.synapseCameraController) this.synapseCameraController.autoRotate = this.autoRotate;
+            console.log("NeuroUI3D: Auto-Rotate", this.autoRotate);
         },
 
         generateSynapseMeshes() {
