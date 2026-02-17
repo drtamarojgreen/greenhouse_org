@@ -13,6 +13,8 @@
     let GreenhouseUtils;
     let resilienceObserver = null;
 
+    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+
     // Ensure GreenhouseUtils is loaded before proceeding
     const loadDependencies = async () => {
         await new Promise((resolve, reject) => {
@@ -147,8 +149,8 @@
         refreshUIText() {
             // Redraw loop will handle language changes automatically via t()
             const langBtn = document.getElementById('rna-lang-toggle');
-            if (langBtn && window.GreenhouseModelsUtil) {
-                langBtn.textContent = window.GreenhouseModelsUtil.t('btn_language');
+            if (langBtn) {
+                langBtn.textContent = t('btn_language');
             }
         }
 
@@ -831,7 +833,6 @@
                 consumed: this.atpConsumed.toFixed(1)
             };
 
-            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             this.ctx.fillText(`ATP: ${atpStatus.atp}%`, this.width - 20, 30);
             this.ctx.fillText(`${t('used')}: ${atpStatus.consumed}`, this.width - 20, 50);
 
@@ -900,7 +901,6 @@
             return;
         }
 
-        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
         const isMobile = window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser();
 
         if (typeof targetElement === 'string') {
@@ -966,7 +966,7 @@
             window.Greenhouse.initializeRNADisplay(simulation);
         }
 
-        simulation.animate();
+        requestAnimationFrame((ts) => simulation.animate(ts));
 
         window.addEventListener('resize', () => {
             const newRect = targetElement.getBoundingClientRect();
@@ -986,7 +986,7 @@
 
             // Render bottom navigation TOC via common utilities
             if (typeof window.GreenhouseUtils.renderModelsTOC === 'function') {
-                window.GreenhouseUtils.renderModelsTOC(targetElement);
+                window.GreenhouseUtils.renderModelsTOC(selector);
             }
         }
     }
