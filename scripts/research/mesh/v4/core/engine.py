@@ -37,12 +37,12 @@ class DiscoveryEngineV4:
         self.visited = set()
         self.total_terms = 0
         
-        self.tree = await self._discover_recursive(seed_term, level=1)
+        self.tree = await self._discover_recursive(seed_term, level=1, parent_count=None)
         return self.tree
 
-    async def _discover_recursive(self, term: str, level: int) -> Optional[Dict[str, Any]]:
+    async def _discover_recursive(self, term: str, level: int, parent_count: Optional[int] = None) -> Optional[Dict[str, Any]]:
         """
-        Recursively discovers terms.
+        Recursively discovers terms with dynamic pruning based on significance scores.
         """
         if level > self.max_levels:
             return None
@@ -64,14 +64,25 @@ class DiscoveryEngineV4:
         
         # Get count for filtering
         count = await self.client.get_publication_count(term)
+
+        # Enhancement 41: Dynamic Pruning via Significance Score
+        # relative to parent node's volume
+        significance_score = 1.0
+        if parent_count and parent_count > 0:
+            significance_score = count / parent_count
+
         threshold = self.level_thresholds.get(level, self.level_thresholds.get(max(self.level_thresholds.keys())))
         
-        if count < threshold:
-            logger.info(f"Pruned Level {level}: {term} ({count} < {threshold})")
+        # A node is kept if it meets the absolute threshold OR has high relative significance
+        is_significant = count >= threshold or (parent_count and significance_score > 0.1)
+
+        if not is_significant:
+            logger.info(f"Pruned Level {level}: {term} (Significance: {significance_score:.4f}, Count: {count})")
             return {
                 "term": term,
                 "count": count,
                 "level": level,
+                "significance": round(significance_score, 4),
                 "status": "pruned"
             }
 
@@ -88,7 +99,7 @@ class DiscoveryEngineV4:
             # for now we just take the first N
             tasks = []
             for related in list(related_candidates)[:self.max_children]:
-                tasks.append(self._discover_recursive(related, level + 1))
+                tasks.append(self._discover_recursive(related, level + 1, parent_count=count))
             
             results = await asyncio.gather(*tasks)
             children = [r for r in results if r is not None]

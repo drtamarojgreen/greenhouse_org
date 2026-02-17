@@ -37,7 +37,9 @@ class DisGeNETClient:
             return json.loads(row[0])
 
         if not self.api_key:
-            logger.warning("DisGeNET API key not provided. Returning empty results.")
+            logger.error("DisGeNET API key missing! This source requires an API key for curated data.")
+            logger.info("GUIDE: Obtain a free key at https://www.disgenet.org/signin/ and set it as DISGENET_API_KEY environment variable.")
+            logger.info("FALLBACK: The v8 pipeline will automatically utilize OpenTargets (public) for alternative associations.")
             return {"error": "No API key"}
 
         headers = {"Authorization": f"Bearer {self.api_key}"}
@@ -68,6 +70,7 @@ class DisGeNETClient:
         data = await self._fetch(session, "gda/disease", params)
 
         if isinstance(data, dict) and "error" in data:
+            # Graceful degradation: return empty but logged
             return []
 
         associations = []

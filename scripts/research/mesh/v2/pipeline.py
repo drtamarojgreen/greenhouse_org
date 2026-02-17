@@ -48,14 +48,24 @@ def run_v2_pipeline(seed, max_terms, min_count, output_path):
     discovered = engine.run(seed, max_terms=max_terms)
 
     # 2. Enrich with Analysis (Z-score, CAGR)
-    # For simplicity in this v2 demo, we'll just get the current count
-    # and maybe a few historical points if we were doing full time-series.
+    logger.info("Enriching results with advanced metrics...")
+
+    # Fetch historical data for each term to get real trends
+    historical_years = [2020, 2021, 2022, 2023, 2024]
+    for item in discovered:
+        logger.info(f"Fetching historical counts for {item['term']}...")
+        item_counts = []
+        for year in historical_years:
+            item_counts.append(client.get_publication_count(item['term'], year=year))
+        item['history'] = {"years": historical_years, "counts": item_counts}
+
+    enriched_results = processor.calculate_advanced_metrics(discovered)
 
     results = {
         "seed": seed,
-        "discovery_results": discovered,
+        "discovery_results": enriched_results,
         "summary": {
-            "total_terms": len(discovered)
+            "total_terms": len(enriched_results)
         }
     }
 

@@ -37,7 +37,9 @@ class DrugBankClient:
             return json.loads(row[0])
 
         if not self.api_key:
-            logger.warning("DrugBank API key not provided. Returning empty results.")
+            logger.error("DrugBank API key missing! This source requires an API key for discovery data.")
+            logger.info("GUIDE: Register for an API key at https://www.drugbank.com/ and set it as DRUGBANK_API_KEY environment variable.")
+            logger.info("FALLBACK: The v8 pipeline will automatically utilize OpenTargets (public) for alternative associations.")
             return {"error": "No API key"}
 
         headers = {"Authorization": self.api_key}
@@ -68,6 +70,7 @@ class DrugBankClient:
         data = await self._fetch(session, "indications", params)
 
         if "error" in data:
+            # Graceful degradation: return empty but logged
             return []
 
         drugs = []
