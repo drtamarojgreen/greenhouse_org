@@ -6,7 +6,12 @@ import mathutils
 import random
 
 def setup_scene(master):
-    """The Garden of the Mind setup."""
+    """
+    The Garden of the Mind setup.
+    Shot ID: S02
+    Intent: Establish a vibrant, peaceful environment.
+    """
+    # MUSIC CUE: Gentle birdsong and pastoral flute.
     master.create_intertitle("The Garden of\nThe Mind", 401, 500)
 
     # Apply scene grade

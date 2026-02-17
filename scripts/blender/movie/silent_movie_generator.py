@@ -56,8 +56,8 @@ scene21 = safe_import_scene("scene21_dialogue")
 scene22 = safe_import_scene("scene22_retreat")
 
 class MovieMaster(BaseMaster):
-    def __init__(self, mode='SILENT_FILM'):
-        super().__init__(mode=mode, total_frames=15000)
+    def __init__(self, mode='SILENT_FILM', quality='test', device_type='HIP'):
+        super().__init__(mode=mode, total_frames=15000, quality=quality, device_type=device_type)
 
     def create_intertitle(self, text, frame_start, frame_end):
         """Creates a classic silent movie intertitle card."""
@@ -344,7 +344,8 @@ class MovieMaster(BaseMaster):
         con.up_axis = 'UP_Y'
 
         if self.mode == 'SILENT_FILM':
-            style.apply_camera_shake(cam, 1, 15000, strength=0.02)
+            # Point 99: Use insert_looping_noise directly for camera shake
+            style.insert_looping_noise(cam, "location", strength=0.02, scale=2.0, frame_start=1, frame_end=15000)
 
         self.setup_camera_keyframes(cam, target)
 
@@ -365,11 +366,22 @@ class MovieMaster(BaseMaster):
         for s in scenes:
             if s: s.setup_scene(self)
 
-    def run(self):
-        self.load_assets()
-        self.setup_lighting()
-        self.setup_compositor()
-        self.animate_master()
+
+    def setup_lighting(self):
+        """Point 98: Sets up lighting with beam reference."""
+        super().setup_lighting()
+
+        # Volumetric Light Shaft (Sun Beam)
+        bpy.ops.object.light_add(type='SPOT', location=(0, 10, 15))
+        self.beam = bpy.context.object
+        self.beam.name = "LightShaftBeam"
+        self.beam.data.energy = 80000
+        self.beam.data.spot_size = math.radians(20)
+        self.beam.data.spot_blend = 1.0
+        self.beam.rotation_euler = (math.radians(-60), 0, 0)
+
+        # Dynamic God Rays (After Sun and Beam are created)
+        style.setup_god_rays(self.scene, beam_obj=self.beam)
 
     def setup_camera_keyframes(self, cam, target):
         """Point 31 & 41: Consolidated camera keyframes using SCENE_MAP and establishing shot."""
@@ -385,21 +397,21 @@ class MovieMaster(BaseMaster):
 
         # Branding (1 - 100)
         kf(1, title_loc, origin)
-        kf(SCENE_MAP['branding'][1], title_loc, origin)
+        kf(SCENE_MAP['scene00_branding'][1], title_loc, origin)
 
         # Intro / Establishing Shot (Point 41) (101 - 200)
-        kf(SCENE_MAP['intro'][0], (0, -30, 10), origin) # Wide outside
-        kf(SCENE_MAP['intro'][1], (0, -15, 5), origin) # Dolly inside
+        kf(SCENE_MAP['scene01_intro'][0], (0, -30, 10), origin) # Wide outside
+        kf(SCENE_MAP['scene01_intro'][1], (0, -15, 5), origin) # Dolly inside
 
         # Brain (201 - 400)
-        kf(SCENE_MAP['brain'][0], (0,-30,8), origin)
-        kf(SCENE_MAP['brain'][1], (0,-35,10), origin)
+        kf(SCENE_MAP['scene_brain'][0], (0,-30,8), origin)
+        kf(SCENE_MAP['scene_brain'][1], (0,-35,10), origin)
 
         # Garden (401 - 650)
         kf(401, title_loc, origin)
         kf(500, title_loc, origin)
-        kf(SCENE_MAP['garden'][0] + 100, (5,-20,4), (-2, 0, 1.5))
-        kf(SCENE_MAP['garden'][1], (-5,-15,3), (2, 0, 1.5))
+        kf(SCENE_MAP['scene02_garden'][0] + 100, (5,-20,4), (-2, 0, 1.5))
+        kf(SCENE_MAP['scene02_garden'][1], (-5,-15,3), (2, 0, 1.5))
 
         # Socratic (651 - 950)
         kf(651, title_loc, origin)
@@ -407,13 +419,13 @@ class MovieMaster(BaseMaster):
         kf(751, (0,-15,4), high_target)
         kf(950, (0,-18,5), high_target)
 
-        # Exchange (951 - 1250)
+        # Knowledge Exchange (951 - 1250)
         kf(951, title_loc, origin)
         kf(1051, (6,-12,3), (0, 0, 1.5))
         kf(1250, (-6,-12,3), (0, 0, 1.5))
 
         # Interaction (4501 - 9500)
-        s_int = SCENE_MAP['interaction']
+        s_int = SCENE_MAP['scene15_interaction']
         kf(s_int[0], (0,-15,4), (-3, 0, 1.5))
         kf(6000, (5,-12,3), (2, 0, 1.5))
         kf(6200, (1,-5,2), (0, 0, 1.5))
@@ -421,8 +433,8 @@ class MovieMaster(BaseMaster):
         kf(s_int[1], (0,-20,8), (0, 0, 1))
 
         # Credits (14501 - 15000)
-        kf(SCENE_MAP['credits'][0], (0,-10,0), (0, 0, 5))
-        kf(SCENE_MAP['credits'][1], (0,-10,0), (0, 0, 15))
+        kf(SCENE_MAP['scene12_credits'][0], (0,-10,0), (0, 0, 5))
+        kf(SCENE_MAP['scene12_credits'][1], (0,-10,0), (0, 0, 15))
 
     def setup_compositor(self):
         tree = style.get_compositor_node_tree(self.scene)
@@ -456,14 +468,21 @@ def main():
     args = argv[argv.index("--") + 1:] if "--" in argv else []
     mode = 'SILENT_FILM'
     if '--unity' in args: mode = 'UNITY_PREVIEW'
-    master = MovieMaster(mode=mode)
 
+    # Point 30, 66: Parse quality and device type
+    quality = args[args.index('--quality') + 1] if '--quality' in args else 'test'
+    device = args[args.index('--device-type') + 1] if '--device-type' in args else 'HIP'
+
+    master = MovieMaster(mode=mode, quality=quality, device_type=device)
+
+    start_f = None
+    end_f = None
     if '--scene' in args:
         scene_name = args[args.index('--scene') + 1]
         if scene_name in SCENE_MAP:
-            master.scene.frame_start, master.scene.frame_end = SCENE_MAP[scene_name]
+            start_f, end_f = SCENE_MAP[scene_name]
 
-    master.run()
+    master.run(start_frame=start_f, end_frame=end_f)
     if '--render-anim' in args:
         bpy.ops.render.render(animation=True)
 

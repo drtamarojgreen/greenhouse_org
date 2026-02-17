@@ -14,7 +14,7 @@ def setup_scene(master):
         return
 
     # Point 31: Use SCENE_MAP
-    start_frame, end_frame = SCENE_MAP['credits']
+    start_frame, end_frame = SCENE_MAP['scene12_credits']
 
     credits_text = (
         "GreenhouseMD Silent Movie\n\n"

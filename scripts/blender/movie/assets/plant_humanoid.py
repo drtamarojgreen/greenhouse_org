@@ -4,9 +4,6 @@ import random
 import mathutils
 import style
 
-# Ensure FBX importer is patched for Blender 5.0 compatibility
-style.patch_fbx_importer()
-
 def create_leaf_mesh():
     """Creates a simple leaf mesh if it doesn't exist."""
     if "LeafTemplate" in bpy.data.meshes:
@@ -44,7 +41,7 @@ def create_vine(start, end, radius=0.05):
     return obj
 
 def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
-    """Enhanced procedural bark material."""
+    """Point 79: Enhanced procedural bark material with LOD system."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
@@ -52,6 +49,14 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
 
     node_output = nodes.new(type='ShaderNodeOutputMaterial')
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    node_bsdf.inputs['Roughness'].default_value = 0.9
+    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
+
+    if quality == 'background':
+        # Simple version for background characters
+        node_bsdf.inputs['Base Color'].default_value = (*color, 1)
+        return mat
+
     node_coord = nodes.new(type='ShaderNodeTexCoord')
     node_mapping = nodes.new(type='ShaderNodeMapping')
     links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
@@ -92,14 +97,13 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     node_bump.inputs['Strength'].default_value = 0.5
     links.new(node_mapping.outputs['Vector'], node_voronoi.inputs['Vector'])
     links.new(node_voronoi.outputs['Distance'], node_bump.inputs['Height'])
-    links.new(node_mix_curv.outputs['Color'], node_bsdf.inputs['Base Color'])
-    links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
-    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
-    node_bsdf.inputs['Roughness'].default_value = 0.9
 
     # Subsurface (Guarded for Blender 5.0 naming drift)
     subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in node_bsdf.inputs else "Subsurface"
     node_bsdf.inputs[subsurf_attr].default_value = 0.15
+
+    links.new(node_mix_curv.outputs['Color'], node_bsdf.inputs['Base Color'])
+    links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
 
     # Peeling Bark (Noise on Displacement)
     # Point 72: Combine normals instead of overwriting
@@ -130,7 +134,7 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     return mat
 
 def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
-    """Enhanced procedural leaf material with Venation and Fuzz."""
+    """Point 79: Enhanced procedural leaf material with LOD system."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
@@ -138,6 +142,11 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
 
     node_output = nodes.new(type='ShaderNodeOutputMaterial')
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
+
+    if quality == 'background':
+        node_bsdf.inputs['Base Color'].default_value = (*color, 1)
+        return mat
     node_coord = nodes.new(type='ShaderNodeTexCoord')
     node_mapping = nodes.new(type='ShaderNodeMapping')
     links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
@@ -152,7 +161,6 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     node_color_mix.inputs[2].default_value = (*color, 1)
     links.new(node_wave.outputs['Fac'], node_color_mix.inputs[0])
     links.new(node_color_mix.outputs['Color'], node_bsdf.inputs['Base Color'])
-    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
 
     # Subsurface (Guarded for Blender 5.0 naming drift)
     subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in node_bsdf.inputs else "Subsurface"
@@ -192,8 +200,12 @@ def create_fingers(location, direction, radius=0.02):
     return fingers
 
 def add_tracking_constraint(obj, target, name="TrackTarget"):
+    """Point 84: Non-destructive constraint management."""
     if not obj or not target: return
-    for c in obj.constraints: obj.constraints.remove(c)
+    # Only remove constraints of the same type and name
+    for c in obj.constraints:
+        if c.type == 'DAMPED_TRACK' and c.name == name:
+            obj.constraints.remove(c)
     con = obj.constraints.new(type='DAMPED_TRACK')
     con.target = target
     con.track_axis = 'TRACK_NEGATIVE_Y'
@@ -277,7 +289,6 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         if mouth.type == 'MESH':
             mouth.shape_key_add(name="Basis")
             smile = mouth.shape_key_add(name="Smile")
-            # In a real setup we'd deform vertices here
 
     arm_height = torso_height * 0.9
     l_arm_start = location + mathutils.Vector((0.2, 0, arm_height))
@@ -412,11 +423,12 @@ def animate_talk(torso, frame_start, frame_end, intensity=1.0):
     mouth.keyframe_insert(data_path="scale", index=2, frame=frame_end)
 
 def animate_expression(torso, frame, expression='NEUTRAL'):
-    """Point 35: Fix expression handling to support None (keep current)."""
+    """Point 35 & 86: Fix expression handling and add mouth deformation."""
     if not torso or expression is None: return
     name = torso.name.split('_')[0]
     brows = [bpy.data.objects.get(f"{name}_Brow_L"), bpy.data.objects.get(f"{name}_Brow_R")]
     pupils = [bpy.data.objects.get(f"{name}_Pupil_L"), bpy.data.objects.get(f"{name}_Pupil_R")]
+    mouth = bpy.data.objects.get(f"{name}_Mouth")
 
     for i, brow in enumerate(brows):
         if not brow: continue
@@ -447,6 +459,16 @@ def animate_expression(torso, frame, expression='NEUTRAL'):
             continue
         pupil.keyframe_insert(data_path="scale", frame=frame)
 
+    if mouth:
+        # Point 86: Scale mouth based on expression
+        if expression == 'ANGRY':
+            mouth.scale = (1.2, 0.2, 0.2) # Thinner/tense
+        elif expression == 'SURPRISED':
+            mouth.scale = (2.0, 0.2, 0.6) # Wider/O-shape
+        elif expression == 'NEUTRAL':
+            mouth.scale = (1.5, 0.2, 0.4)
+        mouth.keyframe_insert(data_path="scale", frame=frame)
+
 def create_flower(location, name="MentalBloom", scale=0.2):
     container = bpy.data.collections.new(name)
     bpy.context.scene.collection.children.link(container)
@@ -476,8 +498,8 @@ def create_flower(location, name="MentalBloom", scale=0.2):
     core.scale = (0.01, 0.01, 0.01)
     return core
 
-def create_inscribed_pillar(location, name="StoicPillar", height=5.0):
-    """Creates a classic pillar with procedural glowing inscriptions."""
+def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=3):
+    """Point 97: Parameterized band decorations."""
     bpy.ops.mesh.primitive_cylinder_add(radius=0.4, depth=height, location=location + mathutils.Vector((0,0,height/2)))
     pillar = bpy.context.object
     pillar.name = name
@@ -510,8 +532,8 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0):
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
     pillar.data.materials.append(mat)
 
-    for i in range(3):
-        z_offset = height * (0.2 + i * 0.3)
+    for i in range(num_bands):
+        z_offset = height * (0.1 + (i+1) * (0.8 / (num_bands + 1)))
         bpy.ops.mesh.primitive_torus_add(location=location + mathutils.Vector((0,0,z_offset)), major_radius=0.42, minor_radius=0.02)
         band = bpy.context.object
         band.name = f"{name}_Band_{i}"

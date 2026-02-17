@@ -20,8 +20,8 @@ from scene13_walking import scene_logic as scene13
 from scene14_duel import scene_logic as scene14
 
 class SequelMaster(BaseMaster):
-    def __init__(self, mode='SILENT_FILM'):
-        super().__init__(mode=mode, total_frames=6000)
+    def __init__(self, mode='SILENT_FILM', quality='test', device_type='HIP'):
+        super().__init__(mode=mode, total_frames=6000, quality=quality, device_type=device_type)
 
     def load_assets(self):
         """Loads models and characters."""
@@ -69,17 +69,24 @@ class SequelMaster(BaseMaster):
         scene14.setup_scene(self) # Duel
         scene12.setup_scene(self) # Credits
 
-    def run(self):
-        self.load_assets()
-        self.setup_lighting()
-        self.animate_master()
-
 def main():
     argv = sys.argv
     args = argv[argv.index("--") + 1:] if "--" in argv else []
-    master = SequelMaster(mode='SILENT_FILM')
+
+    quality = args[args.index('--quality') + 1] if '--quality' in args else 'test'
+    device = args[args.index('--device-type') + 1] if '--device-type' in args else 'HIP'
+
+    master = SequelMaster(mode='SILENT_FILM', quality=quality, device_type=device)
     style.patch_fbx_importer()
-    master.run()
+
+    start_f = None
+    end_f = None
+    if '--scene' in args:
+        scene_name = args[args.index('--scene') + 1]
+        if scene_name in SCENE_MAP:
+            start_f, end_f = SCENE_MAP[scene_name]
+
+    master.run(start_frame=start_f, end_frame=end_f)
 
     if '--render-anim' in args:
         bpy.ops.render.render(animation=True)

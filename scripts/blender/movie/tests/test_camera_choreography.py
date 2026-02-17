@@ -86,7 +86,7 @@ class TestCameraChoreography(unittest.TestCase):
 
     def test_60_final_transition(self):
         """R60: Final transition shot duration before credits."""
-        credits_start = silent_movie_generator.SCENE_MAP['credits'][0]
+        credits_start = silent_movie_generator.SCENE_MAP['scene12_credits'][0]
         retreat_end = silent_movie_generator.SCENE_MAP['scene22'][1]
 
         self.assertEqual(credits_start, retreat_end + 1, "R60 FAIL: Credits should start immediately after retreat")

@@ -13,12 +13,16 @@ if ASSETS_PATH not in sys.path:
 
 import plant_humanoid
 import style
+from constants import SCENE_MAP
 
 def setup_scene(master):
-    """Retreat scene 22."""
-    # Frame range: 13701 - 14500
-    start_frame = 13701
-    end_frame = 14500
+    """
+    Retreat scene 22.
+    Shot ID: S22_01
+    Intent: Antagonist flees. Handoff to credits.
+    """
+    # Point 31: Use SCENE_MAP
+    start_frame, end_frame = SCENE_MAP['scene22_retreat']
 
     if not master.gnome:
         return

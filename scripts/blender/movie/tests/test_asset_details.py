@@ -12,9 +12,10 @@ import style
 class TestAssetDetails(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Run the movie master to generate the scene
+        # Point 59: Support --quick flag for faster tests
+        quick = "--quick" in sys.argv
         cls.master = MovieMaster(mode='SILENT_FILM')
-        cls.master.run()
+        cls.master.run(quick=quick)
 
     def test_herbaceous_hierarchy(self):
         """Verify the deep hierarchy of Herbaceous."""
@@ -39,14 +40,12 @@ class TestAssetDetails(unittest.TestCase):
         self.assertGreater(len(leaves), 10, "Herbaceous Head should have many leaves")
 
     def test_gnome_hierarchy(self):
-        """Verify the deep hierarchy of the Gloom Gnome."""
+        """Point 28 & 58: Verify the hierarchy of the Gloom Gnome (with merged static parts)."""
         torso = bpy.data.objects.get("GloomGnome_Torso")
         self.assertIsNotNone(torso, "GloomGnome_Torso missing")
 
+        # After Point 28, Hat/Beard/Cloak are joined into Torso mesh, not children.
         child_names = [c.name for c in torso.children]
-        self.assertIn("GloomGnome_Hat", child_names)
-        self.assertIn("GloomGnome_Beard", child_names)
-        self.assertIn("GloomGnome_Cloak", child_names)
         self.assertIn("GloomGnome_Staff_Container", child_names)
 
         # Check staff container for segments

@@ -102,12 +102,19 @@ def get_compositor_node_tree(scene):
         except (TypeError, ValueError):
             tree = bpy.data.node_groups.new(name="Compositing Nodetree", type='COMPOSITING')
 
-    # Ensure it is assigned to the scene
-    if tree and hasattr(scene, 'compositing_node_group') and not getattr(scene, 'compositing_node_group', None):
-        try:
-            scene.compositing_node_group = tree
-        except Exception:
-            pass
+    # Point 37: Ensure it is assigned to the scene and validated
+    if tree:
+        if hasattr(scene, 'node_tree') and scene.node_tree != tree:
+            scene.node_tree = tree
+        elif hasattr(scene, 'compositing_node_group') and not scene.compositing_node_group:
+            try:
+                scene.compositing_node_group = tree
+            except Exception:
+                pass
+
+    # Final verification
+    if tree and hasattr(scene, 'use_nodes') and not scene.use_nodes:
+        scene.use_nodes = True
 
     return tree
 
@@ -420,9 +427,6 @@ def camera_pull_out(cam, target, frame_start, frame_end, distance=5):
     """Animates camera moving away from target."""
     camera_push_in(cam, target, frame_start, frame_end, distance=-distance)
 
-def apply_camera_shake(cam, frame_start, frame_end, strength=0.05):
-    """Adds a subtle handheld-style shake."""
-    insert_looping_noise(cam, "location", strength=strength, scale=2.0, frame_start=frame_start, frame_end=frame_end)
 
 def ease_action(obj, data_path, index=-1, interpolation='BEZIER', easing='EASE_IN_OUT'):
     """Sets easing for all keyframes of a specific data path."""
@@ -603,9 +607,9 @@ def setup_chromatic_aberration(scene, strength=0.01):
     distort.inputs['Dispersion'].default_value = strength
     return distort
 
-def setup_god_rays(scene):
-    """Configure volumetric shafts with color ramp and intensity shifts."""
-    beam = bpy.data.objects.get("LightShaftBeam")
+def setup_god_rays(scene, beam_obj=None):
+    """Point 98: Support passing direct beam object reference."""
+    beam = beam_obj or bpy.data.objects.get("LightShaftBeam")
     if beam:
         # Volumetric shaft color shift (Green to Gold)
         beam.data.color = (0, 1, 0.2) # Greenish
@@ -807,6 +811,42 @@ def animate_fireflies(center, volume_size=(5, 5, 5), density=10, frame_start=1, 
         fly.keyframe_insert(data_path="hide_render", frame=frame_start)
         fly.hide_render = True
         fly.keyframe_insert(data_path="hide_render", frame=frame_end)
+
+def create_noise_based_material(name, color_ramp_colors, noise_type='NOISE', noise_scale=10.0, roughness=0.5):
+    """Point 32: Generic helper for creating noise-based procedural materials."""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    nodes.clear()
+
+    node_out = nodes.new(type='ShaderNodeOutputMaterial')
+    node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    node_bsdf.inputs['Roughness'].default_value = roughness
+
+    node_coord = nodes.new(type='ShaderNodeTexCoord')
+    node_mapping = nodes.new(type='ShaderNodeMapping')
+    links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
+
+    if noise_type == 'WAVE':
+        node_noise = nodes.new(type='ShaderNodeTexWave')
+        node_noise.inputs['Scale'].default_value = noise_scale
+    else:
+        node_noise = nodes.new(type='ShaderNodeTexNoise')
+        node_noise.inputs['Scale'].default_value = noise_scale
+
+    links.new(node_mapping.outputs['Vector'], node_noise.inputs['Vector'])
+
+    node_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_ramp.color_ramp.elements.clear()
+    for i, color in enumerate(color_ramp_colors):
+        el = node_ramp.color_ramp.elements.new(i / (len(color_ramp_colors) - 1))
+        el.color = color
+
+    links.new(node_noise.outputs[0], node_ramp.inputs['Fac'])
+    links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
+    links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
+
+    return mat
 
 def animate_reaction_shot(character_name, frame_start, frame_end):
     """Adds listener micro-movements: blinks, eye shifts, subtle nods."""

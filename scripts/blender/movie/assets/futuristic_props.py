@@ -15,7 +15,13 @@ def create_hologram(location, size=1.0):
     bsdf.inputs["Emission Color"].default_value = (0, 0.8, 1, 1)
     bsdf.inputs["Emission Strength"].default_value = 5.0
     bsdf.inputs["Alpha"].default_value = 0.3
-    mat.blend_method = 'BLEND'
+
+    # Point 76: Modern transparency for Blender 4.2+
+    if hasattr(mat, "surface_render_method"):
+        mat.surface_render_method = 'BLENDED'
+    else:
+        mat.blend_method = 'BLEND'
+
     holo.data.materials.append(mat)
 
     return holo

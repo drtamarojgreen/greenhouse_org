@@ -33,3 +33,11 @@ Run the Blender test suite:
 ```bash
 python3 run_blender_tests.py
 ```
+
+## 🐄 Distributed Rendering
+
+For large renders (15,000 frames), it is recommended to use a render farm:
+- **SheepIt**: Free community-driven render farm.
+- **Flamenco**: Self-hosted Blender render farm manager.
+
+Use `render_manager.py` to schedule chunks on local machines or multiple render nodes.

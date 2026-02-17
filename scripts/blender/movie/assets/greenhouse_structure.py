@@ -138,24 +138,38 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
 
     # 4. Glass Panes (simplified planes)
     # Walls
+    glass_panes = []
     for side in [-1, 1]:
         # X-walls
         bpy.ops.mesh.primitive_plane_add(location=main_loc + mathutils.Vector((side * size[0]/2, 0, size[2]/2)), rotation=(0, math.pi/2, 0))
         pane = bpy.context.object
         pane.scale = (size[2]/2, size[1]/2, 1)
         pane.data.materials.append(glass_mat)
-        gh_col.objects.link(pane)
-        if pane.name in bpy.context.scene.collection.objects:
-            bpy.context.scene.collection.objects.unlink(pane)
+        glass_panes.append(pane)
 
         # Y-walls
         bpy.ops.mesh.primitive_plane_add(location=main_loc + mathutils.Vector((0, side * size[1]/2, size[2]/2)), rotation=(math.pi/2, 0, 0))
         pane = bpy.context.object
         pane.scale = (size[0]/2, size[2]/2, 1)
         pane.data.materials.append(glass_mat)
-        gh_col.objects.link(pane)
-        if pane.name in bpy.context.scene.collection.objects:
-            bpy.context.scene.collection.objects.unlink(pane)
+        glass_panes.append(pane)
+
+    # Point 29: Join all parts to minimize object count and noise modifier overhead
+    bpy.ops.object.select_all(action='DESELECT')
+    for obj in gh_col.objects:
+        obj.select_set(True)
+    for pane in glass_panes:
+        pane.select_set(True)
+
+    # We join everything into one main object
+    main_obj = bpy.context.active_object
+    bpy.context.view_layer.objects.active = main_obj
+    bpy.ops.object.join()
+    main_obj.name = "Greenhouse_Main"
+
+    # Ensure it's in the collection
+    if main_obj.name not in gh_col.objects:
+        gh_col.objects.link(main_obj)
 
     return gh_col
 

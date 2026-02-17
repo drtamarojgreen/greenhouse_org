@@ -16,7 +16,8 @@ def render_range(start, end, output_subdir, master_script_name="silent_movie_gen
         print(f"Warning: Range {start}-{end} exceeds 200 frames. Sub-dividing...")
         for s in range(start, end + 1, 200):
             e = min(s + 199, end)
-            render_range(s, e, f"{output_subdir}/sub_{s:04d}", master_script_name=master_script_name)
+            # Point 40: Flat subdirectory structure
+            render_range(s, e, f"{output_subdir}_sub_{s:04d}", master_script_name=master_script_name)
         return
 
     cmd = [

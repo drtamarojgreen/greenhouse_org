@@ -90,7 +90,7 @@ class TestGnomeRetreat(unittest.TestCase):
     def test_45_off_screen_state(self):
         """R45: Antagonist final off-screen or occluded state."""
         gnome = self.master.gnome
-        credits_start = silent_movie_generator.SCENE_MAP['credits'][0]
+        credits_start = silent_movie_generator.SCENE_MAP['scene12_credits'][0]
 
         # Check hide_render at end of retreat
         hide_found = False

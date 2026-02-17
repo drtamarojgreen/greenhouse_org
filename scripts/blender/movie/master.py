@@ -5,7 +5,7 @@ import math
 import mathutils
 import random
 import style
-from constants import SCENE_MAP
+from constants import SCENE_MAP, QUALITY_PRESETS
 
 def ensure_dependencies():
     """Point 6: Centralized dependency management."""
@@ -20,9 +20,11 @@ def ensure_dependencies():
 
 class BaseMaster:
     """Point 5: Shared logic for MovieMaster and SequelMaster."""
-    def __init__(self, mode='SILENT_FILM', total_frames=15000):
+    def __init__(self, mode='SILENT_FILM', total_frames=15000, quality='test', device_type='HIP'):
         self.mode = mode
         self.total_frames = total_frames
+        self.quality = quality
+        self.device_type = device_type # Point 66: Configurable device
 
         # Point 2: Initialize all instance attributes in __init__
         self.scene = None
@@ -47,7 +49,7 @@ class BaseMaster:
         ensure_dependencies()
 
     def setup_engine(self):
-        """Standard engine setup."""
+        """Standard engine setup with quality presets and color management."""
         bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.delete()
 
@@ -59,11 +61,40 @@ class BaseMaster:
         scene.render.resolution_x = 1280
         scene.render.resolution_y = 720
 
+        # Point 62: Default render output
+        scene.render.filepath = f"//renders/{'sequel' if self.total_frames == 6000 else 'full_movie'}/"
+
+        # Point 61: Color Management (Filmic is default in modern Blender, but we ensure it)
+        scene.display_settings.display_device = 'sRGB'
+        if hasattr(scene.view_settings, "view_transform"):
+            scene.view_settings.view_transform = 'Filmic'
+
+        # Point 65: Motion Blur
+        scene.render.use_motion_blur = True
+
         if self.mode == 'SILENT_FILM':
             scene.render.engine = 'CYCLES'
+
+            # Point 66: GPU device selection
+            try:
+                prefs = bpy.context.preferences.addons['cycles'].preferences
+                prefs.compute_device_type = self.device_type
+                prefs.get_devices()
+                for device in prefs.devices:
+                    if device.type == self.device_type:
+                        device.use = True
+            except Exception:
+                pass
+
             scene.cycles.device = 'GPU'
-            scene.cycles.samples = 32
-            scene.cycles.use_denoising = True
+
+            # Point 30 & 67: Quality settings
+            q = QUALITY_PRESETS.get(self.quality, QUALITY_PRESETS['test'])
+            scene.cycles.samples = q['samples']
+            scene.cycles.use_denoising = q['denoising']
+            if hasattr(scene.cycles, "denoiser"):
+                scene.cycles.denoiser = 'OPENIMAGEDENOISE'
+
             scene.world.use_nodes = True
             bg = scene.world.node_tree.nodes.get("Background")
             if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
@@ -120,3 +151,28 @@ class BaseMaster:
                         if fcurve.data_path == "hide_render":
                             for kp in fcurve.keyframe_points:
                                 kp.interpolation = 'CONSTANT'
+
+    def run(self, start_frame=None, end_frame=None, quick=False):
+        """Runs the full pipeline. Point 59 & 70: Optimized for targeted ranges and quick testing."""
+        self.setup_engine()
+        if start_frame is not None: self.scene.frame_start = start_frame
+        if end_frame is not None: self.scene.frame_end = end_frame
+
+        self.load_assets()
+        if quick: return # Skip heavy setup and animation for structural tests
+
+        self.setup_lighting()
+        self.setup_compositor()
+        self.animate_master()
+
+    def load_assets(self):
+        """Must be overridden by subclass."""
+        pass
+
+    def animate_master(self):
+        """Must be overridden by subclass."""
+        pass
+
+    def setup_compositor(self):
+        """Must be overridden by subclass."""
+        pass

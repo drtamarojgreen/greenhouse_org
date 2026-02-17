@@ -46,7 +46,7 @@ class TestReleaseGate(unittest.TestCase):
     def test_97_credits_trigger(self):
         """R97: Credits content start trigger only after retreat completion."""
         retreat_end = silent_movie_generator.SCENE_MAP['scene22'][1]
-        credits_start = silent_movie_generator.SCENE_MAP['credits'][0]
+        credits_start = silent_movie_generator.SCENE_MAP['scene12_credits'][0]
 
         self.assertGreater(credits_start, retreat_end, "R97 FAIL: Credits started too early")
 

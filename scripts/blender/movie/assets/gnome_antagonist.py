@@ -148,14 +148,37 @@ def create_gnome(name, location, scale=0.6):
 
     cloak.data.materials.append(mat_cloak)
 
-    parts = [(body, mat_body), (hat, mat_hat), (beard, mat_beard), (orb, mat_gloom), (mouth, mat_gnome_eye), (cloak, mat_hat)]
-    for p, mat in parts:
+    # Point 85: Wave modifier for cloak secondary motion
+    wave = cloak.modifiers.new(name="CloakWave", type='WAVE')
+    wave.use_x = True
+    wave.use_y = True
+    wave.height = 0.05
+    wave.width = 0.5
+    wave.speed = 0.02
+
+    # Point 28: Merge static parts to reduce draw calls
+    # Assign materials before joining
+    hat.data.materials.append(mat_hat)
+    beard.data.materials.append(mat_beard)
+    mouth.data.materials.append(mat_gnome_eye)
+    # cloak already has mat_cloak
+    body.data.materials.append(mat_body)
+
+    static_parts = [hat, beard, mouth, cloak]
+    bpy.ops.object.select_all(action='DESELECT')
+    for p in static_parts:
+        p.select_set(True)
+    body.select_set(True)
+    bpy.context.view_layer.objects.active = body
+    bpy.ops.object.join()
+
+    # Staff orb
+    orb.data.materials.append(mat_gloom)
+
+    parts = [(body, None), (orb, None)] # Materials already appended to data
+    for p, _ in parts:
         if p.name not in container.objects:
             container.objects.link(p)
-        if not p.material_slots:
-            p.data.materials.append(None)
-        p.material_slots[0].link = 'OBJECT'
-        p.material_slots[0].material = mat
 
     body.scale = (scale, scale, scale)
     return body

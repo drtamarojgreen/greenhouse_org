@@ -31,8 +31,10 @@ def run_audit():
         
         print(f"Rendering frame {frame:04d}...")
         try:
-            # Silence the overwhelming blender stdout for clean monitoring
-            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
+            # Point 63: Use a log file instead of DEVNULL to capture errors
+            log_file = os.path.join(audit_dir, f"render_{frame:04d}.log")
+            with open(log_file, "w") as f:
+                subprocess.run(cmd, check=True, stdout=f, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             print(f"ERROR: Failed to render frame {frame}. Command: {' '.join(cmd)}")
             continue
