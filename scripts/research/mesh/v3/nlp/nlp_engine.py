@@ -92,10 +92,21 @@ class NLPEngineV3:
     def detect_emerging_entities(self, texts: List[str]) -> List[str]:
         """
         Enhancement 35: Named Entity Recognition (NER) for drugs/biomarkers.
-        (Conceptual placeholder)
+        Uses a keyword-based approach to identify potential entities in the text.
         """
-        # In a full implementation, we'd use spaCy's 'en_core_sci_sm' or similar
-        return ["Entity1", "Entity2"]
+        # Common drug/biomarker suffixes for a basic heuristic NER
+        suffixes = ['mab', 'nib', 'tinib', 'vir', 'afil', 'stat', 'one', 'ide', 'ine', 'ol']
+        entities = set()
+
+        for text in texts:
+            words = text.split()
+            for word in words:
+                # Clean word
+                clean_word = "".join(c for c in word if c.isalnum()).lower()
+                if any(clean_word.endswith(s) for s in suffixes) and len(clean_word) > 5:
+                    entities.add(word.strip(".,()[]"))
+
+        return sorted(list(entities))[:10]
 
     def extract_themes(self, texts: List[str]) -> Dict[str, List[str]]:
         """

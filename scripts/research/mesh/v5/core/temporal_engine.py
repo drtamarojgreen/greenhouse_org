@@ -62,13 +62,29 @@ class TemporalEngineV5:
             "color": self.config["timeline"]["visualization"]["colors"].get(term, "#CCCCCC")
         }
 
-    async def run(self):
+    async def run(self, dynamic_conditions: List[str] = None):
         """
         Executes the full longitudinal analysis.
         """
         intervals = self.generate_intervals()
         self.results["intervals"] = [f"{s}-{e}" for s, e in intervals]
         
+        # Enhancement: Automatic Condition Discovery
+        # If dynamic_conditions are provided (e.g. from v4 or v8), use them
+        conditions = dynamic_conditions if dynamic_conditions else self.timeline_cfg.get("conditions", [])
+
+        # If still no conditions, try to load from v8 output if it exists
+        if not conditions:
+            v8_output = "scripts/research/mesh/v8/discovery.json"
+            if os.path.exists(v8_output):
+                try:
+                    with open(v8_output, 'r') as f:
+                        data = json.load(f)
+                        conditions = [item['term'] for item in data[:10]]
+                        logger.info(f"Dynamically discovered {len(conditions)} conditions from {v8_output}")
+                except Exception as e:
+                    logger.warning(f"Failed to load dynamic conditions from {v8_output}: {e}")
+
         # Limit concurrency to respect NCBI rate limits
         sem = asyncio.Semaphore(5)
         
@@ -77,7 +93,7 @@ class TemporalEngineV5:
                 return await self.process_condition(condition, intervals)
         
         tasks = []
-        for condition in self.timeline_cfg["conditions"]:
+        for condition in conditions:
             tasks.append(sem_process(condition))
             
         self.results["datasets"] = await asyncio.gather(*tasks)

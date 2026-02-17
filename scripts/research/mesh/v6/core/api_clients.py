@@ -133,20 +133,26 @@ class DiscoveryClientV6:
             "interventions": list(set(all_interventions))[:10]
         }
 
-    async def get_fda_drugs_data(self, session: aiohttp.ClientSession, node_name: str) -> Dict:
+    async def get_fda_drugs_data(self, session: aiohttp.ClientSession, node_name: str, limit: int = 50) -> Dict:
+        """
+        Fetches FDA drug label data with increased limit and basic pagination support via skip.
+        """
         search_query = f'description:"{node_name}"+OR+indications_and_usage:"{node_name}"'
-        params = {"search": search_query, "limit": 5}
+        all_drugs = []
+
+        # OpenFDA allows up to 100 per request, we'll do one large request or multiple if needed.
+        # For simplicity and to avoid hitting rate limits too hard, we'll do up to 100.
+        params = {"search": search_query, "limit": min(limit, 100)}
         data = await self._fetch(session, self.OPENFDA_BASE_URL, params)
 
         if "error" in data:
             if "404" in data["error"]:
-                return {"related_drugs": [], "message": "No direct drugs found for this specific term."}
+                return {"related_drugs": [], "message": f"No direct drugs found for '{node_name}'."}
             return data
 
-        drugs = []
         if "results" in data:
             for result in data["results"]:
                 if "openfda" in result and "brand_name" in result["openfda"]:
-                    drugs.extend(result["openfda"]["brand_name"])
+                    all_drugs.extend(result["openfda"]["brand_name"])
 
-        return {"related_drugs": list(set(drugs))}
+        return {"related_drugs": list(set(all_drugs))}

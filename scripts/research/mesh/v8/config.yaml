@@ -6,8 +6,9 @@ pipeline:
   cache_db: "scripts/research/mesh/v8/cache.db"
 
 api_keys:
-  # Provide API keys here or set them as environment variables:
-  # DISGENET_API_KEY, DRUGBANK_API_KEY, PUBMED_API_KEY
+  # API keys can be provided here or as environment variables:
+  # PUBMED_API_KEY, DISGENET_API_KEY, DRUGBANK_API_KEY
+  # If keys are missing, the pipeline utilizes OpenTargets for public fallback data.
   pubmed: null
   disgenet: null
   drugbank: null
