@@ -75,20 +75,6 @@ loadScript('genetic_camera_controls.js');
 loadScript('genetic_pip_controls.js');
 loadScript('genetic_ui_3d.js');
 
-const expect = (actual) => ({
-    toBe: (expected) => assert.equal(actual, expected),
-    toBeDefined: () => assert.isDefined(actual),
-    toBeGreaterThan: (expected) => assert.greaterThan(actual, expected),
-    toBeLessThan: (expected) => assert.lessThan(actual, expected),
-    toBeGreaterThanOrEqual: (expected) => assert.isTrue(actual >= expected),
-    toBeLessThanOrEqual: (expected) => assert.isTrue(actual <= expected),
-    toBeTruthy: () => assert.isTrue(!!actual),
-    toBeFalsy: () => assert.isFalse(!!actual),
-    not: {
-        toBe: (expected) => assert.notEqual(actual, expected)
-    }
-});
-
 const jasmine = {
     createSpy: (name) => {
         const spy = (...args) => {
@@ -130,7 +116,7 @@ TestFramework.describe('Genetic PiP Interactions', () => {
         const isOver = window.GreenhouseGeneticPiPControls.getPiPAtPosition(
             15, 15, canvas.width, canvas.height
         );
-        expect(isOver).toBe('helix');
+        assert.equal(isOver, 'helix');
     });
 
     TestFramework.it('should handle mouse drag in helix PiP', () => {
@@ -141,13 +127,37 @@ TestFramework.describe('Genetic PiP Interactions', () => {
         window.GreenhouseGeneticPiPControls.handleMouseMove({ clientX: 100, clientY: 50 });
         window.GreenhouseGeneticPiPControls.handleMouseUp();
 
-        expect(ui3d.cameras[1].rotationY).not.toBe(initialRotY);
+        assert.notEqual(ui3d.cameras[1].rotationY, initialRotY);
     });
 
     TestFramework.it('should reset PiP state', () => {
         ui3d.cameras[1].rotationY = 1.5;
         window.GreenhouseGeneticPiPControls.resetPiP('helix');
-        expect(ui3d.cameras[1].rotationY).toBe(0);
+        assert.equal(ui3d.cameras[1].rotationY, 0);
+    });
+
+    TestFramework.it('should verify zoom in PiP via wheel', () => {
+        const initialZ = ui3d.cameras[1].z;
+        const mockEvent = {
+            clientX: 15, clientY: 15,
+            deltaY: 100,
+            preventDefault: () => {},
+            stopPropagation: () => {}
+        };
+
+        const handled = window.GreenhouseGeneticPiPControls.handleWheel(mockEvent, canvas);
+        assert.equal(handled, true);
+        assert.notEqual(ui3d.cameras[1].z, initialZ);
+    });
+
+    TestFramework.it('should check reset button hit detection', () => {
+        // Reset button is in top-right corner of PiP
+        // helix PiP is at (10, 10, 200, 150)
+        // Reset icon is at (10 + 200 - 16 - 4, 10 + 4) = (190, 14)
+        const pipName = window.GreenhouseGeneticPiPControls.checkResetButton(
+            195, 15, canvas.width, canvas.height
+        );
+        assert.equal(pipName, 'helix');
     });
 });
 

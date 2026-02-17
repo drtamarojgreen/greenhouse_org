@@ -253,12 +253,21 @@ TestFramework.describe('RNA Page Models (Comprehensive)', () => {
             simulation.ribosome.index = 5;
             simulation.rnaStrand[5].connected = false;
             simulation.enzymes = [];
+            simulation.ribosome.stallTimer = 0;
+
+            // Update with small dt, should not trigger yet
+            simulation.update(1000);
+            assert.isTrue(simulation.ribosome.stalled);
+            assert.equal(simulation.ribosome.stallTimer, 1000);
+            assert.equal(simulation.enzymes.length, 0);
 
             // Stall for > 15s (simulate with dt)
-            simulation.update(16000);
+            simulation.update(15000);
 
-            const hasUPF1 = simulation.enzymes.some(e => e.name === 'UPF1/Exosome');
-            assert.isTrue(hasUPF1);
+            const upf1Enzyme = simulation.enzymes.find(e => e.name === 'UPF1/Exosome');
+            assert.isDefined(upf1Enzyme);
+            assert.equal(upf1Enzyme.state, 'decaying');
+            assert.equal(simulation.ribosome.stallTimer, 0, "Stall timer should reset after trigger");
         });
 
         TestFramework.it('should finish repair', () => {
@@ -288,6 +297,21 @@ TestFramework.describe('RNA Page Models (Comprehensive)', () => {
             folding.foldingStrength = 0;
             folding.update(16);
             assert.greaterThan(folding.foldingStrength, 0);
+        });
+
+        TestFramework.it('Folding engine should calculate offsets', () => {
+            const folding = new window.Greenhouse.RNAFoldingEngine();
+            folding.foldingStrength = 1.0;
+            const totalBases = 40;
+            const mid = Math.floor(totalBases / 2);
+
+            const offsetMid = folding.getFoldingOffset(mid, totalBases);
+            assert.equal(offsetMid.x, 0); // sin(0) = 0
+            assert.equal(offsetMid.y, 0); // (cos(0)-1)*40 = 0
+
+            const offsetSide = folding.getFoldingOffset(mid + 3, totalBases);
+            assert.notEqual(offsetSide.x, 0);
+            assert.notEqual(offsetSide.y, 0);
         });
 
         TestFramework.it('Environment should calculate multipliers', () => {
