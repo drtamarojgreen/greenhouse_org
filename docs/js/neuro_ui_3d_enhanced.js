@@ -149,8 +149,8 @@
             // Add Start Overlay
             this.addStartOverlay(container);
 
-            // Add Control Panel
-            this.addControlPanel(container);
+            // Add Control Panel (Disabled in favor of high-quality Canvas UI in neuro_controls.js)
+            // this.addControlPanel(container);
 
             // Start Animation Loop
             this.startAnimation();
