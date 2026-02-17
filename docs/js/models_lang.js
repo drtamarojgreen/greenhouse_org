@@ -2419,7 +2419,10 @@
             "desc_bio_mtdna": "Marker of mitochondrial damage and cellular stress signaling.",
             "desc_bio_ros": "Reactive Oxygen Species: Cause cellular damage if not neutralized by antioxidants.",
             "desc_bio_hrr": "The speed at which the heart rate returns to baseline after a stressor.",
-            "stress_ui_biological_component": "Biological component of the stress model."},
+            "stress_ui_biological_component": "Biological component of the stress model.",
+            "label_shortcuts": "Keyboard Shortcuts",
+            "view_mode_legend_text": "VIEW MODES: 1:MACRO | 2:MICRO | 3:MOLECULAR | 4:PATHWAY | H:L-HEMI | R:EXPORT"
+        },
         es: {
             // Consent Screen
             consent_title: "Explorando la Plasticidad Neuronal: Un Modelo de TCC y DBT",
@@ -4830,7 +4833,10 @@
             "desc_bio_ali": "Índice alostático: medida compuesta de desregulación fisiológica en múltiples sistemas.",
             "desc_bio_mtdna": "ADNmt: marcador de daño mitocondrial y señalización de estrés celular.",
             "desc_bio_ros": "ROS: especies reactivas de oxígeno: causan daño celular si no son neutralizadas por antioxidantes.",
-            "desc_bio_hrr": "Recuperación de FC: la velocidad a la que la frecuencia cardíaca vuelve a la línea base después de un estresor."}
+            "desc_bio_hrr": "Recuperación de FC: la velocidad a la que la frecuencia cardíaca vuelve a la línea base después de un estresor.",
+            "label_shortcuts": "Atajos de Teclado",
+            "view_mode_legend_text": "MODOS DE VISTA: 1:MACRO | 2:MICRO | 3:MOLECULAR | 4:PATHWAY | H:L-HEMI | R:EXPORTAR"
+        }
     };
     window.GreenhouseTranslations = GreenhouseTranslations;
 })();
