@@ -98,8 +98,20 @@
                 await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, baseUrl);
 
             if (data) {
+                // Handle various JSON formats (KEGG vs custom Greenhouse)
+                let nodes = data.nodes || data.molecules || data.compartments || [];
+                let edges = data.edges || data.reactions || [];
+
+                // Standardize node fields
+                nodes = nodes.map(n => ({
+                    ...n,
+                    id: n.id,
+                    name: n.name || n.label || n.id,
+                    type: n.type || n.class || 'compound'
+                }));
+
                 // Apply 3D Layout (Simplified version of PathwayViewer logic)
-                const nodesWithPos = data.nodes.map((n, i) => {
+                const nodesWithPos = nodes.map((n, i) => {
                     const anatomicalMap = {
                         'pfc': { x: 0, y: 80, z: 140 },
                         'striatum': { x: 80, y: 20, z: 40 },
@@ -111,19 +123,49 @@
                         'gut': { x: 0, y: -300, z: 20 },
                         'blood_stream': { x: -80, y: -150, z: 0 },
                         'neuronal': { x: -20, y: 150, z: 100 },
-                        'immune_cells': { x: -100, y: -350, z: 50 }
+                        'immune_cells': { x: -100, y: -350, z: 50 },
+                        'synapse': { x: 0, y: 150, z: 150 },
+                        'cytosol': { x: 0, y: 160, z: 150 },
+                        'nucleus': { x: 0, y: 170, z: 150 }
                     };
-                    const base = anatomicalMap[n.region] || anatomicalMap[meta.regions[0]] || { x: 0, y: 0, z: 0 };
-                    return {
-                        ...n,
-                        x: base.x + (Math.sin(i) * 20),
-                        y: base.y + (Math.cos(i) * 20),
-                        z: base.z + (Math.sin(i * 0.5) * 10)
-                    };
+
+                    let pos = { x: 0, y: 0, z: 0 };
+                    if (n.region && anatomicalMap[n.region]) {
+                        const base = anatomicalMap[n.region];
+                        pos = {
+                            x: base.x + (Math.sin(i) * 20),
+                            y: base.y + (Math.cos(i) * 20),
+                            z: base.z + (Math.sin(i * 0.5) * 10)
+                        };
+                    } else if (meta.regions && meta.regions[0] && anatomicalMap[meta.regions[0]]) {
+                        const base = anatomicalMap[meta.regions[0]];
+                        // If we fall back to a single region, use jittered positions
+                        pos = {
+                            x: base.x + (Math.sin(i) * 20),
+                            y: base.y + (Math.cos(i) * 20),
+                            z: base.z + (Math.sin(i * 0.5) * 10)
+                        };
+                    } else if (n.x !== undefined && n.y !== undefined) {
+                        // Fallback to 2D coordinates from KGML/JSON with scaling
+                        const scaleFactor = 2.0;
+                        pos.x = (n.x - 400) / scaleFactor;
+                        pos.y = -(n.y - 400) / scaleFactor;
+                        pos.z = (n.type === 'gene') ? 0 : 50;
+                    }
+
+                    return { ...n, ...pos };
                 });
-                this.pathwayCache[id] = { nodes: nodesWithPos, edges: data.edges };
+
+                // Standardize edges (ensure source/target are strings)
+                const standardizedEdges = edges.map(e => ({
+                    source: e.source || e.substrate,
+                    target: e.target || e.product,
+                    type: e.type || 'standard'
+                }));
+
+                this.pathwayCache[id] = { nodes: nodesWithPos, edges: standardizedEdges };
                 this.currentPathwayNodes = nodesWithPos;
-                this.currentPathwayEdges = data.edges;
+                this.currentPathwayEdges = standardizedEdges;
                 this.currentPathwayId = id;
             }
         },

@@ -249,7 +249,7 @@
                 const projP = projectedNodes[id];
                 if (projP.scale <= 0) return;
 
-                const node = this.graphData.nodes.find(n => n.id === parseInt(id));
+                const node = this.graphData.nodes.find(n => n.id == id);
                 if (!node) return;
 
                 const baseSize = 4 + (node.weight || 0) * 0.5;
