@@ -97,20 +97,41 @@ class DiscoveryClientV6:
         count = int(data.get("esearchresult", {}).get("count", 0))
         return {"review_articles_count": count}
 
-    async def get_clinical_trials_data(self, session: aiohttp.ClientSession, node_name: str) -> Dict:
-        params = {"query.term": node_name, "countTotal": "true", "pageSize": 10}
-        data = await self._fetch(session, self.CLINICAL_TRIALS_BASE_URL, params)
-        if "error" in data:
-            return data
+    async def get_clinical_trials_data(self, session: aiohttp.ClientSession, node_name: str, max_pages: int = 3) -> Dict:
+        """
+        Fetches clinical trials data with pagination support.
+        """
+        all_interventions = []
+        next_token = None
+        total_count = 0
 
-        count = data.get("totalCount", 0)
-        interventions = []
-        for study in data.get("studies", []):
-            study_interventions = study.get("protocolSection", {}).get("armsInterventionsModule", {}).get("interventions", [])
-            for intervention in study_interventions:
-                interventions.append(intervention.get("name"))
+        for page in range(max_pages):
+            params = {"query.term": node_name, "countTotal": "true", "pageSize": 10}
+            if next_token:
+                params["pageToken"] = next_token
 
-        return {"trials_count": count, "interventions": list(set(interventions))[:5]}
+            data = await self._fetch(session, self.CLINICAL_TRIALS_BASE_URL, params)
+            if "error" in data:
+                if page == 0: return data
+                break
+
+            if page == 0:
+                total_count = data.get("totalCount", 0)
+
+            for study in data.get("studies", []):
+                study_interventions = study.get("protocolSection", {}).get("armsInterventionsModule", {}).get("interventions", [])
+                for intervention in study_interventions:
+                    if intervention.get("name"):
+                        all_interventions.append(intervention.get("name"))
+
+            next_token = data.get("nextPageToken")
+            if not next_token:
+                break
+
+        return {
+            "trials_count": total_count,
+            "interventions": list(set(all_interventions))[:10]
+        }
 
     async def get_fda_drugs_data(self, session: aiohttp.ClientSession, node_name: str) -> Dict:
         search_query = f'description:"{node_name}"+OR+indications_and_usage:"{node_name}"'

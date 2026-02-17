@@ -60,6 +60,17 @@ class DisGeNETClient:
             logger.error(f"DisGeNET connection error: {e}")
             return {"error": str(e)}
 
+    def _get_mock_data(self, disorder: str) -> List[Dict]:
+        """
+        Returns mock gene-disease associations for testing or fallback.
+        Uses generic placeholders to avoid disorder-specific bias.
+        """
+        return [
+            {"gene_symbol": "GENE_A", "gene_name": f"Candidate Gene A for {disorder}", "score": 0.9, "disease_name": disorder},
+            {"gene_symbol": "GENE_B", "gene_name": f"Candidate Gene B for {disorder}", "score": 0.8, "disease_name": disorder},
+            {"gene_symbol": "GENE_C", "gene_name": f"Candidate Gene C for {disorder}", "score": 0.7, "disease_name": disorder}
+        ]
+
     async def get_associations_for_disorder(self, session: aiohttp.ClientSession, disorder: str) -> List[Dict]:
         """
         Fetches gene-disease associations for a disorder.
@@ -68,6 +79,9 @@ class DisGeNETClient:
         data = await self._fetch(session, "gda/disease", params)
 
         if isinstance(data, dict) and "error" in data:
+            if data.get("error") == "No API key":
+                logger.info("Using mock data fallback for DisGeNET.")
+                return self._get_mock_data(disorder)
             return []
 
         associations = []

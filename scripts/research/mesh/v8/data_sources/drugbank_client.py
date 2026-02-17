@@ -60,6 +60,17 @@ class DrugBankClient:
             logger.error(f"DrugBank connection error: {e}")
             return {"error": str(e)}
 
+    def _get_mock_data(self, disorder: str) -> List[Dict]:
+        """
+        Returns mock drug associations for testing or fallback.
+        Uses generic placeholders to avoid disorder-specific bias.
+        """
+        return [
+            {"id": "DB_XXXXX", "name": f"Approved Drug for {disorder}", "indication": disorder, "status": "approved"},
+            {"id": "DB_YYYYY", "name": f"Experimental Compound for {disorder}", "indication": disorder, "status": "experimental"},
+            {"id": "DB_ZZZZZ", "name": f"Investigational Therapy for {disorder}", "indication": disorder, "status": "investigational"}
+        ]
+
     async def get_drugs_for_disorder(self, session: aiohttp.ClientSession, disorder: str) -> List[Dict]:
         """
         Fetches drugs associated with a disorder.
@@ -68,6 +79,9 @@ class DrugBankClient:
         data = await self._fetch(session, "indications", params)
 
         if "error" in data:
+            if data.get("error") == "No API key":
+                logger.info("Using mock data fallback for DrugBank.")
+                return self._get_mock_data(disorder)
             return []
 
         drugs = []

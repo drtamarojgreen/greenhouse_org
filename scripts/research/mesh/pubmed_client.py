@@ -60,7 +60,7 @@ def get_term_publication_count(term: str, year: Optional[int] = None) -> int:
         print(f"Error parsing PubMed response for '{term}': {e}")
         return 0
 
-def discover_related_terms(term: str, max_papers: int = 50) -> Set[str]:
+def discover_related_terms(term: str, max_papers: int = 100) -> Set[str]:
     """
     Discovers related MeSH terms by analyzing a sample of recent papers.
     This is the core discovery mechanism for the algorithm. It avoids fetching
@@ -115,9 +115,21 @@ def discover_related_terms(term: str, max_papers: int = 50) -> Set[str]:
 
         # 3. Parse the XML to extract MeSH terms
         root = ElementTree.fromstring(fetch_response.content)
-        for heading in root.iter("DescriptorName"):
-            if heading.text:
-                related_terms.add(heading.text)
+        for heading in root.findall(".//MeshHeading"):
+            descriptor = heading.find("DescriptorName")
+            if descriptor is not None and descriptor.text:
+                # Check if this is a Major Topic
+                is_major = descriptor.get("MajorTopicYN") == "Y"
+
+                # Also check qualifiers for Major Topic status
+                qualifiers = heading.findall("QualifierName")
+                for qual in qualifiers:
+                    if qual.get("MajorTopicYN") == "Y":
+                        is_major = True
+
+                # For v1, we still add all terms, but we ensure we handle the structure correctly
+                # and prioritize major topics in future weighted versions.
+                related_terms.add(descriptor.text)
         
         # Remove the original search term if it's present
         if term in related_terms:

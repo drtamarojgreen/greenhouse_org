@@ -96,3 +96,23 @@ class NLPEngineV3:
         """
         # In a full implementation, we'd use spaCy's 'en_core_sci_sm' or similar
         return ["Entity1", "Entity2"]
+
+    def extract_themes(self, texts: List[str]) -> Dict[str, List[str]]:
+        """
+        Combines keyword extraction and topic modeling to extract high-level themes.
+        """
+        if not texts:
+            return {"keywords": [], "topics": []}
+
+        keywords = self.extract_keywords(texts, top_n=10)
+        topics = self.model_topics(texts, n_topics=3)
+
+        # Flatten topics for a simple theme list
+        flat_topics = []
+        for topic_list in topics:
+            flat_topics.extend(topic_list)
+
+        return {
+            "keywords": keywords,
+            "topics": list(set(flat_topics))
+        }

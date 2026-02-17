@@ -96,8 +96,35 @@ class MeSHPipelineV3:
         self.visualizer.plot_cooccurrence_network(matrix)
 
         # 5. NLP Phase (Optional enrichment)
-        # In a full run, we would fetch abstracts for the top papers here
-        self.cli.display_info("NLP Engine initialized and ready for abstract analysis.")
+        self.cli.display_info("Starting NLP Theme Extraction...")
+
+        # Enrichment: Fetch real abstracts for the top discovered terms
+        abstracts = []
+        for r in results[:3]: # Sampling top 3 results for performance
+            self.cli.display_info(f"Fetching abstracts for term: [bold]{r['term']}[/bold]")
+
+            # Find papers where this is a Major Topic
+            search_data = await self.client.esearch(f"({r['term']}[MeSH Major Topic])", retmax=5)
+            ids = search_data.get("esearchresult", {}).get("idlist", [])
+
+            if ids:
+                xml_content = await self.client.efetch(ids=ids)
+                if xml_content:
+                    try:
+                        root = ElementTree.fromstring(xml_content)
+                        for abstract in root.findall(".//AbstractText"):
+                            if abstract.text:
+                                abstracts.append(abstract.text)
+                    except Exception as e:
+                        self.cli.display_error(f"Failed to parse XML for {r['term']}: {e}")
+
+        if abstracts:
+            self.cli.display_info(f"Analyzing {len(abstracts)} real abstracts...")
+            themes = self.nlp.extract_themes(abstracts)
+            self.cli.display_info(f"Extracted Keywords: [bold]{', '.join(themes['keywords'])}[/bold]")
+            self.cli.display_info(f"Extracted Topics: [bold]{', '.join(themes['topics'])}[/bold]")
+        else:
+            self.cli.display_info("No real abstracts found for NLP analysis.")
 
         # 6. Final Report & Telemetry
         self.cli.display_telemetry(self.client.get_telemetry())
