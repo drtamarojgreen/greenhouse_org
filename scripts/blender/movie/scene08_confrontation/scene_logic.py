@@ -2,7 +2,12 @@ import bpy
 import math
 
 def setup_scene(master):
-    """The Confrontation between Plants and Gnome."""
+    """
+    The Confrontation between Plants and Gnome.
+    Shot ID: S08
+    Intent: Peak narrative tension.
+    """
+    # MUSIC CUE: Tense, staccato violins.
     # Plants reaction
     if master.h1:
         master.h1.rotation_euler = (0, 0, 0)

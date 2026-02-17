@@ -2,6 +2,7 @@ import bpy
 import unittest
 import os
 import sys
+import math
 
 # Add movie root to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -153,7 +154,7 @@ class TestRenderPreparedness(unittest.TestCase):
         from silent_movie_generator import SCENE_MAP
         exists = 'interaction' in SCENE_MAP
         if exists:
-            start, end = SCENE_MAP['interaction']
+            start, end = SCENE_MAP['scene15_interaction']
             is_correct = start == 4501 and end == 9500
             status = "PASS" if is_correct else "FAIL"
             self.log_result("Interaction Scene Map", status, f"Range: {start}-{end}")

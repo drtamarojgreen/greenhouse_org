@@ -1,7 +1,33 @@
+"""
+Shared animation, shading, and cinematography utilities for Greenhouse Movie Production.
+Handles version-safe Blender API access (4.x/5.x), procedural acting, and filmic effects.
+(Point 92)
+"""
 import bpy
 import random
 import math
 import mathutils
+
+__all__ = [
+    'get_action_curves', 'get_or_create_fcurve', 'get_eevee_engine_id',
+    'get_compositor_node_tree', 'create_mix_node', 'get_mix_sockets',
+    'get_mix_output', 'set_principled_socket', 'patch_fbx_importer',
+    'apply_scene_grade', 'animate_foliage_wind', 'animate_light_flicker',
+    'insert_looping_noise', 'animate_breathing', 'animate_dust_particles',
+    'apply_fade_transition', 'camera_push_in', 'camera_pull_out',
+    'apply_camera_shake', 'ease_action', 'animate_blink',
+    'animate_saccadic_movement', 'animate_finger_tapping',
+    'apply_reactive_foliage', 'animate_leaf_twitches',
+    'animate_pulsing_emission', 'animate_dynamic_pupils',
+    'apply_thought_motes', 'animate_gait', 'animate_cloak_sway',
+    'animate_shoulder_shrug', 'animate_gnome_stumble',
+    'apply_reactive_bloom', 'apply_thermal_transition',
+    'setup_chromatic_aberration', 'setup_god_rays', 'animate_vignette',
+    'apply_neuron_color_coding', 'setup_bioluminescent_flora',
+    'animate_mood_fog', 'apply_film_flicker', 'apply_glow_trails',
+    'setup_saturation_control', 'apply_desaturation_beat',
+    'animate_dialogue_v2', 'animate_expression_blend', 'animate_reaction_shot'
+]
 
 def get_action_curves(action, create_if_missing=False):
     """Helper to get fcurves/curves collection from Action for Blender 5.0+ compatibility."""
@@ -76,12 +102,19 @@ def get_compositor_node_tree(scene):
         except (TypeError, ValueError):
             tree = bpy.data.node_groups.new(name="Compositing Nodetree", type='COMPOSITING')
 
-    # Ensure it is assigned to the scene
-    if tree and hasattr(scene, 'compositing_node_group') and not getattr(scene, 'compositing_node_group', None):
-        try:
-            scene.compositing_node_group = tree
-        except Exception:
-            pass
+    # Point 37: Ensure it is assigned to the scene and validated
+    if tree:
+        if hasattr(scene, 'node_tree') and scene.node_tree != tree:
+            scene.node_tree = tree
+        elif hasattr(scene, 'compositing_node_group') and not scene.compositing_node_group:
+            try:
+                scene.compositing_node_group = tree
+            except Exception:
+                pass
+
+    # Final verification
+    if tree and hasattr(scene, 'use_nodes') and not scene.use_nodes:
+        scene.use_nodes = True
 
     return tree
 
@@ -101,7 +134,7 @@ def create_mix_node(tree, node_type_legacy, node_type_modern, blend_type='MIX', 
     if node is None:
         raise RuntimeError(f"Could not create Mix node. Tried: {types_to_try}")
 
-    if hasattr(node, 'data_type'):
+    if hasattr(node, 'data_type') and node.bl_idname != 'CompositorNodeMixRGB':
         node.data_type = data_type
     
     if hasattr(node, 'blend_type'):
@@ -138,6 +171,7 @@ def set_principled_socket(mat_or_node, socket_name, value, frame=None):
         'Specular': ['Specular', 'Specular IOR Level'],
         'Transmission': ['Transmission', 'Transmission Weight'],
         'Emission': ['Emission', 'Emission Color'],
+        'Emission Strength': ['Emission Strength'],
     }
 
     target_sockets = mapping.get(socket_name, [socket_name])
@@ -257,12 +291,9 @@ def animate_foliage_wind(objects, strength=0.05, frame_start=1, frame_end=15000)
         insert_looping_noise(obj, "rotation_euler", strength=strength, frame_start=frame_start, frame_end=frame_end)
 
 def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed=None):
-    """Adds magical flicker to a light within a specific frame range."""
+    """Point 96: Fixed seed usage for light flicker."""
     light_obj = bpy.data.objects.get(light_name)
     if not light_obj: return
-
-    if seed is not None:
-        random.seed(seed)
 
     if not light_obj.data.animation_data:
         light_obj.data.animation_data_create()
@@ -277,7 +308,8 @@ def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed
     modifier = fcurve.modifiers.new(type='NOISE')
     modifier.strength = light_obj.data.energy * strength
     modifier.scale = 2.0
-    modifier.phase = random.random() * 100
+    # Point 96: Use the seed for the noise modifier phase
+    modifier.phase = seed if seed is not None else random.random() * 100
 
     # Restrict range to avoid global flicker
     modifier.use_restricted_range = True
@@ -318,29 +350,22 @@ def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=1500
         modifier.blend_out = 10
 
 def animate_breathing(obj, frame_start, frame_end, axis=2, amplitude=0.03, cycle=72):
-    """Adds a rhythmic scale oscillation to simulate breathing."""
+    """Point 24: Use Noise modifier for breathing to reduce keyframe bloat."""
     if not obj: return
-    base_val = obj.scale[axis]
-    for f in range(frame_start, frame_end + 1, cycle):
-        obj.scale[axis] = base_val
-        obj.keyframe_insert(data_path="scale", index=axis, frame=f)
-        if f + cycle // 2 <= frame_end:
-            obj.scale[axis] = base_val * (1.0 + amplitude)
-            obj.keyframe_insert(data_path="scale", index=axis, frame=f + cycle // 2)
-
-    obj.scale[axis] = base_val
-    obj.keyframe_insert(data_path="scale", index=axis, frame=frame_end)
+    insert_looping_noise(obj, "scale", index=axis, strength=amplitude, scale=cycle, frame_start=frame_start, frame_end=frame_end)
 
 def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 1, 1, 1), frame_start=1, frame_end=15000):
-    """Creates a group of small drifting motes."""
-    container = bpy.data.collections.get("DustParticles")
+    """Point 22 & 80: Create unique materials per color for dust particles."""
+    container_name = f"DustParticles_{color}"
+    container = bpy.data.collections.get(container_name)
     if not container:
-        container = bpy.data.collections.new("DustParticles")
+        container = bpy.data.collections.new(container_name)
         bpy.context.scene.collection.children.link(container)
 
-    mat = bpy.data.materials.get("DustMat")
+    mat_name = f"DustMat_{color}"
+    mat = bpy.data.materials.get(mat_name)
     if not mat:
-        mat = bpy.data.materials.new(name="DustMat")
+        mat = bpy.data.materials.new(name=mat_name)
         mat.use_nodes = True
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs["Base Color"].default_value = color
@@ -402,9 +427,6 @@ def camera_pull_out(cam, target, frame_start, frame_end, distance=5):
     """Animates camera moving away from target."""
     camera_push_in(cam, target, frame_start, frame_end, distance=-distance)
 
-def apply_camera_shake(cam, frame_start, frame_end, strength=0.05):
-    """Adds a subtle handheld-style shake."""
-    insert_looping_noise(cam, "location", strength=strength, scale=2.0, frame_start=frame_start, frame_end=frame_end)
 
 def ease_action(obj, data_path, index=-1, interpolation='BEZIER', easing='EASE_IN_OUT'):
     """Sets easing for all keyframes of a specific data path."""
@@ -439,21 +461,43 @@ def animate_blink(eye_obj, frame_start, frame_end, interval_range=(60, 180)):
         current_f = blink_start + 6
 
 def animate_saccadic_movement(eye_obj, gaze_target, frame_start, frame_end, strength=0.02):
-    """Adds quick, subtle eye darting when looking at a target."""
-    if not eye_obj or not gaze_target: return
-    insert_looping_noise(eye_obj, "rotation_euler", strength=strength, scale=2.0, frame_start=frame_start, frame_end=frame_end)
+    """Point 87: Replace noise with discrete saccades."""
+    if not eye_obj: return
+
+    current_f = frame_start
+    while current_f < frame_end:
+        # Wait for a while
+        current_f += random.randint(30, 120)
+        if current_f >= frame_end: break
+
+        # Quick dart
+        orig_rot = eye_obj.rotation_euler.copy()
+        eye_obj.keyframe_insert(data_path="rotation_euler", frame=current_f)
+
+        dart_rot = orig_rot + mathutils.Vector((random.uniform(-0.1, 0.1), 0, random.uniform(-0.1, 0.1))) * strength * 50
+        eye_obj.rotation_euler = dart_rot
+        eye_obj.keyframe_insert(data_path="rotation_euler", frame=current_f + 2)
+
+        # Return to normal
+        eye_obj.rotation_euler = orig_rot
+        eye_obj.keyframe_insert(data_path="rotation_euler", frame=current_f + 5)
+
+        current_f += 5
 
 def animate_finger_tapping(finger_objs, frame_start, frame_end, cycle=40):
-    """Adds rhythmic tapping to vine fingers."""
+    """Point 26: Use Noise modifier for finger tapping."""
     for i, f_obj in enumerate(finger_objs):
-        offset = i * 5
-        for f in range(frame_start + offset, frame_end, cycle):
-            f_obj.rotation_euler[0] = 0
-            f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
-            f_obj.rotation_euler[0] = math.radians(15)
-            f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f + cycle // 4)
-            f_obj.rotation_euler[0] = 0
-            f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f + cycle // 2)
+        insert_looping_noise(f_obj, "rotation_euler", index=0, strength=0.2, scale=cycle/4, frame_start=frame_start, frame_end=frame_end)
+
+def animate_finger_curl(finger_objs, frame_start, frame_end, curl_amount=45):
+    """Point 82: Individual finger curl animation."""
+    for i, f_obj in enumerate(finger_objs):
+        f_obj.rotation_euler[0] = 0
+        f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=frame_start)
+        f_obj.rotation_euler[0] = math.radians(curl_amount)
+        f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=(frame_start + frame_end) // 2)
+        f_obj.rotation_euler[0] = 0
+        f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=frame_end)
 
 def apply_reactive_foliage(foliage_objs, trigger_obj, frame_start, frame_end, threshold=3.0):
     """Increases foliage sway intensity when a trigger object is nearby."""
@@ -510,27 +554,29 @@ def apply_thought_motes(character_obj, frame_start, frame_end, count=5):
         mote.name = f"ThoughtMote_{character_obj.name}_{i}"
         insert_looping_noise(mote, "location", strength=0.5, scale=10.0, frame_start=frame_start, frame_end=frame_end)
 
+_plant_humanoid = None
+def get_plant_humanoid():
+    global _plant_humanoid
+    if _plant_humanoid is None:
+        import plant_humanoid
+        _plant_humanoid = plant_humanoid
+    return _plant_humanoid
+
 def animate_gait(torso, mode='HEAVY', frame_start=1, frame_end=15000):
-    """Differentiates walk cycles by delegating to asset-specific animation logic."""
+    """Point 88: Cached import for gait delegation."""
     step_h = 0.2 if mode == 'HEAVY' else 0.08
     cycle_l = 64 if mode == 'HEAVY' else 32
 
-    # We attempt to import asset script here to avoid circular imports if needed
-    # but since it's already in path we can use the torso's custom properties or naming
-    import plant_humanoid
-    plant_humanoid.animate_walk(torso, frame_start, frame_end, step_height=step_h, cycle_length=cycle_l)
+    ph = get_plant_humanoid()
+    ph.animate_walk(torso, frame_start, frame_end, step_height=step_h, cycle_length=cycle_l)
 
 def animate_cloak_sway(cloak_obj, frame_start, frame_end):
     """Animate cloak with noise."""
     insert_looping_noise(cloak_obj, "rotation_euler", index=0, strength=0.05, scale=5.0, frame_start=frame_start, frame_end=frame_end)
 
 def animate_shoulder_shrug(torso_obj, frame_start, frame_end, cycle=120):
-    """Adds subtle shoulder shrugs."""
-    for f in range(frame_start, frame_end, cycle):
-        torso_obj.rotation_euler[0] = math.radians(5)
-        torso_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f + cycle // 2)
-        torso_obj.rotation_euler[0] = 0
-        torso_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f + cycle)
+    """Point 26: Use Noise modifier for shoulder shrugs."""
+    insert_looping_noise(torso_obj, "rotation_euler", index=0, strength=0.05, scale=cycle/2, frame_start=frame_start, frame_end=frame_end)
 
 def animate_gnome_stumble(gnome_obj, frame):
     """Adds an 'off-balance' frame to walk cycle."""
@@ -561,9 +607,9 @@ def setup_chromatic_aberration(scene, strength=0.01):
     distort.inputs['Dispersion'].default_value = strength
     return distort
 
-def setup_god_rays(scene):
-    """Configure volumetric shafts with color ramp and intensity shifts."""
-    beam = bpy.data.objects.get("LightShaftBeam")
+def setup_god_rays(scene, beam_obj=None):
+    """Point 98: Support passing direct beam object reference."""
+    beam = beam_obj or bpy.data.objects.get("LightShaftBeam")
     if beam:
         # Volumetric shaft color shift (Green to Gold)
         beam.data.color = (0, 1, 0.2) # Greenish
@@ -623,7 +669,7 @@ def animate_mood_fog(scene, frame, density=0.01):
         vol.inputs['Density'].keyframe_insert(data_path="default_value", frame=frame)
 
 def apply_film_flicker(scene, frame_start, frame_end, strength=0.05):
-    """Randomized brightness jumps."""
+    """Point 23: Use Noise modifier for film flicker."""
     tree = get_compositor_node_tree(scene)
     if not tree: return
     
@@ -635,9 +681,21 @@ def apply_film_flicker(scene, frame_start, frame_end, strength=0.05):
         except RuntimeError:
             return
 
-    for f in range(frame_start, frame_end + 1, 2):
-        bright.inputs['Bright'].default_value = random.uniform(-strength, strength)
-        bright.inputs['Bright'].keyframe_insert(data_path="default_value", frame=f)
+    if not tree.animation_data:
+        tree.animation_data_create()
+    if not tree.animation_data.action:
+        tree.animation_data.action = bpy.data.actions.new(name="CompositorAction")
+
+    data_path = f'nodes["{bright.name}"].inputs[0].default_value'
+    fcurve = get_or_create_fcurve(tree.animation_data.action, data_path, ref_obj=tree)
+
+    if fcurve:
+        mod = fcurve.modifiers.new(type='NOISE')
+        mod.strength = strength
+        mod.scale = 1.0
+        mod.use_restricted_range = True
+        mod.frame_start = frame_start
+        mod.frame_end = frame_end
 
 def apply_glow_trails(scene):
     """Ghosting/Trail effect (simplified via Vector Blur)."""
@@ -712,10 +770,89 @@ def animate_expression_blend(character_name, frame, expression='NEUTRAL', durati
 
     plant_humanoid.animate_expression(torso, frame, expression=expression)
 
+def animate_fireflies(center, volume_size=(5, 5, 5), density=10, frame_start=1, frame_end=15000):
+    """Point 49: Distinct firefly behavior with pulsing emission."""
+    container_name = "Fireflies"
+    container = bpy.data.collections.get(container_name)
+    if not container:
+        container = bpy.data.collections.new(container_name)
+        bpy.context.scene.collection.children.link(container)
+
+    mat = bpy.data.materials.new(name="FireflyMat")
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Base Color"].default_value = (0.8, 1.0, 0.2, 1) # Yellow-green
+    mat.blend_method = 'BLEND'
+
+    for i in range(density):
+        loc = center + mathutils.Vector((
+            random.uniform(-volume_size[0], volume_size[0]),
+            random.uniform(-volume_size[1], volume_size[1]),
+            random.uniform(0, volume_size[2])
+        ))
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.02, location=loc)
+        fly = bpy.context.object
+        fly.name = f"Firefly_{i}"
+        container.objects.link(fly)
+        if fly.name in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.unlink(fly)
+        fly.data.materials.append(mat)
+
+        # Drifting
+        insert_looping_noise(fly, "location", strength=0.5, scale=40.0, frame_start=frame_start, frame_end=frame_end)
+
+        # Point 49: Pulsing emission
+        animate_pulsing_emission(fly, frame_start, frame_end, base_strength=2.0, pulse_amplitude=10.0, cycle=random.randint(20, 60))
+
+        # Visibility
+        fly.hide_render = True
+        fly.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
+        fly.hide_render = False
+        fly.keyframe_insert(data_path="hide_render", frame=frame_start)
+        fly.hide_render = True
+        fly.keyframe_insert(data_path="hide_render", frame=frame_end)
+
+def create_noise_based_material(name, color_ramp_colors, noise_type='NOISE', noise_scale=10.0, roughness=0.5):
+    """Point 32: Generic helper for creating noise-based procedural materials."""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    nodes.clear()
+
+    node_out = nodes.new(type='ShaderNodeOutputMaterial')
+    node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    node_bsdf.inputs['Roughness'].default_value = roughness
+
+    node_coord = nodes.new(type='ShaderNodeTexCoord')
+    node_mapping = nodes.new(type='ShaderNodeMapping')
+    links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
+
+    if noise_type == 'WAVE':
+        node_noise = nodes.new(type='ShaderNodeTexWave')
+        node_noise.inputs['Scale'].default_value = noise_scale
+    else:
+        node_noise = nodes.new(type='ShaderNodeTexNoise')
+        node_noise.inputs['Scale'].default_value = noise_scale
+
+    links.new(node_mapping.outputs['Vector'], node_noise.inputs['Vector'])
+
+    node_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_ramp.color_ramp.elements.clear()
+    for i, color in enumerate(color_ramp_colors):
+        el = node_ramp.color_ramp.elements.new(i / (len(color_ramp_colors) - 1))
+        el.color = color
+
+    links.new(node_noise.outputs[0], node_ramp.inputs['Fac'])
+    links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
+    links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
+
+    return mat
+
 def animate_reaction_shot(character_name, frame_start, frame_end):
-    """Adds listener micro-movements: blinks, eye shifts, subtle nods."""
+    """Point 39: Adds listener micro-movements with robust character resolution."""
     char_name = character_name.split('_')[0]
-    head = bpy.data.objects.get(f"{char_name}_Head")
+    # Fallback to torso if head doesn't exist (e.g. for merged static characters)
+    head = bpy.data.objects.get(f"{char_name}_Head") or bpy.data.objects.get(f"{char_name}_Torso")
     if not head: return
 
     # Blinks

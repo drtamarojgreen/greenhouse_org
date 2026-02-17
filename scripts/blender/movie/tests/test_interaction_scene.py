@@ -40,8 +40,9 @@ class TestInteractionScene(unittest.TestCase):
             if fc.data_path == "location" and fc.array_index == 0:
                 loc_x_found = True
                 keyframes = [kp.co[0] for kp in fc.keyframe_points]
-                self.assertIn(4501, keyframes)
-                self.assertIn(6000, keyframes)
+                # Point 57: Use approximate matching for float frames
+                self.assertTrue(any(abs(k - 4501) < 0.5 for k in keyframes))
+                self.assertTrue(any(abs(k - 6000) < 0.5 for k in keyframes))
         self.assertTrue(loc_x_found, "Location X keyframes not found for Herbaceous")
 
     def test_talking_animation(self):
@@ -82,9 +83,9 @@ class TestInteractionScene(unittest.TestCase):
             if fc.data_path == "rotation_euler" and fc.array_index == 1:
                 rot_y_found = True
                 keyframes = [kp.co[0] for kp in fc.keyframe_points]
-                # Herbaceous expressions at 6200, 6500
-                self.assertIn(6200, keyframes)
-                self.assertIn(6500, keyframes)
+                # Point 57: Approximate matching
+                self.assertTrue(any(abs(k - 6200) < 0.5 for k in keyframes))
+                self.assertTrue(any(abs(k - 6500) < 0.5 for k in keyframes))
         self.assertTrue(rot_y_found, "Rotation Y (expression) keyframes not found for Herbaceous Brow")
 
     def test_staff_gesture(self):
@@ -101,10 +102,10 @@ class TestInteractionScene(unittest.TestCase):
             if fc.data_path == "rotation_euler" and fc.array_index == 0:
                 rot_x_found = True
                 keyframes = [kp.co[0] for kp in fc.keyframe_points]
-                # Gesture at 6200, 6300, 6400
-                self.assertIn(6200, keyframes)
-                self.assertIn(6300, keyframes)
-                self.assertIn(6400, keyframes)
+                # Point 57: Approximate matching
+                self.assertTrue(any(abs(k - 6200) < 0.5 for k in keyframes))
+                self.assertTrue(any(abs(k - 6300) < 0.5 for k in keyframes))
+                self.assertTrue(any(abs(k - 6400) < 0.5 for k in keyframes))
         self.assertTrue(rot_x_found, "Rotation X keyframes not found for Staff gesture")
 
     def test_gaze_target_movement(self):
@@ -121,9 +122,9 @@ class TestInteractionScene(unittest.TestCase):
             if fc.data_path == "location":
                 loc_found = True
                 keyframes = [kp.co[0] for kp in fc.keyframe_points]
-                # Interaction gaze updates at 7501, 8200
-                self.assertIn(7501, keyframes)
-                self.assertIn(8200, keyframes)
+                # Point 57: Approximate matching
+                self.assertTrue(any(abs(k - 7501) < 0.5 for k in keyframes))
+                self.assertTrue(any(abs(k - 8200) < 0.5 for k in keyframes))
         self.assertTrue(loc_found, "Location keyframes not found for GazeTarget interaction")
 
 if __name__ == "__main__":

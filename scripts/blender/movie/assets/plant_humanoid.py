@@ -4,9 +4,6 @@ import random
 import mathutils
 import style
 
-# Ensure FBX importer is patched for Blender 5.0 compatibility
-style.patch_fbx_importer()
-
 def create_leaf_mesh():
     """Creates a simple leaf mesh if it doesn't exist."""
     if "LeafTemplate" in bpy.data.meshes:
@@ -44,7 +41,7 @@ def create_vine(start, end, radius=0.05):
     return obj
 
 def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
-    """Enhanced procedural bark material."""
+    """Point 79: Enhanced procedural bark material with LOD system."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
@@ -52,6 +49,14 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
 
     node_output = nodes.new(type='ShaderNodeOutputMaterial')
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    node_bsdf.inputs['Roughness'].default_value = 0.9
+    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
+
+    if quality == 'background':
+        # Simple version for background characters
+        node_bsdf.inputs['Base Color'].default_value = (*color, 1)
+        return mat
+
     node_coord = nodes.new(type='ShaderNodeTexCoord')
     node_mapping = nodes.new(type='ShaderNodeMapping')
     links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
@@ -92,21 +97,23 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     node_bump.inputs['Strength'].default_value = 0.5
     links.new(node_mapping.outputs['Vector'], node_voronoi.inputs['Vector'])
     links.new(node_voronoi.outputs['Distance'], node_bump.inputs['Height'])
-    links.new(node_mix_curv.outputs['Color'], node_bsdf.inputs['Base Color'])
-    links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
-    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
-    node_bsdf.inputs['Roughness'].default_value = 0.9
 
     # Subsurface (Guarded for Blender 5.0 naming drift)
     subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in node_bsdf.inputs else "Subsurface"
     node_bsdf.inputs[subsurf_attr].default_value = 0.15
 
+    links.new(node_mix_curv.outputs['Color'], node_bsdf.inputs['Base Color'])
+    links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
+
     # Peeling Bark (Noise on Displacement)
+    # Point 72: Combine normals instead of overwriting
     node_peel_noise = nodes.new(type='ShaderNodeTexNoise')
     node_peel_noise.inputs['Scale'].default_value = 10.0
     node_bump_peel = nodes.new(type='ShaderNodeBump')
     node_bump_peel.inputs['Strength'].default_value = 0.8
     links.new(node_peel_noise.outputs['Fac'], node_bump_peel.inputs['Height'])
+    # Connect previous bump to this one's normal input
+    links.new(node_bump.outputs['Normal'], node_bump_peel.inputs['Normal'])
     links.new(node_bump_peel.outputs['Normal'], node_bsdf.inputs['Normal'])
 
     # Muddy Limbs (Gradient mixed with base color)
@@ -127,7 +134,7 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     return mat
 
 def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
-    """Enhanced procedural leaf material with Venation and Fuzz."""
+    """Point 79: Enhanced procedural leaf material with LOD system."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
@@ -135,6 +142,11 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
 
     node_output = nodes.new(type='ShaderNodeOutputMaterial')
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
+
+    if quality == 'background':
+        node_bsdf.inputs['Base Color'].default_value = (*color, 1)
+        return mat
     node_coord = nodes.new(type='ShaderNodeTexCoord')
     node_mapping = nodes.new(type='ShaderNodeMapping')
     links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
@@ -149,7 +161,6 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     node_color_mix.inputs[2].default_value = (*color, 1)
     links.new(node_wave.outputs['Fac'], node_color_mix.inputs[0])
     links.new(node_color_mix.outputs['Color'], node_bsdf.inputs['Base Color'])
-    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
 
     # Subsurface (Guarded for Blender 5.0 naming drift)
     subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in node_bsdf.inputs else "Subsurface"
@@ -166,9 +177,16 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     links.new(node_venation_mix.outputs['Color'], node_bsdf.inputs['Base Color'])
 
     # Plant Fuzz (Fuzzy noise on Specular/Roughness)
+    # Point 73: Use a ramp to map noise to a reasonable roughness range
     node_fuzz = nodes.new(type='ShaderNodeTexNoise')
     node_fuzz.inputs['Scale'].default_value = 500.0
-    links.new(node_fuzz.outputs['Fac'], node_bsdf.inputs['Roughness'])
+    node_fuzz_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_fuzz_ramp.color_ramp.elements[0].position = 0.0
+    node_fuzz_ramp.color_ramp.elements[0].color = (0.3, 0.3, 0.3, 1)
+    node_fuzz_ramp.color_ramp.elements[1].position = 1.0
+    node_fuzz_ramp.color_ramp.elements[1].color = (0.8, 0.8, 0.8, 1)
+    links.new(node_fuzz.outputs['Fac'], node_fuzz_ramp.inputs['Fac'])
+    links.new(node_fuzz_ramp.outputs['Color'], node_bsdf.inputs['Roughness'])
 
     return mat
 
@@ -182,8 +200,12 @@ def create_fingers(location, direction, radius=0.02):
     return fingers
 
 def add_tracking_constraint(obj, target, name="TrackTarget"):
+    """Point 84: Non-destructive constraint management."""
     if not obj or not target: return
-    for c in obj.constraints: obj.constraints.remove(c)
+    # Only remove constraints of the same type and name
+    for c in obj.constraints:
+        if c.type == 'DAMPED_TRACK' and c.name == name:
+            obj.constraints.remove(c)
     con = obj.constraints.new(type='DAMPED_TRACK')
     con.target = target
     con.track_axis = 'TRACK_NEGATIVE_Y'
@@ -267,7 +289,6 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         if mouth.type == 'MESH':
             mouth.shape_key_add(name="Basis")
             smile = mouth.shape_key_add(name="Smile")
-            # In a real setup we'd deform vertices here
 
     arm_height = torso_height * 0.9
     l_arm_start = location + mathutils.Vector((0.2, 0, arm_height))
@@ -327,8 +348,10 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     torso.data.materials.append(mat)
 
     if "Herbaceous" in name:
+        # Point 89: Leaning staff for active engagement
         staff_loc = location + mathutils.Vector((1.0, -0.2, 0.5))
-        staff = create_vine(staff_loc, staff_loc + mathutils.Vector((0, 0, 1.8)), radius=0.04)
+        staff_end = staff_loc + mathutils.Vector((0.3, -0.2, 1.8))
+        staff = create_vine(staff_loc, staff_end, radius=0.04)
         staff.name = f"{name}_ReasonStaff"
         staff.parent = torso
         staff.matrix_parent_inverse = torso.matrix_world.inverted()
@@ -347,6 +370,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     return torso
 
 def animate_walk(torso, frame_start, frame_end, step_height=0.1, cycle_length=48):
+    """Point 81: Enhanced walk cycle with hip sway and Z-axis hip rotation."""
     if not torso: return
     name = torso.name.split('_')[0]
     l_leg = bpy.data.objects.get(f"{name}_Leg_L")
@@ -354,38 +378,58 @@ def animate_walk(torso, frame_start, frame_end, step_height=0.1, cycle_length=48
     l_arm = bpy.data.objects.get(f"{name}_Arm_L")
     r_arm = bpy.data.objects.get(f"{name}_Arm_R")
     base_z = torso.location.z
+
     for f in range(frame_start, frame_end + 1, 6):
         phase = ((f - frame_start) % cycle_length) / cycle_length
+        # Vertical bob
         torso.location.z = base_z + abs(math.sin(phase * math.pi * 2)) * step_height
         torso.keyframe_insert(data_path="location", index=2, frame=f)
-        torso.rotation_euler[2] = math.sin(phase * math.pi * 2) * math.radians(5)
+
+        # Point 81: Hip sway (Z rotation) and side-to-side (X rotation)
+        torso.rotation_euler[2] = math.sin(phase * math.pi * 2) * math.radians(8) # Increased sway
         torso.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
+
+        torso.rotation_euler[0] = math.cos(phase * math.pi * 2) * math.radians(2) # Slight lean
+        torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+
         if l_leg and r_leg:
-            l_leg.rotation_euler[0] = math.sin(phase * math.pi * 2) * math.radians(30)
-            r_leg.rotation_euler[0] = math.sin(phase * math.pi * 2 + math.pi) * math.radians(30)
+            l_leg.rotation_euler[0] = math.sin(phase * math.pi * 2) * math.radians(35)
+            r_leg.rotation_euler[0] = math.sin(phase * math.pi * 2 + math.pi) * math.radians(35)
             l_leg.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
             r_leg.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+
         if l_arm and r_arm:
-            l_arm.rotation_euler[0] = math.sin(phase * math.pi * 2 + math.pi) * math.radians(15)
-            r_arm.rotation_euler[0] = math.sin(phase * math.pi * 2) * math.radians(15)
+            # Opposite arm swing
+            l_arm.rotation_euler[0] = math.sin(phase * math.pi * 2 + math.pi) * math.radians(20)
+            r_arm.rotation_euler[0] = math.sin(phase * math.pi * 2) * math.radians(20)
             l_arm.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
             r_arm.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
 
-def animate_talk(torso, frame_start, frame_end):
+def animate_talk(torso, frame_start, frame_end, intensity=1.0):
+    """Point 83: Enhanced talk with rhythmic closures (consonants)."""
     if not torso: return
     mouth = bpy.data.objects.get(f"{torso.name.split('_')[0]}_Mouth")
     if not mouth: return
+
     for f in range(frame_start, frame_end + 1, 4):
-        mouth.scale.z = random.uniform(0.1, 1.0)
+        # Occasional closure every ~12 frames
+        if f % 12 == 0:
+            mouth.scale.z = 0.1
+        else:
+            mouth.scale.z = random.uniform(0.2, 1.0) * intensity
         mouth.keyframe_insert(data_path="scale", index=2, frame=f)
+
     mouth.scale.z = 0.4
     mouth.keyframe_insert(data_path="scale", index=2, frame=frame_end)
 
 def animate_expression(torso, frame, expression='NEUTRAL'):
-    if not torso: return
+    """Point 35 & 86: Fix expression handling and add mouth deformation."""
+    if not torso or expression is None: return
     name = torso.name.split('_')[0]
     brows = [bpy.data.objects.get(f"{name}_Brow_L"), bpy.data.objects.get(f"{name}_Brow_R")]
     pupils = [bpy.data.objects.get(f"{name}_Pupil_L"), bpy.data.objects.get(f"{name}_Pupil_R")]
+    mouth = bpy.data.objects.get(f"{name}_Mouth")
+
     for i, brow in enumerate(brows):
         if not brow: continue
         if expression == 'ANGRY':
@@ -394,15 +438,36 @@ def animate_expression(torso, frame, expression='NEUTRAL'):
         elif expression == 'SURPRISED':
             brow.rotation_euler[1] = math.radians(90)
             brow.location.z = 0.08
-        else:
+        elif expression == 'NEUTRAL':
             brow.rotation_euler[1] = math.radians(90)
             brow.location.z = 0.06
+        else:
+            continue # Unknown expression
+
         brow.keyframe_insert(data_path="rotation_euler", index=1, frame=frame)
         brow.keyframe_insert(data_path="location", index=2, frame=frame)
+
     for pupil in pupils:
         if not pupil: continue
-        pupil.scale = (1.5, 1.5, 1.5) if expression == 'SURPRISED' else ((0.8, 0.8, 0.8) if expression == 'ANGRY' else (1,1,1))
+        if expression == 'SURPRISED':
+            pupil.scale = (1.5, 1.5, 1.5)
+        elif expression == 'ANGRY':
+            pupil.scale = (0.8, 0.8, 0.8)
+        elif expression == 'NEUTRAL':
+            pupil.scale = (1, 1, 1)
+        else:
+            continue
         pupil.keyframe_insert(data_path="scale", frame=frame)
+
+    if mouth:
+        # Point 86: Scale mouth based on expression
+        if expression == 'ANGRY':
+            mouth.scale = (1.2, 0.2, 0.2) # Thinner/tense
+        elif expression == 'SURPRISED':
+            mouth.scale = (2.0, 0.2, 0.6) # Wider/O-shape
+        elif expression == 'NEUTRAL':
+            mouth.scale = (1.5, 0.2, 0.4)
+        mouth.keyframe_insert(data_path="scale", frame=frame)
 
 def create_flower(location, name="MentalBloom", scale=0.2):
     container = bpy.data.collections.new(name)
@@ -433,8 +498,8 @@ def create_flower(location, name="MentalBloom", scale=0.2):
     core.scale = (0.01, 0.01, 0.01)
     return core
 
-def create_inscribed_pillar(location, name="StoicPillar", height=5.0):
-    """Creates a classic pillar with procedural glowing inscriptions."""
+def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=3):
+    """Point 97: Parameterized band decorations."""
     bpy.ops.mesh.primitive_cylinder_add(radius=0.4, depth=height, location=location + mathutils.Vector((0,0,height/2)))
     pillar = bpy.context.object
     pillar.name = name
@@ -467,8 +532,8 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0):
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
     pillar.data.materials.append(mat)
 
-    for i in range(3):
-        z_offset = height * (0.2 + i * 0.3)
+    for i in range(num_bands):
+        z_offset = height * (0.1 + (i+1) * (0.8 / (num_bands + 1)))
         bpy.ops.mesh.primitive_torus_add(location=location + mathutils.Vector((0,0,z_offset)), major_radius=0.42, minor_radius=0.02)
         band = bpy.context.object
         band.name = f"{name}_Band_{i}"
@@ -489,16 +554,37 @@ def create_scroll(location, name="PhilosophicalScroll"):
     return scroll
 
 def create_procedural_bush(location, name="GardenBush", size=1.0):
+    """Point 25: Optimized bush creation by joining leaves into a single mesh."""
     container = bpy.data.collections.new(name)
     bpy.context.scene.collection.children.link(container)
     leaf_template = create_leaf_mesh()
     mat = create_leaf_material(f"BushMat_{name}", color=(0.05, 0.3, 0.05))
+
+    leaves = []
     for i in range(25):
         offset = mathutils.Vector((random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(0, 1))) * size
         leaf = bpy.data.objects.new(f"{name}_Leaf_{i}", leaf_template.data)
-        container.objects.link(leaf)
+        bpy.context.scene.collection.objects.link(leaf) # Link to scene temporarily for joining
         leaf.location = location + offset
         leaf.rotation_euler = (random.uniform(0, 3.14), random.uniform(0, 3.14), random.uniform(0, 3.14))
         leaf.scale = (size, size, size)
-        leaf.data.materials.append(mat)
+        leaves.append(leaf)
+
+    # Join leaves
+    if leaves:
+        bpy.ops.object.select_all(action='DESELECT')
+        for l in leaves:
+            l.select_set(True)
+        bpy.context.view_layer.objects.active = leaves[0]
+        bpy.ops.object.join()
+
+        bush = bpy.context.active_object
+        bush.name = f"{name}_Combined"
+        bush.data.materials.append(mat)
+
+        # Move to container and unlink from scene if needed
+        container.objects.link(bush)
+        if bush.name in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.unlink(bush)
+
     return container

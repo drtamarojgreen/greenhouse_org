@@ -1,0 +1,26 @@
+name: Blender Movie Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'scripts/blender/movie/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'scripts/blender/movie/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+
+      - name: Run Movie Tests
+        run: |
+          python3 scripts/blender/movie/run_blender_tests.py

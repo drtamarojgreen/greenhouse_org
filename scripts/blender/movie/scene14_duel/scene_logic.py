@@ -11,7 +11,12 @@ if ASSETS_PATH not in sys.path:
 import plant_humanoid
 
 def setup_scene(master):
-    """The Duel Scene for the sequel."""
+    """
+    The Duel Scene for the sequel.
+    Shot ID: S14
+    Intent: Action sequence demonstrating conflict.
+    """
+    # MUSIC CUE: High-tempo, aggressive brass and percussion.
     frame_start = 4501
     frame_end = 5800
 
@@ -25,6 +30,14 @@ def setup_scene(master):
         master.h1.keyframe_insert(data_path="rotation_euler", index=1, frame=4610)
         master.h1.rotation_euler.y = 0
         master.h1.keyframe_insert(data_path="rotation_euler", index=1, frame=4630)
+
+        # Point 50: Recoil from flare
+        master.h1.rotation_euler[0] = 0
+        master.h1.keyframe_insert(data_path="rotation_euler", index=0, frame=4660)
+        master.h1.rotation_euler[0] = math.radians(-45)
+        master.h1.keyframe_insert(data_path="rotation_euler", index=0, frame=4680)
+        master.h1.rotation_euler[0] = 0
+        master.h1.keyframe_insert(data_path="rotation_euler", index=0, frame=4720)
 
         # Staff strike
         staff = bpy.data.objects.get("Herbaceous_ReasonStaff")

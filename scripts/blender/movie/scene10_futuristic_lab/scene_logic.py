@@ -3,7 +3,12 @@ import mathutils
 import futuristic_props
 
 def setup_scene(master):
-    """The Digital Mirror - Futuristic Lab scene."""
+    """
+    The Digital Mirror - Futuristic Lab scene.
+    Shot ID: S10
+    Intent: Introspection and analysis through technology.
+    """
+    # MUSIC CUE: Bubbling, rhythmic synth sequences.
     master.create_intertitle("The Digital Mirror", 3501, 3600)
 
     # Lab Assets

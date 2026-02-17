@@ -17,12 +17,22 @@ class TestGnomeRetreat(unittest.TestCase):
     def setUp(self):
         self.master = silent_movie_generator.MovieMaster()
         self.master.load_assets()
-        # Setup scenes 18-22
-        import scene18_dialogue.scene_logic as s18
-        import scene19_dialogue.scene_logic as s19
-        import scene20_dialogue.scene_logic as s20
-        import scene21_dialogue.scene_logic as s21
-        import scene22_retreat.scene_logic as s22
+        # Point 54: Robust imports for scene logic
+        try:
+            import scene18_dialogue.scene_logic as s18
+            import scene19_dialogue.scene_logic as s19
+            import scene20_dialogue.scene_logic as s20
+            import scene21_dialogue.scene_logic as s21
+            import scene22_retreat.scene_logic as s22
+        except ImportError:
+            # Fallback to dynamic import if needed
+            def dynamic_import(name):
+                return __import__(f"{name}.scene_logic", fromlist=['scene_logic'])
+            s18 = dynamic_import("scene18_dialogue")
+            s19 = dynamic_import("scene19_dialogue")
+            s20 = dynamic_import("scene20_dialogue")
+            s21 = dynamic_import("scene21_dialogue")
+            s22 = dynamic_import("scene22_retreat")
 
         s18.setup_scene(self.master)
         s19.setup_scene(self.master)
@@ -80,7 +90,7 @@ class TestGnomeRetreat(unittest.TestCase):
     def test_45_off_screen_state(self):
         """R45: Antagonist final off-screen or occluded state."""
         gnome = self.master.gnome
-        credits_start = silent_movie_generator.SCENE_MAP['credits'][0]
+        credits_start = silent_movie_generator.SCENE_MAP['scene12_credits'][0]
 
         # Check hide_render at end of retreat
         hide_found = False

@@ -2,7 +2,12 @@ import bpy
 import mathutils
 
 def setup_scene(master):
-    """The Records of Reason - Library scene."""
+    """
+    The Records of Reason - Library scene.
+    Shot ID: S09
+    Intent: Seeking wisdom/information from ancient sources.
+    """
+    # MUSIC CUE: Warm, echoing library atmosphere (soft woodwinds).
     master.create_intertitle("Consulting the\nRecords of Reason", 2501, 2600)
 
     # Props for this scene

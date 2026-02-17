@@ -34,16 +34,21 @@ def run_tests():
 
         print(f"\n>> Running {test_file}...")
 
+        # Point 10: Ensure Blender can find movie modules by setting PYTHONPATH
+        env = os.environ.copy()
+        env["PYTHONPATH"] = f"{script_dir}:{env.get('PYTHONPATH', '')}"
+
         # Command to run blender in background and execute the test script
         cmd = [
             "blender",
             "--background",
+            "--python-use-system-env", # Respect system site-packages
             "--python", test_path
         ]
 
         try:
             # We don't use stdout=DEVNULL because we want to see the test results
-            result = subprocess.run(cmd, check=False, capture_output=True, text=True)
+            result = subprocess.run(cmd, check=False, capture_output=True, text=True, env=env)
             if result.returncode == 0:
                 print(f"PASS: {test_file}")
                 # Print the summary from the script's output if available

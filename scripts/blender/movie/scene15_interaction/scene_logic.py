@@ -15,7 +15,12 @@ import plant_humanoid
 import style
 
 def setup_scene(master):
-    """5000 frames of protagonist interaction."""
+    """
+    5000 frames of protagonist interaction.
+    Shot ID: S15
+    Intent: Emotional resonance through complex character interaction.
+    """
+    # MUSIC CUE: Melancholy cello theme.
     # Frame range: 4501 - 9500
     start_frame = 4501
     end_frame = 9500
@@ -50,8 +55,15 @@ def setup_scene(master):
 
     # Facial Expressions
     plant_humanoid.animate_expression(master.h1, 6200, 'SURPRISED')
+    # Point 39: Listener reaction
+    style.animate_reaction_shot("Arbor", 6200, 6500)
+
     plant_humanoid.animate_expression(master.h1, 6500, 'NEUTRAL')
+
     plant_humanoid.animate_expression(master.h2, 6800, 'ANGRY') # Playful debate
+    # Point 39: Listener reaction
+    style.animate_reaction_shot("Herbaceous", 6800, 7200)
+
     plant_humanoid.animate_expression(master.h2, 7200, 'NEUTRAL')
 
     # Limb movements (Gestures)
@@ -69,6 +81,8 @@ def setup_scene(master):
     fingers = [c for c in master.h2.children if "Finger" in c.name or "Vine" in c.name]
     if fingers:
         style.animate_finger_tapping(fingers, 6500, 7500)
+        # Point 82: Grasp/Curl
+        style.animate_finger_curl(fingers, 7000, 7100)
 
     # Phase 3: Emotional Resonance (7501 - 9000)
     # Both characters breathing and subtle movements

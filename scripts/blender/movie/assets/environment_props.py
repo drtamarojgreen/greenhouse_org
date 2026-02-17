@@ -27,8 +27,9 @@ def create_marble_floor_mat():
     node_noise.inputs['Detail'].default_value = 15.0
 
     node_mix = nodes.new(type='ShaderNodeMixRGB')
-    node_mix.blend_type = 'MULTIPLY'
-    node_mix.inputs[0].default_value = 0.3
+    # Point 71: Use OVERLAY for more subtle vein effect
+    node_mix.blend_type = 'OVERLAY'
+    node_mix.inputs[0].default_value = 0.1
 
     links.new(node_checker.outputs['Color'], node_mix.inputs[1])
     links.new(node_noise.outputs['Fac'], node_mix.inputs[2])
@@ -48,6 +49,10 @@ def create_marble_floor_mat():
     links.new(node_disp.outputs['Displacement'], node_out.inputs['Displacement'])
 
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
+
+    # Point 78: Enable Cycles displacement
+    mat.cycles.displacement_method = 'BOTH'
+
     return mat
 
 def setup_volumetric_haze(density=0.005):

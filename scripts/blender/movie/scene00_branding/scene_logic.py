@@ -3,7 +3,12 @@ import math
 import style
 
 def setup_scene(master):
-    """Intro Branding Scene."""
+    """
+    Intro Branding Scene.
+    Shot ID: S00
+    Intent: Establish brand identity with high-contrast text.
+    """
+    # MUSIC CUE: Deep orchestral swell starts. (Point 47)
     # Frame range: 1 - 100
     master.create_intertitle("GreenhouseMD\nPresents", 1, 100)
 

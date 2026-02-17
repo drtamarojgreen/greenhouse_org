@@ -34,6 +34,8 @@ class TestReleaseGate(unittest.TestCase):
             start, end = silent_movie_generator.SCENE_MAP[s_name]
             mid_frame = (start + end) // 2
             self.master.scene.frame_set(mid_frame)
+            # Point 60: Update view layer to evaluate keyframes
+            bpy.context.view_layer.update()
 
             # During these dialogue scenes, Herbaceous and Arbor must be visible
             for char in ["Herbaceous", "Arbor"]:
@@ -44,7 +46,7 @@ class TestReleaseGate(unittest.TestCase):
     def test_97_credits_trigger(self):
         """R97: Credits content start trigger only after retreat completion."""
         retreat_end = silent_movie_generator.SCENE_MAP['scene22'][1]
-        credits_start = silent_movie_generator.SCENE_MAP['credits'][0]
+        credits_start = silent_movie_generator.SCENE_MAP['scene12_credits'][0]
 
         self.assertGreater(credits_start, retreat_end, "R97 FAIL: Credits started too early")
 

@@ -4,7 +4,12 @@ import random
 import style
 
 def setup_scene(master):
-    """The Intrusion of Gloom."""
+    """
+    The Intrusion of Gloom.
+    Shot ID: S07
+    Intent: Introduce external stress/antagonism through visual mood shifts.
+    """
+    # MUSIC CUE: Ominous, low strings and dissonant piano.
     master.create_intertitle("The Intrusion of\nGloom", 1801, 1900)
 
     # Apply shadow grade
