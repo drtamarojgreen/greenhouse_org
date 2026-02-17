@@ -63,6 +63,7 @@
             await window.GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
             await window.GreenhouseUtils.loadScript('neuro_ui_3d_neuron.js', baseUrl);
             await window.GreenhouseUtils.loadScript('inflammation_config.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation_pathway.js', baseUrl);
             await window.GreenhouseUtils.loadScript('inflammation_ui_3d.js', baseUrl);
             await window.GreenhouseUtils.loadScript('inflammation_signaling.js', baseUrl);
             await window.GreenhouseUtils.loadScript('inflammation_macro.js', baseUrl);

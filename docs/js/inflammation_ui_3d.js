@@ -15,6 +15,7 @@
         leukocytes: [],
         synapses: [],
         originalRegionColors: {},
+        theme: 'default', // default, deuteranopia, protanopia, tritanopia
         pathwayCache: {},
         currentPathwayNodes: [],
         currentPathwayEdges: [],
@@ -48,10 +49,15 @@
         },
 
         async loadPathways() {
-            const data = await window.GreenhouseModelsUtil.PathwayService.loadMetadata(this.app.baseUrl);
-            this.availablePathways = data.pathways;
-            // Pre-load default pathway for inflammation
-            await this.fetchPathway('tryptophan');
+            try {
+                const data = await window.GreenhouseModelsUtil.PathwayService.loadMetadata(this.app.baseUrl);
+                this.availablePathways = data.pathways;
+                // Pre-load default pathway for inflammation
+                await this.fetchPathway('tryptophan');
+            } catch (e) {
+                console.error("Inflammation UI: Failed to load pathway metadata", e);
+                if (window.GreenhouseInflammationPathway) window.GreenhouseInflammationPathway.error = "Metadata Load Failed";
+            }
         },
 
         async fetchPathway(id) {
@@ -61,28 +67,48 @@
                 this.currentPathwayId = id;
                 return;
             }
-            const meta = this.availablePathways.find(p => p.id === id);
-            if (!meta) return;
+            const meta = this.availablePathways ? this.availablePathways.find(p => p.id === id) : null;
+            if (!meta) {
+                if (window.GreenhouseInflammationPathway) window.GreenhouseInflammationPathway.error = "Pathway Not Found: " + id;
+                return;
+            }
 
             if (!meta.source) {
                 console.log(`Inflammation UI: No source for pathway ${id}, skipping fetch.`);
                 return;
             }
 
-            let data;
-            if (meta.source.endsWith('.json')) {
-                data = await window.GreenhouseModelsUtil.PathwayService.loadJSONPathway(meta.source, this.app.baseUrl);
-                if (data) {
-                    // JSON format might already have compartments/nodes
-                    this.pathwayCache[id] = data;
-                    this.currentPathwayNodes = data.nodes || data.compartments;
-                    this.currentPathwayEdges = data.edges || data.reactions;
-                    this.currentPathwayId = id;
-                    return;
-                }
-            } else {
-                data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, this.app.baseUrl);
+            if (window.GreenhouseInflammationPathway) {
+                window.GreenhouseInflammationPathway.isLoading = true;
+                window.GreenhouseInflammationPathway.error = null;
             }
+
+            let data;
+            try {
+                if (meta.source.endsWith('.json')) {
+                    data = await window.GreenhouseModelsUtil.PathwayService.loadJSONPathway(meta.source, this.app.baseUrl);
+                    if (data) {
+                        // JSON format might already have compartments/nodes
+                        this.pathwayCache[id] = data;
+                        this.currentPathwayNodes = data.nodes || data.compartments;
+                        this.currentPathwayEdges = data.edges || data.reactions;
+                        this.currentPathwayId = id;
+                        if (window.GreenhouseInflammationPathway) window.GreenhouseInflammationPathway.isLoading = false;
+                        return;
+                    }
+                } else {
+                    data = await window.GreenhouseModelsUtil.PathwayService.loadPathway(meta.source, this.app.baseUrl);
+                }
+            } catch (e) {
+                console.error(`Inflammation UI: Error fetching pathway ${id}`, e);
+                if (window.GreenhouseInflammationPathway) {
+                    window.GreenhouseInflammationPathway.isLoading = false;
+                    window.GreenhouseInflammationPathway.error = "Fetch Failed";
+                }
+                return;
+            }
+
+            if (window.GreenhouseInflammationPathway) window.GreenhouseInflammationPathway.isLoading = false;
 
             if (data) {
                 const nodesWithPos = data.nodes.map((n, i) => {
@@ -229,6 +255,7 @@
 
         render(ctx, state, camera, projection) {
             const performanceMode = state.factors.performanceMode === 1;
+            this.theme = state.factors.colorTheme || 'default';
             const viewModeVal = state.factors.viewMode || 0;
             const viewMode = ['macro', 'micro', 'molecular', 'pathway'][Math.round(viewModeVal)] || 'macro';
             const activePathId = state.factors.activePathway || 'tryptophan';
@@ -237,9 +264,8 @@
                 if (this.currentPathwayId !== activePathId) {
                     this.fetchPathway(activePathId);
                 }
-                // We'll reuse Stress's Pathway module if possible, or create a specific one
-                if (window.GreenhouseStressPathway) {
-                    window.GreenhouseStressPathway.render(ctx, state, camera, projection, this);
+                if (window.GreenhouseInflammationPathway) {
+                    window.GreenhouseInflammationPathway.render(ctx, state, camera, projection, this);
                 }
             } else if (viewMode === 'macro' && window.GreenhouseInflammationMacro) {
                 window.GreenhouseInflammationMacro.render(ctx, state, camera, projection, this);
@@ -248,7 +274,24 @@
                 window.GreenhouseInflammationMicro.render(ctx, state, camera, projection, this);
             } else if (viewMode === 'molecular' && window.GreenhouseInflammationMolecular) {
                 window.GreenhouseInflammationMolecular.render(ctx, state, camera, projection, this);
+                if (state.factors.showBridgeOverlay) this.drawMolecularToMicroBridge(ctx, state, projection);
             }
+        },
+
+        drawMolecularToMicroBridge(ctx, state, projection) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(100, 255, 200, 0.1)';
+            ctx.fillRect(40, 250, 150, 60);
+            ctx.strokeStyle = '#00ff99';
+            ctx.strokeRect(40, 250, 150, 60);
+
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 9px Quicksand';
+            ctx.fillText('MOLECULAR-MICRO BRIDGE', 45, 265);
+            ctx.font = '8px monospace';
+            const impact = (state.metrics.tnfAlpha * 1.5).toFixed(2);
+            ctx.fillText(`SIGNALING IMPACT: ${impact}x`, 45, 280);
+            ctx.fillText(`PHENOTYPE SHIFT: ${state.metrics.microgliaActivation > 0.5 ? 'PRO-INFLAM' : 'HOMEOSTATIC'}`, 45, 295);
+            ctx.restore();
         },
 
         checkHover(mx, my, camera, projection) {
@@ -260,7 +303,12 @@
                 for (const g of this.glia) {
                     const p = Math3D.project3DTo2D(g.x, g.y, g.z, camera, projection);
                     const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
-                    if (dist < 25 * p.scale) return { id: 'glia', label: g.type === 'astrocyte' ? 'Astrocyte' : 'Microglia', description: g.type === 'astrocyte' ? 'Glia that supports neurons and maintains the blood-brain barrier via endfeet.' : 'Resident immune cell; M1 (reactive) or M2 (resolving) phenotypes.', type: '3d' };
+                    if (dist < 25 * p.scale) return { id: 'glia', label: g.type === 'astrocyte' ? 'Astrocyte' : 'Microglia', description: g.type === 'astrocyte' ? 'Glia that supports neurons and maintains the blood-brain barrier via endfeet.' : 'Resident immune cell; M1 (reactive) or M2 (resolving) phenotypes.', type: '3d', data: g };
+                }
+                for (const l of this.leukocytes) {
+                    const p = Math3D.project3DTo2D(l.x, l.y, l.z, camera, projection);
+                    const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
+                    if (dist < 15 * p.scale) return { id: 'leukocyte', label: 'Leukocyte', description: 'White blood cell involved in the inflammatory response.', type: '3d', data: l };
                 }
                 if (my > projection.height * 0.7) return { id: 'bbb', label: 'Blood-Brain Barrier', description: 'Endothelial lining and basement membrane; regulates leukocyte infiltration.', type: '3d' };
             } else if (viewMode === 'molecular') {

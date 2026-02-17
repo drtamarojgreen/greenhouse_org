@@ -67,7 +67,8 @@
             glia_m2: 'M2 Microglia: The "alternatively activated" anti-inflammatory phenotype; involved in tissue repair and resolution.',
             mast_cell: 'Mast Cell: Immune cell residing near vessels; contains granules with histamine and TNF-α that can rapidly trigger inflammation.',
             astrocyte: 'Astrocyte: Star-shaped glial cell that maintains the blood-brain barrier via endfeet and regulates the chemical environment.',
-            microglia: 'Microglia: The resident immune cells of the CNS, acting as the first and main form of active immune defense.'
+            microglia: 'Microglia: The resident immune cells of the CNS, acting as the first and main form of active immune defense.',
+            keyboard_shortcuts: 'Keyboard Shortcuts: [1-4] Switch View Modes; [H] Toggle Hemispheres; [R] Export Simulation State; [Space] Pause Simulation.'
         },
 
         draw(ctx, app, x, y) {

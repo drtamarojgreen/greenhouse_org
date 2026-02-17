@@ -41,6 +41,13 @@
 
             // --- RESEARCH / PHARMA ---
             { id: 'leakyGut', label: 'Intestinal Permeability', type: 'checkbox', defaultValue: 0, impact: 0.15, category: 'research' },
+            { id: 'showVolumeBounds', label: 'Micro Volume Bounds', type: 'checkbox', defaultValue: 0, category: 'research' },
+            { id: 'showReceptors', label: 'Show Receptor Sites', type: 'checkbox', defaultValue: 0, category: 'research' },
+            { id: 'showBridgeOverlay', label: 'Signaling Bridge Overlay', type: 'checkbox', defaultValue: 0, category: 'research' },
+            { id: 'colorTheme', label: 'Color Theme', defaultValue: 'default', options: [
+                { value: 'default', label: 'DEFAULT' },
+                { value: 'deuteranopia', label: 'DEUTERANOPIA' }
+            ], type: 'select', category: 'research' },
             { id: 'showMoleculeLabels', label: 'Show Molecule Labels', type: 'checkbox', defaultValue: 1, category: 'research' },
             { id: 'showMechanismLabels', label: 'Show Mechanism Labels', type: 'checkbox', defaultValue: 0, category: 'research' },
             { id: 'showCompartmentLabels', label: 'Show Compartment Labels', type: 'checkbox', defaultValue: 0, category: 'research' },

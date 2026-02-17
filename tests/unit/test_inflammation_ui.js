@@ -57,6 +57,7 @@ global.document = {
 global.navigator = { userAgent: 'node' };
 global.console = console;
 global.requestAnimationFrame = (cb) => {};
+global.prompt = (msg, def) => def; // Mock prompt
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
@@ -89,7 +90,8 @@ TestFramework.describe('GreenhouseInflammationApp UI', () => {
     TestFramework.it('should setup UI elements from config with categories', () => {
         assert.greaterThan(app.ui.checkboxes.length, 0);
         assert.isDefined(app.ui.checkboxes[0].category);
-        assert.equal(app.ui.buttons.length, 6);
+        // Item count increased in 100-enhancement pass (RESET, JSON, CSV, UNDO, PAUSE, etc.)
+        assert.equal(app.ui.buttons.length, 18);
     });
 
     TestFramework.it('should toggle factor on checkbox click when category is open', () => {
@@ -100,7 +102,7 @@ TestFramework.describe('GreenhouseInflammationApp UI', () => {
         const initialVal = app.engine.state.factors[checkbox.id];
 
         checkbox.x = cat.x + 10;
-        checkbox.y = cat.y + 30;
+        checkbox.y = cat.y + 55; // Shifted for search bar
 
         const event = { clientX: checkbox.x + 5, clientY: checkbox.y + 5 };
         app.handleMouseDown(event);
@@ -121,7 +123,7 @@ TestFramework.describe('GreenhouseInflammationApp UI', () => {
         cat.isOpen = true;
         const checkbox = app.ui.checkboxes.find(c => c.category === 'env');
         checkbox.x = cat.x + 10;
-        checkbox.y = cat.y + 30;
+        checkbox.y = cat.y + 55; // Shifted for search bar
 
         const event = { clientX: checkbox.x + 5, clientY: checkbox.y + 5 };
         app.handleMouseMove(event);
