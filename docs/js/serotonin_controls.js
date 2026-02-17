@@ -417,7 +417,7 @@
         const canvas = G.canvas;
         if (!canvas) return;
 
-        if (canvas.style.filter.includes(type)) {
+        if (canvas.style.filter !== 'none' && canvas.style.filter !== '') {
             canvas.style.filter = 'none';
         } else {
             canvas.style.filter = filterMap[type] || 'none';
