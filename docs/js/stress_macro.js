@@ -181,6 +181,7 @@
             const Math3D = window.GreenhouseModels3DMath;
             const factors = state.factors;
             const activeFactors = Object.keys(factors).filter(k => factors[k] === 1 && k !== 'viewMode');
+            const renderedLabels = [];
 
             ctx.save();
             activeFactors.forEach((fid, idx) => {
@@ -214,9 +215,11 @@
                     ctx.fillStyle = `rgba(255, 255, 255, ${alpha * (1 - pulse)})`;
                     ctx.beginPath(); ctx.arc(px, py, 4 * p.scale, 0, Math.PI * 2); ctx.fill();
 
+                    const isHovered = ui3d.app.ui.hoveredElement && ui3d.app.ui.hoveredElement.id === fid;
                     ctx.fillStyle = fid.includes('Mod') ? '#00ffaa' : (fid.includes('comt') ? '#ffaa00' : '#4ca1af');
-                    ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
-                    ctx.beginPath(); ctx.arc(p.x, p.y, 5 * p.scale, 0, Math.PI * 2); ctx.fill();
+                    ctx.shadowBlur = isHovered ? 20 : 10;
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, (isHovered ? 8 : 5) * p.scale, 0, Math.PI * 2); ctx.fill();
                     ctx.shadowBlur = 0;
 
                     const t = (k) => (window.GreenhouseModelsUtil && window.GreenhouseModelsUtil.t) ? window.GreenhouseModelsUtil.t(k) : k;
@@ -224,9 +227,29 @@
                     const factorMeta = config ? config.factors.find(f => f.id === fid) : null;
                     const label = factorMeta ? t(factorMeta.label) : fid.toUpperCase().replace(/([A-Z])/g, ' $1');
 
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 10px Quicksand, sans-serif';
-                    ctx.fillText(label.toUpperCase(), p.x + 10, p.y);
+                    // Label Overlap Prevention (Item 74/Vision Enhancement)
+                    const labelText = label.toUpperCase();
+                    const textWidth = ctx.measureText(labelText).width;
+
+                    // UI Occupancy Check (Item 74/Vision Enhancement)
+                    const sw = projection.width;
+                    const sh = projection.height;
+                    const col2X = Math.max(400, sw - 630);
+                    const isInUI = (p.x < 425 && p.y > 100) || (p.x > col2X - 20 && p.y > 150) || (p.y < 130) || (p.y > sh - 100);
+
+                    const canRenderLabel = !isInUI && !renderedLabels.some(other => {
+                        const dx = Math.abs(p.x - other.x);
+                        const dy = Math.abs(p.y - other.y);
+                        return dx < (textWidth / 2 + other.w / 2 + 15) && dy < 18;
+                    });
+
+                    if (canRenderLabel || isHovered) {
+                        ctx.fillStyle = isHovered ? '#fff' : `rgba(255, 255, 255, ${alpha})`;
+                        ctx.font = `${isHovered ? 'bold 11px' : 'bold 9px'} Quicksand, sans-serif`;
+                        ctx.textAlign = 'left';
+                        ctx.fillText(labelText, p.x + 12, p.y + 4);
+                        renderedLabels.push({ x: p.x + 12 + textWidth / 2, y: p.y, w: textWidth });
+                    }
                 }
             });
             ctx.restore();
