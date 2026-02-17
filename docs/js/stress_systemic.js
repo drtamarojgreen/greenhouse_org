@@ -288,20 +288,37 @@
                     ctx.font = `bold ${10 * p.scale}px Quicksand, sans-serif`;
                     ctx.textAlign = 'center';
 
-                    let labelY = p.y - radius - 8;
+                    let labelY = p.y - radius - 10;
                     let countY = p.y + radius + 15;
 
-                    // Simple Collision Check
-                    renderedLabels.forEach(other => {
-                        const dx = Math.abs(p.x - other.x);
-                        const dy = Math.abs(labelY - other.y);
-                        if (dx < 80 * p.scale && dy < 25 * p.scale) {
-                            labelY -= 20 * p.scale; // Shift up if overlapping
-                        }
-                    });
-                    renderedLabels.push({ x: p.x, y: labelY });
+                    // Robust Collision Check for 12 nodes
+                    const labelText = window.GreenhouseModelsUtil.t(cat.label);
+                    const textWidth = ctx.measureText(labelText).width;
 
-                    ctx.fillText(window.GreenhouseModelsUtil.t(cat.label), p.x, labelY);
+                    // UI Occupancy Check (Item 74/Vision Enhancement)
+                    const sw = ctx.canvas.width;
+                    const sh = ctx.canvas.height;
+                    const col2X = Math.max(400, sw - 630);
+                    const isInUI = (p.x < 425 && labelY > 100) || (p.x > col2X - 25 && labelY > 150) || (labelY < 130) || (labelY > sh - 100);
+
+                    let collision = isInUI;
+                    if (!collision) {
+                        for (let retry = 0; retry < 3; retry++) {
+                            collision = renderedLabels.some(other => {
+                                const dx = Math.abs(p.x - other.x);
+                                const dy = Math.abs(labelY - other.y);
+                                return dx < (textWidth / 2 + other.w / 2 + 15) && dy < 20;
+                            });
+                            if (collision) labelY -= 20 * p.scale;
+                            else break;
+                        }
+                    }
+
+                    if (!collision || isHovered) {
+                        ctx.fillText(labelText, p.x, labelY);
+                        renderedLabels.push({ x: p.x, y: labelY, w: textWidth });
+                    }
+
                     ctx.font = `${11 * p.scale}px monospace`;
                     ctx.fillText(`${score}/${total} (${percent}%)`, p.x, countY);
 
