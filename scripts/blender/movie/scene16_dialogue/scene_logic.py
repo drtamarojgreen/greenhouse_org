@@ -13,12 +13,17 @@ if ASSETS_PATH not in sys.path:
 
 import plant_humanoid
 import style
+from constants import SCENE_MAP
 
 def setup_scene(master):
-    """Dialogue scene 16."""
-    # Frame range: 9501 - 10200
-    start_frame = 9501
-    end_frame = 10200
+    """
+    Dialogue scene 16.
+    Shot ID: S16
+    Intent: Intellectual debate continues.
+    """
+    # MUSIC CUE: Thoughtful woodwinds.
+    # Point 31: Use SCENE_MAP
+    start_frame, end_frame = SCENE_MAP['scene16_dialogue']
 
     if not master.h1 or not master.h2:
         return

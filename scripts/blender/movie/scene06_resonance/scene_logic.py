@@ -3,7 +3,12 @@ import math
 import style
 
 def setup_scene(master):
-    """The Resonance of Logos synchronization."""
+    """
+    The Resonance of Logos synchronization.
+    Shot ID: S06
+    Intent: Peak emotional and intellectual synergy.
+    """
+    # MUSIC CUE: Triumphant orchestral climax.
     master.create_intertitle("The Resonance of\nLogos", 2901, 3000)
 
     # Scene range: 3001 - 3500

@@ -9,6 +9,8 @@ def setup_scene(master):
     Shot ID: S12
     Intent: Conclude the film with scrolling cast and crew info.
     """
+    # MUSIC CUE: Somber yet hopeful piano finale.
+
     # Point 45: Guard object creation to prevent duplicates
     if "CreditsText" in bpy.data.objects:
         return

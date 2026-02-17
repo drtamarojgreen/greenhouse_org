@@ -849,9 +849,10 @@ def create_noise_based_material(name, color_ramp_colors, noise_type='NOISE', noi
     return mat
 
 def animate_reaction_shot(character_name, frame_start, frame_end):
-    """Adds listener micro-movements: blinks, eye shifts, subtle nods."""
+    """Point 39: Adds listener micro-movements with robust character resolution."""
     char_name = character_name.split('_')[0]
-    head = bpy.data.objects.get(f"{char_name}_Head")
+    # Fallback to torso if head doesn't exist (e.g. for merged static characters)
+    head = bpy.data.objects.get(f"{char_name}_Head") or bpy.data.objects.get(f"{char_name}_Torso")
     if not head: return
 
     # Blinks

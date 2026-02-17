@@ -383,17 +383,17 @@ class MovieMaster(BaseMaster):
         # Dynamic God Rays (After Sun and Beam are created)
         style.setup_god_rays(self.scene, beam_obj=self.beam)
 
-    def setup_camera_keyframes(self, cam, target):
-        """Point 31 & 41: Consolidated camera keyframes using SCENE_MAP and establishing shot."""
+    def setup_camera_keyframes(self, cam, target_obj):
+        """Point 31, 36, 41: Consolidated camera keyframes with clear variable naming."""
         title_loc = (0, -12, 0)
         origin = (0, 0, 0)
         high_target = (0, 0, 1.5)
 
         def kf(frame, cam_loc, target_loc):
             cam.location = cam_loc
-            target.location = target_loc
+            target_obj.location = target_loc
             cam.keyframe_insert(data_path="location", frame=frame)
-            target.keyframe_insert(data_path="location", frame=frame)
+            target_obj.keyframe_insert(data_path="location", frame=frame)
 
         # Branding (1 - 100)
         kf(1, title_loc, origin)

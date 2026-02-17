@@ -11,7 +11,12 @@ if ASSETS_PATH not in sys.path:
 import plant_humanoid
 
 def setup_scene(master):
-    """The Duel Scene for the sequel."""
+    """
+    The Duel Scene for the sequel.
+    Shot ID: S14
+    Intent: Action sequence demonstrating conflict.
+    """
+    # MUSIC CUE: High-tempo, aggressive brass and percussion.
     frame_start = 4501
     frame_end = 5800
 

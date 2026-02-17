@@ -4,7 +4,12 @@ import random
 import style
 
 def setup_scene(master):
-    """The Synaptic Bridge."""
+    """
+    The Synaptic Bridge.
+    Shot ID: S05
+    Intent: Visualize connectivity and mental energy flow.
+    """
+    # MUSIC CUE: Uplifting, rhythmic synthesizer theme.
     master.create_intertitle("The Bridge of\nConnectivity", 1501, 1600)
 
     # Scene range: 1601 - 1800

@@ -5,7 +5,12 @@ import plant_humanoid
 import style
 
 def setup_scene(master):
-    """The Sanctuary of Stillness - Naturalistic scene."""
+    """
+    The Sanctuary of Stillness - Naturalistic scene.
+    Shot ID: S11
+    Intent: Reconnection with nature and recovery.
+    """
+    # MUSIC CUE: Gentle birdsong and pastoral flute.
     master.create_intertitle("The Sanctuary of\nStillness", 3801, 3900)
 
     # Apply sanctuary grade

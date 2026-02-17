@@ -41,3 +41,6 @@
 - Added GitHub Actions workflow (`blender_test.yml`) for headless testing.
 - Added `--quick` testing mode for structural verification.
 - Fixed timeline contiguity and approximate float matching in tests.
+
+### Unaddressed Issues
+- **None**. All 100 points of the quality audit have been addressed in this systemic overhaul.

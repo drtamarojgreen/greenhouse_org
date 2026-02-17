@@ -12,7 +12,12 @@ if ASSETS_PATH not in sys.path:
 import plant_humanoid
 
 def setup_scene(master):
-    """The Walking Scene for the sequel."""
+    """
+    The Walking Scene for the sequel.
+    Shot ID: S13
+    Intent: Demonstrate movement and character interaction in motion.
+    """
+    # MUSIC CUE: Plucky, rhythmic strings.
     frame_start = 501
     frame_end = 1500
 
