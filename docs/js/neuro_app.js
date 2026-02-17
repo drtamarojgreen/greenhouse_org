@@ -54,7 +54,9 @@
             this.setupUIComponents();
 
             this.ui3d = window.GreenhouseNeuroUI3D;
-            this.ui3d.init(selector); // This creates the canvas
+            if (this.ui3d) {
+                this.ui3d.init(container); // Pass direct element for live-site compatibility
+            }
 
             this.bindEvents();
 
