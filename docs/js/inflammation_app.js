@@ -94,6 +94,7 @@
             ];
 
             this.setupUI();
+            this.computeUILayout();
 
             this.canvas.onmousedown = (e) => this.handleMouseDown(e);
             this.canvas.onmousemove = (e) => this.handleMouseMove(e);
@@ -108,6 +109,7 @@
                 this.canvas.width = container.offsetWidth;
                 this.projection.width = this.canvas.width;
                 this.setupUI();
+                this.computeUILayout();
             });
         },
 
@@ -132,6 +134,55 @@
                 { id: 'toggle_right', label: 'R-HEMI', x: 335, y: 70, w: 60, h: 22, type: 'toggle' },
                 { id: 'toggle_deep', label: 'DEEP', x: 400, y: 70, w: 50, h: 22, type: 'toggle' }
             ];
+        },
+
+        computeUILayout() {
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+            const isNarrow = w < 960;
+
+            // 1. Title & Global HUD Coordinates
+            this.layout = {
+                title: { x: 40, y: 40 },
+                subtitle: { x: 40, y: 60 },
+                breadcrumbs: { x: isNarrow ? 40 : 300, y: isNarrow ? 15 : 35 },
+                miniMap: { x: w - 140, y: 40, w: 100, h: 80 },
+                legend: { x: 40, y: 100, w: 200, h: 180 },
+                metrics: { x: 40, y: h - 80, spacing: 110 },
+                analysisMatrix: { x: w - 180, y: h - 280 },
+                analysisTimeline: { x: w - 180, y: h - 120 }
+            };
+
+            // 2. Buttons Reflow
+            let btnX = 40;
+            this.ui.buttons.forEach(b => {
+                b.x = btnX;
+                b.y = 70;
+                btnX += b.w + 5;
+            });
+
+            // 3. Categories Reflow
+            const catSpacing = 20;
+            const catW = isNarrow ? Math.min(400, (w - 60) / 2) : 200;
+            this.ui.categories.forEach((cat, i) => {
+                cat.w = catW;
+                if (isNarrow) {
+                    const col = i % 2;
+                    const row = Math.floor(i / 2);
+                    cat.x = 20 + col * (catW + catSpacing);
+                    cat.y = 175 + row * 35;
+                } else {
+                    cat.x = 20 + i * (catW + catSpacing);
+                    cat.y = 175;
+                }
+            });
+
+            // 4. Legend Reflow (Avoid overlaps with category panels)
+            if (isNarrow) {
+                this.layout.legend = { x: w - 180, y: 140, w: 160, h: 140 };
+            } else {
+                this.layout.legend = { x: 40, y: h - 290, w: 200, h: 180 };
+            }
         },
 
         handleMouseDown(e) {
@@ -174,13 +225,14 @@
         },
 
         hitTestCheckboxes(mx, my) {
+            const isNarrow = this.canvas.width < 960;
             for (const cat of this.ui.categories) {
                 if (!cat.isOpen) continue;
 
                 const catBoxes = this.ui.checkboxes.filter(c => c.category === cat.id);
                 for (let i = 0; i < catBoxes.length; i++) {
-                    const col = i % 2;
-                    const row = Math.floor(i / 2);
+                    const col = isNarrow ? 0 : (i % 2);
+                    const row = isNarrow ? i : Math.floor(i / 2);
                     const bx = cat.x + 10 + (col * 190);
                     const by = cat.y + 30 + (row * 22);
 
@@ -368,11 +420,16 @@
         },
 
         drawUI(ctx, w, h, state) {
-            ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Quicksand, sans-serif'; ctx.fillText('NEUROINFLAMMATION ENGINE', 40, 40);
+            const isNarrow = w < 960;
+            const l = this.layout;
+
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Quicksand, sans-serif';
+            ctx.fillText('NEUROINFLAMMATION ENGINE', l.title.x, l.title.y);
+
             ctx.fillStyle = '#4ca1af'; ctx.font = 'bold 12px Quicksand, sans-serif';
             const modes = ['btn_mode_macro', 'btn_mode_micro', 'btn_mode_molecular'];
             const modeName = t(modes[state.factors.viewMode || 0]);
-            ctx.fillText(`${modeName} LEVEL: IMMUNE RESPONSE`, 40, 60);
+            ctx.fillText(`${modeName} LEVEL: IMMUNE RESPONSE`, l.subtitle.x, l.subtitle.y);
 
             const m = state.metrics;
             const mLabels = [
@@ -382,41 +439,49 @@
                 { l: 'STRESS BURDEN', v: (m.stressBurden * 100).toFixed(1) + '%', c: '#ff9900' }
             ];
             mLabels.forEach((ml, i) => {
-                const bx = 40 + i * 110;
+                const bx = l.metrics.x + i * l.metrics.spacing;
+                const by = l.metrics.y;
                 ctx.fillStyle = 'rgba(255,255,255,0.05)';
-                this.roundRect(ctx, bx, h - 80, 100, 50, 8, true);
-                ctx.fillStyle = ml.c; ctx.fillRect(bx, h - 80, 2, 50);
-                ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '9px Quicksand, sans-serif'; ctx.fillText(ml.l, bx + 10, h - 65);
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 13px Quicksand, sans-serif'; ctx.fillText(ml.v, bx + 10, h - 45);
+                this.roundRect(ctx, bx, by, 100, 50, 8, true);
+                ctx.fillStyle = ml.c; ctx.fillRect(bx, by, 2, 50);
+                ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '9px Quicksand, sans-serif'; ctx.fillText(ml.l, bx + 10, by + 15);
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 13px Quicksand, sans-serif'; ctx.fillText(ml.v, bx + 10, by + 35);
             });
 
             if (this.ui.categories) {
+                // Draw all headers first
                 this.ui.categories.forEach(cat => {
                     if (window.GreenhouseInflammationControls) {
                         window.GreenhouseInflammationControls.drawCategoryHeader(ctx, cat);
                     }
-
-                    if (cat.isOpen) {
-                        const catBoxes = this.ui.checkboxes.filter(c => c.category === cat.id);
-                        ctx.save();
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-                        const height = Math.ceil(catBoxes.length / 2) * 22 + 40;
-                        ctx.fillRect(cat.x, cat.y + 25, 400, height);
-                        ctx.strokeStyle = 'rgba(76, 161, 175, 0.5)';
-                        ctx.strokeRect(cat.x, cat.y + 25, 400, height);
-                        ctx.restore();
-
-                        catBoxes.forEach((c, i) => {
-                            const col = i % 2;
-                            const row = Math.floor(i / 2);
-                            c.x = cat.x + 10 + (col * 190);
-                            c.y = cat.y + 30 + (row * 22);
-                            if (window.GreenhouseInflammationControls) {
-                                window.GreenhouseInflammationControls.drawCheckbox(ctx, this, c, state);
-                            }
-                        });
-                    }
                 });
+
+                // Draw the open panel last to ensure it's on top of other headers
+                const openCat = this.ui.categories.find(c => c.isOpen);
+                if (openCat) {
+                    const catBoxes = this.ui.checkboxes.filter(c => c.category === openCat.id);
+                    const rows = isNarrow ? catBoxes.length : Math.ceil(catBoxes.length / 2);
+                    const panelW = isNarrow ? 210 : 400;
+                    const panelH = rows * 22 + 40;
+
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(5, 5, 15, 0.95)';
+                    ctx.fillRect(openCat.x, openCat.y + 25, panelW, panelH);
+                    ctx.strokeStyle = '#4ca1af';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(openCat.x, openCat.y + 25, panelW, panelH);
+                    ctx.restore();
+
+                    catBoxes.forEach((c, i) => {
+                        const col = isNarrow ? 0 : (i % 2);
+                        const row = isNarrow ? i : Math.floor(i / 2);
+                        c.x = openCat.x + 10 + (col * 190);
+                        c.y = openCat.y + 30 + (row * 22);
+                        if (window.GreenhouseInflammationControls) {
+                            window.GreenhouseInflammationControls.drawCheckbox(ctx, this, c, state);
+                        }
+                    });
+                }
             }
 
             this.ui.buttons.forEach(b => {
@@ -431,13 +496,13 @@
 
             if (window.GreenhouseInflammationControls) {
                 const config = window.GreenhouseInflammationConfig;
-                window.GreenhouseInflammationControls.drawAtlasLegend(ctx, this, config);
-                window.GreenhouseInflammationControls.drawMiniMap(ctx, this, w, h);
-                window.GreenhouseInflammationControls.drawBreadcrumbs(ctx, this, this.ui.currentRegion);
+                window.GreenhouseInflammationControls.drawAtlasLegend(ctx, this, config, l.legend);
+                window.GreenhouseInflammationControls.drawMiniMap(ctx, this, w, h, l.miniMap);
+                window.GreenhouseInflammationControls.drawBreadcrumbs(ctx, this, this.ui.currentRegion, l.breadcrumbs);
             }
 
             if (window.GreenhouseInflammationAnalysis) {
-                window.GreenhouseInflammationAnalysis.render(ctx, this, state);
+                window.GreenhouseInflammationAnalysis.render(ctx, this, state, l.analysisMatrix, l.analysisTimeline);
             }
 
             if (this.ui.hoveredElement && window.GreenhouseInflammationTooltips && this.ui.hoveredElement.type !== 'header') {

@@ -8,24 +8,23 @@
     'use strict';
 
     const GreenhouseInflammationAnalysis = {
-        render(ctx, app, state) {
+        render(ctx, app, state, matrixLayout, timelineLayout) {
             const w = app.canvas.width;
             const h = app.canvas.height;
 
             if (state.factors.viewMode === 0) { // Macro
-                this.drawMatrix(ctx, w, h, state);
-                this.drawTimeline(ctx, w, h, state);
+                this.drawMatrix(ctx, w, h, state, matrixLayout);
+                this.drawTimeline(ctx, w, h, state, timelineLayout);
             } else if (state.factors.viewMode === 2) { // Molecular
-                this.drawTimeline(ctx, w, h, state);
+                this.drawTimeline(ctx, w, h, state, timelineLayout);
             }
         },
 
-        drawMatrix(ctx, w, h, state) {
+        drawMatrix(ctx, w, h, state, layout) {
             const regions = ['PFC', 'HIP', 'THA', 'INS', 'BG'];
             const elements = ['TNF', 'IL10', 'MIC', 'BBB'];
 
-            const x = w - 180;
-            const y = h - 280;
+            const { x, y } = layout || { x: w - 180, y: h - 280 };
             const size = 25;
 
             ctx.save();
@@ -53,9 +52,8 @@
             ctx.restore();
         },
 
-        drawTimeline(ctx, w, h, state) {
-            const x = w - 180;
-            const y = h - 120;
+        drawTimeline(ctx, w, h, state, layout) {
+            const { x, y } = layout || { x: w - 180, y: h - 120 };
             const m = state.metrics;
             ctx.save();
             ctx.fillStyle = 'rgba(0,0,0,0.7)';

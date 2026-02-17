@@ -97,13 +97,12 @@
             ctx.restore();
         },
 
-        drawAtlasLegend(ctx, app, config) {
-            const x = 40;
-            const y = 100;
+        drawAtlasLegend(ctx, app, config, layout) {
+            const { x, y, w, h } = layout || { x: 40, y: 100, w: 200, h: 180 };
             ctx.save();
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            if (app.roundRect) app.roundRect(ctx, x, y, 200, 180, 8, true, true);
-            else ctx.fillRect(x, y, 200, 180);
+            if (app.roundRect) app.roundRect(ctx, x, y, w, h, 8, true, true);
+            else ctx.fillRect(x, y, w, h);
 
             ctx.fillStyle = '#4ca1af';
             ctx.font = 'bold 11px Quicksand, sans-serif';
@@ -124,11 +123,8 @@
             ctx.restore();
         },
 
-        drawMiniMap(ctx, app, w, h) {
-            const mx = w - 140;
-            const my = 40;
-            const mw = 100;
-            const mh = 80;
+        drawMiniMap(ctx, app, w, h, layout) {
+            const { x: mx, y: my, w: mw, h: mh } = layout || { x: w - 140, y: 40, w: 100, h: 80 };
             ctx.save();
             ctx.fillStyle = 'rgba(0,0,0,0.8)';
             ctx.strokeStyle = '#4ca1af';
@@ -154,9 +150,8 @@
             ctx.restore();
         },
 
-        drawBreadcrumbs(ctx, app, region) {
-            const x = 300;
-            const y = 35;
+        drawBreadcrumbs(ctx, app, region, layout) {
+            const { x, y } = layout || { x: 300, y: 35 };
             ctx.save();
             ctx.fillStyle = 'rgba(255,255,255,0.4)';
             ctx.font = '9px monospace';
