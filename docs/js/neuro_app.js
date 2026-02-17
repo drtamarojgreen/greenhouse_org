@@ -29,10 +29,11 @@
 
         init(selector, baseUrl = '') {
             console.log('NeuroApp: Initializing High Quality Canvas UI...');
-            this.baseUrl = baseUrl || '';
-
-            const container = document.querySelector(selector);
+            // Handle cases where selector is already a DOM element (from GreenhouseUtils re-init)
+            const container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!container) return;
+
+            this.baseUrl = baseUrl || '';
 
             container.innerHTML = '';
             container.style.backgroundColor = '#000';

@@ -39,7 +39,7 @@
         selectedConnection: null,
 
         init(containerSelector) {
-            const container = document.querySelector(containerSelector);
+            const container = (typeof containerSelector === 'string') ? document.querySelector(containerSelector) : containerSelector;
             if (!container) {
                 console.error('NeuroUI3D: Container not found', containerSelector);
                 return;
