@@ -3,7 +3,7 @@ import math
 import mathutils
 import random
 
-def create_gnarled_staff(location, height=1.5, name="GnarledStaff"):
+def create_gnarled_staff(location, height=1.5, name="GnarledStaff", material=None):
     """Creates a gnarled staff using randomized segments."""
     container = bpy.data.objects.new(f"{name}_Container", None)
     bpy.context.scene.collection.objects.link(container)
@@ -11,7 +11,6 @@ def create_gnarled_staff(location, height=1.5, name="GnarledStaff"):
 
     curr_loc = location
     segments = []
-    mat_gloom = bpy.data.materials.get("GloomMat")
 
     for i in range(8):
         next_loc = curr_loc + mathutils.Vector((random.uniform(-0.05, 0.05), random.uniform(-0.05, 0.05), height/8))
@@ -25,7 +24,7 @@ def create_gnarled_staff(location, height=1.5, name="GnarledStaff"):
 
         seg.parent = container
         seg.matrix_parent_inverse = container.matrix_world.inverted()
-        if mat_gloom: seg.data.materials.append(mat_gloom)
+        if material: seg.data.materials.append(material)
         curr_loc = next_loc
         segments.append(seg)
 
@@ -35,6 +34,39 @@ def create_gnome(name, location, scale=0.6):
     """Generates a gnome character as an antagonist."""
     container = bpy.data.collections.new(name)
     bpy.context.scene.collection.children.link(container)
+
+    # Point 12: Create materials first
+    mat_body = bpy.data.materials.new(name=f"{name}_MatBody")
+    mat_body.use_nodes = True
+    mat_body.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.2, 0.1, 0.3, 1)
+
+    mat_hat = bpy.data.materials.new(name=f"{name}_MatHat")
+    mat_hat.use_nodes = True
+    mat_hat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.1, 0.05, 0.2, 1)
+
+    mat_beard = bpy.data.materials.new(name=f"{name}_MatBeard")
+    mat_beard.use_nodes = True
+    mat_beard.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.8, 0.8, 1)
+
+    mat_gloom = bpy.data.materials.new(name=f"{name}_MatGloom")
+    mat_gloom.use_nodes = True
+    bsdf_gloom = mat_gloom.node_tree.nodes["Principled BSDF"]
+    bsdf_gloom.inputs["Base Color"].default_value = (0, 0, 0, 1)
+    bsdf_gloom.inputs["Emission Strength"].default_value = 0.5
+    bsdf_gloom.inputs["Emission Color"].default_value = (0.1, 0, 0.2, 1)
+
+    node_rust = mat_gloom.node_tree.nodes.new(type='ShaderNodeTexNoise')
+    node_rust.inputs['Scale'].default_value = 50.0
+    mat_gloom.node_tree.links.new(node_rust.outputs['Fac'], bsdf_gloom.inputs['Roughness'])
+
+    node_runes = mat_gloom.node_tree.nodes.new(type='ShaderNodeTexNoise')
+    node_runes.inputs['Scale'].default_value = 15.0
+    node_runes_color = mat_gloom.node_tree.nodes.new(type='ShaderNodeValToRGB')
+    node_runes_color.color_ramp.elements[0].position = 0.5
+    node_runes_color.color_ramp.elements[0].color = (0, 0, 0, 1)
+    node_runes_color.color_ramp.elements[1].color = (1, 0.2, 0.8, 1)
+    mat_gloom.node_tree.links.new(node_runes.outputs['Fac'], node_runes_color.inputs['Fac'])
+    mat_gloom.node_tree.links.new(node_runes_color.outputs['Color'], bsdf_gloom.inputs['Emission Color'])
 
     # Body (Cylinder)
     bpy.ops.mesh.primitive_cylinder_add(radius=0.3, depth=0.8, location=location + mathutils.Vector((0,0,0.4)))
@@ -81,7 +113,7 @@ def create_gnome(name, location, scale=0.6):
 
     # Gloom Staff (Gnarled)
     staff_base = location + mathutils.Vector((0.5, -0.3, 0))
-    staff, staff_tip = create_gnarled_staff(staff_base, name=f"{name}_Staff")
+    staff, staff_tip = create_gnarled_staff(staff_base, name=f"{name}_Staff", material=mat_gloom)
     staff.parent = body
     staff.matrix_parent_inverse = body.matrix_world.inverted()
 
@@ -92,40 +124,6 @@ def create_gnome(name, location, scale=0.6):
     orb.parent = staff
     orb.matrix_parent_inverse = staff.matrix_world.inverted()
 
-    # Materials
-    mat_body = bpy.data.materials.new(name=f"{name}_MatBody")
-    mat_body.use_nodes = True
-    mat_body.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.2, 0.1, 0.3, 1) # Dark purple
-
-    mat_hat = bpy.data.materials.new(name=f"{name}_MatHat")
-    mat_hat.use_nodes = True
-    mat_hat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.1, 0.05, 0.2, 1) # Deep navy
-
-    mat_beard = bpy.data.materials.new(name=f"{name}_MatBeard")
-    mat_beard.use_nodes = True
-    mat_beard.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.8, 0.8, 1) # White
-
-    mat_gloom = bpy.data.materials.new(name=f"{name}_MatGloom")
-    mat_gloom.use_nodes = True
-    bsdf_gloom = mat_gloom.node_tree.nodes["Principled BSDF"]
-    bsdf_gloom.inputs["Base Color"].default_value = (0, 0, 0, 1) # Black
-    bsdf_gloom.inputs["Emission Strength"].default_value = 0.5
-    bsdf_gloom.inputs["Emission Color"].default_value = (0.1, 0, 0.2, 1)
-
-    # Rusted Staff (Noise/Roughness)
-    node_rust = mat_gloom.node_tree.nodes.new(type='ShaderNodeTexNoise')
-    node_rust.inputs['Scale'].default_value = 50.0
-    mat_gloom.node_tree.links.new(node_rust.outputs['Fac'], bsdf_gloom.inputs['Roughness'])
-
-    # Engraved Runes (Emissive Noise replacing Musgrave)
-    node_runes = mat_gloom.node_tree.nodes.new(type='ShaderNodeTexNoise')
-    node_runes.inputs['Scale'].default_value = 15.0
-    node_runes_color = mat_gloom.node_tree.nodes.new(type='ShaderNodeValToRGB')
-    node_runes_color.color_ramp.elements[0].position = 0.5
-    node_runes_color.color_ramp.elements[0].color = (0, 0, 0, 1)
-    node_runes_color.color_ramp.elements[1].color = (1, 0.2, 0.8, 1) # Pink glow
-    mat_gloom.node_tree.links.new(node_runes.outputs['Fac'], node_runes_color.inputs['Fac'])
-    mat_gloom.node_tree.links.new(node_runes_color.outputs['Color'], bsdf_gloom.inputs['Emission Color'])
 
     # Tattered Cloak (Woven Cloak)
     bpy.ops.mesh.primitive_plane_add(size=1.0, location=location + mathutils.Vector((0, 0.2, 0.5)), rotation=(math.radians(90), 0, 0))

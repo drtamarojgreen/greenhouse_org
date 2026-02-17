@@ -34,6 +34,8 @@ class TestReleaseGate(unittest.TestCase):
             start, end = silent_movie_generator.SCENE_MAP[s_name]
             mid_frame = (start + end) // 2
             self.master.scene.frame_set(mid_frame)
+            # Point 60: Update view layer to evaluate keyframes
+            bpy.context.view_layer.update()
 
             # During these dialogue scenes, Herbaceous and Arbor must be visible
             for char in ["Herbaceous", "Arbor"]:

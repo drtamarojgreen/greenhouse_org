@@ -32,7 +32,8 @@ def create_greenhouse_glass_mat():
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.7, 0.8, 0.9, 1)
-    bsdf.inputs["Alpha"].default_value = 0.15
+    # Point 74: Use Transmission for Cycles, Alpha 1.0 to avoid conflicts
+    bsdf.inputs["Alpha"].default_value = 1.0
 
     # Transmission (Guarded for Blender 5.0 naming drift)
     style.set_principled_socket(bsdf, 'Transmission', 1.0)
@@ -78,7 +79,9 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
         pillar.scale = (beam_thickness, beam_thickness, size[2]/2)
         pillar.data.materials.append(iron_mat)
         gh_col.objects.link(pillar)
-        bpy.context.collection.objects.unlink(pillar)
+        # Point 15: Guarded unlink
+        if pillar.name in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.unlink(pillar)
 
     # 2. Horizontal Beams (Floor and Top of walls)
     for z in [0, size[2]]:
@@ -89,7 +92,8 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
             beam.scale = (beam_thickness, size[1]/2, beam_thickness)
             beam.data.materials.append(iron_mat)
             gh_col.objects.link(beam)
-            bpy.context.collection.objects.unlink(beam)
+            if beam.name in bpy.context.scene.collection.objects:
+                bpy.context.scene.collection.objects.unlink(beam)
         # Latitudinal
         for y in [-size[1]/2, size[1]/2]:
             bpy.ops.mesh.primitive_cube_add(location=main_loc + mathutils.Vector((0, y, z)))
@@ -97,7 +101,8 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
             beam.scale = (size[0]/2, beam_thickness, beam_thickness)
             beam.data.materials.append(iron_mat)
             gh_col.objects.link(beam)
-            bpy.context.collection.objects.unlink(beam)
+            if beam.name in bpy.context.scene.collection.objects:
+                bpy.context.scene.collection.objects.unlink(beam)
 
     # 3. Gabled Roof
     peak_height = size[2] + 4
@@ -107,7 +112,8 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
     peak_beam.scale = (size[0]/2, beam_thickness, beam_thickness)
     peak_beam.data.materials.append(iron_mat)
     gh_col.objects.link(peak_beam)
-    bpy.context.collection.objects.unlink(peak_beam)
+    if peak_beam.name in bpy.context.scene.collection.objects:
+        bpy.context.scene.collection.objects.unlink(peak_beam)
 
     # Rafters
     for x in [-size[0]/2, 0, size[0]/2]:
@@ -127,7 +133,8 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
             rafter.rotation_euler[0] = angle - math.pi/2
             rafter.data.materials.append(iron_mat)
             gh_col.objects.link(rafter)
-            bpy.context.collection.objects.unlink(rafter)
+            if rafter.name in bpy.context.scene.collection.objects:
+                bpy.context.scene.collection.objects.unlink(rafter)
 
     # 4. Glass Panes (simplified planes)
     # Walls
@@ -138,7 +145,8 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
         pane.scale = (size[2]/2, size[1]/2, 1)
         pane.data.materials.append(glass_mat)
         gh_col.objects.link(pane)
-        bpy.context.collection.objects.unlink(pane)
+        if pane.name in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.unlink(pane)
 
         # Y-walls
         bpy.ops.mesh.primitive_plane_add(location=main_loc + mathutils.Vector((0, side * size[1]/2, size[2]/2)), rotation=(math.pi/2, 0, 0))
@@ -146,7 +154,8 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
         pane.scale = (size[0]/2, size[2]/2, 1)
         pane.data.materials.append(glass_mat)
         gh_col.objects.link(pane)
-        bpy.context.collection.objects.unlink(pane)
+        if pane.name in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.unlink(pane)
 
     return gh_col
 

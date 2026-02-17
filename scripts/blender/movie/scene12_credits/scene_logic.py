@@ -1,11 +1,20 @@
 import bpy
 import math
 
+from constants import SCENE_MAP
+
 def setup_scene(master):
-    """Scrolling Credits Scene."""
-    # Frame range: 14501 - 15000
-    start_frame = 14501
-    end_frame = 15000
+    """
+    Scrolling Credits Scene.
+    Shot ID: S12
+    Intent: Conclude the film with scrolling cast and crew info.
+    """
+    # Point 45: Guard object creation to prevent duplicates
+    if "CreditsText" in bpy.data.objects:
+        return
+
+    # Point 31: Use SCENE_MAP
+    start_frame, end_frame = SCENE_MAP['credits']
 
     credits_text = (
         "GreenhouseMD Silent Movie\n\n"

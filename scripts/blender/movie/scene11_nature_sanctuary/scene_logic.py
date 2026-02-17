@@ -42,7 +42,8 @@ def setup_scene(master):
     style.animate_dust_particles(mathutils.Vector((0, 0, 5)), color=(1, 0.8, 0.9, 1), density=20, frame_start=3901, frame_end=4100)
 
     # Atmospheric Fauna (Glow-bugs)
-    style.animate_dust_particles(mathutils.Vector((0, 0, 1)), color=(0.5, 1, 0.2, 1), density=15, frame_start=3901, frame_end=4100)
+    # Point 49: Distinct firefly behavior
+    style.animate_fireflies(mathutils.Vector((0, 0, 1)), density=15, frame_start=3901, frame_end=4100)
 
     # Peaceful characters
     for char in [master.h1, master.h2]:

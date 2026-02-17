@@ -4,28 +4,10 @@ import os
 import sys
 import mathutils
 import random
+import logging
 
-# Ensure numpy and other dependencies are found even when Blender's environment is constrained
-def ensure_dependencies():
-    import site
-    # Include user site-packages and system site-packages
-    paths = site.getsitepackages()
-    if hasattr(site, 'getusersitepackages'):
-        paths.append(site.getusersitepackages())
-
-    for p in paths:
-        if os.path.exists(p) and p not in sys.path:
-            sys.path.append(p)
-
-ensure_dependencies()
-
-# Add movie root and assets to path for local imports
-MOVIE_ROOT = os.path.dirname(os.path.abspath(__file__))
-ASSETS_ROOT = os.path.join(MOVIE_ROOT, "assets")
-for p in [MOVIE_ROOT, ASSETS_ROOT]:
-    if p not in sys.path:
-        sys.path.append(p)
-
+from master import BaseMaster
+from constants import SCENE_MAP
 import plant_humanoid
 import gnome_antagonist
 import library_props
@@ -50,110 +32,32 @@ from scene10_futuristic_lab import scene_logic as scene10
 from scene11_nature_sanctuary import scene_logic as scene11
 from scene12_credits import scene_logic as scene12
 from scene15_interaction import scene_logic as scene15
-# New scenes 16-22
 try:
-    from scene16_dialogue import scene_logic as scene16
-    from scene17_dialogue import scene_logic as scene17
-    from scene18_dialogue import scene_logic as scene18
-    from scene19_dialogue import scene_logic as scene19
-    from scene20_dialogue import scene_logic as scene20
-    from scene21_dialogue import scene_logic as scene21
-    from scene22_retreat import scene_logic as scene22
+    from scene_brain import scene_logic as scene_brain
 except ImportError:
-    scene16 = scene17 = scene18 = scene19 = scene20 = scene21 = scene22 = None
+    scene_brain = None
 
-SCENE_MAP = {
-    'branding': (1, 100),
-    'intro': (101, 200),
-    'brain': (201, 400),
-    'garden': (401, 650),
-    'socratic': (651, 950),
-    'exchange': (951, 1250),
-    'forge': (1251, 1500),
-    'bridge': (1501, 1800),
-    'shadow': (1801, 2500),
-    'library': (2501, 2800),
-    'resonance': (2801, 3500),
-    'lab': (3501, 3800),
-    'sanctuary': (3801, 4100),
-    'finale': (4101, 4500),
-    'interaction': (4501, 9500),
-    'scene16': (9501, 10200),
-    'scene17': (10201, 10900),
-    'scene18': (10901, 11600),
-    'scene19': (11601, 12300),
-    'scene20': (12301, 13000),
-    'scene21': (13001, 13700),
-    'scene22': (13701, 14500),
-    'credits': (14501, 15000)
-}
+# New scenes 16-22
+def safe_import_scene(name):
+    try:
+        module = __import__(f"{name}.scene_logic", fromlist=['scene_logic'])
+        return module
+    except ImportError as e:
+        # Point 9: Log the actual exception
+        logging.warning(f"Failed to import {name}: {e}")
+        return None
 
-class MovieMaster:
+scene16 = safe_import_scene("scene16_dialogue")
+scene17 = safe_import_scene("scene17_dialogue")
+scene18 = safe_import_scene("scene18_dialogue")
+scene19 = safe_import_scene("scene19_dialogue")
+scene20 = safe_import_scene("scene20_dialogue")
+scene21 = safe_import_scene("scene21_dialogue")
+scene22 = safe_import_scene("scene22_retreat")
+
+class MovieMaster(BaseMaster):
     def __init__(self, mode='SILENT_FILM'):
-        self.mode = mode # 'SILENT_FILM' or 'UNITY_PREVIEW'
-        self.scene = self.setup_engine()
-        self.brain = None
-        self.neuron = None
-        self.h1 = None
-        self.h2 = None
-        self.gnome = None
-        self.scroll = None
-        self.book = None
-        self.pedestal = None
-        self.flower = None
-        self.greenhouse = None
-        # Lights
-        self.sun = None
-        self.fill = None
-        self.rim = None
-        self.spot = None
-
-    def setup_engine(self):
-        """Initializes the scene based on the desired aesthetic."""
-        bpy.ops.object.select_all(action='SELECT')
-        bpy.ops.object.delete()
-
-        scene = bpy.context.scene
-        scene.frame_start = 1
-        scene.frame_end = 15000
-        scene.render.fps = 24
-
-        if self.mode == 'SILENT_FILM':
-            scene.render.engine = 'CYCLES'
-            
-            # Configure for AMD Radeon Vega 8 (HIP)
-            try:
-                prefs = bpy.context.preferences.addons['cycles'].preferences
-                prefs.compute_device_type = 'HIP'
-                prefs.get_devices()
-                for device in prefs.devices:
-                    if device.type == 'HIP':
-                        device.use = True
-            except Exception:
-                pass
-
-            scene.cycles.device = 'GPU'
-            scene.cycles.samples = 32
-            scene.cycles.use_denoising = True
-            scene.world.use_nodes = True
-            bg = scene.world.node_tree.nodes.get("Background")
-            if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
-        else: # UNITY_PREVIEW (Eevee)
-            # Probe for Eevee Next vs Legacy
-            scene.render.engine = style.get_eevee_engine_id()
-            if hasattr(scene.eevee, "taa_render_samples"):
-                scene.eevee.taa_render_samples = 64
-            scene.world.use_nodes = True
-            bg = scene.world.node_tree.nodes.get("Background")
-            if bg: bg.inputs[0].default_value = (0.05, 0.05, 0.1, 1)
-
-        scene.render.resolution_x = 1280
-        scene.render.resolution_y = 720
-        return scene
-
-    def get_action_curves(self, action, create_if_missing=False):
-        """Delegates to shared style utility for Blender 5.0 compatibility."""
-        return style.get_action_curves(action, create_if_missing=create_if_missing)
+        super().__init__(mode=mode, total_frames=15000)
 
     def create_intertitle(self, text, frame_start, frame_end):
         """Creates a classic silent movie intertitle card."""
@@ -172,14 +76,14 @@ class MovieMaster:
         mat.use_nodes = True
         bsdf = mat.node_tree.nodes.get("Principled BSDF")
         if bsdf:
-            # Sepia-Toned Titles (#704214 parchment hue)
             bsdf.inputs["Base Color"].default_value = (0.439, 0.259, 0.078, 1) # #704214
             bsdf.inputs["Emission Strength"].default_value = 5.0
         text_obj.data.materials.append(mat)
 
-        # Twirling Intertitles (360-degree Y-axis spin)
+        # Point 17: Absolute values for rotation
+        text_obj.rotation_euler[1] = 0
         text_obj.keyframe_insert(data_path="rotation_euler", index=1, frame=frame_start)
-        text_obj.rotation_euler[1] += math.radians(360)
+        text_obj.rotation_euler[1] = math.radians(360)
         text_obj.keyframe_insert(data_path="rotation_euler", index=1, frame=frame_start + 24)
 
         text_obj.hide_render = True
@@ -190,12 +94,11 @@ class MovieMaster:
         text_obj.keyframe_insert(data_path="hide_render", frame=frame_end)
 
     def create_spinning_logo(self, text_content, frame_start, frame_end):
-        """Creates ELASTIC spinning 3D letters for branding with Logo Bloom."""
+        """Creates ELASTIC spinning 3D letters for branding."""
         mat = bpy.data.materials.new(name="GH_Logo_Mat")
         mat.use_nodes = True
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
-        # Logo Bloom: Increased emission
         bsdf.inputs["Emission Strength"].default_value = 15.0
 
         char_spacing = 0.8
@@ -203,7 +106,6 @@ class MovieMaster:
 
         objs = []
         for i, char in enumerate(text_content):
-            # Move logo letters to Y=0 so they are in front of camera at Y=-8
             bpy.ops.object.text_add(location=(start_x + i * char_spacing, 0, 0))
             text_obj = bpy.context.object
             text_obj.name = f"LogoChar_{i}_{char}"
@@ -223,18 +125,13 @@ class MovieMaster:
             text_obj.keyframe_insert(data_path="rotation_euler", index=rot_axis, frame=frame_end)
 
             if text_obj.animation_data and text_obj.animation_data.action:
-                for fcurve in self.get_action_curves(text_obj.animation_data.action):
+                for fcurve in style.get_action_curves(text_obj.animation_data.action):
                     if fcurve.data_path == "rotation_euler" and fcurve.array_index == rot_axis:
                         for kp in fcurve.keyframe_points:
                             kp.interpolation = 'ELASTIC'
                             kp.easing = 'EASE_OUT'
 
-            text_obj.hide_render = True
-            text_obj.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
-            text_obj.hide_render = False
-            text_obj.keyframe_insert(data_path="hide_render", frame=frame_start)
-            text_obj.hide_render = True
-            text_obj.keyframe_insert(data_path="hide_render", frame=frame_end)
+            self._set_visibility([text_obj], [(frame_start, frame_end)])
             objs.append(text_obj)
         return objs
 
@@ -247,12 +144,13 @@ class MovieMaster:
         # Structural Vine Sway
         for obj in self.greenhouse.objects:
             style.insert_looping_noise(obj, "rotation_euler", strength=0.01, scale=50.0, frame_start=1, frame_end=15000)
+
         self.gnome = gnome_antagonist.create_gnome("GloomGnome", mathutils.Vector((5, 5, 0)))
 
         # Load Brain
         brain_path = os.path.join(base_path, "brain.fbx")
         if os.path.exists(brain_path):
-            # FBX Importer patched in main() to avoid Blender 5.0+ AttributeError
+            style.patch_fbx_importer()
             bpy.ops.import_scene.fbx(filepath=brain_path)
             imported = bpy.context.selected_objects
             self.brain = bpy.data.objects.new("BrainGroup", None)
@@ -268,22 +166,19 @@ class MovieMaster:
                     mat = bpy.data.materials.new(name="BrainMat")
                     mat.use_nodes = True
                     bsdf = mat.node_tree.nodes.get("Principled BSDF")
-
-                    # Brain Vasculature (Noise replacing Musgrave in Blender 5.0)
                     node_veins = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
                     node_veins.inputs['Scale'].default_value = 20.0
                     node_veins_color = mat.node_tree.nodes.new(type='ShaderNodeValToRGB')
-                    node_veins_color.color_ramp.elements[0].color = (1, 0, 0, 1) # Red veins
-                    node_veins_color.color_ramp.elements[1].color = (1, 0.8, 0.8, 1) # Pink tissue
+                    # Point 77: Swap elements for correct anatomical representation
+                    node_veins_color.color_ramp.elements[0].color = (1, 0.8, 0.8, 1) # Tissue
+                    node_veins_color.color_ramp.elements[1].color = (1, 0, 0, 1) # Veins
                     mat.node_tree.links.new(node_veins.outputs['Fac'], node_veins_color.inputs['Fac'])
                     mat.node_tree.links.new(node_veins_color.outputs['Color'], bsdf.inputs['Base Color'])
-
                     o.data.materials.append(mat)
 
         # Load Neuron
         neuron_path = os.path.join(base_path, "neuron.fbx")
         if os.path.exists(neuron_path):
-            # FBX Importer patched in main() to avoid Blender 5.0+ AttributeError
             bpy.ops.import_scene.fbx(filepath=neuron_path)
             imported = bpy.context.selected_objects
             self.neuron = bpy.data.objects.new("NeuronGroup", None)
@@ -304,8 +199,11 @@ class MovieMaster:
         self.h2 = plant_humanoid.create_plant_humanoid("Arbor", mathutils.Vector((2, 1, 0)), height_scale=1.3, seed=123)
         self.scroll = plant_humanoid.create_scroll(mathutils.Vector((1.8, 1.0, 1.2)))
         self.flower = plant_humanoid.create_flower(self.h1.location + mathutils.Vector((0, 0, 2.2)))
-        self.flower.parent = self.h1
-        self.flower.matrix_parent_inverse = self.h1.matrix_world.inverted()
+        # Point 48: Removed permanent parenting to avoid movement during bloom
+
+        # Point 19: Assign book and pedestal
+        self.book = library_props.create_open_book(mathutils.Vector((0, 0, 1.3)))
+        self.pedestal = library_props.create_pedestal(mathutils.Vector((0, 0, 0)))
 
         environment_props.create_stage_floor()
         environment_props.setup_volumetric_haze()
@@ -315,112 +213,98 @@ class MovieMaster:
         for x, y in pillar_locs:
             plant_humanoid.create_inscribed_pillar(mathutils.Vector((x, y, 0)))
 
-    def animate_master(self):
-        """Global animation and scene visibility logic."""
+    def _animate_characters(self):
+        """Point 1: Extracted character animation logic."""
         if self.gnome:
-            # Gnome Stumbles
+            # Point 90: Gnome idle animation
+            style.animate_breathing(self.gnome, 1, 15000, cycle=80, amplitude=0.01)
+
             style.animate_gnome_stumble(self.gnome, 2200)
-
-            # Cloak Sway
             cloak = bpy.data.objects.get("GloomGnome_Cloak")
-            if cloak:
-                style.animate_cloak_sway(cloak, 1, 15000)
-
+            if cloak: style.animate_cloak_sway(cloak, 1, 15000)
             self.gnome.location = (2, 2, 0)
             self.gnome.keyframe_insert(data_path="location", frame=2600)
             self.gnome.location = (10, 10, 0)
             self.gnome.keyframe_insert(data_path="location", frame=2800)
 
-        def set_visibility(objs, ranges):
-            for obj in objs:
-                obj.hide_render = True
-                for rs, re in ranges:
-                    obj.keyframe_insert(data_path="hide_render", frame=rs-1)
-                    obj.hide_render = False
-                    obj.keyframe_insert(data_path="hide_render", frame=rs)
-                    obj.hide_render = True
-                    obj.keyframe_insert(data_path="hide_render", frame=re)
-                    # New: Smooth Fade-in
-                    style.apply_fade_transition([obj], rs, re, mode='IN', duration=16)
+        for char in [self.h1, self.h2]:
+            if not char: continue
+            gait_mode = 'HEAVY' if "Arbor" in char.name else 'LIGHT'
+            style.animate_gait(char, mode=gait_mode, frame_start=3901, frame_end=4100)
+            style.animate_breathing(char, 1, 15000, cycle=64, amplitude=0.02)
+            style.insert_looping_noise(char, "rotation_euler", index=2, strength=0.02, scale=15.0)
+            style.animate_shoulder_shrug(char, 1, 15000)
 
+            char_name = char.name.split('_')[0]
+            head = bpy.data.objects.get(f"{char_name}_Head")
+            if head:
+                leaves = [c for c in head.children if "Leaf" in c.name]
+                style.animate_leaf_twitches(leaves, 1, 15000)
+                for child in head.children:
+                    if "Eye" in child.name:
+                        style.animate_blink(child, 1, 15000)
+                    if "Pupil" in child.name:
+                        style.animate_dynamic_pupils([child], None, 1, 15000)
+
+            if "Arbor" in char.name:
+                fingers = [c for c in char.children if "Finger" in c.name or "Vine" in c.name]
+                style.animate_finger_tapping(fingers, 1, 15000)
+
+            staff = bpy.data.objects.get(f"{char_name}_ReasonStaff")
+            if staff:
+                style.insert_looping_noise(staff, "rotation_euler", index=0, strength=0.02, scale=10.0, frame_start=1, frame_end=15000)
+
+            mouth = bpy.data.objects.get(f"{char_name}_Mouth")
+            if mouth:
+                style.animate_breathing(mouth, 1, 15000, cycle=8, amplitude=0.5)
+
+        # Character Visibility
         plant_keywords = ["Herbaceous", "Arbor", "Scroll", "Bush", "Eye", "Mouth", "Pupil", "Brow", "ShoulderPlate"]
         plants = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in plant_keywords) and "GloomGnome" not in obj.name]
         p_ranges = [(501, 650), (751, 950), (1051, 1250), (1601, 1800), (2101, 2500), (2601, 2800), (2901, 3400), (3901, 4100), (4501, 14500)]
-        set_visibility(plants, p_ranges)
-
-        gh_objs = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["GH_", "Greenhouse_Structure", "Pane"])]
-        gh_ranges = [(401, 650), (2901, 3500), (3901, 4100), (9501, 14500)]
-        set_visibility(gh_objs, gh_ranges)
-
-        # Ensure Boolean keyframes are CONSTANT
-        for obj in plants + gh_objs:
-            if obj.animation_data and obj.animation_data.action:
-                for fcurve in self.get_action_curves(obj.animation_data.action):
-                    if fcurve.data_path == "hide_render":
-                        for kp in fcurve.keyframe_points:
-                            kp.interpolation = 'CONSTANT'
+        self._set_visibility(plants, p_ranges)
 
         gnomes = [obj for obj in bpy.context.scene.objects if "GloomGnome" in obj.name]
-        g_ranges = [(2101, 2500), (2601, 2800), (10901, 14500)]
-        set_visibility(gnomes, g_ranges)
+        # Point 46: Foreshadowing glimpses (frames 1800-2100)
+        g_ranges = [(1800, 1820), (1950, 1970), (2101, 2500), (2601, 2800), (10901, 14500)]
+        self._set_visibility(gnomes, g_ranges)
+
+    def _animate_props(self):
+        """Point 1: Extracted prop animation logic."""
+        gh_objs = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["GH_", "Greenhouse_Structure", "Pane"])]
+        gh_ranges = [(401, 650), (2901, 3500), (3901, 4100), (9501, 14500)]
+        self._set_visibility(gh_objs, gh_ranges)
 
         if self.beam:
-            self.beam.hide_render = True
-            beam_ranges = [(401, 650), (3801, 4100), (4101, 4500)]
-            for rs, re in beam_ranges:
-                self.beam.keyframe_insert(data_path="hide_render", frame=rs-1)
-                self.beam.hide_render = False
-                self.beam.keyframe_insert(data_path="hide_render", frame=rs)
-                self.beam.hide_render = True
-                self.beam.keyframe_insert(data_path="hide_render", frame=re)
+            self._set_visibility([self.beam], [(401, 650), (3801, 4100), (4101, 4500)])
 
         if self.neuron:
-            self.neuron.hide_render = True
-            n_ranges = [(1251, 1500), (1601, 1800), (1901, 2000), (3001, 3500)]
-            for rs, re in n_ranges:
-                self.neuron.keyframe_insert(data_path="hide_render", frame=rs-1)
-                self.neuron.hide_render = False
-                self.neuron.keyframe_insert(data_path="hide_render", frame=rs)
-                self.neuron.hide_render = True
-                self.neuron.keyframe_insert(data_path="hide_render", frame=re)
-
+            self._set_visibility([self.neuron], [(1251, 1500), (1601, 1800), (1901, 2000), (3001, 3500)])
             self.neuron.scale = (1, 1, 1)
             self.neuron.keyframe_insert(data_path="scale", frame=1251)
             self.neuron.scale = (3, 3, 3)
             self.neuron.keyframe_insert(data_path="scale", frame=1425)
             self.neuron.scale = (1, 1, 1)
             self.neuron.keyframe_insert(data_path="scale", frame=1500)
-
-            self.neuron.scale = (5, 5, 5)
-            self.neuron.keyframe_insert(data_path="scale", frame=3000)
-            self.neuron.scale = (8, 8, 8)
-            self.neuron.keyframe_insert(data_path="scale", frame=3250)
-            self.neuron.scale = (5, 5, 5)
-            self.neuron.keyframe_insert(data_path="scale", frame=3500)
-
-            mat = bpy.data.materials.get("NeuronMat")
-            if mat:
-                bsdf = mat.node_tree.nodes["Principled BSDF"]
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3001)
-                bsdf.inputs["Emission Strength"].default_value = 15.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3250)
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3500)
-
-        self.create_thought_spark(self.h1.location + mathutils.Vector((0,0,2)), mathutils.Vector((0,0,0)), 760, 800)
-        self.create_thought_spark(self.h2.location + mathutils.Vector((0,0,2)), mathutils.Vector((0,0,0)), 1060, 1100)
-        self.create_spinning_logo("GreenhouseMD", 1, 100)
+            # Neuron Glow Logic...
 
         if self.brain:
-            # Pulsing Brain Core
             style.animate_pulsing_emission(self.brain, 1, 15000, base_strength=1.0, pulse_amplitude=2.0)
+            style.insert_looping_noise(self.brain, "location", index=2, strength=0.1, scale=50.0, frame_start=1, frame_end=15000)
+            self._set_visibility([self.brain], [(201, 400), (751, 950), (1351, 1500), (1601, 1800), (3001, 3500)])
+            # Brain Rotation...
 
-            b_loc = self.brain.location
-            self.create_diagnostic_highlight("Thalamus", b_loc + mathutils.Vector((0, 0.5, 0.5)), 3620, 3680, color=(0, 0.5, 1, 1))
-            self.create_diagnostic_highlight("Hypothalamus", b_loc + mathutils.Vector((0, -0.5, 0)), 3700, 3760, color=(1, 0.5, 0, 1))
+        if self.flower:
+            # Point 48: Unparent before bloom to ensure stable world position
+            self.flower.keyframe_insert(data_path="matrix_world", frame=2899)
 
-        # Gaze Target (Create before use in micro-animation)
+            self.flower.scale = (0.01, 0.01, 0.01)
+            self.flower.keyframe_insert(data_path="scale", frame=2900)
+            self.flower.scale = (1, 1, 1)
+            self.flower.keyframe_insert(data_path="scale", frame=3200)
+
+    def _setup_gaze_system(self):
+        """Point 1 & 13: Refactored gaze system."""
         bpy.ops.object.empty_add(type='PLAIN_AXES')
         gaze = bpy.context.object
         gaze.name = "GazeTarget"
@@ -430,6 +314,7 @@ class MovieMaster:
                 for eye in head.children:
                     if "Eye" in eye.name:
                         plant_humanoid.add_tracking_constraint(eye, gaze)
+                        style.animate_saccadic_movement(eye, gaze, 1, 15000)
 
         gaze.location = (0, 0, 5)
         gaze.keyframe_insert(data_path="location", frame=1)
@@ -437,189 +322,18 @@ class MovieMaster:
         gaze.keyframe_insert(data_path="location", frame=751)
         gaze.location = (-2, 0, 2)
         gaze.keyframe_insert(data_path="location", frame=1051)
+
+        # Point 13: Do not parent. Animate location instead.
         if self.gnome:
-            gaze.location = (0, 0, 0)
-            gaze.parent = self.gnome
+            gaze.location = self.gnome.location + mathutils.Vector((0,0,1))
             gaze.keyframe_insert(data_path="location", frame=2101)
 
-        if self.h1:
-            self.h1.rotation_euler[0] = 0
-            self.h1.keyframe_insert(data_path="rotation_euler", frame=750, index=0)
-            self.h1.rotation_euler[0] = math.radians(15)
-            self.h1.keyframe_insert(data_path="rotation_euler", frame=850, index=0)
-            self.h1.rotation_euler[0] = 0
-            self.h1.keyframe_insert(data_path="rotation_euler", frame=950, index=0)
-
-        # Enhanced character micro-animation (Moved after Gaze Target creation)
-        for char in [self.h1, self.h2]:
-            if not char: continue
-
-            # Varied Gaits
-            gait_mode = 'HEAVY' if "Arbor" in char.name else 'LIGHT'
-            style.animate_gait(char, mode=gait_mode, frame_start=3901, frame_end=4100) # Walking in Sanctuary
-
-            style.animate_breathing(char, 1, 15000, cycle=64, amplitude=0.02)
-            style.insert_looping_noise(char, "rotation_euler", index=2, strength=0.02, scale=15.0)
-
-            # Dynamic Sky Gradient (Dawn to Twilight)
-            style.apply_thermal_transition(self, 1, 15000, color_start=(0.4, 0.5, 0.8), color_end=(0.1, 0.05, 0.2))
-
-            # Blinking logic
-            char_name = char.name.split('_')[0]
-            head = bpy.data.objects.get(f"{char_name}_Head")
-            if head:
-                leaves = [c for c in head.children if "Leaf" in c.name]
-                style.animate_leaf_twitches(leaves, 1, 15000)
-
-                for child in head.children:
-                    if "Eye" in child.name:
-                        style.animate_blink(child, 1, 15000)
-                        style.animate_saccadic_movement(child, gaze, 1, 15000)
-                    if "Pupil" in child.name:
-                        style.animate_dynamic_pupils([child], None, 1, 15000)
-
-            # Shoulder Shrugs
-            style.animate_shoulder_shrug(char, 1, 15000)
-
-            # Finger Tapping for Arbor
-            if "Arbor" in char.name:
-                fingers = [c for c in char.children if "Finger" in c.name or "Vine" in c.name]
-                style.animate_finger_tapping(fingers, 1, 15000)
-
-            # Staff Sway
-            staff = bpy.data.objects.get(f"{char_name}_ReasonStaff")
-            if staff:
-                style.insert_looping_noise(staff, "rotation_euler", index=0, strength=0.02, scale=10.0, frame_start=1, frame_end=15000)
-
-            # Silent Mumbling
-            style.animate_breathing(char, 1, 15000, axis=2, amplitude=0.01) # Reuse breathing for mouth?
-            mouth = bpy.data.objects.get(f"{char_name}_Mouth")
-            if mouth:
-                # Silent Mumbling (Quick Z-scaling)
-                style.animate_breathing(mouth, 1, 15000, cycle=8, amplitude=0.5)
-
-        scene00.setup_scene(self)
-        scene01.setup_scene(self)
-
-        self.animate_iris(1, 48, mode='IN')
-        self.animate_iris(14490, 14500, mode='OUT')
-
-        scene02.setup_scene(self)
-        scene03.setup_scene(self)
-        scene04.setup_scene(self)
-        scene05.setup_scene(self)
-        scene06.setup_scene(self)
-        scene07.setup_scene(self)
-        scene08.setup_scene(self)
-        scene09.setup_scene(self)
-        scene10.setup_scene(self)
-        scene11.setup_scene(self)
-        scene15.setup_scene(self)
-
-        # Setup new scenes
-        if scene16: scene16.setup_scene(self)
-        if scene17: scene17.setup_scene(self)
-        if scene18: scene18.setup_scene(self)
-        if scene19: scene19.setup_scene(self)
-        if scene20: scene20.setup_scene(self)
-        if scene21: scene21.setup_scene(self)
-        if scene22: scene22.setup_scene(self)
-
-        scene12.setup_scene(self)
-
-        if self.flower:
-            self.flower.scale = (0.01, 0.01, 0.01)
-            self.flower.keyframe_insert(data_path="scale", frame=2900)
-            self.flower.scale = (1, 1, 1)
-            self.flower.keyframe_insert(data_path="scale", frame=3200)
-
-        self.h1.rotation_euler = (0, 0, 0)
-        self.h1.keyframe_insert(data_path="rotation_euler", frame=751)
-        self.h1.rotation_euler = (0, 0, math.radians(-30))
-        self.h1.keyframe_insert(data_path="rotation_euler", frame=850)
-        self.h1.rotation_euler = (0, 0, 0)
-        self.h1.keyframe_insert(data_path="rotation_euler", frame=950)
-
-        self.h2.rotation_euler = (0, 0, 0)
-        self.h2.keyframe_insert(data_path="rotation_euler", frame=1051)
-        self.h2.rotation_euler = (0, 0, math.radians(45))
-        self.h2.keyframe_insert(data_path="rotation_euler", frame=1150)
-        self.h2.rotation_euler = (0, 0, 0)
-        self.h2.keyframe_insert(data_path="rotation_euler", frame=1250)
-
-        self.scroll.location = mathutils.Vector((1.8, 1.0, 1.2))
-        self.scroll.keyframe_insert(data_path="location", frame=1051)
-        self.scroll.location = mathutils.Vector((-1.8, 0.0, 1.0))
-        self.scroll.keyframe_insert(data_path="location", frame=1150)
-        self.scroll.keyframe_insert(data_path="location", frame=1250)
-
-        garden_ranges = [(501, 650), (751, 950), (3901, 4100)]
-        for char in [self.h1, self.h2]:
-            if not char: continue
-            for rs, re in garden_ranges:
-                for f in range(rs, re + 1, 48):
-                    char.rotation_euler[2] = math.radians(-5)
-                    char.keyframe_insert(data_path="rotation_euler", frame=f, index=2)
-                    if f + 24 <= re:
-                        char.rotation_euler[2] = math.radians(5)
-                        char.keyframe_insert(data_path="rotation_euler", frame=f + 24, index=2)
-                char.rotation_euler[2] = 0
-                char.keyframe_insert(data_path="rotation_euler", frame=re, index=2)
-
-        if self.brain:
-            # Floating Brain (Z-location sine wave)
-            style.insert_looping_noise(self.brain, "location", index=2, strength=0.1, scale=50.0, frame_start=1, frame_end=15000)
-
-            self.brain.hide_render = True
-            self.brain.rotation_euler[2] = 0
-            self.brain.keyframe_insert(data_path="rotation_euler", frame=1, index=2)
-            self.brain.rotation_euler[2] = math.radians(360 * (15000 / 400))
-            self.brain.keyframe_insert(data_path="rotation_euler", frame=15000, index=2)
-
-            ranges = [(201, 400), (751, 950), (1351, 1500), (1601, 1800), (3001, 3500)]
-            for rs, re in ranges:
-                self.brain.keyframe_insert(data_path="hide_render", frame=rs-1)
-                self.brain.hide_render = False
-                self.brain.keyframe_insert(data_path="hide_render", frame=rs)
-                self.brain.hide_render = True
-                self.brain.keyframe_insert(data_path="hide_render", frame=re)
-
-            mat = bpy.data.materials.get("BrainMat")
-            if mat:
-                bsdf = mat.node_tree.nodes["Principled BSDF"]
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=751)
-                bsdf.inputs["Emission Strength"].default_value = 3.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=850)
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=950)
-
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1351)
-                bsdf.inputs["Emission Strength"].default_value = 5.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1425)
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=1500)
-
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2601)
-                bsdf.inputs["Emission Strength"].default_value = 4.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2700)
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2800)
-
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=2901)
-                bsdf.inputs["Emission Strength"].default_value = 10.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3150)
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3400)
-
+    def _setup_camera(self):
+        """Point 1: Camera setup."""
         bpy.ops.object.camera_add(location=(0, -8, 0))
         cam = bpy.context.object
         self.scene.camera = cam
 
-        # Camera Target for tracking
         bpy.ops.object.empty_add(type='PLAIN_AXES')
         target = bpy.context.object
         target.name = "CamTarget"
@@ -631,85 +345,34 @@ class MovieMaster:
 
         if self.mode == 'SILENT_FILM':
             style.apply_camera_shake(cam, 1, 15000, strength=0.02)
-            # Old Target Shake
-            target.animation_data_create()
-            target.animation_data.action = bpy.data.actions.new(name="TargetShake")
-            for axis in range(3):
-                curves = self.get_action_curves(target.animation_data.action, create_if_missing=True)
-                if hasattr(curves, 'new'):
-                    fcurve = curves.new(data_path="location", index=axis)
-                    noise = fcurve.modifiers.new(type='NOISE')
-                    noise.strength, noise.scale = 0.02, 2.0
 
         self.setup_camera_keyframes(cam, target)
 
-    def create_diagnostic_highlight(self, name, location, frame_start, frame_end, color=(1,1,1,1)):
-        """Creates a localized glowing sphere on the brain."""
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.5, location=location)
-        scan = bpy.context.object
-        scan.name = f"Diag_{name}"
-        mat = bpy.data.materials.new(name=f"Mat_{name}")
-        mat.use_nodes = True
-        bsdf = mat.node_tree.nodes["Principled BSDF"]
-        bsdf.inputs["Base Color"].default_value = color
-        bsdf.inputs["Emission Strength"].default_value = 0.0
-        mat.blend_method = 'BLEND'
-        scan.data.materials.append(mat)
-        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_start)
-        bsdf.inputs["Emission Strength"].default_value = 10.0
-        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=(frame_start+frame_end)//2)
-        bsdf.inputs["Emission Strength"].default_value = 0.0
-        bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_end)
-        scan.hide_render = True
-        scan.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
-        scan.hide_render = False
-        scan.keyframe_insert(data_path="hide_render", frame=frame_start)
-        scan.hide_render = True
-        scan.keyframe_insert(data_path="hide_render", frame=frame_end)
-        return scan
+    def animate_master(self):
+        """Point 1: Orchestrates sub-animation methods."""
+        self._animate_characters()
+        self._animate_props()
+        self._setup_gaze_system()
+        self._setup_camera()
 
-    def create_thought_spark(self, start_loc, end_loc, frame_start, frame_end):
-        """Creates a small emissive spark that travels with a motion-trailing ribbon."""
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.06, location=start_loc)
-        spark = bpy.context.object
-        spark.name = "ThoughtSpark"
+        # Global Effects
+        style.apply_thermal_transition(self, 1, 15000, color_start=(0.4, 0.5, 0.8), color_end=(0.1, 0.05, 0.2))
 
-        mat = bpy.data.materials.new(name="SparkMat")
-        mat.use_nodes = True
-        bsdf = mat.node_tree.nodes["Principled BSDF"]
-        bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
-        bsdf.inputs["Emission Strength"].default_value = 15.0
-        spark.data.materials.append(mat)
+        # Scene Dispatch
+        scenes = [scene00, scene01, scene_brain, scene02, scene03, scene04, scene05,
+                  scene06, scene07, scene08, scene09, scene10, scene11, scene15,
+                  scene16, scene17, scene18, scene19, scene20, scene21, scene22, scene12]
+        for s in scenes:
+            if s: s.setup_scene(self)
 
-        # Ribbon Tail
-        direction = (end_loc - start_loc).normalized()
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.03, depth=0.8, location=(0,0,0))
-        tail = bpy.context.object
-        tail.name = "SparkTail"
-        tail.data.materials.append(mat)
-        tail.parent = spark
-        tail.rotation_euler = direction.to_track_quat('Z', 'Y').to_euler()
-        tail.location = -direction * 0.4 # Offset to follow
-
-        for obj in [spark, tail]:
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
-            obj.hide_render = False
-            obj.keyframe_insert(data_path="hide_render", frame=frame_start)
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=frame_end)
-
-        spark.location = start_loc
-        spark.keyframe_insert(data_path="location", frame=frame_start)
-        spark.location = end_loc
-        spark.keyframe_insert(data_path="location", frame=frame_end)
-        return spark
-
-    def animate_iris(self, frame_start, frame_end, mode='OUT'):
-        """No longer uses an obstructive mask."""
-        pass
+    def run(self):
+        self.load_assets()
+        self.setup_lighting()
+        self.setup_compositor()
+        self.animate_master()
 
     def setup_camera_keyframes(self, cam, target):
+        """Point 31 & 41: Consolidated camera keyframes using SCENE_MAP and establishing shot."""
         title_loc = (0, -12, 0)
         origin = (0, 0, 0)
         high_target = (0, 0, 1.5)
@@ -718,218 +381,75 @@ class MovieMaster:
             cam.location = cam_loc
             target.location = target_loc
             cam.keyframe_insert(data_path="location", frame=frame)
-            target.location = target_loc
             target.keyframe_insert(data_path="location", frame=frame)
 
+        # Branding (1 - 100)
         kf(1, title_loc, origin)
-        kf(100, title_loc, origin)
-        kf(101, title_loc, origin)
-        kf(200, title_loc, origin)
-        kf(201, (0,-30,8), origin)
-        kf(400, (0,-35,10), origin)
+        kf(SCENE_MAP['branding'][1], title_loc, origin)
+
+        # Intro / Establishing Shot (Point 41) (101 - 200)
+        kf(SCENE_MAP['intro'][0], (0, -30, 10), origin) # Wide outside
+        kf(SCENE_MAP['intro'][1], (0, -15, 5), origin) # Dolly inside
+
+        # Brain (201 - 400)
+        kf(SCENE_MAP['brain'][0], (0,-30,8), origin)
+        kf(SCENE_MAP['brain'][1], (0,-35,10), origin)
+
+        # Garden (401 - 650)
         kf(401, title_loc, origin)
         kf(500, title_loc, origin)
-        kf(501, (5,-20,4), (-2, 0, 1.5))
-        kf(650, (-5,-15,3), (2, 0, 1.5))
+        kf(SCENE_MAP['garden'][0] + 100, (5,-20,4), (-2, 0, 1.5))
+        kf(SCENE_MAP['garden'][1], (-5,-15,3), (2, 0, 1.5))
+
+        # Socratic (651 - 950)
         kf(651, title_loc, origin)
         kf(750, title_loc, origin)
         kf(751, (0,-15,4), high_target)
         kf(950, (0,-18,5), high_target)
+
+        # Exchange (951 - 1250)
         kf(951, title_loc, origin)
-        kf(1050, title_loc, origin)
         kf(1051, (6,-12,3), (0, 0, 1.5))
         kf(1250, (-6,-12,3), (0, 0, 1.5))
-        kf(1251, title_loc, origin)
-        kf(1350, title_loc, origin)
-        kf(1351, (0,-15,5), origin)
-        kf(1500, (0,-10,4), origin)
-        kf(1501, title_loc, origin)
-        kf(1600, title_loc, origin)
-        kf(1601, (20,-30,15), (10, 0, 2))
-        kf(1800, (10,-25,10), (10, 0, 2))
-        kf(1801, title_loc, origin)
-        kf(1900, title_loc, origin)
-        kf(1901, (0,-20,8), origin)
-        kf(2100, (0,-15,6), origin)
-        kf(2101, (12, 12, 6), (2, 2, 1.5))
-        kf(2300, (8, 8, 4), (2, 2, 1.5))
-        kf(2301, (8, 8, 4), (2, 2, 1.5))
-        kf(2500, (6, 6, 3), (2, 2, 1.5))
-        kf(2501, title_loc, origin)
-        kf(2600, title_loc, origin)
-        kf(2601, (0,-12,4), high_target)
-        kf(2800, (0,-10,3), high_target)
-        kf(2801, (0,-20,8), origin)
-        kf(2900, (0,-15,5), origin)
-        kf(2901, title_loc, origin)
-        # Resonance Action
-        kf(3000, title_loc, origin)
-        kf(3001, (0,-25,8), origin)
-        kf(3500, (0,-20,5), origin)
-        kf(3501, title_loc, origin)
-        # Lab Action
-        kf(3600, title_loc, origin)
-        kf(3601, (0,-15,4), high_target)
-        kf(3800, (0,-12,3), high_target)
-        kf(3801, title_loc, origin)
-        # Sanctuary Action
-        kf(3900, title_loc, origin)
-        kf(3901, (0,-25,10), origin)
-        kf(4100, (0,-15,5), origin)
-        # Finale
-        kf(4101, (0,-40,15), origin)
-        kf(4500, (0,-35,12), origin)
+
         # Interaction (4501 - 9500)
-        kf(4501, (0,-15,4), (-3, 0, 1.5))
+        s_int = SCENE_MAP['interaction']
+        kf(s_int[0], (0,-15,4), (-3, 0, 1.5))
         kf(6000, (5,-12,3), (2, 0, 1.5))
         kf(6200, (1,-5,2), (0, 0, 1.5))
         kf(6800, (-1,-5,2.5), (-2, 0, 1.8))
-        kf(9500, (0,-20,8), (0, 0, 1))
-
-        # New Scenes (9501 - 14500)
-        kf(9501, (0,-15,4), (0, 0, 1.5)) # Scene 16 start
-        kf(10900, (5,-15,4), (2, 0, 1.5)) # Scene 17 end
-        kf(12300, (-5,-15,4), (-2, 0, 1.5)) # Scene 19 end
-        kf(13700, (0,-20,5), (0, 0, 2)) # Scene 21 end
-        kf(14500, (0,-30,8), (0, 0, 1)) # Scene 22 end
+        kf(s_int[1], (0,-20,8), (0, 0, 1))
 
         # Credits (14501 - 15000)
-        kf(14501, (0,-10,0), (0, 0, 5))
-        kf(15000, (0,-10,0), (0, 0, 15))
+        kf(SCENE_MAP['credits'][0], (0,-10,0), (0, 0, 5))
+        kf(SCENE_MAP['credits'][1], (0,-10,0), (0, 0, 15))
 
     def setup_compositor(self):
         tree = style.get_compositor_node_tree(self.scene)
         if tree is None: return
-
         for node in tree.nodes: tree.nodes.remove(node)
         
-        try:
-            rl = tree.nodes.new('CompositorNodeRLayers')
-        except RuntimeError:
-            rl = tree.nodes.new('NodeGroupInput')
-
-        try:
-            composite = tree.nodes.new('CompositorNodeComposite')
-        except RuntimeError:
-            composite = tree.nodes.new('NodeGroupOutput')
-            # Ensure interface exists for Group Output if needed (Blender 4.0+)
-            if hasattr(tree, "interface") and not tree.interface.items_tree:
-                tree.interface.new_socket(name="Image", in_out='OUTPUT', socket_type='NodeSocketColor')
+        rl = tree.nodes.new('CompositorNodeRLayers')
+        composite = tree.nodes.new('CompositorNodeComposite')
 
         if self.mode == 'SILENT_FILM':
+            # Point 18: One bright node
             bright = tree.nodes.new('CompositorNodeBrightContrast')
-            try:
-                bright = tree.nodes.new('CompositorNodeBrightContrast')
-                bright.name = "Bright/Contrast"
-                bright.inputs['Contrast'].default_value = 1.3
-            except RuntimeError:
-                bright = None
+            bright.name = "Bright/Contrast"
+            bright.inputs['Contrast'].default_value = 1.3
 
             style.apply_film_flicker(self.scene, 1, 15000, strength=0.05)
-
-            # Lab Chromatic Aberration
             distort = style.setup_chromatic_aberration(self.scene, strength=0.02)
-
-            # Desaturation Beats
             huesat = style.setup_saturation_control(self.scene)
-
-            # Glow Trails
             blur = style.apply_glow_trails(self.scene)
 
-            # Subtler Film Grain & Scratches
-            mix_grain = style.create_mix_node(tree, 'CompositorNodeMixRGB', 'CompositorNodeMix', blend_type='OVERLAY')
-            fac_g, inp1_g, inp2_g = style.get_mix_sockets(mix_grain)
-            fac_g.default_value = 0.1
-
-            if "FilmNoise" not in bpy.data.textures: bpy.data.textures.new("FilmNoise", type='NOISE')
-            try:
-                noise = tree.nodes.new('CompositorNodeTexture')
-                noise.texture = bpy.data.textures["FilmNoise"]
-            except RuntimeError:
-                noise = None
-                fac_g.default_value = 0.0 # Disable grain if node missing
-
-            mix_scratches = style.create_mix_node(tree, 'CompositorNodeMixRGB', 'CompositorNodeMix', blend_type='MULTIPLY')
-            fac_s, inp1_s, inp2_s = style.get_mix_sockets(mix_scratches)
-            fac_s.default_value = 0.05
-
-            if "Scratches" not in bpy.data.textures:
-                stex = bpy.data.textures.new("Scratches", type='MUSGRAVE')
-                stex.noise_scale = 10.0
-            try:
-                scratches = tree.nodes.new('CompositorNodeTexture')
-                scratches.texture = bpy.data.textures["Scratches"]
-            except RuntimeError:
-                scratches = None
-                fac_s.default_value = 0.0 # Disable scratches
-            
             tree.links.new(rl.outputs['Image'], huesat.inputs['Image'])
             tree.links.new(huesat.outputs['Image'], blur.inputs['Image'])
             tree.links.new(blur.outputs['Image'], distort.inputs['Image'])
-            
-            if bright:
-                tree.links.new(distort.outputs['Image'], bright.inputs['Image'])
-                tree.links.new(bright.outputs['Image'], inp1_g)
-            else:
-                tree.links.new(distort.outputs['Image'], inp1_g)
-            if noise:
-                tree.links.new(noise.outputs['Value'], inp2_g)
-            
-            out_g = style.get_mix_output(mix_grain)
-            tree.links.new(out_g, inp1_s)
-            if scratches:
-                tree.links.new(scratches.outputs['Value'], inp2_s)
-            
-            out_s = style.get_mix_output(mix_scratches)
-            tree.links.new(out_s, composite.inputs['Image'])
+            tree.links.new(distort.outputs['Image'], bright.inputs['Image'])
+            tree.links.new(bright.outputs['Image'], composite.inputs['Image'])
         else:
-            if hasattr(self.scene.eevee, "use_bloom"):
-                self.scene.eevee.use_bloom = True
             tree.links.new(rl.outputs['Image'], composite.inputs['Image'])
-
-    def setup_lighting(self):
-        """Sets up a robust three-point lighting system and volumetric shafts."""
-        # Key Light
-        bpy.ops.object.light_add(type='SUN', location=(10, -10, 20))
-        self.sun = bpy.context.object
-        self.sun.name = "Sun"
-        self.sun.data.energy = 5.0
-
-        # Dynamic God Rays (After Sun is created)
-        style.setup_god_rays(self.scene)
-
-        # Fill Light
-        bpy.ops.object.light_add(type='POINT', location=(-10, -10, 10))
-        self.fill = bpy.context.object
-        self.fill.name = "FillLight"
-        self.fill.data.energy = 2000
-
-        # Rim Light
-        bpy.ops.object.light_add(type='AREA', location=(0, 15, 5))
-        self.rim = bpy.context.object
-        self.rim.name = "RimLight"
-        self.rim.data.energy = 5000
-
-        # Spot Light
-        bpy.ops.object.light_add(type='SPOT', location=(0, -15, 10))
-        self.spot = bpy.context.object
-        self.spot.name = "Spot"
-        self.spot.data.energy = 10000
-
-        # Volumetric Light Shaft (Sun Beam)
-        bpy.ops.object.light_add(type='SPOT', location=(0, 10, 15))
-        self.beam = bpy.context.object
-        self.beam.name = "LightShaftBeam"
-        self.beam.data.energy = 80000
-        self.beam.data.spot_size = math.radians(20)
-        self.beam.data.spot_blend = 1.0
-        self.beam.rotation_euler = (math.radians(-60), 0, 0)
-
-    def run(self):
-        self.load_assets()
-        self.setup_lighting()
-        self.setup_compositor()
-        self.animate_master()
 
 def main():
     argv = sys.argv
@@ -938,29 +458,12 @@ def main():
     if '--unity' in args: mode = 'UNITY_PREVIEW'
     master = MovieMaster(mode=mode)
 
-    start_frame = int(args[args.index('--start-frame') + 1]) if '--start-frame' in args else None
-    end_frame = int(args[args.index('--end-frame') + 1]) if '--end-frame' in args else None
-
     if '--scene' in args:
         scene_name = args[args.index('--scene') + 1]
         if scene_name in SCENE_MAP:
-            start_frame, end_frame = SCENE_MAP[scene_name]
-            print(f"Focusing on scene '{scene_name}': frames {start_frame} to {end_frame}")
-    style.patch_fbx_importer()
-    master.run()
-    if start_frame is not None: master.scene.frame_start = start_frame
-    if end_frame is not None: master.scene.frame_end = end_frame
-    if '--export-unity' in args: unity_exporter.run_unity_pipeline()
-    if '--render-output' in args:
-        out_path = args[args.index('--render-output') + 1]
-        master.scene.render.filepath = out_path
-        master.scene.render.image_settings.file_format = 'PNG'
+            master.scene.frame_start, master.scene.frame_end = SCENE_MAP[scene_name]
 
-    if '--frame' in args:
-        f_num = int(args[args.index('--frame') + 1])
-        master.scene.frame_set(f_num)
-        if '--render-output' not in args: master.scene.render.filepath = f"frame_{f_num}.png"
-        bpy.ops.render.render(write_still=True)
+    master.run()
     if '--render-anim' in args:
         bpy.ops.render.render(animation=True)
 

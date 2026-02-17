@@ -2,6 +2,7 @@ import bpy
 import unittest
 import os
 import sys
+import math
 
 # Add movie root to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

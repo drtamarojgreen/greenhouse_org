@@ -33,6 +33,10 @@ class TestCameraChoreography(unittest.TestCase):
         for start, end in silent_movie_generator.SCENE_MAP.values():
             scene_boundaries.extend([start, end])
 
+        # Point 52: Allow planned intra-scene cuts (e.g., in Interaction)
+        planned_intra_scene = [6200, 6800]
+        scene_boundaries.extend(planned_intra_scene)
+
         # Every camera jump should be near a scene boundary or intertitle
         for f in sorted(list(set(cut_frames))):
             self.assertTrue(any(abs(f - b) < 5 for b in scene_boundaries), f"R51 FAIL: Unplanned camera keyframe at {f}")

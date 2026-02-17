@@ -9,6 +9,7 @@ if MOVIE_ROOT not in sys.path:
     sys.path.append(MOVIE_ROOT)
 
 import silent_movie_generator
+import style # Point 53
 
 class TestMeshIntegrity(unittest.TestCase):
     def setUp(self):
