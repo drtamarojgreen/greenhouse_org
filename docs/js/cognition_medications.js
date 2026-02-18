@@ -8,11 +8,121 @@
     'use strict';
 
     const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+    const utils = () => window.GreenhouseCognitionDrawingUtils;
 
     const GreenhouseCognitionMedications = {
         init(app) {
             this.app = app;
+            this.setupMappings();
             console.log('CognitionMedications: Initialized');
+        },
+
+        setupMappings() {
+            this.mappings = {
+                81: (ctx, w, h) => utils().drawSynapse(ctx, w * 0.5, h * 0.5, '#4da6ff', t('cog_label_serotonin_reuptake')),
+                82: (ctx, w, h) => utils().drawSynapse(ctx, w * 0.5, h * 0.5, '#ff4d4d', t('cog_label_d2_blockade')),
+                83: (ctx, w, h) => utils().drawSynapse(ctx, w * 0.5, h * 0.5, '#ffff00', t('cog_label_increased_ne_da')),
+                84: (ctx, w, h) => utils().drawSynapse(ctx, w * 0.5, h * 0.5, '#00ff00', t('cog_label_gaba_potentiation')),
+                85: (ctx, w, h) => utils().drawPulse(ctx, w * 0.5, h * 0.5, '#ffffff', t('cog_label_signal_stabilization')),
+                86: (ctx, w, h) => utils().drawSynapse(ctx, w * 0.5, h * 0.5, '#ff9900', t('cog_label_dual_action')),
+                87: (ctx, w, h) => utils().drawSynapticGrowth(ctx, w * 0.5, h * 0.5, '#39ff14', t('cog_label_synaptogenesis_burst')),
+                88: (ctx, w, h) => utils().drawSynapse(ctx, w * 0.5, h * 0.5, '#ff00ff', t('cog_label_mao_inhibition')),
+                89: (ctx, w, h) => utils().drawSynapse(ctx, w * 0.5, h * 0.5, '#4fd1c5', t('cog_label_ach_inhibition')),
+                90: (ctx, w, h) => {
+                    const x = w * 0.5, y = h * 0.5, color = '#ff4d4d';
+                    const time = Date.now() * 0.01;
+                    ctx.fillStyle = color;
+                    ctx.beginPath(); ctx.arc(x + Math.sin(time) * 5, y + Math.cos(time) * 5, 8, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillText(t('cog_label_eps_effects'), x - 50, y + 30);
+                },
+                91: (ctx, w, h) => {
+                    const x = w * 0.5, y = h * 0.5, color = '#4da6ff';
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    for (let i = 0; i < 4; i++) ctx.fillRect(x - 120 + i * 60, y - 5, 55, 10);
+                    ctx.strokeStyle = color; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(x - 120, y); ctx.lineTo(x + 120, y); ctx.stroke();
+                    const time = Date.now() * 0.005;
+                    for (let i = 0; i < 8; i++) {
+                        const tx = x - 100 + i * 30;
+                        const ty = y - 60 + (time + i * 5) % 120;
+                        ctx.fillStyle = (i % 3 === 0) ? '#ff4d4d' : '#4da6ff';
+                        ctx.beginPath(); ctx.arc(tx, ty, 3, 0, Math.PI * 2); ctx.fill();
+                    }
+                    ctx.fillStyle = color; ctx.fillText(t('cog_label_bbb_permeability'), x - 100, y + 80);
+                },
+                92: (ctx, w, h) => {
+                    const x = w * 0.5, y = h * 0.5, color = '#00ffcc';
+                    for (let i = 0; i < 10; i++) {
+                        ctx.fillStyle = i < 7 ? color : '#333';
+                        ctx.beginPath(); ctx.arc(x - 100 + i * 20, y, 8, 0, Math.PI * 2); ctx.fill();
+                    }
+                    ctx.fillStyle = color; ctx.fillText(t('cog_label_receptor_occupancy'), x - 60, y + 40);
+                },
+                93: (ctx, w, h) => {
+                    const x = w * 0.5, y = h * 0.5, color = '#ff9900';
+                    ctx.fillStyle = '#333'; ctx.fillRect(x - 60, y, 120, 10);
+                    const count = 3 + Math.round(Math.sin(Date.now() * 0.002) * 2);
+                    ctx.fillStyle = color;
+                    for (let i = 0; i < 5; i++) {
+                        if (i < count) {
+                            ctx.beginPath(); ctx.arc(x - 50 + i * 25, y - 5, 8, Math.PI, 0); ctx.fill();
+                        }
+                    }
+                    ctx.fillText(t('cog_label_receptor_downregulation'), x - 60, y + 30);
+                },
+                94: (ctx, w, h) => {
+                    const x = w * 0.5, y = h * 0.5, color = '#ff4d4d';
+                    ctx.strokeStyle = color; ctx.beginPath();
+                    ctx.moveTo(x - 50, y); ctx.lineTo(x, y - 40); ctx.lineTo(x + 50, y + 20); ctx.stroke();
+                    ctx.fillStyle = color; ctx.fillText(t('cog_label_withdrawal_rebound'), x - 60, y + 50);
+                },
+                95: (ctx, w, h) => {
+                    const x = w * 0.5, y = h * 0.5, color = '#39ff14';
+                    ctx.strokeStyle = color; ctx.beginPath();
+                    for (let i = 0; i < 20; i++) {
+                        ctx.lineTo(x + Math.sin(i * 0.5) * 15, y - 40 + i * 4);
+                    }
+                    ctx.stroke(); ctx.fillStyle = color;
+                    ctx.fillText(t('cog_label_genetic_metabolism'), x - 60, y + 60);
+                },
+                96: (ctx, w, h) => {
+                    const x = w * 0.5 - 100, y = h * 0.5 - 60, color = '#4fd1c5';
+                    const sw = 200, sh = 120;
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.strokeRect(x, y, sw, sh);
+                    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y + sh);
+                    for (let i = 0; i < sw; i++) {
+                        const val = sh - (sh * 0.6 * (1 - Math.exp(-i * 0.03)) + 30 + Math.sin(i * 0.2) * 5);
+                        ctx.lineTo(x + i, y + val);
+                    }
+                    ctx.stroke(); ctx.fillStyle = color;
+                    ctx.fillText(t('cog_label_steady_state'), x, y - 15);
+                },
+                97: (ctx, w, h) => {
+                    const x = w * 0.5, y = h * 0.5;
+                    ctx.strokeStyle = '#ff4d4d'; ctx.beginPath();
+                    ctx.moveTo(x - 40, y - 40); ctx.lineTo(x + 40, y + 40);
+                    ctx.moveTo(x + 40, y - 40); ctx.lineTo(x - 40, y + 40); ctx.stroke();
+                    ctx.fillStyle = '#ff4d4d'; ctx.fillText(t('cog_label_complex_interaction'), x - 70, y + 60);
+                },
+                98: (ctx, w, h) => {
+                    const x = w * 0.5, y = h * 0.5, color = '#00ffff';
+                    ctx.strokeStyle = color; ctx.setLineDash([5, 5]);
+                    ctx.beginPath(); ctx.arc(x, y, 30, 0, Math.PI * 2); ctx.stroke();
+                    ctx.setLineDash([]); ctx.fillStyle = color;
+                    ctx.fillText('?', x - 5, y + 5); ctx.fillText(t('cog_label_orphan_receptor'), x - 60, y + 50);
+                },
+                99: (ctx, w, h) => {
+                    const x = w * 0.5, y = h * 0.5;
+                    ctx.fillStyle = '#ff9900'; ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillText(t('cog_label_metabolic_impact'), x - 70, y + 40);
+                },
+                100: (ctx, w, h) => {
+                    const x = w * 0.5, y = h * 0.5;
+                    ctx.fillStyle = '#4fd1c5'; ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = '#4fd1c5'; ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI * 2); ctx.stroke();
+                    ctx.fillText(t('cog_label_offline_sync'), x - 70, y + 40);
+                }
+            };
         },
 
         render(ctx) {
@@ -22,379 +132,11 @@
             const w = this.app.canvas.width;
             const h = this.app.canvas.height;
 
-            // Header
-            ctx.fillStyle = '#4fd1c5';
-            ctx.font = 'bold 14px Arial';
-            ctx.fillText(`MEDICATION MECHANISM: ${t(activeEnhancement.name).toUpperCase()}`, 20, 70);
+            utils().renderHeader(ctx, this.app, activeEnhancement);
 
-            ctx.font = '12px Arial';
-            ctx.fillStyle = '#fff';
-            ctx.fillText(`Target Region: ${t(this.app.config.regions[activeEnhancement.region]?.name) || activeEnhancement.region}`, 20, 90);
-
-            // Specific logic
-            if (activeEnhancement.id === 81) { // SSRI
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#00ff00', t('cog_label_serotonin_reuptake'));
+            if (this.mappings[activeEnhancement.id]) {
+                this.mappings[activeEnhancement.id](ctx, w, h);
             }
-            if (activeEnhancement.id === 82) { // Dopamine Blockade
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff4d4d', t('cog_label_d2_blockade'));
-            }
-            if (activeEnhancement.id === 83) { // ADHD Stimulants
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ffff00', t('cog_label_increased_ne_da'));
-            }
-            if (activeEnhancement.id === 84) { // GABA
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#4da6ff', t('cog_label_gaba_potentiation'));
-            }
-            if (activeEnhancement.id === 85) { // Lithium
-                this.drawStabilization(ctx, w * 0.5, h * 0.5, '#ffffff', t('cog_label_signal_stabilization'));
-            }
-            if (activeEnhancement.id === 86) { // SNRI
-                this.drawSynapseDual(ctx, w * 0.5, h * 0.45, '#00ff00', '#ffff00', t('cog_label_dual_action'));
-            }
-            if (activeEnhancement.id === 87) { // Ketamine
-                this.drawRapidSynaptogenesis(ctx, w * 0.5, h * 0.5, '#4fd1c5', t('cog_label_synaptogenesis_burst'));
-            }
-            if (activeEnhancement.id === 88) { // MAOI
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff9900', t('cog_label_mao_inhibition'));
-            }
-            if (activeEnhancement.id === 89) { // Acetylcholinesterase
-                this.drawSynapse(ctx, w * 0.5, h * 0.45, '#ff9900', t('cog_label_ach_inhibition'));
-            }
-            if (activeEnhancement.id === 90) { // Side Effects
-                this.drawEPS(ctx, w * 0.6, h * 0.6, '#ff4d4d', t('cog_label_eps_effects'));
-            }
-            if (activeEnhancement.id === 91) { // BBB
-                this.drawBBB(ctx, w * 0.5, h * 0.5, '#ffffff', t('cog_label_bbb_permeability'));
-            }
-            if (activeEnhancement.id === 92) { // Occupancy
-                this.drawOccupancy(ctx, w * 0.5, h * 0.5, '#39ff14', t('cog_label_receptor_occupancy'));
-            }
-            if (activeEnhancement.id === 93) { // Tolerance
-                this.drawDownregulation(ctx, w * 0.5, h * 0.5, '#ff9900', t('cog_label_receptor_downregulation'));
-            }
-            if (activeEnhancement.id === 94) { // Withdrawal
-                this.drawRebound(ctx, w * 0.5, h * 0.6, '#ff0000', t('cog_label_withdrawal_rebound'));
-            }
-            if (activeEnhancement.id === 95) { // Pharmacogenomic
-                this.drawDNAVariation(ctx, w * 0.5, h * 0.5, '#4da6ff', t('cog_label_genetic_metabolism'));
-            }
-            if (activeEnhancement.id === 96) { // Steady State
-                this.drawConcentrationCurve(ctx, w * 0.6, h * 0.3, '#4da6ff', t('cog_label_steady_state'));
-            }
-            if (activeEnhancement.id === 97) { // Polypharmacy
-                this.drawInteractions(ctx, w * 0.5, h * 0.5);
-            }
-            if (activeEnhancement.id === 98) { // Novel Targets
-                this.drawNovel(ctx, w * 0.5, h * 0.5, '#ffffff', 'Orphan Receptor Research');
-            }
-            if (activeEnhancement.id === 99) { // Metabolic
-                this.drawMetabolic(ctx, w * 0.5, h * 0.5);
-            }
-            if (activeEnhancement.id === 100) { // Offline
-                this.drawOfflineSync(ctx, w * 0.5, h * 0.5);
-            }
-        },
-
-        drawStabilization(ctx, x, y, color, label) {
-            const time = Date.now() * 0.001;
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(x - 100, y);
-            for (let i = 0; i < 200; i++) {
-                const noise = Math.sin(time + i * 0.1) * (20 * Math.exp(-i * 0.01));
-                ctx.lineTo(x - 100 + i, y + noise);
-            }
-            ctx.stroke();
-            ctx.fillStyle = color;
-            ctx.fillText(label, x - 80, y + 40);
-        },
-
-        drawSynapseDual(ctx, x, y, color1, color2, label) {
-            this.drawSynapse(ctx, x, y, color1, label);
-            // Add second neurotransmitter
-            ctx.fillStyle = color2;
-            const time = Date.now() * 0.002;
-            for (let i = 0; i < 10; i++) {
-                const ox = Math.cos(time + i) * 30;
-                const oy = (i * 4 + time * 12) % 40 - 20;
-                ctx.beginPath();
-                ctx.arc(x + ox, y + oy, 2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        },
-
-        drawOccupancy(ctx, x, y, color, label) {
-            const receptors = 10;
-            const occupied = 7;
-            for (let i = 0; i < receptors; i++) {
-                ctx.fillStyle = i < occupied ? color : '#333';
-                ctx.beginPath();
-                ctx.arc(x - 100 + i * 20, y, 8, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#666';
-                ctx.stroke();
-            }
-            ctx.fillStyle = color;
-            ctx.fillText(label, x - 60, y + 40);
-        },
-
-        drawSynapse(ctx, x, y, color, label) {
-            // Presynaptic terminal
-            ctx.fillStyle = '#333';
-            ctx.strokeStyle = '#666';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(x - 50, y - 80);
-            ctx.quadraticCurveTo(x, y - 100, x + 50, y - 80);
-            ctx.lineTo(x + 40, y - 30);
-            ctx.lineTo(x - 40, y - 30);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Transporters (SERT/DAT)
-            ctx.fillStyle = '#555';
-            ctx.fillRect(x - 35, y - 35, 10, 10);
-            ctx.fillRect(x + 25, y - 35, 10, 10);
-
-            // Postsynaptic density
-            ctx.fillStyle = '#222';
-            ctx.beginPath();
-            ctx.rect(x - 60, y + 30, 120, 15);
-            ctx.fill();
-            ctx.stroke();
-
-            // Receptors
-            ctx.strokeStyle = '#4da6ff';
-            for(let i=0; i<4; i++) {
-                ctx.beginPath();
-                ctx.arc(x - 45 + i*30, y + 30, 8, Math.PI, 0);
-                ctx.stroke();
-            }
-
-            // Neurotransmitters
-            ctx.fillStyle = color;
-            const time = Date.now() * 0.002;
-            for (let i = 0; i < 20; i++) {
-                const ox = Math.sin(time + i) * 40;
-                const oy = (i * 4 + time * 15) % 60 - 30;
-                ctx.beginPath();
-                ctx.arc(x + ox, y + oy, 2.5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // Inhibition markers (Red 'X' on transporters)
-            if (label.includes('Inhibition') || label.includes('Blockade')) {
-                ctx.strokeStyle = '#ff4d4d';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(x - 35, y - 35); ctx.lineTo(x - 25, y - 25);
-                ctx.moveTo(x - 25, y - 35); ctx.lineTo(x - 35, y - 25);
-                ctx.moveTo(x + 25, y - 35); ctx.lineTo(x + 35, y - 25);
-                ctx.moveTo(x + 35, y - 35); ctx.lineTo(x + 25, y - 25);
-                ctx.stroke();
-            }
-
-            ctx.fillStyle = color;
-            ctx.font = 'bold 12px Arial';
-            ctx.fillText(label, x - 100, y + 70);
-        },
-
-        drawRapidSynaptogenesis(ctx, x, y, color, label) {
-            const time = Date.now() * 0.005;
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 1;
-            for (let i = 0; i < 8; i++) {
-                const angle = (i / 8) * Math.PI * 2 + time;
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.lineTo(x + Math.cos(angle) * 40, y + Math.sin(angle) * 40);
-                ctx.stroke();
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                ctx.arc(x + Math.cos(angle) * 40, y + Math.sin(angle) * 40, 3, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.fillStyle = color;
-            ctx.fillText(label, x - 60, y + 70);
-        },
-
-        drawBBB(ctx, x, y, color, label) {
-            // Endothelial cells
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-            for(let i=0; i<4; i++) {
-                ctx.fillRect(x - 120 + i*60, y - 5, 55, 10);
-            }
-
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(x - 120, y);
-            ctx.lineTo(x + 120, y);
-            ctx.stroke();
-
-            // Blood side vs CNS side
-            ctx.fillStyle = 'rgba(255, 77, 77, 0.1)';
-            ctx.fillRect(x - 120, y - 100, 240, 100);
-            ctx.fillStyle = 'rgba(77, 166, 255, 0.1)';
-            ctx.fillRect(x - 120, y, 240, 100);
-
-            // Molecules
-            const time = Date.now() * 0.005;
-            for (let i = 0; i < 8; i++) {
-                const tx = x - 100 + i * 30;
-                const ty = y - 60 + (time + i*5) % 120;
-                const isLarge = i % 3 === 0;
-                const isLipophilic = i % 2 === 0;
-
-                if (ty < y) {
-                    ctx.fillStyle = isLarge ? '#ff4d4d' : '#f6e05e';
-                } else {
-                    ctx.fillStyle = isLarge && ty < y + 10 ? '#ff4d4d' : '#4da6ff';
-                    if (isLarge && ty < y + 15) return; // Blocked large ones
-                }
-
-                ctx.beginPath();
-                ctx.arc(tx, Math.min(ty, y - 5) > y - 10 && isLarge ? y - 10 : ty, isLarge ? 6 : 3, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.fillStyle = color;
-            ctx.fillText(label, x - 100, y + 80);
-            ctx.font = '10px Arial';
-            ctx.fillText('BLOOD SIDE', x + 50, y - 20);
-            ctx.fillText('CNS SIDE', x + 50, y + 30);
-        },
-
-        drawDownregulation(ctx, x, y, color, label) {
-            ctx.fillStyle = '#333';
-            ctx.fillRect(x - 60, y, 120, 10);
-
-            // Receptors disappearing
-            const time = Math.sin(Date.now() * 0.002);
-            const count = 3 + Math.round(time * 2);
-            ctx.fillStyle = color;
-            for (let i = 0; i < 5; i++) {
-                if (i < count) {
-                    ctx.beginPath();
-                    ctx.arc(x - 50 + i * 25, y - 5, 8, Math.PI, 0);
-                    ctx.fill();
-                } else {
-                    ctx.strokeStyle = 'rgba(255,153,0,0.2)';
-                    ctx.beginPath();
-                    ctx.arc(x - 50 + i * 25, y - 5, 8, Math.PI, 0);
-                    ctx.stroke();
-                }
-            }
-            ctx.fillStyle = color;
-            ctx.fillText(label, x - 60, y + 30);
-        },
-
-        drawConcentrationCurve(ctx, x, y, color, label) {
-            const w = 200, h = 120;
-            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-            ctx.strokeRect(x, y, w, h);
-
-            // Zones
-            ctx.fillStyle = 'rgba(255, 77, 77, 0.1)'; ctx.fillRect(x, y, w, 30); // Toxic
-            ctx.fillStyle = 'rgba(57, 255, 20, 0.1)'; ctx.fillRect(x, y + 30, w, 50); // Therapeutic
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'; ctx.fillRect(x, y + 80, w, 40); // Sub-therapeutic
-
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(x, y + h);
-            for (let i = 0; i < w; i++) {
-                const doseEffect = Math.sin(i * 0.2) * 5;
-                const val = h - (h * 0.6 * (1 - Math.exp(-i * 0.03)) + 30 + doseEffect);
-                ctx.lineTo(x + i, y + val);
-            }
-            ctx.stroke();
-
-            ctx.fillStyle = color;
-            ctx.font = 'bold 11px Arial';
-            ctx.fillText(label, x, y - 15);
-            ctx.fillStyle = '#fff';
-            ctx.font = '9px Arial';
-            ctx.fillText('TOXIC', x + w + 5, y + 20);
-            ctx.fillText('THERAPEUTIC', x + w + 5, y + 60);
-            ctx.fillText('SUB-THERAPEUTIC', x + w + 5, y + 100);
-        },
-
-        drawEPS(ctx, x, y, color, label) {
-            const time = Date.now() * 0.01;
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(x + Math.sin(time) * 5, y + Math.cos(time) * 5, 8, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillText(label, x - 50, y + 30);
-        },
-
-        drawRebound(ctx, x, y, color, label) {
-            ctx.strokeStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(x - 50, y);
-            ctx.lineTo(x, y - 40);
-            ctx.lineTo(x + 50, y + 20);
-            ctx.stroke();
-            ctx.fillStyle = color;
-            ctx.fillText(label, x - 60, y + 50);
-        },
-
-        drawDNAVariation(ctx, x, y, color, label) {
-            ctx.strokeStyle = color;
-            ctx.beginPath();
-            for (let i = 0; i < 20; i++) {
-                const py = y - 40 + i * 4;
-                const px = x + Math.sin(i * 0.5) * 15;
-                ctx.lineTo(px, py);
-            }
-            ctx.stroke();
-            ctx.fillStyle = color;
-            ctx.fillText(label, x - 60, y + 60);
-        },
-
-        drawInteractions(ctx, x, y) {
-            ctx.strokeStyle = '#ff4d4d';
-            ctx.beginPath();
-            ctx.moveTo(x - 40, y - 40);
-            ctx.lineTo(x + 40, y + 40);
-            ctx.moveTo(x + 40, y - 40);
-            ctx.lineTo(x - 40, y + 40);
-            ctx.stroke();
-            ctx.fillStyle = '#ff4d4d';
-            ctx.fillText(t('cog_label_complex_interaction'), x - 70, y + 60);
-        },
-
-        drawNovel(ctx, x, y, color, label) {
-            ctx.strokeStyle = color;
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath();
-            ctx.arc(x, y, 30, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.fillStyle = color;
-            ctx.fillText('?', x - 5, y + 5);
-            ctx.fillText(label, x - 60, y + 50);
-        },
-
-        drawMetabolic(ctx, x, y) {
-            ctx.fillStyle = '#ff9900';
-            ctx.beginPath();
-            ctx.arc(x, y, 15, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillText(t('cog_label_metabolic_impact'), x - 70, y + 40);
-        },
-
-        drawOfflineSync(ctx, x, y) {
-            ctx.fillStyle = '#4fd1c5';
-            ctx.beginPath();
-            ctx.arc(x, y, 10, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#4fd1c5';
-            ctx.beginPath();
-            ctx.arc(x, y, 20, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.fillText(t('cog_label_offline_sync'), x - 70, y + 40);
         }
     };
 

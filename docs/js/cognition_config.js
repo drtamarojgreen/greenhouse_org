@@ -94,6 +94,17 @@
             { name: 'cog_theory_dualproc_name', description: 'cog_theory_dualproc_desc' },
             { name: 'cog_theory_load_name', description: 'cog_theory_load_desc' }
         ],
+        categories: {
+            'Analytical': { name: 'cog_cat_analytical', description: 'cog_cat_analytical_desc' },
+            'Theory': { name: 'cog_cat_theory', description: 'cog_cat_theory_desc' },
+            'Development': { name: 'cog_cat_development', description: 'cog_cat_development_desc' },
+            'Intervention': { name: 'cog_cat_intervention', description: 'cog_cat_intervention_desc' },
+            'Medication': { name: 'cog_cat_medication', description: 'cog_cat_medication_desc' },
+            'Visualization': { name: 'cog_cat_visualization', description: 'cog_cat_visualization_desc' },
+            'Accuracy': { name: 'cog_cat_accuracy', description: 'cog_cat_accuracy_desc' },
+            'Research': { name: 'cog_cat_research', description: 'cog_cat_research_desc' },
+            'Educational': { name: 'cog_cat_educational', description: 'cog_cat_educational_desc' }
+        },
         enhancements: [
             // Core Visual & Analytical Features
             { id: 1, category: 'Analytical', name: 'cog_enh_1_name', description: 'cog_enh_1_desc', region: 'prefrontalCortex' },

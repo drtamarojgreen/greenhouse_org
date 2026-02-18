@@ -18,6 +18,7 @@
         activeRegion: null,
         activeTheory: null,
         activeEnhancement: null,
+        activeCategory: 'All',
         config: null,
         centroids: {},
         pulses: [],
@@ -48,10 +49,16 @@
             container.style.display = 'flex';
             container.style.flexDirection = 'column';
 
+            // Accessibility: Set role and aria-label
+            container.setAttribute('role', 'application');
+            container.setAttribute('aria-label', t('cog_simulation'));
+
             this.canvas = document.createElement('canvas');
             this.canvas.width = container.offsetWidth || 800;
             this.canvas.height = 500;
             this.canvas.style.display = 'block';
+            this.canvas.setAttribute('role', 'img');
+            this.canvas.setAttribute('aria-label', t('cog_model_title'));
             container.appendChild(this.canvas);
             this.ctx = this.canvas.getContext('2d');
 
@@ -100,8 +107,6 @@
                 this.refreshUIText();
             });
 
-            // Local Language Toggle is now integrated into createEnhancementUI
-
             this.isRunning = true;
             this.startLoop();
 
@@ -111,7 +116,6 @@
         },
 
         refreshUIText() {
-
             const lBtn = document.getElementById('cognition-lang-toggle');
             if (lBtn) lBtn.textContent = t('btn_language');
 
@@ -153,7 +157,6 @@
         },
 
         createEnhancementUI(container) {
-
             const uiContainer = document.createElement('div');
             uiContainer.style.cssText = `
                 display: flex;
@@ -186,6 +189,7 @@
                 { id: 'Educational', key: 'cog_cat_educational' }
             ];
             const categorySelect = document.createElement('select');
+            categorySelect.setAttribute('aria-label', t('cog_cat_all'));
             categorySelect.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px;
             `;
@@ -199,6 +203,7 @@
             const searchInput = document.createElement('input');
             searchInput.id = 'enhancement-search';
             searchInput.placeholder = t('cog_search_placeholder');
+            searchInput.setAttribute('aria-label', t('cog_search_placeholder'));
             searchInput.style.cssText = `
                 background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 5px; border-radius: 4px; flex-grow: 1;
             `;
@@ -231,7 +236,6 @@
             controlsRow.appendChild(glassToggle);
             controlsRow.appendChild(resetCamera);
 
-            // Local Language Toggle for Cognition - Integrated into UI row
             const langBtn = document.createElement('button');
             langBtn.id = 'cognition-lang-toggle';
             langBtn.textContent = window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t('btn_language') : 'Language';
@@ -249,6 +253,7 @@
 
             const listContainer = document.createElement('div');
             listContainer.id = 'enhancement-list';
+            listContainer.setAttribute('role', 'listbox');
             listContainer.style.cssText = `
                 display: flex;
                 gap: 8px;
@@ -262,10 +267,11 @@
                 this.renderEnhancementList = renderList;
                 listContainer.innerHTML = '';
                 const filter = categorySelect.value;
+                this.activeCategory = filter;
                 const search = searchInput.value.toLowerCase();
                 const enhancements = (this.config.enhancements || []).filter(e => {
                     const matchCat = filter === 'All' || e.category === filter;
-                    const translatedName = t(e.name).toLowerCase();
+                    const translatedName = t(e.name || '').toLowerCase();
                     const matchSearch = translatedName.includes(search);
                     return matchCat && matchSearch;
                 });
@@ -273,6 +279,7 @@
                 enhancements.forEach(enh => {
                     const btn = document.createElement('button');
                     btn.className = 'enhancement-item';
+                    btn.setAttribute('role', 'option');
                     btn.textContent = t(enh.name);
                     btn.title = t(enh.description);
                     btn.style.cssText = `
@@ -304,7 +311,6 @@
         },
 
         createInfoPanel(container) {
-
             this.infoPanel = document.createElement('div');
             this.infoPanel.style.cssText = `
                 padding: 20px;
@@ -319,7 +325,6 @@
         },
 
         updateInfoPanel() {
-
             const enh = this.activeEnhancement;
             if (!enh) return;
             const region = this.config.regions[this.activeRegion] || {};
@@ -343,7 +348,7 @@
             this.canvas.addEventListener('mousedown', (e) => {
                 isDragging = true;
                 hasDragged = false;
-                this.isAnimatingCamera = false; // Stop auto-animation on manual interaction
+                this.isAnimatingCamera = false;
                 lastX = e.clientX;
                 lastY = e.clientY;
             });
@@ -356,8 +361,6 @@
 
                     this.camera.rotationY += dx * 0.01;
                     this.camera.rotationX += dy * 0.01;
-
-                    // Limit X rotation to avoid flipping
                     this.camera.rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotationX));
 
                     lastX = e.clientX;
@@ -367,7 +370,6 @@
 
             window.addEventListener('mouseup', (e) => {
                 if (isDragging && !hasDragged) {
-                    // It was a click, not a drag
                     const rect = this.canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
                     const y = e.clientY - rect.top;
@@ -378,7 +380,6 @@
 
             this.canvas.addEventListener('wheel', (e) => {
                 e.preventDefault();
-                // Improved zoom speed and feel
                 const delta = e.deltaY;
                 const zoomSpeed = Math.abs(this.camera.z) * 0.001;
                 this.camera.z += delta * zoomSpeed * 5;
@@ -394,14 +395,12 @@
 
                 if (pickedRegion) {
                     this.activeRegion = pickedRegion;
-                    // Find an enhancement that uses this region to update the UI
-                    const relatedEnhancement = this.config.enhancements.find(e => e.region === pickedRegion);
+                    const relatedEnhancement = this.config.enhancements.find(e => e.region === pickedRegion && (this.activeCategory === 'All' || e.category === this.activeCategory));
                     if (relatedEnhancement) {
                         this.activeEnhancement = relatedEnhancement;
                         this.updateInfoPanel();
                         this.syncSidebarSelection();
                     } else {
-                        // Just highlight region if no specific enhancement is mapped
                         this.updateInfoPanelWithRegionOnly(pickedRegion);
                     }
                 }
@@ -411,7 +410,6 @@
         syncSidebarSelection() {
             const listContainer = document.getElementById('enhancement-list');
             if (!listContainer) return;
-
 
             Array.from(listContainer.children).forEach(btn => {
                 if (btn.textContent === t(this.activeEnhancement?.name)) {
@@ -424,7 +422,6 @@
         },
 
         updateInfoPanelWithRegionOnly(regionId) {
-
             const region = this.config.regions[regionId];
             if (!region) return;
             this.infoPanel.innerHTML = `
@@ -447,17 +444,10 @@
         zoomToRegion(regionId) {
             const centroid = this.centroids[regionId];
             if (!centroid) return;
-
-            // Calculate target rotation to face the centroid roughly
-            // Brain is centered at 0,0,0. Centroid is at (x,y,z)
             const targetRotY = -Math.atan2(centroid.x, -centroid.z);
             const targetRotX = Math.atan2(centroid.y, Math.sqrt(centroid.x * centroid.x + centroid.z * centroid.z)) * 0.5;
 
-            this.targetCamera = {
-                rotationX: targetRotX,
-                rotationY: targetRotY,
-                z: -450 // Zoom in
-            };
+            this.targetCamera = { rotationX: targetRotX, rotationY: targetRotY, z: -450 };
             this.isAnimatingCamera = true;
         },
 
@@ -476,67 +466,44 @@
         },
 
         update() {
-            // Background update
             this.backgroundParticles.forEach(p => {
-                p.x += p.vx;
-                p.y += p.vy;
-                if (p.x < 0) p.x = this.canvas.width;
-                if (p.x > this.canvas.width) p.x = 0;
-                if (p.y < 0) p.y = this.canvas.height;
-                if (p.y > this.canvas.height) p.y = 0;
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0) p.x = this.canvas.width; if (p.x > this.canvas.width) p.x = 0;
+                if (p.y < 0) p.y = this.canvas.height; if (p.y > this.canvas.height) p.y = 0;
             });
 
-            // Camera Interpolation
             if (this.isAnimatingCamera && this.targetCamera) {
                 const lerp = 0.05;
                 this.camera.rotationX += (this.targetCamera.rotationX - this.camera.rotationX) * lerp;
-
-                // Handle rotation wrapping for Y
                 let diffY = this.targetCamera.rotationY - this.camera.rotationY;
-                while (diffY > Math.PI) diffY -= Math.PI * 2;
-                while (diffY < -Math.PI) diffY += Math.PI * 2;
+                while (diffY > Math.PI) diffY -= Math.PI * 2; while (diffY < -Math.PI) diffY += Math.PI * 2;
                 this.camera.rotationY += diffY * lerp;
-
                 this.camera.z += (this.targetCamera.z - this.camera.z) * lerp;
-
-                if (Math.abs(diffY) < 0.01 && Math.abs(this.camera.z - this.targetCamera.z) < 1) {
-                    this.isAnimatingCamera = false;
-                }
+                if (Math.abs(diffY) < 0.01 && Math.abs(this.camera.z - this.targetCamera.z) < 1) this.isAnimatingCamera = false;
             }
 
-            // Update Pulses
             for (let i = this.pulses.length - 1; i >= 0; i--) {
                 const p = this.pulses[i];
                 p.progress += p.speed;
-                if (p.progress >= 1) {
-                    this.pulses.splice(i, 1);
-                    continue;
-                }
-                // Linear interpolation for now, can be curved later
+                if (p.progress >= 1) { this.pulses.splice(i, 1); continue; }
                 p.x = p.from.x + (p.to.x - p.from.x) * p.progress;
                 p.y = p.from.y + (p.to.y - p.from.y) * p.progress;
                 p.z = p.from.z + (p.to.z - p.from.z) * p.progress;
             }
 
-            // Random pulse generation based on active state
-            if (Math.random() < 0.05) {
-                this.generateContextualPulses();
-            }
+            if (Math.random() < 0.05) this.generateContextualPulses();
         },
 
         generateContextualPulses() {
             const enh = this.activeEnhancement;
             if (!enh) return;
-
-            // Mapping enhancements to pulse paths
             const paths = {
-                2: [['prefrontalCortex', 'parietalLobe'], ['parietalLobe', 'occipitalLobe']], // Signal Propagation
-                8: [['prefrontalCortex', 'parietalLobe']], // Working Memory
-                16: [['thalamus', 'amygdala']], // Threat Detection
-                106: [['temporalLobe', 'prefrontalCortex']], // Language Processing
-                12: [['prefrontalCortex', 'parietalLobe'], ['parietalLobe', 'temporalLobe']] // DMN
+                2: [['prefrontalCortex', 'parietalLobe'], ['parietalLobe', 'occipitalLobe']],
+                8: [['prefrontalCortex', 'parietalLobe']],
+                16: [['thalamus', 'amygdala']],
+                106: [['temporalLobe', 'prefrontalCortex']],
+                12: [['prefrontalCortex', 'parietalLobe'], ['parietalLobe', 'temporalLobe']]
             };
-
             const pathSet = paths[enh.id];
             if (pathSet) {
                 pathSet.forEach(pair => {
@@ -544,11 +511,8 @@
                     const to = this.centroids[pair[1]];
                     if (from && to) {
                         this.pulses.push({
-                            x: from.x, y: from.y, z: from.z,
-                            from, to,
-                            progress: 0,
-                            speed: 0.01 + Math.random() * 0.02,
-                            size: 2 + Math.random() * 2,
+                            x: from.x, y: from.y, z: from.z, from, to, progress: 0,
+                            speed: 0.01 + Math.random() * 0.02, size: 2 + Math.random() * 2,
                             color: enh.id === 16 ? '255, 100, 100' : '57, 255, 20'
                         });
                     }
@@ -561,27 +525,19 @@
             const ctx = this.ctx;
             const w = this.canvas.width;
             const h = this.canvas.height;
-
-
+            const utils = window.GreenhouseCognitionDrawingUtils;
 
             ctx.clearRect(0, 0, w, h);
 
-            // Draw Background
-            ctx.save();
             this.backgroundParticles.forEach(p => {
                 const brightness = (this.activeEnhancement && this.activeEnhancement.category === 'Theory') ? 1.5 : 1.0;
                 ctx.fillStyle = `rgba(57, 255, 20, ${p.alpha * brightness})`;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
             });
-            ctx.restore();
 
             const grad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
-            grad.addColorStop(0, '#0a200a');
-            grad.addColorStop(1, '#051005');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, w, h);
+            grad.addColorStop(0, '#0a200a'); grad.addColorStop(1, '#051005');
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
 
             if (window.GreenhouseCognitionBrain && window.GreenhouseModels3DMath) {
                 window.GreenhouseCognitionBrain.drawBrainShell(
@@ -589,22 +545,13 @@
                     this.activeRegion ? { region: this.activeRegion } : null,
                     this.options
                 );
+                if (this.pulses.length > 0) window.GreenhouseCognitionBrain.drawPulses(ctx, this.pulses, this.camera, this.projection);
 
-                if (this.pulses.length > 0) {
-                    window.GreenhouseCognitionBrain.drawPulses(ctx, this.pulses, this.camera, this.projection);
-                }
-
-                // Connection Maps
                 const enh = this.activeEnhancement;
                 if (enh) {
-                    if (enh.id === 12) { // DMN
-                        window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['prefrontalCortex', 'parietalLobe', 'temporalLobe'], this.camera, this.projection, '80, 100, 255');
-                    } else if (enh.id === 11) { // Salience Network
-                        window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['amygdala', 'temporalLobe', 'prefrontalCortex'], this.camera, this.projection, '255, 100, 50');
-                    }
+                    if (enh.id === 12) window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['prefrontalCortex', 'parietalLobe', 'temporalLobe'], this.camera, this.projection, '80, 100, 255');
+                    else if (enh.id === 11) window.GreenhouseCognitionBrain.drawConnections(ctx, this.centroids, ['amygdala', 'temporalLobe', 'prefrontalCortex'], this.camera, this.projection, '255, 100, 50');
                 }
-
-                // Floating Labels
                 window.GreenhouseCognitionBrain.drawLabels(ctx, this.centroids, this.config, this.camera, this.projection);
             }
 
@@ -614,19 +561,22 @@
             ctx.fillText(`${t('cog_model_title').toUpperCase()}: ${t('cerebral_cortex').toUpperCase()}`, 20, 30);
 
             if (this.activeEnhancement) {
-                ctx.fillStyle = '#4fd1c5';
-                ctx.font = 'bold 12px Arial';
-                ctx.fillText(`${t('active_enhancement').toUpperCase()}: ${t(this.activeEnhancement.name).toUpperCase()}`, 20, 50);
+                if (this.activeEnhancement.render) {
+                    this.activeEnhancement.render(ctx, this);
+                } else {
+                    // Fallback to sub-modules
+                    if (window.GreenhouseCognitionAnalytics) window.GreenhouseCognitionAnalytics.render(ctx);
+                    if (window.GreenhouseCognitionTheories) window.GreenhouseCognitionTheories.render(ctx);
+                    if (window.GreenhouseCognitionDevelopment) window.GreenhouseCognitionDevelopment.render(ctx);
+                    if (window.GreenhouseCognitionInterventions) window.GreenhouseCognitionInterventions.render(ctx);
+                    if (window.GreenhouseCognitionMedications) window.GreenhouseCognitionMedications.render(ctx);
+                    if (window.GreenhouseCognitionResearch) window.GreenhouseCognitionResearch.render(ctx);
+                    if (window.GreenhouseCognitionEducational) window.GreenhouseCognitionEducational.render(ctx);
+                }
+            } else if (this.activeCategory !== 'All' && this.config.categories[this.activeCategory]) {
+                const cat = this.config.categories[this.activeCategory];
+                if (utils) utils.renderCategoryInfo(ctx, this.activeCategory, cat.description, w, h);
             }
-
-            // Call sub-module renders
-            if (window.GreenhouseCognitionAnalytics) window.GreenhouseCognitionAnalytics.render(ctx);
-            if (window.GreenhouseCognitionTheories) window.GreenhouseCognitionTheories.render(ctx);
-            if (window.GreenhouseCognitionDevelopment) window.GreenhouseCognitionDevelopment.render(ctx);
-            if (window.GreenhouseCognitionInterventions) window.GreenhouseCognitionInterventions.render(ctx);
-            if (window.GreenhouseCognitionMedications) window.GreenhouseCognitionMedications.render(ctx);
-            if (window.GreenhouseCognitionResearch) window.GreenhouseCognitionResearch.render(ctx);
-            if (window.GreenhouseCognitionEducational) window.GreenhouseCognitionEducational.render(ctx);
         }
     };
 
