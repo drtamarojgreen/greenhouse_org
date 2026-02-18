@@ -26,13 +26,27 @@ def setup_lighting_scenes(master):
     master.rim.name = "RimLight"
     master.rim.data.energy = 5000
 
+    # Firefly Fill Light (#22)
+    bpy.ops.object.light_add(type='POINT', location=(0, 0, 2))
+    master.firefly_fill = bpy.context.object
+    master.firefly_fill.name = "FireflyFill"
+    master.firefly_fill.data.energy = 0
+    master.firefly_fill.data.color = (0.8, 1.0, 0.2)
+    # Pulsing firefly light in sanctuary
+    sanctuary_start, sanctuary_end = SCENE_MAP['scene11_nature_sanctuary']
+    for f in range(sanctuary_start, sanctuary_end, 48):
+        master.firefly_fill.data.energy = 500
+        master.firefly_fill.data.keyframe_insert(data_path="energy", frame=f)
+        master.firefly_fill.data.energy = 1500
+        master.firefly_fill.data.keyframe_insert(data_path="energy", frame=f + 24)
+
     # Spot
     bpy.ops.object.light_add(type='SPOT', location=(0, -15, 10))
     master.spot = bpy.context.object
     master.spot.name = "Spot"
     master.spot.data.energy = 10000
 
-    # Volumetric light shaft (Sun Beam)
+    # Volumetric light shaft (Sun Beam / Moonlight Enhancement #21)
     bpy.ops.object.light_add(type='SPOT', location=(0, 10, 15))
     master.beam = bpy.context.object
     master.beam.name = "LightShaftBeam"
@@ -41,6 +55,23 @@ def setup_lighting_scenes(master):
     master.beam.data.spot_blend = 1.0
     master.beam.rotation_euler = (math.radians(-60), 0, 0)
     style.setup_god_rays(master.scene, beam_obj=master.beam)
+
+    # Animate Sunlight to Moonlight transition (#21)
+    # Day color: warm yellow-white
+    # Shadow/Gnome scenes: cold blue
+    shadow_start = SCENE_MAP['scene07_shadow'][0]
+    shadow_end = SCENE_MAP['scene11_nature_sanctuary'][1]
+
+    day_color = (1.0, 0.95, 0.8)
+    moon_color = (0.4, 0.5, 1.0)
+
+    master.beam.data.color = day_color
+    master.beam.data.keyframe_insert(data_path="color", frame=shadow_start - 50)
+    master.beam.data.color = moon_color
+    master.beam.data.keyframe_insert(data_path="color", frame=shadow_start)
+    master.beam.data.keyframe_insert(data_path="color", frame=shadow_end)
+    master.beam.data.color = day_color
+    master.beam.data.keyframe_insert(data_path="color", frame=shadow_end + 50)
 
     # --- NEW: Character key lights ---
     # Herbaceous key light (warm, positioned stage left above)
@@ -72,6 +103,29 @@ def setup_lighting_scenes(master):
     gnome_key.data.spot_blend = 0.7
     gnome_key.data.color = (0.4, 0.8, 0.3)     # unsettling green
     gnome_key.rotation_euler = (math.radians(30), 0, math.radians(-30))
+
+    # --- Enhancement #25: Character-Tinted Rim Lights ---
+    def add_tinted_rim(name, location, color):
+        bpy.ops.object.light_add(type='SPOT', location=location)
+        rim = bpy.context.object
+        rim.name = f"{name}_RimTint"
+        rim.data.energy = 5000
+        rim.data.color = color
+        rim.data.spot_size = math.radians(45)
+        return rim
+
+    master.h1_rim = add_tinted_rim("Herbaceous", (-3, 5, 2), (1.0, 0.6, 0.1)) # Warm Amber
+    master.h2_rim = add_tinted_rim("Arbor", (3, 5, 2), (0.7, 0.8, 1.0))      # Cool Silver
+    master.gnome_rim = add_tinted_rim("Gnome", (5, 5, 2), (0.5, 0.1, 0.8))   # Purple/Green menace
+
+    # --- Enhancement #28: Gloom Orb Practical Light ---
+    bpy.ops.object.light_add(type='POINT', location=(0, 0, 0))
+    orb_light = bpy.context.object
+    orb_light.name = "GloomOrb_Practical"
+    orb_light.data.energy = 1000
+    orb_light.data.color = (0.6, 0.1, 1.0)
+    # We will parent this to the staff in silent_movie_generator or a helper
+    master.orb_light = orb_light
 
     # --- NEW: Soft area fill for overall scene brightness ---
     # Overhead dome fill - bounced light from greenhouse glass ceiling
@@ -130,9 +184,27 @@ def setup_lighting_scenes(master):
         gnome_key.data.keyframe_insert(data_path="energy",
                                         frame=SCENE_MAP['scene22_retreat'][0])
 
+    # --- Enhancement #23: Lightning Flashes ---
+    import random
+    storm_start, storm_end = SCENE_MAP['scene22_retreat']
+    for f in range(storm_start, storm_end, 120): # Every ~5 seconds
+        if random.random() > 0.4:
+            flash_frame = f + random.randint(0, 60)
+            master.sun.data.energy = 5.0
+            master.sun.data.keyframe_insert(data_path="energy", frame=flash_frame - 1)
+            master.sun.data.energy = 500.0 # Lightning spike
+            master.sun.data.keyframe_insert(data_path="energy", frame=flash_frame)
+            master.sun.data.energy = 5.0
+            master.sun.data.keyframe_insert(data_path="energy", frame=flash_frame + 2)
+
+    # Enhancement #26, #27, #29, #30
+    style.animate_dawn_progression(master.sun)
+    style.apply_interior_exterior_contrast(master.sun, master.scene.camera)
+    style.replace_with_soft_boxes()
+    style.animate_hdri_rotation(master.scene)
+
     # Store new lights on master for visibility control elsewhere
     master.herb_key = herb_key
     master.arbor_key = arbor_key
     master.gnome_key = gnome_key
-    master.dome_fill = dome_fill
-    master.ground_bounce = ground_bounce
+    # Note: area lights were replaced by soft boxes

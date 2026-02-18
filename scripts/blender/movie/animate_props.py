@@ -11,9 +11,16 @@ def animate_all_props(master):
             style.insert_looping_noise(obj, "rotation_euler", strength=0.01, scale=50.0, frame_start=1, frame_end=15000)
 
     gh_objs = [obj for obj in bpy.context.scene.objects
-               if any(k in obj.name for k in ["GH_", "Greenhouse_Structure", "Pane", "Greenhouse_Main"])]
+               if any(k in obj.name for k in ["GH_", "Greenhouse_Structure", "Pane", "Greenhouse_Main", "Ivy"])]
     gh_ranges = [(401, 650), (2901, 3500), (3901, 4100), (9501, 14500)]
     master._set_visibility(gh_objs, gh_ranges)
+
+    # Exterior Garden Visibility
+    ext_keywords = ["ExteriorBed", "KoiPond", "Koi_", "CobblestonePath", "ExteriorGround", "HedgeFront", "HedgeLeft", "HedgeRight", "HedgeBack"]
+    ext_objs = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ext_keywords)]
+    # Visible during drone shots and when camera is outside
+    ext_ranges = [(101, 200), (401, 480), (3901, 4100), (14200, 14400)]
+    master._set_visibility(ext_objs, ext_ranges)
 
     # 2. Volumetric Light Beam
     if hasattr(master, 'beam') and master.beam:

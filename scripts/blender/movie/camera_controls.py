@@ -30,19 +30,76 @@ def setup_camera_keyframes(master, cam, target):
     origin = (0, 0, 0)
     high_target = (0, 0, 1.5)
 
-    def kf_eased(frame, cam_loc, target_loc, easing='EASE_IN_OUT'):
+    def kf_eased(frame, cam_loc, target_loc, roll=0, focus_obj=None, lens=None, easing='EASE_IN_OUT'):
+        """Enhanced kf with Dutch Angle (roll), DoF (Enhancement #2), Focal Length (Enhancement #4) and easing."""
         cam.location = cam_loc
         target.location = target_loc
+        # Dutch Angle (roll) - Enhancement #1
+        cam.rotation_euler[2] = math.radians(roll)
+
+        if lens:
+            cam.data.lens = lens
+            cam.data.keyframe_insert(data_path="lens", frame=frame)
+
+        if focus_obj:
+            cam.data.dof.use_dof = True
+            cam.data.dof.focus_object = focus_obj
+            cam.data.dof.keyframe_insert(data_path="focus_object", frame=frame)
+
         cam.keyframe_insert(data_path="location", frame=frame)
         target.keyframe_insert(data_path="location", frame=frame)
+        cam.keyframe_insert(data_path="rotation_euler", index=2, frame=frame)
 
         # Set easing on the just-inserted keyframe
         if cam.animation_data and cam.animation_data.action:
             for fc in style.get_action_curves(cam.animation_data.action):
-                if fc.data_path == "location":
+                if fc.data_path in ["location", "rotation_euler"]:
                     kp = fc.keyframe_points[-1]
                     kp.interpolation = 'BEZIER'
                     kp.easing = easing
+
+        if cam.data.animation_data and cam.data.animation_data.action:
+            for fc in style.get_action_curves(cam.data.animation_data.action):
+                if fc.data_path in ["lens", "focus_object"]:
+                    kp = fc.keyframe_points[-1]
+                    kp.interpolation = 'BEZIER'
+                    kp.easing = easing
+
+    def crash_zoom(frame, target_lens, duration=10):
+        """Enhancement #4: Crash Zoom on Key Dramatic Beats."""
+        start_lens = cam.data.lens
+        cam.data.keyframe_insert(data_path="lens", frame=frame)
+        cam.data.lens = target_lens
+        cam.data.keyframe_insert(data_path="lens", frame=frame + duration)
+
+        # Jarring linear interpolation for crash zoom
+        for fc in style.get_action_curves(cam.data.animation_data.action):
+            if fc.data_path == "lens":
+                for kp in fc.keyframe_points:
+                    if kp.co[0] in [frame, frame+duration]:
+                        kp.interpolation = 'LINEAR'
+
+    def whip_pan(frame, target_loc, target_look_at, duration=5):
+        """Enhancement #7: Whip Pan Transitions Between Scenes."""
+        kf_eased(frame, cam.location, target.location, easing='EASE_IN')
+        kf_eased(frame + duration, target_loc, target_look_at, easing='EASE_OUT')
+        # We simulate whip pan blur via rapid movement,
+        # actual motion blur is enabled in setup_engine.
+
+    def circular_dolly(frame_start, frame_end, center, radius, height, look_at=(0,0,0)):
+        """Enhancement #10: Circular Dolly Around Characters."""
+        for f in range(frame_start, frame_end + 1, 24):
+            angle = math.pi * (f - frame_start) / (frame_end - frame_start)
+            x = center[0] + radius * math.cos(angle)
+            y = center[1] + radius * math.sin(angle)
+            kf_eased(f, (x, y, height), look_at, easing='LINEAR')
+
+    def apply_impact_shake(frame, intensity=0.1):
+        """Enhancement #9: Motivated Camera Shake on Impact."""
+        # Sharp shake over 2-3 frames
+        orig_loc = cam.location.copy()
+        kf_eased(frame, orig_loc + mathutils.Vector((0, 0, intensity)), target.location, easing='LINEAR')
+        kf_eased(frame + 2, orig_loc, target.location, easing='EASE_OUT')
 
     # Drone shot helper - adds a lateral sweep at altitude
     def drone_sweep(frame_start, frame_end,
@@ -102,6 +159,9 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(751, (0,-15,4), high_target)
     kf_eased(950, (0,-18,5), high_target)
 
+    # Whip Pan (#7) transition to Knowledge Exchange
+    whip_pan(951, title_loc, origin, duration=5)
+
     # Knowledge Exchange (951 - 1250)
     kf_eased(951, title_loc, origin)
     kf_eased(1051, (6,-12,3), (0, 0, 1.5))
@@ -120,35 +180,52 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(5000, (0, -15, 4), (-2, 0, 1.5), easing='EASE_OUT')    # medium shot
 
     # Dialogue closeups (9501 - 13000)
+    h1_obj = bpy.data.objects.get("Herbaceous_Torso")
+    h2_obj = bpy.data.objects.get("Arbor_Torso")
+    gnome_obj = bpy.data.objects.get("GloomGnome_Torso")
+
     # Scene 16 (9501-10200): Herbaceous speaks first, then Arbor
     kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5))        # wide
-    kf_eased(9525,  (-1.5, -3, 1.8), (-2, 0, 1.8))      # Herbaceous face
+    # Rack Focus (#2) and Over-the-Shoulder (#3)
+    kf_eased(9525,  (1.8, 1.5, 1.8), (-2, 0, 1.8), focus_obj=h1_obj) # OTS Arbor to Herbaceous
     kf_eased(9780,  (0, -15, 4),    (0, 0, 1.5))        # wide
-    kf_eased(9830,  (1.5, -3, 1.8),  (2, 0, 1.8))       # Arbor face
+    kf_eased(9830,  (-1.8, 1.5, 1.8), (2, 0, 1.8), focus_obj=h2_obj) # OTS Herbaceous to Arbor
     kf_eased(10100, (0, -15, 4),    (0, 0, 1.5))        # pull back
 
     # Scene 17 (10201-10900): Arbor speaks first
     kf_eased(10201, (0, -15, 4),    (0, 0, 1.5))
-    kf_eased(10250, (1.5, -3, 1.8),  (2, 0, 1.8))       # Arbor closeup
+    kf_eased(10250, (-1.8, 1.5, 1.8), (2, 0, 1.8), focus_obj=h2_obj) # Arbor closeup
     kf_eased(10540, (0, -15, 4),    (0, 0, 1.5))
-    kf_eased(10590, (-1.5, -3, 1.8), (-2, 0, 1.8))      # Herbaceous closeup
+    kf_eased(10590, (1.8, 1.5, 1.8), (-2, 0, 1.8), focus_obj=h1_obj) # Herbaceous closeup
     kf_eased(10850, (0, -15, 4),    (0, 0, 1.5))
 
-    # Scene 18 (10901-11600): Gnome enters
-    kf_eased(10901, (0, -15, 4),    (0, 0, 1.5))
-    kf_eased(10950, (-1.5, -3, 1.8), (-2, 0, 1.8))      # Herbaceous speaks
-    kf_eased(11200, (4, -3, 1.5),   (5, 0, 1.2))        # Gnome reaction
-    kf_eased(11500, (0, -20, 6),    (0, 0, 1))          # wide
+    # Scene 18 (10901-11600): Gnome enters - Dutch Angle Enhancement #1
+    kf_eased(10901, (0, -15, 4),    (0, 0, 1.5), roll=0)
+    crash_zoom(10901, 80, duration=5) # Enhancement #4: Crash Zoom on Gnome entry
+    kf_eased(10950, (-1.5, -3, 1.2), (-2, 0, 1.8), roll=5, focus_obj=h1_obj)      # Herbaceous Low Angle (#5)
+    kf_eased(11200, (4, -3, 1.5),   (5, 0, 1.2), roll=-15, focus_obj=gnome_obj)  # Gnome Dutch Angle (#1)
+    kf_eased(11500, (0, -20, 6),    (0, 0, 1), roll=0)
 
-    # Scenes 19-21: peaks
-    kf_eased(11601, (-1.5, -3, 1.8), (-2, 0, 1.8))
-    kf_eased(11900, (4, -2.5, 1.5), (5, 0, 1.2))        # Gnome fear
-    kf_eased(12000, (-1.5, -3, 1.8), (-2, 0, 1.8))
-    kf_eased(12200, (4, -2.5, 1.5), (5, 0, 1.2))
-    kf_eased(12300, (1.5, -3, 1.8),  (2, 0, 1.8))       # Arbor
-    kf_eased(12500, (4, -2.5, 1.5), (5, 0, 1.2))
-    kf_eased(12700, (0, -25, 10),   (0, 0, 1))          # wide
-    kf_eased(13000, (-1.5, -3, 1.8), (-2, 0, 1.8))      # final argument
+    # Scenes 19-21: peaks - High Tension Dutch Angles and Hero Shots
+    kf_eased(11601, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=10, focus_obj=h1_obj)     # Low Angle Hero (#5)
+    kf_eased(11900, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj)      # Extreme Dutch for Gnome (#1)
+
+    apply_impact_shake(11900, intensity=0.2) # Impact Shake (#9)
+
+    kf_eased(12000, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=15, focus_obj=h1_obj)
+    kf_eased(12200, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj)
+    kf_eased(12300, (1.5, -3, 1.0),  (2, 0, 1.8), roll=15, focus_obj=h2_obj)      # Arbor Hero Shot (#5)
+    kf_eased(12500, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj)
+    kf_eased(12700, (0, -25, 10),   (0, 0, 1), roll=0)          # wide
+    kf_eased(13000, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=20, focus_obj=h1_obj)     # Final Hero Argument (#5)
+
+    # Enhancement #10: Circular Dolly Around Characters during climax
+    # Enhancement #12: Anticipation before circular dolly
+    style.apply_anticipation(cam, "location", 13100, mathutils.Vector((0, 2, 0)), duration=10)
+    circular_dolly(13100, 13600, center=(0,0,0), radius=10, height=2, look_at=(0,0,1))
+
+    # Whip Pan (#7) transition to Retreat
+    whip_pan(SCENE_MAP['scene22_retreat'][0] - 10, (6, 6, 2), (3, 3, 1.2), duration=5)
 
     # Scene 22 retreat camera (13701-14500)
     s22_start = SCENE_MAP['scene22_retreat'][0]

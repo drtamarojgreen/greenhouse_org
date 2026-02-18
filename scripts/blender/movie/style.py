@@ -27,7 +27,13 @@ __all__ = [
     'animate_mood_fog', 'apply_film_flicker', 'apply_glow_trails',
     'setup_saturation_control', 'apply_desaturation_beat',
     'animate_dialogue_v2', 'animate_expression_blend', 'animate_reaction_shot',
-    'set_blend_method', 'animate_plant_advance'
+    'set_blend_method', 'animate_plant_advance', 'add_scene_markers',
+    'animate_distance_based_glow', 'apply_bioluminescent_veins',
+    'animate_weight_shift', 'apply_anticipation', 'animate_limp',
+    'animate_thinking_gesture', 'animate_defensive_crouch',
+    'setup_caustic_patterns', 'animate_dawn_progression',
+    'apply_interior_exterior_contrast', 'replace_with_soft_boxes',
+    'animate_hdri_rotation'
 ]
 
 def get_action_curves(action, create_if_missing=False):
@@ -740,11 +746,18 @@ def apply_desaturation_beat(scene, frame_start, frame_end, saturation=0.2):
         huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_end + 5)
 
 def animate_dialogue_v2(mouth_obj, frame_start, frame_end, intensity=1.0, speed=1.0):
-    """Enhanced procedural mouth movement with variable intensity and speed."""
+    """Enhanced procedural mouth movement with Breathing Pause (#16)."""
     if not mouth_obj: return
 
     current_f = frame_start
     while current_f < frame_end:
+        # Enhancement #16: Breathing Pause Mid-Dialogue
+        if random.random() > 0.9: # ~10% chance of a pause
+            mouth_obj.scale[2] = 0.4
+            mouth_obj.keyframe_insert(data_path="scale", index=2, frame=current_f)
+            current_f += 12 # 12 frame hold
+            continue
+
         # Randomized open/close cycles
         cycle_len = random.randint(4, 12) / speed
         open_amount = random.uniform(0.5, 1.5) * intensity
@@ -903,6 +916,57 @@ def animate_plant_advance(master, frame_start, frame_end):
     master.gnome.scale = (0.3, 0.3, 0.3)  # shrinks further under pressure
     master.gnome.keyframe_insert(data_path="scale", frame=frame_start + 600)
 
+def animate_weight_shift(obj, frame_start, frame_end, cycle=120, amplitude=0.02):
+    """Enhancement #11: Weight-Shifted Idle Stance."""
+    insert_looping_noise(obj, "location", index=0, strength=amplitude, scale=cycle, frame_start=frame_start, frame_end=frame_end)
+    insert_looping_noise(obj, "rotation_euler", index=1, strength=amplitude, scale=cycle, frame_start=frame_start, frame_end=frame_end)
+
+def apply_anticipation(obj, data_path, frame, offset_value, duration=5):
+    """Enhancement #12: Anticipation Frames Before Major Moves."""
+    orig_val = getattr(obj, data_path)
+    if hasattr(orig_val, "copy"): orig_val = orig_val.copy()
+
+    # Key current
+    obj.keyframe_insert(data_path=data_path, frame=frame - duration)
+    # Pull back
+    if isinstance(offset_value, (int, float)):
+        setattr(obj, data_path, orig_val - offset_value)
+    else: # Vector/Euler
+        setattr(obj, data_path, orig_val - offset_value)
+    obj.keyframe_insert(data_path=data_path, frame=frame - (duration // 2))
+    # Return for actual move
+    setattr(obj, data_path, orig_val)
+
+def animate_limp(obj, frame_start, frame_end, cycle=32):
+    """Enhancement #14: Gnome Limping Retreat Gait."""
+    # Asymmetric gait using noise with varying scale on Y
+    insert_looping_noise(obj, "location", index=2, strength=0.05, scale=cycle, frame_start=frame_start, frame_end=frame_end)
+    # Drag effect on one side
+    for f in range(frame_start, frame_end, cycle):
+        obj.rotation_euler[1] = math.radians(5)
+        obj.keyframe_insert(data_path="rotation_euler", index=1, frame=f)
+        obj.rotation_euler[1] = 0
+        obj.keyframe_insert(data_path="rotation_euler", index=1, frame=f + (cycle // 2))
+
+def animate_thinking_gesture(arm_obj, frame_start):
+    """Enhancement #19: Hand-to-Head Thinking Gesture."""
+    # Animate arm rising toward head
+    arm_obj.rotation_euler[0] = math.radians(-80)
+    arm_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=frame_start)
+    arm_obj.rotation_euler[0] = math.radians(-110)
+    arm_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=frame_start + 48)
+
+def animate_defensive_crouch(obj, frame_start, frame_end):
+    """Enhancement #20: Gnome Defensive Crouch."""
+    # Shrink spine (scale Z)
+    obj.scale[2] = 1.0
+    obj.keyframe_insert(data_path="scale", index=2, frame=frame_start)
+    obj.scale[2] = 0.8
+    obj.keyframe_insert(data_path="scale", index=2, frame=frame_start + 24)
+    obj.keyframe_insert(data_path="scale", index=2, frame=frame_end - 24)
+    obj.scale[2] = 1.0
+    obj.keyframe_insert(data_path="scale", index=2, frame=frame_end)
+
 def animate_reaction_shot(character_name, frame_start, frame_end):
     """Point 39: Adds listener micro-movements with robust character resolution."""
     char_name = character_name.split('_')[0]
@@ -925,3 +989,186 @@ def animate_reaction_shot(character_name, frame_start, frame_end):
             torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 30)
             torso.rotation_euler[0] = 0
             torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 60)
+
+def add_scene_markers(master):
+    """Enhancement #74: Timeline Bookmark System."""
+    from constants import SCENE_MAP
+    # Clear existing markers
+    master.scene.timeline_markers.clear()
+    for name, (start, end) in SCENE_MAP.items():
+        master.scene.timeline_markers.new(name.replace("scene", "S"), frame=start)
+
+def animate_distance_based_glow(gnome, characters, frame_start, frame_end):
+    """Enhancement #83: Gnome Eye Glow Intensity Driver."""
+    if not gnome: return
+
+    # Get eye material
+    mat = None
+    for slot in gnome.material_slots:
+        if "Eye" in slot.material.name:
+            mat = slot.material
+            break
+    if not mat: return
+
+    # Animate intensity based on proximity
+    for f in range(frame_start, frame_end + 1, 12):
+        bpy.context.scene.frame_set(f)
+        min_dist = 100.0
+        for char in characters:
+            if char:
+                dist = (gnome.matrix_world.to_translation() - char.matrix_world.to_translation()).length
+                min_dist = min(min_dist, dist)
+
+        # Closer = Brighter (Max at distance 1.0, Min at distance 10.0)
+        intensity = max(2.0, 50.0 * (1.0 / max(1.0, min_dist)))
+        set_principled_socket(mat, "Emission Strength", intensity, frame=f)
+
+def apply_bioluminescent_veins(characters, frame_start, frame_end):
+    """Enhancement #88: Bioluminescent Vein Network."""
+    for char in characters:
+        if not char: continue
+        for slot in char.material_slots:
+            mat = slot.material
+            if not mat or not mat.use_nodes: continue
+
+            # Use noise-driven emission for 'veins'
+            nodes = mat.node_tree.nodes
+            links = mat.node_tree.links
+
+            bsdf = nodes.get("Principled BSDF")
+            if not bsdf: continue
+
+            # Setup pulsing base
+            for f in range(frame_start, frame_end + 1, 72): # Match breathing cycle
+                set_principled_socket(mat, "Emission Strength", 0.5, frame=f)
+                set_principled_socket(mat, "Emission Strength", 2.0, frame=f + 36)
+
+def setup_caustic_patterns(floor_obj):
+    """Enhancement #24: Caustic Light Patterns on Floor."""
+    if not floor_obj: return
+    for slot in floor_obj.material_slots:
+        mat = slot.material
+        if not mat or not mat.use_nodes: continue
+        nodes, links = mat.node_tree.nodes, mat.node_tree.links
+
+        # Add a procedural caustic texture overlay
+        node_tex = nodes.new(type='ShaderNodeTexVoronoi')
+        node_tex.voronoi_dimensions = '3D'
+        node_tex.feature = 'F1'
+        node_tex.inputs['Scale'].default_value = 10.0
+
+        node_math = nodes.new(type='ShaderNodeMath')
+        node_math.operation = 'POWER'
+        node_math.inputs[1].default_value = 5.0
+
+        links.new(node_tex.outputs['Distance'], node_math.inputs[0])
+
+        # Mix with Base Color
+        bsdf = nodes.get("Principled BSDF")
+        if bsdf:
+            mix = nodes.new(type='ShaderNodeMixRGB')
+            mix.blend_type = 'ADD'
+            mix.inputs[0].default_value = 0.2
+
+            # Move existing link
+            old_link = None
+            for link in links:
+                if link.to_socket == bsdf.inputs['Base Color']:
+                    old_link = link
+                    break
+
+            if old_link:
+                links.new(old_link.from_socket, mix.inputs[1])
+                links.remove(old_link)
+
+            links.new(node_math.outputs[0], mix.inputs[2])
+            links.new(mix.outputs[0], bsdf.inputs['Base Color'])
+
+        # Animate texture for moving water effect
+        node_tex.inputs['W'].default_value = 0
+        node_tex.inputs['W'].keyframe_insert(data_path="default_value", frame=1)
+        node_tex.inputs['W'].default_value = 10.0
+        node_tex.inputs['W'].keyframe_insert(data_path="default_value", frame=15000)
+
+def animate_dawn_progression(sun_light):
+    """Enhancement #26: Gradual Dawn Light Progression."""
+    if not sun_light: return
+    # Start Pre-dawn (blue) -> Golden hour -> Midday white
+    colors = [
+        (1, (0.1, 0.2, 0.5)),
+        (4000, (1.0, 0.6, 0.2)),
+        (8000, (1.0, 0.9, 0.8)),
+        (15000, (1.0, 1.0, 1.0))
+    ]
+    for frame, color in colors:
+        sun_light.data.color = color
+        sun_light.data.keyframe_insert(data_path="color", frame=frame)
+
+    # Animate sun angle (X rotation)
+    sun_light.rotation_euler[0] = math.radians(-10)
+    sun_light.keyframe_insert(data_path="rotation_euler", index=0, frame=1)
+    sun_light.rotation_euler[0] = math.radians(-90)
+    sun_light.keyframe_insert(data_path="rotation_euler", index=0, frame=15000)
+
+def apply_interior_exterior_contrast(sun_light, cam):
+    """Enhancement #27: Interior vs Exterior Light Contrast."""
+    # This needs to be checked per frame or keyframed based on drone shots
+    # For now, we'll keyframe it based on the known drone shots frame ranges
+    drone_ranges = [(101, 200), (401, 480), (3901, 4100), (14200, 14400)]
+    for start, end in drone_ranges:
+        sun_light.data.color = (0.7, 0.8, 1.0) # Cool exterior
+        sun_light.data.keyframe_insert(data_path="color", frame=start)
+        sun_light.data.color = (1.0, 0.9, 0.8) # Return to warm interior
+        sun_light.data.keyframe_insert(data_path="color", frame=end)
+
+def replace_with_soft_boxes():
+    """Enhancement #29: Soft Box Fill Replacement."""
+    # Replace AREA lights with large emissive planes
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'LIGHT' and obj.data.type == 'AREA':
+            loc = obj.location.copy()
+            rot = obj.rotation_euler.copy()
+            name = obj.name
+            energy = obj.data.energy
+            color = obj.data.color
+
+            bpy.ops.object.select_all(action='DESELECT')
+            obj.select_set(True)
+            bpy.ops.object.delete()
+
+            bpy.ops.mesh.primitive_plane_add(location=loc, rotation=rot)
+            plane = bpy.context.object
+            plane.name = f"SoftBox_{name}"
+            plane.scale = (2, 2, 1)
+
+            mat = bpy.data.materials.new(name=f"Mat_{plane.name}")
+            mat.use_nodes = True
+            bsdf = mat.node_tree.nodes["Principled BSDF"]
+            set_principled_socket(mat, "Emission", color + (1,))
+            set_principled_socket(mat, "Emission Strength", energy / 1000.0) # Scale energy
+            plane.data.materials.append(mat)
+
+def animate_hdri_rotation(scene):
+    """Enhancement #30: Animated HDRI Sky Rotation."""
+    world = scene.world
+    if not world or not world.use_nodes: return
+    nodes = world.node_tree.nodes
+    mapping = nodes.get("Mapping")
+    if not mapping:
+        # Try to find or create mapping node for environment texture
+        tex = None
+        for n in nodes:
+            if n.type == 'TEX_ENVIRONMENT':
+                tex = n
+                break
+        if tex:
+            mapping = nodes.new(type='ShaderNodeMapping')
+            coord = nodes.new(type='ShaderNodeTexCoord')
+            world.node_tree.links.new(coord.outputs['Generated'], mapping.inputs['Vector'])
+            world.node_tree.links.new(mapping.outputs['Vector'], tex.inputs['Vector'])
+
+    if mapping:
+        mapping.inputs['Rotation'].default_value[2] = 0
+        mapping.inputs['Rotation'].keyframe_insert(data_path="default_value", index=2, frame=1)
+        mapping.inputs['Rotation'].default_value[2] = math.radians(360)
+        mapping.inputs['Rotation'].keyframe_insert(data_path="default_value", index=2, frame=15000)
