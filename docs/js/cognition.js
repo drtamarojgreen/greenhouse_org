@@ -58,6 +58,7 @@
             await window.GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await window.GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
             await window.GreenhouseUtils.loadScript('cognition_ui_3d_brain.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition_drawing_utils.js', baseUrl);
             await window.GreenhouseUtils.loadScript('cognition_config.js', baseUrl);
             await window.GreenhouseUtils.loadScript('cognition_analytics.js', baseUrl);
             await window.GreenhouseUtils.loadScript('cognition_theories.js', baseUrl);
