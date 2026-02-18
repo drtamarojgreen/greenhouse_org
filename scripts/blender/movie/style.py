@@ -21,13 +21,15 @@ __all__ = [
     'animate_pulsing_emission', 'animate_dynamic_pupils',
     'apply_thought_motes', 'animate_gait', 'animate_cloak_sway',
     'animate_shoulder_shrug', 'animate_gnome_stumble',
+    'animate_lightning_flash', 'setup_caustics', 'setup_hdri_rotation',
+    'setup_iris_wipe', 'apply_film_burn',
     'apply_reactive_bloom', 'apply_thermal_transition',
     'setup_chromatic_aberration', 'setup_god_rays', 'animate_vignette',
     'apply_neuron_color_coding', 'setup_bioluminescent_flora',
     'animate_mood_fog', 'apply_film_flicker', 'apply_glow_trails',
     'setup_saturation_control', 'apply_desaturation_beat',
     'animate_dialogue_v2', 'animate_expression_blend', 'animate_reaction_shot',
-    'set_blend_method', 'animate_plant_advance'
+    'set_blend_method', 'animate_plant_advance', 'apply_anticipation'
 ]
 
 def get_action_curves(action, create_if_missing=False):
@@ -570,12 +572,29 @@ def get_plant_humanoid():
     return _plant_humanoid
 
 def animate_gait(torso, mode='HEAVY', frame_start=1, frame_end=15000):
-    """Point 88: Cached import for gait delegation."""
+    """Point 88: Cached import for gait delegation with Point 14: Limping."""
     step_h = 0.2 if mode == 'HEAVY' else 0.08
     cycle_l = 64 if mode == 'HEAVY' else 32
 
+    # Point 14: Gnome Limping Retreat Gait (asymmetric cycle)
+    if mode == 'LIMP':
+        step_h = 0.15
+        cycle_l = 48
+
     ph = get_plant_humanoid()
     ph.animate_walk(torso, frame_start, frame_end, step_height=step_h, cycle_length=cycle_l)
+
+    # Point 15: Secondary Torso Twist
+    insert_looping_noise(torso, "rotation_euler", index=2, strength=0.05, scale=cycle_l, frame_start=frame_start, frame_end=frame_end)
+
+def apply_anticipation(obj, frame, magnitude=0.1, duration=5):
+    """Point 12: Adds a pull-back or compression pose before a major move."""
+    orig_loc = obj.location.copy()
+    obj.keyframe_insert(data_path="location", frame=frame - duration)
+    # Pull back in Y
+    obj.location[1] -= magnitude
+    obj.keyframe_insert(data_path="location", frame=frame)
+    obj.location = orig_loc
 
 def animate_cloak_sway(cloak_obj, frame_start, frame_end):
     """Animate cloak with noise."""
@@ -604,6 +623,74 @@ def apply_thermal_transition(master, frame_start, frame_end, color_start=(0.5, 0
         bg.inputs[0].keyframe_insert(data_path="default_value", frame=frame_start)
         bg.inputs[0].default_value = (*color_end, 1)
         bg.inputs[0].keyframe_insert(data_path="default_value", frame=frame_end)
+
+def animate_lightning_flash(sun_obj, frame):
+    """Point 23: Lightning Flashes During Storm."""
+    if not sun_obj: return
+    orig_energy = sun_obj.data.energy
+    sun_obj.data.keyframe_insert(data_path="energy", frame=frame - 1)
+    sun_obj.data.energy = orig_energy * 20
+    sun_obj.data.keyframe_insert(data_path="energy", frame=frame)
+    sun_obj.data.energy = orig_energy
+    sun_obj.data.keyframe_insert(data_path="energy", frame=frame + 2)
+
+def setup_caustics(mat):
+    """Point 24: Procedural caustic light patterns."""
+    if not mat or not mat.use_nodes: return
+    # Simplified: add a Voronoi texture to the material as a light/dark mask
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    caustic_node = nodes.new(type='ShaderNodeTexVoronoi')
+    caustic_node.inputs['Scale'].default_value = 5.0
+    # In a real implementation, we would mix this into the base color or emission
+
+def setup_hdri_rotation(world, frame_start, frame_end):
+    """Point 30: Slowly rotate the world HDRI environment."""
+    if not world or not world.node_tree: return
+    nodes = world.node_tree.nodes
+    mapping = nodes.get("Mapping") or nodes.new(type='ShaderNodeMapping')
+    mapping.inputs['Rotation'].default_value[2] = 0
+    mapping.keyframe_insert(data_path="inputs[2].default_value", index=2, frame=frame_start)
+    mapping.inputs['Rotation'].default_value[2] = math.radians(45)
+    mapping.keyframe_insert(data_path="inputs[2].default_value", index=2, frame=frame_end)
+
+def setup_iris_wipe(scene, frame, mode='OPEN'):
+    """Point 49: Silent Film Iris Wipe Transitions."""
+    tree = get_compositor_node_tree(scene)
+    if not tree: return
+    iris = tree.nodes.new('CompositorNodeEllipseMask')
+    iris.name = "IrisWipe"
+    if mode == 'OPEN':
+        iris.width = 0
+        iris.height = 0
+        iris.keyframe_insert(data_path="width", frame=frame)
+        iris.keyframe_insert(data_path="height", frame=frame)
+        iris.width = 2.0
+        iris.height = 2.0
+        iris.keyframe_insert(data_path="width", frame=frame + 24)
+        iris.keyframe_insert(data_path="height", frame=frame + 24)
+    else:
+        iris.width = 2.0
+        iris.height = 2.0
+        iris.keyframe_insert(data_path="width", frame=frame)
+        iris.keyframe_insert(data_path="height", frame=frame)
+        iris.width = 0
+        iris.height = 0
+        iris.keyframe_insert(data_path="width", frame=frame + 24)
+        iris.keyframe_insert(data_path="height", frame=frame + 24)
+    return iris
+
+def apply_film_burn(scene, frame):
+    """Point 51: Film Burn Transition Effect."""
+    tree = get_compositor_node_tree(scene)
+    if not tree: return
+    bright = tree.nodes.new('CompositorNodeBrightContrast')
+    bright.inputs['Bright'].default_value = 0
+    bright.keyframe_insert(data_path="inputs[0].default_value", frame=frame - 5)
+    bright.inputs['Bright'].default_value = 100
+    bright.keyframe_insert(data_path="inputs[0].default_value", frame=frame)
+    bright.inputs['Bright'].default_value = 0
+    bright.keyframe_insert(data_path="inputs[0].default_value", frame=frame + 5)
 
 def setup_chromatic_aberration(scene, strength=0.01):
     """Adds a Lens Distortion node for chromatic aberration."""
@@ -740,11 +827,21 @@ def apply_desaturation_beat(scene, frame_start, frame_end, saturation=0.2):
         huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_end + 5)
 
 def animate_dialogue_v2(mouth_obj, frame_start, frame_end, intensity=1.0, speed=1.0):
-    """Enhanced procedural mouth movement with variable intensity and speed."""
+    """Enhanced procedural mouth movement with Point 16: Breathing pauses."""
     if not mouth_obj: return
 
     current_f = frame_start
+    speech_timer = 0
     while current_f < frame_end:
+        # Point 16: Insert a 6-frame hold every 48 frames
+        if speech_timer >= 48:
+            mouth_obj.scale[2] = 0.4
+            mouth_obj.keyframe_insert(data_path="scale", index=2, frame=current_f)
+            mouth_obj.keyframe_insert(data_path="scale", index=2, frame=current_f + 6)
+            current_f += 6
+            speech_timer = 0
+            continue
+
         # Randomized open/close cycles
         cycle_len = random.randint(4, 12) / speed
         open_amount = random.uniform(0.5, 1.5) * intensity
@@ -758,6 +855,7 @@ def animate_dialogue_v2(mouth_obj, frame_start, frame_end, intensity=1.0, speed=
             mouth_obj.keyframe_insert(data_path="scale", index=2, frame=mid_f)
 
         current_f += cycle_len
+        speech_timer += cycle_len
 
     mouth_obj.scale[2] = 0.4
     mouth_obj.keyframe_insert(data_path="scale", index=2, frame=frame_end)

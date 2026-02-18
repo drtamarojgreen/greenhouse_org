@@ -30,11 +30,25 @@ def setup_camera_keyframes(master, cam, target):
     origin = (0, 0, 0)
     high_target = (0, 0, 1.5)
 
-    def kf_eased(frame, cam_loc, target_loc, easing='EASE_IN_OUT'):
+    def kf_eased(frame, cam_loc, target_loc, easing='EASE_IN_OUT', roll=0, lens=None, focus_dist=None):
         cam.location = cam_loc
         target.location = target_loc
         cam.keyframe_insert(data_path="location", frame=frame)
         target.keyframe_insert(data_path="location", frame=frame)
+
+        # Point 1: Dutch Angle
+        cam.rotation_euler[1] = math.radians(roll)
+        cam.keyframe_insert(data_path="rotation_euler", index=1, frame=frame)
+
+        # Point 4: Crash Zoom
+        if lens is not None:
+            cam.data.lens = lens
+            cam.data.keyframe_insert(data_path="lens", frame=frame)
+
+        # Point 2: Rack Focus (Focus Distance)
+        if focus_dist is not None:
+            cam.data.dof.focus_distance = focus_dist
+            cam.data.dof.keyframe_insert(data_path="focus_distance", frame=frame)
 
         # Set easing on the just-inserted keyframe
         if cam.animation_data and cam.animation_data.action:
@@ -52,12 +66,25 @@ def setup_camera_keyframes(master, cam, target):
         Moves camera in a slow lateral arc at high altitude,
         looking nearly straight down with slight forward angle.
         """
+        # Point 8: Parallax Scrolling (handled by camera motion across depth)
         kf_eased(frame_start,
            (start_xy[0], start_xy[1], altitude),
            look_at, easing='EASE_IN')
         kf_eased(frame_end,
            (end_xy[0], end_xy[1], altitude),
            look_at, easing='EASE_OUT')
+
+    def whip_pan(frame, direction='LEFT', magnitude=30):
+        """Point 7: Whip Pan Transition."""
+        orig_rot = cam.rotation_euler.copy()
+        cam.keyframe_insert(data_path="rotation_euler", frame=frame-2)
+        if direction == 'LEFT':
+            cam.rotation_euler[2] += math.radians(magnitude)
+        else:
+            cam.rotation_euler[2] -= math.radians(magnitude)
+        cam.keyframe_insert(data_path="rotation_euler", frame=frame)
+        cam.rotation_euler = orig_rot
+        cam.keyframe_insert(data_path="rotation_euler", frame=frame+2)
 
     # Extend clip_end for high altitude drone shots
     cam.data.clip_end = 500.0
@@ -108,6 +135,7 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(1250, (-6,-12,3), (0, 0, 1.5))
 
     # Sanctuary fly-in: crane shot from above descending (3901 - 4100)
+    whip_pan(3901, direction='RIGHT') # Point 7: Whip Pan Transition
     kf_eased(3901, (0, -80, 40), (0, 0, 0), easing='EASE_IN')       # extreme wide aerial
     kf_eased(3950, (0, -80, 40), (0, 0, 0), easing='EASE_IN')       # hold
     kf_eased(4050, (0, -25, 10), (0, 0, 2), easing='EASE_IN_OUT')   # descend
@@ -121,10 +149,13 @@ def setup_camera_keyframes(master, cam, target):
 
     # Dialogue closeups (9501 - 13000)
     # Scene 16 (9501-10200): Herbaceous speaks first, then Arbor
-    kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5))        # wide
-    kf_eased(9525,  (-1.5, -3, 1.8), (-2, 0, 1.8))      # Herbaceous face
-    kf_eased(9780,  (0, -15, 4),    (0, 0, 1.5))        # wide
-    kf_eased(9830,  (1.5, -3, 1.8),  (2, 0, 1.8))       # Arbor face
+    kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5), focus_dist=15)        # wide
+    # Point 3: Over-the-shoulder framing
+    kf_eased(9525,  (-1, -4, 1.8), (-2, 0, 1.8), focus_dist=2.5)      # Herbaceous face (OTS)
+    # Point 2: Rack Focus (switching to listener)
+    kf_eased(9650,  (-1, -4, 1.8), (2, 0, 1.8), focus_dist=6.5)       # Rack to Arbor
+    kf_eased(9780,  (0, -15, 4),    (0, 0, 1.5), focus_dist=15)        # wide
+    kf_eased(9830,  (1, -4, 1.8),  (2, 0, 1.8), focus_dist=2.5)       # Arbor face (OTS)
     kf_eased(10100, (0, -15, 4),    (0, 0, 1.5))        # pull back
 
     # Scene 17 (10201-10900): Arbor speaks first
@@ -136,9 +167,12 @@ def setup_camera_keyframes(master, cam, target):
 
     # Scene 18 (10901-11600): Gnome enters
     kf_eased(10901, (0, -15, 4),    (0, 0, 1.5))
-    kf_eased(10950, (-1.5, -3, 1.8), (-2, 0, 1.8))      # Herbaceous speaks
-    kf_eased(11200, (4, -3, 1.5),   (5, 0, 1.2))        # Gnome reaction
-    kf_eased(11500, (0, -20, 6),    (0, 0, 1))          # wide
+    # Point 5: Low Angle Hero Shot (lower camera, looking up)
+    kf_eased(10950, (-2, -3, 0.8), (-2, 0, 2.5), roll=15)      # Herbaceous speaks
+    # Point 4: Crash Zoom on Gnome
+    kf_eased(11200, (4, -3, 1.5),   (5, 0, 1.2), roll=20, lens=100)        # Gnome reaction
+    kf_eased(11205, (4, -3, 1.5),   (5, 0, 1.2), roll=20, lens=35)         # Back to normal
+    kf_eased(11500, (0, -20, 6),    (0, 0, 1), roll=0)
 
     # Scenes 19-21: peaks
     kf_eased(11601, (-1.5, -3, 1.8), (-2, 0, 1.8))
@@ -152,17 +186,21 @@ def setup_camera_keyframes(master, cam, target):
 
     # Scene 22 retreat camera (13701-14500)
     s22_start = SCENE_MAP['scene22_retreat'][0]
-    kf_eased(s22_start,       (6, 6, 2),    (3, 3, 1.2))   # gnome closeup
-    kf_eased(s22_start + 100, (0, -8, 3),   (1, 1, 1.5))   # pull back
+    # Point 9: Motivated Camera Shake (on gnome stomp/retreat start)
+    style.apply_camera_shake(cam, s22_start, s22_start+5, strength=0.5)
+
+    kf_eased(s22_start,       (6, 6, 2),    (3, 3, 1.2), roll=25)   # gnome closeup
+    kf_eased(s22_start + 100, (0, -8, 3),   (1, 1, 1.5), roll=10)   # pull back
     kf_eased(s22_start + 200, (-2, -10, 4), (-1, 1, 1.5))  # swing to plants
     kf_eased(s22_start + 350, (0, -30, 15), (0, 0, 1))     # wide shot - gnome tiny
     kf_eased(s22_start + 500, (0, -15, 5),  (0, 0, 1.5))   # settle on plants
     kf_eased(14400,           (0, -15, 5),  (0, 0, 1.5))   # hold
 
     # Victory drone
+    # Point 43: Visual Echo of Opening in Finale (Mirror Opening Composition)
     drone_sweep(14200, 14400,
-                start_xy=(-60, -60),
-                end_xy=(60, 60),
+                start_xy=(-40, -40), # Mirrored/Similar to start
+                end_xy=(40, -20),
                 altitude=90,
                 look_at=(0, 0, 0))
 

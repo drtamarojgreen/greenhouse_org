@@ -26,27 +26,49 @@ def create_greenhouse_iron_mat():
     return mat
 
 def create_greenhouse_glass_mat():
+    """Point 35: Greenhouse Fogged Glass Effect."""
     mat = bpy.data.materials.get("GH_Glass")
     if mat: return mat
     mat = bpy.data.materials.new(name="GH_Glass")
     mat.use_nodes = True
-    bsdf = mat.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs["Base Color"].default_value = (0.7, 0.8, 0.9, 1)
-    # Point 74: Use Transmission for Cycles, Alpha 1.0 to avoid conflicts
-    bsdf.inputs["Alpha"].default_value = 1.0
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    nodes.clear()
 
-    # Transmission (Guarded for Blender 5.0 naming drift)
-    style.set_principled_socket(bsdf, 'Transmission', 1.0)
+    node_out = nodes.new('ShaderNodeOutputMaterial')
+    node_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
+    node_bsdf.inputs["Base Color"].default_value = (0.7, 0.8, 0.9, 1)
+    node_bsdf.inputs["Alpha"].default_value = 1.0
+    style.set_principled_socket(node_bsdf, 'Transmission', 1.0)
 
-    bsdf.inputs["Roughness"].default_value = 0.05
+    # Point 35: Condensation Noise (Fogged effect)
+    node_fog = nodes.new('ShaderNodeTexNoise')
+    node_fog.inputs['Scale'].default_value = 100.0
 
-    # Scratched Glass (Noise replacing Musgrave in Blender 5.0)
-    node_scratches = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
-    node_scratches.inputs['Scale'].default_value = 50.0
-    mat.node_tree.links.new(node_scratches.outputs['Fac'], bsdf.inputs['Roughness'])
+    node_ramp = nodes.new('ShaderNodeValToRGB')
+    node_ramp.color_ramp.elements[0].position = 0.4
+    node_ramp.color_ramp.elements[0].color = (0.05, 0.05, 0.05, 1) # Clear
+    node_ramp.color_ramp.elements[1].position = 0.6
+    node_ramp.color_ramp.elements[1].color = (0.8, 0.8, 0.8, 1)    # Fogged
 
+    links.new(node_fog.outputs['Fac'], node_ramp.inputs['Fac'])
+    links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Roughness'])
+
+    links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
     style.set_blend_method(mat, 'BLEND')
     return mat
+
+def create_ivy_vine(start_loc, end_loc, col):
+    """Point 31: Procedural Ivy on Greenhouse Walls."""
+    bpy.ops.curve.primitive_bezier_curve_add()
+    ivy = bpy.context.object
+    ivy.name = "ProceduralIvy"
+    # Simplified: give it some thickness
+    ivy.data.bevel_depth = 0.02
+    ivy.data.bevel_resolution = 4
+    col.objects.link(ivy)
+    if ivy.name in bpy.context.scene.collection.objects:
+        bpy.context.scene.collection.objects.unlink(ivy)
+    return ivy
 
 def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
     """Creates a 1920s expressionist iron and glass greenhouse."""

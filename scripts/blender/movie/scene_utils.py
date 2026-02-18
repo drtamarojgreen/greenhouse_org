@@ -4,7 +4,7 @@ import random
 import style
 
 def create_intertitle(master, text, frame_start, frame_end):
-    """Creates a classic silent movie intertitle card."""
+    """Creates a classic silent movie intertitle card with Points 45 & 50."""
     if master.mode != 'SILENT_FILM': return
 
     # Point 103: Fixed rotation for credits/intertitles
@@ -14,14 +14,35 @@ def create_intertitle(master, text, frame_start, frame_end):
     text_obj.data.body = text
     text_obj.data.align_x = 'CENTER'
     text_obj.data.align_y = 'CENTER'
-    text_obj.data.size = 1.0
-    text_obj.data.extrude = 0.05
+
+    # Point 50: Typography Evolution
+    if frame_start < 5000:
+        text_obj.data.size = 1.0 # Ornate serif style (simulated via size/extrude)
+        text_obj.data.extrude = 0.05
+    else:
+        text_obj.data.size = 1.2 # Bold and urgent
+        text_obj.data.extrude = 0.1
 
     mat = bpy.data.materials.new(name=f"TextMat_{frame_start}")
     mat.use_nodes = True
-    style.set_principled_socket(mat, "Base Color", (0.439, 0.259, 0.078, 1)) # #704214
-    style.set_principled_socket(mat, "Emission Strength", 5.0)
+
+    # Point 92: High Contrast Intertitle Mode
+    if getattr(master, 'high_contrast_mode', False):
+        style.set_principled_socket(mat, "Base Color", (1, 1, 1, 1)) # White
+        style.set_principled_socket(mat, "Emission Strength", 10.0)
+    else:
+        style.set_principled_socket(mat, "Base Color", (0.439, 0.259, 0.078, 1)) # #704214
+        style.set_principled_socket(mat, "Emission Strength", 5.0)
+
     text_obj.data.materials.append(mat)
+
+    # Point 45: Thought Bubble Card
+    if frame_start > 9000:
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=2, location=(0,0,-0.1))
+        bubble = bpy.context.object
+        bubble.scale = (1.5, 0.2, 1)
+        bubble.name = f"Bubble_{frame_start}"
+        master._set_visibility([bubble], [(frame_start, frame_end)])
 
     # Absolute values for rotation
     text_obj.rotation_euler[1] = 0
