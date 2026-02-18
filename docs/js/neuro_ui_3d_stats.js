@@ -71,8 +71,9 @@
                 }
             }
 
-            ctx.font = '12px Arial';
+            ctx.font = 'bold 11px Quicksand, Arial';
             ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
 
             const drawnLabels = [];
 
@@ -92,20 +93,37 @@
 
                 if (!collision) {
                     // Draw Label with background for readability
-                    const text = t(label.name);
+                    const text = t(label.name).toUpperCase();
                     const textWidth = ctx.measureText(text).width;
+                    const paddingH = 6;
+                    const paddingV = 4;
+                    const h = 14;
 
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-                    ctx.fillRect(label.x - textWidth / 2 - 4, label.y - 22, textWidth + 8, 16);
+                    // Rounded background
+                    ctx.fillStyle = 'rgba(10, 15, 25, 0.7)';
+                    ctx.strokeStyle = 'rgba(76, 161, 175, 0.5)';
+                    ctx.lineWidth = 1;
 
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                    ctx.fillText(text, label.x, label.y - 10);
+                    const rx = label.x - textWidth / 2 - paddingH;
+                    const ry = label.y - h / 2 - paddingV;
+                    const rw = textWidth + paddingH * 2;
+                    const rh = h + paddingV * 2;
+
+                    // Manual round rect for stats (not using app.roundRect to keep it decoupled)
+                    ctx.beginPath();
+                    ctx.roundRect ? ctx.roundRect(rx, ry, rw, rh, 4) : ctx.rect(rx, ry, rw, rh);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText(text, label.x, label.y);
 
                     drawnLabels.push(label);
                 }
             });
 
             ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
         }
     };
 

@@ -172,6 +172,7 @@
         },
 
         drawSynapsePiP(ctx, x, y, w, h, connection, synapseMeshes, isMainView = false, externalCamera = null) {
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
             const adhdConfig = window.GreenhouseNeuroApp?.ga?.adhdConfig;
 
@@ -199,8 +200,9 @@
                 ctx.rect(x, y, w, h);
                 ctx.clip();
                 ctx.fillStyle = '#4ca1af';
-                ctx.font = '12px Arial';
-                ctx.fillText("Synapse View", x + 10, y + 20);
+                ctx.font = '800 10px Quicksand, sans-serif';
+                ctx.textBaseline = 'top';
+                ctx.fillText(t('synapse_view_title').toUpperCase(), x + 15, y + 15);
             } else {
                 ctx.save();
             }
@@ -208,7 +210,9 @@
             if (!connection || !synapseMeshes) {
                 ctx.fillStyle = '#666';
                 ctx.textAlign = 'center';
-                ctx.fillText("No Connection Selected", x + w / 2, y + h / 2);
+                ctx.textBaseline = 'middle';
+                ctx.font = '14px Quicksand, sans-serif';
+                ctx.fillText(t('no_connection_selected'), x + w / 2, y + h / 2);
                 ctx.restore();
                 return;
             }
@@ -483,6 +487,7 @@
             // Labels
             ctx.font = 'bold 12px Quicksand, sans-serif';
             ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             ctx.shadowColor = 'rgba(0,0,0,0.8)';
             ctx.shadowBlur = 4;
             ctx.shadowOffsetX = 1;
@@ -495,23 +500,23 @@
                 // ADHD: EF Gating (10)
                 if (adhdActive.has(10) && Math.random() < 0.1) {
                     ctx.fillStyle = 'red';
-                    ctx.fillText("GATING FAILURE", preLabelPos.x + x, preLabelPos.y + y - 20);
+                    ctx.fillText(t('gating_failure').toUpperCase(), preLabelPos.x + x, preLabelPos.y + y - 20);
                 }
-                ctx.fillText("PRE-SYNAPTIC TERMINAL", preLabelPos.x + x, preLabelPos.y + y);
+                ctx.fillText(t('pre_synaptic_terminal').toUpperCase(), preLabelPos.x + x, preLabelPos.y + y);
             }
 
             // 2. Synaptic Cleft (Middle)
             const cleftLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 0, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (cleftLabelPos.scale > 0) {
                 ctx.fillStyle = 'rgba(0, 136, 255, 0.9)';
-                ctx.fillText("SYNAPTIC CLEFT", cleftLabelPos.x + x, cleftLabelPos.y + y);
+                ctx.fillText(t('synaptic_cleft').toUpperCase(), cleftLabelPos.x + x, cleftLabelPos.y + y);
             }
 
             // 3. Post-Synaptic Density (Bottom)
             const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 180, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (postLabelPos.scale > 0) {
                 ctx.fillStyle = '#C0C0C0';
-                ctx.fillText("POST-SYNAPTIC DENSITY", postLabelPos.x + x, postLabelPos.y + y);
+                ctx.fillText(t('post_synaptic_density').toUpperCase(), postLabelPos.x + x, postLabelPos.y + y);
             }
 
             ctx.restore();

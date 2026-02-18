@@ -137,6 +137,19 @@
             this.evaluateFitness();
         }
 
+        removeNeuron(genome, index) {
+            if (index < 0 || index >= genome.neurons.length) return;
+            // Connection repair: Remove connections involving this neuron
+            genome.connections = genome.connections.filter(c => c.from !== index && c.to !== index);
+            // Re-index connections
+            genome.connections.forEach(c => {
+                if (c.from > index) c.from--;
+                if (c.to > index) c.to--;
+            });
+            // Remove neuron
+            genome.neurons.splice(index, 1);
+        }
+
         createRandomGenome() {
             // ADHD: Prenatal Exposure Simulation (Enhancement 78)
             const prenatalNoise = this.adhdConfig.activeEnhancements.has(78) ? 50 : 0;
@@ -491,7 +504,7 @@
                     // Random node death in population
                     this.population.forEach(g => {
                         if (g.neurons.length > 5) {
-                            g.neurons.splice(Math.floor(this.nextRand() * g.neurons.length), 1);
+                            this.removeNeuron(g, Math.floor(this.nextRand() * g.neurons.length));
                         }
                     });
                 }
@@ -679,7 +692,7 @@
             if (this.adhdConfig.activeEnhancements.has(79) && this.nextRand() < 0.01) {
                 const killIdx = Math.floor(this.nextRand() * genome.neurons.length);
                 if (genome.neurons[killIdx].id !== 0) {
-                    genome.neurons.splice(killIdx, 1);
+                    this.removeNeuron(genome, killIdx);
                 }
             }
 
