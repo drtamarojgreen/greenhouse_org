@@ -34,11 +34,13 @@ class TestReleaseGate(unittest.TestCase):
             if s_name not in silent_movie_generator.SCENE_MAP: continue
             start, end = silent_movie_generator.SCENE_MAP[s_name]
             
-            # Check start, mid, end
-            check_frames = [start, (start+end)//2, end]
-            
+            # Check start, middle, and end of the scene for visibility
+            check_frames = [start, (start + end) // 2, end]
+
             for f in check_frames:
                 self.master.scene.frame_set(f)
+                bpy.context.view_layer.update() # Needed to evaluate hide_render keyframes
+
                 # During these dialogue scenes, Herbaceous and Arbor must be visible
                 for char in ["Herbaceous", "Arbor"]:
                     obj = bpy.data.objects.get(f"{char}_Torso")
@@ -48,7 +50,7 @@ class TestReleaseGate(unittest.TestCase):
     def test_97_credits_trigger(self):
         """R97: Credits content start trigger only after retreat completion."""
         retreat_end = silent_movie_generator.SCENE_MAP['scene22'][1]
-        credits_start = silent_movie_generator.SCENE_MAP['credits'][0]
+        credits_start = silent_movie_generator.SCENE_MAP['scene12_credits'][0]
 
         self.assertGreater(credits_start, retreat_end, "R97 FAIL: Credits started too early")
 

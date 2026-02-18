@@ -135,9 +135,11 @@ class TestAssetDetails(unittest.TestCase):
         """Verify that objects visible in viewport are also visible in render."""
         for obj in bpy.data.objects:
             if obj.type in ['MESH', 'CURVE', 'SURFACE']:
+                # If an object is visible in the viewport but hidden in the render, it's a potential mistake.
                 if not obj.hide_viewport and obj.hide_render:
+                    # Ignore known non-renderable helper objects
                     if "Target" in obj.name or "Control" in obj.name or "Collision" in obj.name: continue
-                    self.fail(f"Object {obj.name} is visible in viewport but HIDDEN in render. This may be a mistake.")
+                    self.fail(f"Object '{obj.name}' is visible in viewport but HIDDEN in render. This may be a mistake.")
 
 if __name__ == "__main__":
     # Filter out Blender arguments
