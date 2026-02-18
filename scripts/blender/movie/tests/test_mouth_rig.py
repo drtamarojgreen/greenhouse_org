@@ -31,10 +31,15 @@ class TestMouthRig(unittest.TestCase):
             curves = style.get_action_curves(mouth.animation_data.action)
             for fc in curves:
                 if fc.data_path == "scale" and fc.array_index == 2:
+                    values = [kp.co[1] for kp in fc.keyframe_points]
+                    self.assertGreater(len(values), 1, f"R21 FAIL: {name} mouth has no animation variation.")
+                    # Robustness: Check that the amplitude actually varies, not just stuck at one value
+                    self.assertNotAlmostEqual(min(values), max(values), delta=0.01, msg=f"R21 FAIL: {name} mouth amplitude is static.")
+
                     for kp in fc.keyframe_points:
                         val = kp.co[1]
                         # Expect scale.z to be within [0.1, 2.0]
-                        self.assertTrue(0.05 <= val <= 2.5, f"R21 FAIL: {name} mouth amplitude {val} out of bounds")
+                        self.assertTrue(0.05 <= val <= 2.5, f"R21 FAIL: {name} mouth amplitude {val:.2f} out of bounds [0.05, 2.5]")
 
     def test_23_silent_segments(self):
         """R23: Silent segments keep mouth movement near zero (or at neutral)."""
@@ -49,14 +54,23 @@ class TestMouthRig(unittest.TestCase):
             # Check frames outside [500, 600]
             # In our implementation, we only keyframe the range and the end.
             # But let's check if there are any keyframes in a "silent" range we know of.
+            found_movement_in_segment = False
             curves = style.get_action_curves(mouth.animation_data.action)
             for fc in curves:
                 if fc.data_path == "scale" and fc.array_index == 2:
+                    values_in_segment = []
                     for kp in fc.keyframe_points:
                         f = kp.co[0]
                         if f < 500 or f > 600:
                             val = kp.co[1]
                             self.assertAlmostEqual(val, 0.4, delta=0.01, msg=f"R23 FAIL: {name} mouth active at silent frame {f}")
+                        else:
+                            values_in_segment.append(kp.co[1])
+                    
+                    if len(values_in_segment) > 1 and max(values_in_segment) - min(values_in_segment) > 0.1:
+                        found_movement_in_segment = True
+            
+            self.assertTrue(found_movement_in_segment, f"R23 FAIL: {name} mouth showed no significant movement within the animated segment [500, 600].")
 
     def test_26_no_negative_scale(self):
         """R26: Preventing impossible negative jaw scale."""

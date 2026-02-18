@@ -12,10 +12,9 @@ import style
 class TestAssetDetails(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Point 59: Support --quick flag for faster tests
-        quick = "--quick" in sys.argv
+        # Run the movie master to generate the scene
         cls.master = MovieMaster(mode='SILENT_FILM')
-        cls.master.run(quick=quick)
+        cls.master.run()
 
     def test_herbaceous_hierarchy(self):
         """Verify the deep hierarchy of Herbaceous."""
@@ -40,12 +39,14 @@ class TestAssetDetails(unittest.TestCase):
         self.assertGreater(len(leaves), 10, "Herbaceous Head should have many leaves")
 
     def test_gnome_hierarchy(self):
-        """Point 28 & 58: Verify the hierarchy of the Gloom Gnome (with merged static parts)."""
+        """Verify the deep hierarchy of the Gloom Gnome."""
         torso = bpy.data.objects.get("GloomGnome_Torso")
         self.assertIsNotNone(torso, "GloomGnome_Torso missing")
 
-        # After Point 28, Hat/Beard/Cloak are joined into Torso mesh, not children.
         child_names = [c.name for c in torso.children]
+        self.assertIn("GloomGnome_Hat", child_names)
+        self.assertIn("GloomGnome_Beard", child_names)
+        self.assertIn("GloomGnome_Cloak", child_names)
         self.assertIn("GloomGnome_Staff_Container", child_names)
 
         # Check staff container for segments
@@ -55,39 +56,46 @@ class TestAssetDetails(unittest.TestCase):
         self.assertIn("GloomGnome_GloomOrb", staff_children)
 
     def test_procedural_textures_in_materials(self):
-        """Verify that materials contain the expected procedural texture nodes."""
+        """Verify that materials contain the expected procedural texture nodes and they are connected."""
+        def check_node_connected(mat, type_name):
+            if not mat or not mat.use_nodes or not mat.node_tree: return False
+            for n in mat.node_tree.nodes:
+                if n.type == type_name and any(out.is_linked for out in n.outputs):
+                    return True
+            return False
+
         # Herbaceous Bark
         mat_bark = bpy.data.materials.get("PlantMat_Herbaceous")
         self.assertIsNotNone(mat_bark)
-        nodes = mat_bark.node_tree.nodes
-        node_types = [n.type for n in nodes]
-        self.assertIn('TEX_NOISE', node_types, "Herbaceous Bark material missing Noise texture")
-        self.assertIn('TEX_VORONOI', node_types, "Herbaceous Bark material missing Voronoi texture")
+        self.assertTrue(check_node_connected(mat_bark, 'TEX_NOISE'), "Herbaceous Bark material missing connected Noise texture")
+        self.assertTrue(check_node_connected(mat_bark, 'TEX_VORONOI'), "Herbaceous Bark material missing connected Voronoi texture")
 
         # Herbaceous Leaf
         mat_leaf = bpy.data.materials.get("LeafMat_Herbaceous")
         self.assertIsNotNone(mat_leaf)
-        node_types_leaf = [n.type for n in mat_leaf.node_tree.nodes]
-        self.assertIn('TEX_WAVE', node_types_leaf, "Herbaceous Leaf material missing Wave texture (Venation)")
+        self.assertTrue(check_node_connected(mat_leaf, 'TEX_WAVE'), "Herbaceous Leaf material missing connected Wave texture (Venation)")
 
         # Gnome Cloak
         mat_cloak = bpy.data.materials.get("GloomGnome_MatCloak")
         self.assertIsNotNone(mat_cloak)
-        node_types_cloak = [n.type for n in mat_cloak.node_tree.nodes]
-        self.assertIn('TEX_WAVE', node_types_cloak, "Gnome Cloak material missing Wave texture (Weave)")
+        self.assertTrue(check_node_connected(mat_cloak, 'TEX_WAVE'), "Gnome Cloak material missing connected Wave texture (Weave)")
 
     def test_compositor_textures(self):
-        """Verify compositor setup includes Film Noise and Scratches."""
+        """Verify compositor setup includes connected Film Noise and Scratches."""
         scene = bpy.context.scene
         tree = style.get_compositor_node_tree(scene)
         self.assertIsNotNone(tree)
 
         tex_nodes = [n for n in tree.nodes if n.type == 'TEXTURE']
-        self.assertGreaterEqual(len(tex_nodes), 2, "Compositor should have at least 2 texture nodes (Grain and Scratches)")
+        
+        connected_textures = []
+        for n in tex_nodes:
+            if n.texture and any(out.is_linked for out in n.outputs):
+                connected_textures.append(n.texture.name)
 
-        textures = [n.texture.name for n in tex_nodes if n.texture]
-        self.assertIn("FilmNoise", textures)
-        self.assertIn("Scratches", textures)
+        self.assertGreaterEqual(len(connected_textures), 2, "Compositor should have at least 2 connected texture nodes")
+        self.assertIn("FilmNoise", connected_textures)
+        self.assertIn("Scratches", connected_textures)
 
     def test_visibility_keyframes(self):
         """Verify visibility (hide_render) keyframes for assets across the timeline."""

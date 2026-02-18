@@ -19,14 +19,30 @@ class TestCompositor(BlenderTestCase):
         if not tree:
             self.fail("Compositor node tree not found")
         
-        nodes = tree.nodes
+        render_layers_node = tree.nodes.get("Render Layers")
+        composite_node = tree.nodes.get("Composite")
+        self.assertIsNotNone(render_layers_node, "Compositor is missing a 'Render Layers' node.")
+        self.assertIsNotNone(composite_node, "Compositor is missing a 'Composite' node.")
+
         effect_nodes = ["ChromaticAberration", "GlobalSaturation", "Bright/Contrast", "GlowTrail", "Vignette"]
         
         for node_name in effect_nodes:
             with self.subTest(node=node_name):
-                exists = node_name in nodes
-                status = "PASS" if exists else "WARNING"
-                self.log_result(f"Compositor Node: {node_name}", status, "Found" if exists else "MISSING")
+                node = tree.nodes.get(node_name)
+                exists = node is not None
+                
+                # Robustness: Check if the node is connected in the main path.
+                is_connected = False
+                if exists:
+                    # A simple check: does it have both inputs and outputs linked?
+                    has_input_link = any(inp.is_linked for inp in node.inputs)
+                    has_output_link = any(out.is_linked for out in node.outputs)
+                    is_connected = has_input_link and has_output_link
+
+                status = "PASS" if is_connected else "FAIL"
+                details = "Found and connected" if is_connected else ("Found but disconnected" if exists else "MISSING")
+                self.log_result(f"Compositor Node: {node_name}", status, details)
+                self.assertTrue(is_connected, f"Node '{node_name}' is missing or not connected in the compositor.")
 
 if __name__ == "__main__":
     argv = [sys.argv[0]]

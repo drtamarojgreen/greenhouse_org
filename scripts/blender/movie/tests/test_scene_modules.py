@@ -38,22 +38,32 @@ class TestSceneModules(unittest.TestCase):
                 # or have it within setup_scene. The 100 enhancements list mentions both.
                 # Let's check for setup_scene as mandatory.
 
-    def test_13_14_smoke_tests(self):
-        """R13/R14: Invoke scene setup/animate in isolation (smoke test)."""
+    def test_13_14_15_smoke_and_state_tests(self):
+        """R13/14/15: Invoke scene setup, check for crashes, and verify state changes (camera, objects)."""
         for name in self.scene_names:
             with self.subTest(scene=name):
+                # Clear animation data to ensure a clean slate for this scene's test
+                for obj in bpy.data.objects:
+                    obj.animation_data_clear()
+
                 mod = importlib.import_module(name + ".scene_logic")
+                
+                initial_object_count = len(bpy.data.objects)
+
                 # Smoke test: should not crash
                 try:
                     mod.setup_scene(self.master)
                 except Exception as e:
                     self.fail(f"R13/R14 FAIL: {name}.setup_scene crashed: {e}")
 
-    def test_15_camera_creation(self):
-        """R15: Each scene returns/creates expected camera."""
-        # The master usually creates the camera, but scenes might manipulate it.
-        # We check if a camera exists after setup.
-        self.assertIsNotNone(self.master.scene.camera, "R15 FAIL: No camera in scene")
+                # R15: Check that a camera still exists after scene setup
+                self.assertIsNotNone(self.master.scene.camera, f"R15 FAIL: Camera is missing after {name}.setup_scene")
+
+                # Robustness: check that something actually happened (objects created or keyframes added)
+                final_object_count = len(bpy.data.objects)
+                has_keyframes = any(obj.animation_data and obj.animation_data.action for obj in bpy.data.objects)
+                self.assertTrue(final_object_count > initial_object_count or has_keyframes,
+                                f"R13/14 FAIL: {name}.setup_scene ran but created no new objects and no keyframes.")
 
     def test_17_keyframes_created(self):
         """R17: Each scene creates at least one keyframe."""
@@ -94,8 +104,9 @@ class TestSceneModules(unittest.TestCase):
                         for fc in obj.animation_data.action.fcurves:
                             for kp in fc.keyframe_points:
                                 f = kp.co[0]
-                                self.assertTrue(expected_start - 10 <= f <= expected_end + 10,
-                                                f"R18 FAIL: {name} keyframe at {f} out of bounds ({expected_start}-{expected_end})")
+                                # Tighten tolerance from 10 to 1 for robustness
+                                self.assertTrue(expected_start - 1 <= f <= expected_end + 1,
+                                                f"R18 FAIL: {name} keyframe at {f} out of strict bounds ({expected_start}-{expected_end})")
 
     def test_19_asset_fallback(self):
         """R19: Test missing asset fallback behavior."""

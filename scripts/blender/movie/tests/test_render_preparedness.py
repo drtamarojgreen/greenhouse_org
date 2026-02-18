@@ -2,7 +2,6 @@ import bpy
 import unittest
 import os
 import sys
-import math
 
 # Add movie root to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -43,19 +42,24 @@ class TestRenderPreparedness(unittest.TestCase):
                 exists = mat_name in bpy.data.materials
                 if exists:
                     mat = bpy.data.materials[mat_name]
-                    # Check for nodes (procedural enhancements)
-                    has_nodes = mat.use_nodes and len(mat.node_tree.nodes) > 2
-                    status = "PASS" if has_nodes else "WARNING"
-                    details = f"Nodes found: {len(mat.node_tree.nodes)}" if has_nodes else "Material exists but has NO procedural nodes"
+                    # Robustness: Check for a connected Principled BSDF node
+                    has_bsdf = False
+                    if mat.use_nodes and mat.node_tree:
+                        for n in mat.node_tree.nodes:
+                            if n.type == 'BSDF_PRINCIPLED' and any(out.is_linked for out in n.outputs):
+                                has_bsdf = True
+                                break
+                    status = "PASS" if has_bsdf else "FAIL"
+                    details = "Has connected Principled BSDF" if has_bsdf else "MISSING or disconnected Principled BSDF"
                 else:
                     status = "FAIL"
                     details = "Material MISSING"
 
                 self.log_result(f"Material: {mat_name} ({desc})", status, details)
-                self.assertTrue(exists)
+                self.assertTrue(exists and (has_bsdf if exists else False))
 
     def test_03_compositor_setup(self):
-        """Check if compositor nodes for effects are present."""
+        """Check if compositor nodes for effects are present and connected."""
         if not bpy.context.scene.use_nodes:
             self.log_result("Compositor", "FAIL", "use_nodes is FALSE")
             self.fail("Compositor not enabled")
@@ -70,10 +74,19 @@ class TestRenderPreparedness(unittest.TestCase):
         required_nodes = ["ChromaticAberration", "GlobalSaturation", "Bright/Contrast", "GlowTrail", "Vignette"]
         for node_name in required_nodes:
             with self.subTest(node=node_name):
-                exists = node_name in nodes
-                status = "PASS" if exists else "FAIL"
-                self.log_result(f"Compositor Node: {node_name}", status, "Node found" if exists else "Node MISSING")
-                self.assertTrue(exists)
+                node = nodes.get(node_name)
+                exists = node is not None
+                
+                is_connected = False
+                if exists:
+                    has_input = any(socket.is_linked for socket in node.inputs)
+                    has_output = any(socket.is_linked for socket in node.outputs)
+                    is_connected = has_input and has_output
+
+                status = "PASS" if is_connected else "FAIL"
+                details = "Found and connected" if is_connected else ("Found but disconnected" if exists else "Node MISSING")
+                self.log_result(f"Compositor Node: {node_name}", status, details)
+                self.assertTrue(is_connected)
 
     def test_04_animation_presence(self):
         """Check if objects have animation data (secondary motion)."""
@@ -81,9 +94,14 @@ class TestRenderPreparedness(unittest.TestCase):
         for name in objs_with_anim:
             obj = bpy.data.objects.get(name)
             if obj:
-                has_anim = obj.animation_data is not None
+                # Robustness: Check for actual fcurves
+                has_anim = False
+                if obj.animation_data and obj.animation_data.action:
+                    if len(obj.animation_data.action.fcurves) > 0:
+                        has_anim = True
+
                 status = "PASS" if has_anim else "FAIL"
-                self.log_result(f"Animation: {name}", status, "Animation data present" if has_anim else "NO animation data")
+                self.log_result(f"Animation: {name}", status, "Animation data with fcurves present" if has_anim else "NO animation data or fcurves")
                 self.assertTrue(has_anim)
 
     def test_05_hierarchy_and_materials(self):
@@ -116,17 +134,30 @@ class TestRenderPreparedness(unittest.TestCase):
             self.master.run()
 
     def test_07_volume_scatter_config(self):
-        """Edge Case: Verify volume scatter density is within safe ranges."""
+        """Edge Case: Verify volume scatter density is within safe ranges and connected."""
         world = bpy.context.scene.world
         vol = world.node_tree.nodes.get("Volume Scatter")
+        
+        is_connected = False
         if vol:
+            # Check connection to World Output
+            world_output = world.node_tree.nodes.get("World Output")
+            if world_output:
+                for link in world.node_tree.links:
+                    if link.from_node == vol and link.to_node == world_output:
+                        is_connected = True
+                        break
+
+        if vol and is_connected:
             density = vol.inputs['Density'].default_value
             # Shadow scene usually sets it higher, but global default should be low
             is_sane = 0.0 < density < 0.1
             status = "PASS" if is_sane else "WARNING"
             self.log_result("Volume Density", status, f"Density is {density}")
         else:
-            self.log_result("Volume Density", "FAIL", "Volume Scatter node MISSING in world")
+            status = "FAIL"
+            details = "Volume Scatter node MISSING" if not vol else "Volume Scatter disconnected"
+            self.log_result("Volume Density", status, details)
 
     def test_08_large_frame_range(self):
         """Edge Case: Check if scene frame range matches the 15000 frame plan."""
@@ -154,7 +185,7 @@ class TestRenderPreparedness(unittest.TestCase):
         from silent_movie_generator import SCENE_MAP
         exists = 'interaction' in SCENE_MAP
         if exists:
-            start, end = SCENE_MAP['scene15_interaction']
+            start, end = SCENE_MAP['interaction']
             is_correct = start == 4501 and end == 9500
             status = "PASS" if is_correct else "FAIL"
             self.log_result("Interaction Scene Map", status, f"Range: {start}-{end}")

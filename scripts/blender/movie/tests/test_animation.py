@@ -12,15 +12,19 @@ class TestAnimation(BlenderTestCase):
         for name in objs_with_anim:
             obj = bpy.data.objects.get(name)
             if obj:
-                has_anim = obj.animation_data is not None
-                status = "PASS" if has_anim else "FAIL"
-                self.log_result(f"Animation: {name}", status, "Data present" if has_anim else "MISSING")
-                self.assertTrue(has_anim)
+                # Robustness: Check for an action with actual keyframes, not just animation_data
+                has_action = obj.animation_data and obj.animation_data.action
+                has_fcurves = has_action and len(obj.animation_data.action.fcurves) > 0
+                status = "PASS" if has_fcurves else "FAIL"
+                details = "Action with f-curves present" if has_fcurves else "MISSING action or f-curves"
+                self.log_result(f"Animation: {name}", status, details)
+                self.assertTrue(has_fcurves)
 
     def test_02_frame_range(self):
         """Check if scene frame range matches the plan."""
         scene = bpy.context.scene
-        is_correct = scene.frame_start == 1 and scene.frame_end == 5000
+        # Corrected frame_end from 5000 to 15000 to match project spec
+        is_correct = scene.frame_start == 1 and scene.frame_end == 15000
         status = "PASS" if is_correct else "FAIL"
         self.log_result("Frame Range", status, f"{scene.frame_start}-{scene.frame_end}")
         self.assertTrue(is_correct)
@@ -28,9 +32,10 @@ class TestAnimation(BlenderTestCase):
     def test_03_camera_tracking(self):
         """Ensure camera is tracking the target."""
         cam = bpy.context.scene.camera
-        has_track = any(c.type == 'TRACK_TO' and c.target and c.target.name == "CamTarget" for c in cam.constraints)
-        self.log_result("Camera Tracking", "PASS" if has_track else "FAIL", "Constraint found" if has_track else "Missing")
-        self.assertTrue(has_track)
+        track_constraint = next((c for c in cam.constraints if c.type == 'TRACK_TO' and c.target and c.target.name == "CamTarget"), None)
+        is_valid = track_constraint is not None and not track_constraint.mute
+        self.log_result("Camera Tracking", "PASS" if is_valid else "FAIL", "Active constraint found" if is_valid else "Missing or muted constraint")
+        self.assertTrue(is_valid)
 
     def test_04_limb_movement(self):
         """Verify that character limbs have active animation data."""
@@ -46,16 +51,22 @@ class TestAnimation(BlenderTestCase):
                     self.log_result(f"Limb Anim: {limb_name}", "FAIL", "Object missing")
                     continue
                 
-                # Check if it has an action and curves
-                has_action = obj.animation_data and obj.animation_data.action
-                curve_count = 0
-                if has_action:
+                # Robustness: Check for significant movement, not just the presence of curves.
+                has_movement = False
+                if obj.animation_data and obj.animation_data.action:
                     curves = style.get_action_curves(obj.animation_data.action)
-                    curve_count = len(curves)
+                    for fc in curves:
+                        if "location" in fc.data_path or "rotation" in fc.data_path:
+                            values = [kp.co[1] for kp in fc.keyframe_points]
+                            if len(values) > 1 and (max(values) - min(values)) > 0.1: # Threshold for significant movement
+                                has_movement = True
+                                break
+                    if has_movement: break
                 
-                status = "PASS" if curve_count > 0 else "WARNING"
-                self.log_result(f"Limb Anim: {limb_name}", status, f"Curves: {curve_count}")
-                # Warning only, as some limbs might be static in specific scenes
+                status = "PASS" if has_movement else "FAIL"
+                details = "Significant movement detected" if has_movement else "Static or no animation"
+                self.log_result(f"Limb Anim: {limb_name}", status, details)
+                self.assertTrue(has_movement, f"{limb_name} is expected to have movement but is static.")
 
     def test_05_camera_coverage(self):
         """Verify camera moves significantly to cover different angles."""

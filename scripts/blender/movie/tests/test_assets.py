@@ -32,10 +32,19 @@ class TestAssets(BlenderTestCase):
                 full_name = f"{char_name}_{part}"
                 with self.subTest(part=full_name):
                     obj = bpy.data.objects.get(full_name)
-                    exists = obj is not None
-                    status = "PASS" if exists else "FAIL"
-                    self.log_result(f"Part: {full_name}", status, "Found" if exists else "MISSING")
-                    self.assertTrue(exists, f"Character part {full_name} is missing")
+                    # Robustness: Check for existence AND correct parenting to the character's main body/head
+                    is_valid = False
+                    if obj and obj.parent:
+                        # Walk up the hierarchy to find the main torso
+                        p = obj.parent
+                        while p:
+                            if f"{char_name}_Torso" in p.name:
+                                is_valid = True
+                                break
+                            p = p.parent
+                    status = "PASS" if is_valid else "FAIL"
+                    self.log_result(f"Part: {full_name}", status, "Found and correctly parented" if is_valid else "MISSING or not parented to character torso")
+                    self.assertTrue(is_valid, f"Character part {full_name} is missing or not parented correctly")
 
     def test_03_visibility_check(self):
         """Check if major assets are ever visible during the render range."""
