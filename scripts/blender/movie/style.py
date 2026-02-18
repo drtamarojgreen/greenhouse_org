@@ -33,7 +33,8 @@ __all__ = [
     'animate_thinking_gesture', 'animate_defensive_crouch',
     'setup_caustic_patterns', 'animate_dawn_progression',
     'apply_interior_exterior_contrast', 'replace_with_soft_boxes',
-    'animate_hdri_rotation'
+    'animate_hdri_rotation', 'apply_iris_wipe', 'animate_vignette_breathing',
+    'animate_floating_spores'
 ]
 
 def get_action_curves(action, create_if_missing=False):
@@ -1172,3 +1173,80 @@ def animate_hdri_rotation(scene):
         mapping.inputs['Rotation'].keyframe_insert(data_path="default_value", index=2, frame=1)
         mapping.inputs['Rotation'].default_value[2] = math.radians(360)
         mapping.inputs['Rotation'].keyframe_insert(data_path="default_value", index=2, frame=15000)
+
+def animate_vignette_breathing(scene, frame_start, frame_end, strength=0.05, cycle=120):
+    """Enhancement #59: Subtle breathing pulse for the vignette."""
+    tree = get_compositor_node_tree(scene)
+    vig = tree.nodes.get("Vignette")
+    if not vig: return
+
+    # We animate width/height with noise or sine-like loop
+    # For simplicity, we use noise via our helper
+    if not tree.animation_data:
+        tree.animation_data_create()
+    if not tree.animation_data.action:
+        tree.animation_data.action = bpy.data.actions.new(name="CompositorAction")
+
+    for axis in ["width", "height"]:
+        data_path = f'nodes["Vignette"].{axis}'
+        fcurve = get_or_create_fcurve(tree.animation_data.action, data_path, ref_obj=tree)
+        if fcurve:
+            mod = fcurve.modifiers.new(type='NOISE')
+            mod.strength = strength
+            mod.scale = cycle / 2.0
+            mod.use_restricted_range = True
+            mod.frame_start = frame_start
+            mod.frame_end = frame_end
+
+def animate_floating_spores(center, volume_size=(10, 10, 5), density=50, frame_start=1, frame_end=15000):
+    """Enhancement #33: Drifting bioluminescent spores in the sanctuary."""
+    container_name = "SanctuarySpores"
+    container = bpy.data.collections.get(container_name) or bpy.data.collections.new(container_name)
+    if container_name not in bpy.context.scene.collection.children:
+        bpy.context.scene.collection.children.link(container)
+
+    mat = bpy.data.materials.get("SporeMat")
+    if not mat:
+        mat = bpy.data.materials.new(name="SporeMat")
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes["Principled BSDF"]
+        bsdf.inputs["Base Color"].default_value = (0.2, 1.0, 0.5, 1) # Bioluminescent green
+        set_principled_socket(mat, "Emission", (0.2, 1.0, 0.5, 1))
+        set_principled_socket(mat, "Emission Strength", 5.0)
+        set_blend_method(mat, 'BLEND')
+
+    for i in range(density):
+        loc = center + mathutils.Vector((
+            random.uniform(-volume_size[0], volume_size[0]),
+            random.uniform(-volume_size[1], volume_size[1]),
+            random.uniform(0, volume_size[2])
+        ))
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.015, location=loc)
+        spore = bpy.context.object
+        spore.name = f"Spore_{i}"
+        container.objects.link(spore)
+        if spore.name in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.unlink(spore)
+        spore.data.materials.append(mat)
+
+        # Gentle drifting noise
+        insert_looping_noise(spore, "location", strength=0.8, scale=60.0, frame_start=frame_start, frame_end=frame_end)
+
+        # Pulse emission
+        animate_pulsing_emission(spore, frame_start, frame_end, base_strength=1.0, pulse_amplitude=4.0, cycle=random.randint(40, 100))
+
+        # Visibility
+        spore.hide_render = True
+        spore.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
+        spore.hide_render = False
+        spore.keyframe_insert(data_path="hide_render", frame=frame_start)
+        spore.hide_render = True
+        spore.keyframe_insert(data_path="hide_render", frame=frame_end)
+
+def apply_iris_wipe(scene, frame_start, frame_end, mode='IN'):
+    """Delegates to compositor_settings version if available, or handles direct keyframing."""
+    try:
+        import compositor_settings
+        compositor_settings.animate_iris_wipe(scene, frame_start, frame_end, mode=mode)
+    except ImportError:
+        pass

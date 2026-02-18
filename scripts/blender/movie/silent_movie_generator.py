@@ -43,10 +43,6 @@ from scene10_futuristic_lab import scene_logic as scene10
 from scene11_nature_sanctuary import scene_logic as scene11
 from scene12_credits import scene_logic as scene12
 from scene15_interaction import scene_logic as scene15
-try:
-    from scene_brain import scene_logic as scene_brain
-except ImportError:
-    scene_brain = None
 
 # New scenes 16-22
 def safe_import_scene(name):
@@ -68,7 +64,6 @@ scene22 = safe_import_scene("scene22_retreat")
 class MovieMaster(BaseMaster):
     def __init__(self, mode='SILENT_FILM', quality='test', device_type='HIP'):
         super().__init__(mode=mode, total_frames=15000, quality=quality, device_type=device_type)
-        setup_engine.ensure_dependencies()
 
     def setup_engine(self):
         return setup_engine.setup_blender_engine(self)
@@ -82,19 +77,16 @@ class MovieMaster(BaseMaster):
         greenhouse_interior.setup_greenhouse_interior()
         exterior_garden.create_exterior_garden()
 
-        # Weather and FX
-        self.rain_emitter = weather_system.create_rain_system(self.scene, frame_start=1801, frame_end=2500, intensity='HEAVY')
-        weather_system.create_rain_splashes(mathutils.Vector((0, 0, -1)), count=40, frame_start=1801, frame_end=2500)
-        weather_system.setup_wet_lens_compositor(self.scene, 1801, 2500)
-        self.storm_emitter = weather_system.create_rain_system(self.scene, frame_start=13701, frame_end=14200, intensity='STORM')
+        # Weather and FX (Initial setup)
         environment_props.create_stage_floor()
         environment_props.setup_volumetric_haze()
         style.animate_dust_particles(mathutils.Vector((0,0,2)), density=30)
 
-        # Character Assets (Refactored)
+        # Character Assets
         setup_characters.setup_all_characters(self)
 
         # Scientific Assets
+        from assets import brain_neuron
         self.brain = brain_neuron.load_brain(base_path)
         self.neuron = brain_neuron.load_neuron(base_path)
 
@@ -106,10 +98,10 @@ class MovieMaster(BaseMaster):
             plant_humanoid.create_inscribed_pillar(mathutils.Vector((x, y, 0)))
 
     def _animate_characters(self):
-        animate_characters.animate_all_characters(self)
+        animate_characters.animate_characters(self)
 
     def _animate_props(self):
-        animate_props.animate_all_props(self)
+        animate_props.animate_props(self)
 
     def _setup_gaze_system(self):
         setup_characters.setup_gaze_system(self)
@@ -118,19 +110,26 @@ class MovieMaster(BaseMaster):
         camera_controls.setup_all_camera_logic(self)
 
     def animate_master(self):
-        scenes = [scene00, scene01, scene_brain, scene02, scene03, scene04, scene05,
+        # Global orchestration
+        scene_orchestrator.orchestrate_scenes(self)
+
+        # Individual scene logic
+        scenes = [scene00, scene01, None, scene02, scene03, scene04, scene05,
                   scene06, scene07, scene08, scene09, scene10, scene11, scene15,
                   scene16, scene17, scene18, scene19, scene20, scene21, scene22, scene12]
-        scene_orchestrator.animate_master_scenes(self, scenes)
+
+        for scene_mod in scenes:
+            if scene_mod and hasattr(scene_mod, 'setup_scene'):
+                scene_mod.setup_scene(self)
 
     def setup_lighting(self):
-        lighting_setup.setup_lighting_scenes(self)
+        lighting_setup.setup_lighting(self)
 
     def setup_camera_keyframes(self, cam, target):
         camera_controls.setup_camera_keyframes(self, cam, target)
 
     def setup_compositor(self):
-        compositor_settings.setup_compositor_effects(self)
+        compositor_settings.setup_compositor(self)
 
 def main():
     argv = sys.argv

@@ -1,39 +1,47 @@
 import bpy
 import style
-from assets import brain_neuron
+import mathutils
+from constants import SCENE_MAP
 
-def animate_all_props(master):
-    """Orchestrates animation and visibility for environmental props."""
+def animate_props(master_instance):
+    """Animates background props and environmental elements."""
+    # Pulsing Brain Core
+    if master_instance.brain:
+        style.animate_pulsing_emission(master_instance.brain, 1, 15000, base_strength=0.1, pulse_amplitude=0.3)
 
-    # 1. Greenhouse Sway and Visibility
-    if hasattr(master, 'greenhouse') and master.greenhouse:
-        for obj in master.greenhouse.objects:
-            style.insert_looping_noise(obj, "rotation_euler", strength=0.01, scale=50.0, frame_start=1, frame_end=15000)
+        # Diagnostic highlights
+        import scene_utils
+        b_loc = master_instance.brain.location
+        scene_utils.create_diagnostic_highlight(master_instance, "Thalamus", b_loc + mathutils.Vector((0, 0.5, 0.5)), 3620, 3680, color=(0, 0.5, 1, 1))
+        scene_utils.create_diagnostic_highlight(master_instance, "Prefrontal", b_loc + mathutils.Vector((0.5, -0.5, 0.8)), 3720, 3780, color=(1, 0.5, 0, 1))
 
-    gh_objs = [obj for obj in bpy.context.scene.objects
-               if any(k in obj.name for k in ["GH_", "Greenhouse_Structure", "Pane", "Greenhouse_Main", "Ivy"])]
-    gh_ranges = [(401, 650), (2901, 3500), (3901, 4100), (9501, 14500)]
-    master._set_visibility(gh_objs, gh_ranges)
+    # Enhancement #22: Fireflies
+    style.animate_fireflies(mathutils.Vector((0, 0, 2)), volume_size=(10, 10, 5), density=15, frame_start=401, frame_end=3800)
 
-    # Exterior Garden Visibility
-    ext_keywords = ["ExteriorBed", "KoiPond", "Koi_", "CobblestonePath", "ExteriorGround", "HedgeFront", "HedgeLeft", "HedgeRight", "HedgeBack"]
-    ext_objs = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ext_keywords)]
-    # Visible during drone shots and when camera is outside
-    ext_ranges = [(101, 200), (401, 480), (3901, 4100), (14200, 14400)]
-    master._set_visibility(ext_objs, ext_ranges)
+    # Enhancement #33: Floating Spores (Sanctuary)
+    if 'scene11_nature_sanctuary' in SCENE_MAP:
+        start, end = SCENE_MAP['scene11_nature_sanctuary']
+        style.animate_floating_spores(mathutils.Vector((0, 0, 3)), volume_size=(12, 12, 6), density=60, frame_start=start, frame_end=end)
 
-    # 2. Volumetric Light Beam
-    if hasattr(master, 'beam') and master.beam:
-        master._set_visibility([master.beam], [(401, 650), (3801, 4100), (4101, 4500)])
+    # Weather System
+    import weather_system
+    # Rain during shadow scene
+    master_instance.rain_emitter = weather_system.create_rain_system(
+        master_instance.scene, frame_start=1801, frame_end=2500, intensity='MEDIUM'
+    )
+    weather_system.create_rain_splashes(mathutils.Vector((0, 0, 0)), count=30, frame_start=1801, frame_end=2500)
 
-    # 3. Brain and Neuron Animation (Delegated to specialized module)
-    brain_neuron.animate_brain_neuron(master)
+    # Storm during retreat
+    master_instance.storm_emitter = weather_system.create_rain_system(
+        master_instance.scene, frame_start=13701, frame_end=14200, intensity='STORM'
+    )
 
-    # 4. Specific Prop Animations
-    if master.flower:
-        # Mental Bloom growth
-        master.flower.keyframe_insert(data_path="matrix_world", frame=2899)
-        master.flower.scale = (0.01, 0.01, 0.01)
-        master.flower.keyframe_insert(data_path="scale", frame=2900)
-        master.flower.scale = (1, 1, 1)
-        master.flower.keyframe_insert(data_path="scale", frame=3200)
+    # Procedural Foliage Wind
+    bushes = [obj for obj in bpy.context.scene.objects if "Bush" in obj.name]
+    style.animate_foliage_wind(bushes, strength=0.08)
+
+    # Indoor vs Outdoor contrast (#27)
+    style.apply_interior_exterior_contrast(master_instance.sun, master_instance.scene.camera)
+
+    # HDRI Rotation (#30)
+    style.animate_hdri_rotation(master_instance.scene)
