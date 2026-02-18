@@ -32,7 +32,8 @@ def setup_scene(master):
     mat_node.use_nodes = True
     bsdf = mat_node.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.2, 0.4, 1.0, 1)
-    bsdf.inputs["Emission Strength"].default_value = 5.0
+    style.set_principled_socket(mat_node, 'Emission', (0.2, 0.4, 1.0, 1))
+    style.set_principled_socket(mat_node, 'Emission Strength', 5.0)
 
     for i, loc in enumerate(node_locs):
         bpy.ops.mesh.primitive_ico_sphere_add(radius=0.15, location=loc)

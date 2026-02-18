@@ -16,12 +16,12 @@ def create_greenhouse_iron_mat():
     # Mossy Iron (Noise overlay mixed with base color)
     node_moss = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
     node_moss.inputs['Scale'].default_value = 20.0
-    node_mix = mat.node_tree.nodes.new(type='ShaderNodeMixRGB')
-    node_mix.blend_type = 'OVERLAY'
-    node_mix.inputs[0].default_value = 0.5
-    node_mix.inputs[1].default_value = (0.106, 0.302, 0.118, 1)
-    mat.node_tree.links.new(node_moss.outputs['Color'], node_mix.inputs[2])
-    mat.node_tree.links.new(node_mix.outputs['Color'], bsdf.inputs['Base Color'])
+    node_mix = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='OVERLAY', data_type='RGBA')
+    fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix)
+    fac_sock.default_value = 0.5
+    in1_sock.default_value = (0.106, 0.302, 0.118, 1)
+    mat.node_tree.links.new(node_moss.outputs['Color'], in2_sock)
+    mat.node_tree.links.new(style.get_mix_output(node_mix), bsdf.inputs['Base Color'])
 
     return mat
 
@@ -45,7 +45,7 @@ def create_greenhouse_glass_mat():
     node_scratches.inputs['Scale'].default_value = 50.0
     mat.node_tree.links.new(node_scratches.outputs['Fac'], bsdf.inputs['Roughness'])
 
-    mat.blend_method = 'BLEND'
+    style.set_blend_method(mat, 'BLEND')
     return mat
 
 def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
@@ -161,8 +161,9 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
     for pane in glass_panes:
         pane.select_set(True)
 
-    # We join everything into one main object
-    main_obj = bpy.context.active_object
+    # Point 29/7: We join everything into one main object
+    # Ensure we have a valid active object that is a mesh from our collection
+    main_obj = gh_col.objects[0]
     bpy.context.view_layer.objects.active = main_obj
     bpy.ops.object.join()
     main_obj.name = "Greenhouse_Main"

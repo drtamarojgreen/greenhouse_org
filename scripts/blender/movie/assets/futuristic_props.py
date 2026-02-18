@@ -1,6 +1,7 @@
 import bpy
 import math
 import mathutils
+import style
 
 def create_hologram(location, size=1.0):
     """Creates a holographic interface."""
@@ -12,15 +13,12 @@ def create_hologram(location, size=1.0):
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0, 0.5, 1, 1)
-    bsdf.inputs["Emission Color"].default_value = (0, 0.8, 1, 1)
-    bsdf.inputs["Emission Strength"].default_value = 5.0
+    style.set_principled_socket(mat, "Emission", (0, 0.8, 1, 1))
+    style.set_principled_socket(mat, "Emission Strength", 5.0)
     bsdf.inputs["Alpha"].default_value = 0.3
 
     # Point 76: Modern transparency for Blender 4.2+
-    if hasattr(mat, "surface_render_method"):
-        mat.surface_render_method = 'BLENDED'
-    else:
-        mat.blend_method = 'BLEND'
+    style.set_blend_method(mat, 'BLEND')
 
     holo.data.materials.append(mat)
 

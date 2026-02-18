@@ -26,14 +26,13 @@ def create_marble_floor_mat():
     node_noise.inputs['Scale'].default_value = 5.0
     node_noise.inputs['Detail'].default_value = 15.0
 
-    node_mix = nodes.new(type='ShaderNodeMixRGB')
-    # Point 71: Use OVERLAY for more subtle vein effect
-    node_mix.blend_type = 'OVERLAY'
-    node_mix.inputs[0].default_value = 0.1
+    node_mix = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='OVERLAY', data_type='RGBA')
+    fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix)
+    fac_sock.default_value = 0.1
 
-    links.new(node_checker.outputs['Color'], node_mix.inputs[1])
-    links.new(node_noise.outputs['Fac'], node_mix.inputs[2])
-    links.new(node_mix.outputs['Color'], node_bsdf.inputs['Base Color'])
+    links.new(node_checker.outputs['Color'], in1_sock)
+    links.new(node_noise.outputs['Fac'], in2_sock)
+    links.new(style.get_mix_output(node_mix), node_bsdf.inputs['Base Color'])
 
     node_bsdf.inputs['Roughness'].default_value = 0.05
     node_bsdf.inputs['Metallic'].default_value = 0.1

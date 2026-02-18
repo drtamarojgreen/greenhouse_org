@@ -64,18 +64,37 @@ def setup_scene(master):
     master.gnome.hide_render = True
     master.gnome.keyframe_insert(data_path="hide_render", frame=end_frame - 50)
 
-    # Camera choreography for retreat (push-in then wide reveal)
-    cam = master.scene.camera
-    target = bpy.data.objects.get("CamTarget")
-    if cam and target:
-        # Snap cut/zoom on gnome's face before he turns
-        cam.location = (6, 6, 2)
-        target.location = master.gnome.location + mathutils.Vector((0, 0, 1))
-        cam.keyframe_insert(data_path="location", frame=start_frame)
-        target.keyframe_insert(data_path="location", frame=start_frame)
+    # Camera choreography for retreat handled in camera_controls.py
 
-        # Wide reveal as he sprints
-        cam.location = (0, -30, 15)
-        target.location = (0, 0, 0)
-        cam.keyframe_insert(data_path="location", frame=start_frame + 300)
-        target.keyframe_insert(data_path="location", frame=start_frame + 300)
+    # Fix C: Coordinate the retreat with a plant pursuit (Point 105)
+    if master.h1 and master.h2:
+        s22_start = start_frame
+
+        # Plants step forward triumphantly as gnome breaks
+        master.h1.location = (-1, 2, 0)
+        master.h1.keyframe_insert(data_path="location", frame=s22_start)
+        master.h1.location = (0, 4, 0)       # advance toward where gnome was
+        master.h1.keyframe_insert(data_path="location", frame=s22_start + 200)
+
+        master.h2.location = (1, 2, 0)
+        master.h2.keyframe_insert(data_path="location", frame=s22_start)
+        master.h2.location = (2, 4, 0)
+        master.h2.keyframe_insert(data_path="location", frame=s22_start + 200)
+
+        # Plants scale back to normal after gnome is gone - dominance was never their nature
+        for char in [master.h1, master.h2]:
+            char.scale = (1.2, 1.2, 1.2)
+            char.keyframe_insert(data_path="scale", frame=s22_start)
+            char.scale = (1.0, 1.0, 1.0)
+            char.keyframe_insert(data_path="scale", frame=s22_start + 400)
+
+        # Victory pose - both characters face camera and hold still
+        for char in [master.h1, master.h2]:
+            char.rotation_euler[2] = 0
+            char.keyframe_insert(data_path="rotation_euler", index=2, frame=s22_start + 300)
+
+        # After gnome disappears off screen, plants return to peaceful positions
+        master.h1.location = (-2, 0, 0)
+        master.h1.keyframe_insert(data_path="location", frame=end_frame - 200)
+        master.h2.location = (2, 0, 0)
+        master.h2.keyframe_insert(data_path="location", frame=end_frame - 200)

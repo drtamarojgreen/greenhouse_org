@@ -38,3 +38,6 @@ def setup_scene(master):
     style.animate_expression_blend("GloomGnome", start_frame + 200, expression='SURPRISED') # Fear creeping in
     style.animate_blink(bpy.data.objects.get("GloomGnome_Eye_L"), start_frame, end_frame, interval_range=(20, 50))
     style.animate_blink(bpy.data.objects.get("GloomGnome_Eye_R"), start_frame, end_frame, interval_range=(20, 50))
+
+    # Fix A: Plants continue to move toward the gnome as their argument intensifies (Point 105)
+    style.animate_plant_advance(master, start_frame, end_frame)

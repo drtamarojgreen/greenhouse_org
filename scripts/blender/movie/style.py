@@ -26,7 +26,8 @@ __all__ = [
     'apply_neuron_color_coding', 'setup_bioluminescent_flora',
     'animate_mood_fog', 'apply_film_flicker', 'apply_glow_trails',
     'setup_saturation_control', 'apply_desaturation_beat',
-    'animate_dialogue_v2', 'animate_expression_blend', 'animate_reaction_shot'
+    'animate_dialogue_v2', 'animate_expression_blend', 'animate_reaction_shot',
+    'set_blend_method', 'animate_plant_advance'
 ]
 
 def get_action_curves(action, create_if_missing=False):
@@ -158,32 +159,36 @@ def get_mix_output(node):
     """Returns the main output socket for a Mix node."""
     return node.outputs.get('Result') or node.outputs.get('Image') or node.outputs.get('Color') or node.outputs[0]
 
-def set_principled_socket(mat_or_node, socket_name, value, frame=None):
-    """Guarded setter for Principled BSDF sockets to handle naming drift (e.g. Specular)."""
+def get_principled_socket(mat_or_node, socket_name):
+    """Safely retrieves a socket from Principled BSDF by name/alias."""
     node = mat_or_node
     if hasattr(mat_or_node, "node_tree"):
         node = mat_or_node.node_tree.nodes.get("Principled BSDF")
+    if not node: return None
 
-    if not node: return False
-
-    # Mapping of legacy names to modern names
     mapping = {
         'Specular': ['Specular', 'Specular IOR Level'],
         'Transmission': ['Transmission', 'Transmission Weight'],
         'Emission': ['Emission', 'Emission Color'],
         'Emission Strength': ['Emission Strength'],
     }
-
     target_sockets = mapping.get(socket_name, [socket_name])
-
     for s in target_sockets:
         if s in node.inputs:
-            node.inputs[s].default_value = value
-            if frame is not None:
-                node.inputs[s].keyframe_insert(data_path="default_value", frame=frame)
-            return True
+            return node.inputs[s]
+    return None
 
-    print(f"Warning: Could not find socket {socket_name} (or alternatives) on {node.name}")
+def set_principled_socket(mat_or_node, socket_name, value, frame=None):
+    """Guarded setter for Principled BSDF sockets to handle naming drift (e.g. Specular)."""
+    sock = get_principled_socket(mat_or_node, socket_name)
+    if sock:
+        sock.default_value = value
+        if frame is not None:
+            sock.keyframe_insert(data_path="default_value", frame=frame)
+        return True
+
+    name = getattr(mat_or_node, "name", "Unknown")
+    print(f"Warning: Could not find socket {socket_name} (or alternatives) on {name}")
     return False
 
 def patch_fbx_importer():
@@ -370,7 +375,7 @@ def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs["Base Color"].default_value = color
         bsdf.inputs["Emission Strength"].default_value = 2.0
-        mat.blend_method = 'BLEND'
+        set_blend_method(mat, 'BLEND')
 
     for i in range(density):
         loc = center + mathutils.Vector((
@@ -397,24 +402,30 @@ def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 
         mote.keyframe_insert(data_path="hide_render", frame=frame_end)
 
 def apply_fade_transition(objs, frame_start, frame_end, mode='IN', duration=12):
-    """Smoothly fades objects in or out using emission strength if they have materials."""
+    """Fixed: use hide_render instead of emission for fading."""
     for obj in objs:
-        if obj.type != 'MESH': continue
-        for slot in obj.material_slots:
-            mat = slot.material
-            if not mat or not mat.use_nodes: continue
-            bsdf = mat.node_tree.nodes.get("Principled BSDF")
-            if not bsdf: continue
-
-            if mode == 'IN':
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_start)
-                bsdf.inputs["Emission Strength"].default_value = 5.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_start + duration)
-            else: # OUT
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_end - duration)
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_end)
+        if mode == 'IN':
+            obj.hide_render = True
+            obj.keyframe_insert(data_path="hide_render", frame=frame_start)
+            obj.hide_render = False
+            obj.keyframe_insert(data_path="hide_render", frame=frame_start + duration)
+            # Set CONSTANT interpolation so it snaps rather than blends
+            if obj.animation_data and obj.animation_data.action:
+                for fc in get_action_curves(obj.animation_data.action):
+                    if fc.data_path == "hide_render":
+                        for kp in fc.keyframe_points:
+                            kp.interpolation = 'CONSTANT'
+        else:
+            obj.hide_render = False
+            obj.keyframe_insert(data_path="hide_render", frame=frame_end - duration)
+            obj.hide_render = True
+            obj.keyframe_insert(data_path="hide_render", frame=frame_end)
+            # Set CONSTANT interpolation
+            if obj.animation_data and obj.animation_data.action:
+                for fc in get_action_curves(obj.animation_data.action):
+                    if fc.data_path == "hide_render":
+                        for kp in fc.keyframe_points:
+                            kp.interpolation = 'CONSTANT'
 
 def camera_push_in(cam, target, frame_start, frame_end, distance=5):
     """Animates camera moving towards target."""
@@ -526,14 +537,10 @@ def animate_pulsing_emission(obj, frame_start, frame_end, base_strength=5.0, pul
     for slot in obj.material_slots:
         mat = slot.material
         if not mat or not mat.use_nodes: continue
-        bsdf = mat.node_tree.nodes.get("Principled BSDF")
-        if not bsdf: continue
 
         for f in range(frame_start, frame_end + 1, cycle):
-            bsdf.inputs["Emission Strength"].default_value = base_strength
-            bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=f)
-            bsdf.inputs["Emission Strength"].default_value = base_strength + pulse_amplitude
-            bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=f + cycle // 2)
+            set_principled_socket(mat, "Emission Strength", base_strength, frame=f)
+            set_principled_socket(mat, "Emission Strength", base_strength + pulse_amplitude, frame=f + cycle // 2)
 
 def animate_dynamic_pupils(pupil_objs, light_energy_provider, frame_start, frame_end):
     """Scales pupils based on scene light energy (simulated)."""
@@ -782,7 +789,7 @@ def animate_fireflies(center, volume_size=(5, 5, 5), density=10, frame_start=1, 
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.8, 1.0, 0.2, 1) # Yellow-green
-    mat.blend_method = 'BLEND'
+    set_blend_method(mat, 'BLEND')
 
     for i in range(density):
         loc = center + mathutils.Vector((
@@ -837,9 +844,17 @@ def create_noise_based_material(name, color_ramp_colors, noise_type='NOISE', noi
     links.new(node_mapping.outputs['Vector'], node_noise.inputs['Vector'])
 
     node_ramp = nodes.new(type='ShaderNodeValToRGB')
-    node_ramp.color_ramp.elements.clear()
+    elements = node_ramp.color_ramp.elements
+    # Blender 5.0 enforces minimum 2 elements, so we manage them without .clear()
+    while len(elements) > len(color_ramp_colors) and len(elements) > 1:
+        elements.remove(elements[-1])
+
     for i, color in enumerate(color_ramp_colors):
-        el = node_ramp.color_ramp.elements.new(i / (len(color_ramp_colors) - 1))
+        if i < len(elements):
+            el = elements[i]
+            el.position = i / max(len(color_ramp_colors) - 1, 1)
+        else:
+            el = elements.new(i / max(len(color_ramp_colors) - 1, 1))
         el.color = color
 
     links.new(node_noise.outputs[0], node_ramp.inputs['Fac'])
@@ -847,6 +862,46 @@ def create_noise_based_material(name, color_ramp_colors, noise_type='NOISE', noi
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
 
     return mat
+
+def set_blend_method(mat, method='BLEND'):
+    """Version-safe transparency method setter for materials."""
+    if hasattr(mat, 'surface_render_method'):
+        # Blender 4.2+ / 5.0
+        mapping = {'BLEND': 'BLENDED', 'HASHED': 'HASHED', 'CLIP': 'CLIP'}
+        mat.surface_render_method = mapping.get(method, 'BLENDED')
+    else:
+        mat.blend_method = method
+
+def animate_plant_advance(master, frame_start, frame_end):
+    """Plants move toward the gnome as their argument intensifies."""
+    if not hasattr(master, 'h1') or not hasattr(master, 'h2') or not hasattr(master, 'gnome'):
+        return
+    if not master.h1 or not master.h2 or not master.gnome:
+        return
+
+    # Phase 1: Plants step forward together (scenes 18-19)
+    master.h1.location = (-2, 0, 0)
+    master.h1.keyframe_insert(data_path="location", frame=frame_start)
+    master.h1.location = (-1, 2, 0)      # moving toward gnome at (2,2,0)
+    master.h1.keyframe_insert(data_path="location", frame=frame_start + 400)
+
+    master.h2.location = (2, 1, 0)
+    master.h2.keyframe_insert(data_path="location", frame=frame_start)
+    master.h2.location = (1, 2, 0)       # flanking from the other side
+    master.h2.keyframe_insert(data_path="location", frame=frame_start + 400)
+
+    # Phase 2: Plants loom over gnome - scale up slightly for dominance
+    for char in [master.h1, master.h2]:
+        char.scale = (1, 1, 1)
+        char.keyframe_insert(data_path="scale", frame=frame_start + 300)
+        char.scale = (1.2, 1.2, 1.2)
+        char.keyframe_insert(data_path="scale", frame=frame_start + 600)
+
+    # Phase 3: Gnome shrinks as he's overwhelmed
+    master.gnome.scale = (0.6, 0.6, 0.6)  # gnome was created at scale=0.6
+    master.gnome.keyframe_insert(data_path="scale", frame=frame_start + 300)
+    master.gnome.scale = (0.3, 0.3, 0.3)  # shrinks further under pressure
+    master.gnome.keyframe_insert(data_path="scale", frame=frame_start + 600)
 
 def animate_reaction_shot(character_name, frame_start, frame_end):
     """Point 39: Adds listener micro-movements with robust character resolution."""

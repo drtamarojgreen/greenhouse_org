@@ -5,6 +5,7 @@ import math
 import mathutils
 import random
 import style
+import scene_utils
 from constants import SCENE_MAP, QUALITY_PRESETS
 
 def ensure_dependencies():
@@ -176,3 +177,15 @@ class BaseMaster:
     def setup_compositor(self):
         """Must be overridden by subclass."""
         pass
+
+    def create_intertitle(self, text, frame_start, frame_end):
+        return scene_utils.create_intertitle(self, text, frame_start, frame_end)
+
+    def create_spinning_logo(self, text_content, frame_start, frame_end):
+        return scene_utils.create_spinning_logo(self, text_content, frame_start, frame_end)
+
+    def create_diagnostic_highlight(self, name, location, frame_start, frame_end, color=(1, 0.5, 0, 1)):
+        return scene_utils.create_diagnostic_highlight(self, name, location, frame_start, frame_end, color)
+
+    def create_thought_spark(self, start_loc, end_loc, frame_start, frame_end):
+        return scene_utils.create_thought_spark(self, start_loc, end_loc, frame_start, frame_end)

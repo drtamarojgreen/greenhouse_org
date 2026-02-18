@@ -2,6 +2,7 @@ import bpy
 import math
 import os
 import sys
+import style
 
 # Ensure assets are importable
 ASSETS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
@@ -63,14 +64,9 @@ def setup_scene(master):
         orb = bpy.data.objects.get("GloomGnome_GloomOrb")
         if orb and orb.material_slots:
             mat = orb.material_slots[0].material
-            bsdf = mat.node_tree.nodes.get("Principled BSDF")
-            if bsdf:
-                bsdf.inputs["Emission Strength"].default_value = 0.5
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=4650)
-                bsdf.inputs["Emission Strength"].default_value = 50.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=4670)
-                bsdf.inputs["Emission Strength"].default_value = 0.5
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=4700)
+            style.set_principled_socket(mat, "Emission Strength", 0.5, frame=4650)
+            style.set_principled_socket(mat, "Emission Strength", 50.0, frame=4670)
+            style.set_principled_socket(mat, "Emission Strength", 0.5, frame=4700)
 
     # Duel zoom
     cam = master.scene.camera
