@@ -131,6 +131,14 @@ class TestAssetDetails(unittest.TestCase):
         self.assertIn(2101, gnome_kps)
         self.assertIn(2800, gnome_kps)
 
+    def test_render_vs_viewport_visibility(self):
+        """Verify that objects visible in viewport are also visible in render."""
+        for obj in bpy.data.objects:
+            if obj.type in ['MESH', 'CURVE', 'SURFACE']:
+                if not obj.hide_viewport and obj.hide_render:
+                    if "Target" in obj.name or "Control" in obj.name or "Collision" in obj.name: continue
+                    self.fail(f"Object {obj.name} is visible in viewport but HIDDEN in render. This may be a mistake.")
+
 if __name__ == "__main__":
     # Filter out Blender arguments
     argv = [sys.argv[0]]

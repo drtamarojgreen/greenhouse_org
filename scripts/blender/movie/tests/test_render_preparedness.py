@@ -193,6 +193,17 @@ class TestRenderPreparedness(unittest.TestCase):
         else:
             self.log_result("Interaction Scene Map", "FAIL", "interaction NOT in SCENE_MAP")
 
+    def test_11_missing_textures(self):
+        """Check for missing image texture files (Pink Render Check)."""
+        missing_images = []
+        for img in bpy.data.images:
+            if img.source == 'FILE':
+                path = bpy.path.abspath(img.filepath)
+                if path and not os.path.exists(path) and img.packed_file is None:
+                    missing_images.append(f"{img.name} ({path})")
+        
+        self.assertEqual(len(missing_images), 0, f"Missing texture files: {missing_images}")
+
     @classmethod
     def tearDownClass(cls):
         print("\n" + "="*50)

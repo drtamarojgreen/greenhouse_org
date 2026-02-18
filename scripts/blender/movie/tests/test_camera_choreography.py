@@ -33,10 +33,6 @@ class TestCameraChoreography(unittest.TestCase):
         for start, end in silent_movie_generator.SCENE_MAP.values():
             scene_boundaries.extend([start, end])
 
-        # Point 52: Allow planned intra-scene cuts (e.g., in Interaction)
-        planned_intra_scene = [6200, 6800]
-        scene_boundaries.extend(planned_intra_scene)
-
         # Every camera jump should be near a scene boundary or intertitle
         for f in sorted(list(set(cut_frames))):
             self.assertTrue(any(abs(f - b) < 5 for b in scene_boundaries), f"R51 FAIL: Unplanned camera keyframe at {f}")
@@ -84,9 +80,40 @@ class TestCameraChoreography(unittest.TestCase):
         # But evaluation is needed.
         pass
 
+    def test_camera_collision(self):
+        """Check if camera clips through major objects (Trees, Structure)."""
+        cam = self.master.scene.camera
+        # Identify obstacles
+        obstacles = []
+        for obj in bpy.data.objects:
+            if any(x in obj.name for x in ["Greenhouse_Structure", "Arbor_Torso", "Tree", "Pillar"]):
+                obstacles.append(obj)
+        
+        if not obstacles:
+            print("WARNING: No obstacles found for collision test.")
+            return
+
+        # Sample frames to save time
+        step = 100 
+        scene = self.master.scene
+        start = scene.frame_start
+        end = scene.frame_end
+        
+        for f in range(start, end, step):
+            scene.frame_set(f)
+            cam_loc = cam.matrix_world.translation
+            
+            for obj in obstacles:
+                if obj.hide_render: continue
+                
+                obj_loc = obj.matrix_world.translation
+                dist = (cam_loc - obj_loc).length
+                
+                self.assertGreater(dist, 0.5, f"Camera collision with {obj.name} at frame {f} (Dist: {dist:.2f})")
+
     def test_60_final_transition(self):
         """R60: Final transition shot duration before credits."""
-        credits_start = silent_movie_generator.SCENE_MAP['scene12_credits'][0]
+        credits_start = silent_movie_generator.SCENE_MAP['credits'][0]
         retreat_end = silent_movie_generator.SCENE_MAP['scene22'][1]
 
         self.assertEqual(credits_start, retreat_end + 1, "R60 FAIL: Credits should start immediately after retreat")
