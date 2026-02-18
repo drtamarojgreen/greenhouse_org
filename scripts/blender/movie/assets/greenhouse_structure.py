@@ -45,7 +45,94 @@ def create_greenhouse_glass_mat():
     node_scratches.inputs['Scale'].default_value = 50.0
     mat.node_tree.links.new(node_scratches.outputs['Fac'], bsdf.inputs['Roughness'])
 
+    # Enhancement #35: Greenhouse Fogged Glass Effect (Condensation)
+    node_fog = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
+    node_fog.inputs['Scale'].default_value = 100.0
+    node_ramp = mat.node_tree.nodes.new(type='ShaderNodeValToRGB')
+    node_ramp.color_ramp.elements[0].position = 0.4
+    node_ramp.color_ramp.elements[1].position = 0.6
+
+    mat.node_tree.links.new(node_fog.outputs['Fac'], node_ramp.inputs['Fac'])
+    # Mix fog into Roughness
+    mix_rough = mat.node_tree.nodes.new(type='ShaderNodeMath')
+    mix_rough.operation = 'ADD'
+    mat.node_tree.links.new(node_scratches.outputs['Fac'], mix_rough.inputs[0])
+    mat.node_tree.links.new(node_ramp.outputs['Color'], mix_rough.inputs[1])
+    mat.node_tree.links.new(mix_rough.outputs[0], bsdf.inputs['Roughness'])
+
     style.set_blend_method(mat, 'BLEND')
+    return mat
+
+def create_ivy(parent_obj, frame_start=1):
+    """Enhancement #31: Procedural Ivy on Greenhouse Walls."""
+    # Simplified ivy using recursive cuboid growth or particle system
+    # We'll use a simple particle system for 'leaf' growth
+    bpy.ops.mesh.primitive_plane_add(size=0.1)
+    leaf_master = bpy.context.object
+    leaf_master.name = "Ivy_Leaf_Master"
+    leaf_master.hide_render = True
+
+    mat = bpy.data.materials.new(name="IvyLeafMat")
+    mat.use_nodes = True
+    mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.02, 0.15, 0.05, 1)
+    leaf_master.data.materials.append(mat)
+
+    # Emitter
+    emitter = parent_obj
+    mod = emitter.modifiers.new(name="IvyParticles", type='PARTICLE_SYSTEM')
+    psys = emitter.particle_systems[0]
+    psys.settings.type = 'HAIR'
+    psys.settings.count = 2000
+    psys.settings.render_type = 'OBJECT'
+    psys.settings.instance_object = leaf_master
+    psys.settings.particle_size = 0.05
+    psys.settings.size_random = 0.5
+    psys.settings.phase_factor_random = 2.0
+
+    # Animate growth (#31)
+    psys.settings.particle_size = 0.001
+    psys.settings.keyframe_insert(data_path="particle_size", frame=1)
+    psys.settings.particle_size = 0.08
+    psys.settings.keyframe_insert(data_path="particle_size", frame=8000)
+
+def create_mossy_stone_mat(name="MossyStone"):
+    """Enhancement #38: Procedural Moss on Stone Surfaces."""
+    mat = bpy.data.materials.get(name)
+    if mat: return mat
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+
+    bsdf = nodes.get("Principled BSDF")
+    bsdf.inputs["Base Color"].default_value = (0.3, 0.3, 0.3, 1) # Stone gray
+
+    # Moss layer
+    node_moss = nodes.new(type='ShaderNodeTexNoise')
+    node_moss.inputs['Scale'].default_value = 50.0
+
+    node_mix = nodes.new(type='ShaderNodeMixRGB')
+    node_mix.blend_type = 'MIX'
+    node_mix.inputs[2].default_value = (0.05, 0.1, 0.02, 1) # Moss green
+
+    # Height-based gradient for moss (#38)
+    node_coord = nodes.new(type='ShaderNodeTexCoord')
+    node_sep = nodes.new(type='ShaderNodeSeparateXYZ')
+    links.new(node_coord.outputs['Object'], node_sep.inputs['Vector'])
+
+    node_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_ramp.color_ramp.elements[0].position = 0.0
+    node_ramp.color_ramp.elements[1].position = 0.3 # Grow in lower 30%
+    links.new(node_sep.outputs['Z'], node_ramp.inputs['Fac'])
+
+    # Combine with noise
+    node_math = nodes.new(type='ShaderNodeMath')
+    node_math.operation = 'MULTIPLY'
+    links.new(node_ramp.outputs['Color'], node_math.inputs[0])
+    links.new(node_moss.outputs['Fac'], node_math.inputs[1])
+
+    links.new(node_math.outputs[0], node_mix.inputs[0])
+    links.new(node_mix.outputs[0], bsdf.inputs['Base Color'])
+
     return mat
 
 def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
@@ -171,6 +258,9 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
     # Ensure it's in the collection
     if main_obj.name not in gh_col.objects:
         gh_col.objects.link(main_obj)
+
+    # Enhancement #31: Ivy
+    create_ivy(main_obj)
 
     return gh_col
 

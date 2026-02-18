@@ -76,6 +76,10 @@ def create_stage_floor(location=(0,0,-1), size=40):
     floor = bpy.context.object
     floor.name = "ExpressionistFloor"
     floor.data.materials.append(create_marble_floor_mat())
+
+    # Enhancement #24: Caustic Light Patterns on Floor
+    style.setup_caustic_patterns(floor)
+
     return floor
 
 if __name__ == "__main__":

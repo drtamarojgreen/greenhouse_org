@@ -30,7 +30,10 @@ __all__ = [
     'set_blend_method', 'animate_plant_advance', 'add_scene_markers',
     'animate_distance_based_glow', 'apply_bioluminescent_veins',
     'animate_weight_shift', 'apply_anticipation', 'animate_limp',
-    'animate_thinking_gesture', 'animate_defensive_crouch'
+    'animate_thinking_gesture', 'animate_defensive_crouch',
+    'setup_caustic_patterns', 'animate_dawn_progression',
+    'apply_interior_exterior_contrast', 'replace_with_soft_boxes',
+    'animate_hdri_rotation'
 ]
 
 def get_action_curves(action, create_if_missing=False):
@@ -1039,3 +1042,133 @@ def apply_bioluminescent_veins(characters, frame_start, frame_end):
             for f in range(frame_start, frame_end + 1, 72): # Match breathing cycle
                 set_principled_socket(mat, "Emission Strength", 0.5, frame=f)
                 set_principled_socket(mat, "Emission Strength", 2.0, frame=f + 36)
+
+def setup_caustic_patterns(floor_obj):
+    """Enhancement #24: Caustic Light Patterns on Floor."""
+    if not floor_obj: return
+    for slot in floor_obj.material_slots:
+        mat = slot.material
+        if not mat or not mat.use_nodes: continue
+        nodes, links = mat.node_tree.nodes, mat.node_tree.links
+
+        # Add a procedural caustic texture overlay
+        node_tex = nodes.new(type='ShaderNodeTexVoronoi')
+        node_tex.voronoi_dimensions = '3D'
+        node_tex.feature = 'F1'
+        node_tex.inputs['Scale'].default_value = 10.0
+
+        node_math = nodes.new(type='ShaderNodeMath')
+        node_math.operation = 'POWER'
+        node_math.inputs[1].default_value = 5.0
+
+        links.new(node_tex.outputs['Distance'], node_math.inputs[0])
+
+        # Mix with Base Color
+        bsdf = nodes.get("Principled BSDF")
+        if bsdf:
+            mix = nodes.new(type='ShaderNodeMixRGB')
+            mix.blend_type = 'ADD'
+            mix.inputs[0].default_value = 0.2
+
+            # Move existing link
+            old_link = None
+            for link in links:
+                if link.to_socket == bsdf.inputs['Base Color']:
+                    old_link = link
+                    break
+
+            if old_link:
+                links.new(old_link.from_socket, mix.inputs[1])
+                links.remove(old_link)
+
+            links.new(node_math.outputs[0], mix.inputs[2])
+            links.new(mix.outputs[0], bsdf.inputs['Base Color'])
+
+        # Animate texture for moving water effect
+        node_tex.inputs['W'].default_value = 0
+        node_tex.inputs['W'].keyframe_insert(data_path="default_value", frame=1)
+        node_tex.inputs['W'].default_value = 10.0
+        node_tex.inputs['W'].keyframe_insert(data_path="default_value", frame=15000)
+
+def animate_dawn_progression(sun_light):
+    """Enhancement #26: Gradual Dawn Light Progression."""
+    if not sun_light: return
+    # Start Pre-dawn (blue) -> Golden hour -> Midday white
+    colors = [
+        (1, (0.1, 0.2, 0.5)),
+        (4000, (1.0, 0.6, 0.2)),
+        (8000, (1.0, 0.9, 0.8)),
+        (15000, (1.0, 1.0, 1.0))
+    ]
+    for frame, color in colors:
+        sun_light.data.color = color
+        sun_light.data.keyframe_insert(data_path="color", frame=frame)
+
+    # Animate sun angle (X rotation)
+    sun_light.rotation_euler[0] = math.radians(-10)
+    sun_light.keyframe_insert(data_path="rotation_euler", index=0, frame=1)
+    sun_light.rotation_euler[0] = math.radians(-90)
+    sun_light.keyframe_insert(data_path="rotation_euler", index=0, frame=15000)
+
+def apply_interior_exterior_contrast(sun_light, cam):
+    """Enhancement #27: Interior vs Exterior Light Contrast."""
+    # This needs to be checked per frame or keyframed based on drone shots
+    # For now, we'll keyframe it based on the known drone shots frame ranges
+    drone_ranges = [(101, 200), (401, 480), (3901, 4100), (14200, 14400)]
+    for start, end in drone_ranges:
+        sun_light.data.color = (0.7, 0.8, 1.0) # Cool exterior
+        sun_light.data.keyframe_insert(data_path="color", frame=start)
+        sun_light.data.color = (1.0, 0.9, 0.8) # Return to warm interior
+        sun_light.data.keyframe_insert(data_path="color", frame=end)
+
+def replace_with_soft_boxes():
+    """Enhancement #29: Soft Box Fill Replacement."""
+    # Replace AREA lights with large emissive planes
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'LIGHT' and obj.data.type == 'AREA':
+            loc = obj.location.copy()
+            rot = obj.rotation_euler.copy()
+            name = obj.name
+            energy = obj.data.energy
+            color = obj.data.color
+
+            bpy.ops.object.select_all(action='DESELECT')
+            obj.select_set(True)
+            bpy.ops.object.delete()
+
+            bpy.ops.mesh.primitive_plane_add(location=loc, rotation=rot)
+            plane = bpy.context.object
+            plane.name = f"SoftBox_{name}"
+            plane.scale = (2, 2, 1)
+
+            mat = bpy.data.materials.new(name=f"Mat_{plane.name}")
+            mat.use_nodes = True
+            bsdf = mat.node_tree.nodes["Principled BSDF"]
+            set_principled_socket(mat, "Emission", color + (1,))
+            set_principled_socket(mat, "Emission Strength", energy / 1000.0) # Scale energy
+            plane.data.materials.append(mat)
+
+def animate_hdri_rotation(scene):
+    """Enhancement #30: Animated HDRI Sky Rotation."""
+    world = scene.world
+    if not world or not world.use_nodes: return
+    nodes = world.node_tree.nodes
+    mapping = nodes.get("Mapping")
+    if not mapping:
+        # Try to find or create mapping node for environment texture
+        tex = None
+        for n in nodes:
+            if n.type == 'TEX_ENVIRONMENT':
+                tex = n
+                break
+        if tex:
+            mapping = nodes.new(type='ShaderNodeMapping')
+            coord = nodes.new(type='ShaderNodeTexCoord')
+            world.node_tree.links.new(coord.outputs['Generated'], mapping.inputs['Vector'])
+            world.node_tree.links.new(mapping.outputs['Vector'], tex.inputs['Vector'])
+
+    if mapping:
+        mapping.inputs['Rotation'].default_value[2] = 0
+        mapping.inputs['Rotation'].keyframe_insert(data_path="default_value", index=2, frame=1)
+        mapping.inputs['Rotation'].default_value[2] = math.radians(360)
+        mapping.inputs['Rotation'].keyframe_insert(data_path="default_value", index=2, frame=15000)

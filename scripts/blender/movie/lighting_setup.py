@@ -26,6 +26,20 @@ def setup_lighting_scenes(master):
     master.rim.name = "RimLight"
     master.rim.data.energy = 5000
 
+    # Firefly Fill Light (#22)
+    bpy.ops.object.light_add(type='POINT', location=(0, 0, 2))
+    master.firefly_fill = bpy.context.object
+    master.firefly_fill.name = "FireflyFill"
+    master.firefly_fill.data.energy = 0
+    master.firefly_fill.data.color = (0.8, 1.0, 0.2)
+    # Pulsing firefly light in sanctuary
+    sanctuary_start, sanctuary_end = SCENE_MAP['scene11_nature_sanctuary']
+    for f in range(sanctuary_start, sanctuary_end, 48):
+        master.firefly_fill.data.energy = 500
+        master.firefly_fill.data.keyframe_insert(data_path="energy", frame=f)
+        master.firefly_fill.data.energy = 1500
+        master.firefly_fill.data.keyframe_insert(data_path="energy", frame=f + 24)
+
     # Spot
     bpy.ops.object.light_add(type='SPOT', location=(0, -15, 10))
     master.spot = bpy.context.object
@@ -183,9 +197,14 @@ def setup_lighting_scenes(master):
             master.sun.data.energy = 5.0
             master.sun.data.keyframe_insert(data_path="energy", frame=flash_frame + 2)
 
+    # Enhancement #26, #27, #29, #30
+    style.animate_dawn_progression(master.sun)
+    style.apply_interior_exterior_contrast(master.sun, master.scene.camera)
+    style.replace_with_soft_boxes()
+    style.animate_hdri_rotation(master.scene)
+
     # Store new lights on master for visibility control elsewhere
     master.herb_key = herb_key
     master.arbor_key = arbor_key
     master.gnome_key = gnome_key
-    master.dome_fill = dome_fill
-    master.ground_bounce = ground_bounce
+    # Note: area lights were replaced by soft boxes

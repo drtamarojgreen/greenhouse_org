@@ -121,14 +121,9 @@ def create_garden_bed(location, size=(3, 1.5), name="GardenBed"):
 
     soil_mat = create_soil_material()
 
-    # Stone edging material
-    stone_mat = bpy.data.materials.get("StoneMat")
-    if not stone_mat:
-        stone_mat = bpy.data.materials.new("StoneMat")
-        stone_mat.use_nodes = True
-        bsdf = stone_mat.node_tree.nodes["Principled BSDF"]
-        bsdf.inputs['Base Color'].default_value = (0.3, 0.28, 0.25, 1)
-        bsdf.inputs['Roughness'].default_value = 0.9
+    # Enhancement #38: Procedural Moss on Stone Surfaces
+    import greenhouse_structure
+    stone_mat = greenhouse_structure.create_mossy_stone_mat(name=f"StoneMat_{name}")
 
     # Raised soil bed
     bpy.ops.mesh.primitive_cube_add(
@@ -246,38 +241,44 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
         name="HedgeBack"
     )
 
-    # --- Gravel path to entrance ---
+    # --- Enhancement #34: Cobblestone Path Material ---
     bpy.ops.mesh.primitive_plane_add(
         size=1,
         location=(0, -(d/2 + padding/2 + 0.6), -0.99)
     )
     path = bpy.context.object
-    path.name = "GravelPath"
+    path.name = "CobblestonePath"
     path.scale = (2.5, (padding + 1.5)/2, 1)
 
-    gravel_mat = bpy.data.materials.new("GravelMat")
-    gravel_mat.use_nodes = True
-    nodes = gravel_mat.node_tree.nodes
-    links = gravel_mat.node_tree.links
+    cobble_mat = bpy.data.materials.new("CobbleMat")
+    cobble_mat.use_nodes = True
+    nodes = cobble_mat.node_tree.nodes
+    links = cobble_mat.node_tree.links
     nodes.clear()
     node_out = nodes.new('ShaderNodeOutputMaterial')
     node_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
-    node_noise = nodes.new('ShaderNodeTexNoise')
-    node_noise.inputs['Scale'].default_value = 80.0
-    node_noise.inputs['Detail'].default_value = 16.0
+
+    # Voronoi for stones
+    node_voronoi = nodes.new('ShaderNodeTexVoronoi')
+    node_voronoi.inputs['Scale'].default_value = 20.0
+
+    # Displacement (#34)
+    node_disp = nodes.new('ShaderNodeDisplacement')
+    node_disp.inputs['Scale'].default_value = 0.05
+    links.new(node_voronoi.outputs['Distance'], node_disp.inputs['Height'])
+    links.new(node_disp.outputs['Displacement'], node_out.inputs['Displacement'])
+
+    # Color
     node_ramp = nodes.new('ShaderNodeValToRGB')
-    elements = node_ramp.color_ramp.elements
-    elements[0].color = (0.18, 0.16, 0.14, 1)
-    elements[1].color = (0.38, 0.35, 0.30, 1)
-    node_bump = nodes.new('ShaderNodeBump')
-    node_bump.inputs['Strength'].default_value = 0.4
-    links.new(node_noise.outputs['Fac'], node_ramp.inputs['Fac'])
+    node_ramp.color_ramp.elements[0].color = (0.2, 0.2, 0.2, 1)
+    node_ramp.color_ramp.elements[1].color = (0.4, 0.4, 0.4, 1)
+    links.new(node_voronoi.outputs['Color'], node_ramp.inputs['Fac'])
     links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
-    links.new(node_noise.outputs['Fac'], node_bump.inputs['Height'])
-    links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
+
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
-    node_bsdf.inputs['Roughness'].default_value = 0.95
-    path.data.materials.append(gravel_mat)
+    node_bsdf.inputs['Roughness'].default_value = 0.8
+    cobble_mat.cycles.displacement_method = 'BOTH'
+    path.data.materials.append(cobble_mat)
 
     # --- Garden beds along front ---
     bed_positions = [
@@ -294,6 +295,51 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
             name=f"ExteriorBed_{i}"
         )
         beds.append(bed)
+
+    # --- Enhancement #32: Koi Pond in Garden Exterior ---
+    def create_koi_pond(location, size=(4, 6)):
+        bpy.ops.mesh.primitive_plane_add(size=1, location=location)
+        pond = bpy.context.object
+        pond.name = "KoiPond"
+        pond.scale = (size[0]/2, size[1]/2, 1)
+
+        mat = bpy.data.materials.new("PondMat")
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes["Principled BSDF"]
+        bsdf.inputs['Base Color'].default_value = (0.05, 0.1, 0.2, 1)
+        style.set_principled_socket(bsdf, 'Transmission', 0.8)
+        bsdf.inputs['Roughness'].default_value = 0.01
+
+        # Ripple normal
+        node_noise = mat.node_tree.nodes.new('ShaderNodeTexNoise')
+        node_noise.inputs['Scale'].default_value = 50.0
+        node_bump = mat.node_tree.nodes.new('ShaderNodeBump')
+        node_bump.inputs['Strength'].default_value = 0.1
+        mat.node_tree.links.new(node_noise.outputs['Fac'], node_bump.inputs['Height'])
+        mat.node_tree.links.new(node_bump.outputs['Normal'], bsdf.inputs['Normal'])
+
+        # Animate ripples (#32)
+        node_noise.inputs['W'].default_value = 0
+        node_noise.inputs['W'].keyframe_insert(data_path="default_value", frame=1)
+        node_noise.inputs['W'].default_value = 5.0
+        node_noise.inputs['W'].keyframe_insert(data_path="default_value", frame=15000)
+
+        pond.data.materials.append(mat)
+        style.set_blend_method(mat, 'BLEND')
+
+        # Add simple fish objects (#32)
+        for i in range(5):
+            bpy.ops.mesh.primitive_cone_add(radius1=0.05, depth=0.2, location=location + mathutils.Vector((random.uniform(-1, 1), random.uniform(-2, 2), -0.1)))
+            fish = bpy.context.object
+            fish.name = f"Koi_{i}"
+            fish.rotation_euler[0] = math.radians(90)
+            fish.data.materials.append(bpy.data.materials.new(f"FishMat_{i}"))
+            fish.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (1, 0.4, 0, 1) # Orange
+
+            # Animate fish paths
+            style.insert_looping_noise(fish, "location", strength=1.0, scale=100.0)
+
+    create_koi_pond(location=(w/2 + 5, 0, -1.01))
 
     # --- Exterior grass ground plane ---
     bpy.ops.mesh.primitive_plane_add(
