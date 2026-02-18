@@ -491,11 +491,13 @@
                     window.GreenhouseNeuroSynapse.drawSynapsePiP(ctx, 0, 0, this.canvas.width, this.canvas.height, this.selectedConnection, this.synapseMeshes, true);
                 }
             } else {
+                const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
                 ctx.fillStyle = '#111';
                 ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 ctx.fillStyle = '#666';
                 ctx.textAlign = 'center';
-                ctx.fillText("Selecting Synapse...", this.canvas.width / 2, this.canvas.height / 2);
+                ctx.font = '16px Quicksand, sans-serif';
+                ctx.fillText(t('selecting_synapse'), this.canvas.width / 2, this.canvas.height / 2);
             }
 
             // Draw PiP View (Whole Brain Network)
@@ -825,9 +827,11 @@
             ctx.rect(0, 0, w, h);
             ctx.clip();
 
+            const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
             ctx.fillStyle = pipConfig.borderColor;
-            ctx.font = '12px Arial';
-            ctx.fillText("Whole Brain", 10, 20);
+            ctx.font = '800 10px Quicksand, sans-serif';
+            ctx.textBaseline = 'top';
+            ctx.fillText(t('whole_brain_title').toUpperCase(), 15, 15);
 
             this.drawGrid(ctx);
             this.drawTargets(ctx, w, h);

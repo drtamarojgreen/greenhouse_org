@@ -163,12 +163,12 @@
             // ADHD Category Buttons
             const catW = (panelW - 60 - 10) / 3;
             this.ui.categoryButtons = [
-                { id: 'cat_scenarios', label: 'SCENARIOS', val: 'scenarios', x: 40 + offsetX, y: 110, w: catW, h: 20 },
-                { id: 'cat_symptoms', label: 'SYMPTOMS', val: 'symptoms', x: 40 + offsetX + catW + 5, y: 110, w: catW, h: 20 },
-                { id: 'cat_treatments', label: 'CLINICAL', val: 'treatments', x: 40 + offsetX + (catW + 5) * 2, y: 110, w: catW, h: 20 },
-                { id: 'cat_pathology', label: 'PATHOLOGY', val: 'pathology', x: 40 + offsetX, y: 135, w: catW, h: 20 },
-                { id: 'cat_etiology', label: 'ETIOLOGY', val: 'etiology', x: 40 + offsetX + catW + 5, y: 135, w: catW, h: 20 },
-                { id: 'cat_conditions', label: 'OTHER', val: 'conditions', x: 40 + offsetX + (catW + 5) * 2, y: 135, w: catW, h: 20 }
+                { id: 'cat_scenarios', label: t('cat_scenarios') || 'SCENARIOS', val: 'scenarios', x: 40 + offsetX, y: 110, w: catW, h: 20 },
+                { id: 'cat_symptoms', label: t('cat_symptoms') || 'SYMPTOMS', val: 'symptoms', x: 40 + offsetX + catW + 5, y: 110, w: catW, h: 20 },
+                { id: 'cat_treatments', label: t('cat_treatments') || 'CLINICAL', val: 'treatments', x: 40 + offsetX + (catW + 5) * 2, y: 110, w: catW, h: 20 },
+                { id: 'cat_pathology', label: t('cat_pathology') || 'PATHOLOGY', val: 'pathology', x: 40 + offsetX, y: 135, w: catW, h: 20 },
+                { id: 'cat_etiology', label: t('cat_etiology') || 'ETIOLOGY', val: 'etiology', x: 40 + offsetX + catW + 5, y: 135, w: catW, h: 20 },
+                { id: 'cat_conditions', label: t('cat_conditions') || 'OTHER', val: 'conditions', x: 40 + offsetX + (catW + 5) * 2, y: 135, w: catW, h: 20 }
             ];
         },
 
@@ -180,6 +180,12 @@
 
                 window.addEventListener('mouseup', () => {
                     this.isDraggingSlider = false;
+                });
+
+                window.addEventListener('resize', () => {
+                    this.setupUIComponents();
+                    this.updateADHDCheckboxes();
+                    this.state.scrollOffset = 0;
                 });
             }
         },
@@ -374,7 +380,11 @@
         },
 
         refreshUIText() {
+            this.ui.tabs.forEach(tab => {
+                tab.label = t(tab.id) || tab.val.toUpperCase();
+            });
             this.ui.buttons.forEach(b => b.label = t(b.id));
+            this.ui.categoryButtons.forEach(b => b.label = t(b.id));
             this.ui.actionButtons.forEach(b => {
                 if (b.action === 'pause') b.label = this.isRunning ? t('btn_pause') : t('btn_play');
                 else if (b.action === 'lang') b.label = t('btn_language');
@@ -466,7 +476,7 @@
 
             ctx.fillStyle = '#4ca1af';
             ctx.font = '800 10px Quicksand';
-            ctx.fillText('ENHANCEMENT CATEGORIES', 40 + offsetX, 105);
+            ctx.fillText(t('active_enhancement').toUpperCase() + ' CATEGORIES', 40 + offsetX, 105);
 
             this.ui.categoryButtons.forEach(b => {
                 Controls.drawButton(ctx, this, b, this.state.adhdCategory === b.val);
