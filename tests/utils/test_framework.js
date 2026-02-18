@@ -32,6 +32,7 @@ class TestFramework {
   describe(suiteName, suiteFunction) {
     const suite = {
       name: suiteName,
+      parent: this.currentSuite,
       tests: [],
       beforeEach: [],
       afterEach: [],
@@ -45,6 +46,7 @@ class TestFramework {
     };
 
     this.suites.push(suite);
+    const parentSuite = this.currentSuite;
     this.currentSuite = suite;
 
     // Execute the suite function to register tests
@@ -54,7 +56,7 @@ class TestFramework {
       console.error(`Error in suite "${suiteName}":`, error);
     }
 
-    this.currentSuite = null;
+    this.currentSuite = parentSuite;
     return suite;
   }
 
@@ -216,6 +218,23 @@ class TestFramework {
   }
 
   /**
+   * Get all hooks of a certain type for a suite and its parents
+   */
+  getHooks(suite, type) {
+    let hooks = [];
+    let current = suite;
+    while (current) {
+      hooks = [...current[type], ...hooks];
+      current = current.parent;
+    }
+    if (type === 'beforeEach') hooks = [...this.beforeEachHooks, ...hooks];
+    if (type === 'afterEach') hooks = [...hooks, ...this.afterEachHooks];
+    if (type === 'beforeAll') hooks = [...this.beforeAllHooks, ...hooks];
+    if (type === 'afterAll') hooks = [...hooks, ...this.afterAllHooks];
+    return hooks;
+  }
+
+  /**
    * Run a single test
    */
   async runTest(test, suite) {
@@ -223,7 +242,8 @@ class TestFramework {
 
     try {
       // Run beforeEach hooks
-      for (const hook of [...this.beforeEachHooks, ...suite.beforeEach]) {
+      const beforeEachHooks = this.getHooks(suite, 'beforeEach');
+      for (const hook of beforeEachHooks) {
         await hook();
       }
 
@@ -257,7 +277,8 @@ class TestFramework {
       }
     } finally {
       // Run afterEach hooks
-      for (const hook of [...this.afterEachHooks, ...suite.afterEach]) {
+      const afterEachHooks = this.getHooks(suite, 'afterEach');
+      for (const hook of afterEachHooks) {
         try {
           await hook();
         } catch (error) {
