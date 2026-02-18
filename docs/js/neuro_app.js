@@ -19,9 +19,12 @@
             viewMode: 0, // 0: Neural, 1: Synaptic, 2: Burst
             dosage: 1.0,
             activeScenarios: new Set(),
+            activeEnhancements: new Set(),
             showInfo: false,
             activeTab: 'sim', // 'sim', 'adhd', 'synapse'
-            searchQuery: ''
+            searchQuery: '',
+            adhdCategory: 'scenarios', // 'scenarios', 'symptoms', 'treatments', etc.
+            scrollOffset: 0
         },
 
         ui: {
@@ -32,6 +35,7 @@
             actionButtons: [],
             cameraButtons: [],
             tabs: [],
+            categoryButtons: [],
             searchInput: { id: 'search_input', x: 40, y: 70, w: 280, h: 30 }
         },
 
@@ -42,9 +46,12 @@
                 viewMode: 0,
                 dosage: 1.0,
                 activeScenarios: new Set(),
+                activeEnhancements: new Set(),
                 showInfo: false,
                 activeTab: 'sim',
-                searchQuery: ''
+                searchQuery: '',
+                adhdCategory: 'scenarios',
+                scrollOffset: 0
             };
 
             // Robust selector handling (Wix compatibility)
@@ -77,6 +84,7 @@
             }
 
             this.setupUIComponents();
+            this.updateADHDCheckboxes();
             this.initSearch();
             this.bindEvents();
 
@@ -151,15 +159,51 @@
                 { id: 'reset_camera', label: t('reset_camera'), x: 400, y: 60, w: 110, h: 25, action: 'reset' },
                 { id: 'auto_rotate', label: t('auto_rotate'), x: 515, y: 60, w: 110, h: 25, action: 'rotate' }
             ];
+
+            // ADHD Category Buttons
+            const catW = (panelW - 60 - 10) / 3;
+            this.ui.categoryButtons = [
+                { id: 'cat_scenarios', label: 'SCENARIOS', val: 'scenarios', x: 40 + offsetX, y: 110, w: catW, h: 20 },
+                { id: 'cat_symptoms', label: 'SYMPTOMS', val: 'symptoms', x: 40 + offsetX + catW + 5, y: 110, w: catW, h: 20 },
+                { id: 'cat_treatments', label: 'CLINICAL', val: 'treatments', x: 40 + offsetX + (catW + 5) * 2, y: 110, w: catW, h: 20 },
+                { id: 'cat_pathology', label: 'PATHOLOGY', val: 'pathology', x: 40 + offsetX, y: 135, w: catW, h: 20 },
+                { id: 'cat_etiology', label: 'ETIOLOGY', val: 'etiology', x: 40 + offsetX + catW + 5, y: 135, w: catW, h: 20 },
+                { id: 'cat_conditions', label: 'OTHER', val: 'conditions', x: 40 + offsetX + (catW + 5) * 2, y: 135, w: catW, h: 20 }
+            ];
         },
 
         bindEvents() {
             if (this.ui3d && this.ui3d.canvas) {
                 this.ui3d.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e), true);
                 this.ui3d.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e), true);
-        window.addEventListener('mouseup', () => {
-            this.isDraggingSlider = false;
-        });
+                this.ui3d.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
+
+                window.addEventListener('mouseup', () => {
+                    this.isDraggingSlider = false;
+                });
+            }
+        },
+
+        handleWheel(e) {
+            if (this.state.activeTab !== 'adhd') return;
+
+            const { x: mx, y: my } = this.getMousePos(e);
+            const offsetX = 15;
+            const scrollAreaX = 30 + offsetX;
+            const scrollAreaY = 160;
+            const scrollAreaW = 310;
+            const scrollAreaH = 320;
+
+            if (mx >= scrollAreaX && mx <= scrollAreaX + scrollAreaW && my >= scrollAreaY && my <= scrollAreaY + scrollAreaH) {
+                e.preventDefault();
+                const delta = e.deltaY;
+                this.state.scrollOffset += delta;
+
+                // Clamp scroll offset
+                const filteredCount = this.getFilteredCheckboxes().length;
+                const totalHeight = filteredCount * 25;
+                const maxScroll = Math.max(0, totalHeight - scrollAreaH + 10);
+                this.state.scrollOffset = Math.max(0, Math.min(this.state.scrollOffset, maxScroll));
             }
         },
 
@@ -209,14 +253,39 @@
                     if (this.searchElem) this.searchElem.focus();
                     hit = true;
                 } else {
-                    const filtered = this.getFilteredCheckboxes();
-                    for (const c of filtered) {
-                        if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
-                            const active = !this.state.activeScenarios.has(c.scenarioId);
-                            if (active) this.state.activeScenarios.add(c.scenarioId);
-                            else this.state.activeScenarios.delete(c.scenarioId);
-                            this.toggleScenario(c.scenarioId, active);
+                    // Category Selection
+                    for (const b of this.ui.categoryButtons) {
+                        if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                            this.state.adhdCategory = b.val;
+                            this.state.scrollOffset = 0;
+                            this.updateADHDCheckboxes();
                             hit = true; break;
+                        }
+                    }
+
+                    if (!hit) {
+                        const filtered = this.getFilteredCheckboxes();
+                        const scrollAreaY = 160;
+                        const scrollAreaH = 320;
+
+                        for (const c of filtered) {
+                            // Check if within visible area before hit detection
+                            if (c.y < scrollAreaY || c.y + c.h > scrollAreaY + scrollAreaH) continue;
+
+                            if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
+                                if (this.state.adhdCategory === 'scenarios') {
+                                    const active = !this.state.activeScenarios.has(c.scenarioId);
+                                    if (active) this.state.activeScenarios.add(c.scenarioId);
+                                    else this.state.activeScenarios.delete(c.scenarioId);
+                                    this.toggleScenario(c.scenarioId, active);
+                                } else {
+                                    const active = !this.state.activeEnhancements.has(c.enhancementId);
+                                    if (active) this.state.activeEnhancements.add(c.enhancementId);
+                                    else this.state.activeEnhancements.delete(c.enhancementId);
+                                    this.ga?.setADHDEnhancement(c.enhancementId, active);
+                                }
+                                hit = true; break;
+                            }
                         }
                     }
                 }
@@ -275,7 +344,12 @@
 
             const all = [...this.ui.tabs, ...this.ui.actionButtons, ...this.ui.cameraButtons];
             if (this.state.activeTab === 'sim') all.push(...this.ui.buttons, ...this.ui.sliders);
-            if (this.state.activeTab === 'adhd') all.push(...this.getFilteredCheckboxes(), this.ui.searchInput);
+            if (this.state.activeTab === 'adhd') {
+                const scrollAreaY = 160;
+                const scrollAreaH = 320;
+                const visibleCheckboxes = this.getFilteredCheckboxes().filter(c => c.y >= scrollAreaY && c.y + c.h <= scrollAreaY + scrollAreaH);
+                all.push(...visibleCheckboxes, this.ui.searchInput, ...this.ui.categoryButtons);
+            }
 
             for (const el of all) {
                 let ex = el.x;
@@ -392,18 +466,48 @@
 
             ctx.fillStyle = '#4ca1af';
             ctx.font = '800 10px Quicksand';
-            ctx.fillText(t('adhd_scenarios').toUpperCase(), 40 + offsetX, 115);
+            ctx.fillText('ENHANCEMENT CATEGORIES', 40 + offsetX, 105);
+
+            this.ui.categoryButtons.forEach(b => {
+                Controls.drawButton(ctx, this, b, this.state.adhdCategory === b.val);
+            });
 
             const filtered = this.getFilteredCheckboxes();
+            const scrollAreaY = 160;
+            const scrollAreaH = 320;
+            const itemHeight = 25;
+            const totalHeight = filtered.length * itemHeight;
+            const maxScroll = Math.max(0, totalHeight - scrollAreaH + 10);
+
             ctx.save();
             ctx.beginPath();
-            ctx.rect(30 + offsetX, 125, 300, 320);
+            ctx.rect(30 + offsetX, scrollAreaY, 310, scrollAreaH);
             ctx.clip();
             filtered.forEach((c, idx) => {
-                c.y = 135 + idx * 25;
-                Controls.drawCheckbox(ctx, this, c, this.state.activeScenarios.has(c.scenarioId));
+                c.y = scrollAreaY + 10 + idx * itemHeight - (this.state.scrollOffset || 0);
+                const isActive = (this.state.adhdCategory === 'scenarios')
+                    ? this.state.activeScenarios.has(c.scenarioId)
+                    : this.state.activeEnhancements.has(c.enhancementId);
+                Controls.drawCheckbox(ctx, this, c, isActive);
             });
             ctx.restore();
+
+            // Draw Scrollbar track
+            if (maxScroll > 0) {
+                const sbX = 340 + offsetX;
+                const sbY = scrollAreaY;
+                const sbW = 4;
+                const sbH = scrollAreaH;
+
+                ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                this.roundRect(ctx, sbX, sbY, sbW, sbH, 2, true);
+
+                // Scrollbar Handle
+                const handleH = Math.max(20, (sbH / (totalHeight + 10)) * sbH);
+                const handlePos = (this.state.scrollOffset / maxScroll) * (sbH - handleH);
+                ctx.fillStyle = 'rgba(76, 161, 175, 0.5)';
+                this.roundRect(ctx, sbX, sbY + handlePos, sbW, handleH, 2, true);
+            }
         },
 
         drawSynapseTab(ctx, offsetX) {
@@ -478,9 +582,48 @@
             this.container.appendChild(this.searchElem);
         },
 
+        updateADHDCheckboxes() {
+            const offsetX = 15;
+            const panelW = this.ui.panelW || 350;
+            this.ui.checkboxes = [];
+            const data = window.GreenhouseADHDData;
+            if (!data) return;
+
+            if (this.state.adhdCategory === 'scenarios') {
+                Object.keys(data.scenarios).forEach((key) => {
+                    if (key === 'none') return;
+                    this.ui.checkboxes.push({
+                        id: `scenario_${key}`,
+                        scenarioId: key,
+                        labelKey: `adhd_scenario_${key}`,
+                        x: 40 + offsetX,
+                        y: 0,
+                        w: panelW - 80,
+                        h: 20
+                    });
+                });
+            } else {
+                const enhancements = data.categories[this.state.adhdCategory] || [];
+                enhancements.forEach(e => {
+                    this.ui.checkboxes.push({
+                        id: `enh_${e.id}`,
+                        enhancementId: e.id,
+                        labelKey: `adhd_enh_${e.id}_name`,
+                        x: 40 + offsetX,
+                        y: 0,
+                        w: panelW - 80,
+                        h: 20
+                    });
+                });
+            }
+        },
+
         getFilteredCheckboxes() {
-            if (!this.state.searchQuery) return this.ui.checkboxes;
-            return this.ui.checkboxes.filter(c => t(c.labelKey).toLowerCase().includes(this.state.searchQuery));
+            let list = this.ui.checkboxes;
+            if (this.state.searchQuery) {
+                list = list.filter(c => t(c.labelKey).toLowerCase().includes(this.state.searchQuery));
+            }
+            return list;
         },
 
         switchMode(index) {

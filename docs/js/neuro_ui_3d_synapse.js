@@ -481,15 +481,37 @@
             connection.synapseDetails.particles = connection.synapseDetails.particles.filter(p => p.life > 0);
 
             // Labels
-            ctx.fillStyle = '#FFD700';
-            const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -280, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            ctx.font = 'bold 12px Quicksand, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+
+            // 1. Pre-Synaptic Terminal (Top)
+            const preLabelPos = GreenhouseModels3DMath.project3DTo2D(0, -180, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             if (preLabelPos.scale > 0) {
+                ctx.fillStyle = '#FFD700';
                 // ADHD: EF Gating (10)
                 if (adhdActive.has(10) && Math.random() < 0.1) {
                     ctx.fillStyle = 'red';
                     ctx.fillText("GATING FAILURE", preLabelPos.x + x, preLabelPos.y + y - 20);
                 }
-                ctx.fillText("Pre-Synaptic Terminal", preLabelPos.x + x, preLabelPos.y + y);
+                ctx.fillText("PRE-SYNAPTIC TERMINAL", preLabelPos.x + x, preLabelPos.y + y);
+            }
+
+            // 2. Synaptic Cleft (Middle)
+            const cleftLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 0, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            if (cleftLabelPos.scale > 0) {
+                ctx.fillStyle = 'rgba(0, 136, 255, 0.9)';
+                ctx.fillText("SYNAPTIC CLEFT", cleftLabelPos.x + x, cleftLabelPos.y + y);
+            }
+
+            // 3. Post-Synaptic Density (Bottom)
+            const postLabelPos = GreenhouseModels3DMath.project3DTo2D(0, 180, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+            if (postLabelPos.scale > 0) {
+                ctx.fillStyle = '#C0C0C0';
+                ctx.fillText("POST-SYNAPTIC DENSITY", postLabelPos.x + x, postLabelPos.y + y);
             }
 
             ctx.restore();
