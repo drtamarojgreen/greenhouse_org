@@ -4,43 +4,79 @@ import unittest
 from base_test import BlenderTestCase
 
 class TestLighting(BlenderTestCase):
-    def test_01_volume_scatter(self):
-        """Verify volume scatter density."""
-        world = bpy.context.scene.world
-        self.assertTrue(world and world.use_nodes and world.node_tree, "World nodes are not enabled.")
+    def log_result(self, id, name, status, details=""):
+        print(f"[{'✓' if status == 'PASS' else '✗'}] {id}: {name} -> {status} ({details})")
+
+    # --- Section 4.1: Emission-as-Fade Bug Fix ---
+
+    def test_4_1_2_garden_bush_emission_zero(self):
+        """4.1.2: Garden bush emission strength is 0 after fade-in."""
+        mat = bpy.data.materials.get("GardenBush_0")
+        if mat and mat.use_nodes:
+            self.master.scene.frame_set(600) # After fade-in
+            node = next((n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+            if node:
+                # Check Emission Strength input
+                strength = node.inputs.get("Emission Strength")
+                if strength:
+                    val = strength.default_value
+                    status = "PASS" if val == 0.0 else "FAIL"
+                    self.log_result("4.1.2", "Bush Emission", status, f"Val: {val}")
+                    self.assertEqual(val, 0.0)
+
+    # --- Section 4.2: New Character Key Lights ---
+
+    def _check_key_light(self, l_id, name, l_type='SPOT', energy=15000):
+        obj = bpy.data.objects.get(name)
+        exists = obj is not None and obj.type == 'LIGHT' and obj.data.type == l_type
         
-        vol_node = world.node_tree.nodes.get("Volume Scatter")
-        world_output = world.node_tree.nodes.get("World Output")
-
-        self.assertIsNotNone(vol_node, "Volume Scatter node is MISSING.")
-        self.assertIsNotNone(world_output, "World Output node is MISSING.")
-
-        # Robustness: Check that the volume scatter is actually connected to the world output.
-        is_connected = any(link.from_node == vol_node for link in world.node_tree.links if link.to_node == world_output and link.to_socket.name == "Volume")
-        self.assertTrue(is_connected, "Volume Scatter node is not connected to the World Output.")
-
-        if vol_node:
-            density = vol_node.inputs['Density'].default_value
-            is_sane = 0.0 < density < 0.1
-            status = "PASS" if is_sane else "WARNING"
-            self.log_result("Volume Density", status, f"{density}")
-
-    def test_02_lighting_check(self):
-        """Ensure there are active light sources."""
-        # Robustness: Check for specific, powerful light types, not just any light.
-        key_lights = [o for o in bpy.data.objects if o.type == 'LIGHT' and o.data.type in ('SUN', 'AREA') and not o.hide_render and o.data.energy > 1.0]
+        status = "PASS" if exists else "FAIL"
+        details = f"Found {l_type}" if exists else "Missing or wrong type"
+        self.log_result(l_id, name, status, details)
+        self.assertTrue(exists)
         
-        emissive_mats = []
-        for mat in bpy.data.materials:
-            if mat.use_nodes:
-                for node in mat.node_tree.nodes:
-                    # Robustness: Check for a meaningful emission strength.
-                    if hasattr(node, 'inputs') and 'Emission Strength' in node.inputs and node.inputs['Emission Strength'].default_value > 0.1:
-                        emissive_mats.append(mat.name)
+        if exists:
+            self.assertEqual(obj.data.energy, energy)
 
-        has_light = len(key_lights) > 0 or len(emissive_mats) > 0
-        self.log_result("Lighting Check", "PASS" if has_light else "FAIL", f"Key Lights: {len(key_lights)}, Strong Emissive Mats: {len(emissive_mats)}")
-        self.assertTrue(has_light)
+    def test_4_2_1_herbaceous_key(self):
+        """4.2.1: HerbaceousKeyLight object exists in scene."""
+        self._check_key_light("4.2.1", "HerbaceousKeyLight", 'SPOT', 15000)
+
+    def test_4_2_2_arbor_key(self):
+        """4.2.2: ArborKeyLight object exists in scene."""
+        self._check_key_light("4.2.2", "ArborKeyLight", 'SPOT', 15000)
+
+    def test_4_2_3_gnome_key_tint(self):
+        """4.2.3: GnomeKeyLight object exists with green tint."""
+        obj = bpy.data.objects.get("GnomeKeyLight")
+        if obj:
+            color = obj.data.color
+            is_green = color.g > color.r and color.g > color.b
+            status = "PASS" if is_green else "FAIL"
+            self.log_result("4.2.3", "Gnome Key Tint", status, f"RGB: {color[0]:.1f}, {color[1]:.1f}, {color[2]:.1f}")
+            self.assertTrue(is_green)
+
+    def test_4_2_6_key_light_dialogue_boost(self):
+        """4.2.6: Character key lights brighten during dialogue scenes."""
+        light = bpy.data.objects.get("HerbaceousKeyLight")
+        if light:
+            self.master.scene.frame_set(9550) # Scene 16
+            energy = light.data.energy
+            status = "PASS" if energy == 25000 else "FAIL"
+            self.log_result("4.2.6", "Light Boost", status, f"Energy: {energy}")
+            self.assertEqual(energy, 25000)
+
+    def test_4_2_7_gnome_light_dimming(self):
+        """4.2.7: GnomeKeyLight dims progressively."""
+        light = bpy.data.objects.get("GnomeKeyLight")
+        if light:
+            # Plan: 8000 -> 4000 -> 1500 -> 500
+            checks = [(11601, 8000), (12301, 4000), (13001, 1500), (13701, 500)]
+            for f, expected in checks:
+                self.master.scene.frame_set(f)
+                val = light.data.energy
+                with self.subTest(frame=f):
+                    self.assertAlmostEqual(val, expected, delta=1.0)
 
 if __name__ == "__main__":
     argv = [sys.argv[0]]

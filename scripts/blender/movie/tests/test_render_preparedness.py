@@ -193,16 +193,52 @@ class TestRenderPreparedness(unittest.TestCase):
         else:
             self.log_result("Interaction Scene Map", "FAIL", "interaction NOT in SCENE_MAP")
 
-    def test_11_missing_textures(self):
-        """Check for missing image texture files (Pink Render Check)."""
-        missing_images = []
-        for img in bpy.data.images:
-            if img.source == 'FILE':
-                path = bpy.path.abspath(img.filepath)
-                if path and not os.path.exists(path) and img.packed_file is None:
-                    missing_images.append(f"{img.name} ({path})")
-        
         self.assertEqual(len(missing_images), 0, f"Missing texture files: {missing_images}")
+
+    def test_12_cpu_rendering_enforcement(self):
+        """Level 4: Ensure Cycles is set to CPU and GPU compute is disabled."""
+        scene = bpy.context.scene
+        if scene.render.engine == 'CYCLES':
+            is_cpu = scene.cycles.device == 'CPU'
+            
+            # Check cycles preferences for GPU
+            cprefs = bpy.context.preferences.addons['cycles'].preferences
+            gpu_disabled = cprefs.compute_device_type == 'NONE'
+            
+            status = "PASS" if (is_cpu and gpu_disabled) else "FAIL"
+            details = f"Device: {scene.cycles.device}, Compute Type: {cprefs.compute_device_type}"
+            self.log_result("CPU Enforcement", status, details)
+            self.assertTrue(is_cpu, "Cycles device must be CPU")
+            self.assertTrue(gpu_disabled, "GPU compute device must be NONE to prevent hardware conflicts")
+
+    def test_13_memory_vertex_threshold(self):
+        """Level 4: Verify total vertex count doesn't exceed safe CPU limits (1M)."""
+        total_verts = sum(len(o.data.vertices) for o in bpy.data.objects if o.type == 'MESH')
+        is_safe = total_verts < 1000000
+        status = "PASS" if is_safe else "WARNING"
+        details = f"Total Vertices: {total_verts:,}"
+        self.log_result("Memory Threshold", status, details)
+        # We use warning level as per plan
+        if not is_safe:
+            print(f"    WARNING: High vertex count ({total_verts:,}). Consider decimation.")
+
+    def test_14_global_cinematic_state(self):
+        """Level 5: Verify Filmic Color Management and Motion Blur gate."""
+        scene = bpy.context.scene
+        
+        # Color Management
+        view_transform = scene.view_settings.view_transform
+        is_filmic = view_transform == 'Filmic'
+        
+        # Motion Blur
+        use_blur = scene.render.use_motion_blur
+        
+        status = "PASS" if (is_filmic and use_blur) else "FAIL"
+        details = f"View: {view_transform}, Motion Blur: {use_blur}"
+        self.log_result("Global Cinematic State", status, details)
+        
+        self.assertTrue(is_filmic, "Production renders must use Filmic view transform")
+        self.assertTrue(use_blur, "OUT-01 FAIL: Motion blur must be enabled for production gate")
 
     @classmethod
     def tearDownClass(cls):

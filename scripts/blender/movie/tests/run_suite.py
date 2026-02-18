@@ -10,6 +10,11 @@ from test_materials import TestMaterials
 from test_animation import TestAnimation
 from test_lighting import TestLighting
 from test_compositor import TestCompositor
+from test_robustness import TestRobustness
+from test_render_preparedness import TestRenderPreparedness
+from test_camera_choreography import TestCameraChoreography
+from test_environment_weather import TestEnvironmentWeather
+from test_blender_5_0_features import TestBlender50Features
 
 def run_all_tests():
     print("\n" + "="*50)
@@ -24,6 +29,11 @@ def run_all_tests():
     suite.addTests(loader.loadTestsFromTestCase(TestAnimation))
     suite.addTests(loader.loadTestsFromTestCase(TestLighting))
     suite.addTests(loader.loadTestsFromTestCase(TestCompositor))
+    suite.addTests(loader.loadTestsFromTestCase(TestRobustness))
+    suite.addTests(loader.loadTestsFromTestCase(TestRenderPreparedness))
+    suite.addTests(loader.loadTestsFromTestCase(TestCameraChoreography))
+    suite.addTests(loader.loadTestsFromTestCase(TestEnvironmentWeather))
+    suite.addTests(loader.loadTestsFromTestCase(TestBlender50Features))
     
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)

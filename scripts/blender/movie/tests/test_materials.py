@@ -67,6 +67,44 @@ class TestMaterials(BlenderTestCase):
             self.log_result(f"Texture: {mat_name}", status, details)
             self.assertTrue(found_and_connected)
 
+    def test_03_material_node_connectivity(self):
+        """VAL-03: Verify no unconnected Image Texture nodes in the shader tree."""
+        for mat in bpy.data.materials:
+            if not mat.use_nodes: continue
+            
+            unconnected = []
+            for node in mat.node_tree.nodes:
+                if node.type == 'TEX_IMAGE':
+                    is_linked = any(socket.is_linked for socket in node.outputs)
+                    if not is_linked:
+                        unconnected.append(node.name)
+            
+            with self.subTest(material=mat.name):
+                status = "PASS" if not unconnected else "FAIL"
+                details = f"All textures linked" if not unconnected else f"Unlinked textures: {unconnected}"
+                self.log_result(f"Node Links: {mat.name}", status, details)
+                self.assertTrue(not unconnected, f"Material {mat.name} has unconnected image textures: {unconnected}")
+
+    def test_04_lod_logic_verification(self):
+        """OPT-01: Verify existence of LOD_Switch logic in botanical materials."""
+        mats_with_lod = ["LeafMat_Herbaceous", "LeafMat_Arbor", "BarkMat_Herbaceous"]
+        for mat_name in mats_with_lod:
+            mat = bpy.data.materials.get(mat_name)
+            if not mat: continue
+            
+            # Look for a node group or math node that acts as an LOD switch
+            has_lod = False
+            if mat.use_nodes:
+                for node in mat.node_tree.nodes:
+                    if "LOD" in node.name.upper() or (node.type == 'GROUP' and node.node_tree and "LOD" in node.node_tree.name.upper()):
+                        has_lod = True
+                        break
+            
+            status = "PASS" if has_lod else "WARNING"
+            details = "LOD logic found" if has_lod else "LOD logic MISSING"
+            self.log_result(f"LOD Logic: {mat_name}", status, details)
+            # Warning only as per plan
+
 if __name__ == "__main__":
     argv = [sys.argv[0]]
     if "--" in sys.argv:

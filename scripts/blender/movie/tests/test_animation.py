@@ -91,6 +91,56 @@ class TestAnimation(BlenderTestCase):
         self.log_result("Camera Movement", status, "Camera changes position significantly" if has_movement else "Camera is static")
         self.assertTrue(has_movement)
 
+    def test_06_noise_modifier_presence(self):
+        """CIN-01: Verify presence of F-Curve Noise modifiers for procedural secondary motion."""
+        # Herbaceous Torso Z-location and some light intensities usually have noise
+        targets = [
+            ("Herbaceous_Torso", "location", 2), # Z-axis
+            ("Arbor_Torso", "location", 2),
+        ]
+        
+        for obj_name, path, index in targets:
+            obj = bpy.data.objects.get(obj_name)
+            if not obj or not obj.animation_data or not obj.animation_data.action:
+                continue
+            
+            has_noise = False
+            for fc in obj.animation_data.action.fcurves:
+                if fc.data_path == path and fc.array_index == index:
+                    for mod in fc.modifiers:
+                        if mod.type == 'NOISE':
+                            has_noise = True
+                            break
+                if has_noise: break
+            
+            status = "PASS" if has_noise else "FAIL"
+            self.log_result(f"Noise Modifier: {obj_name}", status, "F-Curve Noise found" if has_noise else "NO Noise modifier found")
+            self.assertTrue(has_noise)
+
+    def test_07_animation_gap_detection(self):
+        """VAL-01: Detect frames with no active render objects (potential black frames)."""
+        # We'll sample transitions or mid-points of scenes
+        from silent_movie_generator import SCENE_MAP
+        
+        gaps = []
+        # Test 5 frames in the middle of each scene
+        for scene_name, (start, end) in SCENE_MAP.items():
+            if end - start < 10: continue
+            mid = (start + end) // 2
+            
+            # Check a small window around mid
+            for f in range(mid, mid + 5):
+                bpy.context.scene.frame_set(f)
+                visible_objs = [o for o in bpy.data.objects if not o.hide_render and o.type == 'MESH']
+                if not visible_objs:
+                    gaps.append(f)
+                    break # One gap per scene is enough for a fail
+        
+        status = "PASS" if not gaps else "WARNING"
+        details = "No black frames detected" if not gaps else f"Potential gaps at frames: {gaps}"
+        self.log_result("Animation Gaps", status, details)
+        # We don't assert hard here because some scenes might intentionally be dark
+
 if __name__ == "__main__":
     argv = [sys.argv[0]]
     if "--" in sys.argv:
