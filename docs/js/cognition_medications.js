@@ -127,7 +127,7 @@
 
         render(ctx) {
             const activeEnhancement = this.app.activeEnhancement;
-            if (!activeEnhancement || activeEnhancement.category !== 'Medication') return;
+            if (!activeEnhancement || !window.GreenhouseCognitionDrawingUtils) return;
 
             const w = this.app.canvas.width;
             const h = this.app.canvas.height;

@@ -75,7 +75,7 @@
 
         render(ctx) {
             const activeEnhancement = this.app.activeEnhancement;
-            if (!activeEnhancement) return;
+            if (!activeEnhancement || !window.GreenhouseCognitionDrawingUtils) return;
 
             const w = this.app.canvas.width;
             const h = this.app.canvas.height;
@@ -159,7 +159,7 @@
         },
 
         drawLTMFormation(ctx, w, h, time) {
-            ctx.fillStyle = '#fff'; ctx.fillText(t('cog_ltm_consolidating') || 'Consolidating...', w / 2 - 100, h / 2 - 40);
+            ctx.fillStyle = '#fff'; ctx.fillText(t('cog_label_ltm_consolidating') || 'Consolidating...', w / 2 - 100, h / 2 - 40);
             ctx.strokeStyle = '#f6e05e'; ctx.beginPath(); ctx.arc(w / 2 - 50, h / 2, 30, 0, Math.PI * 2); ctx.stroke();
             ctx.beginPath(); ctx.arc(w / 2 + 50, h / 2, 40, 0, Math.PI * 2); ctx.stroke();
             const progress = (time % 2) / 2;
