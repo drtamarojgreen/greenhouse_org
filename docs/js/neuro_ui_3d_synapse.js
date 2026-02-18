@@ -1,5 +1,5 @@
 // docs/js/neuro_ui_3d_synapse.js
-// Molecular Synapse Visualization for Neuro GA
+// Molecular Synapse Visualization for Neuro GA - Optimized with Vertex Pre-projection
 
 (function () {
     'use strict';
@@ -8,19 +8,27 @@
         synapseCameraController: null,
 
         drawConnections(ctx, connections, neurons, camera, projection, width, height) {
+            const now = Date.now();
             const lightDir = { x: 0.5, y: -0.5, z: 1 };
             const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
+
+            // Optimization: Pre-project all neuron positions once
+            const nodeProjMap = new Map();
+            for (let i = 0; i < neurons.length; i++) {
+                const n = neurons[i];
+                nodeProjMap.set(n.id, GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, camera, projection));
+            }
 
             const batches = {};
 
             connections.forEach(conn => {
                 if (!conn.mesh) return;
 
-                const p1 = GreenhouseModels3DMath.project3DTo2D(conn.from.x, conn.from.y, conn.from.z, camera, projection);
-                const p2 = GreenhouseModels3DMath.project3DTo2D(conn.to.x, conn.to.y, conn.to.z, camera, projection);
+                const p1 = nodeProjMap.get(conn.from.id);
+                const p2 = nodeProjMap.get(conn.to.id);
 
-                if (p1.scale <= 0 && p2.scale <= 0) return;
+                if (!p1 || !p2 || (p1.scale <= 0 && p2.scale <= 0)) return;
 
                 const avgScale = (Math.max(0, p1.scale) + Math.max(0, p2.scale)) / 2;
 
@@ -38,26 +46,27 @@
                     return;
                 }
 
-                const transformedVertices = conn.mesh.vertices;
-                const projected = transformedVertices.map(v =>
+                // Optimization: Pre-project mesh vertices
+                const projected = conn.mesh.vertices.map(v =>
                     GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection)
                 );
 
-                const facesWithDepth = conn.mesh.faces.map(face => {
+                const facesWithDepth = [];
+                for (let i = 0; i < conn.mesh.faces.length; i++) {
+                    const face = conn.mesh.faces[i];
                     const v1 = projected[face[0]];
                     const v2 = projected[face[1]];
                     const v3 = projected[face[2]];
 
                     if (v1.scale > 0 && v2.scale > 0 && v3.scale > 0) {
-                        return {
-                            face,
+                        facesWithDepth.push({
                             depth: (v1.depth + v2.depth + v3.depth) / 3,
                             vertices: [v1, v2, v3],
-                            origVertices: [transformedVertices[face[0]], transformedVertices[face[1]], transformedVertices[face[2]]]
-                        };
+                            origVertices: [conn.mesh.vertices[face[0]], conn.mesh.vertices[face[1]], conn.mesh.vertices[face[2]]]
+                        });
                     }
-                    return null;
-                }).filter(f => f !== null).sort((a, b) => b.depth - a.depth);
+                }
+                facesWithDepth.sort((a, b) => b.depth - a.depth);
 
                 const alpha = GreenhouseModels3DMath.applyDepthFog(0.8, facesWithDepth[0]?.depth || 1);
 
@@ -106,8 +115,7 @@
                 });
 
                 const seed = (conn.from.id + conn.to.id) * 0.1;
-                const speed = 0.001;
-                const cycle = (Date.now() * speed + seed) % 2.0;
+                const cycle = (now * 0.001 + seed) % 2.0;
 
                 if (cycle < 1.0) {
                     const t = cycle;
@@ -226,33 +234,36 @@
                 const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
                 lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
-                mesh.faces.forEach(face => {
-                    const v1 = mesh.vertices[face[0]];
-                    const v2 = mesh.vertices[face[1]];
-                    const v3 = mesh.vertices[face[2]];
+                // Optimization: Pre-project all vertices once per mesh
+                const projectedVertices = mesh.vertices.map(v =>
+                    GreenhouseModels3DMath.project3DTo2D(v.x, v.y + offsetY, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 })
+                );
 
-                    const transform = (v) => {
-                        return GreenhouseModels3DMath.project3DTo2D(v.x, v.y + offsetY, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
-                    };
-
-                    const p1 = transform(v1);
-                    const p2 = transform(v2);
-                    const p3 = transform(v3);
+                for (let i = 0; i < mesh.faces.length; i++) {
+                    const face = mesh.faces[i];
+                    const p1 = projectedVertices[face[0]];
+                    const p2 = projectedVertices[face[1]];
+                    const p3 = projectedVertices[face[2]];
 
                     if (p1.scale > 0 && p2.scale > 0 && p3.scale > 0) {
+                        const v1 = mesh.vertices[face[0]];
+                        const v2 = mesh.vertices[face[1]];
+                        const v3 = mesh.vertices[face[2]];
+
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
                         const worldV1 = { x: v1.x, y: v1.y + offsetY, z: v1.z };
                         const worldV2 = { x: v2.x, y: v2.y + offsetY, z: v2.z };
                         const worldV3 = { x: v3.x, y: v3.y + offsetY, z: v3.z };
                         const normal = GreenhouseModels3DMath.calculateFaceNormal(worldV1, worldV2, worldV3);
 
+                        // Backface culling
                         if (p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y) + p1.x * (p2.y - p3.y) > 0) {
                             const diffuse = Math.max(0, normal.x * lightDir.x + normal.y * lightDir.y + normal.z * lightDir.z);
                             const specular = Math.pow(diffuse, 20);
                             projectedFaces.push({ p1, p2, p3, depth, diffuse, specular });
                         }
                     }
-                });
+                }
 
                 projectedFaces.sort((a, b) => b.depth - a.depth);
 
