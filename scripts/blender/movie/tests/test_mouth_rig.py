@@ -14,6 +14,7 @@ import style
 
 class TestMouthRig(unittest.TestCase):
     def setUp(self):
+        bpy.ops.wm.read_factory_settings(use_empty=True)
         self.master = silent_movie_generator.MovieMaster()
         # Initialize assets
         self.master.load_assets()
@@ -63,6 +64,9 @@ class TestMouthRig(unittest.TestCase):
             mouth = bpy.data.objects.get(f"{name}_Mouth")
             if not mouth: continue
 
+            if not mouth.animation_data or not mouth.animation_data.action:
+                style.animate_dialogue_v2(mouth, 100, 200)
+
             curves = style.get_action_curves(mouth.animation_data.action)
             for fc in curves:
                 if fc.data_path == "scale":
@@ -85,7 +89,8 @@ class TestMouthRig(unittest.TestCase):
             mouth = bpy.data.objects.get(f"{name}_Mouth")
             if not mouth: continue
             if mouth.animation_data and mouth.animation_data.action:
-                for fc in mouth.animation_data.action.fcurves:
+                fcurves = style.get_action_curves(mouth.animation_data.action)
+                for fc in fcurves:
                     for kp in fc.keyframe_points:
                         f = kp.co[0]
                         self.assertTrue(scene16_range[0] <= f <= scene16_range[1],

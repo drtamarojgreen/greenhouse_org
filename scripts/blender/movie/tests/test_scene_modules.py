@@ -13,7 +13,9 @@ import silent_movie_generator
 
 class TestSceneModules(unittest.TestCase):
     def setUp(self):
+        bpy.ops.wm.read_factory_settings(use_empty=True)
         self.master = silent_movie_generator.MovieMaster()
+        self.master.load_assets()
         self.scene_names = [f'scene{i}_dialogue' for i in range(16, 22)] + ['scene22_retreat']
 
     def test_11_imports(self):

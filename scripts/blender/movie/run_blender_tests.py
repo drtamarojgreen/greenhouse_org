@@ -7,6 +7,11 @@ def run_tests():
     tests_dir = os.path.join(script_dir, "tests")
 
     test_files = [
+        "test_assets.py",
+        "test_materials.py",
+        "test_animation.py",
+        "test_lighting.py",
+        "test_compositor.py",
         "test_render_preparedness.py",
         "test_blender_5_0_features.py",
         "test_interaction_scene.py",
