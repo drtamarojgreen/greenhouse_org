@@ -39,11 +39,6 @@ def setup_scene(master):
 
     mat_iron = bpy.data.materials.get("GH_Iron")
     if mat_iron:
-        bsdf = mat_iron.node_tree.nodes.get("Principled BSDF")
-        if bsdf:
-            bsdf.inputs["Emission Strength"].default_value = 0.0
-            bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3001)
-            bsdf.inputs["Emission Strength"].default_value = 5.0
-            bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=peak_f)
-            bsdf.inputs["Emission Strength"].default_value = 0.0
-            bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=3500)
+        style.set_principled_socket(mat_iron, 'Emission Strength', 0.0, frame=3001)
+        style.set_principled_socket(mat_iron, 'Emission Strength', 5.0, frame=peak_f)
+        style.set_principled_socket(mat_iron, 'Emission Strength', 0.0, frame=3500)

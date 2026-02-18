@@ -4,6 +4,26 @@ import mathutils
 import style
 from constants import SCENE_MAP
 
+def setup_all_camera_logic(master):
+    """Initializes camera, target, and keyframes."""
+    bpy.ops.object.camera_add(location=(0, -8, 0))
+    cam = bpy.context.object
+    master.scene.camera = cam
+
+    bpy.ops.object.empty_add(type='PLAIN_AXES')
+    target = bpy.context.object
+    target.name = "CamTarget"
+
+    con = cam.constraints.new(type='TRACK_TO')
+    con.target = target
+    con.track_axis = 'TRACK_NEGATIVE_Z'
+    con.up_axis = 'UP_Y'
+
+    if master.mode == 'SILENT_FILM':
+        style.insert_looping_noise(cam, "location", strength=0.02, scale=2.0, frame_start=1, frame_end=15000)
+
+    setup_camera_keyframes(master, cam, target)
+
 def setup_camera_keyframes(master, cam, target):
     """Consolidated camera keyframes with dramatic fly-ins and drone sweeps."""
     title_loc = (0, -12, 0)

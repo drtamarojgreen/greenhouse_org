@@ -159,32 +159,36 @@ def get_mix_output(node):
     """Returns the main output socket for a Mix node."""
     return node.outputs.get('Result') or node.outputs.get('Image') or node.outputs.get('Color') or node.outputs[0]
 
-def set_principled_socket(mat_or_node, socket_name, value, frame=None):
-    """Guarded setter for Principled BSDF sockets to handle naming drift (e.g. Specular)."""
+def get_principled_socket(mat_or_node, socket_name):
+    """Safely retrieves a socket from Principled BSDF by name/alias."""
     node = mat_or_node
     if hasattr(mat_or_node, "node_tree"):
         node = mat_or_node.node_tree.nodes.get("Principled BSDF")
+    if not node: return None
 
-    if not node: return False
-
-    # Mapping of legacy names to modern names
     mapping = {
         'Specular': ['Specular', 'Specular IOR Level'],
         'Transmission': ['Transmission', 'Transmission Weight'],
         'Emission': ['Emission', 'Emission Color'],
         'Emission Strength': ['Emission Strength'],
     }
-
     target_sockets = mapping.get(socket_name, [socket_name])
-
     for s in target_sockets:
         if s in node.inputs:
-            node.inputs[s].default_value = value
-            if frame is not None:
-                node.inputs[s].keyframe_insert(data_path="default_value", frame=frame)
-            return True
+            return node.inputs[s]
+    return None
 
-    print(f"Warning: Could not find socket {socket_name} (or alternatives) on {node.name}")
+def set_principled_socket(mat_or_node, socket_name, value, frame=None):
+    """Guarded setter for Principled BSDF sockets to handle naming drift (e.g. Specular)."""
+    sock = get_principled_socket(mat_or_node, socket_name)
+    if sock:
+        sock.default_value = value
+        if frame is not None:
+            sock.keyframe_insert(data_path="default_value", frame=frame)
+        return True
+
+    name = getattr(mat_or_node, "name", "Unknown")
+    print(f"Warning: Could not find socket {socket_name} (or alternatives) on {name}")
     return False
 
 def patch_fbx_importer():
@@ -398,24 +402,30 @@ def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 
         mote.keyframe_insert(data_path="hide_render", frame=frame_end)
 
 def apply_fade_transition(objs, frame_start, frame_end, mode='IN', duration=12):
-    """Smoothly fades objects in or out using emission strength if they have materials."""
+    """Fixed: use hide_render instead of emission for fading."""
     for obj in objs:
-        if obj.type != 'MESH': continue
-        for slot in obj.material_slots:
-            mat = slot.material
-            if not mat or not mat.use_nodes: continue
-            bsdf = mat.node_tree.nodes.get("Principled BSDF")
-            if not bsdf: continue
-
-            if mode == 'IN':
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_start)
-                bsdf.inputs["Emission Strength"].default_value = 5.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_start + duration)
-            else: # OUT
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_end - duration)
-                bsdf.inputs["Emission Strength"].default_value = 0.0
-                bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=frame_end)
+        if mode == 'IN':
+            obj.hide_render = True
+            obj.keyframe_insert(data_path="hide_render", frame=frame_start)
+            obj.hide_render = False
+            obj.keyframe_insert(data_path="hide_render", frame=frame_start + duration)
+            # Set CONSTANT interpolation so it snaps rather than blends
+            if obj.animation_data and obj.animation_data.action:
+                for fc in get_action_curves(obj.animation_data.action):
+                    if fc.data_path == "hide_render":
+                        for kp in fc.keyframe_points:
+                            kp.interpolation = 'CONSTANT'
+        else:
+            obj.hide_render = False
+            obj.keyframe_insert(data_path="hide_render", frame=frame_end - duration)
+            obj.hide_render = True
+            obj.keyframe_insert(data_path="hide_render", frame=frame_end)
+            # Set CONSTANT interpolation
+            if obj.animation_data and obj.animation_data.action:
+                for fc in get_action_curves(obj.animation_data.action):
+                    if fc.data_path == "hide_render":
+                        for kp in fc.keyframe_points:
+                            kp.interpolation = 'CONSTANT'
 
 def camera_push_in(cam, target, frame_start, frame_end, distance=5):
     """Animates camera moving towards target."""
@@ -527,14 +537,10 @@ def animate_pulsing_emission(obj, frame_start, frame_end, base_strength=5.0, pul
     for slot in obj.material_slots:
         mat = slot.material
         if not mat or not mat.use_nodes: continue
-        bsdf = mat.node_tree.nodes.get("Principled BSDF")
-        if not bsdf: continue
 
         for f in range(frame_start, frame_end + 1, cycle):
-            bsdf.inputs["Emission Strength"].default_value = base_strength
-            bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=f)
-            bsdf.inputs["Emission Strength"].default_value = base_strength + pulse_amplitude
-            bsdf.inputs["Emission Strength"].keyframe_insert(data_path="default_value", frame=f + cycle // 2)
+            set_principled_socket(mat, "Emission Strength", base_strength, frame=f)
+            set_principled_socket(mat, "Emission Strength", base_strength + pulse_amplitude, frame=f + cycle // 2)
 
 def animate_dynamic_pupils(pupil_objs, light_energy_provider, frame_start, frame_end):
     """Scales pupils based on scene light energy (simulated)."""

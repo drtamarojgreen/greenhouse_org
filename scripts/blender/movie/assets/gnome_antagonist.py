@@ -70,6 +70,8 @@ def create_gnome(name, location, scale=0.6):
     node_runes_color.color_ramp.elements[0].color = (0, 0, 0, 1)
     node_runes_color.color_ramp.elements[1].color = (1, 0.2, 0.8, 1)
     mat_gloom.node_tree.links.new(node_runes.outputs['Fac'], node_runes_color.inputs['Fac'])
+
+    # Point 75: Alias-aware linking
     emission_sock = bsdf_gloom.inputs.get("Emission") or bsdf_gloom.inputs.get("Emission Color")
     if emission_sock:
         mat_gloom.node_tree.links.new(node_runes_color.outputs['Color'], emission_sock)

@@ -532,7 +532,10 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=
 
     links.new(node_coord.outputs['Generated'], node_noise.inputs['Vector'])
     links.new(node_noise.outputs['Fac'], node_ramp.inputs['Fac'])
-    links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Emission Color'])
+
+    emission_sock = style.get_principled_socket(node_bsdf, 'Emission')
+    if emission_sock:
+        links.new(node_ramp.outputs['Color'], emission_sock)
     style.set_principled_socket(node_bsdf, 'Emission Strength', 5.0)
 
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])

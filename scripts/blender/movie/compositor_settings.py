@@ -1,7 +1,7 @@
 import bpy
 import style
 
-def setup_compositor(master):
+def setup_compositor_effects(master):
     """Sets up the compositor tree with filmic effects and wet-lens support."""
     tree = style.get_compositor_node_tree(master.scene)
     if tree is None: return

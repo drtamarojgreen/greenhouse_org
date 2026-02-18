@@ -3,7 +3,7 @@ import math
 import style
 from constants import SCENE_MAP
 
-def setup_lighting(master):
+def setup_lighting_scenes(master):
     """Extended lighting with character spots and area fills."""
     # Common base lighting from master if it had one,
     # but we'll implement it here for better control.
