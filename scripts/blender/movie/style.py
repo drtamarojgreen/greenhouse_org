@@ -27,7 +27,8 @@ __all__ = [
     'animate_mood_fog', 'apply_film_flicker', 'apply_glow_trails',
     'setup_saturation_control', 'apply_desaturation_beat',
     'animate_dialogue_v2', 'animate_expression_blend', 'animate_reaction_shot',
-    'set_blend_method', 'animate_plant_advance'
+    'set_blend_method', 'animate_plant_advance', 'add_scene_markers',
+    'animate_distance_based_glow', 'apply_bioluminescent_veins'
 ]
 
 def get_action_curves(action, create_if_missing=False):
@@ -925,3 +926,56 @@ def animate_reaction_shot(character_name, frame_start, frame_end):
             torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 30)
             torso.rotation_euler[0] = 0
             torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 60)
+
+def add_scene_markers(master):
+    """Enhancement #74: Timeline Bookmark System."""
+    from constants import SCENE_MAP
+    # Clear existing markers
+    master.scene.timeline_markers.clear()
+    for name, (start, end) in SCENE_MAP.items():
+        master.scene.timeline_markers.new(name.replace("scene", "S"), frame=start)
+
+def animate_distance_based_glow(gnome, characters, frame_start, frame_end):
+    """Enhancement #83: Gnome Eye Glow Intensity Driver."""
+    if not gnome: return
+
+    # Get eye material
+    mat = None
+    for slot in gnome.material_slots:
+        if "Eye" in slot.material.name:
+            mat = slot.material
+            break
+    if not mat: return
+
+    # Animate intensity based on proximity
+    for f in range(frame_start, frame_end + 1, 12):
+        bpy.context.scene.frame_set(f)
+        min_dist = 100.0
+        for char in characters:
+            if char:
+                dist = (gnome.matrix_world.to_translation() - char.matrix_world.to_translation()).length
+                min_dist = min(min_dist, dist)
+
+        # Closer = Brighter (Max at distance 1.0, Min at distance 10.0)
+        intensity = max(2.0, 50.0 * (1.0 / max(1.0, min_dist)))
+        set_principled_socket(mat, "Emission Strength", intensity, frame=f)
+
+def apply_bioluminescent_veins(characters, frame_start, frame_end):
+    """Enhancement #88: Bioluminescent Vein Network."""
+    for char in characters:
+        if not char: continue
+        for slot in char.material_slots:
+            mat = slot.material
+            if not mat or not mat.use_nodes: continue
+
+            # Use noise-driven emission for 'veins'
+            nodes = mat.node_tree.nodes
+            links = mat.node_tree.links
+
+            bsdf = nodes.get("Principled BSDF")
+            if not bsdf: continue
+
+            # Setup pulsing base
+            for f in range(frame_start, frame_end + 1, 72): # Match breathing cycle
+                set_principled_socket(mat, "Emission Strength", 0.5, frame=f)
+                set_principled_socket(mat, "Emission Strength", 2.0, frame=f + 36)

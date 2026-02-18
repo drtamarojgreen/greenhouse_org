@@ -6,6 +6,9 @@ import style
 
 def animate_master_scenes(master, scenes):
     """Global animation and scene visibility logic."""
+    # Technical: Timeline Bookmarks (#74)
+    style.add_scene_markers(master)
+
     # Character and Prop Animation
     master._animate_characters()
     master._animate_props()
@@ -16,6 +19,10 @@ def animate_master_scenes(master, scenes):
     style.apply_thermal_transition(master, 1, 15000,
                                    color_start=(0.4, 0.5, 0.8),
                                    color_end=(0.1, 0.05, 0.2))
+
+    # Character Material Enhancements (#83, #88)
+    style.animate_distance_based_glow(master.gnome, [master.h1, master.h2], 1, 15000)
+    style.apply_bioluminescent_veins([master.h1, master.h2], 1, 15000)
 
     # Character keyword groups for visibility management
     plant_keywords = ["Herbaceous", "Arbor", "Scroll", "Bush", "Eye", "Mouth", "ShoulderPlate", "Pillar", "Flower", "Book", "Pedestal"]

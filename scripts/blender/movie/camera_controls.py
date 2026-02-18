@@ -30,19 +30,31 @@ def setup_camera_keyframes(master, cam, target):
     origin = (0, 0, 0)
     high_target = (0, 0, 1.5)
 
-    def kf_eased(frame, cam_loc, target_loc, easing='EASE_IN_OUT'):
+    def kf_eased(frame, cam_loc, target_loc, roll=0, easing='EASE_IN_OUT'):
+        """Enhanced kf with Dutch Angle (roll) and easing."""
         cam.location = cam_loc
         target.location = target_loc
+        # Dutch Angle (roll) - Enhancement #1
+        cam.rotation_euler[2] = math.radians(roll)
+
         cam.keyframe_insert(data_path="location", frame=frame)
         target.keyframe_insert(data_path="location", frame=frame)
+        cam.keyframe_insert(data_path="rotation_euler", index=2, frame=frame)
 
         # Set easing on the just-inserted keyframe
         if cam.animation_data and cam.animation_data.action:
             for fc in style.get_action_curves(cam.animation_data.action):
-                if fc.data_path == "location":
+                if fc.data_path in ["location", "rotation_euler"]:
                     kp = fc.keyframe_points[-1]
                     kp.interpolation = 'BEZIER'
                     kp.easing = easing
+
+    def apply_impact_shake(frame, intensity=0.1):
+        """Enhancement #9: Motivated Camera Shake on Impact."""
+        # Sharp shake over 2-3 frames
+        orig_loc = cam.location.copy()
+        kf_eased(frame, orig_loc + mathutils.Vector((0, 0, intensity)), target.location, easing='LINEAR')
+        kf_eased(frame + 2, orig_loc, target.location, easing='EASE_OUT')
 
     # Drone shot helper - adds a lateral sweep at altitude
     def drone_sweep(frame_start, frame_end,
@@ -134,21 +146,24 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(10590, (-1.5, -3, 1.8), (-2, 0, 1.8))      # Herbaceous closeup
     kf_eased(10850, (0, -15, 4),    (0, 0, 1.5))
 
-    # Scene 18 (10901-11600): Gnome enters
-    kf_eased(10901, (0, -15, 4),    (0, 0, 1.5))
-    kf_eased(10950, (-1.5, -3, 1.8), (-2, 0, 1.8))      # Herbaceous speaks
-    kf_eased(11200, (4, -3, 1.5),   (5, 0, 1.2))        # Gnome reaction
-    kf_eased(11500, (0, -20, 6),    (0, 0, 1))          # wide
+    # Scene 18 (10901-11600): Gnome enters - Dutch Angle Enhancement #1
+    kf_eased(10901, (0, -15, 4),    (0, 0, 1.5), roll=0)
+    kf_eased(10950, (-1.5, -3, 1.2), (-2, 0, 1.8), roll=5)      # Herbaceous Low Angle (#5)
+    kf_eased(11200, (4, -3, 1.5),   (5, 0, 1.2), roll=-15)      # Gnome Dutch Angle (#1)
+    kf_eased(11500, (0, -20, 6),    (0, 0, 1), roll=0)
 
-    # Scenes 19-21: peaks
-    kf_eased(11601, (-1.5, -3, 1.8), (-2, 0, 1.8))
-    kf_eased(11900, (4, -2.5, 1.5), (5, 0, 1.2))        # Gnome fear
-    kf_eased(12000, (-1.5, -3, 1.8), (-2, 0, 1.8))
-    kf_eased(12200, (4, -2.5, 1.5), (5, 0, 1.2))
-    kf_eased(12300, (1.5, -3, 1.8),  (2, 0, 1.8))       # Arbor
-    kf_eased(12500, (4, -2.5, 1.5), (5, 0, 1.2))
-    kf_eased(12700, (0, -25, 10),   (0, 0, 1))          # wide
-    kf_eased(13000, (-1.5, -3, 1.8), (-2, 0, 1.8))      # final argument
+    # Scenes 19-21: peaks - High Tension Dutch Angles and Hero Shots
+    kf_eased(11601, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=10)     # Low Angle Hero (#5)
+    kf_eased(11900, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25)      # Extreme Dutch for Gnome (#1)
+
+    apply_impact_shake(11900, intensity=0.2) # Impact Shake (#9)
+
+    kf_eased(12000, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=15)
+    kf_eased(12200, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25)
+    kf_eased(12300, (1.5, -3, 1.0),  (2, 0, 1.8), roll=15)      # Arbor Hero Shot (#5)
+    kf_eased(12500, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25)
+    kf_eased(12700, (0, -25, 10),   (0, 0, 1), roll=0)          # wide
+    kf_eased(13000, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=20)     # Final Hero Argument (#5)
 
     # Scene 22 retreat camera (13701-14500)
     s22_start = SCENE_MAP['scene22_retreat'][0]
