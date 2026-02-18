@@ -1,65 +1,58 @@
 import bpy
-import mathutils
+import math
+from assets import plant_humanoid, gnome_antagonist, library_props
 import style
-from assets import plant_humanoid, gnome_antagonist
 
 def setup_all_characters(master):
-    """Initializes and positions all characters."""
-    # Gnome Antagonist
-    master.gnome = gnome_antagonist.create_gnome("GloomGnome", mathutils.Vector((5, 5, 0)))
+    """Loads and initializes characters."""
+    # Protagonists
+    master.h1 = plant_humanoid.create_plant_humanoid(name="Herbaceous", location=(-2, 0, 0))
+    master.h2 = plant_humanoid.create_plant_humanoid(name="Arbor", location=(2, 0, 0))
 
-    # Plant Humanoids
-    master.h1 = plant_humanoid.create_plant_humanoid("Herbaceous", mathutils.Vector((-2, 0, 0)), height_scale=0.8, seed=42)
-    master.h2 = plant_humanoid.create_plant_humanoid("Arbor", mathutils.Vector((2, 1, 0)), height_scale=1.3, seed=123)
+    # Antagonist
+    master.gnome = gnome_antagonist.create_gnome(name="GloomGnome", location=(5, 5, 0))
 
-    # Character-specific props
-    master.scroll = plant_humanoid.create_scroll(mathutils.Vector((1.8, 1.0, 1.2)))
-    master.flower = plant_humanoid.create_flower(master.h1.location + mathutils.Vector((0, 0, 2.2)))
+    # Setup practical lights for characters (#25, #28)
+    setup_character_practical_lights(master)
 
-    # Parent practical lights and setup rim tracking
-    if hasattr(master, 'orb_light'):
-        staff = bpy.data.objects.get("GloomGnome_ReasonStaff") or bpy.data.objects.get("GloomGnome_Staff")
+def setup_character_practical_lights(master):
+    """Enhancement #25, #28: Rim and Practical lights parented to characters."""
+    # Gloom Gnome practical orb light (#28)
+    if master.gnome:
+        staff = bpy.data.objects.get("GloomGnome_Staff")
         if staff:
-            master.orb_light.parent = staff
-            master.orb_light.location = (0, 0, 1.5) # Top of staff
+            bpy.ops.object.light_add(type='POINT', location=(0, 0, 1.2))
+            orb_light = bpy.context.object
+            orb_light.name = "GloomOrbLight"
+            orb_light.data.energy = 500
+            orb_light.data.color = (0.5, 0, 1.0) # Purple
+            orb_light.parent = staff
+            style.animate_light_flicker("GloomOrbLight", 1, 15000, strength=0.3)
 
-    # Setup Rim Light Tracking (#25)
-    for char, rim in [(master.h1, getattr(master, 'h1_rim', None)),
-                      (master.h2, getattr(master, 'h2_rim', None)),
-                      (master.gnome, getattr(master, 'gnome_rim', None))]:
-        if char and rim:
-            # Position relative to character
-            rim.parent = char
-            rim.location = (0, -3, 2)
-            # Track to character for consistent rim effect
+    # Character tinted rim lights (#25)
+    chars = [('Herbaceous', (0.7, 1.0, 0.7)), ('Arbor', (0.7, 0.7, 1.0))]
+    for name, color in chars:
+        torso = bpy.data.objects.get(f"{name}_Torso")
+        if torso:
+            bpy.ops.object.light_add(type='SPOT', location=(0, -2, 2))
+            rim = bpy.context.object
+            rim.name = f"{name}_Rim"
+            rim.data.energy = 2000
+            rim.data.color = color
+            rim.parent = torso
+            # Aim at character
             con = rim.constraints.new(type='TRACK_TO')
-            con.target = char
-            con.track_axis = 'TRACK_NEGATIVE_Z'
-            con.up_axis = 'UP_Y'
+            con.target = torso
 
 def setup_gaze_system(master):
-    """Sets up the empty-based gaze tracking system for characters."""
-    bpy.ops.object.empty_add(type='PLAIN_AXES')
-    gaze = bpy.context.object
-    gaze.name = "GazeTarget"
-
-    for char_name in ["Herbaceous", "Arbor"]:
-        head = bpy.data.objects.get(f"{char_name}_Head")
-        if head:
-            for eye in head.children:
-                if "Eye" in eye.name:
-                    plant_humanoid.add_tracking_constraint(eye, gaze)
-                    style.animate_saccadic_movement(eye, gaze, 1, 15000)
-
-    gaze.location = (0, 0, 5)
-    gaze.keyframe_insert(data_path="location", frame=1)
-    gaze.location = (2, 0, 2)
-    gaze.keyframe_insert(data_path="location", frame=751)
-    gaze.location = (-2, 0, 2)
-    gaze.keyframe_insert(data_path="location", frame=1051)
-
-    if master.gnome:
-        gaze.location = master.gnome.location + mathutils.Vector((0,0,1))
-        gaze.keyframe_insert(data_path="location", frame=2101)
-
-    return gaze
+    """Sets up the procedural eye tracking."""
+    # Simple gaze setup: characters look at each other
+    if master.h1 and master.h2:
+        for char, target in [(master.h1, master.h2), (master.h2, master.h1)]:
+            head = bpy.data.objects.get(f"{char.name.split('_')[0]}_Head")
+            if head:
+                con = head.constraints.new(type='TRACK_TO')
+                con.target = target
+                con.track_axis = 'TRACK_NEGATIVE_Z'
+                con.up_axis = 'UP_Y'
+                con.influence = 0.6

@@ -52,7 +52,7 @@ def create_plant_pot(location, radius=0.15, height=0.2, name="Pot"):
     soil_top = bpy.context.object
     soil_top.name = f"{name}_Soil"
 
-    from . import exterior_garden
+    import exterior_garden
     soil_top.data.materials.append(exterior_garden.create_soil_material())
     soil_top.parent = pot
     soil_top.matrix_parent_inverse = pot.matrix_world.inverted()

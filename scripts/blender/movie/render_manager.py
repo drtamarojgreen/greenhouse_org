@@ -1,48 +1,45 @@
-import subprocess
+import bpy
 import os
 import sys
+from constants import SCENE_MAP
 
-def render_range(start, end, output_subdir, master_script_name="silent_movie_generator.py"):
-    """
-    Renders a specific frame range of the GreenhouseMD movie using a specified master script.
-    Ensures that no single blender call renders more than 200 frames.
-    """
-    master_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), master_script_name)
-    render_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "renders", output_subdir)
-    os.makedirs(render_dir, exist_ok=True)
+def render_scene_batch(master, scene_names, output_dir="renders"):
+    """Enhancement #90: Renders a batch of scenes specifically."""
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-    # Verify range
-    if end - start + 1 > 200:
-        print(f"Warning: Range {start}-{end} exceeds 200 frames. Sub-dividing...")
-        for s in range(start, end + 1, 200):
-            e = min(s + 199, end)
-            # Point 40: Flat subdirectory structure
-            render_range(s, e, f"{output_subdir}_sub_{s:04d}", master_script_name=master_script_name)
-        return
+    master.load_assets()
+    master.setup_lighting()
+    master._setup_camera()
+    master.setup_compositor()
+    master._animate_characters()
+    master._animate_props()
+    master.animate_master()
 
-    cmd = [
-        "blender", "--background", "--python", master_script, "--",
-        "--render-anim",
-        "--start-frame", str(start),
-        "--end-frame", str(end),
-        "--render-output", os.path.join(render_dir, "render_")
-    ]
+    for name in scene_names:
+        if name in SCENE_MAP:
+            start, end = SCENE_MAP[name]
+            print(f"Queueing render for scene: {name} (Frames {start}-{end})")
 
-    print(f"--- Rendering frames {start} to {end} ---")
-    print(f"Command: {' '.join(cmd)}")
-    try:
-        subprocess.run(cmd, check=True)
-        print(f"--- Finished frames {start} to {end} ---")
-    except subprocess.CalledProcessError as e:
-        print(f"Error rendering range {start}-{end}: {e}")
-        sys.exit(1)
+            master.scene.frame_start = start
+            master.scene.frame_end = end
+            master.scene.render.filepath = os.path.join(output_dir, f"{name}_")
+
+            # Use bpy.ops.render.render to render the animation for this range
+            bpy.ops.render.render(animation=True)
+
+def main():
+    # This can be called from command line:
+    # blender -b movie.blend -P render_manager.py -- --scenes scene01_intro,scene02_garden
+    argv = sys.argv
+    args = argv[argv.index("--") + 1:] if "--" in argv else []
+
+    scene_list = []
+    if '--scenes' in args:
+        scene_list = args[args.index('--scenes') + 1].split(',')
+
+    # We'd need to instantiate MovieMaster here if called directly
+    # but usually this is called from within silent_movie_generator context
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python3 render_manager.py <start_frame> <end_frame> [output_subdir]")
-        sys.exit(1)
-
-    start = int(sys.argv[1])
-    end = int(sys.argv[2])
-    subdir = sys.argv[3] if len(sys.argv) > 3 else f"manual_{start}_{end}"
-    render_range(start, end, subdir)
+    main()
