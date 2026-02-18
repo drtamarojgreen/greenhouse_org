@@ -26,7 +26,8 @@ __all__ = [
     'apply_neuron_color_coding', 'setup_bioluminescent_flora',
     'animate_mood_fog', 'apply_film_flicker', 'apply_glow_trails',
     'setup_saturation_control', 'apply_desaturation_beat',
-    'animate_dialogue_v2', 'animate_expression_blend', 'animate_reaction_shot'
+    'animate_dialogue_v2', 'animate_expression_blend', 'animate_reaction_shot',
+    'set_blend_method', 'animate_plant_advance'
 ]
 
 def get_action_curves(action, create_if_missing=False):
@@ -370,7 +371,7 @@ def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs["Base Color"].default_value = color
         bsdf.inputs["Emission Strength"].default_value = 2.0
-        mat.blend_method = 'BLEND'
+        set_blend_method(mat, 'BLEND')
 
     for i in range(density):
         loc = center + mathutils.Vector((
@@ -782,7 +783,7 @@ def animate_fireflies(center, volume_size=(5, 5, 5), density=10, frame_start=1, 
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.8, 1.0, 0.2, 1) # Yellow-green
-    mat.blend_method = 'BLEND'
+    set_blend_method(mat, 'BLEND')
 
     for i in range(density):
         loc = center + mathutils.Vector((
@@ -837,9 +838,17 @@ def create_noise_based_material(name, color_ramp_colors, noise_type='NOISE', noi
     links.new(node_mapping.outputs['Vector'], node_noise.inputs['Vector'])
 
     node_ramp = nodes.new(type='ShaderNodeValToRGB')
-    node_ramp.color_ramp.elements.clear()
+    elements = node_ramp.color_ramp.elements
+    # Blender 5.0 enforces minimum 2 elements, so we manage them without .clear()
+    while len(elements) > len(color_ramp_colors) and len(elements) > 1:
+        elements.remove(elements[-1])
+
     for i, color in enumerate(color_ramp_colors):
-        el = node_ramp.color_ramp.elements.new(i / (len(color_ramp_colors) - 1))
+        if i < len(elements):
+            el = elements[i]
+            el.position = i / max(len(color_ramp_colors) - 1, 1)
+        else:
+            el = elements.new(i / max(len(color_ramp_colors) - 1, 1))
         el.color = color
 
     links.new(node_noise.outputs[0], node_ramp.inputs['Fac'])
@@ -847,6 +856,46 @@ def create_noise_based_material(name, color_ramp_colors, noise_type='NOISE', noi
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
 
     return mat
+
+def set_blend_method(mat, method='BLEND'):
+    """Version-safe transparency method setter for materials."""
+    if hasattr(mat, 'surface_render_method'):
+        # Blender 4.2+ / 5.0
+        mapping = {'BLEND': 'BLENDED', 'HASHED': 'HASHED', 'CLIP': 'CLIP'}
+        mat.surface_render_method = mapping.get(method, 'BLENDED')
+    else:
+        mat.blend_method = method
+
+def animate_plant_advance(master, frame_start, frame_end):
+    """Plants move toward the gnome as their argument intensifies."""
+    if not hasattr(master, 'h1') or not hasattr(master, 'h2') or not hasattr(master, 'gnome'):
+        return
+    if not master.h1 or not master.h2 or not master.gnome:
+        return
+
+    # Phase 1: Plants step forward together (scenes 18-19)
+    master.h1.location = (-2, 0, 0)
+    master.h1.keyframe_insert(data_path="location", frame=frame_start)
+    master.h1.location = (-1, 2, 0)      # moving toward gnome at (2,2,0)
+    master.h1.keyframe_insert(data_path="location", frame=frame_start + 400)
+
+    master.h2.location = (2, 1, 0)
+    master.h2.keyframe_insert(data_path="location", frame=frame_start)
+    master.h2.location = (1, 2, 0)       # flanking from the other side
+    master.h2.keyframe_insert(data_path="location", frame=frame_start + 400)
+
+    # Phase 2: Plants loom over gnome - scale up slightly for dominance
+    for char in [master.h1, master.h2]:
+        char.scale = (1, 1, 1)
+        char.keyframe_insert(data_path="scale", frame=frame_start + 300)
+        char.scale = (1.2, 1.2, 1.2)
+        char.keyframe_insert(data_path="scale", frame=frame_start + 600)
+
+    # Phase 3: Gnome shrinks as he's overwhelmed
+    master.gnome.scale = (0.6, 0.6, 0.6)  # gnome was created at scale=0.6
+    master.gnome.keyframe_insert(data_path="scale", frame=frame_start + 300)
+    master.gnome.scale = (0.3, 0.3, 0.3)  # shrinks further under pressure
+    master.gnome.keyframe_insert(data_path="scale", frame=frame_start + 600)
 
 def animate_reaction_shot(character_name, frame_start, frame_end):
     """Point 39: Adds listener micro-movements with robust character resolution."""

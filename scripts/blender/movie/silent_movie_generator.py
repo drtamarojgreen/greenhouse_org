@@ -6,14 +6,21 @@ import mathutils
 import random
 import logging
 
+# Module Imports
+import setup_engine
+import camera_controls
+import lighting_setup
+import compositor_settings
+import setup_scenes
+
+# Asset Imports
+from assets import plant_humanoid, gnome_antagonist, library_props, futuristic_props
+from assets import greenhouse_structure, environment_props, weather_system
+from assets import exterior_garden, greenhouse_interior
+from assets import brain_neuron
+
 from master import BaseMaster
 from constants import SCENE_MAP
-import plant_humanoid
-import gnome_antagonist
-import library_props
-import futuristic_props
-import greenhouse_structure
-import environment_props
 import unity_exporter
 import style
 
@@ -43,7 +50,6 @@ def safe_import_scene(name):
         module = __import__(f"{name}.scene_logic", fromlist=['scene_logic'])
         return module
     except ImportError as e:
-        # Point 9: Log the actual exception
         logging.warning(f"Failed to import {name}: {e}")
         return None
 
@@ -58,12 +64,17 @@ scene22 = safe_import_scene("scene22_retreat")
 class MovieMaster(BaseMaster):
     def __init__(self, mode='SILENT_FILM', quality='test', device_type='HIP'):
         super().__init__(mode=mode, total_frames=15000, quality=quality, device_type=device_type)
+        setup_engine.ensure_dependencies()
+
+    def setup_engine(self):
+        return setup_engine.setup_blender_engine(self)
 
     def create_intertitle(self, text, frame_start, frame_end):
         """Creates a classic silent movie intertitle card."""
         if self.mode != 'SILENT_FILM': return
 
-        bpy.ops.object.text_add(location=(0, 0, 0), rotation=(math.pi/2, 0, 0))
+        # Point 103: Fixed rotation for credits/intertitles
+        bpy.ops.object.text_add(location=(0, 0, 0), rotation=(-math.pi/2, 0, 0))
         text_obj = bpy.context.object
         text_obj.name = f"Title_{frame_start}_{text[:5]}"
         text_obj.data.body = text
@@ -77,10 +88,10 @@ class MovieMaster(BaseMaster):
         bsdf = mat.node_tree.nodes.get("Principled BSDF")
         if bsdf:
             bsdf.inputs["Base Color"].default_value = (0.439, 0.259, 0.078, 1) # #704214
-            bsdf.inputs["Emission Strength"].default_value = 5.0
+            style.set_principled_socket(mat, "Emission Strength", 5.0)
         text_obj.data.materials.append(mat)
 
-        # Point 17: Absolute values for rotation
+        # Absolute values for rotation
         text_obj.rotation_euler[1] = 0
         text_obj.keyframe_insert(data_path="rotation_euler", index=1, frame=frame_start)
         text_obj.rotation_euler[1] = math.radians(360)
@@ -97,9 +108,8 @@ class MovieMaster(BaseMaster):
         """Creates ELASTIC spinning 3D letters for branding."""
         mat = bpy.data.materials.new(name="GH_Logo_Mat")
         mat.use_nodes = True
-        bsdf = mat.node_tree.nodes["Principled BSDF"]
-        bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
-        bsdf.inputs["Emission Strength"].default_value = 15.0
+        style.set_principled_socket(mat, "Base Color", (1, 1, 1, 1))
+        style.set_principled_socket(mat, "Emission Strength", 15.0)
 
         char_spacing = 0.8
         start_x = -((len(text_content) - 1) * char_spacing) / 2
@@ -141,67 +151,33 @@ class MovieMaster(BaseMaster):
 
         self.greenhouse = greenhouse_structure.create_greenhouse_structure()
 
+        # Populate interior and exterior
+        greenhouse_interior.setup_greenhouse_interior()
+        exterior_garden.create_exterior_garden()
+
         # Structural Vine Sway
         for obj in self.greenhouse.objects:
             style.insert_looping_noise(obj, "rotation_euler", strength=0.01, scale=50.0, frame_start=1, frame_end=15000)
 
         self.gnome = gnome_antagonist.create_gnome("GloomGnome", mathutils.Vector((5, 5, 0)))
 
-        # Load Brain
-        brain_path = os.path.join(base_path, "brain.fbx")
-        if os.path.exists(brain_path):
-            style.patch_fbx_importer()
-            bpy.ops.import_scene.fbx(filepath=brain_path)
-            imported = bpy.context.selected_objects
-            self.brain = bpy.data.objects.new("BrainGroup", None)
-            bpy.context.scene.collection.objects.link(self.brain)
-            for o in imported:
-                o.parent = self.brain
-                o.matrix_parent_inverse = self.brain.matrix_world.inverted()
-                if o.type == 'MESH':
-                    bpy.ops.object.select_all(action='DESELECT')
-                    o.select_set(True)
-                    bpy.context.view_layer.objects.active = o
-                    bpy.ops.object.shade_smooth()
-                    mat = bpy.data.materials.new(name="BrainMat")
-                    mat.use_nodes = True
-                    bsdf = mat.node_tree.nodes.get("Principled BSDF")
-                    node_veins = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
-                    node_veins.inputs['Scale'].default_value = 20.0
-                    node_veins_color = mat.node_tree.nodes.new(type='ShaderNodeValToRGB')
-                    # Point 77: Swap elements for correct anatomical representation
-                    node_veins_color.color_ramp.elements[0].color = (1, 0.8, 0.8, 1) # Tissue
-                    node_veins_color.color_ramp.elements[1].color = (1, 0, 0, 1) # Veins
-                    mat.node_tree.links.new(node_veins.outputs['Fac'], node_veins_color.inputs['Fac'])
-                    mat.node_tree.links.new(node_veins_color.outputs['Color'], bsdf.inputs['Base Color'])
-                    o.data.materials.append(mat)
+        # Weather System (Rain)
+        self.rain_emitter = weather_system.create_rain_system(self.scene, frame_start=1801, frame_end=2500, intensity='HEAVY')
+        weather_system.create_rain_splashes(mathutils.Vector((0, 0, -1)), count=40, frame_start=1801, frame_end=2500)
+        weather_system.setup_wet_lens_compositor(self.scene, 1801, 2500)
 
-        # Load Neuron
-        neuron_path = os.path.join(base_path, "neuron.fbx")
-        if os.path.exists(neuron_path):
-            bpy.ops.import_scene.fbx(filepath=neuron_path)
-            imported = bpy.context.selected_objects
-            self.neuron = bpy.data.objects.new("NeuronGroup", None)
-            bpy.context.scene.collection.objects.link(self.neuron)
-            for o in imported:
-                o.parent = self.neuron
-                o.matrix_parent_inverse = self.neuron.matrix_world.inverted()
-                if o.type == 'MESH':
-                    bpy.ops.object.select_all(action='DESELECT')
-                    o.select_set(True)
-                    bpy.context.view_layer.objects.active = o
-                    bpy.ops.object.shade_smooth()
-                    mat = bpy.data.materials.new(name="NeuronMat")
-                    mat.use_nodes = True
-                    o.data.materials.append(mat)
+        # Storm during retreat
+        self.storm_emitter = weather_system.create_rain_system(self.scene, frame_start=13701, frame_end=14200, intensity='STORM')
+
+        # Load Brain and Neuron (Refactored)
+        self.brain = brain_neuron.load_brain(base_path)
+        self.neuron = brain_neuron.load_neuron(base_path)
 
         self.h1 = plant_humanoid.create_plant_humanoid("Herbaceous", mathutils.Vector((-2, 0, 0)), height_scale=0.8, seed=42)
         self.h2 = plant_humanoid.create_plant_humanoid("Arbor", mathutils.Vector((2, 1, 0)), height_scale=1.3, seed=123)
         self.scroll = plant_humanoid.create_scroll(mathutils.Vector((1.8, 1.0, 1.2)))
         self.flower = plant_humanoid.create_flower(self.h1.location + mathutils.Vector((0, 0, 2.2)))
-        # Point 48: Removed permanent parenting to avoid movement during bloom
 
-        # Point 19: Assign book and pedestal
         self.book = library_props.create_open_book(mathutils.Vector((0, 0, 1.3)))
         self.pedestal = library_props.create_pedestal(mathutils.Vector((0, 0, 0)))
 
@@ -214,11 +190,8 @@ class MovieMaster(BaseMaster):
             plant_humanoid.create_inscribed_pillar(mathutils.Vector((x, y, 0)))
 
     def _animate_characters(self):
-        """Point 1: Extracted character animation logic."""
         if self.gnome:
-            # Point 90: Gnome idle animation
             style.animate_breathing(self.gnome, 1, 15000, cycle=80, amplitude=0.01)
-
             style.animate_gnome_stumble(self.gnome, 2200)
             cloak = bpy.data.objects.get("GloomGnome_Cloak")
             if cloak: style.animate_cloak_sway(cloak, 1, 15000)
@@ -258,53 +231,35 @@ class MovieMaster(BaseMaster):
             if mouth:
                 style.animate_breathing(mouth, 1, 15000, cycle=8, amplitude=0.5)
 
-        # Character Visibility
+        # Visibility
         plant_keywords = ["Herbaceous", "Arbor", "Scroll", "Bush", "Eye", "Mouth", "Pupil", "Brow", "ShoulderPlate"]
         plants = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in plant_keywords) and "GloomGnome" not in obj.name]
         p_ranges = [(501, 650), (751, 950), (1051, 1250), (1601, 1800), (2101, 2500), (2601, 2800), (2901, 3400), (3901, 4100), (4501, 14500)]
         self._set_visibility(plants, p_ranges)
 
         gnomes = [obj for obj in bpy.context.scene.objects if "GloomGnome" in obj.name]
-        # Point 46: Foreshadowing glimpses (frames 1800-2100)
         g_ranges = [(1800, 1820), (1950, 1970), (2101, 2500), (2601, 2800), (10901, 14500)]
         self._set_visibility(gnomes, g_ranges)
 
     def _animate_props(self):
-        """Point 1: Extracted prop animation logic."""
         gh_objs = [obj for obj in bpy.context.scene.objects if any(k in obj.name for k in ["GH_", "Greenhouse_Structure", "Pane"])]
         gh_ranges = [(401, 650), (2901, 3500), (3901, 4100), (9501, 14500)]
         self._set_visibility(gh_objs, gh_ranges)
 
-        if self.beam:
+        if hasattr(self, 'beam') and self.beam:
             self._set_visibility([self.beam], [(401, 650), (3801, 4100), (4101, 4500)])
 
-        if self.neuron:
-            self._set_visibility([self.neuron], [(1251, 1500), (1601, 1800), (1901, 2000), (3001, 3500)])
-            self.neuron.scale = (1, 1, 1)
-            self.neuron.keyframe_insert(data_path="scale", frame=1251)
-            self.neuron.scale = (3, 3, 3)
-            self.neuron.keyframe_insert(data_path="scale", frame=1425)
-            self.neuron.scale = (1, 1, 1)
-            self.neuron.keyframe_insert(data_path="scale", frame=1500)
-            # Neuron Glow Logic...
-
-        if self.brain:
-            style.animate_pulsing_emission(self.brain, 1, 15000, base_strength=1.0, pulse_amplitude=2.0)
-            style.insert_looping_noise(self.brain, "location", index=2, strength=0.1, scale=50.0, frame_start=1, frame_end=15000)
-            self._set_visibility([self.brain], [(201, 400), (751, 950), (1351, 1500), (1601, 1800), (3001, 3500)])
-            # Brain Rotation...
+        # Brain and Neuron Animation (Refactored)
+        brain_neuron.animate_brain_neuron(self)
 
         if self.flower:
-            # Point 48: Unparent before bloom to ensure stable world position
             self.flower.keyframe_insert(data_path="matrix_world", frame=2899)
-
             self.flower.scale = (0.01, 0.01, 0.01)
             self.flower.keyframe_insert(data_path="scale", frame=2900)
             self.flower.scale = (1, 1, 1)
             self.flower.keyframe_insert(data_path="scale", frame=3200)
 
     def _setup_gaze_system(self):
-        """Point 1 & 13: Refactored gaze system."""
         bpy.ops.object.empty_add(type='PLAIN_AXES')
         gaze = bpy.context.object
         gaze.name = "GazeTarget"
@@ -323,13 +278,11 @@ class MovieMaster(BaseMaster):
         gaze.location = (-2, 0, 2)
         gaze.keyframe_insert(data_path="location", frame=1051)
 
-        # Point 13: Do not parent. Animate location instead.
         if self.gnome:
             gaze.location = self.gnome.location + mathutils.Vector((0,0,1))
             gaze.keyframe_insert(data_path="location", frame=2101)
 
     def _setup_camera(self):
-        """Point 1: Camera setup."""
         bpy.ops.object.camera_add(location=(0, -8, 0))
         cam = bpy.context.object
         self.scene.camera = cam
@@ -344,124 +297,24 @@ class MovieMaster(BaseMaster):
         con.up_axis = 'UP_Y'
 
         if self.mode == 'SILENT_FILM':
-            # Point 99: Use insert_looping_noise directly for camera shake
             style.insert_looping_noise(cam, "location", strength=0.02, scale=2.0, frame_start=1, frame_end=15000)
 
         self.setup_camera_keyframes(cam, target)
 
     def animate_master(self):
-        """Point 1: Orchestrates sub-animation methods."""
-        self._animate_characters()
-        self._animate_props()
-        self._setup_gaze_system()
-        self._setup_camera()
-
-        # Global Effects
-        style.apply_thermal_transition(self, 1, 15000, color_start=(0.4, 0.5, 0.8), color_end=(0.1, 0.05, 0.2))
-
-        # Scene Dispatch
         scenes = [scene00, scene01, scene_brain, scene02, scene03, scene04, scene05,
                   scene06, scene07, scene08, scene09, scene10, scene11, scene15,
                   scene16, scene17, scene18, scene19, scene20, scene21, scene22, scene12]
-        for s in scenes:
-            if s: s.setup_scene(self)
-
+        setup_scenes.setup_all_scenes(self, scenes)
 
     def setup_lighting(self):
-        """Point 98: Sets up lighting with beam reference."""
-        super().setup_lighting()
+        lighting_setup.setup_lighting(self)
 
-        # Volumetric Light Shaft (Sun Beam)
-        bpy.ops.object.light_add(type='SPOT', location=(0, 10, 15))
-        self.beam = bpy.context.object
-        self.beam.name = "LightShaftBeam"
-        self.beam.data.energy = 80000
-        self.beam.data.spot_size = math.radians(20)
-        self.beam.data.spot_blend = 1.0
-        self.beam.rotation_euler = (math.radians(-60), 0, 0)
-
-        # Dynamic God Rays (After Sun and Beam are created)
-        style.setup_god_rays(self.scene, beam_obj=self.beam)
-
-    def setup_camera_keyframes(self, cam, target_obj):
-        """Point 31, 36, 41: Consolidated camera keyframes with clear variable naming."""
-        title_loc = (0, -12, 0)
-        origin = (0, 0, 0)
-        high_target = (0, 0, 1.5)
-
-        def kf(frame, cam_loc, target_loc):
-            cam.location = cam_loc
-            target_obj.location = target_loc
-            cam.keyframe_insert(data_path="location", frame=frame)
-            target_obj.keyframe_insert(data_path="location", frame=frame)
-
-        # Branding (1 - 100)
-        kf(1, title_loc, origin)
-        kf(SCENE_MAP['scene00_branding'][1], title_loc, origin)
-
-        # Intro / Establishing Shot (Point 41) (101 - 200)
-        kf(SCENE_MAP['scene01_intro'][0], (0, -30, 10), origin) # Wide outside
-        kf(SCENE_MAP['scene01_intro'][1], (0, -15, 5), origin) # Dolly inside
-
-        # Brain (201 - 400)
-        kf(SCENE_MAP['scene_brain'][0], (0,-30,8), origin)
-        kf(SCENE_MAP['scene_brain'][1], (0,-35,10), origin)
-
-        # Garden (401 - 650)
-        kf(401, title_loc, origin)
-        kf(500, title_loc, origin)
-        kf(SCENE_MAP['scene02_garden'][0] + 100, (5,-20,4), (-2, 0, 1.5))
-        kf(SCENE_MAP['scene02_garden'][1], (-5,-15,3), (2, 0, 1.5))
-
-        # Socratic (651 - 950)
-        kf(651, title_loc, origin)
-        kf(750, title_loc, origin)
-        kf(751, (0,-15,4), high_target)
-        kf(950, (0,-18,5), high_target)
-
-        # Knowledge Exchange (951 - 1250)
-        kf(951, title_loc, origin)
-        kf(1051, (6,-12,3), (0, 0, 1.5))
-        kf(1250, (-6,-12,3), (0, 0, 1.5))
-
-        # Interaction (4501 - 9500)
-        s_int = SCENE_MAP['scene15_interaction']
-        kf(s_int[0], (0,-15,4), (-3, 0, 1.5))
-        kf(6000, (5,-12,3), (2, 0, 1.5))
-        kf(6200, (1,-5,2), (0, 0, 1.5))
-        kf(6800, (-1,-5,2.5), (-2, 0, 1.8))
-        kf(s_int[1], (0,-20,8), (0, 0, 1))
-
-        # Credits (14501 - 15000)
-        kf(SCENE_MAP['scene12_credits'][0], (0,-10,0), (0, 0, 5))
-        kf(SCENE_MAP['scene12_credits'][1], (0,-10,0), (0, 0, 15))
+    def setup_camera_keyframes(self, cam, target):
+        camera_controls.setup_camera_keyframes(self, cam, target)
 
     def setup_compositor(self):
-        tree = style.get_compositor_node_tree(self.scene)
-        if tree is None: return
-        for node in tree.nodes: tree.nodes.remove(node)
-        
-        rl = tree.nodes.new('CompositorNodeRLayers')
-        composite = tree.nodes.new('CompositorNodeComposite')
-
-        if self.mode == 'SILENT_FILM':
-            # Point 18: One bright node
-            bright = tree.nodes.new('CompositorNodeBrightContrast')
-            bright.name = "Bright/Contrast"
-            bright.inputs['Contrast'].default_value = 1.3
-
-            style.apply_film_flicker(self.scene, 1, 15000, strength=0.05)
-            distort = style.setup_chromatic_aberration(self.scene, strength=0.02)
-            huesat = style.setup_saturation_control(self.scene)
-            blur = style.apply_glow_trails(self.scene)
-
-            tree.links.new(rl.outputs['Image'], huesat.inputs['Image'])
-            tree.links.new(huesat.outputs['Image'], blur.inputs['Image'])
-            tree.links.new(blur.outputs['Image'], distort.inputs['Image'])
-            tree.links.new(distort.outputs['Image'], bright.inputs['Image'])
-            tree.links.new(bright.outputs['Image'], composite.inputs['Image'])
-        else:
-            tree.links.new(rl.outputs['Image'], composite.inputs['Image'])
+        compositor_settings.setup_compositor(self)
 
 def main():
     argv = sys.argv
@@ -469,7 +322,6 @@ def main():
     mode = 'SILENT_FILM'
     if '--unity' in args: mode = 'UNITY_PREVIEW'
 
-    # Point 30, 66: Parse quality and device type
     quality = args[args.index('--quality') + 1] if '--quality' in args else 'test'
     device = args[args.index('--device-type') + 1] if '--device-type' in args else 'HIP'
 

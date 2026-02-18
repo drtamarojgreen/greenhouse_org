@@ -66,29 +66,29 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     node_noise2 = nodes.new(type='ShaderNodeTexNoise')
     node_noise2.inputs['Scale'].default_value = 50.0
 
-    node_mix_noise = nodes.new(type='ShaderNodeMixRGB')
-    node_mix_noise.blend_type = 'MIX'
-    node_mix_noise.inputs[0].default_value = 0.3
+    node_mix_noise = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='MIX', data_type='RGBA')
+    fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix_noise)
+    fac_sock.default_value = 0.3
     links.new(node_mapping.outputs['Vector'], node_noise1.inputs['Vector'])
     links.new(node_mapping.outputs['Vector'], node_noise2.inputs['Vector'])
-    links.new(node_noise1.outputs['Fac'], node_mix_noise.inputs[1])
-    links.new(node_noise2.outputs['Fac'], node_mix_noise.inputs[2])
+    links.new(node_noise1.outputs['Fac'], in1_sock)
+    links.new(node_noise2.outputs['Fac'], in2_sock)
 
     node_ramp = nodes.new(type='ShaderNodeValToRGB')
     node_ramp.color_ramp.elements[0].position = 0.3
     node_ramp.color_ramp.elements[0].color = (*[c*0.3 for c in color], 1)
     node_ramp.color_ramp.elements[1].position = 0.7
     node_ramp.color_ramp.elements[1].color = (*color, 1)
-    links.new(node_mix_noise.outputs['Color'], node_ramp.inputs['Fac'])
+    links.new(style.get_mix_output(node_mix_noise), node_ramp.inputs['Fac'])
 
     node_geom = nodes.new(type='ShaderNodeNewGeometry')
     node_curv_ramp = nodes.new(type='ShaderNodeValToRGB')
-    node_mix_curv = nodes.new(type='ShaderNodeMixRGB')
-    node_mix_curv.blend_type = 'OVERLAY'
-    node_mix_curv.inputs[0].default_value = 0.5
+    node_mix_curv = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='OVERLAY', data_type='RGBA')
+    fac_sock_curv, in1_sock_curv, in2_sock_curv = style.get_mix_sockets(node_mix_curv)
+    fac_sock_curv.default_value = 0.5
     links.new(node_geom.outputs['Pointiness'], node_curv_ramp.inputs['Fac'])
-    links.new(node_ramp.outputs['Color'], node_mix_curv.inputs[1])
-    links.new(node_curv_ramp.outputs['Color'], node_mix_curv.inputs[2])
+    links.new(node_ramp.outputs['Color'], in1_sock_curv)
+    links.new(node_curv_ramp.outputs['Color'], in2_sock_curv)
 
     node_voronoi = nodes.new(type='ShaderNodeTexVoronoi')
     node_voronoi.feature = 'DISTANCE_TO_EDGE'
@@ -102,7 +102,7 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in node_bsdf.inputs else "Subsurface"
     node_bsdf.inputs[subsurf_attr].default_value = 0.15
 
-    links.new(node_mix_curv.outputs['Color'], node_bsdf.inputs['Base Color'])
+    links.new(style.get_mix_output(node_mix_curv), node_bsdf.inputs['Base Color'])
     links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
 
     # Peeling Bark (Noise on Displacement)
@@ -124,12 +124,12 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     node_grad_ramp.color_ramp.elements[1].color = (1, 1, 1, 1)
     links.new(node_grad.outputs['Fac'], node_grad_ramp.inputs['Fac'])
 
-    node_mix_mud = nodes.new(type='ShaderNodeMixRGB')
-    node_mix_mud.blend_type = 'MULTIPLY'
-    node_mix_mud.inputs[0].default_value = 1.0
-    links.new(node_mix_curv.outputs['Color'], node_mix_mud.inputs[1])
-    links.new(node_grad_ramp.outputs['Color'], node_mix_mud.inputs[2])
-    links.new(node_mix_mud.outputs['Color'], node_bsdf.inputs['Base Color'])
+    node_mix_mud = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='MULTIPLY', data_type='RGBA')
+    fac_sock_mud, in1_sock_mud, in2_sock_mud = style.get_mix_sockets(node_mix_mud)
+    fac_sock_mud.default_value = 1.0
+    links.new(style.get_mix_output(node_mix_curv), in1_sock_mud)
+    links.new(node_grad_ramp.outputs['Color'], in2_sock_mud)
+    links.new(style.get_mix_output(node_mix_mud), node_bsdf.inputs['Base Color'])
 
     return mat
 
@@ -156,11 +156,12 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     node_wave.inputs['Scale'].default_value = 10.0
     links.new(node_mapping.outputs['Vector'], node_wave.inputs['Vector'])
 
-    node_color_mix = nodes.new(type='ShaderNodeMixRGB')
-    node_color_mix.inputs[1].default_value = (*[c*0.7 for c in color], 1)
-    node_color_mix.inputs[2].default_value = (*color, 1)
-    links.new(node_wave.outputs['Fac'], node_color_mix.inputs[0])
-    links.new(node_color_mix.outputs['Color'], node_bsdf.inputs['Base Color'])
+    node_color_mix = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='MIX', data_type='RGBA')
+    fac_sock_col, in1_sock_col, in2_sock_col = style.get_mix_sockets(node_color_mix)
+    in1_sock_col.default_value = (*[c*0.7 for c in color], 1)
+    in2_sock_col.default_value = (*color, 1)
+    links.new(node_wave.outputs['Fac'], fac_sock_col)
+    links.new(style.get_mix_output(node_color_mix), node_bsdf.inputs['Base Color'])
 
     # Subsurface (Guarded for Blender 5.0 naming drift)
     subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in node_bsdf.inputs else "Subsurface"
@@ -169,12 +170,12 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     # Leaf Venation (Noise replacing Musgrave)
     node_musgrave = nodes.new(type='ShaderNodeTexNoise')
     node_musgrave.inputs['Scale'].default_value = 20.0
-    node_venation_mix = nodes.new(type='ShaderNodeMixRGB')
-    node_venation_mix.blend_type = 'MULTIPLY'
-    node_venation_mix.inputs[0].default_value = 0.2
-    links.new(node_color_mix.outputs['Color'], node_venation_mix.inputs[1])
-    links.new(node_musgrave.outputs['Fac'], node_venation_mix.inputs[2])
-    links.new(node_venation_mix.outputs['Color'], node_bsdf.inputs['Base Color'])
+    node_venation_mix = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='MULTIPLY', data_type='RGBA')
+    fac_sock_ven, in1_sock_ven, in2_sock_ven = style.get_mix_sockets(node_venation_mix)
+    fac_sock_ven.default_value = 0.2
+    links.new(style.get_mix_output(node_color_mix), in1_sock_ven)
+    links.new(node_musgrave.outputs['Fac'], in2_sock_ven)
+    links.new(style.get_mix_output(node_venation_mix), node_bsdf.inputs['Base Color'])
 
     # Plant Fuzz (Fuzzy noise on Specular/Roughness)
     # Point 73: Use a ramp to map noise to a reasonable roughness range
@@ -186,7 +187,10 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     node_fuzz_ramp.color_ramp.elements[1].position = 1.0
     node_fuzz_ramp.color_ramp.elements[1].color = (0.8, 0.8, 0.8, 1)
     links.new(node_fuzz.outputs['Fac'], node_fuzz_ramp.inputs['Fac'])
-    links.new(node_fuzz_ramp.outputs['Color'], node_bsdf.inputs['Roughness'])
+    # Point 73: Insert RGBToBW for stricter Blender 5.0 Float sockets
+    node_fuzz_rgb2bw = nodes.new(type='ShaderNodeRGBToBW')
+    links.new(node_fuzz_ramp.outputs['Color'], node_fuzz_rgb2bw.inputs['Color'])
+    links.new(node_fuzz_rgb2bw.outputs['Val'], node_bsdf.inputs['Roughness'])
 
     return mat
 
@@ -336,6 +340,8 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
             p.select_set(True)
             bpy.context.view_layer.objects.active = p
             bpy.ops.object.convert(target='MESH')
+        # Point 29: Ensure active object is a mesh before appending materials or joining
+        bpy.context.view_layer.objects.active = p
         p.data.materials.append(mat)
         p.parent = torso
         p.matrix_parent_inverse = torso.matrix_world.inverted()
@@ -527,7 +533,7 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=
     links.new(node_coord.outputs['Generated'], node_noise.inputs['Vector'])
     links.new(node_noise.outputs['Fac'], node_ramp.inputs['Fac'])
     links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Emission Color'])
-    node_bsdf.inputs['Emission Strength'].default_value = 5.0
+    style.set_principled_socket(node_bsdf, 'Emission Strength', 5.0)
 
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
     pillar.data.materials.append(mat)

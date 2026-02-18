@@ -32,7 +32,7 @@ def setup_scene(master):
         "Final Resolution of logos achieved."
     )
 
-    bpy.ops.object.text_add(location=(0, 0, -5), rotation=(math.radians(90), 0, 0))
+    bpy.ops.object.text_add(location=(0, 0, -5), rotation=(math.radians(-90), 0, 0))
     text_obj = bpy.context.object
     text_obj.name = "CreditsText"
     text_obj.data.body = credits_text

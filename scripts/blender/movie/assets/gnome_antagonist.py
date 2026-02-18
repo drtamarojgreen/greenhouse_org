@@ -52,12 +52,16 @@ def create_gnome(name, location, scale=0.6):
     mat_gloom.use_nodes = True
     bsdf_gloom = mat_gloom.node_tree.nodes["Principled BSDF"]
     bsdf_gloom.inputs["Base Color"].default_value = (0, 0, 0, 1)
-    bsdf_gloom.inputs["Emission Strength"].default_value = 0.5
-    bsdf_gloom.inputs["Emission Color"].default_value = (0.1, 0, 0.2, 1)
+    import style
+    style.set_principled_socket(mat_gloom, "Emission Strength", 0.5)
+    style.set_principled_socket(mat_gloom, "Emission", (0.1, 0, 0.2, 1))
 
     node_rust = mat_gloom.node_tree.nodes.new(type='ShaderNodeTexNoise')
     node_rust.inputs['Scale'].default_value = 50.0
-    mat_gloom.node_tree.links.new(node_rust.outputs['Fac'], bsdf_gloom.inputs['Roughness'])
+    # Blender 5.0 Float sockets
+    node_rust_rgb2bw = mat_gloom.node_tree.nodes.new(type='ShaderNodeRGBToBW')
+    mat_gloom.node_tree.links.new(node_rust.outputs['Fac'], node_rust_rgb2bw.inputs['Color'])
+    mat_gloom.node_tree.links.new(node_rust_rgb2bw.outputs['Val'], bsdf_gloom.inputs['Roughness'])
 
     node_runes = mat_gloom.node_tree.nodes.new(type='ShaderNodeTexNoise')
     node_runes.inputs['Scale'].default_value = 15.0
@@ -66,7 +70,9 @@ def create_gnome(name, location, scale=0.6):
     node_runes_color.color_ramp.elements[0].color = (0, 0, 0, 1)
     node_runes_color.color_ramp.elements[1].color = (1, 0.2, 0.8, 1)
     mat_gloom.node_tree.links.new(node_runes.outputs['Fac'], node_runes_color.inputs['Fac'])
-    mat_gloom.node_tree.links.new(node_runes_color.outputs['Color'], bsdf_gloom.inputs['Emission Color'])
+    emission_sock = bsdf_gloom.inputs.get("Emission") or bsdf_gloom.inputs.get("Emission Color")
+    if emission_sock:
+        mat_gloom.node_tree.links.new(node_runes_color.outputs['Color'], emission_sock)
 
     # Body (Cylinder)
     bpy.ops.mesh.primitive_cylinder_add(radius=0.3, depth=0.8, location=location + mathutils.Vector((0,0,0.4)))
@@ -90,8 +96,8 @@ def create_gnome(name, location, scale=0.6):
     # Red Glowing Eyes
     mat_gnome_eye = bpy.data.materials.new(name=f"{name}_MatEye")
     mat_gnome_eye.use_nodes = True
-    mat_gnome_eye.node_tree.nodes["Principled BSDF"].inputs["Emission Color"].default_value = (1, 0, 0, 1)
-    mat_gnome_eye.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 10.0
+    style.set_principled_socket(mat_gnome_eye, 'Emission', (1, 0, 0, 1))
+    style.set_principled_socket(mat_gnome_eye, 'Emission Strength', 10.0)
 
     for side in [-1, 1]:
         eye_loc = location + mathutils.Vector((side * 0.15, -0.25, 0.85))
@@ -147,6 +153,7 @@ def create_gnome(name, location, scale=0.6):
     mat_cloak.node_tree.links.new(node_bump.outputs['Normal'], bsdf_cloak.inputs['Normal'])
 
     cloak.data.materials.append(mat_cloak)
+    style.set_blend_method(mat_cloak, 'BLEND')
 
     # Point 85: Wave modifier for cloak secondary motion
     wave = cloak.modifiers.new(name="CloakWave", type='WAVE')
