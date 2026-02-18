@@ -28,7 +28,9 @@ __all__ = [
     'setup_saturation_control', 'apply_desaturation_beat',
     'animate_dialogue_v2', 'animate_expression_blend', 'animate_reaction_shot',
     'set_blend_method', 'animate_plant_advance', 'add_scene_markers',
-    'animate_distance_based_glow', 'apply_bioluminescent_veins'
+    'animate_distance_based_glow', 'apply_bioluminescent_veins',
+    'animate_weight_shift', 'apply_anticipation', 'animate_limp',
+    'animate_thinking_gesture', 'animate_defensive_crouch'
 ]
 
 def get_action_curves(action, create_if_missing=False):
@@ -741,11 +743,18 @@ def apply_desaturation_beat(scene, frame_start, frame_end, saturation=0.2):
         huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_end + 5)
 
 def animate_dialogue_v2(mouth_obj, frame_start, frame_end, intensity=1.0, speed=1.0):
-    """Enhanced procedural mouth movement with variable intensity and speed."""
+    """Enhanced procedural mouth movement with Breathing Pause (#16)."""
     if not mouth_obj: return
 
     current_f = frame_start
     while current_f < frame_end:
+        # Enhancement #16: Breathing Pause Mid-Dialogue
+        if random.random() > 0.9: # ~10% chance of a pause
+            mouth_obj.scale[2] = 0.4
+            mouth_obj.keyframe_insert(data_path="scale", index=2, frame=current_f)
+            current_f += 12 # 12 frame hold
+            continue
+
         # Randomized open/close cycles
         cycle_len = random.randint(4, 12) / speed
         open_amount = random.uniform(0.5, 1.5) * intensity
@@ -903,6 +912,57 @@ def animate_plant_advance(master, frame_start, frame_end):
     master.gnome.keyframe_insert(data_path="scale", frame=frame_start + 300)
     master.gnome.scale = (0.3, 0.3, 0.3)  # shrinks further under pressure
     master.gnome.keyframe_insert(data_path="scale", frame=frame_start + 600)
+
+def animate_weight_shift(obj, frame_start, frame_end, cycle=120, amplitude=0.02):
+    """Enhancement #11: Weight-Shifted Idle Stance."""
+    insert_looping_noise(obj, "location", index=0, strength=amplitude, scale=cycle, frame_start=frame_start, frame_end=frame_end)
+    insert_looping_noise(obj, "rotation_euler", index=1, strength=amplitude, scale=cycle, frame_start=frame_start, frame_end=frame_end)
+
+def apply_anticipation(obj, data_path, frame, offset_value, duration=5):
+    """Enhancement #12: Anticipation Frames Before Major Moves."""
+    orig_val = getattr(obj, data_path)
+    if hasattr(orig_val, "copy"): orig_val = orig_val.copy()
+
+    # Key current
+    obj.keyframe_insert(data_path=data_path, frame=frame - duration)
+    # Pull back
+    if isinstance(offset_value, (int, float)):
+        setattr(obj, data_path, orig_val - offset_value)
+    else: # Vector/Euler
+        setattr(obj, data_path, orig_val - offset_value)
+    obj.keyframe_insert(data_path=data_path, frame=frame - (duration // 2))
+    # Return for actual move
+    setattr(obj, data_path, orig_val)
+
+def animate_limp(obj, frame_start, frame_end, cycle=32):
+    """Enhancement #14: Gnome Limping Retreat Gait."""
+    # Asymmetric gait using noise with varying scale on Y
+    insert_looping_noise(obj, "location", index=2, strength=0.05, scale=cycle, frame_start=frame_start, frame_end=frame_end)
+    # Drag effect on one side
+    for f in range(frame_start, frame_end, cycle):
+        obj.rotation_euler[1] = math.radians(5)
+        obj.keyframe_insert(data_path="rotation_euler", index=1, frame=f)
+        obj.rotation_euler[1] = 0
+        obj.keyframe_insert(data_path="rotation_euler", index=1, frame=f + (cycle // 2))
+
+def animate_thinking_gesture(arm_obj, frame_start):
+    """Enhancement #19: Hand-to-Head Thinking Gesture."""
+    # Animate arm rising toward head
+    arm_obj.rotation_euler[0] = math.radians(-80)
+    arm_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=frame_start)
+    arm_obj.rotation_euler[0] = math.radians(-110)
+    arm_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=frame_start + 48)
+
+def animate_defensive_crouch(obj, frame_start, frame_end):
+    """Enhancement #20: Gnome Defensive Crouch."""
+    # Shrink spine (scale Z)
+    obj.scale[2] = 1.0
+    obj.keyframe_insert(data_path="scale", index=2, frame=frame_start)
+    obj.scale[2] = 0.8
+    obj.keyframe_insert(data_path="scale", index=2, frame=frame_start + 24)
+    obj.keyframe_insert(data_path="scale", index=2, frame=frame_end - 24)
+    obj.scale[2] = 1.0
+    obj.keyframe_insert(data_path="scale", index=2, frame=frame_end)
 
 def animate_reaction_shot(character_name, frame_start, frame_end):
     """Point 39: Adds listener micro-movements with robust character resolution."""
