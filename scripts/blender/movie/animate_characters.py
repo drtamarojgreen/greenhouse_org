@@ -13,6 +13,19 @@ def animate_all_characters(master):
         if cloak:
             style.animate_cloak_sway(cloak, 1, 15000)
 
+        # Point 42: Foreshadowing Shadow
+        master.gnome.location = (2, -10, 0) # Hidden but casting shadow
+        master.gnome.keyframe_insert(data_path="location", frame=1751)
+
+        # Point 47: Gnome Staff Degradation (Emission Dimming)
+        orb = bpy.data.objects.get("GloomGnome_GloomOrb")
+        if orb:
+            style.set_principled_socket(orb.active_material, "Emission Strength", 10.0, frame=10901)
+            style.set_principled_socket(orb.active_material, "Emission Strength", 0.0, frame=14500)
+
+        # Point 57: Particle Debris During Gnome Exit (Scenes 22)
+        style.animate_dust_particles(master.gnome.location, density=50, color=(0,0,0,1), frame_start=13701, frame_end=14500)
+
         # Initial presence/movement
         master.gnome.location = (2, 2, 0)
         master.gnome.keyframe_insert(data_path="location", frame=2600)

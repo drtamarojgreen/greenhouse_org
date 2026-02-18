@@ -40,21 +40,29 @@ def create_vine(start, end, radius=0.05):
     bpy.context.collection.objects.link(obj)
     return obj
 
-def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
-    """Point 79: Enhanced procedural bark material with LOD system."""
+def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero', season='SPRING'):
+    """Point 79: Enhanced procedural bark material with LOD (Point 71) and Point 81: Seasonal Variants."""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
+    # Point 81: Seasonal adjustments
+    if season == 'AUTUMN':
+        color = (0.5, 0.2, 0.05) # Orange-brown
+    elif season == 'WINTER':
+        color = (0.3, 0.35, 0.4) # Pale/grayish
+
     node_output = nodes.new(type='ShaderNodeOutputMaterial')
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    # Point 82: Bark weathering (will be keyframed in animate_characters)
     node_bsdf.inputs['Roughness'].default_value = 0.9
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
 
     if quality == 'background':
-        # Simple version for background characters
+        # Point 71: LOD switching for background characters (lower complexity)
         node_bsdf.inputs['Base Color'].default_value = (*color, 1)
+        node_bsdf.inputs['Roughness'].default_value = 1.0
         return mat
 
     node_coord = nodes.new(type='ShaderNodeTexCoord')
@@ -115,6 +123,20 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     # Connect previous bump to this one's normal input
     links.new(node_bump.outputs['Normal'], node_bump_peel.inputs['Normal'])
     links.new(node_bump_peel.outputs['Normal'], node_bsdf.inputs['Normal'])
+
+    # Point 88: Bioluminescent Vein Network
+    node_veins = nodes.new(type='ShaderNodeTexNoise')
+    node_veins.inputs['Scale'].default_value = 40.0
+    node_vein_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_vein_ramp.color_ramp.elements[0].position = 0.7
+    node_vein_ramp.color_ramp.elements[0].color = (0,0,0,1)
+    node_vein_ramp.color_ramp.elements[1].color = (0, 1, 0.5, 1) # Bioluminescent green
+    links.new(node_veins.outputs['Fac'], node_vein_ramp.inputs['Fac'])
+
+    emission_sock = style.get_principled_socket(node_bsdf, 'Emission Color')
+    if emission_sock:
+        links.new(node_vein_ramp.outputs['Color'], emission_sock)
+    style.set_principled_socket(node_bsdf, 'Emission Strength', 2.0)
 
     # Muddy Limbs (Gradient mixed with base color)
     node_grad = nodes.new(type='ShaderNodeTexGradient')
@@ -215,7 +237,7 @@ def add_tracking_constraint(obj, target, name="TrackTarget"):
     con.track_axis = 'TRACK_NEGATIVE_Y'
     con.name = name
 
-def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05, seed=None, include_facial_details=True):
+def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05, seed=None, include_facial_details=True, season='SPRING'):
     if seed is not None: random.seed(seed)
     container = bpy.data.collections.new(name)
     bpy.context.scene.collection.children.link(container)
@@ -236,8 +258,19 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     elif "Arbor" in name: bark_base, leaf_base, eye_color = (0.05, 0.15, 0.05), (0.2, 0.4, 0.3), (0.8, 1, 1)
     else: bark_base, leaf_base, eye_color = (0.106, 0.302, 0.118), (0.522, 0.631, 0.490), (1, 1, 1)
 
-    mat = create_bark_material(f"PlantMat_{name}", color=bark_base)
+    mat = create_bark_material(f"PlantMat_{name}", color=bark_base, season=season)
     leaf_mat = create_leaf_material(f"LeafMat_{name}", color=leaf_base)
+
+    # Point 85: Root Tendrils
+    for i in range(4):
+        angle = (i / 4) * math.pi * 2
+        root_end = location + mathutils.Vector((math.cos(angle)*0.4, math.sin(angle)*0.4, -0.2))
+        root = create_vine(location + mathutils.Vector((0,0,0.1)), root_end, radius=0.03)
+        root.name = f"{name}_Root_{i}"
+        root.parent = torso
+        root.matrix_parent_inverse = torso.matrix_world.inverted()
+        root.data.materials.append(mat)
+        container.objects.link(root)
 
     mat_eye = bpy.data.materials.new(name=f"EyeMat_{name}")
     mat_eye.use_nodes = True

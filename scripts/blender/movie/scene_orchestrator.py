@@ -33,7 +33,33 @@ def animate_master_scenes(master, scenes):
     if master.neuron:
         master._set_visibility([master.neuron], [(1601, 1800), (3001, 3500)])
 
+    # Point 61-70: Sound Design Cues
+    setup_sound_markers(master)
+
     # Setup individual scenes
     for scene_mod in scenes:
         if scene_mod and hasattr(scene_mod, "setup_scene"):
             scene_mod.setup_scene(master)
+
+def setup_sound_markers(master):
+    """Point 61-70: Sound Design Cues (Score Markers)."""
+    markers = master.scene.timeline_markers
+    markers.clear()
+
+    # Point 61: Leitmotif Markers
+    markers.new("MUSIC_HERBACEOUS", frame=401)
+    markers.new("MUSIC_ARBOR", frame=951)
+    markers.new("MUSIC_GNOME", frame=1801)
+
+    # Point 63: Silence before key reveal
+    markers.new("SILENCE_REVEAL", frame=1790)
+
+    # Point 65: Stinger on Crash Zoom
+    markers.new("STINGER_CRASH", frame=11200)
+    markers.new("STINGER_FINAL", frame=13000)
+
+    # Point 67: Victory Fanfare
+    markers.new("MUSIC_VICTORY", frame=14450)
+
+    # Point 69: Thunder Frame Markers
+    markers.new("SOUND_THUNDER", frame=13800)
