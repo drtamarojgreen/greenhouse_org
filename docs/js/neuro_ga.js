@@ -490,6 +490,16 @@
             });
         }
 
+        cloneGenome(genome) {
+            return {
+                neurons: genome.neurons.map(n => ({ ...n })),
+                connections: genome.connections.map(c => ({ ...c })),
+                fitness: genome.fitness,
+                generation: genome.generation,
+                parentId: genome.parentId
+            };
+        }
+
         step() {
             // ADHD: TBI (88) / Birth Complication (98)
             if (this.adhdConfig.activeEnhancements.has(88) || this.adhdConfig.activeEnhancements.has(98)) {
@@ -567,7 +577,7 @@
             const newPopulation = [];
 
             if (this.bestGenome) {
-                newPopulation.push(JSON.parse(JSON.stringify(this.bestGenome)));
+                newPopulation.push(this.cloneGenome(this.bestGenome));
             }
 
             // ADHD: Sustained Attention Decay (Enhancement 7)

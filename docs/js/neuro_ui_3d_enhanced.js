@@ -74,8 +74,6 @@
                 far: projConfig.far
             };
 
-            console.log('NeuroUI3D: Canvas build delayed by 5 seconds.');
-
             this.canvas = document.createElement('canvas');
             this.canvas.width = container.offsetWidth;
             this.canvas.height = 600;

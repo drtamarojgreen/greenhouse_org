@@ -29,10 +29,28 @@
             const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
-            // Project all vertices first
-            const projectedVertices = vertices.map(v => {
-                return GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
-            });
+            // Optimization: Reuse projected vertices array
+            if (!this._projectedCache || this._projectedCache.length !== vertices.length) {
+                this._projectedCache = vertices.map(() => ({ x: 0, y: 0, scale: 0, depth: 0 }));
+            }
+
+            for (let i = 0; i < vertices.length; i++) {
+                const v = vertices[i];
+                const p = GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
+                this._projectedCache[i].x = p.x;
+                this._projectedCache[i].y = p.y;
+                this._projectedCache[i].scale = p.scale;
+                this._projectedCache[i].depth = p.depth;
+            }
+            const projectedVertices = this._projectedCache;
+
+            // Optimization: Reuse face objects pool
+            if (!this._facePool) {
+                this._facePool = [];
+                for (let i = 0; i < faces.length; i++) {
+                    this._facePool.push({ face: null, p1: null, p2: null, p3: null, depth: 0, nx: 0, ny: 0, nz: 0, region: null });
+                }
+            }
 
             // Prepare Faces with Depth and Normals
             const facesToDraw = [];
@@ -52,10 +70,6 @@
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
 
                         // Calculate Normal (World Space)
-                        // We need rotated vertices for correct lighting if the object rotates
-                        // But here the camera rotates around the object.
-                        // So the object is static in World Space, camera moves.
-                        // Normal is static in World Space.
                         const v1 = vertices[face.indices[0]];
                         const v2 = vertices[face.indices[1]];
                         const v3 = vertices[face.indices[2]];
@@ -76,13 +90,18 @@
                             nx /= nLen; ny /= nLen; nz /= nLen;
                         }
 
-                        facesToDraw.push({
-                            face,
-                            p1, p2, p3,
-                            depth,
-                            nx, ny, nz,
-                            region: face.region
-                        });
+                        const poolObj = this._facePool[facesToDraw.length];
+                        poolObj.face = face;
+                        poolObj.p1 = p1;
+                        poolObj.p2 = p2;
+                        poolObj.p3 = p3;
+                        poolObj.depth = depth;
+                        poolObj.nx = nx;
+                        poolObj.ny = ny;
+                        poolObj.nz = nz;
+                        poolObj.region = face.region;
+
+                        facesToDraw.push(poolObj);
                     }
                 }
             });
@@ -167,8 +186,8 @@
             ctx.beginPath();
 
             // Assuming vertex ordering matches the latitude/longitude bands from generator
-            const latitudeBands = 40;
-            const longitudeBands = 40;
+            const latitudeBands = 30;
+            const longitudeBands = 30;
 
             for (let lat = 0; lat <= latitudeBands; lat += 5) { // Draw every 5th band
                 for (let lon = 0; lon <= longitudeBands; lon++) {
@@ -184,66 +203,71 @@
             ctx.restore();
         },
 
-        // Draws smooth, non-jagged boundaries using plane intersection
+        // Draws smooth, non-jagged boundaries using plane intersection - Optimized with segment caching
         drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection) {
             if (!brainShell.regionalPlanes) return;
 
+            // Optimization: Pre-calculate 3D intersection segments if not done
+            if (!brainShell._boundarySegments) {
+                brainShell._boundarySegments = [];
+                const radius = 200;
+
+                brainShell.regionalPlanes.forEach(plane => {
+                    const axis = plane.axis;
+                    const threshold = plane.value * radius;
+
+                    faces.forEach(face => {
+                        const v1 = vertices[face.indices[0]];
+                        const v2 = vertices[face.indices[1]];
+                        const v3 = vertices[face.indices[2]];
+
+                        const s1 = v1[axis] > threshold;
+                        const s2 = v2[axis] > threshold;
+                        const s3 = v3[axis] > threshold;
+
+                        if ((s1 !== s2) || (s1 !== s3) || (s2 !== s3)) {
+                            const segment = [];
+                            const checkEdge = (va, vb) => {
+                                if ((va[axis] > threshold) !== (vb[axis] > threshold)) {
+                                    const t = (threshold - va[axis]) / (vb[axis] - va[axis]);
+                                    segment.push({
+                                        x: va.x + t * (vb.x - va.x),
+                                        y: va.y + t * (vb.y - va.y),
+                                        z: va.z + t * (vb.z - va.z)
+                                    });
+                                }
+                            };
+                            checkEdge(v1, v2);
+                            checkEdge(v2, v3);
+                            checkEdge(v3, v1);
+                            if (segment.length === 2) {
+                                brainShell._boundarySegments.push(segment);
+                            }
+                        }
+                    });
+                });
+            }
+
             ctx.save();
-            ctx.setLineDash([8, 4]); // Longer dash for premium HUD look
+            ctx.setLineDash([8, 4]);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
             ctx.lineWidth = 1;
             ctx.shadowBlur = 8;
-            ctx.shadowColor = 'rgba(0, 242, 255, 0.4)'; // Subtle cyan glow
+            ctx.shadowColor = 'rgba(0, 242, 255, 0.4)';
 
-            const radius = 200; // Expected radius for normalization
+            brainShell._boundarySegments.forEach(seg => {
+                const p1 = GreenhouseModels3DMath.project3DTo2D(seg[0].x, seg[0].y, seg[0].z, camera, projection);
+                const p2 = GreenhouseModels3DMath.project3DTo2D(seg[1].x, seg[1].y, seg[1].z, camera, projection);
 
-            brainShell.regionalPlanes.forEach(plane => {
-                const axis = plane.axis;
-                const threshold = plane.value * radius;
-
-                faces.forEach(face => {
-                    const v1 = vertices[face.indices[0]];
-                    const v2 = vertices[face.indices[1]];
-                    const v3 = vertices[face.indices[2]];
-
-                    // Check which vertices are on which side of the plane
-                    const s1 = v1[axis] > threshold;
-                    const s2 = v2[axis] > threshold;
-                    const s3 = v3[axis] > threshold;
-
-                    // If triangle crosses the plane, find the intersection segment
-                    if ((s1 !== s2) || (s1 !== s3) || (s2 !== s3)) {
-                        const points = [];
-
-                        const checkEdge = (va, vb) => {
-                            if ((va[axis] > threshold) !== (vb[axis] > threshold)) {
-                                const t = (threshold - va[axis]) / (vb[axis] - va[axis]);
-                                const inter = {
-                                    x: va.x + t * (vb.x - va.x),
-                                    y: va.y + t * (vb.y - va.y),
-                                    z: va.z + t * (vb.z - va.z)
-                                };
-                                const proj = GreenhouseModels3DMath.project3DTo2D(inter.x, inter.y, inter.z, camera, projection);
-                                if (proj.scale > 0 && proj.depth < 0.8) { // Only draw front-facing boundaries
-                                    points.push(proj);
-                                }
-                            }
-                        };
-
-                        checkEdge(v1, v2);
-                        checkEdge(v2, v3);
-                        checkEdge(v3, v1);
-
-                        if (points.length === 2) {
-                            ctx.beginPath();
-                            ctx.moveTo(points[0].x, points[0].y);
-                            ctx.lineTo(points[1].x, points[1].y);
-                            ctx.globalAlpha = 0.6 * GreenhouseModels3DMath.applyDepthFog(1, points[0].depth, 0.3, 0.8);
-                            ctx.stroke();
-                        }
-                    }
-                });
+                if (p1.scale > 0 && p2.scale > 0 && p1.depth < 0.8) {
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.globalAlpha = 0.6 * GreenhouseModels3DMath.applyDepthFog(1, p1.depth, 0.3, 0.8);
+                    ctx.stroke();
+                }
             });
+
             ctx.restore();
         }
     };
