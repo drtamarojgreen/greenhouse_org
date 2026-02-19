@@ -6,13 +6,19 @@ from constants import SCENE_MAP
 
 def setup_all_camera_logic(master):
     """Initializes camera, target, and keyframes."""
-    bpy.ops.object.camera_add(location=(0, -8, 0))
-    cam = bpy.context.object
+    # Camera
+    cam_data = bpy.data.cameras.new("MovieCamera")
+    cam = bpy.data.objects.new("MovieCamera", cam_data)
+    bpy.context.collection.objects.link(cam)
+    cam.location = (0, -8, 0)
     master.scene.camera = cam
 
-    bpy.ops.object.empty_add(type='PLAIN_AXES')
-    target = bpy.context.object
-    target.name = "CamTarget"
+    # Target
+    target = bpy.data.objects.get("CamTarget")
+    if not target:
+        target = bpy.data.objects.new("CamTarget", None)
+        bpy.context.scene.collection.objects.link(target)
+    master.cam_target = target
 
     con = cam.constraints.new(type='TRACK_TO')
     con.target = target

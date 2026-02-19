@@ -111,8 +111,16 @@ class MovieMaster(BaseMaster):
         camera_controls.setup_all_camera_logic(self)
 
     def animate_master(self):
+        # Initial setups
+        self._setup_camera()
+        self._setup_gaze_system()
+
         # Global orchestration
         scene_orchestrator.orchestrate_scenes(self)
+
+        # Acting and Props
+        self._animate_characters()
+        self._animate_props()
 
         # Individual scene logic
         scenes = [scene00, scene01, scene_brain, scene02, scene03, scene04, scene05,

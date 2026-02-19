@@ -79,6 +79,13 @@ def setup_character_practical_lights(master):
 
 def setup_gaze_system(master):
     """Sets up the procedural eye tracking."""
+    # Target
+    gaze = bpy.data.objects.get("GazeTarget")
+    if not gaze:
+        gaze = bpy.data.objects.new("GazeTarget", None)
+        bpy.context.scene.collection.objects.link(gaze)
+    master.gaze_target = gaze
+
     # Simple gaze setup: characters look at each other
     if master.h1 and master.h2:
         for char, target in [(master.h1, master.h2), (master.h2, master.h1)]:

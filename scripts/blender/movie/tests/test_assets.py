@@ -15,7 +15,7 @@ class TestAssets(BlenderTestCase):
     def test_01_assets_exist(self):
         """Check if all major characters and structures are in the scene."""
         # Updated for Single Mesh System
-        required_objs = ["Herbaceous_Mesh", "Arbor_Mesh", "GloomGnome_Mesh", "Exterior_Garden_Main", "Greenhouse_Main", "CamTarget"]
+        required_objs = ["Herbaceous_Mesh", "Arbor_Mesh", "GloomGnome_Mesh", "Exterior_Garden_Main", "Greenhouse_Main", "CamTarget", "GazeTarget"]
         for obj_name in required_objs:
             with self.subTest(obj=obj_name):
                 exists = obj_name in bpy.data.objects

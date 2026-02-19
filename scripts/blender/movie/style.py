@@ -168,8 +168,11 @@ def set_node_input(node, name, value):
     return False
 
 def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
-    """Creates a modern Mix node (5.x)."""
-    node = tree.nodes.new('ShaderNodeMix')
+    """Creates a modern Mix node (5.x). Handles both Shader and Compositor trees."""
+    if tree.bl_idname == 'CompositorNodeTree':
+        node = tree.nodes.new('CompositorNodeMixRGB')
+    else:
+        node = tree.nodes.new('ShaderNodeMix')
     
     if hasattr(node, 'data_type'):
         node.data_type = data_type
@@ -181,7 +184,7 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
 
 def get_mix_sockets(node):
     """Returns (Factor, Input1, Input2) sockets for a Mix node (5.x)."""
-    if node.bl_idname == 'ShaderNodeMix':
+    if node.bl_idname == 'ShaderNodeMix' or node.bl_idname == 'CompositorNodeMixRGB':
         dt = getattr(node, 'data_type', 'RGBA')
         if dt == 'RGBA':
             return get_socket_by_identifier(node.inputs, 'Factor_Float'), \
@@ -203,7 +206,7 @@ def get_mix_sockets(node):
 
 def get_mix_output(node):
     """Returns the main output socket for a Mix node (5.x)."""
-    if node.bl_idname == 'ShaderNodeMix':
+    if node.bl_idname == 'ShaderNodeMix' or node.bl_idname == 'CompositorNodeMixRGB':
         dt = getattr(node, 'data_type', 'RGBA')
         if dt == 'RGBA': return get_socket_by_identifier(node.outputs, 'Result_Color')
         if dt == 'VECTOR': return get_socket_by_identifier(node.outputs, 'Result_Vector')
