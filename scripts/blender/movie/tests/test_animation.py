@@ -55,13 +55,7 @@ class TestAnimation(BlenderTestCase):
                     if obj.animation_data and obj.animation_data.action:
                         curves = style.get_action_curves(obj.animation_data.action)
                         for fc in curves:
-                            # Robust path matching for Blender 5.0 Slotted Actions
-                            path = fc.data_path
-                            is_target_bone = bone_name in path
-                            if not is_target_bone and hasattr(fc, "group") and fc.group:
-                                is_target_bone = bone_name in fc.group.name
-
-                            if is_target_bone and ("location" in path or "rotation" in path):
+                            if bone_name in fc.data_path and ("location" in fc.data_path or "rotation" in fc.data_path):
                                 values = [kp.co[1] for kp in fc.keyframe_points]
                                 if len(values) > 1 and (max(values) - min(values)) > 0.05:
                                     has_movement = True
@@ -110,9 +104,7 @@ class TestAnimation(BlenderTestCase):
             has_noise = False
             curves = style.get_action_curves(obj.animation_data.action)
             for fc in curves:
-                # Robust path matching: check if full path matches or if it's a relative path in a matching group/slot
-                path_match = fc.data_path == path or (path.endswith(fc.data_path) and obj.type == 'ARMATURE')
-                if path_match and fc.array_index == index:
+                if fc.data_path == path and fc.array_index == index:
                     for mod in fc.modifiers:
                         if mod.type == 'NOISE':
                             has_noise = True

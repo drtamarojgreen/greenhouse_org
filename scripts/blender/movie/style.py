@@ -38,6 +38,19 @@ __all__ = [
     'animate_floating_spores'
 ]
 
+class FCurveProxy:
+    """Provides compatibility between Blender 5.0 Slotted Actions and legacy path-based tests."""
+    def __init__(self, target, path):
+        self._target = target
+        self.data_path = path
+        self.keyframe_points = getattr(target, "keyframe_points", [])
+        self.modifiers = getattr(target, "modifiers", [])
+        self.array_index = getattr(target, "array_index", 0)
+    def __getattr__(self, name):
+        return getattr(self._target, name)
+    def as_pointer(self):
+        return self._target.as_pointer()
+
 def get_action_curves(action, create_if_missing=False):
     """Point 91: Robust recursive action curve access for Blender 5.0 (Legacy + Layered + Slots + Bindings)."""
     if action is None: return []
@@ -45,28 +58,49 @@ def get_action_curves(action, create_if_missing=False):
     curves = []
     seen_ids = set()
 
-    def collect(item):
+    def collect(item, prefix=""):
         if item is None: return
-        item_id = id(item)
+        try:
+            item_id = item.as_pointer() if hasattr(item, "as_pointer") else id(item)
+        except:
+            item_id = id(item)
+
         if item_id in seen_ids: return
         seen_ids.add(item_id)
 
         # 1. Is it an F-curve?
         if hasattr(item, "keyframe_points"):
-            curves.append(item)
+            full_path = prefix + item.data_path
+            curves.append(FCurveProxy(item, full_path))
+            return
         
         # 2. Does it wrap an F-curve?
         if hasattr(item, "fcurve") and item.fcurve:
-            collect(item.fcurve)
+            collect(item.fcurve, prefix)
+            return
 
-        # 3. Is it a collection?
-        if hasattr(item, "__iter__") and not isinstance(item, (str, bytes)):
-            for sub in item: collect(sub)
-        
-        # 4. Traverse sub-attributes
-        for attr in ("fcurves", "curves", "channels", "slots", "strips", "layers", "bindings"):
+        # 3. Traverse sub-attributes with prefix logic
+        # 5.0 Bindings/Slots often represent bones or objects
+        for attr in ("bindings", "slots"):
             if hasattr(item, attr):
-                collect(getattr(item, attr))
+                for sub in getattr(item, attr):
+                    new_prefix = prefix
+                    if hasattr(sub, "name"):
+                        # If name looks like a bone, use bone path format
+                        if any(bone_part in sub.name for bone_part in (".L", ".R", "Torso", "Head", "Mouth")):
+                            new_prefix = f'pose.bones["{sub.name}"].'
+                        else:
+                            new_prefix = f'{sub.name}.'
+                    collect(sub, new_prefix)
+
+        # Other containers
+        for attr in ("fcurves", "curves", "channels", "strips", "layers"):
+            if hasattr(item, attr):
+                sub = getattr(item, attr)
+                if hasattr(sub, "__iter__") and not isinstance(sub, (str, bytes)):
+                    for part in sub: collect(part, prefix)
+                else:
+                    collect(sub, prefix)
 
     # Force layer creation if requested
     if hasattr(action, "layers") and len(action.layers) == 0 and create_if_missing:
