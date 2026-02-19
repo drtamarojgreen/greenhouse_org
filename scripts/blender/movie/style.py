@@ -12,7 +12,7 @@ __all__ = [
     'get_action_curves', 'get_or_create_fcurve', 'get_eevee_engine_id',
     'get_compositor_node_tree', 'create_mix_node', 'get_mix_sockets',
     'get_mix_output', 'set_principled_socket', 'patch_fbx_importer',
-    'get_socket_by_identifier',
+    'get_socket_by_identifier', 'clear_scene_selective', 'create_noise_based_material',
     'apply_scene_grade', 'animate_foliage_wind', 'animate_light_flicker',
     'insert_looping_noise', 'animate_breathing', 'animate_dust_particles',
     'apply_fade_transition', 'camera_push_in', 'camera_pull_out',
@@ -35,67 +35,39 @@ __all__ = [
     'setup_caustic_patterns', 'animate_dawn_progression',
     'apply_interior_exterior_contrast', 'replace_with_soft_boxes',
     'animate_hdri_rotation', 'apply_iris_wipe', 'animate_vignette_breathing',
-    'animate_floating_spores', 'clear_scene_selective'
+    'animate_floating_spores'
 ]
 
 def get_action_curves(action, create_if_missing=False):
-    """Point 91: Robust layered action support for Blender 5.0+."""
+    """Point 91: Exclusive layered action support for Blender 5.0+."""
     if action is None: return []
 
-    # Blender 5.0+ Layered actions
-    if hasattr(action, 'layers'):
-        if len(action.layers) == 0 and create_if_missing:
-            action.layers.new(name="Layer")
+    # Force creation of layer if missing for new actions
+    if len(action.layers) == 0 and create_if_missing:
+        action.layers.new(name="Layer")
 
-        curves = []
-        for layer in action.layers:
-            for strip in layer.strips:
-                if hasattr(strip, 'fcurves'):
-                    curves.extend(strip.fcurves)
-        return curves
-
-    # Legacy / Transition APIs
-    if hasattr(action, 'fcurves'): return action.fcurves
-    if hasattr(action, 'curves'): return action.curves
-    if hasattr(action, 'layer') and hasattr(action.layer, 'fcurves'):
-        return action.layer.fcurves
-
-    return []
+    curves = []
+    for layer in action.layers:
+        for strip in layer.strips:
+            if hasattr(strip, 'fcurves'):
+                curves.extend(strip.fcurves)
+    return curves
 
 def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
     """
-    Retrieves or creates an F-Curve, handling legacy and Blender 5.0+ (Layered Action) APIs.
-    ref_obj: The object/datablock the action is assigned to (required for Blender 5.0+ new actions).
+    Retrieves or creates an F-Curve using the Blender 5.0+ Layered Action API.
+    ref_obj: The object/datablock the action is assigned to.
     """
-    if action is None: return None
-
-    # Blender 5.0+ Layered Action Creation
-    if hasattr(action, 'fcurve_ensure_for_datablock') and ref_obj:
-        return action.fcurve_ensure_for_datablock(ref_obj, data_path=data_path, index=index)
-
-    # Legacy Access
-    curves = get_action_curves(action, create_if_missing=True)
-    
-    if not isinstance(curves, list):
-        for fc in curves:
-            if fc.data_path == data_path and fc.array_index == index:
-                return fc
-        try:
-            return curves.new(data_path=data_path, index=index)
-        except Exception:
-            pass
-
-    # Fallback for list-based return from get_action_curves (read-only search)
-    for fc in curves:
-        if fc.data_path == data_path and fc.array_index == index:
-            return fc
-
-    return None
+    if action is None or ref_obj is None: return None
+    return action.fcurve_ensure_for_datablock(ref_obj, data_path=data_path, index=index)
 
 def get_eevee_engine_id():
     """Probes Blender for the correct Eevee engine identifier (EEVEE vs EEVEE_NEXT)."""
     # Check render engines available in current build
+    # In some 4.2+ builds it is BLENDER_EEVEE_NEXT, in 5.0 it might revert to BLENDER_EEVEE
+    # We probe by checking what the current scene allows
     try:
+        # Fallback list in order of preference
         for engine in ['BLENDER_EEVEE_NEXT', 'BLENDER_EEVEE']:
             if engine in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items:
                 return engine
@@ -104,16 +76,11 @@ def get_eevee_engine_id():
     return 'BLENDER_EEVEE' # Legacy default
 
 def get_compositor_node_tree(scene):
-    """Safely retrieves the compositor node tree for Blender 5.x."""
-    # Blender 5.0 uses 'compositing_node_group'
-    tree = scene.compositing_node_group
-    
-    # Explicit creation if missing
+    """Directly retrieves the compositor node tree for Blender 5.x."""
+    tree = getattr(scene, 'compositing_node_group', None)
     if not tree:
-        name = "Compositing"
-        tree = bpy.data.node_groups.new(name=name, type='CompositorNodeTree')
+        tree = bpy.data.node_groups.new(name="Compositing", type='CompositorNodeTree')
         scene.compositing_node_group = tree
-
     return tree
 
 def get_socket_by_identifier(collection, identifier):
@@ -165,68 +132,46 @@ def set_node_input(node, name, value):
     return False
 
 def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
-    """Creates a modern Mix node (5.x). Handles both Shader and Compositor trees."""
-    # Comprehensive list of possible Mix node ID names across Blender versions
-    node_types = [
-        'ShaderNodeMix',
-        'CompositorNodeMix',
-        'CompositorNodeMixRGB',
-        'CompositorNodeMixColor',
-        'MixRGB',
-        'Mix'
-    ]
+    """Creates a modern Mix node (5.x) with robust fallbacks."""
+    if tree.bl_idname == 'CompositorNodeTree':
+        for node_type in ['CompositorNodeMixColor', 'CompositorNodeMix', 'CompositorNodeMixRGB']:
+            try:
+                node = tree.nodes.new(node_type)
+                break
+            except RuntimeError:
+                continue
+        else:
+            raise RuntimeError("Could not find a valid Compositor Mix node type.")
+    else:
+        node = tree.nodes.new('ShaderNodeMix')
 
-    node = None
-    for nt in node_types:
-        try:
-            node = tree.nodes.new(nt)
-            break
-        except RuntimeError:
-            continue
-
-    if node:
-        if hasattr(node, 'data_type'):
-            node.data_type = data_type
-        if hasattr(node, 'blend_type'):
-            node.blend_type = blend_type
-            
+    node.data_type = data_type
+    node.blend_type = blend_type
     return node
 
 def get_mix_sockets(node):
     """Returns (Factor, Input1, Input2) sockets for a Mix node (5.x)."""
     if node is None: return None, None, None
+    dt = getattr(node, 'data_type', 'RGBA')
 
-    if node.bl_idname in ['ShaderNodeMix', 'CompositorNodeMix', 'CompositorNodeMixRGB', 'CompositorNodeMixColor']:
-        dt = getattr(node, 'data_type', 'RGBA')
-        if dt == 'RGBA':
-            return get_socket_by_identifier(node.inputs, 'Factor_Float'), \
-                   get_socket_by_identifier(node.inputs, 'A_Color'), \
-                   get_socket_by_identifier(node.inputs, 'B_Color')
-        elif dt == 'VECTOR':
-            return get_socket_by_identifier(node.inputs, 'Factor_Float'), \
-                   get_socket_by_identifier(node.inputs, 'A_Vector'), \
-                   get_socket_by_identifier(node.inputs, 'B_Vector')
-        elif dt == 'FLOAT':
-            return get_socket_by_identifier(node.inputs, 'Factor_Float'), \
-                   get_socket_by_identifier(node.inputs, 'A_Float'), \
-                   get_socket_by_identifier(node.inputs, 'B_Float')
+    if dt == 'RGBA':
+        return get_socket_by_identifier(node.inputs, 'Factor_Float') or node.inputs.get('Factor'), \
+               get_socket_by_identifier(node.inputs, 'A_Color') or node.inputs.get('A'), \
+               get_socket_by_identifier(node.inputs, 'B_Color') or node.inputs.get('B')
+    elif dt == 'VECTOR':
+        return get_socket_by_identifier(node.inputs, 'Factor_Float') or node.inputs.get('Factor'), \
+               get_socket_by_identifier(node.inputs, 'A_Vector') or node.inputs.get('A'), \
+               get_socket_by_identifier(node.inputs, 'B_Vector') or node.inputs.get('B')
     
-    # Generic fallback
-    return node.inputs.get('Factor') or node.inputs[0], \
-           node.inputs.get('A') or node.inputs[1], \
-           node.inputs.get('B') or node.inputs[2]
+    return node.inputs[0], node.inputs[1], node.inputs[2]
 
 def get_mix_output(node):
     """Returns the main output socket for a Mix node (5.x)."""
     if node is None: return None
-
-    if node.bl_idname in ['ShaderNodeMix', 'CompositorNodeMix', 'CompositorNodeMixRGB', 'CompositorNodeMixColor']:
-        dt = getattr(node, 'data_type', 'RGBA')
-        if dt == 'RGBA': return get_socket_by_identifier(node.outputs, 'Result_Color')
-        if dt == 'VECTOR': return get_socket_by_identifier(node.outputs, 'Result_Vector')
-        if dt == 'FLOAT': return get_socket_by_identifier(node.outputs, 'Result_Float')
-        
-    return node.outputs.get('Result') or node.outputs.get('Image') or node.outputs.get('Color') or node.outputs[0]
+    dt = getattr(node, 'data_type', 'RGBA')
+    if dt == 'RGBA': return get_socket_by_identifier(node.outputs, 'Result_Color') or node.outputs.get('Result')
+    if dt == 'VECTOR': return get_socket_by_identifier(node.outputs, 'Result_Vector') or node.outputs.get('Result')
+    return node.outputs[0]
 
 def get_principled_socket(mat_or_node, socket_name):
     """Safely retrieves a socket from Principled BSDF by name/alias."""
@@ -394,29 +339,19 @@ def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed
 
 def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=15000, strength=0.05, scale=10.0, phase=None):
     """Inserts noise modifier to a data path, ensuring the range is respected."""
-    # Handle both Objects and PoseBones
-    anim_data_owner = obj
-    if hasattr(obj, "id_data") and isinstance(obj.id_data, bpy.types.Object): # PoseBone
-        anim_data_owner = obj.id_data
+    if not obj.animation_data:
+        obj.animation_data_create()
+    if not obj.animation_data.action:
+        obj.animation_data.action = bpy.data.actions.new(name=f"Noise_{obj.name}_{data_path.replace('.', '_')}")
 
-    if not anim_data_owner.animation_data:
-        anim_data_owner.animation_data_create()
-    if not anim_data_owner.animation_data.action:
-        anim_data_owner.animation_data.action = bpy.data.actions.new(name=f"Noise_{obj.name}")
-
-    action = anim_data_owner.animation_data.action
+    action = obj.animation_data.action
     indices = [index] if index >= 0 else [0, 1, 2]
 
     for idx in indices:
-        # For PoseBones, data_path must include bone name
-        actual_path = data_path
-        if hasattr(obj, "path_from_id"):
-            actual_path = obj.path_from_id(data_path)
-
-        fcurve = get_or_create_fcurve(action, actual_path, idx, ref_obj=anim_data_owner)
+        fcurve = get_or_create_fcurve(action, data_path, idx, ref_obj=obj)
         
         if not fcurve:
-            print(f"Warning: Could not access/create fcurve for {obj.name} ({actual_path}[{idx}])")
+            print(f"Warning: Could not access/create fcurve for {obj.name} ({data_path}[{idx}])")
             continue
 
         if not fcurve.keyframe_points:
@@ -434,17 +369,9 @@ def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=1500
         modifier.blend_out = 10
 
 def animate_breathing(obj, frame_start, frame_end, axis=2, amplitude=0.03, cycle=72):
-    """Point 24: Use Noise modifier for breathing to reduce keyframe bloat. Bone-aware."""
+    """Point 24: Use Noise modifier for breathing to reduce keyframe bloat."""
     if not obj: return
-
-    target = obj
-    data_path = "scale"
-
-    # If it's an armature, animate the Torso bone instead of the object
-    if obj.type == 'ARMATURE' and "Torso" in obj.pose.bones:
-        target = obj.pose.bones["Torso"]
-
-    insert_looping_noise(target, data_path, index=axis, strength=amplitude, scale=cycle, frame_start=frame_start, frame_end=frame_end)
+    insert_looping_noise(obj, "scale", index=axis, strength=amplitude, scale=cycle, frame_start=frame_start, frame_end=frame_end)
 
 def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 1, 1, 1), frame_start=1, frame_end=15000):
     """Point 22 & 80: Optimized dust particles. Reuses existing motes if available."""
@@ -473,16 +400,14 @@ def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 
     needed = density - len(existing_motes)
     
     if needed > 0:
-        # Create prototype mesh once (BMesh)
+        # Create prototype mesh once
         mesh_name = f"DustMoteMesh_{color_hex}"
         mesh = bpy.data.meshes.get(mesh_name)
         if not mesh:
-            import bmesh
-            mesh = bpy.data.meshes.new(mesh_name)
-            bm = bmesh.new()
-            bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.01)
-            bm.to_mesh(mesh)
-            bm.free()
+            bpy.ops.mesh.primitive_ico_sphere_add(radius=0.01, location=(0,0,0))
+            mesh = bpy.context.object.data
+            mesh.name = mesh_name
+            bpy.data.objects.remove(bpy.context.object, do_unlink=True) # Keep mesh, delete temp obj
 
         for i in range(needed):
             mote = bpy.data.objects.new(f"DustMote_{color_hex}_{len(existing_motes)+i}", mesh)
@@ -655,10 +580,13 @@ def apply_reactive_foliage(foliage_objs, trigger_obj, frame_start, frame_end, th
         for fcurve in get_action_curves(obj.animation_data.action):
             for mod in fcurve.modifiers:
                 if mod.type == 'NOISE':
+                    # In a real script we would keyframe the strength, here we simulate with noise phase
                     mod.strength = 0.05 # Base
                     for f in range(frame_start, frame_end, 24):
                         dist = (obj.location - trigger_obj.location).length
                         if dist < threshold:
+                            # Dynamic property animation in Blender is usually via Drivers or Keyframes
+                            # For simplicity in this procedural script, we set a high base if they are ever close
                             mod.strength = 0.15
                             break
 
@@ -682,26 +610,18 @@ def animate_dynamic_pupils(pupil_objs, light_energy_provider, frame_start, frame
     for p in pupil_objs:
         p.scale = (1, 1, 1)
         p.keyframe_insert(data_path="scale", frame=frame_start)
+        # Contract in 'light' scenes, dilate in 'shadow'
         p.scale = (0.5, 0.5, 0.5)
         p.keyframe_insert(data_path="scale", frame=2000) # Peak light
         p.scale = (1.5, 1.5, 1.5)
         p.keyframe_insert(data_path="scale", frame=2300) # Shadow
 
 def apply_thought_motes(character_obj, frame_start, frame_end, count=5):
-    """Point 95: BMesh Thought Motes."""
-    import bmesh
-    mesh_data = bpy.data.meshes.get("ThoughtMoteMesh")
-    if not mesh_data:
-        mesh_data = bpy.data.meshes.new("ThoughtMoteMesh")
-        bm = bmesh.new()
-        bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.05)
-        bm.to_mesh(mesh_data)
-        bm.free()
-
+    """Floating icons that drift near characters."""
     for i in range(count):
-        mote = bpy.data.objects.new(f"ThoughtMote_{character_obj.name}_{i}", mesh_data)
-        bpy.context.collection.objects.link(mote)
-        mote.location = character_obj.location + mathutils.Vector((0, 0, 2))
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.05, location=character_obj.location + mathutils.Vector((0,0,2)))
+        mote = bpy.context.object
+        mote.name = f"ThoughtMote_{character_obj.name}_{i}"
         insert_looping_noise(mote, "location", strength=0.5, scale=10.0, frame_start=frame_start, frame_end=frame_end)
 
 _plant_humanoid = None
@@ -907,8 +827,10 @@ def animate_dialogue_v2(mouth_obj, frame_start, frame_end, intensity=1.0, speed=
 def animate_expression_blend(character_name, frame, expression='NEUTRAL', duration=12):
     """Smoothly transitions between facial expression presets."""
     from assets import plant_humanoid
-    torso = bpy.data.objects.get(f"{character_name}_Mesh") or \
-            bpy.data.objects.get(f"{character_name}_Torso")
+    # Since plant_humanoid handles the actual keyframing of parts, we wrap it
+    # and ensure multiple frames are keyed for a smooth transition if duration > 0.
+    # For now, we'll implement a simple version that uses plant_humanoid's logic.
+    torso = bpy.data.objects.get(f"{character_name}_Torso")
     if not torso: return
 
     if duration > 0:
@@ -926,18 +848,10 @@ def animate_fireflies(center, volume_size=(5, 5, 5), density=10, frame_start=1, 
         bpy.context.scene.collection.children.link(container)
 
     mat = bpy.data.materials.new(name="FireflyMat")
+    # mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.8, 1.0, 0.2, 1) # Yellow-green
     set_blend_method(mat, 'BLEND')
-
-    mesh_data = bpy.data.meshes.get("FireflyMesh")
-    if not mesh_data:
-        import bmesh
-        mesh_data = bpy.data.meshes.new("FireflyMesh")
-        bm = bmesh.new()
-        bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.02)
-        bm.to_mesh(mesh_data)
-        bm.free()
 
     for i in range(density):
         loc = center + mathutils.Vector((
@@ -945,9 +859,12 @@ def animate_fireflies(center, volume_size=(5, 5, 5), density=10, frame_start=1, 
             random.uniform(-volume_size[1], volume_size[1]),
             random.uniform(0, volume_size[2])
         ))
-        fly = bpy.data.objects.new(f"Firefly_{i}", mesh_data)
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.02, location=loc)
+        fly = bpy.context.object
+        fly.name = f"Firefly_{i}"
         container.objects.link(fly)
-        fly.location = loc
+        if fly.name in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.unlink(fly)
         fly.data.materials.append(mat)
 
         # Drifting
@@ -964,8 +881,8 @@ def animate_fireflies(center, volume_size=(5, 5, 5), density=10, frame_start=1, 
         fly.hide_render = True
         fly.keyframe_insert(data_path="hide_render", frame=frame_end)
 
-def create_noise_based_material(name, color_ramp_colors, noise_type='NOISE', noise_scale=10.0, roughness=0.5):
-    """Point 32: Generic helper for creating noise-based procedural materials."""
+def create_noise_based_material(name, colors, noise_type='NOISE', noise_scale=5.0, roughness=0.5):
+    """Exclusive 5.0+ noise-based material helper."""
     mat = bpy.data.materials.new(name=name)
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
@@ -974,38 +891,36 @@ def create_noise_based_material(name, color_ramp_colors, noise_type='NOISE', noi
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
     node_bsdf.inputs['Roughness'].default_value = roughness
 
-    node_coord = nodes.new(type='ShaderNodeTexCoord')
-    node_mapping = nodes.new(type='ShaderNodeMapping')
-    links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
-
     if noise_type == 'WAVE':
         node_noise = nodes.new(type='ShaderNodeTexWave')
-        node_noise.inputs['Scale'].default_value = noise_scale
+    elif noise_type == 'VORONOI':
+        node_noise = nodes.new(type='ShaderNodeTexVoronoi')
     else:
         node_noise = nodes.new(type='ShaderNodeTexNoise')
-        node_noise.inputs['Scale'].default_value = noise_scale
 
-    links.new(node_mapping.outputs['Vector'], node_noise.inputs['Vector'])
+    node_noise.inputs['Scale'].default_value = noise_scale
 
     node_ramp = nodes.new(type='ShaderNodeValToRGB')
-    elements = node_ramp.color_ramp.elements
-    # Blender 5.0 enforces minimum 2 elements, so we manage them without .clear()
-    while len(elements) > len(color_ramp_colors) and len(elements) > 1:
-        elements.remove(elements[-1])
-
-    for i, color in enumerate(color_ramp_colors):
-        if i < len(elements):
-            el = elements[i]
-            el.position = i / max(len(color_ramp_colors) - 1, 1)
+    elems = node_ramp.color_ramp.elements
+    # Safe pattern for 5.0: Reuse 2 existing stops, only append if more needed
+    for i, color in enumerate(colors):
+        if i < len(elems):
+            elems[i].color = color
         else:
-            el = elements.new(i / max(len(color_ramp_colors) - 1, 1))
-        el.color = color
+            elems.new(i / max(1, len(colors)-1)).color = color
 
     links.new(node_noise.outputs[0], node_ramp.inputs['Fac'])
     links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
 
     return mat
+
+def clear_scene_selective():
+    """Point 92: Clear objects/data without a full session reset."""
+    bpy.ops.object.select_all(action='SELECT'); bpy.ops.object.delete()
+    for block in (bpy.data.meshes, bpy.data.materials, bpy.data.actions, bpy.data.curves, bpy.data.armatures, bpy.data.node_groups):
+        for item in block:
+            if item.users == 0: block.remove(item)
 
 def set_blend_method(mat, method='BLEND'):
     """Version-safe transparency method setter for materials."""
@@ -1070,6 +985,8 @@ def apply_anticipation(obj, data_path, frame, offset_value, duration=5):
 
 def animate_limp(obj, frame_start, frame_end, cycle=32):
     """Enhancement #14: Gnome Limping Retreat Gait."""
+    # Asymmetric gait using noise with varying scale on Y
+    insert_looping_noise(obj, "location", index=2, strength=0.05, scale=cycle, frame_start=frame_start, frame_end=frame_end)
     # Drag effect on one side
     for f in range(frame_start, frame_end, cycle):
         obj.rotation_euler[1] = math.radians(5)
@@ -1099,10 +1016,8 @@ def animate_defensive_crouch(obj, frame_start, frame_end):
 def animate_reaction_shot(character_name, frame_start, frame_end):
     """Point 39: Adds listener micro-movements with robust character resolution."""
     char_name = character_name.split('_')[0]
-    # Fallback to torso/mesh if head doesn't exist (e.g. for merged static characters)
-    head = bpy.data.objects.get(f"{char_name}_Mesh") or \
-           bpy.data.objects.get(f"{char_name}_Head") or \
-           bpy.data.objects.get(f"{char_name}_Torso")
+    # Fallback to torso if head doesn't exist (e.g. for merged static characters)
+    head = bpy.data.objects.get(f"{char_name}_Head") or bpy.data.objects.get(f"{char_name}_Torso")
     if not head: return
 
     # Blinks
@@ -1111,8 +1026,7 @@ def animate_reaction_shot(character_name, frame_start, frame_end):
             animate_blink(child, frame_start, frame_end, interval_range=(40, 100))
 
     # Subtle nods (X-axis rotation)
-    torso = bpy.data.objects.get(f"{char_name}_Mesh") or \
-            bpy.data.objects.get(f"{char_name}_Torso")
+    torso = bpy.data.objects.get(f"{char_name}_Torso")
     if torso:
         for f in range(frame_start, frame_end, 60):
             torso.rotation_euler[0] = 0
@@ -1146,8 +1060,13 @@ def animate_distance_based_glow(gnome, characters, frame_start, frame_end):
     bsdf = mat.node_tree.nodes.get("Principled BSDF")
     if not bsdf: return
     
+    # We need to find the input socket for Emission Strength
+    # Note: get_principled_socket is a helper in this file, but we need the actual socket object to add a driver
     socket = get_principled_socket(bsdf, "Emission Strength")
     if not socket: return
+
+    # Remove any existing animation data on this socket to be clean
+    # (Though adding a driver usually overrides)
 
     # Add Driver
     fcurve = socket.driver_add("default_value")
@@ -1166,9 +1085,12 @@ def animate_distance_based_glow(gnome, characters, frame_start, frame_end):
         dist_vars.append(f"dist_{i}")
         
     if not dist_vars:
+        # Fallback if no characters found
         driver.expression = "2.0"
         return
 
+    # Expression: max(2.0, 50.0 * (1.0 / max(1.0, min_dist)))
+    # min_dist = min(d1, d2, ...)
     min_dist_expr = f"min({', '.join(dist_vars)})"
     driver.expression = f"max(2.0, 50.0 * (1.0 / max(1.0, {min_dist_expr})))"
 
@@ -1263,6 +1185,7 @@ def animate_dawn_progression(sun_light):
 def apply_interior_exterior_contrast(sun_light, cam):
     """Enhancement #27: Interior vs Exterior Light Contrast."""
     # This needs to be checked per frame or keyframed based on drone shots
+    # For now, we'll keyframe it based on the known drone shots frame ranges
     drone_ranges = [(101, 200), (401, 480), (3901, 4100), (14200, 14400)]
     for start, end in drone_ranges:
         sun_light.data.color = (0.7, 0.8, 1.0) # Cool exterior
@@ -1281,23 +1204,17 @@ def replace_with_soft_boxes():
             energy = obj.data.energy
             color = obj.data.color
 
-            import bmesh
-            mesh_data = bpy.data.meshes.new(f"SoftBox_{name}_Mesh")
-            bm = bmesh.new()
-            bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=1.0)
-            bm.to_mesh(mesh_data)
-            bm.free()
+            bpy.ops.object.select_all(action='DESELECT')
+            obj.select_set(True)
+            bpy.ops.object.delete()
 
-            plane = bpy.data.objects.new(f"SoftBox_{name}", mesh_data)
-            bpy.context.collection.objects.link(plane)
-            plane.location = loc
-            plane.rotation_euler = rot
+            bpy.ops.mesh.primitive_plane_add(location=loc, rotation=rot)
+            plane = bpy.context.object
+            plane.name = f"SoftBox_{name}"
             plane.scale = (2, 2, 1)
 
-            # Delete old light
-            bpy.data.objects.remove(obj, do_unlink=True)
-
             mat = bpy.data.materials.new(name=f"Mat_{plane.name}")
+            # mat.use_nodes = True
             bsdf = mat.node_tree.nodes["Principled BSDF"]
             set_principled_socket(mat, "Emission", list(color) + [1])
             set_principled_socket(mat, "Emission Strength", energy / 1000.0) # Scale energy
@@ -1310,6 +1227,7 @@ def animate_hdri_rotation(scene):
     nodes = world.node_tree.nodes
     mapping = nodes.get("Mapping")
     if not mapping:
+        # Try to find or create mapping node for environment texture
         tex = None
         for n in nodes:
             if n.type == 'TEX_ENVIRONMENT':
@@ -1333,6 +1251,8 @@ def animate_vignette_breathing(scene, frame_start, frame_end, strength=0.05, cyc
     vig = tree.nodes.get("Vignette")
     if not vig: return
 
+    # We animate width/height with noise or sine-like loop
+    # For simplicity, we use noise via our helper
     if not tree.animation_data:
         tree.animation_data_create()
     if not tree.animation_data.action:
@@ -1366,24 +1286,18 @@ def animate_floating_spores(center, volume_size=(10, 10, 5), density=50, frame_s
         set_principled_socket(mat, "Emission Strength", 5.0)
         set_blend_method(mat, 'BLEND')
 
-    mesh_data = bpy.data.meshes.get("SporeMesh")
-    if not mesh_data:
-        import bmesh
-        mesh_data = bpy.data.meshes.new("SporeMesh")
-        bm = bmesh.new()
-        bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.015)
-        bm.to_mesh(mesh_data)
-        bm.free()
-
     for i in range(density):
         loc = center + mathutils.Vector((
             random.uniform(-volume_size[0], volume_size[0]),
             random.uniform(-volume_size[1], volume_size[1]),
             random.uniform(0, volume_size[2])
         ))
-        spore = bpy.data.objects.new(f"Spore_{i}", mesh_data)
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.015, location=loc)
+        spore = bpy.context.object
+        spore.name = f"Spore_{i}"
         container.objects.link(spore)
-        spore.location = loc
+        if spore.name in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.unlink(spore)
         spore.data.materials.append(mat)
 
         # Gentle drifting noise
@@ -1407,16 +1321,3 @@ def apply_iris_wipe(scene, frame_start, frame_end, mode='IN'):
         compositor_settings.animate_iris_wipe(scene, frame_start, frame_end, mode=mode)
     except ImportError:
         pass
-
-def clear_scene_selective():
-    """Point 92: Clear objects/data without a full session reset for faster testing."""
-    bpy.ops.object.select_all(action='SELECT')
-    bpy.ops.object.delete()
-
-    # Purge unreferenced data blocks
-    for block in (bpy.data.meshes, bpy.data.materials,
-                  bpy.data.actions, bpy.data.curves,
-                  bpy.data.armatures, bpy.data.node_groups):
-        for item in block:
-            if item.users == 0:
-                block.remove(item)

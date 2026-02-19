@@ -7,7 +7,6 @@ def create_greenhouse_iron_mat():
     mat = bpy.data.materials.get("GH_Iron")
     if mat: return mat
     mat = bpy.data.materials.new(name="GH_Iron")
-    mat.use_nodes = True
     nodes = mat.node_tree.nodes
     bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
 
@@ -15,7 +14,7 @@ def create_greenhouse_iron_mat():
     bsdf.inputs["Metallic"].default_value = 1.0
     bsdf.inputs["Roughness"].default_value = 0.7
 
-    # Mossy Iron (Noise overlay mixed with base color)
+    # Mossy Iron
     node_moss = nodes.new(type='ShaderNodeTexNoise')
     node_moss.inputs['Scale'].default_value = 20.0
     node_mix = style.create_mix_node(mat.node_tree, blend_type='OVERLAY', data_type='RGBA')
@@ -31,14 +30,14 @@ def create_greenhouse_glass_mat():
     mat = bpy.data.materials.get("GH_Glass")
     if mat: return mat
     mat = bpy.data.materials.new(name="GH_Glass")
-    mat.use_nodes = True
     nodes = mat.node_tree.nodes
     bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
 
     bsdf.inputs["Base Color"].default_value = (0.7, 0.8, 0.9, 1)
     bsdf.inputs["Alpha"].default_value = 1.0
 
-    style.set_principled_socket(bsdf, 'Transmission', 1.0)
+    # Modern 5.0+ Sockets
+    bsdf.inputs['Transmission Weight'].default_value = 1.0
     bsdf.inputs["Roughness"].default_value = 0.05
 
     # Scratched Glass
@@ -69,7 +68,6 @@ def create_mossy_stone_mat(name="MossyStone"):
     mat = bpy.data.materials.get(name)
     if mat: return mat
     mat = bpy.data.materials.new(name=name)
-    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
 
     bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
@@ -116,7 +114,7 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
     # 1. Main Iron Mesh
     iron_data = bpy.data.meshes.new("Greenhouse_Iron_MeshData")
     iron_obj = bpy.data.objects.new("Greenhouse_Iron", iron_data)
-    bpy.context.collection.objects.link(iron_obj)
+    bpy.context.scene.collection.objects.link(iron_obj)
     iron_obj.location = main_loc
 
     bm_iron = bmesh.new()
@@ -124,11 +122,8 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
     def add_beam(loc, scale, rot=(0,0,0)):
         matrix = mathutils.Matrix.Translation(loc) @ mathutils.Euler(rot).to_matrix().to_4x4()
         ret = bmesh.ops.create_cube(bm_iron, size=2.0, matrix=matrix)
-        # Apply scaling to the last created vertices
         for v in ret['verts']:
-            v.co.x *= scale[0]
-            v.co.y *= scale[1]
-            v.co.z *= scale[2]
+            v.co.x *= scale[0]; v.co.y *= scale[1]; v.co.z *= scale[2]
 
     # Pillars
     pillar_locs = [(-size[0]/2, -size[1]/2), (size[0]/2, -size[1]/2), (-size[0]/2, size[1]/2), (size[0]/2, size[1]/2),
@@ -161,7 +156,7 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
     # 2. Glass Mesh
     glass_data = bpy.data.meshes.new("Greenhouse_Glass_MeshData")
     glass_obj = bpy.data.objects.new("Greenhouse_Glass", glass_data)
-    bpy.context.collection.objects.link(glass_obj)
+    bpy.context.scene.collection.objects.link(glass_obj)
     glass_obj.location = main_loc
 
     bm_glass = bmesh.new()
@@ -170,20 +165,18 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
         matrix_x = mathutils.Matrix.Translation((side * size[0]/2, 0, size[2]/2)) @ mathutils.Euler((0, math.pi/2, 0)).to_matrix().to_4x4()
         bmesh.ops.create_grid(bm_glass, x_segments=1, y_segments=1, size=1.0, matrix=matrix_x)
         for v in bm_glass.verts[-4:]:
-            v.co.y *= size[1]/2
-            v.co.z *= size[2]/2
+            v.co.y *= size[1]/2; v.co.z *= size[2]/2
         # Y-walls
         matrix_y = mathutils.Matrix.Translation((0, side * size[1]/2, size[2]/2)) @ mathutils.Euler((math.pi/2, 0, 0)).to_matrix().to_4x4()
         bmesh.ops.create_grid(bm_glass, x_segments=1, y_segments=1, size=1.0, matrix=matrix_y)
         for v in bm_glass.verts[-4:]:
-            v.co.x *= size[0]/2
-            v.co.z *= size[2]/2
+            v.co.x *= size[0]/2; v.co.z *= size[2]/2
 
     bm_glass.to_mesh(glass_data)
     bm_glass.free()
     glass_obj.data.materials.append(glass_mat)
 
-    # Merge them into one main object for "properly merged" requirement
+    # Merge
     bpy.ops.object.select_all(action='DESELECT')
     iron_obj.select_set(True)
     glass_obj.select_set(True)
@@ -193,9 +186,3 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
     main_obj.name = "Greenhouse_Main"
 
     return main_obj
-
-if __name__ == "__main__":
-    # Test
-    bpy.ops.object.select_all(action='SELECT')
-    bpy.ops.object.delete()
-    create_greenhouse_structure()
