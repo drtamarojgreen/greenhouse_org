@@ -47,7 +47,7 @@ class TestGnomeRetreat(BlenderTestCase):
         gnome = self.master.gnome
         self.assertIsNotNone(gnome)
 
-        s22_range = silent_movie_generator.SCENE_MAP['scene22']
+        s22_range = silent_movie_generator.SCENE_MAP['scene22_retreat']
         curves = style.get_action_curves(gnome.animation_data.action)
 
         loc_keys = []
@@ -76,7 +76,7 @@ class TestGnomeRetreat(BlenderTestCase):
     def test_44_speed_ramp(self):
         """R44: Retreat speed ramp behavior."""
         gnome = self.master.gnome
-        s22_range = silent_movie_generator.SCENE_MAP['scene22']
+        s22_range = silent_movie_generator.SCENE_MAP['scene22_retreat']
 
         def get_pos(frame):
             curves = style.get_action_curves(gnome.animation_data.action)
@@ -97,7 +97,7 @@ class TestGnomeRetreat(BlenderTestCase):
     def test_48_no_teleport_jumps(self):
         """R48: No teleport jumps during retreat."""
         gnome = self.master.gnome
-        s22_range = silent_movie_generator.SCENE_MAP['scene22']
+        s22_range = silent_movie_generator.SCENE_MAP['scene22_retreat']
 
         last_pos = None
         for f in range(s22_range[0], s22_range[1], 50):

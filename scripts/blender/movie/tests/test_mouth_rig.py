@@ -40,7 +40,7 @@ class TestMouthRig(BlenderTestCase):
             self.assertTrue(mouth_z_found, "Mouth Z scale f-curve not found")
 
     def test_26_no_negative_scale(self):
-        """R26: Preventing impossible negative jaw scale."""
+        """R26: Preventing impossible negative jaw scale (Bones)."""
         for char_obj in [self.master.h1, self.master.h2]:
             if not char_obj: continue
             if not char_obj.animation_data:
@@ -48,9 +48,9 @@ class TestMouthRig(BlenderTestCase):
 
             curves = style.get_action_curves(char_obj.animation_data.action)
             for fc in curves:
-                if "scale" in fc.data_path:
+                if 'pose.bones["Mouth"].scale' in fc.data_path:
                     for kp in fc.keyframe_points:
-                        self.assertGreater(kp.co[1], 0, f"Negative/zero scale found: {kp.co[1]}")
+                        self.assertGreater(kp.co[1], 0, f"Negative/zero scale found on Mouth bone: {kp.co[1]}")
 
 if __name__ == "__main__":
     argv = [sys.argv[0]]

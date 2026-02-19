@@ -46,19 +46,20 @@ class TestInteractionScene(unittest.TestCase):
         self.assertTrue(loc_x_found, "Location X keyframes not found for Herbaceous")
 
     def test_talking_animation(self):
-        """Check if characters have talking animation in the interaction range."""
+        """Check if characters have talking animation in the interaction range (Bones)."""
         for name in ["Herbaceous", "Arbor"]:
-            mouth = bpy.data.objects.get(f"{name}_Mouth")
-            self.assertIsNotNone(mouth, f"{name}_Mouth not found")
+            char_obj = bpy.data.objects.get(name)
+            self.assertIsNotNone(char_obj, f"{name} armature not found")
 
-            anim_data = mouth.animation_data
-            self.assertIsNotNone(anim_data, f"{name}_Mouth has no animation data")
+            anim_data = char_obj.animation_data
+            self.assertIsNotNone(anim_data, f"{name} has no animation data")
 
             curves = style.get_action_curves(anim_data.action)
-            scale_z_found = False
+            mouth_bone_found = False
             for fc in curves:
-                if fc.data_path == "scale" and fc.array_index == 2:
-                    scale_z_found = True
+                # Check for Mouth bone scale on the armature
+                if 'pose.bones["Mouth"].scale' in fc.data_path and fc.array_index == 2:
+                    mouth_bone_found = True
                     keyframes = [kp.co[0] for kp in fc.keyframe_points]
                     # Herbaceous talks 4600-5000, 5600-5900
                     # Arbor talks 5100-5500
@@ -66,27 +67,27 @@ class TestInteractionScene(unittest.TestCase):
                         self.assertTrue(any(4600 <= k <= 5900 for k in keyframes), "Herbaceous talking keyframes missing")
                     else:
                         self.assertTrue(any(5100 <= k <= 5500 for k in keyframes), "Arbor talking keyframes missing")
-            self.assertTrue(scale_z_found, f"Scale Z keyframes not found for {name}_Mouth")
+            self.assertTrue(mouth_bone_found, f"Mouth bone scale keyframes not found for {name}")
 
     def test_expression_keyframes(self):
-        """Verify expression keyframes are set for interaction."""
-        # Testing one brow as a proxy for expression logic
-        brow = bpy.data.objects.get("Herbaceous_Brow_L")
-        self.assertIsNotNone(brow, "Herbaceous_Brow_L not found")
+        """Verify expression keyframes are set for interaction (Bones)."""
+        # Testing eye bone scaling as a proxy for expression logic
+        char_obj = bpy.data.objects.get("Herbaceous")
+        self.assertIsNotNone(char_obj, "Herbaceous armature not found")
 
-        anim_data = brow.animation_data
-        self.assertIsNotNone(anim_data, "Herbaceous_Brow_L has no animation data")
+        anim_data = char_obj.animation_data
+        self.assertIsNotNone(anim_data, "Herbaceous has no animation data")
 
         curves = style.get_action_curves(anim_data.action)
-        rot_y_found = False
+        eye_scale_found = False
         for fc in curves:
-            if fc.data_path == "rotation_euler" and fc.array_index == 1:
-                rot_y_found = True
+            if 'pose.bones["Eye.L"].scale' in fc.data_path:
+                eye_scale_found = True
                 keyframes = [kp.co[0] for kp in fc.keyframe_points]
                 # Point 57: Approximate matching
                 self.assertTrue(any(abs(k - 6200) < 0.5 for k in keyframes))
                 self.assertTrue(any(abs(k - 6500) < 0.5 for k in keyframes))
-        self.assertTrue(rot_y_found, "Rotation Y (expression) keyframes not found for Herbaceous Brow")
+        self.assertTrue(eye_scale_found, "Eye bone scale (expression) keyframes not found for Herbaceous")
 
     def test_staff_gesture(self):
         """Check Herbaceous staff gesture in interaction scene."""
