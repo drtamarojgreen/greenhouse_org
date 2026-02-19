@@ -39,7 +39,7 @@ __all__ = [
 ]
 
 def get_action_curves(action, create_if_missing=False):
-    """Point 91: Robust action curve access for Blender 5.0 (Legacy + Layered)."""
+    """Point 91: Robust action curve access for Blender 5.0 (Legacy + Layered + Slots + Channels)."""
     if action is None: return []
     
     curves = []
@@ -54,9 +54,34 @@ def get_action_curves(action, create_if_missing=False):
             action.layers.new(name="Layer")
         
         for layer in action.layers:
-            for strip in layer.strips:
-                if hasattr(strip, 'fcurves'):
-                    curves.extend(strip.fcurves)
+            if hasattr(layer, 'fcurves'): curves.extend(layer.fcurves)
+            if hasattr(layer, 'channels'): curves.extend(layer.channels)
+            if hasattr(layer, 'strips'):
+                for strip in layer.strips:
+                    if hasattr(strip, 'fcurves'): curves.extend(strip.fcurves)
+                    if hasattr(strip, 'channels'): curves.extend(strip.channels)
+
+    # 3. Slot-based/Channel-based F-Curves (Blender 5.0 variations)
+    if hasattr(action, "curves"):
+        curves.extend(action.curves)
+
+    # 4. Action Slots (Blender 5.x)
+    if hasattr(action, "slots"):
+        for slot in action.slots:
+            if hasattr(slot, "fcurves"): curves.extend(slot.fcurves)
+            if hasattr(slot, "curves"): curves.extend(slot.curves)
+            if hasattr(slot, "channels"): curves.extend(slot.channels)
+
+    # 5. Bindings-based F-Curves
+    if hasattr(action, "bindings"):
+        for binding in action.bindings:
+            if hasattr(binding, 'fcurves'): curves.extend(binding.fcurves)
+            if hasattr(binding, 'channels'): curves.extend(binding.channels)
+
+    # 6. Global Action Channels (Headless redundancy)
+    if hasattr(action, "channels"):
+        curves.extend(action.channels)
+
     return curves
 
 def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
@@ -68,18 +93,14 @@ def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
     return action.fcurve_ensure_for_datablock(ref_obj, data_path=data_path, index=index)
 
 def get_eevee_engine_id():
-    """Probes Blender for the correct Eevee engine identifier (EEVEE vs EEVEE_NEXT)."""
-    # Check render engines available in current build
-    # In some 4.2+ builds it is BLENDER_EEVEE_NEXT, in 5.0 it might revert to BLENDER_EEVEE
-    # We probe by checking what the current scene allows
+    """Probes Blender for the correct Eevee engine identifier."""
+    # Priority for 5.0 is EEVEE (which might be Next) or EEVEE_NEXT explicitly
     try:
-        # Fallback list in order of preference
-        for engine in ['BLENDER_EEVEE_NEXT', 'BLENDER_EEVEE']:
-            if engine in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items:
-                return engine
-    except Exception:
-        pass
-    return 'BLENDER_EEVEE' # Legacy default
+        enum_items = bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items
+        if 'BLENDER_EEVEE_NEXT' in enum_items: return 'BLENDER_EEVEE_NEXT'
+        if 'BLENDER_EEVEE' in enum_items: return 'BLENDER_EEVEE'
+    except: pass
+    return 'BLENDER_EEVEE'
 
 def get_compositor_node_tree(scene):
     """Directly retrieves the compositor node tree for Blender 5.x."""
@@ -411,6 +432,10 @@ def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=1500
     if hasattr(obj, "id_data") and obj.rna_type.identifier == 'PoseBone':
         anim_target = obj.id_data
         path_prefix = f'pose.bones["{obj.name}"].'
+    elif hasattr(obj, "bone") and hasattr(obj, "id_data") and obj.id_data.type == 'ARMATURE':
+        # Another way PoseBone might present
+        anim_target = obj.id_data
+        path_prefix = f'pose.bones["{obj.name}"].'
 
     if not anim_target.animation_data:
         anim_target.animation_data_create()
@@ -586,25 +611,38 @@ def ease_action(obj, data_path, index=-1, interpolation='BEZIER', easing='EASE_I
                 kp.easing = easing
 
 def animate_blink(eye_obj, frame_start, frame_end, interval_range=(60, 180)):
-    """Adds intermittent blinking by scaling the eye on Z."""
+    """Adds intermittent blinking by scaling the eye on Z (Explicit targeting)."""
     if not eye_obj: return
+
+    target_obj = eye_obj
+    data_path = "scale"
+    if hasattr(eye_obj, "id_data") and eye_obj.id_data.type == 'ARMATURE':
+        target_obj = eye_obj.id_data
+        data_path = f'pose.bones["{eye_obj.name}"].scale'
+
     current_f = frame_start
+    # Get base Z from the object or bone
     base_z = eye_obj.scale[2]
 
     while current_f < frame_end:
-        eye_obj.scale[2] = base_z
-        eye_obj.keyframe_insert(data_path="scale", index=2, frame=current_f)
+        if "pose.bones" in data_path: target_obj.pose.bones[eye_obj.name].scale[2] = base_z
+        else: target_obj.scale[2] = base_z
+        target_obj.keyframe_insert(data_path=data_path, index=2, frame=current_f)
 
         # Random interval between blinks
         blink_start = current_f + random.randint(*interval_range)
         if blink_start + 6 > frame_end: break
 
         # Blink sequence: Open -> Closed -> Open
-        eye_obj.keyframe_insert(data_path="scale", index=2, frame=blink_start)
-        eye_obj.scale[2] = base_z * 0.1
-        eye_obj.keyframe_insert(data_path="scale", index=2, frame=blink_start + 3)
-        eye_obj.scale[2] = base_z
-        eye_obj.keyframe_insert(data_path="scale", index=2, frame=blink_start + 6)
+        target_obj.keyframe_insert(data_path=data_path, index=2, frame=blink_start)
+
+        if "pose.bones" in data_path: target_obj.pose.bones[eye_obj.name].scale[2] = base_z * 0.1
+        else: target_obj.scale[2] = base_z * 0.1
+        target_obj.keyframe_insert(data_path=data_path, index=2, frame=blink_start + 3)
+
+        if "pose.bones" in data_path: target_obj.pose.bones[eye_obj.name].scale[2] = base_z
+        else: target_obj.scale[2] = base_z
+        target_obj.keyframe_insert(data_path=data_path, index=2, frame=blink_start + 6)
 
         current_f = blink_start + 6
 
@@ -861,16 +899,38 @@ def apply_desaturation_beat(scene, frame_start, frame_end, saturation=0.2):
         set_node_input(huesat, 'Saturation', saturation, frame=frame_end)
         set_node_input(huesat, 'Saturation', 1.0, frame=frame_end + 5)
 
-def animate_dialogue_v2(mouth_obj, frame_start, frame_end, intensity=1.0, speed=1.0):
-    """Enhanced procedural mouth movement with Breathing Pause (#16)."""
-    if not mouth_obj: return
+def animate_dialogue_v2(char_or_obj, frame_start, frame_end, intensity=1.0, speed=1.0):
+    """Point 39: Enhanced procedural mouth movement with Rig Targeting support."""
+    target_obj = None
+    data_path = "scale"
+
+    # 1. Resolve character name to Mouth bone if possible
+    if isinstance(char_or_obj, str):
+        arm = bpy.data.objects.get(char_or_obj)
+        if arm and arm.type == 'ARMATURE':
+            target_obj = arm
+            data_path = 'pose.bones["Mouth"].scale'
+        else:
+            # Fallback to mesh object
+            target_obj = bpy.data.objects.get(f"{char_or_obj}_Mouth")
+    else:
+        target_obj = char_or_obj
+        if hasattr(target_obj, "id_data") and target_obj.id_data.type == 'ARMATURE':
+            data_path = f'pose.bones["{target_obj.name}"].scale'
+            target_obj = target_obj.id_data
+
+    if not target_obj: return
 
     current_f = frame_start
     while current_f < frame_end:
         # Enhancement #16: Breathing Pause Mid-Dialogue
         if random.random() > 0.9: # ~10% chance of a pause
-            mouth_obj.scale[2] = 0.4
-            mouth_obj.keyframe_insert(data_path="scale", index=2, frame=current_f)
+            set_val = 0.4
+            if "pose.bones" in data_path:
+                target_obj.pose.bones["Mouth"].scale[2] = set_val
+            else:
+                target_obj.scale[2] = set_val
+            target_obj.keyframe_insert(data_path=data_path, index=2, frame=current_f)
             current_f += 12 # 12 frame hold
             continue
 
@@ -878,18 +938,29 @@ def animate_dialogue_v2(mouth_obj, frame_start, frame_end, intensity=1.0, speed=
         cycle_len = random.randint(4, 12) / speed
         open_amount = random.uniform(0.5, 1.5) * intensity
 
-        mouth_obj.scale[2] = 0.4 # Neutral
-        mouth_obj.keyframe_insert(data_path="scale", index=2, frame=current_f)
+        # Neutral
+        set_val = 0.4
+        if "pose.bones" in data_path:
+            target_obj.pose.bones["Mouth"].scale[2] = set_val
+        else:
+            target_obj.scale[2] = set_val
+        target_obj.keyframe_insert(data_path=data_path, index=2, frame=current_f)
 
         mid_f = current_f + cycle_len / 2
         if mid_f < frame_end:
-            mouth_obj.scale[2] = open_amount
-            mouth_obj.keyframe_insert(data_path="scale", index=2, frame=mid_f)
+            if "pose.bones" in data_path:
+                target_obj.pose.bones["Mouth"].scale[2] = open_amount
+            else:
+                target_obj.scale[2] = open_amount
+            target_obj.keyframe_insert(data_path=data_path, index=2, frame=mid_f)
 
         current_f += cycle_len
 
-    mouth_obj.scale[2] = 0.4
-    mouth_obj.keyframe_insert(data_path="scale", index=2, frame=frame_end)
+    if "pose.bones" in data_path:
+        target_obj.pose.bones["Mouth"].scale[2] = 0.4
+    else:
+        target_obj.scale[2] = 0.4
+    target_obj.keyframe_insert(data_path=data_path, index=2, frame=frame_end)
 
 def animate_expression_blend(character_name, frame, expression='NEUTRAL', duration=12):
     """Smoothly transitions between facial expression presets."""
@@ -901,7 +972,7 @@ def animate_expression_blend(character_name, frame, expression='NEUTRAL', durati
     armature = bpy.data.objects.get(character_name)
     if not armature or armature.type != 'ARMATURE':
         # Try fallback to mesh parent
-        mesh = bpy.data.objects.get(f"{character_name}_Torso") or bpy.data.objects.get(f"{character_name}_Mesh")
+        mesh = bpy.data.objects.get(f"{character_name}_Torso")
         if mesh and mesh.parent and mesh.parent.type == 'ARMATURE':
             armature = mesh.parent
         else:
@@ -976,6 +1047,7 @@ def create_noise_based_material(name, colors=None, noise_type='NOISE', noise_sca
     node_noise.inputs['Scale'].default_value = noise_scale
     
     node_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_ramp.name = "VAL_TO_RGB" # Ensure name for test discovery
     elems = node_ramp.color_ramp.elements
     # Safe pattern for 5.0: Reuse 2 existing stops, only append if more needed
     for i, color in enumerate(colors):
@@ -1093,20 +1165,46 @@ def animate_thinking_gesture(arm_obj, frame_start):
     arm_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=frame_start + 48)
 
 def animate_defensive_crouch(obj, frame_start, frame_end):
-    """Enhancement #20: Gnome Defensive Crouch."""
+    """Enhancement #20: Gnome Defensive Crouch (Bone-aware)."""
+    target = obj
+    if hasattr(obj, "type") and obj.type == 'ARMATURE':
+        target = obj.pose.bones.get("Torso") or obj
+
     # Shrink spine (scale Z)
-    obj.scale[2] = 1.0
-    obj.keyframe_insert(data_path="scale", index=2, frame=frame_start)
-    obj.scale[2] = 0.8
-    obj.keyframe_insert(data_path="scale", index=2, frame=frame_start + 24)
-    obj.keyframe_insert(data_path="scale", index=2, frame=frame_end - 24)
-    obj.scale[2] = 1.0
-    obj.keyframe_insert(data_path="scale", index=2, frame=frame_end)
+    target.scale[2] = 1.0
+    target.keyframe_insert(data_path="scale", index=2, frame=frame_start)
+    target.scale[2] = 0.8
+    target.keyframe_insert(data_path="scale", index=2, frame=frame_start + 24)
+    target.keyframe_insert(data_path="scale", index=2, frame=frame_end - 24)
+    target.scale[2] = 1.0
+    target.keyframe_insert(data_path="scale", index=2, frame=frame_end)
 
 def animate_reaction_shot(character_name, frame_start, frame_end):
-    """Point 39: Adds listener micro-movements with robust character resolution."""
+    """Point 39: Adds listener micro-movements with Rig Targeting support."""
     char_name = character_name.split('_')[0]
-    # Fallback to torso if head doesn't exist (e.g. for merged static characters)
+    arm = bpy.data.objects.get(char_name)
+
+    # 1. Rigged Version (Preferred for 5.0)
+    if arm and arm.type == 'ARMATURE':
+        # Blinks via Eye bones
+        for side in ["L", "R"]:
+            eye_bone = arm.pose.bones.get(f"Eye.{side}")
+            if eye_bone:
+                animate_blink(eye_bone, frame_start, frame_end, interval_range=(40, 100))
+
+        # Micro-nods via Torso bone
+        torso = arm.pose.bones.get("Torso")
+        if torso:
+            for f in range(frame_start, frame_end, 60):
+                torso.rotation_euler[0] = 0
+                torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+                torso.rotation_euler[0] = math.radians(random.uniform(1, 3))
+                torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 30)
+                torso.rotation_euler[0] = 0
+                torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 60)
+        return
+
+    # 2. Legacy/Mesh Version
     head = bpy.data.objects.get(f"{char_name}_Head") or bpy.data.objects.get(f"{char_name}_Torso")
     if not head: return
 
@@ -1116,15 +1214,15 @@ def animate_reaction_shot(character_name, frame_start, frame_end):
             animate_blink(child, frame_start, frame_end, interval_range=(40, 100))
 
     # Subtle nods (X-axis rotation)
-    torso = bpy.data.objects.get(f"{char_name}_Torso")
-    if torso:
+    torso_obj = bpy.data.objects.get(f"{char_name}_Torso")
+    if torso_obj:
         for f in range(frame_start, frame_end, 60):
-            torso.rotation_euler[0] = 0
-            torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
-            torso.rotation_euler[0] = math.radians(random.uniform(1, 3))
-            torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 30)
-            torso.rotation_euler[0] = 0
-            torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 60)
+            torso_obj.rotation_euler[0] = 0
+            torso_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+            torso_obj.rotation_euler[0] = math.radians(random.uniform(1, 3))
+            torso_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 30)
+            torso_obj.rotation_euler[0] = 0
+            torso_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=f + 60)
 
 def add_scene_markers(master):
     """Enhancement #74: Timeline Bookmark System."""

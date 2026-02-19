@@ -32,10 +32,10 @@ def setup_scene(master):
     # Shot ID: S17_01
     # Intent: Deeper philosophical inquiry.
 
-    style.animate_dialogue_v2(bpy.data.objects.get("Arbor_Mouth"), start_frame + 50, start_frame + 350, intensity=1.2)
+    style.animate_dialogue_v2("Arbor", start_frame + 50, start_frame + 350, intensity=1.2)
     style.animate_reaction_shot("Herbaceous", start_frame + 50, start_frame + 350)
 
-    style.animate_dialogue_v2(bpy.data.objects.get("Herbaceous_Mouth"), start_frame + 400, start_frame + 650, intensity=1.0)
+    style.animate_dialogue_v2("Herbaceous", start_frame + 400, start_frame + 650, intensity=1.0)
     style.animate_reaction_shot("Arbor", start_frame + 400, start_frame + 650)
 
     style.animate_expression_blend("Arbor", start_frame + 150, expression='NEUTRAL')

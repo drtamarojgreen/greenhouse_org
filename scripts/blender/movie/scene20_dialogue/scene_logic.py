@@ -32,7 +32,7 @@ def setup_scene(master):
     # Shot ID: S20_01
     # Intent: The final argument.
 
-    style.animate_dialogue_v2(bpy.data.objects.get("Herbaceous_Mouth"), start_frame + 24, start_frame + 400, intensity=1.5)
+    style.animate_dialogue_v2("Herbaceous", start_frame + 24, start_frame + 400, intensity=1.5)
     style.animate_expression_blend("Herbaceous", start_frame + 50, expression='NEUTRAL')
 
     # Gnome is visibly shaking

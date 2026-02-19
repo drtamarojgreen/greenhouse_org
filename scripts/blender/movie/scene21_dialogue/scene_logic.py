@@ -32,7 +32,7 @@ def setup_scene(master):
     # Shot ID: S21_01
     # Intent: Breakthrough. Gnome is defeated by reason.
 
-    style.animate_dialogue_v2(bpy.data.objects.get("Arbor_Mouth"), start_frame + 24, start_frame + 300, intensity=1.0)
+    style.animate_dialogue_v2("Arbor", start_frame + 24, start_frame + 300, intensity=1.0)
     style.animate_expression_blend("Arbor", start_frame + 50, expression='NEUTRAL')
 
     # Gnome retreats a few steps

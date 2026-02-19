@@ -43,7 +43,7 @@ class BaseMaster:
             bg = scene.world.node_tree.nodes.get("Background")
             if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
         else:
-            scene.render.engine = 'BLENDER_EEVEE_NEXT'
+            scene.render.engine = style.get_eevee_engine_id()
             scene.world.use_nodes = True
             bg = scene.world.node_tree.nodes.get("Background")
             if bg: bg.inputs[0].default_value = (0.05, 0.05, 0.1, 1)
@@ -74,8 +74,11 @@ class BaseMaster:
         if start_frame is not None: self.scene.frame_start = start_frame
         if end_frame is not None: self.scene.frame_end = end_frame
         self.load_assets()
-        if quick: return
+        if quick:
+            bpy.context.view_layer.update()
+            return
         self.setup_lighting(); self.setup_compositor(); self.animate_master()
+        bpy.context.view_layer.update()
 
     def load_assets(self): pass
     def animate_master(self): pass

@@ -43,7 +43,8 @@ class TestCompositor(BlenderTestCase):
                 is_connected = False
                 if exists:
                     # A simple check: does it have both inputs and outputs linked?
-                    has_input_link = any(inp.is_linked for inp in node.inputs)
+                    # Mask nodes like EllipseMask have no inputs.
+                    has_input_link = any(inp.is_linked for inp in node.inputs) or node.type in ('ELLIPSEMASK', 'BOXMASK', 'MASK', 'RGB', 'VALUE', 'TEXTURE')
                     has_output_link = any(out.is_linked for out in node.outputs)
                     is_connected = has_input_link and has_output_link
 

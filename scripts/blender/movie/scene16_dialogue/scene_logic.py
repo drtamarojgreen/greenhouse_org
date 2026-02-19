@@ -35,13 +35,13 @@ def setup_scene(master):
 
     # Dialogue turn-taking with hold frames
     # Herbaceous speaks
-    style.animate_dialogue_v2(bpy.data.objects.get("Herbaceous_Mouth"), start_frame + 24, start_frame + 280, intensity=1.1)
+    style.animate_dialogue_v2("Herbaceous", start_frame + 24, start_frame + 280, intensity=1.1)
     style.animate_reaction_shot("Arbor", start_frame + 24, start_frame + 280)
 
     # Hold frame after Herbaceous speaks (280 - 350)
 
     # Arbor responds
-    style.animate_dialogue_v2(bpy.data.objects.get("Arbor_Mouth"), start_frame + 350, start_frame + 600, intensity=0.9)
+    style.animate_dialogue_v2("Arbor", start_frame + 350, start_frame + 600, intensity=0.9)
     style.animate_reaction_shot("Herbaceous", start_frame + 350, start_frame + 600)
 
     # Hold frame at end (600 - 700)
