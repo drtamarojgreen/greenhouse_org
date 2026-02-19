@@ -52,9 +52,9 @@ def create_lab_bench(location):
     mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.1, 0.1, 0.1, 1)
     mat.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 1.0
     mat.node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.1
-    bench.data.materials.append(mat)
+    obj.data.materials.append(mat)
 
-    return bench
+    return obj
 
 if __name__ == "__main__":
     bpy.ops.object.select_all(action='SELECT')

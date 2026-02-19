@@ -28,37 +28,6 @@ def create_terracotta_material():
     node_bsdf.inputs['Roughness'].default_value = 0.85
     return mat
 
-def create_plant_pot(location, radius=0.15, height=0.2, name="Pot"):
-    location = mathutils.Vector(location)
-    """A terracotta plant pot with tapered sides."""
-    # Blender cone with top and bottom radii creates tapered pot shape
-    bpy.ops.mesh.primitive_cone_add(
-        vertices=16,
-        radius1=radius,           # base (bottom, narrower)
-        radius2=radius * 1.3,     # top (wider opening)
-        depth=height,
-        location=location + mathutils.Vector((0, 0, height/2))
-    )
-    pot = bpy.context.object
-    pot.name = name
-    pot.data.materials.append(create_terracotta_material())
-
-    # Soil disc on top
-    bpy.ops.mesh.primitive_cylinder_add(
-        radius=radius * 1.25,
-        depth=0.02,
-        location=location + mathutils.Vector((0, 0, height + 0.01))
-    )
-    soil_top = bpy.context.object
-    soil_top.name = f"{name}_Soil"
-
-    import exterior_garden
-    soil_top.data.materials.append(exterior_garden.create_soil_material())
-    soil_top.parent = pot
-    soil_top.matrix_parent_inverse = pot.matrix_world.inverted()
-
-    return pot
-
 def create_potted_plant(location, plant_type='FERN', name="PottedPlant"):
     """Point 95: BMesh Potted Plant creation."""
     import bmesh
