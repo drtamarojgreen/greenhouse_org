@@ -134,14 +134,29 @@ def set_node_input(node, name, value):
 def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
     """Creates a modern Mix node (5.x) with robust fallbacks."""
     if tree.bl_idname == 'CompositorNodeTree':
-        for node_type in ['CompositorNodeMixColor', 'CompositorNodeMix', 'CompositorNodeMixRGB']:
+        # Try different possible compositor mix node names for 5.0 compatibility
+        # Expanded candidates list
+        candidates = ['CompositorNodeMix', 'CompositorNodeMixColor', 'CompositorNodeMixRGB', 'MixRGB']
+        node = None
+        for node_type in candidates:
             try:
                 node = tree.nodes.new(node_type)
-                break
-            except RuntimeError:
+                if node: break
+            except (RuntimeError, TypeError, KeyError):
                 continue
-        else:
-            raise RuntimeError("Could not find a valid Compositor Mix node type.")
+
+        if not node:
+            # Last ditch attempt: try to find anything with 'Mix' in it in the compositor node types
+            import bpy
+            compositor_types = [t for t in dir(bpy.types) if t.startswith("CompositorNode") and "Mix" in t]
+            for nt in compositor_types:
+                try:
+                    node = tree.nodes.new(nt)
+                    if node: break
+                except: continue
+
+        if not node:
+            raise RuntimeError(f"Could not find a valid Compositor Mix node type. Tree: {tree.bl_idname}")
     else:
         node = tree.nodes.new('ShaderNodeMix')
 
@@ -162,7 +177,7 @@ def get_mix_sockets(node):
         return get_socket_by_identifier(node.inputs, 'Factor_Float') or node.inputs.get('Factor'), \
                get_socket_by_identifier(node.inputs, 'A_Vector') or node.inputs.get('A'), \
                get_socket_by_identifier(node.inputs, 'B_Vector') or node.inputs.get('B')
-    
+
     return node.inputs[0], node.inputs[1], node.inputs[2]
 
 def get_mix_output(node):
@@ -708,7 +723,7 @@ def animate_vignette(scene, frame_start, frame_end, start_val=1.0, end_val=0.5):
 
 def apply_neuron_color_coding(neuron_mat, frame, color=(1, 0, 0)):
     """Shifts neuron emission color."""
-    if not neuron_mat or not neuron_mat.use_nodes: return
+    if not neuron_mat or not neuron_mat.node_tree: return
     bsdf = neuron_mat.node_tree.nodes.get("Principled BSDF")
     if bsdf:
         bsdf.inputs["Emission Color"].default_value = (*color, 1)
@@ -716,7 +731,7 @@ def apply_neuron_color_coding(neuron_mat, frame, color=(1, 0, 0)):
 
 def setup_bioluminescent_flora(mat, color=(0, 1, 0.5)):
     """Adds glowing 'veins' to materials."""
-    if not mat or not mat.use_nodes: return
+    if not mat or not mat.node_tree: return
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
 
@@ -1137,9 +1152,9 @@ def setup_caustic_patterns(floor_obj):
         # Mix with Base Color
         bsdf = nodes.get("Principled BSDF")
         if bsdf:
-            mix = nodes.new(type='ShaderNodeMixRGB')
-            mix.blend_type = 'ADD'
-            mix.inputs[0].default_value = 0.2
+            mix = create_mix_node(mat.node_tree, blend_type='ADD', data_type='RGBA')
+            fac, in1, in2 = get_mix_sockets(mix)
+            if fac: fac.default_value = 0.2
 
             # Move existing link
             old_link = None
@@ -1149,11 +1164,11 @@ def setup_caustic_patterns(floor_obj):
                     break
 
             if old_link:
-                links.new(old_link.from_socket, mix.inputs[1])
+                links.new(old_link.from_socket, in1)
                 links.remove(old_link)
 
-            links.new(node_math.outputs[0], mix.inputs[2])
-            links.new(mix.outputs[0], bsdf.inputs['Base Color'])
+            links.new(node_math.outputs[0], in2)
+            links.new(get_mix_output(mix), bsdf.inputs['Base Color'])
 
         # Animate texture for moving water effect
         node_tex.voronoi_dimensions = '4D'
@@ -1223,7 +1238,7 @@ def replace_with_soft_boxes():
 def animate_hdri_rotation(scene):
     """Enhancement #30: Animated HDRI Sky Rotation."""
     world = scene.world
-    if not world or not world.use_nodes: return
+    if not world or not world.node_tree: return
     nodes = world.node_tree.nodes
     mapping = nodes.get("Mapping")
     if not mapping:
