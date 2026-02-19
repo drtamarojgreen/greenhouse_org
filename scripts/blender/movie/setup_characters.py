@@ -101,7 +101,8 @@ def setup_gaze_system(master):
                     con = head_bone.constraints.new(type='TRACK_TO')
                     con.target = target
                     if target.type == 'ARMATURE':
-                        con.subtarget = "Head"
+                        # Point 92: Track Torso to avoid dependency cycles (Head <-> Head)
+                        con.subtarget = "Torso"
                     con.track_axis = 'TRACK_NEGATIVE_Y' # Bone Y is usually length, depends on rigging. 
                     # Standard Rigify/Blender bones: Y axis runs along bone. Head usually points up (Y) or forward (-Y) depending on rest pose. 
                     # In our custom rig: Head bone moves from Torso_Top -> Up. So Y is UP.

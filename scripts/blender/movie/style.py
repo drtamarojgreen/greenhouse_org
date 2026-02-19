@@ -90,6 +90,13 @@ def get_socket_by_identifier(collection, identifier):
             return s
     return None
 
+def get_id_and_path(obj, data_path):
+    """Resolves the ID object and relative data path for both Objects and PoseBones."""
+    if hasattr(obj, "id_data") and hasattr(obj, "name") and not hasattr(obj, "animation_data"):
+        # This is likely a PoseBone
+        return obj.id_data, f'pose.bones["{obj.name}"].{data_path}'
+    return obj, data_path
+
 def create_compositor_output(tree):
     """Creates the final output node (NodeGroupOutput for 5.x)."""
     node = tree.nodes.new('NodeGroupOutput')
@@ -396,22 +403,26 @@ def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed
 
 def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=15000, strength=0.05, scale=10.0, phase=None):
     """Inserts noise modifier to a data path, ensuring the range is respected."""
-    if not obj.animation_data:
-        obj.animation_data_create()
-    if not obj.animation_data.action:
-        obj.animation_data.action = bpy.data.actions.new(name=f"Noise_{obj.name}_{data_path.replace('.', '_')}")
+    # Resolve ID object (e.g. Armature for PoseBones)
+    id_obj, full_path = get_id_and_path(obj, data_path)
 
-    action = obj.animation_data.action
+    if not id_obj.animation_data:
+        id_obj.animation_data_create()
+    if not id_obj.animation_data.action:
+        id_obj.animation_data.action = bpy.data.actions.new(name=f"Noise_{id_obj.name}")
+
+    action = id_obj.animation_data.action
     indices = [index] if index >= 0 else [0, 1, 2]
 
     for idx in indices:
-        fcurve = get_or_create_fcurve(action, data_path, idx, ref_obj=obj)
+        fcurve = get_or_create_fcurve(action, full_path, idx, ref_obj=id_obj)
         
         if not fcurve:
-            print(f"Warning: Could not access/create fcurve for {obj.name} ({data_path}[{idx}])")
+            print(f"Warning: Could not access/create fcurve for {id_obj.name} ({full_path}[{idx}])")
             continue
 
         if not fcurve.keyframe_points:
+            # Insert keyframe on original object with relative path
             obj.keyframe_insert(data_path=data_path, index=idx, frame=frame_start)
 
         modifier = fcurve.modifiers.new(type='NOISE')
