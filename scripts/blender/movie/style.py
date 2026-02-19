@@ -39,59 +39,40 @@ __all__ = [
 ]
 
 def get_action_curves(action, create_if_missing=False):
-    """Point 91: Robust action curve access for Blender 5.0 (Legacy + Layered + Slots + Bindings)."""
+    """Point 91: Robust recursive action curve access for Blender 5.0 (Legacy + Layered + Slots + Bindings)."""
     if action is None: return []
     
     curves = []
     seen_ids = set()
 
-    def add_unique(items):
-        for item in items:
-            # In some 5.0 builds, items might be Channels that wrap FCurves
-            fc = item
-            if hasattr(item, "fcurve"): fc = item.fcurve
+    def collect(item):
+        if item is None: return
+        item_id = id(item)
+        if item_id in seen_ids: return
+        seen_ids.add(item_id)
 
-            if fc and id(fc) not in seen_ids:
-                curves.append(fc)
-                seen_ids.add(id(fc))
-
-    # 1. Legacy F-Curves (Directly on Action)
-    if hasattr(action, "fcurves"):
-        add_unique(action.fcurves)
-
-    # 2. Layered F-Curves (Blender 5.0+)
-    if hasattr(action, "layers"):
-        # Force creation of layer if missing for new actions
-        if len(action.layers) == 0 and create_if_missing:
-            action.layers.new(name="Layer")
+        # 1. Is it an F-curve?
+        if hasattr(item, "keyframe_points"):
+            curves.append(item)
         
-        for layer in action.layers:
-            if hasattr(layer, 'fcurves'): add_unique(layer.fcurves)
-            if hasattr(layer, 'channels'): add_unique(layer.channels)
-            if hasattr(layer, 'strips'):
-                for strip in layer.strips:
-                    if hasattr(strip, 'fcurves'): add_unique(strip.fcurves)
-                    if hasattr(strip, 'channels'): add_unique(strip.channels)
+        # 2. Does it wrap an F-curve?
+        if hasattr(item, "fcurve") and item.fcurve:
+            collect(item.fcurve)
 
-    # 3. Slot-based/Channel-based F-Curves (Blender 5.0 variations)
-    if hasattr(action, "curves"):
-        add_unique(action.curves)
-    if hasattr(action, "channels"):
-        add_unique(action.channels)
-    
-    # 4. Action Slots (Blender 5.x)
-    if hasattr(action, "slots"):
-        for slot in action.slots:
-            if hasattr(slot, "fcurves"): add_unique(slot.fcurves)
-            if hasattr(slot, "channels"): add_unique(slot.channels)
-            if hasattr(slot, "curves"): add_unique(slot.curves)
+        # 3. Is it a collection?
+        if hasattr(item, "__iter__") and not isinstance(item, (str, bytes)):
+            for sub in item: collect(sub)
         
-    # 5. Bindings-based F-Curves
-    if hasattr(action, "bindings"):
-        for binding in action.bindings:
-            if hasattr(binding, 'fcurves'): add_unique(binding.fcurves)
-            if hasattr(binding, 'channels'): add_unique(binding.channels)
-                
+        # 4. Traverse sub-attributes
+        for attr in ("fcurves", "curves", "channels", "slots", "strips", "layers", "bindings"):
+            if hasattr(item, attr):
+                collect(getattr(item, attr))
+
+    # Force layer creation if requested
+    if hasattr(action, "layers") and len(action.layers) == 0 and create_if_missing:
+        action.layers.new(name="Layer")
+
+    collect(action)
     return curves
 
 def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
@@ -967,12 +948,20 @@ def animate_dialogue_v2(char_or_obj, frame_start, frame_end, intensity=1.0, spee
     # Helper for safe property setting
     def set_mouth_val(val):
         if "pose.bones" in data_path:
-            # Extract bone name from data_path: pose.bones["Name"].scale
-            bname = data_path.split('"')[1]
-            if bname in target_obj.pose.bones:
-                target_obj.pose.bones[bname].scale[2] = val
+            # Extract bone name safely from data_path: pose.bones["Name"].scale
+            try:
+                bname = data_path.split('"')[1]
+                if bname in target_obj.pose.bones:
+                    target_obj.pose.bones[bname].scale[2] = val
+            except (IndexError, AttributeError):
+                # Fallback if path is different or bones missing
+                if "Mouth" in target_obj.pose.bones:
+                    target_obj.pose.bones["Mouth"].scale[2] = val
         else:
-            target_obj.scale[2] = val
+            try:
+                target_obj.scale[2] = val
+            except AttributeError:
+                pass
 
     current_f = frame_start
     while current_f < frame_end:
@@ -1252,9 +1241,9 @@ def animate_reaction_shot(character_name, frame_start, frame_end):
                 animate_blink(eye_bone, frame_start, frame_end, interval_range=(40, 100))
         
         # Micro-nods via Torso bone — must call keyframe_insert on the ARMATURE object with full data_path
-        torso = arm.pose.bones.get("Torso")
+        torso = arm.pose.bones.get("Torso") or next((b for b in arm.pose.bones if "Torso" in b.name), None)
         if torso:
-            dp = 'pose.bones["Torso"].rotation_euler'
+            dp = f'pose.bones["{torso.name}"].rotation_euler'
             for f in range(frame_start, frame_end, 60):
                 torso.rotation_euler[0] = 0
                 arm.keyframe_insert(data_path=dp, index=0, frame=f)
