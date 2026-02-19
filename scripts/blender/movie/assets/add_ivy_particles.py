@@ -1,6 +1,6 @@
 import bpy
 
-def add_ivy_particles(target_name="Greenhouse_Main"):
+def add_ivy_particles(target_name="Greenhouse_Structure"):
     """
     Point 94: Deferred particle system setup.
     Adds ivy particles as a separate pass after the scene is built.
