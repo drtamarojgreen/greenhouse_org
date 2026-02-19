@@ -25,6 +25,11 @@ def setup_all_camera_logic(master):
     con.track_axis = 'TRACK_NEGATIVE_Z'
     con.up_axis = 'UP_Y'
 
+    # Point 92: Set focus object to target Empty (animatable focus via target location)
+    cam.data.dof.use_dof = True
+    cam.data.dof.focus_object = target
+    cam.data.dof.aperture_fstop = 2.8
+
     if master.mode == 'SILENT_FILM':
         style.insert_looping_noise(cam, "location", strength=0.02, scale=2.0, frame_start=1, frame_end=15000)
 
@@ -49,8 +54,8 @@ def setup_camera_keyframes(master, cam, target):
 
         if focus_obj:
             cam.data.dof.use_dof = True
-            cam.data.dof.focus_object = focus_obj
-            cam.data.dof.keyframe_insert(data_path="focus_object", frame=frame)
+            # Note: focus_object itself is not animatable.
+            # We use the target Empty as the global focus_object and animate its location.
 
         cam.keyframe_insert(data_path="location", frame=frame)
         target.keyframe_insert(data_path="location", frame=frame)
@@ -66,7 +71,7 @@ def setup_camera_keyframes(master, cam, target):
 
         if cam.data.animation_data and cam.data.animation_data.action:
             for fc in style.get_action_curves(cam.data.animation_data.action):
-                if fc.data_path in ["lens", "focus_object"]:
+                if fc.data_path in ["lens", "focus_distance"]:
                     kp = fc.keyframe_points[-1]
                     kp.interpolation = 'BEZIER'
                     kp.easing = easing
