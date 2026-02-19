@@ -42,6 +42,7 @@ def create_gnome(name, location, scale=0.6):
     head = armature_data.edit_bones.new("Head"); head.head, head.tail, head.parent = (0,0,0.8), (0,0,1.2), torso
     arm_l = armature_data.edit_bones.new("Arm.L"); arm_l.head, arm_l.tail, arm_l.parent = (0.3,0,0.6), (0.6,0,0.3), torso
     arm_r = armature_data.edit_bones.new("Arm.R"); arm_r.head, arm_r.tail, arm_r.parent = (-0.3,0,0.6), (-0.6,0,0.3), torso
+    mouth = armature_data.edit_bones.new("Mouth"); mouth.head, mouth.tail, mouth.parent = (0,-0.25,0.6), (0,-0.3,0.6), head
 
     bpy.ops.object.mode_set(mode='OBJECT')
     for pb in armature_obj.pose.bones: pb.rotation_mode = 'XYZ'
@@ -50,7 +51,7 @@ def create_gnome(name, location, scale=0.6):
     mesh_obj = bpy.data.objects.new(f"{name}_Torso", mesh_data); bpy.context.scene.collection.objects.link(mesh_obj); mesh_obj.parent = armature_obj
 
     bm = bmesh.new(); dlayer = bm.verts.layers.deform.verify()
-    vg_torso, vg_head, vg_arm_l = [mesh_obj.vertex_groups.new(name=n).index for n in ["Torso", "Head", "Arm.L"]]
+    vg_torso, vg_head, vg_arm_l, vg_mouth = [mesh_obj.vertex_groups.new(name=n).index for n in ["Torso", "Head", "Arm.L", "Mouth"]]
 
     # Body
     ret = bmesh.ops.create_cone(bm, segments=12, cap_ends=True, radius1=0.3, radius2=0.3, depth=0.8, matrix=mathutils.Matrix.Translation((0,0,0.4)))
@@ -77,7 +78,7 @@ def create_gnome(name, location, scale=0.6):
     # Mouth
     ret = bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation((0, -0.28, 0.6)))
     for v in ret['verts']: 
-        v.co.x, v.co.y, v.co.z = v.co.x * 1.5, v.co.y * 0.1, v.co.z * 0.2; v[dlayer][vg_head] = 1.0
+        v.co.x, v.co.y, v.co.z = v.co.x * 1.5, v.co.y * 0.1, v.co.z * 0.2; v[dlayer][vg_mouth] = 1.0
     for f in {f for v in ret['verts'] for f in v.link_faces}: f.material_index = 4
 
     # Staff

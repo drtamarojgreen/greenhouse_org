@@ -10,7 +10,8 @@ def animate_characters(master_instance):
     gnome = master_instance.gnome
 
     # --- Persistent acting ---
-    for char in [h1, h2, gnome]:
+    persistent_chars = [h1, h2, gnome, master_instance.brain, master_instance.neuron]
+    for char in persistent_chars:
         if not char: continue
         # Enhancement #11: Weight Shift on Torso bone if available
         torso = char.pose.bones.get("Torso") if char.type == 'ARMATURE' else None
