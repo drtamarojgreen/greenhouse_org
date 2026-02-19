@@ -39,13 +39,25 @@ __all__ = [
 ]
 
 def get_action_curves(action, create_if_missing=False):
-    """Point 91: Robust action curve access for Blender 5.0 (Legacy + Layered + Slots)."""
+    """Point 91: Robust action curve access for Blender 5.0 (Legacy + Layered + Slots + Bindings)."""
     if action is None: return []
     
     curves = []
+    seen_ids = set()
+
+    def add_unique(items):
+        for item in items:
+            # In some 5.0 builds, items might be Channels that wrap FCurves
+            fc = item
+            if hasattr(item, "fcurve"): fc = item.fcurve
+
+            if fc and id(fc) not in seen_ids:
+                curves.append(fc)
+                seen_ids.add(id(fc))
+
     # 1. Legacy F-Curves (Directly on Action)
     if hasattr(action, "fcurves"):
-        curves.extend(action.fcurves)
+        add_unique(action.fcurves)
 
     # 2. Layered F-Curves (Blender 5.0+)
     if hasattr(action, "layers"):
@@ -54,31 +66,31 @@ def get_action_curves(action, create_if_missing=False):
             action.layers.new(name="Layer")
         
         for layer in action.layers:
-            # Check main layer curves if applicable
-            if hasattr(layer, 'fcurves'):
-                curves.extend(layer.fcurves)
+            if hasattr(layer, 'fcurves'): add_unique(layer.fcurves)
+            if hasattr(layer, 'channels'): add_unique(layer.channels)
             if hasattr(layer, 'strips'):
                 for strip in layer.strips:
-                    if hasattr(strip, 'fcurves'):
-                        curves.extend(strip.fcurves)
+                    if hasattr(strip, 'fcurves'): add_unique(strip.fcurves)
+                    if hasattr(strip, 'channels'): add_unique(strip.channels)
 
     # 3. Slot-based/Channel-based F-Curves (Blender 5.0 variations)
     if hasattr(action, "curves"):
-        curves.extend(action.curves)
+        add_unique(action.curves)
+    if hasattr(action, "channels"):
+        add_unique(action.channels)
     
     # 4. Action Slots (Blender 5.x)
     if hasattr(action, "slots"):
         for slot in action.slots:
-            if hasattr(slot, "fcurves"):
-                curves.extend(slot.fcurves)
-            if hasattr(slot, "curves"): # Some beta builds
-                curves.extend(slot.curves)
+            if hasattr(slot, "fcurves"): add_unique(slot.fcurves)
+            if hasattr(slot, "channels"): add_unique(slot.channels)
+            if hasattr(slot, "curves"): add_unique(slot.curves)
         
     # 5. Bindings-based F-Curves
     if hasattr(action, "bindings"):
         for binding in action.bindings:
-            if hasattr(binding, 'fcurves'):
-                curves.extend(binding.fcurves)
+            if hasattr(binding, 'fcurves'): add_unique(binding.fcurves)
+            if hasattr(binding, 'channels'): add_unique(binding.channels)
                 
     return curves
 
@@ -931,9 +943,17 @@ def animate_dialogue_v2(char_or_obj, frame_start, frame_end, intensity=1.0, spee
     if isinstance(char_or_obj, str):
         arm = bpy.data.objects.get(char_or_obj)
         if arm and arm.type == 'ARMATURE':
-            target_obj = arm
-            data_path = 'pose.bones["Mouth"].scale'
-        else:
+            if "Mouth" in arm.pose.bones:
+                target_obj = arm
+                data_path = 'pose.bones["Mouth"].scale'
+            else:
+                # Rig might be different, try to find bone with Mouth in name
+                mouth_bone = next((b for b in arm.pose.bones if "Mouth" in b.name), None)
+                if mouth_bone:
+                    target_obj = arm
+                    data_path = f'pose.bones["{mouth_bone.name}"].scale'
+
+        if not target_obj:
             # Fallback to mesh object
             target_obj = bpy.data.objects.get(f"{char_or_obj}_Mouth")
     else:
@@ -944,15 +964,21 @@ def animate_dialogue_v2(char_or_obj, frame_start, frame_end, intensity=1.0, spee
 
     if not target_obj: return
 
+    # Helper for safe property setting
+    def set_mouth_val(val):
+        if "pose.bones" in data_path:
+            # Extract bone name from data_path: pose.bones["Name"].scale
+            bname = data_path.split('"')[1]
+            if bname in target_obj.pose.bones:
+                target_obj.pose.bones[bname].scale[2] = val
+        else:
+            target_obj.scale[2] = val
+
     current_f = frame_start
     while current_f < frame_end:
         # Enhancement #16: Breathing Pause Mid-Dialogue
         if random.random() > 0.9: # ~10% chance of a pause
-            set_val = 0.4
-            if "pose.bones" in data_path:
-                target_obj.pose.bones["Mouth"].scale[2] = set_val
-            else:
-                target_obj.scale[2] = set_val
+            set_mouth_val(0.4)
             target_obj.keyframe_insert(data_path=data_path, index=2, frame=current_f)
             current_f += 12 # 12 frame hold
             continue
@@ -962,27 +988,17 @@ def animate_dialogue_v2(char_or_obj, frame_start, frame_end, intensity=1.0, spee
         open_amount = random.uniform(0.5, 1.5) * intensity
 
         # Neutral
-        set_val = 0.4
-        if "pose.bones" in data_path:
-            target_obj.pose.bones["Mouth"].scale[2] = set_val
-        else:
-            target_obj.scale[2] = set_val
+        set_mouth_val(0.4)
         target_obj.keyframe_insert(data_path=data_path, index=2, frame=current_f)
 
         mid_f = current_f + cycle_len / 2
         if mid_f < frame_end:
-            if "pose.bones" in data_path:
-                target_obj.pose.bones["Mouth"].scale[2] = open_amount
-            else:
-                target_obj.scale[2] = open_amount
+            set_mouth_val(open_amount)
             target_obj.keyframe_insert(data_path=data_path, index=2, frame=mid_f)
 
         current_f += cycle_len
 
-    if "pose.bones" in data_path:
-        target_obj.pose.bones["Mouth"].scale[2] = 0.4
-    else:
-        target_obj.scale[2] = 0.4
+    set_mouth_val(0.4)
     target_obj.keyframe_insert(data_path=data_path, index=2, frame=frame_end)
 
 def animate_expression_blend(character_name, frame, expression='NEUTRAL', duration=12):
@@ -1238,13 +1254,14 @@ def animate_reaction_shot(character_name, frame_start, frame_end):
         # Micro-nods via Torso bone — must call keyframe_insert on the ARMATURE object with full data_path
         torso = arm.pose.bones.get("Torso")
         if torso:
+            dp = 'pose.bones["Torso"].rotation_euler'
             for f in range(frame_start, frame_end, 60):
                 torso.rotation_euler[0] = 0
-                arm.keyframe_insert(data_path='pose.bones["Torso"].rotation_euler', index=0, frame=f)
+                arm.keyframe_insert(data_path=dp, index=0, frame=f)
                 torso.rotation_euler[0] = math.radians(random.uniform(1, 3))
-                arm.keyframe_insert(data_path='pose.bones["Torso"].rotation_euler', index=0, frame=f + 30)
+                arm.keyframe_insert(data_path=dp, index=0, frame=f + 30)
                 torso.rotation_euler[0] = 0
-                arm.keyframe_insert(data_path='pose.bones["Torso"].rotation_euler', index=0, frame=f + 60)
+                arm.keyframe_insert(data_path=dp, index=0, frame=f + 60)
         return
 
     # 2. Legacy/Mesh Version
