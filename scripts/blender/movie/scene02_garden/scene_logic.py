@@ -30,7 +30,9 @@ def setup_scene(master):
 
     # Visibility and Transitions
     for b in bushes:
-        for obj in b.objects:
+        # BMesh bushes are single objects
+        objs_to_animate = [b]
+        for obj in objs_to_animate:
             obj.hide_render = True
             obj.keyframe_insert(data_path="hide_render", frame=500)
             obj.hide_render = False
@@ -38,8 +40,8 @@ def setup_scene(master):
             obj.hide_render = True
             obj.keyframe_insert(data_path="hide_render", frame=651)
 
-        style.apply_fade_transition(b.objects, 501, 650, mode='IN', duration=12)
-        style.animate_foliage_wind(b.objects, strength=0.03, frame_start=501, frame_end=650)
+        style.apply_fade_transition(objs_to_animate, 501, 650, mode='IN', duration=12)
+        style.animate_foliage_wind(objs_to_animate, strength=0.03, frame_start=501, frame_end=650)
 
     # Atmospheric Fauna (Butterflies) - BMesh
     import bmesh

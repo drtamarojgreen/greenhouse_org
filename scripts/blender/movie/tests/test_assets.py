@@ -15,7 +15,7 @@ class TestAssets(BlenderTestCase):
     def test_01_assets_exist(self):
         """Check if all major characters and structures are in the scene."""
         # Updated for Single Mesh System
-        required_objs = ["Herbaceous_Mesh", "Arbor_Mesh", "GloomGnome_Torso", "Exterior_Garden_Main", "Greenhouse_Main", "CamTarget"]
+        required_objs = ["Herbaceous_Mesh", "Arbor_Mesh", "GloomGnome_Mesh", "Exterior_Garden_Main", "Greenhouse_Main", "CamTarget"]
         for obj_name in required_objs:
             with self.subTest(obj=obj_name):
                 exists = obj_name in bpy.data.objects
@@ -48,14 +48,14 @@ class TestAssets(BlenderTestCase):
                 self.assertTrue(is_valid)
         
         # Gnome might still be multi-part or partially merged? 
-        # Checking Gnome Torso as base
-        gnome = bpy.data.objects.get("GloomGnome_Torso")
-        self.assertTrue(gnome, "GloomGnome_Torso missing")
+        # Checking Gnome Mesh as base
+        gnome = bpy.data.objects.get("GloomGnome_Mesh")
+        self.assertTrue(gnome, "GloomGnome_Mesh missing")
 
     def test_03_visibility_check(self):
         """Check if major assets are ever visible during the render range."""
         # Updated for Single Mesh System
-        required_objs = ["Herbaceous_Mesh", "Arbor_Mesh", "GloomGnome_Torso", "BrainGroup", "NeuronGroup"]
+        required_objs = ["Herbaceous_Mesh", "Arbor_Mesh", "GloomGnome_Mesh", "BrainGroup", "NeuronGroup"]
         
         for obj_name in required_objs:
             obj = bpy.data.objects.get(obj_name)

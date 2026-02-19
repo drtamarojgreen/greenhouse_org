@@ -897,7 +897,8 @@ def animate_expression_blend(character_name, frame, expression='NEUTRAL', durati
     # Since plant_humanoid handles the actual keyframing of parts, we wrap it
     # and ensure multiple frames are keyed for a smooth transition if duration > 0.
     # For now, we'll implement a simple version that uses plant_humanoid's logic.
-    torso = bpy.data.objects.get(f"{character_name}_Torso")
+    torso = bpy.data.objects.get(f"{character_name}_Mesh") or \
+            bpy.data.objects.get(f"{character_name}_Torso")
     if not torso: return
 
     if duration > 0:
@@ -1091,8 +1092,10 @@ def animate_defensive_crouch(obj, frame_start, frame_end):
 def animate_reaction_shot(character_name, frame_start, frame_end):
     """Point 39: Adds listener micro-movements with robust character resolution."""
     char_name = character_name.split('_')[0]
-    # Fallback to torso if head doesn't exist (e.g. for merged static characters)
-    head = bpy.data.objects.get(f"{char_name}_Head") or bpy.data.objects.get(f"{char_name}_Torso")
+    # Fallback to torso/mesh if head doesn't exist (e.g. for merged static characters)
+    head = bpy.data.objects.get(f"{char_name}_Mesh") or \
+           bpy.data.objects.get(f"{char_name}_Head") or \
+           bpy.data.objects.get(f"{char_name}_Torso")
     if not head: return
 
     # Blinks
@@ -1101,7 +1104,8 @@ def animate_reaction_shot(character_name, frame_start, frame_end):
             animate_blink(child, frame_start, frame_end, interval_range=(40, 100))
 
     # Subtle nods (X-axis rotation)
-    torso = bpy.data.objects.get(f"{char_name}_Torso")
+    torso = bpy.data.objects.get(f"{char_name}_Mesh") or \
+            bpy.data.objects.get(f"{char_name}_Torso")
     if torso:
         for f in range(frame_start, frame_end, 60):
             torso.rotation_euler[0] = 0

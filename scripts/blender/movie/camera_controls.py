@@ -180,9 +180,9 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(5000, (0, -15, 4), (-2, 0, 1.5), easing='EASE_OUT')    # medium shot
 
     # Dialogue closeups (9501 - 13000)
-    h1_obj = bpy.data.objects.get("Herbaceous_Torso")
-    h2_obj = bpy.data.objects.get("Arbor_Torso")
-    gnome_obj = bpy.data.objects.get("GloomGnome_Torso")
+    h1_obj = bpy.data.objects.get("Herbaceous_Mesh")
+    h2_obj = bpy.data.objects.get("Arbor_Mesh")
+    gnome_obj = bpy.data.objects.get("GloomGnome_Mesh")
 
     # Scene 16 (9501-10200): Herbaceous speaks first, then Arbor
     kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5))        # wide

@@ -7,13 +7,16 @@ def create_greenhouse_iron_mat():
     mat = bpy.data.materials.get("GH_Iron")
     if mat: return mat
     mat = bpy.data.materials.new(name="GH_Iron")
-    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
+
     bsdf.inputs["Base Color"].default_value = (0.106, 0.302, 0.118, 1) # Greenhouse Brand Green
     bsdf.inputs["Metallic"].default_value = 1.0
     bsdf.inputs["Roughness"].default_value = 0.7
 
     # Mossy Iron (Noise overlay mixed with base color)
-    node_moss = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
+    node_moss = nodes.new(type='ShaderNodeTexNoise')
     node_moss.inputs['Scale'].default_value = 20.0
     node_mix = style.create_mix_node(mat.node_tree, blend_type='OVERLAY', data_type='RGBA')
     fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix)
@@ -28,37 +31,37 @@ def create_greenhouse_glass_mat():
     mat = bpy.data.materials.get("GH_Glass")
     if mat: return mat
     mat = bpy.data.materials.new(name="GH_Glass")
-    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
+
     bsdf.inputs["Base Color"].default_value = (0.7, 0.8, 0.9, 1)
-    # Point 74: Use Transmission for Cycles, Alpha 1.0 to avoid conflicts
     bsdf.inputs["Alpha"].default_value = 1.0
 
-    # Transmission (Guarded for Blender 5.0 naming drift)
     style.set_principled_socket(bsdf, 'Transmission', 1.0)
-
     bsdf.inputs["Roughness"].default_value = 0.05
 
-    # Scratched Glass (Noise replacing Musgrave in Blender 5.0)
-    node_scratches = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
+    # Scratched Glass
+    node_scratches = nodes.new(type='ShaderNodeTexNoise')
     node_scratches.inputs['Scale'].default_value = 50.0
-    mat.node_tree.links.new(node_scratches.outputs['Fac'], bsdf.inputs['Roughness'])
 
-    # Enhancement #35: Greenhouse Fogged Glass Effect (Condensation)
-    node_fog = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
+    # Fogged Glass
+    node_fog = nodes.new(type='ShaderNodeTexNoise')
     node_fog.inputs['Scale'].default_value = 100.0
-    node_ramp = mat.node_tree.nodes.new(type='ShaderNodeValToRGB')
+    node_ramp = nodes.new(type='ShaderNodeValToRGB')
     node_ramp.color_ramp.elements[0].position = 0.4
     node_ramp.color_ramp.elements[1].position = 0.6
 
     mat.node_tree.links.new(node_fog.outputs['Fac'], node_ramp.inputs['Fac'])
-    # Mix fog into Roughness
-    mix_rough = mat.node_tree.nodes.new(type='ShaderNodeMath')
+
+    # Mix into Roughness
+    mix_rough = nodes.new(type='ShaderNodeMath')
     mix_rough.operation = 'ADD'
     mat.node_tree.links.new(node_scratches.outputs['Fac'], mix_rough.inputs[0])
     mat.node_tree.links.new(node_ramp.outputs['Color'], mix_rough.inputs[1])
     mat.node_tree.links.new(mix_rough.outputs[0], bsdf.inputs['Roughness'])
 
-    style.set_blend_method(mat, 'BLEND')
+    style.set_blend_method(mat, 'BLENDED')
     return mat
 
 def create_mossy_stone_mat(name="MossyStone"):
@@ -66,20 +69,21 @@ def create_mossy_stone_mat(name="MossyStone"):
     mat = bpy.data.materials.get(name)
     if mat: return mat
     mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
 
-    bsdf = nodes.get("Principled BSDF")
+    bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
     bsdf.inputs["Base Color"].default_value = (0.3, 0.3, 0.3, 1) # Stone gray
 
     # Moss layer
     node_moss = nodes.new(type='ShaderNodeTexNoise')
     node_moss.inputs['Scale'].default_value = 50.0
 
-    node_mix = nodes.new(type='ShaderNodeMixRGB')
-    node_mix.blend_type = 'MIX'
-    node_mix.inputs[2].default_value = (0.05, 0.1, 0.02, 1) # Moss green
+    node_mix = style.create_mix_node(mat.node_tree, blend_type='MIX', data_type='RGBA')
+    fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix)
+    in2_sock.default_value = (0.05, 0.1, 0.02, 1) # Moss green
 
-    # Height-based gradient for moss (#38)
+    # Height-based gradient for moss
     node_coord = nodes.new(type='ShaderNodeTexCoord')
     node_sep = nodes.new(type='ShaderNodeSeparateXYZ')
     links.new(node_coord.outputs['Object'], node_sep.inputs['Vector'])
@@ -95,8 +99,8 @@ def create_mossy_stone_mat(name="MossyStone"):
     links.new(node_ramp.outputs['Color'], node_math.inputs[0])
     links.new(node_moss.outputs['Fac'], node_math.inputs[1])
 
-    links.new(node_math.outputs[0], node_mix.inputs[0])
-    links.new(node_mix.outputs[0], bsdf.inputs['Base Color'])
+    links.new(node_math.outputs[0], fac_sock)
+    links.new(style.get_mix_output(node_mix), bsdf.inputs['Base Color'])
 
     return mat
 
@@ -119,9 +123,9 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
 
     def add_beam(loc, scale, rot=(0,0,0)):
         matrix = mathutils.Matrix.Translation(loc) @ mathutils.Euler(rot).to_matrix().to_4x4()
-        bmesh.ops.create_cube(bm_iron, size=2.0, matrix=matrix)
+        ret = bmesh.ops.create_cube(bm_iron, size=2.0, matrix=matrix)
         # Apply scaling to the last created vertices
-        for v in bm_iron.verts[-8:]:
+        for v in ret['verts']:
             v.co.x *= scale[0]
             v.co.y *= scale[1]
             v.co.z *= scale[2]
