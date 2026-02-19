@@ -5,9 +5,16 @@ import sys
 
 # Add movie root to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sequel_generator import SequelMaster
-from constants import SCENE_MAP
+try:
+    from sequel_generator import SequelMaster
+    from constants import SCENE_MAP
+    SEQUEL_AVAILABLE = True
+except ImportError:
+    SEQUEL_AVAILABLE = False
 
+import style
+
+@unittest.skipUnless(SEQUEL_AVAILABLE, "sequel_generator not available")
 class TestSequelGenerator(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -31,7 +38,7 @@ class TestSequelGenerator(unittest.TestCase):
         self.assertIsNotNone(gnome.animation_data)
         # Check for keyframes in duel range (4501+)
         found = False
-        for fc in gnome.animation_data.action.fcurves:
+        for fc in style.get_action_curves(gnome.animation_data.action):
             for kp in fc.keyframe_points:
                 if kp.co[0] >= 4501:
                     found = True

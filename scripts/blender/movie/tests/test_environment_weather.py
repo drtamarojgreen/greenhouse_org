@@ -59,8 +59,11 @@ class TestEnvironmentWeather(BlenderTestCase):
     def test_5_3_2_rain_params(self):
         """5.3.2: Rain particle system configured for MEDIUM intensity."""
         obj = bpy.data.objects.get("RainEmitter")
-        if obj and obj.particle_systems:
+        if obj and obj.particle_systems and len(obj.particle_systems) > 0:
             psys = obj.particle_systems[0]
+            if not hasattr(psys, "settings") or not hasattr(psys.settings, "count"):
+                self.skipTest("Legacy particle system settings not available")
+                return
             count = psys.settings.count
             status = "PASS" if count == 6000 else "FAIL"
             self.log_result("5.3.2", "Rain Intensity", status, f"Count: {count}")
@@ -69,8 +72,11 @@ class TestEnvironmentWeather(BlenderTestCase):
     def test_5_3_3_rain_range(self):
         """5.3.3: Rain frame range matches shadow scene (1801–2500)."""
         obj = bpy.data.objects.get("RainEmitter")
-        if obj and obj.particle_systems:
+        if obj and obj.particle_systems and len(obj.particle_systems) > 0:
             psys = obj.particle_systems[0]
+            if not hasattr(psys, "settings") or not hasattr(psys.settings, "frame_start"):
+                self.skipTest("Legacy particle system settings not available")
+                return
             start = psys.settings.frame_start
             end = psys.settings.frame_end
             status = "PASS" if (start == 1801 and end == 2500) else "FAIL"

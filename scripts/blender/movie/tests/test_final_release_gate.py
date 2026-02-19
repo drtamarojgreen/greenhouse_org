@@ -39,13 +39,15 @@ class TestReleaseGate(unittest.TestCase):
 
             for f in check_frames:
                 self.master.scene.frame_set(f)
-                bpy.context.view_layer.update() # Needed to evaluate hide_render keyframes
+                # For Blender 5.0+, evaluated_depsgraph_get is more reliable
+                dg = bpy.context.evaluated_depsgraph_get()
 
                 # During these dialogue scenes, Herbaceous and Arbor must be visible
                 for char in ["Herbaceous", "Arbor"]:
                     obj = bpy.data.objects.get(f"{char}_Torso")
                     if obj:
-                        self.assertFalse(obj.hide_render, f"R96 FAIL: {char} hidden during {s_name} at frame {f}")
+                        obj_eval = obj.evaluated_get(dg)
+                        self.assertFalse(obj_eval.hide_render, f"R96 FAIL: {char} hidden during {s_name} at frame {f}")
 
     def test_97_credits_trigger(self):
         """R97: Credits content start trigger only after retreat completion."""

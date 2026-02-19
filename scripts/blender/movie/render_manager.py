@@ -19,14 +19,16 @@ def render_scene_batch(master, scene_names, output_dir="renders"):
     for name in scene_names:
         if name in SCENE_MAP:
             start, end = SCENE_MAP[name]
-            print(f"Queueing render for scene: {name} (Frames {start}-{end})")
+            # Point 86: Added chunking logic for parallel render support
+            chunk_size = 500
+            for frame_start in range(start, end + 1, chunk_size):
+                frame_end = min(frame_start + chunk_size - 1, end)
+                print(f"Queueing chunk for scene: {name} (Frames {frame_start}-{frame_end})")
 
-            master.scene.frame_start = start
-            master.scene.frame_end = end
-            master.scene.render.filepath = os.path.join(output_dir, f"{name}_")
-
-            # Use bpy.ops.render.render to render the animation for this range
-            bpy.ops.render.render(animation=True)
+                master.scene.frame_start = frame_start
+                master.scene.frame_end = frame_end
+                master.scene.render.filepath = os.path.join(output_dir, f"{name}_{frame_start}_")
+                bpy.ops.render.render(animation=True)
 
 def main():
     # This can be called from command line:

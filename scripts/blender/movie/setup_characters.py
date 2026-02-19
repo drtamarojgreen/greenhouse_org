@@ -19,18 +19,33 @@ def setup_character_practical_lights(master):
     """Enhancement #25, #28: Rim and Practical lights parented to characters."""
     # Gloom Gnome practical orb light (#28)
     if master.gnome:
-        staff = bpy.data.objects.get("GloomGnome_Staff")
-        if staff:
-            bpy.ops.object.light_add(type='POINT', location=(0, 0, 1.2))
+        # Check for Armature (new) or legacy Staff object
+        if master.gnome.type == 'ARMATURE':
+            bpy.ops.object.light_add(type='POINT', location=(0.6, 0, 1.8))
             orb_light = bpy.context.object
             orb_light.name = "GloomOrbLight"
             orb_light.data.energy = 500
             orb_light.data.color = (0.5, 0, 1.0) # Purple
-            orb_light.parent = staff
+            orb_light.parent = master.gnome
+            orb_light.parent_type = 'BONE'
+            orb_light.parent_bone = "Arm.L"
             style.animate_light_flicker("GloomOrbLight", 1, 15000, strength=0.3)
+        else:
+            staff = bpy.data.objects.get("GloomGnome_Staff")
+            if staff:
+                bpy.ops.object.light_add(type='POINT', location=(0, 0, 1.2))
+                orb_light = bpy.context.object
+                orb_light.name = "GloomOrbLight"
+                orb_light.data.energy = 500
+                orb_light.data.color = (0.5, 0, 1.0) # Purple
+                orb_light.parent = staff
+                style.animate_light_flicker("GloomOrbLight", 1, 15000, strength=0.3)
 
     # Character tinted rim lights (#25)
-    chars = [('Herbaceous', (0.7, 1.0, 0.7), master.h1), ('Arbor', (0.7, 0.7, 1.0), master.h2)]
+    # Include Gnome in rim lights
+    chars = [('Herbaceous', (0.7, 1.0, 0.7), master.h1), 
+             ('Arbor', (0.7, 0.7, 1.0), master.h2),
+             ('GloomGnome', (0.6, 0.4, 1.0), master.gnome)]
     for name, color, char_obj in chars:
         if char_obj and char_obj.type == 'ARMATURE':
             bpy.ops.object.light_add(type='SPOT', location=(0, -2, 2))
@@ -64,9 +79,17 @@ def setup_character_practical_lights(master):
 
 def setup_gaze_system(master):
     """Sets up the procedural eye tracking."""
-    # Simple gaze setup: characters look at each other
-    if master.h1 and master.h2:
-        for char, target in [(master.h1, master.h2), (master.h2, master.h1)]:
+    # Target
+    gaze = bpy.data.objects.get("GazeTarget")
+    if not gaze:
+        gaze = bpy.data.objects.new("GazeTarget", None)
+        bpy.context.scene.collection.objects.link(gaze)
+    master.gaze_target = gaze
+
+    # Simple gaze setup: characters look at the shared GazeTarget to avoid dependency cycles
+    if master.gaze_target:
+        for char in [master.h1, master.h2, master.gnome]:
+            if not char: continue
             # support both Armature (new) and Mesh (old/gnome)
             if char.type == 'ARMATURE':
                 # Add constraint to HEAD BONE
@@ -77,14 +100,7 @@ def setup_gaze_system(master):
                         if c.type == 'TRACK_TO': head_bone.constraints.remove(c)
                         
                     con = head_bone.constraints.new(type='TRACK_TO')
-                    con.target = target
-                    if target.type == 'ARMATURE':
-                        con.subtarget = "Head"
-                    con.track_axis = 'TRACK_NEGATIVE_Y' # Bone Y is usually length, depends on rigging. 
-                    # Standard Rigify/Blender bones: Y axis runs along bone. Head usually points up (Y) or forward (-Y) depending on rest pose. 
-                    # In our custom rig: Head bone moves from Torso_Top -> Up. So Y is UP.
-                    # We want the Face (typically -Y or +Y in local bone space?) to look at target.
-                    # Actually, let's assume standard Front = -Y for now, check later.
+                    con.target = master.gaze_target
                     con.track_axis = 'TRACK_NEGATIVE_Y' 
                     con.up_axis = 'UP_Z'
                     con.influence = 0.5
@@ -93,7 +109,7 @@ def setup_gaze_system(master):
                 head = bpy.data.objects.get(f"{char.name.split('_')[0]}_Head")
                 if head:
                     con = head.constraints.new(type='TRACK_TO')
-                    con.target = target
+                    con.target = master.gaze_target
                     con.track_axis = 'TRACK_NEGATIVE_Z'
                     con.up_axis = 'UP_Y'
                     con.influence = 0.6

@@ -13,9 +13,11 @@ def animate_characters(master_instance):
     for char in [h1, h2, gnome]:
         if not char: continue
         # Enhancement #11: Weight Shift
-        style.animate_weight_shift(char, 1, 15000)
+        torso = char.pose.bones.get("Torso") if char.type == 'ARMATURE' else None
+        target = torso if torso else char
+        style.animate_weight_shift(target, 1, 15000)
         # Enhancement #24: Breathing
-        style.animate_breathing(char, 1, 15000)
+        style.animate_breathing(target, 1, 15000)
 
     # --- Scene specific acting ---
 
@@ -38,11 +40,18 @@ def animate_characters(master_instance):
             style.animate_reaction_shot(listener, start, end)
 
             # #87 Saccadic eye movement for speaker
-            head = bpy.data.objects.get(f"{char_name}_Head") or bpy.data.objects.get(f"{char_name}_Torso")
-            if head:
-                for child in head.children:
-                    if "Eye" in child.name:
-                        style.animate_saccadic_movement(child, None, start, end)
+            char_obj = bpy.data.objects.get(char_name)
+            if char_obj and char_obj.type == 'ARMATURE':
+                for bone_name in ["Eye.L", "Eye.R"]:
+                    bone = char_obj.pose.bones.get(bone_name)
+                    if bone:
+                        style.animate_saccadic_movement(bone, None, start, end)
+            else:
+                head = bpy.data.objects.get(f"{char_name}_Head") or bpy.data.objects.get(f"{char_name}_Torso")
+                if head:
+                    for child in head.children:
+                        if "Eye" in child.name:
+                            style.animate_saccadic_movement(child, None, start, end)
 
     # Enhancement #14: Limping Gait for Gnome
     if gnome:
@@ -59,6 +68,18 @@ def animate_characters(master_instance):
         if 'scene16_dialogue' in SCENE_MAP:
             start, end = SCENE_MAP['scene16_dialogue']
             # Find left arm
-            arm = bpy.data.objects.get("Herbaceous_Arm_L")
+            if h1.type == 'ARMATURE':
+                arm = h1.pose.bones.get("Arm.L")
+            else:
+                arm = bpy.data.objects.get("Herbaceous_Arm_L")
+                
             if arm:
                 style.animate_thinking_gesture(arm, start + 50)
+
+    # Enhancement: Walking for movement segments
+    from assets import plant_humanoid
+    for s_name in ['scene02_garden', 'scene15_interaction', 'scene22_retreat']:
+        if s_name in SCENE_MAP:
+            start, end = SCENE_MAP[s_name]
+            for char in [h1, h2, gnome]:
+                if char: plant_humanoid.animate_walk(char, start, end)

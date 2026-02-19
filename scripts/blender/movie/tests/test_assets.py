@@ -15,47 +15,51 @@ class TestAssets(BlenderTestCase):
     def test_01_assets_exist(self):
         """Check if all major characters and structures are in the scene."""
         # Updated for Single Mesh System
-        required_objs = ["Herbaceous_Mesh", "Arbor_Mesh", "GloomGnome_Torso", "Exterior_Garden_Main", "Greenhouse_Main", "CamTarget"]
-        for obj_name in required_objs:
+        objs = {
+            "Herbaceous_Torso": "Herbaceous",
+            "Arbor_Torso": "Arbor",
+            "GloomGnome_Mesh": "GloomGnome",
+            "Exterior_Garden_Main": None,
+            "Greenhouse_Main": None,
+            "CamTarget": None,
+            "GazeTarget": None
+        }
+        for obj_name in objs:
             with self.subTest(obj=obj_name):
                 exists = obj_name in bpy.data.objects
                 status = "PASS" if exists else "FAIL"
-                self.log_result(f"Asset: {obj_name}", status, "Found" if exists else "MISSING")
+                details = "Found" if exists else "NOT FOUND"
+                self.log_result(f"Asset: {obj_name}", status, details)
                 self.assertTrue(exists)
 
     def test_02_detailed_hierarchy(self):
         """Verify existence of character Armatures and Meshes."""
-        chars = ["Herbaceous", "Arbor"]
-        for char_name in chars:
-            # Check Armature
-            arm_name = f"{char_name}" # Armature is named after the character
-            with self.subTest(part=arm_name):
-                obj = bpy.data.objects.get(arm_name)
-                is_valid = obj and obj.type == 'ARMATURE'
-                status = "PASS" if is_valid else "FAIL"
-                self.log_result(f"Armature: {arm_name}", status, "Found" if is_valid else "MISSING")
-                self.assertTrue(is_valid)
+        parts = {
+            "Herbaceous": "ARMATURE",
+            "Herbaceous_Torso": "MESH",
+            "Arbor": "ARMATURE",
+            "Arbor_Torso": "MESH"
+        }
+        for name, otype in parts.items():
+            with self.subTest(part=name):
+                obj = bpy.data.objects.get(name)
+                is_valid = obj and obj.type == otype
+                
+                # For meshes, check parenting
+                if is_valid and otype == "MESH" and "_" in name:
+                    parent_name = name.split("_")[0]
+                    is_valid = obj.parent and obj.parent.name == parent_name
 
-            # Check Mesh Parenting
-            mesh_name = f"{char_name}_Mesh"
-            with self.subTest(part=mesh_name):
-                obj = bpy.data.objects.get(mesh_name)
-                is_valid = False
-                if obj and obj.parent and obj.parent.name == arm_name:
-                    is_valid = True
                 status = "PASS" if is_valid else "FAIL"
-                self.log_result(f"Mesh: {mesh_name}", status, "Parented to Armature" if is_valid else "MISSING or Unparented")
+                details = f"Found and correct type" if is_valid else "MISSING or Unparented"
+                if otype == "MESH" and is_valid: details = "Parented to Armature"
+                self.log_result(f"{otype.capitalize()}: {name}", status, details)
                 self.assertTrue(is_valid)
         
-        # Gnome might still be multi-part or partially merged? 
-        # Checking Gnome Torso as base
-        gnome = bpy.data.objects.get("GloomGnome_Torso")
-        self.assertTrue(gnome, "GloomGnome_Torso missing")
-
     def test_03_visibility_check(self):
         """Check if major assets are ever visible during the render range."""
         # Updated for Single Mesh System
-        required_objs = ["Herbaceous_Mesh", "Arbor_Mesh", "GloomGnome_Torso", "BrainGroup", "NeuronGroup"]
+        required_objs = ["Herbaceous_Torso", "Arbor_Torso", "GloomGnome_Mesh", "BrainGroup", "NeuronGroup"]
         
         for obj_name in required_objs:
             obj = bpy.data.objects.get(obj_name)

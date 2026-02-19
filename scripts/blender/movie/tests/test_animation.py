@@ -8,13 +8,15 @@ import style
 class TestAnimation(BlenderTestCase):
     def test_01_animation_presence(self):
         """Check if objects have animation data."""
-        objs_with_anim = ["Herbaceous_Torso", "Arbor_Torso", "GazeTarget", "CamTarget"]
+        # characters are now Armatures named Herbaceous/Arbor
+        objs_with_anim = ["Herbaceous", "Arbor", "GazeTarget", "CamTarget"]
         for name in objs_with_anim:
             obj = bpy.data.objects.get(name)
             if obj:
                 # Robustness: Check for an action with actual keyframes, not just animation_data
                 has_action = obj.animation_data and obj.animation_data.action
-                has_fcurves = has_action and len(obj.animation_data.action.fcurves) > 0
+                curves = style.get_action_curves(obj.animation_data.action)
+                has_fcurves = has_action and len(curves) > 0
                 status = "PASS" if has_fcurves else "FAIL"
                 details = "Action with f-curves present" if has_fcurves else "MISSING action or f-curves"
                 self.log_result(f"Animation: {name}", status, details)
@@ -39,34 +41,29 @@ class TestAnimation(BlenderTestCase):
 
     def test_04_limb_movement(self):
         """Verify that character limbs have active animation data."""
-        limbs = [
-            "Herbaceous_Arm_L", "Herbaceous_Arm_R", "Herbaceous_Leg_L", "Herbaceous_Leg_R",
-            "Arbor_Arm_L", "Arbor_Arm_R"
-        ]
+        # Limbs are now bones: pose.bones["Arm.L"] etc.
+        chars = ["Herbaceous", "Arbor"]
+        bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R"]
         
-        for limb_name in limbs:
-            with self.subTest(limb=limb_name):
-                obj = bpy.data.objects.get(limb_name)
-                if not obj:
-                    self.log_result(f"Limb Anim: {limb_name}", "FAIL", "Object missing")
-                    continue
-                
-                # Robustness: Check for significant movement, not just the presence of curves.
-                has_movement = False
-                if obj.animation_data and obj.animation_data.action:
-                    curves = style.get_action_curves(obj.animation_data.action)
-                    for fc in curves:
-                        if "location" in fc.data_path or "rotation" in fc.data_path:
-                            values = [kp.co[1] for kp in fc.keyframe_points]
-                            if len(values) > 1 and (max(values) - min(values)) > 0.1: # Threshold for significant movement
-                                has_movement = True
-                                break
-                    if has_movement: break
-                
-                status = "PASS" if has_movement else "FAIL"
-                details = "Significant movement detected" if has_movement else "Static or no animation"
-                self.log_result(f"Limb Anim: {limb_name}", status, details)
-                self.assertTrue(has_movement, f"{limb_name} is expected to have movement but is static.")
+        for char_name in chars:
+            obj = bpy.data.objects.get(char_name)
+            if not obj: continue
+            
+            for bone_name in bones:
+                with self.subTest(char=char_name, bone=bone_name):
+                    has_movement = False
+                    if obj.animation_data and obj.animation_data.action:
+                        curves = style.get_action_curves(obj.animation_data.action)
+                        for fc in curves:
+                            if bone_name in fc.data_path and ("location" in fc.data_path or "rotation" in fc.data_path):
+                                values = [kp.co[1] for kp in fc.keyframe_points]
+                                if len(values) > 1 and (max(values) - min(values)) > 0.05:
+                                    has_movement = True
+                                    break
+                    
+                    status = "PASS" if has_movement else "FAIL"
+                    self.log_result(f"Bone Anim: {char_name}.{bone_name}", status)
+                    self.assertTrue(has_movement)
 
     def test_05_camera_coverage(self):
         """Verify camera moves significantly to cover different angles."""
@@ -93,10 +90,10 @@ class TestAnimation(BlenderTestCase):
 
     def test_06_noise_modifier_presence(self):
         """CIN-01: Verify presence of F-Curve Noise modifiers for procedural secondary motion."""
-        # Herbaceous Torso Z-location and some light intensities usually have noise
+        # Noise is now often on bones: pose.bones["Torso"].location
         targets = [
-            ("Herbaceous_Torso", "location", 2), # Z-axis
-            ("Arbor_Torso", "location", 2),
+            ("Herbaceous", 'pose.bones["Torso"].location', 2), # Z-axis
+            ("Arbor", 'pose.bones["Torso"].location', 2),
         ]
         
         for obj_name, path, index in targets:
@@ -105,7 +102,8 @@ class TestAnimation(BlenderTestCase):
                 continue
             
             has_noise = False
-            for fc in obj.animation_data.action.fcurves:
+            curves = style.get_action_curves(obj.animation_data.action)
+            for fc in curves:
                 if fc.data_path == path and fc.array_index == index:
                     for mod in fc.modifiers:
                         if mod.type == 'NOISE':

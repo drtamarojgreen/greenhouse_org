@@ -52,9 +52,12 @@ class TestLightingIntegrity(unittest.TestCase):
         scene = self.master.scene
         tree = style.get_compositor_node_tree(scene)
         bright = tree.nodes.get("Bright/Contrast")
-        if bright:
-            curves = style.get_action_curves(bright.inputs['Bright'].animation_data.action if bright.inputs['Bright'].animation_data else None)
-            for fc in curves:
+        if bright and tree.animation_data and tree.animation_data.action:
+            # Animation for compositor nodes is stored on the node_tree itself
+            curves = style.get_action_curves(tree.animation_data.action)
+            bright_curves = [fc for fc in curves if 'Bright/Contrast' in fc.data_path and 'Bright' in fc.data_path]
+            
+            for fc in bright_curves:
                 last_val = None
                 for kp in fc.keyframe_points:
                     if last_val is not None:

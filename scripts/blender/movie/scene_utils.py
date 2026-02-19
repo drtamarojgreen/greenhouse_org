@@ -20,11 +20,21 @@ def create_intertitle(master_instance, text, frame_start, frame_end):
     style.set_principled_socket(mat, "Emission Strength", 5.0)
     text_obj.data.materials.append(mat)
 
-    # Backdrop
-    bpy.ops.mesh.primitive_plane_add(location=(0, 0.1, 0), rotation=(-math.pi/2, 0, 0))
-    bg = bpy.context.object
-    bg.name = f"TitleBG_{frame_start}"
-    bg.scale = (10, 6, 1)
+    # Backdrop (BMesh)
+    import bmesh
+    bg_data = bpy.data.meshes.new(f"TitleBG_{frame_start}_MeshData")
+    bg = bpy.data.objects.new(f"TitleBG_{frame_start}", bg_data)
+    bpy.context.collection.objects.link(bg)
+    bg.location = (0, 0.1, 0)
+    bg.rotation_euler = (-math.pi/2, 0, 0)
+    
+    bm_bg = bmesh.new()
+    bmesh.ops.create_grid(bm_bg, x_segments=1, y_segments=1, size=1.0)
+    for v in bm_bg.verts:
+        v.co.x *= 10.0
+        v.co.y *= 6.0
+    bm_bg.to_mesh(bg_data)
+    bm_bg.free()
 
     bg_mat = bpy.data.materials.new(name=f"TitleBGMat_{frame_start}")
     bg_bsdf = bg_mat.node_tree.nodes["Principled BSDF"]
@@ -74,10 +84,17 @@ def create_spinning_logo(master_instance, text_content, frame_start, frame_end):
     return logo
 
 def create_thought_spark(master_instance, start_loc, end_loc, frame_start, frame_end):
-    """Creates a moving glowing spark between two points."""
-    bpy.ops.mesh.primitive_ico_sphere_add(radius=0.08, location=start_loc)
-    spark = bpy.context.object
-    spark.name = f"Spark_{frame_start}"
+    """Point 95: BMesh Thought Spark."""
+    import bmesh
+    mesh_data = bpy.data.meshes.new(f"Spark_{frame_start}_MeshData")
+    spark = bpy.data.objects.new(f"Spark_{frame_start}", mesh_data)
+    bpy.context.collection.objects.link(spark)
+    spark.location = start_loc
+    
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.08)
+    bm.to_mesh(mesh_data)
+    bm.free()
 
     mat = bpy.data.materials.new(name=f"SparkMat_{frame_start}")
     style.set_principled_socket(mat, "Emission", (0.5, 0.8, 1, 1))
@@ -101,10 +118,17 @@ def create_thought_spark(master_instance, start_loc, end_loc, frame_start, frame
     return spark
 
 def create_diagnostic_highlight(master_instance, label, location, frame_start, frame_end, color=(1,1,1,1)):
-    """Creates a scientific call-out marker."""
-    bpy.ops.mesh.primitive_ico_sphere_add(radius=0.1, location=location)
-    sphere = bpy.context.object
-    sphere.name = f"Diag_{label}"
+    """Point 95: BMesh Diagnostic Highlight."""
+    import bmesh
+    mesh_data = bpy.data.meshes.new(f"Diag_{label}_MeshData")
+    sphere = bpy.data.objects.new(f"Diag_{label}", mesh_data)
+    bpy.context.collection.objects.link(sphere)
+    sphere.location = location
+    
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.1)
+    bm.to_mesh(mesh_data)
+    bm.free()
 
     mat = bpy.data.materials.new(name=f"DiagMat_{label}")
     style.set_principled_socket(mat, "Emission", color)

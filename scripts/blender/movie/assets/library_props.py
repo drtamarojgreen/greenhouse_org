@@ -9,16 +9,27 @@ def create_wood_material(name, color=(0.15, 0.08, 0.05)):
     return style.create_noise_based_material(name, colors, noise_type='WAVE', noise_scale=5.0, roughness=0.3)
 
 def create_pedestal(location, height=1.2):
-    location = mathutils.Vector(location)
-    """Creates a stone or wood pedestal for the book."""
-    bpy.ops.mesh.primitive_cube_add(size=1.0, location=location + mathutils.Vector((0,0,height/2)))
-    pedestal = bpy.context.object
-    pedestal.name = "Pedestal"
-    pedestal.scale = (0.5, 0.5, height/2)
+    """Point 95: BMesh Pedestal creation."""
+    import bmesh
+    mesh_data = bpy.data.meshes.new("Pedestal_MeshData")
+    obj = bpy.data.objects.new("Pedestal", mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
+
+    bm = bmesh.new()
+    matrix = mathutils.Matrix.Translation((0, 0, height/2))
+    ret = bmesh.ops.create_cube(bm, size=1.0, matrix=matrix)
+    for v in ret['verts']:
+        v.co.x *= 0.5
+        v.co.y *= 0.5
+        v.co.z *= height/2
+
+    bm.to_mesh(mesh_data)
+    bm.free()
 
     mat = create_wood_material("PedestalMat")
-    pedestal.data.materials.append(mat)
-    return pedestal
+    obj.data.materials.append(mat)
+    return obj
 
 def create_paper_material(name):
     """Point 32: Refactored to use style helper."""
@@ -26,34 +37,28 @@ def create_paper_material(name):
     return style.create_noise_based_material(name, colors, noise_type='NOISE', noise_scale=12.0, roughness=0.8)
 
 def create_open_book(location):
-    location = mathutils.Vector(location)
-    """Creates a large open book asset."""
-    container = bpy.data.objects.new("BookContainer", None)
-    bpy.context.scene.collection.objects.link(container)
-    container.location = location
+    """Point 95: BMesh Open Book creation."""
+    import bmesh
+    mesh_data = bpy.data.meshes.new("Book_MeshData")
+    obj = bpy.data.objects.new("Book", mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
 
+    bm = bmesh.new()
     # Left Page
-    bpy.ops.mesh.primitive_plane_add(size=1.0, location=location + mathutils.Vector((-0.5, 0, 0.1)))
-    left = bpy.context.object
-    left.name = "Page_Left"
-    left.rotation_euler = (0, math.radians(-10), 0)
-    left.parent = container
-    left.matrix_parent_inverse = container.matrix_world.inverted()
-
+    mat_l = mathutils.Matrix.Translation((-0.5, 0, 0.1)) @ mathutils.Euler((0, math.radians(-10), 0)).to_matrix().to_4x4()
+    bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.5, matrix=mat_l)
+    
     # Right Page
-    bpy.ops.mesh.primitive_plane_add(size=1.0, location=location + mathutils.Vector((0.5, 0, 0.1)))
-    right = bpy.context.object
-    right.name = "Page_Right"
-    right.rotation_euler = (0, math.radians(10), 0)
-    right.parent = container
-    right.matrix_parent_inverse = container.matrix_world.inverted()
+    mat_r = mathutils.Matrix.Translation((0.5, 0, 0.1)) @ mathutils.Euler((0, math.radians(10), 0)).to_matrix().to_4x4()
+    bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.5, matrix=mat_r)
 
-    # Material
+    bm.to_mesh(mesh_data)
+    bm.free()
+
     mat = create_paper_material("PageMat")
-    left.data.materials.append(mat)
-    right.data.materials.append(mat)
-
-    return container
+    obj.data.materials.append(mat)
+    return obj
 
 if __name__ == "__main__":
     bpy.ops.object.select_all(action='SELECT')

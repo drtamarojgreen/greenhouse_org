@@ -6,18 +6,29 @@ from constants import SCENE_MAP
 
 def setup_all_camera_logic(master):
     """Initializes camera, target, and keyframes."""
-    bpy.ops.object.camera_add(location=(0, -8, 0))
-    cam = bpy.context.object
+    # Camera
+    cam_data = bpy.data.cameras.new("MovieCamera")
+    cam = bpy.data.objects.new("MovieCamera", cam_data)
+    bpy.context.collection.objects.link(cam)
+    cam.location = (0, -8, 0)
     master.scene.camera = cam
 
-    bpy.ops.object.empty_add(type='PLAIN_AXES')
-    target = bpy.context.object
-    target.name = "CamTarget"
+    # Target
+    target = bpy.data.objects.get("CamTarget")
+    if not target:
+        target = bpy.data.objects.new("CamTarget", None)
+        bpy.context.scene.collection.objects.link(target)
+    master.cam_target = target
 
     con = cam.constraints.new(type='TRACK_TO')
     con.target = target
     con.track_axis = 'TRACK_NEGATIVE_Z'
     con.up_axis = 'UP_Y'
+    
+    # Point 92: Set focus object to target Empty (animatable focus via target location)
+    cam.data.dof.use_dof = True
+    cam.data.dof.focus_object = target
+    cam.data.dof.aperture_fstop = 2.8
 
     if master.mode == 'SILENT_FILM':
         style.insert_looping_noise(cam, "location", strength=0.02, scale=2.0, frame_start=1, frame_end=15000)
@@ -43,8 +54,8 @@ def setup_camera_keyframes(master, cam, target):
 
         if focus_obj:
             cam.data.dof.use_dof = True
-            cam.data.dof.focus_object = focus_obj
-            cam.data.dof.keyframe_insert(data_path="focus_object", frame=frame)
+            # Note: focus_object itself is not animatable. 
+            # We use the target Empty as the global focus_object and animate its location.
 
         cam.keyframe_insert(data_path="location", frame=frame)
         target.keyframe_insert(data_path="location", frame=frame)
@@ -60,7 +71,7 @@ def setup_camera_keyframes(master, cam, target):
 
         if cam.data.animation_data and cam.data.animation_data.action:
             for fc in style.get_action_curves(cam.data.animation_data.action):
-                if fc.data_path in ["lens", "focus_object"]:
+                if fc.data_path in ["lens", "focus_distance"]:
                     kp = fc.keyframe_points[-1]
                     kp.interpolation = 'BEZIER'
                     kp.easing = easing
@@ -125,14 +136,14 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(100, title_loc, origin)
 
     # Opening drone - audience first sees the greenhouse from above
-    drone_sweep(101, 180,
+    drone_sweep(101, 179, # End early so 180 below takes precedence
                 start_xy=(-40, -40),
                 end_xy=(40, -20),
                 altitude=75,
                 look_at=(0, 0, 0))
 
     # Descend from drone into establishing shot
-    kf_eased(180, (40, -20, 75),  (0, 0, 0))
+    kf_eased(180, (40, -20, 20),  (0, 0, 0))
     kf_eased(200, (0, -30, 10),   (0, 0, 1.5))
 
     # Intro / Establishing Shot (101 - 200) - Already handled by drone-to-descend
@@ -168,7 +179,7 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(1250, (-6,-12,3), (0, 0, 1.5))
 
     # Sanctuary fly-in: crane shot from above descending (3901 - 4100)
-    kf_eased(3901, (0, -80, 40), (0, 0, 0), easing='EASE_IN')       # extreme wide aerial
+    kf_eased(3901, (0, -80, 40), (0, 0, 0), easing='EASE_IN')
     kf_eased(3950, (0, -80, 40), (0, 0, 0), easing='EASE_IN')       # hold
     kf_eased(4050, (0, -25, 10), (0, 0, 2), easing='EASE_IN_OUT')   # descend
     kf_eased(4100, (0, -18, 5), (0, 0, 1.5), easing='EASE_OUT')     # settle
@@ -182,7 +193,7 @@ def setup_camera_keyframes(master, cam, target):
     # Dialogue closeups (9501 - 13000)
     h1_obj = bpy.data.objects.get("Herbaceous_Torso")
     h2_obj = bpy.data.objects.get("Arbor_Torso")
-    gnome_obj = bpy.data.objects.get("GloomGnome_Torso")
+    gnome_obj = bpy.data.objects.get("GloomGnome_Mesh") # gnome is still _Mesh or should it be _Torso?
 
     # Scene 16 (9501-10200): Herbaceous speaks first, then Arbor
     kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5))        # wide
