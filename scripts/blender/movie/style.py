@@ -804,10 +804,8 @@ def apply_glow_trails(scene):
     if not tree: return None
     blur = tree.nodes.get("GlowTrail") or tree.nodes.new(type='CompositorNodeVecBlur')
     blur.name = "GlowTrail"
-    if hasattr(blur, 'factor'):
-        blur.factor = 0.8
-    if hasattr(blur, 'samples'):
-        blur.samples = 16
+    set_node_input(blur, 'Factor', 0.8)
+    set_node_input(blur, 'Samples', 16)
     return blur
 
 def setup_saturation_control(scene):
@@ -1290,23 +1288,33 @@ def animate_vignette_breathing(scene, frame_start, frame_end, strength=0.05, cyc
     vig = tree.nodes.get("Vignette")
     if not vig: return
 
-    # We animate width/height with noise or sine-like loop
-    # For simplicity, we use noise via our helper
     if not tree.animation_data:
         tree.animation_data_create()
     if not tree.animation_data.action:
         tree.animation_data.action = bpy.data.actions.new(name="CompositorAction")
 
-    for axis in ["width", "height"]:
-        data_path = f'nodes["Vignette"].{axis}'
-        fcurve = get_or_create_fcurve(tree.animation_data.action, data_path, ref_obj=tree)
-        if fcurve:
-            mod = fcurve.modifiers.new(type='NOISE')
-            mod.strength = strength
-            mod.scale = cycle / 2.0
-            mod.use_restricted_range = True
-            mod.frame_start = frame_start
-            mod.frame_end = frame_end
+    # In 5.0, preferred to animate the 'Size' socket if it exists
+    size_sock = get_socket_by_identifier(vig.inputs, 'Size') or vig.inputs.get('Size')
+    if size_sock:
+        # Size is usually a float2 or similar
+        for i in range(2):
+            data_path = f'nodes["Vignette"].inputs["{size_sock.identifier}"].default_value'
+            fcurve = get_or_create_fcurve(tree.animation_data.action, data_path, index=i, ref_obj=tree)
+            if fcurve:
+                mod = fcurve.modifiers.new(type='NOISE')
+                mod.strength, mod.scale = strength, cycle / 2.0
+                mod.use_restricted_range = True
+                mod.frame_start, mod.frame_end = frame_start, frame_end
+    else:
+        # Fallback to properties
+        for axis in ["width", "height"]:
+            data_path = f'nodes["Vignette"].{axis}'
+            fcurve = get_or_create_fcurve(tree.animation_data.action, data_path, ref_obj=tree)
+            if fcurve:
+                mod = fcurve.modifiers.new(type='NOISE')
+                mod.strength, mod.scale = strength, cycle / 2.0
+                mod.use_restricted_range = True
+                mod.frame_start, mod.frame_end = frame_start, frame_end
 
 def animate_floating_spores(center, volume_size=(10, 10, 5), density=50, frame_start=1, frame_end=15000):
     """Enhancement #33: Drifting bioluminescent spores in the sanctuary."""

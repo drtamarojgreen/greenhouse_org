@@ -61,7 +61,7 @@ def setup_compositor(master_instance):
     # Glow Trail (Vector Blur)
     blur = tree.nodes.new('CompositorNodeVecBlur')
     blur.name = "GlowTrail"
-    blur.factor = 0.8
+    style.set_node_input(blur, 'Factor', 0.8)
 
     # Global Saturation
     huesat = tree.nodes.new('CompositorNodeHueSat')
