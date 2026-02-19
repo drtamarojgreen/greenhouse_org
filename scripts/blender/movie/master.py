@@ -74,8 +74,11 @@ class BaseMaster:
         if start_frame is not None: self.scene.frame_start = start_frame
         if end_frame is not None: self.scene.frame_end = end_frame
         self.load_assets()
-        if quick: return
+        if quick:
+            bpy.context.view_layer.update()
+            return
         self.setup_lighting(); self.setup_compositor(); self.animate_master()
+        bpy.context.view_layer.update()
 
     def load_assets(self): pass
     def animate_master(self): pass

@@ -39,7 +39,7 @@ __all__ = [
 ]
 
 def get_action_curves(action, create_if_missing=False):
-    """Point 91: Robust action curve access for Blender 5.0 (Legacy + Layered + Slots)."""
+    """Point 91: Robust action curve access for Blender 5.0 (Legacy + Layered + Slots + Channels)."""
     if action is None: return []
     
     curves = []
@@ -54,13 +54,12 @@ def get_action_curves(action, create_if_missing=False):
             action.layers.new(name="Layer")
         
         for layer in action.layers:
-            # Check main layer curves if applicable
-            if hasattr(layer, 'fcurves'):
-                curves.extend(layer.fcurves)
+            if hasattr(layer, 'fcurves'): curves.extend(layer.fcurves)
+            if hasattr(layer, 'channels'): curves.extend(layer.channels)
             if hasattr(layer, 'strips'):
                 for strip in layer.strips:
-                    if hasattr(strip, 'fcurves'):
-                        curves.extend(strip.fcurves)
+                    if hasattr(strip, 'fcurves'): curves.extend(strip.fcurves)
+                    if hasattr(strip, 'channels'): curves.extend(strip.channels)
 
     # 3. Slot-based/Channel-based F-Curves (Blender 5.0 variations)
     if hasattr(action, "curves"):
@@ -69,16 +68,19 @@ def get_action_curves(action, create_if_missing=False):
     # 4. Action Slots (Blender 5.x)
     if hasattr(action, "slots"):
         for slot in action.slots:
-            if hasattr(slot, "fcurves"):
-                curves.extend(slot.fcurves)
-            if hasattr(slot, "curves"): # Some beta builds
-                curves.extend(slot.curves)
+            if hasattr(slot, "fcurves"): curves.extend(slot.fcurves)
+            if hasattr(slot, "curves"): curves.extend(slot.curves)
+            if hasattr(slot, "channels"): curves.extend(slot.channels)
 
     # 5. Bindings-based F-Curves
     if hasattr(action, "bindings"):
         for binding in action.bindings:
-            if hasattr(binding, 'fcurves'):
-                curves.extend(binding.fcurves)
+            if hasattr(binding, 'fcurves'): curves.extend(binding.fcurves)
+            if hasattr(binding, 'channels'): curves.extend(binding.channels)
+
+    # 6. Global Action Channels (Headless redundancy)
+    if hasattr(action, "channels"):
+        curves.extend(action.channels)
 
     return curves
 
@@ -91,18 +93,14 @@ def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
     return action.fcurve_ensure_for_datablock(ref_obj, data_path=data_path, index=index)
 
 def get_eevee_engine_id():
-    """Probes Blender for the correct Eevee engine identifier (EEVEE vs EEVEE_NEXT)."""
-    # Check render engines available in current build
-    # In some 4.2+ builds it is BLENDER_EEVEE_NEXT, in 5.0 it might revert to BLENDER_EEVEE
-    # We probe by checking what the current scene allows
+    """Probes Blender for the correct Eevee engine identifier."""
+    # Priority for 5.0 is EEVEE (which might be Next) or EEVEE_NEXT explicitly
     try:
-        # Fallback list in order of preference
-        for engine in ['BLENDER_EEVEE_NEXT', 'BLENDER_EEVEE']:
-            if engine in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items:
-                return engine
-    except Exception:
-        pass
-    return 'BLENDER_EEVEE' # Legacy default
+        enum_items = bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items
+        if 'BLENDER_EEVEE_NEXT' in enum_items: return 'BLENDER_EEVEE_NEXT'
+        if 'BLENDER_EEVEE' in enum_items: return 'BLENDER_EEVEE'
+    except: pass
+    return 'BLENDER_EEVEE'
 
 def get_compositor_node_tree(scene):
     """Directly retrieves the compositor node tree for Blender 5.x."""
