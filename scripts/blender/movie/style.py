@@ -12,7 +12,7 @@ __all__ = [
     'get_action_curves', 'get_or_create_fcurve', 'get_eevee_engine_id',
     'get_compositor_node_tree', 'create_mix_node', 'get_mix_sockets',
     'get_mix_output', 'set_principled_socket', 'patch_fbx_importer',
-    'get_socket_by_identifier', 'clear_scene_selective', 'create_noise_based_material',
+    'get_socket_by_identifier', 'set_socket_value', 'clear_scene_selective', 'create_noise_based_material',
     'apply_scene_grade', 'animate_foliage_wind', 'animate_light_flicker',
     'insert_looping_noise', 'animate_breathing', 'animate_dust_particles',
     'apply_fade_transition', 'camera_push_in', 'camera_pull_out',
@@ -102,7 +102,28 @@ def create_compositor_output(tree):
             
     return node
 
-def set_node_input(node, name, value):
+def set_socket_value(socket, value, frame=None):
+    """Point 92: Robustly sets a socket value, handling vector vs scalar mismatches."""
+    if socket is None: return False
+    try:
+        # Handle vector/array sockets if provided value is a scalar
+        # Exclude strings (enums) from length check
+        has_len = hasattr(socket, "default_value") and hasattr(socket.default_value, "__len__")
+        is_str = isinstance(getattr(socket, "default_value", None), (str, bytes))
+
+        if has_len and not is_str and not isinstance(value, (list, tuple, mathutils.Vector)):
+            socket.default_value = [value] * len(socket.default_value)
+        else:
+            socket.default_value = value
+
+        if frame is not None:
+            socket.keyframe_insert(data_path="default_value", frame=frame)
+        return True
+    except (AttributeError, TypeError, ValueError) as e:
+        print(f"Warning: Failed to set socket {getattr(socket, 'name', 'unknown')} to {value}: {e}")
+        return False
+
+def set_node_input(node, name, value, frame=None):
     """
     Sets a node parameter via input socket (preferred in 5.x).
     """
@@ -118,16 +139,16 @@ def set_node_input(node, name, value):
                 break
 
     if target:
-        try:
-            target.default_value = value
-            return True
-        except (AttributeError, TypeError):
-            pass
+        return set_socket_value(target, value, frame=frame)
 
     # Fallback to property if no socket matches
     if hasattr(node, name):
-        setattr(node, name, value)
-        return True
+        try:
+            setattr(node, name, value)
+            if frame is not None:
+                node.keyframe_insert(data_path=name, frame=frame)
+            return True
+        except: pass
 
     return False
 
@@ -235,10 +256,7 @@ def set_principled_socket(mat_or_node, socket_name, value, frame=None):
     """Guarded setter for Principled BSDF sockets to handle naming drift (e.g. Specular)."""
     sock = get_principled_socket(mat_or_node, socket_name)
     if sock:
-        sock.default_value = value
-        if frame is not None:
-            sock.keyframe_insert(data_path="default_value", frame=frame)
-        return True
+        return set_socket_value(sock, value, frame=frame)
 
     name = getattr(mat_or_node, "name", "Unknown")
     print(f"Warning: Could not find socket {socket_name} (or alternatives) on {name}")
@@ -587,7 +605,11 @@ def animate_saccadic_movement(eye_obj, gaze_target, frame_start, frame_end, stre
         orig_rot = eye_obj.rotation_euler.copy()
         eye_obj.keyframe_insert(data_path="rotation_euler", frame=current_f)
 
-        dart_rot = orig_rot + mathutils.Vector((random.uniform(-0.1, 0.1), 0, random.uniform(-0.1, 0.1))) * strength * 50
+        # Point 92: Safe Euler addition (AttributeError fix)
+        dart_rot = orig_rot.copy()
+        dart_rot.x += random.uniform(-0.1, 0.1) * strength * 50
+        dart_rot.z += random.uniform(-0.1, 0.1) * strength * 50
+
         eye_obj.rotation_euler = dart_rot
         eye_obj.keyframe_insert(data_path="rotation_euler", frame=current_f + 2)
 
@@ -702,10 +724,8 @@ def apply_thermal_transition(master, frame_start, frame_end, color_start=(0.5, 0
     """Transitions world background color between two thermal-inspired colors."""
     bg = master.scene.world.node_tree.nodes.get("Background")
     if bg:
-        bg.inputs[0].default_value = (*color_start, 1)
-        bg.inputs[0].keyframe_insert(data_path="default_value", frame=frame_start)
-        bg.inputs[0].default_value = (*color_end, 1)
-        bg.inputs[0].keyframe_insert(data_path="default_value", frame=frame_end)
+        set_socket_value(bg.inputs[0], (*color_start, 1), frame=frame_start)
+        set_socket_value(bg.inputs[0], (*color_end, 1), frame=frame_end)
 
 def setup_chromatic_aberration(scene, strength=0.01):
     """Adds a Lens Distortion node for chromatic aberration (5.x)."""
@@ -738,12 +758,8 @@ def animate_vignette(scene, frame_start, frame_end, start_val=1.0, end_val=0.5):
     vig = tree.nodes.get("Vignette") or tree.nodes.new(type='CompositorNodeEllipseMask')
     vig.name = "Vignette"
     
-    set_node_input(vig, 'Size', [start_val, start_val])
-    target = vig.inputs.get('Size')
-    if target:
-        target.keyframe_insert(data_path="default_value", frame=frame_start)
-        set_node_input(vig, 'Size', [end_val, end_val])
-        target.keyframe_insert(data_path="default_value", frame=frame_end)
+    set_node_input(vig, 'Size', start_val, frame=frame_start)
+    set_node_input(vig, 'Size', end_val, frame=frame_end)
 
 def apply_neuron_color_coding(neuron_mat, frame, color=(1, 0, 0)):
     """Shifts neuron emission color."""
@@ -814,7 +830,7 @@ def setup_saturation_control(scene):
     if not tree: return None
     huesat = tree.nodes.get("GlobalSaturation") or tree.nodes.new(type='CompositorNodeHueSat')
     huesat.name = "GlobalSaturation"
-    huesat.inputs['Saturation'].default_value = 1.0
+    set_node_input(huesat, 'Saturation', 1.0)
     return huesat
 
 def apply_desaturation_beat(scene, frame_start, frame_end, saturation=0.2):
@@ -823,13 +839,10 @@ def apply_desaturation_beat(scene, frame_start, frame_end, saturation=0.2):
     if not tree: return
     huesat = tree.nodes.get("GlobalSaturation")
     if huesat:
-        huesat.inputs['Saturation'].default_value = 1.0
-        huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_start - 5)
-        huesat.inputs['Saturation'].default_value = saturation
-        huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_start)
-        huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_end)
-        huesat.inputs['Saturation'].default_value = 1.0
-        huesat.inputs['Saturation'].keyframe_insert(data_path="default_value", frame=frame_end + 5)
+        set_node_input(huesat, 'Saturation', 1.0, frame=frame_start - 5)
+        set_node_input(huesat, 'Saturation', saturation, frame=frame_start)
+        set_node_input(huesat, 'Saturation', saturation, frame=frame_end)
+        set_node_input(huesat, 'Saturation', 1.0, frame=frame_end + 5)
 
 def animate_dialogue_v2(mouth_obj, frame_start, frame_end, intensity=1.0, speed=1.0):
     """Enhanced procedural mouth movement with Breathing Pause (#16)."""
@@ -1015,7 +1028,19 @@ def apply_anticipation(obj, data_path, frame, offset_value, duration=5):
     if isinstance(offset_value, (int, float)):
         setattr(obj, data_path, orig_val - offset_value)
     else: # Vector/Euler
-        setattr(obj, data_path, orig_val - offset_value)
+        # Point 92: Safe subtraction for Euler/Vector types
+        if hasattr(orig_val, "x") and hasattr(offset_value, "x"): # Euler or Vector
+            new_val = orig_val.copy()
+            new_val.x -= offset_value.x
+            new_val.y -= offset_value.y
+            new_val.z -= offset_value.z
+            setattr(obj, data_path, new_val)
+        else:
+            try:
+                setattr(obj, data_path, orig_val - offset_value)
+            except:
+                pass
+
     obj.keyframe_insert(data_path=data_path, frame=frame - (duration // 2))
     # Return for actual move
     setattr(obj, data_path, orig_val)

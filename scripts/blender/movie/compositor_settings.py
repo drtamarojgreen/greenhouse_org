@@ -95,16 +95,21 @@ def animate_wet_glass(scene, frame_start, frame_end, strength=10.0):
     displace = tree.nodes.get("WetGlass")
     if not displace: return
 
-    # Use first input if identifier search fails
-    target = style.get_socket_by_identifier(displace.inputs, 'Factor') or displace.inputs[0]
-    if target:
-        target.default_value = 0.0
-        target.keyframe_insert(data_path="default_value", frame=frame_start - 12)
-        target.default_value = strength
-        target.keyframe_insert(data_path="default_value", frame=frame_start)
-        target.keyframe_insert(data_path="default_value", frame=frame_end)
-        target.default_value = 0.0
-        target.keyframe_insert(data_path="default_value", frame=frame_end + 12)
+    # Point 92: Search for Scale/Factor sockets (X/Y Scale in modern Displace)
+    targets = []
+    for name in ['X Scale', 'Y Scale', 'X', 'Y', 'Factor', 'Scale']:
+        s = style.get_socket_by_identifier(displace.inputs, name) or displace.inputs.get(name)
+        if s: targets.append(s)
+
+    if not targets and len(displace.inputs) > 1:
+        # Avoid input[0] which is usually Image
+        targets = [displace.inputs[1]]
+
+    for target in targets:
+        style.set_socket_value(target, 0.0, frame=frame_start - 12)
+        style.set_socket_value(target, strength, frame=frame_start)
+        style.set_socket_value(target, strength, frame=frame_end)
+        style.set_socket_value(target, 0.0, frame=frame_end + 12)
 
 def animate_iris_wipe(scene, frame_start, frame_end, mode='IN'):
     """Enhancement #49: Iris Wipe transition animation."""
@@ -112,17 +117,9 @@ def animate_iris_wipe(scene, frame_start, frame_end, mode='IN'):
     iris = tree.nodes.get("IrisWipe")
     if not iris: return
 
-    target = style.get_socket_by_identifier(iris.inputs, 'Size') or style.get_socket_by_identifier(iris.inputs, 'Width')
-    
     if mode == 'IN':
-        style.set_node_input(iris, 'Size', [0.0, 0.0])
-        if target:
-            target.keyframe_insert(data_path="default_value", frame=frame_start)
-            style.set_node_input(iris, 'Size', [2.0, 2.0])
-            target.keyframe_insert(data_path="default_value", frame=frame_end)
+        style.set_node_input(iris, 'Size', 0.0, frame=frame_start)
+        style.set_node_input(iris, 'Size', 2.0, frame=frame_end)
     else: # OUT
-        style.set_node_input(iris, 'Size', [2.0, 2.0])
-        if target:
-            target.keyframe_insert(data_path="default_value", frame=frame_start)
-            style.set_node_input(iris, 'Size', [0.0, 0.0])
-            target.keyframe_insert(data_path="default_value", frame=frame_end)
+        style.set_node_input(iris, 'Size', 2.0, frame=frame_start)
+        style.set_node_input(iris, 'Size', 0.0, frame=frame_end)
