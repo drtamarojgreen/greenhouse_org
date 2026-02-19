@@ -572,12 +572,17 @@
             this.lastTime = now;
             const simStep = 100;
             this.accumulatedTime += dt;
-            while (this.accumulatedTime >= simStep) {
+            let bestGenome = null;
+            let steps = 0;
+            while (this.accumulatedTime >= simStep && steps < 5) { // Cap steps to avoid spiral of death
                 if (this.ga) {
-                    const bestGenome = this.ga.step();
-                    if (this.ui3d) this.ui3d.updateData(bestGenome);
+                    bestGenome = this.ga.step();
                 }
                 this.accumulatedTime -= simStep;
+                steps++;
+            }
+            if (bestGenome && this.ui3d) {
+                this.ui3d.updateData(bestGenome);
             }
             this.rafId = requestAnimationFrame((t) => this.loop(t));
         },

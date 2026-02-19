@@ -6,6 +6,22 @@
 
     const GreenhouseNeuroSynapse = {
         synapseCameraController: null,
+        _vertexPool: [],
+        _facePool: [],
+
+        _getProjectedVertex(index) {
+            if (!this._vertexPool[index]) {
+                this._vertexPool[index] = { x: 0, y: 0, depth: 0, scale: 0 };
+            }
+            return this._vertexPool[index];
+        },
+
+        _getFaceObj(index) {
+            if (!this._facePool[index]) {
+                this._facePool[index] = { depth: 0, vertices: null, origVertices: null };
+            }
+            return this._facePool[index];
+        },
 
         drawConnections(ctx, connections, neurons, camera, projection, width, height) {
             const now = Date.now();
@@ -22,8 +38,9 @@
 
             const batches = {};
 
-            connections.forEach(conn => {
-                if (!conn.mesh) return;
+            for (let cIdx = 0; cIdx < connections.length; cIdx++) {
+                const conn = connections[cIdx];
+                if (!conn.mesh) continue;
 
                 const p1 = nodeProjMap.get(conn.from.id);
                 const p2 = nodeProjMap.get(conn.to.id);
@@ -46,31 +63,40 @@
                     return;
                 }
 
-                // Optimization: Pre-project mesh vertices
-                const projected = conn.mesh.vertices.map(v =>
-                    GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection)
-                );
+                // Optimization: Pre-project mesh vertices (using pooling)
+                const meshVertices = conn.mesh.vertices;
+                const projected = [];
+                for (let i = 0; i < meshVertices.length; i++) {
+                    const v = meshVertices[i];
+                    const p = GreenhouseModels3DMath.project3DTo2D(v.x, v.y, v.z, camera, projection);
+                    const poolV = this._getProjectedVertex(i);
+                    poolV.x = p.x; poolV.y = p.y; poolV.depth = p.depth; poolV.scale = p.scale;
+                    projected.push(poolV);
+                }
 
                 const facesWithDepth = [];
-                for (let i = 0; i < conn.mesh.faces.length; i++) {
-                    const face = conn.mesh.faces[i];
+                let faceCount = 0;
+                const meshFaces = conn.mesh.faces;
+                for (let i = 0; i < meshFaces.length; i++) {
+                    const face = meshFaces[i];
                     const v1 = projected[face[0]];
                     const v2 = projected[face[1]];
                     const v3 = projected[face[2]];
 
                     if (v1.scale > 0 && v2.scale > 0 && v3.scale > 0) {
-                        facesWithDepth.push({
-                            depth: (v1.depth + v2.depth + v3.depth) / 3,
-                            vertices: [v1, v2, v3],
-                            origVertices: [conn.mesh.vertices[face[0]], conn.mesh.vertices[face[1]], conn.mesh.vertices[face[2]]]
-                        });
+                        const fObj = this._getFaceObj(faceCount++);
+                        fObj.depth = (v1.depth + v2.depth + v3.depth) / 3;
+                        fObj.vertices = [v1, v2, v3];
+                        fObj.origVertices = [meshVertices[face[0]], meshVertices[face[1]], meshVertices[face[2]]];
+                        facesWithDepth.push(fObj);
                     }
                 }
                 facesWithDepth.sort((a, b) => b.depth - a.depth);
 
                 const alpha = GreenhouseModels3DMath.applyDepthFog(0.8, facesWithDepth[0]?.depth || 1);
 
-                facesWithDepth.forEach(({ vertices, origVertices }) => {
+                for (let i = 0; i < facesWithDepth.length; i++) {
+                    const { vertices, origVertices } = facesWithDepth[i];
                     const [v1, v2, v3] = vertices;
                     const [ov1, ov2, ov3] = origVertices;
 
@@ -112,7 +138,7 @@
                         ctx.lineTo(v3.x, v3.y);
                         ctx.fill();
                     }
-                });
+                }
 
                 const seed = (conn.from.id + conn.to.id) * 0.1;
                 const cycle = (now * 0.001 + seed) % 2.0;
@@ -160,7 +186,7 @@
                         ctx.restore();
                     }
                 }
-            });
+            }
 
             ctx.lineWidth = 1;
             for (const key in batches) {
@@ -238,10 +264,16 @@
                 const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
                 lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
-                // Optimization: Pre-project all vertices once per mesh
-                const projectedVertices = mesh.vertices.map(v =>
-                    GreenhouseModels3DMath.project3DTo2D(v.x, v.y + offsetY, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 })
-                );
+                // Optimization: Pre-project all vertices once per mesh (using pooling)
+                const meshVertices = mesh.vertices;
+                const projectedVertices = [];
+                for (let i = 0; i < meshVertices.length; i++) {
+                    const v = meshVertices[i];
+                    const p = GreenhouseModels3DMath.project3DTo2D(v.x, v.y + offsetY, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                    const poolV = this._getProjectedVertex(i + 1000); // Offset pool for PIP
+                    poolV.x = p.x; poolV.y = p.y; poolV.depth = p.depth; poolV.scale = p.scale;
+                    projectedVertices.push(poolV);
+                }
 
                 for (let i = 0; i < mesh.faces.length; i++) {
                     const face = mesh.faces[i];
@@ -271,7 +303,8 @@
 
                 projectedFaces.sort((a, b) => b.depth - a.depth);
 
-                projectedFaces.forEach(f => {
+                for (let i = 0; i < projectedFaces.length; i++) {
+                    const f = projectedFaces[i];
                     let r = 150, g = 150, b = 150;
                     if (color.startsWith('#')) {
                         const hex = color.slice(1);
@@ -287,7 +320,7 @@
                     ctx.lineTo(f.p2.x + x, f.p2.y + y);
                     ctx.lineTo(f.p3.x + x, f.p3.y + y);
                     ctx.fill();
-                });
+                }
             };
 
             let connectionColor = connection.weight > 0 ? '#FFD700' : '#E0E0E0';

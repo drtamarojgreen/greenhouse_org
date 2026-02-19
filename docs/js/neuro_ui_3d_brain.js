@@ -2,23 +2,27 @@
     'use strict';
 
     const GreenhouseNeuroBrain = {
+        _vertexPool: [],
+        _facePool: [],
+        _precomputedBoundaries: null,
+
+        _getProjectedVertex(index) {
+            if (!this._vertexPool[index]) {
+                this._vertexPool[index] = { x: 0, y: 0, depth: 0, scale: 0 };
+            }
+            return this._vertexPool[index];
+        },
+
+        _getFaceObj(index) {
+            if (!this._facePool[index]) {
+                this._facePool[index] = { face: null, p1: null, p2: null, p3: null, depth: 0, nx: 0, ny: 0, nz: 0, region: null };
+            }
+            return this._facePool[index];
+        },
+
         drawBrainShell(ctx, brainShell, camera, projection, width, height, activeGene = null) {
             const targetRegion = activeGene ? activeGene.region : null;
             if (!brainShell) return;
-
-            // Log camera rotation every 60 calls
-            if (!this._drawBrainCallCount) this._drawBrainCallCount = 0;
-            this._drawBrainCallCount++;
-
-            if (this._drawBrainCallCount % 60 === 0) {
-                console.log('[drawBrainShell] Camera rotation:', {
-                    call: this._drawBrainCallCount,
-                    rotationX: camera.rotationX?.toFixed(3),
-                    rotationY: camera.rotationY?.toFixed(3),
-                    rotationZ: camera.rotationZ?.toFixed(3),
-                    hasRotation: !!(camera.rotationX || camera.rotationY || camera.rotationZ)
-                });
-            }
 
             const vertices = brainShell.vertices;
             const faces = brainShell.faces;
@@ -29,14 +33,21 @@
             const len = Math.sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
             lightDir.x /= len; lightDir.y /= len; lightDir.z /= len;
 
-            // Project all vertices first
-            const projectedVertices = vertices.map(v => {
-                return GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
-            });
+            // Project all vertices first (using object pooling)
+            const projectedVertices = [];
+            for (let i = 0; i < vertices.length; i++) {
+                const v = vertices[i];
+                const p = GreenhouseModels3DMath.project3DTo2D(v.x, -v.y, v.z, camera, projection);
+                const poolV = this._getProjectedVertex(i);
+                poolV.x = p.x; poolV.y = p.y; poolV.depth = p.depth; poolV.scale = p.scale;
+                projectedVertices.push(poolV);
+            }
 
             // Prepare Faces with Depth and Normals
+            let faceCount = 0;
             const facesToDraw = [];
-            faces.forEach((face, index) => {
+            for (let i = 0; i < faces.length; i++) {
+                const face = faces[i];
                 const p1 = projectedVertices[face.indices[0]];
                 const p2 = projectedVertices[face.indices[1]];
                 const p3 = projectedVertices[face.indices[2]];
@@ -51,11 +62,6 @@
                     if (dx1 * dy2 - dy1 * dx2 > 0) {
                         const depth = (p1.depth + p2.depth + p3.depth) / 3;
 
-                        // Calculate Normal (World Space)
-                        // We need rotated vertices for correct lighting if the object rotates
-                        // But here the camera rotates around the object.
-                        // So the object is static in World Space, camera moves.
-                        // Normal is static in World Space.
                         const v1 = vertices[face.indices[0]];
                         const v2 = vertices[face.indices[1]];
                         const v3 = vertices[face.indices[2]];
@@ -76,22 +82,23 @@
                             nx /= nLen; ny /= nLen; nz /= nLen;
                         }
 
-                        facesToDraw.push({
-                            face,
-                            p1, p2, p3,
-                            depth,
-                            nx, ny, nz,
-                            region: face.region
-                        });
+                        const fObj = this._getFaceObj(faceCount++);
+                        fObj.face = face;
+                        fObj.p1 = p1; fObj.p2 = p2; fObj.p3 = p3;
+                        fObj.depth = depth;
+                        fObj.nx = nx; fObj.ny = ny; fObj.nz = nz;
+                        fObj.region = face.region;
+                        facesToDraw.push(fObj);
                     }
                 }
-            });
+            }
 
-            // Sort by Depth (Painter's Algorithm)
+            // Sort by Depth
             facesToDraw.sort((a, b) => b.depth - a.depth);
 
             // Draw Faces
-            facesToDraw.forEach(f => {
+            for (let i = 0; i < facesToDraw.length; i++) {
+                const f = facesToDraw[i];
                 // Lighting (Phong)
                 // Diffuse
                 const diffuse = Math.max(0, f.nx * lightDir.x + f.ny * lightDir.y + f.nz * lightDir.z);
@@ -152,7 +159,7 @@
                 ctx.lineTo(f.p2.x, f.p2.y);
                 ctx.lineTo(f.p3.x, f.p3.y);
                 ctx.fill();
-            });
+            }
 
             // NEW: Topological Projection - Smooth Surface Overlay
             this.drawSurfaceGrid(ctx, projectedVertices, brainShell);
@@ -188,14 +195,40 @@
         drawTopologicalBoundaries(ctx, projectedVertices, vertices, faces, brainShell, camera, projection) {
             if (!brainShell.regionalPlanes) return;
 
+            const segments = this._getPrecomputedBoundaries(brainShell);
+
             ctx.save();
-            ctx.setLineDash([8, 4]); // Longer dash for premium HUD look
+            ctx.setLineDash([8, 4]);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
             ctx.lineWidth = 1;
             ctx.shadowBlur = 8;
-            ctx.shadowColor = 'rgba(0, 242, 255, 0.4)'; // Subtle cyan glow
+            ctx.shadowColor = 'rgba(0, 242, 255, 0.4)';
 
-            const radius = 200; // Expected radius for normalization
+            for (let i = 0; i < segments.length; i++) {
+                const seg = segments[i];
+                const p1 = GreenhouseModels3DMath.project3DTo2D(seg[0].x, seg[0].y, seg[0].z, camera, projection);
+                const p2 = GreenhouseModels3DMath.project3DTo2D(seg[1].x, seg[1].y, seg[1].z, camera, projection);
+
+                if (p1.scale > 0 && p2.scale > 0 && p1.depth < 0.8) {
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.globalAlpha = 0.6 * GreenhouseModels3DMath.applyDepthFog(1, p1.depth, 0.3, 0.8);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        },
+
+        _getPrecomputedBoundaries(brainShell) {
+            if (this._precomputedBoundaries) return this._precomputedBoundaries;
+
+            const segments = [];
+            const radius = 200;
+            const vertices = brainShell.vertices;
+            const faces = brainShell.faces;
+
+            if (!brainShell.regionalPlanes) return [];
 
             brainShell.regionalPlanes.forEach(plane => {
                 const axis = plane.axis;
@@ -206,45 +239,31 @@
                     const v2 = vertices[face.indices[1]];
                     const v3 = vertices[face.indices[2]];
 
-                    // Check which vertices are on which side of the plane
                     const s1 = v1[axis] > threshold;
                     const s2 = v2[axis] > threshold;
                     const s3 = v3[axis] > threshold;
 
-                    // If triangle crosses the plane, find the intersection segment
                     if ((s1 !== s2) || (s1 !== s3) || (s2 !== s3)) {
                         const points = [];
-
                         const checkEdge = (va, vb) => {
                             if ((va[axis] > threshold) !== (vb[axis] > threshold)) {
                                 const t = (threshold - va[axis]) / (vb[axis] - va[axis]);
-                                const inter = {
+                                points.push({
                                     x: va.x + t * (vb.x - va.x),
                                     y: va.y + t * (vb.y - va.y),
                                     z: va.z + t * (vb.z - va.z)
-                                };
-                                const proj = GreenhouseModels3DMath.project3DTo2D(inter.x, inter.y, inter.z, camera, projection);
-                                if (proj.scale > 0 && proj.depth < 0.8) { // Only draw front-facing boundaries
-                                    points.push(proj);
-                                }
+                                });
                             }
                         };
-
                         checkEdge(v1, v2);
                         checkEdge(v2, v3);
                         checkEdge(v3, v1);
-
-                        if (points.length === 2) {
-                            ctx.beginPath();
-                            ctx.moveTo(points[0].x, points[0].y);
-                            ctx.lineTo(points[1].x, points[1].y);
-                            ctx.globalAlpha = 0.6 * GreenhouseModels3DMath.applyDepthFog(1, points[0].depth, 0.3, 0.8);
-                            ctx.stroke();
-                        }
+                        if (points.length === 2) segments.push(points);
                     }
                 });
             });
-            ctx.restore();
+            this._precomputedBoundaries = segments;
+            return segments;
         }
     };
 

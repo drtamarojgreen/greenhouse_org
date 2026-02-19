@@ -172,8 +172,8 @@
 
             // Fallback to original sphere generation
             const radius = 200;
-            const latitudeBands = 40;
-            const longitudeBands = 40;
+            const latitudeBands = 30;
+            const longitudeBands = 30;
 
             for (let lat = 0; lat <= latitudeBands; lat++) {
                 const theta = (lat * Math.PI) / latitudeBands;
