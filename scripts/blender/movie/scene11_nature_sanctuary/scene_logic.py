@@ -27,7 +27,9 @@ def setup_scene(master):
 
     # Visibility and Transitions
     for b in bushes:
-        for obj in b.objects:
+        # BMesh bushes are single objects
+        objs_to_animate = [b]
+        for obj in objs_to_animate:
             obj.hide_render = True
             obj.keyframe_insert(data_path="hide_render", frame=3900)
             obj.hide_render = False
@@ -41,8 +43,8 @@ def setup_scene(master):
             obj.scale = (1, 1, 1)
             obj.keyframe_insert(data_path="scale", frame=4100)
 
-        style.apply_fade_transition(b.objects, 3901, 4100, mode='IN', duration=20)
-        style.animate_foliage_wind(b.objects, strength=0.04, frame_start=3901, frame_end=4100)
+        style.apply_fade_transition(objs_to_animate, 3901, 4100, mode='IN', duration=20)
+        style.animate_foliage_wind(objs_to_animate, strength=0.04, frame_start=3901, frame_end=4100)
 
     # Falling Petals
     style.animate_dust_particles(mathutils.Vector((0, 0, 5)), color=(1, 0.8, 0.9, 1), density=20, frame_start=3901, frame_end=4100)

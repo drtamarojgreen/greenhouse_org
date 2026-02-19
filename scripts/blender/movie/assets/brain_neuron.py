@@ -15,11 +15,13 @@ def load_brain(base_path):
     if not imported: return None
 
     # Merge all brain parts into one
-    bpy.ops.object.select_all(action='DESELECT')
-    for o in imported: o.select_set(True)
-    bpy.context.view_layer.objects.active = imported[0]
-    bpy.ops.object.join()
-    brain_obj = bpy.context.view_layer.objects.active
+    if len(imported) > 1:
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in imported: o.select_set(True)
+        bpy.context.view_layer.objects.active = imported[0]
+        bpy.ops.object.join()
+
+    brain_obj = imported[0]
     brain_obj.name = "BrainGroup"
     bpy.ops.object.shade_smooth()
 
@@ -54,11 +56,13 @@ def load_neuron(base_path):
     imported = [o for o in bpy.context.selected_objects if o.type == 'MESH']
     if not imported: return None
 
-    bpy.ops.object.select_all(action='DESELECT')
-    for o in imported: o.select_set(True)
-    bpy.context.view_layer.objects.active = imported[0]
-    bpy.ops.object.join()
-    neuron_obj = bpy.context.view_layer.objects.active
+    if len(imported) > 1:
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in imported: o.select_set(True)
+        bpy.context.view_layer.objects.active = imported[0]
+        bpy.ops.object.join()
+
+    neuron_obj = imported[0]
     neuron_obj.name = "NeuronGroup"
     bpy.ops.object.shade_smooth()
 

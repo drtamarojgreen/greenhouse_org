@@ -27,9 +27,9 @@ def create_hologram(location, size=1.0):
     # Point 76: Modern transparency for Blender 4.2+
     style.set_blend_method(mat, 'BLEND')
 
-    holo.data.materials.append(mat)
+    obj.data.materials.append(mat)
 
-    return holo
+    return obj
 
 def create_lab_bench(location):
     """Point 95: BMesh Lab Bench creation."""
