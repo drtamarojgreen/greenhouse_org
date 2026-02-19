@@ -221,116 +221,47 @@ def create_hanging_basket(location, name="HangingBasket"):
     return obj
 
 def setup_greenhouse_interior(greenhouse_size=(15, 15, 8)):
-    """
-    Populates the greenhouse interior with:
-    - Potting benches along the walls
-    - A central display table
-    - Hanging baskets from the roof beams
-    - Standalone large specimen plants
-    """
+    """Point 95: Optimized BMesh Greenhouse Interior setup."""
     w, d, h = greenhouse_size
-
-    # --- Potting benches along side walls ---
-    bench_positions = [
-        # Left wall benches
-        mathutils.Vector((-w/2 + 1.5, -3, -1)),
-        mathutils.Vector((-w/2 + 1.5,  3, -1)),
-        # Right wall benches
-        mathutils.Vector(( w/2 - 1.5, -3, -1)),
-        mathutils.Vector(( w/2 - 1.5,  3, -1)),
-        # Back wall bench
-        mathutils.Vector((0, d/2 - 1.5, -1)),
-    ]
-    benches = []
-    for i, pos in enumerate(bench_positions):
-        bench = create_potting_bench(
-            pos,
-            name=f"PottingBench_{i}"
-        )
-        if bench: benches.append(bench)
-
-    # --- Central display island ---
-    # Merge island parts? 
-    # Island is simple: 1 table + 4 plants.
-    # Let's join them for consistency.
-    island_parts = []
     
-    bpy.ops.mesh.primitive_cube_add(
-        location=(0, 0, -0.6)
-    )
-    island = bpy.context.object
-    island.name = "DisplayIsland_Base"
-    island.scale = (2.5, 1.0, 0.4)
+    # 1. Benches
+    bench_positions = [(-w/2 + 1.5, -3, -1), (-w/2 + 1.5, 3, -1),
+                       (w/2 - 1.5, -3, -1), (w/2 - 1.5, 3, -1), (0, d/2 - 1.5, -1)]
+    for i, pos in enumerate(bench_positions):
+        create_potting_bench(pos, name=f"PottingBench_{i}")
 
-    import library_props
-    island.data.materials.append(
-        library_props.create_wood_material(
-            "IslandMat", color=(0.2, 0.1, 0.04)
-        )
-    )
-    island_parts.append(island)
+    # 2. Island
+    island = create_display_island()
 
-    # Specimen plants on the island
-    island_plant_locs = [
-        mathutils.Vector((-1.5, 0, 0.2)),
-        mathutils.Vector((-0.5, 0.3, 0.2)),
-        mathutils.Vector(( 0.5, -0.2, 0.2)),
-        mathutils.Vector(( 1.5, 0.1, 0.2)),
-    ]
-    for i, loc in enumerate(island_plant_locs):
-        p_obj = create_potted_plant(
-            loc,
-            plant_type=random.choice(
-                ['FERN', 'SUCCULENT',
-                 'FLOWERING', 'VINE']
-            ),
-            name=f"IslandPlant_{i}"
-        )
-        if p_obj: island_parts.append(p_obj)
-        
-    # Join Island
-    if island_parts:
-        bpy.ops.object.select_all(action='DESELECT')
-        for p in island_parts: p.select_set(True)
-        bpy.context.view_layer.objects.active = island_parts[0]
-        bpy.ops.object.join()
-        island_main = bpy.context.active_object
-        island_main.name = "DisplayIsland_Main"
-
-
-    # --- Hanging baskets from roof ---
-    basket_locs = [
-        mathutils.Vector((-4, -4, h - 1)),
-        mathutils.Vector(( 4, -4, h - 1)),
-        mathutils.Vector((-4,  4, h - 1)),
-        mathutils.Vector(( 4,  4, h - 1)),
-        mathutils.Vector(( 0,  0, h - 0.5)),  # center
-    ]
+    # 3. Hanging Baskets
+    basket_locs = [(-4, -4, h - 1), (4, -4, h - 1), (-4, 4, h - 1), (4, 4, h - 1), (0, 0, h - 0.5)]
     for i, loc in enumerate(basket_locs):
-        basket = create_hanging_basket(
-            loc,
-            name=f"HangingBasket_{i}"
-        )
+        create_hanging_basket(loc, name=f"HangingBasket_{i}")
 
-        # Hanging wire from beam to basket
-        # Join wire to basket?
-        if basket:
-            beam_attach = loc + mathutils.Vector((0, 0, 0.5))
-            from assets import plant_humanoid
-            wire = plant_humanoid.create_vine(
-                beam_attach, loc,
-                radius=0.004
-            )
-            wire.name = f"BasketWire_{i}"
-            iron_mat = bpy.data.materials.get("GH_Iron")
-            if iron_mat:
-                wire.data.materials.append(iron_mat)
-            
-            # Join wire to basket
-            bpy.ops.object.select_all(action='DESELECT')
-            wire.select_set(True)
-            basket.select_set(True)
-            bpy.context.view_layer.objects.active = basket
-            bpy.ops.object.join()
+def create_display_island():
+    import bmesh
+    import library_props
+    mesh_data = bpy.data.meshes.new("Island_MeshData")
+    obj = bpy.data.objects.new("DisplayIsland", mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = (0, 0, -0.6)
 
-    return benches
+    bm = bmesh.new()
+    ret = bmesh.ops.create_cube(bm, size=1.0)
+    for v in ret['verts']:
+        v.co.x *= 2.5
+        v.co.y *= 1.0
+        v.co.z *= 0.4
+    bm.to_mesh(mesh_data)
+    bm.free()
+
+    obj.data.materials.append(library_props.create_wood_material("IslandMat", color=(0.2, 0.1, 0.04)))
+
+    # Add plants
+    island_plant_locs = [(-1.5, 0, 0.2), (-0.5, 0.3, 0.2), (0.5, -0.2, 0.2), (1.5, 0.1, 0.2)]
+    for i, loc in enumerate(island_plant_locs):
+        p_obj = create_potted_plant(mathutils.Vector((0,0,-0.6)) + mathutils.Vector(loc),
+                                  plant_type=random.choice(['FERN', 'SUCCULENT', 'VINE']),
+                                  name=f"IslandPlant_{i}")
+        p_obj.parent = obj
+    return obj

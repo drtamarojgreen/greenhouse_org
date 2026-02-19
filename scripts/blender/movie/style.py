@@ -377,19 +377,29 @@ def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed
 
 def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=15000, strength=0.05, scale=10.0, phase=None):
     """Inserts noise modifier to a data path, ensuring the range is respected."""
-    if not obj.animation_data:
-        obj.animation_data_create()
-    if not obj.animation_data.action:
-        obj.animation_data.action = bpy.data.actions.new(name=f"Noise_{obj.name}_{data_path.replace('.', '_')}")
+    # Handle both Objects and PoseBones
+    anim_data_owner = obj
+    if hasattr(obj, "id_data") and isinstance(obj.id_data, bpy.types.Object): # PoseBone
+        anim_data_owner = obj.id_data
 
-    action = obj.animation_data.action
+    if not anim_data_owner.animation_data:
+        anim_data_owner.animation_data_create()
+    if not anim_data_owner.animation_data.action:
+        anim_data_owner.animation_data.action = bpy.data.actions.new(name=f"Noise_{obj.name}")
+
+    action = anim_data_owner.animation_data.action
     indices = [index] if index >= 0 else [0, 1, 2]
 
     for idx in indices:
-        fcurve = get_or_create_fcurve(action, data_path, idx, ref_obj=obj)
+        # For PoseBones, data_path must include bone name
+        actual_path = data_path
+        if hasattr(obj, "path_from_id"):
+            actual_path = obj.path_from_id(data_path)
+
+        fcurve = get_or_create_fcurve(action, actual_path, idx, ref_obj=anim_data_owner)
         
         if not fcurve:
-            print(f"Warning: Could not access/create fcurve for {obj.name} ({data_path}[{idx}])")
+            print(f"Warning: Could not access/create fcurve for {obj.name} ({actual_path}[{idx}])")
             continue
 
         if not fcurve.keyframe_points:
@@ -407,9 +417,17 @@ def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=1500
         modifier.blend_out = 10
 
 def animate_breathing(obj, frame_start, frame_end, axis=2, amplitude=0.03, cycle=72):
-    """Point 24: Use Noise modifier for breathing to reduce keyframe bloat."""
+    """Point 24: Use Noise modifier for breathing to reduce keyframe bloat. Bone-aware."""
     if not obj: return
-    insert_looping_noise(obj, "scale", index=axis, strength=amplitude, scale=cycle, frame_start=frame_start, frame_end=frame_end)
+
+    target = obj
+    data_path = "scale"
+
+    # If it's an armature, animate the Torso bone instead of the object
+    if obj.type == 'ARMATURE' and "Torso" in obj.pose.bones:
+        target = obj.pose.bones["Torso"]
+
+    insert_looping_noise(target, data_path, index=axis, strength=amplitude, scale=cycle, frame_start=frame_start, frame_end=frame_end)
 
 def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 1, 1, 1), frame_start=1, frame_end=15000):
     """Point 22 & 80: Optimized dust particles. Reuses existing motes if available."""
@@ -438,14 +456,16 @@ def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 
     needed = density - len(existing_motes)
     
     if needed > 0:
-        # Create prototype mesh once
+        # Create prototype mesh once (BMesh)
         mesh_name = f"DustMoteMesh_{color_hex}"
         mesh = bpy.data.meshes.get(mesh_name)
         if not mesh:
-            bpy.ops.mesh.primitive_ico_sphere_add(radius=0.01, location=(0,0,0))
-            mesh = bpy.context.object.data
-            mesh.name = mesh_name
-            bpy.data.objects.remove(bpy.context.object, do_unlink=True) # Keep mesh, delete temp obj
+            import bmesh
+            mesh = bpy.data.meshes.new(mesh_name)
+            bm = bmesh.new()
+            bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.01)
+            bm.to_mesh(mesh)
+            bm.free()
 
         for i in range(needed):
             mote = bpy.data.objects.new(f"DustMote_{color_hex}_{len(existing_motes)+i}", mesh)
@@ -655,11 +675,20 @@ def animate_dynamic_pupils(pupil_objs, light_energy_provider, frame_start, frame
         p.keyframe_insert(data_path="scale", frame=2300) # Shadow
 
 def apply_thought_motes(character_obj, frame_start, frame_end, count=5):
-    """Floating icons that drift near characters."""
+    """Point 95: BMesh Thought Motes."""
+    import bmesh
+    mesh_data = bpy.data.meshes.get("ThoughtMoteMesh")
+    if not mesh_data:
+        mesh_data = bpy.data.meshes.new("ThoughtMoteMesh")
+        bm = bmesh.new()
+        bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.05)
+        bm.to_mesh(mesh_data)
+        bm.free()
+
     for i in range(count):
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.05, location=character_obj.location + mathutils.Vector((0,0,2)))
-        mote = bpy.context.object
-        mote.name = f"ThoughtMote_{character_obj.name}_{i}"
+        mote = bpy.data.objects.new(f"ThoughtMote_{character_obj.name}_{i}", mesh_data)
+        bpy.context.collection.objects.link(mote)
+        mote.location = character_obj.location + mathutils.Vector((0, 0, 2))
         insert_looping_noise(mote, "location", strength=0.5, scale=10.0, frame_start=frame_start, frame_end=frame_end)
 
 _plant_humanoid = None
@@ -891,18 +920,24 @@ def animate_fireflies(center, volume_size=(5, 5, 5), density=10, frame_start=1, 
     bsdf.inputs["Base Color"].default_value = (0.8, 1.0, 0.2, 1) # Yellow-green
     set_blend_method(mat, 'BLEND')
 
+    mesh_data = bpy.data.meshes.get("FireflyMesh")
+    if not mesh_data:
+        import bmesh
+        mesh_data = bpy.data.meshes.new("FireflyMesh")
+        bm = bmesh.new()
+        bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.02)
+        bm.to_mesh(mesh_data)
+        bm.free()
+
     for i in range(density):
         loc = center + mathutils.Vector((
             random.uniform(-volume_size[0], volume_size[0]),
             random.uniform(-volume_size[1], volume_size[1]),
             random.uniform(0, volume_size[2])
         ))
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.02, location=loc)
-        fly = bpy.context.object
-        fly.name = f"Firefly_{i}"
+        fly = bpy.data.objects.new(f"Firefly_{i}", mesh_data)
         container.objects.link(fly)
-        if fly.name in bpy.context.scene.collection.objects:
-            bpy.context.scene.collection.objects.unlink(fly)
+        fly.location = loc
         fly.data.materials.append(mat)
 
         # Drifting
@@ -1244,14 +1279,21 @@ def replace_with_soft_boxes():
             energy = obj.data.energy
             color = obj.data.color
 
-            bpy.ops.object.select_all(action='DESELECT')
-            obj.select_set(True)
-            bpy.ops.object.delete()
+            import bmesh
+            mesh_data = bpy.data.meshes.new(f"SoftBox_{name}_Mesh")
+            bm = bmesh.new()
+            bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=1.0)
+            bm.to_mesh(mesh_data)
+            bm.free()
 
-            bpy.ops.mesh.primitive_plane_add(location=loc, rotation=rot)
-            plane = bpy.context.object
-            plane.name = f"SoftBox_{name}"
+            plane = bpy.data.objects.new(f"SoftBox_{name}", mesh_data)
+            bpy.context.collection.objects.link(plane)
+            plane.location = loc
+            plane.rotation_euler = rot
             plane.scale = (2, 2, 1)
+
+            # Delete old light
+            bpy.data.objects.remove(obj, do_unlink=True)
 
             mat = bpy.data.materials.new(name=f"Mat_{plane.name}")
             # mat.use_nodes = True
@@ -1326,18 +1368,24 @@ def animate_floating_spores(center, volume_size=(10, 10, 5), density=50, frame_s
         set_principled_socket(mat, "Emission Strength", 5.0)
         set_blend_method(mat, 'BLEND')
 
+    mesh_data = bpy.data.meshes.get("SporeMesh")
+    if not mesh_data:
+        import bmesh
+        mesh_data = bpy.data.meshes.new("SporeMesh")
+        bm = bmesh.new()
+        bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.015)
+        bm.to_mesh(mesh_data)
+        bm.free()
+
     for i in range(density):
         loc = center + mathutils.Vector((
             random.uniform(-volume_size[0], volume_size[0]),
             random.uniform(-volume_size[1], volume_size[1]),
             random.uniform(0, volume_size[2])
         ))
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.015, location=loc)
-        spore = bpy.context.object
-        spore.name = f"Spore_{i}"
+        spore = bpy.data.objects.new(f"Spore_{i}", mesh_data)
         container.objects.link(spore)
-        if spore.name in bpy.context.scene.collection.objects:
-            bpy.context.scene.collection.objects.unlink(spore)
+        spore.location = loc
         spore.data.materials.append(mat)
 
         # Gentle drifting noise

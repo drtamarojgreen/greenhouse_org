@@ -159,137 +159,66 @@ def create_garden_bed(location, size=(3, 1.5), name="GardenBed"):
     return obj
 
 def create_exterior_garden(greenhouse_size=(15, 15, 8)):
-    """
-    Full exterior garden surrounding the greenhouse:
-    - Hedge rows along the perimeter
-    - Garden beds with flowers
-    - Gravel path leading to entrance
-    - Exterior trees
-    """
+    """Point 95: Optimized BMesh Exterior Garden."""
     w, d = greenhouse_size[0], greenhouse_size[1]
-    padding = 3.0   # distance from greenhouse wall to first hedge
-
-    # Collect all static objects for final join
-    static_garden_objects = []
+    padding = 3.0
     
-    # Hedges
-    # Front hedge row (with gap for path)
+    # Static meshes to join
+    to_join = []
+
+    # 1. Path
+    path = create_garden_path(padding, d)
+    to_join.append(path)
+
+    # 2. Hedges
     hedge_y = -(d/2 + padding + 1.2)
-    h1 = create_hedge_row(
-        (-w/2 - padding, hedge_y, -1),
-        (-2.5, hedge_y, -1),
-        height=3.0, depth=1.2,
-        name="HedgeFrontLeft"
-    )
-    static_garden_objects.append(h1)
-    
-    h2 = create_hedge_row(
-        (2.5, hedge_y, -1),
-        (w/2 + padding, hedge_y, -1),
-        height=3.0, depth=1.2,
-        name="HedgeFrontRight"
-    )
-    static_garden_objects.append(h2)
+    to_join.append(create_hedge_row((-w/2 - padding, hedge_y, -1), (-2.5, hedge_y, -1), name="HedgeFrontL"))
+    to_join.append(create_hedge_row((2.5, hedge_y, -1), (w/2 + padding, hedge_y, -1), name="HedgeFrontR"))
+    to_join.append(create_hedge_row((- (w/2 + padding + 1.2), -(d/2 + padding), -1), (- (w/2 + padding + 1.2), (d/2 + padding), -1), name="HedgeL"))
+    to_join.append(create_hedge_row((w/2 + padding + 1.2, -(d/2 + padding), -1), (w/2 + padding + 1.2, (d/2 + padding), -1), name="HedgeR"))
+    to_join.append(create_hedge_row((-w/2 - padding, d/2 + padding + 1.2, -1), (w/2 + padding, d/2 + padding + 1.2, -1), name="HedgeBack"))
 
-    # Side hedges
-    for side, name in [(-1, "Left"), (1, "Right")]:
-        hedge_x = side * (w/2 + padding + 1.2)
-        h = create_hedge_row(
-            (hedge_x, -(d/2 + padding), -1),
-            (hedge_x,  (d/2 + padding), -1),
-            height=3.0, depth=1.2,
-            name=f"Hedge{name}"
-        )
-        static_garden_objects.append(h)
-
-    # Back hedge
-    h_back = create_hedge_row(
-        (-w/2 - padding, d/2 + padding + 1.2, -1),
-        ( w/2 + padding, d/2 + padding + 1.2, -1),
-        height=3.0, depth=1.2,
-        name="HedgeBack"
-    )
-    static_garden_objects.append(h_back)
-
-    # --- Enhancement #34: Cobblestone Path Material (BMesh) ---
+    # 3. Ground
+    ground_data = bpy.data.meshes.new("ExteriorGround_MeshData")
+    ground = bpy.data.objects.new("ExteriorGround", ground_data)
+    bpy.context.collection.objects.link(ground)
+    ground.location = (0, 0, -1.02)
     import bmesh
-    path_data = bpy.data.meshes.new("CobblestonePath_MeshData")
-    path = bpy.data.objects.new("CobblestonePath", path_data)
-    bpy.context.collection.objects.link(path)
-    path.location = (0, -(d/2 + padding/2 + 0.6), -0.99)
+    bm = bmesh.new()
+    bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=100.0)
+    bm.to_mesh(ground_data)
+    bm.free()
+    ground.data.materials.append(bpy.data.materials.get("GrassMat") or bpy.data.materials.new("GrassMat"))
+    to_join.append(ground)
 
-    bm_path = bmesh.new()
-    bmesh.ops.create_grid(bm_path, x_segments=1, y_segments=1, size=1.0)
-    for v in bm_path.verts:
+    # JOIN ALL
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in to_join: o.select_set(True)
+    bpy.context.view_layer.objects.active = to_join[0]
+    bpy.ops.object.join()
+    main_garden = bpy.context.view_layer.objects.active
+    main_garden.name = "Exterior_Garden_Main"
+
+    return main_garden
+
+def create_garden_path(padding, d):
+    import bmesh
+    mesh_data = bpy.data.meshes.new("Path_MeshData")
+    obj = bpy.data.objects.new("CobblestonePath", mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = (0, -(d/2 + padding/2 + 0.6), -0.99)
+    bm = bmesh.new()
+    bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=1.0)
+    for v in bm.verts:
         v.co.x *= 2.5
         v.co.y *= (padding + 1.5)
-    bm_path.to_mesh(path_data)
-    bm_path.free()
-
-    cobble_mat = bpy.data.materials.new("CobbleMat")
-    # cobble_mat.use_nodes = True
-    nodes = cobble_mat.node_tree.nodes
-    links = cobble_mat.node_tree.links
-    nodes.clear()
-    node_out = nodes.new('ShaderNodeOutputMaterial')
-    node_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
-
-    # Voronoi for stones
-    node_voronoi = nodes.new('ShaderNodeTexVoronoi')
-    node_voronoi.inputs['Scale'].default_value = 20.0
-
-    # Displacement (#34)
-    node_disp = nodes.new('ShaderNodeDisplacement')
-    node_disp.inputs['Scale'].default_value = 0.05
-    links.new(node_voronoi.outputs['Distance'], node_disp.inputs['Height'])
-    links.new(node_disp.outputs['Displacement'], node_out.inputs['Displacement'])
-
-    # Color
-    node_ramp = nodes.new('ShaderNodeValToRGB')
-    node_ramp.color_ramp.elements[0].color = (0.2, 0.2, 0.2, 1)
-    node_ramp.color_ramp.elements[1].color = (0.4, 0.4, 0.4, 1)
-    links.new(node_voronoi.outputs['Color'], node_ramp.inputs['Fac'])
-    links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
-
-    links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
-    node_bsdf.inputs['Roughness'].default_value = 0.8
-    cobble_mat.displacement_method = 'BOTH'
-    path.data.materials.append(cobble_mat)
-    static_garden_objects.append(path)
-
-    # --- Garden beds along front ---
-    bed_positions = [
-        mathutils.Vector((-6, -(d/2 + 1.5), -1)),
-        mathutils.Vector((-3, -(d/2 + 1.5), -1)),
-        mathutils.Vector(( 3, -(d/2 + 1.5), -1)),
-        mathutils.Vector(( 6, -(d/2 + 1.5), -1)),
-    ]
-    beds = []
-    for i, pos in enumerate(bed_positions):
-        # create_garden_bed returns a collection now, but the main object is the soil/bed mesh
-        # We need to extract the mesh object to join it
-        bed_col = create_garden_bed(
-            pos,
-            size=(2.5, 1.2),
-            name=f"ExteriorBed_{i}"
-        )
-        # Find the mesh object in the collection (it should be the one joined with flowers)
-        for obj in bed_col.objects:
-            if obj.type == 'MESH' and "Soil" in obj.name:
-                static_garden_objects.append(obj)
-            # Emitters and stones are handled by particle systems on the soil object (or separate emitter?)
-            # Wait, in create_garden_bed we linked border_emitter.
-            elif "BorderEmitter" in obj.name:
-                # Emitters must stay separate if they have modifiers that need to be applied or preserved?
-                # Actually, if we join, we lose the particle system settings unless we apply them.
-                # Applying hair particles -> Real geometry? Or keep them as emmiters?
-                # User wants "no meshes", so keeping them as particle systems is fine, 
-                # BUT if we have 4 emitters, that's 4 objects.
-                # Let's try to join the emitters too!
-                static_garden_objects.append(obj)
+    bm.to_mesh(mesh_data)
+    bm.free()
+    obj.data.materials.append(bpy.data.materials.get("CobbleMat") or bpy.data.materials.new("CobbleMat"))
+    return obj
 
     # --- Enhancement #32: Koi Pond in Garden Exterior ---
-    def create_koi_pond(location, size=(4, 6)):
+def create_koi_pond(location, size=(4, 6)):
         location = mathutils.Vector(location)
         bpy.ops.mesh.primitive_plane_add(size=1, location=location)
         pond = bpy.context.object

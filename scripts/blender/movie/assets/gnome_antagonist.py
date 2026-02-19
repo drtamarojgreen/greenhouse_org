@@ -62,6 +62,16 @@ def create_gnome(name, location, scale=0.6):
     head.tail = (0, 0, 1.2)
     head.parent = torso
 
+    arm_l = armature_data.edit_bones.new("Arm.L")
+    arm_l.head = (0.3, 0, 0.6)
+    arm_l.tail = (0.6, 0, 0.3)
+    arm_l.parent = torso
+
+    arm_r = armature_data.edit_bones.new("Arm.R")
+    arm_r.head = (-0.3, 0, 0.6)
+    arm_r.tail = (-0.6, 0, 0.3)
+    arm_r.parent = torso
+
     bpy.ops.object.mode_set(mode='OBJECT')
 
     # 2. Mesh
@@ -74,6 +84,8 @@ def create_gnome(name, location, scale=0.6):
     dlayer = bm.verts.layers.deform.verify()
     vg_torso = mesh_obj.vertex_groups.new(name="Torso").index
     vg_head = mesh_obj.vertex_groups.new(name="Head").index
+    vg_arm_l = mesh_obj.vertex_groups.new(name="Arm.L").index
+    vg_arm_r = mesh_obj.vertex_groups.new(name="Arm.R").index
 
     # Body
     ret = bmesh.ops.create_cylinder(bm, segments=12, radius=0.3, depth=0.8, matrix=mathutils.Matrix.Translation((0,0,0.4)))
@@ -133,22 +145,39 @@ def create_gnome(name, location, scale=0.6):
     bm.to_mesh(mesh_data)
     bm.free()
 
-    # Staff
-    staff_base = (0.5, -0.3, 0)
-    staff, staff_tip = create_gnarled_staff(location + mathutils.Vector(staff_base), name=f"{name}_Staff", material=mat_gloom)
-    staff.parent = armature_obj # Parent to armature instead of torso object
+    # Staff (Rigged to Arm.L)
+    # We will build the staff AS PART OF THE MESH to ensure "properly merged"
+    staff_bm_loc = (0.6, 0, 0.3)
+    curr_loc = mathutils.Vector(staff_bm_loc)
+    for i in range(8):
+        next_loc = curr_loc + mathutils.Vector((random.uniform(-0.05, 0.05), random.uniform(-0.05, 0.05), 1.5/8))
+        segment_center = (curr_loc + next_loc) / 2
+        segment_vec = next_loc - curr_loc
+        segment_len = segment_vec.length
+        direction = segment_vec.normalized()
+        rot = direction.to_track_quat('Z', 'Y').to_matrix().to_4x4()
+        matrix = mathutils.Matrix.Translation(segment_center) @ rot
+        ret = bmesh.ops.create_cylinder(bm, segments=8, radius=0.03, depth=segment_len + 0.02, matrix=matrix)
+        for v in ret['verts']: v[dlayer][vg_arm_l] = 1.0
+        for f in ret['faces']: f.material_index = 3 # mat_gloom
+        curr_loc = next_loc
 
-    # Orb
-    orb_data = bpy.data.meshes.new(f"{name}_OrbData")
-    orb = bpy.data.objects.new(f"{name}_GloomOrb", orb_data)
-    bpy.context.collection.objects.link(orb)
-    orb.location = staff_tip
-    bm_orb = bmesh.new()
-    bmesh.ops.create_uvsphere(bm_orb, u_segments=12, v_segments=12, radius=0.15)
-    bm_orb.to_mesh(orb_data)
-    bm_orb.free()
-    orb.data.materials.append(mat_gloom)
-    orb.parent = staff
+    staff_tip_local = curr_loc
+
+    # Orb (Rigged to Arm.L)
+    ret = bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=0.15, matrix=mathutils.Matrix.Translation(staff_tip_local))
+    for v in ret['verts']: v[dlayer][vg_arm_l] = 1.0
+    for f in ret['faces']: f.material_index = 3
+
+    bm.to_mesh(mesh_data)
+    bm.free()
+
+    # Armature Modifier
+    mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
+    mod.object = armature_obj
+
+    armature_obj.scale = (scale, scale, scale)
+    return armature_obj
 
     # Armature Modifier
     mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')

@@ -4,75 +4,69 @@ import mathutils
 import style
 
 def load_brain(base_path):
-    """Loads and sets up the brain model."""
+    """Point 95: Optimized BMesh/Join for Brain loading."""
     brain_path = os.path.join(base_path, "brain.fbx")
-    if not os.path.exists(brain_path):
-        return None
+    if not os.path.exists(brain_path): return None
 
     style.patch_fbx_importer()
     bpy.ops.import_scene.fbx(filepath=brain_path)
-    imported = bpy.context.selected_objects
+    imported = [o for o in bpy.context.selected_objects if o.type == 'MESH']
 
-    brain_group = bpy.data.objects.new("BrainGroup", None)
-    bpy.context.scene.collection.objects.link(brain_group)
+    if not imported: return None
 
-    for o in imported:
-        o.parent = brain_group
-        o.matrix_parent_inverse = brain_group.matrix_world.inverted()
-        if o.type == 'MESH':
-            bpy.ops.object.select_all(action='DESELECT')
-            o.select_set(True)
-            bpy.context.view_layer.objects.active = o
-            bpy.ops.object.shade_smooth()
+    # Merge all brain parts into one
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in imported: o.select_set(True)
+    bpy.context.view_layer.objects.active = imported[0]
+    bpy.ops.object.join()
+    brain_obj = bpy.context.view_layer.objects.active
+    brain_obj.name = "BrainGroup"
+    bpy.ops.object.shade_smooth()
 
-            mat = bpy.data.materials.new(name="BrainMat")
-            bsdf = mat.node_tree.nodes.get("Principled BSDF")
+    # Shared Material
+    mat = bpy.data.materials.get("BrainMat") or bpy.data.materials.new(name="BrainMat")
+    if not mat.use_nodes: mat.use_nodes = True
+    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+    subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in bsdf.inputs else "Subsurface"
+    bsdf.inputs[subsurf_attr].default_value = 0.1
 
-            # Subsurface Weight (Blender 5.0 compatibility)
-            subsurf_attr = "Subsurface Weight" if "Subsurface Weight" in bsdf.inputs else "Subsurface"
-            bsdf.inputs[subsurf_attr].default_value = 0.1
+    # Simple color if not already setup
+    if not any(n.type == 'TEX_NOISE' for n in mat.node_tree.nodes):
+        node_veins = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
+        node_veins_color = mat.node_tree.nodes.new(type='ShaderNodeValToRGB')
+        elements = node_veins_color.color_ramp.elements
+        elements[0].color = (1, 0.8, 0.8, 1)
+        elements[1].color = (1, 0, 0, 1)
+        mat.node_tree.links.new(node_veins.outputs['Fac'], node_veins_color.inputs['Fac'])
+        mat.node_tree.links.new(node_veins_color.outputs['Color'], bsdf.inputs['Base Color'])
 
-            node_veins = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
-            node_veins.inputs['Scale'].default_value = 20.0
+    brain_obj.data.materials.clear()
+    brain_obj.data.materials.append(mat)
 
-            node_veins_color = mat.node_tree.nodes.new(type='ShaderNodeValToRGB')
-            # Point 4: version safe color ramp handling (min 2 elements)
-            elements = node_veins_color.color_ramp.elements
-            elements[0].color = (1, 0.8, 0.8, 1) # Tissue
-            elements[1].color = (1, 0, 0, 1) # Veins
-
-            mat.node_tree.links.new(node_veins.outputs['Fac'], node_veins_color.inputs['Fac'])
-            mat.node_tree.links.new(node_veins_color.outputs['Color'], bsdf.inputs['Base Color'])
-
-            o.data.materials.append(mat)
-
-    return brain_group
+    return brain_obj
 
 def load_neuron(base_path):
-    """Loads and sets up the neuron model."""
+    """Point 95: Optimized Neuron loading."""
     neuron_path = os.path.join(base_path, "neuron.fbx")
-    if not os.path.exists(neuron_path):
-        return None
+    if not os.path.exists(neuron_path): return None
 
     bpy.ops.import_scene.fbx(filepath=neuron_path)
-    imported = bpy.context.selected_objects
+    imported = [o for o in bpy.context.selected_objects if o.type == 'MESH']
+    if not imported: return None
 
-    neuron_group = bpy.data.objects.new("NeuronGroup", None)
-    bpy.context.scene.collection.objects.link(neuron_group)
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in imported: o.select_set(True)
+    bpy.context.view_layer.objects.active = imported[0]
+    bpy.ops.object.join()
+    neuron_obj = bpy.context.view_layer.objects.active
+    neuron_obj.name = "NeuronGroup"
+    bpy.ops.object.shade_smooth()
 
-    for o in imported:
-        o.parent = neuron_group
-        o.matrix_parent_inverse = neuron_group.matrix_world.inverted()
-        if o.type == 'MESH':
-            bpy.ops.object.select_all(action='DESELECT')
-            o.select_set(True)
-            bpy.context.view_layer.objects.active = o
-            bpy.ops.object.shade_smooth()
+    mat = bpy.data.materials.get("NeuronMat") or bpy.data.materials.new(name="NeuronMat")
+    neuron_obj.data.materials.clear()
+    neuron_obj.data.materials.append(mat)
 
-            mat = bpy.data.materials.new(name="NeuronMat")
-            o.data.materials.append(mat)
-
-    return neuron_group
+    return neuron_obj
 
 def animate_brain_neuron(master_instance):
     """Animates brain and neuron props."""

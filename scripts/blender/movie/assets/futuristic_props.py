@@ -4,11 +4,18 @@ import mathutils
 import style
 
 def create_hologram(location, size=1.0):
-    location = mathutils.Vector(location)
-    """Creates a holographic interface."""
-    bpy.ops.mesh.primitive_plane_add(size=size, location=location + mathutils.Vector((0,0,1.2)), rotation=(math.radians(90), 0, 0))
-    holo = bpy.context.object
-    holo.name = "Hologram"
+    """Point 95: BMesh Hologram creation."""
+    import bmesh
+    mesh_data = bpy.data.meshes.new("Holo_MeshData")
+    obj = bpy.data.objects.new("Hologram", mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = mathutils.Vector(location) + mathutils.Vector((0, 0, 1.2))
+    obj.rotation_euler = (math.radians(90), 0, 0)
+
+    bm = bmesh.new()
+    bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=size/2)
+    bm.to_mesh(mesh_data)
+    bm.free()
 
     mat = bpy.data.materials.new(name="HoloMat")
     bsdf = mat.node_tree.nodes["Principled BSDF"]
@@ -25,12 +32,21 @@ def create_hologram(location, size=1.0):
     return holo
 
 def create_lab_bench(location):
-    location = mathutils.Vector(location)
-    """Creates a futuristic laboratory table."""
-    bpy.ops.mesh.primitive_cube_add(size=1.0, location=location + mathutils.Vector((0,0,0.4)))
-    bench = bpy.context.object
-    bench.name = "LabBench"
-    bench.scale = (2.0, 1.0, 0.4)
+    """Point 95: BMesh Lab Bench creation."""
+    import bmesh
+    mesh_data = bpy.data.meshes.new("Bench_MeshData")
+    obj = bpy.data.objects.new("LabBench", mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = mathutils.Vector(location) + mathutils.Vector((0,0,0.4))
+
+    bm = bmesh.new()
+    ret = bmesh.ops.create_cube(bm, size=1.0)
+    for v in ret['verts']:
+        v.co.x *= 2.0
+        v.co.y *= 1.0
+        v.co.z *= 0.4
+    bm.to_mesh(mesh_data)
+    bm.free()
 
     mat = bpy.data.materials.new(name="BenchMat")
     mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.1, 0.1, 0.1, 1)

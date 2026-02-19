@@ -70,16 +70,24 @@ def setup_volumetric_haze(density=0.005):
         links.new(vol.outputs['Volume'], out.inputs['Volume'])
 
 def create_stage_floor(location=(0,0,-1), size=40):
-    """Creates a checkered marble stage floor."""
-    bpy.ops.mesh.primitive_plane_add(size=size, location=location)
-    floor = bpy.context.object
-    floor.name = "ExpressionistFloor"
-    floor.data.materials.append(create_marble_floor_mat())
+    """Point 95: BMesh Stage Floor creation."""
+    import bmesh
+    mesh_data = bpy.data.meshes.new("Floor_MeshData")
+    obj = bpy.data.objects.new("ExpressionistFloor", mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
+
+    bm = bmesh.new()
+    bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=size/2)
+    bm.to_mesh(mesh_data)
+    bm.free()
+
+    obj.data.materials.append(create_marble_floor_mat())
 
     # Enhancement #24: Caustic Light Patterns on Floor
-    style.setup_caustic_patterns(floor)
+    style.setup_caustic_patterns(obj)
 
-    return floor
+    return obj
 
 if __name__ == "__main__":
     bpy.ops.object.select_all(action='SELECT')

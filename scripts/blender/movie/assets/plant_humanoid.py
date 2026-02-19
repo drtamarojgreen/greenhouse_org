@@ -283,6 +283,15 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     bmesh_cylinder(limb_thickness*1.5, 0.9, (0.2, 0, -0.4), "Leg.L")
     bmesh_cylinder(limb_thickness*1.5, 0.9, (-0.2, 0, -0.4), "Leg.R")
 
+    # Reason Staff (Rigged to Arm.R)
+    vg_arm_r = mesh_obj.vertex_groups.get("Arm.R").index
+    staff_matrix = mathutils.Matrix.Translation((0.8, 0, arm_height - 0.4))
+    ret = bmesh.ops.create_cylinder(bm, segments=8, radius=0.03, depth=2.0, matrix=staff_matrix)
+    for v in ret['verts']:
+        v[deform_layer][vg_arm_r] = 1.0
+    for f in ret['faces']:
+        f.material_index = 0 # bark material
+
     # Leaves (Hair)
     vg_head = mesh_obj.vertex_groups.get("Head").index
     for i in range(int(15 * height_scale)):
@@ -445,62 +454,70 @@ def create_flower(location, name="MentalBloom", scale=0.2):
     return obj
 
 def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=3):
-    """Point 97: Parameterized band decorations."""
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.4, depth=height, location=location + mathutils.Vector((0,0,height/2)))
-    pillar = bpy.context.object
-    pillar.name = name
+    """Point 95: BMesh Inscribed Pillar."""
+    import bmesh
+    mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
+    obj = bpy.data.objects.new(name, mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
+
+    bm = bmesh.new()
+    # Main Pillar
+    bmesh.ops.create_cylinder(bm, segments=16, radius=0.4, depth=height, matrix=mathutils.Matrix.Translation((0,0,height/2)))
+
+    # Decorative Bands
+    for i in range(num_bands):
+        z_offset = height * (0.1 + (i+1) * (0.8 / (num_bands + 1)))
+        # BMesh torus isn't a direct primitive op, but we can use a circle or a thin cylinder
+        bmesh.ops.create_cylinder(bm, segments=16, radius=0.42, depth=0.04, matrix=mathutils.Matrix.Translation((0,0,z_offset)))
+
+    bm.to_mesh(mesh_data)
+    bm.free()
 
     mat = bpy.data.materials.new(name=f"PillarMat_{name}")
-    # mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
-
     node_output = nodes.new(type='ShaderNodeOutputMaterial')
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
     node_bsdf.inputs["Base Color"].default_value = (0.1, 0.1, 0.1, 1)
-
     node_coord = nodes.new(type='ShaderNodeTexCoord')
     node_noise = nodes.new(type='ShaderNodeTexNoise')
     node_noise.inputs['Scale'].default_value = 12.0
     node_noise.inputs['Detail'].default_value = 15.0
-
     node_ramp = nodes.new(type='ShaderNodeValToRGB')
     node_ramp.color_ramp.elements[0].position = 0.55
     node_ramp.color_ramp.elements[0].color = (0, 0, 0, 1)
     node_ramp.color_ramp.elements[1].position = 0.6
     node_ramp.color_ramp.elements[1].color = (0.2, 0.8, 0.4, 1)
-
     links.new(node_coord.outputs['Generated'], node_noise.inputs['Vector'])
     links.new(node_noise.outputs['Fac'], node_ramp.inputs['Fac'])
-
     emission_sock = style.get_principled_socket(node_bsdf, 'Emission')
-    if emission_sock:
-        links.new(node_ramp.outputs['Color'], emission_sock)
+    if emission_sock: links.new(node_ramp.outputs['Color'], emission_sock)
     style.set_principled_socket(node_bsdf, 'Emission Strength', 5.0)
-
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
-    pillar.data.materials.append(mat)
+    obj.data.materials.append(mat)
 
-    for i in range(num_bands):
-        z_offset = height * (0.1 + (i+1) * (0.8 / (num_bands + 1)))
-        bpy.ops.mesh.primitive_torus_add(location=location + mathutils.Vector((0,0,z_offset)), major_radius=0.42, minor_radius=0.02)
-        band = bpy.context.object
-        band.name = f"{name}_Band_{i}"
-        band.parent = pillar
-        band.matrix_parent_inverse = pillar.matrix_world.inverted()
-        band.data.materials.append(mat)
-
-    return pillar
+    return obj
 
 def create_scroll(location, name="PhilosophicalScroll"):
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.05, depth=0.4, location=location, rotation=(0, math.pi/2, 0))
-    scroll = bpy.context.object
-    scroll.name = name
+    """Point 95: BMesh Scroll creation."""
+    import bmesh
+    mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
+    obj = bpy.data.objects.new(name, mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
+    obj.rotation_euler = (0, math.pi/2, 0)
+
+    bm = bmesh.new()
+    bmesh.ops.create_cylinder(bm, segments=12, radius=0.05, depth=0.4)
+    bm.to_mesh(mesh_data)
+    bm.free()
+
     mat = bpy.data.materials.new(name="ScrollMat")
     mat.use_nodes = True
     mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.9, 0.8, 0.6, 1)
-    scroll.data.materials.append(mat)
-    return scroll
+    obj.data.materials.append(mat)
+    return obj
 
 _bush_cache = {}
 

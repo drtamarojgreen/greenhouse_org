@@ -43,6 +43,7 @@ from scene10_futuristic_lab import scene_logic as scene10
 from scene11_nature_sanctuary import scene_logic as scene11
 from scene12_credits import scene_logic as scene12
 from scene15_interaction import scene_logic as scene15
+from scene_brain import scene_logic as scene_brain
 
 # New scenes 16-22
 def safe_import_scene(name):
@@ -114,7 +115,7 @@ class MovieMaster(BaseMaster):
         scene_orchestrator.orchestrate_scenes(self)
 
         # Individual scene logic
-        scenes = [scene00, scene01, None, scene02, scene03, scene04, scene05,
+        scenes = [scene00, scene01, scene_brain, scene02, scene03, scene04, scene05,
                   scene06, scene07, scene08, scene09, scene10, scene11, scene15,
                   scene16, scene17, scene18, scene19, scene20, scene21, scene22, scene12]
 
