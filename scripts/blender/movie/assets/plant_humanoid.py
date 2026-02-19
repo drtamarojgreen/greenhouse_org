@@ -202,28 +202,28 @@ def create_fingers(location, direction, radius=0.02):
     return fingers
 
 def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05, seed=None, include_facial_details=True):
-    """Rigorous Single-Mesh Implementation using Armature."""
+    """Point 95: Optimized BMesh Implementation with Proper Rigging."""
     location = mathutils.Vector(location)
     if seed is not None: random.seed(seed)
     
+    import bmesh
+
     # 1. Create Armature
-    bpy.ops.object.armature_add(enter_editmode=True, align='WORLD', location=location)
-    armature_obj = bpy.context.object
-    armature_obj.name = name # The character's main object is now the Armature
-    armature = armature_obj.data
-    armature.name = f"{name}_ArmatureData"
+    armature_data = bpy.data.armatures.new(f"{name}_ArmatureData")
+    armature_obj = bpy.data.objects.new(name, armature_data)
+    bpy.context.collection.objects.link(armature_obj)
+    armature_obj.location = location
     
-    # Clear default bone
-    bpy.ops.armature.select_all(action='SELECT')
-    bpy.ops.armature.delete()
+    # Add bones in Edit Mode
+    bpy.context.view_layer.objects.active = armature_obj
+    bpy.ops.object.mode_set(mode='EDIT')
     
-    # Helper to add bone
     def add_bone(bone_name, head_pos, tail_pos, parent_name=None):
-        bone = armature.edit_bones.new(bone_name)
-        bone.head = head_pos + location
-        bone.tail = tail_pos + location
-        if parent_name and parent_name in armature.edit_bones:
-            bone.parent = armature.edit_bones[parent_name]
+        bone = armature_data.edit_bones.new(bone_name)
+        bone.head = head_pos
+        bone.tail = tail_pos
+        if parent_name and parent_name in armature_data.edit_bones:
+            bone.parent = armature_data.edit_bones[parent_name]
         return bone
 
     torso_height = 1.5 * height_scale
@@ -231,150 +231,117 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     arm_height = torso_height * 0.9
     
     # Define Bones (Relative to location)
-    # Torso
-    add_bone("Torso", mathutils.Vector((0,0,0)), mathutils.Vector((0,0,torso_height)))
-    # Head
-    add_bone("Head", mathutils.Vector((0,0,torso_height)), mathutils.Vector((0,0,torso_height+head_radius)), "Torso")
-    # Limbs
-    add_bone("Arm.L", mathutils.Vector((0.2,0,arm_height)), mathutils.Vector((0.8,0,arm_height-0.4)), "Torso") 
-    add_bone("Arm.R", mathutils.Vector((-0.2,0,arm_height)), mathutils.Vector((-0.8,0,arm_height-0.4)), "Torso")
-    add_bone("Leg.L", mathutils.Vector((0.1,0,0.1)), mathutils.Vector((0.3,0,-0.8)), "Torso")
-    add_bone("Leg.R", mathutils.Vector((-0.1,0,0.1)), mathutils.Vector((-0.3,0,-0.8)), "Torso")
+    add_bone("Torso", (0,0,0), (0,0,torso_height))
+    add_bone("Head", (0,0,torso_height), (0,0,torso_height+head_radius), "Torso")
+    add_bone("Arm.L", (0.2,0,arm_height), (0.8,0,arm_height-0.4), "Torso")
+    add_bone("Arm.R", (-0.2,0,arm_height), (-0.8,0,arm_height-0.4), "Torso")
+    add_bone("Leg.L", (0.1,0,0.1), (0.3,0,-0.8), "Torso")
+    add_bone("Leg.R", (-0.1,0,0.1), (-0.3,0,-0.8), "Torso")
     
-    # Facial Bones (for animation)
+    # Facial Bones
     eye_z = torso_height + head_radius * 0.3
-    add_bone("Eye.L", mathutils.Vector((head_radius*0.4, -head_radius*0.8, eye_z)), mathutils.Vector((head_radius*0.4, -head_radius*0.9, eye_z)), "Head")
-    add_bone("Eye.R", mathutils.Vector((-head_radius*0.4, -head_radius*0.8, eye_z)), mathutils.Vector((-head_radius*0.4, -head_radius*0.9, eye_z)), "Head")
-    add_bone("Mouth", mathutils.Vector((0, -head_radius*0.9, torso_height + head_radius * 0.1)), mathutils.Vector((0, -head_radius*1.0, torso_height + head_radius * 0.1)), "Head")
+    add_bone("Eye.L", (head_radius*0.4, -head_radius*0.8, eye_z), (head_radius*0.4, -head_radius*0.9, eye_z), "Head")
+    add_bone("Eye.R", (-head_radius*0.4, -head_radius*0.8, eye_z), (-head_radius*0.4, -head_radius*0.9, eye_z), "Head")
+    add_bone("Mouth", (0, -head_radius*0.9, torso_height + head_radius * 0.1), (0, -head_radius*1.0, torso_height + head_radius * 0.1), "Head")
     
     bpy.ops.object.mode_set(mode='OBJECT')
 
+    # 2. Build Mesh via BMesh
+    mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
+    mesh_obj = bpy.data.objects.new(f"{name}_Mesh", mesh_data)
+    bpy.context.collection.objects.link(mesh_obj)
+    mesh_obj.parent = armature_obj
+
+    bm = bmesh.new()
+
+    # Vertex Group layer
+    deform_layer = bm.verts.layers.deform.verify()
+
+    def bmesh_cylinder(radius, height, location, bone_name, segments=12):
+        vg_index = mesh_obj.vertex_groups.new(name=bone_name).index
+        matrix = mathutils.Matrix.Translation(location)
+        ret = bmesh.ops.create_cylinder(bm, segments=segments, radius=radius, depth=height, matrix=matrix)
+        for v in ret['verts']:
+            v[deform_layer][vg_index] = 1.0
+
+    def bmesh_sphere(radius, location, bone_name, segments=12):
+        vg_index = mesh_obj.vertex_groups.new(name=bone_name).index
+        matrix = mathutils.Matrix.Translation(location)
+        ret = bmesh.ops.create_uvsphere(bm, u_segments=segments, v_segments=segments, radius=radius, matrix=matrix)
+        for v in ret['verts']:
+            v[deform_layer][vg_index] = 1.0
+
+    # Build parts
+    bmesh_cylinder(0.2, torso_height, (0,0,torso_height/2), "Torso")
+    bmesh_sphere(head_radius, (0,0,torso_height + head_radius), "Head")
+
+    # Limbs
+    limb_thickness = vine_thickness
+    # Simplified limbs as cylinders for BMesh efficiency
+    bmesh_cylinder(limb_thickness, 0.7, (0.5, 0, arm_height-0.2), "Arm.L")
+    bmesh_cylinder(limb_thickness, 0.7, (-0.5, 0, arm_height-0.2), "Arm.R")
+    bmesh_cylinder(limb_thickness*1.5, 0.9, (0.2, 0, -0.4), "Leg.L")
+    bmesh_cylinder(limb_thickness*1.5, 0.9, (-0.2, 0, -0.4), "Leg.R")
+
+    # Leaves (Hair)
+    vg_head = mesh_obj.vertex_groups.get("Head").index
+    for i in range(int(15 * height_scale)):
+        angle = (i / 15) * math.pi * 2
+        loc = (math.cos(angle)*head_radius, math.sin(angle)*head_radius, torso_height + head_radius + random.uniform(-0.2, 0.2))
+        rot = mathutils.Euler((random.uniform(0, 3.14), random.uniform(0, 3.14), angle)).to_matrix().to_4x4()
+        matrix = mathutils.Matrix.Translation(loc) @ rot
+        # Create a small plane for leaf
+        ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.1, matrix=matrix)
+        for v in ret['verts']:
+            v[deform_layer][vg_head] = 1.0
+        for f in ret['faces']:
+            f.material_index = 1 # mat_leaf
+
+    # Eyes
+    eye_mat_index = 2
+    vg_eye_l = mesh_obj.vertex_groups.new(name="Eye.L").index
+    vg_eye_r = mesh_obj.vertex_groups.new(name="Eye.R").index
+
+    for side, vg_idx in [(-1, vg_eye_r), (1, vg_eye_l)]:
+        loc = (side * head_radius * 0.4, -head_radius * 0.8, torso_height + head_radius * 0.3)
+        ret = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.04, matrix=mathutils.Matrix.Translation(loc))
+        for v in ret['verts']:
+            v[deform_layer][vg_idx] = 1.0
+        for f in ret['faces']:
+            f.material_index = 2 # mat_eye
+
     # Materials
-    # Load Character Data
     import json
     import os
-    
     data_path = os.path.join(os.path.dirname(__file__), "data", "characters.json")
     try:
-        with open(data_path, 'r') as f:
-            char_data = json.load(f)
-    except FileNotFoundError:
-        print(f"Warning: Character data not found at {data_path}. Using defaults.")
-        char_data = {}
+        with open(data_path, 'r') as f: char_data = json.load(f)
+    except FileNotFoundError: char_data = {}
 
-    # Determine character key (handle instance names like Herbaceous_01)
     base_name = name.split('_')[0]
     config = char_data.get(base_name, char_data.get("Default", {}))
-    
-    # Apply Config
-    scale = config.get("scale", 1.0)
-    torso_height = config.get("torso_height", 1.5) * height_scale * scale
-    
     colors = config.get("colors", {})
     bark_base = tuple(colors.get("bark", [0.1, 0.3, 0.1]))
     leaf_base = tuple(colors.get("leaf", [0.6, 0.7, 0.2]))
     eye_color = tuple(colors.get("eye", [1.0, 1.0, 1.0]))
-    
-    features = config.get("features", {})
-    has_staff = features.get("has_staff", False)
-    has_shoulder_plates = features.get("has_shoulder_plates", False)
 
     mat_bark = create_bark_material(f"PlantMat_{name}", color=bark_base)
     mat_leaf = create_leaf_material(f"LeafMat_{name}", color=leaf_base)
     mat_eye = bpy.data.materials.new(name=f"EyeMat_{name}")
-    # mat_eye.use_nodes = True
     style.set_principled_socket(mat_eye, 'Emission Strength', 5.0)
     mat_eye.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = eye_color + (1,)
-    
-    parts_to_join = []
-    
-    def create_part(mesh_obj, group_name):
-        # Assign all verts to group
-        vg = mesh_obj.vertex_groups.new(name=group_name)
-        verts = [v.index for v in mesh_obj.data.vertices]
-        vg.add(verts, 1.0, 'REPLACE')
-        parts_to_join.append(mesh_obj)
-        return mesh_obj
 
-    # Geometry Generation
-    # Torso
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.2, depth=torso_height, location=location + mathutils.Vector((0,0,torso_height/2)))
-    torso = bpy.context.object
-    torso.name = f"{name}_Torso_Geo"
-    torso.data.materials.append(mat_bark)
-    create_part(torso, "Torso")
-    
-    # Head
-    bpy.ops.mesh.primitive_ico_sphere_add(radius=head_radius, subdivisions=3, location=location + mathutils.Vector((0,0,torso_height + head_radius)))
-    head = bpy.context.object
-    head.name = f"{name}_Head_Geo"
-    head.data.materials.append(mat_bark)
-    create_part(head, "Head")
-    
-    # Limbs (Vine Curves -> Mesh)
-    def create_limb(bone_name, start, end, radius):
-        # Transform local bone coords to world
-        start_world = location + start
-        end_world = location + end
-        vine = create_vine(start_world, end_world, radius=radius)
-        # Convert to mesh
-        bpy.context.view_layer.objects.active = vine
-        vine.select_set(True)
-        bpy.ops.object.convert(target='MESH')
-        vine.data.materials.append(mat_bark)
-        create_part(vine, bone_name)
-        # Fingers? simpler for now: just end of vine
-        return vine
+    mesh_obj.data.materials.append(mat_bark)
+    mesh_obj.data.materials.append(mat_leaf)
+    mesh_obj.data.materials.append(mat_eye)
 
-    create_limb("Arm.L", mathutils.Vector((0.2,0,arm_height)), mathutils.Vector((0.8,0,arm_height-0.4)), vine_thickness)
-    create_limb("Arm.R", mathutils.Vector((-0.2,0,arm_height)), mathutils.Vector((-0.8,0,arm_height-0.4)), vine_thickness)
-    create_limb("Leg.L", mathutils.Vector((0.1,0,0.1)), mathutils.Vector((0.3,0,-0.8)), vine_thickness*1.5)
-    create_limb("Leg.R", mathutils.Vector((-0.1,0,0.1)), mathutils.Vector((-0.3,0,-0.8)), vine_thickness*1.5)
+    bm.to_mesh(mesh_data)
+    bm.free()
 
-    # Hair/Leaves
-    leaf_template = create_leaf_mesh()
-    leaves = []
-    for i in range(int(15 * height_scale)):
-        leaf = bpy.data.objects.new(f"{name}_Leaf_{i}", leaf_template.data)
-        bpy.context.collection.objects.link(leaf)
-        angle = (i / 15) * math.pi * 2
-        leaf.location = head.location + mathutils.Vector((math.cos(angle)*head_radius, math.sin(angle)*head_radius, random.uniform(-0.2, 0.2)))
-        leaf.rotation_euler = (random.uniform(0, 3.14), random.uniform(0, 3.14), angle)
-        leaves.append(leaf)
-        
-    if leaves:
-        bpy.ops.object.select_all(action='DESELECT')
-        for l in leaves: l.select_set(True)
-        bpy.context.view_layer.objects.active = leaves[0]
-        bpy.ops.object.join()
-        hair = bpy.context.active_object
-        hair.data.materials.append(mat_leaf)
-        create_part(hair, "Head")
+    # Armature Modifier
+    mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
+    mod.object = armature_obj
 
-    # Eyes
-    for side, bone_name in [(-1, "Eye.R"), (1, "Eye.L")]:
-        eye_loc = location + mathutils.Vector((side * head_radius * 0.4, -head_radius * 0.8, torso_height + head_radius * 0.3))
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.04, location=eye_loc)
-        eye = bpy.context.object
-        eye.data.materials.append(mat_eye)
-        create_part(eye, bone_name)
-    
-    # Use Join to merge all parts
-    if parts_to_join:
-        bpy.ops.object.select_all(action='DESELECT')
-        for p in parts_to_join:
-            p.select_set(True)
-        bpy.context.view_layer.objects.active = parts_to_join[0]
-        bpy.ops.object.join()
-        
-        final_mesh = bpy.context.active_object
-        final_mesh.name = f"{name}_Mesh"
-        
-        # Parent to Armature
-        final_mesh.parent = armature_obj
-        modifier = final_mesh.modifiers.new(type='ARMATURE', name="Armature")
-        modifier.object = armature_obj
-        
     return armature_obj
 
 def animate_walk(armature_obj, frame_start, frame_end, step_height=0.1, cycle_length=48):
@@ -448,44 +415,34 @@ def animate_expression(armature_obj, frame, expression='NEUTRAL'):
         eye.keyframe_insert(data_path="scale", frame=frame)
 
 def create_flower(location, name="MentalBloom", scale=0.2):
-    container = bpy.data.collections.new(name)
-    bpy.context.scene.collection.children.link(container)
+    """Point 96: BMesh flower creation."""
+    import bmesh
+    mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
+    obj = bpy.data.objects.new(name, mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
     
+    bm = bmesh.new()
     # Core
-    bpy.ops.mesh.primitive_ico_sphere_add(radius=0.1, location=location)
-    core = bpy.context.object
-    core.name = f"{name}_Mesh" # Single mesh name
-    
-    mat_petal = bpy.data.materials.new(name=f"{name}_MatPetal")
-    # mat_petal.use_nodes = True
-    mat_petal.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.2, 0.5, 1)
+    bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.1)
     
     # Petals
-    petals = []
     for i in range(5):
         angle = (i / 5) * math.pi * 2
-        bpy.ops.mesh.primitive_plane_add(size=0.2, location=location + mathutils.Vector((math.cos(angle)*0.15, math.sin(angle)*0.15, 0.05)))
-        p = bpy.context.object
-        p.rotation_euler = (math.radians(45), 0, angle)
-        p.data.materials.append(mat_petal)
-        petals.append(p)
+        loc = (math.cos(angle)*0.15, math.sin(angle)*0.15, 0.05)
+        rot = mathutils.Euler((math.radians(45), 0, angle)).to_matrix().to_4x4()
+        matrix = mathutils.Matrix.Translation(loc) @ rot
+        bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.2, matrix=matrix)
 
-    # Join
-    if petals:
-        bpy.ops.object.select_all(action='DESELECT')
-        for p in petals: p.select_set(True)
-        core.select_set(True)
-        bpy.context.view_layer.objects.active = core
-        bpy.ops.object.join()
-        
-    core.scale = (scale, scale, scale)
+    bm.to_mesh(mesh_data)
+    bm.free()
     
-    # Assign to container
-    container.objects.link(core)
-    if core.name in bpy.context.scene.collection.objects:
-        bpy.context.scene.collection.objects.unlink(core)
-        
-    return core
+    mat_petal = bpy.data.materials.new(name=f"{name}_MatPetal")
+    mat_petal.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.2, 0.5, 1)
+    obj.data.materials.append(mat_petal)
+
+    obj.scale = (scale, scale, scale)
+    return obj
 
 def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=3):
     """Point 97: Parameterized band decorations."""
@@ -548,65 +505,42 @@ def create_scroll(location, name="PhilosophicalScroll"):
 _bush_cache = {}
 
 def create_procedural_bush(location, name="GardenBush", size=1.0, seed=None):
-    """Point 25: Optimized bush creation with Geometry Caching (Instancing)."""
-    # Quantize size to allow for better cache hits (e.g. 0.8, 0.9, 1.0, 1.1, 1.2 ...)
+    """Point 25: Optimized bush creation with BMesh and Geometry Caching."""
     size_key = round(size * 10) / 10.0
     cache_key = (size_key, seed)
 
-    container = bpy.data.collections.new(name)
-    bpy.context.scene.collection.children.link(container)
-    
-    # Check cache
     if cache_key in _bush_cache:
-        cached_mesh = _bush_cache[cache_key]
-        # Create a linked duplicate (new object, shared mesh)
-        bush = bpy.data.objects.new(name, cached_mesh)
-        container.objects.link(bush)
-        bush.location = location
-        # Random rotation for variety even with same mesh
-        bush.rotation_euler = (0, 0, random.uniform(0, 6.28))
-    else:
-        # Generate new geometry
-        if seed is not None: random.seed(seed)
-        
-        leaf_template = create_leaf_mesh()
-        mat = create_leaf_material(f"BushMat_{name}", color=(0.05, 0.3, 0.05))
+        mesh_data = _bush_cache[cache_key]
+        obj = bpy.data.objects.new(name, mesh_data)
+        bpy.context.collection.objects.link(obj)
+        obj.location = location
+        obj.rotation_euler = (0, 0, random.uniform(0, 6.28))
+        return obj
 
-        leaves = []
-        for i in range(25):
-            offset = mathutils.Vector((random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(0, 1))) * size
-            leaf = bpy.data.objects.new(f"{name}_Leaf_{i}", leaf_template.data)
-            bpy.context.scene.collection.objects.link(leaf) 
-            leaf.location = mathutils.Vector((0,0,0)) + offset # Local to bush center
-            leaf.rotation_euler = (random.uniform(0, 3.14), random.uniform(0, 3.14), random.uniform(0, 3.14))
-            leaf.scale = (size, size, size)
-            leaves.append(leaf)
+    if seed is not None: random.seed(seed)
 
-        # Join leaves into one mesh
-        if leaves:
-            bpy.ops.object.select_all(action='DESELECT')
-            for l in leaves:
-                l.select_set(True)
-            bpy.context.view_layer.objects.active = leaves[0]
-            bpy.ops.object.join()
+    import bmesh
+    mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
+    bm = bmesh.new()
 
-            bush = bpy.context.active_object
-            bush.name = name
-            bush.data.materials.append(mat)
-            
-            # Reset location to 0,0,0 before caching so instances can be placed correctly
-            bush.location = (0,0,0)
-            
-            # Cache the mesh data
-            _bush_cache[cache_key] = bush.data
-            
-            # Now place the actual instance
-            bush.location = location
-            bush.rotation_euler = (0, 0, random.uniform(0, 6.28))
+    for i in range(25):
+        offset = (random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(0, 1))
+        scale_vec = (size, size, size)
+        rot = mathutils.Euler((random.uniform(0, 3.14), random.uniform(0, 3.14), random.uniform(0, 3.14))).to_matrix().to_4x4()
+        matrix = mathutils.Matrix.Translation(offset) @ rot
+        bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.2 * size, matrix=matrix)
 
-            # Move to container and unlink from scene if needed
-            container.objects.link(bush)
-            if bush.name in bpy.context.scene.collection.objects:
-                bpy.context.scene.collection.objects.unlink(bush)
+    bm.to_mesh(mesh_data)
+    bm.free()
+
+    mat = create_leaf_material(f"BushMat_{name}", color=(0.05, 0.3, 0.05))
+    mesh_data.materials.append(mat)
+
+    _bush_cache[cache_key] = mesh_data
     
-    return container
+    obj = bpy.data.objects.new(name, mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
+    obj.rotation_euler = (0, 0, random.uniform(0, 6.28))
+
+    return obj

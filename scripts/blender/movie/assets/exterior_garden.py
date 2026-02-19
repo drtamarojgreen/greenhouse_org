@@ -83,166 +83,80 @@ def create_soil_material():
     return mat
 
 def create_hedge_row(start, end, height=2.5, depth=1.2, name="Hedge"):
-    """Creates a trimmed hedge between two points."""
-    direction = (mathutils.Vector(end) -
-                 mathutils.Vector(start))
+    """Point 95: BMesh Hedge creation."""
+    import bmesh
+    direction = (mathutils.Vector(end) - mathutils.Vector(start))
     length = direction.length
-    mid = (mathutils.Vector(start) +
-           mathutils.Vector(end)) / 2
+    mid = (mathutils.Vector(start) + mathutils.Vector(end)) / 2
     angle = math.atan2(direction.y, direction.x)
 
-    bpy.ops.mesh.primitive_cube_add(location=mid)
-    hedge = bpy.context.object
-    hedge.name = name
-    hedge.scale = (length / 2, depth / 2, height / 2)
-    hedge.rotation_euler[2] = angle
+    mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
+    hedge = bpy.data.objects.new(name, mesh_data)
+    bpy.context.collection.objects.link(hedge)
+    hedge.location = mid
+
+    bm = bmesh.new()
+    matrix = mathutils.Euler((0, 0, angle)).to_matrix().to_4x4()
+    ret = bmesh.ops.create_cube(bm, size=1.0, matrix=matrix)
+    for v in ret['verts']:
+        v.co.x *= length
+        v.co.y *= depth
+        v.co.z *= height
+
+    bm.to_mesh(mesh_data)
+    bm.free()
 
     mat = create_hedge_material()
     hedge.data.materials.append(mat)
 
-    # Slightly lumpy top via displace modifier
-    bpy.ops.object.modifier_add(type='DISPLACE')
-    hedge.modifiers["Displace"].strength = 0.08
-    tex = bpy.data.textures.new(f"HedgeBump_{name}", type='CLOUDS')
-    tex.noise_scale = 0.3
-    hedge.modifiers["Displace"].texture = tex
-
     return hedge
 
 def create_garden_bed(location, size=(3, 1.5), name="GardenBed"):
-    location = mathutils.Vector(location)
-    """
-    A raised planting bed with soil, edging stones, and
-    small flowering plants inside.
-    """
-    container = bpy.data.collections.new(name)
-    bpy.context.scene.collection.children.link(container)
-
-    soil_mat = create_soil_material()
-
-    # Enhancement #38: Procedural Moss on Stone Surfaces
-    import greenhouse_structure
-    stone_mat = greenhouse_structure.create_mossy_stone_mat(name=f"StoneMat_{name}")
-
-    # Raised soil bed
-    bpy.ops.mesh.primitive_cube_add(
-        location=location + mathutils.Vector((0, 0, 0.1))
-    )
-    soil = bpy.context.object
-    soil.name = f"{name}_Soil"
-    soil.scale = (size[0]/2, size[1]/2, 0.12)
-    soil.data.materials.append(soil_mat)
-    container.objects.link(soil)
-    if soil.name in bpy.context.scene.collection.objects:
-        bpy.context.scene.collection.objects.unlink(soil)
-
-    # Stone border (Particle System Approach)
-    # Reuse master stone
-    stone_master_name = "GardenStoneMaster"
-    stone_master = bpy.data.objects.get(stone_master_name)
-    if not stone_master:
-        bpy.ops.mesh.primitive_cube_add(size=0.1)
-        stone_master = bpy.context.object
-        stone_master.name = stone_master_name
-        stone_master.scale = (1, 0.4, 0.6) # Flattened stone shape
-        stone_master.data.materials.append(stone_mat)
-        # Hide master from render
-        stone_master.hide_render = True
-        stone_master.location = (0, 0, -100) # Move away
-        container.objects.link(stone_master)
-        if stone_master.name in bpy.context.scene.collection.objects:
-            bpy.context.scene.collection.objects.unlink(stone_master)
-
-    # Create Emitter for border
-    # We create a curve or a mesh strip representing the border
-    bpy.ops.mesh.primitive_cube_add(location=location + mathutils.Vector((0,0,0.1))) # Temp create to get context
-    temp = bpy.context.object
-    bpy.data.objects.remove(temp, do_unlink=True) # Cleanup
-
-    # Let's just create 4 thin emitter strips and join them
-    # Front/Back
-    strips = []
-    for side in [-1, 1]:
-        bpy.ops.mesh.primitive_cube_add(location=mathutils.Vector((0, side * (size[1]/2 + 0.1), 0)))
-        s = bpy.context.object
-        s.scale = (size[0]/2 + 0.2, 0.05, 0.05)
-        strips.append(s)
-        
-        bpy.ops.mesh.primitive_cube_add(location=mathutils.Vector((side * (size[0]/2 + 0.1), 0, 0)))
-        s2 = bpy.context.object
-        s2.scale = (0.05, size[1]/2, 0.05)
-        strips.append(s2)
-        
-    bpy.ops.object.select_all(action='DESELECT')
-    for s in strips: s.select_set(True)
-    bpy.context.view_layer.objects.active = strips[0]
-    bpy.ops.object.join()
-    border_emitter = bpy.context.active_object
-    border_emitter.name = f"{name}_BorderEmitter"
-    border_emitter.location = location + mathutils.Vector((0,0,0.1))
-    
-    # Add Particle System
-    psys = border_emitter.modifiers.new("Stones", type='PARTICLE_SYSTEM')
-    ps = border_emitter.particle_systems[0]
-    ps.settings.type = 'HAIR'
-    ps.settings.count = 40 # Adjust for density
-    ps.settings.render_type = 'OBJECT'
-    ps.settings.instance_object = stone_master
-    ps.settings.particle_size = 0.3
-    ps.settings.size_random = 0.4
-    ps.settings.phase_factor_random = 1.0 # Random rotation
-    
-    # Make emitter invisible
-    border_emitter.hide_render = True
-    
-    container.objects.link(border_emitter)
-    # stone_master is already linked at creation
-    if border_emitter.name in bpy.context.scene.collection.objects:
-        bpy.context.scene.collection.objects.unlink(border_emitter)
-
-    # Small plants inside the bed
+    """Point 95: BMesh Garden Bed creation."""
+    import bmesh
     from assets import plant_humanoid
-    flower_colors = [
-        (1, 0.2, 0.4),   # pink
-        (1, 0.8, 0.1),   # yellow
-        (0.6, 0.2, 0.9), # purple
-        (1, 0.4, 0.1),   # orange
-    ]
+    location = mathutils.Vector(location)
+
+    mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
+    obj = bpy.data.objects.new(name, mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
+
+    bm = bmesh.new()
+    # Soil
+    ret = bmesh.ops.create_cube(bm, size=1.0, matrix=mathutils.Matrix.Translation((0,0,0.1)))
+    for v in ret['verts']:
+        v.co.x *= size[0]
+        v.co.y *= size[1]
+        v.co.z *= 0.12
+    for f in ret['faces']: f.material_index = 0 # soil
+
+    # Stones (simple BMesh border instead of particles)
+    for i in range(20):
+        angle = (i / 20) * math.pi * 2
+        sx, sy = (size[0]/2 + 0.05) * math.cos(angle), (size[1]/2 + 0.05) * math.sin(angle)
+        ret = bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation((sx, sy, 0.1)))
+        for f in ret['faces']: f.material_index = 1 # stone
+
+    bm.to_mesh(mesh_data)
+    bm.free()
+
+    obj.data.materials.append(create_soil_material())
+    import greenhouse_structure
+    obj.data.materials.append(greenhouse_structure.create_mossy_stone_mat(name=f"StoneMat_{name}"))
     
-    flowers_to_join = []
-    
+    # Flowers
+    flower_colors = [(1, 0.2, 0.4), (1, 0.8, 0.1), (0.6, 0.2, 0.9), (1, 0.4, 0.1)]
     for i in range(random.randint(3, 6)):
-        flower_loc = location + mathutils.Vector((
-            random.uniform(-size[0]/2 + 0.3, size[0]/2 - 0.3),
-            random.uniform(-size[1]/2 + 0.2, size[1]/2 - 0.2),
-            0.22
-        ))
-        core = plant_humanoid.create_flower(
-            flower_loc,
-            name=f"{name}_Flower_{i}",
-            scale=random.uniform(0.15, 0.35)
-        )
-        # Override petal color
+        floc = location + mathutils.Vector((random.uniform(-size[0]/2 + 0.3, size[0]/2 - 0.3),
+                                          random.uniform(-size[1]/2 + 0.2, size[1]/2 - 0.2), 0.22))
+        f_obj = plant_humanoid.create_flower(floc, name=f"{name}_Flower_{i}", scale=random.uniform(0.15, 0.35))
+        f_obj.parent = obj
         color = random.choice(flower_colors)
-        mat_name = f"{name}_Flower_{i}_MatPetal"
-        petal_mat = bpy.data.materials.get(mat_name)
-        if petal_mat:
-            bsdf = petal_mat.node_tree.nodes.get("Principled BSDF")
-            if bsdf:
-                bsdf.inputs['Base Color'].default_value = (*color, 1)
+        if f_obj.data.materials:
+            f_obj.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*color, 1)
 
-        flowers_to_join.append(core)
-
-    # Join flowers into soil
-    if flowers_to_join:
-        bpy.ops.object.select_all(action='DESELECT')
-        for f in flowers_to_join:
-            f.select_set(True)
-        soil.select_set(True)
-        bpy.context.view_layer.objects.active = soil
-        bpy.ops.object.join()
-        
-    return container
+    return obj
 
 def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     """
@@ -297,14 +211,20 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     )
     static_garden_objects.append(h_back)
 
-    # --- Enhancement #34: Cobblestone Path Material ---
-    bpy.ops.mesh.primitive_plane_add(
-        size=1,
-        location=(0, -(d/2 + padding/2 + 0.6), -0.99)
-    )
-    path = bpy.context.object
-    path.name = "CobblestonePath"
-    path.scale = (2.5, (padding + 1.5)/2, 1)
+    # --- Enhancement #34: Cobblestone Path Material (BMesh) ---
+    import bmesh
+    path_data = bpy.data.meshes.new("CobblestonePath_MeshData")
+    path = bpy.data.objects.new("CobblestonePath", path_data)
+    bpy.context.collection.objects.link(path)
+    path.location = (0, -(d/2 + padding/2 + 0.6), -0.99)
+
+    bm_path = bmesh.new()
+    bmesh.ops.create_grid(bm_path, x_segments=1, y_segments=1, size=1.0)
+    for v in bm_path.verts:
+        v.co.x *= 2.5
+        v.co.y *= (padding + 1.5)
+    bm_path.to_mesh(path_data)
+    bm_path.free()
 
     cobble_mat = bpy.data.materials.new("CobbleMat")
     # cobble_mat.use_nodes = True
@@ -421,13 +341,16 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
 
     create_koi_pond(location=(w/2 + 5, 0, -1.01))
 
-    # --- Exterior grass ground plane ---
-    bpy.ops.mesh.primitive_plane_add(
-        size=200,
-        location=(0, 0, -1.02)
-    )
-    ground = bpy.context.object
-    ground.name = "ExteriorGround"
+    # --- Exterior grass ground plane (BMesh) ---
+    ground_data = bpy.data.meshes.new("ExteriorGround_MeshData")
+    ground = bpy.data.objects.new("ExteriorGround", ground_data)
+    bpy.context.collection.objects.link(ground)
+    ground.location = (0, 0, -1.02)
+
+    bm_ground = bmesh.new()
+    bmesh.ops.create_grid(bm_ground, x_segments=1, y_segments=1, size=100.0)
+    bm_ground.to_mesh(ground_data)
+    bm_ground.free()
 
     grass_mat = bpy.data.materials.new("GrassMat")
     # grass_mat.use_nodes = True

@@ -39,20 +39,27 @@ __all__ = [
 ]
 
 def get_action_curves(action, create_if_missing=False):
-    """Helper to get fcurves/curves collection from Action for Blender 5.0+ compatibility."""
-    if not action: return []
-    if hasattr(action, 'fcurves'):
-        return action.fcurves
-    if hasattr(action, 'curves'):
-        return action.curves
-    # Blender 5.0 / Animation 2025 Layered Action support
-    if hasattr(action, 'layer') and hasattr(action.layer, 'fcurves'):
-        return action.layer.fcurves
+    """Point 91: Robust layered action support for Blender 5.0+."""
+    if action is None: return []
+
+    # Blender 5.0+ Layered actions
     if hasattr(action, 'layers'):
         if len(action.layers) == 0 and create_if_missing:
             action.layers.new(name="Layer")
-        if len(action.layers) > 0 and hasattr(action.layers[0], 'fcurves'):
-            return action.layers[0].fcurves
+
+        curves = []
+        for layer in action.layers:
+            for strip in layer.strips:
+                if hasattr(strip, 'fcurves'):
+                    curves.extend(strip.fcurves)
+        return curves
+
+    # Legacy / Transition APIs
+    if hasattr(action, 'fcurves'): return action.fcurves
+    if hasattr(action, 'curves'): return action.curves
+    if hasattr(action, 'layer') and hasattr(action.layer, 'fcurves'):
+        return action.layer.fcurves
+
     return []
 
 def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
@@ -60,18 +67,29 @@ def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
     Retrieves or creates an F-Curve, handling legacy and Blender 5.0+ (Layered Action) APIs.
     ref_obj: The object/datablock the action is assigned to (required for Blender 5.0+ new actions).
     """
+    if action is None: return None
+
+    # Blender 5.0+ Layered Action Creation
+    if hasattr(action, 'fcurve_ensure_for_datablock') and ref_obj:
+        return action.fcurve_ensure_for_datablock(ref_obj, data_path=data_path, index=index)
+
+    # Legacy Access
     curves = get_action_curves(action, create_if_missing=True)
     
-    # Legacy / Standard Collection Access
-    if not (isinstance(curves, list) and not curves):
+    if not isinstance(curves, list):
         for fc in curves:
             if fc.data_path == data_path and fc.array_index == index:
                 return fc
-        return curves.new(data_path=data_path, index=index)
-    
-    # Blender 5.0+ Fallback
-    if hasattr(action, 'fcurve_ensure_for_datablock') and ref_obj:
-        return action.fcurve_ensure_for_datablock(ref_obj, data_path, index=index)
+        try:
+            return curves.new(data_path=data_path, index=index)
+        except Exception:
+            pass
+
+    # Fallback for list-based return from get_action_curves (read-only search)
+    for fc in curves:
+        if fc.data_path == data_path and fc.array_index == index:
+            return fc
+
     return None
 
 def get_eevee_engine_id():

@@ -61,37 +61,6 @@ def create_greenhouse_glass_mat():
     style.set_blend_method(mat, 'BLEND')
     return mat
 
-def create_ivy(parent_obj, frame_start=1):
-    """Enhancement #31: Procedural Ivy on Greenhouse Walls."""
-    # Simplified ivy using recursive cuboid growth or particle system
-    # We'll use a simple particle system for 'leaf' growth
-    bpy.ops.mesh.primitive_plane_add(size=0.1)
-    leaf_master = bpy.context.object
-    leaf_master.name = "Ivy_Leaf_Master"
-    leaf_master.hide_render = True
-
-    mat = bpy.data.materials.new(name="IvyLeafMat")
-    mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.02, 0.15, 0.05, 1)
-    leaf_master.data.materials.append(mat)
-
-    # Emitter
-    emitter = parent_obj
-    mod = emitter.modifiers.new(name="IvyParticles", type='PARTICLE_SYSTEM')
-    psys = emitter.particle_systems[0]
-    psys.settings.type = 'HAIR'
-    psys.settings.count = 2000
-    psys.settings.render_type = 'OBJECT'
-    psys.settings.instance_object = leaf_master
-    psys.settings.particle_size = 0.05
-    psys.settings.size_random = 0.5
-    psys.settings.phase_factor_random = 2.0
-
-    # Animate growth (#31)
-    psys.settings.particle_size = 0.001
-    psys.settings.keyframe_insert(data_path="particle_size", frame=1)
-    psys.settings.particle_size = 0.08
-    psys.settings.keyframe_insert(data_path="particle_size", frame=8000)
-
 def create_mossy_stone_mat(name="MossyStone"):
     """Enhancement #38: Procedural Moss on Stone Surfaces."""
     mat = bpy.data.materials.get(name)
@@ -132,133 +101,94 @@ def create_mossy_stone_mat(name="MossyStone"):
     return mat
 
 def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
-    """Creates a 1920s expressionist iron and glass greenhouse."""
+    """Point 95: Optimized BMesh Greenhouse structure."""
+    import bmesh
     main_loc = mathutils.Vector(location)
-
-    # Container collection
-    gh_col = bpy.data.collections.new("Greenhouse_Structure")
-    bpy.context.scene.collection.children.link(gh_col)
 
     iron_mat = create_greenhouse_iron_mat()
     glass_mat = create_greenhouse_glass_mat()
-
     beam_thickness = 0.08
 
-    # 1. Pillars (Corners and along walls)
-    pillar_locs = []
-    for x in [-size[0]/2, size[0]/2]:
-        for y in [-size[1]/2, size[1]/2]:
-            pillar_locs.append((x, y))
+    # 1. Main Iron Mesh
+    iron_data = bpy.data.meshes.new("Greenhouse_Iron_MeshData")
+    iron_obj = bpy.data.objects.new("Greenhouse_Iron", iron_data)
+    bpy.context.collection.objects.link(iron_obj)
+    iron_obj.location = main_loc
 
-    # Mid-wall pillars
-    pillar_locs.append((0, -size[1]/2))
-    pillar_locs.append((0, size[1]/2))
-    pillar_locs.append((-size[0]/2, 0))
-    pillar_locs.append((size[0]/2, 0))
+    bm_iron = bmesh.new()
 
+    def add_beam(loc, scale, rot=(0,0,0)):
+        matrix = mathutils.Matrix.Translation(loc) @ mathutils.Euler(rot).to_matrix().to_4x4()
+        bmesh.ops.create_cube(bm_iron, size=2.0, matrix=matrix)
+        # Apply scaling to the last created vertices
+        for v in bm_iron.verts[-8:]:
+            v.co.x *= scale[0]
+            v.co.y *= scale[1]
+            v.co.z *= scale[2]
+
+    # Pillars
+    pillar_locs = [(-size[0]/2, -size[1]/2), (size[0]/2, -size[1]/2), (-size[0]/2, size[1]/2), (size[0]/2, size[1]/2),
+                   (0, -size[1]/2), (0, size[1]/2), (-size[0]/2, 0), (size[0]/2, 0)]
     for px, py in pillar_locs:
-        bpy.ops.mesh.primitive_cube_add(location=main_loc + mathutils.Vector((px, py, size[2]/2)))
-        pillar = bpy.context.object
-        pillar.scale = (beam_thickness, beam_thickness, size[2]/2)
-        pillar.data.materials.append(iron_mat)
-        gh_col.objects.link(pillar)
-        # Point 15: Guarded unlink
-        if pillar.name in bpy.context.scene.collection.objects:
-            bpy.context.scene.collection.objects.unlink(pillar)
+        add_beam((px, py, size[2]/2), (beam_thickness, beam_thickness, size[2]/2))
 
-    # 2. Horizontal Beams (Floor and Top of walls)
+    # Horizontal Beams
     for z in [0, size[2]]:
-        # Longitudinal
         for x in [-size[0]/2, size[0]/2]:
-            bpy.ops.mesh.primitive_cube_add(location=main_loc + mathutils.Vector((x, 0, z)))
-            beam = bpy.context.object
-            beam.scale = (beam_thickness, size[1]/2, beam_thickness)
-            beam.data.materials.append(iron_mat)
-            gh_col.objects.link(beam)
-            if beam.name in bpy.context.scene.collection.objects:
-                bpy.context.scene.collection.objects.unlink(beam)
-        # Latitudinal
+            add_beam((x, 0, z), (beam_thickness, size[1]/2, beam_thickness))
         for y in [-size[1]/2, size[1]/2]:
-            bpy.ops.mesh.primitive_cube_add(location=main_loc + mathutils.Vector((0, y, z)))
-            beam = bpy.context.object
-            beam.scale = (size[0]/2, beam_thickness, beam_thickness)
-            beam.data.materials.append(iron_mat)
-            gh_col.objects.link(beam)
-            if beam.name in bpy.context.scene.collection.objects:
-                bpy.context.scene.collection.objects.unlink(beam)
+            add_beam((0, y, z), (size[0]/2, beam_thickness, beam_thickness))
 
-    # 3. Gabled Roof
-    peak_height = size[2] + 4
-    # Peak beam
-    bpy.ops.mesh.primitive_cube_add(location=main_loc + mathutils.Vector((0, 0, peak_height)))
-    peak_beam = bpy.context.object
-    peak_beam.scale = (size[0]/2, beam_thickness, beam_thickness)
-    peak_beam.data.materials.append(iron_mat)
-    gh_col.objects.link(peak_beam)
-    if peak_beam.name in bpy.context.scene.collection.objects:
-        bpy.context.scene.collection.objects.unlink(peak_beam)
-
-    # Rafters
+    # Roof
+    peak_h = size[2] + 4
+    add_beam((0, 0, peak_h), (size[0]/2, beam_thickness, beam_thickness))
     for x in [-size[0]/2, 0, size[0]/2]:
         for side_y in [-1, 1]:
-            y_start = side_y * size[1]/2
-            z_start = size[2]
-            y_end = 0
-            z_end = peak_height
-
+            y_start, z_start, y_end, z_end = side_y * size[1]/2, size[2], 0, peak_h
             mid = mathutils.Vector((x, (y_start + y_end)/2, (z_start + z_end)/2))
             dist = math.sqrt((y_end - y_start)**2 + (z_end - z_start)**2)
             angle = math.atan2(z_end - z_start, y_end - y_start)
+            add_beam(mid, (beam_thickness, dist/2, beam_thickness), (angle - math.pi/2, 0, 0))
 
-            bpy.ops.mesh.primitive_cube_add(location=main_loc + mid)
-            rafter = bpy.context.object
-            rafter.scale = (beam_thickness, dist/2, beam_thickness)
-            rafter.rotation_euler[0] = angle - math.pi/2
-            rafter.data.materials.append(iron_mat)
-            gh_col.objects.link(rafter)
-            if rafter.name in bpy.context.scene.collection.objects:
-                bpy.context.scene.collection.objects.unlink(rafter)
+    bm_iron.to_mesh(iron_data)
+    bm_iron.free()
+    iron_obj.data.materials.append(iron_mat)
 
-    # 4. Glass Panes (simplified planes)
-    # Walls
-    glass_panes = []
+    # 2. Glass Mesh
+    glass_data = bpy.data.meshes.new("Greenhouse_Glass_MeshData")
+    glass_obj = bpy.data.objects.new("Greenhouse_Glass", glass_data)
+    bpy.context.collection.objects.link(glass_obj)
+    glass_obj.location = main_loc
+
+    bm_glass = bmesh.new()
     for side in [-1, 1]:
         # X-walls
-        bpy.ops.mesh.primitive_plane_add(location=main_loc + mathutils.Vector((side * size[0]/2, 0, size[2]/2)), rotation=(0, math.pi/2, 0))
-        pane = bpy.context.object
-        pane.scale = (size[2]/2, size[1]/2, 1)
-        pane.data.materials.append(glass_mat)
-        glass_panes.append(pane)
-
+        matrix_x = mathutils.Matrix.Translation((side * size[0]/2, 0, size[2]/2)) @ mathutils.Euler((0, math.pi/2, 0)).to_matrix().to_4x4()
+        bmesh.ops.create_grid(bm_glass, x_segments=1, y_segments=1, size=1.0, matrix=matrix_x)
+        for v in bm_glass.verts[-4:]:
+            v.co.y *= size[1]/2
+            v.co.z *= size[2]/2
         # Y-walls
-        bpy.ops.mesh.primitive_plane_add(location=main_loc + mathutils.Vector((0, side * size[1]/2, size[2]/2)), rotation=(math.pi/2, 0, 0))
-        pane = bpy.context.object
-        pane.scale = (size[0]/2, size[2]/2, 1)
-        pane.data.materials.append(glass_mat)
-        glass_panes.append(pane)
+        matrix_y = mathutils.Matrix.Translation((0, side * size[1]/2, size[2]/2)) @ mathutils.Euler((math.pi/2, 0, 0)).to_matrix().to_4x4()
+        bmesh.ops.create_grid(bm_glass, x_segments=1, y_segments=1, size=1.0, matrix=matrix_y)
+        for v in bm_glass.verts[-4:]:
+            v.co.x *= size[0]/2
+            v.co.z *= size[2]/2
 
-    # Point 29: Join all parts to minimize object count and noise modifier overhead
+    bm_glass.to_mesh(glass_data)
+    bm_glass.free()
+    glass_obj.data.materials.append(glass_mat)
+
+    # Merge them into one main object for "properly merged" requirement
     bpy.ops.object.select_all(action='DESELECT')
-    for obj in gh_col.objects:
-        obj.select_set(True)
-    for pane in glass_panes:
-        pane.select_set(True)
-
-    # Point 29/7: We join everything into one main object
-    # Ensure we have a valid active object that is a mesh from our collection
-    main_obj = gh_col.objects[0]
-    bpy.context.view_layer.objects.active = main_obj
+    iron_obj.select_set(True)
+    glass_obj.select_set(True)
+    bpy.context.view_layer.objects.active = iron_obj
     bpy.ops.object.join()
+    main_obj = iron_obj
     main_obj.name = "Greenhouse_Main"
 
-    # Ensure it's in the collection
-    if main_obj.name not in gh_col.objects:
-        gh_col.objects.link(main_obj)
-
-    # Enhancement #31: Ivy
-    create_ivy(main_obj)
-
-    return gh_col
+    return main_obj
 
 if __name__ == "__main__":
     # Test

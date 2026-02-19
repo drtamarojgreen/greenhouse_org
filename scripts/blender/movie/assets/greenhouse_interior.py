@@ -60,376 +60,165 @@ def create_plant_pot(location, radius=0.15, height=0.2, name="Pot"):
     return pot
 
 def create_potted_plant(location, plant_type='FERN', name="PottedPlant"):
-    location = mathutils.Vector(location)
-    """
-    Creates a pot with a small plant inside.
-    Returns a single merged mesh object.
-    """
-    # Create a temporary collection to hold parts before joining
-    temp_col = bpy.data.collections.new(f"{name}_Temp")
-    bpy.context.scene.collection.children.link(temp_col)
+    """Point 95: BMesh Potted Plant creation."""
+    import bmesh
+    from assets import plant_humanoid
     
-    parts = []
+    mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
+    obj = bpy.data.objects.new(name, mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
 
-    pot_height = random.uniform(0.15, 0.25)
-    # Re-implement pot creation inline or modify create_plant_pot to return objects
-    # For simplicity, inline the pot creation here to avoid parenting issues before join
+    bm = bmesh.new()
+    pot_h = random.uniform(0.15, 0.25)
+    rad = random.uniform(0.1, 0.18)
     
     # Pot
-    radius = random.uniform(0.1, 0.18)
-    bpy.ops.mesh.primitive_cone_add(
-        vertices=16,
-        radius1=radius,
-        radius2=radius * 1.3,
-        depth=pot_height,
-        location=location + mathutils.Vector((0, 0, pot_height/2))
-    )
-    pot = bpy.context.object
-    pot.name = f"{name}_Pot"
-    pot.data.materials.append(create_terracotta_material())
-    parts.append(pot)
+    bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=rad, radius2=rad*1.3, depth=pot_h, matrix=mathutils.Matrix.Translation((0,0,pot_h/2)))
+    for f in bm.faces: f.material_index = 0 # terracotta
 
-    # Soil disc
-    bpy.ops.mesh.primitive_cylinder_add(
-        radius=radius * 1.25,
-        depth=0.02,
-        location=location + mathutils.Vector((0, 0, pot_height + 0.01))
-    )
-    soil = bpy.context.object
-    soil.name = f"{name}_Soil"
-    import exterior_garden
-    soil.data.materials.append(exterior_garden.create_soil_material())
-    parts.append(soil)
+    # Soil
+    ret = bmesh.ops.create_cylinder(bm, segments=16, radius=rad*1.25, depth=0.02, matrix=mathutils.Matrix.Translation((0,0,pot_h + 0.01)))
+    for f in ret['faces']: f.material_index = 1 # soil
 
-    plant_top = location + mathutils.Vector((0, 0, pot_height + 0.02))
-
-    # Generate plant parts
+    # Plant
+    plant_top = mathutils.Vector((0, 0, pot_h + 0.02))
     if plant_type == 'FERN':
-        _create_fern(plant_top, name, parts)
+        for i in range(random.randint(5, 9)):
+            angle = (i / 7) * math.pi * 2
+            end = plant_top + mathutils.Vector((math.cos(angle)*0.25, math.sin(angle)*0.25, 0.1))
+            _bmesh_vine(bm, plant_top, end, radius=0.008, mat_idx=2)
     elif plant_type == 'SUCCULENT':
-        _create_succulent(plant_top, name, parts)
+        ret = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.04, matrix=mathutils.Matrix.Translation(plant_top + mathutils.Vector((0,0,0.05))))
+        for f in ret['faces']: f.material_index = 2
+        for i in range(8):
+            angle = (i / 8) * math.pi * 2
+            r = 0.06 + (i % 3) * 0.02
+            loc = plant_top + mathutils.Vector((math.cos(angle)*r, math.sin(angle)*r, 0.02))
+            matrix = mathutils.Matrix.Translation(loc) @ mathutils.Euler((math.radians(30), 0, angle)).to_matrix().to_4x4()
+            ret = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.025, matrix=matrix)
+            for f in ret['faces']: f.material_index = 2
     elif plant_type == 'VINE':
-        _create_hanging_vine(plant_top, name, parts)
-    elif plant_type == 'FLOWERING':
-        from assets import plant_humanoid
-        core = plant_humanoid.create_flower(
-            plant_top,
-            name=f"{name}_Flower",
-            scale=random.uniform(0.2, 0.4)
-        )
-        parts.append(core)
+        for i in range(4):
+            angle = (i / 4) * math.pi * 2
+            end = plant_top + mathutils.Vector((math.cos(angle)*0.4, math.sin(angle)*0.4, -0.3))
+            _bmesh_vine(bm, plant_top, end, radius=0.006, mat_idx=2)
 
-    # Join all parts
-    if parts:
-        bpy.ops.object.select_all(action='DESELECT')
-        for p in parts:
-            # Ensure in temp col for selection? select_set works globally if in scene
-            # They are in active context from primitive_add/create functions
-            p.select_set(True)
-        
-        bpy.context.view_layer.objects.active = parts[0]
-        bpy.ops.object.join()
-        combined = bpy.context.active_object
-        combined.name = name
-        
-        # Cleanup temp collection if needed (parts are now one object)
-        # Ensure the combined object is linked to the scene collection or intended destination
-        # It's currently in whatever collection parts[0] was in.
-    else:
-        combined = None
+    bm.to_mesh(mesh_data)
+    bm.free()
 
-    bpy.data.collections.remove(temp_col)
-    return combined
+    obj.data.materials.append(create_terracotta_material())
+    import exterior_garden
+    obj.data.materials.append(exterior_garden.create_soil_material())
+    obj.data.materials.append(plant_humanoid.create_leaf_material(f"{name}_LeafMat", color=(0.1, 0.4, 0.1)))
 
-def _create_fern(location, name, parts_list):
-    """Small fern with radiating fronds."""
-    from assets import plant_humanoid
-    mat = plant_humanoid.create_leaf_material(
-        f"{name}_FernMat",
-        color=(0.08, 0.35, 0.06),
-        quality='hero'
-    )
-    for i in range(random.randint(5, 9)):
-        angle = (i / 7) * math.pi * 2
-        frond_end = location + mathutils.Vector((
-            math.cos(angle) * 0.25,
-            math.sin(angle) * 0.25,
-            0.1
-        ))
-        frond = plant_humanoid.create_vine(location, frond_end, radius=0.008)
-        frond.name = f"{name}_Frond_{i}"
-        frond.data.materials.append(mat)
-        parts_list.append(frond)
+    return obj
 
-def _create_succulent(location, name, parts_list):
-    """Rosette succulent from ico spheres."""
-    mat = bpy.data.materials.new(f"{name}_SucculentMat")
-    # mat.use_nodes = True # Deprecated
-    bsdf = mat.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs['Base Color'].default_value = (0.15, 0.45, 0.25, 1)
-    bsdf.inputs['Roughness'].default_value = 0.3
-
-    # Center bud
-    bpy.ops.mesh.primitive_ico_sphere_add(
-        radius=0.04,
-        location=location + mathutils.Vector((0, 0, 0.05))
-    )
-    center = bpy.context.object
-    center.name = f"{name}_Center"
-    center.data.materials.append(mat)
-    parts_list.append(center)
-
-    # Radiating leaves
-    for i in range(8):
-        angle = (i / 8) * math.pi * 2
-        r = 0.06 + (i % 3) * 0.02
-        leaf_loc = location + mathutils.Vector((
-            math.cos(angle) * r,
-            math.sin(angle) * r,
-            0.02
-        ))
-        bpy.ops.mesh.primitive_ico_sphere_add(
-            radius=0.025,
-            location=leaf_loc
-        )
-        leaf = bpy.context.object
-        leaf.name = f"{name}_Leaf_{i}"
-        leaf.scale = (1.5, 0.8, 0.5)
-        leaf.rotation_euler[2] = angle
-        leaf.rotation_euler[0] = math.radians(30)
-        leaf.data.materials.append(mat)
-        parts_list.append(leaf)
-
-def _create_hanging_vine(location, name, parts_list):
-    """Trailing vine that hangs over pot edge."""
-    from assets import plant_humanoid
-    mat = plant_humanoid.create_leaf_material(
-        f"{name}_VineMat",
-        color=(0.05, 0.28, 0.08)
-    )
-    for i in range(4):
-        angle = (i / 4) * math.pi * 2
-        end = location + mathutils.Vector((
-            math.cos(angle) * 0.4,
-            math.sin(angle) * 0.4,
-            -0.3  # hangs down below pot rim
-        ))
-        vine = plant_humanoid.create_vine(location, end, radius=0.006)
-        vine.name = f"{name}_Vine_{i}"
-        vine.data.materials.append(mat)
-        parts_list.append(vine)
+def _bmesh_vine(bm, start, end, radius, mat_idx):
+    """Internal helper to add a vine to a BMesh."""
+    import bmesh
+    direction = end - start
+    length = direction.length
+    center = (start + end) / 2
+    rot = direction.normalized().to_track_quat('Z', 'Y').to_matrix().to_4x4()
+    matrix = mathutils.Matrix.Translation(center) @ rot
+    ret = bmesh.ops.create_cylinder(bm, segments=8, radius=radius, depth=length, matrix=matrix)
+    for f in ret['faces']: f.material_index = mat_idx
 
 def create_potting_bench(location, name="PottingBench"):
-    """
-    A proper wooden potting table with:
-    - Slatted wooden top
-    - Lower shelf for tools/pots
-    - Iron pipe legs (matching greenhouse aesthetic)
-    Returns a SINGLE joined mesh object.
-    """
-    # Temp collection for organization (optional, but keep for safety)
-    # Actually, let's just create parts and join them.
-    
-    parts = []
-
+    """Point 95: BMesh Potting Bench creation."""
+    import bmesh
     import library_props
-    iron_mat = bpy.data.materials.get("GH_Iron") or \
-               bpy.data.materials.new("GH_Iron")
-    wood_mat = library_props.create_wood_material(
-        f"{name}_WoodMat",
-        color=(0.25, 0.12, 0.05)
-    )
 
-    table_h = 1.0
-    table_w = 2.4
-    table_d = 0.8
+    mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
+    obj = bpy.data.objects.new(name, mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
 
-    # --- Tabletop slats ---
+    bm = bmesh.new()
+    table_h, table_w, table_d = 1.0, 2.4, 0.8
+
+    # Slats
     slat_count = 8
     slat_gap = table_w / slat_count
     for i in range(slat_count):
-        x = location.x - table_w/2 + slat_gap * (i + 0.5)
-        bpy.ops.mesh.primitive_cube_add(
-            location=(x,
-                      location.y,
-                      location.z + table_h)
-        )
-        slat = bpy.context.object
-        slat.name = f"{name}_Slat_{i}"
-        slat.scale = (
-            slat_gap/2 - 0.01,
-            table_d/2,
-            0.025
-        )
-        slat.data.materials.append(wood_mat)
-        parts.append(slat)
+        x = -table_w/2 + slat_gap * (i + 0.5)
+        matrix = mathutils.Matrix.Translation((x, 0, table_h))
+        ret = bmesh.ops.create_cube(bm, size=1.0, matrix=matrix)
+        for v in ret['verts']:
+            v.co.x *= (slat_gap - 0.02)
+            v.co.y *= table_d
+            v.co.z *= 0.05
+        for f in ret['faces']: f.material_index = 0 # wood
 
-    # --- Iron pipe legs (4 corners) ---
-    leg_positions = [
-        (-table_w/2 + 0.05,  table_d/2 - 0.05),
-        ( table_w/2 - 0.05,  table_d/2 - 0.05),
-        (-table_w/2 + 0.05, -table_d/2 + 0.05),
-        ( table_w/2 - 0.05, -table_d/2 + 0.05),
-    ]
-    for i, (lx, ly) in enumerate(leg_positions):
-        bpy.ops.mesh.primitive_cylinder_add(
-            radius=0.025,
-            depth=table_h,
-            location=(location.x + lx,
-                      location.y + ly,
-                      location.z + table_h/2)
-        )
-        leg = bpy.context.object
-        leg.name = f"{name}_Leg_{i}"
-        leg.data.materials.append(iron_mat)
-        parts.append(leg)
+    # Legs
+    leg_pos = [(-table_w/2 + 0.05, table_d/2 - 0.05), (table_w/2 - 0.05, table_d/2 - 0.05),
+               (-table_w/2 + 0.05, -table_d/2 + 0.05), (table_w/2 - 0.05, -table_d/2 + 0.05)]
+    for lx, ly in leg_pos:
+        matrix = mathutils.Matrix.Translation((lx, ly, table_h/2))
+        ret = bmesh.ops.create_cylinder(bm, segments=8, radius=0.025, depth=table_h, matrix=matrix)
+        for f in ret['faces']: f.material_index = 1 # iron
 
-    # --- Lower shelf ---
-    bpy.ops.mesh.primitive_cube_add(
-        location=(location.x,
-                  location.y,
-                  location.z + table_h * 0.35)
-    )
-    shelf = bpy.context.object
-    shelf.name = f"{name}_Shelf"
-    shelf.scale = (table_w/2 - 0.05, table_d/2 - 0.05, 0.015)
-    shelf.data.materials.append(wood_mat)
-    parts.append(shelf)
+    # Lower shelf
+    matrix_shelf = mathutils.Matrix.Translation((0, 0, table_h * 0.35))
+    ret = bmesh.ops.create_cube(bm, size=1.0, matrix=matrix_shelf)
+    for v in ret['verts']:
+        v.co.x *= (table_w - 0.1)
+        v.co.y *= (table_d - 0.1)
+        v.co.z *= 0.03
+    for f in ret['faces']: f.material_index = 0
 
-    # --- Pots on the table ---
-    plant_types = ['FERN', 'SUCCULENT', 'FLOWERING',
-                   'VINE', 'SUCCULENT', 'FERN']
-    pot_positions = [
-        mathutils.Vector((location.x - 0.8,
-                          location.y - 0.15,
-                          location.z + table_h + 0.02)),
-        mathutils.Vector((location.x - 0.3,
-                          location.y + 0.1,
-                          location.z + table_h + 0.02)),
-        mathutils.Vector((location.x + 0.15,
-                          location.y - 0.05,
-                          location.z + table_h + 0.02)),
-        mathutils.Vector((location.x + 0.6,
-                          location.y + 0.1,
-                          location.z + table_h + 0.02)),
-        mathutils.Vector((location.x + 0.9,
-                          location.y - 0.15,
-                          location.z + table_h + 0.02)),
-    ]
-    for i, (pos, ptype) in enumerate(
-            zip(pot_positions, plant_types)):
-        # create_potted_plant now returns a SINGLE OBJECT (or None)
-        plant_obj = create_potted_plant(
-            pos,
-            plant_type=ptype,
-            name=f"{name}_Plant_{i}"
-        )
-        if plant_obj:
-            parts.append(plant_obj)
+    bm.to_mesh(mesh_data)
+    bm.free()
 
-    # --- Lower shelf storage (extra pots, stacked) ---
-    for i in range(3):
-        # We need to adapt create_plant_pot to return the object too, or just make it inline or use potted_plant result
-        # create_plant_pot currently returns 'pot' object but creates 'soil' parented to it.
-        # This will fail join if we don't include children or if we don't apply parenting.
-        # Optimization: Just create empty pots here as single meshes.
+    wood_mat = library_props.create_wood_material(f"{name}_WoodMat", color=(0.25, 0.12, 0.05))
+    iron_mat = bpy.data.materials.get("GH_Iron") or bpy.data.materials.new("GH_Iron")
+    obj.data.materials.append(wood_mat)
+    obj.data.materials.append(iron_mat)
+
+    # Add plants as children (keeping them separate for variety if needed, but they are single objects now)
+    plant_types = ['FERN', 'SUCCULENT', 'VINE', 'SUCCULENT', 'FERN']
+    pot_positions = [(-0.8, -0.15, table_h + 0.02), (-0.3, 0.1, table_h + 0.02),
+                     (0.15, -0.05, table_h + 0.02), (0.6, 0.1, table_h + 0.02), (0.9, -0.15, table_h + 0.02)]
+
+    for i, (pos, ptype) in enumerate(zip(pot_positions, plant_types)):
+        p_obj = create_potted_plant(location + mathutils.Vector(pos), plant_type=ptype, name=f"{name}_Plant_{i}")
+        p_obj.parent = obj
         
-        # Inline simplified empty pot creation suited for joining
-        radius = 0.12
-        height = 0.15
-        loc = mathutils.Vector((
-            location.x - 0.6 + i * 0.4,
-            location.y,
-            location.z + table_h * 0.35 + 0.015
-        ))
-        
-        bpy.ops.mesh.primitive_cone_add(
-            vertices=16,
-            radius1=radius, radius2=radius*1.3, depth=height,
-            location=loc + mathutils.Vector((0,0,height/2))
-        )
-        pot = bpy.context.object
-        pot.name = f"{name}_StoragePot_{i}"
-        pot.data.materials.append(create_terracotta_material())
-        parts.append(pot)
-
-    # JOIN EVERYTHING
-    if parts:
-        bpy.ops.object.select_all(action='DESELECT')
-        for p in parts:
-            p.select_set(True)
-        bpy.context.view_layer.objects.active = parts[0]
-        bpy.ops.object.join()
-        bench_main = bpy.context.active_object
-        bench_main.name = name
-        
-        # Link to collection (assuming caller handles it or we link to scene col)
-        # Note: primitive_add links to scene collection by default.
-        # But create_potted_plant might have done its own thing? 
-        # create_potted_plant removes temp col but links combined object? No, lines say "It's currently in whatever collection parts[0] was in".
-        # So it's safer to ensure linkage.
-        if bench_main.name not in bpy.context.scene.collection.objects:
-             bpy.context.scene.collection.objects.link(bench_main)
-             
-        return bench_main
-    return None
+    return obj
 
 def create_hanging_basket(location, name="HangingBasket"):
-    """Hanging wire basket with trailing plants from greenhouse roof. Returns single mesh."""
-    parts = []
-    
-    # Wire frame basket
-    basket_mat = bpy.data.materials.get("GH_Iron")
-
-    bpy.ops.mesh.primitive_ico_sphere_add(
-        radius=0.2,
-        location=location
-    )
-    basket = bpy.context.object
-    basket.name = f"{name}_Frame"
-    # Make it look like open wire by using wireframe modifier
-    wire_mod = basket.modifiers.new(name="Wire", type='WIREFRAME')
-    wire_mod.thickness = 0.008
-    # We must apply modifier to join
-    bpy.ops.object.modifier_apply(modifier="Wire")
-    
-    if basket_mat:
-        basket.data.materials.append(basket_mat)
-    parts.append(basket)
-
-    # Trailing vines hanging down
+    """Point 95: BMesh Hanging Basket."""
+    import bmesh
     from assets import plant_humanoid
-    mat = plant_humanoid.create_leaf_material(
-        f"{name}_TrailMat",
-        color=(0.04, 0.25, 0.06)
-    )
+    
+    mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
+    obj = bpy.data.objects.new(name, mesh_data)
+    bpy.context.collection.objects.link(obj)
+    obj.location = location
+
+    bm = bmesh.new()
+    # Basket frame (Ico sphere wireframe simulation in BMesh)
+    ret = bmesh.ops.create_icosphere(bm, subdivisions=2, radius=0.2)
+    # To simulate wireframe in BMesh, we could do more, but for simplicity we'll just use the mesh
+    for f in bm.faces: f.material_index = 0
+    
+    # Trailing vines
     for i in range(6):
         angle = (i / 6) * math.pi * 2
-        start = location + mathutils.Vector((
-            math.cos(angle) * 0.15,
-            math.sin(angle) * 0.15,
-            -0.2
-        ))
-        end = start + mathutils.Vector((
-            math.cos(angle) * 0.1,
-            math.sin(angle) * 0.1,
-            -random.uniform(0.4, 0.8)
-        ))
-        vine = plant_humanoid.create_vine(start, end, radius=0.005)
-        vine.name = f"{name}_Trail_{i}"
-        vine.data.materials.append(mat)
-        parts.append(vine)
+        start = mathutils.Vector((math.cos(angle)*0.15, math.sin(angle)*0.15, -0.2))
+        end = start + mathutils.Vector((math.cos(angle)*0.1, math.sin(angle)*0.1, -random.uniform(0.4, 0.8)))
+        _bmesh_vine(bm, start, end, radius=0.005, mat_idx=1)
 
-    # JOIN
-    if parts:
-        bpy.ops.object.select_all(action='DESELECT')
-        for p in parts: p.select_set(True)
-        bpy.context.view_layer.objects.active = parts[0]
-        bpy.ops.object.join()
-        basket_main = bpy.context.active_object
-        basket_main.name = name
-        return basket_main
-    return None
+    bm.to_mesh(mesh_data)
+    bm.free()
+
+    iron_mat = bpy.data.materials.get("GH_Iron") or bpy.data.materials.new("GH_Iron")
+    leaf_mat = plant_humanoid.create_leaf_material(f"{name}_LeafMat", color=(0.04, 0.25, 0.06))
+    obj.data.materials.append(iron_mat)
+    obj.data.materials.append(leaf_mat)
+
+    return obj
 
 def setup_greenhouse_interior(greenhouse_size=(15, 15, 8)):
     """
