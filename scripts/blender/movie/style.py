@@ -35,7 +35,7 @@ __all__ = [
     'setup_caustic_patterns', 'animate_dawn_progression',
     'apply_interior_exterior_contrast', 'replace_with_soft_boxes',
     'animate_hdri_rotation', 'apply_iris_wipe', 'animate_vignette_breathing',
-    'animate_floating_spores'
+    'animate_floating_spores', 'clear_scene_selective'
 ]
 
 def get_action_curves(action, create_if_missing=False):
@@ -1413,3 +1413,16 @@ def apply_iris_wipe(scene, frame_start, frame_end, mode='IN'):
         compositor_settings.animate_iris_wipe(scene, frame_start, frame_end, mode=mode)
     except ImportError:
         pass
+
+def clear_scene_selective():
+    """Point 92: Clear objects/data without a full session reset for faster testing."""
+    bpy.ops.object.select_all(action='SELECT')
+    bpy.ops.object.delete()
+
+    # Purge unreferenced data blocks
+    for block in (bpy.data.meshes, bpy.data.materials,
+                  bpy.data.actions, bpy.data.curves,
+                  bpy.data.armatures, bpy.data.node_groups):
+        for item in block:
+            if item.users == 0:
+                block.remove(item)

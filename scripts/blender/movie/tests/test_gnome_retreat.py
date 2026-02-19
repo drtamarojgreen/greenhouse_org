@@ -73,6 +73,45 @@ class TestGnomeRetreat(BlenderTestCase):
                             hide_found = True
         self.assertTrue(hide_found, "R45 FAIL: Gnome not hidden before credits")
 
+    def test_44_speed_ramp(self):
+        """R44: Retreat speed ramp behavior."""
+        gnome = self.master.gnome
+        s22_range = silent_movie_generator.SCENE_MAP['scene22']
+
+        def get_pos(frame):
+            curves = style.get_action_curves(gnome.animation_data.action)
+            pos = mathutils.Vector((0,0,0))
+            for fc in curves:
+                if "location" in fc.data_path:
+                    pos[fc.array_index] = fc.evaluate(frame)
+            return pos
+
+        pos_start = get_pos(s22_range[0] + 150)
+        pos_mid = get_pos(s22_range[0] + 250)
+        pos_end = get_pos(s22_range[1] - 50)
+
+        dist_1 = (pos_mid - pos_start).length
+        dist_2 = (pos_end - pos_mid).length
+        self.assertGreater(dist_2, dist_1, "R44 FAIL: No speed ramp detected in retreat")
+
+    def test_48_no_teleport_jumps(self):
+        """R48: No teleport jumps during retreat."""
+        gnome = self.master.gnome
+        s22_range = silent_movie_generator.SCENE_MAP['scene22']
+
+        last_pos = None
+        for f in range(s22_range[0], s22_range[1], 50):
+            current_pos = mathutils.Vector((0,0,0))
+            curves = style.get_action_curves(gnome.animation_data.action)
+            for fc in curves:
+                if "location" in fc.data_path:
+                    current_pos[fc.array_index] = fc.evaluate(f)
+
+            if last_pos is not None:
+                dist = (current_pos - last_pos).length
+                self.assertLess(dist, 20, f"R48 FAIL: Large teleport jump of {dist} detected at frame {f}")
+            last_pos = current_pos
+
 if __name__ == "__main__":
     argv = [sys.argv[0]]
     if "--" in sys.argv:

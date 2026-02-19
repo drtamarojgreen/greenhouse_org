@@ -47,7 +47,7 @@ def create_potted_plant(location, plant_type='FERN', name="PottedPlant"):
     for f in bm.faces: f.material_index = 0 # terracotta
 
     # Soil
-    ret = bmesh.ops.create_cylinder(bm, segments=16, radius=rad*1.25, depth=0.02, matrix=mathutils.Matrix.Translation((0,0,pot_h + 0.01)))
+    ret = bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=rad*1.25, radius2=rad*1.25, depth=0.02, matrix=mathutils.Matrix.Translation((0,0,pot_h + 0.01)))
     for f in ret['faces']: f.material_index = 1 # soil
 
     # Plant
@@ -91,7 +91,7 @@ def _bmesh_vine(bm, start, end, radius, mat_idx):
     center = (start + end) / 2
     rot = direction.normalized().to_track_quat('Z', 'Y').to_matrix().to_4x4()
     matrix = mathutils.Matrix.Translation(center) @ rot
-    ret = bmesh.ops.create_cylinder(bm, segments=8, radius=radius, depth=length, matrix=matrix)
+    ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=radius, radius2=radius, depth=length, matrix=matrix)
     for f in ret['faces']: f.material_index = mat_idx
 
 def create_potting_bench(location, name="PottingBench"):
@@ -118,14 +118,16 @@ def create_potting_bench(location, name="PottingBench"):
             v.co.x *= (slat_gap - 0.02)
             v.co.y *= table_d
             v.co.z *= 0.05
-        for f in ret['faces']: f.material_index = 0 # wood
+        # create_cube only returns 'verts'
+        for f in {f for v in ret['verts'] for f in v.link_faces}:
+            f.material_index = 0 # wood
 
     # Legs
     leg_pos = [(-table_w/2 + 0.05, table_d/2 - 0.05), (table_w/2 - 0.05, table_d/2 - 0.05),
                (-table_w/2 + 0.05, -table_d/2 + 0.05), (table_w/2 - 0.05, -table_d/2 + 0.05)]
     for lx, ly in leg_pos:
         matrix = mathutils.Matrix.Translation((lx, ly, table_h/2))
-        ret = bmesh.ops.create_cylinder(bm, segments=8, radius=0.025, depth=table_h, matrix=matrix)
+        ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.025, radius2=0.025, depth=table_h, matrix=matrix)
         for f in ret['faces']: f.material_index = 1 # iron
 
     # Lower shelf
@@ -135,7 +137,9 @@ def create_potting_bench(location, name="PottingBench"):
         v.co.x *= (table_w - 0.1)
         v.co.y *= (table_d - 0.1)
         v.co.z *= 0.03
-    for f in ret['faces']: f.material_index = 0
+    # create_cube only returns 'verts'
+    for f in {f for v in ret['verts'] for f in v.link_faces}:
+        f.material_index = 0
 
     bm.to_mesh(mesh_data)
     bm.free()
@@ -151,7 +155,7 @@ def create_potting_bench(location, name="PottingBench"):
                      (0.15, -0.05, table_h + 0.02), (0.6, 0.1, table_h + 0.02), (0.9, -0.15, table_h + 0.02)]
 
     for i, (pos, ptype) in enumerate(zip(pot_positions, plant_types)):
-        p_obj = create_potted_plant(location + mathutils.Vector(pos), plant_type=ptype, name=f"{name}_Plant_{i}")
+        p_obj = create_potted_plant(mathutils.Vector(location) + mathutils.Vector(pos), plant_type=ptype, name=f"{name}_Plant_{i}")
         p_obj.parent = obj
         
     return obj

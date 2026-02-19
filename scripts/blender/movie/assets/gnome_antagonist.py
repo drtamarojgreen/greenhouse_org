@@ -24,14 +24,14 @@ def create_gnarled_staff(location, height=1.5, name="GnarledStaff", material=Non
         rot = direction.to_track_quat('Z', 'Y').to_matrix().to_4x4()
         matrix = mathutils.Matrix.Translation(segment_center) @ rot
 
-        bmesh.ops.create_cylinder(bm, segments=8, radius=0.03, depth=segment_len + 0.02, matrix=matrix)
+        bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.03, radius2=0.03, depth=segment_len + 0.02, matrix=matrix)
         curr_loc = next_loc
 
     bm.to_mesh(mesh_data)
     bm.free()
     if material: obj.data.materials.append(material)
 
-    return obj, location + curr_loc
+    return obj, mathutils.Vector(location) + curr_loc
 
 def create_gnome(name, location, scale=0.6):
     """Point 95: BMesh Gnome with Proper Rigging."""
@@ -73,6 +73,8 @@ def create_gnome(name, location, scale=0.6):
     arm_r.parent = torso
 
     bpy.ops.object.mode_set(mode='OBJECT')
+    for pb in armature_obj.pose.bones:
+        pb.rotation_mode = 'XYZ'
 
     # 2. Mesh
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
@@ -88,7 +90,7 @@ def create_gnome(name, location, scale=0.6):
     vg_arm_r = mesh_obj.vertex_groups.new(name="Arm.R").index
 
     # Body
-    ret = bmesh.ops.create_cylinder(bm, segments=12, radius=0.3, depth=0.8, matrix=mathutils.Matrix.Translation((0,0,0.4)))
+    ret = bmesh.ops.create_cone(bm, segments=12, cap_ends=True, radius1=0.3, radius2=0.3, depth=0.8, matrix=mathutils.Matrix.Translation((0,0,0.4)))
     for v in ret['verts']: v[dlayer][vg_torso] = 1.0
     for f in ret['faces']: f.material_index = 0 # mat_body
 
@@ -118,7 +120,9 @@ def create_gnome(name, location, scale=0.6):
         v.co.y *= 0.1
         v.co.z *= 0.2
         v[dlayer][vg_head] = 1.0
-    for f in ret['faces']: f.material_index = 4 # Reuse red glow for mouth
+    # create_cube only returns 'verts'
+    for f in {f for v in ret['verts'] for f in v.link_faces}:
+        f.material_index = 4 # Reuse red glow for mouth
 
     # Staff (Rigged to Arm.L)
     staff_bm_loc = (0.6, 0, 0.3)
@@ -131,7 +135,7 @@ def create_gnome(name, location, scale=0.6):
         direction = segment_vec.normalized()
         rot = direction.to_track_quat('Z', 'Y').to_matrix().to_4x4()
         matrix = mathutils.Matrix.Translation(segment_center) @ rot
-        ret = bmesh.ops.create_cylinder(bm, segments=8, radius=0.03, depth=segment_len + 0.02, matrix=matrix)
+        ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.03, radius2=0.03, depth=segment_len + 0.02, matrix=matrix)
         for v in ret['verts']: v[dlayer][vg_arm_l] = 1.0
         for f in ret['faces']: f.material_index = 3 # mat_gloom
         curr_loc = next_loc

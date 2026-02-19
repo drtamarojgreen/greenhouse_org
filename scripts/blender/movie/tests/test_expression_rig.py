@@ -50,7 +50,13 @@ class TestExpressionRig(BlenderTestCase):
 
                 self.assertIsNotNone(char_asset.animation_data, f"R33 FAIL: {name} has no animation data")
                 curves = style.get_action_curves(char_asset.animation_data.action)
-                self.assertGreater(len(curves), 0, f"R33 FAIL: No f-curves found for {name}")
+
+                eye_scale_found = False
+                for fc in curves:
+                    if "Eye" in fc.data_path and "scale" in fc.data_path:
+                        eye_scale_found = True
+                        break
+                self.assertTrue(eye_scale_found, f"R33 FAIL: No eye scale keyframes found for {name}")
 
     def test_35_eye_target_constraints(self):
         """R35: Eye target constraints (Bone Constraints version)."""

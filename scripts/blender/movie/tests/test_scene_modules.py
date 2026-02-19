@@ -48,6 +48,7 @@ class TestSceneModules(BlenderTestCase):
 
                 mod = importlib.import_module(name + ".scene_logic")
                 
+                initial_object_count = len(bpy.data.objects)
                 # Smoke test
                 try:
                     mod.setup_scene(self.master)
@@ -55,3 +56,28 @@ class TestSceneModules(BlenderTestCase):
                     self.fail(f"R13/R14 FAIL: {name}.setup_scene crashed: {e}")
 
                 self.assertIsNotNone(self.master.scene.camera, f"R15 FAIL: Camera is missing after {name}.setup_scene")
+
+                # Robustness: check that something actually happened (objects created or keyframes added)
+                final_object_count = len(bpy.data.objects)
+                has_keyframes = any(obj.animation_data and obj.animation_data.action for obj in bpy.data.objects)
+                self.assertTrue(final_object_count > initial_object_count or has_keyframes,
+                                f"R13/14 FAIL: {name}.setup_scene ran but created no new objects and no keyframes.")
+
+    def test_17_keyframes_created(self):
+        """R17: Each scene creates at least one keyframe."""
+        for name in self.scene_names:
+            with self.subTest(scene=name):
+                # Clear all animation data first
+                for obj in bpy.data.objects:
+                    obj.animation_data_clear()
+
+                mod = importlib.import_module(name + ".scene_logic")
+                mod.setup_scene(self.master)
+
+                has_keyframes = False
+                for obj in bpy.data.objects:
+                    if obj.animation_data and obj.animation_data.action:
+                        if len(style.get_action_curves(obj.animation_data.action)) > 0:
+                            has_keyframes = True
+                            break
+                self.assertTrue(has_keyframes, f"R17 FAIL: {name} created no keyframes")

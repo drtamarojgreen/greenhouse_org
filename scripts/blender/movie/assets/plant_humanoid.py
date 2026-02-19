@@ -245,6 +245,8 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     add_bone("Mouth", (0, -head_radius*0.9, torso_height + head_radius * 0.1), (0, -head_radius*1.0, torso_height + head_radius * 0.1), "Head")
     
     bpy.ops.object.mode_set(mode='OBJECT')
+    for pb in armature_obj.pose.bones:
+        pb.rotation_mode = 'XYZ'
 
     # 2. Build Mesh via BMesh
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
@@ -260,7 +262,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     def bmesh_cylinder(radius, height, location, bone_name, segments=12):
         vg_index = mesh_obj.vertex_groups.new(name=bone_name).index
         matrix = mathutils.Matrix.Translation(location)
-        ret = bmesh.ops.create_cylinder(bm, segments=segments, radius=radius, depth=height, matrix=matrix)
+        ret = bmesh.ops.create_cone(bm, segments=segments, cap_ends=True, radius1=radius, radius2=radius, depth=height, matrix=matrix)
         for v in ret['verts']:
             v[deform_layer][vg_index] = 1.0
 
@@ -286,7 +288,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     # Reason Staff (Rigged to Arm.R)
     vg_arm_r = mesh_obj.vertex_groups.get("Arm.R").index
     staff_matrix = mathutils.Matrix.Translation((0.8, 0, arm_height - 0.4))
-    ret = bmesh.ops.create_cylinder(bm, segments=8, radius=0.03, depth=2.0, matrix=staff_matrix)
+    ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.03, radius2=0.03, depth=2.0, matrix=staff_matrix)
     for v in ret['verts']:
         v[deform_layer][vg_arm_r] = 1.0
     for f in ret['faces']:
@@ -303,7 +305,8 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.1, matrix=matrix)
         for v in ret['verts']:
             v[deform_layer][vg_head] = 1.0
-        for f in ret['faces']:
+        # create_grid only returns 'verts'
+        for f in {f for v in ret['verts'] for f in v.link_faces}:
             f.material_index = 1 # mat_leaf
 
     # Eyes
@@ -463,13 +466,13 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=
 
     bm = bmesh.new()
     # Main Pillar
-    bmesh.ops.create_cylinder(bm, segments=16, radius=0.4, depth=height, matrix=mathutils.Matrix.Translation((0,0,height/2)))
+    bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=0.4, radius2=0.4, depth=height, matrix=mathutils.Matrix.Translation((0,0,height/2)))
 
     # Decorative Bands
     for i in range(num_bands):
         z_offset = height * (0.1 + (i+1) * (0.8 / (num_bands + 1)))
         # BMesh torus isn't a direct primitive op, but we can use a circle or a thin cylinder
-        bmesh.ops.create_cylinder(bm, segments=16, radius=0.42, depth=0.04, matrix=mathutils.Matrix.Translation((0,0,z_offset)))
+        bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=0.42, radius2=0.42, depth=0.04, matrix=mathutils.Matrix.Translation((0,0,z_offset)))
 
     bm.to_mesh(mesh_data)
     bm.free()
@@ -509,7 +512,7 @@ def create_scroll(location, name="PhilosophicalScroll"):
     obj.rotation_euler = (0, math.pi/2, 0)
 
     bm = bmesh.new()
-    bmesh.ops.create_cylinder(bm, segments=12, radius=0.05, depth=0.4)
+    bmesh.ops.create_cone(bm, segments=12, cap_ends=True, radius1=0.05, radius2=0.05, depth=0.4)
     bm.to_mesh(mesh_data)
     bm.free()
 
@@ -545,6 +548,7 @@ def create_procedural_bush(location, name="GardenBush", size=1.0, seed=None):
         scale_vec = (size, size, size)
         rot = mathutils.Euler((random.uniform(0, 3.14), random.uniform(0, 3.14), random.uniform(0, 3.14))).to_matrix().to_4x4()
         matrix = mathutils.Matrix.Translation(offset) @ rot
+        # create_grid only returns 'verts', but here they all share material 0 so we don't need to capture ret
         bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.2 * size, matrix=matrix)
 
     bm.to_mesh(mesh_data)
