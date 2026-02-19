@@ -191,23 +191,24 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(5000, (0, -15, 4), (-2, 0, 1.5), easing='EASE_OUT')    # medium shot
 
     # Dialogue closeups (9501 - 13000)
-    h1_obj = bpy.data.objects.get("Herbaceous_Torso")
-    h2_obj = bpy.data.objects.get("Arbor_Torso")
-    gnome_obj = bpy.data.objects.get("GloomGnome_Torso")
+    # Point 93: Target Armatures instead of meshes for better Rig Tracking
+    h1_obj = bpy.data.objects.get("Herbaceous")
+    h2_obj = bpy.data.objects.get("Arbor")
+    gnome_obj = bpy.data.objects.get("GloomGnome")
 
     # Scene 16 (9501-10200): Herbaceous speaks first, then Arbor
     kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5))        # wide
-    # Rack Focus (#2) and Over-the-Shoulder (#3)
-    kf_eased(9525,  (1.8, 1.5, 1.8), (-2, 0, 1.8), focus_obj=h1_obj) # OTS Arbor to Herbaceous
+    # Rack Focus (#2) and Over-the-Shoulder (#3) - Moved closer for hero status (dist < 4)
+    kf_eased(9525,  (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj) # OTS Arbor to Herbaceous
     kf_eased(9780,  (0, -15, 4),    (0, 0, 1.5))        # wide
-    kf_eased(9830,  (-1.8, 1.5, 1.8), (2, 0, 1.8), focus_obj=h2_obj) # OTS Herbaceous to Arbor
+    kf_eased(9830,  (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj) # OTS Herbaceous to Arbor
     kf_eased(10100, (0, -15, 4),    (0, 0, 1.5))        # pull back
 
     # Scene 17 (10201-10900): Arbor speaks first
     kf_eased(10201, (0, -15, 4),    (0, 0, 1.5))
-    kf_eased(10250, (-1.8, 1.5, 1.8), (2, 0, 1.8), focus_obj=h2_obj) # Arbor closeup
+    kf_eased(10250, (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj) # Arbor closeup
     kf_eased(10540, (0, -15, 4),    (0, 0, 1.5))
-    kf_eased(10590, (1.8, 1.5, 1.8), (-2, 0, 1.8), focus_obj=h1_obj) # Herbaceous closeup
+    kf_eased(10590, (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj) # Herbaceous closeup
     kf_eased(10850, (0, -15, 4),    (0, 0, 1.5))
 
     # Scene 18 (10901-11600): Gnome enters - Dutch Angle Enhancement #1

@@ -41,7 +41,7 @@ def setup_scene(master):
     # Shot ID: S18_01
     # Intent: Antagonist enters, feeling the weight of the logic.
 
-    style.animate_dialogue_v2(bpy.data.objects.get("Herbaceous_Mouth"), start_frame + 24, start_frame + 300, intensity=1.1)
+    style.animate_dialogue_v2("Herbaceous", start_frame + 24, start_frame + 300, intensity=1.1)
     style.animate_reaction_shot("Arbor", start_frame + 24, start_frame + 300)
 
     # Gnome reacting in background

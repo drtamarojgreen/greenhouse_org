@@ -24,13 +24,13 @@ class TestInteractionScene(unittest.TestCase):
         self.assertEqual(scene.frame_end, 15000)
 
     def test_herbaceous_interaction_animation(self):
-        """Check Herbaceous animation in the interaction phase."""
-        obj = bpy.data.objects.get("Herbaceous_Torso")
-        self.assertIsNotNone(obj, "Herbaceous_Torso not found")
+        """Check Herbaceous animation in the interaction phase (Armature)."""
+        obj = bpy.data.objects.get("Herbaceous")
+        self.assertIsNotNone(obj, "Herbaceous armature not found")
 
         anim_data = obj.animation_data
-        self.assertIsNotNone(anim_data, "Herbaceous_Torso has no animation data")
-        self.assertIsNotNone(anim_data.action, "Herbaceous_Torso has no action")
+        self.assertIsNotNone(anim_data, "Herbaceous has no animation data")
+        self.assertIsNotNone(anim_data.action, "Herbaceous has no action")
 
         curves = style.get_action_curves(anim_data.action)
 

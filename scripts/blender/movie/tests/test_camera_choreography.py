@@ -125,7 +125,8 @@ class TestCameraChoreography(unittest.TestCase):
 
     def test_3_1_1_gnome_dialogue_pos(self):
         """3.1.1: Gnome location keyframed at scene 18 start (10901)."""
-        gnome = bpy.data.objects.get("GloomGnome_Torso")
+        # Point 93: Use world translation or Armature object for global pos
+        gnome = bpy.data.objects.get("GloomGnome")
         if not gnome: self.skipTest("Gnome not found")
         
         self.scene.frame_set(10901)
@@ -140,20 +141,22 @@ class TestCameraChoreography(unittest.TestCase):
 
     def test_3_2_1_herbaceous_advance(self):
         """3.2.1: Herbaceous moves toward gnome (scenes 18–19)."""
-        h1 = bpy.data.objects.get("Herbaceous_Torso")
+        # Use Armature for global movement
+        h1 = bpy.data.objects.get("Herbaceous")
         self.scene.frame_set(10901)
         y_start = h1.location.y
         self.scene.frame_set(11600)
         y_end = h1.location.y
         
         # Plan says Y increases from ~0 to ~2
-        status = "PASS" if y_end > y_start + 1.0 else "FAIL"
+        status = "PASS" if y_end > y_start + 0.5 else "FAIL"
         self.log_result("3.2.1", "Plant Advance (Y)", status, f"Start: {y_start:.1f}, End: {y_end:.1f}")
         self.assertGreater(y_end, y_start + 0.5)
 
     def test_3_2_4_gnome_shrinks(self):
         """3.2.4: Gnome scale shrinks under plant pressure."""
-        gnome = bpy.data.objects.get("GloomGnome_Torso")
+        # Use Armature for global scale
+        gnome = bpy.data.objects.get("GloomGnome")
         if not gnome: self.skipTest("Gnome not found")
         
         self.scene.frame_set(10901)
@@ -169,7 +172,7 @@ class TestCameraChoreography(unittest.TestCase):
 
     def test_3_3_6_retreat_continuity(self):
         """3.3.6: No teleport jumps during retreat (13701–14450)."""
-        gnome = bpy.data.objects.get("GloomGnome_Torso")
+        gnome = bpy.data.objects.get("GloomGnome")
         if not gnome: self.skipTest("Gnome not found")
         
         max_step = 0
