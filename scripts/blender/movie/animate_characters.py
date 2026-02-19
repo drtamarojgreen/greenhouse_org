@@ -12,11 +12,11 @@ def animate_characters(master_instance):
     # --- Persistent acting ---
     for char in [h1, h2, gnome]:
         if not char: continue
-        # Enhancement #11: Weight Shift
+        # Enhancement #11: Weight Shift on Torso bone if available
         torso = char.pose.bones.get("Torso") if char.type == 'ARMATURE' else None
         target = torso if torso else char
         style.animate_weight_shift(target, 1, 15000)
-        # Enhancement #24: Breathing
+        # Enhancement #24: Breathing on Torso bone if available
         style.animate_breathing(target, 1, 15000)
 
     # --- Scene specific acting ---
@@ -78,7 +78,12 @@ def animate_characters(master_instance):
 
     # Enhancement: Walking for movement segments
     from assets import plant_humanoid
-    for s_name in ['scene02_garden', 'scene15_interaction', 'scene22_retreat']:
+    # Moving scenes across the production
+    moving_scenes = [
+        'scene01_intro', 'scene02_garden', 'scene05_bridge',
+        'scene13_walking', 'scene15_interaction', 'scene22_retreat'
+    ]
+    for s_name in moving_scenes:
         if s_name in SCENE_MAP:
             start, end = SCENE_MAP[s_name]
             for char in [h1, h2, gnome]:

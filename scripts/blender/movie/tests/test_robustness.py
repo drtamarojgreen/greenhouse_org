@@ -36,13 +36,13 @@ class TestRobustness(BlenderTestCase):
             self.log_result("Missing FBX Warning", "WARNING", f"Files not found: {missing}")
 
     def test_02_scale_extremes(self):
-        """BOU-01: Verify mouth rig scales remain within safe bounds."""
+        """BOU-01: Verify mouth rig scales remain within safe bounds (Bones)."""
         for char in ["Herbaceous", "Arbor"]:
-            mouth = bpy.data.objects.get(f"{char}_Mouth")
-            if mouth and mouth.animation_data and mouth.animation_data.action:
-                curves = style.get_action_curves(mouth.animation_data.action)
+            char_obj = bpy.data.objects.get(char)
+            if char_obj and char_obj.animation_data and char_obj.animation_data.action:
+                curves = style.get_action_curves(char_obj.animation_data.action)
                 for fc in curves:
-                    if fc.data_path == "scale":
+                    if 'pose.bones["Mouth"].scale' in fc.data_path:
                         for kp in fc.keyframe_points:
                             val = kp.co[1]
                             # R71 update: Ensure scale doesn't explode
