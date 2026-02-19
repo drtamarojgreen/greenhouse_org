@@ -32,7 +32,6 @@
         isPlaying: false,
         tooltipEl: null,
         adhdEffects: {
-            activeEnhancements: new Set(),
             noiseParticles: [],
             jitterAmount: 0,
             fatigueLevel: 0,
@@ -432,7 +431,7 @@
             const adhd = ga?.adhdConfig;
 
             // ADHD: Time Perception Distortion (Enhancement 12)
-            if (adhd?.activeEnhancements.has(12)) {
+            if (adhd?.activeEnhancements?.has(12)) {
                 if (Math.random() < 0.05) {
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
                     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -440,12 +439,12 @@
             }
 
             // ADHD: Sustained Attention Decay (Enhancement 7)
-            if (adhd?.activeEnhancements.has(7)) {
+            if (adhd?.activeEnhancements?.has(7)) {
                 ctx.globalAlpha = Math.max(0.3, adhd.sustainedAttention);
             }
 
             // ADHD: Attentional Blink (Enhancement 1)
-            if (adhd?.activeEnhancements.has(1) && adhd.blinkCooldown > 0) {
+            if (adhd?.activeEnhancements?.has(1) && adhd.blinkCooldown > 0) {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
                 ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 // Skip further rendering to simulate perception "blink"
@@ -454,9 +453,9 @@
 
             // ADHD: Global Jitter (Enhancement 14/40)
             let shakeX = 0, shakeY = 0;
-            const jitterFactor = adhd?.activeEnhancements.has(40) ? 0.2 : 1.0;
+            const jitterFactor = adhd?.activeEnhancements?.has(40) ? 0.2 : 1.0;
 
-            if (this.adhdEffects.activeEnhancements.has(14)) {
+            if (adhd?.activeEnhancements?.has(14)) {
                 shakeX = (Math.random() - 0.5) * 5 * jitterFactor;
                 shakeY = (Math.random() - 0.5) * 5 * jitterFactor;
                 ctx.save();
@@ -464,12 +463,12 @@
             }
 
             // ADHD: Task-Switching Latency (Enhancement 6)
-            if (adhd?.activeEnhancements.has(6) && adhd.taskSwitchingLatency > 0) {
+            if (adhd?.activeEnhancements?.has(6) && adhd.taskSwitchingLatency > 0) {
                 ctx.filter = 'blur(4px)';
             }
 
             // ADHD: Hyperfocus Tunneling (Enhancement 20)
-            if (this.adhdEffects.activeEnhancements.has(20)) {
+            if (adhd?.activeEnhancements?.has(20)) {
                 const grad = ctx.createRadialGradient(this.canvas.width / 2, this.canvas.height / 2, 100, this.canvas.width / 2, this.canvas.height / 2, 400);
                 grad.addColorStop(0, 'rgba(0,0,0,0)');
                 grad.addColorStop(1, 'rgba(0,0,0,0.8)');
@@ -478,19 +477,19 @@
             }
 
             // ADHD: Signal-to-Noise Ratio (Enhancement 2)
-            if (this.adhdEffects.activeEnhancements.has(2)) {
+            if (adhd?.activeEnhancements?.has(2)) {
                 this.drawNoiseParticles(ctx);
             }
 
             // ADHD: Treatment - Therapeutic Alliance Glow (Enhancement 49)
-            if (this.adhdEffects.activeEnhancements.has(49)) {
+            if (adhd?.activeEnhancements?.has(49)) {
                 ctx.save();
                 ctx.shadowBlur = 20;
                 ctx.shadowColor = 'gold';
             }
 
             // ADHD: Pathology - Neuroinflammation (Enhancement 65)
-            if (adhd?.activeEnhancements.has(65)) {
+            if (adhd?.activeEnhancements?.has(65)) {
                 ctx.fillStyle = 'rgba(100, 50, 0, 0.4)';
                 ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             }
@@ -521,50 +520,50 @@
             this.drawNetworkView(ctx, pipX, pipY, pipW, pipH);
 
             // ADHD: Executive Function Gating Visuals (Enhancement 10)
-            if (adhd?.activeEnhancements.has(10)) {
+            if (adhd?.activeEnhancements?.has(10)) {
                 this.drawGatingVisuals(ctx, pipX, pipY, pipW, pipH);
             }
 
             // ADHD: Emotional Lability Spikes (Enhancement 11)
-            if (adhd?.activeEnhancements.has(11) && Math.random() < 0.1) {
+            if (adhd?.activeEnhancements?.has(11) && Math.random() < 0.1) {
                 this.drawAmygdalaSpike(ctx, pipX, pipY, pipW, pipH);
             }
 
             // ADHD: Response Variability Graph (Enhancement 17)
-            if (adhd?.activeEnhancements.has(17)) {
+            if (adhd?.activeEnhancements?.has(17)) {
                 this.drawResponseVariabilityGraph(ctx, 20, 20, 150, 60, ga);
             }
 
             // ADHD: Distractibility Index (Enhancement 15)
-            if (adhd?.activeEnhancements.has(15)) {
+            if (adhd?.activeEnhancements?.has(15)) {
                 this.drawDistractibilityIndex(ctx, 20, 90, ga);
             }
 
             // ADHD: Hereditability Tree (Enhancement 92)
-            if (adhd?.activeEnhancements.has(92)) {
+            if (adhd?.activeEnhancements?.has(92)) {
                 this.drawHereditabilityTree(ctx, 20, 230, ga);
             }
 
             // ADHD: Executive Assistant UI (Enhancement 42)
-            if (adhd?.activeEnhancements.has(42)) {
+            if (adhd?.activeEnhancements?.has(42)) {
                 this.drawExecutiveAssistant(ctx, ga);
             }
 
             // ADHD: Impulse Inhibition Meter (Enhancement 25)
-            if (adhd?.activeEnhancements.has(25)) {
+            if (adhd?.activeEnhancements?.has(25)) {
                 this.drawImpulseInhibitionMeter(ctx, 20, 130, ga);
             }
 
             // ADHD: Glutamate/GABA Imbalance Meter (Enhancement 62)
-            if (adhd?.activeEnhancements.has(62)) {
+            if (adhd?.activeEnhancements?.has(62)) {
                 this.drawGlutamateGabaMeter(ctx, 20, 180, ga);
             }
 
-            if (this.adhdEffects.activeEnhancements.has(49)) {
+            if (adhd?.activeEnhancements?.has(49)) {
                 ctx.restore();
             }
 
-            if (this.adhdEffects.activeEnhancements.has(14)) {
+            if (adhd?.activeEnhancements?.has(14)) {
                 ctx.restore();
             }
 
@@ -925,14 +924,14 @@
 
                 // ADHD: Hyperactive Firing Mode (Enhancement 3) / Binaural Beat Sync (Enhancement 38)
                 // Pulse speed is handled inside drawNeuron if we pass a frequency
-                let pulseFreq = adhd?.activeEnhancements.has(3) ? 0.01 : 0.005;
-                if (adhd?.activeEnhancements.has(38)) {
+                let pulseFreq = adhd?.activeEnhancements?.has(3) ? 0.01 : 0.005;
+                if (adhd?.activeEnhancements?.has(38)) {
                     pulseFreq = 0.008 + Math.sin(Date.now() * 0.005) * 0.002;
                 }
 
                 // ADHD: Cognitive Fatigue Shader (Enhancement 19)
                 let colorOverride = null;
-                if (this.adhdEffects.activeEnhancements.has(19)) {
+                if (adhd?.activeEnhancements?.has(19)) {
                     const fatigue = adhd?.fatigue || 0;
                     if (fatigue > 0.5) {
                         colorOverride = '#333'; // Darken
@@ -940,10 +939,10 @@
                 }
 
                 // ADHD: Hypofrontality (52) / Striatal Hyper-Reactivity (53)
-                if (adhd?.activeEnhancements.has(52) && neuron.region === 'pfc') {
+                if (adhd?.activeEnhancements?.has(52) && neuron.region === 'pfc') {
                     ctx.globalAlpha *= 0.4;
                 }
-                if (adhd?.activeEnhancements.has(53) && (neuron.region === 'striatum' || neuron.region === 'brainstem')) {
+                if (adhd?.activeEnhancements?.has(53) && (neuron.region === 'striatum' || neuron.region === 'brainstem')) {
                     ctx.save();
                     ctx.shadowBlur = 15;
                     ctx.shadowColor = 'yellow';
@@ -951,14 +950,14 @@
 
                 // ADHD: Vigilance Waxing/Waning (Enhancement 13)
                 let alphaOverride = 1.0;
-                if (this.adhdEffects.activeEnhancements.has(13)) {
+                if (adhd?.activeEnhancements?.has(13)) {
                     alphaOverride = 0.3 + 0.7 * Math.abs(Math.sin(Date.now() * 0.001));
                 }
 
                 // ADHD: Motor Restlessness Particles (Enhancement 14) / Side Effect Jitters (47)
                 let jitter = 0;
-                if (this.adhdEffects.activeEnhancements.has(14) && neuron.region === 'motorCortex') jitter = 2;
-                if (adhd?.activeEnhancements.has(47)) jitter = 4;
+                if (adhd?.activeEnhancements?.has(14) && neuron.region === 'motorCortex') jitter = 2;
+                if (adhd?.activeEnhancements?.has(47)) jitter = 4;
 
                 if (jitter > 0) {
                     neuron.x += (Math.random() - 0.5) * jitter;
@@ -1256,7 +1255,9 @@
         },
 
         handleTooltipMove(e) {
-            if (!this.tooltipEl || !this.adhdEffects.activeEnhancements.size) return;
+            const ga = window.GreenhouseNeuroApp?.ga;
+            const activeEnhancements = ga?.adhdConfig?.activeEnhancements;
+            if (!this.tooltipEl || !activeEnhancements || !activeEnhancements.size) return;
 
             const rect = this.canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -1278,12 +1279,12 @@
                      const synapseCamera = window.GreenhouseNeuroSynapse.synapseCameraController?.getCamera() || {
                         x: 0, y: 0, z: -200, rotationX: 0.2, rotationY: 0, rotationZ: 0, fov: 400
                      };
-                     tooltipContent = window.GreenhouseNeuroSynapse.checkSynapseHover(x, y, this.canvas.width, this.canvas.height, synapseCamera, this.adhdEffects.activeEnhancements);
+                     tooltipContent = window.GreenhouseNeuroSynapse.checkSynapseHover(x, y, this.canvas.width, this.canvas.height, synapseCamera, activeEnhancements);
                 }
             }
 
             // 1. Noise Particles (SNR - ID 2)
-            if (this.adhdEffects.activeEnhancements.has(2)) {
+            if (activeEnhancements.has(2)) {
                 const hitNoise = this.adhdEffects.noiseParticles.find(p => {
                     return Math.sqrt(Math.pow(p.x - x, 2) + Math.pow(p.y - y, 2)) < 10;
                 });
@@ -1294,7 +1295,7 @@
             }
 
             // 2. Cognitive Fatigue Shader (ID 19) - Show if hovering near dark nodes
-            if (!tooltipContent && this.adhdEffects.activeEnhancements.has(19)) {
+            if (!tooltipContent && activeEnhancements.has(19)) {
                 // This is a global effect, but we can show it when hovering the main view
                 const pipConfig = this.config.get('pip');
                 if (x < this.canvas.width - pipConfig.width - 20) {
@@ -1306,18 +1307,18 @@
             }
 
             // 3. Vigilance (ID 13) - Oscillating nodes
-            if (!tooltipContent && this.adhdEffects.activeEnhancements.has(13)) {
+            if (!tooltipContent && activeEnhancements.has(13)) {
                  tooltipContent = `<strong>${t(`adhd_enh_13_name`)}</strong><br>${t(`adhd_enh_13_desc`)}`;
             }
 
             // 4. Meters
             if (!tooltipContent) {
                 if (x > 20 && x < 170) {
-                    if (y > 130 && y < 170 && this.adhdEffects.activeEnhancements.has(25)) {
+                    if (y > 130 && y < 170 && activeEnhancements.has(25)) {
                         tooltipContent = `<strong>Impulse Inhibition</strong><br>Ratio of inhibitory to excitatory signals in the network. Low inhibition models impulsive connection bursts.`;
-                    } else if (y > 180 && y < 220 && this.adhdEffects.activeEnhancements.has(62)) {
+                    } else if (y > 180 && y < 220 && activeEnhancements.has(62)) {
                         tooltipContent = `<strong>Glutamate/GABA Balance</strong><br>The primary excitatory/inhibitory chemical balance. Imbalance models hyper-reactivity and sensory overload.`;
-                    } else if (y > 230 && y < 290 && this.adhdEffects.activeEnhancements.has(92)) {
+                    } else if (y > 230 && y < 290 && activeEnhancements.has(92)) {
                         tooltipContent = `<strong>Hereditability Tree</strong><br>Visualizing the genetic lineage of the most successful neural networks across generations.`;
                     }
                 }
