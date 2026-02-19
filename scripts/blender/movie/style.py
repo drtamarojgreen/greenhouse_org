@@ -95,10 +95,7 @@ def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
 def get_eevee_engine_id():
     """Probes Blender for the correct Eevee engine identifier (EEVEE vs EEVEE_NEXT)."""
     # Check render engines available in current build
-    # In some 4.2+ builds it is BLENDER_EEVEE_NEXT, in 5.0 it might revert to BLENDER_EEVEE
-    # We probe by checking what the current scene allows
     try:
-        # Fallback list in order of preference
         for engine in ['BLENDER_EEVEE_NEXT', 'BLENDER_EEVEE']:
             if engine in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items:
                 return engine
@@ -169,26 +166,37 @@ def set_node_input(node, name, value):
 
 def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
     """Creates a modern Mix node (5.x). Handles both Shader and Compositor trees."""
-    if tree.bl_idname == 'CompositorNodeTree':
-        # Blender 5.0+: CompositorNodeMixRGB -> CompositorNodeMix
+    # Comprehensive list of possible Mix node ID names across Blender versions
+    node_types = [
+        'ShaderNodeMix',
+        'CompositorNodeMix',
+        'CompositorNodeMixRGB',
+        'CompositorNodeMixColor',
+        'MixRGB',
+        'Mix'
+    ]
+
+    node = None
+    for nt in node_types:
         try:
-            node = tree.nodes.new('CompositorNodeMix')
+            node = tree.nodes.new(nt)
+            break
         except RuntimeError:
-            node = tree.nodes.new('CompositorNodeMixRGB')
-    else:
-        node = tree.nodes.new('ShaderNodeMix')
-    
-    if hasattr(node, 'data_type'):
-        node.data_type = data_type
-    
-    if hasattr(node, 'blend_type'):
-        node.blend_type = blend_type
+            continue
+
+    if node:
+        if hasattr(node, 'data_type'):
+            node.data_type = data_type
+        if hasattr(node, 'blend_type'):
+            node.blend_type = blend_type
             
     return node
 
 def get_mix_sockets(node):
     """Returns (Factor, Input1, Input2) sockets for a Mix node (5.x)."""
-    if node.bl_idname in ['ShaderNodeMix', 'CompositorNodeMix', 'CompositorNodeMixRGB']:
+    if node is None: return None, None, None
+
+    if node.bl_idname in ['ShaderNodeMix', 'CompositorNodeMix', 'CompositorNodeMixRGB', 'CompositorNodeMixColor']:
         dt = getattr(node, 'data_type', 'RGBA')
         if dt == 'RGBA':
             return get_socket_by_identifier(node.inputs, 'Factor_Float'), \
@@ -210,7 +218,9 @@ def get_mix_sockets(node):
 
 def get_mix_output(node):
     """Returns the main output socket for a Mix node (5.x)."""
-    if node.bl_idname in ['ShaderNodeMix', 'CompositorNodeMix', 'CompositorNodeMixRGB']:
+    if node is None: return None
+
+    if node.bl_idname in ['ShaderNodeMix', 'CompositorNodeMix', 'CompositorNodeMixRGB', 'CompositorNodeMixColor']:
         dt = getattr(node, 'data_type', 'RGBA')
         if dt == 'RGBA': return get_socket_by_identifier(node.outputs, 'Result_Color')
         if dt == 'VECTOR': return get_socket_by_identifier(node.outputs, 'Result_Vector')
@@ -645,13 +655,10 @@ def apply_reactive_foliage(foliage_objs, trigger_obj, frame_start, frame_end, th
         for fcurve in get_action_curves(obj.animation_data.action):
             for mod in fcurve.modifiers:
                 if mod.type == 'NOISE':
-                    # In a real script we would keyframe the strength, here we simulate with noise phase
                     mod.strength = 0.05 # Base
                     for f in range(frame_start, frame_end, 24):
                         dist = (obj.location - trigger_obj.location).length
                         if dist < threshold:
-                            # Dynamic property animation in Blender is usually via Drivers or Keyframes
-                            # For simplicity in this procedural script, we set a high base if they are ever close
                             mod.strength = 0.15
                             break
 
@@ -675,7 +682,6 @@ def animate_dynamic_pupils(pupil_objs, light_energy_provider, frame_start, frame
     for p in pupil_objs:
         p.scale = (1, 1, 1)
         p.keyframe_insert(data_path="scale", frame=frame_start)
-        # Contract in 'light' scenes, dilate in 'shadow'
         p.scale = (0.5, 0.5, 0.5)
         p.keyframe_insert(data_path="scale", frame=2000) # Peak light
         p.scale = (1.5, 1.5, 1.5)
@@ -901,9 +907,6 @@ def animate_dialogue_v2(mouth_obj, frame_start, frame_end, intensity=1.0, speed=
 def animate_expression_blend(character_name, frame, expression='NEUTRAL', duration=12):
     """Smoothly transitions between facial expression presets."""
     from assets import plant_humanoid
-    # Since plant_humanoid handles the actual keyframing of parts, we wrap it
-    # and ensure multiple frames are keyed for a smooth transition if duration > 0.
-    # For now, we'll implement a simple version that uses plant_humanoid's logic.
     torso = bpy.data.objects.get(f"{character_name}_Mesh") or \
             bpy.data.objects.get(f"{character_name}_Torso")
     if not torso: return
@@ -923,7 +926,6 @@ def animate_fireflies(center, volume_size=(5, 5, 5), density=10, frame_start=1, 
         bpy.context.scene.collection.children.link(container)
 
     mat = bpy.data.materials.new(name="FireflyMat")
-    # mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.8, 1.0, 0.2, 1) # Yellow-green
     set_blend_method(mat, 'BLEND')
@@ -1068,8 +1070,6 @@ def apply_anticipation(obj, data_path, frame, offset_value, duration=5):
 
 def animate_limp(obj, frame_start, frame_end, cycle=32):
     """Enhancement #14: Gnome Limping Retreat Gait."""
-    # Asymmetric gait using noise with varying scale on Y
-    insert_looping_noise(obj, "location", index=2, strength=0.05, scale=cycle, frame_start=frame_start, frame_end=frame_end)
     # Drag effect on one side
     for f in range(frame_start, frame_end, cycle):
         obj.rotation_euler[1] = math.radians(5)
@@ -1146,14 +1146,9 @@ def animate_distance_based_glow(gnome, characters, frame_start, frame_end):
     bsdf = mat.node_tree.nodes.get("Principled BSDF")
     if not bsdf: return
     
-    # We need to find the input socket for Emission Strength
-    # Note: get_principled_socket is a helper in this file, but we need the actual socket object to add a driver
     socket = get_principled_socket(bsdf, "Emission Strength")
     if not socket: return
 
-    # Remove any existing animation data on this socket to be clean
-    # (Though adding a driver usually overrides)
-    
     # Add Driver
     fcurve = socket.driver_add("default_value")
     driver = fcurve.driver
@@ -1171,12 +1166,9 @@ def animate_distance_based_glow(gnome, characters, frame_start, frame_end):
         dist_vars.append(f"dist_{i}")
         
     if not dist_vars:
-        # Fallback if no characters found
         driver.expression = "2.0"
         return
 
-    # Expression: max(2.0, 50.0 * (1.0 / max(1.0, min_dist)))
-    # min_dist = min(d1, d2, ...)
     min_dist_expr = f"min({', '.join(dist_vars)})"
     driver.expression = f"max(2.0, 50.0 * (1.0 / max(1.0, {min_dist_expr})))"
 
@@ -1271,7 +1263,6 @@ def animate_dawn_progression(sun_light):
 def apply_interior_exterior_contrast(sun_light, cam):
     """Enhancement #27: Interior vs Exterior Light Contrast."""
     # This needs to be checked per frame or keyframed based on drone shots
-    # For now, we'll keyframe it based on the known drone shots frame ranges
     drone_ranges = [(101, 200), (401, 480), (3901, 4100), (14200, 14400)]
     for start, end in drone_ranges:
         sun_light.data.color = (0.7, 0.8, 1.0) # Cool exterior
@@ -1307,7 +1298,6 @@ def replace_with_soft_boxes():
             bpy.data.objects.remove(obj, do_unlink=True)
 
             mat = bpy.data.materials.new(name=f"Mat_{plane.name}")
-            # mat.use_nodes = True
             bsdf = mat.node_tree.nodes["Principled BSDF"]
             set_principled_socket(mat, "Emission", list(color) + [1])
             set_principled_socket(mat, "Emission Strength", energy / 1000.0) # Scale energy
@@ -1320,7 +1310,6 @@ def animate_hdri_rotation(scene):
     nodes = world.node_tree.nodes
     mapping = nodes.get("Mapping")
     if not mapping:
-        # Try to find or create mapping node for environment texture
         tex = None
         for n in nodes:
             if n.type == 'TEX_ENVIRONMENT':
@@ -1344,8 +1333,6 @@ def animate_vignette_breathing(scene, frame_start, frame_end, strength=0.05, cyc
     vig = tree.nodes.get("Vignette")
     if not vig: return
 
-    # We animate width/height with noise or sine-like loop
-    # For simplicity, we use noise via our helper
     if not tree.animation_data:
         tree.animation_data_create()
     if not tree.animation_data.action:
