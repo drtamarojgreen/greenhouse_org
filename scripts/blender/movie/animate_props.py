@@ -3,8 +3,13 @@ import style
 import mathutils
 from constants import SCENE_MAP
 
+from assets import brain_neuron
+
 def animate_props(master_instance):
     """Animates background props and environmental elements."""
+    # Scientific assets
+    brain_neuron.animate_brain_neuron(master_instance)
+
     # Pulsing Brain Core
     if master_instance.brain:
         style.animate_pulsing_emission(master_instance.brain, 1, 15000, base_strength=0.1, pulse_amplitude=0.3)

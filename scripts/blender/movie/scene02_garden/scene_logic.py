@@ -30,7 +30,9 @@ def setup_scene(master):
 
     # Visibility and Transitions
     for b in bushes:
-        for obj in b.objects:
+        # BMesh bushes are single objects
+        objs_to_animate = [b]
+        for obj in objs_to_animate:
             obj.hide_render = True
             obj.keyframe_insert(data_path="hide_render", frame=500)
             obj.hide_render = False
@@ -38,14 +40,21 @@ def setup_scene(master):
             obj.hide_render = True
             obj.keyframe_insert(data_path="hide_render", frame=651)
 
-        style.apply_fade_transition(b.objects, 501, 650, mode='IN', duration=12)
-        style.animate_foliage_wind(b.objects, strength=0.03, frame_start=501, frame_end=650)
+        style.apply_fade_transition(objs_to_animate, 501, 650, mode='IN', duration=12)
+        style.animate_foliage_wind(objs_to_animate, strength=0.03, frame_start=501, frame_end=650)
 
-    # Atmospheric Fauna (Butterflies)
+    # Atmospheric Fauna (Butterflies) - BMesh
+    import bmesh
+    butterfly_mesh = bpy.data.meshes.new("ButterflyMesh")
+    bm = bmesh.new()
+    bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.05)
+    bm.to_mesh(butterfly_mesh)
+    bm.free()
+
     for i in range(5):
-        bpy.ops.mesh.primitive_plane_add(size=0.1, location=(random.uniform(-3, 3), random.uniform(0, 3), 2))
-        butterfly = bpy.context.object
-        butterfly.name = f"Butterfly_{i}"
+        butterfly = bpy.data.objects.new(f"Butterfly_{i}", butterfly_mesh)
+        bpy.context.collection.objects.link(butterfly)
+        butterfly.location = (random.uniform(-3, 3), random.uniform(0, 3), 2)
         style.insert_looping_noise(butterfly, "location", strength=1.0, scale=10.0, frame_start=501, frame_end=650)
 
     # Reactive Blooms

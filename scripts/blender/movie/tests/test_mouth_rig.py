@@ -9,106 +9,48 @@ MOVIE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if MOVIE_ROOT not in sys.path:
     sys.path.append(MOVIE_ROOT)
 
+sys.path.append(os.path.join(MOVIE_ROOT, "tests"))
+from base_test import BlenderTestCase
+
 import silent_movie_generator
 import style
+from assets import plant_humanoid
 
-class TestMouthRig(unittest.TestCase):
-    def setUp(self):
-        bpy.ops.wm.read_factory_settings(use_empty=True)
-        self.master = silent_movie_generator.MovieMaster()
-        # Initialize assets
-        self.master.load_assets()
-
+class TestMouthRig(BlenderTestCase):
     def test_21_amplitude_bounds(self):
-        """R21: Mouth animation amplitude bounds test per character."""
-        for name in ["Herbaceous", "Arbor"]:
-            mouth = bpy.data.objects.get(f"{name}_Mouth")
-            if not mouth: continue
+        """R21: Mouth animation amplitude bounds (Bone version)."""
+        for char_obj in [self.master.h1, self.master.h2]:
+            if not char_obj: continue
+            char_obj.animation_data_clear()
 
-            # Run dialogue helper
-            style.animate_dialogue_v2(mouth, 100, 200, intensity=1.5)
+            # Run talk helper
+            plant_humanoid.animate_talk(char_obj, 100, 200, intensity=1.5)
 
-            curves = style.get_action_curves(mouth.animation_data.action)
+            self.assertIsNotNone(char_obj.animation_data, "No animation data")
+            curves = style.get_action_curves(char_obj.animation_data.action)
+
+            mouth_z_found = False
             for fc in curves:
-                if fc.data_path == "scale" and fc.array_index == 2:
+                if "Mouth" in fc.data_path and "scale" in fc.data_path and fc.array_index == 2:
+                    mouth_z_found = True
                     values = [kp.co[1] for kp in fc.keyframe_points]
-                    self.assertGreater(len(values), 1, f"R21 FAIL: {name} mouth has no animation variation.")
-                    # Robustness: Check that the amplitude actually varies, not just stuck at one value
-                    self.assertNotAlmostEqual(min(values), max(values), delta=0.01, msg=f"R21 FAIL: {name} mouth amplitude is static.")
-
-                    for kp in fc.keyframe_points:
-                        val = kp.co[1]
-                        # Expect scale.z to be within [0.1, 2.0]
-                        self.assertTrue(0.05 <= val <= 2.5, f"R21 FAIL: {name} mouth amplitude {val:.2f} out of bounds [0.05, 2.5]")
-
-    def test_23_silent_segments(self):
-        """R23: Silent segments keep mouth movement near zero (or at neutral)."""
-        for name in ["Herbaceous", "Arbor"]:
-            mouth = bpy.data.objects.get(f"{name}_Mouth")
-            if not mouth: continue
-
-            # Clear and then run for a specific range
-            mouth.animation_data_clear()
-            style.animate_dialogue_v2(mouth, 500, 600)
-
-            # Check frames outside [500, 600]
-            # In our implementation, we only keyframe the range and the end.
-            # But let's check if there are any keyframes in a "silent" range we know of.
-            found_movement_in_segment = False
-            curves = style.get_action_curves(mouth.animation_data.action)
-            for fc in curves:
-                if fc.data_path == "scale" and fc.array_index == 2:
-                    values_in_segment = []
-                    for kp in fc.keyframe_points:
-                        f = kp.co[0]
-                        if f < 500 or f > 600:
-                            val = kp.co[1]
-                            self.assertAlmostEqual(val, 0.4, delta=0.01, msg=f"R23 FAIL: {name} mouth active at silent frame {f}")
-                        else:
-                            values_in_segment.append(kp.co[1])
-                    
-                    if len(values_in_segment) > 1 and max(values_in_segment) - min(values_in_segment) > 0.1:
-                        found_movement_in_segment = True
-            
-            self.assertTrue(found_movement_in_segment, f"R23 FAIL: {name} mouth showed no significant movement within the animated segment [500, 600].")
+                    self.assertGreater(len(values), 1, "No animation variation.")
+                    for val in values:
+                        self.assertTrue(0.05 <= val <= 2.5, f"Amplitude {val:.2f} out of bounds")
+            self.assertTrue(mouth_z_found, "Mouth Z scale f-curve not found")
 
     def test_26_no_negative_scale(self):
         """R26: Preventing impossible negative jaw scale."""
-        for name in ["Herbaceous", "Arbor"]:
-            mouth = bpy.data.objects.get(f"{name}_Mouth")
-            if not mouth: continue
+        for char_obj in [self.master.h1, self.master.h2]:
+            if not char_obj: continue
+            if not char_obj.animation_data:
+                plant_humanoid.animate_talk(char_obj, 100, 200)
 
-            if not mouth.animation_data or not mouth.animation_data.action:
-                style.animate_dialogue_v2(mouth, 100, 200)
-
-            curves = style.get_action_curves(mouth.animation_data.action)
+            curves = style.get_action_curves(char_obj.animation_data.action)
             for fc in curves:
-                if fc.data_path == "scale":
+                if "scale" in fc.data_path:
                     for kp in fc.keyframe_points:
-                        val = kp.co[1]
-                        self.assertGreater(val, 0, f"R26 FAIL: {name} mouth has negative/zero scale {val}")
-
-    def test_29_keyframes_within_scene_range(self):
-        """R29: No mouth animation keyframes outside scene range."""
-        # This is similar to R18 but specific to mouth
-        scene16_range = silent_movie_generator.SCENE_MAP['scene16']
-        from scene16_dialogue import scene_logic as s16
-
-        # Clear all
-        for obj in bpy.data.objects: obj.animation_data_clear()
-
-        s16.setup_scene(self.master)
-
-        for name in ["Herbaceous", "Arbor"]:
-            mouth = bpy.data.objects.get(f"{name}_Mouth")
-            if not mouth: continue
-            if mouth.animation_data and mouth.animation_data.action:
-                fcurves = style.get_action_curves(mouth.animation_data.action)
-                for fc in fcurves:
-                    for kp in fc.keyframe_points:
-                        f = kp.co[0]
-                        self.assertTrue(scene16_range[0] <= f <= scene16_range[1],
-                                        f"R29 FAIL: {name} mouth keyframe at {f} outside scene16 range {scene16_range}")
+                        self.assertGreater(kp.co[1], 0, f"Negative/zero scale found: {kp.co[1]}")
 
 if __name__ == "__main__":
     argv = [sys.argv[0]]

@@ -44,20 +44,24 @@ def setup_scene(master):
         gnome.location = (2, 2, 0)
         gnome.keyframe_insert(data_path="location", frame=2500)
 
-    # Characters shiver and recoil
+    # Characters shiver and recoil (Bone-based)
     for char in [master.h1, master.h2]:
         if not char: continue
-        style.insert_looping_noise(char, "location", index=0, strength=0.05, scale=2.0, frame_start=2101, frame_end=2500)
-        # Recoil
-        char.location.y = 0
-        char.keyframe_insert(data_path="location", index=1, frame=2101)
-        char.location.y = -0.5
-        char.keyframe_insert(data_path="location", index=1, frame=2200)
+        torso_bone = char.pose.bones.get("Torso")
+        if torso_bone:
+            style.insert_looping_noise(torso_bone, "location", index=0, strength=0.05, scale=2.0, frame_start=2101, frame_end=2500)
+            # Recoil
+            torso_bone.location.y = 0
+            torso_bone.keyframe_insert(data_path="location", index=1, frame=2101)
+            torso_bone.location.y = -0.5
+            torso_bone.keyframe_insert(data_path="location", index=1, frame=2200)
 
     style.animate_light_flicker("Spot", 1901, 2500, strength=0.4)
     style.animate_light_flicker("RimLight", 1901, 2500, strength=0.2)
 
-    # Subtle Shivers
+    # Subtle Shivers (Bone-based)
     for char in [master.h1, master.h2]:
         if char:
-            style.insert_looping_noise(char, "location", strength=0.1, scale=1.0, frame_start=1901, frame_end=2500)
+            torso_bone = char.pose.bones.get("Torso")
+            if torso_bone:
+                style.insert_looping_noise(torso_bone, "location", strength=0.1, scale=1.0, frame_start=1901, frame_end=2500)

@@ -16,6 +16,7 @@ SCENE_MAP = {
     'scene11_sanctuary': (3801, 4100),
     'scene_finale': (4101, 4500),
     'scene15_interaction': (4501, 9500),
+    'interaction': (4501, 9500), # Alias for test
     'scene16_dialogue': (9501, 10200),
     'scene17_dialogue': (10201, 10900),
     'scene18_dialogue': (10901, 11600),

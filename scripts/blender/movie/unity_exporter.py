@@ -41,7 +41,7 @@ def run_unity_pipeline():
     os.makedirs(output_dir, exist_ok=True)
 
     # Export Characters
-    characters = [obj for obj in bpy.context.scene.objects if "Torso" in obj.name]
+    characters = [obj for obj in bpy.context.scene.objects if "Torso" in obj.name or "Mesh" in obj.name]
     if characters:
         export_for_unity(os.path.join(output_dir, "Characters.fbx"), characters)
 

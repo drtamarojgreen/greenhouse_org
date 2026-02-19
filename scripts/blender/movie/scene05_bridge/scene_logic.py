@@ -34,10 +34,17 @@ def setup_scene(master):
     style.set_principled_socket(mat_node, 'Emission', (0.2, 0.4, 1.0, 1))
     style.set_principled_socket(mat_node, 'Emission Strength', 5.0)
 
+    import bmesh
+    node_mesh = bpy.data.meshes.new("SynapticNodeMesh")
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=2, radius=0.15)
+    bm.to_mesh(node_mesh)
+    bm.free()
+
     for i, loc in enumerate(node_locs):
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.15, location=loc)
-        node = bpy.context.object
-        node.name = f"SynapticNode_{i}"
+        node = bpy.data.objects.new(f"SynapticNode_{i}", node_mesh)
+        bpy.context.collection.objects.link(node)
+        node.location = loc
         node.data.materials.append(mat_node)
 
         node.hide_render = True
