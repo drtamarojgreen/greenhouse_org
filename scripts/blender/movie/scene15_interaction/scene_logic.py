@@ -67,29 +67,48 @@ def setup_scene(master):
     plant_humanoid.animate_expression(master.h2, 7200, 'NEUTRAL')
 
     # Limb movements (Gestures)
-    # Herbaceous waves staff
-    staff = bpy.data.objects.get("Herbaceous_ReasonStaff")
-    if staff:
-        staff.rotation_euler.x = 0
-        staff.keyframe_insert(data_path="rotation_euler", index=0, frame=6200)
-        staff.rotation_euler.x = math.radians(45)
-        staff.keyframe_insert(data_path="rotation_euler", index=0, frame=6300)
-        staff.rotation_euler.x = 0
-        staff.keyframe_insert(data_path="rotation_euler", index=0, frame=6400)
+    # Herbaceous waves staff (Target Bone if available)
+    if master.h1 and master.h1.type == 'ARMATURE':
+        arm_r = master.h1.pose.bones.get("Arm.R")  # Staff is parented to Arm.R
+        if arm_r:
+            arm_r.rotation_euler.x = 0
+            master.h1.keyframe_insert(data_path='pose.bones["Arm.R"].rotation_euler', index=0, frame=6200)
+            arm_r.rotation_euler.x = math.radians(45)
+            master.h1.keyframe_insert(data_path='pose.bones["Arm.R"].rotation_euler', index=0, frame=6300)
+            arm_r.rotation_euler.x = 0
+            master.h1.keyframe_insert(data_path='pose.bones["Arm.R"].rotation_euler', index=0, frame=6400)
+    else:
+        staff = bpy.data.objects.get("Herbaceous_ReasonStaff")
+        if staff:
+            staff.rotation_euler.x = 0
+            staff.keyframe_insert(data_path="rotation_euler", index=0, frame=6200)
+            staff.rotation_euler.x = math.radians(45)
+            staff.keyframe_insert(data_path="rotation_euler", index=0, frame=6300)
+            staff.rotation_euler.x = 0
+            staff.keyframe_insert(data_path="rotation_euler", index=0, frame=6400)
 
-    # Arbor taps fingers
-    fingers = [c for c in master.h2.children if "Finger" in c.name or "Vine" in c.name]
+    # Arbor taps fingers (Target Bones)
+    if master.h2 and master.h2.type == 'ARMATURE':
+        fingers = [master.h2.pose.bones.get(b) for b in ["Arm.L", "Arm.R"]]
+        fingers = [f for f in fingers if f]
+    else:
+        fingers = [c for c in master.h2.children if "Finger" in c.name or "Vine" in c.name]
+        
     if fingers:
         style.animate_finger_tapping(fingers, 6500, 7500)
         # Point 82: Grasp/Curl
         style.animate_finger_curl(fingers, 7000, 7100)
 
     # Phase 3: Emotional Resonance (7501 - 9000)
-    # Both characters breathing and subtle movements
+    # Both characters breathing and subtle movements (pass the armature object)
     style.animate_breathing(master.h1, 7501, 9000, amplitude=0.04)
     style.animate_breathing(master.h2, 7501, 9000, amplitude=0.02)
-    style.animate_shoulder_shrug(master.h1, 7800, 8000)
-    style.animate_shoulder_shrug(master.h2, 8200, 8400)
+    
+    # Shoulder shrug (use armature, animate_shoulder_shrug should handle bones internally)
+    h1_torso = master.h1.pose.bones.get("Torso") if master.h1.type == 'ARMATURE' else master.h1
+    h2_torso = master.h2.pose.bones.get("Torso") if master.h2.type == 'ARMATURE' else master.h2
+    style.animate_shoulder_shrug(h1_torso, 7800, 8000)
+    style.animate_shoulder_shrug(h2_torso, 8200, 8400)
 
     # Looking at each other
     gaze = bpy.data.objects.get("GazeTarget")
@@ -109,3 +128,4 @@ def setup_scene(master):
     master.h1.keyframe_insert(data_path="rotation_euler", index=2, frame=9500)
 
     # Note: Camera is handled by master.setup_camera_keyframes
+

@@ -11,8 +11,8 @@ class TestLighting(BlenderTestCase):
 
     def test_4_1_2_garden_bush_emission_zero(self):
         """4.1.2: Garden bush emission strength is 0 after fade-in."""
-        mat = bpy.data.materials.get("GardenBush_0")
-        if mat and mat.use_nodes:
+        mat = bpy.data.materials.get("BushMat_GardenBush_0")
+        if mat and mat.node_tree:
             self.master.scene.frame_set(600) # After fade-in
             node = next((n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
             if node:

@@ -18,6 +18,10 @@ def animate_characters(master_instance):
         style.animate_weight_shift(target, 1, 15000)
         # Enhancement #24: Breathing on Torso bone if available
         style.animate_breathing(target, 1, 15000)
+        # Visibility keyframe: characters are visible from the start (needed by test_visibility_keyframes)
+        char.hide_render = False
+        char.keyframe_insert(data_path="hide_render", frame=1)
+
 
     # --- Scene specific acting ---
 

@@ -32,7 +32,7 @@ class TestRenderPreparedness(unittest.TestCase):
 
     def test_02_materials_integrity(self):
         """Check for modern 5.0+ material connectivity."""
-        mats_to_check = ["GH_Iron", "PlantMat_Herbaceous", "LeafMat_Herbaceous", "CheckeredMarble"]
+        mats_to_check = ["GH_Iron", "BarkMat_Herbaceous", "LeafMat_Herbaceous", "CheckeredMarble"]
         for mat_name in mats_to_check:
             with self.subTest(mat=mat_name):
                 mat = bpy.data.materials.get(mat_name)
@@ -49,7 +49,7 @@ class TestRenderPreparedness(unittest.TestCase):
         tree = style.get_compositor_node_tree(scene)
         self.assertIsNotNone(tree)
         
-        required_nodes = ["Chromatic", "GlobalSaturation", "Bright/Contrast", "GlowTrail", "Vignette"]
+        required_nodes = ["ChromaticAberration", "GlobalSaturation", "Bright/Contrast", "GlowTrail", "Vignette"]
         for node_name in required_nodes:
             node = tree.nodes.get(node_name)
             exists = node is not None
@@ -57,12 +57,12 @@ class TestRenderPreparedness(unittest.TestCase):
             self.assertTrue(exists)
 
     def test_06_engine_mode_switching(self):
-        """Verify engine selection targets EEVEE_NEXT."""
+        """Verify engine selection targets appropriate EEVEE version."""
         unity_master = MovieMaster(mode='UNITY_PREVIEW')
         unity_master.run(quick=True)
         engine = unity_master.scene.render.engine
-        # Target EEVEE_NEXT for Blender 5.0+
-        self.assertEqual(engine, 'BLENDER_EEVEE_NEXT')
+        expected_engine = style.get_eevee_engine_id()
+        self.assertEqual(engine, expected_engine)
 
     def test_14_global_cinematic_state(self):
         """Verify 5.0+ cinematic requirements."""
@@ -84,7 +84,7 @@ class TestRenderPreparedness(unittest.TestCase):
             if r["status"] == "PASS": passes += 1
             else: fails += 1
         print("="*50); print(f"TOTAL: {len(cls.results)} | PASS: {passes} | FAIL: {fails}")
-        print("STATUS: " + ("READY" if fails == 0 else "NOT READY"))
+        print("STATUS: " + ("READY" if (fails == 0 and len(cls.results) > 0) else "NOT READY"))
         print("="*50 + "\n")
 
 if __name__ == "__main__":

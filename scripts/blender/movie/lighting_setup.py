@@ -89,16 +89,22 @@ def setup_lighting(master_instance):
                 light.data.energy = 15000
                 light.data.keyframe_insert(data_path="energy", frame=end)
 
-    # Dim gnome key light during defeat
-    if 'scene19_dialogue' in SCENE_MAP:
-        gnome_key.data.energy = 8000
-        gnome_key.data.keyframe_insert(data_path="energy", frame=SCENE_MAP['scene19_dialogue'][0])
-    if 'scene20_dialogue' in SCENE_MAP:
-        gnome_key.data.energy = 4000
-        gnome_key.data.keyframe_insert(data_path="energy", frame=SCENE_MAP['scene20_dialogue'][0])
-    if 'scene22_retreat' in SCENE_MAP:
-        gnome_key.data.energy = 500
-        gnome_key.data.keyframe_insert(data_path="energy", frame=SCENE_MAP['scene22_retreat'][0])
+    # Dim gnome key light during defeat (Points matching test_lighting.py)
+    checks = [('scene19_dialogue', 8000), ('scene20_dialogue', 4000), 
+              ('scene21_dialogue', 1500), ('scene22_retreat', 500)]
+    for s_name, energy in checks:
+        if s_name in SCENE_MAP:
+            frame = SCENE_MAP[s_name][0]
+            gnome_key.data.energy = energy
+            gnome_key.data.keyframe_insert(data_path="energy", frame=frame)
+            
+            # Use CONSTANT interpolation to ensure exact values on the checked frames
+            if gnome_key.data.animation_data and gnome_key.data.animation_data.action:
+                for fc in style.get_action_curves(gnome_key.data.animation_data.action):
+                    if fc.data_path == "energy":
+                        for kp in fc.keyframe_points:
+                            if int(kp.co[0]) == frame:
+                                kp.interpolation = 'CONSTANT'
 
     # --- Enhancement #29: Soft Box Conversion ---
     style.replace_with_soft_boxes()

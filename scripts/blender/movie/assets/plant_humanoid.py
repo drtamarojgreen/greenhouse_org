@@ -332,37 +332,39 @@ def animate_walk(armature_obj, frame_start, frame_end, step_height=0.1, cycle_le
     pb = armature_obj.pose.bones
     for f in range(frame_start, frame_end + 1, 6):
         phase = ((f - frame_start) % cycle_length) / cycle_length
-        # Torso bobbing
+        # Torso bobbing (Explicit targeting)
         if pb.get("Torso"):
-            pb["Torso"].location.z = abs(math.sin(phase * 6.28)) * step_height; pb["Torso"].keyframe_insert(data_path="location", index=2, frame=f)
-            pb["Torso"].rotation_euler[2] = math.sin(phase * 6.28) * 0.14; pb["Torso"].keyframe_insert(data_path="rotation_euler", index=2, frame=f)
+            pb["Torso"].location.z = abs(math.sin(phase * 6.28)) * step_height
+            armature_obj.keyframe_insert(data_path='pose.bones["Torso"].location', index=2, frame=f)
+            pb["Torso"].rotation_euler[2] = math.sin(phase * 6.28) * 0.14
+            armature_obj.keyframe_insert(data_path='pose.bones["Torso"].rotation_euler', index=2, frame=f)
         
-        # Limb swinging (opposite pairs)
+        # Limb swinging (Explicit targeting)
         swing = math.sin(phase * 6.28) * 0.4
         for bone_name, s_mult in [("Leg.L", 1), ("Leg.R", -1), ("Arm.L", -1), ("Arm.R", 1)]:
             bone = pb.get(bone_name)
             if bone:
                 bone.rotation_euler[0] = swing * s_mult
-                bone.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+                armature_obj.keyframe_insert(data_path=f'pose.bones["{bone_name}"].rotation_euler', index=0, frame=f)
 
 def animate_talk(armature_obj, frame_start, frame_end, intensity=1.0):
     mouth = armature_obj.pose.bones.get("Mouth")
     if not mouth: return
     for f in range(frame_start, frame_end + 1, 4):
         mouth.scale.z = 0.1 if f % 12 == 0 else random.uniform(0.2, 1.0) * intensity
-        mouth.keyframe_insert(data_path="scale", index=2, frame=f)
+        armature_obj.keyframe_insert(data_path='pose.bones["Mouth"].scale', index=2, frame=f)
 
 def animate_expression(armature_obj, frame, expression='NEUTRAL'):
     pb = armature_obj.pose.bones
     mouth = pb.get("Mouth")
     if mouth:
         mouth.scale = (1.5, 1.5, 1.5) if expression == 'SURPRISED' else ((0.8, 0.8, 0.8) if expression == 'ANGRY' else (1, 1, 1))
-        mouth.keyframe_insert(data_path="scale", frame=frame)
+        armature_obj.keyframe_insert(data_path='pose.bones["Mouth"].scale', frame=frame)
     for ename in ["Eye.L", "Eye.R"]:
         eye = pb.get(ename)
         if eye:
             eye.scale = (1.5, 1.5, 1.5) if expression == 'SURPRISED' else ((0.8, 0.8, 0.8) if expression == 'ANGRY' else (1, 1, 1))
-            eye.keyframe_insert(data_path="scale", frame=frame)
+            armature_obj.keyframe_insert(data_path=f'pose.bones["{ename}"].scale', frame=frame)
 
 def create_flower(location, name="MentalBloom", scale=0.2):
     import bmesh; mesh = bpy.data.meshes.new(f"{name}_MeshData")

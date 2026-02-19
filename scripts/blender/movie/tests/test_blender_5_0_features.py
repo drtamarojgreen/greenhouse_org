@@ -74,7 +74,8 @@ class TestBlender50Features(unittest.TestCase):
         """1.3.1: create_noise_based_material avoids .clear() crash."""
         # This tests the logic in style.py
         mat = style.create_noise_based_material("TestRampClear", colors=[(1,0,0,1), (0,1,0,1), (0,0,1,1)])
-        ramp = next(n for n in mat.node_tree.nodes if n.type == 'VAL_TO_RGB')
+        ramp = next((n for n in mat.node_tree.nodes if n.type in ('VALTORGB', 'VAL_TO_RGB') or n.name == 'VAL_TO_RGB'), None)
+        self.assertIsNotNone(ramp, "No ValToRGB (color ramp) node found in material")
         self.assertEqual(len(ramp.color_ramp.elements), 3)
 
     # --- Section 1.4: Roughness Socket Type Coercion Fix ---

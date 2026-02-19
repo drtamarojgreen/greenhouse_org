@@ -12,9 +12,13 @@ import style
 class TestInteractionScene(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Run the movie master to generate the scene
-        cls.master = MovieMaster(mode='SILENT_FILM')
-        cls.master.run()
+        # Point 140: Ensure animation data exists
+        h1 = bpy.data.objects.get("Herbaceous")
+        has_anim = h1 and h1.animation_data and h1.animation_data.action and len(style.get_action_curves(h1.animation_data.action)) > 0
+        
+        if not hasattr(cls, 'master') or not cls.master or not has_anim:
+            cls.master = MovieMaster(mode='SILENT_FILM')
+            cls.master.run()
 
     def test_interaction_frame_range(self):
         """Verify the interaction scene frames are within the 4501-9500 range."""
@@ -24,13 +28,13 @@ class TestInteractionScene(unittest.TestCase):
         self.assertEqual(scene.frame_end, 15000)
 
     def test_herbaceous_interaction_animation(self):
-        """Check Herbaceous animation in the interaction phase."""
-        obj = bpy.data.objects.get("Herbaceous_Torso")
-        self.assertIsNotNone(obj, "Herbaceous_Torso not found")
+        """Check Herbaceous animation in the interaction phase (Armature)."""
+        obj = bpy.data.objects.get("Herbaceous")
+        self.assertIsNotNone(obj, "Herbaceous armature not found")
 
         anim_data = obj.animation_data
-        self.assertIsNotNone(anim_data, "Herbaceous_Torso has no animation data")
-        self.assertIsNotNone(anim_data.action, "Herbaceous_Torso has no action")
+        self.assertIsNotNone(anim_data, "Herbaceous has no animation data")
+        self.assertIsNotNone(anim_data.action, "Herbaceous has no action")
 
         curves = style.get_action_curves(anim_data.action)
 
@@ -90,24 +94,26 @@ class TestInteractionScene(unittest.TestCase):
         self.assertTrue(eye_scale_found, "Eye bone scale (expression) keyframes not found for Herbaceous")
 
     def test_staff_gesture(self):
-        """Check Herbaceous staff gesture in interaction scene."""
-        staff = bpy.data.objects.get("Herbaceous_ReasonStaff")
-        self.assertIsNotNone(staff, "Herbaceous_ReasonStaff not found")
-
-        anim_data = staff.animation_data
-        self.assertIsNotNone(anim_data, "Herbaceous_ReasonStaff has no animation data")
+        """Check Herbaceous staff gesture in interaction scene (Bone-aware)."""
+        # Staff is parented to Arm.R bone, which is animated for the gesture
+        arm = bpy.data.objects.get("Herbaceous")
+        self.assertIsNotNone(arm, "Herbaceous armature not found")
+        
+        anim_data = arm.animation_data
+        self.assertIsNotNone(anim_data, "Herbaceous has no animation data")
 
         curves = style.get_action_curves(anim_data.action)
         rot_x_found = False
+        target_path = 'pose.bones["Arm.R"].rotation_euler'
         for fc in curves:
-            if fc.data_path == "rotation_euler" and fc.array_index == 0:
+            if target_path in fc.data_path and fc.array_index == 0:
                 rot_x_found = True
                 keyframes = [kp.co[0] for kp in fc.keyframe_points]
                 # Point 57: Approximate matching
                 self.assertTrue(any(abs(k - 6200) < 0.5 for k in keyframes))
                 self.assertTrue(any(abs(k - 6300) < 0.5 for k in keyframes))
                 self.assertTrue(any(abs(k - 6400) < 0.5 for k in keyframes))
-        self.assertTrue(rot_x_found, "Rotation X keyframes not found for Staff gesture")
+        self.assertTrue(rot_x_found, f"Rotation X keyframes not found for bone {target_path}")
 
     def test_gaze_target_movement(self):
         """Check GazeTarget location changes during interaction."""
