@@ -63,6 +63,16 @@
             return this.randomBuffer[this.randomIdx++];
         }
 
+        cloneGenome(genome) {
+            return {
+                neurons: genome.neurons.map(n => ({ ...n })),
+                connections: genome.connections.map(c => ({ ...c })),
+                fitness: genome.fitness,
+                generation: genome.generation,
+                parentId: genome.parentId
+            };
+        }
+
         init(config = {}) {
             if (config.populationSize) this.populationSize = config.populationSize;
             if (config.bounds) this.bounds = config.bounds;
@@ -203,102 +213,110 @@
             let maxFitness = -Infinity;
             this.bestGenome = null;
 
+            const config = this.adhdConfig;
+            const enhancements = config.activeEnhancements;
+
+            // Cache common enhancement checks
+            const hasGBA = enhancements.has(94);
+            const hasBreaks = enhancements.has(44);
+            const hasSensoryOverload = enhancements.has(18);
+            const hasNeurofeedback = enhancements.has(32);
+            const hasAttentionDecay = enhancements.has(7);
+            const hasLCInstability = enhancements.has(74);
+            const hasSocialSupport = enhancements.has(41);
+            const hasMoodCycle = enhancements.has(105);
+            const hasSNR = enhancements.has(2);
+            const hasThalamicGating = enhancements.has(61);
+            const hasPesticide = enhancements.has(87);
+            const hasRewardDelay = enhancements.has(5);
+            const hasOverStimulation = enhancements.has(89);
+            const hasInterference = enhancements.has(8);
+            const hasSalienceMisalignment = enhancements.has(59);
+            const hasEvolutionaryAdaptation = enhancements.has(93);
+            const hasGamifiedFocus = enhancements.has(43);
+            const hasAmygdalaSensitivity = enhancements.has(73);
+
             // ADHD: Gut-Brain Axis Interaction (Enhancement 94)
-            const metabolicPlasticity = this.adhdConfig.activeEnhancements.has(94) ? 1.2 : 1.0;
+            const metabolicPlasticity = hasGBA ? 1.2 : 1.0;
 
             // ADHD: Timed Break Intervals (Enhancement 44)
-            if (this.adhdConfig.activeEnhancements.has(44)) {
-                if (this.generation % 500 === 0) this.adhdConfig.breakInterval = 50;
-                if (this.adhdConfig.breakInterval > 0) {
-                    this.adhdConfig.breakInterval--;
+            if (hasBreaks) {
+                if (this.generation % 500 === 0) config.breakInterval = 50;
+                if (config.breakInterval > 0) {
+                    config.breakInterval--;
                     return;
                 }
             }
 
             // ADHD: Sensory Overload Mode (Enhancement 18)
-            if (this.adhdConfig.activeEnhancements.has(18) && this.generation % 50 === 0) {
+            if (hasSensoryOverload && this.generation % 50 === 0) {
                 this.generateTargetPoints(this.targetPoints.length + 1);
             }
 
             // ADHD: Task-Switching Latency (Enhancement 6) / Procrastination Lag (Enhancement 22)
-            if (this.adhdConfig.taskSwitchingLatency > 0) {
-                this.adhdConfig.taskSwitchingLatency--;
+            if (config.taskSwitchingLatency > 0) {
+                config.taskSwitchingLatency--;
                 return;
             }
-            if (this.adhdConfig.procrastinationLag > 0) {
-                this.adhdConfig.procrastinationLag--;
+            if (config.procrastinationLag > 0) {
+                config.procrastinationLag--;
                 return;
             }
 
             // ADHD: Neurofeedback Training Loop (Enhancement 32)
-            // Reward individuals that stay near previously high-fitness centers
-            const neurofeedbackReward = this.adhdConfig.activeEnhancements.has(32) ? 1.2 : 1.0;
+            const neurofeedbackReward = hasNeurofeedback ? 1.2 : 1.0;
 
             // ADHD: Sustained Attention Decay (Enhancement 7)
-            const attentionMultiplier = this.adhdConfig.activeEnhancements.has(7) ? this.adhdConfig.sustainedAttention : 1.0;
+            const attentionMultiplier = hasAttentionDecay ? config.sustainedAttention : 1.0;
 
             // ADHD: Locus Coeruleus Instability (Enhancement 74)
-            const lcMultiplier = this.adhdConfig.activeEnhancements.has(74) ? (0.5 + this.nextRand()) : 1.0;
+            const lcMultiplier = hasLCInstability ? (0.5 + this.nextRand()) : 1.0;
 
             // ADHD: Social Support Buffering (Enhancement 41)
-            const socialSupport = this.adhdConfig.activeEnhancements.has(41) ? 1.3 : 1.0;
+            const socialSupport = hasSocialSupport ? 1.3 : 1.0;
 
             // Bipolar: Rhythmic Mood Cycling (105)
-            if (this.adhdConfig.activeEnhancements.has(105)) {
-                this.adhdConfig.moodCycle = (Math.sin(this.generation * 0.05) + 1) / 2; // 0 to 1 cycle
+            if (hasMoodCycle) {
+                config.moodCycle = (Math.sin(this.generation * 0.05) + 1) / 2; // 0 to 1 cycle
             }
+
+            const targetPoints = this.targetPoints;
+            const targetAges = config.targetAges;
+            const targetDistSqThreshold = 100 * 100;
+            const noiseSmoothing = config.noiseSmoothing;
+            const snr = config.snr;
+            const dosagePrecision = config.dosagePrecision;
 
             this.population.forEach(genome => {
                 let fitness = 0;
 
                 // ADHD: Receptor Downregulation (Enhancement 68)
                 let responseSensitivity = 1.0;
-                if (this.adhdConfig.activeEnhancements.has(68)) {
-                    const recentStim = this.adhdConfig.stimulationHistory.slice(-10).reduce((a, b) => a + b, 0) / 10;
+                if (enhancements.has(68)) {
+                    const recentStim = config.stimulationHistory.slice(-10).reduce((a, b) => a + b, 0) / 10;
                     if (recentStim > 500) responseSensitivity = 0.5; // Diminished response
                 }
 
-                // Optimization: Pre-calculate square bounds for fast distance checks
-                const targetDistSqThreshold = 100 * 100;
-
                 // 1. Connectivity Score: Reward connections to target points
-                genome.neurons.forEach(neuron => {
-                    // ADHD: Signal-to-Noise Ratio (Enhancement 2)
+                const neurons = genome.neurons;
+                for (let i = 0; i < neurons.length; i++) {
+                    const neuron = neurons[i];
                     let nx = neuron.x;
                     let ny = neuron.y;
                     let nz = neuron.z;
-                    if (this.adhdConfig.activeEnhancements.has(2)) {
-                        const smoothing = this.adhdConfig.noiseSmoothing; // Mindfulness (34)
-                        const noise = (this.nextRand() - 0.5) * 50 * this.adhdConfig.snr * (1 - smoothing);
-                        nx += noise;
-                        ny += noise;
-                        nz += noise;
+
+                    if (hasSNR) {
+                        const noise = (this.nextRand() - 0.5) * 50 * snr * (1 - noiseSmoothing);
+                        nx += noise; ny += noise; nz += noise;
                     }
 
-                    this.targetPoints.forEach((target, tIdx) => {
-                        // ADHD: Thalamic Gating Dysfunction (Enhancement 61) / Pesticide Exposure (87)
-                        if (this.adhdConfig.activeEnhancements.has(61) || this.adhdConfig.activeEnhancements.has(87)) {
-                            nx += (this.nextRand() - 0.5) * 20; // Extra noise/disruption
-                        }
+                    for (let tIdx = 0; tIdx < targetPoints.length; tIdx++) {
+                        const target = targetPoints[tIdx];
 
-                        // ADHD: Reward Delay Discounting (Enhancement 5)
-                        let delayDiscount = 1.0;
-                        if (this.adhdConfig.activeEnhancements.has(5)) {
-                            const age = this.adhdConfig.targetAges[tIdx];
-                            // ADHD: Over-Stimulation Modeling (Enhancement 89)
-                            const delayDecay = this.adhdConfig.activeEnhancements.has(89) ? 0.05 : 0.01;
-                            delayDiscount = Math.exp(-delayDecay * age);
+                        // ADHD: Thalamic Gating Dysfunction (61) / Pesticide Exposure (87)
+                        if (hasThalamicGating || hasPesticide) {
+                            nx += (this.nextRand() - 0.5) * 20;
                         }
-
-                        // ADHD: Interference Sensitivity (Enhancement 8)
-                        let interference = 1.0;
-                        if (this.adhdConfig.activeEnhancements.has(8)) {
-                            interference = 1.0 - (this.adhdConfig.snr * 0.5);
-                        }
-
-                        // ADHD: Salience Network Misalignment (Enhancement 59)
-                        let targetWeight = 1.0;
-                        if (this.adhdConfig.activeEnhancements.has(59) && tIdx % 2 !== 0) targetWeight = 1.5;
 
                         // Optimization: Use squared distance for inner loop check
                         const dx = nx - target.x;
@@ -308,27 +326,39 @@
 
                         if (distSq < targetDistSqThreshold) {
                             const dist = Math.sqrt(distSq);
-                            // ADHD: Evolutionary Adaptation View (Enhancement 93)
-                            const noveltyBonus = this.adhdConfig.activeEnhancements.has(93) ? 1.5 : 1.0;
 
-                            // ADHD: Dosage Optimization Slider (Enhancement 48) - precision impact
-                            const precision = this.adhdConfig.dosagePrecision;
+                            // ADHD: Reward Delay Discounting (5)
+                            let delayDiscount = 1.0;
+                            if (hasRewardDelay) {
+                                const age = targetAges[tIdx];
+                                const delayDecay = hasOverStimulation ? 0.05 : 0.01;
+                                delayDiscount = Math.exp(-delayDecay * age);
+                            }
 
-                            fitness += (100 - dist) * targetWeight * delayDiscount * interference * attentionMultiplier * neurofeedbackReward * socialSupport * lcMultiplier * metabolicPlasticity * noveltyBonus * responseSensitivity * precision;
+                            // ADHD: Interference Sensitivity (8)
+                            const interference = hasInterference ? (1.0 - (snr * 0.5)) : 1.0;
+
+                            // ADHD: Salience Network Misalignment (59)
+                            const targetWeight = (hasSalienceMisalignment && tIdx % 2 !== 0) ? 1.5 : 1.0;
+
+                            // ADHD: Evolutionary Adaptation View (93)
+                            const noveltyBonus = hasEvolutionaryAdaptation ? 1.5 : 1.0;
+
+                            fitness += (100 - dist) * targetWeight * delayDiscount * interference * attentionMultiplier * neurofeedbackReward * socialSupport * lcMultiplier * metabolicPlasticity * noveltyBonus * responseSensitivity * dosagePrecision;
                         }
 
-                        // ADHD: Gamified Focus Tasks (Enhancement 43)
-                        if (this.adhdConfig.userTarget) {
-                            const udx = nx - this.adhdConfig.userTarget.x;
-                            const udy = ny - this.adhdConfig.userTarget.y;
-                            const udz = nz - this.adhdConfig.userTarget.z;
-                            if (udx * udx + udy * udy + udz * udz < 2500) fitness += 500; // Large reward for user-defined focus
+                        // ADHD: Gamified Focus Tasks (43)
+                        if (config.userTarget) {
+                            const udx = nx - config.userTarget.x;
+                            const udy = ny - config.userTarget.y;
+                            const udz = nz - config.userTarget.z;
+                            if (udx * udx + udy * udy + udz * udz < 2500) fitness += 500;
                         }
-                    });
-                });
+                    }
+                }
 
                 // ADHD: Amygdala Hyper-Sensitivity (Enhancement 73)
-                if (this.adhdConfig.activeEnhancements.has(73)) {
+                if (hasAmygdalaSensitivity) {
                     // Trigger threat response to neutral targets (penalize fitness)
                     if (this.nextRand() < 0.1) fitness *= 0.5;
                 }
@@ -567,7 +597,7 @@
             const newPopulation = [];
 
             if (this.bestGenome) {
-                newPopulation.push(JSON.parse(JSON.stringify(this.bestGenome)));
+                newPopulation.push(this.cloneGenome(this.bestGenome));
             }
 
             // ADHD: Sustained Attention Decay (Enhancement 7)

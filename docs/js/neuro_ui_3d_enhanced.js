@@ -284,8 +284,13 @@
                 this.initializeBrainShell();
             }
 
+            const existingMap = new Map();
+            for (let i = 0; i < this.neurons.length; i++) {
+                existingMap.set(this.neurons[i].id, this.neurons[i]);
+            }
+
             this.neurons = genome.neurons.map((n, i) => {
-                const existingNeuron = this.neurons.find(existing => existing.id === n.id);
+                const existingNeuron = existingMap.get(n.id);
                 if (existingNeuron) {
                     return {
                         ...n,
@@ -329,9 +334,14 @@
 
         initializeConnections(connections) {
             const oldConnectionIds = new Set(this.connections.map(c => c.id));
+            const neuronMap = new Map();
+            for (let i = 0; i < this.neurons.length; i++) {
+                neuronMap.set(this.neurons[i].id, this.neurons[i]);
+            }
+
             this.connections = connections.map(conn => {
-                const fromNeuron = this.neurons.find(n => n.id === conn.from);
-                const toNeuron = this.neurons.find(n => n.id === conn.to);
+                const fromNeuron = neuronMap.get(conn.from);
+                const toNeuron = neuronMap.get(conn.to);
 
                 if (!fromNeuron || !toNeuron) return null;
 

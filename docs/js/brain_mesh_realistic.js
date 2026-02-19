@@ -18,8 +18,8 @@
 
             // Parameters for realistic brain shape
             const baseRadius = 200;
-            const latBands = 60; // Higher resolution for detail
-            const lonBands = 60;
+            const latBands = 30; // Optimized resolution
+            const lonBands = 30;
 
             // Generate base ellipsoid with anatomical proportions
             for (let lat = 0; lat <= latBands; lat++) {
