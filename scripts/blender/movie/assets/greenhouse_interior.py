@@ -48,7 +48,8 @@ def create_potted_plant(location, plant_type='FERN', name="PottedPlant"):
 
     # Soil
     ret = bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=rad*1.25, radius2=rad*1.25, depth=0.02, matrix=mathutils.Matrix.Translation((0,0,pot_h + 0.01)))
-    for f in ret['faces']: f.material_index = 1 # soil
+    for f in {f for v in ret['verts'] for f in v.link_faces}:
+        f.material_index = 1 # soil
 
     # Plant
     plant_top = mathutils.Vector((0, 0, pot_h + 0.02))
@@ -59,14 +60,16 @@ def create_potted_plant(location, plant_type='FERN', name="PottedPlant"):
             _bmesh_vine(bm, plant_top, end, radius=0.008, mat_idx=2)
     elif plant_type == 'SUCCULENT':
         ret = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.04, matrix=mathutils.Matrix.Translation(plant_top + mathutils.Vector((0,0,0.05))))
-        for f in ret['faces']: f.material_index = 2
+        for f in {f for v in ret['verts'] for f in v.link_faces}:
+            f.material_index = 2
         for i in range(8):
             angle = (i / 8) * math.pi * 2
             r = 0.06 + (i % 3) * 0.02
             loc = plant_top + mathutils.Vector((math.cos(angle)*r, math.sin(angle)*r, 0.02))
             matrix = mathutils.Matrix.Translation(loc) @ mathutils.Euler((math.radians(30), 0, angle)).to_matrix().to_4x4()
             ret = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.025, matrix=matrix)
-            for f in ret['faces']: f.material_index = 2
+            for f in {f for v in ret['verts'] for f in v.link_faces}:
+                f.material_index = 2
     elif plant_type == 'VINE':
         for i in range(4):
             angle = (i / 4) * math.pi * 2
@@ -92,7 +95,8 @@ def _bmesh_vine(bm, start, end, radius, mat_idx):
     rot = direction.normalized().to_track_quat('Z', 'Y').to_matrix().to_4x4()
     matrix = mathutils.Matrix.Translation(center) @ rot
     ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=radius, radius2=radius, depth=length, matrix=matrix)
-    for f in ret['faces']: f.material_index = mat_idx
+    for f in {f for v in ret['verts'] for f in v.link_faces}:
+        f.material_index = mat_idx
 
 def create_potting_bench(location, name="PottingBench"):
     """Point 95: BMesh Potting Bench creation."""
@@ -128,7 +132,8 @@ def create_potting_bench(location, name="PottingBench"):
     for lx, ly in leg_pos:
         matrix = mathutils.Matrix.Translation((lx, ly, table_h/2))
         ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.025, radius2=0.025, depth=table_h, matrix=matrix)
-        for f in ret['faces']: f.material_index = 1 # iron
+        for f in {f for v in ret['verts'] for f in v.link_faces}:
+            f.material_index = 1 # iron
 
     # Lower shelf
     matrix_shelf = mathutils.Matrix.Translation((0, 0, table_h * 0.35))

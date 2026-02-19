@@ -92,26 +92,30 @@ def create_gnome(name, location, scale=0.6):
     # Body
     ret = bmesh.ops.create_cone(bm, segments=12, cap_ends=True, radius1=0.3, radius2=0.3, depth=0.8, matrix=mathutils.Matrix.Translation((0,0,0.4)))
     for v in ret['verts']: v[dlayer][vg_torso] = 1.0
-    for f in ret['faces']: f.material_index = 0 # mat_body
+    for f in {f for v in ret['verts'] for f in v.link_faces}:
+        f.material_index = 0 # mat_body
 
     # Hat
     ret = bmesh.ops.create_cone(bm, segments=12, cap_ends=True, radius1=0.35, radius2=0, depth=0.7, matrix=mathutils.Matrix.Translation((0,0,1.15)))
     for v in ret['verts']: v[dlayer][vg_head] = 1.0
-    for f in ret['faces']: f.material_index = 1 # mat_hat
+    for f in {f for v in ret['verts'] for f in v.link_faces}:
+        f.material_index = 1 # mat_hat
 
     # Beard
     rot_beard = mathutils.Euler((math.radians(-30), 0, 0)).to_matrix().to_4x4()
     mat_beard_loc = mathutils.Matrix.Translation((0,-0.2,0.7)) @ rot_beard
     ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.2, radius2=0, depth=0.4, matrix=mat_beard_loc)
     for v in ret['verts']: v[dlayer][vg_head] = 1.0
-    for f in ret['faces']: f.material_index = 2 # mat_beard
+    for f in {f for v in ret['verts'] for f in v.link_faces}:
+        f.material_index = 2 # mat_beard
 
     # Eyes
     for side in [-1, 1]:
         loc = (side * 0.15, -0.25, 0.85)
         ret = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.04, matrix=mathutils.Matrix.Translation(loc))
         for v in ret['verts']: v[dlayer][vg_head] = 1.0
-        for f in ret['faces']: f.material_index = 4 # mat_eye
+        for f in {f for v in ret['verts'] for f in v.link_faces}:
+            f.material_index = 4 # mat_eye
 
     # Mouth
     ret = bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation((0, -0.28, 0.6)))
@@ -137,13 +141,15 @@ def create_gnome(name, location, scale=0.6):
         matrix = mathutils.Matrix.Translation(segment_center) @ rot
         ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.03, radius2=0.03, depth=segment_len + 0.02, matrix=matrix)
         for v in ret['verts']: v[dlayer][vg_arm_l] = 1.0
-        for f in ret['faces']: f.material_index = 3 # mat_gloom
+        for f in {f for v in ret['verts'] for f in v.link_faces}:
+            f.material_index = 3 # mat_gloom
         curr_loc = next_loc
 
     # Orb
     ret = bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=0.15, matrix=mathutils.Matrix.Translation(curr_loc))
     for v in ret['verts']: v[dlayer][vg_arm_l] = 1.0
-    for f in ret['faces']: f.material_index = 3
+    for f in {f for v in ret['verts'] for f in v.link_faces}:
+        f.material_index = 3
 
     bm.to_mesh(mesh_data)
     bm.free()

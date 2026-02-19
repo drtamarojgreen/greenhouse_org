@@ -291,7 +291,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.03, radius2=0.03, depth=2.0, matrix=staff_matrix)
     for v in ret['verts']:
         v[deform_layer][vg_arm_r] = 1.0
-    for f in ret['faces']:
+    for f in {f for v in ret['verts'] for f in v.link_faces}:
         f.material_index = 0 # bark material
 
     # Leaves (Hair)
@@ -319,7 +319,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         ret = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.04, matrix=mathutils.Matrix.Translation(loc))
         for v in ret['verts']:
             v[deform_layer][vg_idx] = 1.0
-        for f in ret['faces']:
+        for f in {f for v in ret['verts'] for f in v.link_faces}:
             f.material_index = 2 # mat_eye
 
     # Materials
