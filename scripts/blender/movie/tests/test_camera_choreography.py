@@ -16,9 +16,14 @@ import style
 class TestCameraChoreography(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Using a singleton-like setup to run the generator once for all tests in this file
-        cls.master = silent_movie_generator.MovieMaster()
-        cls.master.run()
+        # Point 140: Check for existing animation data to avoid redundant runs, but ensure it exists
+        h1 = bpy.data.objects.get("Herbaceous")
+        has_anim = h1 and h1.animation_data and h1.animation_data.action and len(style.get_action_curves(h1.animation_data.action)) > 0
+
+        if not hasattr(cls, 'master') or not cls.master or not has_anim:
+            cls.master = silent_movie_generator.MovieMaster()
+            cls.master.run()
+
         cls.cam = cls.master.scene.camera
         cls.scene = cls.master.scene
 

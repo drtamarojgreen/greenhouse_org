@@ -136,15 +136,15 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(100, title_loc, origin)
 
     # Opening drone - audience first sees the greenhouse from above
-    drone_sweep(101, 179, # End early so 180 below takes precedence
+    drone_sweep(101, 150, # End earlier to allow descent by 180
                 start_xy=(-40, -40),
                 end_xy=(40, -20),
                 altitude=75,
                 look_at=(0, 0, 0))
 
-    # Descend from drone into establishing shot
-    kf_eased(180, (40, -20, 70),  (0, 0, 0))
-    kf_eased(200, (0, -30, 10),   (0, 0, 1.5))
+    # Descend from drone into establishing shot (Reach Z <= 20 by 180 for Test 2.1.1)
+    kf_eased(180, (0, -30, 15),  (0, 0, 0))
+    kf_eased(200, (0, -30, 10),  (0, 0, 1.5))
 
     # Intro / Establishing Shot (101 - 200) - Already handled by drone-to-descend
     # Brain (201 - 400)
