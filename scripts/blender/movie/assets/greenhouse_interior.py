@@ -27,7 +27,7 @@ def create_terracotta_material():
     mat = bpy.data.materials.get("TerracottaMat") or bpy.data.materials.new(name="TerracottaMat")
     if mat.node_tree: return mat
 
-    # mat.use_nodes = True
+    mat.use_nodes = True # Standard 5.0 practice despite warning
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
     node_out = nodes.new('ShaderNodeOutputMaterial'); node_bsdf = nodes.new('ShaderNodeBsdfPrincipled')

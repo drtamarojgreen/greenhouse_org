@@ -134,11 +134,12 @@ def set_node_input(node, name, value):
 def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
     """Point 92: Robust Mix node creation for Blender 5.0+."""
     node = None
+    is_compositor = tree.bl_idname == 'CompositorNodeTree'
 
     # 1. Try common type identifiers
     candidates = []
-    if tree.bl_idname == 'CompositorNodeTree':
-        candidates = ['CompositorNodeMixColor', 'CompositorNodeMix', 'CompositorNodeMixRGB', 'MixRGB', 'Mix']
+    if is_compositor:
+        candidates = ['CompositorNodeMix', 'CompositorNodeMixColor', 'CompositorNodeMixRGB', 'MixRGB', 'Mix']
     else:
         candidates = ['ShaderNodeMix', 'ShaderNodeMixRGB', 'MixRGB', 'Mix']
 
@@ -151,7 +152,7 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
     if not node:
         # 2. Dynamic discovery in bpy.types
         import bpy
-        prefix = "CompositorNode" if tree.bl_idname == 'CompositorNodeTree' else "ShaderNode"
+        prefix = "CompositorNode" if is_compositor else "ShaderNode"
         types = [t for t in dir(bpy.types) if t.startswith(prefix) and "Mix" in t]
         for nt in types:
             try:
@@ -159,45 +160,56 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
                 if node: break
             except: continue
 
-    if not node and tree.bl_idname == 'CompositorNodeTree':
-        # 3. Emergency fallbacks for unified 5.0+ nodes
-        for c in ['ShaderNodeMix', 'Mix']:
-            try:
-                node = tree.nodes.new(c)
-                if node: break
-            except: continue
+    if not node and is_compositor:
+        # 3. Emergency fallback to AlphaOver if Mix is missing in Compositor
+        try:
+            node = tree.nodes.new('CompositorNodeAlphaOver')
+            print("INFO: Using AlphaOver as fallback for Mix in compositor.")
+        except: pass
 
     if not node:
         import bpy
-        available = [t for t in dir(bpy.types) if (tree.bl_idname == 'CompositorNodeTree' and "Compositor" in t) or (tree.bl_idname != 'CompositorNodeTree' and "Shader" in t)]
+        available = [t for t in dir(bpy.types) if (is_compositor and "Compositor" in t) or (not is_compositor and "Shader" in t)]
         raise RuntimeError(f"Mix node NOT found in {tree.bl_idname}. Tried: {candidates}. Available: {available}")
 
-    node.data_type = data_type
-    node.blend_type = blend_type
+    # Set properties
+    if hasattr(node, 'data_type'): node.data_type = data_type
+    if hasattr(node, 'blend_type'): node.blend_type = blend_type
+    elif hasattr(node, 'operation'): node.operation = blend_type
+
     return node
 
 def get_mix_sockets(node):
-    """Returns (Factor, Input1, Input2) sockets for a Mix node (5.x)."""
+    """Returns (Factor, Input1, Input2) sockets for a Mix node (5.x) or AlphaOver fallback."""
     if node is None: return None, None, None
-    dt = getattr(node, 'data_type', 'RGBA')
 
+    # AlphaOver Fallback handling
+    if node.bl_idname == 'CompositorNodeAlphaOver':
+        # Input 0: Factor, 1: Background (A), 2: Foreground (B)
+        return node.inputs[0], node.inputs[1], node.inputs[2]
+
+    dt = getattr(node, 'data_type', 'RGBA')
     if dt == 'RGBA':
-        return get_socket_by_identifier(node.inputs, 'Factor_Float') or node.inputs.get('Factor'), \
-               get_socket_by_identifier(node.inputs, 'A_Color') or node.inputs.get('A'), \
-               get_socket_by_identifier(node.inputs, 'B_Color') or node.inputs.get('B')
+        return get_socket_by_identifier(node.inputs, 'Factor_Float') or node.inputs.get('Factor') or node.inputs[0], \
+               get_socket_by_identifier(node.inputs, 'A_Color') or node.inputs.get('A') or node.inputs[1], \
+               get_socket_by_identifier(node.inputs, 'B_Color') or node.inputs.get('B') or node.inputs[2]
     elif dt == 'VECTOR':
-        return get_socket_by_identifier(node.inputs, 'Factor_Float') or node.inputs.get('Factor'), \
-               get_socket_by_identifier(node.inputs, 'A_Vector') or node.inputs.get('A'), \
-               get_socket_by_identifier(node.inputs, 'B_Vector') or node.inputs.get('B')
+        return get_socket_by_identifier(node.inputs, 'Factor_Float') or node.inputs.get('Factor') or node.inputs[0], \
+               get_socket_by_identifier(node.inputs, 'A_Vector') or node.inputs.get('A') or node.inputs[1], \
+               get_socket_by_identifier(node.inputs, 'B_Vector') or node.inputs.get('B') or node.inputs[2]
 
     return node.inputs[0], node.inputs[1], node.inputs[2]
 
 def get_mix_output(node):
-    """Returns the main output socket for a Mix node (5.x)."""
+    """Returns the main output socket for a Mix node (5.x) or AlphaOver fallback."""
     if node is None: return None
+
+    if node.bl_idname == 'CompositorNodeAlphaOver':
+        return node.outputs[0]
+
     dt = getattr(node, 'data_type', 'RGBA')
-    if dt == 'RGBA': return get_socket_by_identifier(node.outputs, 'Result_Color') or node.outputs.get('Result')
-    if dt == 'VECTOR': return get_socket_by_identifier(node.outputs, 'Result_Vector') or node.outputs.get('Result')
+    if dt == 'RGBA': return get_socket_by_identifier(node.outputs, 'Result_Color') or node.outputs.get('Result') or node.outputs[0]
+    if dt == 'VECTOR': return get_socket_by_identifier(node.outputs, 'Result_Vector') or node.outputs.get('Result') or node.outputs[0]
     return node.outputs[0]
 
 def get_principled_socket(mat_or_node, socket_name):

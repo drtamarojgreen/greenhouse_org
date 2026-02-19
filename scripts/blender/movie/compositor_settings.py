@@ -37,10 +37,15 @@ def setup_compositor(master_instance):
     displace = tree.nodes.new('CompositorNodeDisplace')
     displace.name = "WetGlass"
 
-    # We use a noise texture for displacement
-    tex_node = tree.nodes.new('CompositorNodeTexture')
-    noise_tex = bpy.data.textures.get("WetGlassNoise") or bpy.data.textures.new("WetGlassNoise", type='NOISE')
-    tex_node.texture = noise_tex
+    # Point 92: Safe creation of Texture node (often missing in 5.0+)
+    try:
+        tex_node = tree.nodes.new('CompositorNodeTexture')
+        noise_tex = bpy.data.textures.get("WetGlassNoise") or bpy.data.textures.new("WetGlassNoise", type='NOISE')
+        tex_node.texture = noise_tex
+        tree.links.new(tex_node.outputs['Value'], displace.inputs['Displacement'])
+    except RuntimeError:
+        # Fallback: skip procedural noise if Texture node is missing
+        pass
 
     # Enhancement #49: Iris Wipe
     iris = tree.nodes.new('CompositorNodeEllipseMask')
@@ -69,7 +74,6 @@ def setup_compositor(master_instance):
     tree.links.new(blur.outputs['Image'], bright.inputs['Image'])
     tree.links.new(bright.outputs['Image'], distort.inputs['Image'])
     tree.links.new(distort.outputs['Image'], displace.inputs['Image'])
-    tree.links.new(tex_node.outputs['Value'], displace.inputs['Displacement'])
     
     # 2. Vignette Mix
     vig_fac, vig_a, vig_b = style.get_mix_sockets(mix_vig)
