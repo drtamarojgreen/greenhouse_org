@@ -123,6 +123,7 @@ def create_koi_pond(location, size=(4, 6)):
     bm.free()
 
     mat = bpy.data.materials.get("PondMat") or bpy.data.materials.new("PondMat")
+    if not mat.node_tree: mat.use_nodes = True
     bsdf = mat.node_tree.nodes.get("Principled BSDF") or mat.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
     bsdf.inputs['Base Color'].default_value = (0.05, 0.1, 0.2, 1)
     bsdf.inputs['Transmission Weight'].default_value = 0.8

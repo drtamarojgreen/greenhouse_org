@@ -5,8 +5,9 @@ import style
 
 def create_greenhouse_iron_mat():
     mat = bpy.data.materials.get("GH_Iron")
-    if mat: return mat
-    mat = bpy.data.materials.new(name="GH_Iron")
+    if mat and mat.node_tree: return mat
+    if not mat: mat = bpy.data.materials.new(name="GH_Iron")
+    mat.use_nodes = True
     nodes = mat.node_tree.nodes
     bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
 
@@ -28,8 +29,9 @@ def create_greenhouse_iron_mat():
 
 def create_greenhouse_glass_mat():
     mat = bpy.data.materials.get("GH_Glass")
-    if mat: return mat
-    mat = bpy.data.materials.new(name="GH_Glass")
+    if mat and mat.node_tree: return mat
+    if not mat: mat = bpy.data.materials.new(name="GH_Glass")
+    mat.use_nodes = True
     nodes = mat.node_tree.nodes
     bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
 
@@ -66,8 +68,9 @@ def create_greenhouse_glass_mat():
 def create_mossy_stone_mat(name="MossyStone"):
     """Enhancement #38: Procedural Moss on Stone Surfaces."""
     mat = bpy.data.materials.get(name)
-    if mat: return mat
-    mat = bpy.data.materials.new(name=name)
+    if mat and mat.node_tree: return mat
+    if not mat: mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
 
     bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")

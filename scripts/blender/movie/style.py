@@ -132,37 +132,45 @@ def set_node_input(node, name, value):
     return False
 
 def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
-    """Creates a modern Mix node (5.x) with robust fallbacks."""
+    """Point 92: Robust Mix node creation for Blender 5.0+."""
+    node = None
+
+    # 1. Try common type identifiers
+    candidates = []
     if tree.bl_idname == 'CompositorNodeTree':
-        # Exhaustive search for Compositor Mix nodes
-        candidates = ['CompositorNodeMix', 'CompositorNodeMixRGB', 'MixRGB', 'Mix']
-        node = None
-        for node_type in candidates:
+        candidates = ['CompositorNodeMixColor', 'CompositorNodeMix', 'CompositorNodeMixRGB', 'MixRGB', 'Mix']
+    else:
+        candidates = ['ShaderNodeMix', 'ShaderNodeMixRGB', 'MixRGB', 'Mix']
+
+    for c in candidates:
+        try:
+            node = tree.nodes.new(c)
+            if node: break
+        except: continue
+
+    if not node:
+        # 2. Dynamic discovery in bpy.types
+        import bpy
+        prefix = "CompositorNode" if tree.bl_idname == 'CompositorNodeTree' else "ShaderNode"
+        types = [t for t in dir(bpy.types) if t.startswith(prefix) and "Mix" in t]
+        for nt in types:
             try:
-                node = tree.nodes.new(node_type)
+                node = tree.nodes.new(nt)
                 if node: break
             except: continue
 
-        if not node:
-            # Dynamic discovery
-            import bpy
-            comp_mix_nodes = [t for t in dir(bpy.types) if "CompositorNode" in t and "Mix" in t]
-            for nt in comp_mix_nodes:
-                try:
-                    node = tree.nodes.new(nt)
-                    if node: break
-                except: continue
+    if not node and tree.bl_idname == 'CompositorNodeTree':
+        # 3. Emergency fallbacks for unified 5.0+ nodes
+        for c in ['ShaderNodeMix', 'Mix']:
+            try:
+                node = tree.nodes.new(c)
+                if node: break
+            except: continue
 
-        if not node:
-            # Diagnostic raise
-            import bpy
-            all_comp = [t for t in dir(bpy.types) if "CompositorNode" in t]
-            raise RuntimeError(f"Could not find Compositor Mix node. Tried: {candidates}. Available: {all_comp}")
-    else:
-        try:
-            node = tree.nodes.new('ShaderNodeMix')
-        except:
-            node = tree.nodes.new('ShaderNodeMixRGB')
+    if not node:
+        import bpy
+        available = [t for t in dir(bpy.types) if (tree.bl_idname == 'CompositorNodeTree' and "Compositor" in t) or (tree.bl_idname != 'CompositorNodeTree' and "Shader" in t)]
+        raise RuntimeError(f"Mix node NOT found in {tree.bl_idname}. Tried: {candidates}. Available: {available}")
 
     node.data_type = data_type
     node.blend_type = blend_type
