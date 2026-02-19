@@ -4,13 +4,13 @@ import mathutils
 import style
 
 def create_hologram(location, size=1.0):
+    location = mathutils.Vector(location)
     """Creates a holographic interface."""
     bpy.ops.mesh.primitive_plane_add(size=size, location=location + mathutils.Vector((0,0,1.2)), rotation=(math.radians(90), 0, 0))
     holo = bpy.context.object
     holo.name = "Hologram"
 
     mat = bpy.data.materials.new(name="HoloMat")
-    mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0, 0.5, 1, 1)
     style.set_principled_socket(mat, "Emission", (0, 0.8, 1, 1))
@@ -25,6 +25,7 @@ def create_hologram(location, size=1.0):
     return holo
 
 def create_lab_bench(location):
+    location = mathutils.Vector(location)
     """Creates a futuristic laboratory table."""
     bpy.ops.mesh.primitive_cube_add(size=1.0, location=location + mathutils.Vector((0,0,0.4)))
     bench = bpy.context.object
@@ -32,7 +33,6 @@ def create_lab_bench(location):
     bench.scale = (2.0, 1.0, 0.4)
 
     mat = bpy.data.materials.new(name="BenchMat")
-    mat.use_nodes = True
     mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.1, 0.1, 0.1, 1)
     mat.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 1.0
     mat.node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.1

@@ -9,6 +9,7 @@ def create_wood_material(name, color=(0.15, 0.08, 0.05)):
     return style.create_noise_based_material(name, colors, noise_type='WAVE', noise_scale=5.0, roughness=0.3)
 
 def create_pedestal(location, height=1.2):
+    location = mathutils.Vector(location)
     """Creates a stone or wood pedestal for the book."""
     bpy.ops.mesh.primitive_cube_add(size=1.0, location=location + mathutils.Vector((0,0,height/2)))
     pedestal = bpy.context.object
@@ -25,6 +26,7 @@ def create_paper_material(name):
     return style.create_noise_based_material(name, colors, noise_type='NOISE', noise_scale=12.0, roughness=0.8)
 
 def create_open_book(location):
+    location = mathutils.Vector(location)
     """Creates a large open book asset."""
     container = bpy.data.objects.new("BookContainer", None)
     bpy.context.scene.collection.objects.link(container)

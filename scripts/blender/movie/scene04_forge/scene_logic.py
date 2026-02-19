@@ -16,7 +16,6 @@ def setup_scene(master):
     anvil = bpy.context.object
     anvil.name = "StoicAnvil"
     mat = bpy.data.materials.new(name="AnvilMat")
-    mat.use_nodes = True
     mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.05, 0.05, 0.05, 1)
     anvil.data.materials.append(mat)
 

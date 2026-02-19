@@ -7,7 +7,7 @@ import random
 
 from master import BaseMaster
 from constants import SCENE_MAP
-import plant_humanoid
+from assets import plant_humanoid
 import gnome_antagonist
 import greenhouse_structure
 import environment_props

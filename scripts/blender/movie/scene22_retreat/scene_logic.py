@@ -11,7 +11,7 @@ ASSETS_PATH = os.path.join(MOVIE_ROOT, "assets")
 if ASSETS_PATH not in sys.path:
     sys.path.append(ASSETS_PATH)
 
-import plant_humanoid
+from assets import plant_humanoid
 import style
 from constants import SCENE_MAP
 

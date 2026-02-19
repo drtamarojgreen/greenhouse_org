@@ -26,7 +26,6 @@ def load_brain(base_path):
             bpy.ops.object.shade_smooth()
 
             mat = bpy.data.materials.new(name="BrainMat")
-            mat.use_nodes = True
             bsdf = mat.node_tree.nodes.get("Principled BSDF")
 
             # Subsurface Weight (Blender 5.0 compatibility)
@@ -71,7 +70,6 @@ def load_neuron(base_path):
             bpy.ops.object.shade_smooth()
 
             mat = bpy.data.materials.new(name="NeuronMat")
-            mat.use_nodes = True
             o.data.materials.append(mat)
 
     return neuron_group

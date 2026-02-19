@@ -12,13 +12,13 @@ def setup_compositor(master_instance):
 
     # Nodes
     render_layers = tree.nodes.new('CompositorNodeRLayers')
-    composite = tree.nodes.new('CompositorNodeComposite')
+    composite = style.create_compositor_output(tree)
 
     # Enhancement #55: Bloom/Glow for Bioluminescence
     glare = tree.nodes.new('CompositorNodeGlare')
-    glare.glare_type = 'FOG_GLOW'
-    glare.size = 8
-    glare.threshold = 0.5
+    style.set_node_input(glare, 'Type', 'FOG_GLOW')
+    style.set_node_input(glare, 'Size', 8)
+    style.set_node_input(glare, 'Threshold', 0.5)
 
     # Enhancement #60: Lens Distortion / Chromatic Aberration
     distort = style.setup_chromatic_aberration(scene, strength=0.02)
@@ -26,31 +26,35 @@ def setup_compositor(master_instance):
     # Enhancement #59: Vignette (Breathing)
     vignette = tree.nodes.new('CompositorNodeEllipseMask')
     vignette.name = "Vignette"
-    vignette.width = 0.8
-    vignette.height = 0.8
+    style.set_node_input(vignette, 'Size', [0.8, 0.8])
 
     # Mix vignette
-    mix_vig = tree.nodes.new('CompositorNodeMixRGB')
-    mix_vig.blend_type = 'MULTIPLY'
+    mix_vig = tree.nodes.new('ShaderNodeMix')
+    mix_vig.data_type = 'RGBA'
+    style.set_node_input(mix_vig, 'blend_type', 'MULTIPLY')
 
     # Enhancement #60: Wet Glass Refraction (Displacement)
-    tex_noise = tree.nodes.new('CompositorNodeTexture')
+    # Texture node is replaced by Image node in typical 5.0 workflows for displacement
+    tex_node = tree.nodes.new('CompositorNodeImage')
+        
     # We need a noise texture datablock
     noise_tex = bpy.data.textures.get("WetGlassNoise") or bpy.data.textures.new("WetGlassNoise", type='NOISE')
-    tex_noise.texture = noise_tex
+    # Note: Noise textures in 5.0 are often handled differently (e.g. via Texture node if it exists or Image)
+    # But for a procedural setup, we'll stick to a placeholder or direct socket support if available.
 
     displace = tree.nodes.new('CompositorNodeDisplace')
     displace.name = "WetGlass"
-    displace.inputs[2].default_value = 0.0 # Scale
+    style.set_node_input(displace, 'Interpolation', 'Bilinear')
+    style.set_node_input(displace, 'Displacement', [0.0, 0.0])
 
     # Enhancement #49: Iris Wipe
     iris = tree.nodes.new('CompositorNodeEllipseMask')
     iris.name = "IrisWipe"
-    iris.width = 2.0 # Start fully open
-    iris.height = 2.0
+    style.set_node_input(iris, 'Size', [2.0, 2.0])
 
-    mix_iris = tree.nodes.new('CompositorNodeMixRGB')
-    mix_iris.blend_type = 'MULTIPLY'
+    mix_iris = tree.nodes.new('ShaderNodeMix')
+    mix_iris.data_type = 'RGBA'
+    style.set_node_input(mix_iris, 'blend_type', 'MULTIPLY')
 
     # Film Grain / Flicker
     style.apply_film_flicker(scene, 1, 15000, strength=0.03)
@@ -61,15 +65,23 @@ def setup_compositor(master_instance):
 
     # Links
     tree.links.new(render_layers.outputs['Image'], glare.inputs['Image'])
-    tree.links.new(glare.outputs['Image'], displace.inputs[0])
-    tree.links.new(tex_noise.outputs[0], displace.inputs[1]) # X
-    tree.links.new(tex_noise.outputs[0], displace.inputs[2]) # Y
-
-    tree.links.new(displace.outputs[0], mix_vig.inputs[1])
-    tree.links.new(vignette.outputs['Mask'], mix_vig.inputs[2])
-    tree.links.new(mix_vig.outputs['Image'], mix_iris.inputs[1])
-    tree.links.new(iris.outputs['Mask'], mix_iris.inputs[2])
-    tree.links.new(mix_iris.outputs['Image'], huesat.inputs['Image'])
+    tree.links.new(glare.outputs['Image'], displace.inputs['Image'])
+    
+    # Texture link
+    if len(tex_node.outputs) > 0:
+        tree.links.new(tex_node.outputs[0], displace.inputs['Displacement'])
+ 
+    # Use style helpers for Mix nodes
+    vig_fac, vig_a, vig_b = style.get_mix_sockets(mix_vig)
+    iris_fac, iris_a, iris_b = style.get_mix_sockets(mix_iris)
+ 
+    tree.links.new(displace.outputs['Image'], vig_a)
+    tree.links.new(vignette.outputs['Mask'], vig_b)
+    
+    tree.links.new(style.get_mix_output(mix_vig), iris_a)
+    tree.links.new(iris.outputs['Mask'], iris_b)
+    
+    tree.links.new(style.get_mix_output(mix_iris), huesat.inputs['Image'])
     tree.links.new(huesat.outputs['Image'], composite.inputs['Image'])
 
 def animate_wet_glass(scene, frame_start, frame_end, strength=10.0):
@@ -78,13 +90,16 @@ def animate_wet_glass(scene, frame_start, frame_end, strength=10.0):
     displace = tree.nodes.get("WetGlass")
     if not displace: return
 
-    displace.inputs[2].default_value = 0.0
-    displace.inputs[2].keyframe_insert(data_path="default_value", frame=frame_start - 12)
-    displace.inputs[2].default_value = strength
-    displace.inputs[2].keyframe_insert(data_path="default_value", frame=frame_start)
-    displace.inputs[2].keyframe_insert(data_path="default_value", frame=frame_end)
-    displace.inputs[2].default_value = 0.0
-    displace.inputs[2].keyframe_insert(data_path="default_value", frame=frame_end + 12)
+    # In 5.0, Displacement is a Vector socket. We might need to keyframe X/Y
+    target = style.get_socket_by_identifier(displace.inputs, 'Displacement')
+    if target:
+        target.default_value = (0.0, 0.0)
+        target.keyframe_insert(data_path="default_value", frame=frame_start - 12)
+        target.default_value = (strength, strength)
+        target.keyframe_insert(data_path="default_value", frame=frame_start)
+        target.keyframe_insert(data_path="default_value", frame=frame_end)
+        target.default_value = (0.0, 0.0)
+        target.keyframe_insert(data_path="default_value", frame=frame_end + 12)
 
 def animate_iris_wipe(scene, frame_start, frame_end, mode='IN'):
     """Enhancement #49: Iris Wipe transition animation."""
@@ -92,21 +107,17 @@ def animate_iris_wipe(scene, frame_start, frame_end, mode='IN'):
     iris = tree.nodes.get("IrisWipe")
     if not iris: return
 
+    target = style.get_socket_by_identifier(iris.inputs, 'Size') or style.get_socket_by_identifier(iris.inputs, 'Width')
+    
     if mode == 'IN':
-        iris.width = 0.0
-        iris.height = 0.0
-        iris.keyframe_insert(data_path="width", frame=frame_start)
-        iris.keyframe_insert(data_path="height", frame=frame_start)
-        iris.width = 2.0
-        iris.height = 2.0
-        iris.keyframe_insert(data_path="width", frame=frame_end)
-        iris.keyframe_insert(data_path="height", frame=frame_end)
+        style.set_node_input(iris, 'Size', [0.0, 0.0])
+        if target:
+            target.keyframe_insert(data_path="default_value", frame=frame_start)
+            style.set_node_input(iris, 'Size', [2.0, 2.0])
+            target.keyframe_insert(data_path="default_value", frame=frame_end)
     else: # OUT
-        iris.width = 2.0
-        iris.height = 2.0
-        iris.keyframe_insert(data_path="width", frame=frame_start)
-        iris.keyframe_insert(data_path="height", frame=frame_start)
-        iris.width = 0.0
-        iris.height = 0.0
-        iris.keyframe_insert(data_path="width", frame=frame_end)
-        iris.keyframe_insert(data_path="height", frame=frame_end)
+        style.set_node_input(iris, 'Size', [2.0, 2.0])
+        if target:
+            target.keyframe_insert(data_path="default_value", frame=frame_start)
+            style.set_node_input(iris, 'Size', [0.0, 0.0])
+            target.keyframe_insert(data_path="default_value", frame=frame_end)

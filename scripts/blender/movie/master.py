@@ -51,8 +51,13 @@ class BaseMaster:
 
     def setup_engine(self):
         """Standard engine setup with quality presets and color management."""
+        # Point 4: Aggressive cleanup to prevent memory leaks from previous runs
         bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.delete()
+        
+        # Purge unused data blocks (meshes, materials, textures, etc.)
+        for _ in range(3): # Purge multiple times to handle nested dependencies
+             bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
 
         scene = bpy.context.scene
         scene.frame_start = 1
@@ -96,7 +101,6 @@ class BaseMaster:
             if hasattr(scene.cycles, "denoiser"):
                 scene.cycles.denoiser = 'OPENIMAGEDENOISE'
 
-            scene.world.use_nodes = True
             bg = scene.world.node_tree.nodes.get("Background")
             if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
         else:

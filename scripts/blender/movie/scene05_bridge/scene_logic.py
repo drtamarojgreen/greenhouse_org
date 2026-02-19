@@ -29,7 +29,6 @@ def setup_scene(master):
 
     nodes = []
     mat_node = bpy.data.materials.new(name="BridgeNodeMat")
-    mat_node.use_nodes = True
     bsdf = mat_node.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.2, 0.4, 1.0, 1)
     style.set_principled_socket(mat_node, 'Emission', (0.2, 0.4, 1.0, 1))

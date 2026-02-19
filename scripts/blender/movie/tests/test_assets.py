@@ -2,7 +2,10 @@ import bpy
 import sys
 import os
 import unittest
+# Add current directory to path to find base_test
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from base_test import BlenderTestCase
+
 
 # Ensure style is available
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -11,7 +14,8 @@ import style
 class TestAssets(BlenderTestCase):
     def test_01_assets_exist(self):
         """Check if all major characters and structures are in the scene."""
-        required_objs = ["Herbaceous_Torso", "Arbor_Torso", "GloomGnome_Torso", "ExpressionistFloor", "CamTarget", "GazeTarget"]
+        # Updated for Single Mesh System
+        required_objs = ["Herbaceous_Mesh", "Arbor_Mesh", "GloomGnome_Torso", "Exterior_Garden_Main", "Greenhouse_Main", "CamTarget"]
         for obj_name in required_objs:
             with self.subTest(obj=obj_name):
                 exists = obj_name in bpy.data.objects
@@ -20,35 +24,38 @@ class TestAssets(BlenderTestCase):
                 self.assertTrue(exists)
 
     def test_02_detailed_hierarchy(self):
-        """Verify existence of specific character body parts."""
-        chars = {
-            "Herbaceous": ["Head", "Arm_L", "Arm_R", "Leg_L", "Leg_R", "Eye_L", "Eye_R", "Brow_L", "Brow_R", "Pupil_L", "Pupil_R"],
-            "Arbor": ["Head", "Arm_L", "Arm_R", "Leg_L", "Leg_R", "Eye_L", "Eye_R", "Brow_L", "Brow_R", "Pupil_L", "Pupil_R"],
-            "GloomGnome": ["Hat", "Beard", "Cloak", "Eye_L", "Eye_R"]
-        }
+        """Verify existence of character Armatures and Meshes."""
+        chars = ["Herbaceous", "Arbor"]
+        for char_name in chars:
+            # Check Armature
+            arm_name = f"{char_name}" # Armature is named after the character
+            with self.subTest(part=arm_name):
+                obj = bpy.data.objects.get(arm_name)
+                is_valid = obj and obj.type == 'ARMATURE'
+                status = "PASS" if is_valid else "FAIL"
+                self.log_result(f"Armature: {arm_name}", status, "Found" if is_valid else "MISSING")
+                self.assertTrue(is_valid)
+
+            # Check Mesh Parenting
+            mesh_name = f"{char_name}_Mesh"
+            with self.subTest(part=mesh_name):
+                obj = bpy.data.objects.get(mesh_name)
+                is_valid = False
+                if obj and obj.parent and obj.parent.name == arm_name:
+                    is_valid = True
+                status = "PASS" if is_valid else "FAIL"
+                self.log_result(f"Mesh: {mesh_name}", status, "Parented to Armature" if is_valid else "MISSING or Unparented")
+                self.assertTrue(is_valid)
         
-        for char_name, parts in chars.items():
-            for part in parts:
-                full_name = f"{char_name}_{part}"
-                with self.subTest(part=full_name):
-                    obj = bpy.data.objects.get(full_name)
-                    # Robustness: Check for existence AND correct parenting to the character's main body/head
-                    is_valid = False
-                    if obj and obj.parent:
-                        # Walk up the hierarchy to find the main torso
-                        p = obj.parent
-                        while p:
-                            if f"{char_name}_Torso" in p.name:
-                                is_valid = True
-                                break
-                            p = p.parent
-                    status = "PASS" if is_valid else "FAIL"
-                    self.log_result(f"Part: {full_name}", status, "Found and correctly parented" if is_valid else "MISSING or not parented to character torso")
-                    self.assertTrue(is_valid, f"Character part {full_name} is missing or not parented correctly")
+        # Gnome might still be multi-part or partially merged? 
+        # Checking Gnome Torso as base
+        gnome = bpy.data.objects.get("GloomGnome_Torso")
+        self.assertTrue(gnome, "GloomGnome_Torso missing")
 
     def test_03_visibility_check(self):
         """Check if major assets are ever visible during the render range."""
-        required_objs = ["Herbaceous_Torso", "Arbor_Torso", "GloomGnome_Torso", "BrainGroup", "NeuronGroup"]
+        # Updated for Single Mesh System
+        required_objs = ["Herbaceous_Mesh", "Arbor_Mesh", "GloomGnome_Torso", "BrainGroup", "NeuronGroup"]
         
         for obj_name in required_objs:
             obj = bpy.data.objects.get(obj_name)

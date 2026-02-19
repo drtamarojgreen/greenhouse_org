@@ -20,9 +20,17 @@ class TestCompositor(BlenderTestCase):
             self.fail("Compositor node tree not found")
         
         render_layers_node = tree.nodes.get("Render Layers")
-        composite_node = tree.nodes.get("Composite")
+        composite_node = tree.nodes.get("Composite") or tree.nodes.get("Group Output")
+        
+        # If still None, try by type
+        if not composite_node:
+            for n in tree.nodes:
+                if n.type in ('COMPOSITE', 'GROUP_OUTPUT', 'NodeGroupOutput'):
+                    composite_node = n
+                    break
+
         self.assertIsNotNone(render_layers_node, "Compositor is missing a 'Render Layers' node.")
-        self.assertIsNotNone(composite_node, "Compositor is missing a 'Composite' node.")
+        self.assertIsNotNone(composite_node, "Compositor is missing a 'Composite' or 'Group Output' node.")
 
         effect_nodes = ["ChromaticAberration", "GlobalSaturation", "Bright/Contrast", "GlowTrail", "Vignette"]
         

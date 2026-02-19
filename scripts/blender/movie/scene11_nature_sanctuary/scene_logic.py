@@ -1,7 +1,8 @@
 import bpy
 import mathutils
 import random
-import plant_humanoid
+from assets import plant_humanoid
+from assets import plant_humanoid
 import style
 
 def setup_scene(master):

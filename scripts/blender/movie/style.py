@@ -12,6 +12,7 @@ __all__ = [
     'get_action_curves', 'get_or_create_fcurve', 'get_eevee_engine_id',
     'get_compositor_node_tree', 'create_mix_node', 'get_mix_sockets',
     'get_mix_output', 'set_principled_socket', 'patch_fbx_importer',
+    'get_socket_by_identifier',
     'apply_scene_grade', 'animate_foliage_wind', 'animate_light_flicker',
     'insert_looping_noise', 'animate_breathing', 'animate_dust_particles',
     'apply_fade_transition', 'camera_push_in', 'camera_pull_out',
@@ -88,82 +89,108 @@ def get_eevee_engine_id():
     return 'BLENDER_EEVEE' # Legacy default
 
 def get_compositor_node_tree(scene):
-    """Safely retrieves the compositor node tree for Blender 4.x/5.x compatibility."""
-    if hasattr(scene, "use_nodes") and not scene.use_nodes:
-        scene.use_nodes = True
+    """Safely retrieves the compositor node tree for Blender 5.x."""
+    # Blender 5.0 uses 'compositing_node_group'
+    tree = scene.compositing_node_group
     
-    tree = getattr(scene, 'node_tree', None) or \
-           getattr(scene, 'compositing_node_group', None) or \
-           getattr(scene, 'compositor_node_tree', None)
-    
-    if not tree and hasattr(bpy.data, "node_groups"):
-        # Fallback: Search for the first available Compositing Node Tree
-        for group in bpy.data.node_groups:
-            if group.type in ('COMPOSITING', 'CompositorNodeTree'):
-                tree = group
-                break
-
-    # Explicit creation if missing (Blender 5.0+ edge case)
-    if not tree and hasattr(bpy.data, "node_groups"):
-        try:
-            tree = bpy.data.node_groups.new(name="Compositing Nodetree", type='CompositorNodeTree')
-        except (TypeError, ValueError):
-            tree = bpy.data.node_groups.new(name="Compositing Nodetree", type='COMPOSITING')
-
-    # Point 37: Ensure it is assigned to the scene and validated
-    if tree:
-        if hasattr(scene, 'node_tree') and scene.node_tree != tree:
-            scene.node_tree = tree
-        elif hasattr(scene, 'compositing_node_group') and not scene.compositing_node_group:
-            try:
-                scene.compositing_node_group = tree
-            except Exception:
-                pass
-
-    # Final verification
-    if tree and hasattr(scene, 'use_nodes') and not scene.use_nodes:
-        scene.use_nodes = True
+    # Explicit creation if missing
+    if not tree:
+        name = "Compositing"
+        tree = bpy.data.node_groups.new(name=name, type='CompositorNodeTree')
+        scene.compositing_node_group = tree
 
     return tree
 
-def create_mix_node(tree, node_type_legacy, node_type_modern, blend_type='MIX', data_type='RGBA'):
-    """Creates a Mix node handling version differences (MixRGB vs Mix Node)."""
-    node = None
-    # Try legacy, then modern, then generic ShaderNodeMix (unified in 4.0+)
-    types_to_try = [node_type_legacy, node_type_modern, 'ShaderNodeMix']
-    
-    for n_type in types_to_try:
-        try:
-            node = tree.nodes.new(n_type)
-            break
-        except RuntimeError:
-            continue
-            
-    if node is None:
-        raise RuntimeError(f"Could not create Mix node. Tried: {types_to_try}")
+def get_socket_by_identifier(collection, identifier):
+    """Robustly finds a socket in a collection by its identifier."""
+    for s in collection:
+        if s.identifier == identifier:
+            return s
+    return None
 
-    if hasattr(node, 'data_type') and node.bl_idname != 'CompositorNodeMixRGB':
+def create_compositor_output(tree):
+    """Creates the final output node (NodeGroupOutput for 5.x)."""
+    node = tree.nodes.new('NodeGroupOutput')
+    
+    # Ensure it has an "Image" socket
+    if hasattr(tree, "interface"):
+        exists = any(s.name == "Image" for s in tree.interface.items_tree if s.item_type == 'SOCKET')
+        if not exists:
+            tree.interface.new_socket(name="Image", in_out='OUTPUT', socket_type='NodeSocketColor')
+            
+    return node
+
+def set_node_input(node, name, value):
+    """
+    Sets a node parameter via input socket (preferred in 5.x).
+    """
+    # 1. Try to find a matching input socket via identifier
+    target = get_socket_by_identifier(node.inputs, name)
+    if not target:
+        # Try case-insensitive name match
+        match_name = name.lower().replace("_", " ")
+        for socket in node.inputs:
+            curr_name = socket.name.lower().replace("_", " ")
+            if curr_name == match_name:
+                target = socket
+                break
+
+    if target:
+        try:
+            target.default_value = value
+            return True
+        except (AttributeError, TypeError):
+            pass
+
+    # Fallback to property if no socket matches
+    if hasattr(node, name):
+        setattr(node, name, value)
+        return True
+
+    return False
+
+def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
+    """Creates a modern Mix node (5.x)."""
+    node = tree.nodes.new('ShaderNodeMix')
+    
+    if hasattr(node, 'data_type'):
         node.data_type = data_type
     
     if hasattr(node, 'blend_type'):
-        try:
-            node.blend_type = blend_type
-        except (TypeError, AttributeError, ValueError):
-            pass
+        node.blend_type = blend_type
             
     return node
 
 def get_mix_sockets(node):
-    """Returns (Factor, Input1, Input2) sockets for a Mix node."""
-    inputs = node.inputs
-    # Modern Mix Node (Blender 3.4+)
-    if 'A' in inputs and 'B' in inputs:
-        return inputs['Factor'], inputs['A'], inputs['B']
-    # Legacy MixRGB
-    return inputs[0], inputs[1], inputs[2]
+    """Returns (Factor, Input1, Input2) sockets for a Mix node (5.x)."""
+    if node.bl_idname == 'ShaderNodeMix':
+        dt = getattr(node, 'data_type', 'RGBA')
+        if dt == 'RGBA':
+            return get_socket_by_identifier(node.inputs, 'Factor_Float'), \
+                   get_socket_by_identifier(node.inputs, 'A_Color'), \
+                   get_socket_by_identifier(node.inputs, 'B_Color')
+        elif dt == 'VECTOR':
+            return get_socket_by_identifier(node.inputs, 'Factor_Float'), \
+                   get_socket_by_identifier(node.inputs, 'A_Vector'), \
+                   get_socket_by_identifier(node.inputs, 'B_Vector')
+        elif dt == 'FLOAT':
+            return get_socket_by_identifier(node.inputs, 'Factor_Float'), \
+                   get_socket_by_identifier(node.inputs, 'A_Float'), \
+                   get_socket_by_identifier(node.inputs, 'B_Float')
+    
+    # Generic fallback
+    return node.inputs.get('Factor') or node.inputs[0], \
+           node.inputs.get('A') or node.inputs[1], \
+           node.inputs.get('B') or node.inputs[2]
 
 def get_mix_output(node):
-    """Returns the main output socket for a Mix node."""
+    """Returns the main output socket for a Mix node (5.x)."""
+    if node.bl_idname == 'ShaderNodeMix':
+        dt = getattr(node, 'data_type', 'RGBA')
+        if dt == 'RGBA': return get_socket_by_identifier(node.outputs, 'Result_Color')
+        if dt == 'VECTOR': return get_socket_by_identifier(node.outputs, 'Result_Vector')
+        if dt == 'FLOAT': return get_socket_by_identifier(node.outputs, 'Result_Float')
+        
     return node.outputs.get('Result') or node.outputs.get('Image') or node.outputs.get('Color') or node.outputs[0]
 
 def get_principled_socket(mat_or_node, socket_name):
@@ -367,40 +394,89 @@ def animate_breathing(obj, frame_start, frame_end, axis=2, amplitude=0.03, cycle
     insert_looping_noise(obj, "scale", index=axis, strength=amplitude, scale=cycle, frame_start=frame_start, frame_end=frame_end)
 
 def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 1, 1, 1), frame_start=1, frame_end=15000):
-    """Point 22 & 80: Create unique materials per color for dust particles."""
-    container_name = f"DustParticles_{color}"
+    """Point 22 & 80: Optimized dust particles. Reuses existing motes if available."""
+    # Use a simpler name to encourage reuse across calls unless color differs significantly
+    color_hex = f"{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}"
+    container_name = f"DustParticles_{color_hex}"
+    
     container = bpy.data.collections.get(container_name)
     if not container:
         container = bpy.data.collections.new(container_name)
         bpy.context.scene.collection.children.link(container)
 
-    mat_name = f"DustMat_{color}"
+    mat_name = f"DustMat_{color_hex}"
     mat = bpy.data.materials.get(mat_name)
     if not mat:
         mat = bpy.data.materials.new(name=mat_name)
-        mat.use_nodes = True
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs["Base Color"].default_value = color
         bsdf.inputs["Emission Strength"].default_value = 2.0
         set_blend_method(mat, 'BLEND')
 
-    for i in range(density):
+    # Reuse existing particles if they exist in this container
+    existing_motes = list(container.objects)
+    
+    # If we need more, create them
+    needed = density - len(existing_motes)
+    
+    if needed > 0:
+        # Create prototype mesh once
+        mesh_name = f"DustMoteMesh_{color_hex}"
+        mesh = bpy.data.meshes.get(mesh_name)
+        if not mesh:
+            bpy.ops.mesh.primitive_ico_sphere_add(radius=0.01, location=(0,0,0))
+            mesh = bpy.context.object.data
+            mesh.name = mesh_name
+            bpy.data.objects.remove(bpy.context.object, do_unlink=True) # Keep mesh, delete temp obj
+
+        for i in range(needed):
+            mote = bpy.data.objects.new(f"DustMote_{color_hex}_{len(existing_motes)+i}", mesh)
+            container.objects.link(mote)
+            mote.data.materials.append(mat)
+            existing_motes.append(mote)
+
+    # Now animate a SUBSET of them for this specific call, or all of them?
+    # The previous logic created NEW ones every call. 
+    # If we reuse them, we need to ensure we don't conflict with their previous animation if ranges overlap.
+    # But dust usually runs through the whole scene. 
+    # Current usage in scene_logic seems to be per-scene ranges.
+    
+    # For now, we'll animate 'density' random particles from the pool
+    # and reset their location to the new 'center'.
+    # This might jump them if they were used in a previous frame range?
+    # No, because `insert_looping_noise` ADDS noise to current location.
+    
+    # Problem: If frame ranges don't overlap, we can reuse.
+    # If they do overlap, we need separate particles.
+    # Given the scene structure (scenes are sequential), reuse is safe.
+    
+    # We will grab the first 'density' motes and keyframe them
+    current_motes = existing_motes[:density]
+    
+    for i, mote in enumerate(current_motes):
+        # Relocate to new center
         loc = center + mathutils.Vector((
             random.uniform(-volume_size[0], volume_size[0]),
             random.uniform(-volume_size[1], volume_size[1]),
             random.uniform(0, volume_size[2])
         ))
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.01, location=loc)
-        mote = bpy.context.object
-        mote.name = f"DustMote_{i}"
-        container.objects.link(mote)
-        for col in mote.users_collection:
-            if col != container:
-                col.objects.unlink(mote)
-        mote.data.materials.append(mat)
+        
+        # We need to jump the mote to this location at frame_start
+        # But `insert_looping_noise` works on the fcurve.
+        # We'll just set the location and keyframe it with CONSTANT interpolation to "teleport" it
+        mote.location = loc
+        mote.keyframe_insert(data_path="location", frame=frame_start)
+        # Ensure constant interpolation for the jump
+        if mote.animation_data and mote.animation_data.action:
+            fc = get_or_create_fcurve(mote.animation_data.action, "location", 0)
+            if fc:
+                 for kp in fc.keyframe_points:
+                     if kp.co[0] == frame_start:
+                         kp.interpolation = 'CONSTANT'
 
         insert_looping_noise(mote, "location", strength=0.2, scale=20.0, frame_start=frame_start, frame_end=frame_end)
 
+        # Visibility
         mote.hide_render = True
         mote.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
         mote.hide_render = False
@@ -543,7 +619,7 @@ def animate_pulsing_emission(obj, frame_start, frame_end, base_strength=5.0, pul
     """Implements a breathing light emission effect."""
     for slot in obj.material_slots:
         mat = slot.material
-        if not mat or not mat.use_nodes: continue
+        if not mat: continue
 
         for f in range(frame_start, frame_end + 1, cycle):
             set_principled_socket(mat, "Emission Strength", base_strength, frame=f)
@@ -572,7 +648,7 @@ _plant_humanoid = None
 def get_plant_humanoid():
     global _plant_humanoid
     if _plant_humanoid is None:
-        import plant_humanoid
+        from assets import plant_humanoid
         _plant_humanoid = plant_humanoid
     return _plant_humanoid
 
@@ -613,12 +689,11 @@ def apply_thermal_transition(master, frame_start, frame_end, color_start=(0.5, 0
         bg.inputs[0].keyframe_insert(data_path="default_value", frame=frame_end)
 
 def setup_chromatic_aberration(scene, strength=0.01):
-    """Adds a Lens Distortion node for chromatic aberration."""
+    """Adds a Lens Distortion node for chromatic aberration (5.x)."""
     tree = get_compositor_node_tree(scene)
-    if not tree: return None
     distort = tree.nodes.get("ChromaticAberration") or tree.nodes.new(type='CompositorNodeLensdist')
     distort.name = "ChromaticAberration"
-    distort.inputs['Dispersion'].default_value = strength
+    set_node_input(distort, 'Dispersion', strength)
     return distort
 
 def setup_god_rays(scene, beam_obj=None):
@@ -639,19 +714,17 @@ def setup_god_rays(scene, beam_obj=None):
         sun.data.color = (1, 0.9, 0.8) # Neutral warm
 
 def animate_vignette(scene, frame_start, frame_end, start_val=1.0, end_val=0.5):
-    """Decreases vignette radius for high tension."""
+    """Decreases vignette radius for high tension (5.x)."""
     tree = get_compositor_node_tree(scene)
-    if not tree: return
     vig = tree.nodes.get("Vignette") or tree.nodes.new(type='CompositorNodeEllipseMask')
     vig.name = "Vignette"
-    vig.width = start_val
-    vig.height = start_val
-    vig.keyframe_insert(data_path="width", frame=frame_start)
-    vig.keyframe_insert(data_path="height", frame=frame_start)
-    vig.width = end_val
-    vig.height = end_val
-    vig.keyframe_insert(data_path="width", frame=frame_end)
-    vig.keyframe_insert(data_path="height", frame=frame_end)
+    
+    set_node_input(vig, 'Size', [start_val, start_val])
+    target = vig.inputs.get('Size')
+    if target:
+        target.keyframe_insert(data_path="default_value", frame=frame_start)
+        set_node_input(vig, 'Size', [end_val, end_val])
+        target.keyframe_insert(data_path="default_value", frame=frame_end)
 
 def apply_neuron_color_coding(neuron_mat, frame, color=(1, 0, 0)):
     """Shifts neuron emission color."""
@@ -676,31 +749,26 @@ def setup_bioluminescent_flora(mat, color=(0, 1, 0.5)):
 def animate_mood_fog(scene, frame, density=0.01):
     """Adjusts volumetric haze density."""
     world = scene.world
-    if not world.use_nodes: return
+    if not world: return
     vol = world.node_tree.nodes.get("Volume Scatter")
     if vol:
         vol.inputs['Density'].default_value = density
         vol.inputs['Density'].keyframe_insert(data_path="default_value", frame=frame)
 
 def apply_film_flicker(scene, frame_start, frame_end, strength=0.05):
-    """Point 23: Use Noise modifier for film flicker."""
+    """Adds brightness flicker using Noise modifier on input socket (5.x)."""
     tree = get_compositor_node_tree(scene)
-    if not tree: return
-    
-    bright = tree.nodes.get("Bright/Contrast")
-    if not bright:
-        try:
-            bright = tree.nodes.new('CompositorNodeBrightContrast')
-            bright.name = "Bright/Contrast"
-        except RuntimeError:
-            return
+    bright = tree.nodes.get("Bright/Contrast") or tree.nodes.new('CompositorNodeBrightContrast')
+    bright.name = "Bright/Contrast"
 
     if not tree.animation_data:
         tree.animation_data_create()
     if not tree.animation_data.action:
         tree.animation_data.action = bpy.data.actions.new(name="CompositorAction")
 
-    data_path = f'nodes["{bright.name}"].inputs[0].default_value'
+    # In 5.0, Brightness is input socket 'Bright'
+    target = bright.inputs.get('Bright') or bright.inputs[0]
+    data_path = f'nodes["{bright.name}"].inputs["{target.identifier}"].default_value'
     fcurve = get_or_create_fcurve(tree.animation_data.action, data_path, ref_obj=tree)
 
     if fcurve:
@@ -778,7 +846,7 @@ def animate_dialogue_v2(mouth_obj, frame_start, frame_end, intensity=1.0, speed=
 
 def animate_expression_blend(character_name, frame, expression='NEUTRAL', duration=12):
     """Smoothly transitions between facial expression presets."""
-    import plant_humanoid
+    from assets import plant_humanoid
     # Since plant_humanoid handles the actual keyframing of parts, we wrap it
     # and ensure multiple frames are keyed for a smooth transition if duration > 0.
     # For now, we'll implement a simple version that uses plant_humanoid's logic.
@@ -800,7 +868,7 @@ def animate_fireflies(center, volume_size=(5, 5, 5), density=10, frame_start=1, 
         bpy.context.scene.collection.children.link(container)
 
     mat = bpy.data.materials.new(name="FireflyMat")
-    mat.use_nodes = True
+    # mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.8, 1.0, 0.2, 1) # Yellow-green
     set_blend_method(mat, 'BLEND')
@@ -836,7 +904,6 @@ def animate_fireflies(center, volume_size=(5, 5, 5), density=10, frame_start=1, 
 def create_noise_based_material(name, color_ramp_colors, noise_type='NOISE', noise_scale=10.0, roughness=0.5):
     """Point 32: Generic helper for creating noise-based procedural materials."""
     mat = bpy.data.materials.new(name=name)
-    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
@@ -1011,18 +1078,43 @@ def animate_distance_based_glow(gnome, characters, frame_start, frame_end):
             break
     if not mat: return
 
-    # Animate intensity based on proximity
-    for f in range(frame_start, frame_end + 1, 12):
-        bpy.context.scene.frame_set(f)
-        min_dist = 100.0
-        for char in characters:
-            if char:
-                dist = (gnome.matrix_world.to_translation() - char.matrix_world.to_translation()).length
-                min_dist = min(min_dist, dist)
+    # Driver-based approach to avoid frame_set looping
+    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+    if not bsdf: return
+    
+    # We need to find the input socket for Emission Strength
+    # Note: get_principled_socket is a helper in this file, but we need the actual socket object to add a driver
+    socket = get_principled_socket(bsdf, "Emission Strength")
+    if not socket: return
 
-        # Closer = Brighter (Max at distance 1.0, Min at distance 10.0)
-        intensity = max(2.0, 50.0 * (1.0 / max(1.0, min_dist)))
-        set_principled_socket(mat, "Emission Strength", intensity, frame=f)
+    # Remove any existing animation data on this socket to be clean
+    # (Though adding a driver usually overrides)
+    
+    # Add Driver
+    fcurve = socket.driver_add("default_value")
+    driver = fcurve.driver
+    driver.type = 'SCRIPTED'
+    
+    # Create variables for distance to each character
+    dist_vars = []
+    for i, char in enumerate(characters):
+        if not char: continue
+        var = driver.variables.new()
+        var.name = f"dist_{i}"
+        var.type = 'LOC_DIFF'
+        var.targets[0].id = gnome
+        var.targets[1].id = char
+        dist_vars.append(f"dist_{i}")
+        
+    if not dist_vars:
+        # Fallback if no characters found
+        driver.expression = "2.0"
+        return
+
+    # Expression: max(2.0, 50.0 * (1.0 / max(1.0, min_dist)))
+    # min_dist = min(d1, d2, ...)
+    min_dist_expr = f"min({', '.join(dist_vars)})"
+    driver.expression = f"max(2.0, 50.0 * (1.0 / max(1.0, {min_dist_expr})))"
 
 def apply_bioluminescent_veins(characters, frame_start, frame_end):
     """Enhancement #88: Bioluminescent Vein Network."""
@@ -1030,7 +1122,7 @@ def apply_bioluminescent_veins(characters, frame_start, frame_end):
         if not char: continue
         for slot in char.material_slots:
             mat = slot.material
-            if not mat or not mat.use_nodes: continue
+            if not mat: continue
 
             # Use noise-driven emission for 'veins'
             nodes = mat.node_tree.nodes
@@ -1049,7 +1141,7 @@ def setup_caustic_patterns(floor_obj):
     if not floor_obj: return
     for slot in floor_obj.material_slots:
         mat = slot.material
-        if not mat or not mat.use_nodes: continue
+        if not mat: continue
         nodes, links = mat.node_tree.nodes, mat.node_tree.links
 
         # Add a procedural caustic texture overlay
@@ -1086,6 +1178,7 @@ def setup_caustic_patterns(floor_obj):
             links.new(mix.outputs[0], bsdf.inputs['Base Color'])
 
         # Animate texture for moving water effect
+        node_tex.voronoi_dimensions = '4D'
         node_tex.inputs['W'].default_value = 0
         node_tex.inputs['W'].keyframe_insert(data_path="default_value", frame=1)
         node_tex.inputs['W'].default_value = 10.0
@@ -1143,9 +1236,9 @@ def replace_with_soft_boxes():
             plane.scale = (2, 2, 1)
 
             mat = bpy.data.materials.new(name=f"Mat_{plane.name}")
-            mat.use_nodes = True
+            # mat.use_nodes = True
             bsdf = mat.node_tree.nodes["Principled BSDF"]
-            set_principled_socket(mat, "Emission", color + (1,))
+            set_principled_socket(mat, "Emission", list(color) + [1])
             set_principled_socket(mat, "Emission Strength", energy / 1000.0) # Scale energy
             plane.data.materials.append(mat)
 

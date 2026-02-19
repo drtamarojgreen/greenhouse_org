@@ -11,7 +11,7 @@ if MOVIE_ROOT not in sys.path:
 
 import silent_movie_generator
 import style
-import plant_humanoid
+from assets import plant_humanoid
 
 class TestExpressionRig(unittest.TestCase):
     def setUp(self):

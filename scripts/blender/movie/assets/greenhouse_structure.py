@@ -7,7 +7,6 @@ def create_greenhouse_iron_mat():
     mat = bpy.data.materials.get("GH_Iron")
     if mat: return mat
     mat = bpy.data.materials.new(name="GH_Iron")
-    mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.106, 0.302, 0.118, 1) # Greenhouse Brand Green
     bsdf.inputs["Metallic"].default_value = 1.0
@@ -16,7 +15,7 @@ def create_greenhouse_iron_mat():
     # Mossy Iron (Noise overlay mixed with base color)
     node_moss = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
     node_moss.inputs['Scale'].default_value = 20.0
-    node_mix = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='OVERLAY', data_type='RGBA')
+    node_mix = style.create_mix_node(mat.node_tree, blend_type='OVERLAY', data_type='RGBA')
     fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix)
     fac_sock.default_value = 0.5
     in1_sock.default_value = (0.106, 0.302, 0.118, 1)
@@ -29,7 +28,6 @@ def create_greenhouse_glass_mat():
     mat = bpy.data.materials.get("GH_Glass")
     if mat: return mat
     mat = bpy.data.materials.new(name="GH_Glass")
-    mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (0.7, 0.8, 0.9, 1)
     # Point 74: Use Transmission for Cycles, Alpha 1.0 to avoid conflicts
@@ -73,7 +71,6 @@ def create_ivy(parent_obj, frame_start=1):
     leaf_master.hide_render = True
 
     mat = bpy.data.materials.new(name="IvyLeafMat")
-    mat.use_nodes = True
     mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.02, 0.15, 0.05, 1)
     leaf_master.data.materials.append(mat)
 
@@ -100,7 +97,6 @@ def create_mossy_stone_mat(name="MossyStone"):
     mat = bpy.data.materials.get(name)
     if mat: return mat
     mat = bpy.data.materials.new(name=name)
-    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
 
     bsdf = nodes.get("Principled BSDF")

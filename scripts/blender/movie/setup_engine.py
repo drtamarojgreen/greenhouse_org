@@ -69,7 +69,6 @@ def setup_blender_engine(master):
         if hasattr(scene.cycles, "denoiser"):
             scene.cycles.denoiser = 'OPENIMAGEDENOISE'
 
-        scene.world.use_nodes = True
         bg = scene.world.node_tree.nodes.get("Background")
         if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
     else:

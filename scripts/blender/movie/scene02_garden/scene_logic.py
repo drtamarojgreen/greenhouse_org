@@ -1,7 +1,7 @@
 import bpy
 import math
 import style
-import plant_humanoid
+from assets import plant_humanoid
 import mathutils
 import random
 

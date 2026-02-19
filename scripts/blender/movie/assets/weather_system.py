@@ -10,7 +10,6 @@ def create_rain_material():
     if mat: return mat
 
     mat = bpy.data.materials.new(name="RainMat")
-    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
@@ -93,7 +92,6 @@ def create_puddle_material():
     if mat: return mat
 
     mat = bpy.data.materials.new(name="WetMarble")
-    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
@@ -124,7 +122,7 @@ def create_puddle_material():
     style.set_principled_socket(node_bsdf, 'Specular', 1.0)
 
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
-    mat.cycles.displacement_method = 'BOTH'
+    mat.displacement_method = 'BOTH'
     return mat
 
 def create_rain_splashes(location, count=20, frame_start=1, frame_end=15000):
@@ -135,7 +133,6 @@ def create_rain_splashes(location, count=20, frame_start=1, frame_end=15000):
     splash_mat = bpy.data.materials.get("SplashMat")
     if not splash_mat:
         splash_mat = bpy.data.materials.new(name="SplashMat")
-        splash_mat.use_nodes = True
         bsdf = splash_mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs['Alpha'].default_value = 0.3
         bsdf.inputs['Roughness'].default_value = 0.0

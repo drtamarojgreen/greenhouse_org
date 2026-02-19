@@ -9,7 +9,7 @@ ASSETS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if ASSETS_PATH not in sys.path:
     sys.path.append(ASSETS_PATH)
 
-import plant_humanoid
+from assets import plant_humanoid
 
 def setup_scene(master):
     """

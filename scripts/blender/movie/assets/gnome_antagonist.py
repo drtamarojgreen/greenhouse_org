@@ -4,6 +4,7 @@ import mathutils
 import random
 
 def create_gnarled_staff(location, height=1.5, name="GnarledStaff", material=None):
+    location = mathutils.Vector(location)
     """Creates a gnarled staff using randomized segments."""
     container = bpy.data.objects.new(f"{name}_Container", None)
     bpy.context.scene.collection.objects.link(container)
@@ -31,25 +32,22 @@ def create_gnarled_staff(location, height=1.5, name="GnarledStaff", material=Non
     return container, curr_loc
 
 def create_gnome(name, location, scale=0.6):
+    location = mathutils.Vector(location)
     """Generates a gnome character as an antagonist."""
     container = bpy.data.collections.new(name)
     bpy.context.scene.collection.children.link(container)
 
     # Point 12: Create materials first
     mat_body = bpy.data.materials.new(name=f"{name}_MatBody")
-    mat_body.use_nodes = True
     mat_body.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.2, 0.1, 0.3, 1)
 
     mat_hat = bpy.data.materials.new(name=f"{name}_MatHat")
-    mat_hat.use_nodes = True
     mat_hat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.1, 0.05, 0.2, 1)
 
     mat_beard = bpy.data.materials.new(name=f"{name}_MatBeard")
-    mat_beard.use_nodes = True
     mat_beard.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.8, 0.8, 1)
 
     mat_gloom = bpy.data.materials.new(name=f"{name}_MatGloom")
-    mat_gloom.use_nodes = True
     bsdf_gloom = mat_gloom.node_tree.nodes["Principled BSDF"]
     bsdf_gloom.inputs["Base Color"].default_value = (0, 0, 0, 1)
     import style
@@ -97,7 +95,6 @@ def create_gnome(name, location, scale=0.6):
 
     # Red Glowing Eyes
     mat_gnome_eye = bpy.data.materials.new(name=f"{name}_MatEye")
-    mat_gnome_eye.use_nodes = True
     style.set_principled_socket(mat_gnome_eye, 'Emission', (1, 0, 0, 1))
     style.set_principled_socket(mat_gnome_eye, 'Emission Strength', 10.0)
 
@@ -142,7 +139,6 @@ def create_gnome(name, location, scale=0.6):
     cloak.matrix_parent_inverse = body.matrix_world.inverted()
 
     mat_cloak = bpy.data.materials.new(name=f"{name}_MatCloak")
-    mat_cloak.use_nodes = True
     bsdf_cloak = mat_cloak.node_tree.nodes["Principled BSDF"]
     bsdf_cloak.inputs["Base Color"].default_value = (0.1, 0.05, 0.2, 1)
 

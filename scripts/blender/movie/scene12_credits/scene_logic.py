@@ -42,7 +42,6 @@ def setup_scene(master):
 
     # Material
     mat = bpy.data.materials.new(name="CreditsMat")
-    mat.use_nodes = True
     mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (1, 1, 1, 1)
     text_obj.data.materials.append(mat)
 

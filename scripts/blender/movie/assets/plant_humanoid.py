@@ -43,7 +43,6 @@ def create_vine(start, end, radius=0.05):
 def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     """Point 79: Enhanced procedural bark material with LOD system."""
     mat = bpy.data.materials.new(name=name)
-    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
@@ -66,7 +65,7 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     node_noise2 = nodes.new(type='ShaderNodeTexNoise')
     node_noise2.inputs['Scale'].default_value = 50.0
 
-    node_mix_noise = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='MIX', data_type='RGBA')
+    node_mix_noise = style.create_mix_node(mat.node_tree, blend_type='MIX', data_type='RGBA')
     fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix_noise)
     fac_sock.default_value = 0.3
     links.new(node_mapping.outputs['Vector'], node_noise1.inputs['Vector'])
@@ -83,7 +82,7 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
 
     node_geom = nodes.new(type='ShaderNodeNewGeometry')
     node_curv_ramp = nodes.new(type='ShaderNodeValToRGB')
-    node_mix_curv = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='OVERLAY', data_type='RGBA')
+    node_mix_curv = style.create_mix_node(mat.node_tree, blend_type='OVERLAY', data_type='RGBA')
     fac_sock_curv, in1_sock_curv, in2_sock_curv = style.get_mix_sockets(node_mix_curv)
     fac_sock_curv.default_value = 0.5
     links.new(node_geom.outputs['Pointiness'], node_curv_ramp.inputs['Fac'])
@@ -124,7 +123,7 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
     node_grad_ramp.color_ramp.elements[1].color = (1, 1, 1, 1)
     links.new(node_grad.outputs['Fac'], node_grad_ramp.inputs['Fac'])
 
-    node_mix_mud = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='MULTIPLY', data_type='RGBA')
+    node_mix_mud = style.create_mix_node(mat.node_tree, blend_type='MULTIPLY', data_type='RGBA')
     fac_sock_mud, in1_sock_mud, in2_sock_mud = style.get_mix_sockets(node_mix_mud)
     fac_sock_mud.default_value = 1.0
     links.new(style.get_mix_output(node_mix_curv), in1_sock_mud)
@@ -136,7 +135,6 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
 def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     """Point 79: Enhanced procedural leaf material with LOD system."""
     mat = bpy.data.materials.new(name=name)
-    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
@@ -156,7 +154,7 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     node_wave.inputs['Scale'].default_value = 10.0
     links.new(node_mapping.outputs['Vector'], node_wave.inputs['Vector'])
 
-    node_color_mix = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='MIX', data_type='RGBA')
+    node_color_mix = style.create_mix_node(mat.node_tree, blend_type='MIX', data_type='RGBA')
     fac_sock_col, in1_sock_col, in2_sock_col = style.get_mix_sockets(node_color_mix)
     in1_sock_col.default_value = (*[c*0.7 for c in color], 1)
     in2_sock_col.default_value = (*color, 1)
@@ -170,7 +168,7 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     # Leaf Venation (Noise replacing Musgrave)
     node_musgrave = nodes.new(type='ShaderNodeTexNoise')
     node_musgrave.inputs['Scale'].default_value = 20.0
-    node_venation_mix = style.create_mix_node(mat.node_tree, 'ShaderNodeMixRGB', 'ShaderNodeMix', blend_type='MULTIPLY', data_type='RGBA')
+    node_venation_mix = style.create_mix_node(mat.node_tree, blend_type='MULTIPLY', data_type='RGBA')
     fac_sock_ven, in1_sock_ven, in2_sock_ven = style.get_mix_sockets(node_venation_mix)
     fac_sock_ven.default_value = 0.2
     links.new(style.get_mix_output(node_color_mix), in1_sock_ven)
@@ -203,200 +201,206 @@ def create_fingers(location, direction, radius=0.02):
         fingers.append(f)
     return fingers
 
-def add_tracking_constraint(obj, target, name="TrackTarget"):
-    """Point 84: Non-destructive constraint management."""
-    if not obj or not target: return
-    # Only remove constraints of the same type and name
-    for c in obj.constraints:
-        if c.type == 'DAMPED_TRACK' and c.name == name:
-            obj.constraints.remove(c)
-    con = obj.constraints.new(type='DAMPED_TRACK')
-    con.target = target
-    con.track_axis = 'TRACK_NEGATIVE_Y'
-    con.name = name
-
 def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05, seed=None, include_facial_details=True):
+    """Rigorous Single-Mesh Implementation using Armature."""
+    location = mathutils.Vector(location)
     if seed is not None: random.seed(seed)
-    container = bpy.data.collections.new(name)
-    bpy.context.scene.collection.children.link(container)
+    
+    # 1. Create Armature
+    bpy.ops.object.armature_add(enter_editmode=True, align='WORLD', location=location)
+    armature_obj = bpy.context.object
+    armature_obj.name = name # The character's main object is now the Armature
+    armature = armature_obj.data
+    armature.name = f"{name}_ArmatureData"
+    
+    # Clear default bone
+    bpy.ops.armature.select_all(action='SELECT')
+    bpy.ops.armature.delete()
+    
+    # Helper to add bone
+    def add_bone(bone_name, head_pos, tail_pos, parent_name=None):
+        bone = armature.edit_bones.new(bone_name)
+        bone.head = head_pos + location
+        bone.tail = tail_pos + location
+        if parent_name and parent_name in armature.edit_bones:
+            bone.parent = armature.edit_bones[parent_name]
+        return bone
 
     torso_height = 1.5 * height_scale
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.2, depth=torso_height, location=location + mathutils.Vector((0,0,torso_height/2)))
-    torso = bpy.context.object
-    torso.name = f"{name}_Torso"
-    bpy.ops.object.shade_smooth()
-
     head_radius = 0.4 * (0.8 + random.random() * 0.4)
-    bpy.ops.mesh.primitive_ico_sphere_add(radius=head_radius, subdivisions=4, location=location + mathutils.Vector((0,0,torso_height + head_radius)))
-    head = bpy.context.object
-    head.name = f"{name}_Head"
-    bpy.ops.object.shade_smooth()
+    arm_height = torso_height * 0.9
+    
+    # Define Bones (Relative to location)
+    # Torso
+    add_bone("Torso", mathutils.Vector((0,0,0)), mathutils.Vector((0,0,torso_height)))
+    # Head
+    add_bone("Head", mathutils.Vector((0,0,torso_height)), mathutils.Vector((0,0,torso_height+head_radius)), "Torso")
+    # Limbs
+    add_bone("Arm.L", mathutils.Vector((0.2,0,arm_height)), mathutils.Vector((0.8,0,arm_height-0.4)), "Torso") 
+    add_bone("Arm.R", mathutils.Vector((-0.2,0,arm_height)), mathutils.Vector((-0.8,0,arm_height-0.4)), "Torso")
+    add_bone("Leg.L", mathutils.Vector((0.1,0,0.1)), mathutils.Vector((0.3,0,-0.8)), "Torso")
+    add_bone("Leg.R", mathutils.Vector((-0.1,0,0.1)), mathutils.Vector((-0.3,0,-0.8)), "Torso")
+    
+    # Facial Bones (for animation)
+    eye_z = torso_height + head_radius * 0.3
+    add_bone("Eye.L", mathutils.Vector((head_radius*0.4, -head_radius*0.8, eye_z)), mathutils.Vector((head_radius*0.4, -head_radius*0.9, eye_z)), "Head")
+    add_bone("Eye.R", mathutils.Vector((-head_radius*0.4, -head_radius*0.8, eye_z)), mathutils.Vector((-head_radius*0.4, -head_radius*0.9, eye_z)), "Head")
+    add_bone("Mouth", mathutils.Vector((0, -head_radius*0.9, torso_height + head_radius * 0.1)), mathutils.Vector((0, -head_radius*1.0, torso_height + head_radius * 0.1)), "Head")
+    
+    bpy.ops.object.mode_set(mode='OBJECT')
 
-    if "Herbaceous" in name: bark_base, leaf_base, eye_color = (0.1, 0.3, 0.1), (0.6, 0.7, 0.2), (1, 1, 0.8)
-    elif "Arbor" in name: bark_base, leaf_base, eye_color = (0.05, 0.15, 0.05), (0.2, 0.4, 0.3), (0.8, 1, 1)
-    else: bark_base, leaf_base, eye_color = (0.106, 0.302, 0.118), (0.522, 0.631, 0.490), (1, 1, 1)
+    # Materials
+    # Load Character Data
+    import json
+    import os
+    
+    data_path = os.path.join(os.path.dirname(__file__), "data", "characters.json")
+    try:
+        with open(data_path, 'r') as f:
+            char_data = json.load(f)
+    except FileNotFoundError:
+        print(f"Warning: Character data not found at {data_path}. Using defaults.")
+        char_data = {}
 
-    mat = create_bark_material(f"PlantMat_{name}", color=bark_base)
-    leaf_mat = create_leaf_material(f"LeafMat_{name}", color=leaf_base)
+    # Determine character key (handle instance names like Herbaceous_01)
+    base_name = name.split('_')[0]
+    config = char_data.get(base_name, char_data.get("Default", {}))
+    
+    # Apply Config
+    scale = config.get("scale", 1.0)
+    torso_height = config.get("torso_height", 1.5) * height_scale * scale
+    
+    colors = config.get("colors", {})
+    bark_base = tuple(colors.get("bark", [0.1, 0.3, 0.1]))
+    leaf_base = tuple(colors.get("leaf", [0.6, 0.7, 0.2]))
+    eye_color = tuple(colors.get("eye", [1.0, 1.0, 1.0]))
+    
+    features = config.get("features", {})
+    has_staff = features.get("has_staff", False)
+    has_shoulder_plates = features.get("has_shoulder_plates", False)
 
+    mat_bark = create_bark_material(f"PlantMat_{name}", color=bark_base)
+    mat_leaf = create_leaf_material(f"LeafMat_{name}", color=leaf_base)
     mat_eye = bpy.data.materials.new(name=f"EyeMat_{name}")
-    mat_eye.use_nodes = True
-    # Emission (Guarded for Blender 5.0 naming drift)
+    # mat_eye.use_nodes = True
     style.set_principled_socket(mat_eye, 'Emission Strength', 5.0)
     mat_eye.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = eye_color + (1,)
+    
+    parts_to_join = []
+    
+    def create_part(mesh_obj, group_name):
+        # Assign all verts to group
+        vg = mesh_obj.vertex_groups.new(name=group_name)
+        verts = [v.index for v in mesh_obj.data.vertices]
+        vg.add(verts, 1.0, 'REPLACE')
+        parts_to_join.append(mesh_obj)
+        return mesh_obj
 
-    mat_pupil = bpy.data.materials.new(name=f"PupilMat_{name}")
-    mat_pupil.use_nodes = True
-    mat_pupil.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0, 0, 0, 1)
+    # Geometry Generation
+    # Torso
+    bpy.ops.mesh.primitive_cylinder_add(radius=0.2, depth=torso_height, location=location + mathutils.Vector((0,0,torso_height/2)))
+    torso = bpy.context.object
+    torso.name = f"{name}_Torso_Geo"
+    torso.data.materials.append(mat_bark)
+    create_part(torso, "Torso")
+    
+    # Head
+    bpy.ops.mesh.primitive_ico_sphere_add(radius=head_radius, subdivisions=3, location=location + mathutils.Vector((0,0,torso_height + head_radius)))
+    head = bpy.context.object
+    head.name = f"{name}_Head_Geo"
+    head.data.materials.append(mat_bark)
+    create_part(head, "Head")
+    
+    # Limbs (Vine Curves -> Mesh)
+    def create_limb(bone_name, start, end, radius):
+        # Transform local bone coords to world
+        start_world = location + start
+        end_world = location + end
+        vine = create_vine(start_world, end_world, radius=radius)
+        # Convert to mesh
+        bpy.context.view_layer.objects.active = vine
+        vine.select_set(True)
+        bpy.ops.object.convert(target='MESH')
+        vine.data.materials.append(mat_bark)
+        create_part(vine, bone_name)
+        # Fingers? simpler for now: just end of vine
+        return vine
 
-    facial_parts = []
-    for side in [-1, 1]:
-        side_str = 'L' if side < 0 else 'R'
-        eye_loc = location + mathutils.Vector((side * head_radius * 0.4, -head_radius * 0.8, torso_height + head_radius * 1.1))
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.04, location=eye_loc)
-        eye = bpy.context.object
-        eye.name = f"{name}_Eye_{side_str}"
-        eye.parent = head
-        eye.matrix_parent_inverse = head.matrix_world.inverted()
-        eye.data.materials.append(mat_eye)
-        facial_parts.append(eye)
+    create_limb("Arm.L", mathutils.Vector((0.2,0,arm_height)), mathutils.Vector((0.8,0,arm_height-0.4)), vine_thickness)
+    create_limb("Arm.R", mathutils.Vector((-0.2,0,arm_height)), mathutils.Vector((-0.8,0,arm_height-0.4)), vine_thickness)
+    create_limb("Leg.L", mathutils.Vector((0.1,0,0.1)), mathutils.Vector((0.3,0,-0.8)), vine_thickness*1.5)
+    create_limb("Leg.R", mathutils.Vector((-0.1,0,0.1)), mathutils.Vector((-0.3,0,-0.8)), vine_thickness*1.5)
 
-        if include_facial_details:
-            bpy.ops.mesh.primitive_ico_sphere_add(radius=0.015, location=eye_loc + mathutils.Vector((0, -0.035, 0)))
-            pupil = bpy.context.object
-            pupil.name = f"{name}_Pupil_{side_str}"
-            pupil.parent = eye
-            pupil.matrix_parent_inverse = eye.matrix_world.inverted()
-            pupil.data.materials.append(mat_pupil)
-            facial_parts.append(pupil)
-
-            brow_loc = eye_loc + mathutils.Vector((0, -0.01, 0.08))
-            bpy.ops.mesh.primitive_cylinder_add(radius=0.005, depth=0.1, location=brow_loc, rotation=(0, math.pi/2, 0))
-            brow = bpy.context.object
-            brow.name = f"{name}_Brow_{side_str}"
-            brow.parent = head
-            brow.matrix_parent_inverse = head.matrix_world.inverted()
-            brow.data.materials.append(mat)
-            facial_parts.append(brow)
-
-    if include_facial_details:
-        bpy.ops.mesh.primitive_cube_add(size=0.05, location=location + mathutils.Vector((0, -head_radius * 0.9, torso_height + head_radius * 0.8)))
-        mouth = bpy.context.object
-        mouth.name = f"{name}_Mouth"
-        mouth.scale = (1.5, 0.2, 0.4)
-        mouth.parent = head
-        mouth.matrix_parent_inverse = head.matrix_world.inverted()
-        mouth.data.materials.append(mat_eye)
-        facial_parts.append(mouth)
-
-        # Expression Blending & Morphing Smiles (Shape Keys)
-        if mouth.type == 'MESH':
-            mouth.shape_key_add(name="Basis")
-            smile = mouth.shape_key_add(name="Smile")
-
-    arm_height = torso_height * 0.9
-    l_arm_start = location + mathutils.Vector((0.2, 0, arm_height))
-    l_arm_end = location + mathutils.Vector((0.8, 0, arm_height - 0.4))
-    left_arm = create_vine(l_arm_start, l_arm_end, radius=vine_thickness)
-    left_arm.name = f"{name}_Arm_L"
-    l_fingers = create_fingers(l_arm_end, (l_arm_end - l_arm_start).normalized(), radius=vine_thickness)
-    for f in l_fingers:
-        f.parent = left_arm
-        f.matrix_parent_inverse = left_arm.matrix_world.inverted()
-        container.objects.link(f)
-
-    r_arm_start = location + mathutils.Vector((-0.2, 0, arm_height))
-    r_arm_end = location + mathutils.Vector((-0.8, 0, arm_height - 0.4))
-    right_arm = create_vine(r_arm_start, r_arm_end, radius=vine_thickness)
-    right_arm.name = f"{name}_Arm_R"
-    r_fingers = create_fingers(r_arm_end, (r_arm_end - r_arm_start).normalized(), radius=vine_thickness)
-    for f in r_fingers:
-        f.parent = right_arm
-        f.matrix_parent_inverse = right_arm.matrix_world.inverted()
-        container.objects.link(f)
-
-    left_leg = create_vine(location + mathutils.Vector((0.1, 0, 0.1)), location + mathutils.Vector((0.3, 0, -0.8)), radius=vine_thickness * 1.5)
-    left_leg.name = f"{name}_Leg_L"
-    right_leg = create_vine(location + mathutils.Vector((-0.1, 0, 0.1)), location + mathutils.Vector((-0.3, 0, -0.8)), radius=vine_thickness * 1.5)
-    right_leg.name = f"{name}_Leg_R"
-
+    # Hair/Leaves
     leaf_template = create_leaf_mesh()
+    leaves = []
     for i in range(int(15 * height_scale)):
         leaf = bpy.data.objects.new(f"{name}_Leaf_{i}", leaf_template.data)
-        container.objects.link(leaf)
+        bpy.context.collection.objects.link(leaf)
         angle = (i / 15) * math.pi * 2
         leaf.location = head.location + mathutils.Vector((math.cos(angle)*head_radius, math.sin(angle)*head_radius, random.uniform(-0.2, 0.2)))
         leaf.rotation_euler = (random.uniform(0, 3.14), random.uniform(0, 3.14), angle)
-        leaf.data.materials.append(leaf_mat)
-        leaf.parent = head
-        leaf.matrix_parent_inverse = head.matrix_world.inverted()
+        leaves.append(leaf)
+        
+    if leaves:
+        bpy.ops.object.select_all(action='DESELECT')
+        for l in leaves: l.select_set(True)
+        bpy.context.view_layer.objects.active = leaves[0]
+        bpy.ops.object.join()
+        hair = bpy.context.active_object
+        hair.data.materials.append(mat_leaf)
+        create_part(hair, "Head")
 
-    main_parts = [head, left_arm, right_arm, left_leg, right_leg]
-    for p in main_parts:
-        if p.name not in container.objects:
-            container.objects.link(p)
-        if p.type == 'CURVE':
-            bpy.ops.object.select_all(action='DESELECT')
+    # Eyes
+    for side, bone_name in [(-1, "Eye.R"), (1, "Eye.L")]:
+        eye_loc = location + mathutils.Vector((side * head_radius * 0.4, -head_radius * 0.8, torso_height + head_radius * 0.3))
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.04, location=eye_loc)
+        eye = bpy.context.object
+        eye.data.materials.append(mat_eye)
+        create_part(eye, bone_name)
+    
+    # Use Join to merge all parts
+    if parts_to_join:
+        bpy.ops.object.select_all(action='DESELECT')
+        for p in parts_to_join:
             p.select_set(True)
-            bpy.context.view_layer.objects.active = p
-            bpy.ops.object.convert(target='MESH')
-        # Point 29: Ensure active object is a mesh before appending materials or joining
-        bpy.context.view_layer.objects.active = p
-        p.data.materials.append(mat)
-        p.parent = torso
-        p.matrix_parent_inverse = torso.matrix_world.inverted()
+        bpy.context.view_layer.objects.active = parts_to_join[0]
+        bpy.ops.object.join()
+        
+        final_mesh = bpy.context.active_object
+        final_mesh.name = f"{name}_Mesh"
+        
+        # Parent to Armature
+        final_mesh.parent = armature_obj
+        modifier = final_mesh.modifiers.new(type='ARMATURE', name="Armature")
+        modifier.object = armature_obj
+        
+    return armature_obj
 
-    for p in facial_parts:
-        if p.name not in container.objects:
-            container.objects.link(p)
-    if torso.name not in container.objects:
-        container.objects.link(torso)
-    torso.data.materials.append(mat)
-
-    if "Herbaceous" in name:
-        # Point 89: Leaning staff for active engagement
-        staff_loc = location + mathutils.Vector((1.0, -0.2, 0.5))
-        staff_end = staff_loc + mathutils.Vector((0.3, -0.2, 1.8))
-        staff = create_vine(staff_loc, staff_end, radius=0.04)
-        staff.name = f"{name}_ReasonStaff"
-        staff.parent = torso
-        staff.matrix_parent_inverse = torso.matrix_world.inverted()
-        staff.data.materials.append(mat)
-        container.objects.link(staff)
-    elif "Arbor" in name:
-        for side in [-1, 1]:
-            bpy.ops.mesh.primitive_ico_sphere_add(radius=0.15, location=location + mathutils.Vector((side * 0.3, 0, arm_height + 0.1)))
-            plate = bpy.context.object
-            plate.name = f"{name}_ShoulderPlate_{side}"
-            plate.parent = torso
-            plate.matrix_parent_inverse = torso.matrix_world.inverted()
-            plate.data.materials.append(mat)
-            container.objects.link(plate)
-
-    return torso
-
-def animate_walk(torso, frame_start, frame_end, step_height=0.1, cycle_length=48):
-    """Point 81: Enhanced walk cycle with hip sway and Z-axis hip rotation."""
-    if not torso: return
-    name = torso.name.split('_')[0]
-    l_leg = bpy.data.objects.get(f"{name}_Leg_L")
-    r_leg = bpy.data.objects.get(f"{name}_Leg_R")
-    l_arm = bpy.data.objects.get(f"{name}_Arm_L")
-    r_arm = bpy.data.objects.get(f"{name}_Arm_R")
-    base_z = torso.location.z
+def animate_walk(armature_obj, frame_start, frame_end, step_height=0.1, cycle_length=48):
+    """Updated walk cycle for Armature."""
+    if not armature_obj or armature_obj.type != 'ARMATURE': return
+    
+    # Get Pose Bones
+    pb = armature_obj.pose.bones
+    torso = pb.get("Torso")
+    l_leg = pb.get("Leg.L")
+    r_leg = pb.get("Leg.R")
+    l_arm = pb.get("Arm.L")
+    r_arm = pb.get("Arm.R")
+    
+    base_z = armature_obj.location.z # Move the whole object for position, bones for animation
 
     for f in range(frame_start, frame_end + 1, 6):
         phase = ((f - frame_start) % cycle_length) / cycle_length
-        # Vertical bob
-        torso.location.z = base_z + abs(math.sin(phase * math.pi * 2)) * step_height
-        torso.keyframe_insert(data_path="location", index=2, frame=f)
-
-        # Point 81: Hip sway (Z rotation) and side-to-side (X rotation)
-        torso.rotation_euler[2] = math.sin(phase * math.pi * 2) * math.radians(8) # Increased sway
-        torso.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
-
-        torso.rotation_euler[0] = math.cos(phase * math.pi * 2) * math.radians(2) # Slight lean
-        torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
+        
+        # Bob location of Torso BONE (relative to object)
+        if torso:
+            torso.location.z = abs(math.sin(phase * math.pi * 2)) * step_height
+            torso.keyframe_insert(data_path="location", index=2, frame=f)
+            # Sway
+            torso.rotation_euler[2] = math.sin(phase * math.pi * 2) * math.radians(8)
+            torso.keyframe_insert(data_path="rotation_euler", index=2, frame=f)
 
         if l_leg and r_leg:
             l_leg.rotation_euler[0] = math.sin(phase * math.pi * 2) * math.radians(35)
@@ -405,103 +409,82 @@ def animate_walk(torso, frame_start, frame_end, step_height=0.1, cycle_length=48
             r_leg.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
 
         if l_arm and r_arm:
-            # Opposite arm swing
             l_arm.rotation_euler[0] = math.sin(phase * math.pi * 2 + math.pi) * math.radians(20)
             r_arm.rotation_euler[0] = math.sin(phase * math.pi * 2) * math.radians(20)
             l_arm.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
             r_arm.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
 
-def animate_talk(torso, frame_start, frame_end, intensity=1.0):
-    """Point 83: Enhanced talk with rhythmic closures (consonants)."""
-    if not torso: return
-    mouth = bpy.data.objects.get(f"{torso.name.split('_')[0]}_Mouth")
+def animate_talk(armature_obj, frame_start, frame_end, intensity=1.0):
+    """Updated talk cycle for Armature bone 'Mouth'."""
+    if not armature_obj or armature_obj.type != 'ARMATURE': return
+    mouth = armature_obj.pose.bones.get("Mouth")
     if not mouth: return
 
     for f in range(frame_start, frame_end + 1, 4):
-        # Occasional closure every ~12 frames
         if f % 12 == 0:
             mouth.scale.z = 0.1
         else:
             mouth.scale.z = random.uniform(0.2, 1.0) * intensity
         mouth.keyframe_insert(data_path="scale", index=2, frame=f)
 
-    mouth.scale.z = 0.4
-    mouth.keyframe_insert(data_path="scale", index=2, frame=frame_end)
-
-def animate_expression(torso, frame, expression='NEUTRAL'):
-    """Point 35 & 86: Fix expression handling and add mouth deformation."""
-    if not torso or expression is None: return
-    name = torso.name.split('_')[0]
-    brows = [bpy.data.objects.get(f"{name}_Brow_L"), bpy.data.objects.get(f"{name}_Brow_R")]
-    pupils = [bpy.data.objects.get(f"{name}_Pupil_L"), bpy.data.objects.get(f"{name}_Pupil_R")]
-    mouth = bpy.data.objects.get(f"{name}_Mouth")
-
-    for i, brow in enumerate(brows):
-        if not brow: continue
-        if expression == 'ANGRY':
-            brow.rotation_euler[1] = math.radians(110 if i == 0 else 70)
-            brow.location.z = 0.05
-        elif expression == 'SURPRISED':
-            brow.rotation_euler[1] = math.radians(90)
-            brow.location.z = 0.08
-        elif expression == 'NEUTRAL':
-            brow.rotation_euler[1] = math.radians(90)
-            brow.location.z = 0.06
-        else:
-            continue # Unknown expression
-
-        brow.keyframe_insert(data_path="rotation_euler", index=1, frame=frame)
-        brow.keyframe_insert(data_path="location", index=2, frame=frame)
-
-    for pupil in pupils:
-        if not pupil: continue
+def animate_expression(armature_obj, frame, expression='NEUTRAL'):
+    """Updated expression for Armature bones."""
+    if not armature_obj or armature_obj.type != 'ARMATURE': return
+    pb = armature_obj.pose.bones
+    
+    # Eye bones
+    eyes = [pb.get("Eye.L"), pb.get("Eye.R")]
+    # Note: Brows aren't bones in this simple rig yet, but we could add them. 
+    # For now, just scale eyes for expression.
+    
+    for eye in eyes:
+        if not eye: continue
         if expression == 'SURPRISED':
-            pupil.scale = (1.5, 1.5, 1.5)
+            eye.scale = (1.5, 1.5, 1.5)
         elif expression == 'ANGRY':
-            pupil.scale = (0.8, 0.8, 0.8)
-        elif expression == 'NEUTRAL':
-            pupil.scale = (1, 1, 1)
+            eye.scale = (0.8, 0.8, 0.8)
         else:
-            continue
-        pupil.keyframe_insert(data_path="scale", frame=frame)
-
-    if mouth:
-        # Point 86: Scale mouth based on expression
-        if expression == 'ANGRY':
-            mouth.scale = (1.2, 0.2, 0.2) # Thinner/tense
-        elif expression == 'SURPRISED':
-            mouth.scale = (2.0, 0.2, 0.6) # Wider/O-shape
-        elif expression == 'NEUTRAL':
-            mouth.scale = (1.5, 0.2, 0.4)
-        mouth.keyframe_insert(data_path="scale", frame=frame)
+            eye.scale = (1, 1, 1)
+        eye.keyframe_insert(data_path="scale", frame=frame)
 
 def create_flower(location, name="MentalBloom", scale=0.2):
     container = bpy.data.collections.new(name)
     bpy.context.scene.collection.children.link(container)
+    
+    # Core
     bpy.ops.mesh.primitive_ico_sphere_add(radius=0.1, location=location)
     core = bpy.context.object
-    core.name = f"{name}_Core"
-    container.objects.link(core)
-    for col in core.users_collection:
-        if col != container:
-            col.objects.unlink(core)
+    core.name = f"{name}_Mesh" # Single mesh name
+    
     mat_petal = bpy.data.materials.new(name=f"{name}_MatPetal")
-    mat_petal.use_nodes = True
+    # mat_petal.use_nodes = True
     mat_petal.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.2, 0.5, 1)
+    
+    # Petals
+    petals = []
     for i in range(5):
         angle = (i / 5) * math.pi * 2
         bpy.ops.mesh.primitive_plane_add(size=0.2, location=location + mathutils.Vector((math.cos(angle)*0.15, math.sin(angle)*0.15, 0.05)))
         p = bpy.context.object
-        p.name = f"{name}_Petal_{i}"
         p.rotation_euler = (math.radians(45), 0, angle)
-        p.parent = core
-        p.matrix_parent_inverse = core.matrix_world.inverted()
         p.data.materials.append(mat_petal)
-        container.objects.link(p)
-        for col in p.users_collection:
-            if col != container:
-                col.objects.unlink(p)
-    core.scale = (0.01, 0.01, 0.01)
+        petals.append(p)
+
+    # Join
+    if petals:
+        bpy.ops.object.select_all(action='DESELECT')
+        for p in petals: p.select_set(True)
+        core.select_set(True)
+        bpy.context.view_layer.objects.active = core
+        bpy.ops.object.join()
+        
+    core.scale = (scale, scale, scale)
+    
+    # Assign to container
+    container.objects.link(core)
+    if core.name in bpy.context.scene.collection.objects:
+        bpy.context.scene.collection.objects.unlink(core)
+        
     return core
 
 def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=3):
@@ -511,7 +494,7 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=
     pillar.name = name
 
     mat = bpy.data.materials.new(name=f"PillarMat_{name}")
-    mat.use_nodes = True
+    # mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
@@ -562,38 +545,68 @@ def create_scroll(location, name="PhilosophicalScroll"):
     scroll.data.materials.append(mat)
     return scroll
 
-def create_procedural_bush(location, name="GardenBush", size=1.0):
-    """Point 25: Optimized bush creation by joining leaves into a single mesh."""
+_bush_cache = {}
+
+def create_procedural_bush(location, name="GardenBush", size=1.0, seed=None):
+    """Point 25: Optimized bush creation with Geometry Caching (Instancing)."""
+    # Quantize size to allow for better cache hits (e.g. 0.8, 0.9, 1.0, 1.1, 1.2 ...)
+    size_key = round(size * 10) / 10.0
+    cache_key = (size_key, seed)
+
     container = bpy.data.collections.new(name)
     bpy.context.scene.collection.children.link(container)
-    leaf_template = create_leaf_mesh()
-    mat = create_leaf_material(f"BushMat_{name}", color=(0.05, 0.3, 0.05))
-
-    leaves = []
-    for i in range(25):
-        offset = mathutils.Vector((random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(0, 1))) * size
-        leaf = bpy.data.objects.new(f"{name}_Leaf_{i}", leaf_template.data)
-        bpy.context.scene.collection.objects.link(leaf) # Link to scene temporarily for joining
-        leaf.location = location + offset
-        leaf.rotation_euler = (random.uniform(0, 3.14), random.uniform(0, 3.14), random.uniform(0, 3.14))
-        leaf.scale = (size, size, size)
-        leaves.append(leaf)
-
-    # Join leaves
-    if leaves:
-        bpy.ops.object.select_all(action='DESELECT')
-        for l in leaves:
-            l.select_set(True)
-        bpy.context.view_layer.objects.active = leaves[0]
-        bpy.ops.object.join()
-
-        bush = bpy.context.active_object
-        bush.name = f"{name}_Combined"
-        bush.data.materials.append(mat)
-
-        # Move to container and unlink from scene if needed
+    
+    # Check cache
+    if cache_key in _bush_cache:
+        cached_mesh = _bush_cache[cache_key]
+        # Create a linked duplicate (new object, shared mesh)
+        bush = bpy.data.objects.new(name, cached_mesh)
         container.objects.link(bush)
-        if bush.name in bpy.context.scene.collection.objects:
-            bpy.context.scene.collection.objects.unlink(bush)
+        bush.location = location
+        # Random rotation for variety even with same mesh
+        bush.rotation_euler = (0, 0, random.uniform(0, 6.28))
+    else:
+        # Generate new geometry
+        if seed is not None: random.seed(seed)
+        
+        leaf_template = create_leaf_mesh()
+        mat = create_leaf_material(f"BushMat_{name}", color=(0.05, 0.3, 0.05))
 
+        leaves = []
+        for i in range(25):
+            offset = mathutils.Vector((random.uniform(-1, 1), random.uniform(-1, 1), random.uniform(0, 1))) * size
+            leaf = bpy.data.objects.new(f"{name}_Leaf_{i}", leaf_template.data)
+            bpy.context.scene.collection.objects.link(leaf) 
+            leaf.location = mathutils.Vector((0,0,0)) + offset # Local to bush center
+            leaf.rotation_euler = (random.uniform(0, 3.14), random.uniform(0, 3.14), random.uniform(0, 3.14))
+            leaf.scale = (size, size, size)
+            leaves.append(leaf)
+
+        # Join leaves into one mesh
+        if leaves:
+            bpy.ops.object.select_all(action='DESELECT')
+            for l in leaves:
+                l.select_set(True)
+            bpy.context.view_layer.objects.active = leaves[0]
+            bpy.ops.object.join()
+
+            bush = bpy.context.active_object
+            bush.name = name
+            bush.data.materials.append(mat)
+            
+            # Reset location to 0,0,0 before caching so instances can be placed correctly
+            bush.location = (0,0,0)
+            
+            # Cache the mesh data
+            _bush_cache[cache_key] = bush.data
+            
+            # Now place the actual instance
+            bush.location = location
+            bush.rotation_euler = (0, 0, random.uniform(0, 6.28))
+
+            # Move to container and unlink from scene if needed
+            container.objects.link(bush)
+            if bush.name in bpy.context.scene.collection.objects:
+                bpy.context.scene.collection.objects.unlink(bush)
+    
     return container

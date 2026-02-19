@@ -1,6 +1,6 @@
 import bpy
 import mathutils
-import futuristic_props
+from assets import futuristic_props
 
 def setup_scene(master):
     """

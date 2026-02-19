@@ -72,7 +72,7 @@ class TestBlender50Features(unittest.TestCase):
     def test_1_3_1_color_ramp_clear_logic(self):
         """1.3.1: create_noise_based_material avoids .clear() crash."""
         # This tests the logic in style.py
-        mat = style.create_noise_based_material("TestRampClear", colors=[(1,0,0,1), (0,1,0,1), (0,0,1,1)])
+        mat = style.create_noise_based_material("TestRampClear", color_ramp_colors=[(1,0,0,1), (0,1,0,1), (0,0,1,1)])
         ramp = next(n for n in mat.node_tree.nodes if n.type == 'VAL_TO_RGB')
         self.assertEqual(len(ramp.color_ramp.elements), 3)
 

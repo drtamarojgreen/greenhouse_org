@@ -15,7 +15,6 @@ def debug_all_frames():
     test_frames = [50, 850, 1700, 2300, 3250]
 
     # Enable compositor for these tests to see what the user sees
-    scene.use_nodes = True
 
     for f in test_frames:
         scene.frame_set(f)

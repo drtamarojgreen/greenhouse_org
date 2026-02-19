@@ -9,7 +9,6 @@ def create_hedge_material():
     if mat: return mat
 
     mat = bpy.data.materials.new(name="HedgeMat")
-    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
@@ -52,7 +51,6 @@ def create_soil_material():
     if mat: return mat
 
     mat = bpy.data.materials.new(name="SoilMat")
-    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
@@ -81,7 +79,7 @@ def create_soil_material():
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
 
     node_bsdf.inputs['Roughness'].default_value = 0.95
-    mat.cycles.displacement_method = 'BOTH'
+    mat.displacement_method = 'BOTH'
     return mat
 
 def create_hedge_row(start, end, height=2.5, depth=1.2, name="Hedge"):
@@ -112,6 +110,7 @@ def create_hedge_row(start, end, height=2.5, depth=1.2, name="Hedge"):
     return hedge
 
 def create_garden_bed(location, size=(3, 1.5), name="GardenBed"):
+    location = mathutils.Vector(location)
     """
     A raised planting bed with soil, edging stones, and
     small flowering plants inside.
@@ -134,39 +133,84 @@ def create_garden_bed(location, size=(3, 1.5), name="GardenBed"):
     soil.scale = (size[0]/2, size[1]/2, 0.12)
     soil.data.materials.append(soil_mat)
     container.objects.link(soil)
-    bpy.context.scene.collection.objects.unlink(soil)
+    if soil.name in bpy.context.scene.collection.objects:
+        bpy.context.scene.collection.objects.unlink(soil)
 
-    # Stone border (4 sides)
-    border_specs = [
-        # (offset, scale, axis)
-        (mathutils.Vector((0,  size[1]/2 + 0.06, 0.08)),
-         (size[0]/2 + 0.15, 0.06, 0.1)),
-        (mathutils.Vector((0, -size[1]/2 - 0.06, 0.08)),
-         (size[0]/2 + 0.15, 0.06, 0.1)),
-        (mathutils.Vector(( size[0]/2 + 0.06, 0, 0.08)),
-         (0.06, size[1]/2, 0.1)),
-        (mathutils.Vector((-size[0]/2 - 0.06, 0, 0.08)),
-         (0.06, size[1]/2, 0.1)),
-    ]
-    for i, (offset, scale) in enumerate(border_specs):
-        bpy.ops.mesh.primitive_cube_add(
-            location=location + offset
-        )
-        stone = bpy.context.object
-        stone.name = f"{name}_Stone_{i}"
-        stone.scale = scale
-        stone.data.materials.append(stone_mat)
-        container.objects.link(stone)
-        bpy.context.scene.collection.objects.unlink(stone)
+    # Stone border (Particle System Approach)
+    # Reuse master stone
+    stone_master_name = "GardenStoneMaster"
+    stone_master = bpy.data.objects.get(stone_master_name)
+    if not stone_master:
+        bpy.ops.mesh.primitive_cube_add(size=0.1)
+        stone_master = bpy.context.object
+        stone_master.name = stone_master_name
+        stone_master.scale = (1, 0.4, 0.6) # Flattened stone shape
+        stone_master.data.materials.append(stone_mat)
+        # Hide master from render
+        stone_master.hide_render = True
+        stone_master.location = (0, 0, -100) # Move away
+        container.objects.link(stone_master)
+        if stone_master.name in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.unlink(stone_master)
+
+    # Create Emitter for border
+    # We create a curve or a mesh strip representing the border
+    bpy.ops.mesh.primitive_cube_add(location=location + mathutils.Vector((0,0,0.1))) # Temp create to get context
+    temp = bpy.context.object
+    bpy.data.objects.remove(temp, do_unlink=True) # Cleanup
+
+    # Let's just create 4 thin emitter strips and join them
+    # Front/Back
+    strips = []
+    for side in [-1, 1]:
+        bpy.ops.mesh.primitive_cube_add(location=mathutils.Vector((0, side * (size[1]/2 + 0.1), 0)))
+        s = bpy.context.object
+        s.scale = (size[0]/2 + 0.2, 0.05, 0.05)
+        strips.append(s)
+        
+        bpy.ops.mesh.primitive_cube_add(location=mathutils.Vector((side * (size[0]/2 + 0.1), 0, 0)))
+        s2 = bpy.context.object
+        s2.scale = (0.05, size[1]/2, 0.05)
+        strips.append(s2)
+        
+    bpy.ops.object.select_all(action='DESELECT')
+    for s in strips: s.select_set(True)
+    bpy.context.view_layer.objects.active = strips[0]
+    bpy.ops.object.join()
+    border_emitter = bpy.context.active_object
+    border_emitter.name = f"{name}_BorderEmitter"
+    border_emitter.location = location + mathutils.Vector((0,0,0.1))
+    
+    # Add Particle System
+    psys = border_emitter.modifiers.new("Stones", type='PARTICLE_SYSTEM')
+    ps = border_emitter.particle_systems[0]
+    ps.settings.type = 'HAIR'
+    ps.settings.count = 40 # Adjust for density
+    ps.settings.render_type = 'OBJECT'
+    ps.settings.instance_object = stone_master
+    ps.settings.particle_size = 0.3
+    ps.settings.size_random = 0.4
+    ps.settings.phase_factor_random = 1.0 # Random rotation
+    
+    # Make emitter invisible
+    border_emitter.hide_render = True
+    
+    container.objects.link(border_emitter)
+    # stone_master is already linked at creation
+    if border_emitter.name in bpy.context.scene.collection.objects:
+        bpy.context.scene.collection.objects.unlink(border_emitter)
 
     # Small plants inside the bed
-    import plant_humanoid
+    from assets import plant_humanoid
     flower_colors = [
         (1, 0.2, 0.4),   # pink
         (1, 0.8, 0.1),   # yellow
         (0.6, 0.2, 0.9), # purple
         (1, 0.4, 0.1),   # orange
     ]
+    
+    flowers_to_join = []
+    
     for i in range(random.randint(3, 6)):
         flower_loc = location + mathutils.Vector((
             random.uniform(-size[0]/2 + 0.3, size[0]/2 - 0.3),
@@ -187,13 +231,17 @@ def create_garden_bed(location, size=(3, 1.5), name="GardenBed"):
             if bsdf:
                 bsdf.inputs['Base Color'].default_value = (*color, 1)
 
-        # Flowering plants are returned in a collection sometimes,
-        # but create_flower returns the core object.
-        if core.name not in container.objects:
-            container.objects.link(core)
-        if core.name in bpy.context.scene.collection.objects:
-            bpy.context.scene.collection.objects.unlink(core)
+        flowers_to_join.append(core)
 
+    # Join flowers into soil
+    if flowers_to_join:
+        bpy.ops.object.select_all(action='DESELECT')
+        for f in flowers_to_join:
+            f.select_set(True)
+        soil.select_set(True)
+        bpy.context.view_layer.objects.active = soil
+        bpy.ops.object.join()
+        
     return container
 
 def create_exterior_garden(greenhouse_size=(15, 15, 8)):
@@ -207,39 +255,47 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     w, d = greenhouse_size[0], greenhouse_size[1]
     padding = 3.0   # distance from greenhouse wall to first hedge
 
-    # --- Hedge perimeter ---
+    # Collect all static objects for final join
+    static_garden_objects = []
+    
+    # Hedges
     # Front hedge row (with gap for path)
     hedge_y = -(d/2 + padding + 1.2)
-    create_hedge_row(
+    h1 = create_hedge_row(
         (-w/2 - padding, hedge_y, -1),
         (-2.5, hedge_y, -1),
         height=3.0, depth=1.2,
         name="HedgeFrontLeft"
     )
-    create_hedge_row(
+    static_garden_objects.append(h1)
+    
+    h2 = create_hedge_row(
         (2.5, hedge_y, -1),
         (w/2 + padding, hedge_y, -1),
         height=3.0, depth=1.2,
         name="HedgeFrontRight"
     )
+    static_garden_objects.append(h2)
 
     # Side hedges
     for side, name in [(-1, "Left"), (1, "Right")]:
         hedge_x = side * (w/2 + padding + 1.2)
-        create_hedge_row(
+        h = create_hedge_row(
             (hedge_x, -(d/2 + padding), -1),
             (hedge_x,  (d/2 + padding), -1),
             height=3.0, depth=1.2,
             name=f"Hedge{name}"
         )
+        static_garden_objects.append(h)
 
     # Back hedge
-    create_hedge_row(
+    h_back = create_hedge_row(
         (-w/2 - padding, d/2 + padding + 1.2, -1),
         ( w/2 + padding, d/2 + padding + 1.2, -1),
         height=3.0, depth=1.2,
         name="HedgeBack"
     )
+    static_garden_objects.append(h_back)
 
     # --- Enhancement #34: Cobblestone Path Material ---
     bpy.ops.mesh.primitive_plane_add(
@@ -251,7 +307,7 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     path.scale = (2.5, (padding + 1.5)/2, 1)
 
     cobble_mat = bpy.data.materials.new("CobbleMat")
-    cobble_mat.use_nodes = True
+    # cobble_mat.use_nodes = True
     nodes = cobble_mat.node_tree.nodes
     links = cobble_mat.node_tree.links
     nodes.clear()
@@ -277,8 +333,9 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
 
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
     node_bsdf.inputs['Roughness'].default_value = 0.8
-    cobble_mat.cycles.displacement_method = 'BOTH'
+    cobble_mat.displacement_method = 'BOTH'
     path.data.materials.append(cobble_mat)
+    static_garden_objects.append(path)
 
     # --- Garden beds along front ---
     bed_positions = [
@@ -289,22 +346,38 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     ]
     beds = []
     for i, pos in enumerate(bed_positions):
-        bed = create_garden_bed(
+        # create_garden_bed returns a collection now, but the main object is the soil/bed mesh
+        # We need to extract the mesh object to join it
+        bed_col = create_garden_bed(
             pos,
             size=(2.5, 1.2),
             name=f"ExteriorBed_{i}"
         )
-        beds.append(bed)
+        # Find the mesh object in the collection (it should be the one joined with flowers)
+        for obj in bed_col.objects:
+            if obj.type == 'MESH' and "Soil" in obj.name:
+                static_garden_objects.append(obj)
+            # Emitters and stones are handled by particle systems on the soil object (or separate emitter?)
+            # Wait, in create_garden_bed we linked border_emitter.
+            elif "BorderEmitter" in obj.name:
+                # Emitters must stay separate if they have modifiers that need to be applied or preserved?
+                # Actually, if we join, we lose the particle system settings unless we apply them.
+                # Applying hair particles -> Real geometry? Or keep them as emmiters?
+                # User wants "no meshes", so keeping them as particle systems is fine, 
+                # BUT if we have 4 emitters, that's 4 objects.
+                # Let's try to join the emitters too!
+                static_garden_objects.append(obj)
 
     # --- Enhancement #32: Koi Pond in Garden Exterior ---
     def create_koi_pond(location, size=(4, 6)):
+        location = mathutils.Vector(location)
         bpy.ops.mesh.primitive_plane_add(size=1, location=location)
         pond = bpy.context.object
         pond.name = "KoiPond"
         pond.scale = (size[0]/2, size[1]/2, 1)
 
         mat = bpy.data.materials.new("PondMat")
-        mat.use_nodes = True
+        # mat.use_nodes = True
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs['Base Color'].default_value = (0.05, 0.1, 0.2, 1)
         style.set_principled_socket(bsdf, 'Transmission', 0.8)
@@ -319,6 +392,7 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
         mat.node_tree.links.new(node_bump.outputs['Normal'], bsdf.inputs['Normal'])
 
         # Animate ripples (#32)
+        node_noise.noise_dimensions = '4D'
         node_noise.inputs['W'].default_value = 0
         node_noise.inputs['W'].keyframe_insert(data_path="default_value", frame=1)
         node_noise.inputs['W'].default_value = 5.0
@@ -326,9 +400,15 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
 
         pond.data.materials.append(mat)
         style.set_blend_method(mat, 'BLEND')
+        
+        static_garden_objects.append(pond)
 
         # Add simple fish objects (#32)
-        for i in range(5):
+        # Keep fish separate for animation? Or join and animate via shape keys/bones?
+        # User wants minimal meshes. Let's make fish ONE particle system on the pond?
+        # Or just join them and animate locally? Joining animated objects is hard without bones.
+        # Let's keep fish separate for now (5 meshes), but maybe reduce count to 3.
+        for i in range(3):
             bpy.ops.mesh.primitive_cone_add(radius1=0.05, depth=0.2, location=location + mathutils.Vector((random.uniform(-1, 1), random.uniform(-2, 2), -0.1)))
             fish = bpy.context.object
             fish.name = f"Koi_{i}"
@@ -350,7 +430,7 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     ground.name = "ExteriorGround"
 
     grass_mat = bpy.data.materials.new("GrassMat")
-    grass_mat.use_nodes = True
+    # grass_mat.use_nodes = True
     nodes = grass_mat.node_tree.nodes
     links = grass_mat.node_tree.links
     nodes.clear()
@@ -370,5 +450,18 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
     node_bsdf.inputs['Roughness'].default_value = 0.95
     ground.data.materials.append(grass_mat)
+    static_garden_objects.append(ground)
+
+    # FINAL JOIN
+    if static_garden_objects:
+        bpy.ops.object.select_all(action='DESELECT')
+        for obj in static_garden_objects:
+            obj.select_set(True)
+        bpy.context.view_layer.objects.active = static_garden_objects[0]
+        # We must be careful about materials. Joining objects preserves material slots.
+        bpy.ops.object.join()
+        
+        main_garden = bpy.context.active_object
+        main_garden.name = "Exterior_Garden_Main"
 
     return beds

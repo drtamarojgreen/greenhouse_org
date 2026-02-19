@@ -14,7 +14,6 @@ def create_intertitle(master_instance, text, frame_start, frame_end):
     text_obj.data.align_y = 'CENTER'
 
     mat = bpy.data.materials.new(name=f"TitleMat_{frame_start}")
-    mat.use_nodes = True
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
     style.set_principled_socket(mat, "Emission", (1, 1, 1, 1))
@@ -28,7 +27,6 @@ def create_intertitle(master_instance, text, frame_start, frame_end):
     bg.scale = (10, 6, 1)
 
     bg_mat = bpy.data.materials.new(name=f"TitleBGMat_{frame_start}")
-    bg_mat.use_nodes = True
     bg_bsdf = bg_mat.node_tree.nodes["Principled BSDF"]
     bg_bsdf.inputs["Base Color"].default_value = (0, 0, 0, 1)
     bg.data.materials.append(bg_mat)
@@ -44,6 +42,64 @@ def create_intertitle(master_instance, text, frame_start, frame_end):
 
     return text_obj
 
+def create_spinning_logo(master_instance, text_content, frame_start, frame_end):
+    """Creates a spinning text logo."""
+    # Point 45: Position high in the air
+    bpy.ops.object.text_add(location=(0, 0, 10), rotation=(math.radians(90), 0, 0))
+    logo = bpy.context.object
+    logo.name = f"Logo_{frame_start}"
+    logo.data.body = text_content
+    logo.data.align_x = 'CENTER'
+    logo.data.align_y = 'CENTER'
+
+    mat = bpy.data.materials.new(name=f"LogoMat_{frame_start}")
+    style.set_principled_socket(mat, "Emission", (1, 0.8, 0, 1))
+    style.set_principled_socket(mat, "Emission Strength", 8.0)
+    logo.data.materials.append(mat)
+
+    # Animation (Rotation)
+    logo.rotation_euler[2] = 0
+    logo.keyframe_insert(data_path="rotation_euler", index=2, frame=frame_start)
+    logo.rotation_euler[2] = math.radians(360)
+    logo.keyframe_insert(data_path="rotation_euler", index=2, frame=frame_end)
+
+    # Visibility
+    logo.hide_render = True
+    logo.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
+    logo.hide_render = False
+    logo.keyframe_insert(data_path="hide_render", frame=frame_start)
+    logo.hide_render = True
+    logo.keyframe_insert(data_path="hide_render", frame=frame_end)
+
+    return logo
+
+def create_thought_spark(master_instance, start_loc, end_loc, frame_start, frame_end):
+    """Creates a moving glowing spark between two points."""
+    bpy.ops.mesh.primitive_ico_sphere_add(radius=0.08, location=start_loc)
+    spark = bpy.context.object
+    spark.name = f"Spark_{frame_start}"
+
+    mat = bpy.data.materials.new(name=f"SparkMat_{frame_start}")
+    style.set_principled_socket(mat, "Emission", (0.5, 0.8, 1, 1))
+    style.set_principled_socket(mat, "Emission Strength", 10.0)
+    spark.data.materials.append(mat)
+
+    # Animation
+    spark.location = start_loc
+    spark.keyframe_insert(data_path="location", frame=frame_start)
+    spark.location = end_loc
+    spark.keyframe_insert(data_path="location", frame=frame_end)
+
+    # Visibility
+    spark.hide_render = True
+    spark.keyframe_insert(data_path="hide_render", frame=frame_start - 1)
+    spark.hide_render = False
+    spark.keyframe_insert(data_path="hide_render", frame=frame_start)
+    spark.hide_render = True
+    spark.keyframe_insert(data_path="hide_render", frame=frame_end)
+
+    return spark
+
 def create_diagnostic_highlight(master_instance, label, location, frame_start, frame_end, color=(1,1,1,1)):
     """Creates a scientific call-out marker."""
     bpy.ops.mesh.primitive_ico_sphere_add(radius=0.1, location=location)
@@ -51,7 +107,6 @@ def create_diagnostic_highlight(master_instance, label, location, frame_start, f
     sphere.name = f"Diag_{label}"
 
     mat = bpy.data.materials.new(name=f"DiagMat_{label}")
-    mat.use_nodes = True
     style.set_principled_socket(mat, "Emission", color)
     style.set_principled_socket(mat, "Emission Strength", 10.0)
     sphere.data.materials.append(mat)
