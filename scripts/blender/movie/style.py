@@ -897,8 +897,15 @@ def animate_expression_blend(character_name, frame, expression='NEUTRAL', durati
     # Since plant_humanoid handles the actual keyframing of parts, we wrap it
     # and ensure multiple frames are keyed for a smooth transition if duration > 0.
     # For now, we'll implement a simple version that uses plant_humanoid's logic.
+    # Point 91: Resolve character name to Armature for modern rig
     armature = bpy.data.objects.get(character_name)
-    if not armature or armature.type != 'ARMATURE': return
+    if not armature or armature.type != 'ARMATURE':
+        # Try fallback to mesh parent
+        mesh = bpy.data.objects.get(f"{character_name}_Torso") or bpy.data.objects.get(f"{character_name}_Mesh")
+        if mesh and mesh.parent and mesh.parent.type == 'ARMATURE':
+            armature = mesh.parent
+        else:
+            return
 
     if duration > 0:
         # Key current state before change

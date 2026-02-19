@@ -186,6 +186,6 @@ def create_greenhouse_structure(location=(0,0,0), size=(15, 15, 8)):
     bpy.context.view_layer.objects.active = iron_obj
     bpy.ops.object.join()
     main_obj = iron_obj
-    main_obj.name = "Greenhouse_Main"
+    main_obj.name = "Greenhouse_Structure"
 
     return main_obj

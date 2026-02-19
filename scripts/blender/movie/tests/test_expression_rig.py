@@ -53,7 +53,7 @@ class TestExpressionRig(BlenderTestCase):
                 
                 eye_scale_found = False
                 for fc in curves:
-                    if "Eye" in fc.data_path and "scale" in fc.data_path:
+                    if 'pose.bones["Eye' in fc.data_path and "scale" in fc.data_path:
                         eye_scale_found = True
                         break
                 self.assertTrue(eye_scale_found, f"R33 FAIL: No eye scale keyframes found for {name}")

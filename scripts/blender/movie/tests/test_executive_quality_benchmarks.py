@@ -26,7 +26,7 @@ class TestExecutiveQualityBenchmarks(unittest.TestCase):
         tree = style.get_compositor_node_tree(scene)
         if tree and tree.animation_data and tree.animation_data.action:
             flicker_found = False
-            for fc in tree.animation_data.action.fcurves:
+            for fc in style.get_action_curves(tree.animation_data.action):
                 if 'Bright' in fc.data_path:
                     for mod in fc.modifiers:
                         if mod.type == 'NOISE':
@@ -47,7 +47,7 @@ class TestExecutiveQualityBenchmarks(unittest.TestCase):
         # Point 87
         eye = bpy.data.objects.get("Herbaceous_Eye_L")
         if eye and eye.animation_data:
-            fc = next((c for c in eye.animation_data.action.fcurves if "rotation_euler" in c.data_path), None)
+            fc = next((c for c in style.get_action_curves(eye.animation_data.action) if "rotation_euler" in c.data_path), None)
             if fc:
                 # Saccades should have fewer, sharper keyframes than noise
                 # A 15000 frame timeline with noise every frame would have 15000 points.

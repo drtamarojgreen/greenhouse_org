@@ -143,7 +143,7 @@ def setup_camera_keyframes(master, cam, target):
                 look_at=(0, 0, 0))
 
     # Descend from drone into establishing shot
-    kf_eased(180, (40, -20, 20),  (0, 0, 0))
+    kf_eased(180, (40, -20, 70),  (0, 0, 0))
     kf_eased(200, (0, -30, 10),   (0, 0, 1.5))
 
     # Intro / Establishing Shot (101 - 200) - Already handled by drone-to-descend
@@ -193,7 +193,7 @@ def setup_camera_keyframes(master, cam, target):
     # Dialogue closeups (9501 - 13000)
     h1_obj = bpy.data.objects.get("Herbaceous_Torso")
     h2_obj = bpy.data.objects.get("Arbor_Torso")
-    gnome_obj = bpy.data.objects.get("GloomGnome_Mesh") # gnome is still _Mesh or should it be _Torso?
+    gnome_obj = bpy.data.objects.get("GloomGnome_Torso")
 
     # Scene 16 (9501-10200): Herbaceous speaks first, then Arbor
     kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5))        # wide

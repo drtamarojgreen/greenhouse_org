@@ -47,7 +47,7 @@ def create_gnome(name, location, scale=0.6):
     for pb in armature_obj.pose.bones: pb.rotation_mode = 'XYZ'
 
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
-    mesh_obj = bpy.data.objects.new(f"{name}_Mesh", mesh_data); bpy.context.scene.collection.objects.link(mesh_obj); mesh_obj.parent = armature_obj
+    mesh_obj = bpy.data.objects.new(f"{name}_Torso", mesh_data); bpy.context.scene.collection.objects.link(mesh_obj); mesh_obj.parent = armature_obj
 
     bm = bmesh.new(); dlayer = bm.verts.layers.deform.verify()
     vg_torso, vg_head, vg_arm_l = [mesh_obj.vertex_groups.new(name=n).index for n in ["Torso", "Head", "Arm.L"]]

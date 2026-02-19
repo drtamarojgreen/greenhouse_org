@@ -22,7 +22,7 @@ class TestRenderPreparedness(unittest.TestCase):
 
     def test_01_assets_exist(self):
         """Check if all major characters and structures are in the scene (5.0+ names)."""
-        required_objs = ["Herbaceous_Mesh", "Arbor_Mesh", "GloomGnome_Mesh", "ExpressionistFloor", "CamTarget", "GazeTarget"]
+        required_objs = ["Herbaceous_Torso", "Arbor_Torso", "GloomGnome_Torso", "ExpressionistFloor", "CamTarget", "GazeTarget"]
         for obj_name in required_objs:
             with self.subTest(obj=obj_name):
                 exists = obj_name in bpy.data.objects

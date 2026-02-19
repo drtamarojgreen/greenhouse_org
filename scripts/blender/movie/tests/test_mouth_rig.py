@@ -31,7 +31,7 @@ class TestMouthRig(BlenderTestCase):
             
             mouth_z_found = False
             for fc in curves:
-                if "Mouth" in fc.data_path and "scale" in fc.data_path and fc.array_index == 2:
+                if 'pose.bones["Mouth"].scale' in fc.data_path and fc.array_index == 2:
                     mouth_z_found = True
                     values = [kp.co[1] for kp in fc.keyframe_points]
                     self.assertGreater(len(values), 1, "No animation variation.")

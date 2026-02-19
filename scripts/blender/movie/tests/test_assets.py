@@ -18,9 +18,9 @@ class TestAssets(BlenderTestCase):
         objs = {
             "Herbaceous_Torso": "Herbaceous",
             "Arbor_Torso": "Arbor",
-            "GloomGnome_Mesh": "GloomGnome",
+            "GloomGnome_Torso": "GloomGnome",
             "Exterior_Garden_Main": None,
-            "Greenhouse_Main": None,
+            "Greenhouse_Structure": None,
             "CamTarget": None,
             "GazeTarget": None
         }
@@ -59,7 +59,7 @@ class TestAssets(BlenderTestCase):
     def test_03_visibility_check(self):
         """Check if major assets are ever visible during the render range."""
         # Updated for Single Mesh System
-        required_objs = ["Herbaceous_Torso", "Arbor_Torso", "GloomGnome_Mesh", "BrainGroup", "NeuronGroup"]
+        required_objs = ["Herbaceous_Torso", "Arbor_Torso", "GloomGnome_Torso", "BrainGroup", "NeuronGroup"]
         
         for obj_name in required_objs:
             obj = bpy.data.objects.get(obj_name)

@@ -15,7 +15,7 @@ class TestAssetDetails(unittest.TestCase):
         """Verify rigged hierarchy (5.0+)."""
         arm = bpy.data.objects.get("Herbaceous")
         self.assertIsNotNone(arm); self.assertEqual(arm.type, 'ARMATURE')
-        mesh = bpy.data.objects.get("Herbaceous_Mesh")
+        mesh = bpy.data.objects.get("Herbaceous_Torso")
         self.assertIsNotNone(mesh); self.assertEqual(mesh.parent, arm)
         self.assertTrue(any(m.type == 'ARMATURE' and m.object == arm for m in mesh.modifiers))
 
