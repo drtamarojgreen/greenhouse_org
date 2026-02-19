@@ -260,10 +260,25 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         loc = (side * head_r * 0.4, -head_r * 0.8, torso_h + head_r * 0.3)
         ret = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.04, matrix=mathutils.Matrix.Translation(loc))
         for v in ret['verts']: v[dlayer][vg_eye] = 1.0
+        for f in {f for v in ret['verts'] for f in v.link_faces}: f.material_index = 2 # Eye mat
+
+    # Mouth
+    vg_mouth = mesh_obj.vertex_groups.new(name="Mouth").index
+    loc_mouth = (0, -head_r * 0.9, torso_h + head_r * 0.1)
+    ret_mouth = bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation(loc_mouth))
+    for v in ret_mouth['verts']:
+        v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
+        v[dlayer][vg_mouth] = 1.0
+    for f in {f for v in ret_mouth['verts'] for f in v.link_faces}: f.material_index = 0 # Bark mat
 
     bm.to_mesh(mesh_data); bm.free()
     mesh_obj.data.materials.append(create_bark_material(f"BarkMat_{name}"))
     mesh_obj.data.materials.append(create_leaf_material(f"LeafMat_{name}"))
+
+    mat_eye = bpy.data.materials.new(name=f"EyeMat_{name}")
+    style.set_principled_socket(mat_eye, 'Emission Color', (1, 1, 1, 1))
+    style.set_principled_socket(mat_eye, 'Emission Strength', 5.0)
+    mesh_obj.data.materials.append(mat_eye)
     mesh_obj.modifiers.new(name="Armature", type='ARMATURE').object = armature_obj
     return armature_obj
 

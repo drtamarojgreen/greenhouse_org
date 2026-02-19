@@ -134,31 +134,35 @@ def set_node_input(node, name, value):
 def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
     """Creates a modern Mix node (5.x) with robust fallbacks."""
     if tree.bl_idname == 'CompositorNodeTree':
-        # Try different possible compositor mix node names for 5.0 compatibility
-        # Expanded candidates list
-        candidates = ['CompositorNodeMix', 'CompositorNodeMixColor', 'CompositorNodeMixRGB', 'MixRGB']
+        # Exhaustive search for Compositor Mix nodes
+        candidates = ['CompositorNodeMix', 'CompositorNodeMixRGB', 'MixRGB', 'Mix']
         node = None
         for node_type in candidates:
             try:
                 node = tree.nodes.new(node_type)
                 if node: break
-            except (RuntimeError, TypeError, KeyError):
-                continue
+            except: continue
 
         if not node:
-            # Last ditch attempt: try to find anything with 'Mix' in it in the compositor node types
+            # Dynamic discovery
             import bpy
-            compositor_types = [t for t in dir(bpy.types) if t.startswith("CompositorNode") and "Mix" in t]
-            for nt in compositor_types:
+            comp_mix_nodes = [t for t in dir(bpy.types) if "CompositorNode" in t and "Mix" in t]
+            for nt in comp_mix_nodes:
                 try:
                     node = tree.nodes.new(nt)
                     if node: break
                 except: continue
 
         if not node:
-            raise RuntimeError(f"Could not find a valid Compositor Mix node type. Tree: {tree.bl_idname}")
+            # Diagnostic raise
+            import bpy
+            all_comp = [t for t in dir(bpy.types) if "CompositorNode" in t]
+            raise RuntimeError(f"Could not find Compositor Mix node. Tried: {candidates}. Available: {all_comp}")
     else:
-        node = tree.nodes.new('ShaderNodeMix')
+        try:
+            node = tree.nodes.new('ShaderNodeMix')
+        except:
+            node = tree.nodes.new('ShaderNodeMixRGB')
 
     node.data_type = data_type
     node.blend_type = blend_type
