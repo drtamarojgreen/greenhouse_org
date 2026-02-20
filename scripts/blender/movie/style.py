@@ -230,21 +230,25 @@ def set_node_input(node, name, value, frame=None):
     return False
 
 def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
-    """Point 92: Robust Mix node creation for Blender 5.0+."""
+    """Point 92: Robust Mix node creation for Blender 5.0+. Prefers MixColor in 5.x."""
     node = None
     is_compositor = tree.bl_idname == 'CompositorNodeTree'
     
     # 1. Try common type identifiers
     candidates = []
     if is_compositor:
-        candidates = ['CompositorNodeMixColor', 'CompositorNodeMix', 'CompositorNodeMixRGB', 'MixRGB', 'Mix']
+        # 5.x Compositor uses MixColor for RGB or Mix for general purpose
+        candidates = ['CompositorNodeMixColor', 'CompositorNodeMix', 'CompositorNodeMixRGB']
     else:
-        candidates = ['ShaderNodeMix', 'ShaderNodeMixRGB', 'MixRGB', 'Mix']
+        # Shader nodes
+        candidates = ['ShaderNodeMix', 'ShaderNodeMixRGB']
         
     for c in candidates:
         try:
             node = tree.nodes.new(c)
-            if node: break
+            if node:
+                print(f"INFO: Created Mix node of type {c} in {tree.bl_idname}")
+                break
         except: continue
         
     if not node:
