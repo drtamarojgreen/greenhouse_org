@@ -23,7 +23,7 @@ def setup_all_camera_logic(master):
     con = cam.constraints.new(type='TRACK_TO')
     con.target = target
     con.track_axis = 'TRACK_NEGATIVE_Z'
-    con.up_axis = 'UP_Y'
+    con.up_axis = 'UP_Z' # Standard for Z-up world (Point 142)
     
     # Point 92: Set focus object to target Empty (animatable focus via target location)
     cam.data.dof.use_dof = True
@@ -139,11 +139,14 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(1, title_loc, origin)
     kf_eased(100, title_loc, origin)
 
-    # Opening drone - audience first sees the greenhouse from above
-    drone_sweep(101, 150, # End earlier to allow descent by 180
-                start_xy=(-40, -40),
-                end_xy=(40, -20),
-                altitude=75,
+    # Opening Forest Zoom OUT - start deep in trees, pull back to reveal hill
+    kf_eased(101, (100, 100, 8), (80, 80, 5), lens=24, easing='EASE_OUT') # Deep forest
+
+    # Opening drone - sweep across the hill
+    drone_sweep(120, 160,
+                start_xy=(80, 80),
+                end_xy=(0, -40),
+                altitude=60,
                 look_at=(0, 0, 0))
 
     # Descend from drone into establishing shot (Reach Z <= 20 by 180 for Test 2.1.1)
@@ -252,12 +255,14 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(s22_start + 500, (0, -15, 5),  (0, 0, 1.5))   # settle on plants
     kf_eased(14400,           (0, -15, 5),  (0, 0, 1.5))   # hold
 
-    # Victory drone
-    drone_sweep(14200, 14400,
-                start_xy=(-60, -60),
-                end_xy=(60, 60),
-                altitude=90,
-                look_at=(0, 0, 0))
+    # Victory Forest Zoom IN - sweep from wide forest back to the sanctuary
+    drone_sweep(14200, 14450,
+                start_xy=(-120, -120),
+                end_xy=(0, -20),
+                altitude=80,
+                look_at=(0, 0, 1.5))
+
+    kf_eased(14500, (0, -12, 3), (0, 0, 1.5), lens=50, easing='EASE_OUT')
 
     # Credits (14501 - 15000)
     kf_eased(SCENE_MAP['scene12_credits'][0], (0,-10,0), (0, 0, 5))
