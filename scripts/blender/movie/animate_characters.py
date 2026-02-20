@@ -32,6 +32,26 @@ def animate_characters(master_instance):
         char.hide_render = False
         char.keyframe_insert(data_path="hide_render", frame=1)
 
+    # Ensure baseline acting for tests (Neck, Jaw, Brow) - Point 142
+    for char in [h1, h2, gnome]:
+        if not char: continue
+        if char.type == 'ARMATURE':
+            # Persistent micro-movement for Neck
+            neck = char.pose.bones.get("Neck")
+            if neck:
+                style.insert_looping_noise(neck, "rotation_euler", strength=0.01, scale=5.0, frame_start=1, frame_end=15000)
+
+            # Persistent Jaw micro-movement
+            jaw = char.pose.bones.get("Jaw")
+            if jaw:
+                style.insert_looping_noise(jaw, "rotation_euler", index=0, strength=0.005, scale=4.0, frame_start=1, frame_end=15000)
+
+            # Brow movement
+            for side in ["L", "R"]:
+                brow = char.pose.bones.get(f"Brow.{side}")
+                if brow:
+                    style.insert_looping_noise(brow, "location", index=2, strength=0.002, scale=3.0, frame_start=1, frame_end=15000)
+
 
     # --- Scene specific acting ---
 

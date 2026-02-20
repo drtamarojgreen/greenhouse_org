@@ -19,6 +19,8 @@ from scene09_library import scene_logic as scene09
 from scene10_futuristic_lab import scene_logic as scene10
 from scene11_nature_sanctuary import scene_logic as scene11
 from scene12_credits import scene_logic as scene12
+from scene13_walking import scene_logic as scene13
+from scene14_duel import scene_logic as scene14
 from scene15_interaction import scene_logic as scene15
 from scene_brain import scene_logic as scene_brain
 
@@ -26,6 +28,7 @@ def safe_import_scene(name):
     try: return __import__(f"{name}.scene_logic", fromlist=['scene_logic'])
     except ImportError: return None
 
+# Point 142: Dynamically import dialogue and retreat scenes
 scene16, scene17, scene18, scene19, scene20, scene21, scene22 = [safe_import_scene(f"scene{i}_dialogue") for i in range(16, 22)] + [safe_import_scene("scene22_retreat")]
 
 class MovieMaster(BaseMaster):
@@ -48,7 +51,14 @@ class MovieMaster(BaseMaster):
     def animate_master(self):
         camera_controls.setup_all_camera_logic(self); setup_characters.setup_gaze_system(self)
         scene_orchestrator.orchestrate_scenes(self); animate_characters.animate_characters(self); animate_props.animate_props(self)
-        for s in [scene00, scene01, scene_brain, scene02, scene03, scene04, scene05, scene06, scene07, scene08, scene09, scene10, scene11, scene15, scene16, scene17, scene18, scene19, scene20, scene21, scene22, scene12]:
+        # Point 142: Executing all scenes in chronological order
+        all_scenes = [
+            scene00, scene01, scene_brain, scene02, scene03, scene04, scene05,
+            scene06, scene07, scene08, scene09, scene10, scene11, scene13,
+            scene14, scene15, scene16, scene17, scene18, scene19, scene20,
+            scene21, scene22, scene12
+        ]
+        for s in all_scenes:
             if s and hasattr(s, 'setup_scene'): s.setup_scene(self)
 
     def setup_lighting(self): lighting_setup.setup_lighting(self)
