@@ -207,17 +207,21 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     bpy.context.scene.collection.objects.link(armature_obj); armature_obj.location = location
     bpy.context.view_layer.objects.active = armature_obj; bpy.ops.object.mode_set(mode='EDIT')
     
-    torso_h = 1.5 * height_scale; head_r = 0.4; arm_h = torso_h * 0.9
+    torso_h = 1.5 * height_scale; head_r = 0.4; arm_h = torso_h * 0.9; neck_h = 0.2
     bones = {
         "Torso": ((0,0,0), (0,0,torso_h), None),
-        "Head": ((0,0,torso_h), (0,0,torso_h+head_r), "Torso"),
+        "Neck": ((0,0,torso_h), (0,0,torso_h+neck_h), "Torso"),
+        "Head": ((0,0,torso_h+neck_h), (0,0,torso_h+neck_h+head_r), "Neck"),
         "Arm.L": ((0.2,0,arm_h), (0.8,0,arm_h-0.4), "Torso"),
         "Arm.R": ((-0.2,0,arm_h), (-0.8,0,arm_h-0.4), "Torso"),
         "Leg.L": ((0.1,0,0.1), (0.3,0,-0.8), "Torso"),
         "Leg.R": ((-0.1,0,0.1), (-0.3,0,-0.8), "Torso"),
-        "Eye.L": ((head_r*0.4, -head_r*0.8, torso_h+head_r*0.3), (head_r*0.4, -head_r*0.9, torso_h+head_r*0.3), "Head"),
-        "Eye.R": ((-head_r*0.4, -head_r*0.8, torso_h+head_r*0.3), (-head_r*0.4, -head_r*0.9, torso_h+head_r*0.3), "Head"),
-        "Mouth": ((0,-head_r*0.9,torso_h+head_r*0.1), (0,-head_r,torso_h+head_r*0.1), "Head")
+        "Eye.L": ((head_r*0.4, -head_r*0.8, torso_h+neck_h+head_r*0.3), (head_r*0.4, -head_r*0.9, torso_h+neck_h+head_r*0.3), "Head"),
+        "Eye.R": ((-head_r*0.4, -head_r*0.8, torso_h+neck_h+head_r*0.3), (-head_r*0.4, -head_r*0.9, torso_h+neck_h+head_r*0.3), "Head"),
+        "Jaw": ((0,-head_r*0.2,torso_h+neck_h+head_r*0.1), (0,-head_r*0.9,torso_h+neck_h+head_r*0.1), "Head"),
+        "Mouth": ((0,-head_r*0.9,torso_h+neck_h+head_r*0.1), (0,-head_r,torso_h+neck_h+head_r*0.1), "Jaw"),
+        "Brow.L": ((head_r*0.3, -head_r*0.8, torso_h+neck_h+head_r*0.7), (head_r*0.5, -head_r*0.8, torso_h+neck_h+head_r*0.7), "Head"),
+        "Brow.R": ((-head_r*0.3, -head_r*0.8, torso_h+neck_h+head_r*0.7), (-head_r*0.5, -head_r*0.8, torso_h+neck_h+head_r*0.7), "Head")
     }
     for bname, (h, t, p) in bones.items():
         bone = armature_data.edit_bones.new(bname); bone.head, bone.tail = h, t
@@ -228,7 +232,6 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
 
     # 2. Mesh
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
-    # Point 93: Main mesh named _Torso for test parity
     mesh_obj = bpy.data.objects.new(f"{name}_Torso", mesh_data); bpy.context.scene.collection.objects.link(mesh_obj); mesh_obj.parent = armature_obj
     bm = bmesh.new(); dlayer = bm.verts.layers.deform.verify()
 
@@ -240,27 +243,29 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         return ret
 
     add_part(0.2, torso_h, (0,0,torso_h/2), "Torso")
-    add_part(head_r, 0, (0,0,torso_h+head_r), "Head", True)
+    add_part(0.1, neck_h, (0,0,torso_h+neck_h/2), "Neck")
+    add_part(head_r, 0, (0,0,torso_h+neck_h+head_r), "Head", True)
     add_part(vine_thickness, 0.7, (0.5, 0, arm_h-0.2), "Arm.L")
     add_part(vine_thickness, 0.7, (-0.5, 0, arm_h-0.2), "Arm.R")
     add_part(vine_thickness*1.5, 0.8, (0.2, 0, -0.4), "Leg.L")
     add_part(vine_thickness*1.5, 0.8, (-0.2, 0, -0.4), "Leg.R")
 
-    # Brows - separate mesh handle for test parity
-    for side, bname in [("L", "Brow_L"), ("R", "Brow_R")]:
-        brow_obj_name = f"{name}_{bname}"
+    # Brows - Parented to new Brow bones
+    for side in ["L", "R"]:
+        bname = f"Brow.{side}"
+        brow_obj_name = f"{name}_Brow_{side}"
         brow_mesh = bpy.data.meshes.new(f"{brow_obj_name}_MeshData")
         brow_obj = bpy.data.objects.new(brow_obj_name, brow_mesh)
         bpy.context.scene.collection.objects.link(brow_obj)
         brow_obj.parent = armature_obj
         brow_obj.parent_type = 'BONE'
-        brow_obj.parent_bone = "Head"
-        # Simple geometry for brow
+        brow_obj.parent_bone = bname
+        
         bm_brow = bmesh.new()
         bmesh.ops.create_cube(bm_brow, size=0.05)
-        for v in bm_brow.verts: v.co.x *= 2.0; v.co.y *= 0.1; v.co.z *= 0.1
+        for v in bm_brow.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.1
         bm_brow.to_mesh(brow_mesh); bm_brow.free()
-        brow_obj.location = (0.15 if side == "L" else -0.15, -head_r*0.9, 0.2)
+        brow_obj.location = (0, 0, 0)
         brow_obj.data.materials.append(create_bark_material(f"BrowMat_{name}"))
 
     # Staff - separate mesh handle for test parity
@@ -301,12 +306,12 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     bpy.context.scene.collection.objects.link(mouth_obj)
     mouth_obj.parent = armature_obj
     mouth_obj.parent_type = 'BONE'
-    mouth_obj.parent_bone = "Head"
+    mouth_obj.parent_bone = "Mouth"
     bm_mouth = bmesh.new()
     bmesh.ops.create_cube(bm_mouth, size=0.1)
     for v in bm_mouth.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
     bm_mouth.to_mesh(mouth_mesh); bm_mouth.free()
-    mouth_obj.location = (0, -head_r*0.9, 0.1)
+    mouth_obj.location = (0, 0, 0)
     mouth_obj.data.materials.append(create_bark_material(f"MouthMat_{name}"))
 
     # Also keep influence on main mesh (optional, but keep per original design)
@@ -356,15 +361,47 @@ def animate_talk(armature_obj, frame_start, frame_end, intensity=1.0):
 
 def animate_expression(armature_obj, frame, expression='NEUTRAL'):
     pb = armature_obj.pose.bones
-    mouth = pb.get("Mouth")
-    if mouth:
-        mouth.scale = (1.5, 1.5, 1.5) if expression == 'SURPRISED' else ((0.8, 0.8, 0.8) if expression == 'ANGRY' else (1, 1, 1))
-        armature_obj.keyframe_insert(data_path='pose.bones["Mouth"].scale', frame=frame)
-    for ename in ["Eye.L", "Eye.R"]:
-        eye = pb.get(ename)
-        if eye:
-            eye.scale = (1.5, 1.5, 1.5) if expression == 'SURPRISED' else ((0.8, 0.8, 0.8) if expression == 'ANGRY' else (1, 1, 1))
-            armature_obj.keyframe_insert(data_path=f'pose.bones["{ename}"].scale', frame=frame)
+    
+    # Values for different expressions
+    # Surprised: Jaw down, Brows up, Eyes wide
+    # Angry: Jaw tight, Brows down, Eyes squint
+    
+    presets = {
+        'SURPRISED': {
+            'Mouth': {'scale': (1.5, 1.5, 1.5)},
+            'Jaw': {'rotation_euler': (math.radians(-20), 0, 0)},
+            'Eye.L': {'scale': (1.4, 1.4, 1.4)},
+            'Eye.R': {'scale': (1.4, 1.4, 1.4)},
+            'Brow.L': {'location': (0, 0, 0.1), 'rotation_euler': (0, 0, math.radians(15))},
+            'Brow.R': {'location': (0, 0, 0.1), 'rotation_euler': (0, 0, math.radians(-15))}
+        },
+        'ANGRY': {
+            'Mouth': {'scale': (0.8, 0.8, 0.8)},
+            'Jaw': {'rotation_euler': (math.radians(5), 0, 0)},
+            'Eye.L': {'scale': (0.8, 1.0, 0.6)},
+            'Eye.R': {'scale': (0.8, 1.0, 0.6)},
+            'Brow.L': {'location': (0, 0, -0.05), 'rotation_euler': (0, 0, math.radians(-15))},
+            'Brow.R': {'location': (0, 0, -0.05), 'rotation_euler': (0, 0, math.radians(15))}
+        },
+        'NEUTRAL': {
+            'Mouth': {'scale': (1, 1, 1)},
+            'Jaw': {'rotation_euler': (0, 0, 0)},
+            'Eye.L': {'scale': (1, 1, 1)},
+            'Eye.R': {'scale': (1, 1, 1)},
+            'Brow.L': {'location': (0, 0, 0), 'rotation_euler': (0, 0, 0)},
+            'Brow.R': {'location': (0, 0, 0), 'rotation_euler': (0, 0, 0)}
+        }
+    }
+    
+    config = presets.get(expression, presets['NEUTRAL'])
+    
+    for bname, attrs in config.items():
+        bone = pb.get(bname)
+        if not bone: continue
+        
+        for attr, val in attrs.items():
+            setattr(bone, attr, val)
+            armature_obj.keyframe_insert(data_path=f'pose.bones["{bname}"].{attr}', frame=frame)
 
 def create_flower(location, name="MentalBloom", scale=0.2):
     import bmesh; mesh = bpy.data.meshes.new(f"{name}_MeshData")

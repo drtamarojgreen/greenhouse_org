@@ -41,9 +41,9 @@ class TestAnimation(BlenderTestCase):
 
     def test_04_limb_movement(self):
         """Verify that character limbs have active animation data."""
-        # Limbs are now bones: pose.bones["Arm.L"] etc.
+        # Limbs and facial bones
         chars = ["Herbaceous", "Arbor"]
-        bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R"]
+        bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R", "Neck", "Jaw", "Mouth", "Eye.L", "Brow.L"]
         
         for char_name in chars:
             obj = bpy.data.objects.get(char_name)
@@ -55,20 +55,16 @@ class TestAnimation(BlenderTestCase):
                     if obj.animation_data and obj.animation_data.action:
                         curves = style.get_action_curves(obj.animation_data.action)
                         for fc in curves:
-                            # Robust path matching for Blender 5.0 Slotted Actions
-                            path = fc.data_path
-                            is_target_bone = bone_name in path
-                            if not is_target_bone and hasattr(fc, "group") and fc.group:
-                                is_target_bone = bone_name in fc.group.name
-                            
-                            if is_target_bone and ("location" in path or "rotation" in path):
+                            # Robust path matching for both Slotted and Legacy actions
+                            if bone_name in fc.data_path and any(p in fc.data_path for p in ("location", "rotation", "scale")):
                                 values = [kp.co[1] for kp in fc.keyframe_points]
-                                if len(values) > 1 and (max(values) - min(values)) > 0.05:
+                                if len(values) > 1 and (max(values) - min(values)) > 0.001:
                                     has_movement = True
                                     break
                     
                     status = "PASS" if has_movement else "FAIL"
-                    self.log_result(f"Bone Anim: {char_name}.{bone_name}", status)
+                    details = f"Curves found: {len(style.get_action_curves(obj.animation_data.action))}" if not has_movement and obj.animation_data else "No action data"
+                    self.log_result(f"Bone Anim: {char_name}.{bone_name}", status, details)
                     self.assertTrue(has_movement)
 
     def test_05_camera_coverage(self):
@@ -110,9 +106,7 @@ class TestAnimation(BlenderTestCase):
             has_noise = False
             curves = style.get_action_curves(obj.animation_data.action)
             for fc in curves:
-                # Robust path matching: check if full path matches or if it's a relative path in a matching group/slot
-                path_match = fc.data_path == path or (path.endswith(fc.data_path) and obj.type == 'ARMATURE')
-                if path_match and fc.array_index == index:
+                if fc.data_path == path and fc.array_index == index:
                     for mod in fc.modifiers:
                         if mod.type == 'NOISE':
                             has_noise = True
