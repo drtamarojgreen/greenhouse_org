@@ -36,6 +36,9 @@ class MovieMaster(BaseMaster):
         super().__init__(mode=mode, total_frames=15000, quality=quality, device_type=device_type)
 
     def load_assets(self):
+        # Point 142: Ensure camera exists early for lighting setup
+        camera_controls.ensure_camera(self)
+
         base_p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.greenhouse = greenhouse_structure.create_greenhouse_structure()
         greenhouse_interior.setup_greenhouse_interior()

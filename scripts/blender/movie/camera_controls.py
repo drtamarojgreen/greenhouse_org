@@ -4,14 +4,16 @@ import mathutils
 import style
 from constants import SCENE_MAP
 
-def setup_all_camera_logic(master):
-    """Initializes camera, target, and keyframes."""
+def ensure_camera(master):
+    """Ensures camera and target exist for early lighting attachment (Point 142)."""
     # Camera
-    cam_data = bpy.data.cameras.new("MovieCamera")
-    cam = bpy.data.objects.new("MovieCamera", cam_data)
-    bpy.context.collection.objects.link(cam)
-    cam.location = (0, -8, 0)
-    master.scene.camera = cam
+    cam = bpy.data.objects.get("MovieCamera")
+    if not cam:
+        cam_data = bpy.data.cameras.new("MovieCamera")
+        cam = bpy.data.objects.new("MovieCamera", cam_data)
+        bpy.context.collection.objects.link(cam)
+        cam.location = (0, -8, 0)
+        master.scene.camera = cam
 
     # Target
     target = bpy.data.objects.get("CamTarget")
@@ -20,15 +22,24 @@ def setup_all_camera_logic(master):
         bpy.context.scene.collection.objects.link(target)
     master.cam_target = target
 
-    con = cam.constraints.new(type='TRACK_TO')
-    con.target = target
-    con.track_axis = 'TRACK_NEGATIVE_Z'
-    con.up_axis = 'UP_Z' # Standard for Z-up world (Point 142)
+    # Basic constraints if not present
+    if not cam.constraints.get("TrackCharacters"):
+        con = cam.constraints.new(type='TRACK_TO')
+        con.name = "TrackCharacters"
+        con.target = target
+        con.track_axis = 'TRACK_NEGATIVE_Z'
+        con.up_axis = 'UP_Z' # Standard for Z-up world (Point 142)
     
     # Point 92: Set focus object to target Empty (animatable focus via target location)
     cam.data.dof.use_dof = True
     cam.data.dof.focus_object = target
     cam.data.dof.aperture_fstop = 2.8
+
+    return cam, target
+
+def setup_all_camera_logic(master):
+    """Initializes camera, target, and keyframes."""
+    cam, target = ensure_camera(master)
 
     if master.mode == 'SILENT_FILM':
         # Enhanced Handheld Noise Layer

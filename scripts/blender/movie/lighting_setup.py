@@ -23,29 +23,40 @@ def setup_lighting(master_instance):
     style.setup_god_rays(master_instance.scene, beam_obj=beam)
     master_instance.beam = beam
 
-    # --- Character key lights ---
-    # Herbaceous key light (warm)
-    bpy.ops.object.light_add(type='SPOT', location=(-3, -8, 6))
-    herb_key = bpy.context.object
-    herb_key.name = "HerbaceousKeyLight"
-    apply_cfg(herb_key, LIGHTING_DEFAULTS.get(herb_key.name))
-    herb_key.rotation_euler = (math.radians(-40), 0, math.radians(20))
+    # --- Character key lights parented behind camera (Point 142) ---
+    cam = bpy.data.objects.get("MovieCamera")
+    target = bpy.data.objects.get("CamTarget")
+
+    def setup_camera_light(name, local_pos, color_cfg=None):
+        bpy.ops.object.light_add(type='SPOT')
+        light = bpy.context.object
+        light.name = name
+        apply_cfg(light, LIGHTING_DEFAULTS.get(name))
+
+        if cam:
+            light.parent = cam
+            # Position is local to camera. Positive Z is behind the camera.
+            light.location = local_pos
+
+        if target:
+            # Point at the characters
+            con = light.constraints.new(type='TRACK_TO')
+            con.target = target
+            con.track_axis = 'TRACK_NEGATIVE_Z'
+            con.up_axis = 'UP_Y'
+
+        return light
+
+    # Herbaceous key light (warm, slightly right and above camera)
+    herb_key = setup_camera_light("HerbaceousKeyLight", (3, 3, 5))
     master_instance.herb_key = herb_key
 
-    # Arbor key light (cool)
-    bpy.ops.object.light_add(type='SPOT', location=(3, -8, 6))
-    arbor_key = bpy.context.object
-    arbor_key.name = "ArborKeyLight"
-    apply_cfg(arbor_key, LIGHTING_DEFAULTS.get(arbor_key.name))
-    arbor_key.rotation_euler = (math.radians(-40), 0, math.radians(-20))
+    # Arbor key light (cool, slightly left and above camera)
+    arbor_key = setup_camera_light("ArborKeyLight", (-3, 3, 5))
     master_instance.arbor_key = arbor_key
 
-    # Gnome key light (menacing green)
-    bpy.ops.object.light_add(type='SPOT', location=(5, 3, 1))
-    gnome_key = bpy.context.object
-    gnome_key.name = "GnomeKeyLight"
-    apply_cfg(gnome_key, LIGHTING_DEFAULTS.get(gnome_key.name))
-    gnome_key.rotation_euler = (math.radians(30), 0, math.radians(-30))
+    # Gnome key light (menacing green, higher and further back for dramatic shadows)
+    gnome_key = setup_camera_light("GnomeKeyLight", (0, 5, 10))
     master_instance.gnome_key = gnome_key
 
     # --- Area fills ---
