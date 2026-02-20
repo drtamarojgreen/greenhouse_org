@@ -197,26 +197,26 @@ def setup_camera_keyframes(master, cam, target):
     gnome_obj = bpy.data.objects.get("GloomGnome")
 
     # Scene 16 (9501-10200): Herbaceous speaks first, then Arbor
-    kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5))        # wide
+    kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5), lens=35)        # wide
     # Rack Focus (#2) and Over-the-Shoulder (#3) - Moved closer for hero status (dist < 4)
-    kf_eased(9525,  (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj) # OTS Arbor to Herbaceous
-    kf_eased(9780,  (0, -15, 4),    (0, 0, 1.5))        # wide
-    kf_eased(9830,  (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj) # OTS Herbaceous to Arbor
-    kf_eased(10100, (0, -15, 4),    (0, 0, 1.5))        # pull back
+    kf_eased(9525,  (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj, lens=85) # OTS Arbor to Herbaceous
+    kf_eased(9780,  (0, -15, 4),    (0, 0, 1.5), lens=35)        # wide
+    kf_eased(9830,  (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj, lens=85) # OTS Herbaceous to Arbor
+    kf_eased(10100, (0, -15, 4),    (0, 0, 1.5), lens=35)        # pull back
 
     # Scene 17 (10201-10900): Arbor speaks first
-    kf_eased(10201, (0, -15, 4),    (0, 0, 1.5))
-    kf_eased(10250, (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj) # Arbor closeup
-    kf_eased(10540, (0, -15, 4),    (0, 0, 1.5))
-    kf_eased(10590, (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj) # Herbaceous closeup
-    kf_eased(10850, (0, -15, 4),    (0, 0, 1.5))
+    kf_eased(10201, (0, -15, 4),    (0, 0, 1.5), lens=35)
+    kf_eased(10250, (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj, lens=85) # Arbor closeup
+    kf_eased(10540, (0, -15, 4),    (0, 0, 1.5), lens=35)
+    kf_eased(10590, (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj, lens=85) # Herbaceous closeup
+    kf_eased(10850, (0, -15, 4),    (0, 0, 1.5), lens=35)
 
     # Scene 18 (10901-11600): Gnome enters - Dutch Angle Enhancement #1
-    kf_eased(10901, (0, -15, 4),    (0, 0, 1.5), roll=0)
+    kf_eased(10901, (0, -15, 4),    (0, 0, 1.5), roll=0, lens=35)
     crash_zoom(10901, 80, duration=5) # Enhancement #4: Crash Zoom on Gnome entry
-    kf_eased(10950, (-1.5, -3, 1.2), (-2, 0, 1.8), roll=5, focus_obj=h1_obj)      # Herbaceous Low Angle (#5)
-    kf_eased(11200, (4, -3, 1.5),   (5, 0, 1.2), roll=-15, focus_obj=gnome_obj)  # Gnome Dutch Angle (#1)
-    kf_eased(11500, (0, -20, 6),    (0, 0, 1), roll=0)
+    kf_eased(10950, (-1.5, -3, 1.2), (-2, 0, 1.8), roll=5, focus_obj=h1_obj, lens=50)      # Herbaceous Low Angle (#5)
+    kf_eased(11200, (4, -3, 1.5),   (5, 0, 1.2), roll=-15, focus_obj=gnome_obj, lens=24)  # Gnome Dutch Angle (#1) - wide and distorted
+    kf_eased(11500, (0, -20, 6),    (0, 0, 1), roll=0, lens=35)
 
     # Scenes 19-21: peaks - High Tension Dutch Angles and Hero Shots
     kf_eased(11601, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=10, focus_obj=h1_obj)     # Low Angle Hero (#5)
