@@ -56,8 +56,8 @@ def create_intertitle(master_instance, text, frame_start, frame_end):
 def create_spinning_logo(master_instance, text_content, frame_start, frame_end):
     """Creates a spinning text logo."""
     # Point 45: Position high in the air.
-    # Use -90 on X to face the production camera (Point 142).
-    bpy.ops.object.text_add(location=(0, 0, 10), rotation=(math.radians(-90), 0, 0))
+    # Use +90 on X to face the production camera (Point 142).
+    bpy.ops.object.text_add(location=(0, 0, 10), rotation=(math.radians(90), 0, 0))
     logo = bpy.context.object
     logo.name = f"Logo_{frame_start}"
     logo.data.body = text_content

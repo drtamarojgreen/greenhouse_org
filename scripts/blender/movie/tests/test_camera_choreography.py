@@ -118,13 +118,13 @@ class TestCameraChoreography(unittest.TestCase):
     # --- Section 2.4: Credits & Intertitle Fixes ---
 
     def test_2_4_1_credits_rotation(self):
-        """2.4.1: Credits text rotation is -90 degrees on X."""
+        """2.4.1: Credits text rotation is +90 degrees on X."""
         credits = bpy.data.objects.get("CreditsText")
         if credits:
             rot_x = math.degrees(credits.rotation_euler[0])
-            status = "PASS" if abs(rot_x + 90.0) < 0.1 else "FAIL"
+            status = "PASS" if abs(rot_x - 90.0) < 0.1 else "FAIL"
             self.log_result("2.4.1", "Credits Rotation", status, f"X Rot: {rot_x:.2f}")
-            self.assertAlmostEqual(rot_x, -90.0, delta=0.1)
+            self.assertAlmostEqual(rot_x, 90.0, delta=0.1)
 
     # --- Section 3.1: Gnome Starting Position ---
 

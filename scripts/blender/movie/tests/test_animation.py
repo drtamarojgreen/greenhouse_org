@@ -14,8 +14,9 @@ class TestAnimation(BlenderTestCase):
             obj = bpy.data.objects.get(name)
             if obj:
                 # Robustness: Check for an action with actual keyframes, not just animation_data
-                has_action = obj.animation_data and obj.animation_data.action
-                curves = style.get_action_curves(obj.animation_data.action)
+                has_anim_data = obj.animation_data is not None
+                has_action = has_anim_data and obj.animation_data.action is not None
+                curves = style.get_action_curves(obj.animation_data.action) if has_action else []
                 has_fcurves = has_action and len(curves) > 0
                 status = "PASS" if has_fcurves else "FAIL"
                 details = "Action with f-curves present" if has_fcurves else "MISSING action or f-curves"
@@ -57,8 +58,13 @@ class TestAnimation(BlenderTestCase):
                         for fc in curves:
                             # Robust path matching for both Slotted and Legacy actions
                             if bone_name in fc.data_path and any(p in fc.data_path for p in ("location", "rotation", "scale")):
+                                # Check for keyframe movement
                                 values = [kp.co[1] for kp in fc.keyframe_points]
                                 if len(values) > 1 and (max(values) - min(values)) > 0.001:
+                                    has_movement = True
+                                    break
+                                # Check for procedural noise modifiers (Point 142)
+                                if any(mod.type == 'NOISE' and not mod.mute for mod in fc.modifiers):
                                     has_movement = True
                                     break
                     

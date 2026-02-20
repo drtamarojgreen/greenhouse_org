@@ -185,11 +185,27 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(1051, (6,-12,3), (0, 0, 1.5))
     kf_eased(1250, (-6,-12,3), (0, 0, 1.5))
 
-    # Sanctuary fly-in: crane shot from above descending (3901 - 4100)
-    kf_eased(3901, (0, -80, 40), (0, 0, 0), easing='EASE_IN')
-    kf_eased(3950, (0, -80, 40), (0, 0, 0), easing='EASE_IN')       # hold
-    kf_eased(4050, (0, -25, 10), (0, 0, 2), easing='EASE_IN_OUT')   # descend
+    # Intermediate scenes to avoid camera gaps (Point 142)
+    # Bridge, Resonance, Shadow (1251 - 2100)
+    kf_eased(1251, (0, -15, 5), (0, 0, 1.5))
+    kf_eased(2100, (5, -15, 4), (0, 0, 1.5))
+
+    # Confrontation, Library, Lab (2101 - 3300)
+    kf_eased(2101, (-5, -12, 3), (0, 0, 1.5))
+    kf_eased(3300, (0, -18, 6), (0, 0, 1.5))
+
+    # Sanctuary fly-in: crane shot from above descending (3301 - 4100)
+    # Note: scene11_nature_sanctuary is 3301-3800
+    kf_eased(3301, (0, -80, 40), (0, 0, 0), easing='EASE_IN')
+    kf_eased(3800, (0, -25, 10), (0, 0, 2), easing='EASE_IN_OUT')
+
+    # Walking (3801-4100)
+    kf_eased(3801, (0, -25, 10), (0, 0, 2))
     kf_eased(4100, (0, -18, 5), (0, 0, 1.5), easing='EASE_OUT')     # settle
+
+    # Duel (4101-4500)
+    kf_eased(4101, (0, -18, 5), (0, 0, 1.5))
+    kf_eased(4500, (0, -30, 15), (0, 0, 1.5))
 
     # Interaction sequence: start wide establish, then commit (4501 - 9500)
     kf_eased(4501, (0, -80, 30), (0, 0, 1), easing='EASE_IN', lens=24)       # Ultra wide

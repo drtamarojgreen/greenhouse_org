@@ -1,6 +1,6 @@
 # Canonical SCENE_MAP for Greenhouse Movie Production
 # (start_frame, end_frame)
-# Point 142: Normalized Scene Map to match directory structure and avoid overlaps
+# Normalized Scene Map to match directory structure and avoid overlaps
 SCENE_MAP = {
     'scene00_branding': (1, 100),
     'scene01_intro': (101, 200),

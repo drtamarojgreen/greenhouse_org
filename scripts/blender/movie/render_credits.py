@@ -1,13 +1,22 @@
 from render_manager import render_range
 import os
 
+from constants import SCENE_MAP
+
 def render_credits():
     print("Starting Credits Render...")
-    # Point 142: Credits are 14501-15000 in SCENE_MAP
+    # Point 142: Dynamically pull credits range from SCENE_MAP
+    start, end = SCENE_MAP.get('scene12_credits', (14501, 15000))
+
     # Must divide into chunks <= 200
-    render_range(14501, 14700, "credits/part1")
-    render_range(14701, 14900, "credits/part2")
-    render_range(14901, 15000, "credits/part3")
+    current = start
+    part = 1
+    while current < end:
+        chunk_end = min(current + 199, end)
+        render_range(current, chunk_end, f"credits/part{part}")
+        current = chunk_end + 1
+        part += 1
+
     print("Credits Render sequence queued.")
 
 if __name__ == "__main__":
