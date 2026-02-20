@@ -61,68 +61,88 @@ class FCurveProxy:
 def get_action_curves(action, create_if_missing=False):
     """
     (Point 91) Robust recursive F-curve collector for Blender 5.0 Slotted/Layered Actions.
+    Exhaustively traverses layers, slots, bindings, and channels.
     Reconstructs legacy-style absolute data paths (e.g. pose.bones["Name"].path) for compatibility.
     """
     if action is None: return []
     
+    # 1. Ensure action has at least one layer if requested (Point 150)
+    if create_if_missing and hasattr(action, "layers") and len(action.layers) == 0:
+        action.layers.new(name="Main Layer")
+
     curves = []
-    seen_ids = set()
-    curves_added = set()
+    seen_fcurves = set()
 
-    def walk(item, prefix=""):
-        if item is None: return
+    def wrap_fc(fc, prefix=""):
+        if not fc: return
+        try: ptr = fc.as_pointer()
+        except: ptr = id(fc)
 
-        # 1. Is it an F-curve?
-        if hasattr(item, "keyframe_points") and hasattr(item, "data_path"):
-            path = item.data_path
-            # Reconstruct relative paths (e.g. "location" -> "pose.bones['Torso'].location")
-            is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
-            if is_relative and prefix:
-                path = prefix + path
+        if ptr in seen_fcurves: return
+        seen_fcurves.add(ptr)
 
-            fc_key = (id(item), path)
-            if fc_key not in curves_added:
-                curves_added.add(fc_key)
-                curves.append(FCurveProxy(item, path))
-            return
+        path = fc.data_path
+        # Reconstruct relative paths (e.g. "location" -> "pose.bones['Torso'].location")
+        is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
+        if is_relative and prefix:
+            path = prefix + path
 
-        item_id = id(item)
-        if item_id in seen_ids: return
-        seen_ids.add(item_id)
+        curves.append(FCurveProxy(fc, path))
 
-        # 2. Reconstruct Prefix for PoseBones
-        new_prefix = prefix
-        name = getattr(item, "name", None)
-        # Use RNA type for robust check if available, otherwise fallback to class name check
-        rna_type = getattr(item, "rna_type", None)
-        type_id = rna_type.identifier if rna_type else item.__class__.__name__
+    # 2. Traditional F-curves (Legacy or global)
+    if hasattr(action, "fcurves"):
+        for fc in action.fcurves:
+            wrap_fc(fc)
 
-        is_container = type_id in ('Action', 'ActionSlot', 'ActionLayer', 'ActionBinding')
+    # 3. 5.0 Hierarchy: Action -> Layers -> Channels/Strips -> FCurve
+    if hasattr(action, "layers"):
+        for layer in action.layers:
+            # Check Channels
+            if hasattr(layer, "channels"):
+                for chan in layer.channels:
+                    fc = getattr(chan, "fcurve", None)
+                    if not fc: continue
 
-        if name and not is_container:
-            # Point 141: Expanded keywords for facial/neck bones
-            bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
-            if any(kw in name for kw in bone_kws):
-                new_prefix = f'pose.bones["{name}"].'
-            elif name.startswith("modifiers") or name.startswith("nodes"):
-                new_prefix = f'{name}.'
+                    # Try to find a prefix from the associated slot
+                    prefix = ""
+                    slot = getattr(chan, "slot", None)
+                    if slot:
+                        sname = getattr(slot, "name", "")
+                        bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
+                        if any(kw in sname for kw in bone_kws):
+                            prefix = f'pose.bones["{sname}"].'
 
-        # 3. Recursive exploration of collections and references
-        # Covers 5.0 Slotted/Layered hierarchy: Action -> Slots -> Bindings -> Channels -> FCurves
-        attrs = ("layers", "slots", "bindings", "channels", "strips", "curves", "fcurves", "groups", "action_groups", "action_items", "action", "fcurve")
-        for attr in attrs:
-            if hasattr(item, attr):
-                sub = getattr(item, attr)
-                if sub is None: continue
-                if hasattr(sub, "__iter__") and not isinstance(sub, (str, bytes)):
-                    for part in sub: walk(part, new_prefix)
-                else:
-                    walk(sub, new_prefix)
+                    wrap_fc(fc, prefix)
 
-    if hasattr(action, "layers") and len(action.layers) == 0 and create_if_missing:
-        action.layers.new(name="Layer")
+            # Check Strips
+            if hasattr(layer, "strips"):
+                for strip in layer.strips:
+                    if hasattr(strip, "channels"):
+                        for chan in strip.channels:
+                            fc = getattr(chan, "fcurve", None)
+                            if fc:
+                                prefix = ""
+                                slot = getattr(chan, "slot", None)
+                                if slot:
+                                    sname = getattr(slot, "name", "")
+                                    if any(kw in sname for kw in (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")):
+                                        prefix = f'pose.bones["{sname}"].'
+                                wrap_fc(fc, prefix)
 
-    walk(action)
+    # 4. 5.0 Hierarchy: Action -> Slots -> Bindings -> Channels -> FCurve
+    if hasattr(action, "slots"):
+        for slot in action.slots:
+            sname = getattr(slot, "name", "")
+            prefix = ""
+            if any(kw in sname for kw in (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")):
+                prefix = f'pose.bones["{sname}"].'
+
+            if hasattr(slot, "bindings"):
+                for binding in slot.bindings:
+                    if hasattr(binding, "channels"):
+                        for chan in binding.channels:
+                            wrap_fc(getattr(chan, "fcurve", None), prefix)
+
     return curves
 
 def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
@@ -236,10 +256,10 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
     candidates = []
     if is_compositor:
         # 5.x Compositor uses MixColor for RGB or Mix for general purpose
-        candidates = ['CompositorNodeMixColor', 'CompositorNodeMix', 'CompositorNodeMixRGB', 'MixColor', 'Mix']
+        candidates = ['CompositorNodeMixColor', 'CompositorNodeMix']
     else:
         # Shader nodes
-        candidates = ['ShaderNodeMix', 'ShaderNodeMixRGB', 'Mix']
+        candidates = ['ShaderNodeMix', 'ShaderNodeMixRGB']
         
     for c in candidates:
         try:
@@ -253,7 +273,8 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
         # 2. Dynamic discovery in bpy.types
         import bpy
         prefix = "CompositorNode" if is_compositor else "ShaderNode"
-        types = [t for t in dir(bpy.types) if (t.startswith(prefix) or "Node" in t) and "Mix" in t]
+        # Be strict about prefix to avoid cross-pollination (Point 152)
+        types = [t for t in dir(bpy.types) if t.startswith(prefix) and "Mix" in t]
         for nt in types:
             try:
                 node = tree.nodes.new(nt)
