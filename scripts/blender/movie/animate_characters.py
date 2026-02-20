@@ -68,8 +68,9 @@ def animate_characters(master_instance):
                             style.animate_saccadic_movement(child, None, start, end)
 
     # Enhancement #14: Limping Gait for Gnome
-    if gnome:
-        style.animate_limp(gnome, 13701, 14500)
+    if gnome and 'scene22_retreat' in SCENE_MAP:
+        start, end = SCENE_MAP['scene22_retreat']
+        style.animate_limp(gnome, start, end)
 
     # Enhancement #20: Defensive Crouch
     if gnome:

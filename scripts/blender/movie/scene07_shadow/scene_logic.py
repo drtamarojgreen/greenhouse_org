@@ -2,6 +2,7 @@ import bpy
 import math
 import random
 import style
+from constants import SCENE_MAP
 
 def setup_scene(master):
     """
