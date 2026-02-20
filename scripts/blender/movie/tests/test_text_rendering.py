@@ -21,7 +21,7 @@ class TestTextRendering(BlenderTestCase):
             self.assertAlmostEqual(rot_x, -90.0, delta=1.0, msg=f"Title {title.name} has incorrect X rotation: {rot_x}")
 
     def test_spinning_logo_orientation(self):
-        """Verify that spinning logo objects face the camera (approx 90 deg on X)."""
+        """Verify that spinning logo objects face the camera (approx -90 deg on X)."""
         logos = [obj for obj in bpy.data.objects if obj.name.startswith("Logo_") and obj.type == 'FONT']
         # If no logos, skip
         if not logos:
@@ -29,7 +29,8 @@ class TestTextRendering(BlenderTestCase):
 
         for logo in logos:
             rot_x = math.degrees(logo.rotation_euler[0])
-            self.assertAlmostEqual(rot_x, 90.0, delta=1.0, msg=f"Logo {logo.name} has incorrect X rotation: {rot_x}")
+            # Point 142: Should be -90 to face production camera correctly
+            self.assertAlmostEqual(rot_x, -90.0, delta=1.0, msg=f"Logo {logo.name} has incorrect X rotation: {rot_x}")
 
     def test_credits_orientation(self):
         """Verify that credits text faces the camera."""

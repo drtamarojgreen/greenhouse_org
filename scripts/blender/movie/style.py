@@ -66,32 +66,29 @@ def get_action_curves(action, create_if_missing=False):
     if action is None: return []
     
     curves = []
-    # Point 91: seen_ids tracks objects to avoid cycles, while curves_added tracks (fc, path) pairs.
+    # Point 91: seen_ids tracks containers to avoid cycles.
     seen_ids = set()
+    # curves_added tracks (fc, path) pairs to allow multiple paths for the same fcurve.
     curves_added = set()
-
-    def add_fcurve(fc, prefix):
-        if not fc: return
-        path = fc.data_path
-        # If path is relative (no bone/node/mod markers) and we have a prefix, combine them
-        is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
-        if is_relative and prefix:
-            path = prefix + path
-
-        fc_key = (id(fc), path)
-        if fc_key in curves_added: return
-        curves_added.add(fc_key)
-        curves.append(FCurveProxy(fc, path))
 
     def walk(item, prefix=""):
         if item is None: return
-        item_id = id(item)
 
-        # 1. Is it an F-curve?
+        # 1. Is it an F-curve? (Check before adding to seen_ids to allow multiple prefixes)
         if hasattr(item, "keyframe_points") and hasattr(item, "data_path"):
-            add_fcurve(item, prefix)
-            return
+            path = item.data_path
+            # If path is relative (no bone/node/mod markers) and we have a prefix, combine them
+            is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
+            if is_relative and prefix:
+                path = prefix + path
 
+            fc_key = (id(item), path)
+            if fc_key not in curves_added:
+                curves_added.add(fc_key)
+                curves.append(FCurveProxy(item, path))
+            return # Stop traversal at f-curve
+
+        item_id = id(item)
         # Avoid cycles/redundancy for container types
         if item_id in seen_ids: return
         seen_ids.add(item_id)
@@ -99,20 +96,27 @@ def get_action_curves(action, create_if_missing=False):
         # 2. Handle hierarchy with prefix reconstruction
         # We look for names that resemble bones to build the pose.bones path.
         new_prefix = prefix
-        if hasattr(item, "name") and not isinstance(item, (bpy.types.Action, bpy.types.ActionSlot)):
-            name = item.name
-            if name and any(bone_kw in name for bone_kw in (".L", ".R", "Torso", "Head", "Mouth", "Leg.", "Arm.")):
+        name = getattr(item, "name", None)
+        # Type check to avoid naming Actions/Slots themselves in the path
+        if name and not isinstance(item, (bpy.types.Action, bpy.types.ActionSlot)):
+            if any(bone_kw in name for bone_kw in (".L", ".R", "Torso", "Head", "Mouth", "Leg.", "Arm.")):
                 # If name looks like a bone, use bone path format
                 new_prefix = f'pose.bones["{name}"].'
-            elif name and (name.startswith("modifiers") or name.startswith("nodes")):
+            elif name.startswith("modifiers") or name.startswith("nodes"):
                 new_prefix = f'{name}.'
 
-        # 3. Does it wrap an F-curve? (ActionChannel/Slot in 5.0)
-        if hasattr(item, "fcurve") and item.fcurve:
-            add_fcurve(item.fcurve, new_prefix)
+        # 3. Does it wrap an F-curve? (ActionChannel in 5.0)
+        fc = getattr(item, "fcurve", None)
+        if fc:
+            # Important: recursive call with prefix to handle reconstruction
+            walk(fc, new_prefix)
+
+        # 3b. Handle Slotted Action Slot data directly if needed
+        # (Already handled by recursion into channels, but added for robustness)
 
         # 4. Exhaustive recursion across all known 5.0 container types
-        for attr in ("layers", "strips", "slots", "bindings", "channels", "curves", "fcurves", "action_items"):
+        # Added 'fcurves' specifically for legacy/global curves
+        for attr in ("layers", "strips", "slots", "bindings", "channels", "curves", "fcurves", "action_items", "action"):
             if hasattr(item, attr):
                 sub = getattr(item, attr)
                 # Handle both collections and direct objects
@@ -238,16 +242,17 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
     candidates = []
     if is_compositor:
         # 5.x Compositor uses MixColor for RGB or Mix for general purpose
-        candidates = ['CompositorNodeMixColor', 'CompositorNodeMix', 'CompositorNodeMixRGB']
+        # Using Mix node generic ID might work better in some 5.x builds
+        candidates = ['CompositorNodeMixColor', 'CompositorNodeMix', 'CompositorNodeMixRGB', 'MixColor', 'Mix']
     else:
         # Shader nodes
-        candidates = ['ShaderNodeMix', 'ShaderNodeMixRGB']
+        candidates = ['ShaderNodeMix', 'ShaderNodeMixRGB', 'Mix']
         
     for c in candidates:
         try:
             node = tree.nodes.new(c)
             if node:
-                print(f"INFO: Created Mix node of type {c} in {tree.bl_idname}")
+                print(f"INFO: Created Mix node of type {c} (ID: {node.bl_idname}) in {tree.bl_idname}")
                 break
         except: continue
         
@@ -263,7 +268,21 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
             except: continue
             
     if not node and is_compositor:
-        # 3. Emergency fallback to AlphaOver if Mix is missing in Compositor
+        # 3. Dynamic search in all available compositor nodes
+        try:
+            # Look for any node that has "Mix" in its name but isn't something else
+            mix_types = [t for t in dir(bpy.types) if "Mix" in t and "CompositorNode" in t]
+            for mt in mix_types:
+                try:
+                    node = tree.nodes.new(mt)
+                    if node:
+                        print(f"INFO: Dynamically discovered Mix node type {mt} in compositor.")
+                        break
+                except: continue
+        except: pass
+
+    if not node and is_compositor:
+        # 4. Emergency fallback to AlphaOver if Mix is missing in Compositor
         try:
             node = tree.nodes.new('CompositorNodeAlphaOver')
             print("INFO: Using AlphaOver as fallback for Mix in compositor.")
@@ -272,7 +291,12 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
     if not node:
         import bpy
         available = [t for t in dir(bpy.types) if (is_compositor and "Compositor" in t) or (not is_compositor and "Shader" in t)]
-        raise RuntimeError(f"Mix node NOT found in {tree.bl_idname}. Tried: {candidates}. Available: {available}")
+        # Robustness: Try 'Mix' as a last-resort string
+        try:
+            node = tree.nodes.new('Mix')
+            print("INFO: Created node using generic 'Mix' identifier.")
+        except:
+            raise RuntimeError(f"Mix node NOT found in {tree.bl_idname}. Tried: {candidates}. Available: {available}")
     
     # Set properties
     if hasattr(node, 'data_type'): node.data_type = data_type
