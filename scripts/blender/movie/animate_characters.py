@@ -13,6 +13,15 @@ def animate_characters(master_instance):
     persistent_chars = [h1, h2, gnome, master_instance.brain, master_instance.neuron]
     for char in persistent_chars:
         if not char: continue
+
+        # Ensure action and layer exist for 5.0 Slotted Actions
+        if not char.animation_data: char.animation_data_create()
+        action = char.animation_data.action
+        if not action:
+            action = char.animation_data.action = bpy.data.actions.new(name=f"Anim_{char.name}")
+        if hasattr(action, "layers") and len(action.layers) == 0:
+            action.layers.new(name="Main Layer")
+
         # Enhancement #11: Weight Shift on Torso bone if available
         torso = char.pose.bones.get("Torso") if char.type == 'ARMATURE' else None
         target = torso if torso else char

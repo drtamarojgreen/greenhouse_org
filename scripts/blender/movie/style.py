@@ -66,18 +66,16 @@ def get_action_curves(action, create_if_missing=False):
     if action is None: return []
     
     curves = []
-    # Point 91: seen_ids tracks containers to avoid cycles.
     seen_ids = set()
-    # curves_added tracks (fc, path) pairs to allow multiple paths for the same fcurve.
     curves_added = set()
 
     def walk(item, prefix=""):
         if item is None: return
 
-        # 1. Is it an F-curve? (Check before adding to seen_ids to allow multiple prefixes)
+        # 1. Is it an F-curve?
         if hasattr(item, "keyframe_points") and hasattr(item, "data_path"):
             path = item.data_path
-            # If path is relative (no bone/node/mod markers) and we have a prefix, combine them
+            # Reconstruct relative paths (e.g. "location" -> "pose.bones['Torso'].location")
             is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
             if is_relative and prefix:
                 path = prefix + path
@@ -86,40 +84,36 @@ def get_action_curves(action, create_if_missing=False):
             if fc_key not in curves_added:
                 curves_added.add(fc_key)
                 curves.append(FCurveProxy(item, path))
-            return # Stop traversal at f-curve
+            return
 
         item_id = id(item)
-        # Avoid cycles/redundancy for container types
         if item_id in seen_ids: return
         seen_ids.add(item_id)
 
-        # 2. Handle hierarchy with prefix reconstruction
-        # We look for names that resemble bones to build the pose.bones path.
+        # 2. Reconstruct Prefix for PoseBones
         new_prefix = prefix
         name = getattr(item, "name", None)
-        # Type check to avoid naming Actions/Slots themselves in the path
-        if name and not isinstance(item, (bpy.types.Action, bpy.types.ActionSlot)):
-            if any(bone_kw in name for bone_kw in (".L", ".R", "Torso", "Head", "Mouth", "Leg.", "Arm.")):
-                # If name looks like a bone, use bone path format
+        # Use RNA type for robust check if available, otherwise fallback to class name check
+        rna_type = getattr(item, "rna_type", None)
+        type_id = rna_type.identifier if rna_type else item.__class__.__name__
+
+        is_container = type_id in ('Action', 'ActionSlot', 'ActionLayer', 'ActionBinding')
+
+        if name and not is_container:
+            # Point 141: Expanded keywords for facial/neck bones
+            bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
+            if any(kw in name for kw in bone_kws):
                 new_prefix = f'pose.bones["{name}"].'
             elif name.startswith("modifiers") or name.startswith("nodes"):
                 new_prefix = f'{name}.'
 
-        # 3. Does it wrap an F-curve? (ActionChannel in 5.0)
-        fc = getattr(item, "fcurve", None)
-        if fc:
-            # Important: recursive call with prefix to handle reconstruction
-            walk(fc, new_prefix)
-
-        # 3b. Handle Slotted Action Slot data directly if needed
-        # (Already handled by recursion into channels, but added for robustness)
-
-        # 4. Exhaustive recursion across all known 5.0 container types
-        # Added 'fcurves' specifically for legacy/global curves
-        for attr in ("layers", "strips", "slots", "bindings", "channels", "curves", "fcurves", "action_items", "action"):
+        # 3. Recursive exploration of collections and references
+        # Covers 5.0 Slotted/Layered hierarchy: Action -> Slots -> Bindings -> Channels -> FCurves
+        attrs = ("layers", "slots", "bindings", "channels", "strips", "curves", "fcurves", "groups", "action_groups", "action_items", "action", "fcurve")
+        for attr in attrs:
             if hasattr(item, attr):
                 sub = getattr(item, attr)
-                # Handle both collections and direct objects
+                if sub is None: continue
                 if hasattr(sub, "__iter__") and not isinstance(sub, (str, bytes)):
                     for part in sub: walk(part, new_prefix)
                 else:
@@ -242,7 +236,6 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
     candidates = []
     if is_compositor:
         # 5.x Compositor uses MixColor for RGB or Mix for general purpose
-        # Using Mix node generic ID might work better in some 5.x builds
         candidates = ['CompositorNodeMixColor', 'CompositorNodeMix', 'CompositorNodeMixRGB', 'MixColor', 'Mix']
     else:
         # Shader nodes
@@ -260,29 +253,17 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
         # 2. Dynamic discovery in bpy.types
         import bpy
         prefix = "CompositorNode" if is_compositor else "ShaderNode"
-        types = [t for t in dir(bpy.types) if t.startswith(prefix) and "Mix" in t]
+        types = [t for t in dir(bpy.types) if (t.startswith(prefix) or "Node" in t) and "Mix" in t]
         for nt in types:
             try:
                 node = tree.nodes.new(nt)
-                if node: break
+                if node:
+                    print(f"INFO: Dynamically found Mix node type {nt} in {tree.bl_idname}")
+                    break
             except: continue
             
     if not node and is_compositor:
-        # 3. Dynamic search in all available compositor nodes
-        try:
-            # Look for any node that has "Mix" in its name but isn't something else
-            mix_types = [t for t in dir(bpy.types) if "Mix" in t and "CompositorNode" in t]
-            for mt in mix_types:
-                try:
-                    node = tree.nodes.new(mt)
-                    if node:
-                        print(f"INFO: Dynamically discovered Mix node type {mt} in compositor.")
-                        break
-                except: continue
-        except: pass
-
-    if not node and is_compositor:
-        # 4. Emergency fallback to AlphaOver if Mix is missing in Compositor
+        # 3. Emergency fallback to AlphaOver if Mix is missing in Compositor
         try:
             node = tree.nodes.new('CompositorNodeAlphaOver')
             print("INFO: Using AlphaOver as fallback for Mix in compositor.")
