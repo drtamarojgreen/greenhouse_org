@@ -129,9 +129,9 @@ def create_gnome(name, location, scale=0.6):
 
     bm.to_mesh(mesh_data); bm.free()
 
-    mat_body = bpy.data.materials.new(name=f"{name}_MatBody"); mat_body.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.2, 0.1, 0.3, 1)
-    mat_hat = bpy.data.materials.new(name=f"{name}_MatHat"); mat_hat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.1, 0.05, 0.2, 1)
-    mat_beard = bpy.data.materials.new(name=f"{name}_MatBeard"); mat_beard.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.8, 0.8, 1)
+    mat_body = bpy.data.materials.new(name=f"{name}_MatBody"); style.set_principled_socket(mat_body, "Base Color", (0.2, 0.1, 0.3, 1))
+    mat_hat = bpy.data.materials.new(name=f"{name}_MatHat"); style.set_principled_socket(mat_hat, "Base Color", (0.1, 0.05, 0.2, 1))
+    mat_beard = bpy.data.materials.new(name=f"{name}_MatBeard"); style.set_principled_socket(mat_beard, "Base Color", (0.8, 0.8, 0.8, 1))
     mat_gloom = bpy.data.materials.new(name=f"{name}_MatGloom")
     # Point 130: Add noise for procedural "flicker" in material itself (Test Expectation)
     nodes = mat_gloom.node_tree.nodes

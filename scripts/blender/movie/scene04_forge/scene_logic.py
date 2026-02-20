@@ -1,5 +1,6 @@
 import bpy
 import math
+import style
 
 def setup_scene(master):
     """
@@ -24,7 +25,7 @@ def setup_scene(master):
     bm.free()
 
     mat = bpy.data.materials.new(name="AnvilMat")
-    mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.05, 0.05, 0.05, 1)
+    style.set_principled_socket(mat, "Base Color", (0.05, 0.05, 0.05, 1))
     anvil.data.materials.append(mat)
 
     master._set_visibility([anvil], [(1351, 1500)])
