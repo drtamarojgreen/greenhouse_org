@@ -9,8 +9,10 @@ def create_rain_material():
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
     node_out = nodes.new(type='ShaderNodeOutputMaterial'); node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
-    node_bsdf.inputs['Base Color'].default_value, node_bsdf.inputs['Roughness'].default_value, node_bsdf.inputs['Alpha'].default_value = (0.75, 0.85, 0.95, 1), 0.0, 0.15
-    node_bsdf.inputs['Transmission Weight'].default_value = 0.9
+    style.set_principled_socket(mat, 'Base Color', (0.75, 0.85, 0.95, 1))
+    style.set_principled_socket(mat, 'Roughness', 0.0)
+    style.set_principled_socket(mat, 'Alpha', 0.15)
+    style.set_principled_socket(mat, 'Transmission', 0.9)
     style.set_blend_method(mat, 'BLENDED'); links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
     return mat
 
@@ -37,14 +39,15 @@ def create_puddle_material():
     node_ripple = nodes.new(type='ShaderNodeTexNoise'); node_ripple.inputs['Scale'].default_value, node_ripple.inputs['Detail'].default_value = 8.0, 12.0
     node_bump = nodes.new(type='ShaderNodeBump'); node_bump.inputs['Strength'].default_value = 0.15
     links.new(node_checker.outputs['Color'], node_bsdf.inputs['Base Color']); links.new(node_ripple.outputs['Fac'], node_bump.inputs['Height']); links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
-    node_bsdf.inputs['Roughness'].default_value, node_bsdf.inputs['Metallic'].default_value = 0.02, 0.0
-    node_bsdf.inputs['Specular IOR Level'].default_value = 1.0
+    style.set_principled_socket(mat, 'Roughness', 0.02)
+    style.set_principled_socket(mat, 'Metallic', 0.0)
+    style.set_principled_socket(mat, 'Specular', 1.0)
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface']); mat.displacement_method = 'BOTH'
     return mat
 
 def create_rain_splashes(location, count=20, frame_start=1, frame_end=15000):
     import bmesh; mat = bpy.data.materials.get("SplashMat") or bpy.data.materials.new(name="SplashMat")
-    bsdf = mat.node_tree.nodes["Principled BSDF"]; bsdf.inputs['Alpha'].default_value, bsdf.inputs['Roughness'].default_value = 0.3, 0.0; style.set_blend_method(mat, 'BLENDED')
+    style.set_principled_socket(mat, 'Alpha', 0.3); style.set_principled_socket(mat, 'Roughness', 0.0); style.set_blend_method(mat, 'BLENDED')
     mesh = bpy.data.meshes.new(f"Splashes_{frame_start}"); obj = bpy.data.objects.new(f"Splashes_{frame_start}", mesh); bpy.context.scene.collection.objects.link(obj); obj.location = location
     bm = bmesh.new()
     for i in range(count): bmesh.ops.create_circle(bm, segments=8, radius=0.05, matrix=mathutils.Matrix.Translation((random.uniform(-20, 20), random.uniform(-15, 15), -0.98)))

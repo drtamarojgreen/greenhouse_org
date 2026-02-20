@@ -49,8 +49,8 @@ def orchestrate_scenes(master_instance):
     if 'scene07_shadow' in SCENE_MAP:
         start, end = SCENE_MAP['scene07_shadow']
         style.animate_mood_fog(scene, start, density=0.05)
-    if 'scene09_climbing' in SCENE_MAP:
-        start, end = SCENE_MAP['scene09_climbing']
+    if 'scene09_library' in SCENE_MAP:
+        start, end = SCENE_MAP['scene09_library']
         style.animate_mood_fog(scene, start, density=0.01)
 
     # Enhancement #60: Wet Glass Refraction

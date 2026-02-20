@@ -23,7 +23,7 @@ def setup_all_camera_logic(master):
     con = cam.constraints.new(type='TRACK_TO')
     con.target = target
     con.track_axis = 'TRACK_NEGATIVE_Z'
-    con.up_axis = 'UP_Y'
+    con.up_axis = 'UP_Z'
     
     # Point 92: Set focus object to target Empty (animatable focus via target location)
     cam.data.dof.use_dof = True

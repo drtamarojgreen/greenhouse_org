@@ -1,5 +1,6 @@
 import bpy
 import math
+import style
 
 from constants import SCENE_MAP
 
@@ -32,7 +33,8 @@ def setup_scene(master):
         "Final Resolution of logos achieved."
     )
 
-    bpy.ops.object.text_add(location=(0, 0, -5), rotation=(math.radians(-90), 0, 0))
+    # Point 142: Use 90 on X to face the production camera correctly.
+    bpy.ops.object.text_add(location=(0, 0, -5), rotation=(math.radians(90), 0, 0))
     text_obj = bpy.context.object
     text_obj.name = "CreditsText"
     text_obj.data.body = credits_text
@@ -42,7 +44,7 @@ def setup_scene(master):
 
     # Material
     mat = bpy.data.materials.new(name="CreditsMat")
-    mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (1, 1, 1, 1)
+    style.set_principled_socket(mat, "Base Color", (1, 1, 1, 1))
     text_obj.data.materials.append(mat)
 
     # Visibility
