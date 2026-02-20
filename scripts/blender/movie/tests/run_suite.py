@@ -23,6 +23,8 @@ from test_render_management import TestRenderManagement
 from test_final_release_gate import TestReleaseGate
 from test_interaction_scene import TestInteractionScene
 from test_blender_5_0_features import TestBlender50Features
+from test_advanced_animation import TestAdvancedAnimation
+from test_text_rendering import TestTextRendering
 from test_timeline_extension import test_timeline_bounds
 # Note: test_timeline_extension is a script, not a unittest.TestCase, so we might skip it here or wrap it.
 
@@ -52,6 +54,9 @@ def run_all_tests():
     suite.addTests(loader.loadTestsFromTestCase(TestReleaseGate))
     suite.addTests(loader.loadTestsFromTestCase(TestInteractionScene))
     suite.addTests(loader.loadTestsFromTestCase(TestBlender50Features))
+    suite.addTests(loader.loadTestsFromTestCase(TestAdvancedAnimation))
+    suite.addTests(loader.loadTestsFromTestCase(TestTextRendering))
+    # Point 144: Final released gate summary inclusion
     
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)

@@ -31,7 +31,11 @@ def setup_all_camera_logic(master):
     cam.data.dof.aperture_fstop = 2.8
 
     if master.mode == 'SILENT_FILM':
+        # Enhanced Handheld Noise Layer
         style.insert_looping_noise(cam, "location", strength=0.02, scale=2.0, frame_start=1, frame_end=15000)
+        # Slower, more organic rotation sway
+        style.insert_looping_noise(cam, "rotation_euler", index=2, strength=0.005, scale=5.0, frame_start=1, frame_end=15000)
+        style.insert_looping_noise(cam, "rotation_euler", index=0, strength=0.005, scale=4.0, frame_start=1, frame_end=15000)
 
     setup_camera_keyframes(master, cam, target)
 
@@ -185,10 +189,10 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(4100, (0, -18, 5), (0, 0, 1.5), easing='EASE_OUT')     # settle
 
     # Interaction sequence: start wide establish, then commit (4501 - 9500)
-    kf_eased(4501, (0, -80, 30), (0, 0, 1), easing='EASE_IN')       # very wide
-    kf_eased(4600, (0, -80, 30), (0, 0, 1), easing='EASE_IN')       # hold wide
-    kf_eased(4800, (0, -25, 10), (-1, 0, 1.5), easing='EASE_IN_OUT')# dramatic fly-in
-    kf_eased(5000, (0, -15, 4), (-2, 0, 1.5), easing='EASE_OUT')    # medium shot
+    kf_eased(4501, (0, -80, 30), (0, 0, 1), easing='EASE_IN', lens=24)       # Ultra wide
+    kf_eased(4600, (0, -80, 30), (0, 0, 1), easing='EASE_IN', lens=24)       # hold wide
+    kf_eased(4800, (0, -25, 10), (-1, 0, 1.5), easing='EASE_IN_OUT', lens=35)# dramatic fly-in
+    kf_eased(5000, (0, -15, 4), (-2, 0, 1.5), easing='EASE_OUT', lens=50)    # medium shot commit
 
     # Dialogue closeups (9501 - 13000)
     # Point 93: Target Armatures instead of meshes for better Rig Tracking
@@ -197,39 +201,39 @@ def setup_camera_keyframes(master, cam, target):
     gnome_obj = bpy.data.objects.get("GloomGnome")
 
     # Scene 16 (9501-10200): Herbaceous speaks first, then Arbor
-    kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5))        # wide
+    kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5), lens=35)        # wide
     # Rack Focus (#2) and Over-the-Shoulder (#3) - Moved closer for hero status (dist < 4)
-    kf_eased(9525,  (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj) # OTS Arbor to Herbaceous
-    kf_eased(9780,  (0, -15, 4),    (0, 0, 1.5))        # wide
-    kf_eased(9830,  (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj) # OTS Herbaceous to Arbor
-    kf_eased(10100, (0, -15, 4),    (0, 0, 1.5))        # pull back
+    kf_eased(9525,  (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj, lens=85) # OTS Arbor to Herbaceous
+    kf_eased(9780,  (0, -15, 4),    (0, 0, 1.5), lens=35)        # wide
+    kf_eased(9830,  (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj, lens=85) # OTS Herbaceous to Arbor
+    kf_eased(10100, (0, -15, 4),    (0, 0, 1.5), lens=35)        # pull back
 
     # Scene 17 (10201-10900): Arbor speaks first
-    kf_eased(10201, (0, -15, 4),    (0, 0, 1.5))
-    kf_eased(10250, (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj) # Arbor closeup
-    kf_eased(10540, (0, -15, 4),    (0, 0, 1.5))
-    kf_eased(10590, (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj) # Herbaceous closeup
-    kf_eased(10850, (0, -15, 4),    (0, 0, 1.5))
+    kf_eased(10201, (0, -15, 4),    (0, 0, 1.5), lens=35)
+    kf_eased(10250, (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj, lens=85) # Arbor closeup
+    kf_eased(10540, (0, -15, 4),    (0, 0, 1.5), lens=35)
+    kf_eased(10590, (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj, lens=85) # Herbaceous closeup
+    kf_eased(10850, (0, -15, 4),    (0, 0, 1.5), lens=35)
 
     # Scene 18 (10901-11600): Gnome enters - Dutch Angle Enhancement #1
-    kf_eased(10901, (0, -15, 4),    (0, 0, 1.5), roll=0)
+    kf_eased(10901, (0, -15, 4),    (0, 0, 1.5), roll=0, lens=35)
     crash_zoom(10901, 80, duration=5) # Enhancement #4: Crash Zoom on Gnome entry
-    kf_eased(10950, (-1.5, -3, 1.2), (-2, 0, 1.8), roll=5, focus_obj=h1_obj)      # Herbaceous Low Angle (#5)
-    kf_eased(11200, (4, -3, 1.5),   (5, 0, 1.2), roll=-15, focus_obj=gnome_obj)  # Gnome Dutch Angle (#1)
-    kf_eased(11500, (0, -20, 6),    (0, 0, 1), roll=0)
+    kf_eased(10950, (-1.5, -3, 1.2), (-2, 0, 1.8), roll=5, focus_obj=h1_obj, lens=50)      # Herbaceous Low Angle (#5)
+    kf_eased(11200, (4, -3, 1.5),   (5, 0, 1.2), roll=-15, focus_obj=gnome_obj, lens=24)  # Gnome Dutch Angle (#1) - wide and distorted
+    kf_eased(11500, (0, -20, 6),    (0, 0, 1), roll=0, lens=35)
 
     # Scenes 19-21: peaks - High Tension Dutch Angles and Hero Shots
-    kf_eased(11601, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=10, focus_obj=h1_obj)     # Low Angle Hero (#5)
-    kf_eased(11900, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj)      # Extreme Dutch for Gnome (#1)
+    kf_eased(11601, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=10, focus_obj=h1_obj, lens=85)     # Low Angle Hero (#5)
+    kf_eased(11900, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)      # Extreme Dutch for Gnome (#1)
 
     apply_impact_shake(11900, intensity=0.2) # Impact Shake (#9)
 
-    kf_eased(12000, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=15, focus_obj=h1_obj)
-    kf_eased(12200, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj)
-    kf_eased(12300, (1.5, -3, 1.0),  (2, 0, 1.8), roll=15, focus_obj=h2_obj)      # Arbor Hero Shot (#5)
-    kf_eased(12500, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj)
-    kf_eased(12700, (0, -25, 10),   (0, 0, 1), roll=0)          # wide
-    kf_eased(13000, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=20, focus_obj=h1_obj)     # Final Hero Argument (#5)
+    kf_eased(12000, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=15, focus_obj=h1_obj, lens=105) # Extreme closeup
+    kf_eased(12200, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
+    kf_eased(12300, (1.5, -3, 1.0),  (2, 0, 1.8), roll=15, focus_obj=h2_obj, lens=85)      # Arbor Hero Shot (#5)
+    kf_eased(12500, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
+    kf_eased(12700, (0, -25, 10),   (0, 0, 1), roll=0, lens=35)          # wide
+    kf_eased(13000, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=20, focus_obj=h1_obj, lens=85)     # Final Hero Argument (#5)
 
     # Enhancement #10: Circular Dolly Around Characters during climax
     # Enhancement #12: Anticipation before circular dolly

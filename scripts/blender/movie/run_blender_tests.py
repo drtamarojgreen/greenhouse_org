@@ -10,6 +10,8 @@ def run_tests():
         "test_assets.py",
         "test_materials.py",
         "test_animation.py",
+        "test_advanced_animation.py",
+        "test_text_rendering.py",
         "test_lighting.py",
         "test_compositor.py",
         "test_render_preparedness.py",
