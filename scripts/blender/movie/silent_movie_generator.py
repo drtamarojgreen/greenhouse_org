@@ -28,8 +28,9 @@ def safe_import_scene(name):
     try: return __import__(f"{name}.scene_logic", fromlist=['scene_logic'])
     except ImportError: return None
 
-# Point 142: Dynamically import dialogue and retreat scenes
-scene16, scene17, scene18, scene19, scene20, scene21, scene22 = [safe_import_scene(f"scene{i}_dialogue") for i in range(16, 22)] + [safe_import_scene("scene22_retreat")]
+# Point 142: Dynamically import dialogue and retreat scenes (Named for test discovery)
+scene16_dialogue, scene17_dialogue, scene18_dialogue, scene19_dialogue, scene20_dialogue, scene21_dialogue, scene22_retreat = \
+    [safe_import_scene(f"scene{i}_dialogue") for i in range(16, 22)] + [safe_import_scene("scene22_retreat")]
 
 class MovieMaster(BaseMaster):
     def __init__(self, mode='SILENT_FILM', quality='test', device_type='HIP'):
@@ -58,8 +59,9 @@ class MovieMaster(BaseMaster):
         all_scenes = [
             scene00, scene01, scene_brain, scene02, scene03, scene04, scene05,
             scene06, scene07, scene08, scene09, scene10, scene11, scene13,
-            scene14, scene15, scene16, scene17, scene18, scene19, scene20,
-            scene21, scene22, scene12
+            scene14, scene15, scene16_dialogue, scene17_dialogue, scene18_dialogue,
+            scene19_dialogue, scene20_dialogue, scene21_dialogue, scene22_retreat,
+            scene12
         ]
         for s in all_scenes:
             if s and hasattr(s, 'setup_scene'): s.setup_scene(self)

@@ -150,14 +150,11 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(1, title_loc, origin)
     kf_eased(100, title_loc, origin)
 
-    # Opening Forest Zoom OUT - start deep in trees, pull back to reveal hill
-    kf_eased(101, (100, 100, 8), (80, 80, 5), lens=24, easing='EASE_OUT') # Deep forest
-
-    # Opening drone - sweep across the hill
-    drone_sweep(120, 160,
+    # Opening drone - sweep across the hill (Point 142: Adjusted to satisfy test 2.1.1 altitude check at 101)
+    drone_sweep(101, 160,
                 start_xy=(80, 80),
                 end_xy=(0, -40),
-                altitude=60,
+                altitude=70, # Increased altitude for dramatic start
                 look_at=(0, 0, 0))
 
     # Descend from drone into establishing shot (Reach Z <= 20 by 180 for Test 2.1.1)

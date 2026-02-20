@@ -81,7 +81,11 @@ def get_action_curves(action, create_if_missing=False):
         if ptr in seen_fcurves: return
         seen_fcurves.add(ptr)
 
-        path = fc.data_path
+        path = getattr(fc, "data_path", "")
+        if not path:
+             # Try to get path from channel/binding if fc is just a proxy or channel
+             path = getattr(fc, "path_full", getattr(fc, "path", ""))
+
         # Reconstruct relative paths (e.g. "location" -> "pose.bones['Torso'].location")
         is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
         if is_relative and prefix:
@@ -100,17 +104,17 @@ def get_action_curves(action, create_if_missing=False):
             # Recursive check for F-curves in channels and strips
             def traverse_channels(channels, slot_hint=None):
                 for chan in channels:
+                    # In some 5.0 builds, chan.fcurve exists; in others, chan itself is the handle
                     fc = getattr(chan, "fcurve", None)
-                    # In some builds, the channel itself might be/have the fcurve data
-                    if not fc and hasattr(chan, "keyframe_points"): fc = chan
+                    if not fc: fc = chan if hasattr(chan, "keyframe_points") else None
 
                     if fc:
-                        prefix = ""
-                        # Try to resolve slot from channel or hint
+                        # Resolve slot from channel or hint
                         slot = getattr(chan, "slot", None) or slot_hint
+                        prefix = ""
                         if slot:
                             sname = getattr(slot, "name", "")
-                            # Map character name or bone name to pose path
+                            # Map bone name to pose path
                             bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
                             if any(kw in sname for kw in bone_kws):
                                 prefix = f'pose.bones["{sname}"].'
@@ -135,11 +139,25 @@ def get_action_curves(action, create_if_missing=False):
 
             if hasattr(slot, "bindings"):
                 for binding in slot.bindings:
+                    # Some bindings have channels directly
                     if hasattr(binding, "channels"):
                         for chan in binding.channels:
                             fc = getattr(chan, "fcurve", None)
-                            if not fc and hasattr(chan, "keyframe_points"): fc = chan
+                            if not fc: fc = chan if hasattr(chan, "keyframe_points") else None
+                            if fc: wrap_fc(fc, prefix)
+                    # Some bindings expose fcurves? (Rare in 5.0 but for completeness)
+                    if hasattr(binding, "fcurves"):
+                        for fc in binding.fcurves:
                             wrap_fc(fc, prefix)
+
+    # 5. Global bindings check (Point 142)
+    if hasattr(action, "bindings"):
+        for binding in action.bindings:
+            if hasattr(binding, "channels"):
+                for chan in binding.channels:
+                    fc = getattr(chan, "fcurve", None)
+                    if not fc: fc = chan if hasattr(chan, "keyframe_points") else None
+                    if fc: wrap_fc(fc)
 
     return curves
 
