@@ -12,15 +12,13 @@ if MOVIE_ROOT not in sys.path:
 
 import silent_movie_generator
 import style_utilities as style
+from base_test import BlenderTestCase
 
 class TestCameraChoreography(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Point 140: Check for existing animation data to avoid redundant runs, but ensure it exists
-        h1 = bpy.data.objects.get("Herbaceous")
-        has_anim = h1 and h1.animation_data and h1.animation_data.action and len(style.get_action_curves(h1.animation_data.action)) > 0
-        
-        if not hasattr(cls, 'master') or not cls.master or not has_anim:
+        # Require a fully prepared movie timeline, not just a few residual keyframes.
+        if not hasattr(cls, 'master') or not cls.master or not BlenderTestCase._movie_state_ready():
             cls.master = silent_movie_generator.MovieMaster()
             cls.master.run()
             

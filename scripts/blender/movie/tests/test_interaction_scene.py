@@ -8,15 +8,13 @@ import math
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from silent_movie_generator import MovieMaster
 import style_utilities as style
+from base_test import BlenderTestCase
 
 class TestInteractionScene(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Point 140: Ensure animation data exists
-        h1 = bpy.data.objects.get("Herbaceous")
-        has_anim = h1 and h1.animation_data and h1.animation_data.action and len(style.get_action_curves(h1.animation_data.action)) > 0
-        
-        if not hasattr(cls, 'master') or not cls.master or not has_anim:
+        # Ensure the full timeline exists (scene-module smoke tests may leave partial state).
+        if not hasattr(cls, 'master') or not cls.master or not BlenderTestCase._movie_state_ready():
             cls.master = MovieMaster(mode='SILENT_FILM')
             cls.master.run()
 
