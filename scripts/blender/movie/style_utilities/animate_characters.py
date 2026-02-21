@@ -493,7 +493,12 @@ def animate_characters(master_instance):
     for s_name, char_name in dialogue_scenes:
         if s_name in SCENE_MAP:
             start, end = SCENE_MAP[s_name]
-            listener = 'Arbor' if char_name == 'Herbaceous' else 'Herbaceous'
+            # Map listener correctly for Gnome scenes
+            if char_name == 'GloomGnome':
+                listener = 'Herbaceous' # Or Arbor, Herbaceous is primary protagonist
+            else:
+                listener = 'Arbor' if char_name == 'Herbaceous' else 'Herbaceous'
+
             animate_reaction_shot(listener, start, end)
             char_obj = bpy.data.objects.get(char_name)
             if char_obj and char_obj.type == 'ARMATURE':

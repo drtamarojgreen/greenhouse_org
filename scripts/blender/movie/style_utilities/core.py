@@ -26,13 +26,16 @@ class FCurveProxy:
 def get_action_curves(action, create_if_missing=False):
     """(Point 91) Robust recursive F-curve collector for Blender 5.0 Slotted/Layered Actions."""
     if action is None: return []
+
+    # 1. Ensure action has at least one layer if requested
     if create_if_missing and hasattr(action, "layers") and len(action.layers) == 0:
         action.layers.new(name="Main Layer")
-    
+
     curves = []
-    seen_ids = set()
+    seen_ptrs = set()
 
     def get_bone_prefix(name):
+        if not name: return ""
         bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
         if any(kw in name for kw in bone_kws):
             clean_name = name.split(":")[-1]
@@ -41,15 +44,19 @@ def get_action_curves(action, create_if_missing=False):
 
     def wrap_fc(fc, prefix=""):
         if not fc: return
-        # Unique ID for F-curve to avoid duplicates
-        fid = f"{id(fc)}_{prefix}_{getattr(fc, 'array_index', 0)}"
-        if fid in seen_ids: return
-        seen_ids.add(fid)
+        try: ptr = fc.as_pointer()
+        except: ptr = id(fc)
 
+        # Use pointer + path + index for unique identification
         path = getattr(fc, "data_path", "")
         if not path:
              path = getattr(fc, "path_full", getattr(fc, "path", ""))
         
+        idx = getattr(fc, "array_index", 0)
+        fid = (ptr, prefix, path, idx)
+        if fid in seen_ptrs: return
+        seen_ptrs.add(fid)
+
         # If path is relative (no pose.bones), prepend prefix
         is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
         if is_relative and prefix:
@@ -57,34 +64,33 @@ def get_action_curves(action, create_if_missing=False):
             
         curves.append(FCurveProxy(fc, path))
 
-    # 1. Legacy F-curves
+    # 1. Traditional F-curves (Legacy or global)
     if hasattr(action, "fcurves"):
         for fc in action.fcurves: wrap_fc(fc)
 
-    # 2. Blender 5.0 Layers & Channels
+    # 2. Blender 5.0 Hierarchy: Action -> Layers -> Channels/Strips -> FCurve
     if hasattr(action, "layers"):
         for layer in action.layers:
             def traverse_channels(channels, slot_hint=None):
                 for chan in channels:
-                    prefix = get_bone_prefix(getattr(slot_hint, "name", ""))
-                    if hasattr(chan, "slot") and chan.slot:
-                        prefix = get_bone_prefix(getattr(chan.slot, "name", ""))
+                    # Resolve slot/prefix
+                    curr_slot = getattr(chan, "slot", None) or slot_hint
+                    prefix = get_bone_prefix(getattr(curr_slot, "name", ""))
                     
                     fc = getattr(chan, "fcurve", None)
                     if not fc and hasattr(chan, "keyframe_points"): fc = chan
                     
                     if fc: wrap_fc(fc, prefix)
                     
-                    # Recursive for nested channels
                     if hasattr(chan, "channels"):
-                        traverse_channels(chan.channels, slot_hint=slot_hint or getattr(chan, "slot", None))
+                        traverse_channels(chan.channels, slot_hint=curr_slot)
 
             if hasattr(layer, "channels"): traverse_channels(layer.channels)
             if hasattr(layer, "strips"):
                 for strip in layer.strips:
                     if hasattr(strip, "channels"): traverse_channels(strip.channels)
 
-    # 3. Blender 5.0 Slots & Bindings
+    # 3. Blender 5.0 Hierarchy: Action -> Slots -> Bindings -> Channels -> FCurve
     if hasattr(action, "slots"):
         for slot in action.slots:
             prefix = get_bone_prefix(getattr(slot, "name", ""))
@@ -98,16 +104,37 @@ def get_action_curves(action, create_if_missing=False):
                             if not fc and hasattr(chan, "keyframe_points"): fc = chan
                             if fc: wrap_fc(fc, prefix)
 
+    # 4. Global bindings check
+    if hasattr(action, "bindings"):
+        for binding in action.bindings:
+            prefix = get_bone_prefix(getattr(binding, "name", ""))
+            if hasattr(binding, "channels"):
+                for chan in binding.channels:
+                    fc = getattr(chan, "fcurve", None)
+                    if not fc and hasattr(chan, "keyframe_points"): fc = chan
+                    if fc: wrap_fc(fc, prefix)
+
     return curves
 
 def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
-    """Retrieves or creates an F-Curve using the Blender 5.0+ Layered Action API."""
+    """Retrieves or creates an F-Curve using the Blender 5.0+ Layered Action API with legacy fallback."""
     if action is None or ref_obj is None: return None
     try:
-        return action.fcurve_ensure_for_datablock(ref_obj, data_path=data_path, index=index)
-    except:
-        if not action.fcurves: return None
-        return action.fcurves.find(data_path, index=index)
+        # Try 5.0 Slotted Action method
+        if hasattr(action, "fcurve_ensure_for_datablock"):
+            return action.fcurve_ensure_for_datablock(ref_obj, data_path=data_path, index=index)
+    except: pass
+
+    # Fallback for Legacy actions
+    if hasattr(action, "fcurves"):
+        fc = action.fcurves.find(data_path, index=index)
+        if not fc:
+            try:
+                fc = action.fcurves.new(data_path, index=index)
+            except: pass
+        return fc
+
+    return None
 
 def get_eevee_engine_id():
     """Probes Blender for the correct Eevee engine identifier."""
