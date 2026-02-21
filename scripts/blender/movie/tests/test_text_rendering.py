@@ -7,21 +7,21 @@ import sys
 # Add movie root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from base_test import BlenderTestCase
-import style
+import style_utilities as style
 
 class TestTextRendering(BlenderTestCase):
     def test_intertitle_orientation(self):
-        """Verify that all intertitle objects face the camera (approx -90 deg on X)."""
+        """Verify that all intertitle objects face the camera (approx +90 deg on X)."""
         titles = [obj for obj in bpy.data.objects if obj.name.startswith("Title_") and obj.type == 'FONT']
         self.assertGreater(len(titles), 0, "No intertitle objects found")
         
         for title in titles:
             rot_x = math.degrees(title.rotation_euler[0])
-            # Check if it's close to -90
-            self.assertAlmostEqual(rot_x, -90.0, delta=1.0, msg=f"Title {title.name} has incorrect X rotation: {rot_x}")
+            # Check if it's close to +90
+            self.assertAlmostEqual(rot_x, 90.0, delta=1.0, msg=f"Title {title.name} has incorrect X rotation: {rot_x}")
 
     def test_spinning_logo_orientation(self):
-        """Verify that spinning logo objects face the camera (approx -90 deg on X)."""
+        """Verify that spinning logo objects face the camera (approx +90 deg on X)."""
         logos = [obj for obj in bpy.data.objects if obj.name.startswith("Logo_") and obj.type == 'FONT']
         # If no logos, skip
         if not logos:
@@ -29,8 +29,8 @@ class TestTextRendering(BlenderTestCase):
             
         for logo in logos:
             rot_x = math.degrees(logo.rotation_euler[0])
-            # Point 142: Should be -90 to face production camera correctly
-            self.assertAlmostEqual(rot_x, -90.0, delta=1.0, msg=f"Logo {logo.name} has incorrect X rotation: {rot_x}")
+            # Point 142: Should be +90 to face production camera correctly in Z-up world with UP_Z
+            self.assertAlmostEqual(rot_x, 90.0, delta=1.0, msg=f"Logo {logo.name} has incorrect X rotation: {rot_x}")
 
     def test_credits_orientation(self):
         """Verify that credits text faces the camera."""
@@ -39,7 +39,7 @@ class TestTextRendering(BlenderTestCase):
             self.skipTest("CreditsText not found")
             
         rot_x = math.degrees(credits.rotation_euler[0])
-        self.assertAlmostEqual(rot_x, -90.0, delta=1.0, msg=f"CreditsText has incorrect X rotation: {rot_x}")
+        self.assertAlmostEqual(rot_x, 90.0, delta=1.0, msg=f"CreditsText has incorrect X rotation: {rot_x}")
 
     def test_text_contrast_and_emission(self):
         """Verify text objects have high-emission materials for visibility/contrast."""

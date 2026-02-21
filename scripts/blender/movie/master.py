@@ -4,7 +4,7 @@ import sys
 import math
 import mathutils
 import random
-import style
+import style_utilities as style
 import scene_utils
 from constants import SCENE_MAP, QUALITY_PRESETS
 

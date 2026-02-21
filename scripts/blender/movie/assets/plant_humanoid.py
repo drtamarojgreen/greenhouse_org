@@ -2,7 +2,7 @@ import bpy
 import math
 import random
 import mathutils
-import style
+import style_utilities as style
 
 def create_leaf_mesh():
     """Creates a simple leaf mesh if it doesn't exist."""
@@ -53,7 +53,7 @@ def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
 
     if quality == 'background':
         # Simple version for background characters
-        node_bsdf.inputs['Base Color'].default_value = (*color, 1)
+        style.set_principled_socket(mat, 'Base Color', (*color, 1))
         return mat
 
     node_coord = nodes.new(type='ShaderNodeTexCoord')
@@ -140,7 +140,7 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
 
     if quality == 'background':
-        node_bsdf.inputs['Base Color'].default_value = (*color, 1)
+        style.set_principled_socket(mat, 'Base Color', (*color, 1))
         return mat
     node_coord = nodes.new(type='ShaderNodeTexCoord')
     node_mapping = nodes.new(type='ShaderNodeMapping')

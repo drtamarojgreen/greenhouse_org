@@ -1,17 +1,19 @@
 import bpy
 import math
 import mathutils
-import style
+import style_utilities as style
 from constants import SCENE_MAP
 
-def setup_all_camera_logic(master):
-    """Initializes camera, target, and keyframes."""
+def ensure_camera(master):
+    """Ensures camera and target exist for early lighting attachment (Point 142)."""
     # Camera
-    cam_data = bpy.data.cameras.new("MovieCamera")
-    cam = bpy.data.objects.new("MovieCamera", cam_data)
-    bpy.context.collection.objects.link(cam)
-    cam.location = (0, -8, 0)
-    master.scene.camera = cam
+    cam = bpy.data.objects.get("MovieCamera")
+    if not cam:
+        cam_data = bpy.data.cameras.new("MovieCamera")
+        cam = bpy.data.objects.new("MovieCamera", cam_data)
+        bpy.context.collection.objects.link(cam)
+        cam.location = (0, -8, 0)
+        master.scene.camera = cam
 
     # Target
     target = bpy.data.objects.get("CamTarget")
@@ -20,15 +22,45 @@ def setup_all_camera_logic(master):
         bpy.context.scene.collection.objects.link(target)
     master.cam_target = target
 
-    con = cam.constraints.new(type='TRACK_TO')
-    con.target = target
-    con.track_axis = 'TRACK_NEGATIVE_Z'
-    con.up_axis = 'UP_Y'
+    # Basic constraints if not present
+    if not cam.constraints.get("TrackCharacters"):
+        con = cam.constraints.new(type='TRACK_TO')
+        con.name = "TrackCharacters"
+        con.target = target
+        con.track_axis = 'TRACK_NEGATIVE_Z'
+        con.up_axis = 'UP_Z' # Standard for Z-up world (Point 142)
     
     # Point 92: Set focus object to target Empty (animatable focus via target location)
     cam.data.dof.use_dof = True
     cam.data.dof.focus_object = target
     cam.data.dof.aperture_fstop = 2.8
+    
+    return cam, target
+
+def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dist=2.5):
+    """P1-4: Prevent camera clipping through character bounds."""
+    # We'll sample and auto-offset if too close
+    for f in range(frame_start, frame_end + 1, 120): # Sparse sampling for speed
+        master.scene.frame_set(f)
+        dg = bpy.context.evaluated_depsgraph_get()
+        cam_eval = cam.evaluated_get(dg)
+        cam_world_loc = cam_eval.matrix_world.translation
+        
+        for char in characters:
+            if not char: continue
+            char_eval = char.evaluated_get(dg)
+            char_loc = char_eval.matrix_world.translation
+            dist = (cam_world_loc - char_loc).length
+            if dist < min_dist:
+                # Push camera back along view vector
+                direction = (cam_world_loc - char_loc).normalized()
+                offset = direction * (min_dist - dist + 0.2)
+                cam.location += offset
+                cam.keyframe_insert(data_path="location", frame=f)
+
+def setup_all_camera_logic(master):
+    """Initializes camera, target, and keyframes."""
+    cam, target = ensure_camera(master)
 
     if master.mode == 'SILENT_FILM':
         # Enhanced Handheld Noise Layer
@@ -116,6 +148,7 @@ def setup_camera_keyframes(master, cam, target):
         kf_eased(frame, orig_loc + mathutils.Vector((0, 0, intensity)), target.location, easing='LINEAR')
         kf_eased(frame + 2, orig_loc, target.location, easing='EASE_OUT')
 
+
     # Drone shot helper - adds a lateral sweep at altitude
     def drone_sweep(frame_start, frame_end,
                     start_xy, end_xy, altitude=70,
@@ -139,11 +172,11 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(1, title_loc, origin)
     kf_eased(100, title_loc, origin)
 
-    # Opening drone - audience first sees the greenhouse from above
-    drone_sweep(101, 150, # End earlier to allow descent by 180
-                start_xy=(-40, -40),
-                end_xy=(40, -20),
-                altitude=75,
+    # Opening drone - sweep across the hill (Point 142: Adjusted to satisfy test 2.1.1 altitude check at 101)
+    drone_sweep(101, 160,
+                start_xy=(80, 80),
+                end_xy=(0, -40),
+                altitude=70, # Increased altitude for dramatic start
                 look_at=(0, 0, 0))
 
     # Descend from drone into establishing shot (Reach Z <= 20 by 180 for Test 2.1.1)
@@ -155,18 +188,17 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(SCENE_MAP['scene_brain'][0], (0,-30,8), origin)
     kf_eased(SCENE_MAP['scene_brain'][1], (0,-35,10), origin)
 
-    # Garden fly-in: start very wide, push into the characters (401 - 650)
-    kf_eased(401, (0, -60, 25), (0, 0, 0), easing='EASE_IN')        # extreme wide
-    kf_eased(450, (0, -60, 25), (0, 0, 0), easing='EASE_IN')        # slow out of hold
-    kf_eased(550, (0, -20, 8), (-2, 0, 1.5), easing='EASE_IN_OUT')  # fly in
-    kf_eased(650, (5, -15, 3), (-2, 0, 1.5), easing='EASE_OUT')     # settle
-
-    # Garden scene drone pass
-    drone_sweep(401, 480,
+    # Garden scene: Drone pass then fly-in (401 - 650)
+    # Point 142: Separated to avoid overlapping keys
+    drone_sweep(401, 520,
                 start_xy=(-50, 20),
-                end_xy=(50, 20),
+                end_xy=(0, -40),
                 altitude=60,
                 look_at=(0, 5, 0))
+
+    kf_eased(521, (0, -40, 20), (0, 0, 0), easing='EASE_IN')        # transition
+    kf_eased(580, (0, -20, 8), (-2, 0, 1.5), easing='EASE_IN_OUT')  # fly in
+    kf_eased(650, (5, -15, 3), (-2, 0, 1.5), easing='EASE_OUT')     # settle
 
     # Socratic (651 - 950)
     kf_eased(651, title_loc, origin)
@@ -182,11 +214,27 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(1051, (6,-12,3), (0, 0, 1.5))
     kf_eased(1250, (-6,-12,3), (0, 0, 1.5))
 
-    # Sanctuary fly-in: crane shot from above descending (3901 - 4100)
-    kf_eased(3901, (0, -80, 40), (0, 0, 0), easing='EASE_IN')
-    kf_eased(3950, (0, -80, 40), (0, 0, 0), easing='EASE_IN')       # hold
-    kf_eased(4050, (0, -25, 10), (0, 0, 2), easing='EASE_IN_OUT')   # descend
+    # Intermediate scenes to avoid camera gaps (Point 142)
+    # Bridge, Resonance, Shadow (1251 - 2100)
+    kf_eased(1251, (0, -15, 5), (0, 0, 1.5))
+    kf_eased(2100, (5, -15, 4), (0, 0, 1.5))
+
+    # Confrontation, Library, Lab (2101 - 3300)
+    kf_eased(2101, (-5, -12, 3), (0, 0, 1.5))
+    kf_eased(3300, (0, -18, 6), (0, 0, 1.5))
+
+    # Sanctuary fly-in: crane shot from above descending (3301 - 4100)
+    # Note: scene11_nature_sanctuary is 3301-3800
+    kf_eased(3301, (0, -80, 40), (0, 0, 0), easing='EASE_IN')
+    kf_eased(3800, (0, -25, 10), (0, 0, 2), easing='EASE_IN_OUT')
+    
+    # Walking (3801-4100)
+    kf_eased(3801, (0, -25, 10), (0, 0, 2))
     kf_eased(4100, (0, -18, 5), (0, 0, 1.5), easing='EASE_OUT')     # settle
+
+    # Duel (4101-4500)
+    kf_eased(4101, (0, -18, 5), (0, 0, 1.5))
+    kf_eased(4500, (0, -30, 15), (0, 0, 1.5))
 
     # Interaction sequence: start wide establish, then commit (4501 - 9500)
     kf_eased(4501, (0, -80, 30), (0, 0, 1), easing='EASE_IN', lens=24)       # Ultra wide
@@ -252,13 +300,16 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(s22_start + 500, (0, -15, 5),  (0, 0, 1.5))   # settle on plants
     kf_eased(14400,           (0, -15, 5),  (0, 0, 1.5))   # hold
 
-    # Victory drone
-    drone_sweep(14200, 14400,
-                start_xy=(-60, -60),
-                end_xy=(60, 60),
-                altitude=90,
-                look_at=(0, 0, 0))
+    # Victory Forest Zoom IN - sweep from wide forest back to the sanctuary
+    drone_sweep(14200, 14450,
+                start_xy=(-120, -120),
+                end_xy=(0, -20),
+                altitude=80,
+                look_at=(0, 0, 1.5))
+    
+    kf_eased(14500, (0, -12, 3), (0, 0, 1.5), lens=50, easing='EASE_OUT')
 
     # Credits (14501 - 15000)
     kf_eased(SCENE_MAP['scene12_credits'][0], (0,-10,0), (0, 0, 5))
     kf_eased(SCENE_MAP['scene12_credits'][1], (0,-10,0), (0, 0, 15))
+

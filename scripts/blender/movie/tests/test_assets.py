@@ -9,7 +9,7 @@ from base_test import BlenderTestCase
 
 # Ensure style is available
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import style
+import style_utilities as style
 
 class TestAssets(BlenderTestCase):
     def test_01_assets_exist(self):

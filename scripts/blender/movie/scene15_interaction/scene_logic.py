@@ -12,7 +12,7 @@ if ASSETS_PATH not in sys.path:
     sys.path.append(ASSETS_PATH)
 
 from assets import plant_humanoid
-import style
+import style_utilities as style
 
 def setup_scene(master):
     """

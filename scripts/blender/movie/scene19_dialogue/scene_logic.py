@@ -12,7 +12,7 @@ if ASSETS_PATH not in sys.path:
     sys.path.append(ASSETS_PATH)
 
 from assets import plant_humanoid
-import style
+import style_utilities as style
 from constants import SCENE_MAP
 
 def setup_scene(master):
@@ -47,3 +47,9 @@ def setup_scene(master):
 
     # Fix A: Plants continue to move toward the gnome as their argument intensifies (Point 105)
     style.animate_plant_advance(master, start_frame, end_frame)
+
+    # Point 142: Gnome starts to retreat incrementally
+    master.gnome.location.x = 3.0
+    master.gnome.keyframe_insert(data_path="location", index=0, frame=start_frame)
+    master.gnome.location.x = 3.5
+    master.gnome.keyframe_insert(data_path="location", index=0, frame=end_frame)

@@ -29,7 +29,7 @@ def create_gnarled_staff(location, height=1.5, name="GnarledStaff", material=Non
 def create_gnome(name, location, scale=0.6):
     """Exclusive 5.0+ BMesh Gnome with Proper Rigging."""
     location = mathutils.Vector(location)
-    import bmesh; import style
+    import bmesh; import style_utilities as style
 
     armature_data = bpy.data.armatures.new(f"{name}_ArmatureData")
     armature_obj = bpy.data.objects.new(name, armature_data)
@@ -129,17 +129,21 @@ def create_gnome(name, location, scale=0.6):
 
     bm.to_mesh(mesh_data); bm.free()
 
-    mat_body = bpy.data.materials.new(name=f"{name}_MatBody"); mat_body.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.2, 0.1, 0.3, 1)
-    mat_hat = bpy.data.materials.new(name=f"{name}_MatHat"); mat_hat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.1, 0.05, 0.2, 1)
-    mat_beard = bpy.data.materials.new(name=f"{name}_MatBeard"); mat_beard.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.8, 0.8, 0.8, 1)
+    mat_body = bpy.data.materials.new(name=f"{name}_MatBody")
+    style.set_principled_socket(mat_body, "Base Color", (0.2, 0.1, 0.3, 1))
+    mat_hat = bpy.data.materials.new(name=f"{name}_MatHat")
+    style.set_principled_socket(mat_hat, "Base Color", (0.1, 0.05, 0.2, 1))
+    mat_beard = bpy.data.materials.new(name=f"{name}_MatBeard")
+    style.set_principled_socket(mat_beard, "Base Color", (0.8, 0.8, 0.8, 1))
     mat_gloom = bpy.data.materials.new(name=f"{name}_MatGloom")
     # Point 130: Add noise for procedural "flicker" in material itself (Test Expectation)
     nodes = mat_gloom.node_tree.nodes
     links = mat_gloom.node_tree.links
-    bsdf = nodes["Principled BSDF"]
+    bsdf = nodes.get("Principled BSDF") or nodes.new('ShaderNodeBsdfPrincipled')
     node_noise = nodes.new('ShaderNodeTexNoise')
     node_noise.inputs['Scale'].default_value = 10.0
-    links.new(node_noise.outputs['Fac'], bsdf.inputs['Emission Strength'])
+    # Use helper for robustness if possible, but links need direct socket
+    links.new(node_noise.outputs['Fac'], bsdf.inputs.get('Emission Strength', bsdf.inputs[0]))
     style.set_principled_socket(mat_gloom, "Emission Color", (0.1, 0, 0.2, 1))
     style.set_principled_socket(mat_gloom, "Emission Strength", 0.5)
     mat_eye = bpy.data.materials.new(name=f"{name}_MatEye"); style.set_principled_socket(mat_eye, 'Emission Color', (1, 0, 0, 1)); style.set_principled_socket(mat_eye, 'Emission Strength', 10.0)

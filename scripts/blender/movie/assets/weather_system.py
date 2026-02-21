@@ -2,7 +2,7 @@ import bpy
 import math
 import mathutils
 import random
-import style
+import style_utilities as style
 
 def create_rain_material():
     mat = bpy.data.materials.get("RainMat") or bpy.data.materials.new(name="RainMat")

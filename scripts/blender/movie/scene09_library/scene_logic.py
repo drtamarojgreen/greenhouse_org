@@ -30,3 +30,9 @@ def setup_scene(master):
             master.h1.keyframe_insert(data_path="location", frame=2601)
             master.h1.rotation_euler = (0, 0, 0)
             master.h1.keyframe_insert(data_path="rotation_euler", frame=2601)
+
+        # Point 142: Pull CamTarget to pedestal focus
+        target = bpy.data.objects.get("CamTarget")
+        if target:
+            target.location = (0, 0, 1.3) # Height of the book
+            target.keyframe_insert(data_path="location", frame=2601)

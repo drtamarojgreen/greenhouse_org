@@ -6,7 +6,7 @@ import os
 # Add movie root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from base_test import BlenderTestCase
-import style
+import style_utilities as style
 
 class TestAdvancedAnimation(BlenderTestCase):
     def test_neck_bone_animation(self):

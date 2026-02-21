@@ -1,12 +1,13 @@
 import bpy
 import math
-import style
+import style_utilities as style
 
 def create_intertitle(master_instance, text, frame_start, frame_end):
     """Creates a classic silent movie intertitle card."""
     if master_instance.mode != 'SILENT_FILM': return
 
-    bpy.ops.object.text_add(location=(0, 0, 0), rotation=(-math.pi/2, 0, 0))
+    # Point 142: Use +90 degrees on X to face camera correctly in Z-up world (UP_Z)
+    bpy.ops.object.text_add(location=(0, 0, 0), rotation=(math.pi/2, 0, 0))
     text_obj = bpy.context.object
     text_obj.name = f"Title_{frame_start}_{text[:5]}"
     text_obj.data.body = text
@@ -26,7 +27,7 @@ def create_intertitle(master_instance, text, frame_start, frame_end):
     bg = bpy.data.objects.new(f"TitleBG_{frame_start}", bg_data)
     bpy.context.collection.objects.link(bg)
     bg.location = (0, 0.1, 0)
-    bg.rotation_euler = (-math.pi/2, 0, 0)
+    bg.rotation_euler = (math.pi/2, 0, 0)
     
     bm_bg = bmesh.new()
     bmesh.ops.create_grid(bm_bg, x_segments=1, y_segments=1, size=1.0)
@@ -55,8 +56,8 @@ def create_intertitle(master_instance, text, frame_start, frame_end):
 def create_spinning_logo(master_instance, text_content, frame_start, frame_end):
     """Creates a spinning text logo."""
     # Point 45: Position high in the air. 
-    # Use -90 on X to face the production camera (Point 142).
-    bpy.ops.object.text_add(location=(0, 0, 10), rotation=(math.radians(-90), 0, 0))
+    # Use +90 on X to face the production camera (Point 142).
+    bpy.ops.object.text_add(location=(0, 0, 10), rotation=(math.radians(90), 0, 0))
     logo = bpy.context.object
     logo.name = f"Logo_{frame_start}"
     logo.data.body = text_content

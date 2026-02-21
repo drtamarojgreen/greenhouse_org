@@ -1,7 +1,7 @@
 import bpy
 import os
 import mathutils
-import style
+import style_utilities as style
 
 def load_brain(base_path):
     """Exclusive 5.0+ Optimized Brain loading."""

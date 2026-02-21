@@ -3,7 +3,7 @@ import unittest
 import os
 import sys
 from silent_movie_generator import MovieMaster
-import style
+import style_utilities as style
 
 class TestAssetDetails(unittest.TestCase):
     @classmethod

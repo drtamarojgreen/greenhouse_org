@@ -2,7 +2,7 @@ import bpy
 import math
 import os
 import sys
-import style
+import style_utilities as style
 
 # Ensure assets are importable
 ASSETS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")

@@ -1,7 +1,7 @@
 import bpy
 import math
 import mathutils
-import style
+import style_utilities as style
 
 def create_wood_material(name, color=(0.15, 0.08, 0.05)):
     """Point 32: Refactored to use style helper."""

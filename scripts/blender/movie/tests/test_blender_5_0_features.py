@@ -7,7 +7,7 @@ import math
 # Add movie root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from silent_movie_generator import MovieMaster
-import style
+import style_utilities as style
 
 class TestBlender50Features(unittest.TestCase):
     @classmethod

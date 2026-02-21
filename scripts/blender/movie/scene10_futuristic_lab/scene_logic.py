@@ -39,3 +39,9 @@ def setup_scene(master):
         master.neuron.keyframe_insert(data_path="hide_render", frame=3601)
         master.neuron.hide_render = True
         master.neuron.keyframe_insert(data_path="hide_render", frame=3801)
+
+    # Point 142: Pull CamTarget to neuron focus
+    target = bpy.data.objects.get("CamTarget")
+    if target:
+        target.location = (0, 0, 1.5)
+        target.keyframe_insert(data_path="location", frame=3601)

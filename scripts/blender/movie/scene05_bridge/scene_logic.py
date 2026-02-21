@@ -1,7 +1,7 @@
 import bpy
 import mathutils
 import random
-import style
+import style_utilities as style
 
 def setup_scene(master):
     """
@@ -72,3 +72,11 @@ def setup_scene(master):
         master.neuron.keyframe_insert(data_path="location", frame=start_f)
         master.neuron.location = mathutils.Vector((10, 0, 2))
         master.neuron.keyframe_insert(data_path="location", frame=end_f)
+
+    # Point 142: Pull CamTarget to synaptic nodes to avoid off-axis framing
+    target = bpy.data.objects.get("CamTarget")
+    if target:
+        target.location = (5, 0, 2)
+        target.keyframe_insert(data_path="location", frame=start_f)
+        target.location = (10, 0, 2) # Track the moving neuron
+        target.keyframe_insert(data_path="location", frame=end_f)

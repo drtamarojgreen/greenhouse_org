@@ -1,6 +1,6 @@
 import bpy
 import math
-import style
+import style_utilities as style
 
 def setup_scene(master):
     """
@@ -17,7 +17,8 @@ def setup_scene(master):
     style.apply_scene_grade(master, 'resonance', 3001, 3500)
 
     # Intensify all lights to peak at 3250
-    for light_name in ["Sun", "FillLight", "RimLight", "Spot"]:
+    # Point 142: Use new light rig names
+    for light_name in ["Sun", "DomeFill", "HerbaceousKeyLight", "ArborKeyLight", "LightShaftBeam"]:
         light = bpy.data.objects.get(light_name)
         if not light: continue
         base_energy = light.data.energy

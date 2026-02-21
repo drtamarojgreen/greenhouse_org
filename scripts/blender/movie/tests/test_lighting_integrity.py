@@ -10,7 +10,7 @@ if MOVIE_ROOT not in sys.path:
     sys.path.append(MOVIE_ROOT)
 
 import silent_movie_generator
-import style
+import style_utilities as style
 
 class TestLightingIntegrity(unittest.TestCase):
     def setUp(self):

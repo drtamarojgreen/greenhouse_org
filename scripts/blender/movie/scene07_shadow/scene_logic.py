@@ -1,7 +1,7 @@
 import bpy
 import math
 import random
-import style
+import style_utilities as style
 
 def setup_scene(master):
     """
@@ -53,8 +53,12 @@ def setup_scene(master):
             torso_bone.location.y = -0.5
             torso_bone.keyframe_insert(data_path="location", index=1, frame=2200)
 
-    style.animate_light_flicker("Spot", 1901, 2500, strength=0.4)
-    style.animate_light_flicker("RimLight", 1901, 2500, strength=0.2)
+    # Point 142: Use new light rig names
+    style.animate_light_flicker("LightShaftBeam", 1901, 2500, strength=0.4)
+    style.animate_light_flicker("GnomeKeyLight", 1901, 2500, strength=0.2)
+
+    # Invisible Vignette (Point 150: Preserved but hidden at user request)
+    style.animate_vignette(master.scene, 1901, 2500, start_val=0.0, end_val=0.0)
 
     # Subtle Shivers (Bone-based)
     for char in [master.h1, master.h2]:

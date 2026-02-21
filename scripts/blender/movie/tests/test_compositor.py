@@ -6,7 +6,7 @@ from base_test import BlenderTestCase
 
 # Ensure style is available
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import style
+import style_utilities as style
 
 class TestCompositor(BlenderTestCase):
     def test_01_compositor_nodes(self):
