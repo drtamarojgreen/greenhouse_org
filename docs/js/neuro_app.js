@@ -241,6 +241,8 @@
             if (this.state.activeTab === 'adhd' && this.state.dropdowns.category.isOpen) {
                 const d = this.ui.categoryDropdown;
                 const optH = 25;
+                let optionHit = false;
+
                 for (let i = 0; i < d.options.length; i++) {
                     const oy = d.y + d.h + 2 + i * optH;
                     if (mx >= d.x && mx <= d.x + d.w && my >= oy && my <= oy + optH) {
@@ -248,13 +250,21 @@
                         this.state.dropdowns.category.isOpen = false;
                         this.state.scrollOffset = 0;
                         this.updateADHDCheckboxes();
-                        hit = true; break;
+                        optionHit = true;
+                        break;
                     }
                 }
-                if (!hit) {
-                    this.state.dropdowns.category.isOpen = false; // Click outside closes it
-                    // Don't mark hit=true yet, allow other elements to be clicked
-                } else return; // Selection made, done.
+
+                if (optionHit) return;
+
+                // If no option hit, check if we clicked the dropdown button itself to close it
+                if (mx >= d.x && mx <= d.x + d.w && my >= d.y && my <= d.y + d.h) {
+                    this.state.dropdowns.category.isOpen = false;
+                    return;
+                }
+
+                // Otherwise, it's a click outside. Close it but don't return so we can click other things.
+                this.state.dropdowns.category.isOpen = false;
             }
 
             // 1. Tabs
