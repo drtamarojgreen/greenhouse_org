@@ -32,6 +32,8 @@ def setup_lighting(master_instance):
         light = bpy.context.object
         light.name = name
         apply_cfg(light, LIGHTING_DEFAULTS.get(name))
+        # Keep an explicit baseline key so early-frame tests evaluate deterministic values.
+        light.data.keyframe_insert(data_path="energy", frame=1)
         
         if cam:
             light.parent = cam
@@ -63,7 +65,7 @@ def setup_lighting(master_instance):
     bpy.ops.object.light_add(type='POINT', location=(0, 0, 5))
     intro_light = bpy.context.object
     intro_light.name = "IntroLight"
-    intro_light.data.energy = 2000
+    intro_light.data.energy = 5000
     intro_light.hide_render = True
     intro_light.keyframe_insert(data_path="hide_render", frame=1)
 

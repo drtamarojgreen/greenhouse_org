@@ -14,6 +14,8 @@ if ASSETS_PATH not in sys.path:
 from assets import plant_humanoid
 import style_utilities as style
 from constants import SCENE_MAP
+from scene_utilities import ensure_scene_keyframe
+
 
 def setup_scene(master):
     """
@@ -27,6 +29,8 @@ def setup_scene(master):
 
     if not master.h1 or not master.h2 or not master.gnome:
         return
+
+    ensure_scene_keyframe(master, start_frame)
 
     # Fix B: Position gnome across from the plants, closer than his escape position (Point 105)
     master.gnome.location = (3, 3, 0)

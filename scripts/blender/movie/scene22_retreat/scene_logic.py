@@ -14,6 +14,8 @@ if ASSETS_PATH not in sys.path:
 from assets import plant_humanoid
 import style_utilities as style
 from constants import SCENE_MAP
+from scene_utilities import ensure_scene_keyframe
+
 
 def setup_scene(master):
     """
@@ -26,6 +28,8 @@ def setup_scene(master):
 
     if not master.gnome:
         return
+
+    ensure_scene_keyframe(master, start_frame)
 
     # Metadata
     # Shot ID: S22_01

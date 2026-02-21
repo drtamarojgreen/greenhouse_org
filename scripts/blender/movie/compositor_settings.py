@@ -80,7 +80,8 @@ def setup_compositor(master_instance):
     # in1 is usually the 'Image', in2 is the 'Color' to mix in (Black)
     # Point 142: Use robust setter
     if in2_i: style.set_socket_value(in2_i, (0, 0, 0, 1))
-    tree.links.new(iris.outputs['Mask'], iris_mix.inputs[0]) # Use mask as factor
+    # Keep iris disabled by default. We only wire the mask during an explicit animated iris transition.
+    if fac_i: style.set_socket_value(fac_i, 0.0)
 
     # Links
     # 1. Main Path
@@ -127,11 +128,25 @@ def animate_iris_wipe(scene, frame_start, frame_end, mode='IN'):
     """Enhancement #49: Iris Wipe transition animation."""
     tree = style.get_compositor_node_tree(scene)
     iris = tree.nodes.get("IrisWipe")
-    if not iris: return
+    iris_mix = tree.nodes.get("IrisMix")
+    if not iris or not iris_mix:
+        return
+
+    fac_i, _, _ = style.get_mix_sockets(iris_mix)
+    if fac_i:
+        # Ensure the factor is driven by the iris mask only for deliberate transition beats.
+        for link in list(tree.links):
+            if link.to_node == iris_mix and link.to_socket == fac_i:
+                tree.links.remove(link)
+        tree.links.new(iris.outputs['Mask'], fac_i)
 
     if mode == 'IN':
-        style.set_node_input(iris, 'Size', 0.0, frame=frame_start)
-        style.set_node_input(iris, 'Size', 2.0, frame=frame_end)
+        style.set_node_input(iris, 'Width', 0.01, frame=frame_start)
+        style.set_node_input(iris, 'Height', 0.01, frame=frame_start)
+        style.set_node_input(iris, 'Width', 2.0, frame=frame_end)
+        style.set_node_input(iris, 'Height', 2.0, frame=frame_end)
     else: # OUT
-        style.set_node_input(iris, 'Size', 2.0, frame=frame_start)
-        style.set_node_input(iris, 'Size', 0.0, frame=frame_end)
+        style.set_node_input(iris, 'Width', 2.0, frame=frame_start)
+        style.set_node_input(iris, 'Height', 2.0, frame=frame_start)
+        style.set_node_input(iris, 'Width', 0.01, frame=frame_end)
+        style.set_node_input(iris, 'Height', 0.01, frame=frame_end)

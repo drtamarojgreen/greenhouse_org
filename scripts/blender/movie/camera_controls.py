@@ -190,9 +190,9 @@ def setup_camera_keyframes(master, cam, target):
 
     # Garden scene: Drone pass then fly-in (401 - 650)
     # Point 142: Separated to avoid overlapping keys
-    drone_sweep(401, 520,
+    drone_sweep(401, 480,
                 start_xy=(-50, 20),
-                end_xy=(0, -40),
+                end_xy=(40, -40),
                 altitude=60,
                 look_at=(0, 5, 0))
 
