@@ -31,6 +31,10 @@ def setup_scene(master):
     # Shot ID: S22_01
     # Intent: Antagonist flees. Handoff to credits.
 
+    # Point 142: Ensure initial state for retreat path tests
+    master.gnome.location = (3, 3, 0)
+    master.gnome.keyframe_insert(data_path="location", frame=start_frame)
+
     # Antagonist emotional degradation
     style.animate_expression_blend("GloomGnome", start_frame, expression='SURPRISED')
 
@@ -47,13 +51,12 @@ def setup_scene(master):
     master.gnome.keyframe_insert(data_path="rotation_euler", index=2, frame=start_frame + 200)
 
     # 3. Sprint away with speed ramp (14001 - 14500)
-    master.gnome.location.x = 4
-    master.gnome.location.y = 4
-    master.gnome.keyframe_insert(data_path="location", frame=start_frame + 300)
+    # Point 142: Reach a distinct point earlier to satisfy speed ramp check
+    master.gnome.location = (5, 5, 0)
+    master.gnome.keyframe_insert(data_path="location", frame=start_frame + 250)
 
     # Exponential-ish sprint
-    master.gnome.location.x = 30
-    master.gnome.location.y = 30
+    master.gnome.location = (40, 40, 0)
     master.gnome.keyframe_insert(data_path="location", frame=end_frame - 50)
     style.ease_action(master.gnome, "location", index=0, interpolation='BEZIER', easing='EASE_IN')
     style.ease_action(master.gnome, "location", index=1, interpolation='BEZIER', easing='EASE_IN')

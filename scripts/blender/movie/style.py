@@ -59,127 +59,111 @@ class FCurveProxy:
             return id(self._target)
 
 def get_action_curves(action, create_if_missing=False):
-    """
-    (Point 91) Robust recursive F-curve collector for Blender 5.0 Slotted/Layered Actions.
-    Exhaustively traverses layers, slots, bindings, and channels.
-    Reconstructs legacy-style absolute data paths (e.g. pose.bones["Name"].path) for compatibility.
-    """
+    """(Point 91) Robust recursive F-curve collector for Blender 5.0 Slotted/Layered Actions."""
     if action is None: return []
     
-    # 1. Ensure action has at least one layer if requested (Point 150)
+    # 1. Ensure action has at least one layer if requested
     if create_if_missing and hasattr(action, "layers") and len(action.layers) == 0:
         action.layers.new(name="Main Layer")
 
     curves = []
-    seen_fcurves = set()
+    seen_ptrs = set()
+
+    def get_bone_prefix(name):
+        if not name: return ""
+        bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
+        if any(kw in name for kw in bone_kws):
+            clean_name = name.split(":")[-1]
+            return f'pose.bones["{clean_name}"].'
+        return ""
 
     def wrap_fc(fc, prefix=""):
         if not fc: return
         try: ptr = fc.as_pointer()
         except: ptr = id(fc)
         
-        if ptr in seen_fcurves: return
-        seen_fcurves.add(ptr)
-        
         path = getattr(fc, "data_path", "")
         if not path:
-             # Try to get path from channel/binding if fc is just a proxy or channel
              path = getattr(fc, "path_full", getattr(fc, "path", ""))
-             
-        # Reconstruct relative paths (e.g. "location" -> "pose.bones['Torso'].location")
+
+        idx = getattr(fc, "array_index", 0)
+        fid = (ptr, prefix, path, idx)
+        if fid in seen_ptrs: return
+        seen_ptrs.add(fid)
+
+        # If path is relative (no pose.bones), prepend prefix
         is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
         if is_relative and prefix:
             path = prefix + path
             
         curves.append(FCurveProxy(fc, path))
 
-    # 2. Traditional F-curves (Legacy or global)
+    # 1. Traditional F-curves (Legacy or global)
     if hasattr(action, "fcurves"):
-        for fc in action.fcurves:
-            wrap_fc(fc)
+        for fc in action.fcurves: wrap_fc(fc)
 
-    # 3. 5.0 Hierarchy: Action -> Layers -> Channels/Strips -> FCurve
+    # 2. Blender 5.0 Hierarchy: Action -> Layers -> Channels/Strips -> FCurve
     if hasattr(action, "layers"):
         for layer in action.layers:
-            # Recursive check for F-curves in channels and strips
             def traverse_channels(channels, slot_hint=None):
                 for chan in channels:
-                    # In some 5.0 builds, chan.fcurve exists; in others, chan itself is the handle
+                    curr_slot = getattr(chan, "slot", None) or slot_hint
+                    prefix = get_bone_prefix(getattr(curr_slot, "name", ""))
+
                     fc = getattr(chan, "fcurve", None)
-                    if not fc: fc = chan if hasattr(chan, "keyframe_points") else None
+                    if not fc and hasattr(chan, "keyframe_points"): fc = chan
                     
-                    if fc:
-                        # Resolve slot from channel or hint
-                        slot = getattr(chan, "slot", None) or slot_hint
-                        prefix = ""
-                        if slot:
-                            sname = getattr(slot, "name", "")
-                            # Map bone name to pose path
-                            bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
-                            if any(kw in sname for kw in bone_kws):
-                                prefix = f'pose.bones["{sname}"].'
-                        
-                        wrap_fc(fc, prefix)
+                    if fc: wrap_fc(fc, prefix)
 
-            if hasattr(layer, "channels"):
-                traverse_channels(layer.channels)
+                    if hasattr(chan, "channels"):
+                        traverse_channels(chan.channels, slot_hint=curr_slot)
 
+            if hasattr(layer, "channels"): traverse_channels(layer.channels)
             if hasattr(layer, "strips"):
                 for strip in layer.strips:
-                    if hasattr(strip, "channels"):
-                        traverse_channels(strip.channels)
+                    if hasattr(strip, "channels"): traverse_channels(strip.channels)
 
-    # 4. 5.0 Hierarchy: Action -> Slots -> Bindings -> Channels -> FCurve
+    # 3. Blender 5.0 Hierarchy: Action -> Slots -> Bindings -> Channels -> FCurve
     if hasattr(action, "slots"):
         for slot in action.slots:
-            sname = getattr(slot, "name", "")
-            # Robust prefixing: handles "Herbaceous:Torso" or just "Torso"
-            prefix = ""
-            bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
-            for kw in bone_kws:
-                if kw in sname:
-                    # Extract clean bone name (remove namespace if present)
-                    clean_name = sname.split(":")[-1]
-                    prefix = f'pose.bones["{clean_name}"].'
-                    break
-                
+            prefix = get_bone_prefix(getattr(slot, "name", ""))
             if hasattr(slot, "bindings"):
                 for binding in slot.bindings:
-                    # Some bindings have channels directly
+                    if hasattr(binding, "fcurves"):
+                        for fc in binding.fcurves: wrap_fc(fc, prefix)
                     if hasattr(binding, "channels"):
                         for chan in binding.channels:
                             fc = getattr(chan, "fcurve", None)
-                            if not fc: fc = chan if hasattr(chan, "keyframe_points") else None
+                            if not fc and hasattr(chan, "keyframe_points"): fc = chan
                             if fc: wrap_fc(fc, prefix)
-                    # Some bindings expose fcurves? (Rare in 5.0 but for completeness)
-                    if hasattr(binding, "fcurves"):
-                        for fc in binding.fcurves:
-                            wrap_fc(fc, prefix)
     
-    # 5. Global bindings check (Point 142)
+    # 4. Global bindings check
     if hasattr(action, "bindings"):
         for binding in action.bindings:
-            prefix = ""
-            # Some bindings are named after the bone they target
-            bname = getattr(binding, "name", "")
-            if any(kw in bname for kw in (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")):
-                prefix = f'pose.bones["{bname}"].'
-
+            prefix = get_bone_prefix(getattr(binding, "name", ""))
             if hasattr(binding, "channels"):
                 for chan in binding.channels:
                     fc = getattr(chan, "fcurve", None)
-                    if not fc: fc = chan if hasattr(chan, "keyframe_points") else None
+                    if not fc and hasattr(chan, "keyframe_points"): fc = chan
                     if fc: wrap_fc(fc, prefix)
 
     return curves
 
 def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
-    """
-    Retrieves or creates an F-Curve using the Blender 5.0+ Layered Action API.
-    ref_obj: The object/datablock the action is assigned to.
-    """
+    """Retrieves or creates an F-Curve using the Blender 5.0+ Layered Action API with legacy fallback."""
     if action is None or ref_obj is None: return None
-    return action.fcurve_ensure_for_datablock(ref_obj, data_path=data_path, index=index)
+    try:
+        if hasattr(action, "fcurve_ensure_for_datablock"):
+            return action.fcurve_ensure_for_datablock(ref_obj, data_path=data_path, index=index)
+    except: pass
+
+    if hasattr(action, "fcurves"):
+        fc = action.fcurves.find(data_path, index=index)
+        if not fc:
+            try: fc = action.fcurves.new(data_path, index=index)
+            except: pass
+        return fc
+    return None
 
 def get_eevee_engine_id():
     """Probes Blender for the correct Eevee engine identifier (EEVEE vs EEVEE_NEXT)."""
@@ -450,7 +434,7 @@ def apply_scene_grade(master, scene_name, frame_start, frame_end):
     bg_color = (0, 0, 0, 1)
     sun_energy = 5.0
     sun_color = (1, 1, 1, 1)
-    rim_energy = 5000
+    rim_energy = 15000
     rim_color = (1, 1, 1, 1)
     fill_energy = 2000
     fill_color = (1, 1, 1, 1)
@@ -491,19 +475,28 @@ def apply_scene_grade(master, scene_name, frame_start, frame_end):
         "Spot": (spot_energy, spot_color)
     }
 
-    for name, (energy, color) in lights.items():
-        # Map master attributes if they exist
-        attr_map = {"Sun": "sun", "RimLight": "rim", "FillLight": "fill", "Spot": "spot"}
-        light_obj = getattr(master, attr_map.get(name, ""), None)
-        if not light_obj:
-            light_obj = bpy.data.objects.get(name)
+    # Enhancement #142: Map legacy names to new character key light rig
+    light_mapping = {
+        "RimLight": ["HerbaceousKeyLight", "ArborKeyLight", "GnomeKeyLight"],
+        "FillLight": ["DomeFill"],
+        "Spot": ["LightShaftBeam"],
+        "Sun": ["Sun"]
+    }
 
-        if light_obj and hasattr(light_obj, "data"):
-            light_obj.data.energy = energy
-            light_obj.data.keyframe_insert(data_path="energy", frame=frame_start)
-            if hasattr(light_obj.data, "color"):
-                light_obj.data.color = color[:3]
-                light_obj.data.keyframe_insert(data_path="color", frame=frame_start)
+    for legacy_name, (energy, color) in lights.items():
+        target_names = light_mapping.get(legacy_name, [legacy_name])
+        for name in target_names:
+            attr_map = {"Sun": "sun", "RimLight": "rim", "FillLight": "fill", "Spot": "spot"}
+            light_obj = getattr(master, attr_map.get(legacy_name, ""), None)
+            if not light_obj:
+                light_obj = bpy.data.objects.get(name)
+
+            if light_obj and hasattr(light_obj, "data"):
+                light_obj.data.energy = energy
+                light_obj.data.keyframe_insert(data_path="energy", frame=frame_start)
+                if hasattr(light_obj.data, "color"):
+                    light_obj.data.color = color[:3]
+                    light_obj.data.keyframe_insert(data_path="color", frame=frame_start)
 
 def animate_foliage_wind(objects, strength=0.05, frame_start=1, frame_end=15000):
     """Adds subtle sway to foliage objects within a specific frame range."""

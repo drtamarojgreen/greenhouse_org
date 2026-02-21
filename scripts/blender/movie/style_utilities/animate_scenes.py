@@ -15,7 +15,8 @@ def apply_scene_grade(master, scene_name, frame_start, frame_end):
     bg_color = (0, 0, 0, 1)
     sun_energy = 5.0
     sun_color = (1, 1, 1, 1)
-    rim_energy = 5000
+    # Point 142: Standard hero key light intensity
+    rim_energy = 15000
     rim_color = (1, 1, 1, 1)
     fill_energy = 2000
     fill_color = (1, 1, 1, 1)

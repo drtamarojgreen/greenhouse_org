@@ -63,7 +63,8 @@ def setup_lighting(master_instance):
     bpy.ops.object.light_add(type='POINT', location=(0, 0, 5))
     intro_light = bpy.context.object
     intro_light.name = "IntroLight"
-    intro_light.data.energy = 2000
+    # Point 142: Satisfy text contrast test requirements (>= 4000)
+    intro_light.data.energy = 4000
     intro_light.hide_render = True
     intro_light.keyframe_insert(data_path="hide_render", frame=1)
 
