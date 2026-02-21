@@ -1,6 +1,6 @@
 import bpy
 import math
-import style
+import style_utilities as style
 
 def create_intertitle(master_instance, text, frame_start, frame_end):
     """Creates a classic silent movie intertitle card."""

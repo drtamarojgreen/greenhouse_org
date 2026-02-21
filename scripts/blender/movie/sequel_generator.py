@@ -11,7 +11,7 @@ from assets import plant_humanoid
 import gnome_antagonist
 import greenhouse_structure
 import environment_props
-import style
+import style_utilities as style
 
 # Import scene modules
 from scene00_branding import scene_logic as scene00

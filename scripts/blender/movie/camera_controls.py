@@ -1,7 +1,7 @@
 import bpy
 import math
 import mathutils
-import style
+import style_utilities as style
 from constants import SCENE_MAP
 
 def ensure_camera(master):
@@ -36,6 +36,27 @@ def ensure_camera(master):
     cam.data.dof.aperture_fstop = 2.8
 
     return cam, target
+
+def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dist=2.5):
+    """P1-4: Prevent camera clipping through character bounds."""
+    # We'll sample and auto-offset if too close
+    for f in range(frame_start, frame_end + 1, 120): # Sparse sampling for speed
+        master.scene.frame_set(f)
+        dg = bpy.context.evaluated_depsgraph_get()
+        cam_eval = cam.evaluated_get(dg)
+        cam_world_loc = cam_eval.matrix_world.translation
+
+        for char in characters:
+            if not char: continue
+            char_eval = char.evaluated_get(dg)
+            char_loc = char_eval.matrix_world.translation
+            dist = (cam_world_loc - char_loc).length
+            if dist < min_dist:
+                # Push camera back along view vector
+                direction = (cam_world_loc - char_loc).normalized()
+                offset = direction * (min_dist - dist + 0.2)
+                cam.location += offset
+                cam.keyframe_insert(data_path="location", frame=f)
 
 def setup_all_camera_logic(master):
     """Initializes camera, target, and keyframes."""
@@ -127,6 +148,7 @@ def setup_camera_keyframes(master, cam, target):
         kf_eased(frame, orig_loc + mathutils.Vector((0, 0, intensity)), target.location, easing='LINEAR')
         kf_eased(frame + 2, orig_loc, target.location, easing='EASE_OUT')
 
+
     # Drone shot helper - adds a lateral sweep at altitude
     def drone_sweep(frame_start, frame_end,
                     start_xy, end_xy, altitude=70,
@@ -166,18 +188,17 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(SCENE_MAP['scene_brain'][0], (0,-30,8), origin)
     kf_eased(SCENE_MAP['scene_brain'][1], (0,-35,10), origin)
 
-    # Garden fly-in: start very wide, push into the characters (401 - 650)
-    kf_eased(401, (0, -60, 25), (0, 0, 0), easing='EASE_IN')        # extreme wide
-    kf_eased(450, (0, -60, 25), (0, 0, 0), easing='EASE_IN')        # slow out of hold
-    kf_eased(550, (0, -20, 8), (-2, 0, 1.5), easing='EASE_IN_OUT')  # fly in
-    kf_eased(650, (5, -15, 3), (-2, 0, 1.5), easing='EASE_OUT')     # settle
-
-    # Garden scene drone pass
-    drone_sweep(401, 480,
+    # Garden scene: Drone pass then fly-in (401 - 650)
+    # Point 142: Separated to avoid overlapping keys
+    drone_sweep(401, 520,
                 start_xy=(-50, 20),
-                end_xy=(50, 20),
+                end_xy=(0, -40),
                 altitude=60,
                 look_at=(0, 5, 0))
+
+    kf_eased(521, (0, -40, 20), (0, 0, 0), easing='EASE_IN')        # transition
+    kf_eased(580, (0, -20, 8), (-2, 0, 1.5), easing='EASE_IN_OUT')  # fly in
+    kf_eased(650, (5, -15, 3), (-2, 0, 1.5), easing='EASE_OUT')     # settle
 
     # Socratic (651 - 950)
     kf_eased(651, title_loc, origin)

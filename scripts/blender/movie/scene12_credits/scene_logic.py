@@ -32,7 +32,7 @@ def setup_scene(master):
         "Final Resolution of logos achieved."
     )
 
-    # Point 142: Use +90 to face camera correctly in Z-up world
+    # Point 142: Use +90 to face camera correctly in Z-up world (Camera at -Y)
     bpy.ops.object.text_add(location=(0, 0, -5), rotation=(math.radians(90), 0, 0))
     text_obj = bpy.context.object
     text_obj.name = "CreditsText"

@@ -1,7 +1,7 @@
 import bpy
 import math
 import mathutils
-import style
+import style_utilities as style
 
 def create_greenhouse_iron_mat():
     mat = bpy.data.materials.get("GH_Iron")

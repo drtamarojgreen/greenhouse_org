@@ -4,7 +4,7 @@ import sys
 import unittest
 import math
 from base_test import BlenderTestCase
-import style
+import style_utilities as style
 import silent_movie_generator
 
 class TestRobustness(BlenderTestCase):

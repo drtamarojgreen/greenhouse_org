@@ -1,6 +1,6 @@
 import bpy
 import math
-import style
+import style_utilities as style
 
 def setup_scene(master):
     """

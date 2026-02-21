@@ -13,7 +13,7 @@ sys.path.append(os.path.join(MOVIE_ROOT, "tests"))
 from base_test import BlenderTestCase
 
 import silent_movie_generator
-import style
+import style_utilities as style
 
 class TestSceneModules(BlenderTestCase):
     @classmethod

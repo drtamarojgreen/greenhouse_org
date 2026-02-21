@@ -1,5 +1,5 @@
 import bpy
-import style
+import style_utilities as style
 import mathutils
 from constants import SCENE_MAP
 

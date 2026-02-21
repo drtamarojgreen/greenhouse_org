@@ -13,7 +13,7 @@ sys.path.append(os.path.join(MOVIE_ROOT, "tests"))
 from base_test import BlenderTestCase
 
 import silent_movie_generator
-import style
+import style_utilities as style
 from assets import plant_humanoid
 
 class TestExpressionRig(BlenderTestCase):
@@ -22,16 +22,17 @@ class TestExpressionRig(BlenderTestCase):
         for exp in ['NEUTRAL', 'ANGRY', 'SURPRISED']:
             with self.subTest(expression=exp):
                 # Clear animation data for the character to ensure isolation
-                for obj in bpy.data.objects:
-                    if "Herbaceous" in obj.name:
-                        obj.animation_data_clear()
+                if self.master.h1:
+                    self.master.h1.animation_data_clear()
 
                 plant_humanoid.animate_expression(self.master.h1, 100, expression=exp)
 
                 # Assert that some animation was actually created on a relevant part (Eyes/Mouth bones)
                 has_keyframes = False
                 if self.master.h1 and self.master.h1.animation_data and self.master.h1.animation_data.action:
-                    if len(style.get_action_curves(self.master.h1.animation_data.action)) > 0:
+                    # Point 142: Use robust curve discovery
+                    curves = style.get_action_curves(self.master.h1.animation_data.action)
+                    if len(curves) > 0:
                         has_keyframes = True
 
                 if exp != 'NEUTRAL':

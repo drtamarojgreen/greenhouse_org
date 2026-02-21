@@ -1,6 +1,6 @@
 import bpy
 import math
-import style
+import style_utilities as style
 from assets import plant_humanoid
 import mathutils
 import random

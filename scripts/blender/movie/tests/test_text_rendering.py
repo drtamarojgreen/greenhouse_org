@@ -7,7 +7,7 @@ import sys
 # Add movie root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from base_test import BlenderTestCase
-import style
+import style_utilities as style
 
 class TestTextRendering(BlenderTestCase):
     def test_intertitle_orientation(self):

@@ -1,7 +1,7 @@
 import bpy
 import math
 from assets import plant_humanoid, gnome_antagonist, library_props
-import style
+import style_utilities as style
 
 def setup_all_characters(master):
     """Loads and initializes characters."""

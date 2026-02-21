@@ -1,6 +1,6 @@
 import bpy
 import math
-import style
+import style_utilities as style
 from constants import SCENE_MAP
 from lighting_config import LIGHTING_DEFAULTS, DIALOGUE_BOOST, GNOME_DEFEAT_PRESETS, DAWN_COLORS
 

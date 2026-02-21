@@ -29,7 +29,7 @@ def create_gnarled_staff(location, height=1.5, name="GnarledStaff", material=Non
 def create_gnome(name, location, scale=0.6):
     """Exclusive 5.0+ BMesh Gnome with Proper Rigging."""
     location = mathutils.Vector(location)
-    import bmesh; import style
+    import bmesh; import style_utilities as style
 
     armature_data = bpy.data.armatures.new(f"{name}_ArmatureData")
     armature_obj = bpy.data.objects.new(name, armature_data)

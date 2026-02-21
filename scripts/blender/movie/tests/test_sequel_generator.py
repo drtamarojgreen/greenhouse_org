@@ -12,7 +12,7 @@ try:
 except ImportError:
     SEQUEL_AVAILABLE = False
 
-import style
+import style_utilities as style
 
 @unittest.skipUnless(SEQUEL_AVAILABLE, "sequel_generator not available")
 class TestSequelGenerator(unittest.TestCase):

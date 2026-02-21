@@ -1,7 +1,7 @@
 import bpy
 import math
 import mathutils
-import style
+import style_utilities as style
 
 def create_marble_floor_mat():
     mat = bpy.data.materials.get("CheckeredMarble") or bpy.data.materials.new(name="CheckeredMarble")

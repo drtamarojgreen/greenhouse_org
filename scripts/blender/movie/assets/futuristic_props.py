@@ -1,7 +1,7 @@
 import bpy
 import math
 import mathutils
-import style
+import style_utilities as style
 
 def create_hologram(location, size=1.0):
     import bmesh; mesh = bpy.data.meshes.new("Holo_MeshData"); obj = bpy.data.objects.new("Hologram", mesh); bpy.context.scene.collection.objects.link(obj); obj.location = mathutils.Vector(location) + mathutils.Vector((0, 0, 1.2)); obj.rotation_euler = (1.57, 0, 0)

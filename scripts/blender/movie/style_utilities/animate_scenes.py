@@ -56,19 +56,29 @@ def apply_scene_grade(master, scene_name, frame_start, frame_end):
         "Spot": (spot_energy, spot_color)
     }
 
-    for name, (energy, color) in lights.items():
-        # Map master attributes if they exist
-        attr_map = {"Sun": "sun", "RimLight": "rim", "FillLight": "fill", "Spot": "spot"}
-        light_obj = getattr(master, attr_map.get(name, ""), None)
-        if not light_obj:
-            light_obj = bpy.data.objects.get(name)
+    # Enhancement #142: Map legacy names to new character key light rig
+    light_mapping = {
+        "RimLight": ["HerbaceousKeyLight", "ArborKeyLight", "GnomeKeyLight"],
+        "FillLight": ["DomeFill"],
+        "Spot": ["LightShaftBeam"],
+        "Sun": ["Sun"]
+    }
 
-        if light_obj and hasattr(light_obj, "data"):
-            light_obj.data.energy = energy
-            light_obj.data.keyframe_insert(data_path="energy", frame=frame_start)
-            if hasattr(light_obj.data, "color"):
-                light_obj.data.color = color[:3]
-                light_obj.data.keyframe_insert(data_path="color", frame=frame_start)
+    for legacy_name, (energy, color) in lights.items():
+        target_names = light_mapping.get(legacy_name, [legacy_name])
+        for name in target_names:
+            # Map master attributes if they exist
+            attr_map = {"Sun": "sun", "RimLight": "rim", "FillLight": "fill", "Spot": "spot"}
+            light_obj = getattr(master, attr_map.get(legacy_name, ""), None)
+            if not light_obj:
+                light_obj = bpy.data.objects.get(name)
+
+            if light_obj and hasattr(light_obj, "data"):
+                light_obj.data.energy = energy
+                light_obj.data.keyframe_insert(data_path="energy", frame=frame_start)
+                if hasattr(light_obj.data, "color"):
+                    light_obj.data.color = color[:3]
+                    light_obj.data.keyframe_insert(data_path="color", frame=frame_start)
 
 def animate_foliage_wind(objects, strength=0.05, frame_start=1, frame_end=15000):
     """Adds subtle sway to foliage objects within a specific frame range."""
@@ -269,8 +279,9 @@ def animate_plant_advance(master, frame_start, frame_end):
         return
 
     # Phase 1: Plants step forward together (scenes 18-19)
-    move_start = 10901 # Scene 18 start
-    move_peak = 12000  # Mid Scene 19
+    # Point 142: Use passed frames instead of hardcoded values for robustness
+    move_start = frame_start
+    move_peak = (frame_start + frame_end) // 2
 
     # Herbaceous (h1) advance
     master.h1.location.y = 0.0
@@ -287,13 +298,13 @@ def animate_plant_advance(master, frame_start, frame_end):
     # Phase 2: Plants loom over gnome
     for char in [master.h1, master.h2]:
         char.scale = (1, 1, 1)
-        char.keyframe_insert(data_path="scale", frame=move_start + 300)
+        char.keyframe_insert(data_path="scale", frame=move_start + 100)
         char.scale = (1.2, 1.2, 1.2)
         char.keyframe_insert(data_path="scale", frame=move_peak)
 
     # Phase 3: Gnome shrinks as he's overwhelmed
     master.gnome.scale = (0.6, 0.6, 0.6)
-    master.gnome.keyframe_insert(data_path="scale", frame=move_start + 300)
+    master.gnome.keyframe_insert(data_path="scale", frame=move_start + 100)
     master.gnome.scale = (0.3, 0.3, 0.3)
     master.gnome.keyframe_insert(data_path="scale", frame=move_peak)
 

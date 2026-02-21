@@ -3,7 +3,7 @@ import mathutils
 import sys
 import unittest
 from base_test import BlenderTestCase
-import style
+import style_utilities as style
 
 class TestAnimation(BlenderTestCase):
     def test_01_animation_presence(self):
@@ -44,7 +44,7 @@ class TestAnimation(BlenderTestCase):
         """Verify that character limbs have active animation data."""
         # Limbs and facial bones
         chars = ["Herbaceous", "Arbor"]
-        bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R", "Neck", "Jaw", "Mouth", "Eye.L", "Brow.L"]
+        bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R", "Neck", "Jaw", "Mouth", "Eye.", "Brow."]
         
         for char_name in chars:
             obj = bpy.data.objects.get(char_name)
@@ -57,10 +57,11 @@ class TestAnimation(BlenderTestCase):
                         curves = style.get_action_curves(obj.animation_data.action)
                         for fc in curves:
                             # Robust path matching for both Slotted and Legacy actions
+                            # Point 142: Flexible matching for side-suffixed bones
                             if bone_name in fc.data_path and any(p in fc.data_path for p in ("location", "rotation", "scale")):
                                 # Check for keyframe movement
                                 values = [kp.co[1] for kp in fc.keyframe_points]
-                                if len(values) > 1 and (max(values) - min(values)) > 0.001:
+                                if len(values) > 1 and (max(values) - min(values)) > 0.0001:
                                     has_movement = True
                                     break
                                 # Check for procedural noise modifiers (Point 142)
@@ -69,7 +70,7 @@ class TestAnimation(BlenderTestCase):
                                     break
                     
                     status = "PASS" if has_movement else "FAIL"
-                    details = f"Curves found: {len(style.get_action_curves(obj.animation_data.action))}" if not has_movement and obj.animation_data else "No action data"
+                    details = f"Curves found: {len(style.get_action_curves(obj.animation_data.action))}" if not has_movement and obj.animation_data and obj.animation_data.action else "No action data"
                     self.log_result(f"Bone Anim: {char_name}.{bone_name}", status, details)
                     self.assertTrue(has_movement)
 

@@ -1,5 +1,5 @@
 import bpy
-import style
+import style_utilities as style
 
 def setup_compositor(master_instance):
     """Sets up the filmic compositor pipeline with silent movie effects."""
@@ -16,13 +16,14 @@ def setup_compositor(master_instance):
 
     # Enhancement #55: Bloom/Glow for Bioluminescence
     glare = tree.nodes.new('CompositorNodeGlare')
-    style.set_node_input(glare, 'Type', 'FOG_GLOW')
+    style.set_node_input(glare, 'glare_type', 'FOG_GLOW') # Point 142: Use lower_case for Blender 4.0+
     style.set_node_input(glare, 'Size', 8)
     style.set_node_input(glare, 'Threshold', 0.5)
 
     # Enhancement #60: Lens Distortion / Chromatic Aberration
     distort = tree.nodes.new('CompositorNodeLensdist')
     distort.name = "ChromaticAberration"
+    style.set_node_input(distort, 'distort', 0.0)
     style.set_node_input(distort, 'Dispersion', 0.02)
 
     # Enhancement #60: Wet Glass Refraction (Simplified displacement)
@@ -54,8 +55,8 @@ def setup_compositor(master_instance):
 
     # Vignette (Ellipse Mask -> Invert -> Multiply)
     ellipse = tree.nodes.new('CompositorNodeEllipseMask')
-    ellipse.width = 0.8
-    ellipse.height = 0.8
+    style.set_node_input(ellipse, 'Width', 0.8)
+    style.set_node_input(ellipse, 'Height', 0.8)
 
     invert = tree.nodes.new('CompositorNodeInvert')
     tree.links.new(ellipse.outputs['Mask'], invert.inputs['Color'])
@@ -63,7 +64,23 @@ def setup_compositor(master_instance):
     vig_mix = style.create_mix_node(tree, blend_type='MULTIPLY', data_type='RGBA')
     vig_mix.name = "Vignette"
     fac_v, in1_v, in2_v = style.get_mix_sockets(vig_mix)
-    if fac_v: fac_v.default_value = 0.0 # Invisible by default
+    # Point 142: Use robust setter to avoid sequence errors
+    if fac_v: style.set_socket_value(fac_v, 0.0) # Invisible by default
+
+    # Enhancement #49: Iris Wipe (Double Multiplicative risk mitigation)
+    # Point 142: Use MIX instead of MULTIPLY for the second stage to prevent black crush
+    iris = tree.nodes.new('CompositorNodeEllipseMask')
+    iris.name = "IrisWipe"
+    style.set_node_input(iris, 'Width', 2.0)
+    style.set_node_input(iris, 'Height', 2.0)
+
+    iris_mix = style.create_mix_node(tree, blend_type='MIX', data_type='RGBA')
+    iris_mix.name = "IrisMix"
+    fac_i, in1_i, in2_i = style.get_mix_sockets(iris_mix)
+    # in1 is usually the 'Image', in2 is the 'Color' to mix in (Black)
+    # Point 142: Use robust setter
+    if in2_i: style.set_socket_value(in2_i, (0, 0, 0, 1))
+    tree.links.new(iris.outputs['Mask'], iris_mix.inputs[0]) # Use mask as factor
 
     # Links
     # 1. Main Path
@@ -77,8 +94,11 @@ def setup_compositor(master_instance):
     tree.links.new(displace.outputs['Image'], in1_v)
     tree.links.new(invert.outputs['Color'], in2_v)
 
+    # Insert Iris Wipe
+    tree.links.new(style.get_mix_output(vig_mix), in1_i)
+
     # 4. Final Output
-    tree.links.new(style.get_mix_output(vig_mix), huesat.inputs['Image'])
+    tree.links.new(style.get_mix_output(iris_mix), huesat.inputs['Image'])
     tree.links.new(huesat.outputs['Image'], composite.inputs['Image'])
 
 def animate_wet_glass(scene, frame_start, frame_end, strength=10.0):

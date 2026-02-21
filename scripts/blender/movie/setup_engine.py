@@ -2,7 +2,7 @@ import bpy
 import os
 import sys
 import site
-import style
+import style_utilities as style
 from constants import QUALITY_PRESETS
 
 def ensure_dependencies():

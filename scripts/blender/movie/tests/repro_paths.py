@@ -4,7 +4,7 @@ import sys
 
 # Add movie root to path
 sys.path.append(os.getcwd() + "/scripts/blender/movie")
-import style
+import style_utilities as style
 
 def test_slotted_action_paths():
     # Create an armature

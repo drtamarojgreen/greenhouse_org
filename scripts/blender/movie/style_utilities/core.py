@@ -28,72 +28,76 @@ def get_action_curves(action, create_if_missing=False):
     if action is None: return []
     if create_if_missing and hasattr(action, "layers") and len(action.layers) == 0:
         action.layers.new(name="Main Layer")
+
     curves = []
-    seen_fcurves = set()
+    seen_ids = set()
+
+    def get_bone_prefix(name):
+        bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
+        if any(kw in name for kw in bone_kws):
+            clean_name = name.split(":")[-1]
+            return f'pose.bones["{clean_name}"].'
+        return ""
+
     def wrap_fc(fc, prefix=""):
         if not fc: return
-        try: ptr = fc.as_pointer()
-        except: ptr = id(fc)
-        if ptr in seen_fcurves: return
-        seen_fcurves.add(ptr)
+        # Unique ID for F-curve to avoid duplicates
+        fid = f"{id(fc)}_{prefix}_{getattr(fc, 'array_index', 0)}"
+        if fid in seen_ids: return
+        seen_ids.add(fid)
+
         path = getattr(fc, "data_path", "")
         if not path:
              path = getattr(fc, "path_full", getattr(fc, "path", ""))
+
+        # If path is relative (no pose.bones), prepend prefix
         is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
         if is_relative and prefix:
             path = prefix + path
+
         curves.append(FCurveProxy(fc, path))
+
+    # 1. Legacy F-curves
     if hasattr(action, "fcurves"):
         for fc in action.fcurves: wrap_fc(fc)
+
+    # 2. Blender 5.0 Layers & Channels
     if hasattr(action, "layers"):
         for layer in action.layers:
             def traverse_channels(channels, slot_hint=None):
                 for chan in channels:
+                    prefix = get_bone_prefix(getattr(slot_hint, "name", ""))
+                    if hasattr(chan, "slot") and chan.slot:
+                        prefix = get_bone_prefix(chan.slot.name)
+
                     fc = getattr(chan, "fcurve", None)
-                    if not fc: fc = chan if hasattr(chan, "keyframe_points") else None
-                    if fc:
-                        slot = getattr(chan, "slot", None) or slot_hint
-                        prefix = ""
-                        if slot:
-                            sname = getattr(slot, "name", "")
-                            bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
-                            if any(kw in sname for kw in bone_kws):
-                                prefix = f'pose.bones["{sname}"].'
-                        wrap_fc(fc, prefix)
+                    if not fc and hasattr(chan, "keyframe_points"): fc = chan
+
+                    if fc: wrap_fc(fc, prefix)
+
+                    # Recursive for nested channels
+                    if hasattr(chan, "channels"):
+                        traverse_channels(chan.channels, slot_hint=slot_hint or getattr(chan, "slot", None))
+
             if hasattr(layer, "channels"): traverse_channels(layer.channels)
             if hasattr(layer, "strips"):
                 for strip in layer.strips:
                     if hasattr(strip, "channels"): traverse_channels(strip.channels)
+
+    # 3. Blender 5.0 Slots & Bindings
     if hasattr(action, "slots"):
         for slot in action.slots:
-            sname = getattr(slot, "name", "")
-            prefix = ""
-            bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
-            for kw in bone_kws:
-                if kw in sname:
-                    clean_name = sname.split(":")[-1]
-                    prefix = f'pose.bones["{clean_name}"].'
-                    break
+            prefix = get_bone_prefix(slot.name)
             if hasattr(slot, "bindings"):
                 for binding in slot.bindings:
+                    if hasattr(binding, "fcurves"):
+                        for fc in binding.fcurves: wrap_fc(fc, prefix)
                     if hasattr(binding, "channels"):
                         for chan in binding.channels:
                             fc = getattr(chan, "fcurve", None)
-                            if not fc: fc = chan if hasattr(chan, "keyframe_points") else None
+                            if not fc and hasattr(chan, "keyframe_points"): fc = chan
                             if fc: wrap_fc(fc, prefix)
-                    if hasattr(binding, "fcurves"):
-                        for fc in binding.fcurves: wrap_fc(fc, prefix)
-    if hasattr(action, "bindings"):
-        for binding in action.bindings:
-            prefix = ""
-            bname = getattr(binding, "name", "")
-            if any(kw in bname for kw in (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")):
-                prefix = f'pose.bones["{bname}"].'
-            if hasattr(binding, "channels"):
-                for chan in binding.channels:
-                    fc = getattr(chan, "fcurve", None)
-                    if not fc: fc = chan if hasattr(chan, "keyframe_points") else None
-                    if fc: wrap_fc(fc, prefix)
+
     return curves
 
 def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):

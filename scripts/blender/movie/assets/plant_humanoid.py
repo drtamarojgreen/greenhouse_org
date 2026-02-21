@@ -2,7 +2,7 @@ import bpy
 import math
 import random
 import mathutils
-import style
+import style_utilities as style
 
 def create_leaf_mesh():
     """Creates a simple leaf mesh if it doesn't exist."""

@@ -2,7 +2,7 @@ import bpy
 import math
 import mathutils
 import random
-import style
+import style_utilities as style
 
 # Memory Optimization: Master Collections for Instancing
 _MASTER_COLLECTION_NAME = "Master_Assets"

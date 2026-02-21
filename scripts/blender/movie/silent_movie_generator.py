@@ -3,7 +3,7 @@ import setup_engine, camera_controls, lighting_setup, compositor_settings, scene
 from assets import plant_humanoid, gnome_antagonist, library_props, futuristic_props, greenhouse_structure, environment_props, weather_system, exterior_garden, greenhouse_interior, brain_neuron
 from master import BaseMaster
 from constants import SCENE_MAP
-import style
+import style_utilities as style
 
 # Import scene modules
 from scene00_branding import scene_logic as scene00
@@ -55,14 +55,28 @@ class MovieMaster(BaseMaster):
     def animate_master(self):
         camera_controls.setup_all_camera_logic(self); setup_characters.setup_gaze_system(self)
         scene_orchestrator.orchestrate_scenes(self); animate_characters.animate_characters(self); animate_props.animate_props(self)
+
+        # Point 142: Camera Safety Pass (P1-4) - After all characters are animated
+        camera_controls.apply_camera_safety(self, self.scene.camera, [self.h1, self.h2, self.gnome], 1, 15000)
+
         # Point 142: Executing all scenes in chronological order
+        # P2-6: Separate sequel-only timeline modules (scene13, scene14) from feature pipeline
+        include_sequel = os.environ.get("MOVIE_SEQUEL_MODE") == "1"
+
         all_scenes = [
             scene00, scene01, scene_brain, scene02, scene03, scene04, scene05,
-            scene06, scene07, scene08, scene09, scene10, scene11, scene13,
-            scene14, scene15, scene16_dialogue, scene17_dialogue, scene18_dialogue,
+            scene06, scene07, scene08, scene09, scene10, scene11
+        ]
+
+        if include_sequel:
+            all_scenes += [scene13, scene14]
+
+        all_scenes += [
+            scene15, scene16_dialogue, scene17_dialogue, scene18_dialogue,
             scene19_dialogue, scene20_dialogue, scene21_dialogue, scene22_retreat,
             scene12
         ]
+
         for s in all_scenes:
             if s and hasattr(s, 'setup_scene'): s.setup_scene(self)
 
