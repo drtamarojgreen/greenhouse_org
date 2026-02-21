@@ -11,6 +11,11 @@ const TestFramework = require('../utils/test_framework.js');
 // --- Mock Browser Environment ---
 global.window = global;
 global.performance = { now: () => Date.now() };
+global.Path2D = class {
+    moveTo() { }
+    lineTo() { }
+    closePath() { }
+};
 global.document = {
     querySelector: () => null,
     createElement: (tag) => {

@@ -52,7 +52,7 @@
                 if (avgScale < 0.5) {
                     const alphaRaw = GreenhouseModels3DMath.applyDepthFog(0.5, (p1.depth + p2.depth) / 2);
                     const alpha = Math.round(alphaRaw * 10) / 10;
-                    if (alpha <= 0) return;
+                    if (alpha <= 0) continue;
 
                     const colorType = conn.weight > 0 ? 'gold' : 'silver';
                     const key = `${colorType}_${alpha}`;
@@ -60,7 +60,7 @@
                     if (!batches[key]) batches[key] = new Path2D();
                     batches[key].moveTo(p1.x, p1.y);
                     batches[key].lineTo(p2.x, p2.y);
-                    return;
+                    continue;
                 }
 
                 // Optimization: Pre-project mesh vertices (using pooling)
@@ -94,6 +94,7 @@
                 facesWithDepth.sort((a, b) => b.depth - a.depth);
 
                 const alpha = GreenhouseModels3DMath.applyDepthFog(0.8, facesWithDepth[0]?.depth || 1);
+                const colorBatches = {};
 
                 for (let i = 0; i < facesWithDepth.length; i++) {
                     const { vertices, origVertices } = facesWithDepth[i];
@@ -126,18 +127,25 @@
                             intensity += diffuse * 0.5;
                         }
 
+                        // Quantize intensity for batching (10 levels)
+                        const qInt = Math.round(intensity * 10) / 10;
                         const baseColor = conn.weight > 0 ? { r: 255, g: 215, b: 0 } : { r: 176, g: 196, b: 222 };
-                        const litR = Math.min(255, baseColor.r * intensity);
-                        const litG = Math.min(255, baseColor.g * intensity);
-                        const litB = Math.min(255, baseColor.b * intensity);
+                        const litR = Math.floor(Math.min(255, baseColor.r * qInt));
+                        const litG = Math.floor(Math.min(255, baseColor.g * qInt));
+                        const litB = Math.floor(Math.min(255, baseColor.b * qInt));
+                        const colorKey = `rgba(${litR}, ${litG}, ${litB}, ${alpha})`;
 
-                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${alpha})`;
-                        ctx.beginPath();
-                        ctx.moveTo(v1.x, v1.y);
-                        ctx.lineTo(v2.x, v2.y);
-                        ctx.lineTo(v3.x, v3.y);
-                        ctx.fill();
+                        if (!colorBatches[colorKey]) colorBatches[colorKey] = new Path2D();
+                        colorBatches[colorKey].moveTo(v1.x, v1.y);
+                        colorBatches[colorKey].lineTo(v2.x, v2.y);
+                        colorBatches[colorKey].lineTo(v3.x, v3.y);
+                        colorBatches[colorKey].closePath();
                     }
+                }
+
+                for (const color in colorBatches) {
+                    ctx.fillStyle = color;
+                    ctx.fill(colorBatches[color]);
                 }
 
                 const seed = (conn.from.id + conn.to.id) * 0.1;

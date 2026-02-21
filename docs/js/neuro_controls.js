@@ -137,6 +137,67 @@
             ctx.font = '12px Quicksand, sans-serif';
             ctx.fillText(query || t('search_scenarios') || 'Search Scenarios...', s.x + 10, s.y + s.h / 2);
             ctx.restore();
+        },
+
+        drawDropdown(ctx, app, d, isOpen) {
+            const isHovered = app.ui.hoveredElement && app.ui.hoveredElement.id === d.id;
+
+            ctx.save();
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+
+            // Button Base
+            ctx.fillStyle = isOpen ? 'rgba(76, 161, 175, 0.4)' : (isHovered ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)');
+            ctx.strokeStyle = isOpen ? '#4ca1af' : 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 1;
+
+            if (app.roundRect) app.roundRect(ctx, d.x, d.y, d.w, d.h, 6, true, true);
+            else { ctx.fillRect(d.x, d.y, d.w, d.h); ctx.strokeRect(d.x, d.y, d.w, d.h); }
+
+            // Current Label
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px Quicksand, sans-serif';
+            const currentLabel = d.options.find(o => o.val === d.val)?.label || d.val;
+            ctx.fillText(currentLabel.toUpperCase(), d.x + 10, d.y + d.h / 2);
+
+            // Arrow
+            ctx.beginPath();
+            const ax = d.x + d.w - 20;
+            const ay = d.y + d.h / 2;
+            if (isOpen) {
+                ctx.moveTo(ax - 4, ay + 2); ctx.lineTo(ax, ay - 2); ctx.lineTo(ax + 4, ay + 2);
+            } else {
+                ctx.moveTo(ax - 4, ay - 2); ctx.lineTo(ax, ay + 2); ctx.lineTo(ax + 4, ay - 2);
+            }
+            ctx.stroke();
+
+            // Options List
+            if (isOpen) {
+                const optH = 25;
+                const listH = d.options.length * optH;
+
+                // Shadow/Backdrop for list
+                ctx.fillStyle = 'rgba(10, 15, 25, 0.95)';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                if (app.roundRect) app.roundRect(ctx, d.x, d.y + d.h + 2, d.w, listH, 6, true, true);
+                ctx.shadowBlur = 0;
+
+                d.options.forEach((opt, idx) => {
+                    const oy = d.y + d.h + 2 + idx * optH;
+                    const isOptHovered = app.ui.hoveredElement && app.ui.hoveredElement.id === `${d.id}_opt_${idx}`;
+
+                    if (isOptHovered) {
+                        ctx.fillStyle = 'rgba(76, 161, 175, 0.3)';
+                        ctx.fillRect(d.x + 2, oy + 2, d.w - 4, optH - 4);
+                    }
+
+                    ctx.fillStyle = isOptHovered ? '#fff' : 'rgba(255,255,255,0.7)';
+                    ctx.fillText(opt.label.toUpperCase(), d.x + 10, oy + optH / 2);
+                });
+            }
+
+            ctx.restore();
         }
     };
 
