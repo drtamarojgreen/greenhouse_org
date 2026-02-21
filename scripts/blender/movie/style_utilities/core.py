@@ -122,6 +122,22 @@ def get_action_curves(action, create_if_missing=False):
 
     return curves
 
+
+
+def ensure_action(obj, action_name_prefix="Anim"):
+    """Ensure an animatable object has animation_data + action and return the action."""
+    if obj is None:
+        return None
+    if not getattr(obj, "animation_data", None):
+        obj.animation_data_create()
+    action = obj.animation_data.action
+    if not action:
+        action = bpy.data.actions.new(name=f"{action_name_prefix}_{obj.name}")
+        obj.animation_data.action = action
+    if hasattr(action, "layers") and len(action.layers) == 0:
+        action.layers.new(name="Main Layer")
+    return action
+
 def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
     """Retrieves or creates an F-Curve using the Blender 5.0+ Layered Action API."""
     if action is None or ref_obj is None: return None
@@ -306,10 +322,7 @@ def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=1500
         anim_target = obj.id_data; path_prefix = f'pose.bones["{obj.name}"].'
     elif hasattr(obj, "bone") and hasattr(obj, "id_data") and obj.id_data.type == 'ARMATURE':
         anim_target = obj.id_data; path_prefix = f'pose.bones["{obj.name}"].'
-    if not anim_target.animation_data: anim_target.animation_data_create()
-    action = anim_target.animation_data.action
-    if not action: action = anim_target.animation_data.action = bpy.data.actions.new(name=f"Noise_{anim_target.name}")
-    if hasattr(action, "layers") and len(action.layers) == 0: action.layers.new(name="Main Layer")
+    action = ensure_action(anim_target, action_name_prefix="Noise")
     indices = [index] if index >= 0 else [0, 1, 2]
     full_path = path_prefix + data_path
     for idx in indices:

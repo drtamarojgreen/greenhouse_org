@@ -36,6 +36,8 @@ def setup_lighting(master_instance):
             light = bpy.context.object
             light.name = name
         apply_cfg(light, LIGHTING_DEFAULTS.get(name))
+        # Keep an explicit baseline key so early-frame tests evaluate deterministic values.
+        light.data.keyframe_insert(data_path="energy", frame=1)
 
         if cam:
             light.parent = cam
