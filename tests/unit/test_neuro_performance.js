@@ -15,6 +15,7 @@ global.performance = { now: () => Date.now() };
 global.Path2D = class {
     moveTo() { }
     lineTo() { }
+    closePath() { }
 };
 
 // --- Helper to Load Scripts ---
@@ -106,7 +107,7 @@ TestFramework.describe('Neuro Performance Profiling', () => {
             return {
                 ...c,
                 from, to, controlPoint: cp,
-                mesh: window.GreenhouseNeuroGeometry.generateTubeMesh(from, to, cp, 2, 8)
+                mesh: window.GreenhouseNeuroGeometry.generateTubeMesh(from, to, cp, 2, 6)
             };
         });
 

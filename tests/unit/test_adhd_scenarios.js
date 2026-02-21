@@ -78,7 +78,6 @@ TestFramework.describe('ADHD Scenarios Integration', () => {
         // Verify UI3D sees the change during render (mocking render to check side effects)
         let filterApplied = false;
         const ctx = document.createElement('canvas').getContext('2d');
-        const originalFilter = Object.getOwnPropertyDescriptor(ctx, 'filter');
 
         // In this mock environment, we just want to ensure that if we call render,
         // it uses the values from GA.

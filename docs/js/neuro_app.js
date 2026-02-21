@@ -24,7 +24,10 @@
             activeTab: 'sim', // 'sim', 'adhd', 'synapse'
             searchQuery: '',
             adhdCategory: 'scenarios', // 'scenarios', 'symptoms', 'treatments', etc.
-            scrollOffset: 0
+            scrollOffset: 0,
+            dropdowns: {
+                category: { isOpen: false }
+            }
         },
 
         ui: {
@@ -35,7 +38,7 @@
             actionButtons: [],
             cameraButtons: [],
             tabs: [],
-            categoryButtons: [],
+            categoryDropdown: null,
             searchInput: { id: 'search_input', x: 40, y: 70, w: 280, h: 30 }
         },
 
@@ -51,7 +54,10 @@
                 activeTab: 'sim',
                 searchQuery: '',
                 adhdCategory: 'scenarios',
-                scrollOffset: 0
+                scrollOffset: 0,
+                dropdowns: {
+                    category: { isOpen: false }
+                }
             };
 
             // Robust selector handling (Wix compatibility)
@@ -160,16 +166,20 @@
                 { id: 'auto_rotate', label: t('auto_rotate'), x: 515, y: 60, w: 110, h: 25, action: 'rotate' }
             ];
 
-            // ADHD Category Buttons
-            const catW = (panelW - 60 - 10) / 3;
-            this.ui.categoryButtons = [
-                { id: 'cat_scenarios', label: t('cat_scenarios') || 'SCENARIOS', val: 'scenarios', x: 40 + offsetX, y: 110, w: catW, h: 20 },
-                { id: 'cat_symptoms', label: t('cat_symptoms') || 'SYMPTOMS', val: 'symptoms', x: 40 + offsetX + catW + 5, y: 110, w: catW, h: 20 },
-                { id: 'cat_treatments', label: t('cat_treatments') || 'CLINICAL', val: 'treatments', x: 40 + offsetX + (catW + 5) * 2, y: 110, w: catW, h: 20 },
-                { id: 'cat_pathology', label: t('cat_pathology') || 'PATHOLOGY', val: 'pathology', x: 40 + offsetX, y: 135, w: catW, h: 20 },
-                { id: 'cat_etiology', label: t('cat_etiology') || 'ETIOLOGY', val: 'etiology', x: 40 + offsetX + catW + 5, y: 135, w: catW, h: 20 },
-                { id: 'cat_conditions', label: t('cat_conditions') || 'OTHER', val: 'conditions', x: 40 + offsetX + (catW + 5) * 2, y: 135, w: catW, h: 20 }
-            ];
+            // ADHD Category Dropdown
+            this.ui.categoryDropdown = {
+                id: 'cat_dropdown',
+                x: 40 + offsetX, y: 110, w: panelW - 70, h: 30,
+                val: this.state.adhdCategory,
+                options: [
+                    { label: t('cat_scenarios') || 'SCENARIOS', val: 'scenarios' },
+                    { label: t('cat_symptoms') || 'SYMPTOMS', val: 'symptoms' },
+                    { label: t('cat_treatments') || 'CLINICAL', val: 'treatments' },
+                    { label: t('cat_pathology') || 'PATHOLOGY', val: 'pathology' },
+                    { label: t('cat_etiology') || 'ETIOLOGY', val: 'etiology' },
+                    { label: t('cat_conditions') || 'OTHER', val: 'conditions' }
+                ]
+            };
         },
 
         bindEvents() {
@@ -227,7 +237,27 @@
             const { x: mx, y: my } = this.getMousePos(e);
             let hit = false;
 
-            // 0. Tabs
+            // 0. Dropdowns (priority hit detection)
+            if (this.state.activeTab === 'adhd' && this.state.dropdowns.category.isOpen) {
+                const d = this.ui.categoryDropdown;
+                const optH = 25;
+                for (let i = 0; i < d.options.length; i++) {
+                    const oy = d.y + d.h + 2 + i * optH;
+                    if (mx >= d.x && mx <= d.x + d.w && my >= oy && my <= oy + optH) {
+                        this.state.adhdCategory = d.options[i].val;
+                        this.state.dropdowns.category.isOpen = false;
+                        this.state.scrollOffset = 0;
+                        this.updateADHDCheckboxes();
+                        hit = true; break;
+                    }
+                }
+                if (!hit) {
+                    this.state.dropdowns.category.isOpen = false; // Click outside closes it
+                    // Don't mark hit=true yet, allow other elements to be clicked
+                } else return; // Selection made, done.
+            }
+
+            // 1. Tabs
             for (const tab of this.ui.tabs) {
                 if (mx >= tab.x && mx <= tab.x + tab.w && my >= tab.y && my <= tab.y + tab.h) {
                     this.state.activeTab = tab.val;
@@ -255,21 +285,17 @@
             // 2. ADHD Tab Elements
             if (!hit && this.state.activeTab === 'adhd') {
                 const s = this.ui.searchInput;
+                const d = this.ui.categoryDropdown;
+
                 if (mx >= s.x && mx <= s.x + s.w && my >= s.y && my <= s.y + s.h) {
                     if (this.searchElem) this.searchElem.focus();
                     hit = true;
-                } else {
-                    // Category Selection
-                    for (const b of this.ui.categoryButtons) {
-                        if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
-                            this.state.adhdCategory = b.val;
-                            this.state.scrollOffset = 0;
-                            this.updateADHDCheckboxes();
-                            hit = true; break;
-                        }
-                    }
+                } else if (mx >= d.x && mx <= d.x + d.w && my >= d.y && my <= d.y + d.h) {
+                    this.state.dropdowns.category.isOpen = !this.state.dropdowns.category.isOpen;
+                    hit = true;
+                }
 
-                    if (!hit) {
+                if (!hit) {
                         const filtered = this.getFilteredCheckboxes();
                         const scrollAreaY = 160;
                         const scrollAreaH = 320;
@@ -295,7 +321,6 @@
                         }
                     }
                 }
-            }
 
             // 3. Action Buttons
             if (!hit) {
@@ -351,10 +376,24 @@
             const all = [...this.ui.tabs, ...this.ui.actionButtons, ...this.ui.cameraButtons];
             if (this.state.activeTab === 'sim') all.push(...this.ui.buttons, ...this.ui.sliders);
             if (this.state.activeTab === 'adhd') {
+                // Priority: Dropdown options
+                if (this.state.dropdowns.category.isOpen) {
+                    const d = this.ui.categoryDropdown;
+                    const optH = 25;
+                    for (let i = 0; i < d.options.length; i++) {
+                        const oy = d.y + d.h + 2 + i * optH;
+                        if (mx >= d.x && mx <= d.x + d.w && my >= oy && my <= oy + optH) {
+                            this.ui.hoveredElement = { id: `${d.id}_opt_${i}` };
+                            this.ui3d.canvas.style.cursor = 'pointer';
+                            return;
+                        }
+                    }
+                }
+
                 const scrollAreaY = 160;
-                const scrollAreaH = 320;
+                const scrollAreaH = 280; // Adjusted for description
                 const visibleCheckboxes = this.getFilteredCheckboxes().filter(c => c.y >= scrollAreaY && c.y + c.h <= scrollAreaY + scrollAreaH);
-                all.push(...visibleCheckboxes, this.ui.searchInput, ...this.ui.categoryButtons);
+                all.push(...visibleCheckboxes, this.ui.searchInput, this.ui.categoryDropdown);
             }
 
             for (const el of all) {
@@ -384,7 +423,11 @@
                 tab.label = t(tab.id) || tab.val.toUpperCase();
             });
             this.ui.buttons.forEach(b => b.label = t(b.id));
-            this.ui.categoryButtons.forEach(b => b.label = t(b.id));
+            if (this.ui.categoryDropdown) {
+                this.ui.categoryDropdown.options.forEach(o => {
+                    o.label = (t(`cat_${o.val}`) || o.val).toUpperCase();
+                });
+            }
             this.ui.actionButtons.forEach(b => {
                 if (b.action === 'pause') b.label = this.isRunning ? t('btn_pause') : t('btn_play');
                 else if (b.action === 'lang') b.label = t('btn_language');
@@ -417,6 +460,11 @@
             if (this.state.activeTab === 'sim') this.drawSimTab(ctx, offsetX);
             else if (this.state.activeTab === 'adhd') this.drawADHDTab(ctx, offsetX);
             else if (this.state.activeTab === 'synapse') this.drawSynapseTab(ctx, offsetX);
+
+            // 3.1 Dropdowns (drawn last for overlay)
+            if (this.state.activeTab === 'adhd') {
+                Controls.drawDropdown(ctx, this, { ...this.ui.categoryDropdown, val: this.state.adhdCategory }, this.state.dropdowns.category.isOpen);
+            }
 
             // 4. Action Buttons
             this.ui.actionButtons.forEach(b => Controls.drawButton(ctx, this, b, false));
@@ -472,19 +520,19 @@
 
         drawADHDTab(ctx, offsetX) {
             const Controls = window.GreenhouseNeuroControls;
+            const panelW = this.ui.panelW || 350;
+
             Controls.drawSearchBox(ctx, this, this.ui.searchInput, this.state.searchQuery);
 
             ctx.fillStyle = '#4ca1af';
             ctx.font = '800 10px Quicksand';
-            ctx.fillText(t('active_enhancement').toUpperCase() + ' CATEGORIES', 40 + offsetX, 105);
+            ctx.fillText(t('active_enhancement').toUpperCase() + ' CATEGORY', 40 + offsetX, 95);
 
-            this.ui.categoryButtons.forEach(b => {
-                Controls.drawButton(ctx, this, b, this.state.adhdCategory === b.val);
-            });
+            // (Category dropdown is drawn in drawUI for overlay)
 
             const filtered = this.getFilteredCheckboxes();
             const scrollAreaY = 160;
-            const scrollAreaH = 320;
+            const scrollAreaH = 280; // Reduced to fit description panel
             const itemHeight = 25;
             const totalHeight = filtered.length * itemHeight;
             const maxScroll = Math.max(0, totalHeight - scrollAreaH + 10);
@@ -501,6 +549,33 @@
                 Controls.drawCheckbox(ctx, this, c, isActive);
             });
             ctx.restore();
+
+            // 8. Description Panel
+            const descY = scrollAreaY + scrollAreaH + 10;
+            const descH = 100;
+            ctx.fillStyle = 'rgba(255,255,255,0.03)';
+            this.roundRect(ctx, 30 + offsetX, descY, 310, descH, 8, true, false);
+
+            let infoText = "Hover over an item to see its description.";
+            const hovered = this.ui.hoveredElement;
+            if (hovered && (hovered.scenarioId || hovered.enhancementId)) {
+                const data = window.GreenhouseADHDData;
+                if (hovered.scenarioId) {
+                    const s = data.scenarios[hovered.scenarioId];
+                    infoText = s ? s.name : hovered.scenarioId;
+                } else {
+                    const e = data.getEnhancementById(hovered.enhancementId);
+                    infoText = e ? e.description : hovered.enhancementId;
+                }
+            }
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'italic 11px Quicksand';
+            if (window.GreenhouseModelsUtil?.wrapText) {
+                window.GreenhouseModelsUtil.wrapText(ctx, infoText, 40 + offsetX, descY + 15, 290, 16);
+            } else {
+                ctx.fillText(infoText, 40 + offsetX, descY + 15);
+            }
 
             // Draw Scrollbar track
             if (maxScroll > 0) {
