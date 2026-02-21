@@ -133,9 +133,15 @@ def get_action_curves(action, create_if_missing=False):
     if hasattr(action, "slots"):
         for slot in action.slots:
             sname = getattr(slot, "name", "")
+            # Robust prefixing: handles "Herbaceous:Torso" or just "Torso"
             prefix = ""
-            if any(kw in sname for kw in (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")):
-                prefix = f'pose.bones["{sname}"].'
+            bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
+            for kw in bone_kws:
+                if kw in sname:
+                    # Extract clean bone name (remove namespace if present)
+                    clean_name = sname.split(":")[-1]
+                    prefix = f'pose.bones["{clean_name}"].'
+                    break
 
             if hasattr(slot, "bindings"):
                 for binding in slot.bindings:
@@ -153,11 +159,17 @@ def get_action_curves(action, create_if_missing=False):
     # 5. Global bindings check (Point 142)
     if hasattr(action, "bindings"):
         for binding in action.bindings:
+            prefix = ""
+            # Some bindings are named after the bone they target
+            bname = getattr(binding, "name", "")
+            if any(kw in bname for kw in (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")):
+                prefix = f'pose.bones["{bname}"].'
+
             if hasattr(binding, "channels"):
                 for chan in binding.channels:
                     fc = getattr(chan, "fcurve", None)
                     if not fc: fc = chan if hasattr(chan, "keyframe_points") else None
-                    if fc: wrap_fc(fc)
+                    if fc: wrap_fc(fc, prefix)
 
     return curves
 
@@ -291,6 +303,8 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
         prefix = "CompositorNode" if is_compositor else "ShaderNode"
         # Be strict about prefix to avoid cross-pollination (Point 152)
         types = [t for t in dir(bpy.types) if t.startswith(prefix) and "Mix" in t]
+        # Prioritize MixColor if available (Compositor 5.0+)
+        types.sort(key=lambda t: 0 if "MixColor" in t else 1)
         for nt in types:
             try:
                 node = tree.nodes.new(nt)
@@ -300,7 +314,15 @@ def create_mix_node(tree, blend_type='MIX', data_type='RGBA'):
             except: continue
             
     if not node and is_compositor:
-        # 3. Emergency fallback to AlphaOver if Mix is missing in Compositor
+        # 3. Fallback to generic 'Mix' if specific ones not found
+        try:
+            node = tree.nodes.new('Mix')
+            print("INFO: Found generic Mix in compositor.")
+        except: pass
+
+    if not node and is_compositor:
+        # 4. Emergency fallback to AlphaOver ONLY if absolutely necessary
+        # Note: This causes "white vignette" if used for Multiply, so we avoid it if possible.
         try:
             node = tree.nodes.new('CompositorNodeAlphaOver')
             print("INFO: Using AlphaOver as fallback for Mix in compositor.")
@@ -923,13 +945,8 @@ def setup_god_rays(scene, beam_obj=None):
         sun.data.color = (1, 0.9, 0.8) # Neutral warm
 
 def animate_vignette(scene, frame_start, frame_end, start_val=1.0, end_val=0.5):
-    """Decreases vignette radius for high tension (5.x)."""
-    tree = get_compositor_node_tree(scene)
-    vig = tree.nodes.get("Vignette") or tree.nodes.new(type='CompositorNodeEllipseMask')
-    vig.name = "Vignette"
-    
-    set_node_input(vig, 'Size', start_val, frame=frame_start)
-    set_node_input(vig, 'Size', end_val, frame=frame_end)
+    """Removed as requested: Stupid white vignette."""
+    pass
 
 def apply_neuron_color_coding(neuron_mat, frame, color=(1, 0, 0)):
     """Shifts neuron emission color."""
@@ -1629,38 +1646,8 @@ def animate_hdri_rotation(scene):
         mapping.inputs['Rotation'].keyframe_insert(data_path="default_value", index=2, frame=15000)
 
 def animate_vignette_breathing(scene, frame_start, frame_end, strength=0.05, cycle=120):
-    """Enhancement #59: Subtle breathing pulse for the vignette."""
-    tree = get_compositor_node_tree(scene)
-    vig = tree.nodes.get("Vignette")
-    if not vig: return
-
-    if not tree.animation_data:
-        tree.animation_data_create()
-    if not tree.animation_data.action:
-        tree.animation_data.action = bpy.data.actions.new(name="CompositorAction")
-
-    # In 5.0, preferred to animate the 'Size' socket if it exists
-    size_sock = get_socket_by_identifier(vig.inputs, 'Size') or vig.inputs.get('Size')
-    if size_sock:
-        # Size is usually a float2 or similar
-        for i in range(2):
-            data_path = f'nodes["Vignette"].inputs["{size_sock.identifier}"].default_value'
-            fcurve = get_or_create_fcurve(tree.animation_data.action, data_path, index=i, ref_obj=tree)
-            if fcurve:
-                mod = fcurve.modifiers.new(type='NOISE')
-                mod.strength, mod.scale = strength, cycle / 2.0
-                mod.use_restricted_range = True
-                mod.frame_start, mod.frame_end = frame_start, frame_end
-    else:
-        # Fallback to properties
-        for axis in ["width", "height"]:
-            data_path = f'nodes["Vignette"].{axis}'
-            fcurve = get_or_create_fcurve(tree.animation_data.action, data_path, ref_obj=tree)
-            if fcurve:
-                mod = fcurve.modifiers.new(type='NOISE')
-                mod.strength, mod.scale = strength, cycle / 2.0
-                mod.use_restricted_range = True
-                mod.frame_start, mod.frame_end = frame_start, frame_end
+    """Removed as requested: Stupid white vignette."""
+    pass
 
 def animate_floating_spores(center, volume_size=(10, 10, 5), density=50, frame_start=1, frame_end=15000):
     """Enhancement #33: Drifting bioluminescent spores in the sanctuary."""

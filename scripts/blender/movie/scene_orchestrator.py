@@ -59,9 +59,6 @@ def orchestrate_scenes(master_instance):
     compositor_settings.animate_wet_glass(scene, 1801, 2500, strength=15.0)
     compositor_settings.animate_wet_glass(scene, 13701, 14200, strength=30.0) # Heavier in storm
 
-    # Enhancement #59: Vignette Breathing
-    style.animate_vignette_breathing(scene, 1, 15000)
-
 def add_sound_design_cues(master):
     """Enhancement #71: Adds markers for sound design synchronization."""
     scene = master.scene

@@ -25,14 +25,6 @@ def setup_compositor(master_instance):
     distort.name = "ChromaticAberration"
     style.set_node_input(distort, 'Dispersion', 0.02)
 
-    # Enhancement #59: Vignette
-    vignette = tree.nodes.new('CompositorNodeEllipseMask')
-    vignette.name = "Vignette"
-    style.set_node_input(vignette, 'Size', [0.8, 0.8])
-
-    # Mix vignette
-    mix_vig = style.create_mix_node(tree, blend_type='MULTIPLY', data_type='RGBA')
-
     # Enhancement #60: Wet Glass Refraction (Simplified displacement)
     displace = tree.nodes.new('CompositorNodeDisplace')
     displace.name = "WetGlass"
@@ -46,13 +38,6 @@ def setup_compositor(master_instance):
     except RuntimeError:
         # Fallback: skip procedural noise if Texture node is missing
         pass
-
-    # Enhancement #49: Iris Wipe
-    iris = tree.nodes.new('CompositorNodeEllipseMask')
-    iris.name = "IrisWipe"
-    style.set_node_input(iris, 'Size', [2.0, 2.0])
-
-    mix_iris = style.create_mix_node(tree, blend_type='MULTIPLY', data_type='RGBA')
 
     # Brightness/Contrast (Film Flicker)
     bright = tree.nodes.new('CompositorNodeBrightContrast')
@@ -75,18 +60,8 @@ def setup_compositor(master_instance):
     tree.links.new(bright.outputs['Image'], distort.inputs['Image'])
     tree.links.new(distort.outputs['Image'], displace.inputs['Image'])
     
-    # 2. Vignette Mix
-    vig_fac, vig_a, vig_b = style.get_mix_sockets(mix_vig)
-    tree.links.new(displace.outputs['Image'], vig_a)
-    tree.links.new(vignette.outputs['Mask'], vig_b)
-    
-    # 3. Iris Mix
-    iris_fac, iris_a, iris_b = style.get_mix_sockets(mix_iris)
-    tree.links.new(style.get_mix_output(mix_vig), iris_a)
-    tree.links.new(iris.outputs['Mask'], iris_b)
-    
     # 4. Final Output
-    tree.links.new(style.get_mix_output(mix_iris), huesat.inputs['Image'])
+    tree.links.new(displace.outputs['Image'], huesat.inputs['Image'])
     tree.links.new(huesat.outputs['Image'], composite.inputs['Image'])
 
 def animate_wet_glass(scene, frame_start, frame_end, strength=10.0):

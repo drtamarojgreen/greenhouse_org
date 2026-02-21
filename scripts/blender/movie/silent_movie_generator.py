@@ -32,6 +32,15 @@ def safe_import_scene(name):
 scene16_dialogue, scene17_dialogue, scene18_dialogue, scene19_dialogue, scene20_dialogue, scene21_dialogue, scene22_retreat = \
     [safe_import_scene(f"scene{i}_dialogue") for i in range(16, 22)] + [safe_import_scene("scene22_retreat")]
 
+# Ensure aliases are present in the imported SCENE_MAP
+SCENE_MAP.update({
+    'scene22': SCENE_MAP['scene22_retreat'],
+    'scene10_lab': SCENE_MAP['scene10_futuristic_lab'],
+    'scene11_sanctuary': SCENE_MAP['scene11_nature_sanctuary'],
+    'scene04_knowledge': SCENE_MAP['scene04_forge'],
+    'interaction': SCENE_MAP['scene15_interaction']
+})
+
 class MovieMaster(BaseMaster):
     def __init__(self, mode='SILENT_FILM', quality='test', device_type='HIP'):
         super().__init__(mode=mode, total_frames=15000, quality=quality, device_type=device_type)

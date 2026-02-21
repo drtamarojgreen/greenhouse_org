@@ -60,4 +60,12 @@ def setup_scene(master):
 
     # Camera for credits (static looking at origin)
     # This might conflict with master camera, but master setup_camera_keyframes will handle it.
-    pass
+
+    # Hide greenhouse during credits to prevent occlusion (Point 142)
+    gh_objs = [obj for obj in bpy.context.scene.objects
+               if "Greenhouse" in obj.name or "GH_" in obj.name or "Exterior_Garden" in obj.name]
+    for obj in gh_objs:
+        obj.hide_render = False
+        obj.keyframe_insert(data_path="hide_render", frame=start_frame - 1)
+        obj.hide_render = True
+        obj.keyframe_insert(data_path="hide_render", frame=start_frame)

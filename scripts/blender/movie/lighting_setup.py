@@ -60,6 +60,13 @@ def setup_lighting(master_instance):
     master_instance.gnome_key = gnome_key
 
     # --- Area fills ---
+    bpy.ops.object.light_add(type='POINT', location=(0, 0, 5))
+    intro_light = bpy.context.object
+    intro_light.name = "IntroLight"
+    intro_light.data.energy = 2000
+    intro_light.hide_render = True
+    intro_light.keyframe_insert(data_path="hide_render", frame=1)
+
     bpy.ops.object.light_add(type='AREA', location=(0, 0, 12))
     dome_fill = bpy.context.object
     dome_fill.name = "DomeFill"

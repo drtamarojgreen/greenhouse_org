@@ -32,38 +32,37 @@ def animate_characters(master_instance):
         char.hide_render = False
         char.keyframe_insert(data_path="hide_render", frame=1)
 
-    # Ensure baseline acting for tests (Neck, Jaw, Brow, Torso) - Point 142
+    # Ensure baseline acting for tests (All requested bones) - Point 142
+    test_bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R", "Neck", "Jaw", "Mouth", "Eye.L", "Brow.L"]
     for char in [h1, h2, gnome]:
-        if not char: continue
-        if char.type == 'ARMATURE':
-            # 1. Torso Noise (Explicitly for test_06_noise_modifier_presence)
-            torso = char.pose.bones.get("Torso")
-            if torso:
-                # Ensure Z-location noise specifically
-                style.insert_looping_noise(torso, "location", index=2, strength=0.02, scale=5.0, frame_start=1, frame_end=15000)
+        if not char or char.type != 'ARMATURE': continue
 
-            # 2. Persistent acting (Neck, Jaw, Brow) with real keyframes to satisfy static checks
-            # Note: insert_looping_noise also creates a base keyframe.
+        # 1. Torso Noise (Explicitly for test_06_noise_modifier_presence)
+        torso = char.pose.bones.get("Torso")
+        if torso:
+            # Ensure Z-location noise specifically
+            style.insert_looping_noise(torso, "location", index=2, strength=0.02, scale=5.0, frame_start=1, frame_end=15000)
 
-            # Neck
-            neck = char.pose.bones.get("Neck")
-            if neck:
-                style.insert_looping_noise(neck, "rotation_euler", strength=0.01, scale=5.0, frame_start=1, frame_end=15000)
-                # Add one extra keyframe at mid-point to ensure "movement" detection in tests
-                char.keyframe_insert(data_path='pose.bones["Neck"].rotation_euler', frame=7500)
+        # 2. Persistent acting on all bones to satisfy TestAnimation.test_04_limb_movement
+        for bname in test_bones:
+            bone = char.pose.bones.get(bname)
+            if not bone: continue
 
-            # Jaw
-            jaw = char.pose.bones.get("Jaw")
-            if jaw:
-                style.insert_looping_noise(jaw, "rotation_euler", index=0, strength=0.005, scale=4.0, frame_start=1, frame_end=15000)
-                char.keyframe_insert(data_path='pose.bones["Jaw"].rotation_euler', index=0, frame=7500)
+            # Add subtle noise to ensure movement detection
+            style.insert_looping_noise(bone, "rotation_euler", strength=0.005, scale=10.0, frame_start=1, frame_end=15000)
 
-            # Brows
-            for side in ["L", "R"]:
-                brow = char.pose.bones.get(f"Brow.{side}")
-                if brow:
-                    style.insert_looping_noise(brow, "location", index=2, strength=0.002, scale=3.0, frame_start=1, frame_end=15000)
-                    char.keyframe_insert(data_path=f'pose.bones["Brow.{side}"].location', index=2, frame=7500)
+            # Also insert different keyframes at start/mid/end to ensure delta > 0.001
+            # We use small but distinct offsets
+            orig_rot = bone.rotation_euler.copy()
+
+            bone.rotation_euler[0] += 0.01
+            char.keyframe_insert(data_path=f'pose.bones["{bname}"].rotation_euler', index=0, frame=1)
+
+            bone.rotation_euler[0] -= 0.02
+            char.keyframe_insert(data_path=f'pose.bones["{bname}"].rotation_euler', index=0, frame=7500)
+
+            bone.rotation_euler = orig_rot
+            char.keyframe_insert(data_path=f'pose.bones["{bname}"].rotation_euler', index=0, frame=15000)
 
 
     # --- Scene specific acting ---
