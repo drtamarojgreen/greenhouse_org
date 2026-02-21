@@ -56,6 +56,9 @@ def setup_scene(master):
     style.animate_light_flicker("Spot", 1901, 2500, strength=0.4)
     style.animate_light_flicker("RimLight", 1901, 2500, strength=0.2)
 
+    # Invisible Vignette (Point 150: Preserved but hidden at user request)
+    style.animate_vignette(master.scene, 1901, 2500, start_val=0.0, end_val=0.0)
+
     # Subtle Shivers (Bone-based)
     for char in [master.h1, master.h2]:
         if char:

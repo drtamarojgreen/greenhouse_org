@@ -66,7 +66,6 @@ def create_soil_material():
     return mat
 
 def create_hedge_row(start, end, height=2.5, depth=1.2, name="Hedge"):
-    """Exclusive BMesh Hedge creation."""
     import bmesh
     direction = (mathutils.Vector(end) - mathutils.Vector(start))
     mid = (mathutils.Vector(start) + mathutils.Vector(end)) / 2
@@ -90,7 +89,6 @@ def create_hedge_row(start, end, height=2.5, depth=1.2, name="Hedge"):
     return hedge
 
 def create_garden_path(padding, d):
-    """Exclusive BMesh Path."""
     import bmesh
     mesh_data = bpy.data.meshes.new("Path_MeshData")
     obj = bpy.data.objects.new("CobblestonePath", mesh_data)
@@ -108,7 +106,6 @@ def create_garden_path(padding, d):
     return obj
 
 def create_koi_pond(location, size=(4, 6)):
-    """Exclusive BMesh Koi Pond."""
     import bmesh
     mesh_data = bpy.data.meshes.new("KoiPond_MeshData")
     pond = bpy.data.objects.new("KoiPond", mesh_data)
@@ -123,7 +120,6 @@ def create_koi_pond(location, size=(4, 6)):
     bm.free()
 
     mat = bpy.data.materials.get("PondMat") or bpy.data.materials.new("PondMat")
-    # if not mat.node_tree: mat.use_nodes = True
     bsdf = mat.node_tree.nodes.get("Principled BSDF") or mat.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
     bsdf.inputs['Base Color'].default_value = (0.05, 0.1, 0.2, 1)
     bsdf.inputs['Transmission Weight'].default_value = 0.8
@@ -134,7 +130,6 @@ def create_koi_pond(location, size=(4, 6)):
     return pond
 
 def create_procedural_tree(location, bark_mat, leaf_mat):
-    """Exclusive BMesh Tree creation (Point 92)."""
     import bmesh
     name = f"Tree_{random.randint(0, 1000000)}"
     mesh = bpy.data.meshes.new(f"{name}_MeshData")
@@ -144,11 +139,9 @@ def create_procedural_tree(location, bark_mat, leaf_mat):
 
     bm = bmesh.new()
     trunk_h = random.uniform(5, 10)
-    # Trunk: use create_cone with equal radius for cylinder
     ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.5, radius2=0.3, depth=trunk_h, matrix=mathutils.Matrix.Translation((0,0,trunk_h/2)))
     for f in {f for v in ret['verts'] for f in v.link_faces}: f.material_index = 0
 
-    # Canopy: layers of spheres
     for i in range(3):
         canopy_r = random.uniform(3, 5)
         z_off = trunk_h + i * 2.0
@@ -162,7 +155,6 @@ def create_procedural_tree(location, bark_mat, leaf_mat):
     return obj
 
 def create_exterior_garden(greenhouse_size=(15, 15, 8)):
-    """Optimized 5.0+ BMesh Exterior Garden with Hill and Forest."""
     w, d = greenhouse_size[0], greenhouse_size[1]
     padding = 3.0
     to_join = []
@@ -175,7 +167,6 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     to_join.append(create_hedge_row(((w/2 + padding + 1.2), -(d/2 + padding), -1), ((w/2 + padding + 1.2), (d/2 + padding), -1), name="HedgeR"))
     to_join.append(create_hedge_row((-w/2 - padding, d/2 + padding + 1.2, -1), (w/2 + padding, d/2 + padding + 1.2, -1), name="HedgeBack"))
 
-    # Hill Creation
     ground_data = bpy.data.meshes.new("ExteriorHill_MeshData")
     ground = bpy.data.objects.new("ExteriorHill", ground_data)
     bpy.context.scene.collection.objects.link(ground)
@@ -187,9 +178,9 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
 
     for v in bm.verts:
         dist = v.co.length
-        # Gaussian hill peak at center, offset so peak is at Z=0
+        # Gaussian hill peak at center, peak is at Z=0
         v.co.z = 15.0 * math.exp(-(dist**2) / (2 * (60.0**2))) - 15.0
-        v.co.z -= (dist / 250.0) * 15.0 # Slope down further at edges
+        v.co.z -= (dist / 250.0) * 15.0
 
     bm.to_mesh(ground_data)
     bm.free()
@@ -198,7 +189,6 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     ground.data.materials.append(grass_mat)
     to_join.append(ground)
 
-    # Forest Creation
     bark_mat = bpy.data.materials.get("BarkMat_Herbaceous") or bpy.data.materials.new("BarkMat_Forest")
     leaf_mat = bpy.data.materials.get("LeafMat_Herbaceous") or bpy.data.materials.new("LeafMat_Forest")
 
@@ -208,7 +198,6 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
         x = math.cos(angle) * radius
         y = math.sin(angle) * radius
 
-        # Match hill height (peak at 0)
         dist = math.sqrt(x*x + y*y)
         z = 15.0 * math.exp(-(dist**2) / (2 * (60.0**2))) - 15.0 - (dist / 250.0) * 15.0 - 1.0
 
