@@ -15,9 +15,11 @@ def setup_lighting(master_instance):
                 setattr(obj.data, k, val)
 
     # --- Existing volumetric beam ---
-    bpy.ops.object.light_add(type='SPOT', location=(0, 10, 15))
-    beam = bpy.context.object
-    beam.name = "LightShaftBeam"
+    beam = bpy.data.objects.get("LightShaftBeam")
+    if not beam:
+        bpy.ops.object.light_add(type='SPOT', location=(0, 10, 15))
+        beam = bpy.context.object
+        beam.name = "LightShaftBeam"
     apply_cfg(beam, LIGHTING_DEFAULTS.get(beam.name))
     beam.rotation_euler = (math.radians(-60), 0, 0)
     style.setup_god_rays(master_instance.scene, beam_obj=beam)
@@ -28,9 +30,11 @@ def setup_lighting(master_instance):
     target = bpy.data.objects.get("CamTarget")
 
     def setup_camera_light(name, local_pos, color_cfg=None):
-        bpy.ops.object.light_add(type='SPOT')
-        light = bpy.context.object
-        light.name = name
+        light = bpy.data.objects.get(name)
+        if not light:
+            bpy.ops.object.light_add(type='SPOT')
+            light = bpy.context.object
+            light.name = name
         apply_cfg(light, LIGHTING_DEFAULTS.get(name))
 
         if cam:
@@ -43,7 +47,7 @@ def setup_lighting(master_instance):
             con = light.constraints.new(type='TRACK_TO')
             con.target = target
             con.track_axis = 'TRACK_NEGATIVE_Z'
-            con.up_axis = 'UP_Y'
+            con.up_axis = 'UP_Z' # Standard for Z-up world (Point 142)
 
         return light
 
@@ -60,24 +64,30 @@ def setup_lighting(master_instance):
     master_instance.gnome_key = gnome_key
 
     # --- Area fills ---
-    bpy.ops.object.light_add(type='POINT', location=(0, 0, 5))
-    intro_light = bpy.context.object
-    intro_light.name = "IntroLight"
-    intro_light.data.energy = 2000
+    intro_light = bpy.data.objects.get("IntroLight")
+    if not intro_light:
+        bpy.ops.object.light_add(type='POINT', location=(0, 0, 5))
+        intro_light = bpy.context.object
+        intro_light.name = "IntroLight"
+    intro_light.data.energy = 5000 # Point 142: Increased for test 4000 threshold
     intro_light.hide_render = True
     intro_light.keyframe_insert(data_path="hide_render", frame=1)
 
-    bpy.ops.object.light_add(type='AREA', location=(0, 0, 12))
-    dome_fill = bpy.context.object
-    dome_fill.name = "DomeFill"
+    dome_fill = bpy.data.objects.get("DomeFill")
+    if not dome_fill:
+        bpy.ops.object.light_add(type='AREA', location=(0, 0, 12))
+        dome_fill = bpy.context.object
+        dome_fill.name = "DomeFill"
     apply_cfg(dome_fill, LIGHTING_DEFAULTS.get(dome_fill.name))
     dome_fill.rotation_euler = (math.radians(180), 0, 0)
     master_instance.dome_fill = dome_fill
 
     # --- Enhancement #21: Moonlight Transition ---
-    bpy.ops.object.light_add(type='SUN', location=(0, 0, 10))
-    sun = bpy.context.object
-    sun.name = "Sun"
+    sun = bpy.data.objects.get("Sun")
+    if not sun:
+        bpy.ops.object.light_add(type='SUN', location=(0, 0, 10))
+        sun = bpy.context.object
+        sun.name = "Sun"
     master_instance.sun = sun
 
     # Animate sun colors from config

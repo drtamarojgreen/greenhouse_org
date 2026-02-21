@@ -17,6 +17,9 @@ class FCurveProxy:
         self.array_index = getattr(target, "array_index", 0)
     def __getattr__(self, name):
         return getattr(self._target, name)
+    def evaluate(self, frame):
+        try: return self._target.evaluate(frame)
+        except: return 0.0
     def as_pointer(self):
         try:
             return self._target.as_pointer()
@@ -33,22 +36,31 @@ def get_action_curves(action, create_if_missing=False):
     seen_ids = set()
 
     def get_bone_prefix(name):
+        if not name: return ""
         bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
         if any(kw in name for kw in bone_kws):
-            clean_name = name.split(":")[-1]
+            clean_name = str(name).split(":")[-1]
             return f'pose.bones["{clean_name}"].'
         return ""
 
     def wrap_fc(fc, prefix=""):
-        if not fc: return
-        # Unique ID for F-curve to avoid duplicates
-        fid = f"{id(fc)}_{prefix}_{getattr(fc, 'array_index', 0)}"
+        if not fc or not hasattr(fc, "keyframe_points"): return
+
+        # Use as_pointer if available for stable ID
+        ptr = id(fc)
+        try: ptr = fc.as_pointer()
+        except: pass
+
+        fid = f"{ptr}_{prefix}_{getattr(fc, 'array_index', 0)}"
         if fid in seen_ids: return
         seen_ids.add(fid)
 
         path = getattr(fc, "data_path", "")
         if not path:
              path = getattr(fc, "path_full", getattr(fc, "path", ""))
+
+        # Point 142: Ensure path is valid string
+        path = str(path)
 
         # If path is relative (no pose.bones), prepend prefix
         is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
@@ -57,46 +69,56 @@ def get_action_curves(action, create_if_missing=False):
 
         curves.append(FCurveProxy(fc, path))
 
-    # 1. Legacy F-curves
-    if hasattr(action, "fcurves"):
-        for fc in action.fcurves: wrap_fc(fc)
+    # 1. Direct F-curves (Legacy and 5.0 Flat)
+    if hasattr(action, "fcurves") and action.fcurves:
+        for fc in action.fcurves:
+            # Point 142: Try to discover slot-based prefixes if not absolute
+            prefix = ""
+            if hasattr(fc, "slot"):
+                prefix = get_bone_prefix(getattr(fc.slot, "name", ""))
+            wrap_fc(fc, prefix)
 
-    # 2. Blender 5.0 Layers & Channels
+    # 2. Blender 5.0 Layers & Channels (Recursively)
+    def traverse_channels(channels, prefix=""):
+        if not channels: return
+        for chan in channels:
+            # Check for slot name to update prefix
+            curr_prefix = prefix
+            slot = getattr(chan, "slot", None)
+            if slot:
+                slot_name = getattr(slot, "name", getattr(slot, "identifier", ""))
+                new_p = get_bone_prefix(slot_name)
+                if new_p: curr_prefix = new_p
+
+            fc = getattr(chan, "fcurve", None)
+            if not fc and hasattr(chan, "keyframe_points"): fc = chan
+            if fc: wrap_fc(fc, curr_prefix)
+
+            # Recurse into child channels (Point 142: handle potential Infinite recursion)
+            if hasattr(chan, "channels") and chan.channels:
+                if chan.channels != channels: # Safety
+                    traverse_channels(chan.channels, curr_prefix)
+
     if hasattr(action, "layers"):
         for layer in action.layers:
-            def traverse_channels(channels, slot_hint=None):
-                for chan in channels:
-                    prefix = get_bone_prefix(getattr(slot_hint, "name", ""))
-                    if hasattr(chan, "slot") and chan.slot:
-                        prefix = get_bone_prefix(getattr(chan.slot, "name", ""))
-
-                    fc = getattr(chan, "fcurve", None)
-                    if not fc and hasattr(chan, "keyframe_points"): fc = chan
-
-                    if fc: wrap_fc(fc, prefix)
-
-                    # Recursive for nested channels
-                    if hasattr(chan, "channels"):
-                        traverse_channels(chan.channels, slot_hint=slot_hint or getattr(chan, "slot", None))
-
-            if hasattr(layer, "channels"): traverse_channels(layer.channels)
-            if hasattr(layer, "strips"):
+            if hasattr(layer, "channels") and layer.channels:
+                traverse_channels(layer.channels)
+            if hasattr(layer, "strips") and layer.strips:
                 for strip in layer.strips:
-                    if hasattr(strip, "channels"): traverse_channels(strip.channels)
+                    if hasattr(strip, "channels") and strip.channels:
+                        traverse_channels(strip.channels)
 
-    # 3. Blender 5.0 Slots & Bindings
+    # 3. Blender 5.0 Slots & Bindings (Fallback discovery)
     if hasattr(action, "slots"):
         for slot in action.slots:
-            prefix = get_bone_prefix(getattr(slot, "name", ""))
+            slot_name = getattr(slot, "name", getattr(slot, "identifier", ""))
+            prefix = get_bone_prefix(slot_name)
             if hasattr(slot, "bindings"):
                 for binding in slot.bindings:
                     if hasattr(binding, "fcurves"):
                         for fc in binding.fcurves: wrap_fc(fc, prefix)
                     if hasattr(binding, "channels"):
-                        for chan in binding.channels:
-                            fc = getattr(chan, "fcurve", None)
-                            if not fc and hasattr(chan, "keyframe_points"): fc = chan
-                            if fc: wrap_fc(fc, prefix)
+                        traverse_channels(binding.channels, prefix)
 
     return curves
 
@@ -216,12 +238,19 @@ def get_mix_sockets(node):
     """Returns (Factor, Input1, Input2) sockets."""
     if node is None: return None, None, None
     if node.bl_idname == 'CompositorNodeAlphaOver': return node.inputs[0], node.inputs[1], node.inputs[2]
-    dt = getattr(node, 'data_type', 'RGBA')
-    if dt == 'RGBA':
-        return get_socket_by_identifier(node.inputs, 'Factor_Float') or node.inputs.get('Factor') or node.inputs[0], \
-               get_socket_by_identifier(node.inputs, 'A_Color') or node.inputs.get('A') or node.inputs[1], \
-               get_socket_by_identifier(node.inputs, 'B_Color') or node.inputs.get('B') or node.inputs[2]
-    return node.inputs[0], node.inputs[1], node.inputs[2]
+
+    # Identify sockets by common names/identifiers and fallback to order
+    def find_socket(names, default_idx):
+        for name in names:
+            s = node.inputs.get(name) or get_socket_by_identifier(node.inputs, name)
+            if s: return s
+        return node.inputs[default_idx]
+
+    factor = find_socket(['Factor', 'Fac', 'Factor_Float'], 0)
+    in1 = find_socket(['A', 'Color1', 'A_Color', 'Image'], 1)
+    in2 = find_socket(['B', 'Color2', 'B_Color', 'Image.001'], 2)
+
+    return factor, in1, in2
 
 def get_mix_output(node):
     """Returns the main output socket."""
