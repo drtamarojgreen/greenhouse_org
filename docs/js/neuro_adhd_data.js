@@ -6,15 +6,15 @@
 
     const ADHD_ENHANCEMENTS = {
         symptoms: [
-            { id: 1, name: "Attentional Blink Simulation", category: "logic", description: "Visualize the failure to process a second stimulus in close succession." },
-            { id: 2, name: "Signal-to-Noise Ratio (SNR) Visualizer", category: "visual", description: "Slider to increase background 'neural noise' to model inattention." },
+            { id: 1, name: "Attentional Blink Simulation", category: "logic", description: "Visualize the failure to process a second stimulus in close succession.", doi: "10.1038/35090500" },
+            { id: 2, name: "Signal-to-Noise Ratio (SNR) Visualizer", category: "visual", description: "Slider to increase background 'neural noise' to model inattention.", doi: "10.1016/j.neuron.2012.08.010" },
             { id: 3, name: "Hyperactive Firing Mode", category: "logic", description: "Mode where neurons fire at higher frequencies with lower thresholds." },
             { id: 4, name: "Impulsive Connection Burst", category: "logic", description: "Rapid, random synapse formation during high-activity states." },
             { id: 5, name: "Reward Delay Discounting Map", category: "logic", description: "Visualizing the decay of 'fitness' value over time for delayed targets." },
             { id: 6, name: "Task-Switching Latency", category: "logic", description: "Modeling the time lag when the GA shifts between different target points." },
             { id: 7, name: "Sustained Attention Decay", category: "logic", description: "Gradual reduction in signal intensity over long simulation runs." },
             { id: 8, name: "Interference Sensitivity", category: "visual", description: "Highlighting how external 'noise' particles disrupt established signal paths." },
-            { id: 9, name: "Working Memory Buffer Overflow", category: "visual", description: "Visualizing the 'dropping' of signals when capacity is exceeded." },
+            { id: 9, name: "Working Memory Buffer Overflow", category: "visual", description: "Visualizing the 'dropping' of signals when capacity is exceeded.", doi: "10.1126/science.173.3994.356" },
             { id: 10, name: "Executive Function Gating", category: "visual", description: "A visual 'gate' in the PFC that fails to inhibit downstream signals." },
             { id: 11, name: "Emotional Lability Spikes", category: "logic", description: "Sudden bursts of activity in amygdala nodes that disrupt the PFC network." },
             { id: 12, name: "Time Perception Distortion", category: "logic", description: "Variable simulation clock to model subjective time dilation/contraction." },
@@ -33,7 +33,7 @@
             { id: 25, name: "Impulse Inhibition Meter", category: "ui", description: "Gauge showing the ratio of PFC inhibitory to striatal excitatory signals." }
         ],
         treatments: [
-            { id: 26, name: "Stimulant DAT Inhibition", category: "synaptic", description: "Mode that reduces signal reuptake in the synapse view." },
+            { id: 26, name: "Stimulant DAT Inhibition", category: "synaptic", description: "Mode that reduces signal reuptake in the synapse view.", doi: "10.1038/nature01037" },
             { id: 27, name: "Methylphenidate Pulse", category: "logic", description: "Periodic normalization of signal intensity and firing thresholds." },
             { id: 28, name: "Amphetamine Release Boost", category: "logic", description: "Increasing base probability of signal propagation from presynaptic nodes." },
             { id: 29, name: "Non-Stimulant NE Modulation", category: "logic", description: "Enhancing the 'weight' of connections in the PFC region specifically." },
@@ -67,7 +67,7 @@
             { id: 55, name: "D1/D2 Receptor Imbalance", category: "synaptic", description: "Color-coded toggle for excitatory vs inhibitory receptor dominance." },
             { id: 56, name: "White Matter Integrity Loss", category: "visual", description: "Modeling thinner, slower connection lines (axons)." },
             { id: 57, name: "Synaptic Pruning Deficits", category: "visual", description: "Over-connected network with high redundancy and low efficiency." },
-            { id: 58, name: "DMN Intrusion", category: "logic", description: "Activity in rest regions (DMN) during active task phases." },
+            { id: 58, name: "DMN Intrusion", category: "logic", description: "Activity in rest regions (DMN) during active task phases.", doi: "10.1073/pnas.231294698" },
             { id: 59, name: "Salience Network Misalignment", category: "logic", description: "Highlighting irrelevant target points as high priority." },
             { id: 60, name: "Cerebellar Coordination Lag", category: "logic", description: "Modeling delays in signal processing in cerebellum nodes." },
             { id: 61, name: "Thalamic Gating Dysfunction", category: "visual", description: "Leaky thalamus letting excess noise into the cortex." },
@@ -107,7 +107,7 @@
             { id: 93, name: "Evolutionary Adaptation View", category: "visual", description: "ADHD traits beneficial for ancestral foraging (e.g., novelty seeking)." },
             { id: 94, name: "Gut-Brain Axis Interaction", category: "logic", description: "Metabolic slider affecting global neural plasticity." },
             { id: 95, name: "Microbiome Diversity", category: "logic", description: "Modeling flora effects on neurotransmitter precursors." },
-            { id: 96, name: "HPA Axis Overdrive", category: "logic", description: "Chronic high cortisol causing hippocampal node shrinkage." },
+            { id: 96, name: "HPA Axis Overdrive", category: "logic", description: "Chronic high cortisol causing hippocampal node shrinkage.", doi: "10.1038/nrg3352" },
             { id: 97, name: "Thyroid Hormone Influence", category: "logic", description: "Global speed adjustment for all cellular processes." },
             { id: 98, name: "Birth Complication Modeling", category: "logic", description: "Low oxygen events during initial network formation." },
             { id: 99, name: "Societal Expectation Filter", category: "ui", description: "Society slider penalizing high-energy (hyperactive) paths." },
@@ -128,6 +128,13 @@
             { id: 110, name: "Lithium Ion Stabilization", category: "logic", description: "Damping extreme oscillations in Bipolar firing cycles." },
             { id: 111, name: "Dialectical Behavior Therapy (DBT)", category: "logic", description: "Pruning emotional lability spikes via mindfulness loops." },
             { id: 112, name: "Acceptance and Commitment Therapy (ACT)", category: "logic", description: "Enhancing cognitive flexibility and path diversity." }
+        ],
+        research: [
+            { id: 201, name: "Genome Data Export", category: "research", description: "Download the current neural network architecture and genetic weights as JSON for offline analysis." },
+            { id: 202, name: "Real-time Fitness Analytics", category: "research", description: "Enable high-frequency tracking of best fitness vs. generation for regression testing." },
+            { id: 203, name: "Literature Mapping Mode", category: "research", description: "Enable interactive scientific citations for enhancements. Clicking highlighted items opens relevant peer-reviewed studies." },
+            { id: 204, name: "Neural Entropy Tracker", category: "research", description: "Monitor the randomness (entropy) of connection angles to study network disorganization." },
+            { id: 205, name: "GA Selection Heatmap", category: "research", description: "Visualize the survival rate of specific node clusters across generations." }
         ]
     };
 

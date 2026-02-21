@@ -97,8 +97,8 @@ window.GreenhouseModels3DMath = {
 window.GreenhouseModelsUtil = { t: (k) => k, toggleLanguage: () => { } };
 window.GreenhouseNeuroConfig = { get: () => ({ x: 0, y: 0, z: 0, fov: 600 }), set: () => { } };
 window.GreenhouseADHDData = {
-    scenarios: { 'inattentive': { enhancements: [1] } },
-    categories: { 'symptoms': [{ id: 1 }, { id: 2 }] }
+    scenarios: [{ id: 'inattentive', enhancements: [1] }],
+    symptoms: [{ id: 1 }, { id: 2 }]
 };
 
 // Load modules
@@ -133,6 +133,8 @@ TestFramework.describe('GreenhouseNeuroApp', () => {
     });
 
     TestFramework.it('should filter scenarios via search', () => {
+        app.state.activeTab = 'adhd';
+        app.setupUIComponents();
         app.state.searchQuery = 'inattentive';
         const filtered = app.getFilteredCheckboxes();
         assert.equal(filtered.length, 1);
@@ -165,11 +167,17 @@ TestFramework.describe('GreenhouseNeuroApp', () => {
 
     TestFramework.it('should switch ADHD categories', () => {
         app.state.activeTab = 'adhd';
-        const catBtn = app.ui.categoryButtons.find(b => b.val === 'symptoms');
-        app.handleMouseDown({
-            clientX: catBtn.x + 5,
-            clientY: catBtn.y + 5
-        });
+        app.setupUIComponents();
+
+        // Open dropdown
+        const dropdown = app.ui.categoryDropdown;
+        app.handleMouseDown({ clientX: dropdown.x + 5, clientY: dropdown.y + 5 });
+        assert.isTrue(app.state.dropdowns.category.isOpen);
+
+        // Select symptoms
+        const opt = app.state.dropdowns.category.options.find(o => o.val === 'symptoms');
+        app.handleMouseDown({ clientX: opt.x + 5, clientY: opt.y + 5 });
+
         assert.equal(app.state.adhdCategory, 'symptoms');
         assert.equal(app.ui.checkboxes.length, 2);
         assert.equal(app.ui.checkboxes[0].enhancementId, 1);
@@ -178,10 +186,10 @@ TestFramework.describe('GreenhouseNeuroApp', () => {
     TestFramework.it('should handle wheel scrolling', () => {
         app.state.activeTab = 'adhd';
         app.state.adhdCategory = 'symptoms';
-        app.updateADHDCheckboxes();
+        app.setupUIComponents(); // Ensure checkboxes are created
 
         // Mock a lot of items for scrolling
-        app.ui.checkboxes = Array(20).fill(0).map((_, i) => ({ x: 55, y: 0, w: 200, h: 20, enhancementId: i }));
+        app.ui.checkboxes = Array(20).fill(0).map((_, i) => ({ x: 55, y: 0, w: 200, h: 20, enhancementId: i, label: 'TEST' }));
 
         app.handleWheel({
             clientX: 100,
