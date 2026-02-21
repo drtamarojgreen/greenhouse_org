@@ -73,14 +73,15 @@
                 far: projConfig.far
             };
 
-            console.log('NeuroUI3D: Canvas build delayed by 5 seconds.');
+            console.log('NeuroUI3D: Initializing Canvas');
 
             this.canvas = document.createElement('canvas');
-            this.canvas.width = container.offsetWidth;
-            this.canvas.height = 600;
+            this.canvas.width = container.offsetWidth || 1000;
+            this.canvas.height = 750;
             this.canvas.style.width = '100%';
-            this.canvas.style.height = '600px';
-            this.canvas.style.backgroundColor = '#111';
+            this.canvas.style.height = '100%';
+            this.canvas.style.backgroundColor = '#050510';
+            this.canvas.style.display = 'block';
 
             container.appendChild(this.canvas);
             this.ctx = this.canvas.getContext('2d');
@@ -497,7 +498,7 @@
             // Draw Main View (Synapse)
             if (this.selectedConnection) {
                 if (window.GreenhouseNeuroSynapse) {
-                    window.GreenhouseNeuroSynapse.drawSynapsePiP(ctx, 0, 0, this.canvas.width, this.canvas.height, this.selectedConnection, this.synapseMeshes, true);
+                    window.GreenhouseNeuroSynapse.drawSynapsePiP(ctx, 0, 0, this.canvas.width, this.canvas.height, this.selectedConnection, this.synapseMeshes, true, this.camera);
                 }
             } else {
                 const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
@@ -1091,45 +1092,69 @@
             const pipX = this.canvas.width - pipW - padding;
             const pipY = this.canvas.height - pipH - padding;
 
-            if (mouseX < pipX || mouseX > pipX + pipW ||
-                mouseY < pipY || mouseY > pipY + pipH) {
-                return null;
-            }
+            if (mouseX >= pipX && mouseX <= pipX + pipW && mouseY >= pipY && mouseY <= pipY + pipH) {
+                const origW = this.projection.width;
+                const origH = this.projection.height;
+                this.projection.width = pipW;
+                this.projection.height = pipH;
+                const lx = mouseX - pipX;
+                const ly = mouseY - pipY;
+                let hit = null;
 
-            const origW = this.projection.width;
-            const origH = this.projection.height;
+                // Neurons
+                let closestNeuron = null;
+                let minNDist = 15;
+                this.neurons.forEach(n => {
+                    const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                    if (p.scale > 0) {
+                        const d = Math.sqrt(Math.pow(lx - p.x, 2) + Math.pow(ly - p.y, 2));
+                        if (d < minNDist * p.scale) {
+                            minNDist = d;
+                            closestNeuron = n;
+                        }
+                    }
+                });
 
-            this.projection.width = pipW;
-            this.projection.height = pipH;
+                if (closestNeuron) {
+                    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+                    hit = {
+                        type: 'neuron',
+                        data: closestNeuron,
+                        label: t('Neuron'),
+                        tooltip: t('neuron_tooltip') + t(closestNeuron.region)
+                    };
+                }
 
-            const localMouseX = mouseX - pipX;
-            const localMouseY = mouseY - pipY;
-
-            let closestConn = null;
-            let minDist = 20;
-
-            this.connections.forEach(conn => {
-                if (!conn.controlPoint) return;
-
-                const p = GreenhouseModels3DMath.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, this.projection);
-
-                if (p.scale > 0) {
-                    const dx = localMouseX - p.x;
-                    const dy = localMouseY - p.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < minDist) {
-                        minDist = dist;
-                        closestConn = conn;
+                if (!hit) {
+                    let closestConn = null;
+                    let minCDist = 20;
+                    this.connections.forEach(conn => {
+                        if (!conn.controlPoint) return;
+                        const p = GreenhouseModels3DMath.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, this.projection);
+                        if (p.scale > 0) {
+                            const d = Math.sqrt(Math.pow(lx - p.x, 2) + Math.pow(ly - p.y, 2));
+                            if (d < minCDist) {
+                                minCDist = d;
+                                closestConn = conn;
+                            }
+                        }
+                    });
+                    if (closestConn) {
+                        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+                        hit = {
+                            type: 'connection',
+                            data: closestConn,
+                            label: t('Connection'),
+                            tooltip: t('connection_tooltip') + closestConn.weight.toFixed(2)
+                        };
                     }
                 }
-            });
-
-            this.projection.width = origW;
-            this.projection.height = origH;
-
-            if (closestConn) {
-                return { type: 'connection', data: closestConn };
+                this.projection.width = origW;
+                this.projection.height = origH;
+                return hit;
+            } else if (this.selectedConnection) {
+                const active = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
+                return window.GreenhouseNeuroSynapse?.checkSynapseHover(mouseX, mouseY, this.canvas.width, this.canvas.height, this.camera, active);
             }
             return null;
         },

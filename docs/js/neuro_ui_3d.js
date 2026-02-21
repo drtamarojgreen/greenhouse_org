@@ -749,52 +749,88 @@
             const pipX = this.canvas.width - pipW - padding;
             const pipY = this.canvas.height - pipH - padding;
 
-            // Only check hits if inside PiP
-            if (mouseX < pipX || mouseX > pipX + pipW ||
-                mouseY < pipY || mouseY > pipY + pipH) {
-                return null;
-            }
+            const isInsidePiP = (mouseX >= pipX && mouseX <= pipX + pipW && mouseY >= pipY && mouseY <= pipY + pipH);
 
-            // Save original projection
-            const origW = this.projection.width;
-            const origH = this.projection.height;
+            if (isInsidePiP) {
+                // Save original projection
+                const origW = this.projection.width;
+                const origH = this.projection.height;
 
-            // Set projection to PiP size
-            this.projection.width = pipW;
-            this.projection.height = pipH;
+                // Set projection to PiP size
+                this.projection.width = pipW;
+                this.projection.height = pipH;
 
-            // Local Mouse Coords relative to PiP
-            const localMouseX = mouseX - pipX;
-            const localMouseY = mouseY - pipY;
+                // Local Mouse Coords relative to PiP
+                const localMouseX = mouseX - pipX;
+                const localMouseY = mouseY - pipY;
 
-            // Check Connections
-            let closestConn = null;
-            let minDist = 20; // Hit radius
+                let hit = null;
 
-            this.connections.forEach(conn => {
-                if (!conn.controlPoint) return;
+                // 1. Check Neurons (Higher priority for tooltips)
+                let closestNeuron = null;
+                let minNDist = 15;
+                this.neurons.forEach(n => {
+                    const p = GreenhouseModels3DMath.project3DTo2D(n.x, n.y, n.z, this.camera, this.projection);
+                    if (p.scale > 0) {
+                        const d = Math.sqrt(Math.pow(localMouseX - p.x, 2) + Math.pow(localMouseY - p.y, 2));
+                        if (d < minNDist * p.scale) {
+                            minNDist = d;
+                            closestNeuron = n;
+                        }
+                    }
+                });
 
-                const p = GreenhouseModels3DMath.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, this.projection);
+                if (closestNeuron) {
+                    const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+                    const regionName = t(closestNeuron.region) || closestNeuron.region;
+                    hit = {
+                        type: 'neuron',
+                        data: closestNeuron,
+                        label: t('Neuron'),
+                        tooltip: t('neuron_tooltip') + regionName
+                    };
+                }
 
-                if (p.scale > 0) {
-                    const dx = localMouseX - p.x;
-                    const dy = localMouseY - p.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
+                // 2. Check Connections
+                if (!hit) {
+                    let closestConn = null;
+                    let minCDist = 20;
 
-                    if (dist < minDist) {
-                        minDist = dist;
-                        closestConn = conn;
+                    this.connections.forEach(conn => {
+                        if (!conn.controlPoint) return;
+                        const p = GreenhouseModels3DMath.project3DTo2D(conn.controlPoint.x, conn.controlPoint.y, conn.controlPoint.z, this.camera, this.projection);
+                        if (p.scale > 0) {
+                            const dx = localMouseX - p.x;
+                            const dy = localMouseY - p.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < minCDist) {
+                                minCDist = dist;
+                                closestConn = conn;
+                            }
+                        }
+                    });
+
+                    if (closestConn) {
+                        const t = (k) => window.GreenhouseModelsUtil ? window.GreenhouseModelsUtil.t(k) : k;
+                        hit = {
+                            type: 'connection',
+                            data: closestConn,
+                            label: t('Connection'),
+                            tooltip: t('connection_tooltip') + closestConn.weight.toFixed(2)
+                        };
                     }
                 }
-            });
 
-            // Restore projection
-            this.projection.width = origW;
-            this.projection.height = origH;
-
-            if (closestConn) {
-                return { type: 'connection', data: closestConn };
+                // Restore projection
+                this.projection.width = origW;
+                this.projection.height = origH;
+                return hit;
+            } else if (this.selectedConnection) {
+                // Check Main View (Synapse View)
+                const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
+                return window.GreenhouseNeuroSynapse?.checkSynapseHover(mouseX, mouseY, this.canvas.width, this.canvas.height, this.synapseCamera, adhdActive);
             }
+
             return null;
         },
 

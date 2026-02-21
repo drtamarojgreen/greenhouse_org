@@ -55,8 +55,10 @@
                 searchQuery: '',
                 adhdCategory: 'scenarios',
                 scrollOffset: 0,
+                researchMode: false,
+                analyticsMode: false,
                 dropdowns: {
-                    category: { isOpen: false }
+                    category: { isOpen: false, options: [] }
                 }
             };
 
@@ -115,9 +117,9 @@
             const tabSpacing = 5;
             const tabW = (panelW - 60 - (tabSpacing * 2)) / 3;
             this.ui.tabs = [
-                { id: 'tab_sim', label: t('tab_simulation') || 'SIM', val: 'sim', x: 40 + offsetX, y: 35, w: tabW, h: 25 },
-                { id: 'tab_adhd', label: t('tab_adhd') || 'ADHD', val: 'adhd', x: 40 + offsetX + tabW + tabSpacing, y: 35, w: tabW, h: 25 },
-                { id: 'tab_synapse', label: t('tab_synapse') || 'DETAIL', val: 'synapse', x: 40 + offsetX + (tabW + tabSpacing) * 2, y: 35, w: tabW, h: 25 }
+                { id: 'tab_simulation', label: t('tab_simulation'), val: 'sim', x: 40 + offsetX, y: 35, w: tabW, h: 25 },
+                { id: 'tab_adhd', label: t('tab_adhd'), val: 'adhd', x: 40 + offsetX + tabW + tabSpacing, y: 35, w: tabW, h: 25 },
+                { id: 'tab_synapse', label: t('tab_synapse'), val: 'synapse', x: 40 + offsetX + (tabW + tabSpacing) * 2, y: 35, w: tabW, h: 25 }
             ];
 
             // Mode Buttons
@@ -128,21 +130,9 @@
                 { id: 'mode_burst', label: t('mode_burst'), val: 2, x: 40 + offsetX + (btnW + 5) * 2, y: 140, w: btnW, h: 25 }
             ];
 
-            // ADHD Scenarios
-            this.ui.checkboxes = [];
-            if (window.GreenhouseADHDData) {
-                Object.keys(window.GreenhouseADHDData.scenarios).forEach((key) => {
-                    if (key === 'none') return;
-                    this.ui.checkboxes.push({
-                        id: `scenario_${key}`,
-                        scenarioId: key,
-                        labelKey: `adhd_scenario_${key}`,
-                        x: 40 + offsetX,
-                        y: 0, // Positioned dynamically
-                        w: panelW - 80,
-                        h: 20
-                    });
-                });
+            // ADHD Scenarios (Populated via updateADHDCheckboxes)
+            if (this.state.activeTab === 'adhd') {
+                this.updateADHDCheckboxes();
             }
 
             // Dosage Slider
@@ -177,9 +167,19 @@
                     { label: t('cat_treatments') || 'CLINICAL', val: 'treatments' },
                     { label: t('cat_pathology') || 'PATHOLOGY', val: 'pathology' },
                     { label: t('cat_etiology') || 'ETIOLOGY', val: 'etiology' },
-                    { label: t('cat_conditions') || 'OTHER', val: 'conditions' }
+                    { label: t('cat_conditions') || 'OTHER', val: 'conditions' },
+                    { label: t('cat_research') || 'RESEARCH', val: 'research' }
                 ]
             };
+            // Set coordinates for options
+            const optH = 25;
+            this.ui.categoryDropdown.options.forEach((opt, i) => {
+                opt.x = this.ui.categoryDropdown.x;
+                opt.y = this.ui.categoryDropdown.y + this.ui.categoryDropdown.h + 2 + i * optH;
+                opt.w = this.ui.categoryDropdown.w;
+                opt.h = optH;
+            });
+            this.state.dropdowns.category.options = this.ui.categoryDropdown.options;
         },
 
         bindEvents() {
@@ -235,6 +235,7 @@
 
         handleMouseDown(e) {
             const { x: mx, y: my } = this.getMousePos(e);
+            console.log(`Mouse Down at: ${mx}, ${my}`);
             let hit = false;
 
             // 0. Dropdowns (priority hit detection)
@@ -260,6 +261,7 @@
             // 1. Tabs
             for (const tab of this.ui.tabs) {
                 if (mx >= tab.x && mx <= tab.x + tab.w && my >= tab.y && my <= tab.y + tab.h) {
+                    console.log(`Tab Clicked: ${tab.val}`);
                     this.state.activeTab = tab.val;
                     hit = true; break;
                 }
@@ -312,9 +314,26 @@
                                     this.toggleScenario(c.scenarioId, active);
                                 } else {
                                     const active = !this.state.activeEnhancements.has(c.enhancementId);
+
+                                    // Research Actions
+                                    if (c.enhancementId === 201 && active) {
+                                        this.exportGenomeData();
+                                        hit = true; break;
+                                    }
+                                    if (c.enhancementId === 202) this.state.analyticsMode = active;
+                                    if (c.enhancementId === 203) this.state.researchMode = active;
+
                                     if (active) this.state.activeEnhancements.add(c.enhancementId);
                                     else this.state.activeEnhancements.delete(c.enhancementId);
                                     this.ga?.setADHDEnhancement(c.enhancementId, active);
+
+                                    // DOI literature mapping
+                                    if (this.state.researchMode && active) {
+                                        const data = window.GreenhouseADHDData.getEnhancementById(c.enhancementId);
+                                        if (data && data.doi) {
+                                            window.open(`https://doi.org/${data.doi}`, '_blank');
+                                        }
+                                    }
                                 }
                                 hit = true; break;
                             }
@@ -404,9 +423,18 @@
                    ex = (el.action === 'reset') ? camPanelX + 15 : camPanelX + 130;
                 }
                 if (mx >= ex && mx <= ex + el.w && my >= (el.y || 60) && my <= (el.y || 60) + el.h) {
-                    this.ui.hoveredElement = el;
+                    this.ui.hoveredElement = { ...el, mx, my };
                     this.ui3d.canvas.style.cursor = 'pointer';
                     return;
+                }
+            }
+
+            // 3. Check 3D Visualization Components
+            if (this.ui3d) {
+                const hit = this.ui3d.hitTest(mx, my);
+                if (hit) {
+                    this.ui.hoveredElement = { ...hit, is3D: true, mx, my };
+                    this.ui3d.canvas.style.cursor = 'pointer';
                 }
             }
         },
@@ -434,6 +462,35 @@
                 else if (b.action === 'info') b.label = 'INFO';
             });
             this.ui.cameraButtons.forEach(b => b.label = t(b.id));
+        },
+
+        exportGenomeData() {
+            if (!this.ga || !this.ga.bestGenome) return;
+            const data = {
+                metadata: {
+                    app: "Greenhouse Neuro Simulation",
+                    version: "2.5.0-RESEARCH",
+                    timestamp: new Date().toISOString(),
+                    generation: this.ga.generation,
+                    fitness: this.ga.bestGenome.fitness
+                },
+                adhdConfig: {
+                    ...this.ga.adhdConfig,
+                    activeEnhancements: Array.from(this.ga.adhdConfig.activeEnhancements)
+                },
+                genome: this.ga.bestGenome
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 4)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `neuro_research_gen${this.ga.generation}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            console.log('Genome Data Exported Successfully.');
         },
 
         drawUI(ctx, w, h) {
@@ -486,7 +543,56 @@
             // 7. Info Overlay
             if (this.state.showInfo) this.drawInfoOverlay(ctx, w, h);
 
+            // 8. Analytics Overlay
+            if (this.state.analyticsMode) this.drawAnalyticsOverlay(ctx, w, h);
+
+            // 9. Tooltips (Drawn last for top-most overlay)
+            const hovered = this.ui.hoveredElement;
+            if (hovered && hovered.tooltip) {
+                let cite = hovered.detail;
+                if (this.state.researchMode && hovered.enhancementId) {
+                    const info = window.GreenhouseADHDData.getEnhancementById(hovered.enhancementId);
+                    if (info && info.doi) {
+                        cite = (cite ? cite + "\n\n" : "") + "RESEARCH REF: " + info.doi + " (Click to view)";
+                    }
+                }
+                Controls.drawTooltip(ctx, this, hovered.mx, hovered.my, hovered.tooltip, cite);
+            }
+
             ctx.restore();
+        },
+
+        drawAnalyticsOverlay(ctx, w, h) {
+            const panelX = w - 320;
+            const panelY = 120;
+            const panelW = 300;
+            const panelH = 150;
+
+            const Controls = window.GreenhouseNeuroControls;
+            Controls.drawPanel(ctx, this, panelX, panelY, panelW, panelH, "REAL-TIME RESEARCH ANALYTICS");
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "10px monospace";
+            const config = this.ga?.adhdConfig;
+            if (config) {
+                ctx.fillText(`SNR: ${config.snr.toFixed(4)}`, panelX + 20, panelY + 45);
+                ctx.fillText(`Entropy: ${(this.ga.bestGenome?.connections.length * 0.12).toFixed(4)}`, panelX + 20, panelY + 60);
+                ctx.fillText(`ATP Efficiency: ${config.atpLevel.toFixed(2)}`, panelX + 20, panelY + 75);
+                ctx.fillText(`Synaptic Drift: ${config.pruningVariance.toFixed(2)}`, panelX + 20, panelY + 90);
+            }
+
+            // Simple Sparkline
+            ctx.strokeStyle = "#4ca1af";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(panelX + 150, panelY + 130);
+            for (let i = 0; i < 20; i++) {
+                const val = Math.sin((this.ga?.generation || 0) * 0.1 + i) * 20;
+                ctx.lineTo(panelX + 150 + i * 7, panelY + 110 + val);
+            }
+            ctx.stroke();
+            ctx.fillStyle = "rgba(76, 161, 175, 0.3)";
+            ctx.fillText("FITNESS TRAJECTORY", panelX + 150, panelY + 140);
         },
 
         drawSimTab(ctx, offsetX) {
@@ -505,6 +611,17 @@
             ctx.fillStyle = '#4ca1af';
             ctx.fillText(t('simulation_mode').toUpperCase(), 40 + offsetX, 130);
             this.ui.buttons.forEach(b => Controls.drawButton(ctx, this, b, this.state.viewMode === b.val));
+
+            // Mode Description
+            const modeKeys = ['mode_neural_desc', 'mode_synaptic_desc', 'mode_burst_desc'];
+            const modeDesc = t(modeKeys[this.state.viewMode]);
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.font = 'italic 11px Quicksand';
+            if (window.GreenhouseModelsUtil?.wrapText) {
+                window.GreenhouseModelsUtil.wrapText(ctx, modeDesc, 40 + offsetX, 175, panelW - 60, 14);
+            } else {
+                ctx.fillText(modeDesc, 40 + offsetX, 175);
+            }
 
             ctx.fillStyle = '#4ca1af';
             ctx.fillText(t('dosage_optimization').toUpperCase(), 40 + offsetX, 470);
@@ -609,7 +726,29 @@
                 return;
             }
             if (Synapse && this.ui3d.synapseMeshes) {
-                Synapse.drawSynapsePiP(ctx, 40 + offsetX, 80, panelW - 40, 380, this.ui3d.selectedConnection, this.ui3d.synapseMeshes, false);
+                const conn = this.ui3d.selectedConnection;
+                // Draw PiP (smaller to fit text)
+                Synapse.drawSynapsePiP(ctx, 40 + offsetX, 80, panelW - 40, 280, conn, this.ui3d.synapseMeshes, false);
+
+                // Detailed Info
+                const infoY = 380;
+                ctx.fillStyle = '#4ca1af';
+                ctx.font = '800 10px Quicksand';
+                ctx.fillText(t('synapse_characteristics').toUpperCase(), 40 + offsetX, infoY);
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '500 12px Quicksand';
+                ctx.fillText(`${t('synapse_strength')}: ${conn.weight.toFixed(4)}`, 40 + offsetX, infoY + 20);
+                ctx.fillText(`${t('synapse_origin')}: ${t(conn.from.region)}`, 40 + offsetX, infoY + 40);
+                ctx.fillText(`${t('synapse_target')}: ${t(conn.to.region)}`, 40 + offsetX, infoY + 60);
+
+                const typeKey = conn.weight > 0 ? 'synapse_excitatory' : 'synapse_inhibitory';
+                ctx.fillStyle = conn.weight > 0 ? '#FFD700' : '#4ca1af';
+                ctx.fillText(`${t('synapse_type')}: ${t(typeKey)}`, 40 + offsetX, infoY + 80);
+
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.font = 'italic 10px Quicksand';
+                ctx.fillText(t('synapse_hover_hint'), 40 + offsetX, infoY + 110);
             }
         },
 
@@ -680,7 +819,9 @@
             if (!data) return;
 
             if (this.state.adhdCategory === 'scenarios') {
-                Object.keys(data.scenarios).forEach((key) => {
+                const scenarios = data.scenarios || {};
+                const keys = Array.isArray(scenarios) ? scenarios.map(s => s.id) : Object.keys(scenarios);
+                keys.forEach((key) => {
                     if (key === 'none') return;
                     this.ui.checkboxes.push({
                         id: `scenario_${key}`,
@@ -693,7 +834,8 @@
                     });
                 });
             } else {
-                const enhancements = data.categories[this.state.adhdCategory] || [];
+                // Support both legacy data.categories and direct access
+                const enhancements = (data.categories ? data.categories[this.state.adhdCategory] : data[this.state.adhdCategory]) || [];
                 enhancements.forEach(e => {
                     this.ui.checkboxes.push({
                         id: `enh_${e.id}`,
@@ -711,7 +853,11 @@
         getFilteredCheckboxes() {
             let list = this.ui.checkboxes;
             if (this.state.searchQuery) {
-                list = list.filter(c => t(c.labelKey).toLowerCase().includes(this.state.searchQuery));
+                list = list.filter(c => {
+                    const label = t(c.labelKey).toLowerCase();
+                    const match = label.includes(this.state.searchQuery);
+                    return match;
+                });
             }
             return list;
         },

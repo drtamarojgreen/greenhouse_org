@@ -648,42 +648,70 @@
             const data = window.GreenhouseADHDData;
             if (!data) return null;
 
+            // Check Vesicles & Mitochondria
+            const conn = window.GreenhouseNeuroUI3D?.selectedConnection;
+            if (conn && conn.synapseDetails) {
+                // Vesicles
+                for (const v of conn.synapseDetails.vesicles) {
+                    const vp = GreenhouseModels3DMath.project3DTo2D(v.x, v.y - 60, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                    if (vp.scale > 0) {
+                        const d = Math.sqrt(Math.pow(vp.x - x, 2) + Math.pow(vp.y - y, 2));
+                        if (d < 15 * vp.scale) {
+                            return { type: 'vesicle', label: t('Vesicle'), tooltip: t('vesicle_tooltip') };
+                        }
+                    }
+                }
+                // Mitochondria
+                for (const m of conn.synapseDetails.mitochondria) {
+                    const mp = GreenhouseModels3DMath.project3DTo2D(m.x, m.y + (m.y > 0 ? 60 : -60), m.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
+                    if (mp.scale > 0) {
+                        const d = Math.sqrt(Math.pow(mp.x - x, 2) + Math.pow(mp.y - y, 2));
+                        if (d < 30 * mp.scale) {
+                            return { type: 'mitochondria', label: t('Mitochondria'), tooltip: t('mitochondria_tooltip') };
+                        }
+                    }
+                }
+            }
+
             // Collision check using projected areas of pre-terminal, cleft, and post-terminal
             const prePos = GreenhouseModels3DMath.project3DTo2D(0, -150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             const postPos = GreenhouseModels3DMath.project3DTo2D(0, 150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             const cleftPos = GreenhouseModels3DMath.project3DTo2D(0, 0, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
 
-            // Pre-Terminal (-200 range)
+            // Pre-Terminal
             const preDist = prePos.scale > 0 ? Math.sqrt(Math.pow(prePos.x - x, 2) + Math.pow(prePos.y - y, 2)) : Infinity;
             if (preDist < 100 * prePos.scale) {
                 const ids = [3, 9, 10, 14, 22, 28, 57, 72, 74, 84, 88, 96, 99];
                 const active = ids.filter(id => adhdActive.has(id));
                 if (active.length > 0) {
                     const e = data.getEnhancementById(active[0]);
-                    return `<strong>${t('adhd_enh_' + e.id + '_name')} (Axon Terminal)</strong><br>${t('adhd_enh_' + e.id + '_desc')}<br><em>Synaptic Dynamic: Altered vesicle docking and release mechanics.</em>`;
+                    return { type: 'synapse_component', label: t('pre_synaptic_terminal'), tooltip: t('pre_synaptic_tooltip'), detail: `${t('adhd_enh_' + e.id + '_name')}: ${t('adhd_enh_' + e.id + '_desc')}` };
                 }
+                return { type: 'synapse_component', label: t('pre_synaptic_terminal'), tooltip: t('pre_synaptic_tooltip') };
             }
 
-            // Synaptic Cleft (0 range)
+            // Synaptic Cleft
             const cleftDist = cleftPos.scale > 0 ? Math.sqrt(Math.pow(cleftPos.x - x, 2) + Math.pow(cleftPos.y - y, 2)) : Infinity;
             if (cleftDist < 120 * cleftPos.scale) {
                 const ids = [1, 2, 8, 11, 12, 13, 18, 23, 26, 30, 31, 34, 41, 51, 61, 65, 66, 69, 70, 79, 82, 85, 87];
                 const active = ids.filter(id => adhdActive.has(id));
                 if (active.length > 0) {
                     const e = data.getEnhancementById(active[0]);
-                    return `<strong>${t('adhd_enh_' + e.id + '_name')} (Synaptic Cleft)</strong><br>${t('adhd_enh_' + e.id + '_desc')}<br><em>Synaptic Dynamic: Modulation of neurotransmitter flux and degradation.</em>`;
+                    return { type: 'synapse_component', label: t('synaptic_cleft'), tooltip: t('cleft_tooltip'), detail: `${t('adhd_enh_' + e.id + '_name')}: ${t('adhd_enh_' + e.id + '_desc')}` };
                 }
+                return { type: 'synapse_component', label: t('synaptic_cleft'), tooltip: t('cleft_tooltip') };
             }
 
-            // Post-Terminal (200 range)
+            // Post-Terminal
             const postDist = postPos.scale > 0 ? Math.sqrt(Math.pow(postPos.x - x, 2) + Math.pow(postPos.y - y, 2)) : Infinity;
             if (postDist < 100 * postPos.scale) {
                 const ids = [5, 29, 32, 55, 68, 73, 77];
                 const active = ids.filter(id => adhdActive.has(id));
                 if (active.length > 0) {
                     const e = data.getEnhancementById(active[0]);
-                    return `<strong>${t('adhd_enh_' + e.id + '_name')} (Dendritic Spine)</strong><br>${t('adhd_enh_' + e.id + '_desc')}<br><em>Synaptic Dynamic: Receptor sensitivity and signal transduction changes.</em>`;
+                    return { type: 'synapse_component', label: t('post_synaptic_density'), tooltip: t('post_synaptic_tooltip'), detail: `${t('adhd_enh_' + e.id + '_name')}: ${t('adhd_enh_' + e.id + '_desc')}` };
                 }
+                return { type: 'synapse_component', label: t('post_synaptic_density'), tooltip: t('post_synaptic_tooltip') };
             }
 
             return null;

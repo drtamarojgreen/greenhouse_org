@@ -198,6 +198,67 @@
             }
 
             ctx.restore();
+        },
+
+        drawTooltip(ctx, app, x, y, text, detail) {
+            if (!text) return;
+
+            ctx.save();
+            const margin = 10;
+            const maxWidth = 250;
+            const lineHeight = 16;
+
+            // Calculate height (dry run of wrapText)
+            const getWrappedHeight = (txt, font, w) => {
+                ctx.font = font;
+                const words = txt.split(' ');
+                let line = '';
+                let lines = 1;
+                for (let n = 0; n < words.length; n++) {
+                    const testLine = line + words[n] + ' ';
+                    if (ctx.measureText(testLine).width > w && n > 0) {
+                        line = words[n] + ' ';
+                        lines++;
+                    } else {
+                        line = testLine;
+                    }
+                }
+                return lines * lineHeight;
+            };
+
+            const textH = getWrappedHeight(text, 'bold 12px Quicksand, sans-serif', maxWidth - margin * 2);
+            const detailH = detail ? getWrappedHeight(detail, 'italic 11px Quicksand, sans-serif', maxWidth - margin * 2) : 0;
+            const totalH = textH + detailH + margin * 2 + (detail ? 5 : 0);
+
+            let tx = x + 15;
+            let ty = y + 15;
+            if (tx + maxWidth > (ctx.canvas.width || 1200)) tx = x - maxWidth - 5;
+            if (ty + totalH > (ctx.canvas.height || 600)) ty = y - totalH - 5;
+
+            // Draw Box
+            ctx.fillStyle = 'rgba(10, 15, 25, 0.95)';
+            ctx.strokeStyle = '#4ca1af';
+            ctx.lineWidth = 1;
+            if (app.roundRect) app.roundRect(ctx, tx, ty, maxWidth, totalH, 8, true, true);
+            else { ctx.fillRect(tx, ty, maxWidth, totalH); ctx.strokeRect(tx, ty, maxWidth, totalH); }
+
+            // Draw Content
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px Quicksand, sans-serif';
+            if (window.GreenhouseModelsUtil?.wrapText) {
+                window.GreenhouseModelsUtil.wrapText(ctx, text, tx + margin, ty + margin, maxWidth - margin * 2, lineHeight);
+                if (detail) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                    ctx.font = 'italic 11px Quicksand, sans-serif';
+                    window.GreenhouseModelsUtil.wrapText(ctx, detail, tx + margin, ty + margin + textH + 5, maxWidth - margin * 2, lineHeight);
+                }
+            } else {
+                ctx.fillText(text, tx + margin, ty + margin);
+            }
+
+            ctx.restore();
         }
     };
 
