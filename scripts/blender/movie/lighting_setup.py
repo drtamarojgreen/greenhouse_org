@@ -71,7 +71,7 @@ def setup_lighting(master_instance):
         bpy.ops.object.light_add(type='POINT', location=(0, 0, 5))
         intro_light = bpy.context.object
         intro_light.name = "IntroLight"
-    intro_light.data.energy = 5000 # Point 142: Increased for test 4000 threshold
+    intro_light.data.energy = 15000 # Point 142: Increased for branding visibility
     intro_light.hide_render = True
     intro_light.keyframe_insert(data_path="hide_render", frame=1)
 

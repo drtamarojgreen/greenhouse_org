@@ -12,6 +12,17 @@ def setup_all_characters(master):
     # Antagonist
     master.gnome = gnome_antagonist.create_gnome(name="GloomGnome", location=(5, 5, 0))
 
+    # Explicitly ensure visibility in render (Point 142)
+    # Target all related objects (Mesh and Armature)
+    for char in [master.h1, master.h2, master.gnome]:
+        if char:
+            char.hide_render = False
+            char.keyframe_insert(data_path="hide_render", frame=1)
+            # Ensure children (meshes) are also visible
+            for child in char.children:
+                child.hide_render = False
+                child.keyframe_insert(data_path="hide_render", frame=1)
+
     # Setup practical lights for characters (#25, #28)
     setup_character_practical_lights(master)
 
@@ -24,7 +35,7 @@ def setup_character_practical_lights(master):
             bpy.ops.object.light_add(type='POINT', location=(0.6, 0, 1.8))
             orb_light = bpy.context.object
             orb_light.name = "GloomOrbLight"
-            orb_light.data.energy = 500
+            orb_light.data.energy = 1500 # Increased energy
             orb_light.data.color = (0.5, 0, 1.0) # Purple
             orb_light.parent = master.gnome
             orb_light.parent_type = 'BONE'
@@ -36,7 +47,7 @@ def setup_character_practical_lights(master):
                 bpy.ops.object.light_add(type='POINT', location=(0, 0, 1.2))
                 orb_light = bpy.context.object
                 orb_light.name = "GloomOrbLight"
-                orb_light.data.energy = 500
+                orb_light.data.energy = 1500 # Increased energy
                 orb_light.data.color = (0.5, 0, 1.0) # Purple
                 orb_light.parent = staff
                 style.animate_light_flicker("GloomOrbLight", 1, 15000, strength=0.3)
@@ -51,7 +62,7 @@ def setup_character_practical_lights(master):
             bpy.ops.object.light_add(type='SPOT', location=(0, -2, 2))
             rim = bpy.context.object
             rim.name = f"{name}_Rim"
-            rim.data.energy = 2000
+            rim.data.energy = 5000 # Increased energy
             rim.data.color = color
             
             # Parent to Torso Bone
@@ -71,7 +82,7 @@ def setup_character_practical_lights(master):
                 bpy.ops.object.light_add(type='SPOT', location=(0, -2, 2))
                 rim = bpy.context.object
                 rim.name = f"{name}_Rim"
-                rim.data.energy = 2000
+                rim.data.energy = 5000 # Increased energy
                 rim.data.color = color
                 rim.parent = torso
                 con = rim.constraints.new(type='TRACK_TO')
@@ -84,6 +95,11 @@ def setup_gaze_system(master):
     if not gaze:
         gaze = bpy.data.objects.new("GazeTarget", None)
         bpy.context.scene.collection.objects.link(gaze)
+
+    # Ensure helper is invisible in render (Point 142)
+    gaze.hide_render = True
+    gaze.keyframe_insert(data_path="hide_render", frame=1)
+
     master.gaze_target = gaze
 
     # Simple gaze setup: characters look at the shared GazeTarget to avoid dependency cycles

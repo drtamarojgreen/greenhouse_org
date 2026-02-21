@@ -5,6 +5,20 @@ import mathutils
 from . import core
 from constants import SCENE_MAP
 
+def set_obj_visibility(obj, visible, frame):
+    """Recursively sets hide_render for an object and its children (Point 142)."""
+    if not obj: return
+    obj.hide_render = not visible
+    obj.keyframe_insert(data_path="hide_render", frame=frame)
+    if obj.animation_data and obj.animation_data.action:
+        for fc in core.get_action_curves(obj.animation_data.action):
+            if fc.data_path == "hide_render":
+                for kp in fc.keyframe_points:
+                    if int(kp.co[0]) == frame: kp.interpolation = 'CONSTANT'
+
+    for child in obj.children:
+        set_obj_visibility(child, visible, frame)
+
 def animate_breathing(obj, frame_start, frame_end, axis=2, amplitude=0.03, cycle=72):
     """Point 24: Use Noise modifier for breathing to reduce keyframe bloat."""
     if not obj: return
@@ -470,7 +484,9 @@ def animate_characters(master_instance):
         target = torso if torso else char
         animate_weight_shift(target, 1, 15000)
         animate_breathing(target, 1, 15000)
-        char.hide_render = False; char.keyframe_insert(data_path="hide_render", frame=1)
+
+        # Explicitly ensure visibility (Point 142)
+        set_obj_visibility(char, True, 1)
 
     # Baseline acting for tests
     test_bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R", "Neck", "Jaw", "Mouth", "Eye.L", "Brow.L"]

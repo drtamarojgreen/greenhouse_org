@@ -18,8 +18,8 @@ def create_hedge_material():
 
     node_ramp = nodes.new(type='ShaderNodeValToRGB')
     elements = node_ramp.color_ramp.elements
-    elements[0].position, elements[0].color = 0.3, (0.01, 0.06, 0.02, 1)
-    elements[1].position, elements[1].color = 0.7, (0.05, 0.18, 0.04, 1)
+    elements[0].position, elements[0].color = 0.3, (0.1, 0.2, 0.1, 1) # Brightened (Point 142)
+    elements[1].position, elements[1].color = 0.7, (0.2, 0.4, 0.2, 1) # Brightened (Point 142)
 
     node_bump = nodes.new(type='ShaderNodeBump')
     node_bump.inputs['Strength'].default_value = 0.8
@@ -49,8 +49,8 @@ def create_soil_material():
 
     node_ramp = nodes.new(type='ShaderNodeValToRGB')
     elements = node_ramp.color_ramp.elements
-    elements[0].position, elements[0].color = 0.2, (0.05, 0.02, 0.01, 1)
-    elements[1].position, elements[1].color = 0.8, (0.15, 0.08, 0.04, 1)
+    elements[0].position, elements[0].color = 0.2, (0.1, 0.05, 0.02, 1) # Brightened
+    elements[1].position, elements[1].color = 0.8, (0.3, 0.15, 0.08, 1) # Brightened
 
     node_disp = nodes.new(type='ShaderNodeDisplacement')
     node_disp.inputs['Scale'].default_value = 0.02

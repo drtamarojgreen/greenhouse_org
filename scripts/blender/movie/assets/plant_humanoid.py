@@ -54,7 +54,7 @@ def create_vine(start, end, radius=0.05):
     bpy.context.collection.objects.link(obj)
     return obj
 
-def create_bark_material(name, color=(0.106, 0.302, 0.118), quality='hero'):
+def create_bark_material(name, color=(0.2, 0.4, 0.2), quality='hero'):
     """Point 79: Enhanced procedural bark material with LOD system."""
     mat = bpy.data.materials.new(name=name)
     nodes, links = mat.node_tree.nodes, mat.node_tree.links

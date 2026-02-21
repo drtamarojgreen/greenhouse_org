@@ -62,11 +62,12 @@ def setup_scene(master):
     style.ease_action(master.gnome, "location", index=0, interpolation='BEZIER', easing='EASE_IN')
     style.ease_action(master.gnome, "location", index=1, interpolation='BEZIER', easing='EASE_IN')
 
-    # Final off-screen state
-    master.gnome.hide_render = False
-    master.gnome.keyframe_insert(data_path="hide_render", frame=end_frame - 51)
-    master.gnome.hide_render = True
-    master.gnome.keyframe_insert(data_path="hide_render", frame=end_frame - 50)
+    # Final off-screen state (Point 142: target meshes too)
+    for obj in [master.gnome] + list(master.gnome.children):
+        obj.hide_render = False
+        obj.keyframe_insert(data_path="hide_render", frame=end_frame - 51)
+        obj.hide_render = True
+        obj.keyframe_insert(data_path="hide_render", frame=end_frame - 50)
 
     # Camera choreography for retreat handled in camera_controls.py
 

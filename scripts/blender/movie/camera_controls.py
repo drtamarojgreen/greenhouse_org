@@ -20,6 +20,11 @@ def ensure_camera(master):
     if not target:
         target = bpy.data.objects.new("CamTarget", None)
         bpy.context.scene.collection.objects.link(target)
+
+    # Ensure helper is invisible in render (Point 142)
+    target.hide_render = True
+    target.keyframe_insert(data_path="hide_render", frame=1)
+
     master.cam_target = target
 
     # Basic constraints if not present

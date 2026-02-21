@@ -28,7 +28,7 @@ def setup_scene(master):
     bpy.ops.object.light_add(type='POINT', location=(0, -5, 2))
     light = bpy.context.object
     light.name = "IntroLight"
-    light.data.energy = 5000 # Increased energy for branding visibility
+    light.data.energy = 15000 # Increased energy for branding visibility (Point 142)
     light.hide_render = True
     light.keyframe_insert(data_path="hide_render", frame=100)
     light.hide_render = False
