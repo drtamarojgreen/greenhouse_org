@@ -944,9 +944,17 @@ def setup_god_rays(scene, beam_obj=None):
     if sun:
         sun.data.color = (1, 0.9, 0.8) # Neutral warm
 
-def animate_vignette(scene, frame_start, frame_end, start_val=1.0, end_val=0.5):
-    """Removed as requested: Stupid white vignette."""
-    pass
+def animate_vignette(scene, frame_start, frame_end, start_val=0.0, end_val=0.0):
+    """Animates the factor of the 'Vignette' node in the compositor. Default 0.0 for invisibility."""
+    tree = get_compositor_node_tree(scene)
+    vig = tree.nodes.get("Vignette")
+    if not vig: return
+
+    # We'll use the 'Factor' input
+    target = vig.inputs.get('Factor') or vig.inputs[0]
+
+    set_socket_value(target, start_val, frame=frame_start)
+    set_socket_value(target, end_val, frame=frame_end)
 
 def apply_neuron_color_coding(neuron_mat, frame, color=(1, 0, 0)):
     """Shifts neuron emission color."""
@@ -1646,8 +1654,26 @@ def animate_hdri_rotation(scene):
         mapping.inputs['Rotation'].keyframe_insert(data_path="default_value", index=2, frame=15000)
 
 def animate_vignette_breathing(scene, frame_start, frame_end, strength=0.05, cycle=120):
-    """Removed as requested: Stupid white vignette."""
-    pass
+    """Adds a pulsing 'breath' effect to the vignette factor."""
+    tree = get_compositor_node_tree(scene)
+    vig = tree.nodes.get("Vignette")
+    if not vig: return
+
+    if not tree.animation_data: tree.animation_data_create()
+    if not tree.animation_data.action:
+        tree.animation_data.action = bpy.data.actions.new(name="CompositorAction")
+
+    target = vig.inputs.get('Factor') or vig.inputs[0]
+    data_path = f'nodes["{vig.name}"].inputs["{target.identifier}"].default_value'
+    fcurve = get_or_create_fcurve(tree.animation_data.action, data_path, ref_obj=tree)
+
+    if fcurve:
+        mod = fcurve.modifiers.new(type='NOISE')
+        mod.strength = strength
+        mod.scale = cycle / 2
+        mod.use_restricted_range = True
+        mod.frame_start = frame_start
+        mod.frame_end = frame_end
 
 def animate_floating_spores(center, volume_size=(10, 10, 5), density=50, frame_start=1, frame_end=15000):
     """Enhancement #33: Drifting bioluminescent spores in the sanctuary."""

@@ -52,6 +52,19 @@ def setup_compositor(master_instance):
     huesat = tree.nodes.new('CompositorNodeHueSat')
     huesat.name = "GlobalSaturation"
 
+    # Vignette (Ellipse Mask -> Invert -> Multiply)
+    ellipse = tree.nodes.new('CompositorNodeEllipseMask')
+    ellipse.width = 0.8
+    ellipse.height = 0.8
+
+    invert = tree.nodes.new('CompositorNodeInvert')
+    tree.links.new(ellipse.outputs['Mask'], invert.inputs['Color'])
+
+    vig_mix = style.create_mix_node(tree, blend_type='MULTIPLY', data_type='RGBA')
+    vig_mix.name = "Vignette"
+    fac_v, in1_v, in2_v = style.get_mix_sockets(vig_mix)
+    if fac_v: fac_v.default_value = 0.0 # Invisible by default
+
     # Links
     # 1. Main Path
     tree.links.new(render_layers.outputs['Image'], glare.inputs['Image'])
@@ -60,8 +73,12 @@ def setup_compositor(master_instance):
     tree.links.new(bright.outputs['Image'], distort.inputs['Image'])
     tree.links.new(distort.outputs['Image'], displace.inputs['Image'])
     
+    # Insert Vignette
+    tree.links.new(displace.outputs['Image'], in1_v)
+    tree.links.new(invert.outputs['Color'], in2_v)
+
     # 4. Final Output
-    tree.links.new(displace.outputs['Image'], huesat.inputs['Image'])
+    tree.links.new(style.get_mix_output(vig_mix), huesat.inputs['Image'])
     tree.links.new(huesat.outputs['Image'], composite.inputs['Image'])
 
 def animate_wet_glass(scene, frame_start, frame_end, strength=10.0):
