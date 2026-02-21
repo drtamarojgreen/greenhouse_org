@@ -68,7 +68,7 @@ def get_action_curves(action, create_if_missing=False):
                 for chan in channels:
                     prefix = get_bone_prefix(getattr(slot_hint, "name", ""))
                     if hasattr(chan, "slot") and chan.slot:
-                        prefix = get_bone_prefix(chan.slot.name)
+                        prefix = get_bone_prefix(getattr(chan.slot, "name", ""))
 
                     fc = getattr(chan, "fcurve", None)
                     if not fc and hasattr(chan, "keyframe_points"): fc = chan
@@ -87,7 +87,7 @@ def get_action_curves(action, create_if_missing=False):
     # 3. Blender 5.0 Slots & Bindings
     if hasattr(action, "slots"):
         for slot in action.slots:
-            prefix = get_bone_prefix(slot.name)
+            prefix = get_bone_prefix(getattr(slot, "name", ""))
             if hasattr(slot, "bindings"):
                 for binding in slot.bindings:
                     if hasattr(binding, "fcurves"):
