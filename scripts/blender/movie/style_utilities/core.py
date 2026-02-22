@@ -115,10 +115,16 @@ def get_action_curves(action, create_if_missing=False):
             prefix = get_bone_prefix(slot_name)
             if hasattr(slot, "bindings"):
                 for binding in slot.bindings:
-                    if hasattr(binding, "fcurves"):
+                    if hasattr(binding, "fcurves") and binding.fcurves:
                         for fc in binding.fcurves: wrap_fc(fc, prefix)
-                    if hasattr(binding, "channels"):
+                    if hasattr(binding, "channels") and binding.channels:
                         traverse_channels(binding.channels, prefix)
+
+    # 4. Final aggressive fallback: check all datablocks for fcurves that might be hidden
+    # This is a safety pass for weird 5.0 edge cases (Point 142)
+    if hasattr(action, "fcurves") and not curves:
+        for fc in action.fcurves:
+            wrap_fc(fc)
 
     return curves
 
@@ -158,10 +164,12 @@ def get_eevee_engine_id():
 
 def get_compositor_node_tree(scene):
     """Directly retrieves the compositor node tree for Blender 5.x."""
-    tree = getattr(scene, 'compositing_node_group', None)
+    scene.use_nodes = True
+    # Access the compositor via node_tree or compositing_node_tree (Point 3, 5)
+    tree = getattr(scene, 'compositing_node_tree', None) or getattr(scene, 'node_tree', None)
     if not tree:
-        tree = bpy.data.node_groups.new(name="Compositing", type='CompositorNodeTree')
-        scene.compositing_node_group = tree
+        # Fallback for specific 4.2+ implementations
+        tree = getattr(scene, 'compositing_node_group', None)
     return tree
 
 def get_socket_by_identifier(collection, identifier):
@@ -171,12 +179,8 @@ def get_socket_by_identifier(collection, identifier):
     return None
 
 def create_compositor_output(tree):
-    """Creates the final output node."""
-    node = tree.nodes.new('NodeGroupOutput')
-    if hasattr(tree, "interface"):
-        exists = any(s.name == "Image" for s in tree.interface.items_tree if s.item_type == 'SOCKET')
-        if not exists:
-            tree.interface.new_socket(name="Image", in_out='OUTPUT', socket_type='NodeSocketColor')
+    """Creates the final output node (Composite node for the main pipeline)."""
+    node = tree.nodes.new('CompositorNodeComposite')
     return node
 
 def set_socket_value(socket, value, frame=None):

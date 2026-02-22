@@ -1,5 +1,6 @@
 import bpy
 import math
+import style_utilities as style
 
 from constants import SCENE_MAP
 
@@ -43,7 +44,10 @@ def setup_scene(master):
 
     # Material
     mat = bpy.data.materials.new(name="CreditsMat")
-    mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (1, 1, 1, 1)
+    # Point 142: Add emission to ensure visibility in black world background
+    style.set_principled_socket(mat, "Base Color", (1, 1, 1, 1))
+    style.set_principled_socket(mat, "Emission", (1, 1, 1, 1))
+    style.set_principled_socket(mat, "Emission Strength", 5.0)
     text_obj.data.materials.append(mat)
 
     # Visibility

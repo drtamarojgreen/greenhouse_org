@@ -100,7 +100,8 @@ def setup_lighting(master_instance):
         dome_fill = bpy.context.object
         dome_fill.name = "DomeFill"
     apply_cfg(dome_fill, LIGHTING_DEFAULTS.get(dome_fill.name))
-    dome_fill.rotation_euler = (math.radians(180), 0, 0)
+    # Point 142: Correct orientation to point DOWN (-Z) towards floor
+    dome_fill.rotation_euler = (0, 0, 0)
     master_instance.dome_fill = dome_fill
 
     # --- Enhancement #23: Storm Lightning ---

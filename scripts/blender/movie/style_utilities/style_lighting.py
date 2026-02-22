@@ -90,6 +90,9 @@ def replace_with_soft_boxes():
             name = obj.name
             energy = obj.data.energy
             color = obj.data.color
+            parent = obj.parent
+            parent_type = obj.parent_type
+            parent_bone = obj.parent_bone
 
             bpy.ops.object.select_all(action='DESELECT')
             obj.select_set(True)
@@ -98,6 +101,16 @@ def replace_with_soft_boxes():
             bpy.ops.mesh.primitive_plane_add(location=loc, rotation=rot)
             plane = bpy.context.object
             plane.name = f"SoftBox_{name}"
+
+            # Point 142: Preserve parenting (Critical for rim lights attached to camera)
+            if parent:
+                plane.parent = parent
+                plane.parent_type = parent_type
+                if parent_type == 'BONE':
+                    plane.parent_bone = parent_bone
+                # Re-apply local transform since primitive_plane_add uses world loc by default
+                plane.location = loc
+                plane.rotation_euler = rot
             plane.scale = (5, 5, 1) # Larger scale (Point 142)
 
             mat = bpy.data.materials.new(name=f"Mat_{plane.name}")
