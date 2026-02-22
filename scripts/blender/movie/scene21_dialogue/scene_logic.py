@@ -32,6 +32,11 @@ def setup_scene(master):
 
     ensure_scene_keyframe(master, start_frame)
 
+    # Position characters (Point 142)
+    master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), start_frame)
+    master.place_character(master.h2, (1, 0, 0), (0, 0, 0), start_frame)
+    master.place_character(master.gnome, (2, 2, 0), (0, 0, math.radians(225)), start_frame)
+
     # Metadata
     # Shot ID: S21_01
     # Intent: Breakthrough. Gnome is defeated by reason.

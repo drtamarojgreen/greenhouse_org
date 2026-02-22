@@ -8,8 +8,10 @@ def setup_scene(master):
     Intent: Staging the forge metaphor with props and character interaction. (Point 43)
     """
     # MUSIC CUE: Rhythmic industrial banging (softened for piano).
-    master.create_intertitle("The Exchange of\nKnowledge", 951, 1050)
-    master.create_intertitle("The Forge of\nFortitude", 1251, 1350)
+    # Point 142: Correct frame range (951 - 1250)
+    from constants import SCENE_MAP
+    start_f, end_f = SCENE_MAP['scene04_forge']
+    master.create_intertitle("The Exchange of\nKnowledge", start_f, start_f + 100)
 
     # Point 43: Add simple anvil prop for the forge scene (BMesh)
     import bmesh
@@ -27,13 +29,16 @@ def setup_scene(master):
     mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.05, 0.05, 0.05, 1)
     anvil.data.materials.append(mat)
 
-    master._set_visibility([anvil], [(1351, 1500)])
+    master._set_visibility([anvil], [(start_f, end_f)])
+
+    if master.h1:
+        master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), start_f)
 
     if master.h1 and master.h1.type == 'ARMATURE':
         # Point 43: Hammering motion (Bone-based)
         torso = master.h1.pose.bones.get("Torso")
         if torso:
-            for f in range(1351, 1500, 20):
+            for f in range(start_f + 100, end_f, 20):
                 torso.rotation_euler[0] = 0
                 torso.keyframe_insert(data_path="rotation_euler", index=0, frame=f)
                 torso.rotation_euler[0] = math.radians(20)

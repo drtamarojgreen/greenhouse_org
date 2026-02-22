@@ -32,6 +32,11 @@ def setup_scene(master):
 
     ensure_scene_keyframe(master, start_frame)
 
+    # Position characters (Point 142)
+    master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), start_frame)
+    master.place_character(master.h2, (1, 0, 0), (0, 0, 0), start_frame)
+    master.place_character(master.gnome, (3, 3, 0), (0, 0, math.radians(225)), start_frame)
+
     # Metadata
     # Shot ID: S19_01
     # Intent: Tension rises as the Gloom Gnome falters.

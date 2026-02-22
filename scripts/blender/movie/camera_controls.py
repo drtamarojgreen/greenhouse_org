@@ -24,7 +24,9 @@ def ensure_camera(master):
     # Ensure helper is invisible in render (Point 142)
     target.display_type = 'WIRE'
     target.hide_render = target.hide_viewport = True
-    target.keyframe_insert(data_path="hide_render", frame=1)
+    # Key it at start, middle, end to ensure it doesn't get toggled
+    for f in [1, 7500, 15000]:
+        target.keyframe_insert(data_path="hide_render", frame=f)
 
     master.cam_target = target
 
@@ -78,8 +80,10 @@ def setup_all_camera_logic(master):
     setup_camera_keyframes(master, cam, target)
 
 def setup_camera_keyframes(master, cam, target):
-    """Consolidated camera keyframes with dramatic fly-ins and drone sweeps."""
-    title_loc = (0, -12, 0)
+    """
+    Cinematic Camera Overhaul (Point 142).
+    Implements 'Storytelling Observer' behavior with off-axis azimuth and crane arcs.
+    """
     origin = (0, 0, 0)
     high_target = (0, 0, 1.5)
 
@@ -174,120 +178,113 @@ def setup_camera_keyframes(master, cam, target):
     cam.data.clip_end = 500.0
     cam.data.clip_start = 0.1
 
-    # Branding (1 - 100)
-    kf_eased(1, title_loc, origin)
-    kf_eased(100, title_loc, origin)
+    # Branding (1 - 100): Authority perspective
+    kf_eased(1, (-14, -6, 6), origin, lens=55)
+    kf_eased(100, (-14, -6, 6), origin, lens=55)
 
-    # Opening drone - sweep across the hill (Point 142: Adjusted to satisfy test 2.1.1 altitude check at 101)
-    drone_sweep(101, 160,
-                start_xy=(80, 80),
-                end_xy=(0, -40),
-                altitude=70, # Increased altitude for dramatic start
-                look_at=(0, 0, 0))
+    # Intro: Reveal via descending crane arc (Point 142)
+    # Start high off-axis (Altitude >= 60 to satisfy Test 2.1.1)
+    kf_eased(101, (-18, 6, 70), origin, easing='EASE_IN')
+    # Descend to altitude <= 20 by 180 for Test 2.1.1
+    kf_eased(180, (-10, -12, 18), high_target, easing='LINEAR')
+    kf_eased(200, (-8, -18, 8), high_target, easing='EASE_OUT')
 
-    # Descend from drone into establishing shot (Reach Z <= 20 by 180 for Test 2.1.1)
-    kf_eased(180, (0, -15, 6),  (0, 0, 0)) # Point 142: Closer (was -30, 15)
-    kf_eased(200, (0, -12, 4),  (0, 0, 1.5))
+    # Brain (201 - 400): Conceptual axial symmetry
+    kf_eased(201, (18, -12, 14), origin, lens=85)
+    # Slow conceptual orbit
+    kf_eased(400, (14, -18, 12), origin, lens=85)
 
-    # Intro / Establishing Shot (101 - 200) - Already handled by drone-to-descend
-    # Brain (201 - 400)
-    kf_eased(SCENE_MAP['scene_brain'][0], (0,-30,8), origin)
-    kf_eased(SCENE_MAP['scene_brain'][1], (0,-35,10), origin)
+    # Garden scene: Reversed motion (Start close -> end high wide)
+    kf_eased(401, (3, -6, 2.5), (-1, 0, 1.5), easing='EASE_IN')
+    kf_eased(550, (8, -12, 6), (0, 2, 1.5), easing='LINEAR')
+    kf_eased(650, (15, -25, 12), (0, 5, 0), easing='EASE_OUT')
 
-    # Garden scene: Drone pass then fly-in (401 - 650)
-    # Point 142: Separated to avoid overlapping keys
-    drone_sweep(401, 480,
-                start_xy=(-50, 20),
-                end_xy=(40, -40),
-                altitude=60,
-                look_at=(0, 5, 0))
+    # Socratic (651 - 950): Eye-level, balanced
+    kf_eased(651, (-10, -10, 2.5), high_target) # Balanced off-axis
+    kf_eased(950, (-8, -12, 2.5), high_target)
 
-    kf_eased(521, (0, -40, 20), (0, 0, 0), easing='EASE_IN')        # transition
-    kf_eased(580, (0, -20, 8), (-2, 0, 1.5), easing='EASE_IN_OUT')  # fly in
-    kf_eased(650, (5, -15, 3), (-2, 0, 1.5), easing='EASE_OUT')     # settle
+    # Knowledge Exchange (951 - 1100): Top light, isolation
+    kf_eased(951, (2, -4, 10), origin, lens=35, easing='EASE_IN')
+    kf_eased(1100, (4, -2, 12), origin, lens=35, easing='EASE_OUT')
 
-    # Socratic (651 - 950)
-    kf_eased(651, title_loc, origin)
-    kf_eased(750, title_loc, origin)
-    kf_eased(751, (0,-15,4), high_target)
-    kf_eased(950, (0,-18,5), high_target)
+    # Forge (1101 - 1250): Low angle, strong shadows
+    kf_eased(1101, (-5, -5, 0.5), (0, 0, 2.0), lens=35, easing='EASE_IN')
+    kf_eased(1250, (-3, -8, 0.4), (0, 0, 2.5), lens=35, easing='EASE_OUT')
 
-    # Whip Pan (#7) transition to Knowledge Exchange
-    whip_pan(951, title_loc, origin, duration=5)
+    # Bridge, Resonance (1251 - 1800)
+    kf_eased(1251, (12, -12, 8), (8, 0, 2))
+    kf_eased(1800, (15, -8, 6), (10, 0, 2))
 
-    # Knowledge Exchange (951 - 1250)
-    kf_eased(951, title_loc, origin)
-    kf_eased(1051, (6,-12,3), (0, 0, 1.5))
-    kf_eased(1250, (-6,-12,3), (0, 0, 1.5))
+    # Shadow / Confrontation (1801 - 2500): Low angle, strong shadows
+    kf_eased(1801, (-6, -6, 0.8), (0, 0, 1.5))
+    kf_eased(2500, (-4, -8, 0.5), (2, 2, 1.5))
 
-    # Intermediate scenes to avoid camera gaps (Point 142)
-    # Bridge, Resonance, Shadow (1251 - 2100)
-    kf_eased(1251, (0, -15, 5), (0, 0, 1.5))
-    kf_eased(2100, (5, -15, 4), (0, 0, 1.5))
+    # Library (2501 - 2800): Seeking wisdom
+    kf_eased(2501, (-8, -8, 2.2), (0, 0, 1.3))
+    kf_eased(2800, (-6, -10, 2.5), (0, 0, 1.3))
 
-    # Confrontation, Library, Lab (2101 - 3300)
-    kf_eased(2101, (-5, -12, 3), (0, 0, 1.5))
-    kf_eased(3300, (0, -12, 4), (0, 0, 1.5))
+    # Lab (2801 - 3300): Clinical introspection
+    kf_eased(2801, (10, -10, 3), (0, 0, 1.5))
+    kf_eased(3300, (8, -12, 4), (0, 0, 1.5))
 
     # Sanctuary fly-in: crane shot from above descending (3301 - 4100)
     # Note: scene11_nature_sanctuary is 3301-3800
-    kf_eased(3301, (0, -20, 10), (0, 0, 1.0), easing='EASE_IN') # Point 142: Even closer
-    kf_eased(3800, (0, -10, 3), (0, 0, 1.5), easing='EASE_IN_OUT')
+    kf_eased(3301, (-10, -15, 12), (0, 0, 1.0), easing='EASE_IN')
+    kf_eased(3800, (-6, -10, 2.5), (0, 0, 1.5), easing='EASE_IN_OUT')
 
     # Walking (3801-4100)
-    kf_eased(3801, (0, -10, 3), (0, 0, 1.5))
-    kf_eased(4100, (0, -8, 2.5), (0, 0, 1.5), easing='EASE_OUT')     # settle
+    kf_eased(3801, (-6, -10, 2.5), (0, 0, 1.5))
+    kf_eased(4100, (-4, -8, 2.2), (0, 0, 1.5), easing='EASE_OUT')
 
-    # Duel (4101-4500)
-    kf_eased(4101, (0, -8, 2.5), (0, 0, 1.5))
-    kf_eased(4500, (0, -12, 5), (0, 0, 1.5))
+    # Duel (4101-4500): Dynamic tracking
+    kf_eased(4101, (-8, -12, 3), (0, 0, 1.5))
+    kf_eased(4500, (8, -10, 4), (0, 0, 1.5))
 
-    # Interaction sequence: start wide establish, then commit (4501 - 9500)
-    kf_eased(4501, (0, -25, 12), (0, 0, 1), easing='EASE_IN', lens=24) # Point 142: Even closer (was -40, 20)
-    kf_eased(4600, (0, -25, 12), (0, 0, 1), easing='EASE_IN', lens=24)
-    kf_eased(4800, (0, -18, 6), (-1, 0, 1.5), easing='EASE_IN_OUT', lens=35)# dramatic fly-in
-    kf_eased(5000, (0, -10, 3), (-2, 0, 1.5), easing='EASE_OUT', lens=50)    # medium shot commit
+    # Interaction sequence: Storytelling observer (4501 - 9500)
+    kf_eased(4501, (-12, -18, 8), (0, 0, 1), easing='EASE_IN', lens=24)
+    kf_eased(4800, (-8, -12, 4), (-1, 0, 1.5), easing='EASE_IN_OUT', lens=35)
+    kf_eased(5000, (-4, -6, 2.8), (-1.5, 0, 1.5), easing='EASE_OUT', lens=50)
 
     # Dialogue closeups (9501 - 13000)
-    # Point 93: Target Armatures instead of meshes for better Rig Tracking
+    # Breaking symmetry: Use off-axis positions for shot/reverse-shot
     h1_obj = bpy.data.objects.get("Herbaceous")
     h2_obj = bpy.data.objects.get("Arbor")
     gnome_obj = bpy.data.objects.get("GloomGnome")
 
-    # Scene 16 (9501-10200): Herbaceous speaks first, then Arbor
-    kf_eased(9501,  (0, -15, 4),    (0, 0, 1.5), lens=35)        # wide
-    # Rack Focus (#2) and Over-the-Shoulder (#3) - Moved closer for hero status (dist < 4)
-    kf_eased(9525,  (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj, lens=85) # OTS Arbor to Herbaceous
-    kf_eased(9780,  (0, -15, 4),    (0, 0, 1.5), lens=35)        # wide
-    kf_eased(9830,  (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj, lens=85) # OTS Herbaceous to Arbor
-    kf_eased(10100, (0, -15, 4),    (0, 0, 1.5), lens=35)        # pull back
+    # Scene 16 (9501-10200)
+    kf_eased(9501,  (-6, -10, 3),    (0, 0, 1.5), lens=35)        # wide
+    # OTS shots (dist < 4)
+    kf_eased(9525,  (2.5, -2, 1.6), (-1, 0, 1.6), focus_obj=h1_obj, lens=85) # OTS Arbor to Herbaceous
+    kf_eased(9780,  (-6, -10, 3),    (0, 0, 1.5), lens=35)        # wide
+    kf_eased(9830,  (-2.5, -2, 1.6), (1, 0, 1.6), focus_obj=h2_obj, lens=85) # OTS Herbaceous to Arbor
+    kf_eased(10100, (-6, -10, 3),    (0, 0, 1.5), lens=35)
 
-    # Scene 17 (10201-10900): Arbor speaks first
-    kf_eased(10201, (0, -15, 4),    (0, 0, 1.5), lens=35)
-    kf_eased(10250, (-1.0, 1.0, 1.5), (2, 0, 1.5), focus_obj=h2_obj, lens=85) # Arbor closeup
-    kf_eased(10540, (0, -15, 4),    (0, 0, 1.5), lens=35)
-    kf_eased(10590, (1.0, 1.0, 1.5), (-2, 0, 1.5), focus_obj=h1_obj, lens=85) # Herbaceous closeup
-    kf_eased(10850, (0, -15, 4),    (0, 0, 1.5), lens=35)
+    # Scene 17 (10201-10900)
+    kf_eased(10201, (6, -10, 3),    (0, 0, 1.5), lens=35)
+    kf_eased(10250, (-2.5, -2, 1.6), (1, 0, 1.6), focus_obj=h2_obj, lens=85) # Arbor closeup
+    kf_eased(10540, (6, -10, 3),    (0, 0, 1.5), lens=35)
+    kf_eased(10590, (2.5, -2, 1.6), (-1, 0, 1.6), focus_obj=h1_obj, lens=85) # Herbaceous closeup
+    kf_eased(10850, (6, -10, 3),    (0, 0, 1.5), lens=35)
 
-    # Scene 18 (10901-11600): Gnome enters - Dutch Angle Enhancement #1
-    kf_eased(10901, (0, -15, 4),    (0, 0, 1.5), roll=0, lens=35)
-    crash_zoom(10901, 80, duration=5) # Enhancement #4: Crash Zoom on Gnome entry
-    kf_eased(10950, (-1.5, -3, 1.2), (-2, 0, 1.8), roll=5, focus_obj=h1_obj, lens=50)      # Herbaceous Low Angle (#5)
-    kf_eased(11200, (4, -3, 1.5),   (5, 0, 1.2), roll=-15, focus_obj=gnome_obj, lens=24)  # Gnome Dutch Angle (#1) - wide and distorted
-    kf_eased(11500, (0, -20, 6),    (0, 0, 1), roll=0, lens=35)
+    # Scene 18 (10901-11600): Gnome enters
+    kf_eased(10901, (10, -12, 4),    (0, 0, 1.5), roll=0, lens=35)
+    crash_zoom(10901, 80, duration=5)
+    kf_eased(10950, (0, -4, 0.8), (-1.5, 0, 1.8), roll=5, focus_obj=h1_obj, lens=50)      # Herbaceous Low Angle
+    kf_eased(11200, (6, 0, 1.2),   (3, 3, 1.2), roll=-15, focus_obj=gnome_obj, lens=24)  # Gnome Dutch Angle
+    kf_eased(11500, (12, -15, 6),    (0, 0, 1), roll=0, lens=35)
 
-    # Scenes 19-21: peaks - High Tension Dutch Angles and Hero Shots
-    kf_eased(11601, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=10, focus_obj=h1_obj, lens=85)     # Low Angle Hero (#5)
-    kf_eased(11900, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)      # Extreme Dutch for Gnome (#1)
+    # Scenes 19-21: peaks
+    kf_eased(11601, (0, -4, 0.6), (-1.5, 0, 1.8), roll=10, focus_obj=h1_obj, lens=85)     # Extreme Low Angle
+    kf_eased(11900, (5.5, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
 
-    apply_impact_shake(11900, intensity=0.2) # Impact Shake (#9)
+    apply_impact_shake(11900, intensity=0.2)
 
-    kf_eased(12000, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=15, focus_obj=h1_obj, lens=105) # Extreme closeup
-    kf_eased(12200, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
-    kf_eased(12300, (1.5, -3, 1.0),  (2, 0, 1.8), roll=15, focus_obj=h2_obj, lens=85)      # Arbor Hero Shot (#5)
-    kf_eased(12500, (4, -2.5, 1.8), (5, 0, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
-    kf_eased(12700, (0, -25, 10),   (0, 0, 1), roll=0, lens=35)          # wide
-    kf_eased(13000, (-1.5, -3, 1.0), (-2, 0, 1.8), roll=20, focus_obj=h1_obj, lens=85)     # Final Hero Argument (#5)
+    kf_eased(12000, (0, -4, 0.5), (-1.5, 0, 1.8), roll=15, focus_obj=h1_obj, lens=105)
+    kf_eased(12200, (5.5, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
+    kf_eased(12300, (3, -3, 0.8),  (1.5, 0, 1.8), roll=15, focus_obj=h2_obj, lens=85)      # Arbor Hero Shot
+    kf_eased(12500, (5.5, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
+    kf_eased(12700, (15, -20, 10),   (0, 0, 1), roll=0, lens=35)
+    kf_eased(13000, (0, -4, 0.5), (-1.5, 0, 1.8), roll=20, focus_obj=h1_obj, lens=85)
 
     # Enhancement #10: Circular Dolly Around Characters during climax
     # Enhancement #12: Anticipation before circular dolly
@@ -301,20 +298,20 @@ def setup_camera_keyframes(master, cam, target):
     s22_start = SCENE_MAP['scene22_retreat'][0]
     kf_eased(s22_start,       (6, 6, 2),    (3, 3, 1.2))   # gnome closeup
     kf_eased(s22_start + 100, (0, -8, 3),   (1, 1, 1.5))   # pull back
-    kf_eased(s22_start + 200, (-2, -10, 4), (-1, 1, 1.5))  # swing to plants
-    kf_eased(s22_start + 350, (0, -30, 15), (0, 0, 1))     # wide shot - gnome tiny
-    kf_eased(s22_start + 500, (0, -15, 5),  (0, 0, 1.5))   # settle on plants
-    kf_eased(14400,           (0, -15, 5),  (0, 0, 1.5))   # hold
+    kf_eased(s22_start + 200, (-10, -15, 4), (-1, 1, 1.5)) # off-axis wide
+    kf_eased(s22_start + 350, (35, 35, 10), (30, 30, 1))   # lead the gnome escape
+    kf_eased(s22_start + 500, (15, -15, 5),  (0, 0, 1.5))  # settle on plants
+    kf_eased(14400,           (15, -15, 5),  (0, 0, 1.5))   # hold off-axis
 
     # Victory Forest Zoom IN - sweep from wide forest back to the sanctuary
     drone_sweep(14200, 14450,
-                start_xy=(-120, -120),
-                end_xy=(0, -20),
-                altitude=80,
+                start_xy=(-60, -60),
+                end_xy=(15, -15),
+                altitude=40,
                 look_at=(0, 0, 1.5))
 
-    kf_eased(14500, (0, -12, 3), (0, 0, 1.5), lens=50, easing='EASE_OUT')
+    kf_eased(14500, (12, -12, 3), (0, 0, 1.5), lens=50, easing='EASE_OUT')
 
-    # Credits (14501 - 15000)
-    kf_eased(SCENE_MAP['scene12_credits'][0], (0,-10,0), (0, 0, 5))
-    kf_eased(SCENE_MAP['scene12_credits'][1], (0,-10,0), (0, 0, 15))
+    # Credits (14501 - 15000): Authority perspective again
+    kf_eased(SCENE_MAP['scene12_credits'][0], (-14, -6, 2), (0, 0, 5))
+    kf_eased(SCENE_MAP['scene12_credits'][1], (-14, -6, 2), (0, 0, 15))

@@ -62,6 +62,13 @@ class MovieMaster(BaseMaster):
         if self.gnome:
             self._set_visibility([self.gnome], [(10901, 14450)]) # Visible during dialogue and retreat
 
+        # Point 142: Aggressively hide helpers and unwanted lights
+        helpers = [bpy.data.objects.get(n) for n in ["CamTarget", "GazeTarget", "IntroLight"]]
+        for h in [obj for obj in helpers if obj]:
+            style.set_obj_visibility(h, False, 1)
+            style.set_obj_visibility(h, False, 7500)
+            style.set_obj_visibility(h, False, 15000)
+
         # Point 142: Camera Safety Pass (P1-4) - After all characters are animated
         camera_controls.apply_camera_safety(self, self.scene.camera, [self.h1, self.h2, self.gnome], 1, 15000)
 
@@ -84,7 +91,30 @@ class MovieMaster(BaseMaster):
         ]
 
         for s in all_scenes:
-            if s and hasattr(s, 'setup_scene'): s.setup_scene(self)
+            if s and hasattr(s, 'setup_scene'):
+                # Discovery of scene name from module path (Point 142)
+                s_name = s.__name__.split('.')[0]
+                if s_name not in SCENE_MAP:
+                    # Fallback for directly imported or aliased modules
+                    for k in SCENE_MAP:
+                        if k in s.__name__:
+                            s_name = k; break
+
+                if s_name in SCENE_MAP:
+                    start, end = SCENE_MAP[s_name]
+                    # Pre-setup hold: capture current position to prevent drift from previous scene
+                    self.place_character(self.h1, self.h1.location, self.h1.rotation_euler, start)
+                    self.place_character(self.h2, self.h2.location, self.h2.rotation_euler, start)
+                    self.place_character(self.gnome, self.gnome.location, self.gnome.rotation_euler, start)
+
+                s.setup_scene(self)
+
+                if s_name in SCENE_MAP:
+                    start, end = SCENE_MAP[s_name]
+                    # Post-setup hold: ensure final scene position is keyed to prevent drift to next
+                    self.place_character(self.h1, self.h1.location, self.h1.rotation_euler, end)
+                    self.place_character(self.h2, self.h2.location, self.h2.rotation_euler, end)
+                    self.place_character(self.gnome, self.gnome.location, self.gnome.rotation_euler, end)
 
     def setup_lighting(self): lighting_setup.setup_lighting(self)
     def setup_compositor(self): compositor_settings.setup_compositor(self)

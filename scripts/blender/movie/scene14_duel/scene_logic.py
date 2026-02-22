@@ -18,8 +18,9 @@ def setup_scene(master):
     Intent: Action sequence demonstrating conflict.
     """
     # MUSIC CUE: High-tempo, aggressive brass and percussion.
-    frame_start = 4501
-    frame_end = 5800
+    # Point 142: Correct frame range (4101 - 4500)
+    from constants import SCENE_MAP
+    frame_start, frame_end = SCENE_MAP['scene14_duel']
 
     # Plants vs Gnome Duel logic
     if master.h1 and master.gnome:

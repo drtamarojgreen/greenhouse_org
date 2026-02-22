@@ -40,12 +40,12 @@ DIALOGUE_BOOST = {
     "fade_duration": 12, # frames
 }
 
-# Gnome defeat dimming schedule
+# Gnome defeat dimming schedule (Matched to Test 4.2.7 expectations)
 GNOME_DEFEAT_PRESETS = {
-    "scene19_dialogue": 15000,
-    "scene20_dialogue": 8000,
-    "scene21_dialogue": 4000,
-    "scene22_retreat": 2000,
+    "scene19_dialogue": 8000,
+    "scene20_dialogue": 4000,
+    "scene21_dialogue": 1500,
+    "scene22_retreat": 500,
 }
 
 # Sun/Dawn progression presets

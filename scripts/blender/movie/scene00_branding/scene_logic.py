@@ -29,10 +29,11 @@ def setup_scene(master):
     # Optional: Specific dramatic lighting for intro
     light = bpy.data.objects.get("IntroLight")
     if light:
-        # Reposition for branding (Point 142)
-        light.location = (0, -5, 2)
+        # Reposition for branding (Point 142: Moved behind camera to avoid glare)
+        light.location = (0, -15, 5)
         light.keyframe_insert(data_path="location", frame=1)
 
         # Visibility (Overwrites lighting_setup default)
-        style.set_obj_visibility(light, True, 1)
+        # Point 142: Actually hide it, text is self-emissive
+        style.set_obj_visibility(light, False, 1)
         style.set_obj_visibility(light, False, 101)

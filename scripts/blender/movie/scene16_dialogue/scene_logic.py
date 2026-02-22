@@ -32,6 +32,12 @@ def setup_scene(master):
 
     ensure_scene_keyframe(master, start_frame)
 
+    # Position characters for dialogue (Point 142)
+    master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), start_frame)
+    master.place_character(master.h2, (1, 0, 0), (0, 0, 0), start_frame)
+    master.hold_position(master.h1, start_frame, end_frame)
+    master.hold_position(master.h2, start_frame, end_frame)
+
     # Metadata
     # Shot ID: S16_01
     # Speakers: Herbaceous, Arbor

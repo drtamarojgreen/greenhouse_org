@@ -92,3 +92,21 @@ class BaseMaster:
     def create_intertitle(self, text, frame_start, frame_end): return scene_utils.create_intertitle(self, text, frame_start, frame_end)
     def create_spinning_logo(self, text, frame_start, frame_end): return scene_utils.create_spinning_logo(self, text, frame_start, frame_end)
     def create_thought_spark(self, start, end, f_start, f_end): return scene_utils.create_thought_spark(self, start, end, f_start, f_end)
+
+    def place_character(self, char, location=None, rotation=None, frame=None):
+        """Helper to position and key a character to prevent drifting (Point 142)."""
+        if not char: return
+        if location:
+            char.location = location
+            if frame is not None: char.keyframe_insert(data_path="location", frame=frame)
+        if rotation:
+            char.rotation_euler = rotation
+            if frame is not None: char.keyframe_insert(data_path="rotation_euler", frame=frame)
+
+    def hold_position(self, obj, frame_start, frame_end):
+        """Keys current position at start and end of range to prevent drifting (Point 142)."""
+        if not obj: return
+        obj.keyframe_insert(data_path="location", frame=frame_start)
+        obj.keyframe_insert(data_path="location", frame=frame_end)
+        obj.keyframe_insert(data_path="rotation_euler", frame=frame_start)
+        obj.keyframe_insert(data_path="rotation_euler", frame=frame_end)

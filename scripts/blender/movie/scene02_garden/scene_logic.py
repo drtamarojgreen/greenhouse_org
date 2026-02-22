@@ -63,3 +63,10 @@ def setup_scene(master):
         master.flower.keyframe_insert(data_path="scale", frame=580)
         master.flower.scale = (1.0, 1.0, 1.0)
         master.flower.keyframe_insert(data_path="scale", frame=650)
+
+    # Character movement: Walking through the garden
+    if master.h1 and master.h2:
+        master.place_character(master.h1, (-3, 2, 0), (0, 0, math.radians(-30)), 401)
+        master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), 650)
+        master.place_character(master.h2, (1, 2, 0), (0, 0, math.radians(30)), 401)
+        master.place_character(master.h2, (1, 0, 0), (0, 0, 0), 650)

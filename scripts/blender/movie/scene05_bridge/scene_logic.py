@@ -10,11 +10,10 @@ def setup_scene(master):
     Intent: Visualize connectivity and mental energy flow.
     """
     # MUSIC CUE: Uplifting, rhythmic synthesizer theme.
-    master.create_intertitle("The Bridge of\nConnectivity", 1501, 1600)
-
-    # Scene range: 1601 - 1800
-    start_f = 1601
-    end_f = 1800
+    # Point 142: Correct frame range (1251 - 1500)
+    from constants import SCENE_MAP
+    start_f, end_f = SCENE_MAP['scene05_bridge']
+    master.create_intertitle("The Bridge of\nConnectivity", start_f, start_f + 100)
 
     style.apply_scene_grade(master, 'resonance', start_f, end_f)
 

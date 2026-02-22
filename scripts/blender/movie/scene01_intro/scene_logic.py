@@ -12,12 +12,8 @@ def setup_scene(master):
 
     # Move characters during intro reveal
     if master.h1 and master.h2:
-        master.h1.location.y = -1.0
-        master.h1.keyframe_insert(data_path="location", index=1, frame=101)
-        master.h1.location.y = 0.0
-        master.h1.keyframe_insert(data_path="location", index=1, frame=200)
-
-        master.h2.location.y = -1.0
-        master.h2.keyframe_insert(data_path="location", index=1, frame=101)
-        master.h2.location.y = 0.0
-        master.h2.keyframe_insert(data_path="location", index=1, frame=200)
+        master.place_character(master.h1, (-2, -1, 0), (0, 0, 0), 101)
+        master.place_character(master.h1, (-2, 0, 0), (0, 0, 0), 200)
+        master.place_character(master.h2, (2, -1, 0), (0, 0, 0), 101)
+        master.place_character(master.h2, (2, 0, 0), (0, 0, 0), 200)
+        master.hold_position(master.gnome, 101, 200)

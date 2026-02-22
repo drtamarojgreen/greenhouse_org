@@ -24,10 +24,9 @@ def setup_scene(master):
 
         # Character placement
         if master.h1:
-            master.h1.location = (0, -1, 0)
-            master.h1.keyframe_insert(data_path="location", frame=2601)
-            master.h1.rotation_euler = (0, 0, 0)
-            master.h1.keyframe_insert(data_path="rotation_euler", frame=2601)
+            master.place_character(master.h1, (0, -1, 0), (0, 0, 0), 2501)
+            master.hold_position(master.h1, 2501, 2800)
+            master.hold_position(master.h2, 2501, 2800)
 
         # Point 142: Pull CamTarget to pedestal focus
         target = bpy.data.objects.get("CamTarget")
