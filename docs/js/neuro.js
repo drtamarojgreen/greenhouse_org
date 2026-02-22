@@ -58,9 +58,13 @@
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_config.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_camera_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_synapse_camera_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_lighting.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_adhd_data.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ga.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_neuron.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_synapse.js', baseUrl);
