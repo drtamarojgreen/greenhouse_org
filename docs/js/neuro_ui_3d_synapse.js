@@ -233,10 +233,7 @@
                 ctx.beginPath();
                 ctx.rect(x, y, w, h);
                 ctx.clip();
-                ctx.fillStyle = '#4ca1af';
-                ctx.font = '800 10px Quicksand, sans-serif';
-                ctx.textBaseline = 'top';
-                ctx.fillText(t('synapse_view_title').toUpperCase(), x + 15, y + 15);
+                // Title drawn in neuro_ui_3d_enhanced.js render() for consistency
             } else {
                 ctx.save();
             }

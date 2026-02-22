@@ -23,10 +23,10 @@
             showInfo: false,
             activeTab: 'sim', // 'sim', 'adhd', 'synapse'
             searchQuery: '',
-            adhdCategory: 'scenarios', // 'scenarios', 'symptoms', 'treatments', etc.
+            adhdCategory: 'scenarios',
             scrollOffset: 0,
             dropdowns: {
-                category: { isOpen: false }
+                category: { isOpen: false, options: [] }
             }
         },
 
@@ -44,123 +44,74 @@
 
         init(selector, baseUrl = '') {
             console.log('NeuroApp: Initializing High Quality Canvas UI...');
-            // Reset State
-            this.state = {
-                viewMode: 0,
-                dosage: 1.0,
-                activeScenarios: new Set(),
-                activeEnhancements: new Set(),
-                showInfo: false,
-                activeTab: 'sim',
-                searchQuery: '',
-                adhdCategory: 'scenarios',
-                scrollOffset: 0,
-                researchMode: false,
-                analyticsMode: false,
-                dropdowns: {
-                    category: { isOpen: false, options: [] }
-                }
-            };
-
-            // Robust selector handling (Wix compatibility)
             this.container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
             if (!this.container) return;
 
             this.baseUrl = baseUrl || '';
-
-            if (typeof selector === 'string') {
-                this.container.innerHTML = '';
-            }
             this.container.style.backgroundColor = '#000';
             this.container.style.position = 'relative';
 
-            // Check dependencies
             if (!window.NeuroGA || !window.GreenhouseNeuroUI3D) {
                 console.error('NeuroApp: Missing GA or UI3D dependencies.');
                 return;
             }
 
             this.ga = new window.NeuroGA();
-            this.ga.init({
-                populationSize: 50,
-                bounds: { x: 500, y: 500, z: 500 }
-            });
+            this.ga.init({ populationSize: 50 });
 
             this.ui3d = window.GreenhouseNeuroUI3D;
             if (this.ui3d) {
                 this.ui3d.init(this.container);
+                // Initial data push
+                const initialBest = this.ga.step();
+                this.ui3d.updateData(initialBest);
             }
 
             this.setupUIComponents();
             this.updateADHDCheckboxes();
             this.initSearch();
             this.bindEvents();
-
             this.startSimulation();
-
-            if (window.GreenhouseUtils && window.GreenhouseUtils.renderModelsTOC) {
-                const tocSelector = (typeof selector === 'string') ? selector : (selector.id ? `#${selector.id}` : null);
-                if (tocSelector) window.GreenhouseUtils.renderModelsTOC(tocSelector);
-            }
         },
 
         setupUIComponents() {
             const w = this.ui3d?.canvas?.width || 1000;
-            const h = this.ui3d?.canvas?.height || 750;
             const offsetX = 15;
-
-            // Responsiveness: Adjust panel width based on canvas
             this.ui.panelW = Math.min(350, w - 40);
             const panelW = this.ui.panelW;
 
-            // Tabs
-            const tabSpacing = 5;
-            const tabW = (panelW - 60 - (tabSpacing * 2)) / 3;
+            const tabW = (panelW - 70) / 3;
             this.ui.tabs = [
                 { id: 'tab_simulation', label: t('tab_simulation'), val: 'sim', x: 40 + offsetX, y: 35, w: tabW, h: 25 },
-                { id: 'tab_adhd', label: t('tab_adhd'), val: 'adhd', x: 40 + offsetX + tabW + tabSpacing, y: 35, w: tabW, h: 25 },
-                { id: 'tab_synapse', label: t('tab_synapse'), val: 'synapse', x: 40 + offsetX + (tabW + tabSpacing) * 2, y: 35, w: tabW, h: 25 }
+                { id: 'tab_adhd', label: t('tab_adhd'), val: 'adhd', x: 40 + offsetX + tabW + 5, y: 35, w: tabW, h: 25 },
+                { id: 'tab_synapse', label: t('tab_synapse'), val: 'synapse', x: 40 + offsetX + (tabW + 5) * 2, y: 35, w: tabW, h: 25 }
             ];
 
-            // Mode Buttons
-            const btnW = (panelW - 60 - 10) / 3;
+            const btnW = (panelW - 70) / 3;
             this.ui.buttons = [
                 { id: 'mode_neural', label: t('mode_neural'), val: 0, x: 40 + offsetX, y: 140, w: btnW, h: 25 },
                 { id: 'mode_synaptic', label: t('mode_synaptic'), val: 1, x: 40 + offsetX + btnW + 5, y: 140, w: btnW, h: 25 },
                 { id: 'mode_burst', label: t('mode_burst'), val: 2, x: 40 + offsetX + (btnW + 5) * 2, y: 140, w: btnW, h: 25 }
             ];
 
-            // ADHD Scenarios (Populated via updateADHDCheckboxes)
-            if (this.state.activeTab === 'adhd') {
-                this.updateADHDCheckboxes();
-            }
-
-            // Dosage Slider
-            this.ui.sliders = [
-                { id: 'dosage_slider', x: 40 + offsetX, y: 480, w: panelW - 70, h: 30, min: 0.1, max: 2.0 }
-            ];
-
+            this.ui.sliders = [{ id: 'dosage_slider', x: 40 + offsetX, y: 480, w: panelW - 70, h: 30, min: 0.1, max: 2.0 }];
             this.ui.searchInput.x = 40 + offsetX;
             this.ui.searchInput.w = panelW - 70;
 
-            // System Buttons
             this.ui.actionButtons = [
                 { id: 'btn_pause', label: t('btn_pause'), x: 40 + offsetX, y: 530, w: 80, h: 35, action: 'pause' },
                 { id: 'btn_lang', label: t('btn_language'), x: 130 + offsetX, y: 530, w: 80, h: 35, action: 'lang' },
                 { id: 'btn_info', label: 'INFO', x: 220 + offsetX, y: 530, w: 80, h: 35, action: 'info' }
             ];
 
-            // Camera Controls
+            const camPanelX = Math.max(380, w - 260);
             this.ui.cameraButtons = [
-                { id: 'reset_camera', label: t('reset_camera'), x: 400, y: 60, w: 110, h: 25, action: 'reset' },
-                { id: 'auto_rotate', label: t('auto_rotate'), x: 515, y: 60, w: 110, h: 25, action: 'rotate' }
+                { id: 'reset_camera', label: t('reset_camera'), x: camPanelX + 15, y: 60, w: 110, h: 25, action: 'reset' },
+                { id: 'auto_rotate', label: t('auto_rotate'), x: camPanelX + 130, y: 60, w: 110, h: 25, action: 'rotate' }
             ];
 
-            // ADHD Category Dropdown
             this.ui.categoryDropdown = {
-                id: 'cat_dropdown',
-                x: 40 + offsetX, y: 110, w: panelW - 70, h: 30,
-                val: this.state.adhdCategory,
+                id: 'cat_dropdown', x: 40 + offsetX, y: 110, w: panelW - 70, h: 30, val: this.state.adhdCategory,
                 options: [
                     { label: t('cat_scenarios') || 'SCENARIOS', val: 'scenarios' },
                     { label: t('cat_symptoms') || 'SYMPTOMS', val: 'symptoms' },
@@ -171,62 +122,21 @@
                     { label: t('cat_research') || 'RESEARCH', val: 'research' }
                 ]
             };
-            // Set coordinates for options
-            const optH = 25;
-            this.ui.categoryDropdown.options.forEach((opt, i) => {
-                opt.x = this.ui.categoryDropdown.x;
-                opt.y = this.ui.categoryDropdown.y + this.ui.categoryDropdown.h + 2 + i * optH;
-                opt.w = this.ui.categoryDropdown.w;
-                opt.h = optH;
-            });
             this.state.dropdowns.category.options = this.ui.categoryDropdown.options;
         },
 
         bindEvents() {
-            if (this.ui3d && this.ui3d.canvas) {
-                this.ui3d.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e), true);
-                this.ui3d.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e), true);
-                this.ui3d.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
-
-                window.addEventListener('mouseup', () => {
-                    this.isDraggingSlider = false;
-                });
-
-                window.addEventListener('resize', () => {
-                    this.setupUIComponents();
-                    this.updateADHDCheckboxes();
-                    this.state.scrollOffset = 0;
-                });
-            }
-        },
-
-        handleWheel(e) {
-            if (this.state.activeTab !== 'adhd') return;
-
-            const { x: mx, y: my } = this.getMousePos(e);
-            const offsetX = 15;
-            const scrollAreaX = 30 + offsetX;
-            const scrollAreaY = 160;
-            const scrollAreaW = 310;
-            const scrollAreaH = 320;
-
-            if (mx >= scrollAreaX && mx <= scrollAreaX + scrollAreaW && my >= scrollAreaY && my <= scrollAreaY + scrollAreaH) {
-                e.preventDefault();
-                const delta = e.deltaY;
-                this.state.scrollOffset += delta;
-
-                // Clamp scroll offset
-                const filteredCount = this.getFilteredCheckboxes().length;
-                const totalHeight = filteredCount * 25;
-                const maxScroll = Math.max(0, totalHeight - scrollAreaH + 10);
-                this.state.scrollOffset = Math.max(0, Math.min(this.state.scrollOffset, maxScroll));
-            }
+            const canvas = this.ui3d?.canvas;
+            if (!canvas) return;
+            canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+            canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+            canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
+            window.addEventListener('mouseup', () => this.isDraggingSlider = false);
+            window.addEventListener('resize', () => { this.setupUIComponents(); this.updateADHDCheckboxes(); });
         },
 
         getMousePos(e) {
-            if (!this.ui3d || !this.ui3d.canvas) return { x: 0, y: 0 };
             const rect = this.ui3d.canvas.getBoundingClientRect();
-            // Critical: Map client coordinates to canvas internal resolution
             return {
                 x: (e.clientX - rect.left) * (this.ui3d.canvas.width / rect.width),
                 y: (e.clientY - rect.top) * (this.ui3d.canvas.height / rect.height)
@@ -234,656 +144,239 @@
         },
 
         handleMouseDown(e) {
-            const { x: mx, y: my } = this.getMousePos(e);
-            console.log(`Mouse Down at: ${mx}, ${my}`);
+            const { x, y } = this.getMousePos(e);
             let hit = false;
 
-            // 0. Dropdowns (priority hit detection)
-            if (this.state.activeTab === 'adhd' && this.state.dropdowns.category.isOpen) {
-                const d = this.ui.categoryDropdown;
-                const optH = 25;
-                for (let i = 0; i < d.options.length; i++) {
-                    const oy = d.y + d.h + 2 + i * optH;
-                    if (mx >= d.x && mx <= d.x + d.w && my >= oy && my <= oy + optH) {
-                        this.state.adhdCategory = d.options[i].val;
-                        this.state.dropdowns.category.isOpen = false;
-                        this.state.scrollOffset = 0;
-                        this.updateADHDCheckboxes();
-                        hit = true; break;
-                    }
-                }
-                if (!hit) {
-                    this.state.dropdowns.category.isOpen = false; // Click outside closes it
-                    // Don't mark hit=true yet, allow other elements to be clicked
-                } else return; // Selection made, done.
-            }
-
-            // 1. Tabs
-            for (const tab of this.ui.tabs) {
-                if (mx >= tab.x && mx <= tab.x + tab.w && my >= tab.y && my <= tab.y + tab.h) {
-                    console.log(`Tab Clicked: ${tab.val}`);
-                    this.state.activeTab = tab.val;
-                    hit = true; break;
+            // Tabs
+            for (const t of this.ui.tabs) {
+                if (x >= t.x && x <= t.x + t.w && y >= t.y && y <= t.y + t.h) {
+                    this.state.activeTab = t.val; hit = true; break;
                 }
             }
+            if (hit) return;
 
-            // 1. Simulation Tab Elements
-            if (!hit && this.state.activeTab === 'sim') {
+            // Sim Tab
+            if (this.state.activeTab === 'sim') {
                 for (const b of this.ui.buttons) {
-                    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
-                        this.state.viewMode = b.val;
-                        this.switchMode(b.val);
-                        hit = true; break;
+                    if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+                        this.state.viewMode = b.val; this.switchMode(b.val); hit = true; break;
                     }
                 }
-                const s = this.ui.sliders[0];
-                if (!hit && mx >= s.x && mx <= s.x + s.w && my >= s.y && my <= s.y + s.h) {
-                    this.updateSlider(mx, s);
-                    this.isDraggingSlider = true;
-                    hit = true;
+                if (!hit && x >= this.ui.sliders[0].x && x <= this.ui.sliders[0].x + this.ui.sliders[0].w && y >= this.ui.sliders[0].y && y <= this.ui.sliders[0].y + this.ui.sliders[0].h) {
+                    this.isDraggingSlider = true; this.updateSlider(x, this.ui.sliders[0]); hit = true;
                 }
             }
 
-            // 2. ADHD Tab Elements
-            if (!hit && this.state.activeTab === 'adhd') {
-                const s = this.ui.searchInput;
+            // ADHD Tab (Checkboxes & Dropdown)
+            if (this.state.activeTab === 'adhd') {
                 const d = this.ui.categoryDropdown;
-
-                if (mx >= s.x && mx <= s.x + s.w && my >= s.y && my <= s.y + s.h) {
-                    if (this.searchElem) this.searchElem.focus();
-                    hit = true;
-                } else if (mx >= d.x && mx <= d.x + d.w && my >= d.y && my <= d.y + d.h) {
-                    this.state.dropdowns.category.isOpen = !this.state.dropdowns.category.isOpen;
-                    hit = true;
+                if (x >= d.x && x <= d.x + d.w && y >= d.y && y <= d.y + d.h) {
+                    this.state.dropdowns.category.isOpen = !this.state.dropdowns.category.isOpen; hit = true;
+                } else if (this.state.dropdowns.category.isOpen) {
+                    for (let i=0; i<d.options.length; i++) {
+                        const oy = d.y + d.h + 2 + i * 25;
+                        if (x >= d.x && x <= d.x + d.w && y >= oy && y <= oy + 25) {
+                            this.state.adhdCategory = d.options[i].val; this.state.dropdowns.category.isOpen = false;
+                            this.updateADHDCheckboxes(); hit = true; break;
+                        }
+                    }
+                    if (!hit) this.state.dropdowns.category.isOpen = false;
                 }
 
                 if (!hit) {
-                        const filtered = this.getFilteredCheckboxes();
-                        const scrollAreaY = 160;
-                        const scrollAreaH = 320;
-
-                        for (const c of filtered) {
-                            // Check if within visible area before hit detection
-                            if (c.y < scrollAreaY || c.y + c.h > scrollAreaY + scrollAreaH) continue;
-
-                            if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
-                                if (this.state.adhdCategory === 'scenarios') {
-                                    const active = !this.state.activeScenarios.has(c.scenarioId);
-                                    if (active) this.state.activeScenarios.add(c.scenarioId);
-                                    else this.state.activeScenarios.delete(c.scenarioId);
-                                    this.toggleScenario(c.scenarioId, active);
-                                } else {
-                                    const active = !this.state.activeEnhancements.has(c.enhancementId);
-
-                                    // Research Actions
-                                    if (c.enhancementId === 201 && active) {
-                                        this.exportGenomeData();
-                                        hit = true; break;
-                                    }
-                                    if (c.enhancementId === 202) this.state.analyticsMode = active;
-                                    if (c.enhancementId === 203) this.state.researchMode = active;
-
-                                    if (active) this.state.activeEnhancements.add(c.enhancementId);
-                                    else this.state.activeEnhancements.delete(c.enhancementId);
-                                    this.ga?.setADHDEnhancement(c.enhancementId, active);
-
-                                    // DOI literature mapping
-                                    if (this.state.researchMode && active) {
-                                        const data = window.GreenhouseADHDData.getEnhancementById(c.enhancementId);
-                                        if (data && data.doi) {
-                                            window.open(`https://doi.org/${data.doi}`, '_blank');
-                                        }
-                                    }
-                                }
-                                hit = true; break;
+                    const filtered = this.getFilteredCheckboxes();
+                    for (const c of filtered) {
+                        if (c.y < 160 || c.y > 440) continue;
+                        if (x >= c.x && x <= c.x + c.w && y >= c.y && y <= c.y + c.h) {
+                            if (this.state.adhdCategory === 'scenarios') {
+                                const act = !this.state.activeScenarios.has(c.scenarioId);
+                                if (act) this.state.activeScenarios.add(c.scenarioId); else this.state.activeScenarios.delete(c.scenarioId);
+                                this.toggleScenario(c.scenarioId, act);
+                            } else {
+                                const act = !this.state.activeEnhancements.has(c.enhancementId);
+                                if (act) this.state.activeEnhancements.add(c.enhancementId); else this.state.activeEnhancements.delete(c.enhancementId);
+                                this.ga?.setADHDEnhancement(c.enhancementId, act);
                             }
+                            hit = true; break;
                         }
                     }
                 }
+            }
 
-            // 3. Action Buttons
+            // Action Buttons
             if (!hit) {
                 for (const b of this.ui.actionButtons) {
-                    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
-                        if (b.action === 'pause') {
-                            if (this.isRunning) this.stopSimulation();
-                            else this.startSimulation();
-                            this.refreshUIText();
-                        } else if (b.action === 'lang') {
-                            if (window.GreenhouseModelsUtil) window.GreenhouseModelsUtil.toggleLanguage();
-                            this.refreshUIText();
-                        } else if (b.action === 'info') {
-                            this.state.showInfo = !this.state.showInfo;
-                        }
+                    if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+                        if (b.action === 'pause') { this.isRunning ? this.stopSimulation() : this.startSimulation(); this.refreshUIText(); }
+                        else if (b.action === 'lang') { window.GreenhouseModelsUtil?.toggleLanguage(); this.refreshUIText(); }
+                        else if (b.action === 'info') this.state.showInfo = !this.state.showInfo;
                         hit = true; break;
                     }
                 }
             }
 
-            // 4. Camera Buttons
+            // Camera Buttons
             if (!hit) {
-                const w = this.ui3d?.canvas?.width || 1000;
-                const camPanelX = Math.max(380, w - 260);
                 for (const b of this.ui.cameraButtons) {
-                    const bx = (b.action === 'reset') ? camPanelX + 15 : camPanelX + 130;
-                    if (mx >= bx && mx <= bx + b.w && my >= 60 && my <= 60 + b.h) {
+                    if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
                         if (b.action === 'reset') this.ui3d?.resetCamera();
                         else if (b.action === 'rotate') this.ui3d?.toggleAutoRotate();
                         hit = true; break;
                     }
                 }
             }
-
-            // 5. Info Overlay Close
-            if (!hit && this.state.showInfo) {
-                this.state.showInfo = false;
-                hit = true;
-            }
         },
 
         handleMouseMove(e) {
-            const { x: mx, y: my } = this.getMousePos(e);
-
-            if (this.isDraggingSlider && this.ui.sliders[0]) {
-                this.updateSlider(mx, this.ui.sliders[0]);
-                return;
-            }
+            const { x, y } = this.getMousePos(e);
+            if (this.isDraggingSlider) return this.updateSlider(x, this.ui.sliders[0]);
 
             this.ui.hoveredElement = null;
             this.ui3d.canvas.style.cursor = 'default';
 
-            const all = [...this.ui.tabs, ...this.ui.actionButtons, ...this.ui.cameraButtons];
-            if (this.state.activeTab === 'sim') all.push(...this.ui.buttons, ...this.ui.sliders);
-            if (this.state.activeTab === 'adhd') {
-                // Priority: Dropdown options
-                if (this.state.dropdowns.category.isOpen) {
-                    const d = this.ui.categoryDropdown;
-                    const optH = 25;
-                    for (let i = 0; i < d.options.length; i++) {
-                        const oy = d.y + d.h + 2 + i * optH;
-                        if (mx >= d.x && mx <= d.x + d.w && my >= oy && my <= oy + optH) {
-                            this.ui.hoveredElement = { id: `${d.id}_opt_${i}` };
-                            this.ui3d.canvas.style.cursor = 'pointer';
-                            return;
-                        }
+            const hit3d = this.ui3d?.hitTest(x, y);
+            if (hit3d) {
+                this.ui.hoveredElement = { ...hit3d, is3D: true, mx: x, my: y };
+                this.ui3d.canvas.style.cursor = 'pointer';
+            } else {
+                const all = [...this.ui.tabs, ...this.ui.actionButtons, ...this.ui.cameraButtons];
+                if (this.state.activeTab === 'sim') all.push(...this.ui.buttons, ...this.ui.sliders);
+                if (this.state.activeTab === 'adhd') all.push(...this.getFilteredCheckboxes(), this.ui.categoryDropdown);
+
+                for (const el of all) {
+                    if (x >= el.x && x <= el.x + el.w && y >= (el.y||60) && y <= (el.y||60) + el.h) {
+                        this.ui.hoveredElement = { ...el, mx: x, my: y };
+                        this.ui3d.canvas.style.cursor = 'pointer'; break;
                     }
                 }
-
-                const scrollAreaY = 160;
-                const scrollAreaH = 280; // Adjusted for description
-                const visibleCheckboxes = this.getFilteredCheckboxes().filter(c => c.y >= scrollAreaY && c.y + c.h <= scrollAreaY + scrollAreaH);
-                all.push(...visibleCheckboxes, this.ui.searchInput, this.ui.categoryDropdown);
             }
+        },
 
-            for (const el of all) {
-                let ex = el.x;
-                if (el.action === 'reset' || el.action === 'rotate') {
-                   const w = this.ui3d?.canvas?.width || 1000;
-                   const camPanelX = Math.max(380, w - 260);
-                   ex = (el.action === 'reset') ? camPanelX + 15 : camPanelX + 130;
-                }
-                if (mx >= ex && mx <= ex + el.w && my >= (el.y || 60) && my <= (el.y || 60) + el.h) {
-                    this.ui.hoveredElement = { ...el, mx, my };
-                    this.ui3d.canvas.style.cursor = 'pointer';
-                    return;
-                }
-            }
-
-            // 3. Check 3D Visualization Components
-            if (this.ui3d) {
-                const hit = this.ui3d.hitTest(mx, my);
-                if (hit) {
-                    this.ui.hoveredElement = { ...hit, is3D: true, mx, my };
-                    this.ui3d.canvas.style.cursor = 'pointer';
+        handleWheel(e) {
+            if (this.state.activeTab === 'adhd') {
+                const { x, y } = this.getMousePos(e);
+                if (x > 30 && x < 350 && y > 160 && y < 440) {
+                    e.preventDefault();
+                    this.state.scrollOffset = Math.max(0, this.state.scrollOffset + e.deltaY);
                 }
             }
         },
 
         updateSlider(mx, s) {
-            let pct = (mx - s.x) / s.w;
-            pct = Math.max(0, Math.min(1, pct));
+            let pct = Math.max(0, Math.min(1, (mx - s.x) / s.w));
             this.state.dosage = s.min + pct * (s.max - s.min);
             if (this.ga) this.ga.adhdConfig.dosagePrecision = this.state.dosage;
         },
 
-        refreshUIText() {
-            this.ui.tabs.forEach(tab => {
-                tab.label = t(tab.id) || tab.val.toUpperCase();
-            });
-            this.ui.buttons.forEach(b => b.label = t(b.id));
-            if (this.ui.categoryDropdown) {
-                this.ui.categoryDropdown.options.forEach(o => {
-                    o.label = (t(`cat_${o.val}`) || o.val).toUpperCase();
-                });
-            }
-            this.ui.actionButtons.forEach(b => {
-                if (b.action === 'pause') b.label = this.isRunning ? t('btn_pause') : t('btn_play');
-                else if (b.action === 'lang') b.label = t('btn_language');
-                else if (b.action === 'info') b.label = 'INFO';
-            });
-            this.ui.cameraButtons.forEach(b => b.label = t(b.id));
-        },
-
-        exportGenomeData() {
-            if (!this.ga || !this.ga.bestGenome) return;
-            const data = {
-                metadata: {
-                    app: "Greenhouse Neuro Simulation",
-                    version: "2.5.0-RESEARCH",
-                    timestamp: new Date().toISOString(),
-                    generation: this.ga.generation,
-                    fitness: this.ga.bestGenome.fitness
-                },
-                adhdConfig: {
-                    ...this.ga.adhdConfig,
-                    activeEnhancements: Array.from(this.ga.adhdConfig.activeEnhancements)
-                },
-                genome: this.ga.bestGenome
-            };
-
-            const blob = new Blob([JSON.stringify(data, null, 4)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `neuro_research_gen${this.ga.generation}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            console.log('Genome Data Exported Successfully.');
-        },
-
-        drawUI(ctx, w, h) {
-            const Controls = window.GreenhouseNeuroControls;
-            if (!Controls) return;
-
-            // Reset state for robust rendering
-            ctx.save();
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-
-            const offsetX = 15;
-            const panelW = this.ui.panelW || 350;
-
-            // 1. Main Panel
-            Controls.drawPanel(ctx, this, 20 + offsetX, 20, panelW, 580, '');
-
-            // 2. Tabs
-            this.ui.tabs.forEach(tab => {
-                Controls.drawButton(ctx, this, tab, this.state.activeTab === tab.val);
-            });
-
-            // 3. Tab Content
-            if (this.state.activeTab === 'sim') this.drawSimTab(ctx, offsetX);
-            else if (this.state.activeTab === 'adhd') this.drawADHDTab(ctx, offsetX);
-            else if (this.state.activeTab === 'synapse') this.drawSynapseTab(ctx, offsetX);
-
-            // 3.1 Dropdowns (drawn last for overlay)
-            if (this.state.activeTab === 'adhd') {
-                Controls.drawDropdown(ctx, this, { ...this.ui.categoryDropdown, val: this.state.adhdCategory }, this.state.dropdowns.category.isOpen);
-            }
-
-            // 4. Action Buttons
-            this.ui.actionButtons.forEach(b => Controls.drawButton(ctx, this, b, false));
-
-            // 5. Camera Panel
-            const camPanelX = Math.max(380, w - 260);
-            Controls.drawPanel(ctx, this, camPanelX, 20, 240, 80, t('3d_view_title'));
-            this.ui.cameraButtons.forEach(b => {
-                const bx = (b.action === 'reset') ? camPanelX + 15 : camPanelX + 130;
-                Controls.drawButton(ctx, this, { ...b, x: bx, y: 60 }, (b.action === 'rotate' && this.ui3d?.autoRotate));
-            });
-
-            // 6. Navigation Hint
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            ctx.font = '9px Quicksand';
-            ctx.textAlign = 'left';
-            ctx.fillText('NAVIGATE: DRAG TO ROTATE • WHEEL TO ZOOM', 40 + offsetX, 585);
-
-            // 7. Info Overlay
-            if (this.state.showInfo) this.drawInfoOverlay(ctx, w, h);
-
-            // 8. Analytics Overlay
-            if (this.state.analyticsMode) this.drawAnalyticsOverlay(ctx, w, h);
-
-            // 9. Tooltips (Drawn last for top-most overlay)
-            const hovered = this.ui.hoveredElement;
-            if (hovered && hovered.tooltip) {
-                let cite = hovered.detail;
-                if (this.state.researchMode && hovered.enhancementId) {
-                    const info = window.GreenhouseADHDData.getEnhancementById(hovered.enhancementId);
-                    if (info && info.doi) {
-                        cite = (cite ? cite + "\n\n" : "") + "RESEARCH REF: " + info.doi + " (Click to view)";
-                    }
-                }
-                Controls.drawTooltip(ctx, this, hovered.mx, hovered.my, hovered.tooltip, cite);
-            }
-
-            ctx.restore();
-        },
-
-        drawAnalyticsOverlay(ctx, w, h) {
-            const panelX = w - 320;
-            const panelY = 120;
-            const panelW = 300;
-            const panelH = 150;
-
-            const Controls = window.GreenhouseNeuroControls;
-            Controls.drawPanel(ctx, this, panelX, panelY, panelW, panelH, "REAL-TIME RESEARCH ANALYTICS");
-
-            ctx.fillStyle = "#fff";
-            ctx.font = "10px monospace";
-            const config = this.ga?.adhdConfig;
-            if (config) {
-                ctx.fillText(`SNR: ${config.snr.toFixed(4)}`, panelX + 20, panelY + 45);
-                ctx.fillText(`Entropy: ${(this.ga.bestGenome?.connections.length * 0.12).toFixed(4)}`, panelX + 20, panelY + 60);
-                ctx.fillText(`ATP Efficiency: ${config.atpLevel.toFixed(2)}`, panelX + 20, panelY + 75);
-                ctx.fillText(`Synaptic Drift: ${config.pruningVariance.toFixed(2)}`, panelX + 20, panelY + 90);
-            }
-
-            // Simple Sparkline
-            ctx.strokeStyle = "#4ca1af";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(panelX + 150, panelY + 130);
-            for (let i = 0; i < 20; i++) {
-                const val = Math.sin((this.ga?.generation || 0) * 0.1 + i) * 20;
-                ctx.lineTo(panelX + 150 + i * 7, panelY + 110 + val);
-            }
-            ctx.stroke();
-            ctx.fillStyle = "rgba(76, 161, 175, 0.3)";
-            ctx.fillText("FITNESS TRAJECTORY", panelX + 150, panelY + 140);
-        },
-
-        drawSimTab(ctx, offsetX) {
-            const Controls = window.GreenhouseNeuroControls;
-            const panelW = this.ui.panelW || 350;
-
-            ctx.fillStyle = '#4ca1af';
-            ctx.font = '800 10px Quicksand';
-            ctx.fillText(t('simulation_stats').toUpperCase(), 40 + offsetX, 80);
-
-            ctx.fillStyle = '#fff';
-            ctx.font = '500 13px Quicksand';
-            const statsText = this.ga ? `${t('gen')}: ${this.ga.generation} | ${t('best_fitness')}: ${Math.round(this.ga.bestGenome?.fitness || 0)}` : t('initializing');
-            ctx.fillText(statsText, 40 + offsetX, 100);
-
-            ctx.fillStyle = '#4ca1af';
-            ctx.fillText(t('simulation_mode').toUpperCase(), 40 + offsetX, 130);
-            this.ui.buttons.forEach(b => Controls.drawButton(ctx, this, b, this.state.viewMode === b.val));
-
-            // Mode Description
-            const modeKeys = ['mode_neural_desc', 'mode_synaptic_desc', 'mode_burst_desc'];
-            const modeDesc = t(modeKeys[this.state.viewMode]);
-            ctx.fillStyle = 'rgba(255,255,255,0.6)';
-            ctx.font = 'italic 11px Quicksand';
-            if (window.GreenhouseModelsUtil?.wrapText) {
-                window.GreenhouseModelsUtil.wrapText(ctx, modeDesc, 40 + offsetX, 175, panelW - 60, 14);
-            } else {
-                ctx.fillText(modeDesc, 40 + offsetX, 175);
-            }
-
-            ctx.fillStyle = '#4ca1af';
-            ctx.fillText(t('dosage_optimization').toUpperCase(), 40 + offsetX, 470);
-            if (this.ui.sliders && this.ui.sliders.length > 0) {
-                Controls.drawSlider(ctx, this, this.ui.sliders[0], this.state.dosage);
-            }
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 10px Quicksand';
-            ctx.textAlign = 'right';
-            ctx.fillText(this.state.dosage.toFixed(2), offsetX + panelW - 20, 498);
-            ctx.textAlign = 'left';
-        },
-
-        drawADHDTab(ctx, offsetX) {
-            const Controls = window.GreenhouseNeuroControls;
-            const panelW = this.ui.panelW || 350;
-
-            Controls.drawSearchBox(ctx, this, this.ui.searchInput, this.state.searchQuery);
-
-            ctx.fillStyle = '#4ca1af';
-            ctx.font = '800 10px Quicksand';
-            ctx.fillText(t('active_enhancement').toUpperCase() + ' CATEGORY', 40 + offsetX, 95);
-
-            // (Category dropdown is drawn in drawUI for overlay)
-
-            const filtered = this.getFilteredCheckboxes();
-            const scrollAreaY = 160;
-            const scrollAreaH = 280; // Reduced to fit description panel
-            const itemHeight = 25;
-            const totalHeight = filtered.length * itemHeight;
-            const maxScroll = Math.max(0, totalHeight - scrollAreaH + 10);
-
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(30 + offsetX, scrollAreaY, 310, scrollAreaH);
-            ctx.clip();
-            filtered.forEach((c, idx) => {
-                c.y = scrollAreaY + 10 + idx * itemHeight - (this.state.scrollOffset || 0);
-                const isActive = (this.state.adhdCategory === 'scenarios')
-                    ? this.state.activeScenarios.has(c.scenarioId)
-                    : this.state.activeEnhancements.has(c.enhancementId);
-                Controls.drawCheckbox(ctx, this, c, isActive);
-            });
-            ctx.restore();
-
-            // 8. Description Panel
-            const descY = scrollAreaY + scrollAreaH + 10;
-            const descH = 100;
-            ctx.fillStyle = 'rgba(255,255,255,0.03)';
-            this.roundRect(ctx, 30 + offsetX, descY, 310, descH, 8, true, false);
-
-            let infoText = "Hover over an item to see its description.";
-            const hovered = this.ui.hoveredElement;
-            if (hovered && (hovered.scenarioId || hovered.enhancementId)) {
-                const data = window.GreenhouseADHDData;
-                if (hovered.scenarioId) {
-                    const s = data.scenarios[hovered.scenarioId];
-                    infoText = s ? s.name : hovered.scenarioId;
-                } else {
-                    const e = data.getEnhancementById(hovered.enhancementId);
-                    infoText = e ? e.description : hovered.enhancementId;
-                }
-            }
-
-            ctx.fillStyle = '#fff';
-            ctx.font = 'italic 11px Quicksand';
-            if (window.GreenhouseModelsUtil?.wrapText) {
-                window.GreenhouseModelsUtil.wrapText(ctx, infoText, 40 + offsetX, descY + 15, 290, 16);
-            } else {
-                ctx.fillText(infoText, 40 + offsetX, descY + 15);
-            }
-
-            // Draw Scrollbar track
-            if (maxScroll > 0) {
-                const sbX = 340 + offsetX;
-                const sbY = scrollAreaY;
-                const sbW = 4;
-                const sbH = scrollAreaH;
-
-                ctx.fillStyle = 'rgba(255,255,255,0.05)';
-                this.roundRect(ctx, sbX, sbY, sbW, sbH, 2, true);
-
-                // Scrollbar Handle
-                const handleH = Math.max(20, (sbH / (totalHeight + 10)) * sbH);
-                const handlePos = (this.state.scrollOffset / maxScroll) * (sbH - handleH);
-                ctx.fillStyle = 'rgba(76, 161, 175, 0.5)';
-                this.roundRect(ctx, sbX, sbY + handlePos, sbW, handleH, 2, true);
-            }
-        },
-
-        drawSynapseTab(ctx, offsetX) {
-            const Synapse = window.GreenhouseNeuroSynapse;
-            const panelW = this.ui.panelW || 350;
-            if (!this.ui3d || !this.ui3d.selectedConnection) {
-                ctx.fillStyle = 'rgba(255,255,255,0.5)';
-                ctx.font = '14px Quicksand';
-                if (window.GreenhouseModelsUtil?.wrapText) {
-                    window.GreenhouseModelsUtil.wrapText(ctx, "Select a connection in the 3D view to see its molecular synapse structure.", 40 + offsetX, 100, panelW - 60, 20);
-                } else {
-                    ctx.fillText("Select a connection to view synapse details.", 40 + offsetX, 100);
-                }
-                return;
-            }
-            if (Synapse && this.ui3d.synapseMeshes) {
-                const conn = this.ui3d.selectedConnection;
-                // Draw PiP (smaller to fit text)
-                Synapse.drawSynapsePiP(ctx, 40 + offsetX, 80, panelW - 40, 280, conn, this.ui3d.synapseMeshes, false);
-
-                // Detailed Info
-                const infoY = 380;
-                ctx.fillStyle = '#4ca1af';
-                ctx.font = '800 10px Quicksand';
-                ctx.fillText(t('synapse_characteristics').toUpperCase(), 40 + offsetX, infoY);
-
-                ctx.fillStyle = '#fff';
-                ctx.font = '500 12px Quicksand';
-                ctx.fillText(`${t('synapse_strength')}: ${conn.weight.toFixed(4)}`, 40 + offsetX, infoY + 20);
-                ctx.fillText(`${t('synapse_origin')}: ${t(conn.from.region)}`, 40 + offsetX, infoY + 40);
-                ctx.fillText(`${t('synapse_target')}: ${t(conn.to.region)}`, 40 + offsetX, infoY + 60);
-
-                const typeKey = conn.weight > 0 ? 'synapse_excitatory' : 'synapse_inhibitory';
-                ctx.fillStyle = conn.weight > 0 ? '#FFD700' : '#4ca1af';
-                ctx.fillText(`${t('synapse_type')}: ${t(typeKey)}`, 40 + offsetX, infoY + 80);
-
-                ctx.fillStyle = 'rgba(255,255,255,0.4)';
-                ctx.font = 'italic 10px Quicksand';
-                ctx.fillText(t('synapse_hover_hint'), 40 + offsetX, infoY + 110);
-            }
-        },
-
-        drawInfoOverlay(ctx, w, h) {
-            const Controls = window.GreenhouseNeuroControls;
-            const infoW = 400, infoH = 220;
-            const infoX = (w - infoW) / 2, infoY = (h - infoH) / 2;
-            Controls.drawPanel(ctx, this, infoX, infoY, infoW, infoH, t('neuro_explanation_title'));
-            ctx.fillStyle = '#fff';
-            ctx.font = '500 13px Quicksand';
-            if (window.GreenhouseModelsUtil?.wrapText) {
-                window.GreenhouseModelsUtil.wrapText(ctx, t('neuro_explanation_text'), infoX + 20, infoY + 50, infoW - 40, 20);
-            }
-            ctx.fillStyle = '#4ca1af';
-            ctx.font = '800 10px Quicksand';
-            ctx.textAlign = 'center';
-            ctx.fillText('CLICK ANYWHERE TO CLOSE', infoX + infoW / 2, infoY + infoH - 20);
-        },
-
-        startSimulation() {
-            if (this.isRunning) return;
-            this.isRunning = true;
-            this.lastTime = performance.now();
-            this.rafId = requestAnimationFrame((t) => this.loop(t));
-        },
-
-        stopSimulation() {
-            this.isRunning = false;
-            if (this.rafId) cancelAnimationFrame(this.rafId);
-        },
+        startSimulation() { this.isRunning = true; this.lastTime = performance.now(); this.loop(performance.now()); },
+        stopSimulation() { this.isRunning = false; },
 
         loop(now) {
             if (!this.isRunning) return;
             const dt = now - this.lastTime;
             this.lastTime = now;
-            const simStep = 100;
             this.accumulatedTime += dt;
-            let bestGenome = null;
-            let steps = 0;
-            while (this.accumulatedTime >= simStep && steps < 5) { // Cap steps to avoid spiral of death
-                if (this.ga) {
-                    bestGenome = this.ga.step();
-                }
-                this.accumulatedTime -= simStep;
-                steps++;
+            let best = null;
+            while (this.accumulatedTime >= 100) {
+                if (this.ga) best = this.ga.step();
+                this.accumulatedTime -= 100;
             }
-            if (bestGenome && this.ui3d) {
-                this.ui3d.updateData(bestGenome);
-            }
+            if (best && this.ui3d) this.ui3d.updateData(best);
             this.rafId = requestAnimationFrame((t) => this.loop(t));
         },
 
-        initSearch() {
-            if (this.searchElem) return;
-            this.searchElem = document.createElement('input');
-            this.searchElem.type = 'text';
-            this.searchElem.style.position = 'absolute';
-            this.searchElem.style.left = '-1000px';
-            this.searchElem.addEventListener('input', (e) => this.state.searchQuery = e.target.value.toLowerCase());
-            this.container.appendChild(this.searchElem);
+        drawUI(ctx, w, h) {
+            const C = window.GreenhouseNeuroControls;
+            if (!C) return;
+            const panelW = this.ui.panelW;
+            const ox = 15;
+
+            C.drawPanel(ctx, this, 20 + ox, 20, panelW, 580, '');
+            this.ui.tabs.forEach(tab => C.drawButton(ctx, this, tab, this.state.activeTab === tab.val));
+
+            if (this.state.activeTab === 'sim') this.drawSimTab(ctx, ox);
+            else if (this.state.activeTab === 'adhd') this.drawADHDTab(ctx, ox);
+            else if (this.state.activeTab === 'synapse') this.drawSynapseTab(ctx, ox);
+
+            this.ui.actionButtons.forEach(b => C.drawButton(ctx, this, b, false));
+            const camPanelX = Math.max(380, w - 260);
+            C.drawPanel(ctx, this, camPanelX, 20, 240, 80, t('3d_view_title'));
+            this.ui.cameraButtons.forEach(b => C.drawButton(ctx, this, b, (b.action === 'rotate' && this.ui3d?.autoRotate)));
+
+            const hov = this.ui.hoveredElement;
+            if (hov && (hov.tooltip || hov.label)) {
+                C.drawTooltip(ctx, this, hov.mx, hov.my, hov.tooltip || hov.label, hov.detail || '');
+            }
         },
 
+        drawSimTab(ctx, ox) {
+            const C = window.GreenhouseNeuroControls;
+            const panelW = this.ui.panelW;
+            ctx.fillStyle = '#4ca1af'; ctx.font = '800 10px Quicksand';
+            ctx.fillText(t('simulation_stats').toUpperCase(), 40 + ox, 80);
+            ctx.fillStyle = '#fff'; ctx.font = '500 13px Quicksand';
+            ctx.fillText(`${t('gen')}: ${this.ga?.generation || 0} | ${t('best_fitness')}: ${Math.round(this.ga?.bestGenome?.fitness || 0)}`, 40 + ox, 100);
+
+            ctx.fillStyle = '#4ca1af'; ctx.fillText(t('simulation_mode').toUpperCase(), 40 + ox, 130);
+            this.ui.buttons.forEach(b => C.drawButton(ctx, this, b, this.state.viewMode === b.val));
+
+            const desc = t(['mode_neural_desc', 'mode_synaptic_desc', 'mode_burst_desc'][this.state.viewMode]);
+            ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = 'italic 11px Quicksand';
+            window.GreenhouseModelsUtil?.wrapText(ctx, desc, 40 + ox, 175, panelW - 60, 14);
+
+            ctx.fillStyle = '#4ca1af'; ctx.fillText(t('dosage_optimization').toUpperCase(), 40 + ox, 470);
+            C.drawSlider(ctx, this, this.ui.sliders[0], this.state.dosage);
+            ctx.fillStyle = '#fff'; ctx.textAlign = 'right'; ctx.fillText(this.state.dosage.toFixed(2), ox + panelW - 20, 498); ctx.textAlign = 'left';
+        },
+
+        drawADHDTab(ctx, ox) {
+            const C = window.GreenhouseNeuroControls;
+            const filtered = this.getFilteredCheckboxes();
+            C.drawDropdown(ctx, this, this.ui.categoryDropdown, this.state.dropdowns.category.isOpen);
+            ctx.save(); ctx.beginPath(); ctx.rect(30 + ox, 160, 310, 280); ctx.clip();
+            filtered.forEach((c, i) => {
+                c.y = 170 + i * 25 - this.state.scrollOffset;
+                const act = (this.state.adhdCategory === 'scenarios') ? this.state.activeScenarios.has(c.scenarioId) : this.state.activeEnhancements.has(c.enhancementId);
+                C.drawCheckbox(ctx, this, c, act);
+            });
+            ctx.restore();
+
+            const hov = this.ui.hoveredElement;
+            let info = "Hover items for details.";
+            if (hov && (hov.scenarioId || hov.enhancementId)) {
+                const data = window.GreenhouseADHDData;
+                info = hov.scenarioId ? (data.scenarios[hov.scenarioId]?.name || hov.scenarioId) : (data.getEnhancementById(hov.enhancementId)?.description || hov.enhancementId);
+            }
+            ctx.fillStyle = '#fff'; ctx.font = 'italic 11px Quicksand';
+            window.GreenhouseModelsUtil?.wrapText(ctx, info, 40 + ox, 455, 290, 16);
+        },
+
+        drawSynapseTab(ctx, ox) {
+            const conn = this.ui3d?.selectedConnection;
+            if (!conn) { ctx.fillStyle = '#fff'; ctx.fillText("Select a connection in 3D.", 40 + ox, 100); return; }
+            window.GreenhouseNeuroSynapse?.drawSynapsePiP(ctx, 40+ox, 80, this.ui.panelW-40, 280, conn, this.ui3d.synapseMeshes, false);
+            ctx.fillStyle = '#4ca1af'; ctx.fillText(t('synapse_characteristics').toUpperCase(), 40 + ox, 380);
+            ctx.fillStyle = '#fff'; ctx.fillText(`${t('synapse_strength')}: ${conn.weight.toFixed(4)}`, 40 + ox, 400);
+            ctx.fillText(`${t('synapse_origin')}: ${t(conn.from.region)}`, 40 + ox, 420);
+            ctx.fillText(`${t('synapse_target')}: ${t(conn.to.region)}`, 40 + ox, 440);
+        },
+
+        refreshUIText() { this.setupUIComponents(); },
+        switchMode(idx) { if (this.ga) { this.ga.populationSize = (idx === 1 ? 80 : 50); this.ga.adhdConfig.burstMode = (idx === 2); } },
+        toggleScenario(id, act) { window.GreenhouseADHDData?.scenarios[id]?.enhancements.forEach(eid => this.ga?.setADHDEnhancement(eid, act)); },
         updateADHDCheckboxes() {
-            const offsetX = 15;
-            const panelW = this.ui.panelW || 350;
-            this.ui.checkboxes = [];
-            const data = window.GreenhouseADHDData;
-            if (!data) return;
-
+            const ox = 15; this.ui.checkboxes = [];
+            const data = window.GreenhouseADHDData; if (!data) return;
             if (this.state.adhdCategory === 'scenarios') {
-                const scenarios = data.scenarios || {};
-                const keys = Array.isArray(scenarios) ? scenarios.map(s => s.id) : Object.keys(scenarios);
-                keys.forEach((key) => {
-                    if (key === 'none') return;
-                    this.ui.checkboxes.push({
-                        id: `scenario_${key}`,
-                        scenarioId: key,
-                        labelKey: `adhd_scenario_${key}`,
-                        x: 40 + offsetX,
-                        y: 0,
-                        w: panelW - 80,
-                        h: 20
-                    });
-                });
+                Object.keys(data.scenarios).forEach(k => { if(k!=='none') this.ui.checkboxes.push({ id:`s_${k}`, scenarioId:k, labelKey:`adhd_scenario_${k}`, x:40+ox, w:this.ui.panelW-80, h:20 }); });
             } else {
-                // Support both legacy data.categories and direct access
-                const enhancements = (data.categories ? data.categories[this.state.adhdCategory] : data[this.state.adhdCategory]) || [];
-                enhancements.forEach(e => {
-                    this.ui.checkboxes.push({
-                        id: `enh_${e.id}`,
-                        enhancementId: e.id,
-                        labelKey: `adhd_enh_${e.id}_name`,
-                        x: 40 + offsetX,
-                        y: 0,
-                        w: panelW - 80,
-                        h: 20
-                    });
+                (data.categories ? data.categories[this.state.adhdCategory] : data[this.state.adhdCategory] || []).forEach(e => {
+                    this.ui.checkboxes.push({ id:`e_${e.id}`, enhancementId:e.id, labelKey:`adhd_enh_${e.id}_name`, x:40+ox, w:this.ui.panelW-80, h:20 });
                 });
             }
         },
-
-        getFilteredCheckboxes() {
-            let list = this.ui.checkboxes;
-            if (this.state.searchQuery) {
-                list = list.filter(c => {
-                    const label = t(c.labelKey).toLowerCase();
-                    const match = label.includes(this.state.searchQuery);
-                    return match;
-                });
-            }
-            return list;
-        },
-
-        switchMode(index) {
-            if (!this.ga) return;
-            if (index === 1) this.ga.populationSize = 80;
-            else if (index === 2) this.ga.adhdConfig.burstMode = true;
-            else { this.ga.populationSize = 50; this.ga.adhdConfig.burstMode = false; }
-        },
-
-        toggleScenario(scenarioId, isActive) {
-            const data = window.GreenhouseADHDData;
-            if (!data || !this.ga) return;
-            const scenario = data.scenarios[scenarioId];
-            if (scenario) scenario.enhancements.forEach(id => this.ga.setADHDEnhancement(id, isActive));
-        },
-
-        roundRect(ctx, x, y, width, height, radius, fill, stroke) {
-            ctx.beginPath(); ctx.moveTo(x + radius, y); ctx.lineTo(x + width - radius, y);
-            ctx.quadraticCurveTo(x + width, y, x + width, y + radius); ctx.lineTo(x + width, y + height - radius);
-            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height); ctx.lineTo(x + radius, y + height);
-            ctx.quadraticCurveTo(x, y + height, x, y + height - radius); ctx.lineTo(x, y + radius);
-            ctx.quadraticCurveTo(x, y, x + radius, y); ctx.closePath();
-            if (fill) ctx.fill(); if (stroke) ctx.stroke();
-        }
+        getFilteredCheckboxes() { return this.ui.checkboxes; },
+        initSearch() {}
     };
 
     window.GreenhouseNeuroApp = GreenhouseNeuroApp;
