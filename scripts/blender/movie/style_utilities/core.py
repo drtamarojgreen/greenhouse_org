@@ -183,27 +183,42 @@ def set_socket_value(socket, value, frame=None):
     """Point 92: Robustly sets a socket value."""
     if socket is None: return False
     try:
-        # Determine if target socket expects a sequence (Point 142)
-        dv = getattr(socket, "default_value", None)
-        expects_seq = dv is not None and hasattr(dv, "__len__") and not isinstance(dv, (str, bytes))
-        provides_seq = isinstance(value, (list, tuple, mathutils.Vector))
-
-        if provides_seq and not expects_seq:
-            # Point 142: Downcast sequence to scalar (e.g., Color tuple to Factor float)
-            if len(value) >= 3:
-                # Use simple luminance for colors
-                target_val = value[0] * 0.299 + value[1] * 0.587 + value[2] * 0.114
-            else:
-                target_val = value[0]
-            socket.default_value = target_val
-        elif not provides_seq and expects_seq:
-            # Upcast scalar to sequence
-            socket.default_value = [value] * len(dv)
-        else:
+        # Try direct assignment first (fast path)
+        try:
             socket.default_value = value
+        except (TypeError, ValueError):
+            # Determine if target socket expects a sequence (Point 142)
+            dv = getattr(socket, "default_value", None)
+            expects_seq = dv is not None and hasattr(dv, "__len__") and not isinstance(dv, (str, bytes))
+            provides_seq = isinstance(value, (list, tuple, mathutils.Vector))
+
+            if provides_seq and not expects_seq:
+                # Point 142: Downcast sequence to scalar (e.g., Color tuple to Factor float)
+                if len(value) >= 3:
+                    # Use simple luminance for colors
+                    target_val = float(value[0] * 0.299 + value[1] * 0.587 + value[2] * 0.114)
+                else:
+                    target_val = float(value[0])
+                socket.default_value = target_val
+            elif not provides_seq and expects_seq:
+                # Upcast scalar to sequence
+                try:
+                    socket.default_value = [value] * len(dv)
+                except:
+                    # Fallback for fixed-size types like vectors
+                    if hasattr(dv, "fill"): dv.fill(value)
+                    else: socket.default_value = (value, value, value)
+            else:
+                # Final attempt at conversion
+                if expects_seq:
+                    socket.default_value = tuple(value)
+                else:
+                    socket.default_value = float(value)
 
         if frame is not None:
-            socket.keyframe_insert(data_path="default_value", frame=frame)
+            try:
+                socket.keyframe_insert(data_path="default_value", frame=frame)
+            except: pass
         return True
     except (AttributeError, TypeError, ValueError) as e:
         print(f"Warning: Failed to set socket {getattr(socket, 'name', 'unknown')} to {value}: {e}")

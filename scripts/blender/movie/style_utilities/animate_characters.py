@@ -485,8 +485,8 @@ def animate_characters(master_instance):
         animate_weight_shift(target, 1, 15000)
         animate_breathing(target, 1, 15000)
 
-        # Explicitly ensure visibility (Point 142)
-        set_obj_visibility(char, True, 1)
+        # Visibility is now managed primarily by master._set_visibility and scene modules (Point 142)
+        # BaseMaster.run() handles initial load_assets then orchestrate/animate.
 
     # Baseline acting for tests
     test_bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R", "Neck", "Jaw", "Mouth", "Eye.L", "Brow.L"]

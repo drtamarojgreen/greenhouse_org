@@ -56,6 +56,12 @@ class MovieMaster(BaseMaster):
         camera_controls.setup_all_camera_logic(self); setup_characters.setup_gaze_system(self)
         scene_orchestrator.orchestrate_scenes(self); animate_characters.animate_characters(self); animate_props.animate_props(self)
 
+        # Point 142: Visibility management for main actors
+        if self.h1 and self.h2:
+            self._set_visibility([self.h1, self.h2], [(101, 15000)])
+        if self.gnome:
+            self._set_visibility([self.gnome], [(10901, 14450)]) # Visible during dialogue and retreat
+
         # Point 142: Camera Safety Pass (P1-4) - After all characters are animated
         camera_controls.apply_camera_safety(self, self.scene.camera, [self.h1, self.h2, self.gnome], 1, 15000)
 
