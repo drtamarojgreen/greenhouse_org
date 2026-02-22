@@ -102,8 +102,8 @@
         },
 
         drawPanel(ctx, app, x, y, w, h, title) {
+            if (!isFinite(x) || !isFinite(y) || !isFinite(w) || !isFinite(h)) return;
             ctx.save();
-            console.log(`Drawing Panel at ${x},${y} with roundRect: ${!!app.roundRect}`);
             // Transparent/Scientific HUD background
             const grad = ctx.createLinearGradient(x, y, x + w, y + h);
             grad.addColorStop(0, 'rgba(10, 15, 25, 0.6)');

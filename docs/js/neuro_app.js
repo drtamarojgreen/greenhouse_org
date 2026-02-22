@@ -31,6 +31,7 @@
         },
 
         ui: {
+            panelW: 350,
             hoveredElement: null,
             buttons: [],
             checkboxes: [],
@@ -287,8 +288,8 @@
 
         drawUI(ctx, w, h) {
             const C = window.GreenhouseNeuroControls;
-            if (!C) return;
-            const panelW = this.ui.panelW;
+            if (!C || !w || !h) return;
+            const panelW = this.ui.panelW || 350;
             const ox = 15;
 
             C.drawPanel(ctx, this, 20 + ox, 20, panelW, 580, '');
@@ -299,7 +300,7 @@
             else if (this.state.activeTab === 'synapse') this.drawSynapseTab(ctx, ox);
 
             this.ui.actionButtons.forEach(b => C.drawButton(ctx, this, b, false));
-            const camPanelX = Math.max(380, w - 260);
+            const camPanelX = Math.max(panelW + 30, w - 260);
             C.drawPanel(ctx, this, camPanelX, 20, 240, 80, t('3d_view_title'));
             this.ui.cameraButtons.forEach(b => C.drawButton(ctx, this, b, (b.action === 'rotate' && this.ui3d?.autoRotate)));
 
