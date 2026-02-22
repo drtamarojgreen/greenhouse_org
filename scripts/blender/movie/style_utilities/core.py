@@ -29,6 +29,8 @@ class FCurveProxy:
 def get_action_curves(action, create_if_missing=False):
     """(Point 91) Robust recursive F-curve collector for Blender 5.0 Slotted/Layered Actions."""
     if action is None: return []
+    
+    # 5.0+: Check for Slotted Action data structure
     if create_if_missing and hasattr(action, "layers") and len(action.layers) == 0:
         action.layers.new(name="Main Layer")
     
@@ -37,6 +39,7 @@ def get_action_curves(action, create_if_missing=False):
 
     def get_bone_prefix(name):
         if not name: return ""
+        # 5.0 Slotted Actions often use slot name as prefix
         bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
         if any(kw in name for kw in bone_kws):
             clean_name = str(name).split(":")[-1]
@@ -57,74 +60,54 @@ def get_action_curves(action, create_if_missing=False):
 
         path = getattr(fc, "data_path", "")
         if not path:
+             # Try 5.0 specific path attributes
              path = getattr(fc, "path_full", getattr(fc, "path", ""))
         
-        # Point 142: Ensure path is valid string
         path = str(path)
         
         # If path is relative (no pose.bones), prepend prefix
+        # 5.0 relative paths usually look like "location", "rotation_euler", etc.
         is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
         if is_relative and prefix:
             path = prefix + path
             
         curves.append(FCurveProxy(fc, path))
 
-    # 1. Direct F-curves (Legacy and 5.0 Flat)
-    if hasattr(action, "fcurves") and action.fcurves:
-        for fc in action.fcurves: 
-            # Point 142: Try to discover slot-based prefixes if not absolute
-            prefix = ""
-            if hasattr(fc, "slot"):
-                prefix = get_bone_prefix(getattr(fc.slot, "name", ""))
-            wrap_fc(fc, prefix)
-
-    # 2. Blender 5.0 Layers & Channels (Recursively)
     def traverse_channels(channels, prefix=""):
-        if not channels: return
         for chan in channels:
-            # Check for slot name to update prefix
             curr_prefix = prefix
-            slot = getattr(chan, "slot", None)
-            if slot:
-                slot_name = getattr(slot, "name", getattr(slot, "identifier", ""))
-                new_p = get_bone_prefix(slot_name)
-                if new_p: curr_prefix = new_p
+            if hasattr(chan, "slot") and chan.slot:
+                slot_prefix = get_bone_prefix(getattr(chan.slot, "name", ""))
+                if slot_prefix: curr_prefix = slot_prefix
             
             fc = getattr(chan, "fcurve", None)
-            if not fc and hasattr(chan, "keyframe_points"): fc = chan
             if fc: wrap_fc(fc, curr_prefix)
             
-            # Recurse into child channels (Point 142: handle potential Infinite recursion)
             if hasattr(chan, "channels") and chan.channels:
-                if chan.channels != channels: # Safety
-                    traverse_channels(chan.channels, curr_prefix)
+                traverse_channels(chan.channels, curr_prefix)
 
+    # 1. Traverse via Layers (The 5.0 standard way)
     if hasattr(action, "layers"):
         for layer in action.layers:
-            if hasattr(layer, "channels") and layer.channels: 
+            if hasattr(layer, "channels"):
                 traverse_channels(layer.channels)
-            if hasattr(layer, "strips") and layer.strips:
-                for strip in layer.strips:
-                    if hasattr(strip, "channels") and strip.channels: 
-                        traverse_channels(strip.channels)
 
-    # 3. Blender 5.0 Slots & Bindings (Fallback discovery)
+    # 2. Traverse via Slots & Bindings (The 5.0 fallback way)
     if hasattr(action, "slots"):
         for slot in action.slots:
-            slot_name = getattr(slot, "name", getattr(slot, "identifier", ""))
-            prefix = get_bone_prefix(slot_name)
+            prefix = get_bone_prefix(getattr(slot, "name", ""))
             if hasattr(slot, "bindings"):
                 for binding in slot.bindings:
-                    if hasattr(binding, "fcurves") and binding.fcurves:
+                    if hasattr(binding, "fcurves"):
                         for fc in binding.fcurves: wrap_fc(fc, prefix)
-                    if hasattr(binding, "channels") and binding.channels:
-                        traverse_channels(binding.channels, prefix)
-                        
-    # 4. Final aggressive fallback: check all datablocks for fcurves that might be hidden
-    # This is a safety pass for weird 5.0 edge cases (Point 142)
-    if hasattr(action, "fcurves") and not curves:
+
+    # 3. Direct F-curves (Legacy and 5.0 Flat/Unassigned)
+    if hasattr(action, "fcurves"):
         for fc in action.fcurves:
-            wrap_fc(fc)
+            prefix = ""
+            if hasattr(fc, "slot") and fc.slot:
+                prefix = get_bone_prefix(getattr(fc.slot, "name", ""))
+            wrap_fc(fc, prefix)
 
     return curves
 
@@ -156,31 +139,34 @@ def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
 def get_eevee_engine_id():
     """Probes Blender for the correct Eevee engine identifier."""
     try:
+        # In 5.0, Eevee is 'BLENDER_EEVEE_NEXT'
+        items = bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items
         for engine in ['BLENDER_EEVEE_NEXT', 'BLENDER_EEVEE']:
-            if engine in bpy.types.RenderSettings.bl_rna.properties['engine'].enum_items:
+            if engine in items:
                 return engine
     except Exception: pass
-    return 'BLENDER_EEVEE'
+    return 'BLENDER_EEVEE_NEXT'
 
 def get_compositor_node_tree(scene):
     """Directly retrieves the compositor node tree for Blender 5.x."""
     if not scene: return None
     scene.use_nodes = True
     
-    # In some versions it's scene.node_tree, in others it's compositing_node_tree
-    tree = getattr(scene, 'node_tree', None) or getattr(scene, 'compositing_node_tree', None)
+    # Blender 5.x uses compositing_node_tree or node_tree
+    tree = getattr(scene, 'compositing_node_tree', None)
+    if not tree:
+        tree = getattr(scene, 'node_tree', None)
     
     if not tree:
-        # Check if we can find it in bpy.data.node_groups as a fallback
-        for ng in bpy.data.node_groups:
-            if ng.type == 'COMPOSITOR' and ng.name == "Compositing":
-                tree = ng
-                break
+        # In some 5.0 builds, it might be nested in a group
+        if hasattr(scene, "compositing_node_group"):
+            tree = scene.compositing_node_group
                 
     if not tree:
-        # Final fallback: return what we have even if None, 
-        # but try to access standard attributes
-        tree = getattr(scene, 'compositing_node_group', None)
+        # Fallback to searching all groups
+        for ng in bpy.data.node_groups:
+            if ng.type == 'COMPOSITOR':
+                return ng
         
     return tree
 
@@ -442,13 +428,29 @@ def apply_iris_wipe(scene, frame_start, frame_end, mode='IN'):
 def set_obj_visibility(obj, visible, frame):
     """Recursively sets hide_render and hide_viewport for an object and its children (Point 142)."""
     if not obj: return
+    
+    # 5.0 Slotted Action support: Ensure action exists
+    if not obj.animation_data:
+        obj.animation_data_create()
+    
     obj.hide_render = obj.hide_viewport = not visible
     obj.keyframe_insert(data_path="hide_render", frame=frame)
+    obj.keyframe_insert(data_path="hide_viewport", frame=frame)
+    
+    # Aggressively set constant interpolation for visibility (Point 142)
     if obj.animation_data and obj.animation_data.action:
-        for fc in get_action_curves(obj.animation_data.action):
-            if fc.data_path == "hide_render":
+        curves = get_action_curves(obj.animation_data.action)
+        for fc in curves:
+            if any(p in fc.data_path for p in ("hide_render", "hide_viewport")):
                 for kp in fc.keyframe_points:
-                    if int(kp.co[0]) == frame: kp.interpolation = 'CONSTANT'
+                    kp.interpolation = 'CONSTANT'
+        
+        # Direct access fallback for unassigned curves
+        if hasattr(obj.animation_data.action, "fcurves"):
+             for fc in obj.animation_data.action.fcurves:
+                 if any(p in fc.data_path for p in ("hide_render", "hide_viewport")):
+                     for kp in fc.keyframe_points:
+                         kp.interpolation = 'CONSTANT'
                     
     for child in obj.children:
         set_obj_visibility(child, visible, frame)

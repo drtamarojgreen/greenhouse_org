@@ -8,13 +8,30 @@ from constants import SCENE_MAP
 def set_obj_visibility(obj, visible, frame):
     """Recursively sets hide_render for an object and its children (Point 142)."""
     if not obj: return
-    obj.hide_render = not visible
+    
+    # 5.0 Slotted Action support: Ensure action exists
+    if not obj.animation_data:
+        obj.animation_data_create()
+        
+    obj.hide_render = obj.hide_viewport = not visible
     obj.keyframe_insert(data_path="hide_render", frame=frame)
+    
+    # Aggressively set constant interpolation for visibility
     if obj.animation_data and obj.animation_data.action:
-        for fc in core.get_action_curves(obj.animation_data.action):
-            if fc.data_path == "hide_render":
+        curves = core.get_action_curves(obj.animation_data.action)
+        found = False
+        for fc in curves:
+            if "hide_render" in fc.data_path:
+                found = True
                 for kp in fc.keyframe_points:
-                    if int(kp.co[0]) == frame: kp.interpolation = 'CONSTANT'
+                    kp.interpolation = 'CONSTANT'
+        
+        # If not found via proxy, try direct access if possible
+        if not found and hasattr(obj.animation_data.action, "fcurves"):
+             for fc in obj.animation_data.action.fcurves:
+                 if "hide_render" in fc.data_path:
+                     for kp in fc.keyframe_points:
+                         kp.interpolation = 'CONSTANT'
                     
     for child in obj.children:
         set_obj_visibility(child, visible, frame)

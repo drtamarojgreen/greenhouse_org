@@ -30,8 +30,9 @@ class BaseMaster:
         scene.render.filepath = f"//renders/{'sequel' if self.total_frames == 6000 else 'full_movie'}/"
         scene.display_settings.display_device, scene.view_settings.view_transform = 'sRGB', 'Filmic'
         # Point 142: Moderated exposure for Cycles (1.5 was causing whiteout)
-        scene.view_settings.exposure = 0.5
+        scene.view_settings.exposure = 1.0
         scene.render.use_motion_blur = True
+        scene.render.film_transparent = True
 
         if self.mode == 'SILENT_FILM':
             scene.render.engine = 'CYCLES'
@@ -62,22 +63,28 @@ class BaseMaster:
 
     def _set_visibility(self, objs, ranges):
         for obj in objs:
-            # Point 142: Ensure we target all meshes in hierarchy
-            all_objs = [obj] + list(obj.children)
-            for o in all_objs:
+            # Recursive visibility for complex hierarchies (Point 142)
+            def process_recursive(o):
+                if not o.animation_data: o.animation_data_create()
                 # Default hidden at start
-                o.hide_render = True
+                o.hide_render = o.hide_viewport = True
                 o.keyframe_insert(data_path="hide_render", frame=1)
                 for rs, re in ranges:
                     if rs > 1:
-                        o.hide_render = True
+                        o.hide_render = o.hide_viewport = True
                         o.keyframe_insert(data_path="hide_render", frame=rs-1)
-                    o.hide_render = False; o.keyframe_insert(data_path="hide_render", frame=rs)
-                    o.hide_render = True; o.keyframe_insert(data_path="hide_render", frame=re)
-                    if o.animation_data and o.animation_data.action:
-                        for fc in style.get_action_curves(o.animation_data.action):
-                            if fc.data_path == "hide_render":
-                                for kp in fc.keyframe_points: kp.interpolation = 'CONSTANT'
+                    o.hide_render = o.hide_viewport = False; o.keyframe_insert(data_path="hide_render", frame=rs)
+                    o.hide_render = o.hide_viewport = True; o.keyframe_insert(data_path="hide_render", frame=re)
+                
+                # Point 142: Ensure constant interpolation
+                if o.animation_data and o.animation_data.action:
+                    for fc in style.get_action_curves(o.animation_data.action):
+                        if "hide_render" in fc.data_path:
+                            for kp in fc.keyframe_points: kp.interpolation = 'CONSTANT'
+                for child in o.children:
+                    process_recursive(child)
+
+            process_recursive(obj)
 
     def run(self, start_frame=None, end_frame=None, quick=False):
         self.setup_engine()

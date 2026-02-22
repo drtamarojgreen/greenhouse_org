@@ -348,41 +348,53 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     return armature_obj
 
 def animate_walk(armature_obj, frame_start, frame_end, step_height=0.1, cycle_length=48):
-    _ensure_action(armature_obj, prefix="Walk")
+    action = _ensure_action(armature_obj, prefix="Walk")
     pb = armature_obj.pose.bones
     for f in range(frame_start, frame_end + 1, 6):
         phase = ((f - frame_start) % cycle_length) / cycle_length
         # Torso bobbing (Explicit targeting)
         if pb.get("Torso"):
-            pb["Torso"].location.z = abs(math.sin(phase * 6.28)) * step_height
-            armature_obj.keyframe_insert(data_path='pose.bones["Torso"].location', index=2, frame=f)
-            pb["Torso"].rotation_euler[2] = math.sin(phase * 6.28) * 0.14
-            armature_obj.keyframe_insert(data_path='pose.bones["Torso"].rotation_euler', index=2, frame=f)
+            z_val = abs(math.sin(phase * 6.28)) * step_height
+            pb["Torso"].location.z = z_val
+            fc_loc = style.get_or_create_fcurve(action, 'pose.bones["Torso"].location', index=2, ref_obj=armature_obj)
+            if fc_loc: fc_loc.keyframe_points.insert(f, z_val)
+            else: armature_obj.keyframe_insert(data_path='pose.bones["Torso"].location', index=2, frame=f)
+            
+            rot_val = math.sin(phase * 6.28) * 0.14
+            pb["Torso"].rotation_euler[2] = rot_val
+            fc_rot = style.get_or_create_fcurve(action, 'pose.bones["Torso"].rotation_euler', index=2, ref_obj=armature_obj)
+            if fc_rot: fc_rot.keyframe_points.insert(f, rot_val)
+            else: armature_obj.keyframe_insert(data_path='pose.bones["Torso"].rotation_euler', index=2, frame=f)
         
         # Limb swinging (Explicit targeting)
         swing = math.sin(phase * 6.28) * 0.4
         for bone_name, s_mult in [("Leg.L", 1), ("Leg.R", -1), ("Arm.L", -1), ("Arm.R", 1)]:
             bone = pb.get(bone_name)
             if bone:
-                bone.rotation_euler[0] = swing * s_mult
-                armature_obj.keyframe_insert(data_path=f'pose.bones["{bone_name}"].rotation_euler', index=0, frame=f)
+                s_val = swing * s_mult
+                bone.rotation_euler[0] = s_val
+                path = f'pose.bones["{bone_name}"].rotation_euler'
+                fc = style.get_or_create_fcurve(action, path, index=0, ref_obj=armature_obj)
+                if fc: fc.keyframe_points.insert(f, s_val)
+                else: armature_obj.keyframe_insert(data_path=path, index=0, frame=f)
 
 def animate_talk(armature_obj, frame_start, frame_end, intensity=1.0):
-    _ensure_action(armature_obj, prefix="Talk")
+    action = _ensure_action(armature_obj, prefix="Talk")
     mouth = armature_obj.pose.bones.get("Mouth")
     if not mouth: return
     for f in range(frame_start, frame_end + 1, 4):
-        mouth.scale.z = 0.1 if f % 12 == 0 else random.uniform(0.2, 1.0) * intensity
-        armature_obj.keyframe_insert(data_path='pose.bones["Mouth"].scale', index=2, frame=f)
+        val = 0.1 if f % 12 == 0 else random.uniform(0.2, 1.0) * intensity
+        mouth.scale.z = val
+        # Use 5.0+ Slotted Action aware keyframing (Point 142)
+        fc = style.get_or_create_fcurve(action, 'pose.bones["Mouth"].scale', index=2, ref_obj=armature_obj)
+        if fc: fc.keyframe_points.insert(f, val)
+        else: armature_obj.keyframe_insert(data_path='pose.bones["Mouth"].scale', index=2, frame=f)
 
 def animate_expression(armature_obj, frame, expression='NEUTRAL'):
-    _ensure_action(armature_obj, prefix="Expression")
+    action = _ensure_action(armature_obj, prefix="Expression")
     pb = armature_obj.pose.bones
     
     # Values for different expressions
-    # Surprised: Jaw down, Brows up, Eyes wide
-    # Angry: Jaw tight, Brows down, Eyes squint
-    
     presets = {
         'SURPRISED': {
             'Mouth': {'scale': (1.5, 1.5, 1.5)},
@@ -418,7 +430,17 @@ def animate_expression(armature_obj, frame, expression='NEUTRAL'):
         
         for attr, val in attrs.items():
             setattr(bone, attr, val)
-            armature_obj.keyframe_insert(data_path=f'pose.bones["{bname}"].{attr}', frame=frame)
+            path = f'pose.bones["{bname}"].{attr}'
+            # Use 5.0+ Slotted Action aware keyframing (Point 142)
+            if isinstance(val, (list, tuple, mathutils.Vector)):
+                for i in range(len(val)):
+                    fc = style.get_or_create_fcurve(action, path, index=i, ref_obj=armature_obj)
+                    if fc: fc.keyframe_points.insert(frame, val[i])
+                    else: armature_obj.keyframe_insert(data_path=path, index=i, frame=frame)
+            else:
+                fc = style.get_or_create_fcurve(action, path, index=0, ref_obj=armature_obj)
+                if fc: fc.keyframe_points.insert(frame, val)
+                else: armature_obj.keyframe_insert(data_path=path, index=0, frame=frame)
 
 def create_flower(location, name="MentalBloom", scale=0.2):
     import bmesh; mesh = bpy.data.meshes.new(f"{name}_MeshData")
