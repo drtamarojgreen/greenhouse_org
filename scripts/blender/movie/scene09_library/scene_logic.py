@@ -17,12 +17,10 @@ def setup_scene(master):
     if book and pedestal:
         # Visibility
         for obj in [book, pedestal]:
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=2600)
-            obj.hide_render = False
-            obj.keyframe_insert(data_path="hide_render", frame=2601)
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=2801)
+            import style_utilities as style
+            style.set_obj_visibility(obj, False, 2600)
+            style.set_obj_visibility(obj, True, 2601)
+            style.set_obj_visibility(obj, False, 2801)
 
         # Character placement
         if master.h1:

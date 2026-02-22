@@ -25,11 +25,12 @@ def setup_scene(master):
     style.apply_scene_grade(master, 'reset', 1, 100)
 
     # Optional: Specific dramatic lighting for intro
-    bpy.ops.object.light_add(type='POINT', location=(0, -5, 2))
-    light = bpy.context.object
-    light.name = "IntroLight"
-    light.data.energy = 15000 # Increased energy for branding visibility (Point 142)
-    light.hide_render = True
-    light.keyframe_insert(data_path="hide_render", frame=100)
-    light.hide_render = False
-    light.keyframe_insert(data_path="hide_render", frame=1)
+    light = bpy.data.objects.get("IntroLight")
+    if light:
+        # Reposition for branding (Point 142)
+        light.location = (0, -5, 2)
+        light.keyframe_insert(data_path="location", frame=1)
+
+        # Visibility (Overwrites lighting_setup default)
+        style.set_obj_visibility(light, True, 1)
+        style.set_obj_visibility(light, False, 101)

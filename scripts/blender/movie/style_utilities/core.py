@@ -183,12 +183,25 @@ def set_socket_value(socket, value, frame=None):
     """Point 92: Robustly sets a socket value."""
     if socket is None: return False
     try:
-        has_len = hasattr(socket, "default_value") and hasattr(socket.default_value, "__len__")
-        is_str = isinstance(getattr(socket, "default_value", None), (str, bytes))
-        if has_len and not is_str and not isinstance(value, (list, tuple, mathutils.Vector)):
-            socket.default_value = [value] * len(socket.default_value)
+        # Determine if target socket expects a sequence (Point 142)
+        dv = getattr(socket, "default_value", None)
+        expects_seq = dv is not None and hasattr(dv, "__len__") and not isinstance(dv, (str, bytes))
+        provides_seq = isinstance(value, (list, tuple, mathutils.Vector))
+
+        if provides_seq and not expects_seq:
+            # Point 142: Downcast sequence to scalar (e.g., Color tuple to Factor float)
+            if len(value) >= 3:
+                # Use simple luminance for colors
+                target_val = value[0] * 0.299 + value[1] * 0.587 + value[2] * 0.114
+            else:
+                target_val = value[0]
+            socket.default_value = target_val
+        elif not provides_seq and expects_seq:
+            # Upcast scalar to sequence
+            socket.default_value = [value] * len(dv)
         else:
             socket.default_value = value
+
         if frame is not None:
             socket.keyframe_insert(data_path="default_value", frame=frame)
         return True
@@ -396,3 +409,17 @@ def apply_iris_wipe(scene, frame_start, frame_end, mode='IN'):
         import compositor_settings
         compositor_settings.animate_iris_wipe(scene, frame_start, frame_end, mode=mode)
     except: pass
+
+def set_obj_visibility(obj, visible, frame):
+    """Recursively sets hide_render for an object and its children (Point 142)."""
+    if not obj: return
+    obj.hide_render = not visible
+    obj.keyframe_insert(data_path="hide_render", frame=frame)
+    if obj.animation_data and obj.animation_data.action:
+        for fc in get_action_curves(obj.animation_data.action):
+            if fc.data_path == "hide_render":
+                for kp in fc.keyframe_points:
+                    if int(kp.co[0]) == frame: kp.interpolation = 'CONSTANT'
+
+    for child in obj.children:
+        set_obj_visibility(child, visible, frame)

@@ -30,12 +30,9 @@ def setup_scene(master):
         # BMesh bushes are single objects
         objs_to_animate = [b]
         for obj in objs_to_animate:
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=3900)
-            obj.hide_render = False
-            obj.keyframe_insert(data_path="hide_render", frame=3901)
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=4101)
+            style.set_obj_visibility(obj, False, 3900)
+            style.set_obj_visibility(obj, True, 3901)
+            style.set_obj_visibility(obj, False, 4101)
 
             # Time-Lapse Growth (Scale 0 to 1)
             obj.scale = (0.01, 0.01, 0.01)

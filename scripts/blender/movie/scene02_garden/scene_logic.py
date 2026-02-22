@@ -33,12 +33,9 @@ def setup_scene(master):
         # BMesh bushes are single objects
         objs_to_animate = [b]
         for obj in objs_to_animate:
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=500)
-            obj.hide_render = False
-            obj.keyframe_insert(data_path="hide_render", frame=501)
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=651)
+            style.set_obj_visibility(obj, False, 500)
+            style.set_obj_visibility(obj, True, 501)
+            style.set_obj_visibility(obj, False, 651)
 
         style.apply_fade_transition(objs_to_animate, 501, 650, mode='IN', duration=12)
         style.animate_foliage_wind(objs_to_animate, strength=0.03, frame_start=501, frame_end=650)
