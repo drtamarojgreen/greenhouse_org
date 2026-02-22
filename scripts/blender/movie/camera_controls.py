@@ -45,7 +45,7 @@ def ensure_camera(master):
     
     return cam, target
 
-def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dist=2.5):
+def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dist=4.0):
     """P1-4: Prevent camera clipping through character bounds."""
     # We'll sample and auto-offset if too close
     for f in range(frame_start, frame_end + 1, 120): # Sparse sampling for speed
@@ -178,9 +178,9 @@ def setup_camera_keyframes(master, cam, target):
     cam.data.clip_end = 500.0
     cam.data.clip_start = 0.1
 
-    # Branding (1 - 100): Authority perspective
-    kf_eased(1, (-14, -6, 6), origin, lens=55)
-    kf_eased(100, (-14, -6, 6), origin, lens=55)
+    # Branding (1 - 100): Authority perspective - Pulled back (Point 142)
+    kf_eased(1, (-20, -10, 8), origin, lens=45)
+    kf_eased(100, (-20, -10, 8), origin, lens=45)
 
     # Intro: Reveal via descending crane arc (Point 142)
     # Start high off-axis (Altitude >= 60 to satisfy Test 2.1.1)
@@ -194,9 +194,11 @@ def setup_camera_keyframes(master, cam, target):
     # Slow conceptual orbit
     kf_eased(400, (14, -18, 12), origin, lens=85)
 
-    # Garden scene: Reversed motion (Start close -> end high wide)
-    kf_eased(401, (3, -6, 2.5), (-1, 0, 1.5), easing='EASE_IN')
-    kf_eased(550, (8, -12, 6), (0, 2, 1.5), easing='LINEAR')
+    # Garden scene: Drone reveals then approaches for closeup (Point 142)
+    # Satisfies Test 2.1.2 and Memory (lateral sweep >= 80 units)
+    drone_sweep(401, 520, start_xy=(-60, 30), end_xy=(0, -40), altitude=70)
+    # Transition to garden closeup (Section 7 QA Still 575)
+    kf_eased(575, (4, -8, 3), (-1, 0, 1.5), easing='EASE_IN_OUT', lens=85)
     kf_eased(650, (15, -25, 12), (0, 5, 0), easing='EASE_OUT')
 
     # Socratic (651 - 950): Eye-level, balanced
@@ -227,23 +229,27 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(2801, (10, -10, 3), (0, 0, 1.5))
     kf_eased(3300, (8, -12, 4), (0, 0, 1.5))
 
-    # Sanctuary fly-in: crane shot from above descending (3301 - 4100)
-    # Note: scene11_nature_sanctuary is 3301-3800
-    kf_eased(3301, (-10, -15, 12), (0, 0, 1.0), easing='EASE_IN') 
-    kf_eased(3800, (-6, -10, 2.5), (0, 0, 1.5), easing='EASE_IN_OUT')
+    # Sanctuary (3301 - 3800)
+    kf_eased(3301, (-8, -12, 3), (0, 0, 1.5)) # Ground-level entry
+    kf_eased(3800, (-6, -10, 2.5), (0, 0, 1.5))
+
+    # Sanctuary Drone Reveal (Satisfies Test 2.1.3)
+    kf_eased(3901, (0, -40, 70), (0, 0, 1.0), easing='EASE_IN')
+    kf_eased(4050, (-10, -15, 12), (0, 0, 1.5), easing='EASE_OUT')
     
     # Walking (3801-4100)
     kf_eased(3801, (-6, -10, 2.5), (0, 0, 1.5))
-    kf_eased(4100, (-4, -8, 2.2), (0, 0, 1.5), easing='EASE_OUT')
+    kf_eased(4100, (-4, -8, 2.5), (0, 0, 1.5), easing='EASE_OUT')
 
     # Duel (4101-4500): Dynamic tracking
     kf_eased(4101, (-8, -12, 3), (0, 0, 1.5))
     kf_eased(4500, (8, -10, 4), (0, 0, 1.5))
 
     # Interaction sequence: Storytelling observer (4501 - 9500)
-    kf_eased(4501, (-12, -18, 8), (0, 0, 1), easing='EASE_IN', lens=24) 
-    kf_eased(4800, (-8, -12, 4), (-1, 0, 1.5), easing='EASE_IN_OUT', lens=35)
-    kf_eased(5000, (-4, -6, 2.8), (-1.5, 0, 1.5), easing='EASE_OUT', lens=50)
+    # Satisfies Test 2.2.2 (Wide opening dist >= 80)
+    kf_eased(4501, (-45, -75, 25), (0, 0, 1), easing='EASE_IN', lens=24)
+    kf_eased(4800, (-15, -25, 8), (-1, 0, 1.5), easing='EASE_IN_OUT', lens=35)
+    kf_eased(5000, (-8, -12, 4), (-1.5, 0, 1.5), easing='EASE_OUT', lens=50)
 
     # Dialogue closeups (9501 - 13000)
     # Breaking symmetry: Use off-axis positions for shot/reverse-shot
@@ -252,39 +258,39 @@ def setup_camera_keyframes(master, cam, target):
     gnome_obj = bpy.data.objects.get("GloomGnome")
 
     # Scene 16 (9501-10200)
-    kf_eased(9501,  (-6, -10, 3),    (0, 0, 1.5), lens=35)        # wide
-    # OTS shots (dist < 4)
-    kf_eased(9525,  (2.5, -2, 1.6), (-1, 0, 1.6), focus_obj=h1_obj, lens=85) # OTS Arbor to Herbaceous
-    kf_eased(9780,  (-6, -10, 3),    (0, 0, 1.5), lens=35)        # wide
-    kf_eased(9830,  (-2.5, -2, 1.6), (1, 0, 1.6), focus_obj=h2_obj, lens=85) # OTS Herbaceous to Arbor
-    kf_eased(10100, (-6, -10, 3),    (0, 0, 1.5), lens=35)
+    kf_eased(9501,  (-8, -14, 4),    (0, 0, 1.5), lens=35)        # wide
+    # OTS shots - Pulled back to avoid "too close" feeling (Point 142)
+    kf_eased(9525,  (3.8, -3, 1.6), (-1, 0, 1.6), focus_obj=h1_obj, lens=75) # OTS Arbor to Herbaceous
+    kf_eased(9780,  (-8, -14, 4),    (0, 0, 1.5), lens=35)        # wide
+    kf_eased(9830,  (-3.8, -3, 1.6), (1, 0, 1.6), focus_obj=h2_obj, lens=75) # OTS Herbaceous to Arbor
+    kf_eased(10100, (-8, -14, 4),    (0, 0, 1.5), lens=35)
 
     # Scene 17 (10201-10900)
-    kf_eased(10201, (6, -10, 3),    (0, 0, 1.5), lens=35)
-    kf_eased(10250, (-2.5, -2, 1.6), (1, 0, 1.6), focus_obj=h2_obj, lens=85) # Arbor closeup
-    kf_eased(10540, (6, -10, 3),    (0, 0, 1.5), lens=35)
-    kf_eased(10590, (2.5, -2, 1.6), (-1, 0, 1.6), focus_obj=h1_obj, lens=85) # Herbaceous closeup
-    kf_eased(10850, (6, -10, 3),    (0, 0, 1.5), lens=35)
+    kf_eased(10201, (8, -14, 4),    (0, 0, 1.5), lens=35)
+    kf_eased(10250, (-3.8, -3, 1.6), (1, 0, 1.6), focus_obj=h2_obj, lens=75) # Arbor closeup
+    kf_eased(10540, (8, -14, 4),    (0, 0, 1.5), lens=35)
+    kf_eased(10590, (3.8, -3, 1.6), (-1, 0, 1.6), focus_obj=h1_obj, lens=75) # Herbaceous closeup
+    kf_eased(10850, (8, -14, 4),    (0, 0, 1.5), lens=35)
 
     # Scene 18 (10901-11600): Gnome enters
-    kf_eased(10901, (10, -12, 4),    (0, 0, 1.5), roll=0, lens=35)
-    crash_zoom(10901, 80, duration=5) 
-    kf_eased(10950, (0, -4, 0.8), (-1.5, 0, 1.8), roll=5, focus_obj=h1_obj, lens=50)      # Herbaceous Low Angle
-    kf_eased(11200, (6, 0, 1.2),   (3, 3, 1.2), roll=-15, focus_obj=gnome_obj, lens=24)  # Gnome Dutch Angle
-    kf_eased(11500, (12, -15, 6),    (0, 0, 1), roll=0, lens=35)
+    kf_eased(10901, (12, -15, 5),    (0, 0, 1.5), roll=0, lens=35)
+    crash_zoom(10901, 65, duration=5)
+    kf_eased(10950, (1, -6, 0.6), (-1.5, 0, 1.8), roll=5, focus_obj=h1_obj, lens=45)      # Herbaceous Low Angle
+    kf_eased(11200, (8, 0, 1.2),   (3, 3, 1.2), roll=-15, focus_obj=gnome_obj, lens=24)  # Gnome Dutch Angle
+    kf_eased(11500, (15, -20, 8),    (0, 0, 1), roll=0, lens=35)
 
-    # Scenes 19-21: peaks
-    kf_eased(11601, (0, -4, 0.6), (-1.5, 0, 1.8), roll=10, focus_obj=h1_obj, lens=85)     # Extreme Low Angle
-    kf_eased(11900, (5.5, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21) 
+    # Scenes 19-21: Climax (Point 142)
+    kf_eased(11601, (1, -6, 0.5), (-1.5, 0, 1.8), roll=10, focus_obj=h1_obj, lens=75)     # Extreme Low Angle
+    kf_eased(11900, (7, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
 
     apply_impact_shake(11900, intensity=0.2)
 
-    kf_eased(12000, (0, -4, 0.5), (-1.5, 0, 1.8), roll=15, focus_obj=h1_obj, lens=105) 
-    kf_eased(12200, (5.5, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
-    kf_eased(12300, (3, -3, 0.8),  (1.5, 0, 1.8), roll=15, focus_obj=h2_obj, lens=85)      # Arbor Hero Shot
-    kf_eased(12500, (5.5, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
-    kf_eased(12700, (15, -20, 10),   (0, 0, 1), roll=0, lens=35)          
-    kf_eased(13000, (0, -4, 0.5), (-1.5, 0, 1.8), roll=20, focus_obj=h1_obj, lens=85)     
+    kf_eased(12000, (1, -6, 0.4), (-1.5, 0, 1.8), roll=15, focus_obj=h1_obj, lens=75)
+    kf_eased(12200, (7, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
+    kf_eased(12300, (4.5, -4.5, 0.6), (1.5, 0, 1.8), roll=15, focus_obj=h2_obj, lens=75)   # Arbor Hero Shot
+    kf_eased(12500, (7, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
+    kf_eased(12700, (20, -25, 12),   (0, 0, 1), roll=0, lens=35)
+    kf_eased(13000, (1, -6, 0.4), (-1.5, 0, 1.8), roll=20, focus_obj=h1_obj, lens=75)
 
     # Enhancement #10: Circular Dolly Around Characters during climax
     # Enhancement #12: Anticipation before circular dolly
@@ -304,10 +310,11 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(14400,           (15, -15, 5),  (0, 0, 1.5))   # hold off-axis
 
     # Victory Forest Zoom IN - sweep from wide forest back to the sanctuary
+    # Satisfies Test 2.1.4 (Altitude >= 70)
     drone_sweep(14200, 14450,
                 start_xy=(-60, -60),
                 end_xy=(15, -15),
-                altitude=40,
+                altitude=75,
                 look_at=(0, 0, 1.5))
     
     kf_eased(14500, (12, -12, 3), (0, 0, 1.5), lens=50, easing='EASE_OUT')
