@@ -74,6 +74,7 @@
         },
 
         drawSlider(ctx, app, s, value) {
+            if (!s || !isFinite(s.x) || !isFinite(s.y) || !isFinite(s.w)) return;
             const isHovered = app.ui.hoveredElement && app.ui.hoveredElement.id === s.id;
 
             ctx.save();
@@ -102,7 +103,7 @@
         },
 
         drawPanel(ctx, app, x, y, w, h, title) {
-            if (!isFinite(x) || !isFinite(y) || !isFinite(w) || !isFinite(h)) return;
+            if (!isFinite(x) || !isFinite(y) || !isFinite(w) || !isFinite(h) || w <= 0 || h <= 0) return;
             ctx.save();
             // Transparent/Scientific HUD background
             const grad = ctx.createLinearGradient(x, y, x + w, y + h);

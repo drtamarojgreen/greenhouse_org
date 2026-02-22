@@ -126,6 +126,20 @@
             this.state.dropdowns.category.options = this.ui.categoryDropdown.options;
         },
 
+        roundRect(ctx, x, y, w, h, r, fill = false, stroke = false) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+            if (fill) ctx.fill();
+            if (stroke) ctx.stroke();
+        },
+
         bindEvents() {
             const canvas = this.ui3d?.canvas;
             if (!canvas) return;
@@ -283,6 +297,11 @@
                 this.accumulatedTime -= 100;
             }
             if (best && this.ui3d) this.ui3d.updateData(best);
+
+            if (this.ui3d) {
+                this.ui3d.render();
+            }
+
             this.rafId = requestAnimationFrame((t) => this.loop(t));
         },
 
@@ -326,8 +345,10 @@
             window.GreenhouseModelsUtil?.wrapText(ctx, desc, 40 + ox, 175, panelW - 60, 14);
 
             ctx.fillStyle = '#4ca1af'; ctx.fillText(t('dosage_optimization').toUpperCase(), 40 + ox, 470);
-            C.drawSlider(ctx, this, this.ui.sliders[0], this.state.dosage);
-            ctx.fillStyle = '#fff'; ctx.textAlign = 'right'; ctx.fillText(this.state.dosage.toFixed(2), ox + panelW - 20, 498); ctx.textAlign = 'left';
+            if (this.ui.sliders && this.ui.sliders[0]) {
+                C.drawSlider(ctx, this, this.ui.sliders[0], this.state.dosage);
+                ctx.fillStyle = '#fff'; ctx.textAlign = 'right'; ctx.fillText(this.state.dosage.toFixed(2), ox + panelW - 20, 498); ctx.textAlign = 'left';
+            }
         },
 
         drawADHDTab(ctx, ox) {
