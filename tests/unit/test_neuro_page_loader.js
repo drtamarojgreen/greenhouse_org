@@ -72,10 +72,15 @@ TestFramework.describe('Neuro Page Loader', () => {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         const expected = [
+            'models_lang.js',
+            'models_util.js',
             'models_3d_math.js',
+            'brain_mesh_realistic.js',
             'neuro_config.js',
             'neuro_camera_controls.js',
+            'neuro_synapse_camera_controls.js',
             'neuro_lighting.js',
+            'neuro_adhd_data.js',
             'neuro_ga.js',
             'neuro_ui_3d_geometry.js',
             'neuro_ui_3d_brain.js',
@@ -83,6 +88,7 @@ TestFramework.describe('Neuro Page Loader', () => {
             'neuro_ui_3d_synapse.js',
             'neuro_ui_3d_stats.js',
             'neuro_ui_3d_enhanced.js',
+            'neuro_controls.js',
             'neuro_app.js'
         ];
 

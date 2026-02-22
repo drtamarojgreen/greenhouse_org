@@ -256,10 +256,18 @@
             } else {
                 const all = [...this.ui.tabs, ...this.ui.actionButtons, ...this.ui.cameraButtons];
                 if (this.state.activeTab === 'sim') all.push(...this.ui.buttons, ...this.ui.sliders);
-                if (this.state.activeTab === 'adhd') all.push(...this.getFilteredCheckboxes(), this.ui.categoryDropdown);
+                if (this.state.activeTab === 'adhd') {
+                    all.push(...this.getFilteredCheckboxes(), this.ui.categoryDropdown);
+                    if (this.state.dropdowns.category.isOpen) {
+                        const d = this.ui.categoryDropdown;
+                        d.options.forEach((opt, i) => {
+                            all.push({ id: `cat_dropdown_opt_${i}`, x: d.x, y: d.y + d.h + 2 + i * 25, w: d.w, h: 25, label: opt.label });
+                        });
+                    }
+                }
 
                 for (const el of all) {
-                    if (x >= el.x && x <= el.x + el.w && y >= (el.y||60) && y <= (el.y||60) + el.h) {
+                    if (x >= el.x && x <= el.x + el.w && y >= el.y && y <= el.y + (el.h || 0)) {
                         this.ui.hoveredElement = { ...el, mx: x, my: y };
                         this.ui3d.canvas.style.cursor = 'pointer'; break;
                     }
@@ -299,6 +307,7 @@
             if (best && this.ui3d) this.ui3d.updateData(best);
 
             if (this.ui3d) {
+                this.ui3d.cameraControls?.update();
                 this.ui3d.render();
             }
 
