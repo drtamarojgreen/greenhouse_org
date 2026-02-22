@@ -11,6 +11,7 @@ def setup_scene(master):
     Shot ID: S02
     Intent: Establish a vibrant, peaceful environment.
     """
+    import math
     # MUSIC CUE: Gentle birdsong and pastoral flute.
     master.create_intertitle("The Garden of\nThe Mind", 401, 500)
 

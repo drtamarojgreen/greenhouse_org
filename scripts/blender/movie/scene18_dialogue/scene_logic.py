@@ -23,6 +23,7 @@ def setup_scene(master):
     Shot ID: S18
     Intent: Emotional tension rises as antagonists are discussed.
     """
+    import math
     # MUSIC CUE: Tense, low string drone.
     # Point 31: Use SCENE_MAP
     start_frame, end_frame = SCENE_MAP['scene18_dialogue']

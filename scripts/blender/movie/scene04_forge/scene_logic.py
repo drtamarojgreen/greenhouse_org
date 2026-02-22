@@ -7,6 +7,7 @@ def setup_scene(master):
     Shot ID: S04
     Intent: Staging the forge metaphor with props and character interaction. (Point 43)
     """
+    import math
     # MUSIC CUE: Rhythmic industrial banging (softened for piano).
     # Point 142: Correct frame range (951 - 1250)
     from constants import SCENE_MAP

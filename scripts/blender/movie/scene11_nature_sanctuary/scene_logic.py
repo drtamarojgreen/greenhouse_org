@@ -11,6 +11,7 @@ def setup_scene(master):
     Shot ID: S11
     Intent: Reconnection with nature and recovery.
     """
+    import math
     # MUSIC CUE: Gentle birdsong and pastoral flute.
     # Point 142: Fix frame range to match SCENE_MAP (3301-3800)
     start_frame, end_frame = 3301, 3800
