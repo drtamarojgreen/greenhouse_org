@@ -67,7 +67,7 @@ def audit_scene_positions():
     # Sort scenes by start frame
     sorted_scenes = sorted(SCENE_MAP.items(), key=lambda x: x[1][0])
 
-    header = f"{'Scene':<25} | {'Frame':<7} | {'Object':<20} | {'X':>10} | {'Y':>10} | {'Z':>10} | {'Heading'}"
+    header = f"{'Scene':<25} | {'Frame':<7} | {'Object':<20} | {'Type':<6} | {'X':>10} | {'Y':>10} | {'Z':>10} | {'Heading'}"
     print(header)
     print("-" * 120)
 
@@ -87,7 +87,7 @@ def audit_scene_positions():
                     # Check if object is actually visible (hide_render)
                     visibility = "V" if not obj_eval.hide_render else "H"
 
-                    line = f"{scene_name[:25]:<25} | {frame:<7} | {name:<20} | {loc.x:10.2f} | {loc.y:10.2f} | {loc.z:10.2f} ({visibility})"
+                    line = f"{scene_name[:25]:<25} | {frame:<7} | {name:<20} | {obj.type:<6} | {loc.x:10.2f} | {loc.y:10.2f} | {loc.z:10.2f} ({visibility})"
 
                     # Special info for camera
                     if name == cam_name:

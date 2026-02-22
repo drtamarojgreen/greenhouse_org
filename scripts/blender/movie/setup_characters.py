@@ -10,18 +10,17 @@ def setup_all_characters(master):
     master.h2 = plant_humanoid.create_plant_humanoid(name="Arbor", location=(2, 0, 0))
 
     # Antagonist
-    master.gnome = gnome_antagonist.create_gnome(name="GloomGnome", location=(5, 5, 0))
+    master.gnome = gnome_antagonist.create_gnome(name="GloomGnome", location=(10, 5, 0))
 
-    # Explicitly ensure visibility in render (Point 142)
-    # Target all related objects (Mesh and Armature)
+    # Explicitly ensure visibility and key spawn positions (Point 142)
     for char in [master.h1, master.h2, master.gnome]:
         if char:
-            char.hide_render = False
-            char.keyframe_insert(data_path="hide_render", frame=1)
-            # Ensure children (meshes) are also visible
-            for child in char.children:
-                child.hide_render = False
-                child.keyframe_insert(data_path="hide_render", frame=1)
+            # Key spawn location/rotation at frame 1
+            char.keyframe_insert(data_path="location", frame=1)
+            char.keyframe_insert(data_path="rotation_euler", frame=1)
+            char.keyframe_insert(data_path="scale", frame=1)
+
+            style.set_obj_visibility(char, True, 1)
 
     # Setup practical lights for characters (#25, #28)
     setup_character_practical_lights(master)
@@ -96,8 +95,9 @@ def setup_gaze_system(master):
         gaze = bpy.data.objects.new("GazeTarget", None)
         bpy.context.scene.collection.objects.link(gaze)
 
-    # Ensure helper is invisible in render (Point 142)
-    gaze.hide_render = True
+    # Ensure helper is invisible in render and viewport (Point 142)
+    gaze.display_type = 'WIRE'
+    gaze.hide_render = gaze.hide_viewport = True
     gaze.keyframe_insert(data_path="hide_render", frame=1)
 
     master.gaze_target = gaze

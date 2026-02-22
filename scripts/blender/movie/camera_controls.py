@@ -22,7 +22,8 @@ def ensure_camera(master):
         bpy.context.scene.collection.objects.link(target)
 
     # Ensure helper is invisible in render (Point 142)
-    target.hide_render = True
+    target.display_type = 'WIRE'
+    target.hide_render = target.hide_viewport = True
     target.keyframe_insert(data_path="hide_render", frame=1)
 
     master.cam_target = target
@@ -185,8 +186,8 @@ def setup_camera_keyframes(master, cam, target):
                 look_at=(0, 0, 0))
 
     # Descend from drone into establishing shot (Reach Z <= 20 by 180 for Test 2.1.1)
-    kf_eased(180, (0, -30, 15),  (0, 0, 0))
-    kf_eased(200, (0, -30, 10),  (0, 0, 1.5))
+    kf_eased(180, (0, -15, 6),  (0, 0, 0)) # Point 142: Closer (was -30, 15)
+    kf_eased(200, (0, -12, 4),  (0, 0, 1.5))
 
     # Intro / Establishing Shot (101 - 200) - Already handled by drone-to-descend
     # Brain (201 - 400)
@@ -226,26 +227,26 @@ def setup_camera_keyframes(master, cam, target):
 
     # Confrontation, Library, Lab (2101 - 3300)
     kf_eased(2101, (-5, -12, 3), (0, 0, 1.5))
-    kf_eased(3300, (0, -18, 6), (0, 0, 1.5))
+    kf_eased(3300, (0, -12, 4), (0, 0, 1.5))
 
     # Sanctuary fly-in: crane shot from above descending (3301 - 4100)
     # Note: scene11_nature_sanctuary is 3301-3800
-    kf_eased(3301, (0, -80, 40), (0, 0, 0), easing='EASE_IN')
-    kf_eased(3800, (0, -25, 10), (0, 0, 2), easing='EASE_IN_OUT')
+    kf_eased(3301, (0, -20, 10), (0, 0, 1.0), easing='EASE_IN') # Point 142: Even closer
+    kf_eased(3800, (0, -10, 3), (0, 0, 1.5), easing='EASE_IN_OUT')
 
     # Walking (3801-4100)
-    kf_eased(3801, (0, -25, 10), (0, 0, 2))
-    kf_eased(4100, (0, -18, 5), (0, 0, 1.5), easing='EASE_OUT')     # settle
+    kf_eased(3801, (0, -10, 3), (0, 0, 1.5))
+    kf_eased(4100, (0, -8, 2.5), (0, 0, 1.5), easing='EASE_OUT')     # settle
 
     # Duel (4101-4500)
-    kf_eased(4101, (0, -18, 5), (0, 0, 1.5))
-    kf_eased(4500, (0, -30, 15), (0, 0, 1.5))
+    kf_eased(4101, (0, -8, 2.5), (0, 0, 1.5))
+    kf_eased(4500, (0, -12, 5), (0, 0, 1.5))
 
     # Interaction sequence: start wide establish, then commit (4501 - 9500)
-    kf_eased(4501, (0, -80, 30), (0, 0, 1), easing='EASE_IN', lens=24)       # Ultra wide
-    kf_eased(4600, (0, -80, 30), (0, 0, 1), easing='EASE_IN', lens=24)       # hold wide
-    kf_eased(4800, (0, -25, 10), (-1, 0, 1.5), easing='EASE_IN_OUT', lens=35)# dramatic fly-in
-    kf_eased(5000, (0, -15, 4), (-2, 0, 1.5), easing='EASE_OUT', lens=50)    # medium shot commit
+    kf_eased(4501, (0, -25, 12), (0, 0, 1), easing='EASE_IN', lens=24) # Point 142: Even closer (was -40, 20)
+    kf_eased(4600, (0, -25, 12), (0, 0, 1), easing='EASE_IN', lens=24)
+    kf_eased(4800, (0, -18, 6), (-1, 0, 1.5), easing='EASE_IN_OUT', lens=35)# dramatic fly-in
+    kf_eased(5000, (0, -10, 3), (-2, 0, 1.5), easing='EASE_OUT', lens=50)    # medium shot commit
 
     # Dialogue closeups (9501 - 13000)
     # Point 93: Target Armatures instead of meshes for better Rig Tracking

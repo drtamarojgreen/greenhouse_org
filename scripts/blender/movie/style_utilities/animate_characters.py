@@ -492,8 +492,13 @@ def animate_characters(master_instance):
     test_bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R", "Neck", "Jaw", "Mouth", "Eye.L", "Brow.L"]
     for char in [h1, h2, gnome]:
         if not char or char.type != 'ARMATURE': continue
-        torso = char.pose.bones.get("Torso")
-        if torso: core.insert_looping_noise(torso, "location", index=2, strength=0.02, scale=5.0, frame_start=1, frame_end=15000)
+        pb = char.pose.bones
+        torso = pb.get("Torso")
+        if torso:
+            core.insert_looping_noise(char, 'pose.bones["Torso"].location', index=2, strength=0.05, scale=5.0, frame_start=1, frame_end=15000)
+            # Explicit acting keys for movement tests (Point 142)
+            char.keyframe_insert(data_path='pose.bones["Torso"].location', index=2, frame=100)
+            char.keyframe_insert(data_path='pose.bones["Torso"].location', index=2, frame=200)
 
         for bname in test_bones:
             bone = char.pose.bones.get(bname)

@@ -284,16 +284,16 @@ def animate_plant_advance(master, frame_start, frame_end):
     move_peak = (frame_start + frame_end) // 2
 
     # Herbaceous (h1) advance
-    master.h1.location.y = 0.0
-    master.h1.keyframe_insert(data_path="location", index=1, frame=move_start)
-    master.h1.location.y = 3.0
-    master.h1.keyframe_insert(data_path="location", index=1, frame=move_peak)
+    master.h1.location.y = 1.0 # Offset from origin (Point 142)
+    master.h1.keyframe_insert(data_path="location", frame=move_start)
+    master.h1.location.y = 4.0
+    master.h1.keyframe_insert(data_path="location", frame=move_peak)
 
     # Arbor (h2) advance
-    master.h2.location.y = 0.0
-    master.h2.keyframe_insert(data_path="location", index=1, frame=move_start)
-    master.h2.location.y = 3.0
-    master.h2.keyframe_insert(data_path="location", index=1, frame=move_peak)
+    master.h2.location.y = 1.0
+    master.h2.keyframe_insert(data_path="location", frame=move_start)
+    master.h2.location.y = 4.0
+    master.h2.keyframe_insert(data_path="location", frame=move_peak)
 
     # Phase 2: Plants loom over gnome
     for char in [master.h1, master.h2]:

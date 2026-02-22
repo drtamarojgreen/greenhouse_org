@@ -64,9 +64,13 @@ class BaseMaster:
             # Point 142: Ensure we target all meshes in hierarchy
             all_objs = [obj] + list(obj.children)
             for o in all_objs:
+                # Default hidden at start
                 o.hide_render = True
+                o.keyframe_insert(data_path="hide_render", frame=1)
                 for rs, re in ranges:
-                    o.keyframe_insert(data_path="hide_render", frame=rs-1)
+                    if rs > 1:
+                        o.hide_render = True
+                        o.keyframe_insert(data_path="hide_render", frame=rs-1)
                     o.hide_render = False; o.keyframe_insert(data_path="hide_render", frame=rs)
                     o.hide_render = True; o.keyframe_insert(data_path="hide_render", frame=re)
                     if o.animation_data and o.animation_data.action:
