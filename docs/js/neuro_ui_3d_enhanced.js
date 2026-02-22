@@ -45,7 +45,6 @@
             }
 
             this.synapseMeshes = this.generateSynapseMeshes();
-            this.startAnimation();
         },
 
         generateSynapseMeshes() {
