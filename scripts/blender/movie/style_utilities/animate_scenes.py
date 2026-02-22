@@ -388,6 +388,7 @@ def animate_hdri_rotation(scene):
 def animate_vignette(scene, frame_start, frame_end, start_val=0.0, end_val=0.0):
     """Animates the factor of the 'Vignette' node in the compositor. Default 0.0 for invisibility."""
     tree = core.get_compositor_node_tree(scene)
+    if not tree: return
     vig = tree.nodes.get("Vignette")
     if not vig: return
     
@@ -400,6 +401,7 @@ def animate_vignette(scene, frame_start, frame_end, start_val=0.0, end_val=0.0):
 def animate_vignette_breathing(scene, frame_start, frame_end, strength=0.05, cycle=120):
     """Adds a pulsing 'breath' effect to the vignette factor."""
     tree = core.get_compositor_node_tree(scene)
+    if not tree: return
     vig = tree.nodes.get("Vignette")
     if not vig: return
 

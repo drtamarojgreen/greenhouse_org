@@ -164,12 +164,24 @@ def get_eevee_engine_id():
 
 def get_compositor_node_tree(scene):
     """Directly retrieves the compositor node tree for Blender 5.x."""
+    if not scene: return None
     scene.use_nodes = True
-    # Access the compositor via node_tree or compositing_node_tree (Point 3, 5)
-    tree = getattr(scene, 'compositing_node_tree', None) or getattr(scene, 'node_tree', None)
+    
+    # In some versions it's scene.node_tree, in others it's compositing_node_tree
+    tree = getattr(scene, 'node_tree', None) or getattr(scene, 'compositing_node_tree', None)
+    
     if not tree:
-        # Fallback for specific 4.2+ implementations
+        # Check if we can find it in bpy.data.node_groups as a fallback
+        for ng in bpy.data.node_groups:
+            if ng.type == 'COMPOSITOR' and ng.name == "Compositing":
+                tree = ng
+                break
+                
+    if not tree:
+        # Final fallback: return what we have even if None, 
+        # but try to access standard attributes
         tree = getattr(scene, 'compositing_node_group', None)
+        
     return tree
 
 def get_socket_by_identifier(collection, identifier):
