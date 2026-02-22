@@ -105,6 +105,7 @@ def setup_compositor(master_instance):
 def animate_wet_glass(scene, frame_start, frame_end, strength=10.0):
     """Enhancement #60: Animates wet glass refraction strength."""
     tree = style.get_compositor_node_tree(scene)
+    if not tree: return
     displace = tree.nodes.get("WetGlass")
     if not displace: return
 
@@ -127,6 +128,7 @@ def animate_wet_glass(scene, frame_start, frame_end, strength=10.0):
 def animate_iris_wipe(scene, frame_start, frame_end, mode='IN'):
     """Enhancement #49: Iris Wipe transition animation."""
     tree = style.get_compositor_node_tree(scene)
+    if not tree: return
     iris = tree.nodes.get("IrisWipe")
     iris_mix = tree.nodes.get("IrisMix")
     if not iris or not iris_mix:
