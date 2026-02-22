@@ -103,21 +103,43 @@
 
         drawPanel(ctx, app, x, y, w, h, title) {
             ctx.save();
-            // Glassmorphism background
-            ctx.fillStyle = 'rgba(10, 15, 25, 0.85)';
-            if (app.roundRect) app.roundRect(ctx, x, y, w, h, 16, true);
+            console.log(`Drawing Panel at ${x},${y} with roundRect: ${!!app.roundRect}`);
+            // Transparent/Scientific HUD background
+            const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+            grad.addColorStop(0, 'rgba(10, 15, 25, 0.6)');
+            grad.addColorStop(1, 'rgba(5, 10, 20, 0.4)');
+            ctx.fillStyle = grad;
 
-            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-            ctx.lineWidth = 1;
-            if (app.roundRect) app.roundRect(ctx, x, y, w, h, 16, false, true);
+            if (app.roundRect) app.roundRect(ctx, x, y, w, h, 12, true);
+
+            // Subtle border glow
+            ctx.strokeStyle = 'rgba(76, 161, 175, 0.3)';
+            ctx.lineWidth = 0.5;
+            if (app.roundRect) app.roundRect(ctx, x, y, w, h, 12, false, true);
+
+            // Corner accents
+            ctx.strokeStyle = '#4ca1af';
+            ctx.lineWidth = 1.5;
+            const accentSize = 10;
+            // Top Left
+            ctx.beginPath(); ctx.moveTo(x, y + accentSize); ctx.lineTo(x, y); ctx.lineTo(x + accentSize, y); ctx.stroke();
+            // Bottom Right
+            ctx.beginPath(); ctx.moveTo(x + w, y + h - accentSize); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w - accentSize, y + h); ctx.stroke();
 
             // Title
             if (title) {
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'top';
                 ctx.fillStyle = '#4ca1af';
-                ctx.font = '800 10px Quicksand, sans-serif';
-                ctx.fillText(title.toUpperCase(), x + 20, y + 15);
+                ctx.font = '800 9px Quicksand, sans-serif';
+                ctx.fillText(title.toUpperCase(), x + 15, y + 12);
+
+                // Title line
+                ctx.beginPath();
+                ctx.moveTo(x + 15, y + 25);
+                ctx.lineTo(x + w - 15, y + 25);
+                ctx.strokeStyle = 'rgba(76, 161, 175, 0.2)';
+                ctx.stroke();
             }
             ctx.restore();
         },
@@ -236,11 +258,19 @@
             if (ty + totalH > (ctx.canvas.height || 600)) ty = y - totalH - 5;
 
             // Draw Box
-            ctx.fillStyle = 'rgba(10, 15, 25, 0.95)';
-            ctx.strokeStyle = '#4ca1af';
+            ctx.fillStyle = 'rgba(5, 10, 20, 0.9)';
+            ctx.strokeStyle = 'rgba(76, 161, 175, 0.8)';
             ctx.lineWidth = 1;
-            if (app.roundRect) app.roundRect(ctx, tx, ty, maxWidth, totalH, 8, true, true);
+            if (app.roundRect) app.roundRect(ctx, tx, ty, maxWidth, totalH, 4, true, true);
             else { ctx.fillRect(tx, ty, maxWidth, totalH); ctx.strokeRect(tx, ty, maxWidth, totalH); }
+
+            // Accent Line
+            ctx.beginPath();
+            ctx.moveTo(tx, ty + 2);
+            ctx.lineTo(tx, ty + totalH - 2);
+            ctx.strokeStyle = '#4ca1af';
+            ctx.lineWidth = 3;
+            ctx.stroke();
 
             // Draw Content
             ctx.textAlign = 'left';
@@ -248,14 +278,14 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 12px Quicksand, sans-serif';
             if (window.GreenhouseModelsUtil?.wrapText) {
-                window.GreenhouseModelsUtil.wrapText(ctx, text, tx + margin, ty + margin, maxWidth - margin * 2, lineHeight);
+                window.GreenhouseModelsUtil.wrapText(ctx, text, tx + margin + 5, ty + margin, maxWidth - margin * 2, lineHeight);
                 if (detail) {
                     ctx.fillStyle = 'rgba(255,255,255,0.7)';
                     ctx.font = 'italic 11px Quicksand, sans-serif';
-                    window.GreenhouseModelsUtil.wrapText(ctx, detail, tx + margin, ty + margin + textH + 5, maxWidth - margin * 2, lineHeight);
+                    window.GreenhouseModelsUtil.wrapText(ctx, detail, tx + margin + 5, ty + margin + textH + 5, maxWidth - margin * 2, lineHeight);
                 }
             } else {
-                ctx.fillText(text, tx + margin, ty + margin);
+                ctx.fillText(text, tx + margin + 5, ty + margin);
             }
 
             ctx.restore();
