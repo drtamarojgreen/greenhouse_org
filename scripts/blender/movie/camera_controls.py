@@ -196,12 +196,14 @@ def setup_camera_keyframes(master, cam, target):
 
     # Garden scene: Reversed motion (Start close -> end high wide)
     kf_eased(401, (3, -6, 2.5), (-1, 0, 1.5), easing='EASE_IN')
-    kf_eased(550, (8, -12, 6), (0, 2, 1.5), easing='LINEAR')
+    # Point 142: Shift Y from -12 to -16 to avoid front hedge collision
+    kf_eased(550, (8, -16, 6), (0, 2, 1.5), easing='LINEAR')
     kf_eased(650, (15, -25, 12), (0, 5, 0), easing='EASE_OUT')
 
     # Socratic (651 - 950): Eye-level, balanced
     kf_eased(651, (-10, -10, 2.5), high_target) # Balanced off-axis
-    kf_eased(950, (-8, -12, 2.5), high_target)
+    # Point 142: Shift Y to -16 to avoid hedge
+    kf_eased(950, (-8, -16, 2.5), high_target)
 
     # Knowledge Exchange (951 - 1100): Top light, isolation
     kf_eased(951, (2, -4, 10), origin, lens=35, easing='EASE_IN')
@@ -209,7 +211,8 @@ def setup_camera_keyframes(master, cam, target):
 
     # Forge (1101 - 1250): Low angle, strong shadows
     kf_eased(1101, (-5, -5, 0.5), (0, 0, 2.0), lens=35, easing='EASE_IN')
-    kf_eased(1250, (-3, -8, 0.4), (0, 0, 2.5), lens=35, easing='EASE_OUT')
+    # Point 142: Move inside wall (Y=-8 -> Y=-6)
+    kf_eased(1250, (-3, -6, 0.4), (0, 0, 2.5), lens=35, easing='EASE_OUT')
 
     # Bridge, Resonance (1251 - 1800)
     kf_eased(1251, (12, -12, 8), (8, 0, 2))
@@ -234,15 +237,18 @@ def setup_camera_keyframes(master, cam, target):
     
     # Walking (3801-4100)
     kf_eased(3801, (-6, -10, 2.5), (0, 0, 1.5))
-    kf_eased(4100, (-4, -8, 2.2), (0, 0, 1.5), easing='EASE_OUT')
+    # Point 142: Move inside wall (Y=-8 -> Y=-6) to avoid clipping glass
+    kf_eased(4100, (-4, -6, 2.2), (0, 0, 1.5), easing='EASE_OUT')
 
     # Duel (4101-4500): Dynamic tracking
-    kf_eased(4101, (-8, -12, 3), (0, 0, 1.5))
+    # Point 142: Shift Y to -16 to avoid hedge collision
+    kf_eased(4101, (-8, -16, 3), (0, 0, 1.5))
     kf_eased(4500, (8, -10, 4), (0, 0, 1.5))
 
     # Interaction sequence: Storytelling observer (4501 - 9500)
     kf_eased(4501, (-12, -18, 8), (0, 0, 1), easing='EASE_IN', lens=24) 
-    kf_eased(4800, (-8, -12, 4), (-1, 0, 1.5), easing='EASE_IN_OUT', lens=35)
+    # Point 142: Shift Y to -16 to avoid hedge
+    kf_eased(4800, (-8, -16, 4), (-1, 0, 1.5), easing='EASE_IN_OUT', lens=35)
     kf_eased(5000, (-4, -6, 2.8), (-1.5, 0, 1.5), easing='EASE_OUT', lens=50)
 
     # Dialogue closeups (9501 - 13000)
@@ -267,7 +273,8 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(10850, (6, -10, 3),    (0, 0, 1.5), lens=35)
 
     # Scene 18 (10901-11600): Gnome enters
-    kf_eased(10901, (10, -12, 4),    (0, 0, 1.5), roll=0, lens=35)
+    # Point 142: Shift Y to -16 to avoid hedge
+    kf_eased(10901, (10, -16, 4),    (0, 0, 1.5), roll=0, lens=35)
     crash_zoom(10901, 80, duration=5) 
     kf_eased(10950, (0, -4, 0.8), (-1.5, 0, 1.8), roll=5, focus_obj=h1_obj, lens=50)      # Herbaceous Low Angle
     kf_eased(11200, (6, 0, 1.2),   (3, 3, 1.2), roll=-15, focus_obj=gnome_obj, lens=24)  # Gnome Dutch Angle
@@ -297,7 +304,8 @@ def setup_camera_keyframes(master, cam, target):
     # Scene 22 retreat camera (13701-14500)
     s22_start = SCENE_MAP['scene22_retreat'][0]
     kf_eased(s22_start,       (6, 6, 2),    (3, 3, 1.2))   # gnome closeup
-    kf_eased(s22_start + 100, (0, -8, 3),   (1, 1, 1.5))   # pull back
+    # Point 142: Move inside (Y=-8 -> Y=-6)
+    kf_eased(s22_start + 100, (0, -6, 3),   (1, 1, 1.5))   # pull back
     kf_eased(s22_start + 200, (-10, -15, 4), (-1, 1, 1.5)) # off-axis wide
     kf_eased(s22_start + 350, (35, 35, 10), (30, 30, 1))   # lead the gnome escape
     kf_eased(s22_start + 500, (15, -15, 5),  (0, 0, 1.5))  # settle on plants
