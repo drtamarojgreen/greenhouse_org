@@ -17,6 +17,9 @@ class FCurveProxy:
         self.array_index = getattr(target, "array_index", 0)
     def __getattr__(self, name):
         return getattr(self._target, name)
+    def evaluate(self, frame):
+        try: return self._target.evaluate(frame)
+        except: return 0.0
     def as_pointer(self):
         try:
             return self._target.as_pointer()
@@ -33,22 +36,31 @@ def get_action_curves(action, create_if_missing=False):
     seen_ids = set()
 
     def get_bone_prefix(name):
+        if not name: return ""
         bone_kws = (".L", ".R", "Torso", "Head", "Neck", "Jaw", "Mouth", "Leg.", "Arm.", "Eye", "Brow")
         if any(kw in name for kw in bone_kws):
-            clean_name = name.split(":")[-1]
+            clean_name = str(name).split(":")[-1]
             return f'pose.bones["{clean_name}"].'
         return ""
 
     def wrap_fc(fc, prefix=""):
-        if not fc: return
-        # Unique ID for F-curve to avoid duplicates
-        fid = f"{id(fc)}_{prefix}_{getattr(fc, 'array_index', 0)}"
+        if not fc or not hasattr(fc, "keyframe_points"): return
+        
+        # Use as_pointer if available for stable ID
+        ptr = id(fc)
+        try: ptr = fc.as_pointer()
+        except: pass
+        
+        fid = f"{ptr}_{prefix}_{getattr(fc, 'array_index', 0)}"
         if fid in seen_ids: return
         seen_ids.add(fid)
 
         path = getattr(fc, "data_path", "")
         if not path:
              path = getattr(fc, "path_full", getattr(fc, "path", ""))
+        
+        # Point 142: Ensure path is valid string
+        path = str(path)
         
         # If path is relative (no pose.bones), prepend prefix
         is_relative = not any(p in path for p in ("pose.bones", "modifiers", "nodes", "["))
@@ -57,48 +69,80 @@ def get_action_curves(action, create_if_missing=False):
             
         curves.append(FCurveProxy(fc, path))
 
-    # 1. Legacy F-curves
-    if hasattr(action, "fcurves"):
-        for fc in action.fcurves: wrap_fc(fc)
+    # 1. Direct F-curves (Legacy and 5.0 Flat)
+    if hasattr(action, "fcurves") and action.fcurves:
+        for fc in action.fcurves: 
+            # Point 142: Try to discover slot-based prefixes if not absolute
+            prefix = ""
+            if hasattr(fc, "slot"):
+                prefix = get_bone_prefix(getattr(fc.slot, "name", ""))
+            wrap_fc(fc, prefix)
 
-    # 2. Blender 5.0 Layers & Channels
+    # 2. Blender 5.0 Layers & Channels (Recursively)
+    def traverse_channels(channels, prefix=""):
+        if not channels: return
+        for chan in channels:
+            # Check for slot name to update prefix
+            curr_prefix = prefix
+            slot = getattr(chan, "slot", None)
+            if slot:
+                slot_name = getattr(slot, "name", getattr(slot, "identifier", ""))
+                new_p = get_bone_prefix(slot_name)
+                if new_p: curr_prefix = new_p
+            
+            fc = getattr(chan, "fcurve", None)
+            if not fc and hasattr(chan, "keyframe_points"): fc = chan
+            if fc: wrap_fc(fc, curr_prefix)
+            
+            # Recurse into child channels (Point 142: handle potential Infinite recursion)
+            if hasattr(chan, "channels") and chan.channels:
+                if chan.channels != channels: # Safety
+                    traverse_channels(chan.channels, curr_prefix)
+
     if hasattr(action, "layers"):
         for layer in action.layers:
-            def traverse_channels(channels, slot_hint=None):
-                for chan in channels:
-                    prefix = get_bone_prefix(getattr(slot_hint, "name", ""))
-                    if hasattr(chan, "slot") and chan.slot:
-                        prefix = get_bone_prefix(getattr(chan.slot, "name", ""))
-                    
-                    fc = getattr(chan, "fcurve", None)
-                    if not fc and hasattr(chan, "keyframe_points"): fc = chan
-                    
-                    if fc: wrap_fc(fc, prefix)
-                    
-                    # Recursive for nested channels
-                    if hasattr(chan, "channels"):
-                        traverse_channels(chan.channels, slot_hint=slot_hint or getattr(chan, "slot", None))
-
-            if hasattr(layer, "channels"): traverse_channels(layer.channels)
-            if hasattr(layer, "strips"):
+            if hasattr(layer, "channels") and layer.channels: 
+                traverse_channels(layer.channels)
+            if hasattr(layer, "strips") and layer.strips:
                 for strip in layer.strips:
-                    if hasattr(strip, "channels"): traverse_channels(strip.channels)
+                    if hasattr(strip, "channels") and strip.channels: 
+                        traverse_channels(strip.channels)
 
-    # 3. Blender 5.0 Slots & Bindings
+    # 3. Blender 5.0 Slots & Bindings (Fallback discovery)
     if hasattr(action, "slots"):
         for slot in action.slots:
-            prefix = get_bone_prefix(getattr(slot, "name", ""))
+            slot_name = getattr(slot, "name", getattr(slot, "identifier", ""))
+            prefix = get_bone_prefix(slot_name)
             if hasattr(slot, "bindings"):
                 for binding in slot.bindings:
-                    if hasattr(binding, "fcurves"):
+                    if hasattr(binding, "fcurves") and binding.fcurves:
                         for fc in binding.fcurves: wrap_fc(fc, prefix)
-                    if hasattr(binding, "channels"):
-                        for chan in binding.channels:
-                            fc = getattr(chan, "fcurve", None)
-                            if not fc and hasattr(chan, "keyframe_points"): fc = chan
-                            if fc: wrap_fc(fc, prefix)
+                    if hasattr(binding, "channels") and binding.channels:
+                        traverse_channels(binding.channels, prefix)
+                        
+    # 4. Final aggressive fallback: check all datablocks for fcurves that might be hidden
+    # This is a safety pass for weird 5.0 edge cases (Point 142)
+    if hasattr(action, "fcurves") and not curves:
+        for fc in action.fcurves:
+            wrap_fc(fc)
 
     return curves
+
+
+
+def ensure_action(obj, action_name_prefix="Anim"):
+    """Ensure an animatable object has animation_data + action and return the action."""
+    if obj is None:
+        return None
+    if not getattr(obj, "animation_data", None):
+        obj.animation_data_create()
+    action = obj.animation_data.action
+    if not action:
+        action = bpy.data.actions.new(name=f"{action_name_prefix}_{obj.name}")
+        obj.animation_data.action = action
+    if hasattr(action, "layers") and len(action.layers) == 0:
+        action.layers.new(name="Main Layer")
+    return action
 
 def get_or_create_fcurve(action, data_path, index=0, ref_obj=None):
     """Retrieves or creates an F-Curve using the Blender 5.0+ Layered Action API."""
@@ -120,10 +164,12 @@ def get_eevee_engine_id():
 
 def get_compositor_node_tree(scene):
     """Directly retrieves the compositor node tree for Blender 5.x."""
-    tree = getattr(scene, 'compositing_node_group', None)
+    scene.use_nodes = True
+    # Access the compositor via node_tree or compositing_node_tree (Point 3, 5)
+    tree = getattr(scene, 'compositing_node_tree', None) or getattr(scene, 'node_tree', None)
     if not tree:
-        tree = bpy.data.node_groups.new(name="Compositing", type='CompositorNodeTree')
-        scene.compositing_node_group = tree
+        # Fallback for specific 4.2+ implementations
+        tree = getattr(scene, 'compositing_node_group', None)
     return tree
 
 def get_socket_by_identifier(collection, identifier):
@@ -133,26 +179,48 @@ def get_socket_by_identifier(collection, identifier):
     return None
 
 def create_compositor_output(tree):
-    """Creates the final output node."""
-    node = tree.nodes.new('NodeGroupOutput')
-    if hasattr(tree, "interface"):
-        exists = any(s.name == "Image" for s in tree.interface.items_tree if s.item_type == 'SOCKET')
-        if not exists:
-            tree.interface.new_socket(name="Image", in_out='OUTPUT', socket_type='NodeSocketColor')
+    """Creates the final output node (Composite node for the main pipeline)."""
+    node = tree.nodes.new('CompositorNodeComposite')
     return node
 
 def set_socket_value(socket, value, frame=None):
     """Point 92: Robustly sets a socket value."""
     if socket is None: return False
     try:
-        has_len = hasattr(socket, "default_value") and hasattr(socket.default_value, "__len__")
-        is_str = isinstance(getattr(socket, "default_value", None), (str, bytes))
-        if has_len and not is_str and not isinstance(value, (list, tuple, mathutils.Vector)):
-            socket.default_value = [value] * len(socket.default_value)
+        # Determine if target socket expects a sequence (Point 142)
+        dv = getattr(socket, "default_value", None)
+        expects_seq = dv is not None and hasattr(dv, "__len__") and not isinstance(dv, (str, bytes))
+        provides_seq = isinstance(value, (list, tuple, mathutils.Vector))
+
+        if provides_seq and not expects_seq:
+            # Downcast sequence to scalar (e.g., Color tuple to Factor float)
+            try:
+                if len(value) >= 3:
+                    target_val = float(value[0] * 0.299 + value[1] * 0.587 + value[2] * 0.114)
+                else:
+                    target_val = float(value[0])
+                socket.default_value = target_val
+            except:
+                socket.default_value = float(value[0])
+        elif not provides_seq and expects_seq:
+            # Upcast scalar to sequence
+            try:
+                socket.default_value = [value] * len(dv)
+            except:
+                try: socket.default_value = (value, value, value, 1.0)
+                except: pass
         else:
-            socket.default_value = value
+            # Direct assignment or best effort conversion
+            try:
+                socket.default_value = value
+            except:
+                if expects_seq: socket.default_value = tuple(value)
+                else: socket.default_value = float(value)
+
         if frame is not None:
-            socket.keyframe_insert(data_path="default_value", frame=frame)
+            try:
+                socket.keyframe_insert(data_path="default_value", frame=frame)
+            except: pass
         return True
     except (AttributeError, TypeError, ValueError) as e:
         print(f"Warning: Failed to set socket {getattr(socket, 'name', 'unknown')} to {value}: {e}")
@@ -216,12 +284,19 @@ def get_mix_sockets(node):
     """Returns (Factor, Input1, Input2) sockets."""
     if node is None: return None, None, None
     if node.bl_idname == 'CompositorNodeAlphaOver': return node.inputs[0], node.inputs[1], node.inputs[2]
-    dt = getattr(node, 'data_type', 'RGBA')
-    if dt == 'RGBA':
-        return get_socket_by_identifier(node.inputs, 'Factor_Float') or node.inputs.get('Factor') or node.inputs[0], \
-               get_socket_by_identifier(node.inputs, 'A_Color') or node.inputs.get('A') or node.inputs[1], \
-               get_socket_by_identifier(node.inputs, 'B_Color') or node.inputs.get('B') or node.inputs[2]
-    return node.inputs[0], node.inputs[1], node.inputs[2]
+    
+    # Identify sockets by common names/identifiers and fallback to order
+    def find_socket(names, default_idx):
+        for name in names:
+            s = node.inputs.get(name) or get_socket_by_identifier(node.inputs, name)
+            if s: return s
+        return node.inputs[default_idx]
+
+    factor = find_socket(['Factor', 'Fac', 'Factor_Float'], 0)
+    in1 = find_socket(['A', 'Color1', 'A_Color', 'Image'], 1)
+    in2 = find_socket(['B', 'Color2', 'B_Color', 'Image.001'], 2)
+        
+    return factor, in1, in2
 
 def get_mix_output(node):
     """Returns the main output socket."""
@@ -277,10 +352,7 @@ def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=1500
         anim_target = obj.id_data; path_prefix = f'pose.bones["{obj.name}"].'
     elif hasattr(obj, "bone") and hasattr(obj, "id_data") and obj.id_data.type == 'ARMATURE':
         anim_target = obj.id_data; path_prefix = f'pose.bones["{obj.name}"].'
-    if not anim_target.animation_data: anim_target.animation_data_create()
-    action = anim_target.animation_data.action
-    if not action: action = anim_target.animation_data.action = bpy.data.actions.new(name=f"Noise_{anim_target.name}")
-    if hasattr(action, "layers") and len(action.layers) == 0: action.layers.new(name="Main Layer")
+    action = ensure_action(anim_target, action_name_prefix="Noise")
     indices = [index] if index >= 0 else [0, 1, 2]
     full_path = path_prefix + data_path
     for idx in indices:
@@ -354,3 +426,17 @@ def apply_iris_wipe(scene, frame_start, frame_end, mode='IN'):
         import compositor_settings
         compositor_settings.animate_iris_wipe(scene, frame_start, frame_end, mode=mode)
     except: pass
+
+def set_obj_visibility(obj, visible, frame):
+    """Recursively sets hide_render and hide_viewport for an object and its children (Point 142)."""
+    if not obj: return
+    obj.hide_render = obj.hide_viewport = not visible
+    obj.keyframe_insert(data_path="hide_render", frame=frame)
+    if obj.animation_data and obj.animation_data.action:
+        for fc in get_action_curves(obj.animation_data.action):
+            if fc.data_path == "hide_render":
+                for kp in fc.keyframe_points:
+                    if int(kp.co[0]) == frame: kp.interpolation = 'CONSTANT'
+                    
+    for child in obj.children:
+        set_obj_visibility(child, visible, frame)

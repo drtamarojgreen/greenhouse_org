@@ -14,6 +14,8 @@ if ASSETS_PATH not in sys.path:
 from assets import plant_humanoid
 import style_utilities as style
 from constants import SCENE_MAP
+from scene_utilities import ensure_scene_keyframe
+
 
 def setup_scene(master):
     """
@@ -21,6 +23,7 @@ def setup_scene(master):
     Shot ID: S18
     Intent: Emotional tension rises as antagonists are discussed.
     """
+    import math
     # MUSIC CUE: Tense, low string drone.
     # Point 31: Use SCENE_MAP
     start_frame, end_frame = SCENE_MAP['scene18_dialogue']
@@ -28,14 +31,16 @@ def setup_scene(master):
     if not master.h1 or not master.h2 or not master.gnome:
         return
 
+    ensure_scene_keyframe(master, start_frame)
+
+    # Position characters for dialogue (Point 142)
+    master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), start_frame)
+    master.place_character(master.h2, (1, 0, 0), (0, 0, 0), start_frame)
+
     # Fix B: Position gnome across from the plants, closer than his escape position (Point 105)
-    master.gnome.location = (3, 3, 0)
-    master.gnome.keyframe_insert(data_path="location", frame=start_frame)
+    master.place_character(master.gnome, (3, 3, 0), (0, 0, math.radians(225)), start_frame)
     master.gnome.scale = (0.6, 0.6, 0.6)
     master.gnome.keyframe_insert(data_path="scale", frame=start_frame)
-    # Face the plants (plants are near origin, gnome is at (3,3), so facing toward -X,-Y)
-    master.gnome.rotation_euler[2] = math.radians(225)
-    master.gnome.keyframe_insert(data_path="rotation_euler", index=2, frame=start_frame)
 
     # Metadata
     # Shot ID: S18_01

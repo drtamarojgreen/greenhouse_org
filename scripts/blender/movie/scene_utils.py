@@ -18,7 +18,7 @@ def create_intertitle(master_instance, text, frame_start, frame_end):
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
     style.set_principled_socket(mat, "Emission", (1, 1, 1, 1))
-    style.set_principled_socket(mat, "Emission Strength", 5.0)
+    style.set_principled_socket(mat, "Emission Strength", 20.0) # Point 142: Boosted for visibility
     text_obj.data.materials.append(mat)
 
     # Backdrop (BMesh)

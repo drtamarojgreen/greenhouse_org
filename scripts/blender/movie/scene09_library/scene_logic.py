@@ -17,19 +17,16 @@ def setup_scene(master):
     if book and pedestal:
         # Visibility
         for obj in [book, pedestal]:
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=2600)
-            obj.hide_render = False
-            obj.keyframe_insert(data_path="hide_render", frame=2601)
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=2801)
+            import style_utilities as style
+            style.set_obj_visibility(obj, False, 2600)
+            style.set_obj_visibility(obj, True, 2601)
+            style.set_obj_visibility(obj, False, 2801)
 
         # Character placement
         if master.h1:
-            master.h1.location = (0, -1, 0)
-            master.h1.keyframe_insert(data_path="location", frame=2601)
-            master.h1.rotation_euler = (0, 0, 0)
-            master.h1.keyframe_insert(data_path="rotation_euler", frame=2601)
+            master.place_character(master.h1, (0, -1, 0), (0, 0, 0), 2501)
+            master.hold_position(master.h1, 2501, 2800)
+            master.hold_position(master.h2, 2501, 2800)
 
         # Point 142: Pull CamTarget to pedestal focus
         target = bpy.data.objects.get("CamTarget")

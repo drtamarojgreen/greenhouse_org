@@ -11,6 +11,7 @@ def setup_scene(master):
     Shot ID: S02
     Intent: Establish a vibrant, peaceful environment.
     """
+    import math
     # MUSIC CUE: Gentle birdsong and pastoral flute.
     master.create_intertitle("The Garden of\nThe Mind", 401, 500)
 
@@ -33,12 +34,9 @@ def setup_scene(master):
         # BMesh bushes are single objects
         objs_to_animate = [b]
         for obj in objs_to_animate:
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=500)
-            obj.hide_render = False
-            obj.keyframe_insert(data_path="hide_render", frame=501)
-            obj.hide_render = True
-            obj.keyframe_insert(data_path="hide_render", frame=651)
+            style.set_obj_visibility(obj, False, 500)
+            style.set_obj_visibility(obj, True, 501)
+            style.set_obj_visibility(obj, False, 651)
 
         style.apply_fade_transition(objs_to_animate, 501, 650, mode='IN', duration=12)
         style.animate_foliage_wind(objs_to_animate, strength=0.03, frame_start=501, frame_end=650)
@@ -66,3 +64,10 @@ def setup_scene(master):
         master.flower.keyframe_insert(data_path="scale", frame=580)
         master.flower.scale = (1.0, 1.0, 1.0)
         master.flower.keyframe_insert(data_path="scale", frame=650)
+
+    # Character movement: Walking through the garden
+    if master.h1 and master.h2:
+        master.place_character(master.h1, (-3, 2, 0), (0, 0, math.radians(-30)), 401)
+        master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), 650)
+        master.place_character(master.h2, (1, 2, 0), (0, 0, math.radians(30)), 401)
+        master.place_character(master.h2, (1, 0, 0), (0, 0, 0), 650)

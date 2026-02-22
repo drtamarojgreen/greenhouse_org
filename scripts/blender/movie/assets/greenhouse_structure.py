@@ -11,7 +11,7 @@ def create_greenhouse_iron_mat():
     nodes = mat.node_tree.nodes
     bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
     
-    bsdf.inputs["Base Color"].default_value = (0.106, 0.302, 0.118, 1) # Greenhouse Brand Green
+    bsdf.inputs["Base Color"].default_value = (0.2, 0.4, 0.2, 1) # Brightened Green (Point 142)
     bsdf.inputs["Metallic"].default_value = 1.0
     bsdf.inputs["Roughness"].default_value = 0.7
 
@@ -20,8 +20,8 @@ def create_greenhouse_iron_mat():
     node_moss.inputs['Scale'].default_value = 20.0
     node_mix = style.create_mix_node(mat.node_tree, blend_type='OVERLAY', data_type='RGBA')
     fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix)
-    fac_sock.default_value = 0.5
-    in1_sock.default_value = (0.106, 0.302, 0.118, 1)
+    if fac_sock: fac_sock.default_value = 0.5
+    in1_sock.default_value = (0.2, 0.4, 0.2, 1)
     mat.node_tree.links.new(node_moss.outputs['Color'], in2_sock)
     mat.node_tree.links.new(style.get_mix_output(node_mix), bsdf.inputs['Base Color'])
 
@@ -35,7 +35,7 @@ def create_greenhouse_glass_mat():
     nodes = mat.node_tree.nodes
     bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
     
-    bsdf.inputs["Base Color"].default_value = (0.7, 0.8, 0.9, 1)
+    bsdf.inputs["Base Color"].default_value = (0.8, 0.9, 1.0, 1) # Brightened
     bsdf.inputs["Alpha"].default_value = 1.0
 
     # Modern 5.0+ Sockets
@@ -74,7 +74,7 @@ def create_mossy_stone_mat(name="MossyStone"):
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
 
     bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
-    bsdf.inputs["Base Color"].default_value = (0.3, 0.3, 0.3, 1) # Stone gray
+    bsdf.inputs["Base Color"].default_value = (0.5, 0.5, 0.5, 1) # Brightened
 
     # Moss layer
     node_moss = nodes.new(type='ShaderNodeTexNoise')
@@ -82,7 +82,7 @@ def create_mossy_stone_mat(name="MossyStone"):
 
     node_mix = style.create_mix_node(mat.node_tree, blend_type='MIX', data_type='RGBA')
     fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix)
-    in2_sock.default_value = (0.05, 0.1, 0.02, 1) # Moss green
+    in2_sock.default_value = (0.1, 0.2, 0.05, 1) # Moss green brightened
 
     # Height-based gradient for moss
     node_coord = nodes.new(type='ShaderNodeTexCoord')

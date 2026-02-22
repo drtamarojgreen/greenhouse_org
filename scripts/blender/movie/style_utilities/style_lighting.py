@@ -83,13 +83,16 @@ def apply_interior_exterior_contrast(sun_light, cam):
 
 def replace_with_soft_boxes():
     """Enhancement #29: Soft Box Fill Replacement."""
-    for obj in bpy.context.scene.objects:
+    for obj in list(bpy.context.scene.objects): # List copy for safety
         if obj.type == 'LIGHT' and obj.data.type == 'AREA':
             loc = obj.location.copy()
             rot = obj.rotation_euler.copy()
             name = obj.name
             energy = obj.data.energy
             color = obj.data.color
+            parent = obj.parent
+            parent_type = obj.parent_type
+            parent_bone = obj.parent_bone
 
             bpy.ops.object.select_all(action='DESELECT')
             obj.select_set(True)
@@ -98,12 +101,25 @@ def replace_with_soft_boxes():
             bpy.ops.mesh.primitive_plane_add(location=loc, rotation=rot)
             plane = bpy.context.object
             plane.name = f"SoftBox_{name}"
-            plane.scale = (2, 2, 1)
+            
+            # Point 142: Preserve parenting (Critical for rim lights attached to camera)
+            if parent:
+                plane.parent = parent
+                plane.parent_type = parent_type
+                if parent_type == 'BONE':
+                    plane.parent_bone = parent_bone
+                # Re-apply local transform since primitive_plane_add uses world loc by default
+                plane.location = loc
+                plane.rotation_euler = rot
+            plane.scale = (5, 5, 1) # Larger scale (Point 142)
 
             mat = bpy.data.materials.new(name=f"Mat_{plane.name}")
-            bsdf = mat.node_tree.nodes["Principled BSDF"]
-            core.set_principled_socket(mat, "Emission", list(color) + [1])
-            core.set_principled_socket(mat, "Emission Strength", energy / 1000.0)
+            # Ensure nodes are enabled
+            mat.use_nodes = True
+            bsdf = mat.node_tree.nodes.get("Principled BSDF")
+            core.set_principled_socket(mat, "Emission Color", list(color) + [1])
+            # Higher factor for better exposure (Point 142)
+            core.set_principled_socket(mat, "Emission Strength", energy / 100.0)
             plane.data.materials.append(mat)
 
 def animate_distance_based_glow(gnome, characters, frame_start, frame_end):

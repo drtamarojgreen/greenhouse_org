@@ -14,6 +14,8 @@ if ASSETS_PATH not in sys.path:
 from assets import plant_humanoid
 import style_utilities as style
 from constants import SCENE_MAP
+from scene_utilities import ensure_scene_keyframe
+
 
 def setup_scene(master):
     """
@@ -27,6 +29,14 @@ def setup_scene(master):
 
     if not master.h1 or not master.h2:
         return
+
+    ensure_scene_keyframe(master, start_frame)
+
+    # Position characters for dialogue (Point 142)
+    master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), start_frame)
+    master.place_character(master.h2, (1, 0, 0), (0, 0, 0), start_frame)
+    master.hold_position(master.h1, start_frame, end_frame)
+    master.hold_position(master.h2, start_frame, end_frame)
 
     # Metadata
     # Shot ID: S16_01

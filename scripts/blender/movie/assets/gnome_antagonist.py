@@ -130,11 +130,11 @@ def create_gnome(name, location, scale=0.6):
     bm.to_mesh(mesh_data); bm.free()
 
     mat_body = bpy.data.materials.new(name=f"{name}_MatBody")
-    style.set_principled_socket(mat_body, "Base Color", (0.2, 0.1, 0.3, 1))
+    style.set_principled_socket(mat_body, "Base Color", (0.4, 0.2, 0.6, 1)) # Brightened (Point 142)
     mat_hat = bpy.data.materials.new(name=f"{name}_MatHat")
-    style.set_principled_socket(mat_hat, "Base Color", (0.1, 0.05, 0.2, 1))
+    style.set_principled_socket(mat_hat, "Base Color", (0.2, 0.1, 0.4, 1)) # Brightened
     mat_beard = bpy.data.materials.new(name=f"{name}_MatBeard")
-    style.set_principled_socket(mat_beard, "Base Color", (0.8, 0.8, 0.8, 1))
+    style.set_principled_socket(mat_beard, "Base Color", (0.9, 0.9, 0.9, 1))
     mat_gloom = bpy.data.materials.new(name=f"{name}_MatGloom")
     # Point 130: Add noise for procedural "flicker" in material itself (Test Expectation)
     nodes = mat_gloom.node_tree.nodes
@@ -144,9 +144,9 @@ def create_gnome(name, location, scale=0.6):
     node_noise.inputs['Scale'].default_value = 10.0
     # Use helper for robustness if possible, but links need direct socket
     links.new(node_noise.outputs['Fac'], bsdf.inputs.get('Emission Strength', bsdf.inputs[0]))
-    style.set_principled_socket(mat_gloom, "Emission Color", (0.1, 0, 0.2, 1))
-    style.set_principled_socket(mat_gloom, "Emission Strength", 0.5)
-    mat_eye = bpy.data.materials.new(name=f"{name}_MatEye"); style.set_principled_socket(mat_eye, 'Emission Color', (1, 0, 0, 1)); style.set_principled_socket(mat_eye, 'Emission Strength', 10.0)
+    style.set_principled_socket(mat_gloom, "Emission Color", (0.2, 0, 0.4, 1))
+    style.set_principled_socket(mat_gloom, "Emission Strength", 1.0) # Brightened
+    mat_eye = bpy.data.materials.new(name=f"{name}_MatEye"); style.set_principled_socket(mat_eye, 'Emission Color', (1, 0.2, 0.2, 1)); style.set_principled_socket(mat_eye, 'Emission Strength', 15.0)
 
     for m in [mat_body, mat_hat, mat_beard, mat_gloom, mat_eye]: mesh_obj.data.materials.append(m)
     mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE'); mod.object = armature_obj; armature_obj.scale = (scale, scale, scale)

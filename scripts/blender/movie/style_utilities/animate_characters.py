@@ -5,6 +5,20 @@ import mathutils
 from . import core
 from constants import SCENE_MAP
 
+def set_obj_visibility(obj, visible, frame):
+    """Recursively sets hide_render for an object and its children (Point 142)."""
+    if not obj: return
+    obj.hide_render = not visible
+    obj.keyframe_insert(data_path="hide_render", frame=frame)
+    if obj.animation_data and obj.animation_data.action:
+        for fc in core.get_action_curves(obj.animation_data.action):
+            if fc.data_path == "hide_render":
+                for kp in fc.keyframe_points:
+                    if int(kp.co[0]) == frame: kp.interpolation = 'CONSTANT'
+                    
+    for child in obj.children:
+        set_obj_visibility(child, visible, frame)
+
 def animate_breathing(obj, frame_start, frame_end, axis=2, amplitude=0.03, cycle=72):
     """Point 24: Use Noise modifier for breathing to reduce keyframe bloat."""
     if not obj: return
@@ -470,14 +484,21 @@ def animate_characters(master_instance):
         target = torso if torso else char
         animate_weight_shift(target, 1, 15000)
         animate_breathing(target, 1, 15000)
-        char.hide_render = False; char.keyframe_insert(data_path="hide_render", frame=1)
+        
+        # Visibility is now managed primarily by master._set_visibility and scene modules (Point 142)
+        # BaseMaster.run() handles initial load_assets then orchestrate/animate.
 
     # Baseline acting for tests
     test_bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R", "Neck", "Jaw", "Mouth", "Eye.L", "Brow.L"]
     for char in [h1, h2, gnome]:
         if not char or char.type != 'ARMATURE': continue
-        torso = char.pose.bones.get("Torso")
-        if torso: core.insert_looping_noise(torso, "location", index=2, strength=0.02, scale=5.0, frame_start=1, frame_end=15000)
+        pb = char.pose.bones
+        torso = pb.get("Torso")
+        if torso: 
+            core.insert_looping_noise(char, 'pose.bones["Torso"].location', index=2, strength=0.05, scale=5.0, frame_start=1, frame_end=15000)
+            # Explicit acting keys for movement tests (Point 142)
+            char.keyframe_insert(data_path='pose.bones["Torso"].location', index=2, frame=100)
+            char.keyframe_insert(data_path='pose.bones["Torso"].location', index=2, frame=200)
 
         for bname in test_bones:
             bone = char.pose.bones.get(bname)

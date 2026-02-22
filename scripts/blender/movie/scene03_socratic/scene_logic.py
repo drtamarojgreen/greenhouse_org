@@ -14,6 +14,7 @@ def setup_scene(master):
 
     # Symbolic Thought Motes
     if master.h1:
+        master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), 751)
         style.apply_thought_motes(master.h1, 751, 950, count=3)
         # Point 39: Reaction shot micro-movements
         style.animate_reaction_shot("Herbaceous", 800, 900)
@@ -26,6 +27,7 @@ def setup_scene(master):
         master.h1.keyframe_insert(data_path="rotation_euler", index=0, frame=950)
 
     if master.h2:
+        master.place_character(master.h2, (1, 0, 0), (0, 0, 0), 751)
         style.apply_thought_motes(master.h2, 751, 950, count=3)
         # Point 39: Reaction shot micro-movements
         style.animate_reaction_shot("Arbor", 751, 850)

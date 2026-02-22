@@ -40,5 +40,5 @@ __all__ = [
     'apply_interior_exterior_contrast', 'replace_with_soft_boxes',
     'animate_hdri_rotation', 'apply_iris_wipe', 'animate_vignette_breathing',
     'animate_floating_spores', 'animate_fireflies', 'animate_finger_curl',
-    'FCurveProxy', 'set_node_input', 'create_compositor_output'
+    'FCurveProxy', 'set_node_input', 'create_compositor_output', 'set_obj_visibility'
 ]

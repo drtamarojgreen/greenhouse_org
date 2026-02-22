@@ -1,6 +1,5 @@
 import bpy
 import math
-from constants import SCENE_MAP
 
 def setup_scene(master):
     """
@@ -9,26 +8,25 @@ def setup_scene(master):
     Intent: Peak narrative tension.
     """
     # MUSIC CUE: Tense, staccato violins.
-    if 'scene08_confrontation' not in SCENE_MAP: return
-    start_frame, end_frame = SCENE_MAP['scene08_confrontation']
-    mid_frame = (start_frame + end_frame) // 2
-
+    # Point 142: Correct frame range (2101 - 2500)
+    from constants import SCENE_MAP
+    start_f, end_f = SCENE_MAP['scene08_confrontation']
+    
     # Plants reaction
     if master.h1:
-        master.h1.rotation_euler = (0, 0, 0)
-        master.h1.keyframe_insert(data_path="rotation_euler", frame=start_frame)
-
+        master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), start_f)
+        
         # Crouch (Scale Z)
         master.h1.scale.z = 0.8
-        master.h1.keyframe_insert(data_path="scale", frame=mid_frame)
+        master.h1.keyframe_insert(data_path="scale", index=2, frame=start_f + 100)
 
         master.h1.rotation_euler = (0, math.radians(10), 0)
-        master.h1.keyframe_insert(data_path="rotation_euler", frame=mid_frame)
+        master.h1.keyframe_insert(data_path="rotation_euler", frame=start_f + 100)
 
         master.h1.scale.z = 1.0
-        master.h1.keyframe_insert(data_path="scale", frame=end_frame)
+        master.h1.keyframe_insert(data_path="scale", index=2, frame=end_f)
         master.h1.rotation_euler = (0, 0, 0)
-        master.h1.keyframe_insert(data_path="rotation_euler", frame=end_frame)
+        master.h1.keyframe_insert(data_path="rotation_euler", frame=end_f)
 
     # The master handles camera (2101-2500 is one shot currently)
     pass

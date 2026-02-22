@@ -29,6 +29,8 @@ class BaseMaster:
         scene.render.resolution_x, scene.render.resolution_y = 1280, 720
         scene.render.filepath = f"//renders/{'sequel' if self.total_frames == 6000 else 'full_movie'}/"
         scene.display_settings.display_device, scene.view_settings.view_transform = 'sRGB', 'Filmic'
+        # Point 142: Increase exposure for better visibility in underexposed environments
+        scene.view_settings.exposure = 1.5
         scene.render.use_motion_blur = True
 
         if self.mode == 'SILENT_FILM':
@@ -59,15 +61,22 @@ class BaseMaster:
 
     def _set_visibility(self, objs, ranges):
         for obj in objs:
-            obj.hide_render = True
-            for rs, re in ranges:
-                obj.keyframe_insert(data_path="hide_render", frame=rs-1)
-                obj.hide_render = False; obj.keyframe_insert(data_path="hide_render", frame=rs)
-                obj.hide_render = True; obj.keyframe_insert(data_path="hide_render", frame=re)
-                if obj.animation_data and obj.animation_data.action:
-                    for fc in style.get_action_curves(obj.animation_data.action):
-                        if fc.data_path == "hide_render":
-                            for kp in fc.keyframe_points: kp.interpolation = 'CONSTANT'
+            # Point 142: Ensure we target all meshes in hierarchy
+            all_objs = [obj] + list(obj.children)
+            for o in all_objs:
+                # Default hidden at start
+                o.hide_render = True
+                o.keyframe_insert(data_path="hide_render", frame=1)
+                for rs, re in ranges:
+                    if rs > 1:
+                        o.hide_render = True
+                        o.keyframe_insert(data_path="hide_render", frame=rs-1)
+                    o.hide_render = False; o.keyframe_insert(data_path="hide_render", frame=rs)
+                    o.hide_render = True; o.keyframe_insert(data_path="hide_render", frame=re)
+                    if o.animation_data and o.animation_data.action:
+                        for fc in style.get_action_curves(o.animation_data.action):
+                            if fc.data_path == "hide_render":
+                                for kp in fc.keyframe_points: kp.interpolation = 'CONSTANT'
 
     def run(self, start_frame=None, end_frame=None, quick=False):
         self.setup_engine()
@@ -83,3 +92,21 @@ class BaseMaster:
     def create_intertitle(self, text, frame_start, frame_end): return scene_utils.create_intertitle(self, text, frame_start, frame_end)
     def create_spinning_logo(self, text, frame_start, frame_end): return scene_utils.create_spinning_logo(self, text, frame_start, frame_end)
     def create_thought_spark(self, start, end, f_start, f_end): return scene_utils.create_thought_spark(self, start, end, f_start, f_end)
+
+    def place_character(self, char, location=None, rotation=None, frame=None):
+        """Helper to position and key a character to prevent drifting (Point 142)."""
+        if not char: return
+        if location:
+            char.location = location
+            if frame is not None: char.keyframe_insert(data_path="location", frame=frame)
+        if rotation:
+            char.rotation_euler = rotation
+            if frame is not None: char.keyframe_insert(data_path="rotation_euler", frame=frame)
+
+    def hold_position(self, obj, frame_start, frame_end):
+        """Keys current position at start and end of range to prevent drifting (Point 142)."""
+        if not obj: return
+        obj.keyframe_insert(data_path="location", frame=frame_start)
+        obj.keyframe_insert(data_path="location", frame=frame_end)
+        obj.keyframe_insert(data_path="rotation_euler", frame=frame_start)
+        obj.keyframe_insert(data_path="rotation_euler", frame=frame_end)

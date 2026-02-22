@@ -32,16 +32,12 @@ def setup_scene(master):
     plant_humanoid.animate_walk(master.h1, 4501, 6000, step_height=0.1, cycle_length=48)
     plant_humanoid.animate_walk(master.h2, 4501, 6000, step_height=0.05, cycle_length=64)
 
-    # Movement across stage
-    master.h1.location.x = -5
-    master.h1.keyframe_insert(data_path="location", index=0, frame=4501)
-    master.h1.location.x = 0
-    master.h1.keyframe_insert(data_path="location", index=0, frame=6000)
+    # Movement across stage (Point 142: Explicitly key positions)
+    master.place_character(master.h1, (-5, -2, 0), (0, 0, 0), 4501)
+    master.place_character(master.h1, (0, -1, 0), (0, 0, 0), 6000)
 
-    master.h2.location.x = -7
-    master.h2.keyframe_insert(data_path="location", index=0, frame=4501)
-    master.h2.location.x = -2
-    master.h2.keyframe_insert(data_path="location", index=0, frame=6000)
+    master.place_character(master.h2, (-7, -2, 0), (0, 0, 0), 4501)
+    master.place_character(master.h2, (-2, -1, 0), (0, 0, 0), 6000)
 
     # Dialogue
     plant_humanoid.animate_talk(master.h1, 4600, 5000)
@@ -49,9 +45,9 @@ def setup_scene(master):
     plant_humanoid.animate_talk(master.h1, 5600, 5900)
 
     # Phase 2: Close-up Interaction & Expressions (6001 - 7500)
-    # Stop walking
-    master.h1.keyframe_insert(data_path="location", frame=6001)
-    master.h2.keyframe_insert(data_path="location", frame=6001)
+    # Stop walking and hold position
+    master.hold_position(master.h1, 6001, 7500)
+    master.hold_position(master.h2, 6001, 7500)
 
     # Facial Expressions
     plant_humanoid.animate_expression(master.h1, 6200, 'SURPRISED')
@@ -122,10 +118,9 @@ def setup_scene(master):
 
     # Phase 4: Final Bloom & Transition (9001 - 9500)
     # Flourish of movement
-    master.h1.rotation_euler.z = math.radians(30)
-    master.h1.keyframe_insert(data_path="rotation_euler", index=2, frame=9001)
-    master.h1.rotation_euler.z = 0
-    master.h1.keyframe_insert(data_path="rotation_euler", index=2, frame=9500)
+    master.place_character(master.h1, (0, -1, 0), (0, 0, math.radians(30)), 9001)
+    master.place_character(master.h1, (0, -1, 0), (0, 0, 0), 9500)
+    master.hold_position(master.h2, 9001, 9500)
 
     # Note: Camera is handled by master.setup_camera_keyframes
 

@@ -272,28 +272,24 @@ def apply_desaturation_beat(scene, frame_start, frame_end, saturation=0.2):
         core.set_node_input(huesat, 'Saturation', 1.0, frame=frame_end + 5)
 
 def animate_plant_advance(master, frame_start, frame_end):
-    """Plants move toward the gnome as their argument intensifies."""
+    """Plants move toward the gnome as their argument intensifies (Point 142)."""
     if not hasattr(master, 'h1') or not hasattr(master, 'h2') or not hasattr(master, 'gnome'):
         return
     if not master.h1 or not master.h2 or not master.gnome:
         return
 
     # Phase 1: Plants step forward together (scenes 18-19)
-    # Point 142: Use passed frames instead of hardcoded values for robustness
     move_start = frame_start
     move_peak = (frame_start + frame_end) // 2
     
+    # Target position near gnome (gnome is at 3,3)
     # Herbaceous (h1) advance
-    master.h1.location.y = 0.0
-    master.h1.keyframe_insert(data_path="location", index=1, frame=move_start)
-    master.h1.location.y = 3.0
-    master.h1.keyframe_insert(data_path="location", index=1, frame=move_peak)
+    master.place_character(master.h1, (-2, 0, 0), (0, 0, 0), move_start)
+    master.place_character(master.h1, (1, 2.5, 0), (0, 0, 0), move_peak)
 
     # Arbor (h2) advance
-    master.h2.location.y = 0.0
-    master.h2.keyframe_insert(data_path="location", index=1, frame=move_start)
-    master.h2.location.y = 3.0
-    master.h2.keyframe_insert(data_path="location", index=1, frame=move_peak)
+    master.place_character(master.h2, (2, 0, 0), (0, 0, 0), move_start)
+    master.place_character(master.h2, (3, 2, 0), (0, 0, 0), move_peak)
 
     # Phase 2: Plants loom over gnome
     for char in [master.h1, master.h2]:
