@@ -69,9 +69,6 @@ class MovieMaster(BaseMaster):
             style.set_obj_visibility(h, False, 7500)
             style.set_obj_visibility(h, False, 15000)
 
-        # Point 142: Camera Safety Pass (P1-4) - After all characters are animated
-        camera_controls.apply_camera_safety(self, self.scene.camera, [self.h1, self.h2, self.gnome], 1, 15000)
-
         # Point 142: Executing all scenes in chronological order
         # P2-6: Separate sequel-only timeline modules (scene13, scene14) from feature pipeline
         include_sequel = os.environ.get("MOVIE_SEQUEL_MODE") == "1"
@@ -115,6 +112,9 @@ class MovieMaster(BaseMaster):
                     self.place_character(self.h1, self.h1.location, self.h1.rotation_euler, end)
                     self.place_character(self.h2, self.h2.location, self.h2.rotation_euler, end)
                     self.place_character(self.gnome, self.gnome.location, self.gnome.rotation_euler, end)
+
+        # Point 142: Camera Safety Pass (P1-4) - Moved to END so it sees final scene placements
+        camera_controls.apply_camera_safety(self, self.scene.camera, [self.h1, self.h2, self.gnome], 1, 15000)
 
     def setup_lighting(self): lighting_setup.setup_lighting(self)
     def setup_compositor(self): compositor_settings.setup_compositor(self)

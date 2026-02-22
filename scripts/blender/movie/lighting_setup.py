@@ -36,7 +36,8 @@ def setup_lighting(master_instance):
     # This vector is the light direction. We convert it to Euler.
     dir_vec = mathutils.Vector((-0.7, -0.4, -0.58)) # Pointing DOWN-ish
     sun.rotation_euler = dir_vec.to_track_quat('-Z', 'Y').to_euler()
-    sun.data.energy = 5.0
+    # Point 142: Sane baseline for Cycles SUN
+    sun.data.energy = 1.5
 
     # Animate sun colors from config
     for frame, color in DAWN_COLORS:
@@ -55,8 +56,8 @@ def setup_lighting(master_instance):
             light.name = name
         apply_cfg(light, LIGHTING_DEFAULTS.get(name))
 
-        # Point 142: Standard baseline energy for tests
-        light.data.energy = 15000
+        # Point 142: Moderated baseline energy for Cycles (was 15000)
+        light.data.energy = 5000
         light.data.keyframe_insert(data_path="energy", frame=1)
 
         if cam:
@@ -84,13 +85,14 @@ def setup_lighting(master_instance):
         if s_name in SCENE_MAP:
             start, end = SCENE_MAP[s_name]
             for light in [herb_rim, arbor_rim]:
-                light.data.energy = 15000
+                # Moderated for Cycles
+                light.data.energy = 5000
                 light.data.keyframe_insert(data_path="energy", frame=start - 1)
-                light.data.energy = 25000
+                light.data.energy = 10000
                 light.data.keyframe_insert(data_path="energy", frame=start + 12)
-                light.data.energy = 25000
+                light.data.energy = 10000
                 light.data.keyframe_insert(data_path="energy", frame=end - 12)
-                light.data.energy = 15000
+                light.data.energy = 5000
                 light.data.keyframe_insert(data_path="energy", frame=end)
 
     # --- Area fills (Bounce) ---

@@ -29,8 +29,8 @@ class BaseMaster:
         scene.render.resolution_x, scene.render.resolution_y = 1280, 720
         scene.render.filepath = f"//renders/{'sequel' if self.total_frames == 6000 else 'full_movie'}/"
         scene.display_settings.display_device, scene.view_settings.view_transform = 'sRGB', 'Filmic'
-        # Point 142: Increase exposure for better visibility in underexposed environments
-        scene.view_settings.exposure = 1.5
+        # Point 142: Moderated exposure for Cycles (1.5 was causing whiteout)
+        scene.view_settings.exposure = 0.5
         scene.render.use_motion_blur = True
 
         if self.mode == 'SILENT_FILM':
@@ -54,7 +54,8 @@ class BaseMaster:
         return scene
 
     def setup_lighting(self):
-        bpy.ops.object.light_add(type='SUN', location=(10, -10, 20)); self.sun = bpy.context.object; self.sun.data.energy = 5.0
+        # Point 142: Sane baseline for Cycles SUN
+        bpy.ops.object.light_add(type='SUN', location=(10, -10, 20)); self.sun = bpy.context.object; self.sun.data.energy = 1.5
         bpy.ops.object.light_add(type='POINT', location=(-10, -10, 10)); self.fill = bpy.context.object; self.fill.data.energy = 2000
         bpy.ops.object.light_add(type='AREA', location=(0, 15, 5)); self.rim = bpy.context.object; self.rim.data.energy = 5000
         bpy.ops.object.light_add(type='SPOT', location=(0, -15, 10)); self.spot = bpy.context.object; self.spot.data.energy = 10000

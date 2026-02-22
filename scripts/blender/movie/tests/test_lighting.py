@@ -40,11 +40,13 @@ class TestLighting(BlenderTestCase):
 
     def test_4_2_1_herbaceous_key(self):
         """4.2.1: HerbaceousKeyLight object exists in scene."""
-        self._check_key_light("4.2.1", "HerbaceousKeyLight", 'SPOT', 15000)
+        # Point 142: Moderated for Cycles
+        self._check_key_light("4.2.1", "HerbaceousKeyLight", 'SPOT', 5000)
 
     def test_4_2_2_arbor_key(self):
         """4.2.2: ArborKeyLight object exists in scene."""
-        self._check_key_light("4.2.2", "ArborKeyLight", 'SPOT', 15000)
+        # Point 142: Moderated for Cycles
+        self._check_key_light("4.2.2", "ArborKeyLight", 'SPOT', 5000)
 
     def test_4_2_3_gnome_key_tint(self):
         """4.2.3: GnomeKeyLight object exists with green tint."""
@@ -62,9 +64,10 @@ class TestLighting(BlenderTestCase):
         if light:
             self.master.scene.frame_set(9550) # Scene 16
             energy = light.data.energy
-            status = "PASS" if energy == 25000 else "FAIL"
+            # Point 142: Moderated for Cycles (was 25000)
+            status = "PASS" if energy == 10000 else "FAIL"
             self.log_result("4.2.6", "Light Boost", status, f"Energy: {energy}")
-            self.assertEqual(energy, 25000)
+            self.assertEqual(energy, 10000)
 
     def test_4_2_7_gnome_light_dimming(self):
         """4.2.7: GnomeKeyLight dims progressively."""
