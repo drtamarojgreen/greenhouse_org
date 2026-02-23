@@ -48,7 +48,7 @@ class TestGnomeRetreat(BlenderTestCase):
         self.assertIsNotNone(gnome)
 
         s22_range = silent_movie_generator.SCENE_MAP['scene22_retreat']
-        curves = style.get_action_curves(gnome.animation_data.action)
+        curves = style.get_action_curves(gnome.animation_data.action, obj=gnome)
 
         loc_keys = []
         for fc in curves:
@@ -64,7 +64,7 @@ class TestGnomeRetreat(BlenderTestCase):
         credits_start = silent_movie_generator.SCENE_MAP['scene12_credits'][0]
 
         hide_found = False
-        curves = style.get_action_curves(gnome.animation_data.action)
+        curves = style.get_action_curves(gnome.animation_data.action, obj=gnome)
         for fc in curves:
             if "hide_render" in fc.data_path:
                 for kp in fc.keyframe_points:
@@ -79,7 +79,7 @@ class TestGnomeRetreat(BlenderTestCase):
         s22_range = silent_movie_generator.SCENE_MAP['scene22_retreat']
 
         def get_pos(frame):
-            curves = style.get_action_curves(gnome.animation_data.action)
+            curves = style.get_action_curves(gnome.animation_data.action, obj=gnome)
             pos = mathutils.Vector((0,0,0))
             for fc in curves:
                 if "location" in fc.data_path:
@@ -102,7 +102,7 @@ class TestGnomeRetreat(BlenderTestCase):
         last_pos = None
         for f in range(s22_range[0], s22_range[1], 50):
             current_pos = mathutils.Vector((0,0,0))
-            curves = style.get_action_curves(gnome.animation_data.action)
+            curves = style.get_action_curves(gnome.animation_data.action, obj=gnome)
             for fc in curves:
                 if "location" in fc.data_path:
                     current_pos[fc.array_index] = fc.evaluate(f)

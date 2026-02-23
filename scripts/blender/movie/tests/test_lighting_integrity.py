@@ -38,7 +38,7 @@ class TestLightingIntegrity(unittest.TestCase):
         """R68: Volumetric effect stability."""
         beam = bpy.data.objects.get("LightShaftBeam")
         if beam and beam.data.animation_data and beam.data.animation_data.action:
-            curves = style.get_action_curves(beam.data.animation_data.action)
+            curves = style.get_action_curves(beam.data.animation_data.action, obj=beam.data)
             for fc in curves:
                 if fc.data_path == "energy":
                     for kp in fc.keyframe_points:
@@ -54,7 +54,7 @@ class TestLightingIntegrity(unittest.TestCase):
         bright = tree.nodes.get("Bright/Contrast")
         if bright and tree.animation_data and tree.animation_data.action:
             # Animation for compositor nodes is stored on the node_tree itself
-            curves = style.get_action_curves(tree.animation_data.action)
+            curves = style.get_action_curves(tree.animation_data.action, obj=tree)
             bright_curves = [fc for fc in curves if 'Bright/Contrast' in fc.data_path and 'Bright' in fc.data_path]
             
             for fc in bright_curves:
@@ -69,7 +69,7 @@ class TestLightingIntegrity(unittest.TestCase):
         """R67: Shadow direction continuity (Sun rotation)."""
         sun = bpy.data.objects.get("Sun")
         if sun and sun.animation_data and sun.animation_data.action:
-             curves = style.get_action_curves(sun.animation_data.action)
+             curves = style.get_action_curves(sun.animation_data.action, obj=sun)
              for fc in curves:
                  if fc.data_path == "rotation_euler":
                      # No sudden spins

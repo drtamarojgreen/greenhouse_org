@@ -14,7 +14,10 @@ def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed
     if not light_obj.data.animation_data.action:
         light_obj.data.animation_data.action = bpy.data.actions.new(name=f"Flicker_{light_name}")
 
+    # Point 142: Use ref_obj=light_obj.data for data-block animation
+    # Modern 5.0 native discovery
     fcurve = core.get_or_create_fcurve(light_obj.data.animation_data.action, "energy", ref_obj=light_obj.data)
+    
     if not fcurve:
         print(f"Warning: Could not access fcurves for light {light_name}")
         return
@@ -83,44 +86,47 @@ def apply_interior_exterior_contrast(sun_light, cam):
 
 def replace_with_soft_boxes():
     """Enhancement #29: Soft Box Fill Replacement."""
-    for obj in list(bpy.context.scene.objects): # List copy for safety
-        if obj.type == 'LIGHT' and obj.data.type == 'AREA':
-            loc = obj.location.copy()
-            rot = obj.rotation_euler.copy()
-            name = obj.name
-            energy = obj.data.energy
-            color = obj.data.color
-            parent = obj.parent
-            parent_type = obj.parent_type
-            parent_bone = obj.parent_bone
+    # Create list first to avoid mutating during iteration
+    light_objs = [obj for obj in bpy.context.scene.objects if obj.type == 'LIGHT' and obj.data.type == 'AREA']
+    
+    for obj in light_objs:
+        loc = obj.location.copy()
+        rot = obj.rotation_euler.copy()
+        name = obj.name
+        energy = obj.data.energy
+        color = list(obj.data.color)
+        
+        parent = obj.parent
+        parent_type = obj.parent_type
+        parent_bone = obj.parent_bone
 
-            bpy.ops.object.select_all(action='DESELECT')
-            obj.select_set(True)
-            bpy.ops.object.delete()
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        bpy.ops.object.delete()
 
-            bpy.ops.mesh.primitive_plane_add(location=loc, rotation=rot)
-            plane = bpy.context.object
-            plane.name = f"SoftBox_{name}"
+        bpy.ops.mesh.primitive_plane_add(location=loc, rotation=rot)
+        plane = bpy.context.object
+        plane.name = f"SoftBox_{name}"
+        
+        # Point 142: Preserve parenting (Critical for rim lights attached to camera)
+        if parent:
+            plane.parent = parent
+            plane.parent_type = parent_type
+            if parent_type == 'BONE':
+                plane.parent_bone = parent_bone
+            # Re-apply local transform
+            plane.location = loc
+            plane.rotation_euler = rot
             
-            # Point 142: Preserve parenting (Critical for rim lights attached to camera)
-            if parent:
-                plane.parent = parent
-                plane.parent_type = parent_type
-                if parent_type == 'BONE':
-                    plane.parent_bone = parent_bone
-                # Re-apply local transform since primitive_plane_add uses world loc by default
-                plane.location = loc
-                plane.rotation_euler = rot
-            plane.scale = (5, 5, 1) # Larger scale (Point 142)
+        plane.scale = (5, 5, 1)
 
-            mat = bpy.data.materials.new(name=f"Mat_{plane.name}")
-            # Ensure nodes are enabled
-            mat.use_nodes = True
-            bsdf = mat.node_tree.nodes.get("Principled BSDF")
-            core.set_principled_socket(mat, "Emission Color", list(color) + [1])
-            # Higher factor for better exposure (Point 142)
-            core.set_principled_socket(mat, "Emission Strength", energy / 100.0)
-            plane.data.materials.append(mat)
+        mat = bpy.data.materials.new(name=f"Mat_{plane.name}")
+        mat.use_nodes = True
+        # Set emission in Principled BSDF
+        core.set_principled_socket(mat, "Emission Color", color + [1])
+        # Higher factor for physical accumulation
+        core.set_principled_socket(mat, "Emission Strength", energy / 100.0)
+        plane.data.materials.append(mat)
 
 def animate_distance_based_glow(gnome, characters, frame_start, frame_end):
     """Enhancement #83: Gnome Eye Glow Intensity Driver."""

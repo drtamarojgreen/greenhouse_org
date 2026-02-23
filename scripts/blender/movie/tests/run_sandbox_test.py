@@ -3,11 +3,13 @@ import sys
 import os
 
 # Add parent directory to path to find modules
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+test_dir = os.path.dirname(os.path.abspath(__file__))
+if test_dir not in sys.path:
+    sys.path.insert(0, test_dir)
 
-from test_animation_sandbox import TestAnimationSandbox
+import test_animation_sandbox
 
-print(f"EP_DEBUG: Loaded test_animation_sandbox module from: {TestAnimationSandbox.__module__}")
+print(f"EP_DEBUG: Loaded test_animation_sandbox module from: {getattr(test_animation_sandbox, '__file__', 'unknown')}")
 
 def run_sandbox_test():
     """
@@ -20,22 +22,17 @@ def run_sandbox_test():
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     
-    suite.addTests(loader.loadTestsFromTestCase(TestAnimationSandbox))
+    suite.addTests(loader.loadTestsFromTestCase(test_animation_sandbox.TestAnimationSandbox))
     
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
     
-    # Exit with a non-zero code if tests failed
     if not result.wasSuccessful():
         sys.exit(1)
 
 if __name__ == "__main__":
-    # Filter out Blender's arguments to avoid confusing the unittest module
     argv = [sys.argv[0]]
     if "--" in sys.argv:
         argv.extend(sys.argv[sys.argv.index("--") + 1:])
-    
-    # Re-assign sys.argv for unittest to process
     sys.argv = argv
-    
     run_sandbox_test()

@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tests.base_test import BlenderTestCase
 from silent_movie_generator import MovieMaster
 import style_utilities as style
+from bpy_extras import anim_utils
 
 class TestAnimationIntegrity(BlenderTestCase):
 
@@ -48,7 +49,7 @@ class TestAnimationIntegrity(BlenderTestCase):
         torso_bone.location[0] = 5.0
         h1.keyframe_insert(data_path='pose.bones["Torso"].location', index=0, frame=42)
         
-        curves = style.get_action_curves(h1.animation_data.action)
+        curves = style.get_action_curves(h1.animation_data.action, obj=h1)
         torso_loc_x_curve = [fc for fc in curves if 'pose.bones["Torso"].location' in fc.data_path and fc.array_index == 0]
         
         self.assertEqual(len(torso_loc_x_curve), 1, "Direct keyframe_insert call failed to create an F-curve")
@@ -76,7 +77,7 @@ class TestAnimationIntegrity(BlenderTestCase):
         bone.rotation_euler[0] -= 0.02
         h1.keyframe_insert(data_path=f'pose.bones["{bone_name}"].rotation_euler', index=0, frame=7500)
 
-        curves = style.get_action_curves(h1.animation_data.action)
+        curves = style.get_action_curves(h1.animation_data.action, obj=h1)
         self.assertGreater(len(curves), 0, "No F-curves found after replicating baseline logic.")
         
         arm_rot_curve = [fc for fc in curves if f'pose.bones["{bone_name}"].rotation_euler' in fc.data_path]
@@ -106,21 +107,24 @@ class TestAnimationIntegrity(BlenderTestCase):
         h1.keyframe_insert(data_path=f'pose.bones["{bone_name}"].location', index=2, frame=100)
 
         # --- Manual Inspection ---
-        print("\n--- MANUAL ACTION INSPECTION ---")
+        print("\n--- MANUAL ACTION INSPECTION (5.0 Channel Bag) ---")
         manual_curves_found = 0
         
-        # Blender 5.0+ uses a more complex structure. Let's inspect it.
-        # This is a simplified version of what get_action_curves should be doing.
-        if hasattr(action, "fcurves"):
-            print(f"Found {len(action.fcurves)} legacy fcurves.")
-            for fc in action.fcurves:
-                print(f"  - Legacy F-Curve: {fc.data_path}, index {fc.array_index}")
-                manual_curves_found += 1
+        slot = h1.animation_data.action_slot
+        if slot:
+            try:
+                bag = anim_utils.action_get_channelbag_for_slot(action, slot)
+                if bag:
+                    print(f"Found {len(bag.fcurves)} fcurves in channel bag.")
+                    for fc in bag.fcurves:
+                        print(f"  - F-Curve: {fc.data_path}, index {fc.array_index}")
+                        manual_curves_found += 1
+            except: pass
         
         print("--- END MANUAL INSPECTION ---")
         
         # Now, let's see what the utility function finds
-        style_curves = style.get_action_curves(action)
+        style_curves = style.get_action_curves(action, obj=h1)
         
         self.assertGreater(manual_curves_found, 0, "Manual inspection failed to find any created fcurves.")
         self.log_result("Manual Inspection", "PASS", f"Manually found {manual_curves_found} fcurve(s).")

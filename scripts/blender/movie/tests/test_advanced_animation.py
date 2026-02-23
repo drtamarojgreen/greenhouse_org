@@ -19,7 +19,7 @@ class TestAdvancedAnimation(BlenderTestCase):
             with self.subTest(char=char_name):
                 has_neck_anim = False
                 if obj.animation_data and obj.animation_data.action:
-                    curves = style.get_action_curves(obj.animation_data.action)
+                    curves = style.get_action_curves(obj.animation_data.action, obj=obj)
                     for fc in curves:
                         if 'Neck' in fc.data_path and 'rotation' in fc.data_path:
                             # Check for at least 2 keyframes with delta
@@ -35,7 +35,7 @@ class TestAdvancedAnimation(BlenderTestCase):
         if not obj or not obj.animation_data or not obj.animation_data.action:
              self.skipTest("Herbaceous armature or action missing")
              
-        curves = style.get_action_curves(obj.animation_data.action)
+        curves = style.get_action_curves(obj.animation_data.action, obj=obj)
         jaw_curves = [c for c in curves if 'Jaw' in c.data_path and 'rotation' in c.data_path]
         mouth_curves = [c for c in curves if 'Mouth' in c.data_path and 'scale' in c.data_path]
         
@@ -52,7 +52,7 @@ class TestAdvancedAnimation(BlenderTestCase):
             with self.subTest(char=char_name):
                 has_brow_anim = False
                 if obj.animation_data and obj.animation_data.action:
-                    curves = style.get_action_curves(obj.animation_data.action)
+                    curves = style.get_action_curves(obj.animation_data.action, obj=obj)
                     for fc in curves:
                         if 'Brow' in fc.data_path:
                             has_brow_anim = True

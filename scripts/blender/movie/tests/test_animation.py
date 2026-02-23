@@ -16,7 +16,7 @@ class TestAnimation(BlenderTestCase):
                 # Robustness: Check for an action with actual keyframes, not just animation_data
                 has_anim_data = obj.animation_data is not None
                 has_action = has_anim_data and obj.animation_data.action is not None
-                curves = style.get_action_curves(obj.animation_data.action) if has_action else []
+                curves = style.get_action_curves(obj.animation_data.action, obj=obj) if has_action else []
                 has_fcurves = has_action and len(curves) > 0
                 status = "PASS" if has_fcurves else "FAIL"
                 details = "Action with f-curves present" if has_fcurves else "MISSING action or f-curves"
@@ -54,7 +54,7 @@ class TestAnimation(BlenderTestCase):
                 with self.subTest(char=char_name, bone=bone_name):
                     has_movement = False
                     if obj.animation_data and obj.animation_data.action:
-                        curves = style.get_action_curves(obj.animation_data.action)
+                        curves = style.get_action_curves(obj.animation_data.action, obj=obj)
                         for fc in curves:
                             # Robust path matching for both Slotted and Legacy actions
                             # Point 142: Flexible matching for side-suffixed bones
@@ -70,7 +70,7 @@ class TestAnimation(BlenderTestCase):
                                     break
                     
                     status = "PASS" if has_movement else "FAIL"
-                    details = f"Curves found: {len(style.get_action_curves(obj.animation_data.action))}" if not has_movement and obj.animation_data and obj.animation_data.action else "No action data"
+                    details = f"Curves found: {len(style.get_action_curves(obj.animation_data.action, obj=obj))}" if not has_movement and obj.animation_data and obj.animation_data.action else "No action data"
                     self.log_result(f"Bone Anim: {char_name}.{bone_name}", status, details)
                     self.assertTrue(has_movement)
 
@@ -83,7 +83,7 @@ class TestAnimation(BlenderTestCase):
         # Sample camera position at start and mid-point
         # Note: We can't easily evaluate fcurves without frame_set which is slow, 
         # so we check if location fcurves exist and have keyframes with different values.
-        curves = style.get_action_curves(cam.animation_data.action)
+        curves = style.get_action_curves(cam.animation_data.action, obj=cam)
         loc_curves = [c for c in curves if "location" in c.data_path]
         
         has_movement = False
@@ -111,7 +111,7 @@ class TestAnimation(BlenderTestCase):
                 continue
             
             has_noise = False
-            curves = style.get_action_curves(obj.animation_data.action)
+            curves = style.get_action_curves(obj.animation_data.action, obj=obj)
             for fc in curves:
                 if fc.data_path == path and fc.array_index == index:
                     for mod in fc.modifiers:

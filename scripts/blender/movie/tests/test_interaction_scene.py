@@ -34,7 +34,7 @@ class TestInteractionScene(unittest.TestCase):
         self.assertIsNotNone(anim_data, "Herbaceous has no animation data")
         self.assertIsNotNone(anim_data.action, "Herbaceous has no action")
 
-        curves = style.get_action_curves(anim_data.action)
+        curves = style.get_action_curves(anim_data.action, obj=obj)
 
         # Check for movement keyframes (Phase 1: 4501-6000)
         loc_x_found = False
@@ -56,7 +56,7 @@ class TestInteractionScene(unittest.TestCase):
             anim_data = char_obj.animation_data
             self.assertIsNotNone(anim_data, f"{name} has no animation data")
 
-            curves = style.get_action_curves(anim_data.action)
+            curves = style.get_action_curves(anim_data.action, obj=char_obj)
             mouth_bone_found = False
             for fc in curves:
                 # Check for Mouth bone scale on the armature
@@ -80,7 +80,7 @@ class TestInteractionScene(unittest.TestCase):
         anim_data = char_obj.animation_data
         self.assertIsNotNone(anim_data, "Herbaceous has no animation data")
 
-        curves = style.get_action_curves(anim_data.action)
+        curves = style.get_action_curves(anim_data.action, obj=char_obj)
         eye_scale_found = False
         for fc in curves:
             if 'pose.bones["Eye.L"].scale' in fc.data_path:
@@ -100,7 +100,7 @@ class TestInteractionScene(unittest.TestCase):
         anim_data = arm.animation_data
         self.assertIsNotNone(anim_data, "Herbaceous has no animation data")
 
-        curves = style.get_action_curves(anim_data.action)
+        curves = style.get_action_curves(anim_data.action, obj=arm)
         rot_x_found = False
         target_path = 'pose.bones["Arm.R"].rotation_euler'
         for fc in curves:
@@ -121,7 +121,7 @@ class TestInteractionScene(unittest.TestCase):
         anim_data = gaze.animation_data
         self.assertIsNotNone(anim_data, "GazeTarget has no animation data")
 
-        curves = style.get_action_curves(anim_data.action)
+        curves = style.get_action_curves(anim_data.action, obj=gaze)
         loc_found = False
         for fc in curves:
             if fc.data_path == "location":

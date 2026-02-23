@@ -79,7 +79,7 @@ class TestSceneModules(BlenderTestCase):
                 has_keyframes = False
                 for obj in bpy.data.objects:
                     if obj.animation_data and obj.animation_data.action:
-                        curves = style.get_action_curves(obj.animation_data.action)
+                        curves = style.get_action_curves(obj.animation_data.action, obj=obj)
                         if len(curves) > 0:
                             has_keyframes = True
                             break

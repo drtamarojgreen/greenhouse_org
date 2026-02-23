@@ -34,7 +34,7 @@ class TestAssetDetails(unittest.TestCase):
     def test_visibility_keyframes(self):
         """Verify 5.0+ layered action visibility."""
         arm = bpy.data.objects.get("Herbaceous")
-        curves = style.get_action_curves(arm.animation_data.action)
+        curves = style.get_action_curves(arm.animation_data.action, obj=arm)
         self.assertTrue(any("hide_render" in fc.data_path for fc in curves))
 
 if __name__ == "__main__":

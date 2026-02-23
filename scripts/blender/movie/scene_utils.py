@@ -163,7 +163,9 @@ def generate_subtitles(master, output_path="movie_subtitles.srt"):
             f_start = 1
             f_end = 100
             if obj.animation_data and obj.animation_data.action:
-                for fc in obj.animation_data.action.fcurves:
+                # Point 142: Utilize modern discovery
+                curves = style.get_action_curves(obj.animation_data.action, obj=obj)
+                for fc in curves:
                     if fc.data_path == "hide_render":
                         # Usually keys are at [start-1, start, end]
                         pts = sorted([kp.co[0] for kp in fc.keyframe_points])

@@ -74,7 +74,7 @@ class TestCameraChoreography(unittest.TestCase):
         
         action = self.cam.animation_data.action
         keyframes = set()
-        for fc in style.get_action_curves(action):
+        for fc in style.get_action_curves(action, obj=self.cam):
             if fc.data_path == "location":
                 for kp in fc.keyframe_points:
                     if 9501 <= kp.co[0] <= 10200:
@@ -102,7 +102,7 @@ class TestCameraChoreography(unittest.TestCase):
     def test_2_3_6_camera_gap_check(self):
         """2.3.6: No camera keyframe gaps > 2000 frames."""
         action = self.cam.animation_data.action
-        all_keys = sorted(list(set([int(kp.co[0]) for fc in style.get_action_curves(action) for kp in fc.keyframe_points])))
+        all_keys = sorted(list(set([int(kp.co[0]) for fc in style.get_action_curves(action, obj=self.cam) for kp in fc.keyframe_points])))
         
         max_gap = 0
         for i in range(len(all_keys) - 1):

@@ -18,20 +18,12 @@ def set_obj_visibility(obj, visible, frame):
     
     # Aggressively set constant interpolation for visibility
     if obj.animation_data and obj.animation_data.action:
-        curves = core.get_action_curves(obj.animation_data.action)
-        found = False
+        curves = core.get_action_curves(obj.animation_data.action, obj=obj)
         for fc in curves:
             if "hide_render" in fc.data_path:
-                found = True
                 for kp in fc.keyframe_points:
-                    kp.interpolation = 'CONSTANT'
-        
-        # If not found via proxy, try direct access if possible
-        if not found and hasattr(obj.animation_data.action, "fcurves"):
-             for fc in obj.animation_data.action.fcurves:
-                 if "hide_render" in fc.data_path:
-                     for kp in fc.keyframe_points:
-                         kp.interpolation = 'CONSTANT'
+                    if int(kp.co[0]) == frame:
+                        kp.interpolation = 'CONSTANT'
                     
     for child in obj.children:
         set_obj_visibility(child, visible, frame)
@@ -45,35 +37,42 @@ def animate_blink(eye_obj, frame_start, frame_end, interval_range=(60, 180)):
     """Adds intermittent blinking by scaling the eye on Z (Explicit targeting)."""
     if not eye_obj: return
     
-    target_obj = eye_obj
-    data_path = "scale"
-    if hasattr(eye_obj, "id_data") and eye_obj.id_data.type == 'ARMATURE':
-        target_obj = eye_obj.id_data
-        data_path = f'pose.bones["{eye_obj.name}"].scale'
+    # Identify target object and data path for PoseBone compatibility
+    anim_target = eye_obj
+    path_prefix = ""
+    bone_name = ""
+    
+    if hasattr(eye_obj, "id_data") and eye_obj.rna_type.identifier == 'PoseBone':
+        anim_target = eye_obj.id_data; path_prefix = f'pose.bones["{eye_obj.name}"].'; bone_name = eye_obj.name
+    elif hasattr(eye_obj, "bone") and hasattr(eye_obj, "id_data") and eye_obj.id_data.type == 'ARMATURE':
+        anim_target = eye_obj.id_data; path_prefix = f'pose.bones["{eye_obj.name}"].'; bone_name = eye_obj.name
 
+    data_path = f"{path_prefix}scale"
     current_f = frame_start
     # Get base Z from the object or bone
     base_z = eye_obj.scale[2]
 
     while current_f < frame_end:
-        if "pose.bones" in data_path: target_obj.pose.bones[eye_obj.name].scale[2] = base_z
-        else: target_obj.scale[2] = base_z
-        target_obj.keyframe_insert(data_path=data_path, index=2, frame=current_f)
+        # Open
+        if bone_name: anim_target.pose.bones[bone_name].scale[2] = base_z
+        else: anim_target.scale[2] = base_z
+        anim_target.keyframe_insert(data_path=data_path, index=2, frame=current_f)
 
         # Random interval between blinks
         blink_start = current_f + random.randint(*interval_range)
         if blink_start + 6 > frame_end: break
 
-        # Blink sequence: Open -> Closed -> Open
-        target_obj.keyframe_insert(data_path=data_path, index=2, frame=blink_start)
+        # Open -> Closed
+        anim_target.keyframe_insert(data_path=data_path, index=2, frame=blink_start)
         
-        if "pose.bones" in data_path: target_obj.pose.bones[eye_obj.name].scale[2] = base_z * 0.1
-        else: target_obj.scale[2] = base_z * 0.1
-        target_obj.keyframe_insert(data_path=data_path, index=2, frame=blink_start + 3)
+        if bone_name: anim_target.pose.bones[bone_name].scale[2] = base_z * 0.1
+        else: anim_target.scale[2] = base_z * 0.1
+        anim_target.keyframe_insert(data_path=data_path, index=2, frame=blink_start + 3)
         
-        if "pose.bones" in data_path: target_obj.pose.bones[eye_obj.name].scale[2] = base_z
-        else: target_obj.scale[2] = base_z
-        target_obj.keyframe_insert(data_path=data_path, index=2, frame=blink_start + 6)
+        # Closed -> Open
+        if bone_name: anim_target.pose.bones[bone_name].scale[2] = base_z
+        else: anim_target.scale[2] = base_z
+        anim_target.keyframe_insert(data_path=data_path, index=2, frame=blink_start + 6)
 
         current_f = blink_start + 6
 
@@ -82,13 +81,16 @@ def animate_saccadic_movement(eye_obj, gaze_target, frame_start, frame_end, stre
     if not eye_obj: return
 
     # Handle PoseBone — must keyframe via armature with full path
-    is_pose_bone = hasattr(eye_obj, 'id_data') and hasattr(eye_obj.id_data, 'type') and eye_obj.id_data.type == 'ARMATURE'
-    if is_pose_bone:
-        arm_obj = eye_obj.id_data
-        bone_dp = f'pose.bones["{eye_obj.name}"].rotation_euler'
-    else:
-        arm_obj = eye_obj
-        bone_dp = 'rotation_euler'
+    anim_target = eye_obj
+    path_prefix = ""
+    bone_name = ""
+    
+    if hasattr(eye_obj, "id_data") and eye_obj.rna_type.identifier == 'PoseBone':
+        anim_target = eye_obj.id_data; path_prefix = f'pose.bones["{eye_obj.name}"].'; bone_name = eye_obj.name
+    elif hasattr(eye_obj, "bone") and hasattr(eye_obj, "id_data") and eye_obj.id_data.type == 'ARMATURE':
+        anim_target = eye_obj.id_data; path_prefix = f'pose.bones["{eye_obj.name}"].'; bone_name = eye_obj.name
+
+    bone_dp = f"{path_prefix}rotation_euler"
 
     current_f = frame_start
     while current_f < frame_end:
@@ -98,7 +100,7 @@ def animate_saccadic_movement(eye_obj, gaze_target, frame_start, frame_end, stre
 
         # Quick dart
         orig_rot = eye_obj.rotation_euler.copy()
-        arm_obj.keyframe_insert(data_path=bone_dp, frame=current_f)
+        anim_target.keyframe_insert(data_path=bone_dp, frame=current_f)
 
         # Point 92: Safe Euler addition
         dart_rot = orig_rot.copy()
@@ -106,11 +108,11 @@ def animate_saccadic_movement(eye_obj, gaze_target, frame_start, frame_end, stre
         dart_rot.z += random.uniform(-0.1, 0.1) * strength * 50
         
         eye_obj.rotation_euler = dart_rot
-        arm_obj.keyframe_insert(data_path=bone_dp, frame=current_f + 2)
+        anim_target.keyframe_insert(data_path=bone_dp, frame=current_f + 2)
 
         # Return to normal
         eye_obj.rotation_euler = orig_rot
-        arm_obj.keyframe_insert(data_path=bone_dp, frame=current_f + 5)
+        anim_target.keyframe_insert(data_path=bone_dp, frame=current_f + 5)
 
         current_f += 5
 
@@ -122,24 +124,31 @@ def animate_finger_tapping(finger_objs, frame_start, frame_end, cycle=40):
 def animate_finger_curl(finger_objs, frame_start, frame_end, curl_amount=45):
     """Point 82: Individual finger curl animation."""
     for i, f_obj in enumerate(finger_objs):
-        # PoseBone: must keyframe on armature object with full path
-        is_pose_bone = hasattr(f_obj, 'id_data') and hasattr(f_obj.id_data, 'type') and f_obj.id_data.type == 'ARMATURE'
-        if is_pose_bone:
-            arm_obj = f_obj.id_data
-            dp = f'pose.bones["{f_obj.name}"].rotation_euler'
-            f_obj.rotation_euler[0] = 0
-            arm_obj.keyframe_insert(data_path=dp, index=0, frame=frame_start)
-            f_obj.rotation_euler[0] = math.radians(curl_amount)
-            arm_obj.keyframe_insert(data_path=dp, index=0, frame=(frame_start + frame_end) // 2)
-            f_obj.rotation_euler[0] = 0
-            arm_obj.keyframe_insert(data_path=dp, index=0, frame=frame_end)
-        else:
-            f_obj.rotation_euler[0] = 0
-            f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=frame_start)
-            f_obj.rotation_euler[0] = math.radians(curl_amount)
-            f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=(frame_start + frame_end) // 2)
-            f_obj.rotation_euler[0] = 0
-            f_obj.keyframe_insert(data_path="rotation_euler", index=0, frame=frame_end)
+        # Identify target
+        anim_target = f_obj
+        path_prefix = ""
+        bone_name = ""
+        if hasattr(f_obj, "id_data") and f_obj.rna_type.identifier == 'PoseBone':
+            anim_target = f_obj.id_data; path_prefix = f'pose.bones["{f_obj.name}"].'; bone_name = f_obj.name
+        elif hasattr(f_obj, "bone") and hasattr(f_obj, "id_data") and f_obj.id_data.type == 'ARMATURE':
+            anim_target = f_obj.id_data; path_prefix = f'pose.bones["{f_obj.name}"].'; bone_name = f_obj.name
+
+        dp = f"{path_prefix}rotation_euler"
+        
+        # Start
+        if bone_name: anim_target.pose.bones[bone_name].rotation_euler[0] = 0
+        else: anim_target.rotation_euler[0] = 0
+        anim_target.keyframe_insert(data_path=dp, index=0, frame=frame_start)
+        
+        # Mid
+        if bone_name: anim_target.pose.bones[bone_name].rotation_euler[0] = math.radians(curl_amount)
+        else: anim_target.rotation_euler[0] = math.radians(curl_amount)
+        anim_target.keyframe_insert(data_path=dp, index=0, frame=(frame_start + frame_end) // 2)
+        
+        # End
+        if bone_name: anim_target.pose.bones[bone_name].rotation_euler[0] = 0
+        else: anim_target.rotation_euler[0] = 0
+        anim_target.keyframe_insert(data_path=dp, index=0, frame=frame_end)
 
 _plant_humanoid = None
 def get_plant_humanoid():
@@ -501,19 +510,16 @@ def animate_characters(master_instance):
         target = torso if torso else char
         animate_weight_shift(target, 1, 15000)
         animate_breathing(target, 1, 15000)
-        
-        # Visibility is now managed primarily by master._set_visibility and scene modules (Point 142)
-        # BaseMaster.run() handles initial load_assets then orchestrate/animate.
 
     # Baseline acting for tests
-    test_bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R", "Neck", "Jaw", "Mouth", "Eye.L", "Brow.L"]
+    test_bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R", "Neck", "Jaw", "Mouth", "Eye.L", "Brow.L", "Eye.R", "Brow.R"]
     for char in [h1, h2, gnome]:
         if not char or char.type != 'ARMATURE': continue
         pb = char.pose.bones
         torso = pb.get("Torso")
         if torso: 
             core.insert_looping_noise(char, 'pose.bones["Torso"].location', index=2, strength=0.05, scale=5.0, frame_start=1, frame_end=15000)
-            # Explicit acting keys for movement tests (Point 142)
+            # Explicit acting keys for movement tests
             char.keyframe_insert(data_path='pose.bones["Torso"].location', index=2, frame=100)
             char.keyframe_insert(data_path='pose.bones["Torso"].location', index=2, frame=200)
 

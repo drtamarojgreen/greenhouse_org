@@ -11,7 +11,10 @@ def get_compositor_node_tree(scene):
     scene.use_nodes = True
     
     # In some versions it's scene.node_tree, in others it's compositing_node_tree
-    tree = getattr(scene, 'node_tree', None) or getattr(scene, 'compositing_node_tree', None)
+    # or compositor_node_tree (Blender 5.x variability)
+    tree = getattr(scene, 'node_tree', None) or \
+           getattr(scene, 'compositing_node_tree', None) or \
+           getattr(scene, 'compositor_node_tree', None)
     
     if not tree:
         # Check if we can find it in bpy.data.node_groups as a fallback

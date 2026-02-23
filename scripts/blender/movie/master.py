@@ -78,7 +78,7 @@ class BaseMaster:
                 
                 # Point 142: Ensure constant interpolation
                 if o.animation_data and o.animation_data.action:
-                    for fc in style.get_action_curves(o.animation_data.action):
+                    for fc in style.get_action_curves(o.animation_data.action, obj=o):
                         if "hide_render" in fc.data_path:
                             for kp in fc.keyframe_points: kp.interpolation = 'CONSTANT'
                 for child in o.children:

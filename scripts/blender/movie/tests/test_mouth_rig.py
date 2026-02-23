@@ -27,7 +27,7 @@ class TestMouthRig(BlenderTestCase):
             plant_humanoid.animate_talk(char_obj, 100, 200, intensity=1.5)
 
             self.assertIsNotNone(char_obj.animation_data, "No animation data")
-            curves = style.get_action_curves(char_obj.animation_data.action)
+            curves = style.get_action_curves(char_obj.animation_data.action, obj=char_obj)
             
             mouth_z_found = False
             for fc in curves:
@@ -46,7 +46,7 @@ class TestMouthRig(BlenderTestCase):
             if not char_obj.animation_data:
                 plant_humanoid.animate_talk(char_obj, 100, 200)
 
-            curves = style.get_action_curves(char_obj.animation_data.action)
+            curves = style.get_action_curves(char_obj.animation_data.action, obj=char_obj)
             for fc in curves:
                 if "scale" in fc.data_path:
                     for kp in fc.keyframe_points:

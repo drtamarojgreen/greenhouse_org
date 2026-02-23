@@ -31,7 +31,7 @@ class TestExpressionRig(BlenderTestCase):
                 has_keyframes = False
                 if self.master.h1 and self.master.h1.animation_data and self.master.h1.animation_data.action:
                     # Point 142: Use robust curve discovery
-                    curves = style.get_action_curves(self.master.h1.animation_data.action)
+                    curves = style.get_action_curves(self.master.h1.animation_data.action, obj=self.master.h1)
                     if len(curves) > 0:
                         has_keyframes = True
 
@@ -50,7 +50,7 @@ class TestExpressionRig(BlenderTestCase):
                 plant_humanoid.animate_expression(char_asset, 100, expression='ANGRY')
                 
                 self.assertIsNotNone(char_asset.animation_data, f"R33 FAIL: {name} has no animation data")
-                curves = style.get_action_curves(char_asset.animation_data.action)
+                curves = style.get_action_curves(char_asset.animation_data.action, obj=char_asset)
                 
                 eye_scale_found = False
                 for fc in curves:
