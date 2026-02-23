@@ -37,6 +37,12 @@ def setup_scene(master):
     master.place_character(master.h2, (1, 0, 0), (0, 0, 0), start_frame)
     master.place_character(master.gnome, (2, 2, 0), (0, 0, math.radians(225)), start_frame)
 
+    # Point 142: Fix stale GazeTarget (Due Diligence)
+    gaze = bpy.data.objects.get("GazeTarget")
+    if gaze:
+        gaze.location = (0.5, 0.5, 1.5) # Looking closer to the plants as they win
+        gaze.keyframe_insert(data_path="location", frame=start_frame)
+
     # Metadata
     # Shot ID: S21_01
     # Intent: Breakthrough. Gnome is defeated by reason.

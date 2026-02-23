@@ -97,9 +97,9 @@ def setup_gaze_system(master):
     
     # Ensure helper is invisible in render and viewport (Point 142)
     gaze.display_type = 'WIRE'
-    gaze.hide_render = gaze.hide_viewport = True
-    for f in [1, 7500, 15000]:
-        gaze.keyframe_insert(data_path="hide_render", frame=f)
+    style.set_obj_visibility(gaze, False, 1)
+    style.set_obj_visibility(gaze, False, 7500)
+    style.set_obj_visibility(gaze, False, 15000)
     
     master.gaze_target = gaze
 

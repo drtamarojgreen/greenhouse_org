@@ -44,7 +44,7 @@ SCENE_ALIASES = {
 
 # Quality Presets
 QUALITY_PRESETS = {
-    'test': {'samples': 32, 'denoising': True},
-    'preview': {'samples': 64, 'denoising': True},
-    'final': {'samples': 128, 'denoising': True}
+    'test': {'samples': 64, 'denoising': True},
+    'preview': {'samples': 128, 'denoising': True},
+    'final': {'samples': 256, 'denoising': True}
 }

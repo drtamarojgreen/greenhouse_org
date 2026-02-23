@@ -53,5 +53,11 @@ def setup_scene(master):
     style.animate_expression_blend("GloomGnome", start_frame + 100, expression='ANGRY')
     style.animate_gnome_stumble(master.gnome, start_frame + 400)
 
+    # Point 142: Fix stale GazeTarget (Due Diligence)
+    gaze = bpy.data.objects.get("GazeTarget")
+    if gaze:
+        gaze.location = (1.5, 1.5, 1.5) # Looking between plants and gnome
+        gaze.keyframe_insert(data_path="location", frame=start_frame)
+
     # Fix A: Plants move toward the gnome as their argument intensifies (Point 105)
     style.animate_plant_advance(master, start_frame, end_frame)

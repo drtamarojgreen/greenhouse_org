@@ -38,6 +38,12 @@ def setup_scene(master):
     master.hold_position(master.h1, start_frame, end_frame)
     master.hold_position(master.h2, start_frame, end_frame)
 
+    # Point 142: Fix stale GazeTarget (Due Diligence)
+    gaze = bpy.data.objects.get("GazeTarget")
+    if gaze:
+        gaze.location = (0, 0, 1.5)
+        gaze.keyframe_insert(data_path="location", frame=start_frame)
+
     # Metadata
     # Shot ID: S17_01
     # Intent: Deeper philosophical inquiry.

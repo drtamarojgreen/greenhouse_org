@@ -16,4 +16,4 @@ def setup_scene(master):
         target.keyframe_insert(data_path="location", frame=400)
 
     # Brain Pulsing
-    style.animate_pulsing_emission(master.brain, 201, 400, base_strength=1.0, pulse_amplitude=5.0, cycle=48)
+    style.animate_pulsing_emission(master.brain, 201, 400, base_strength=1.0, pulse_amplitude=2.0, cycle=48)

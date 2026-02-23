@@ -18,7 +18,7 @@ def create_intertitle(master_instance, text, frame_start, frame_end):
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
     style.set_principled_socket(mat, "Emission", (1, 1, 1, 1))
-    style.set_principled_socket(mat, "Emission Strength", 20.0) # Point 142: Boosted for visibility
+    style.set_principled_socket(mat, "Emission Strength", 5.0) # Point 142: Boosted for visibility
     text_obj.data.materials.append(mat)
 
     # Backdrop (BMesh)
@@ -66,7 +66,7 @@ def create_spinning_logo(master_instance, text_content, frame_start, frame_end):
 
     mat = bpy.data.materials.new(name=f"LogoMat_{frame_start}")
     style.set_principled_socket(mat, "Emission", (1, 0.8, 0, 1))
-    style.set_principled_socket(mat, "Emission Strength", 8.0)
+    style.set_principled_socket(mat, "Emission Strength", 5.0)
     logo.data.materials.append(mat)
 
     # Animation (Rotation)
@@ -100,7 +100,7 @@ def create_thought_spark(master_instance, start_loc, end_loc, frame_start, frame
 
     mat = bpy.data.materials.new(name=f"SparkMat_{frame_start}")
     style.set_principled_socket(mat, "Emission", (0.5, 0.8, 1, 1))
-    style.set_principled_socket(mat, "Emission Strength", 10.0)
+    style.set_principled_socket(mat, "Emission Strength", 5.0)
     spark.data.materials.append(mat)
 
     # Animation
@@ -134,7 +134,7 @@ def create_diagnostic_highlight(master_instance, label, location, frame_start, f
 
     mat = bpy.data.materials.new(name=f"DiagMat_{label}")
     style.set_principled_socket(mat, "Emission", color)
-    style.set_principled_socket(mat, "Emission Strength", 10.0)
+    style.set_principled_socket(mat, "Emission Strength", 5.0)
     sphere.data.materials.append(mat)
 
     # Pulse

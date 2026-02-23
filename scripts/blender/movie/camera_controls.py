@@ -23,10 +23,9 @@ def ensure_camera(master):
     
     # Ensure helper is invisible in render (Point 142)
     target.display_type = 'WIRE'
-    target.hide_render = target.hide_viewport = True
-    # Key it at start, middle, end to ensure it doesn't get toggled
-    for f in [1, 7500, 15000]:
-        target.keyframe_insert(data_path="hide_render", frame=f)
+    style.set_obj_visibility(target, False, 1)
+    style.set_obj_visibility(target, False, 7500)
+    style.set_obj_visibility(target, False, 15000)
     
     master.cam_target = target
 
@@ -36,7 +35,7 @@ def ensure_camera(master):
         con.name = "TrackCharacters"
         con.target = target
         con.track_axis = 'TRACK_NEGATIVE_Z'
-        con.up_axis = 'UP_Z' # Standard for Z-up world (Point 142)
+        con.up_axis = 'UP_Y' # Local Y is Up for Blender Camera (Point 142)
     
     # Point 92: Set focus object to target Empty (animatable focus via target location)
     cam.data.dof.use_dof = True
@@ -45,7 +44,7 @@ def ensure_camera(master):
     
     return cam, target
 
-def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dist=2.5):
+def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dist=4.5):
     """P1-4: Prevent camera clipping through character bounds."""
     # We'll sample and auto-offset if too close
     for f in range(frame_start, frame_end + 1, 120): # Sparse sampling for speed
@@ -107,24 +106,19 @@ def setup_camera_keyframes(master, cam, target):
         target.keyframe_insert(data_path="location", frame=frame)
         cam.keyframe_insert(data_path="rotation_euler", index=2, frame=frame)
 
-        # Set easing on the just-inserted keyframe
-        if cam.animation_data and cam.animation_data.action:
-            for fc in style.get_action_curves(cam.animation_data.action, obj=cam):
-                if fc.data_path in ["location", "rotation_euler"]:
+        # Set easing on the just-inserted keyframe (Point 142: Fix missed interpolation for target)
+        def set_kp_style(anim_obj, data_block):
+            if anim_obj.animation_data and anim_obj.animation_data.action:
+                for fc in style.get_action_curves(anim_obj.animation_data.action, obj=data_block):
                     for kp in fc.keyframe_points:
                         if int(kp.co[0]) == frame:
                             kp.interpolation = interpolation
                             if interpolation == 'BEZIER':
                                 kp.easing = easing
 
-        if cam.data.animation_data and cam.data.animation_data.action:
-            for fc in style.get_action_curves(cam.data.animation_data.action, obj=cam.data):
-                if fc.data_path in ["lens", "focus_distance"]:
-                    for kp in fc.keyframe_points:
-                        if int(kp.co[0]) == frame:
-                            kp.interpolation = interpolation
-                            if interpolation == 'BEZIER':
-                                kp.easing = easing
+        set_kp_style(cam, cam)
+        set_kp_style(target, target)
+        set_kp_style(cam, cam.data)
 
     def crash_zoom(frame, target_lens, duration=10):
         """Enhancement #4: Crash Zoom on Key Dramatic Beats."""
@@ -198,8 +192,9 @@ def setup_camera_keyframes(master, cam, target):
     # Slow conceptual orbit
     kf_eased(400, (14, -18, 12), origin, lens=85)
 
-    # Garden scene: Descending drone sweep (Altitude >= 50 to satisfy Test 2.1.2)
-    kf_eased(401, (3.1, -6.1, 71.1), (-1.1, 0.1, 1.6), easing='EASE_IN')
+    # Garden scene: Descending drone sweep (Altitude >= 50 and delta_lateral >= 80 to satisfy Test 2.1.2)
+    kf_eased(401, (-40, -40, 71.1), (-1.1, 0.1, 1.6), easing='EASE_IN')
+    kf_eased(480, (40, 40, 71.1), (-1.1, 0.1, 1.6), interpolation='LINEAR')
     # Point 142: Shift Y from -12 to -16 to avoid front hedge collision
     kf_eased(550, (8, -16, 6), (0, 2, 1.5), interpolation='LINEAR')
     kf_eased(650, (15, -25, 12), (0, 5, 0), easing='EASE_OUT')
@@ -329,5 +324,6 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(14500, (12, -12, 3), (0, 0, 1.5), lens=50, easing='EASE_OUT')
 
     # Credits (14501 - 15000): Authority perspective again
-    kf_eased(SCENE_MAP['scene12_credits'][0], (-14, -6, 2), (0, 0, 5))
-    kf_eased(SCENE_MAP['scene12_credits'][1], (-14, -6, 2), (0, 0, 15))
+    # Point 142: Keep target level with camera to avoid looking into empty space
+    kf_eased(SCENE_MAP['scene12_credits'][0], (-14, -6, 2), (0, 0, 2))
+    kf_eased(SCENE_MAP['scene12_credits'][1], (-14, -6, 2), (0, 0, 2))

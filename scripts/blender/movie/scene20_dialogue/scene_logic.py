@@ -37,6 +37,12 @@ def setup_scene(master):
     master.place_character(master.h2, (1, 0, 0), (0, 0, 0), start_frame)
     master.place_character(master.gnome, (3.5, 3.5, 0), (0, 0, math.radians(225)), start_frame)
 
+    # Point 142: Fix stale GazeTarget (Due Diligence)
+    gaze = bpy.data.objects.get("GazeTarget")
+    if gaze:
+        gaze.location = (1.5, 1.5, 1.5) # Looking between plants and gnome
+        gaze.keyframe_insert(data_path="location", frame=start_frame)
+
     # Metadata
     # Shot ID: S20_01
     # Intent: The final argument.

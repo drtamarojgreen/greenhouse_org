@@ -54,6 +54,12 @@ def setup_scene(master):
         style.animate_blink(bpy.data.objects.get("GloomGnome_Eye_L"), start_frame, end_frame, interval_range=(20, 50))
         style.animate_blink(bpy.data.objects.get("GloomGnome_Eye_R"), start_frame, end_frame, interval_range=(20, 50))
 
+    # Point 142: Fix stale GazeTarget (Due Diligence)
+    gaze = bpy.data.objects.get("GazeTarget")
+    if gaze:
+        gaze.location = (1.5, 1.5, 1.5) # Looking between plants and gnome
+        gaze.keyframe_insert(data_path="location", frame=start_frame)
+
     # Fix A: Plants continue to move toward the gnome as their argument intensifies (Point 105)
     style.animate_plant_advance(master, start_frame, end_frame)
 
