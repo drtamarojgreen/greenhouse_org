@@ -53,7 +53,7 @@ def setup_scene(master):
     # 3. Sprint away with speed ramp (14001 - 14500)
     master.gnome.location.x = 4
     master.gnome.location.y = 4
-    master.gnome.keyframe_insert(data_path="location", frame=start_frame + 300)
+    master.gnome.keyframe_insert(data_path="location", frame=start_frame + 299)
 
     # Exponential-ish sprint
     master.gnome.location.x = 30

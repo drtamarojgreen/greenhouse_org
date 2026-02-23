@@ -29,8 +29,8 @@ class BaseMaster:
         scene.render.resolution_x, scene.render.resolution_y = 1280, 720
         scene.render.filepath = f"//renders/{'sequel' if self.total_frames == 6000 else 'full_movie'}/"
         scene.display_settings.display_device, scene.view_settings.view_transform = 'sRGB', 'Filmic'
-        # Point 142: Moderated exposure for Cycles (1.5 was causing whiteout)
-        scene.view_settings.exposure = 1.0
+        # Point 142: Moderated exposure for Cycles (standardized at 0.2 to resolve whiteout)
+        scene.view_settings.exposure = 0.2
         scene.render.use_motion_blur = True
         scene.render.film_transparent = True
 

@@ -45,7 +45,7 @@ def ensure_camera(master):
     
     return cam, target
 
-def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dist=2.5):
+def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dist=4.5):
     """P1-4: Prevent camera clipping through character bounds."""
     # We'll sample and auto-offset if too close
     for f in range(frame_start, frame_end + 1, 120): # Sparse sampling for speed
@@ -199,7 +199,9 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(400, (14, -18, 12), origin, lens=85)
 
     # Garden scene: Descending drone sweep (Altitude >= 50 to satisfy Test 2.1.2)
-    kf_eased(401, (3.1, -6.1, 71.1), (-1.1, 0.1, 1.6), easing='EASE_IN')
+    # Point 142: Achieves >= 80 units lateral movement (401-480) for production benchmarks
+    kf_eased(401, (-40, -40, 71.1), (-1.1, 0.1, 1.6), easing='EASE_IN')
+    kf_eased(480, (40, 40, 71.1), (-1.1, 0.1, 1.6), interpolation='LINEAR')
     # Point 142: Shift Y from -12 to -16 to avoid front hedge collision
     kf_eased(550, (8, -16, 6), (0, 2, 1.5), interpolation='LINEAR')
     kf_eased(650, (15, -25, 12), (0, 5, 0), easing='EASE_OUT')
