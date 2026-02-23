@@ -36,14 +36,23 @@
 
     const captureScriptAttributes = () => {
         const scriptElement = document.currentScript || document.querySelector('script[src*="neuro.js"]');
-        if (!scriptElement) {
-            console.error('Neuro App: Script element not found.');
-            return { baseUrl: '', targetSelector: '#neuro-app-container' };
+
+        // Capture initial values from script element
+        let baseUrl = scriptElement ? (scriptElement.getAttribute('data-base-url') || '') : '';
+        let targetSelector = scriptElement ? (scriptElement.getAttribute('data-target-selector-left') || '#neuro-app-container') : '#neuro-app-container';
+
+        // Fallback to global attributes if currentScript attributes are missing (standardized Greenhouse pattern)
+        const globalAttributes = window._greenhouseScriptAttributes || window._greenhouseNeuroAttributes || {};
+
+        baseUrl = baseUrl || globalAttributes['base-url'] || globalAttributes.baseUrl || '';
+        targetSelector = targetSelector || globalAttributes['target-selector-left'] || globalAttributes.targetSelector || '#neuro-app-container';
+
+        // Ensure baseUrl ends with slash for correct path joining
+        if (baseUrl && !baseUrl.endsWith('/')) {
+            baseUrl += '/';
         }
-        return {
-            baseUrl: scriptElement.getAttribute('data-base-url') || '',
-            targetSelector: scriptElement.getAttribute('data-target-selector-left') || '#neuro-app-container'
-        };
+
+        return { baseUrl, targetSelector };
     };
 
     async function main() {
@@ -53,14 +62,18 @@
 
             if (!window.GreenhouseUtils) throw new Error("GreenhouseUtils not found.");
 
-            // Load dependencies sequentially
+            // Load dependencies sequentially - Authoritative sequence for production stability
             await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_config.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_camera_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_synapse_camera_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_lighting.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_adhd_data.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ga.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_neuron.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_synapse.js', baseUrl);
