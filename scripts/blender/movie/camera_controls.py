@@ -201,7 +201,7 @@ def setup_camera_keyframes(master, cam, target):
     # Garden scene: Descending drone sweep (Altitude >= 50 to satisfy Test 2.1.2)
     kf_eased(401, (3.1, -6.1, 71.1), (-1.1, 0.1, 1.6), easing='EASE_IN')
     # Point 142: Shift Y from -12 to -16 to avoid front hedge collision
-    kf_eased(550, (8, -16, 6), (0, 2, 1.5), easing='LINEAR')
+    kf_eased(550, (8, -16, 6), (0, 2, 1.5), interpolation='LINEAR')
     kf_eased(650, (15, -25, 12), (0, 5, 0), easing='EASE_OUT')
 
     # Socratic (651 - 950): Eye-level, balanced
