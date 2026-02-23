@@ -62,7 +62,6 @@
                 this.synapseCameraController.autoRotate = true;
             }
 
-            console.log('NeuroUI3D: Initializing Canvas...');
 
             this.canvas = document.createElement('canvas');
             this.canvas.width = container.offsetWidth || 1000;
@@ -381,7 +380,6 @@
                 setTimeout(() => {
                     this.selectedConnection = this.connections[0];
                     this.viewMode = 'synapse';
-                    console.log("Auto-selected connection for Synapse View");
                 }, 1000);
             }
         },
@@ -945,14 +943,12 @@
         resetCamera() {
             if (this.networkCameraController) this.networkCameraController.resetCamera();
             if (this.synapseCameraController) this.synapseCameraController.resetCamera();
-            console.log("NeuroUI3D: Camera Reset");
         },
 
         toggleAutoRotate() {
             this.autoRotate = !this.autoRotate;
             if (this.networkCameraController) this.networkCameraController.autoRotate = this.autoRotate;
             if (this.synapseCameraController) this.synapseCameraController.autoRotate = this.autoRotate;
-            console.log("NeuroUI3D: Auto-Rotate", this.autoRotate);
         },
 
         generateSynapseMeshes() {

@@ -40,7 +40,6 @@
         },
 
         init(selector, baseUrl = '') {
-            console.log('NeuroApp: Initializing High Quality Canvas UI...');
             // Reset State
             this.state = {
                 viewMode: 0,

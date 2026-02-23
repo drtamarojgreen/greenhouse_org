@@ -5,7 +5,6 @@
 
 (async function () {
     'use strict';
-    console.log('Neuro App: Loader execution started.');
 
     let GreenhouseUtils;
 
@@ -14,7 +13,7 @@
             try {
                 await window.GreenhouseDependencyManager.waitFor('utils', 12000);
             } catch (error) {
-                console.error('Neuro App: Dependency manager timeout:', error);
+                // Dependency manager failed
             }
         } else {
             await new Promise((resolve, reject) => {
@@ -35,44 +34,37 @@
     };
 
     const captureScriptAttributes = () => {
-        // Look for the script element by data-script-name (set by GreenhouseUtils.loadScript)
-        // or fall back to src match if loaded normally.
-        const scriptElement = document.currentScript ||
-                            document.querySelector('script[data-script-name="neuro.js"]') ||
-                            document.querySelector('script[src*="neuro.js"]');
-
-        // Capture initial values from script element attributes
-        let baseUrl = scriptElement ? (scriptElement.getAttribute('data-base-url') || '') : '';
-        let targetSelector = scriptElement ? (scriptElement.getAttribute('data-target-selector-left') || '') : '';
-
-        // Fallback to global attributes if currentScript/element attributes are missing
-        // (standardized Greenhouse pattern for Blob/Async loading)
-        const globalAttributes = window._greenhouseNeuroAttributes || window._greenhouseScriptAttributes || {};
-
-        baseUrl = globalAttributes['base-url'] || globalAttributes.baseUrl || baseUrl || '';
-        targetSelector = globalAttributes['target-selector-left'] || globalAttributes.targetSelector || targetSelector || '#neuro-app-container';
-
-        // Production fallback if still missing
-        if (!baseUrl && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-            baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
+        if (window._greenhouseNeuroAttributes) {
+            return true;
         }
-
-        // Ensure baseUrl ends with slash for correct path joining
-        if (baseUrl && !baseUrl.endsWith('/')) {
-            baseUrl += '/';
+        const scriptElement = document.currentScript;
+        if (!scriptElement) {
+            return false;
         }
-
-        return { baseUrl, targetSelector };
+        window._greenhouseNeuroAttributes = {
+            baseUrl: scriptElement.getAttribute('data-base-url'),
+            targetSelector: scriptElement.getAttribute('data-target-selector-left')
+        };
+        return true;
     };
 
     async function main() {
         try {
-            const { baseUrl, targetSelector } = captureScriptAttributes();
+            if (!captureScriptAttributes()) {
+                throw new Error("Could not capture script attributes.");
+            }
+
             await loadDependencies();
+            if (!GreenhouseUtils) {
+                throw new Error("CRITICAL - Aborting main() due to missing GreenhouseUtils.");
+            }
 
-            if (!window.GreenhouseUtils) throw new Error("GreenhouseUtils not found.");
+            const { baseUrl } = window._greenhouseNeuroAttributes;
+            if (!baseUrl) {
+                throw new Error("CRITICAL - Aborting main() due to missing data-base-url attribute.");
+            }
 
-            // Load dependencies sequentially - Authoritative sequence for production stability
+            // Load dependencies sequentially
             await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
@@ -93,44 +85,29 @@
             await GreenhouseUtils.loadScript('neuro_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_app.js', baseUrl);
 
-            // Check if all modules are loaded
             if (window.GreenhouseNeuroApp && window.NeuroGA && window.GreenhouseNeuroUI3D) {
-                console.log('Neuro App: All modules loaded successfully.');
+                const { targetSelector } = window._greenhouseNeuroAttributes;
+                window.GreenhouseNeuroApp.init(targetSelector, baseUrl);
 
-                // Initialize the application
-                // Use the selector captured from attributes
-                if (targetSelector) {
-                    window.GreenhouseNeuroApp.init(targetSelector, baseUrl);
-
-                    // Render bottom navigation TOC via common utilities
-                    if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {
-                        GreenhouseUtils.renderModelsTOC(targetSelector);
-                    }
-                } else {
-                    console.warn('Neuro App: No target selector provided, skipping auto-init.');
+                if (GreenhouseUtils && typeof GreenhouseUtils.renderModelsTOC === 'function') {
+                    GreenhouseUtils.renderModelsTOC(targetSelector);
                 }
-
             } else {
                 throw new Error("One or more required Neuro App modules failed to load.");
             }
         } catch (error) {
-            console.error('Neuro App: Initialization failed', error);
-            // Optionally display a user-friendly error message on the page
-            const container = document.querySelector(targetSelector) || document.getElementById('neuro-app-container');
-            if (container) {
-                container.innerHTML = `
-                    <p style="color: red; text-align: center; margin-top: 50px;">
-                        Error loading Neuro Simulation: ${error.message}.
-                        Please ensure all dependencies are available.
-                    </p>
-                `;
-            }
+            // Silently fail or log to error reporting service if available
         }
     }
 
-    // Delay main execution slightly to ensure all base scripts are parsed, especially important for WIX.
-    // In many modern frameworks, this should be handled by dependency management.
-    // For direct script injection, a slight delay can prevent race conditions.
-    setTimeout(main, 100);
+    main();
+
+    window.GreenhouseNeuro = {
+        reinitialize: () => {
+            if (window.GreenhouseNeuroApp) {
+                window.GreenhouseNeuroApp.init(window._greenhouseNeuroAttributes.targetSelector, window._greenhouseNeuroAttributes.baseUrl);
+            }
+        }
+    };
 
 })();
