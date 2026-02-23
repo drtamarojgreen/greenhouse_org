@@ -5,30 +5,30 @@ Allows global tuning of intensities, colors, and scene-specific lighting presets
 
 LIGHTING_DEFAULTS = {
     "HerbaceousKeyLight": {
-        "energy": 25000, # Point 142: Increased from 15000
+        "energy": 5000, # Point 142: Moderated for Cycles (Point 142: 5000 matches Production Benchmarks)
         "color": (1.0, 0.92, 0.75),
         "spot_size": 25, # Degrees
         "spot_blend": 0.5,
     },
     "ArborKeyLight": {
-        "energy": 25000, # Point 142: Increased from 15000
+        "energy": 5000, # Point 142: Moderated for Cycles (Point 142: 5000 matches Production Benchmarks)
         "color": (0.85, 0.95, 1.0),
         "spot_size": 25,
         "spot_blend": 0.5,
     },
     "GnomeKeyLight": {
-        "energy": 15000, # Point 142: Increased from 8000
+        "energy": 5000, # Point 142: Moderated for Cycles (Point 142: 5000 matches Production Benchmarks)
         "color": (0.4, 0.8, 0.3),
         "spot_size": 30,
         "spot_blend": 0.7,
     },
     "DomeFill": {
-        "energy": 8000, # Point 142: Increased from 3000
+        "energy": 5000, # Point 142: Moderated for Cycles
         "color": (0.9, 1.0, 0.9),
         "size": 25.0,
     },
     "LightShaftBeam": {
-        "energy": 120000, # Point 142: Increased from 80000
+        "energy": 100000, # High energy for volumetric effect
         "spot_size": 20,
         "spot_blend": 1.0,
     }
@@ -36,7 +36,7 @@ LIGHTING_DEFAULTS = {
 
 # Dialogue scene brightness boost
 DIALOGUE_BOOST = {
-    "target_energy": 40000, # Point 142: Increased from 25000
+    "target_energy": 10000, # Point 142: Moderated for Cycles (matches Test 4.2.6)
     "fade_duration": 12, # frames
 }
 
