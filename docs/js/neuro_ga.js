@@ -686,6 +686,21 @@
             };
         }
 
+        start() {
+            this.isRunning = true;
+            console.log("NeuroGA: Started");
+        }
+
+        stop() {
+            this.isRunning = false;
+            console.log("NeuroGA: Stopped");
+        }
+
+        update(dt) {
+            if (!this.isRunning) return;
+            return this.step();
+        }
+
         mutate(genome) {
             // ADHD: Gene-Environment Interaction (Enhancement 91)
             if (this.adhdConfig.activeEnhancements.has(91)) {
