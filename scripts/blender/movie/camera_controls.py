@@ -36,7 +36,7 @@ def ensure_camera(master):
         con.name = "TrackCharacters"
         con.target = target
         con.track_axis = 'TRACK_NEGATIVE_Z'
-        con.up_axis = 'UP_Z' # Standard for Z-up world (Point 142)
+        con.up_axis = 'UP_Y' # Correct for Z-up world (Point 142)
     
     # Point 92: Set focus object to target Empty (animatable focus via target location)
     cam.data.dof.use_dof = True
@@ -94,7 +94,7 @@ def ensure_secondary_camera(master):
         con.name = "TrackTarget"
         con.target = target
         con.track_axis = 'TRACK_NEGATIVE_Z'
-        con.up_axis = 'UP_Z'
+        con.up_axis = 'UP_Y'
     
     return cam, target
 

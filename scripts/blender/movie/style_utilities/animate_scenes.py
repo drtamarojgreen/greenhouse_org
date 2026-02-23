@@ -278,7 +278,11 @@ def animate_plant_advance(master, frame_start, frame_end):
 
 def add_scene_markers(master):
     """Enhancement #74: Timeline Bookmark System."""
-    master.scene.timeline_markers.clear()
+    # Point 142: Selective clear to preserve camera-switching markers
+    for m in list(master.scene.timeline_markers):
+        if not m.camera:
+            master.scene.timeline_markers.remove(m)
+
     from constants import SCENE_MAP
     for name, (start, end) in SCENE_MAP.items():
         master.scene.timeline_markers.new(name.replace("scene", "S"), frame=start)
