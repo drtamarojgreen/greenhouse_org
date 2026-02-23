@@ -66,9 +66,42 @@ def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dis
                 cam.location += offset
                 cam.keyframe_insert(data_path="location", frame=f)
 
+def ensure_secondary_camera(master):
+    """Ensures secondary camera and target exist (Point 142)."""
+    # Camera
+    cam = bpy.data.objects.get("MovieCamera_Secondary")
+    if not cam:
+        cam_data = bpy.data.cameras.new("MovieCamera_Secondary")
+        cam = bpy.data.objects.new("MovieCamera_Secondary", cam_data)
+        master.scene.collection.objects.link(cam)
+        cam.location = (0, -15, 2)
+
+    # Target
+    target = bpy.data.objects.get("CamTarget_Secondary")
+    if not target:
+        target = bpy.data.objects.new("CamTarget_Secondary", None)
+        master.scene.collection.objects.link(target)
+
+    # Ensure helper is invisible in render
+    target.display_type = 'WIRE'
+    target.hide_render = target.hide_viewport = True
+    for f in [1, 7500, 15000]:
+        target.keyframe_insert(data_path="hide_render", frame=f)
+
+    # Basic constraints
+    if not cam.constraints.get("TrackTarget"):
+        con = cam.constraints.new(type='TRACK_TO')
+        con.name = "TrackTarget"
+        con.target = target
+        con.track_axis = 'TRACK_NEGATIVE_Z'
+        con.up_axis = 'UP_Z'
+
+    return cam, target
+
 def setup_all_camera_logic(master):
     """Initializes camera, target, and keyframes."""
     cam, target = ensure_camera(master)
+    ensure_secondary_camera(master)
 
     if master.mode == 'SILENT_FILM':
         # Enhanced Handheld Noise Layer
@@ -181,6 +214,26 @@ def setup_camera_keyframes(master, cam, target):
     # Extend clip_end for high altitude drone shots
     cam.data.clip_end = 500.0
     cam.data.clip_start = 0.1
+
+    # Initialize Secondary Camera and switch markers (Point 142)
+    cam_sec, target_sec = ensure_secondary_camera(master)
+    cam_sec.location = (0, -15, 2)
+    target_sec.location = (0, 0, 2)
+    cam_sec.keyframe_insert(data_path="location", frame=150)
+    target_sec.keyframe_insert(data_path="location", frame=150)
+
+    # Timeline Markers for Camera Switching (Point 142)
+    # We add or update markers instead of clearing to preserve existing ones.
+    def ensure_marker(name, frame, camera):
+        m = master.scene.timeline_markers.get(name)
+        if not m:
+            m = master.scene.timeline_markers.new(name, frame=frame)
+        m.frame = frame
+        m.camera = camera
+
+    ensure_marker("MainCam", 1, cam)
+    ensure_marker("SecondaryCam", 150, cam_sec)
+    ensure_marker("MainCamBack", 201, cam)
 
     # Branding (1 - 100): Authority perspective
     kf_eased(1, (-14, -6, 6), origin, lens=55)
