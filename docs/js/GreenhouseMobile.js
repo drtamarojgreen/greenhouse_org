@@ -386,7 +386,7 @@
                     position: absolute; top: 40px; right: 25px;
                     background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
                     color: white; width: 44px; height: 44px; border-radius: 50%;
-                    font-size: 32px; display: flex; align-items: center; justify-content: center;
+                    font-size: 32px; display: flex; align-items; justify-content: center;
                     z-index: 100001; backdrop-filter: blur(10px);
                 }
                 .gh-swipe-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: all 0.3s ease; }

@@ -52,7 +52,7 @@
                 if (avgScale < 0.5) {
                     const alphaRaw = GreenhouseModels3DMath.applyDepthFog(0.5, (p1.depth + p2.depth) / 2);
                     const alpha = Math.round(alphaRaw * 10) / 10;
-                    if (alpha <= 0) continue;
+                    if (alpha <= 0) return;
 
                     const colorType = conn.weight > 0 ? 'gold' : 'silver';
                     const key = `${colorType}_${alpha}`;
@@ -60,7 +60,7 @@
                     if (!batches[key]) batches[key] = new Path2D();
                     batches[key].moveTo(p1.x, p1.y);
                     batches[key].lineTo(p2.x, p2.y);
-                    continue;
+                    return;
                 }
 
                 // Optimization: Pre-project mesh vertices (using pooling)
@@ -94,7 +94,6 @@
                 facesWithDepth.sort((a, b) => b.depth - a.depth);
 
                 const alpha = GreenhouseModels3DMath.applyDepthFog(0.8, facesWithDepth[0]?.depth || 1);
-                const colorBatches = {};
 
                 for (let i = 0; i < facesWithDepth.length; i++) {
                     const { vertices, origVertices } = facesWithDepth[i];
@@ -127,25 +126,18 @@
                             intensity += diffuse * 0.5;
                         }
 
-                        // Quantize intensity for batching (10 levels)
-                        const qInt = Math.round(intensity * 10) / 10;
                         const baseColor = conn.weight > 0 ? { r: 255, g: 215, b: 0 } : { r: 176, g: 196, b: 222 };
-                        const litR = Math.floor(Math.min(255, baseColor.r * qInt));
-                        const litG = Math.floor(Math.min(255, baseColor.g * qInt));
-                        const litB = Math.floor(Math.min(255, baseColor.b * qInt));
-                        const colorKey = `rgba(${litR}, ${litG}, ${litB}, ${alpha})`;
+                        const litR = Math.min(255, baseColor.r * intensity);
+                        const litG = Math.min(255, baseColor.g * intensity);
+                        const litB = Math.min(255, baseColor.b * intensity);
 
-                        if (!colorBatches[colorKey]) colorBatches[colorKey] = new Path2D();
-                        colorBatches[colorKey].moveTo(v1.x, v1.y);
-                        colorBatches[colorKey].lineTo(v2.x, v2.y);
-                        colorBatches[colorKey].lineTo(v3.x, v3.y);
-                        colorBatches[colorKey].closePath();
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${alpha})`;
+                        ctx.beginPath();
+                        ctx.moveTo(v1.x, v1.y);
+                        ctx.lineTo(v2.x, v2.y);
+                        ctx.lineTo(v3.x, v3.y);
+                        ctx.fill();
                     }
-                }
-
-                for (const color in colorBatches) {
-                    ctx.fillStyle = color;
-                    ctx.fill(colorBatches[color]);
                 }
 
                 const seed = (conn.from.id + conn.to.id) * 0.1;
@@ -233,7 +225,10 @@
                 ctx.beginPath();
                 ctx.rect(x, y, w, h);
                 ctx.clip();
-                // Title drawn in neuro_ui_3d_enhanced.js render() for consistency
+                ctx.fillStyle = '#4ca1af';
+                ctx.font = '800 10px Quicksand, sans-serif';
+                ctx.textBaseline = 'top';
+                ctx.fillText(t('synapse_view_title').toUpperCase(), x + 15, y + 15);
             } else {
                 ctx.save();
             }
@@ -645,70 +640,42 @@
             const data = window.GreenhouseADHDData;
             if (!data) return null;
 
-            // Check Vesicles & Mitochondria
-            const conn = window.GreenhouseNeuroUI3D?.selectedConnection;
-            if (conn && conn.synapseDetails) {
-                // Vesicles
-                for (const v of conn.synapseDetails.vesicles) {
-                    const vp = GreenhouseModels3DMath.project3DTo2D(v.x, v.y - 60, v.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
-                    if (vp.scale > 0) {
-                        const d = Math.sqrt(Math.pow(vp.x - x, 2) + Math.pow(vp.y - y, 2));
-                        if (d < 15 * vp.scale) {
-                            return { type: 'vesicle', label: t('Vesicle'), tooltip: t('vesicle_tooltip') };
-                        }
-                    }
-                }
-                // Mitochondria
-                for (const m of conn.synapseDetails.mitochondria) {
-                    const mp = GreenhouseModels3DMath.project3DTo2D(m.x, m.y + (m.y > 0 ? 60 : -60), m.z, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
-                    if (mp.scale > 0) {
-                        const d = Math.sqrt(Math.pow(mp.x - x, 2) + Math.pow(mp.y - y, 2));
-                        if (d < 30 * mp.scale) {
-                            return { type: 'mitochondria', label: t('Mitochondria'), tooltip: t('mitochondria_tooltip') };
-                        }
-                    }
-                }
-            }
-
             // Collision check using projected areas of pre-terminal, cleft, and post-terminal
             const prePos = GreenhouseModels3DMath.project3DTo2D(0, -150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             const postPos = GreenhouseModels3DMath.project3DTo2D(0, 150, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
             const cleftPos = GreenhouseModels3DMath.project3DTo2D(0, 0, 0, synapseCamera, { width: w, height: h, near: 10, far: 1000 });
 
-            // Pre-Terminal
+            // Pre-Terminal (-200 range)
             const preDist = prePos.scale > 0 ? Math.sqrt(Math.pow(prePos.x - x, 2) + Math.pow(prePos.y - y, 2)) : Infinity;
             if (preDist < 100 * prePos.scale) {
                 const ids = [3, 9, 10, 14, 22, 28, 57, 72, 74, 84, 88, 96, 99];
                 const active = ids.filter(id => adhdActive.has(id));
                 if (active.length > 0) {
                     const e = data.getEnhancementById(active[0]);
-                    return { type: 'synapse_component', label: t('pre_synaptic_terminal'), tooltip: t('pre_synaptic_tooltip'), detail: `${t('adhd_enh_' + e.id + '_name')}: ${t('adhd_enh_' + e.id + '_desc')}` };
+                    return `<strong>${t('adhd_enh_' + e.id + '_name')} (Axon Terminal)</strong><br>${t('adhd_enh_' + e.id + '_desc')}<br><em>Synaptic Dynamic: Altered vesicle docking and release mechanics.</em>`;
                 }
-                return { type: 'synapse_component', label: t('pre_synaptic_terminal'), tooltip: t('pre_synaptic_tooltip') };
             }
 
-            // Synaptic Cleft
+            // Synaptic Cleft (0 range)
             const cleftDist = cleftPos.scale > 0 ? Math.sqrt(Math.pow(cleftPos.x - x, 2) + Math.pow(cleftPos.y - y, 2)) : Infinity;
             if (cleftDist < 120 * cleftPos.scale) {
                 const ids = [1, 2, 8, 11, 12, 13, 18, 23, 26, 30, 31, 34, 41, 51, 61, 65, 66, 69, 70, 79, 82, 85, 87];
                 const active = ids.filter(id => adhdActive.has(id));
                 if (active.length > 0) {
                     const e = data.getEnhancementById(active[0]);
-                    return { type: 'synapse_component', label: t('synaptic_cleft'), tooltip: t('cleft_tooltip'), detail: `${t('adhd_enh_' + e.id + '_name')}: ${t('adhd_enh_' + e.id + '_desc')}` };
+                    return `<strong>${t('adhd_enh_' + e.id + '_name')} (Synaptic Cleft)</strong><br>${t('adhd_enh_' + e.id + '_desc')}<br><em>Synaptic Dynamic: Modulation of neurotransmitter flux and degradation.</em>`;
                 }
-                return { type: 'synapse_component', label: t('synaptic_cleft'), tooltip: t('cleft_tooltip') };
             }
 
-            // Post-Terminal
+            // Post-Terminal (200 range)
             const postDist = postPos.scale > 0 ? Math.sqrt(Math.pow(postPos.x - x, 2) + Math.pow(postPos.y - y, 2)) : Infinity;
             if (postDist < 100 * postPos.scale) {
                 const ids = [5, 29, 32, 55, 68, 73, 77];
                 const active = ids.filter(id => adhdActive.has(id));
                 if (active.length > 0) {
                     const e = data.getEnhancementById(active[0]);
-                    return { type: 'synapse_component', label: t('post_synaptic_density'), tooltip: t('post_synaptic_tooltip'), detail: `${t('adhd_enh_' + e.id + '_name')}: ${t('adhd_enh_' + e.id + '_desc')}` };
+                    return `<strong>${t('adhd_enh_' + e.id + '_name')} (Dendritic Spine)</strong><br>${t('adhd_enh_' + e.id + '_desc')}<br><em>Synaptic Dynamic: Receptor sensitivity and signal transduction changes.</em>`;
                 }
-                return { type: 'synapse_component', label: t('post_synaptic_density'), tooltip: t('post_synaptic_tooltip') };
             }
 
             return null;

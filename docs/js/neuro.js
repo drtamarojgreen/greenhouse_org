@@ -58,13 +58,9 @@
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro_config.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro_camera_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro_synapse_camera_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro_lighting.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro_adhd_data.js', baseUrl);
-            await GreenhouseUtils.loadScript('neuro_ga.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_config.js', baseUrl);
+            await GreenhouseUtils.loadScript('neuro_ga.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_neuron.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_ui_3d_synapse.js', baseUrl);
@@ -91,18 +87,25 @@
                 }
 
             } else {
-                throw new Error("One or more application modules failed to load.");
+                throw new Error("One or more required Neuro App modules failed to load.");
             }
-
         } catch (error) {
-            console.error('Neuro App: Initialization failed:', error);
-            if (GreenhouseUtils) {
-                GreenhouseUtils.displayError(`Failed to load neuro components: ${error.message}`);
+            console.error('Neuro App: Initialization failed', error);
+            // Optionally display a user-friendly error message on the page
+            if (document.getElementById('neuro-app-container')) {
+                document.getElementById('neuro-app-container').innerHTML = `
+                    <p style="color: red; text-align: center; margin-top: 50px;">
+                        Error loading Neuro Simulation: ${error.message}.
+                        Please ensure all dependencies are available.
+                    </p>
+                `;
             }
         }
     }
 
-    // --- Main Execution Logic ---
-    main();
+    // Delay main execution slightly to ensure all base scripts are parsed, especially important for WIX.
+    // In many modern frameworks, this should be handled by dependency management.
+    // For direct script injection, a slight delay can prevent race conditions.
+    setTimeout(main, 100);
 
 })();

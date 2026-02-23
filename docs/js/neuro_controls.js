@@ -74,7 +74,6 @@
         },
 
         drawSlider(ctx, app, s, value) {
-            if (!s || !isFinite(s.x) || !isFinite(s.y) || !isFinite(s.w)) return;
             const isHovered = app.ui.hoveredElement && app.ui.hoveredElement.id === s.id;
 
             ctx.save();
@@ -103,44 +102,22 @@
         },
 
         drawPanel(ctx, app, x, y, w, h, title) {
-            if (!isFinite(x) || !isFinite(y) || !isFinite(w) || !isFinite(h) || w <= 0 || h <= 0) return;
             ctx.save();
-            // Transparent/Scientific HUD background
-            const grad = ctx.createLinearGradient(x, y, x + w, y + h);
-            grad.addColorStop(0, 'rgba(10, 15, 25, 0.6)');
-            grad.addColorStop(1, 'rgba(5, 10, 20, 0.4)');
-            ctx.fillStyle = grad;
+            // Glassmorphism background
+            ctx.fillStyle = 'rgba(10, 15, 25, 0.85)';
+            if (app.roundRect) app.roundRect(ctx, x, y, w, h, 16, true);
 
-            if (app.roundRect) app.roundRect(ctx, x, y, w, h, 12, true);
-
-            // Subtle border glow
-            ctx.strokeStyle = 'rgba(76, 161, 175, 0.3)';
-            ctx.lineWidth = 0.5;
-            if (app.roundRect) app.roundRect(ctx, x, y, w, h, 12, false, true);
-
-            // Corner accents
-            ctx.strokeStyle = '#4ca1af';
-            ctx.lineWidth = 1.5;
-            const accentSize = 10;
-            // Top Left
-            ctx.beginPath(); ctx.moveTo(x, y + accentSize); ctx.lineTo(x, y); ctx.lineTo(x + accentSize, y); ctx.stroke();
-            // Bottom Right
-            ctx.beginPath(); ctx.moveTo(x + w, y + h - accentSize); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w - accentSize, y + h); ctx.stroke();
+            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+            ctx.lineWidth = 1;
+            if (app.roundRect) app.roundRect(ctx, x, y, w, h, 16, false, true);
 
             // Title
             if (title) {
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'top';
                 ctx.fillStyle = '#4ca1af';
-                ctx.font = '800 9px Quicksand, sans-serif';
-                ctx.fillText(title.toUpperCase(), x + 15, y + 12);
-
-                // Title line
-                ctx.beginPath();
-                ctx.moveTo(x + 15, y + 25);
-                ctx.lineTo(x + w - 15, y + 25);
-                ctx.strokeStyle = 'rgba(76, 161, 175, 0.2)';
-                ctx.stroke();
+                ctx.font = '800 10px Quicksand, sans-serif';
+                ctx.fillText(title.toUpperCase(), x + 20, y + 15);
             }
             ctx.restore();
         },
@@ -159,136 +136,6 @@
             ctx.fillStyle = query ? '#fff' : 'rgba(255,255,255,0.3)';
             ctx.font = '12px Quicksand, sans-serif';
             ctx.fillText(query || t('search_scenarios') || 'Search Scenarios...', s.x + 10, s.y + s.h / 2);
-            ctx.restore();
-        },
-
-        drawDropdown(ctx, app, d, isOpen) {
-            const isHovered = app.ui.hoveredElement && app.ui.hoveredElement.id === d.id;
-
-            ctx.save();
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-
-            // Button Base
-            ctx.fillStyle = isOpen ? 'rgba(76, 161, 175, 0.4)' : (isHovered ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)');
-            ctx.strokeStyle = isOpen ? '#4ca1af' : 'rgba(255,255,255,0.2)';
-            ctx.lineWidth = 1;
-
-            if (app.roundRect) app.roundRect(ctx, d.x, d.y, d.w, d.h, 6, true, true);
-            else { ctx.fillRect(d.x, d.y, d.w, d.h); ctx.strokeRect(d.x, d.y, d.w, d.h); }
-
-            // Current Label
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 10px Quicksand, sans-serif';
-            const currentLabel = d.options.find(o => o.val === d.val)?.label || d.val;
-            ctx.fillText(currentLabel.toUpperCase(), d.x + 10, d.y + d.h / 2);
-
-            // Arrow
-            ctx.beginPath();
-            const ax = d.x + d.w - 20;
-            const ay = d.y + d.h / 2;
-            if (isOpen) {
-                ctx.moveTo(ax - 4, ay + 2); ctx.lineTo(ax, ay - 2); ctx.lineTo(ax + 4, ay + 2);
-            } else {
-                ctx.moveTo(ax - 4, ay - 2); ctx.lineTo(ax, ay + 2); ctx.lineTo(ax + 4, ay - 2);
-            }
-            ctx.stroke();
-
-            // Options List
-            if (isOpen) {
-                const optH = 25;
-                const listH = d.options.length * optH;
-
-                // Shadow/Backdrop for list
-                ctx.fillStyle = 'rgba(10, 15, 25, 0.95)';
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = 'rgba(0,0,0,0.5)';
-                if (app.roundRect) app.roundRect(ctx, d.x, d.y + d.h + 2, d.w, listH, 6, true, true);
-                ctx.shadowBlur = 0;
-
-                d.options.forEach((opt, idx) => {
-                    const oy = d.y + d.h + 2 + idx * optH;
-                    const isOptHovered = app.ui.hoveredElement && app.ui.hoveredElement.id === `${d.id}_opt_${idx}`;
-
-                    if (isOptHovered) {
-                        ctx.fillStyle = 'rgba(76, 161, 175, 0.3)';
-                        ctx.fillRect(d.x + 2, oy + 2, d.w - 4, optH - 4);
-                    }
-
-                    ctx.fillStyle = isOptHovered ? '#fff' : 'rgba(255,255,255,0.7)';
-                    ctx.fillText(opt.label.toUpperCase(), d.x + 10, oy + optH / 2);
-                });
-            }
-
-            ctx.restore();
-        },
-
-        drawTooltip(ctx, app, x, y, text, detail) {
-            if (!text) return;
-
-            ctx.save();
-            const margin = 10;
-            const maxWidth = 250;
-            const lineHeight = 16;
-
-            // Calculate height (dry run of wrapText)
-            const getWrappedHeight = (txt, font, w) => {
-                ctx.font = font;
-                const words = txt.split(' ');
-                let line = '';
-                let lines = 1;
-                for (let n = 0; n < words.length; n++) {
-                    const testLine = line + words[n] + ' ';
-                    if (ctx.measureText(testLine).width > w && n > 0) {
-                        line = words[n] + ' ';
-                        lines++;
-                    } else {
-                        line = testLine;
-                    }
-                }
-                return lines * lineHeight;
-            };
-
-            const textH = getWrappedHeight(text, 'bold 12px Quicksand, sans-serif', maxWidth - margin * 2);
-            const detailH = detail ? getWrappedHeight(detail, 'italic 11px Quicksand, sans-serif', maxWidth - margin * 2) : 0;
-            const totalH = textH + detailH + margin * 2 + (detail ? 5 : 0);
-
-            let tx = x + 15;
-            let ty = y + 15;
-            if (tx + maxWidth > (ctx.canvas.width || 1200)) tx = x - maxWidth - 5;
-            if (ty + totalH > (ctx.canvas.height || 600)) ty = y - totalH - 5;
-
-            // Draw Box
-            ctx.fillStyle = 'rgba(5, 10, 20, 0.9)';
-            ctx.strokeStyle = 'rgba(76, 161, 175, 0.8)';
-            ctx.lineWidth = 1;
-            if (app.roundRect) app.roundRect(ctx, tx, ty, maxWidth, totalH, 4, true, true);
-            else { ctx.fillRect(tx, ty, maxWidth, totalH); ctx.strokeRect(tx, ty, maxWidth, totalH); }
-
-            // Accent Line
-            ctx.beginPath();
-            ctx.moveTo(tx, ty + 2);
-            ctx.lineTo(tx, ty + totalH - 2);
-            ctx.strokeStyle = '#4ca1af';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-
-            // Draw Content
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 12px Quicksand, sans-serif';
-            if (window.GreenhouseModelsUtil?.wrapText) {
-                window.GreenhouseModelsUtil.wrapText(ctx, text, tx + margin + 5, ty + margin, maxWidth - margin * 2, lineHeight);
-                if (detail) {
-                    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-                    ctx.font = 'italic 11px Quicksand, sans-serif';
-                    window.GreenhouseModelsUtil.wrapText(ctx, detail, tx + margin + 5, ty + margin + textH + 5, maxWidth - margin * 2, lineHeight);
-                }
-            } else {
-                ctx.fillText(text, tx + margin + 5, ty + margin);
-            }
-
             ctx.restore();
         }
     };
