@@ -35,17 +35,22 @@
     };
 
     const captureScriptAttributes = () => {
-        const scriptElement = document.currentScript || document.querySelector('script[src*="neuro.js"]');
+        // Look for the script element by data-script-name (set by GreenhouseUtils.loadScript)
+        // or fall back to src match if loaded normally.
+        const scriptElement = document.currentScript ||
+                            document.querySelector('script[data-script-name="neuro.js"]') ||
+                            document.querySelector('script[src*="neuro.js"]');
 
-        // Capture initial values from script element
+        // Capture initial values from script element attributes
         let baseUrl = scriptElement ? (scriptElement.getAttribute('data-base-url') || '') : '';
-        let targetSelector = scriptElement ? (scriptElement.getAttribute('data-target-selector-left') || '#neuro-app-container') : '#neuro-app-container';
+        let targetSelector = scriptElement ? (scriptElement.getAttribute('data-target-selector-left') || '') : '';
 
-        // Fallback to global attributes if currentScript attributes are missing (standardized Greenhouse pattern)
-        const globalAttributes = window._greenhouseScriptAttributes || window._greenhouseNeuroAttributes || {};
+        // Fallback to global attributes if currentScript/element attributes are missing
+        // (standardized Greenhouse pattern for Blob/Async loading)
+        const globalAttributes = window._greenhouseNeuroAttributes || window._greenhouseScriptAttributes || {};
 
-        baseUrl = baseUrl || globalAttributes['base-url'] || globalAttributes.baseUrl || '';
-        targetSelector = targetSelector || globalAttributes['target-selector-left'] || globalAttributes.targetSelector || '#neuro-app-container';
+        baseUrl = globalAttributes['base-url'] || globalAttributes.baseUrl || baseUrl || '';
+        targetSelector = globalAttributes['target-selector-left'] || globalAttributes.targetSelector || targetSelector || '#neuro-app-container';
 
         // Production fallback if still missing
         if (!baseUrl && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
@@ -73,6 +78,7 @@
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_config.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic_camera_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_camera_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_synapse_camera_controls.js', baseUrl);
             await GreenhouseUtils.loadScript('neuro_lighting.js', baseUrl);

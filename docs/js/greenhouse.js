@@ -287,7 +287,7 @@
      * but is still passed to `scheduler.js` for potential future use in app-specific logic.
      */
     async function loadSchedulerApplication() {
-        console.log(`Greenhouse: Loading scheduler application (displaying all views for development).`);
+        console.log(`Greenhouse: Loading scheduler application.`);
 
         const schedulerSelectors = {
             dashboardLeft: config.selectors.dashboardLeft,
@@ -397,7 +397,8 @@
             'neuro',
             'neuro.js',
             config.selectors.neuro,
-            config.fallbackSelectors.neuro
+            config.fallbackSelectors.neuro,
+            ['neuro_config.js', 'neuro_controls.js', 'neuro_ui_3d.js', 'neuro_app.js']
         );
     }
 
@@ -560,7 +561,6 @@
      * @param {function} loadFn - The async function to load the application.
      */
     async function pollAndLoad(selector, loadFn) {
-        console.log(`Greenhouse: Polling for ${selector}...`);
         const pollInterval = 100;
         const maxAttempts = 150; // 15 seconds
         let attempts = 0;
@@ -569,7 +569,6 @@
             const element = document.querySelector(selector);
             if (element) {
                 clearInterval(poll);
-                console.log(`Greenhouse: Target found for ${selector}. Loading app...`);
                 await loadFn();
             } else {
                 attempts++;

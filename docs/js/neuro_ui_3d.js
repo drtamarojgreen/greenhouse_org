@@ -50,13 +50,13 @@
                 // Network Controller
                 this.networkCameraController = new window.GreenhouseGeneticCameraController(
                     this.camera,
-                    window.GreenhouseGeneticConfig // Reuse config or create mock if needed
+                    window.GreenhouseNeuroConfig // Reuse config or create mock if needed
                 );
 
                 // Synapse Controller
                 this.synapseCameraController = new window.GreenhouseGeneticCameraController(
                     this.synapseCamera,
-                    window.GreenhouseGeneticConfig
+                    window.GreenhouseNeuroConfig
                 );
                 // Synapse view usually rotates slowly by default
                 this.synapseCameraController.autoRotate = true;
