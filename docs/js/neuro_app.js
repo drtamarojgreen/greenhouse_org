@@ -56,7 +56,10 @@
 
             // Robust selector handling (Wix compatibility)
             this.container = (typeof selector === 'string') ? document.querySelector(selector) : selector;
-            if (!this.container) return;
+            if (!this.container) {
+                console.error('NeuroApp: Target container not found:', selector);
+                return;
+            }
 
             this.baseUrl = baseUrl || '';
 
@@ -515,7 +518,7 @@
             const filteredCount = this.getFilteredCheckboxes().length;
             const totalHeight = filteredCount * lineHeight;
             const scrollbarHeight = scrollAreaH * (scrollAreaH / totalHeight);
-            const scrollbarY = scrollAreaY + (thisAreaH / totalHeight) * this.state.scrollOffset;
+            const scrollbarY = scrollAreaY + (scrollAreaH / totalHeight) * this.state.scrollOffset;
 
             if (totalHeight > scrollAreaH) {
                 ctx.fillStyle = 'rgba(255,255,255,0.2)';
@@ -589,19 +592,19 @@
         startSimulation() {
             if (this.isRunning) return;
             this.isRunning = true;
-            this.ga.start();
-            this.ui3d.startAnimation();
+            if (this.ga && typeof this.ga.start === 'function') this.ga.start();
+            if (this.ui3d && typeof this.ui3d.startAnimation === 'function') this.ui3d.startAnimation();
             this.lastTime = performance.now();
-            this.rafLoop();
+            this.rafId = requestAnimationFrame((t) => this.rafLoop(t));
             console.log('NeuroApp: Simulation started.');
         },
 
         stopSimulation() {
             if (!this.isRunning) return;
             this.isRunning = false;
-            this.ga.stop();
-            this.ui3d.stopAnimation();
-            cancelAnimationFrame(this.rafId);
+            if (this.ga && typeof this.ga.stop === 'function') this.ga.stop();
+            if (this.ui3d && typeof this.ui3d.stopAnimation === 'function') this.ui3d.stopAnimation();
+            if (this.rafId) cancelAnimationFrame(this.rafId);
             console.log('NeuroApp: Simulation stopped.');
         },
 
@@ -609,6 +612,11 @@
             if (!this.isRunning) return;
 
             const deltaTime = (currentTime - this.lastTime) / 1000; // seconds
+            if (isNaN(deltaTime) || deltaTime < 0) {
+                this.lastTime = currentTime;
+                this.rafId = requestAnimationFrame((t) => this.rafLoop(t));
+                return;
+            }
             this.lastTime = currentTime;
             this.accumulatedTime += deltaTime;
 

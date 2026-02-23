@@ -47,6 +47,11 @@
         baseUrl = baseUrl || globalAttributes['base-url'] || globalAttributes.baseUrl || '';
         targetSelector = targetSelector || globalAttributes['target-selector-left'] || globalAttributes.targetSelector || '#neuro-app-container';
 
+        // Production fallback if still missing
+        if (!baseUrl && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
+        }
+
         // Ensure baseUrl ends with slash for correct path joining
         if (baseUrl && !baseUrl.endsWith('/')) {
             baseUrl += '/';
@@ -105,8 +110,9 @@
         } catch (error) {
             console.error('Neuro App: Initialization failed', error);
             // Optionally display a user-friendly error message on the page
-            if (document.getElementById('neuro-app-container')) {
-                document.getElementById('neuro-app-container').innerHTML = `
+            const container = document.querySelector(targetSelector) || document.getElementById('neuro-app-container');
+            if (container) {
+                container.innerHTML = `
                     <p style="color: red; text-align: center; margin-top: 50px;">
                         Error loading Neuro Simulation: ${error.message}.
                         Please ensure all dependencies are available.

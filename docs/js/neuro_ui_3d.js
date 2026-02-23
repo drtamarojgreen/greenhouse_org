@@ -400,6 +400,7 @@
         },
 
         startAnimation() {
+            if (this.animationId) return;
             const animate = () => {
                 if (this.autoRotate) {
                     this.camera.rotationY += this.rotationSpeed;
@@ -408,6 +409,13 @@
                 this.animationId = requestAnimationFrame(animate);
             };
             animate();
+        },
+
+        stopAnimation() {
+            if (this.animationId) {
+                cancelAnimationFrame(this.animationId);
+                this.animationId = null;
+            }
         },
 
         render() {
