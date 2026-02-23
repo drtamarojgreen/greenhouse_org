@@ -46,15 +46,15 @@
             }
 
             // Initialize Controllers
-            if (window.GreenhouseGeneticCameraController) {
+            if (window.NeuroSynapseCameraController) {
                 // Network Controller
-                this.networkCameraController = new window.GreenhouseGeneticCameraController(
+                this.networkCameraController = new window.NeuroSynapseCameraController(
                     this.camera,
                     window.GreenhouseNeuroConfig // Reuse config or create mock if needed
                 );
 
                 // Synapse Controller
-                this.synapseCameraController = new window.GreenhouseGeneticCameraController(
+                this.synapseCameraController = new window.NeuroSynapseCameraController(
                     this.synapseCamera,
                     window.GreenhouseNeuroConfig
                 );
@@ -259,7 +259,9 @@
         },
 
         updateData(genome) {
-            this.neurons = [];
+            if (!genome) return;
+
+            const oldNeurons = this.neurons || [];
             this.connections = [];
             this.newConnections = [];
             // Convert GA genome to visualization data
@@ -276,7 +278,7 @@
 
             this.neurons = genome.neurons.map((n, i) => {
                 // Check if neuron already exists to preserve position
-                const existingNeuron = this.neurons.find(existing => existing.id === n.id);
+                const existingNeuron = oldNeurons.find(existing => existing.id === n.id);
                 if (existingNeuron) {
                     return {
                         ...n,

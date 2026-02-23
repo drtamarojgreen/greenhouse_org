@@ -36,12 +36,15 @@
          * @param {Object} pipBounds - PiP bounds {x, y, w, h}
          */
         handleMouseDown(e, canvas, pipBounds) {
+            if (!canvas) return false;
             const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
             // Check if mouse is within PiP bounds
-            if (!this.isInBounds(mouseX, mouseY, pipBounds)) {
+            if (pipBounds && !this.isInBounds(mouseX, mouseY, pipBounds)) {
                 return false;
             }
             
@@ -69,11 +72,13 @@
          * @param {HTMLCanvasElement} canvas - Canvas element
          */
         handleMouseMove(e, canvas) {
-            if (!this.isDragging && !this.isPanning) return false;
+            if (!canvas || (!this.isDragging && !this.isPanning)) return false;
 
             const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
 
             const dx = mouseX - this.lastX;
             const dy = mouseY - this.lastY;
@@ -105,12 +110,15 @@
          * @param {Object} pipBounds - PiP bounds {x, y, w, h}
          */
         handleWheel(e, canvas, pipBounds) {
+            if (!canvas) return false;
             const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
             // Check if mouse is within PiP bounds
-            if (!this.isInBounds(mouseX, mouseY, pipBounds)) {
+            if (pipBounds && !this.isInBounds(mouseX, mouseY, pipBounds)) {
                 return false;
             }
             
