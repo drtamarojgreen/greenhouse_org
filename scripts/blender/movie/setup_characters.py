@@ -81,9 +81,13 @@ def setup_character_practical_lights(master):
         elif char_obj:
              torso = bpy.data.objects.get(f"{name}_Torso")
              if torso:
-                bpy.ops.object.light_add(type='SPOT', location=(0, -2, 2))
-                rim = bpy.context.object
-                rim.name = f"{name}_Rim"
+                rim_name = f"{name}_Rim"
+                rim = bpy.data.objects.get(rim_name)
+                if not rim:
+                    bpy.ops.object.light_add(type='SPOT', location=(0, -2, 2))
+                    rim = bpy.context.object
+                    rim.name = rim_name
+
                 rim.data.energy = 5000 # Increased energy
                 rim.data.color = color
                 rim.parent = torso
@@ -126,7 +130,7 @@ def setup_gaze_system(master):
                     con.name = "TrackGaze"
                     con.target = master.gaze_target
                     con.track_axis = 'TRACK_NEGATIVE_Y' 
-                    con.up_axis = 'UP_Z'
+                    con.up_axis = 'UP_Y' # Standardize to UP_Y for tracking consistency
                     con.influence = 0.5
             else:
                 # Old Mesh-based fallback

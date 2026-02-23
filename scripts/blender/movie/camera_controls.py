@@ -30,13 +30,15 @@ def ensure_camera(master):
     
     master.cam_target = target
 
-    # Basic constraints if not present
-    if not cam.constraints.get("TrackCharacters"):
+    # Basic constraints
+    con = cam.constraints.get("TrackCharacters")
+    if not con:
         con = cam.constraints.new(type='TRACK_TO')
         con.name = "TrackCharacters"
-        con.target = target
-        con.track_axis = 'TRACK_NEGATIVE_Z'
-        con.up_axis = 'UP_Y' # Correct Up axis for standard Blender Camera (Point 142)
+
+    con.target = target
+    con.track_axis = 'TRACK_NEGATIVE_Z'
+    con.up_axis = 'UP_Y' # Correct Up axis for standard Blender Camera (Point 142)
     
     # Point 92: Set focus object to target Empty (animatable focus via target location)
     cam.data.dof.use_dof = True
@@ -84,8 +86,8 @@ def setup_camera_keyframes(master, cam, target):
     Cinematic Camera Overhaul (Point 142).
     Implements 'Storytelling Observer' behavior with off-axis azimuth and crane arcs.
     """
-    origin = (0, 0, 0)
-    high_target = (0, 0, 1.5)
+    origin = (0, 0, 1.2)
+    high_target = (0, 0, 1.8)
 
     def kf_eased(frame, cam_loc, target_loc, roll=0, focus_obj=None, lens=None, easing='EASE_IN_OUT', interpolation='BEZIER'):
         """Enhanced kf with Dutch Angle (roll), DoF (Enhancement #2), Focal Length (Enhancement #4) and easing."""
@@ -166,7 +168,7 @@ def setup_camera_keyframes(master, cam, target):
     # Drone shot helper - adds a lateral sweep at altitude
     def drone_sweep(frame_start, frame_end,
                     start_xy, end_xy, altitude=70,
-                    look_at=(0,0,0)):
+                    look_at=(0,0,1.2)):
         """
         Moves camera in a slow lateral arc at high altitude,
         looking nearly straight down with slight forward angle.
@@ -204,7 +206,7 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(480, (30, 30, 71.1), (-1.1, 0.1, 1.6), interpolation='LINEAR')
     # Point 142: Shift Y from -12 to -16 to avoid front hedge collision
     kf_eased(550, (8, -16, 6), (0, 2, 1.5), interpolation='LINEAR')
-    kf_eased(650, (15, -25, 12), (0, 5, 0), easing='EASE_OUT')
+    kf_eased(650, (15, -25, 12), (0, 5, 1.5), easing='EASE_OUT')
 
     # Socratic (651 - 950): Eye-level, balanced
     kf_eased(651, (-10, -10, 2.6), high_target) # Balanced off-axis
