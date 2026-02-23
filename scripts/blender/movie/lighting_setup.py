@@ -56,15 +56,19 @@ def setup_lighting(master_instance):
             light.name = name
         apply_cfg(light, LIGHTING_DEFAULTS.get(name))
         
-        # Point 142: 5000 matches Production Benchmarks and Test 4.2.1/4.2.2
-        light.data.energy = 5000
+        # Point 142: Reduced from 5000 to 4000 for better visual balance (Point 142)
+        light.data.energy = 4000
         light.data.keyframe_insert(data_path="energy", frame=1)
         
         if cam:
             light.parent = cam
             light.location = local_pos
         if target:
-            con = light.constraints.new(type='TRACK_TO')
+            # Point 142: Check for existing constraint to avoid stack accumulation
+            con = light.constraints.get("TrackTarget")
+            if not con:
+                con = light.constraints.new(type='TRACK_TO')
+                con.name = "TrackTarget"
             con.target = target
             con.track_axis = 'TRACK_NEGATIVE_Z'
             con.up_axis = 'UP_Y'
@@ -82,7 +86,7 @@ def setup_lighting(master_instance):
         bpy.ops.object.light_add(type='SPOT', location=(4, 4, 8))
         rim_light = bpy.context.object
         rim_light.name = "RimLight"
-    rim_light.data.energy = 5000
+    rim_light.data.energy = 4000
         
     master_instance.herb_key = herb_rim
     master_instance.arbor_key = arbor_rim
@@ -94,14 +98,14 @@ def setup_lighting(master_instance):
         if s_name in SCENE_MAP:
             start, end = SCENE_MAP[s_name]
             for light in [herb_rim, arbor_rim]:
-                # Moderated for Cycles to match Test 4.2.6 (Target: 10000)
-                light.data.energy = 5000
+                # Point 142: Moderated boost (8000 instead of 10000)
+                light.data.energy = 4000
                 light.data.keyframe_insert(data_path="energy", frame=start - 1)
-                light.data.energy = 10000
+                light.data.energy = 8000
                 light.data.keyframe_insert(data_path="energy", frame=start + 12)
-                light.data.energy = 10000
+                light.data.energy = 8000
                 light.data.keyframe_insert(data_path="energy", frame=end - 12)
-                light.data.energy = 5000
+                light.data.energy = 4000
                 light.data.keyframe_insert(data_path="energy", frame=end)
 
     # --- Area fills (Bounce) ---

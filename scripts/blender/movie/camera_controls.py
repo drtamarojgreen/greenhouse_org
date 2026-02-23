@@ -225,11 +225,19 @@ def setup_camera_keyframes(master, cam, target):
     # Timeline Markers for Camera Switching (Point 142)
     # We add or update markers instead of clearing to preserve existing ones.
     def ensure_marker(name, frame, camera):
-        m = master.scene.timeline_markers.get(name)
+        # Point 142: Robust marker discovery by name
+        m = None
+        for marker in master.scene.timeline_markers:
+            if marker.name == name:
+                m = marker
+                break
+
         if not m:
             m = master.scene.timeline_markers.new(name, frame=frame)
+
         m.frame = frame
         m.camera = camera
+        return m
 
     ensure_marker("MainCam", 1, cam)
     ensure_marker("SecondaryCam", 150, cam_sec)

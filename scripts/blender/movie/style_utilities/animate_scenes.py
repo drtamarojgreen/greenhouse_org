@@ -279,13 +279,21 @@ def animate_plant_advance(master, frame_start, frame_end):
 def add_scene_markers(master):
     """Enhancement #74: Timeline Bookmark System."""
     # Point 142: Selective clear to preserve camera-switching markers
+    # We explicitly preserve markers named for camera switching (Point 142)
+    camera_marker_names = ["MainCam", "SecondaryCam", "MainCamBack"]
     for m in list(master.scene.timeline_markers):
-        if not m.camera:
-            master.scene.timeline_markers.remove(m)
+        if m.camera or m.name in camera_marker_names:
+            continue
+        master.scene.timeline_markers.remove(m)
 
     from constants import SCENE_MAP
+    # Point 142: Avoid collision with camera markers (1, 150, 201)
+    camera_marker_frames = [1, 150, 201]
     for name, (start, end) in SCENE_MAP.items():
-        master.scene.timeline_markers.new(name.replace("scene", "S"), frame=start)
+        frame = start
+        if frame in camera_marker_frames:
+            frame += 1 # Offset scene markers by 1 frame to prevent camera switch overrides
+        master.scene.timeline_markers.new(name.replace("scene", "S"), frame=frame)
 
 def setup_caustic_patterns(floor_obj):
     """Enhancement #24: Caustic Light Patterns on Floor."""
