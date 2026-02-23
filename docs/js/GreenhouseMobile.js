@@ -49,7 +49,7 @@
                 onSelectMode: (modeIndex) => { /* Genetic specific logic */ }
             },
             neuro: {
-                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'neuro_config.js', 'neuro_camera_controls.js', 'neuro_lighting.js', 'neuro_ga.js', 'neuro_ui_3d_geometry.js', 'neuro_ui_3d_brain.js', 'neuro_ui_3d_neuron.js', 'neuro_ui_3d_synapse.js', 'neuro_ui_3d_stats.js', 'neuro_ui_3d_enhanced.js', 'neuro_app.js'],
+                scripts: ['models_lang.js', 'models_util.js', 'models_3d_math.js', 'neuro_config.js', 'neuro_camera_controls.js', 'neuro_lighting.js', 'neuro_ga.js', 'neuro_ui_3d_geometry.js', 'neuro_ui_3d_brain.js', 'neuro_ui_3d_neuron.js', 'neuro_ui_3d_synapse.js', 'neuro_ui_3d_stats.js', 'neuro_ui_3d.js', 'neuro_app.js'],
                 modes: ['Neural Network', 'Synaptic Density', 'Burst Patterns'],
                 init: (container, baseUrl) => {
                     const uniqueId = 'neuro-canvas-' + Math.random().toString(36).substr(2, 9);

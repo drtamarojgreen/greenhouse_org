@@ -45,14 +45,14 @@
                 const p1 = nodeProjMap.get(conn.from.id);
                 const p2 = nodeProjMap.get(conn.to.id);
 
-                if (!p1 || !p2 || (p1.scale <= 0 && p2.scale <= 0)) return;
+                if (!p1 || !p2 || (p1.scale <= 0 && p2.scale <= 0)) continue;
 
                 const avgScale = (Math.max(0, p1.scale) + Math.max(0, p2.scale)) / 2;
 
                 if (avgScale < 0.5) {
                     const alphaRaw = GreenhouseModels3DMath.applyDepthFog(0.5, (p1.depth + p2.depth) / 2);
                     const alpha = Math.round(alphaRaw * 10) / 10;
-                    if (alpha <= 0) return;
+                    if (alpha <= 0) continue;
 
                     const colorType = conn.weight > 0 ? 'gold' : 'silver';
                     const key = `${colorType}_${alpha}`;
@@ -60,7 +60,7 @@
                     if (!batches[key]) batches[key] = new Path2D();
                     batches[key].moveTo(p1.x, p1.y);
                     batches[key].lineTo(p2.x, p2.y);
-                    return;
+                    continue;
                 }
 
                 // Optimization: Pre-project mesh vertices (using pooling)
