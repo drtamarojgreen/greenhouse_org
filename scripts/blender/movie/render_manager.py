@@ -1,6 +1,12 @@
 import bpy
 import os
 import sys
+
+# Point 142: Ensure local modules are discoverable when run directly via blender --python
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.append(script_dir)
+
 from constants import SCENE_MAP
 
 def render_scene_batch(master, scene_names, output_dir="renders"):
