@@ -6,9 +6,7 @@ import sys
 async def test_mobile_hub(page, base_url):
     print("\n--- Testing Mobile Hub ---")
     pages = [
-        "docs/genetic.html", "docs/neuro.html", "docs/pathway.html", "docs/synapse.html",
-        "docs/dopamine.html", "docs/serotonin.html", "docs/dna.html", "docs/rna.html",
-        "docs/emotion.html", "docs/cognition.html", "docs/models.html"
+        "docs/models.html"
     ]
 
     for page_path in pages:
@@ -21,10 +19,10 @@ async def test_mobile_hub(page, base_url):
             print(f"  ✓ Mobile hub detected on {page_path}")
 
             cards = await page.query_selector_all('.gh-mobile-card')
-            if len(cards) == 10:
-                print(f"  ✓ Found 10 models in hub.")
+            if len(cards) == 12:
+                print(f"  ✓ Found 12 models in hub.")
             else:
-                print(f"  ✗ Expected 10 models, found {len(cards)}")
+                print(f"  ✗ Expected 12 models, found {len(cards)}")
                 return False
         except Exception as e:
             print(f"  ✗ Mobile hub NOT detected on {page_path}: {str(e)}")

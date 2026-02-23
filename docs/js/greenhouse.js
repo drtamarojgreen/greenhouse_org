@@ -20,7 +20,6 @@
     // Import GreenhouseUtils
     const GreenhouseUtils = window.GreenhouseUtils;
     if (!GreenhouseUtils) {
-        console.error('Greenhouse: GreenhouseUtils not found. Ensure GreenhouseUtils.js is loaded before greenhouse.js.');
         return;
     }
 
@@ -184,12 +183,8 @@
      */
     async function loadApplication(appName, scriptName, mainSelector, fallbackSelector, uiScriptName = null, viewParam = 'default', rightPanelSelector = null, rightPanelFallbackSelector = null, extraAttributes = {}) {
         try {
-            console.log(`Greenhouse: Initializing ${appName} application`);
-
             const urlParams = new URLSearchParams(window.location.search);
             const view = urlParams.get('view') || viewParam;
-
-            console.log(`Greenhouse: Loading ${appName} for view: ${view}`);
 
             let selectorsToTryLeft = Array.isArray(mainSelector) ? [...mainSelector] : [mainSelector];
             if (fallbackSelector) {
@@ -218,7 +213,7 @@
 
             } else {
                 // For single-panel applications, only wait for the left target element
-                const targetElement = await GreenhouseUtils.waitForElement(selectorsToTryLeft, config.elementWaitTimeout);
+                await GreenhouseUtils.waitForElement(selectorsToTryLeft, config.elementWaitTimeout);
                 targetSelectorLeft = selectorsToTryLeft.find(selector => document.querySelector(selector));
             }
 
@@ -239,7 +234,7 @@
             await GreenhouseUtils.loadScript(scriptName, config.githubPagesBaseUrl, appAttributes);
 
         } catch (error) {
-            console.error(`Greenhouse: Failed to load ${appName} application:`, error);
+            // Silently fail
         }
     }
 
@@ -248,17 +243,7 @@
      * @description Loads the emotion simulation application.
      */
     async function loadEmotionApplication() {
-        await loadApplication(
-            'emotion',
-            'emotion.js',
-            config.selectors.emotion,
-            config.fallbackSelectors.emotion,
-            null,
-            'default',
-            null,
-            null,
-            {}
-        );
+        await loadApplication('emotion', 'emotion.js', config.selectors.emotion, config.fallbackSelectors.emotion);
     }
 
     /**
@@ -266,29 +251,14 @@
      * @description Loads the cognition simulation application.
      */
     async function loadCognitionApplication() {
-        await loadApplication(
-            'cognition',
-            'cognition.js',
-            config.selectors.cognition,
-            config.fallbackSelectors.cognition,
-            null,
-            'default',
-            null,
-            null,
-            {}
-        );
+        await loadApplication('cognition', 'cognition.js', config.selectors.cognition, config.fallbackSelectors.cognition);
     }
 
     /**
      * @function loadSchedulerApplication
      * @description Loads the scheduler application.
-     * As per user request, this function now loads all scheduler UI elements by default for development.
-     * The 'view' parameter is no longer used to conditionally load UI components here,
-     * but is still passed to `scheduler.js` for potential future use in app-specific logic.
      */
     async function loadSchedulerApplication() {
-        console.log(`Greenhouse: Loading scheduler application (displaying all views for development).`);
-
         const schedulerSelectors = {
             dashboardLeft: config.selectors.dashboardLeft,
             dashboardRight: config.selectors.dashboardRight,
@@ -300,8 +270,6 @@
             'data-scheduler-selectors': JSON.stringify(schedulerSelectors)
         };
 
-        // The mainSelector and rightPanelSelector are now just for finding *any* valid container to start.
-        // The real work is done in scheduler.js with the full set of selectors.
         const mainSelector = [config.selectors.dashboardLeft, config.selectors.repeaterLeft];
         const fallbackSelector = config.fallbackSelectors.dashboardLeft;
         const rightPanelSelector = [config.selectors.dashboardRight, config.selectors.repeaterRight];
@@ -328,12 +296,7 @@
      * @description Loads the books application after ensuring the target element exists.
      */
     async function loadBooksApplication() {
-        await loadApplication(
-            'books',
-            'books.js',
-            config.selectors.books,
-            config.fallbackSelectors.books
-        );
+        await loadApplication('books', 'books.js', config.selectors.books, config.fallbackSelectors.books);
     }
 
     /**
@@ -341,12 +304,7 @@
      * @description Loads the videos application after ensuring the target element exists.
      */
     async function loadVideosApplication() {
-        await loadApplication(
-            'videos',
-            'videos.js',
-            config.selectors.videos,
-            config.fallbackSelectors.videos
-        );
+        await loadApplication('videos', 'videos.js', config.selectors.videos, config.fallbackSelectors.videos);
     }
 
     /**
@@ -354,12 +312,7 @@
      * @description Loads the news application after ensuring the target element exists.
      */
     async function loadNewsApplication() {
-        await loadApplication(
-            'news',
-            'news.js',
-            config.selectors.news,
-            config.fallbackSelectors.news
-        );
+        await loadApplication('news', 'news.js', config.selectors.news, config.fallbackSelectors.news);
     }
 
     /**
@@ -367,12 +320,7 @@
      * @description Loads the models application after ensuring the target element exists.
      */
     async function loadModelsApplication() {
-        await loadApplication(
-            'models',
-            'models.js',
-            config.selectors.models,
-            config.fallbackSelectors.models
-        );
+        await loadApplication('models', 'models.js', config.selectors.models, config.fallbackSelectors.models);
     }
 
     /**
@@ -380,12 +328,7 @@
      * @description Loads the tech application after ensuring the target element exists.
      */
     async function loadTechApplication() {
-        await loadApplication(
-            'tech',
-            'tech.js',
-            config.selectors.tech,
-            config.fallbackSelectors.tech
-        );
+        await loadApplication('tech', 'tech.js', config.selectors.tech, config.fallbackSelectors.tech);
     }
 
     /**
@@ -393,12 +336,7 @@
      * @description Loads the neuro application.
      */
     async function loadNeuroApplication() {
-        await loadApplication(
-            'neuro',
-            'neuro.js',
-            config.selectors.neuro,
-            config.fallbackSelectors.neuro
-        );
+        await loadApplication('neuro', 'neuro.js', config.selectors.neuro, config.fallbackSelectors.neuro);
     }
 
     /**
@@ -406,12 +344,7 @@
      * @description Loads the synapse application.
      */
     async function loadSynapseApplication() {
-        await loadApplication(
-            'synapse',
-            'synapse.js',
-            config.selectors.synapse,
-            config.fallbackSelectors.synapse
-        );
+        await loadApplication('synapse', 'synapse.js', config.selectors.synapse, config.fallbackSelectors.synapse);
     }
 
     /**
@@ -419,12 +352,7 @@
      * @description Loads the pathway application.
      */
     async function loadPathwayApplication() {
-        await loadApplication(
-            'pathway',
-            'pathway.js',
-            config.selectors.pathway,
-            config.fallbackSelectors.pathway
-        );
+        await loadApplication('pathway', 'pathway.js', config.selectors.pathway, config.fallbackSelectors.pathway);
     }
 
     /**
@@ -432,12 +360,7 @@
      * @description Loads the inflammation simulation application.
      */
     async function loadInflammationApplication() {
-        await loadApplication(
-            'inflammation',
-            'inflammation.js',
-            config.selectors.inflammation,
-            config.fallbackSelectors.inflammation
-        );
+        await loadApplication('inflammation', 'inflammation.js', config.selectors.inflammation, config.fallbackSelectors.inflammation);
     }
 
     /**
@@ -445,12 +368,7 @@
      * @description Loads the stress simulation application.
      */
     async function loadStressApplication() {
-        await loadApplication(
-            'stress',
-            'stress.js',
-            config.selectors.stress,
-            config.fallbackSelectors.stress
-        );
+        await loadApplication('stress', 'stress.js', config.selectors.stress, config.fallbackSelectors.stress);
     }
 
     /**
@@ -486,17 +404,7 @@
      * @description Loads the DNA repair simulation application.
      */
     async function loadDnaRepairApplication() {
-        await loadApplication(
-            'dnaRepair',
-            'dna_repair.js',
-            config.selectors.dna,
-            config.fallbackSelectors.dna,
-            null,
-            'default',
-            null,
-            null,
-            {}
-        );
+        await loadApplication('dnaRepair', 'dna_repair.js', config.selectors.dna, config.fallbackSelectors.dna);
     }
 
     /**
@@ -504,17 +412,7 @@
      * @description Loads the RNA repair simulation application.
      */
     async function loadRnaRepairApplication() {
-        await loadApplication(
-            'rnaRepair',
-            'rna_repair.js',
-            config.selectors.rna,
-            config.fallbackSelectors.rna,
-            null,
-            'default',
-            null,
-            null,
-            {}
-        );
+        await loadApplication('rnaRepair', 'rna_repair.js', config.selectors.rna, config.fallbackSelectors.rna);
     }
 
     /**
@@ -522,17 +420,7 @@
      * @description Loads the Dopamine signaling simulation application.
      */
     async function loadDopamineApplication() {
-        await loadApplication(
-            'dopamine',
-            'dopamine.js',
-            config.selectors.dopamine,
-            config.fallbackSelectors.dopamine,
-            null,
-            'default',
-            null,
-            null,
-            {}
-        );
+        await loadApplication('dopamine', 'dopamine.js', config.selectors.dopamine, config.fallbackSelectors.dopamine);
     }
 
     /**
@@ -540,17 +428,7 @@
      * @description Loads the Serotonin structural model application.
      */
     async function loadSerotoninApplication() {
-        await loadApplication(
-            'serotonin',
-            'serotonin.js',
-            config.selectors.serotonin,
-            config.fallbackSelectors.serotonin,
-            null,
-            'default',
-            null,
-            null,
-            {}
-        );
+        await loadApplication('serotonin', 'serotonin.js', config.selectors.serotonin, config.fallbackSelectors.serotonin);
     }
 
     /**
@@ -560,7 +438,6 @@
      * @param {function} loadFn - The async function to load the application.
      */
     async function pollAndLoad(selector, loadFn) {
-        console.log(`Greenhouse: Polling for ${selector}...`);
         const pollInterval = 100;
         const maxAttempts = 150; // 15 seconds
         let attempts = 0;
@@ -569,13 +446,11 @@
             const element = document.querySelector(selector);
             if (element) {
                 clearInterval(poll);
-                console.log(`Greenhouse: Target found for ${selector}. Loading app...`);
                 await loadFn();
             } else {
                 attempts++;
                 if (attempts >= maxAttempts) {
                     clearInterval(poll);
-                    console.error(`Greenhouse: Timeout waiting for ${selector}.`);
                 }
             }
         }, pollInterval);
@@ -586,60 +461,35 @@
      * @description Main initialization function that runs when the DOM is ready.
      */
     async function initialize() {
-        console.log('Greenhouse: Initializing application loader');
-
         // Load the visual effects script on all pages (no need to wait for specific elements)
         GreenhouseUtils.loadScript('effects.js', config.githubPagesBaseUrl);
 
         // Load mobile experience handler if on a mobile device
         if (GreenhouseUtils.isMobileUser()) {
-            console.log('Greenhouse: Mobile device detected. Loading mobile experience handler...');
             GreenhouseUtils.loadScript('GreenhouseMobile.js', config.githubPagesBaseUrl, {
                 'base-url': config.githubPagesBaseUrl
             });
         }
 
-        // Check if the current page is the schedule page.
-        if (window.location.pathname.includes(config.schedulePagePath)) {
-            await loadSchedulerApplication();
-        } else if (window.location.pathname.includes(config.booksPagePath)) {
-            await loadBooksApplication();
-        } else if (window.location.pathname.includes(config.videosPagePath)) {
-            //await loadVideosApplication();
-
-
-
-        } else if (window.location.pathname.includes(config.newsPagePath)) {
-            await loadNewsApplication();
-        } else if (window.location.pathname.includes(config.modelsPagePath)) {
-            pollAndLoad(config.selectors.models, loadModelsApplication);
-        } else if (window.location.pathname.includes(config.geneticPagePath)) {
-            pollAndLoad(config.selectors.genetic, loadGeneticApplication);
-        } else if (window.location.pathname.includes(config.techPagePath)) {
-            pollAndLoad(config.selectors.tech, loadTechApplication);
-        } else if (window.location.pathname.includes(config.neuroPagePath)) {
-            pollAndLoad(config.selectors.neuro, loadNeuroApplication);
-        } else if (window.location.pathname.includes(config.synapsePagePath)) {
-            pollAndLoad(config.selectors.synapse, loadSynapseApplication);
-        } else if (window.location.pathname.includes(config.pathwayPagePath)) {
-            pollAndLoad(config.selectors.pathway, loadPathwayApplication);
-        } else if (window.location.pathname.includes(config.dnaPagePath)) {
-            pollAndLoad(config.selectors.dna, loadDnaRepairApplication);
-        } else if (window.location.pathname.includes(config.rnaPagePath)) {
-            pollAndLoad(config.selectors.rna, loadRnaRepairApplication);
-        } else if (window.location.pathname.includes(config.dopaminePagePath)) {
-            pollAndLoad(config.selectors.dopamine, loadDopamineApplication);
-        } else if (window.location.pathname.includes(config.serotoninPagePath)) {
-            pollAndLoad(config.selectors.serotonin, loadSerotoninApplication);
-        } else if (window.location.pathname.includes(config.emotionPagePath)) {
-            pollAndLoad(config.selectors.emotion, loadEmotionApplication);
-        } else if (window.location.pathname.includes(config.cognitionPagePath)) {
-            pollAndLoad(config.selectors.cognition, loadCognitionApplication);
-        } else if (window.location.pathname.includes(config.inflammationPagePath)) {
-            pollAndLoad(config.selectors.inflammation, loadInflammationApplication);
-        } else if (window.location.pathname.includes(config.stressPagePath)) {
-            pollAndLoad(config.selectors.stress, loadStressApplication);
-        }
+        const path = window.location.pathname;
+        // Check if the current page is one of the application pages.
+        if (path.includes(config.schedulePagePath)) await loadSchedulerApplication();
+        else if (path.includes(config.booksPagePath)) await loadBooksApplication();
+        else if (path.includes(config.newsPagePath)) await loadNewsApplication();
+        else if (path.includes(config.modelsPagePath)) pollAndLoad(config.selectors.models, loadModelsApplication);
+        else if (path.includes(config.geneticPagePath)) pollAndLoad(config.selectors.genetic, loadGeneticApplication);
+        else if (path.includes(config.techPagePath)) pollAndLoad(config.selectors.tech, loadTechApplication);
+        else if (path.includes(config.neuroPagePath)) pollAndLoad(config.selectors.neuro, loadNeuroApplication);
+        else if (path.includes(config.synapsePagePath)) pollAndLoad(config.selectors.synapse, loadSynapseApplication);
+        else if (path.includes(config.pathwayPagePath)) pollAndLoad(config.selectors.pathway, loadPathwayApplication);
+        else if (path.includes(config.dnaPagePath)) pollAndLoad(config.selectors.dna, loadDnaRepairApplication);
+        else if (path.includes(config.rnaPagePath)) pollAndLoad(config.selectors.rna, loadRnaRepairApplication);
+        else if (path.includes(config.dopaminePagePath)) pollAndLoad(config.selectors.dopamine, loadDopamineApplication);
+        else if (path.includes(config.serotoninPagePath)) pollAndLoad(config.selectors.serotonin, loadSerotoninApplication);
+        else if (path.includes(config.emotionPagePath)) pollAndLoad(config.selectors.emotion, loadEmotionApplication);
+        else if (path.includes(config.cognitionPagePath)) pollAndLoad(config.selectors.cognition, loadCognitionApplication);
+        else if (path.includes(config.inflammationPagePath)) pollAndLoad(config.selectors.inflammation, loadInflammationApplication);
+        else if (path.includes(config.stressPagePath)) pollAndLoad(config.selectors.stress, loadStressApplication);
     }
 
     // --- Main execution logic ---

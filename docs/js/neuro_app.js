@@ -40,7 +40,6 @@
         },
 
         init(selector, baseUrl = '') {
-            console.log('NeuroApp: Initializing High Quality Canvas UI...');
             // Reset State
             this.state = {
                 viewMode: 0,
@@ -446,7 +445,7 @@
 
         drawSimTab(ctx, offsetX) {
             const Controls = window.GreenhouseNeuroControls;
-            const panelW = this.ui.panelW || 350;
+            if (!Controls) return;
 
             ctx.fillStyle = '#4ca1af';
             ctx.font = '800 10px Quicksand';
@@ -461,15 +460,17 @@
             ctx.fillText(t('simulation_mode').toUpperCase(), 40 + offsetX, 130);
             this.ui.buttons.forEach(b => Controls.drawButton(ctx, this, b, this.state.viewMode === b.val));
 
-            ctx.fillStyle = '#4ca1af';
-            ctx.fillText(t('dosage_control').toUpperCase(), 40 + offsetX, 470);
-            Controls.drawSlider(ctx, this, this.ui.sliders[0], this.state.dosage);
+            if (this.ui.sliders && this.ui.sliders[0]) {
+                ctx.fillStyle = '#4ca1af';
+                ctx.fillText(t('dosage_control').toUpperCase(), 40 + offsetX, 470);
+                Controls.drawSlider(ctx, this, this.ui.sliders[0], this.state.dosage);
 
-            // Dosage label
-            ctx.fillStyle = '#fff';
-            ctx.font = '12px Quicksand, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(`${(this.state.dosage * 100).toFixed(0)}%`, this.ui.sliders[0].x + this.ui.sliders[0].w / 2, this.ui.sliders[0].y + 25);
+                // Dosage label
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Quicksand, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${(this.state.dosage * 100).toFixed(0)}%`, this.ui.sliders[0].x + this.ui.sliders[0].w / 2, this.ui.sliders[0].y + 25);
+            }
         },
 
         drawADHDTab(ctx, offsetX) {
@@ -596,7 +597,6 @@
             if (this.ui3d && typeof this.ui3d.startAnimation === 'function') this.ui3d.startAnimation();
             this.lastTime = performance.now();
             this.rafId = requestAnimationFrame((t) => this.rafLoop(t));
-            console.log('NeuroApp: Simulation started.');
         },
 
         stopSimulation() {
@@ -605,7 +605,6 @@
             if (this.ga && typeof this.ga.stop === 'function') this.ga.stop();
             if (this.ui3d && typeof this.ui3d.stopAnimation === 'function') this.ui3d.stopAnimation();
             if (this.rafId) cancelAnimationFrame(this.rafId);
-            console.log('NeuroApp: Simulation stopped.');
         },
 
         rafLoop(currentTime) {
