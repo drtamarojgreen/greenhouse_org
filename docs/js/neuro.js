@@ -35,15 +35,37 @@
     };
 
     const captureScriptAttributes = () => {
-        const scriptElement = document.currentScript || document.querySelector('script[src*="neuro.js"]');
-        if (!scriptElement) {
-            console.error('Neuro App: Script element not found.');
-            return { baseUrl: '', targetSelector: '#neuro-app-container' };
+        // Try to find the script element (currentScript, by src, or by name set by GreenhouseUtils)
+        const scriptElement = document.currentScript ||
+                             document.querySelector('script[src*="neuro.js"]') ||
+                             document.querySelector('script[data-script-name="neuro.js"]');
+
+        // Fallback for blob URLs using GreenhouseUtils global storage (Point 142)
+        const globalAttributes = window._greenhouseScriptAttributes || {};
+
+        let baseUrl = (scriptElement ? scriptElement.getAttribute('data-base-url') : null) ||
+                        globalAttributes['base-url'] ||
+                        '';
+
+        // Second Fallback: Infer from GreenhouseUtils location
+        if (!baseUrl) {
+            const utilsScript = document.querySelector('script[src*="GreenhouseUtils.js"]');
+            if (utilsScript && utilsScript.src) {
+                const src = utilsScript.src;
+                baseUrl = src.substring(0, src.lastIndexOf('js/'));
+                console.log('Neuro App: Inferred baseUrl from GreenhouseUtils:', baseUrl);
+            }
         }
-        return {
-            baseUrl: scriptElement.getAttribute('data-base-url') || '',
-            targetSelector: scriptElement.getAttribute('data-target-selector-left') || '#neuro-app-container'
-        };
+
+        const targetSelector = (scriptElement ? scriptElement.getAttribute('data-target-selector-left') : null) ||
+                               globalAttributes['target-selector-left'] ||
+                               '#neuro-app-container';
+
+        if (!scriptElement && !baseUrl) {
+            console.warn('Neuro App: Script element not found and no baseUrl resolved.');
+        }
+
+        return { baseUrl, targetSelector };
     };
 
     async function main() {
