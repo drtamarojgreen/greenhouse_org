@@ -70,9 +70,12 @@ def setup_character_practical_lights(master):
             rim.parent_bone = "Torso"
             
             # Aim at character Head Bone
-            con = rim.constraints.new(type='TRACK_TO')
+            con = rim.constraints.get("TrackHead") or rim.constraints.new(type='TRACK_TO')
+            con.name = "TrackHead"
             con.target = char_obj
             con.subtarget = "Head"
+            con.track_axis = 'TRACK_NEGATIVE_Z'
+            con.up_axis = 'UP_Y'
         
         # Fallback for legacy or other objects
         elif char_obj:
@@ -84,8 +87,11 @@ def setup_character_practical_lights(master):
                 rim.data.energy = 5000 # Increased energy
                 rim.data.color = color
                 rim.parent = torso
-                con = rim.constraints.new(type='TRACK_TO')
+                con = rim.constraints.get("TrackTorso") or rim.constraints.new(type='TRACK_TO')
+                con.name = "TrackTorso"
                 con.target = torso
+                con.track_axis = 'TRACK_NEGATIVE_Z'
+                con.up_axis = 'UP_Y'
 
 def setup_gaze_system(master):
     """Sets up the procedural eye tracking."""
@@ -116,7 +122,8 @@ def setup_gaze_system(master):
                     for c in head_bone.constraints:
                         if c.type == 'TRACK_TO': head_bone.constraints.remove(c)
                         
-                    con = head_bone.constraints.new(type='TRACK_TO')
+                    con = head_bone.constraints.get("TrackGaze") or head_bone.constraints.new(type='TRACK_TO')
+                    con.name = "TrackGaze"
                     con.target = master.gaze_target
                     con.track_axis = 'TRACK_NEGATIVE_Y' 
                     con.up_axis = 'UP_Z'
@@ -125,7 +132,8 @@ def setup_gaze_system(master):
                 # Old Mesh-based fallback
                 head = bpy.data.objects.get(f"{char.name.split('_')[0]}_Head")
                 if head:
-                    con = head.constraints.new(type='TRACK_TO')
+                    con = head.constraints.get("TrackGaze") or head.constraints.new(type='TRACK_TO')
+                    con.name = "TrackGaze"
                     con.target = master.gaze_target
                     con.track_axis = 'TRACK_NEGATIVE_Z'
                     con.up_axis = 'UP_Y'

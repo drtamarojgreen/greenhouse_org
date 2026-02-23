@@ -36,7 +36,7 @@ def ensure_camera(master):
         con.name = "TrackCharacters"
         con.target = target
         con.track_axis = 'TRACK_NEGATIVE_Z'
-        con.up_axis = 'UP_Z' # Standard for Z-up world (Point 142)
+        con.up_axis = 'UP_Y' # Correct Up axis for standard Blender Camera (Point 142)
     
     # Point 92: Set focus object to target Empty (animatable focus via target location)
     cam.data.dof.use_dof = True
@@ -199,9 +199,9 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(400, (14, -18, 12), origin, lens=85)
 
     # Garden scene: Descending drone sweep (Altitude >= 50 to satisfy Test 2.1.2)
-    # Point 142: Achieves >= 80 units lateral movement (401-480) for production benchmarks
-    kf_eased(401, (-40, -40, 71.1), (-1.1, 0.1, 1.6), easing='EASE_IN')
-    kf_eased(480, (40, 40, 71.1), (-1.1, 0.1, 1.6), interpolation='LINEAR')
+    # Point 142: Achieves >= 80 units lateral movement (401-650) for production benchmarks
+    kf_eased(401, (-70, -70, 71.1), (-1.1, 0.1, 1.6), easing='EASE_IN')
+    kf_eased(480, (30, 30, 71.1), (-1.1, 0.1, 1.6), interpolation='LINEAR')
     # Point 142: Shift Y from -12 to -16 to avoid front hedge collision
     kf_eased(550, (8, -16, 6), (0, 2, 1.5), interpolation='LINEAR')
     kf_eased(650, (15, -25, 12), (0, 5, 0), easing='EASE_OUT')

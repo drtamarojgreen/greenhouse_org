@@ -64,10 +64,14 @@ def setup_lighting(master_instance):
             light.parent = cam
             light.location = local_pos
         if target:
-            con = light.constraints.new(type='TRACK_TO')
+            # Check if constraint already exists to avoid redundant buildup
+            con = light.constraints.get("TrackTarget")
+            if not con:
+                con = light.constraints.new(type='TRACK_TO')
+                con.name = "TrackTarget"
             con.target = target
             con.track_axis = 'TRACK_NEGATIVE_Z'
-            con.up_axis = 'UP_Z'
+            con.up_axis = 'UP_Y' # Standard for Blender Spot lights
         return light
 
     # Positioned as rims/kicker lights to satisfy Test 4.2.1 and 4.2.2

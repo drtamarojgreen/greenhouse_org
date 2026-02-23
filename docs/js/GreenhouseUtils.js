@@ -236,13 +236,8 @@ window.GreenhouseUtils = (function () {
                 }
 
                 // Temporarily store attributes globally for scripts loaded via blob URLs
-                // Point 142: Ensure base-url is included for relative path resolution
-                const extendedAttributes = { ...attributes };
-                if (!extendedAttributes['base-url'] && baseUrl) {
-                    extendedAttributes['base-url'] = baseUrl;
-                }
-                window._greenhouseScriptAttributes = extendedAttributes;
-                console.log(`GreenhouseUtils: loadScript - Setting _greenhouseScriptAttributes for ${scriptName}:`, extendedAttributes);
+                window._greenhouseScriptAttributes = attributes;
+                console.log(`GreenhouseUtils: loadScript - Setting _greenhouseScriptAttributes for ${scriptName}:`, attributes);
 
                 const blob = new Blob([scriptText], { type: 'text/javascript' });
                 const objectUrl = URL.createObjectURL(blob);
