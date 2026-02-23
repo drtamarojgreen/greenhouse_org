@@ -19,7 +19,9 @@ global.document = {
             return null;
         }
     },
-    querySelectorAll: (sel) => []
+    querySelectorAll: (sel) => [],
+    getElementById: (id) => ({ innerHTML: '' }),
+    querySelector: (sel) => null
 };
 
 global.window.GreenhouseDependencyManager = {
@@ -32,10 +34,11 @@ const mockUtils = {
         mockUtils.loaded.push(name);
         if (name === 'neuro_app.js') global.window.GreenhouseNeuroApp = { init: () => { } };
         if (name === 'neuro_ga.js') global.window.NeuroGA = function () { };
-        if (name === 'neuro_ui_3d_enhanced.js') global.window.GreenhouseNeuroUI3D = {};
+        if (name === 'neuro_ui_3d.js') global.window.GreenhouseNeuroUI3D = {};
         return Promise.resolve();
     },
     displayError: () => { },
+    renderModelsTOC: () => { },
     loaded: []
 };
 global.window.GreenhouseUtils = mockUtils;
@@ -87,7 +90,7 @@ TestFramework.describe('Neuro Page Loader', () => {
             'neuro_ui_3d_neuron.js',
             'neuro_ui_3d_synapse.js',
             'neuro_ui_3d_stats.js',
-            'neuro_ui_3d_enhanced.js',
+            'neuro_ui_3d.js',
             'neuro_controls.js',
             'neuro_app.js'
         ];
