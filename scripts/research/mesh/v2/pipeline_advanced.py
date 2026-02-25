@@ -122,19 +122,25 @@ def classify_term(term_details):
 
 # ---------- Tree construction from JSON data ----------
 
-def build_dynamic_mesh_tree(discovery_data, max_depth=2):
+def build_dynamic_mesh_tree(discovery_data, max_depth=2, query_limit=None):
     root = Node("MeSH Discoveries", node_type="root")
     
     # Store fetched MeSH details to avoid duplicate API calls
     mesh_details_cache = {}
+    query_counter = 0
 
     for entry in discovery_data.get("discovery_results", []):
         seed_term_name = entry["term"]
         seed_term_details = mesh_details_cache.get(seed_term_name)
         if not seed_term_details:
-            seed_term_details = get_mesh_details(seed_term_name)
-            if seed_term_details:
-                mesh_details_cache[seed_term_name] = seed_term_details
+            if query_limit and query_counter >= query_limit:
+                logger.warning(f"Query limit of {query_limit} reached. Skipping details for '{seed_term_name}'.")
+                seed_term_details = None
+            else:
+                seed_term_details = get_mesh_details(seed_term_name)
+                query_counter += 1
+                if seed_term_details:
+                    mesh_details_cache[seed_term_name] = seed_term_details
         
         seed_mesh_id = seed_term_details["mesh_id"] if seed_term_details else None
         seed_node = Node(seed_term_name, seed_mesh_id, node_type="seed_term")
@@ -146,9 +152,14 @@ def build_dynamic_mesh_tree(discovery_data, max_depth=2):
         for related_term_name in entry.get("related", []):
             related_term_details = mesh_details_cache.get(related_term_name)
             if not related_term_details:
-                related_term_details = get_mesh_details(related_term_name)
-                if related_term_details:
-                    mesh_details_cache[related_term_name] = related_term_details
+                if query_limit and query_counter >= query_limit:
+                    logger.info(f"Query limit reached. Skipping details for '{related_term_name}'.")
+                    related_term_details = None
+                else:
+                    related_term_details = get_mesh_details(related_term_name)
+                    query_counter += 1
+                    if related_term_details:
+                        mesh_details_cache[related_term_name] = related_term_details
 
             if related_term_details:
                 term_type = classify_term(related_term_details)
@@ -222,5 +233,6 @@ if __name__ == "__main__":
         discovery_data = json.load(f)
 
     logger.info("Building dynamic MeSH tree...")
-    tree = build_dynamic_mesh_tree(discovery_data)
+    query_limit = config.get("query_limit")
+    tree = build_dynamic_mesh_tree(discovery_data, query_limit=query_limit)
 

@@ -66,6 +66,8 @@ class PubMedClientV4:
         async with aiohttp.ClientSession() as session:
             for attempt in range(5):
                 try:
+                    # Rate limiting mitigation: delay between requests
+                    await asyncio.sleep(0.5)
                     async with session.get(url, params=params) as response:
                         if response.status == 429:
                             wait = (2 ** attempt) + random.random()
