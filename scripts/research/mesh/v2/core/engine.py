@@ -30,7 +30,7 @@ class DiscoveryEngine:
 
             count = self.client.get_publication_count(current_term, year=target_year)
 
-            if count >= self.min_count:
+            if current_term == seed_term or count >= self.min_count:
                 logger.info(f"Accepted: {current_term} ({count} publications)")
 
                 related = self.client.discover_related_terms(current_term)

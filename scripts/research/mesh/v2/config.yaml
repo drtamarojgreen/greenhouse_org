@@ -17,3 +17,4 @@ test:
 
 # Advanced pipeline settings
 advanced_pipeline_output_path: "scripts/research/mesh/v2/mesh_mental_health_tree.json"
+query_limit: 100

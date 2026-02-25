@@ -8,6 +8,7 @@ import argparse
 import yaml
 import os
 import sys
+from xml.etree import ElementTree
 
 # Add the current directory to sys.path to allow relative-like imports if run as a script
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -39,19 +40,23 @@ class MeSHPipelineV3:
         self.nlp = NLPEngineV3()
 
     def _load_config(self, path: str) -> dict:
-        default_config = {
-            "seed_term": "Attention-Deficit/Hyperactivity Disorder",
-            "max_terms": 20,
-            "min_count": 20000,
-            "viz_output_dir": "scripts/research/mesh/v3/viz_output",
-            "checkpoint_path": "scripts/research/mesh/v3/checkpoint.json",
-            "logging": {"level": "INFO"}
-        }
         if path and os.path.exists(path):
             with open(path, 'r') as f:
-                config = yaml.safe_load(f)
-                default_config.update(config)
-        return default_config
+                return yaml.safe_load(f)
+        else:
+            # Fallback to default config.yaml if it exists in the same directory
+            default_path = os.path.join(os.path.dirname(__file__), "config.yaml")
+            if os.path.exists(default_path):
+                with open(default_path, 'r') as f:
+                    return yaml.safe_load(f)
+
+        # Absolute minimum required to avoid crashes if no config is found
+        return {
+            "seed_term": "Mental Health",
+            "max_terms": 10,
+            "min_count": 1000,
+            "logging": {"level": "INFO"}
+        }
 
     def _setup_logging(self):
         logging.basicConfig(

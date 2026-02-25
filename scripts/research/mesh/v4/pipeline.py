@@ -32,27 +32,30 @@ class MeSHPipelineV4:
         self.engine = DiscoveryEngineV4(self.client, self.config)
 
     def _load_config(self, path: str) -> dict:
-        default_config = {
-            "seed_term": "Attention-Deficit/Hyperactivity Disorder",
+        if path and os.path.exists(path):
+            with open(path, 'r') as f:
+                config = yaml.safe_load(f)
+                return config if config else {}
+        else:
+            # Fallback to default config.yaml if it exists in the same directory
+            default_path = os.path.join(os.path.dirname(__file__), "config.yaml")
+            if os.path.exists(default_path):
+                with open(default_path, 'r') as f:
+                    config = yaml.safe_load(f)
+                    return config if config else {}
+
+        # Absolute minimum required to avoid crashes if no config is found
+        return {
+            "seed_term": "Mental Health",
             "discovery": {
-                "max_levels": 4,
-                "level_thresholds": {1: 20000, 2: 10000, 3: 5000, 4: 1000},
+                "max_levels": 3,
+                "level_thresholds": {1: 10000, 2: 5000, 3: 1000},
                 "max_children_per_node": 10,
-                "total_max_terms": 100
+                "total_max_terms": 50
             },
             "output_json": "scripts/research/mesh/v4/discovery_v4.json",
             "logging": {"level": "INFO"}
         }
-        if path and os.path.exists(path):
-            with open(path, 'r') as f:
-                config = yaml.safe_load(f)
-                if config:
-                    # Update nested dicts properly
-                    if 'discovery' in config:
-                        default_config['discovery'].update(config['discovery'])
-                        del config['discovery']
-                    default_config.update(config)
-        return default_config
 
     def _setup_logging(self):
         logging.basicConfig(
