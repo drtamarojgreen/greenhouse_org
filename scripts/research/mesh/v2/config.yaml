@@ -2,7 +2,7 @@
 
 # Pipeline settings
 seed_term: "Mental Health"
-max_terms: 80
+max_terms: 20
 min_count: 40000
 output_path: "scripts/research/mesh/v2/discovery_v2.json"
 
@@ -13,7 +13,7 @@ logging:
 
 # Test settings
 test:
-  max_terms: 1
+  max_terms: 20
 
 # Advanced pipeline settings
 advanced_pipeline_output_path: "scripts/research/mesh/v2/mesh_mental_health_tree.json"
