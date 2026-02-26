@@ -29,7 +29,7 @@ def create_pango_producer(root, id, text, size, weight="normal", out=100):
     return prod
 
 def generate_header():
-    root = ET.Element("mlt", {"LC_NUMERIC": "C", "version": "7.22.0"})
+    root = ET.Element("mlt", {"LC_NUMERIC": "C", "version": "7.22.0", "producer": "main_tractor"})
     width, height, fps = CONFIG["width"], CONFIG["height"], CONFIG["fps"]
     ET.SubElement(root, "profile", {"description": "atsc_1080p_25", "width": str(width), "height": str(height), "frame_rate_num": str(fps)})
 
@@ -95,7 +95,8 @@ def generate_header():
     ET.SubElement(tr_c, "property", {"name": "geometry"}).text = f"0=0/30%:100%x40%:100"
 
     # Main Assembly Tractor (Overlapping for transitions)
-    main_tractor = ET.SubElement(root, "tractor", {"id": "main_tractor"})
+    total_dur = dur_a + (dur_b - overlap) + dur_c
+    main_tractor = ET.SubElement(root, "tractor", {"id": "main_tractor", "out": str(total_dur - 1)})
     # Track 0: Segment A and Segment C
     playlist0 = ET.SubElement(main_tractor, "track")
     ET.SubElement(playlist0, "entry", {"producer": "tractor_a", "in": "0", "out": str(dur_a - 1)})

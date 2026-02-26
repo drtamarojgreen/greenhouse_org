@@ -1,0 +1,19 @@
+FINAL CREDITS TEXT PLACEMENT & ANIMATION REPORT
+================================================
+
+Producer ID: credits_text
+Content Snippet: CAST
+
+Herbaceous            AI
+Arbor                 AI
+GloomGnome            AI
+
+
+EXECUTIVE PRODUCE...
+Alignment: Center (Implicit)
+Colors: FG=rgb(255,255,255), BG=#000000
+Contrast Ratio: 21.00:1
+Animation (Scroll) Keyframes:
+  Frame 0: Pos(0,1080) Size(1920x3000) Opacity(100)
+  Frame 2249: Pos(0,-3000) Size(1920x3000) Opacity(100)
+--------------------
