@@ -26,7 +26,8 @@ def generate_final_credits():
     """Generates the final_credits.kdenlive XML file using kdenlivetitle."""
     root = ET.Element("mlt", {
         "LC_NUMERIC": "C",
-        "version": "7.22.0"
+        "version": "7.22.0",
+        "producer": "main_tractor"
     })
 
     width = CONFIG["width"]
