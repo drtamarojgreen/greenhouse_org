@@ -13,8 +13,9 @@ class TestHeaderXML(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Ensure the header.kdenlive is generated before tests
+        # We use default config for base tests
         generate_header()
-        cls.output_path = Path(__file__).parent.parent / CONFIG["output_dir"] / "header.kdenlive"
+        cls.output_path = Path(__file__).parent.parent / "output" / "header.kdenlive"
 
     def test_file_exists(self):
         self.assertTrue(self.output_path.exists(), "header.kdenlive was not generated")

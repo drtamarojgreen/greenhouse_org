@@ -1,11 +1,11 @@
 import xml.etree.ElementTree as ET
 from pathlib import Path
+import config_loader
+import mlt_utils
 
-# ── PRODUCTION CONFIGURATION ────────────────────────────────────────────────
+# Fallback configuration
 CONFIG = {
     "film_title":        "The Greenhouse",
-    "studio_name":       "GreenhouseMD Production Studio",
-    "co_production":     "GreenhouseMD / GreenhouseMHD Production",
     "year":              2026,
     "fps":               25,
     "width":             1920,
@@ -13,95 +13,78 @@ CONFIG = {
     "output_dir":        "output",
     "credits_scroll_duration": 90,
     "background_black":  "#000000",
-    "text_white":        "#ffffff",
-    "text_gold":         "#c8a84b",
-    "cast": {
-        "Herbaceous":  "AI",
-        "Arbor":       "AI",
-        "GloomGnome":  "AI",
-    },
 }
 
-def generate_final_credits():
+def generate_final_credits(config_path=None):
     """Generates the final_credits.kdenlive XML file using kdenlivetitle."""
-    root = ET.Element("mlt", {
-        "LC_NUMERIC": "C",
-        "version": "7.22.0",
-        "producer": "main_tractor"
-    })
+    try:
+        full_config = config_loader.load_config(config_path)
+        prod_cfg = config_loader.get_production_settings(full_config)
+        credits_cfg = config_loader.get_credits_config(full_config)
+    except Exception as e:
+        print(f"Warning: Configuration loading failed ({e}). Using hardcoded defaults.")
+        prod_cfg = CONFIG
+        credits_cfg = {
+            "duration": 90, "background": "#000000",
+            "font": {"family": "DejaVu Sans", "size": 36, "weight": 50},
+            "cast": {"Herbaceous": "AI", "Arbor": "AI", "GloomGnome": "AI"},
+            "crew": [{"role": "PRODUCER", "name": "Tamaro Green"}],
+            "scroll": {"text_height": 3000, "geometry": "0=0/1080:1920x3000:100; 2249=0/-3000:1920x3000:100"}
+        }
 
-    width = CONFIG["width"]
-    height = CONFIG["height"]
-    fps = CONFIG["fps"]
-    duration_frames = CONFIG["credits_scroll_duration"] * fps
+    width, height, fps = prod_cfg["width"], prod_cfg["height"], prod_cfg["fps"]
+    duration_frames = credits_cfg["duration"] * fps
 
-    ET.SubElement(root, "profile", {
-        "description": "atsc_1080p_25",
-        "width": str(width),
-        "height": str(height),
-        "frame_rate_num": str(fps),
-        "frame_rate_den": "1",
-        "progressive": "1"
-    })
+    root = mlt_utils.create_mlt_root("main_tractor")
+    mlt_utils.add_profile(root, width, height, fps)
 
     # Background
-    bg = ET.SubElement(root, "producer", {"id": "bg", "in": "0", "out": str(duration_frames - 1)})
-    ET.SubElement(bg, "property", {"name": "mlt_service"}).text = "color"
-    ET.SubElement(bg, "property", {"name": "resource"}).text = CONFIG["background_black"]
+    mlt_utils.add_color_producer(root, "bg", credits_cfg["background"], duration_frames - 1)
 
-    # Kdenlive Title XML
-    title_xml = ET.Element("kdenlivetitle", {"width": str(width), "height": str(height), "out": str(duration_frames - 1)})
-    
-    # We'll use a single large text item for simplicity, or multiple items.
-    # Kdenlive titles handle newlines in content.
+    # Content construction
     content = "CAST\n\n"
-    for char, actor in CONFIG["cast"].items():
+    for char, actor in credits_cfg.get("cast", {}).items():
         content += f"{char.ljust(20)}  {actor}\n"
-    content += "\n\nEXECUTIVE PRODUCER\nTamaro Green\n\nPRODUCER\nTamaro Green\n\n"
-    content += "LIGHTING DIRECTOR\nAI\n\nWRITER\nAI\n\nCOSTUME DESIGNER\nAI\n\n"
-    content += f"{CONFIG['film_title']}\n\nA GreenhouseMD / GreenhouseMHD Production\n"
-    content += f"© {CONFIG['year']} GreenhouseMD Production Studio\nAll rights reserved."
+    content += "\n\n"
+    for member in credits_cfg.get("crew", []):
+        content += f"{member['role']}\n{member['name']}\n\n"
 
-    # In a real kdenlivetitle, each line might be an item, but for a scroll, 
-    # a single block is often used.
+    content += f"{prod_cfg.get('film_title', 'The Greenhouse')}\n\n"
+    content += f"© {prod_cfg.get('year', 2026)} GreenhouseMD Production Studio\nAll rights reserved."
+
+    # Title XML
+    title_xml = ET.Element("kdenlivetitle", {"width": str(width), "height": str(height), "out": str(duration_frames - 1)})
     item = ET.SubElement(title_xml, "item", {"z-index": "0", "type": "QGraphicsTextItem"})
     ET.SubElement(item, "content").text = content
-    # Kdenlive title uses specific font properties
-    ET.SubElement(item, "font", {"family": "DejaVu Sans", "size": "36", "weight": "50"})
+    f_cfg = credits_cfg.get("font", {})
+    ET.SubElement(item, "font", {"family": f_cfg.get("family", "DejaVu Sans"), "size": str(f_cfg.get("size", 36)), "weight": str(f_cfg.get("weight", 50))})
     ET.SubElement(item, "font-color", {"red": "255", "green": "255", "blue": "255", "alpha": "255"})
     
-    # Kdenlive title XML string
     xmldata = ET.tostring(title_xml, encoding="utf-8").decode("utf-8")
 
-    # MLT Producer for the title
+    # Producer for title
     prod = ET.SubElement(root, "producer", {"id": "credits_text", "in": "0", "out": str(duration_frames - 1)})
     ET.SubElement(prod, "property", {"name": "mlt_service"}).text = "kdenlivetitle"
     ET.SubElement(prod, "property", {"name": "xmldata"}).text = xmldata
-    # The requirement said to use a geometry keyframe for the scroll
-    text_height = 3000 # Estimate
-    geom = f"0=0/{height}:{width}x{text_height}:100; {duration_frames-1}=0/-{text_height}:{width}x{text_height}:100"
-    ET.SubElement(prod, "property", {"name": "geometry"}).text = geom
+    ET.SubElement(prod, "property", {"name": "geometry"}).text = credits_cfg["scroll"]["geometry"]
 
     # Tractor
-    tractor = ET.SubElement(root, "tractor", {"id": "main_tractor", "in": "0", "out": str(duration_frames - 1)})
-    ET.SubElement(tractor, "track", {"producer": "bg"})
-    ET.SubElement(tractor, "track", {"producer": "credits_text"})
-    
-    # Composite to ensure layering
-    tr = ET.SubElement(tractor, "transition", {"in": "0", "out": str(duration_frames - 1)})
-    ET.SubElement(tr, "property", {"name": "mlt_service"}).text = "composite"
-    ET.SubElement(tr, "property", {"name": "a_track"}).text = "0"
-    ET.SubElement(tr, "property", {"name": "b_track"}).text = "1"
+    tractor = mlt_utils.add_tractor(root, "main_tractor", duration_frames - 1)
+    mlt_utils.add_track(tractor, "bg")
+    mlt_utils.add_track(tractor, "credits_text")
+    mlt_utils.add_transition(tractor, "composite", 0, 1, 0, duration_frames - 1)
 
-    # Global film grain
-    f_grain = ET.SubElement(tractor, "filter")
-    ET.SubElement(f_grain, "property", {"name": "mlt_service"}).text = "frei0r.film"
+    # Filters
+    if "filters" in credits_cfg:
+        for f in credits_cfg["filters"]:
+            props = {k: v for k, v in f.items() if k != "type"}
+            mlt_utils.add_filter(tractor, f["type"], props)
+    else:
+        mlt_utils.add_filter(tractor, "frei0r.film")
 
-    output_dir = Path(__file__).parent / CONFIG["output_dir"]
+    output_dir = Path(__file__).parent / prod_cfg["output_dir"]
     output_dir.mkdir(exist_ok=True)
-    output_path = output_dir / "final_credits.kdenlive"
-
-    with open(output_path, "wb") as f:
+    with open(output_dir / "final_credits.kdenlive", "wb") as f:
         f.write(b'<?xml version="1.0" encoding="utf-8"?>\n')
         f.write(ET.tostring(root, encoding="utf-8"))
 

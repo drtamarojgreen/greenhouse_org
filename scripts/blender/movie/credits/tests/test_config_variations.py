@@ -15,19 +15,33 @@ from reporting_utils import is_on_screen
 class TestConfigVariations(unittest.TestCase):
 
     def test_header_config_variation(self):
-        new_config = {
-            "film_title": "Custom Title",
-            "background_dark": "#FF0000",
-            "header_segment_a_duration": 5,
-            "fps": 24
+        # Create a temporary config file
+        temp_config_path = Path("temp_header_config.yaml")
+        temp_config = {
+            "production": {
+                "film_title": "Custom Title",
+                "fps": 24,
+                "width": 1920,
+                "height": 1080,
+                "output_dir": "output"
+            },
+            "header": {
+                "segments": {
+                    "a": {"duration": 5, "background": "#FF0000", "text": [
+                        {"id": "c_title", "content": "Custom Title", "size": 144, "weight": "bold", "geometry": "0=0/0:100%x100%:100"}
+                    ]}
+                }
+            }
         }
+        import yaml
+        with open(temp_config_path, "w") as f:
+            yaml.dump(temp_config, f)
 
-        with patch.dict(generate_header.CONFIG, new_config):
-            # Redirect stdout to suppress print
+        try:
             with patch('sys.stdout', new_io=io.StringIO()):
-                generate_header.generate_header()
+                generate_header.generate_header(temp_config_path)
 
-            output_path = Path(generate_header.__file__).parent / generate_header.CONFIG["output_dir"] / "header.kdenlive"
+            output_path = Path(generate_header.__file__).parent / "output" / "header.kdenlive"
             tree = ET.parse(output_path)
             root = tree.getroot()
 
@@ -44,19 +58,36 @@ class TestConfigVariations(unittest.TestCase):
             # Verify duration (5s * 24fps = 120 frames. out=119)
             bg_a_out = int(bg_a.get("out"))
             self.assertEqual(bg_a_out, 119)
+        finally:
+            if temp_config_path.exists():
+                temp_config_path.unlink()
 
     def test_credits_config_variation(self):
-        new_config = {
-            "cast": {"Abe": "Actor", "Bea": "Boss"},
-            "credits_scroll_duration": 10,
-            "fps": 30
+        temp_config_path = Path("temp_credits_config.yaml")
+        temp_config = {
+            "production": {
+                "film_title": "Custom Film",
+                "fps": 30,
+                "width": 1920,
+                "height": 1080,
+                "output_dir": "output"
+            },
+            "credits": {
+                "duration": 10,
+                "background": "#000000",
+                "cast": {"Abe": "Actor", "Bea": "Boss"},
+                "scroll": {"geometry": "0=0/1080:1920x3000:100; 299=0/-3000:1920x3000:100"}
+            }
         }
+        import yaml
+        with open(temp_config_path, "w") as f:
+            yaml.dump(temp_config, f)
 
-        with patch.dict(generate_final_credits.CONFIG, new_config):
+        try:
             with patch('sys.stdout', new_io=io.StringIO()):
-                generate_final_credits.generate_final_credits()
+                generate_final_credits.generate_final_credits(temp_config_path)
 
-            output_path = Path(generate_final_credits.__file__).parent / generate_final_credits.CONFIG["output_dir"] / "final_credits.kdenlive"
+            output_path = Path(generate_final_credits.__file__).parent / "output" / "final_credits.kdenlive"
             tree = ET.parse(output_path)
             root = tree.getroot()
 
@@ -69,6 +100,9 @@ class TestConfigVariations(unittest.TestCase):
             # Verify duration (10s * 30fps = 300 frames. out=299)
             bg = root.find(".//producer[@id='bg']")
             self.assertEqual(int(bg.get("out")), 299)
+        finally:
+            if temp_config_path.exists():
+                temp_config_path.unlink()
 
     def test_visibility_edge_cases(self):
         # Case 1: Fully on screen
