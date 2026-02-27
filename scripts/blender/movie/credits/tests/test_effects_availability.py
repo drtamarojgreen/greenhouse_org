@@ -10,7 +10,7 @@ import render_credits
 class TestEffectsAvailability(unittest.TestCase):
     def setUp(self):
         self.required_producers = ["pango", "kdenlivetitle", "color"]
-        self.required_filters = ["frei0r.glow", "frei0r.film"]
+        self.required_filters = ["frei0r.glow", "oldfilm"]
         self.required_transitions = ["composite", "luma"]
 
         try:

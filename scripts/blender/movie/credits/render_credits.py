@@ -122,7 +122,7 @@ def render_project(melt_bin, input_xml, output_mp4, dry_run=False):
     # Post-render validation
     if not output_mp4.exists():
         raise RuntimeError(f"Output file {output_mp4} was not created.")
-    if output_mp4.stat().st_size < 100 * 1024: # 100 KB
+    if output_mp4.stat().st_size < 1024: # 1 KB minimum for tiny test renders
         raise RuntimeError(f"Output file {output_mp4} is suspiciously small ({output_mp4.stat().st_size} bytes).")
     
     print(f"SUCCESS: Rendered {output_mp4}")

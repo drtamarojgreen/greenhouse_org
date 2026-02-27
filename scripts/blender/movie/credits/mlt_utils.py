@@ -44,12 +44,27 @@ def add_tractor(root, id, out_frame=None):
         attrs["out"] = str(out_frame)
     return ET.SubElement(root, "tractor", attrs)
 
-def add_track(tractor, producer_id=None, in_frame=None, out_frame=None):
+def add_track(tractor, producer_id=None):
     """Adds a track to a tractor."""
     track = ET.SubElement(tractor, "track")
     if producer_id:
         track.set("producer", producer_id)
     return track
+
+def add_playlist(root, id):
+    """Adds a playlist element to the MLT root."""
+    return ET.SubElement(root, "playlist", {"id": id})
+
+def add_playlist_entry(playlist, producer_id, in_frame=None, out_frame=None):
+    """Adds an entry to a playlist."""
+    attrs = {"producer": producer_id}
+    if in_frame is not None: attrs["in"] = str(in_frame)
+    if out_frame is not None: attrs["out"] = str(out_frame)
+    return ET.SubElement(playlist, "entry", attrs)
+
+def add_blank(playlist, length):
+    """Adds a blank entry to a playlist."""
+    return ET.SubElement(playlist, "blank", {"length": str(length)})
 
 def add_transition(tractor, service, a_track, b_track, in_frame=None, out_frame=None, geometry=None):
     """Adds a transition to a tractor."""

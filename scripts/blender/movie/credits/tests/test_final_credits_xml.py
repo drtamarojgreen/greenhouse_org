@@ -47,10 +47,10 @@ class TestFinalCreditsXML(unittest.TestCase):
         filter_film = None
         for f in tractor.findall("filter"):
             svc = f.find("property[@name='mlt_service']")
-            if svc is not None and svc.text == "frei0r.film":
+            if svc is not None and svc.text == "oldfilm":
                 filter_film = f
                 break
-        self.assertIsNotNone(filter_film, "frei0r.film filter not found on main_tractor")
+        self.assertIsNotNone(filter_film, "oldfilm filter not found on main_tractor")
 
     def test_composite_transition(self):
         tree = ET.parse(self.output_path)

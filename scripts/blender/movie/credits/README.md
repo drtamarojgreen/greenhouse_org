@@ -51,7 +51,7 @@ python3 -m unittest discover scripts/blender/movie/credits/tests/
 
 ### What is verified?
 - **XML Structure**: Ensures MLT compatibility and project integrity.
-- **Cinematic Effects**: Verifies the presence and configuration of `frei0r.glow`, `frei0r.film`, and transition tracks.
+- **Cinematic Effects**: Verifies the presence and configuration of `frei0r.glow`, `oldfilm`, and transition tracks.
 - **Accessibility**: Calculates contrast ratios to ensure 4.5:1 compliance (WCAG 2.1 AA).
 - **Visibility & Layout**: Confirms all text appears on-screen and follows alignment rules.
 - **Config Variation**: Uses mocking to ensure the generation logic is robust against changes in titles, colors, durations, and cast lists.

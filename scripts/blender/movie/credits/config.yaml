@@ -87,4 +87,4 @@ credits:
     text_height: 3000
     geometry: "0=0/1080:1920x3000:100; 2249=0/-3000:1920x3000:100"
   filters:
-    - type: "frei0r.film"
+    - type: "oldfilm"

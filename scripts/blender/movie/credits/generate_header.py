@@ -58,7 +58,7 @@ def generate_header(config_path=None):
         for t in seg_cfg["text"]:
             mlt_utils.add_pango_producer(root, t["id"], t["content"], t["size"], t["weight"], dur_frames, width)
 
-    # Segment Tractors
+    # Segment Playlists (Wrapping tractors in playlists for better compatibility)
     for seg_id, seg_cfg in header_cfg["segments"].items():
         dur_frames = durations[seg_id]
         tractor = mlt_utils.add_tractor(root, f"tractor_{seg_id}", dur_frames - 1)
@@ -67,30 +67,38 @@ def generate_header(config_path=None):
             mlt_utils.add_track(tractor, t["id"])
             mlt_utils.add_transition(tractor, "composite", 0, i + 1, 0, dur_frames - 1, t["geometry"])
 
+        pl = mlt_utils.add_playlist(root, f"playlist_{seg_id}")
+        mlt_utils.add_playlist_entry(pl, f"tractor_{seg_id}")
+
     # Main Assembly (Optimized for standard A-B-C structure)
-    if all(k in durations for k in ["a", "b", "c"]):
+    if all(k in durations for k in ["a", "b", "c"]) and len(durations) == 3:
         total_dur = durations["a"] + (durations["b"] - overlap) + durations["c"]
         main_tractor = mlt_utils.add_tractor(root, "main_tractor", total_dur - 1)
 
-        playlist0 = mlt_utils.add_track(main_tractor)
-        ET.SubElement(playlist0, "entry", {"producer": "tractor_a", "in": "0", "out": str(durations["a"] - 1)})
-        ET.SubElement(playlist0, "blank", {"length": str(durations["b"] - overlap)})
-        ET.SubElement(playlist0, "entry", {"producer": "tractor_c", "in": "0", "out": str(durations["c"] - 1)})
+        # Track 0: Playlist A then C
+        track0 = mlt_utils.add_playlist(root, "main_track_0")
+        mlt_utils.add_playlist_entry(track0, "playlist_a", 0, durations["a"] - 1)
+        mlt_utils.add_blank(track0, durations["b"] - overlap)
+        mlt_utils.add_playlist_entry(track0, "playlist_c", 0, durations["c"] - 1)
+        mlt_utils.add_track(main_tractor, "main_track_0")
 
-        playlist1 = mlt_utils.add_track(main_tractor)
-        ET.SubElement(playlist1, "blank", {"length": str(durations["a"] - overlap)})
-        ET.SubElement(playlist1, "entry", {"producer": "tractor_b", "in": "0", "out": str(durations["b"] - 1)})
+        # Track 1: Playlist B
+        track1 = mlt_utils.add_playlist(root, "main_track_1")
+        mlt_utils.add_blank(track1, durations["a"] - overlap)
+        mlt_utils.add_playlist_entry(track1, "playlist_b", 0, durations["b"] - 1)
+        mlt_utils.add_track(main_tractor, "main_track_1")
 
         # Transitions
         mlt_utils.add_transition(main_tractor, "luma", 0, 1, durations["a"] - overlap, durations["a"])
         mlt_utils.add_transition(main_tractor, "luma", 1, 0, durations["a"] + durations["b"] - overlap, durations["a"] + durations["b"])
     else:
-        # Fallback for custom segment structures
+        # Fallback for custom segment structures (Sequential)
         total_dur = sum(durations.values())
         main_tractor = mlt_utils.add_tractor(root, "main_tractor", total_dur - 1)
+        main_pl = mlt_utils.add_playlist(root, "main_sequential_playlist")
         for seg_id in sorted(durations.keys()):
-            track = mlt_utils.add_track(main_tractor)
-            ET.SubElement(track, "entry", {"producer": f"tractor_{seg_id}", "in": "0", "out": str(durations[seg_id] - 1)})
+            mlt_utils.add_playlist_entry(main_pl, f"playlist_{seg_id}")
+        mlt_utils.add_track(main_tractor, "main_sequential_playlist")
 
     # Global filters
     if "filters" in header_cfg:

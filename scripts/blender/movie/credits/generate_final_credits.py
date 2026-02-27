@@ -80,7 +80,7 @@ def generate_final_credits(config_path=None):
             props = {k: v for k, v in f.items() if k != "type"}
             mlt_utils.add_filter(tractor, f["type"], props)
     else:
-        mlt_utils.add_filter(tractor, "frei0r.film")
+        mlt_utils.add_filter(tractor, "oldfilm")
 
     output_dir = Path(__file__).parent / prod_cfg["output_dir"]
     output_dir.mkdir(exist_ok=True)
