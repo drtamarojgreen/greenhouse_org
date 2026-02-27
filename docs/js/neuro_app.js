@@ -657,9 +657,9 @@
             let items = [];
 
             if (this.state.adhdCategory === 'scenarios') {
-                items = Object.entries(data.scenarios)
+                items = Object.entries(data.scenarios || {})
                     .filter(([key]) => key !== 'none' && t(`adhd_scenario_${key}`).toLowerCase().includes(this.state.searchQuery.toLowerCase()))
-                    .map(([key, val]) => ({
+                    .map(([key]) => ({
                         id: `scenario_${key}`,
                         scenarioId: key,
                         labelKey: `adhd_scenario_${key}`,
@@ -670,20 +670,21 @@
                         h: 20
                     }));
             } else {
-                items = Object.entries(data.enhancements)
-                    .filter(([id, enh]) => {
-                        const label = t(`adhd_enh_${id}_name`);
-                        const description = t(`adhd_enh_${id}_desc`);
-                        const matchesCategory = enh.category.includes(this.state.adhdCategory);
-                        const matchesSearch = label.toLowerCase().includes(this.state.searchQuery.toLowerCase()) || description.toLowerCase().includes(this.state.searchQuery.toLowerCase());
-                        return matchesCategory && matchesSearch;
+                const enhancements = (data.categories && data.categories[this.state.adhdCategory]) || [];
+                items = enhancements
+                    .filter((enh) => {
+                        const label = t(`adhd_enh_${enh.id}_name`);
+                        const description = t(`adhd_enh_${enh.id}_desc`);
+                        const matchesSearch = label.toLowerCase().includes(this.state.searchQuery.toLowerCase()) ||
+                                              description.toLowerCase().includes(this.state.searchQuery.toLowerCase());
+                        return matchesSearch;
                     })
-                    .map(([id, enh]) => ({
-                        id: `enhancement_${id}`,
-                        enhancementId: parseInt(id),
-                        labelKey: `adhd_enh_${id}_name`,
-                        description: t(`adhd_enh_${id}_desc`),
-                        category: enh.category[0],
+                    .map((enh) => ({
+                        id: `enhancement_${enh.id}`,
+                        enhancementId: enh.id,
+                        labelKey: `adhd_enh_${enh.id}_name`,
+                        description: t(`adhd_enh_${enh.id}_desc`),
+                        category: enh.category,
                         y: 0,
                         w: this.ui.panelW - 80,
                         h: 20
@@ -752,6 +753,7 @@
         },
 
         switchMode(mode) {
+            this.state.viewMode = mode;
             if (this.ga) {
                 this.ga.adhdConfig.viewMode = mode;
                 if (mode === 1) { // Synaptic View

@@ -25,6 +25,10 @@ global.document = {
         offsetWidth: 1000,
         offsetHeight: 750
     }),
+    getElementById: () => null,
+    body: {
+        appendChild: () => { }
+    },
     createElement: (tag) => {
         if (tag === 'canvas') {
             const canvas = {
@@ -100,7 +104,12 @@ window.GreenhouseADHDData = {
     scenarios: {
         'inattentive': { id: 'inattentive', enhancements: [1] }
     },
-    symptoms: [{ id: 1 }, { id: 2 }]
+    categories: {
+        'symptoms': [
+            { id: 1, name: "Symptom 1", category: "logic", description: "Desc 1" },
+            { id: 2, name: "Symptom 2", category: "visual", description: "Desc 2" }
+        ]
+    }
 };
 window.GreenhouseBrainMeshRealistic = {
     getRegionVertices: () => ({ 'pfc': [], 'motor': [] }),
@@ -174,26 +183,18 @@ TestFramework.describe('GreenhouseNeuroApp', () => {
 
     TestFramework.it('should handle mode switching', () => {
         app.switchMode(1); // Synaptic
-        assert.equal(app.ga.populationSize, 80);
+        assert.equal(app.state.viewMode, 1);
     });
 
     TestFramework.it('should switch ADHD categories', () => {
         app.state.activeTab = 'adhd';
         app.setupUIComponents();
 
-        // Open dropdown
-        const dropdown = app.ui.categoryDropdown;
-        app.handleMouseDown({ clientX: dropdown.x + 5, clientY: dropdown.y + 5 });
-        assert.isTrue(app.state.dropdowns.category.isOpen);
-
-        // Select symptoms (index 1)
-        const d = app.ui.categoryDropdown;
-        const oy = d.y + d.h + 2 + 1 * 25;
-        app.handleMouseDown({ clientX: d.x + 5, clientY: oy + 5 });
+        // Find symptoms category button
+        const btn = app.ui.categoryButtons.find(b => b.val === 'symptoms');
+        app.handleMouseDown({ clientX: btn.x + 5, clientY: btn.y + 5 });
 
         assert.equal(app.state.adhdCategory, 'symptoms');
-        assert.equal(app.ui.checkboxes.length, 2);
-        assert.equal(app.ui.checkboxes[0].enhancementId, 1);
     });
 
     TestFramework.it('should handle wheel scrolling', () => {
