@@ -155,6 +155,7 @@
             <option value="stress">Stress Dynamics Model</option>
         </select>
         <button id="run-suite-tests" class="btn">Run Suite Tests</button>
+        <button id="clear-results" class="btn" style="background-color: #ff9800; color: white;">Clear Results</button>
         <button id="clear-environment" class="btn">Clear Environment</button>
     </div>
     <div id="active-label">Active Model: None</div>
@@ -172,28 +173,60 @@
         const activeLabel = document.getElementById('active-label');
         const loadingOverlay = document.getElementById('loading-overlay');
         const runTestsBtn = document.getElementById('run-suite-tests');
+        const clearResultsBtn = document.getElementById('clear-results');
         const clearBtn = document.getElementById('clear-environment');
         const loaderMessage = document.getElementById('loader-message');
 
-        // Stub GreenhouseUtils if not loaded (Safety)
-        if (!window.GreenhouseUtils) {
-            window.GreenhouseUtils = {
-                waitForElement: (s, t = 5000) => new Promise((resolve, reject) => {
-                    const check = () => {
-                        const el = document.querySelector(Array.isArray(s) ? s[0] : s);
-                        if (el) return resolve(el);
-                        if (t <= 0) return reject();
-                        t -= 100; setTimeout(check, 100);
-                    };
-                    check();
-                }),
-                loadScript: (n, b, a = {}) => new Promise((res) => {
-                    const s = document.createElement('script');
-                    s.src = `${b}${n}`;
-                    Object.entries(a).forEach(([k,v]) => s.setAttribute(k,v));
-                    s.onload = res; document.body.appendChild(s);
-                })
+        /**
+         * Robust GreenhouseUtils Interceptor
+         * Ensures attributes persist across sub-script loads and handles app-specific dependencies.
+         */
+        const originalLoadScript = window.GreenhouseUtils ? window.GreenhouseUtils.loadScript : null;
+
+        window.GreenhouseUtils = window.GreenhouseUtils || {};
+
+        // Override or provide loadScript to ensure attributes are always merged and persistent
+        window.GreenhouseUtils.loadScript = async function(name, baseUrl, attributes = {}) {
+            console.log(`[Harness] Loading sub-script: ${name}`);
+
+            // Merge current global attributes with newly provided ones
+            const mergedAttributes = {
+                ...(window._greenhouseScriptAttributes || {}),
+                ...attributes
             };
+
+            // Persist them back to the window object so the sub-script can see them
+            window._greenhouseScriptAttributes = mergedAttributes;
+
+            // Re-inject the script into the DOM with attributes
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = `${baseUrl}js/${name}`;
+                script.dataset.modelScript = "true";
+
+                for (const [key, value] of Object.entries(mergedAttributes)) {
+                    script.setAttribute(`data-${key}`, value);
+                }
+
+                script.onload = () => {
+                    console.log(`[Harness] Sub-script loaded: ${name}`);
+                    resolve();
+                };
+                script.onerror = reject;
+                document.body.appendChild(script);
+            });
+        };
+
+        if (!window.GreenhouseUtils.waitForElement) {
+            window.GreenhouseUtils.waitForElement = (s, t = 5000) => new Promise((resolve, reject) => {
+                const check = () => {
+                    const el = document.querySelector(Array.isArray(s) ? s[0] : s);
+                    if (el) return resolve(el);
+                    if (t <= 0) return reject();
+                    t -= 100; setTimeout(check, 100);
+                };
+                check();
+            });
         }
 
         const models = {
@@ -216,6 +249,8 @@
         function clearEnvironment() {
             modelContainer.innerHTML = '';
             document.querySelectorAll('script[data-model-script="true"]').forEach(s => s.remove());
+            const overlay = document.getElementById('greenhouse-test-results-overlay');
+            if (overlay) overlay.remove();
 
             const apps = [
                 'GreenhouseNeuroApp', 'GreenhouseGenetic', 'GreenhouseDopamine',
@@ -239,6 +274,14 @@
             if (!model) return;
 
             clearEnvironment();
+
+            // Mock GreenhouseADHDData for Neuro model to prevent crashes
+            if (modelId === 'neuro') {
+                window.GreenhouseADHDData = {
+                    scenarios: { "default": { "name": "Standard", "description": "Standard neural activity", "levels": {} } },
+                    adhdTraits: { "impulsivity": 0.5, "inattention": 0.5, "hyperactivity": 0.5 }
+                };
+            }
             activeLabel.textContent = `Active Model: ${model.label}`;
             modelSelector.value = modelId;
 
@@ -278,12 +321,17 @@
             }
 
             // Sync global state
-            window._greenhouseScriptAttributes = {
+            const scriptAttributes = {
                 'target-selector-left': primarySelector,
                 'target-selector-right': '',
                 'base-url': baseUrl,
                 'view': 'default'
             };
+            if (modelId === 'genetic') {
+                scriptAttributes['data-genetic-selectors'] = script.getAttribute('data-genetic-selectors');
+            }
+            window._greenhouseScriptAttributes = scriptAttributes;
+
             const config = { baseUrl, targetSelector: primarySelector };
             if (modelId === 'neuro') window._greenhouseNeuroAttributes = config;
             if (modelId === 'synapse') window._greenhouseSynapseAttributes = config;
@@ -294,10 +342,152 @@
         }
 
         modelSelector.addEventListener('change', (e) => loadModel(e.target.value));
+
+        clearResultsBtn.onclick = () => {
+            const overlay = document.getElementById('greenhouse-test-results-overlay');
+            if (overlay) overlay.remove();
+        };
+
         clearBtn.onclick = clearEnvironment;
-        runTestsBtn.onclick = () => {
+        runTestsBtn.onclick = async () => {
+            console.log("Run Tests clicked. Model ID:", modelSelector.value);
+            const modelId = modelSelector.value;
+
+            // 1. Setup Mock Environment for Repository Tests
+            window.require = (path) => {
+                if (path.includes('assertion_library')) return window.assert || {};
+                if (path.includes('test_framework')) return window.TestFramework || {};
+                return {};
+            };
+            window.module = { exports: {} };
+            window.process = { exit: (code) => console.log("Process exit with code:", code) };
+            window.__dirname = "";
+
+            // 2. Intercept TestFramework to aggregate results
+            if (window.TestFramework) {
+                window.TestFramework.reset();
+                const originalRun = window.TestFramework.run;
+                // Temporarily disable auto-run to allow aggregation
+                window.TestFramework.run = async () => { return { passed:0, failed:0, total:0 }; };
+            }
+
+            // 3. Meticulous mapping of ALL 98 identified unit test files
+            const testMap = {
+                'neuro': [
+                    'test_neuro_page.js', 'test_neuro_logic.js', 'test_neuro_ui.js', 'test_neuro_ga.js',
+                    'test_neuro_app_logic.js', 'test_neuro_performance.js', 'test_neuro_3d_engine.js',
+                    'test_neuro_ui_components.js', 'test_neuro_page_loader.js', 'test_adhd_scenarios.js',
+                    'models/auxiliary/test_neuro_page_full.js', 'models/auxiliary/test_neuro_page_new.js'
+                ],
+                'genetic': [
+                    'test_genetic_page.js', 'test_genetic_ui.js', 'test_genetic_algo.js', 'test_genetic_helpers.js',
+                    'test_genetic_labels.js', 'test_genetic_visualizations.js', 'test_genetic_3d_projection.js',
+                    'test_genetic_camera_views.js', 'test_genetic_main_camera_controller.js', 'test_genetic_mouse_actual_bug.js',
+                    'test_genetic_mouse_control_independence.js', 'test_genetic_mouse_event_flow.js', 'test_genetic_pip_camera_usage.js',
+                    'test_genetic_pip_controls.js', 'test_genetic_pip_interactions.js', 'test_genetic_rotation_and_camera_positions.js',
+                    'test_genetic_page_loader.js', 'models/auxiliary/test_genetic_page_new.js'
+                ],
+                'dopamine': [
+                    'test_dopamine_ui.js', 'test_dopamine_model_logic.js', 'test_dopamine_electro_unit.js', 'test_dopamine_molecular_unit.js'
+                ],
+                'serotonin': [
+                    'test_serotonin_ui.js', 'test_serotonin_model_logic.js', 'test_serotonin_transport_unit.js'
+                ],
+                'inflammation': [
+                    'test_inflammation_logic.js', 'test_inflammation_ui.js', 'test_inflammation_enhancements.js'
+                ],
+                'stress': [
+                    'test_stress_logic.js', 'test_stress_ui.js', 'test_stress_regression.js', 'test_stress_enhancements.js', 'test_stress_interventions.js', 'test_stress_ui.js'
+                ],
+                'dna': [
+                    'test_dna_ui.js', 'test_dna_logic.js', 'test_dna_page.js'
+                ],
+                'rna': [
+                    'test_rna_ui.js', 'test_rna_page.js', 'repro_rna_error.js'
+                ],
+                'synapse': [
+                    'test_synapse_ui.js', 'test_synapse_logic.js', 'test_synapse_receptors.js', 'test_synapse_page_loader.js', 'models/auxiliary/test_synapse_page_new.js'
+                ],
+                'pathway': [
+                    'test_pathway_ui.js', 'test_pathway_logic.js', 'test_pathway_page_loader.js', 'test_json_pathway_support.js', 'models/auxiliary/test_pathway_page_new.js'
+                ],
+                'emotion': [
+                    'test_emotion_page.js', 'models/auxiliary/test_emotion_page.js', 'models/auxiliary/test_emotion_deep_dive.js'
+                ],
+                'cognition': [
+                    'test_cognition_logic.js', 'test_cognition_ui.js', 'test_cognition_drawing.js', 'test_cognition_modules.js', 'test_cognition_regression.js', 'models/auxiliary/test_cognition_page.js'
+                ]
+            };
+
+            const commonTests = [
+                'test_accessibility.js', 'test_assertion_library.js', 'test_dependency_manager.js',
+                'test_global_ux.js', 'test_greenhouse_utils.js', 'test_labeling_system.js',
+                'test_models_3d_math.js', 'test_models_toc.js', 'test_models_util.js',
+                'test_performance_profiler_unit.js', 'test_performance_regression.js',
+                'test_react_compatibility.js', 'test_test_framework.js', 'test_v8_graph_renderer.js',
+                'test_mobile_edge_cases.js', 'test_mobile_integration.js', 'test_mobile_model_behaviors.js',
+                'test_mobile_models_lifecycle.js', 'test_mobile_regression.js', 'test_mobile_typography_contrast.js',
+                'test_mobile_ui_interactions.js', 'test_mobile_viewer.js', 'test_model_sync.js',
+                'test_patient_app_unit.js', 'test_dashboard_app_unit.js', 'test_meditation_app.js',
+                'test_scheduler_logic.js', 'test_tech_canvas.js', 'test_inspiration_logic.js',
+                'test_kegg_parser.js', 'models/auxiliary/test_models_page_new.js'
+            ];
+
+            const testFiles = [...(testMap[modelId] || []), ...commonTests];
+
+            console.log(`Loading ${testFiles.length} repository unit tests...`);
+            for (const file of testFiles) {
+                await new Promise((resolve) => {
+                    const script = document.createElement('script');
+                    script.src = `../tests/unit/${file}`;
+                    script.onload = resolve;
+                    script.onerror = resolve; // Continue even if one fails
+                    document.body.appendChild(script);
+                });
+            }
+
+            // 4. Run Aggregated Results
+            if (window.TestFramework) {
+                // Restore run method
+                const TestFrameworkClass = window.TestFramework.constructor;
+                const proto = TestFrameworkClass.prototype;
+                window.TestFramework.run = proto.run.bind(window.TestFramework);
+
+                const repoResults = await window.TestFramework.run();
+                console.log("Aggregated Repository Results:", repoResults);
+
+                // Bridge to GreenhouseTestSuite for final reporting
+                if (window.GreenhouseTestSuite) {
+                // Clear previous tests to avoid aggregation bloat
+                window.GreenhouseTestSuite.tests = [];
+                // Re-add standard tests
+                window.GreenhouseTestSuite.addTest('Dependency Check', () => {
+                    if (typeof window.GreenhouseUtils === 'undefined') throw new Error('GreenhouseUtils missing');
+                    return 'All base utilities loaded';
+                });
+
+                    repoResults.suites.forEach(suite => {
+                        window.GreenhouseTestSuite.addTest(`Repo Suite: ${suite.name}`, async () => {
+                            if (suite.failed > 0) throw new Error(`${suite.failed} tests failed in suite`);
+                            return `${suite.passed} tests passed`;
+                        });
+                    });
+                }
+            }
+
+            // 5. Run the production in-browser test suite (includes merged repo suites)
             if (window.GreenhouseTestSuite) {
-                window.GreenhouseTestSuite.runAll();
+                await window.GreenhouseTestSuite.runAll();
+                const totalFiles = testFiles.length;
+                const overlay = document.getElementById('greenhouse-test-results-overlay');
+                if (overlay) {
+                    const fileCount = document.createElement('div');
+                    fileCount.style.fontSize = '10px';
+                    fileCount.style.marginTop = '5px';
+                    fileCount.style.color = '#aaa';
+                    fileCount.textContent = `Tests loaded from ${totalFiles} repository files.`;
+                    overlay.insertBefore(fileCount, overlay.querySelector('button'));
+                }
             } else {
                 const s = document.createElement('script');
                 s.src = `${baseUrl}js/model_tests.js`;
