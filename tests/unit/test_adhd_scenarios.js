@@ -16,24 +16,36 @@ global.requestAnimationFrame = (cb) => { return 1; };
 global.cancelAnimationFrame = (id) => { };
 global.performance = { now: () => Date.now() };
 global.Path2D = class { moveTo() { } lineTo() { } };
-global.document = {
-    createElement: (tag) => ({
-        getContext: () => ({
-            save: () => { }, restore: () => { }, translate: () => { }, rotate: () => { }, scale: () => { },
-            beginPath: () => { }, moveTo: () => { }, lineTo: () => { }, stroke: () => { }, fill: () => { },
-            rect: () => { }, clip: () => { }, fillText: () => { }, measureText: () => ({ width: 100 }),
-            createLinearGradient: () => ({ addColorStop: () => { } }),
-            createRadialGradient: () => ({ addColorStop: () => { } }),
-            clearRect: () => { }, fillRect: () => { }, strokeRect: () => { }, closePath: () => { },
-            quadraticCurveTo: () => { }, bezierCurveTo: () => { }, arcTo: () => { }, arc: () => { },
-            setLineDash: () => { },
-            set fillStyle(v) { }, set strokeStyle(v) { }, set lineWidth(v) { }, set globalAlpha(v) { },
-            set font(v) { }, set textAlign(v) { }, set textBaseline(v) { }, set filter(v) { }
-        }),
-        width: 800, height: 600, style: {},
-        addEventListener: () => { }, appendChild: () => { }, getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
+const createMockElement = (tag) => ({
+    tagName: tag.toUpperCase(),
+    getContext: () => ({
+        save: () => { }, restore: () => { }, translate: () => { }, rotate: () => { }, scale: () => { },
+        beginPath: () => { }, moveTo: () => { }, lineTo: () => { }, stroke: () => { }, fill: () => { },
+        rect: () => { }, clip: () => { }, fillText: () => { }, measureText: () => ({ width: 100 }),
+        createLinearGradient: () => ({ addColorStop: () => { } }),
+        createRadialGradient: () => ({ addColorStop: () => { } }),
+        clearRect: () => { }, fillRect: () => { }, strokeRect: () => { }, closePath: () => { },
+        quadraticCurveTo: () => { }, bezierCurveTo: () => { }, arcTo: () => { }, arc: () => { },
+        setLineDash: () => { },
+        set fillStyle(v) { }, set strokeStyle(v) { }, set lineWidth(v) { }, set globalAlpha(v) { },
+        set font(v) { }, set textAlign(v) { }, set textBaseline(v) { }, set filter(v) { }
     }),
-    querySelector: () => null
+    width: 800, height: 600, style: {},
+    addEventListener: () => { },
+    removeEventListener: () => { },
+    appendChild: () => { },
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
+    focus: () => { },
+    blur: () => { }
+});
+
+global.document = {
+    createElement: createMockElement,
+    querySelector: () => null,
+    getElementById: () => null,
+    body: {
+        appendChild: () => { }
+    }
 };
 
 // --- Helper to Load Scripts ---
