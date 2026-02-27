@@ -16,6 +16,7 @@
 
     <!-- Mandatory Production Scripts -->
     <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseUtils.js"></script>
+    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseDependencyManager.js"></script>
     <script src="https://drtamarojgreen.github.io/greenhouse_org/js/greenhouse.js"></script>
 
     <style>
@@ -350,28 +351,165 @@
 
         clearBtn.onclick = clearEnvironment;
         runTestsBtn.onclick = async () => {
-            console.log("Run Tests clicked. Model ID:", modelSelector.value);
+            const hLog = console.log.bind(console);
+            const hError = console.error.bind(console);
+            const hWarn = console.warn.bind(console);
+
+            hLog("[Harness] Run Tests clicked. Model ID:", modelSelector.value);
             const modelId = modelSelector.value;
 
             // 1. Setup Mock Environment for Repository Tests
-            window.require = (path) => {
-                if (path.includes('assertion_library')) return window.assert || {};
-                if (path.includes('test_framework')) return window.TestFramework || {};
-                return {};
-            };
-            window.module = { exports: {} };
-            window.process = { exit: (code) => console.log("Process exit with code:", code) };
-            window.__dirname = "";
-
-            // 2. Intercept TestFramework to aggregate results
-            if (window.TestFramework) {
-                window.TestFramework.reset();
-                const originalRun = window.TestFramework.run;
-                // Temporarily disable auto-run to allow aggregation
-                window.TestFramework.run = async () => { return { passed:0, failed:0, total:0 }; };
+            if (!window._originalDocumentMethods) {
+                window._originalDocumentMethods = {
+                    createElement: document.createElement.bind(document),
+                    querySelector: document.querySelector.bind(document),
+                    getElementById: document.getElementById.bind(document)
+                };
             }
 
-            // 3. Meticulous mapping of ALL 98 identified unit test files
+            window.require = (path) => {
+                hLog(`[Harness] Mock Require: ${path}`);
+                if (path.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
+                if (path.includes('test_framework')) return window.TestFramework;
+                if (path === 'fs') return {
+                    readFileSync: (p) => {
+                        hLog(`[Harness] Mock FS read: ${p}`);
+                        return '';
+                    },
+                    existsSync: () => true
+                };
+                if (path === 'path') return { join: (...args) => args.join('/'), resolve: (...args) => args.join('/') };
+                if (path === 'vm') return { runInThisContext: (code) => {
+                    hLog("[Harness] vm.runInThisContext ignored for browser-loaded scripts");
+                } };
+                return {};
+            };
+
+            window.onerror = (msg, url, line, col, error) => {
+                hError(`[Global Error] ${msg} at ${url}:${line}:${col}`, error);
+            };
+            window.module = { exports: {} };
+            window.process = { exit: (code) => hLog("[Harness] Process exit intercepted. Code:", code) };
+            window.__dirname = "";
+
+            const mockGlobal = new Proxy(window, {
+                set(target, prop, value) {
+                    if (['console', 'CustomEvent', 'dispatchEvent', 'location'].includes(prop)) {
+                        hWarn(`[Harness] Blocked repo test from overwriting window.${prop}`);
+                        return true;
+                    }
+                    target[prop] = value;
+                    return true;
+                }
+            });
+            window.global = mockGlobal;
+
+            // 2. Load Core Testing Infrastructure
+            const loadInfra = [];
+            if (!window.assert) loadInfra.push('js/assertion_library.js');
+            if (!window.TestFramework) loadInfra.push('js/test_framework.js');
+            if (!window.GreenhouseTestSuite) loadInfra.push('js/model_tests.js');
+
+            for (const src of loadInfra) {
+                await new Promise(res => {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = res;
+                    document.body.appendChild(s);
+                });
+            }
+
+            // 3. Prepare Dashboard & Test Queue
+            if (window.GreenhouseTestSuite) {
+                window.GreenhouseTestSuite.tests = [];
+
+                // Persistence layer to survive redefinitions
+                if (!window._harnessTestQueue) window._harnessTestQueue = [];
+                window._harnessTestQueue = []; // Reset for this run
+
+                const originalAddTest = window.GreenhouseTestSuite.addTest.bind(window.GreenhouseTestSuite);
+                window.GreenhouseTestSuite.addTest = (name, fn) => {
+                    hLog(`[Harness] Dashboard addTest: ${name}`);
+                    window._harnessTestQueue.push({ name, fn });
+                    originalAddTest(name, fn);
+                };
+
+                window.GreenhouseTestSuite.runAll = async function() {
+                    hLog(`[Harness] runAll() starting. Total tests: ${this.tests.length}`);
+                    this.isTesting = true;
+                    this.results = [];
+                    for (let test of this.tests) {
+                        try {
+                            const startTime = performance.now();
+                            const result = await test.fn();
+                            const duration = performance.now() - startTime;
+                            this.results.push({ name: test.name, status: 'PASS', duration: duration.toFixed(2) + 'ms', details: result });
+                        } catch (error) {
+                            hError(`[Harness] Test FAILED: ${test.name}`, error);
+                            this.results.push({ name: test.name, status: 'FAIL', error: error.message });
+                        }
+                    }
+                    this.isTesting = false;
+                    this.report();
+                };
+
+                window.GreenhouseTestSuite.addTest('Harness Environment Check', () => {
+                    if (typeof window.GreenhouseUtils === 'undefined') throw new Error('GreenhouseUtils missing');
+                    return 'Ready';
+                });
+            }
+
+            // 4. Seamlessly Bridge Repository Tests
+            if (window.TestFramework) {
+                window.TestFramework.reset();
+                const registeredRepoTests = new Set();
+
+                window.TestFramework.it = (name, fn) => {
+                    const suite = window.TestFramework.currentSuite;
+                    const suiteName = suite ? suite.name : 'Unit';
+                    const fullName = `[${suiteName}] ${name}`;
+
+                    if (registeredRepoTests.has(fullName)) return;
+                    registeredRepoTests.add(fullName);
+                    hLog(`[Harness] Registered bridged test: ${fullName}`);
+
+                    if (window.GreenhouseTestSuite) {
+                        window.GreenhouseTestSuite.addTest(fullName, async () => {
+                            // Check if getHooks exists (it's in tests/utils but not in docs/js)
+                            if (typeof window.TestFramework.getHooks === 'function') {
+                                if (suite && !suite._beforeAllRun) {
+                                    const hooks = window.TestFramework.getHooks(suite, 'beforeAll');
+                                    for (const h of (hooks || [])) await h();
+                                    suite._beforeAllRun = true;
+                                }
+                                const beHooks = window.TestFramework.getHooks(suite, 'beforeEach');
+                                for (const h of (beHooks || [])) await h();
+                                try { await fn(); } finally {
+                                    const aeHooks = window.TestFramework.getHooks(suite, 'afterEach');
+                                    for (const h of (aeHooks || [])) await h();
+                                }
+                            } else {
+                                // Fallback for docs/js version
+                                if (suite && !suite._beforeAllRun) {
+                                    for (const h of (suite.beforeAll || [])) await h();
+                                    suite._beforeAllRun = true;
+                                }
+                                for (const h of (suite.beforeEach || [])) await h();
+                                try { await fn(); } finally {
+                                    for (const h of (suite.afterEach || [])) await h();
+                                }
+                            }
+                        });
+                    }
+                };
+
+                window.TestFramework.run = async () => {
+                    hLog("[Harness] Repo script called run() - Intercepted");
+                    return { passed: 0, failed: 0, total: 0, suites: [] };
+                };
+            }
+
+            // 5. Meticulous mapping of ALL 98 identified unit test files
             const testMap = {
                 'neuro': [
                     'test_neuro_page.js', 'test_neuro_logic.js', 'test_neuro_ui.js', 'test_neuro_ga.js',
@@ -435,48 +573,37 @@
 
             const testFiles = [...(testMap[modelId] || []), ...commonTests];
 
-            console.log(`Loading ${testFiles.length} repository unit tests...`);
+            hLog(`[Harness] Loading ${testFiles.length} repository unit tests...`);
+
+            // Sequential load to avoid overloading or losing race conditions in registry
             for (const file of testFiles) {
-                await new Promise((resolve) => {
+                try {
+                    let response = await fetch(`../tests/unit/${file}`);
+                    if (!response.ok) response = await fetch(`tests/unit/${file}`);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const code = await response.text();
+
+                    const wrappedCode = `(function(require, module, exports, __dirname, global, process, console) {
+                        try {
+                            ${code}
+                        } catch (e) {
+                            console.error("[Harness] Execution error in ${file}:", e);
+                        }
+                    })(window.require, {exports:{}}, {}, "", window.global, window.process, window.console);`;
+
                     const script = document.createElement('script');
-                    script.src = `../tests/unit/${file}`;
-                    script.onload = resolve;
-                    script.onerror = resolve; // Continue even if one fails
+                    script.textContent = wrappedCode;
+                    script.dataset.file = file;
                     document.body.appendChild(script);
-                });
-            }
-
-            // 4. Run Aggregated Results
-            if (window.TestFramework) {
-                // Restore run method
-                const TestFrameworkClass = window.TestFramework.constructor;
-                const proto = TestFrameworkClass.prototype;
-                window.TestFramework.run = proto.run.bind(window.TestFramework);
-
-                const repoResults = await window.TestFramework.run();
-                console.log("Aggregated Repository Results:", repoResults);
-
-                // Bridge to GreenhouseTestSuite for final reporting
-                if (window.GreenhouseTestSuite) {
-                // Clear previous tests to avoid aggregation bloat
-                window.GreenhouseTestSuite.tests = [];
-                // Re-add standard tests
-                window.GreenhouseTestSuite.addTest('Dependency Check', () => {
-                    if (typeof window.GreenhouseUtils === 'undefined') throw new Error('GreenhouseUtils missing');
-                    return 'All base utilities loaded';
-                });
-
-                    repoResults.suites.forEach(suite => {
-                        window.GreenhouseTestSuite.addTest(`Repo Suite: ${suite.name}`, async () => {
-                            if (suite.failed > 0) throw new Error(`${suite.failed} tests failed in suite`);
-                            return `${suite.passed} tests passed`;
-                        });
-                    });
+                    hLog(`[Harness] Executed test file: ${file}`);
+                } catch (e) {
+                    hError(`[Harness] Failed to load/execute test file: ${file}`, e);
                 }
             }
 
-            // 5. Run the production in-browser test suite (includes merged repo suites)
+            // 6. Run the production in-browser test suite (includes merged repo suites)
             if (window.GreenhouseTestSuite) {
+                hLog(`[Harness] Starting runAll() with ${window.GreenhouseTestSuite.tests.length} tests registered.`);
                 await window.GreenhouseTestSuite.runAll();
                 const totalFiles = testFiles.length;
                 const overlay = document.getElementById('greenhouse-test-results-overlay');

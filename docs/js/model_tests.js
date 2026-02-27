@@ -66,24 +66,46 @@
                 el.style.position = 'fixed';
                 el.style.top = '10px';
                 el.style.left = '10px';
-                el.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+                el.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
                 el.style.color = '#fff';
-                el.style.padding = '15px';
-                el.style.borderRadius = '8px';
-                el.style.fontFamily = 'monospace';
-                el.style.fontSize = '12px';
-                el.style.zIndex = '10000';
-                el.style.border = '1px solid #444';
+                el.style.padding = '20px';
+                el.style.borderRadius = '12px';
+                el.style.fontFamily = '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
+                el.style.fontSize = '13px';
+                el.style.zIndex = '100000';
+                el.style.border = '1px solid #4ca1af';
+                el.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+                el.style.maxWidth = '450px';
+                el.style.maxHeight = '80vh';
+                el.style.overflowY = 'auto';
                 document.body.appendChild(el);
             }
 
+            const details = this.results.map(r => `
+                <div style="margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px;">
+                    <span style="color: ${r.status === 'PASS' ? '#00ff99' : '#ff5533'}; font-weight: bold;">
+                        ${r.status === 'PASS' ? '✓' : '✗'} ${r.name}
+                    </span>
+                    <div style="font-size: 11px; color: #aaa; margin-left: 18px;">
+                        ${r.status === 'PASS' ? (r.duration || '') : (r.error || 'Unknown error')}
+                    </div>
+                </div>
+            `).join('');
+
             el.innerHTML = `
-                <strong style="color:#4fd1c5">Unit Test Results</strong><br>
-                Passed: <span style="color:#00ff00">${summary.passed}</span><br>
-                Failed: <span style="color:#ff0000">${summary.failed}</span><br>
-                Total: ${summary.total}<br><br>
-                <button onclick="window.GreenhouseTestSuite.runAll()" style="background:#4fd1c5; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; color:#000; font-weight:bold;">Rerun Tests</button>
-                <button onclick="this.parentElement.remove()" style="background:#ff4d4d; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; color:#fff; margin-left:5px;">Close</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #4ca1af; padding-bottom: 10px;">
+                    <strong style="color:#4ca1af; font-size: 16px;">Test Results Dashboard</strong>
+                    <span style="font-size: 12px; color: #888;">${summary.passed}/${summary.total} PASSED</span>
+                </div>
+
+                <div style="max-height: 50vh; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;">
+                    ${details}
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button onclick="window.GreenhouseTestSuite.runAll()" style="flex: 1; background:#4ca1af; border:none; padding:8px; border-radius:6px; cursor:pointer; color:#fff; font-weight:bold;">Rerun All</button>
+                    <button onclick="this.closest('#greenhouse-test-results-overlay').remove()" style="background:#444; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; color:#fff;">Close</button>
+                </div>
             `;
         }
     };
