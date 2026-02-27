@@ -260,6 +260,7 @@
         }
 
         spawnProtein() {
+            if (this.rnaStrand.length < 10) return;
             const index = Math.floor(Math.random() * (this.rnaStrand.length - 5));
             const protein = {
                 startIndex: index,
@@ -307,10 +308,11 @@
             else if (roll < 0.9) damageType = this.damageTypes.PSEUDOURIDINE; // Enhancement 7
             else damageType = this.damageTypes.DECAPPING; // Enhancement 25
 
+            if (this.rnaStrand.length < 5) return;
             const index = Math.floor(Math.random() * (this.rnaStrand.length - 2)) + 1;
             const base = this.rnaStrand[index];
 
-            if (base.protected) return;
+            if (!base || base.protected) return;
 
             if (damageType === this.damageTypes.BREAK) {
                 if (base.connected) {

@@ -15,8 +15,8 @@
     <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/models_toc.css">
 
     <!-- Mandatory Production Scripts -->
-    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseUtils.js"></script>
     <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseDependencyManager.js"></script>
+    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseUtils.js"></script>
     <script src="https://drtamarojgreen.github.io/greenhouse_org/js/greenhouse.js"></script>
 
     <style>
@@ -367,21 +367,57 @@
                 };
             }
 
-            window.require = (path) => {
-                hLog(`[Harness] Mock Require: ${path}`);
-                if (path.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
-                if (path.includes('test_framework')) return window.TestFramework;
-                if (path === 'fs') return {
+            window.require = (requirePath) => {
+                hLog(`[Harness] Mock Require: ${requirePath}`);
+                if (requirePath.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
+                if (requirePath.includes('test_framework')) return window.TestFramework;
+                if (requirePath === 'fs') return {
                     readFileSync: (p) => {
                         hLog(`[Harness] Mock FS read: ${p}`);
+                        try {
+                            const xhr = new XMLHttpRequest();
+                            let normalizedPath = p.replace(/^.*docs\/js\//, 'js/')
+                                                  .replace(/^.*mobile\/app\//, '../mobile/app/')
+                                                  .replace(/^.*utils\//, 'js/')
+                                                  .replace(/^\/+/, '');
+
+                            if (!normalizedPath.includes('/') && normalizedPath.endsWith('.js')) {
+                                normalizedPath = 'js/' + normalizedPath;
+                            }
+
+                            xhr.open('GET', normalizedPath, false); // synchronous
+                            xhr.send(null);
+                            if (xhr.status === 200) return xhr.responseText;
+                            hError(`[Harness] FS read failed for ${normalizedPath}: ${xhr.status}`);
+                        } catch (e) {
+                            hError(`[Harness] FS read error for ${p}:`, e);
+                        }
                         return '';
                     },
                     existsSync: () => true
                 };
-                if (path === 'path') return { join: (...args) => args.join('/'), resolve: (...args) => args.join('/') };
-                if (path === 'vm') return { runInThisContext: (code) => {
-                    hLog("[Harness] vm.runInThisContext ignored for browser-loaded scripts");
-                } };
+                if (requirePath === 'path') return {
+                    join: (...args) => args.join('/').replace(/\/+/g, '/'),
+                    resolve: (...args) => args.join('/').replace(/\/+/g, '/'),
+                    dirname: (p) => p.split('/').slice(0, -1).join('/') || '.'
+                };
+                if (requirePath === 'vm') return {
+                    runInThisContext: (code) => {
+                        hLog("[Harness] vm.runInThisContext executed via eval");
+                        return eval(code);
+                    },
+                    createContext: (sandbox) => {
+                        hLog("[Harness] vm.createContext created");
+                        return sandbox || {};
+                    },
+                    runInContext: (code, context) => {
+                        hLog("[Harness] vm.runInContext executed via eval with context");
+                        const keys = Object.keys(context);
+                        const values = Object.values(context);
+                        const fn = new Function(...keys, code);
+                        return fn.apply(context, values);
+                    }
+                };
                 return {};
             };
 
@@ -393,12 +429,30 @@
             window.__dirname = "";
 
             const mockGlobal = new Proxy(window, {
+                get(target, prop) {
+                    const val = target[prop];
+                    if (typeof val === 'function') {
+                        if (val.name === 'setTimeout' || val.name === 'setInterval' || val.name === 'requestAnimationFrame') {
+                             return val.bind(target);
+                        }
+                        // Bind most native methods to the target to avoid "Illegal invocation"
+                        if (/^[A-Z]/.test(prop) || ['dispatchEvent', 'addEventListener', 'removeEventListener', 'fetch', 'XMLHttpRequest'].includes(prop)) {
+                            return val;
+                        }
+                        return typeof val.bind === 'function' ? val.bind(target) : val;
+                    }
+                    return val;
+                },
                 set(target, prop, value) {
-                    if (['console', 'CustomEvent', 'dispatchEvent', 'location'].includes(prop)) {
+                    if (['console', 'CustomEvent', 'dispatchEvent', 'location', 'window', 'global'].includes(prop)) {
                         hWarn(`[Harness] Blocked repo test from overwriting window.${prop}`);
                         return true;
                     }
-                    target[prop] = value;
+                    try {
+                        target[prop] = value;
+                    } catch (e) {
+                        hWarn(`[Harness] Failed to set window.${prop}: ${e.message}`);
+                    }
                     return true;
                 }
             });
@@ -475,29 +529,32 @@
 
                     if (window.GreenhouseTestSuite) {
                         window.GreenhouseTestSuite.addTest(fullName, async () => {
-                            // Check if getHooks exists (it's in tests/utils but not in docs/js)
-                            if (typeof window.TestFramework.getHooks === 'function') {
-                                if (suite && !suite._beforeAllRun) {
-                                    const hooks = window.TestFramework.getHooks(suite, 'beforeAll');
+                            // Helper for hooks
+                            const runHooks = async (type) => {
+                                if (typeof window.TestFramework.getHooks === 'function') {
+                                    const hooks = window.TestFramework.getHooks(suite, type);
                                     for (const h of (hooks || [])) await h();
-                                    suite._beforeAllRun = true;
+                                } else if (suite && suite[type]) {
+                                    for (const h of suite[type]) await h();
                                 }
-                                const beHooks = window.TestFramework.getHooks(suite, 'beforeEach');
-                                for (const h of (beHooks || [])) await h();
-                                try { await fn(); } finally {
-                                    const aeHooks = window.TestFramework.getHooks(suite, 'afterEach');
-                                    for (const h of (aeHooks || [])) await h();
+                            };
+
+                            if (suite && !suite._beforeAllRun) {
+                                await runHooks('beforeAll');
+                                suite._beforeAllRun = true;
+                            }
+                            await runHooks('beforeEach');
+
+                            try {
+                                if (fn.length > 0) {
+                                    await new Promise((resolve, reject) => {
+                                        fn((err) => err ? reject(err) : resolve());
+                                    });
+                                } else {
+                                    await fn();
                                 }
-                            } else {
-                                // Fallback for docs/js version
-                                if (suite && !suite._beforeAllRun) {
-                                    for (const h of (suite.beforeAll || [])) await h();
-                                    suite._beforeAllRun = true;
-                                }
-                                for (const h of (suite.beforeEach || [])) await h();
-                                try { await fn(); } finally {
-                                    for (const h of (suite.afterEach || [])) await h();
-                                }
+                            } finally {
+                                await runHooks('afterEach');
                             }
                         });
                     }
