@@ -276,12 +276,18 @@
                         const filtered = this.getFilteredCheckboxes();
                         const scrollAreaY = 160;
                         const scrollAreaH = 320;
+                        const startY = 180;
+                        let currentY = startY - this.state.scrollOffset;
+                        const lineHeight = 25;
 
                         for (const c of filtered) {
-                            // Check if within visible area before hit detection
-                            if (c.y < scrollAreaY || c.y + c.h > scrollAreaY + scrollAreaH) continue;
+                            const cy = currentY;
+                            currentY += lineHeight;
 
-                            if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
+                            // Check if within visible area before hit detection
+                            if (cy < scrollAreaY || cy + c.h > scrollAreaY + scrollAreaH) continue;
+
+                            if (mx >= c.x && mx <= c.x + c.w && my >= cy && my <= cy + c.h) {
                                 if (this.state.adhdCategory === 'scenarios') {
                                     const active = !this.state.activeScenarios.has(c.scenarioId);
                                     if (active) this.state.activeScenarios.add(c.scenarioId);
@@ -356,7 +362,18 @@
             if (this.state.activeTab === 'adhd') {
                 const scrollAreaY = 160;
                 const scrollAreaH = 320;
-                const visibleCheckboxes = this.getFilteredCheckboxes().filter(c => c.y >= scrollAreaY && c.y + c.h <= scrollAreaY + scrollAreaH);
+                const startY = 180;
+                let currentY = startY - this.state.scrollOffset;
+                const lineHeight = 25;
+
+                const visibleCheckboxes = this.getFilteredCheckboxes()
+                    .map(c => {
+                        const cy = currentY;
+                        currentY += lineHeight;
+                        return { ...c, y: cy };
+                    })
+                    .filter(c => c.y >= scrollAreaY && c.y + c.h <= scrollAreaY + scrollAreaH);
+
                 all.push(...visibleCheckboxes, this.ui.searchInput, ...this.ui.categoryButtons);
             }
 
