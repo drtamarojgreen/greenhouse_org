@@ -126,8 +126,9 @@
 
             // ADHD Scenarios
             this.ui.checkboxes = [];
-            if (window.GreenhouseADHDData) {
-                Object.keys(window.GreenhouseADHDData.scenarios).forEach((key) => {
+            const data = window.GreenhouseADHDData;
+            if (data && data.scenarios) {
+                Object.keys(data.scenarios).forEach((key) => {
                     if (key === 'none') return;
                     this.ui.checkboxes.push({
                         id: `scenario_${key}`,
@@ -649,42 +650,48 @@
         },
 
         updateADHDCheckboxes() {
-            if (!window.GreenhouseADHDData) return;
+            const data = window.GreenhouseADHDData;
+            if (!data) return;
 
             this.ui.checkboxes = []; // Clear existing for dynamic rebuild
-
-            const data = window.GreenhouseADHDData;
             let items = [];
 
+            const query = (this.state.searchQuery || '').toLowerCase();
+
             if (this.state.adhdCategory === 'scenarios') {
-                items = Object.entries(data.scenarios || {})
-                    .filter(([key]) => key !== 'none' && t(`adhd_scenario_${key}`).toLowerCase().includes(this.state.searchQuery.toLowerCase()))
+                const scenarios = data.scenarios || {};
+                items = Object.entries(scenarios)
+                    .filter(([key]) => {
+                        if (key === 'none') return false;
+                        const label = t(`adhd_scenario_${key}`) || '';
+                        return label.toLowerCase().includes(query);
+                    })
                     .map(([key]) => ({
                         id: `scenario_${key}`,
                         scenarioId: key,
                         labelKey: `adhd_scenario_${key}`,
-                        description: t(`adhd_scenario_${key}_desc`),
+                        description: t(`adhd_scenario_${key}_desc`) || '',
                         category: 'scenarios',
                         y: 0,
                         w: this.ui.panelW - 80,
                         h: 20
                     }));
             } else {
-                const enhancements = (data.categories && data.categories[this.state.adhdCategory]) || [];
+                const categoryData = data.categories || {};
+                const enhancements = categoryData[this.state.adhdCategory] || [];
                 items = enhancements
                     .filter((enh) => {
-                        const label = t(`adhd_enh_${enh.id}_name`);
-                        const description = t(`adhd_enh_${enh.id}_desc`);
-                        const matchesSearch = label.toLowerCase().includes(this.state.searchQuery.toLowerCase()) ||
-                                              description.toLowerCase().includes(this.state.searchQuery.toLowerCase());
-                        return matchesSearch;
+                        if (!enh) return false;
+                        const label = (t(`adhd_enh_${enh.id}_name`) || '').toLowerCase();
+                        const description = (t(`adhd_enh_${enh.id}_desc`) || '').toLowerCase();
+                        return label.includes(query) || description.includes(query);
                     })
                     .map((enh) => ({
                         id: `enhancement_${enh.id}`,
                         enhancementId: enh.id,
                         labelKey: `adhd_enh_${enh.id}_name`,
-                        description: t(`adhd_enh_${enh.id}_desc`),
-                        category: enh.category,
+                        description: t(`adhd_enh_${enh.id}_desc`) || '',
+                        category: enh.category || 'misc',
                         y: 0,
                         w: this.ui.panelW - 80,
                         h: 20
