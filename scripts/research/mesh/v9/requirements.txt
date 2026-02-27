@@ -1,0 +1,9 @@
+aiohttp>=3.9
+pyyaml>=6.0
+pandas>=2.0
+numpy>=1.26
+rich>=13.0
+networkx>=3.2
+scipy>=1.12
+matplotlib>=3.8
+seaborn>=0.13

@@ -1,0 +1,61 @@
+# V9 Pipeline Configuration
+
+seed_term: "Depression"
+
+discovery:
+  max_levels: 2
+  level_thresholds:
+    1: 15000
+    2: 5000
+  max_children_per_node: 5
+  total_max_terms: 50
+  generic_term_exclusions:
+    - "Humans"
+    - "Adult"
+    - "Male"
+    - "Female"
+    - "Middle Aged"
+    - "Aged"
+    - "Child"
+    - "Adolescent"
+
+temporal:
+  enabled: true
+  start_year: 2015
+  end_year: 2025
+  interval_strategy: "5yr"   # Options: "5yr", "decade", "annual"
+  normalize: true
+
+clinical_trials:
+  enabled: true
+  max_pages: 2
+  statuses:
+    - "RECRUITING"
+    - "ACTIVE_NOT_RECRUITING"
+    - "COMPLETED"
+
+graph:
+  enabled: true
+  centrality: ["degree", "betweenness", "pagerank"]
+  top_nodes_limit: 50
+
+analytics:
+  cagr_emerging_threshold: 20.0
+  momentum_recency_weight: 0.4
+
+api:
+  pubmed_api_key: null      # Set via PUBMED_API_KEY env var
+  email: "cito@greenhousemd.org"
+  max_concurrent_requests: 8
+
+cache:
+  db_path: "scripts/research/mesh/v9/cache.db"
+  ttl_days: 7
+
+output:
+  base_dir: "scripts/research/mesh/v9/output"
+  formats: ["json", "csv", "svg", "png"]
+
+logging:
+  level: "INFO"
+  file: "scripts/research/mesh/v9/pipeline.log"
