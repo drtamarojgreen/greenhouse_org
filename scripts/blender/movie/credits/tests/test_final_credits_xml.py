@@ -5,7 +5,8 @@ import sys
 
 # Add the parent directory to sys.path to import generate_final_credits
 sys.path.append(str(Path(__file__).parent.parent))
-from generate_final_credits import generate_final_credits, CONFIG
+from generate_final_credits import generate_final_credits
+import config_loader
 from reporting_utils import get_contrast_ratio, parse_geometry, resolve_to_pixels
 
 class TestFinalCreditsXML(unittest.TestCase):
@@ -13,7 +14,7 @@ class TestFinalCreditsXML(unittest.TestCase):
     def setUpClass(cls):
         # Ensure the final_credits.kdenlive is generated before tests
         generate_final_credits()
-        cls.output_path = Path(__file__).parent.parent / CONFIG["output_dir"] / "final_credits.kdenlive"
+        cls.output_path = Path(__file__).parent.parent / "output" / "final_credits.kdenlive"
 
     def test_file_exists(self):
         self.assertTrue(self.output_path.exists(), "final_credits.kdenlive was not generated")
@@ -46,10 +47,10 @@ class TestFinalCreditsXML(unittest.TestCase):
         filter_film = None
         for f in tractor.findall("filter"):
             svc = f.find("property[@name='mlt_service']")
-            if svc is not None and svc.text == "frei0r.film":
+            if svc is not None and svc.text == "oldfilm":
                 filter_film = f
                 break
-        self.assertIsNotNone(filter_film, "frei0r.film filter not found on main_tractor")
+        self.assertIsNotNone(filter_film, "oldfilm filter not found on main_tractor")
 
     def test_composite_transition(self):
         tree = ET.parse(self.output_path)
@@ -66,11 +67,13 @@ class TestFinalCreditsXML(unittest.TestCase):
         self.assertEqual(comp.find("property[@name='b_track']").text, "1")
 
     def test_cast_presence(self):
+        full_config = config_loader.load_config()
+        credits_cfg = config_loader.get_credits_config(full_config)
         with open(self.output_path, 'r', encoding='utf-8') as f:
             content = f.read()
         self.assertIn("CAST", content)
         self.assertIn("Tamaro Green", content)
-        for char in CONFIG["cast"]:
+        for char in credits_cfg.get("cast", {}):
             self.assertIn(char, content)
 
     def test_scroll_geometry(self):
@@ -126,7 +129,8 @@ class TestFinalCreditsXML(unittest.TestCase):
         # Background color
         bg = root.find(".//producer[@id='bg']")
         res = bg.find("property[@name='resource']").text
-        self.assertEqual(res.lower(), CONFIG["background_black"].lower())
+        # Default is black
+        self.assertEqual(res.lower(), "#000000")
 
         # Text color from kdenlivetitle xmldata
         credits_text = root.find(".//producer[@id='credits_text']")
@@ -140,7 +144,7 @@ class TestFinalCreditsXML(unittest.TestCase):
 
         self.assertEqual((r, g, b), (255, 255, 255))
 
-        ratio = get_contrast_ratio(CONFIG["background_black"], (r/255.0, g/255.0, b/255.0))
+        ratio = get_contrast_ratio("#000000", (r/255.0, g/255.0, b/255.0))
         self.assertGreaterEqual(ratio, 4.5)
 
     def test_total_duration(self):

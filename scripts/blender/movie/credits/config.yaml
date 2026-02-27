@@ -1,0 +1,90 @@
+# GreenhouseMD Production Configuration
+production:
+  film_title: "The Greenhouse"
+  studio_name: "GreenhouseMD Production Studio"
+  co_production: "GreenhouseMD / GreenhouseMHD Production"
+  year: 2026
+  fps: 25
+  width: 1920
+  height: 1080
+  output_dir: "output"
+
+header:
+  segments:
+    a:
+      duration: 12
+      background: "#1a1a1a"
+      text:
+        - id: "a1"
+          content: "GreenhouseMD"
+          size: 120
+          weight: "bold"
+          geometry: "0=10%/40%:80%x30%:0; 50=0/40%:100%x30%:100"
+        - id: "a2"
+          content: "Production Studio"
+          size: 48
+          weight: "normal"
+          geometry: "0=0/60%:100%x10%:0; 75=0/60%:100%x10%:100"
+    b:
+      duration: 15
+      background: "#000000"
+      text:
+        - id: "b1"
+          content: "GreenhouseMD Production Studio presents...\nA GreenhouseMD / GreenhouseMHD Production"
+          size: 60
+          weight: "normal"
+          geometry: "0=0/44%:100%x30%:0; 25=0/44%:100%x30%:100; 374=0/42%:100%x30%:100"
+    c:
+      duration: 15
+      background: "#000000"
+      text:
+        - id: "c_title"
+          content: "The Greenhouse"
+          size: 144
+          weight: "bold"
+          geometry: "0=0/30%:100%x40%:100"
+  transitions:
+    - type: "luma"
+      in: 11
+      out: 12
+      a_track: 0
+      b_track: 1
+    - type: "luma"
+      in: 26
+      out: 27
+      a_track: 1
+      b_track: 0
+  filters:
+    - type: "frei0r.glow"
+      blur: "0.02"
+
+credits:
+  duration: 90
+  background: "#000000"
+  font:
+    family: "DejaVu Sans"
+    size: 36
+    weight: 50
+  colors:
+    text: "#ffffff"
+    gold: "#c8a84b"
+  cast:
+    Herbaceous: "AI"
+    Arbor: "AI"
+    GloomGnome: "AI"
+  crew:
+    - role: "EXECUTIVE PRODUCER"
+      name: "Tamaro Green"
+    - role: "PRODUCER"
+      name: "Tamaro Green"
+    - role: "LIGHTING DIRECTOR"
+      name: "AI"
+    - role: "WRITER"
+      name: "AI"
+    - role: "COSTUME DESIGNER"
+      name: "AI"
+  scroll:
+    text_height: 3000
+    geometry: "0=0/1080:1920x3000:100; 2249=0/-3000:1920x3000:100"
+  filters:
+    - type: "oldfilm"
