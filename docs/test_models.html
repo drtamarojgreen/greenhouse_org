@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Greenhouse Models Test Harness</title>
-    <script src="https://drtamarojgreen.github.io/greenhouse_org/GreenhouseUtils.js"></script>
+    <!-- Core Dependencies -->
+    <script src="js/GreenhouseDependencyManager.js"></script>
+    <script src="js/GreenhouseUtils.js"></script>
+    <script src="js/performance_profiler.js"></script>
+    <script src="js/model_tests.js"></script>
     <script>
-        // Stub GreenhouseUtils if not loaded
+        // Stub GreenhouseUtils if not loaded (fallback)
         if (!window.GreenhouseUtils) {
-            console.warn('[TestHarness] GreenhouseUtils.js not found at provided URL. Using stubs.');
+            console.warn('[TestHarness] GreenhouseUtils.js not found. Using stubs.');
             window.GreenhouseUtils = {
                 waitForElement: (selectors, timeout) => {
                     return new Promise((resolve, reject) => {
@@ -29,233 +33,249 @@
                     });
                 },
                 loadScript: (name, baseUrl, attributes) => {
-                    return new Promise((resolve) => {
+                    return new Promise((resolve, reject) => {
                         const script = document.createElement('script');
-                        script.src = `${baseUrl}${name}`;
+                        const timestamp = new Date().getTime();
+                        const path = name.startsWith('js/') ? name : `js/${name}`;
+                        script.src = `${baseUrl}${path}?t=${timestamp}`;
                         if (attributes) {
                             for (const [k, v] of Object.entries(attributes)) {
                                 script.setAttribute('data-' + k, v);
                             }
                         }
                         script.onload = resolve;
+                        script.onerror = reject;
                         document.body.appendChild(script);
                     });
                 },
-                isMobileUser: () => window.innerWidth <= 768
+                isMobileUser: () => window.innerWidth <= 1024,
+                renderModelsTOC: () => console.log('[TestHarness] TOC rendering requested')
             };
         }
     </script>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f7f6;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; padding: 0;
+            background-color: #050510;
+            color: #eee;
+            display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
         }
         .header {
-            text-align: center;
-            margin-bottom: 30px;
-            width: 100%;
-            max-width: 800px;
+            text-align: center; padding: 15px;
+            background: linear-gradient(to right, #0a0a20, #1a1a3a);
+            border-bottom: 1px solid #333; flex-shrink: 0;
         }
+        .header h1 { margin: 0; font-size: 24px; color: #4ca1af; letter-spacing: 1px; }
         .controls {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            width: 100%;
-            max-width: 600px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            background: #1a1a2e; padding: 15px; border-bottom: 1px solid #333;
+            display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap; flex-shrink: 0;
         }
-        select {
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            width: 100%;
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        select, button {
+            padding: 8px 12px; font-size: 14px; border-radius: 4px;
+            border: 1px solid #444; background: #0f3460; color: white;
+            cursor: pointer; font-weight: 600;
         }
-        #model-status {
-            font-weight: 600;
-            color: #4ca1af;
-            text-align: center;
+        button:hover { background: #16213e; border-color: #4ca1af; }
+        #run-tests-btn { background-color: #4ca1af; }
+        #clear-results-btn { background-color: #e94560; }
+        #model-container { flex: 1; position: relative; background: #000; overflow: auto; width: 100%; }
+        .status-bar {
+            background: #16213e; padding: 5px 15px; font-size: 12px;
+            display: flex; justify-content: space-between; border-top: 1px solid #333; flex-shrink: 0;
         }
-        #model-container {
-            width: 100%;
-            min-height: 600px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            overflow: hidden;
-            position: relative;
+        #model-status { color: #4ca1af; font-weight: bold; }
+        #log-viewer {
+            position: absolute; bottom: 30px; right: 10px; width: 400px; height: 250px;
+            background: rgba(0, 0, 0, 0.85); border: 1px solid #444; border-radius: 8px;
+            font-family: 'Courier New', monospace; font-size: 11px; padding: 10px;
+            overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        /* Styling for the reconstructed Wix structure to ensure it's visible if needed */
-        .wixui-section {
-            width: 100%;
-            height: 100%;
-        }
+        .log-entry { margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px; }
+        .log-error { color: #ff4d4d; }
+        .log-warn { color: #ffcc00; }
+
+        /* Wix Simulation */
+        #SITE_PAGES_TRANSITION_GROUP { width: 100%; height: 100%; position: relative; }
+        .wixui-section { width: 100%; height: 100%; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Greenhouse Mental Health</h1>
-        <p>Model Integration Test Harness</p>
-    </div>
+    <div class="header"><h1>Greenhouse Models | Test Harness</h1></div>
 
     <div class="controls">
-        <label for="model-selector">Select a model to load:</label>
-        <select id="model-selector">
-            <option value="" disabled selected>-- Choose a Model --</option>
-            <option value="genetic">Genetic Model</option>
-            <option value="neuro">Neuro Model</option>
-            <option value="pathway">Pathway Model</option>
-            <option value="synapse">Synapse Model</option>
-            <option value="dopamine">Dopamine Signaling Model</option>
-            <option value="serotonin">Serotonin Structural Model</option>
-            <option value="dna">DNA Repair Model</option>
-            <option value="rna">RNA Repair Model</option>
-            <option value="emotion">Emotion Model</option>
-            <option value="cognition">Cognition Model</option>
-            <option value="inflammation">Neuroinflammation Model</option>
-            <option value="stress">Stress Dynamics Model</option>
-        </select>
-        <div id="model-status">No model loaded</div>
+        <div class="control-group">
+            <label for="model-selector">Model:</label>
+            <select id="model-selector">
+                <option value="" disabled selected>-- Choose a Model --</option>
+                <option value="genetic">Genetic Model</option>
+                <option value="neuro">Neuro Model</option>
+                <option value="pathway">Pathway Model</option>
+                <option value="synapse">Synapse Model</option>
+                <option value="dopamine">Dopamine Signaling</option>
+                <option value="serotonin">Serotonin Structural</option>
+                <option value="dna">DNA Repair Model</option>
+                <option value="rna">RNA Repair Model</option>
+                <option value="emotion">Emotion Model</option>
+                <option value="cognition">Cognition Model</option>
+                <option value="inflammation">Neuroinflammation</option>
+                <option value="stress">Stress Dynamics</option>
+                <option value="models_hub">Models Hub Page</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <input type="checkbox" id="local-mode" checked>
+            <label for="local-mode">Local Mode</label>
+        </div>
+        <div class="btn-group">
+            <button id="run-tests-btn">Run Tests</button>
+            <button id="clear-results-btn">Clear Results</button>
+            <button id="toggle-logs-btn">Toggle Logs</button>
+            <button id="reset-harness-btn">Reset Harness</button>
+        </div>
     </div>
 
     <div id="model-container">
-        <!-- Reconstructed Wix DOM will be injected here -->
+        <div style="display:flex; justify-content:center; align-items:center; height:100%; color:#555;">
+            Select a model to begin testing
+        </div>
+    </div>
+
+    <div id="log-viewer"></div>
+
+    <div class="status-bar">
+        <div>Status: <span id="model-status">Idle</span></div>
+        <div>V1.2.0-PRO</div>
     </div>
 
     <script>
-        const baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
+        const remoteBaseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
+        const localBaseUrl = './';
         const primarySelector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
 
         const models = {
-            'genetic': { label: 'Genetic Model', file: 'genetic.js' },
-            'neuro': { label: 'Neuro Model', file: 'neuro.js' },
-            'pathway': { label: 'Pathway Model', file: 'pathway.js' },
-            'synapse': { label: 'Synapse Model', file: 'synapse.js' },
-            'dopamine': { label: 'Dopamine Signaling Model', file: 'dopamine.js' },
-            'serotonin': { label: 'Serotonin Structural Model', file: 'serotonin.js' },
-            'dna': { label: 'DNA Repair Model', file: 'dna_repair.js' },
-            'rna': { label: 'RNA Repair Model', file: 'rna_repair.js' },
-            'emotion': { label: 'Emotion Model', file: 'emotion.js' },
-            'cognition': { label: 'Cognition Model', file: 'cognition.js' },
-            'inflammation': { label: 'Neuroinflammation Model', file: 'inflammation.js' },
-            'stress': { label: 'Stress Dynamics Model', file: 'stress.js' }
+            'genetic': { file: 'genetic.js', label: 'Genetic', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'neuro': { file: 'neuro.js', label: 'Neuro', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'pathway': { file: 'pathway.js', label: 'Pathway', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'synapse': { file: 'synapse.js', label: 'Synapse', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'dopamine': { file: 'dopamine.js', label: 'Dopamine', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'serotonin': { file: 'serotonin.js', label: 'Serotonin', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'dna': { file: 'dna_repair.js', label: 'DNA Repair', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'rna': { file: 'rna_repair.js', label: 'RNA Repair', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'emotion': { file: 'emotion.js', label: 'Emotion', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'cognition': { file: 'cognition.js', label: 'Cognition', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'inflammation': { file: 'inflammation.js', label: 'Inflammation', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'stress': { file: 'stress.js', label: 'Stress', selector: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' },
+            'models_hub': { file: 'models.js', label: 'Hub Page', selector: '#SITE_PAGES_TRANSITION_GROUP .wixui-section > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)' }
         };
 
         const selector = document.getElementById('model-selector');
-        const status = document.getElementById('model-status');
         const container = document.getElementById('model-container');
+        const logViewer = document.getElementById('log-viewer');
+        const status = document.getElementById('model-status');
 
-        selector.addEventListener('change', (e) => {
-            const modelId = e.target.value;
-            if (modelId && models[modelId]) {
-                loadModel(modelId);
-            }
-        });
+        // --- Enhanced Logger ---
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+
+        function addLog(args, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logViewer.appendChild(entry);
+            logViewer.scrollTop = logViewer.scrollHeight;
+        }
+
+        console.log = (...args) => { originalLog(...args); addLog(args, 'info'); };
+        console.warn = (...args) => { originalWarn(...args); addLog(args, 'warn'); };
+        console.error = (...args) => { originalError(...args); addLog(args, 'error'); };
+
+        document.getElementById('toggle-logs-btn').onclick = () => logViewer.style.display = logViewer.style.display === 'none' ? 'block' : 'none';
+        document.getElementById('reset-harness-btn').onclick = () => window.location.reload();
+        document.getElementById('run-tests-btn').onclick = () => {
+            if (window.GreenhouseTestSuite) {
+                if (window.GreenhouseProfiler) window.GreenhouseProfiler.start();
+                window.GreenhouseTestSuite.runAll();
+            } else alert('Test Suite not found.');
+        };
+        document.getElementById('clear-results-btn').onclick = () => {
+            const overlay = document.getElementById('greenhouse-test-results-overlay');
+            if (overlay) overlay.remove();
+        };
+
+        selector.addEventListener('change', (e) => loadModel(e.target.value));
+
+        function stopModels() {
+            console.log('[TestHarness] Resetting app state...');
+            ['GreenhouseDopamine', 'GreenhouseSerotonin', 'GreenhouseDNARepair', 'GreenhouseNeuroApp', 'GreenhouseStressApp', 'GreenhouseInflammationApp', 'GreenhouseEmotionApp', 'GreenhouseCognitionApp'].forEach(app => {
+                if (window[app]) {
+                    if (window[app].isRunning !== undefined) window[app].isRunning = false;
+                    if (window[app].stop) window[app].stop();
+                    if (window[app].stopSimulation) window[app].stopSimulation();
+                }
+            });
+            if (window.Greenhouse && window.Greenhouse.rnaSimulation) window.Greenhouse.rnaSimulation.stop();
+        }
 
         function loadModel(id) {
             const model = models[id];
+            let baseUrl = document.getElementById('local-mode').checked ? localBaseUrl : remoteBaseUrl;
+            if (!baseUrl.endsWith('/')) baseUrl += '/';
+
             status.textContent = `Loading ${model.label}...`;
+            stopModels();
 
-            // 1. Clear container and scripts
             container.innerHTML = '';
-            const oldScripts = document.querySelectorAll('script[data-loaded-by="test-harness"]');
-            oldScripts.forEach(s => s.remove());
+            document.querySelectorAll('script[data-loaded-by="test-harness"]').forEach(s => s.remove());
+            ['_greenhouseScriptAttributes', '_greenhouseNeuroAttributes', '_greenhouseGeneticAttributes', '_greenhouseSynapseAttributes', '_greenhouseStressAttributes', '_greenhouseInflammationAttributes', '_greenhouseModelsAttributes'].forEach(g => delete window[g]);
 
-            // Clear any global attributes that might interfere
-            delete window._greenhouseScriptAttributes;
-            delete window._greenhouseNeuroAttributes;
-            delete window._greenhouseGeneticAttributes;
+            // Rebuild Wix DOM structure exactly
+            const tg = document.createElement('div'); tg.id = 'SITE_PAGES_TRANSITION_GROUP';
+            const sec = document.createElement('section'); sec.className = 'wixui-section';
+            sec.appendChild(document.createElement('div')); // child 1
+            const d2 = document.createElement('div'); sec.appendChild(d2); // child 2
+            const d21 = document.createElement('div'); d2.appendChild(d21); // child 1
+            const isec = document.createElement('section'); d21.appendChild(isec); // child 1
+            const idiv1 = document.createElement('div'); isec.appendChild(idiv1); // child 1
+            idiv1.appendChild(document.createElement('div')); // Title: child 1
+            idiv1.appendChild(document.createElement('div')); // Para: child 2
+            const target = document.createElement('div'); target.id = 'model-target'; isec.appendChild(target); // child 2
+            tg.appendChild(sec); container.appendChild(tg);
 
-            // 2. Rebuild Wix DOM structure
-            // section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)
-
-            const section1 = document.createElement('section');
-            section1.className = 'wixui-section';
-
-            const dummyDiv = document.createElement('div'); // nth-child(1)
-            section1.appendChild(dummyDiv);
-
-            const div2 = document.createElement('div'); // nth-child(2)
-            section1.appendChild(div2);
-
-            const div2_1 = document.createElement('div'); // nth-child(1)
-            div2.appendChild(div2_1);
-
-            const innerSection = document.createElement('section'); // nth-child(1)
-            div2_1.appendChild(innerSection);
-
-            const innerDiv1 = document.createElement('div'); // nth-child(1)
-            innerSection.appendChild(innerDiv1);
-
-            const geneticTitle = document.createElement('div'); // geneticTitle (nth-child(1) of innerDiv1)
-            innerDiv1.appendChild(geneticTitle);
-
-            const geneticParagraph = document.createElement('div'); // geneticParagraph (nth-child(2) of innerDiv1)
-            innerDiv1.appendChild(geneticParagraph);
-
-            const targetElement = document.createElement('div'); // targetElement (nth-child(2) of innerSection)
-            targetElement.id = 'model-target';
-            innerSection.appendChild(targetElement);
-
-            container.appendChild(section1);
-
-            // 3. Prepare script attributes
             const script = document.createElement('script');
-            // Instructions say: https://drtamarojgreen.github.io/greenhouse_org/{scriptName}
-            // but greenhouse.js uses config.githubPagesBaseUrl + 'js/' + scriptName
-            // I will check greenhouse.js again or try to be safe.
-            // GreenhouseUtils.loadScript in GreenhouseUtils.js uses `${baseUrl}js/${scriptName}?t=${timestamp}`;
             script.src = `${baseUrl}js/${model.file}`;
-
-            // Set attributes both in dataset and via setAttribute
-            script.dataset.targetSelectorLeft = primarySelector;
-            script.dataset.targetSelectorRight = '';
-            script.dataset.baseUrl = baseUrl;
-            script.dataset.view = 'default';
             script.dataset.loadedBy = 'test-harness';
 
-            script.setAttribute('data-target-selector-left', primarySelector);
-            script.setAttribute('data-target-selector-right', '');
-            script.setAttribute('data-base-url', baseUrl);
-            script.setAttribute('data-view', 'default');
-            script.setAttribute('data-loaded-by', 'test-harness');
+            const sel = model.selector || primarySelector;
+            const attrs = { 'target-selector-left': sel, 'target-selector-right': '', 'base-url': baseUrl, 'view': 'default' };
+            for (const [k, v] of Object.entries(attrs)) script.setAttribute('data-' + k, v);
 
             if (id === 'genetic') {
-                const geneticSelectors = {
-                    genetic: primarySelector,
+                const gs = {
+                    genetic: sel,
                     geneticTitle: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(1)',
                     geneticParagraph: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(2)'
                 };
-                script.setAttribute('data-genetic-selectors', JSON.stringify(geneticSelectors));
+                script.setAttribute('data-genetic-selectors', JSON.stringify(gs));
             }
 
-            // Set global attributes for scripts that expect them (like genetic.js if it fails to find its own script tag)
-            window._greenhouseScriptAttributes = {
-                'target-selector-left': primarySelector,
-                'target-selector-right': '',
-                'base-url': baseUrl,
-                'view': 'default'
-            };
-            if (id === 'genetic') {
-                window._greenhouseScriptAttributes['data-genetic-selectors'] = script.getAttribute('data-genetic-selectors');
-            }
+            window._greenhouseScriptAttributes = { ...attrs };
+            if (id === 'genetic') window._greenhouseScriptAttributes['data-genetic-selectors'] = script.getAttribute('data-genetic-selectors');
 
-            // 4. Append script to document
+            const cfg = { baseUrl: baseUrl, targetSelector: sel };
+            if (id === 'neuro') window._greenhouseNeuroAttributes = cfg;
+            if (id === 'synapse') window._greenhouseSynapseAttributes = cfg;
+            if (id === 'models_hub') window._greenhouseModelsAttributes = cfg;
+            if (id === 'stress') window._greenhouseStressAttributes = cfg;
+            if (id === 'inflammation') window._greenhouseInflammationAttributes = cfg;
+
             document.body.appendChild(script);
-
-            status.textContent = `Active Model: ${model.label}`;
-            console.log(`[TestHarness] Injected script for ${model.label}`);
+            console.log(`[TestHarness] Injected ${model.label}`);
         }
     </script>
 </body>
