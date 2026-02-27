@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greenhouse Models Test Harness</title>
+    <script src="https://drtamarojgreen.github.io/greenhouse_org/GreenhouseUtils.js"></script>
+    <script>
+        // Stub GreenhouseUtils if not loaded
+        if (!window.GreenhouseUtils) {
+            console.warn('[TestHarness] GreenhouseUtils.js not found at provided URL. Using stubs.');
+            window.GreenhouseUtils = {
+                waitForElement: (selectors, timeout) => {
+                    return new Promise((resolve, reject) => {
+                        const selectorArray = Array.isArray(selectors) ? selectors : [selectors];
+                        const check = () => {
+                            for (const s of selectorArray) {
+                                const el = document.querySelector(s);
+                                if (el) return resolve(el);
+                            }
+                        };
+                        check();
+                        const observer = new MutationObserver(check);
+                        observer.observe(document.body, { childList: true, subtree: true });
+                        setTimeout(() => {
+                            observer.disconnect();
+                            reject(new Error("Timeout waiting for " + selectors));
+                        }, timeout || 15000);
+                    });
+                },
+                loadScript: (name, baseUrl, attributes) => {
+                    return new Promise((resolve) => {
+                        const script = document.createElement('script');
+                        script.src = `${baseUrl}${name}`;
+                        if (attributes) {
+                            for (const [k, v] of Object.entries(attributes)) {
+                                script.setAttribute('data-' + k, v);
+                            }
+                        }
+                        script.onload = resolve;
+                        document.body.appendChild(script);
+                    });
+                },
+                isMobileUser: () => window.innerWidth <= 768
+            };
+        }
+    </script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 800px;
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            width: 100%;
+        }
+        #model-status {
+            font-weight: 600;
+            color: #4ca1af;
+            text-align: center;
+        }
+        #model-container {
+            width: 100%;
+            min-height: 600px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+            position: relative;
+        }
+        /* Styling for the reconstructed Wix structure to ensure it's visible if needed */
+        .wixui-section {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Greenhouse Mental Health</h1>
+        <p>Model Integration Test Harness</p>
+    </div>
+
+    <div class="controls">
+        <label for="model-selector">Select a model to load:</label>
+        <select id="model-selector">
+            <option value="" disabled selected>-- Choose a Model --</option>
+            <option value="genetic">Genetic Model</option>
+            <option value="neuro">Neuro Model</option>
+            <option value="pathway">Pathway Model</option>
+            <option value="synapse">Synapse Model</option>
+            <option value="dopamine">Dopamine Signaling Model</option>
+            <option value="serotonin">Serotonin Structural Model</option>
+            <option value="dna">DNA Repair Model</option>
+            <option value="rna">RNA Repair Model</option>
+            <option value="emotion">Emotion Model</option>
+            <option value="cognition">Cognition Model</option>
+            <option value="inflammation">Neuroinflammation Model</option>
+            <option value="stress">Stress Dynamics Model</option>
+        </select>
+        <div id="model-status">No model loaded</div>
+    </div>
+
+    <div id="model-container">
+        <!-- Reconstructed Wix DOM will be injected here -->
+    </div>
+
+    <script>
+        const baseUrl = 'https://drtamarojgreen.github.io/greenhouse_org/';
+        const primarySelector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
+
+        const models = {
+            'genetic': { label: 'Genetic Model', file: 'genetic.js' },
+            'neuro': { label: 'Neuro Model', file: 'neuro.js' },
+            'pathway': { label: 'Pathway Model', file: 'pathway.js' },
+            'synapse': { label: 'Synapse Model', file: 'synapse.js' },
+            'dopamine': { label: 'Dopamine Signaling Model', file: 'dopamine.js' },
+            'serotonin': { label: 'Serotonin Structural Model', file: 'serotonin.js' },
+            'dna': { label: 'DNA Repair Model', file: 'dna_repair.js' },
+            'rna': { label: 'RNA Repair Model', file: 'rna_repair.js' },
+            'emotion': { label: 'Emotion Model', file: 'emotion.js' },
+            'cognition': { label: 'Cognition Model', file: 'cognition.js' },
+            'inflammation': { label: 'Neuroinflammation Model', file: 'inflammation.js' },
+            'stress': { label: 'Stress Dynamics Model', file: 'stress.js' }
+        };
+
+        const selector = document.getElementById('model-selector');
+        const status = document.getElementById('model-status');
+        const container = document.getElementById('model-container');
+
+        selector.addEventListener('change', (e) => {
+            const modelId = e.target.value;
+            if (modelId && models[modelId]) {
+                loadModel(modelId);
+            }
+        });
+
+        function loadModel(id) {
+            const model = models[id];
+            status.textContent = `Loading ${model.label}...`;
+
+            // 1. Clear container and scripts
+            container.innerHTML = '';
+            const oldScripts = document.querySelectorAll('script[data-loaded-by="test-harness"]');
+            oldScripts.forEach(s => s.remove());
+
+            // Clear any global attributes that might interfere
+            delete window._greenhouseScriptAttributes;
+            delete window._greenhouseNeuroAttributes;
+            delete window._greenhouseGeneticAttributes;
+
+            // 2. Rebuild Wix DOM structure
+            // section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)
+
+            const section1 = document.createElement('section');
+            section1.className = 'wixui-section';
+
+            const dummyDiv = document.createElement('div'); // nth-child(1)
+            section1.appendChild(dummyDiv);
+
+            const div2 = document.createElement('div'); // nth-child(2)
+            section1.appendChild(div2);
+
+            const div2_1 = document.createElement('div'); // nth-child(1)
+            div2.appendChild(div2_1);
+
+            const innerSection = document.createElement('section'); // nth-child(1)
+            div2_1.appendChild(innerSection);
+
+            const innerDiv1 = document.createElement('div'); // nth-child(1)
+            innerSection.appendChild(innerDiv1);
+
+            const geneticTitle = document.createElement('div'); // geneticTitle (nth-child(1) of innerDiv1)
+            innerDiv1.appendChild(geneticTitle);
+
+            const geneticParagraph = document.createElement('div'); // geneticParagraph (nth-child(2) of innerDiv1)
+            innerDiv1.appendChild(geneticParagraph);
+
+            const targetElement = document.createElement('div'); // targetElement (nth-child(2) of innerSection)
+            targetElement.id = 'model-target';
+            innerSection.appendChild(targetElement);
+
+            container.appendChild(section1);
+
+            // 3. Prepare script attributes
+            const script = document.createElement('script');
+            // Instructions say: https://drtamarojgreen.github.io/greenhouse_org/{scriptName}
+            // but greenhouse.js uses config.githubPagesBaseUrl + 'js/' + scriptName
+            // I will check greenhouse.js again or try to be safe.
+            // GreenhouseUtils.loadScript in GreenhouseUtils.js uses `${baseUrl}js/${scriptName}?t=${timestamp}`;
+            script.src = `${baseUrl}js/${model.file}`;
+
+            // Set attributes both in dataset and via setAttribute
+            script.dataset.targetSelectorLeft = primarySelector;
+            script.dataset.targetSelectorRight = '';
+            script.dataset.baseUrl = baseUrl;
+            script.dataset.view = 'default';
+            script.dataset.loadedBy = 'test-harness';
+
+            script.setAttribute('data-target-selector-left', primarySelector);
+            script.setAttribute('data-target-selector-right', '');
+            script.setAttribute('data-base-url', baseUrl);
+            script.setAttribute('data-view', 'default');
+            script.setAttribute('data-loaded-by', 'test-harness');
+
+            if (id === 'genetic') {
+                const geneticSelectors = {
+                    genetic: primarySelector,
+                    geneticTitle: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(1)',
+                    geneticParagraph: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(2)'
+                };
+                script.setAttribute('data-genetic-selectors', JSON.stringify(geneticSelectors));
+            }
+
+            // Set global attributes for scripts that expect them (like genetic.js if it fails to find its own script tag)
+            window._greenhouseScriptAttributes = {
+                'target-selector-left': primarySelector,
+                'target-selector-right': '',
+                'base-url': baseUrl,
+                'view': 'default'
+            };
+            if (id === 'genetic') {
+                window._greenhouseScriptAttributes['data-genetic-selectors'] = script.getAttribute('data-genetic-selectors');
+            }
+
+            // 4. Append script to document
+            document.body.appendChild(script);
+
+            status.textContent = `Active Model: ${model.label}`;
+            console.log(`[TestHarness] Injected script for ${model.label}`);
+        }
+    </script>
+</body>
+</html>
