@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greenhouse Live Simulator</title>
+
+    <!-- Mandatory Production Stylesheets -->
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/style.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/image.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/effects.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/pages.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/tech.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/model.css">
+    <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/models_toc.css">
+
+    <!-- Mandatory Production Scripts -->
+    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseUtils.js"></script>
+    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/greenhouse.js"></script>
+
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #fff;
+            width: 100%;
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 2px solid #4ca1af;
+        }
+
+        .harness-title {
+            color: #4ca1af;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 0 15px 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        select {
+            padding: 10px 15px;
+            font-size: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            width: 320px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        select:focus { border-color: #4ca1af; }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        #run-suite-tests { background-color: #4ca1af; color: white; }
+        #run-suite-tests:hover { background-color: #3d8b98; }
+
+        #clear-environment { background-color: #e4e6eb; color: #1c1e21; }
+        #clear-environment:hover { background-color: #d8dadf; }
+
+        #active-label {
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #777;
+        }
+
+        #model-container {
+            width: 100%;
+            flex-grow: 1;
+            position: relative;
+            background-color: #fff;
+            padding-top: 20px;
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-size: 20px;
+            font-weight: bold;
+            color: #4ca1af;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(76, 161, 175, 0.1);
+            border-top: 6px solid #4ca1af;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 25px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .wixui-section { display: block; width: 100%; min-height: 600px; }
+        #model-target { width: 100%; min-height: 500px; display: block; }
+        .wixui-section div { min-height: 5px; min-width: 5px; }
+    </style>
+</head>
+<body>
+
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loader-message">Initializing Live Site Environment...</div>
+</div>
+
+<header>
+    <h1 class="harness-title">Greenhouse Live Simulator</h1>
+    <div class="controls">
+        <select id="model-selector">
+            <option value="" disabled selected>-- Select a Live Model --</option>
+            <option value="genetic">Genetic Model</option>
+            <option value="neuro">Neuro Model</option>
+            <option value="pathway">Pathway Model</option>
+            <option value="synapse">Synapse Model</option>
+            <option value="dopamine">Dopamine Signaling Model</option>
+            <option value="serotonin">Serotonin Structural Model</option>
+            <option value="dna">DNA Repair Model</option>
+            <option value="rna">RNA Repair Model</option>
+            <option value="emotion">Emotion Model</option>
+            <option value="cognition">Cognition Model</option>
+            <option value="inflammation">Neuroinflammation Model</option>
+            <option value="stress">Stress Dynamics Model</option>
+        </select>
+        <button id="run-suite-tests" class="btn">Run Suite Tests</button>
+        <button id="clear-environment" class="btn">Clear Environment</button>
+    </div>
+    <div id="active-label">Active Model: None</div>
+</header>
+
+<div id="model-container">
+    <!-- Reconstructed DOM will go here -->
+</div>
+
+<script>
+    (function() {
+        const baseUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
+        const modelContainer = document.getElementById('model-container');
+        const modelSelector = document.getElementById('model-selector');
+        const activeLabel = document.getElementById('active-label');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const runTestsBtn = document.getElementById('run-suite-tests');
+        const clearBtn = document.getElementById('clear-environment');
+        const loaderMessage = document.getElementById('loader-message');
+
+        // Stub GreenhouseUtils if not loaded (Safety)
+        if (!window.GreenhouseUtils) {
+            window.GreenhouseUtils = {
+                waitForElement: (s, t = 5000) => new Promise((resolve, reject) => {
+                    const check = () => {
+                        const el = document.querySelector(Array.isArray(s) ? s[0] : s);
+                        if (el) return resolve(el);
+                        if (t <= 0) return reject();
+                        t -= 100; setTimeout(check, 100);
+                    };
+                    check();
+                }),
+                loadScript: (n, b, a = {}) => new Promise((res) => {
+                    const s = document.createElement('script');
+                    s.src = `${b}${n}`;
+                    Object.entries(a).forEach(([k,v]) => s.setAttribute(k,v));
+                    s.onload = res; document.body.appendChild(s);
+                })
+            };
+        }
+
+        const models = {
+            'genetic': { label: 'Genetic Model', js: 'genetic.js' },
+            'neuro': { label: 'Neuro Model', js: 'neuro.js' },
+            'pathway': { label: 'Pathway Model', js: 'pathway.js' },
+            'synapse': { label: 'Synapse Model', js: 'synapse.js' },
+            'dopamine': { label: 'Dopamine Signaling Model', js: 'dopamine.js' },
+            'serotonin': { label: 'Serotonin Structural Model', js: 'serotonin.js' },
+            'dna': { label: 'DNA Repair Model', js: 'dna_repair.js' },
+            'rna': { label: 'RNA Repair Model', js: 'rna_repair.js' },
+            'emotion': { label: 'Emotion Model', js: 'emotion.js' },
+            'cognition': { label: 'Cognition Model', js: 'cognition.js' },
+            'inflammation': { label: 'Neuroinflammation Model', js: 'inflammation.js' },
+            'stress': { label: 'Stress Dynamics Model', js: 'stress.js' }
+        };
+
+        const primarySelector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
+
+        function clearEnvironment() {
+            modelContainer.innerHTML = '';
+            document.querySelectorAll('script[data-model-script="true"]').forEach(s => s.remove());
+
+            const apps = [
+                'GreenhouseNeuroApp', 'GreenhouseGenetic', 'GreenhouseDopamine',
+                'GreenhouseSerotonin', 'GreenhouseDNARepair', 'GreenhouseRNARepair',
+                'GreenhouseEmotionApp', 'GreenhouseCognitionApp', 'GreenhouseInflammationApp',
+                'GreenhouseStressApp', 'GreenhousePathwayApp', 'GreenhouseSynapseApp'
+            ];
+            apps.forEach(app => {
+                if (window[app]) {
+                    if (window[app].isRunning !== undefined) window[app].isRunning = false;
+                    if (window[app].stop) window[app].stop();
+                    delete window[app];
+                }
+            });
+            activeLabel.textContent = 'Active Model: None';
+            modelSelector.value = '';
+        }
+
+        async function loadModel(modelId) {
+            const model = models[modelId];
+            if (!model) return;
+
+            clearEnvironment();
+            activeLabel.textContent = `Active Model: ${model.label}`;
+            modelSelector.value = modelId;
+
+            loaderMessage.textContent = `Replicating Production Delay for ${model.label}...`;
+            loadingOverlay.style.display = 'flex';
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            loadingOverlay.style.display = 'none';
+
+            // Reconstruct DOM
+            const section1 = document.createElement('section'); section1.className = 'wixui-section';
+            section1.appendChild(document.createElement('div'));
+            const div2 = document.createElement('div'); section1.appendChild(div2);
+            const div2_1 = document.createElement('div'); div2.appendChild(div2_1);
+            const sectionInner = document.createElement('section'); div2_1.appendChild(sectionInner);
+            const idiv1 = document.createElement('div'); sectionInner.appendChild(idiv1);
+            idiv1.appendChild(document.createElement('div')); idiv1.appendChild(document.createElement('div'));
+            const targetDiv = document.createElement('div'); targetDiv.id = 'model-target';
+            sectionInner.appendChild(targetDiv);
+            modelContainer.appendChild(section1);
+
+            // Script Injection
+            const script = document.createElement('script');
+            script.src = `${baseUrl}js/${model.js}`;
+            script.dataset.modelScript = "true";
+            script.setAttribute('data-target-selector-left', primarySelector);
+            script.setAttribute('data-target-selector-right', "");
+            script.setAttribute('data-base-url', baseUrl);
+            script.setAttribute('data-view', "default");
+
+            if (modelId === 'genetic') {
+                const gs = {
+                    "genetic": primarySelector,
+                    "geneticTitle": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+                    "geneticParagraph": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(2)"
+                };
+                script.setAttribute('data-genetic-selectors', JSON.stringify(gs));
+            }
+
+            // Sync global state
+            window._greenhouseScriptAttributes = {
+                'target-selector-left': primarySelector,
+                'target-selector-right': '',
+                'base-url': baseUrl,
+                'view': 'default'
+            };
+            const config = { baseUrl, targetSelector: primarySelector };
+            if (modelId === 'neuro') window._greenhouseNeuroAttributes = config;
+            if (modelId === 'synapse') window._greenhouseSynapseAttributes = config;
+            if (modelId === 'stress') window._greenhouseStressAttributes = config;
+            if (modelId === 'inflammation') window._greenhouseInflammationAttributes = config;
+
+            document.body.appendChild(script);
+        }
+
+        modelSelector.addEventListener('change', (e) => loadModel(e.target.value));
+        clearBtn.onclick = clearEnvironment;
+        runTestsBtn.onclick = () => {
+            if (window.GreenhouseTestSuite) {
+                window.GreenhouseTestSuite.runAll();
+            } else {
+                const s = document.createElement('script');
+                s.src = `${baseUrl}js/model_tests.js`;
+                s.onload = () => window.GreenhouseTestSuite && window.GreenhouseTestSuite.runAll();
+                document.body.appendChild(s);
+            }
+        };
+    })();
+</script>
+
+</body>
+</html>
