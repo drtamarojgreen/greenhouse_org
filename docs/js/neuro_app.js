@@ -657,14 +657,17 @@
             let items = [];
 
             const query = (this.state.searchQuery || '').toLowerCase();
+            const offsetX = 15;
+            const x = 40 + offsetX;
 
             if (this.state.adhdCategory === 'scenarios') {
                 const scenarios = data.scenarios || {};
                 items = Object.entries(scenarios)
                     .filter(([key]) => {
                         if (key === 'none') return false;
-                        const label = t(`adhd_scenario_${key}`) || '';
-                        return label.toLowerCase().includes(query);
+                        const label = (t(`adhd_scenario_${key}`) || '').toLowerCase();
+                        const desc = (t(`adhd_scenario_${key}_desc`) || '').toLowerCase();
+                        return label.includes(query) || desc.includes(query) || key.toLowerCase().includes(query);
                     })
                     .map(([key]) => ({
                         id: `scenario_${key}`,
@@ -672,6 +675,7 @@
                         labelKey: `adhd_scenario_${key}`,
                         description: t(`adhd_scenario_${key}_desc`) || '',
                         category: 'scenarios',
+                        x: x,
                         y: 0,
                         w: this.ui.panelW - 80,
                         h: 20
@@ -684,7 +688,8 @@
                         if (!enh) return false;
                         const label = (t(`adhd_enh_${enh.id}_name`) || '').toLowerCase();
                         const description = (t(`adhd_enh_${enh.id}_desc`) || '').toLowerCase();
-                        return label.includes(query) || description.includes(query);
+                        const idStr = String(enh.id).toLowerCase();
+                        return label.includes(query) || description.includes(query) || idStr.includes(query);
                     })
                     .map((enh) => ({
                         id: `enhancement_${enh.id}`,
@@ -692,6 +697,7 @@
                         labelKey: `adhd_enh_${enh.id}_name`,
                         description: t(`adhd_enh_${enh.id}_desc`) || '',
                         category: enh.category || 'misc',
+                        x: x,
                         y: 0,
                         w: this.ui.panelW - 80,
                         h: 20
