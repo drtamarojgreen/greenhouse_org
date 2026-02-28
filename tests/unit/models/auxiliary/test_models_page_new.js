@@ -9,115 +9,68 @@ const { performance } = require('perf_hooks');
 const { assert } = require('../../../utils/assertion_library.js');
 const TestFramework = require('../../../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    currentScript: {
-        getAttribute: (attr) => {
-            if (attr === 'data-base-url') {
-                return 'http://localhost:8080/';
-            }
-            return null;
-        }
-    },
-    getElementById: () => ({
-        addEventListener: () => { },
-        getContext: () => ({
-            save: () => { },
-            restore: () => { },
-            translate: () => { },
-            rotate: () => { },
-            scale: () => { },
-            beginPath: () => { },
-            moveTo: () => { },
-            lineTo: () => { },
-            stroke: () => { },
-            fill: () => { },
-            rect: () => { },
-            clip: () => { },
-            fillText: () => { },
-            measureText: () => ({ width: 0 }),
-            createLinearGradient: () => ({ addColorStop: () => { } }),
-            clearRect: () => { },
-            fillRect: () => { },
-            strokeRect: () => { }
+// --- Standard Environment Builder ---
+const createEnv = () => {
+    const mockWindow = {
+        innerWidth: 800, innerHeight: 600,
+        navigator: { userAgent: 'Node' },
+        performance: performance,
+        addEventListener: () => {},
+        requestAnimationFrame: (cb) => setTimeout(cb, 16)
+    };
+
+    const mockDocument = {
+        currentScript: { getAttribute: (a) => a === 'data-base-url' ? '/' : null },
+        getElementById: () => ({
+            addEventListener: () => {},
+            getContext: () => ({
+                save: () => {}, restore: () => {}, translate: () => {}, rotate: () => {}, scale: () => {},
+                beginPath: () => {}, moveTo: () => {}, lineTo: () => {}, stroke: () => {}, fill: () => {},
+                rect: () => {}, clip: () => {}, fillText: () => {}, measureText: () => ({ width: 0 }),
+                createLinearGradient: () => ({ addColorStop: () => {} }), clearRect: () => {}, fillRect: () => {}, strokeRect: () => {}
+            }),
+            width: 800, height: 600,
+            getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
         }),
-        width: 800,
-        height: 600,
-        getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
-    }),
-    createElement: () => ({
-        getContext: () => ({})
-    })
+        createElement: () => ({ getContext: () => ({}) }),
+        head: { appendChild: () => {} },
+        body: { appendChild: () => {} }
+    };
+
+    const context = vm.createContext({ ...mockWindow, document: mockDocument, window: mockWindow });
+    context.global = context;
+
+    context.GreenhouseUtils = {
+        loadedScripts: new Set(),
+        loadScript: async function(name) {
+            this.loadedScripts.add(name);
+            const code = fs.readFileSync(path.join(__dirname, '../../../../docs/js', name), 'utf8');
+            vm.runInContext(code, context);
+            if (name === 'models_data.js') context.GreenhouseModelsData = {};
+            if (name === 'models_ui.js') context.GreenhouseModelsUI = {};
+            if (name === 'models_ux.js') context.GreenhouseModelsUX = { init: () => {}, reinitialize: () => {} };
+            if (name === 'data_adapter.js') context.GreenhouseDataAdapter = { init: () => {} };
+            return Promise.resolve();
+        }
+    };
+
+    context.GreenhouseDependencyManager = { waitFor: () => Promise.resolve(), register: () => {} };
+
+    context.loadMain = () => {
+        const code = fs.readFileSync(path.join(__dirname, '../../../../docs/js/models.js'), 'utf8');
+        vm.runInContext(code, context);
+    };
+
+    return context;
 };
-global.addEventListener = () => { };
-global.console = console;
-global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
-
-// --- Mocks ---
-const mockGreenhouseUtils = {
-    loadedScripts: new Set(),
-    loadScript: async function(scriptName) {
-        this.loadedScripts.add(scriptName);
-        loadScript(scriptName);
-        // Simulate loading by creating mock objects
-        if (scriptName === 'models_data.js') {
-            global.window.GreenhouseModelsData = {};
-        }
-        if (scriptName === 'models_ui.js') {
-            global.window.GreenhouseModelsUI = {};
-        }
-        if (scriptName === 'models_ux.js') {
-            global.window.GreenhouseModelsUX = {
-                init: () => {},
-                reinitialize: () => {}
-            };
-        }
-         if (scriptName === 'data_adapter.js') {
-            global.window.GreenhouseDataAdapter = {
-                init: () => {}
-            };
-        }
-        return Promise.resolve();
-    }
-};
-
-global.window.GreenhouseDependencyManager = {
-    waitFor: () => Promise.resolve(),
-    register: () => {}
-};
-
-global.window.GreenhouseUtils = mockGreenhouseUtils;
-
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../../docs/js', filename);
-    const startTime = performance.now();
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code, { filename });
-    const duration = performance.now() - startTime;
-    if (TestFramework.ResourceReporter) {
-        TestFramework.ResourceReporter.recordScript(filePath, duration);
-    }
-}
 
 // --- Test Suites ---
 
 TestFramework.describe('Models Page Loader', () => {
 
-    TestFramework.beforeEach(() => {
-        // Reset mocks before each test
-        mockGreenhouseUtils.loadedScripts.clear();
-        delete global.window.GreenhouseModels;
-        delete global.window.GreenhouseModelsData;
-        delete global.window.GreenhouseModelsUI;
-        delete global.window.GreenhouseModelsUX;
-        delete global.window.GreenhouseDataAdapter;
-    });
-
     TestFramework.it('should load all dependent scripts', async () => {
-        await loadScript('models.js');
+        const env = createEnv();
+        env.loadMain();
 
         // Allow async operations within models.js to complete
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -142,16 +95,17 @@ TestFramework.describe('Models Page Loader', () => {
         ];
 
         for (const script of expectedScripts) {
-            assert.isTrue(mockGreenhouseUtils.loadedScripts.has(script), `Script ${script} should have been loaded`);
+            assert.isTrue(env.GreenhouseUtils.loadedScripts.has(script), `Script ${script} should have been loaded`);
         }
     });
 
     TestFramework.it('should define GreenhouseModels with a reinitialize function', async () => {
-        await loadScript('models.js');
+        const env = createEnv();
+        env.loadMain();
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        assert.isDefined(global.window.GreenhouseModels, 'GreenhouseModels should be defined on the window object');
-        assert.isFunction(global.window.GreenhouseModels.reinitialize, 'GreenhouseModels.reinitialize should be a function');
+        assert.isDefined(env.GreenhouseModels, 'GreenhouseModels should be defined on the window object');
+        assert.isFunction(env.GreenhouseModels.reinitialize, 'GreenhouseModels.reinitialize should be a function');
     });
 
 });

@@ -53,85 +53,51 @@ function getContrast(color1, color2) {
     return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
 
-// --- Setup Global Environment ---
-const createMockWindow = () => ({
-    innerWidth: 500,
-    innerHeight: 800,
-    location: { pathname: '/models', search: '?mobile=true', hostname: 'localhost' },
-    navigator: { userAgent: 'iPhone', maxTouchPoints: 5, platform: 'iPhone' },
-    dispatchEvent: () => { },
-    addEventListener: () => { },
-    ontouchstart: () => { },
-    _greenhouseScriptAttributes: {},
-    fetch: () => Promise.resolve({
-        ok: true,
-        text: () => Promise.resolve('<models><model id="genetic"><title>Genetic</title><url>/genetic</url></model></models>')
-    }),
-    URL: { createObjectURL: () => 'blob:', revokeObjectURL: () => {} },
-    Blob: class {},
-    CustomEvent: class { constructor(name, data) { this.name = name; this.detail = data ? data.detail : null; } },
-    setTimeout: (fn, t) => fn(),
-    clearTimeout: clearTimeout,
-    Promise: Promise,
-    console: { log: () => {}, error: () => {}, warn: () => {}, debug: () => {} },
-    IntersectionObserver: class {
-        constructor(callback) { this.callback = callback; }
-        observe(target) { this.callback([{ isIntersecting: true, target }]); }
-        unobserve() {}
-        disconnect() {}
-    }
-});
-
-const createMockElement = (tag) => ({
-    tag, id: '', className: '', textContent: '', innerHTML: '',
-    style: {}, dataset: {}, children: [], offsetWidth: 400, offsetHeight: 600,
-    appendChild: function (c) { this.children.push(c); c.parentNode = this; return c; },
-    querySelector: function (sel) {
-        if (sel.startsWith('#')) return this.children.find(c => c.id === sel.substring(1)) || null;
-        return this.children.find(c => c.className?.includes(sel.replace('.', ''))) || null;
-    },
-    addEventListener: function (evt, handler) {
-        this._listeners = this._listeners || {};
-        this._listeners[evt] = handler;
-    },
-    classList: {
-        add: function(c) { this._classes = this._classes || new Set(); this._classes.add(c); },
-        remove: function(c) { this._classes = this._classes || new Set(); this._classes.delete(c); },
-        contains: function(c) { return this._classes ? this._classes.has(c) : false; }
-    }
-});
-
-const runInNewContext = () => {
-    const mockWindow = createMockWindow();
-    const mockDocument = {
-        createElement: createMockElement,
-        body: createMockElement('body'),
-        head: createMockElement('head'),
-        querySelector: () => null,
-        getElementById: function(id) {
-            const findIn = (el) => {
-                if (el.id === id) return el;
-                for (let child of el.children) {
-                    const found = findIn(child);
-                    if (found) return found;
-                }
-                return null;
-            };
-            return findIn(this.body) || findIn(this.head);
-        }
+// --- Standard Environment Builder ---
+const runInNewContext = (overrides = {}) => {
+    const mockWindow = {
+        innerWidth: 500, innerHeight: 800,
+        location: { pathname: '/models', search: '?mobile=true', hostname: 'localhost' },
+        navigator: { userAgent: 'iPhone', maxTouchPoints: 5, platform: 'iPhone' },
+        dispatchEvent: () => { }, addEventListener: () => { },
+        fetch: () => Promise.resolve({
+            ok: true, text: () => Promise.resolve('<models><model id="genetic"><title>Genetic</title><url>/genetic</url></model></models>')
+        }),
+        URL: { createObjectURL: () => 'blob:', revokeObjectURL: () => {} },
+        setTimeout: (fn) => fn(), clearTimeout: () => {}
     };
-    mockWindow.document = mockDocument;
 
-    const context = vm.createContext(mockWindow);
+    const createEl = (tag) => ({
+        tagName: tag.toUpperCase(), id: '', className: '', textContent: '', innerHTML: '',
+        style: {}, dataset: {}, children: [], offsetWidth: 400, offsetHeight: 600,
+        appendChild: function(c) { this.children.push(c); c.parentNode = this; return c; },
+        querySelector: function(sel) {
+            if (sel.startsWith('#')) return this.children.find(c => c.id === sel.substring(1)) || null;
+            return this.children.find(c => c.className?.includes(sel.replace('.', ''))) || null;
+        },
+        addEventListener: function() {},
+        classList: {
+            add: function(c) { this._cl = this._cl || new Set(); this._cl.add(c); },
+            remove: function(c) { this._cl = this._cl || new Set(); this._cl.delete(c); },
+            contains: function(c) { return this._cl ? this._cl.has(c) : false; }
+        }
+    });
+
+    const mockDocument = createEl('document');
+    mockDocument.body = createEl('body'); mockDocument.head = createEl('head');
+    mockDocument.getElementById = (id) => {
+        const find = (el) => { if(el.id === id) return el; for(let c of el.children){ const r=find(c); if(r) return r; } return null; };
+        return find(mockDocument.body) || find(mockDocument.head);
+    };
+    mockDocument.createElement = createEl;
+    mockDocument.querySelector = () => null;
+    mockDocument.addEventListener = () => {};
+
+    const context = vm.createContext({ ...mockWindow, document: mockDocument, window: mockWindow });
     context.global = context;
-    context.window = context;
-    context.navigator = mockWindow.navigator;
-    context.document = mockDocument;
 
-    const utilsCode = fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseUtils.js'), 'utf8');
-    vm.runInContext(utilsCode, context);
-    const mobileCode = fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseMobile.js'), 'utf8');
-    vm.runInContext(mobileCode, context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseUtils.js'), 'utf8'), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseMobile.js'), 'utf8'), context);
 
     return context;
 };
@@ -141,7 +107,6 @@ const runInNewContext = () => {
 TestFramework.describe('Mobile Typography & Contrast Compliance', () => {
 
     const context = runInNewContext();
-    // Trigger style injection
     context.GreenhouseMobile.injectStyles();
     const styleTag = context.document.getElementById('greenhouse-mobile-styles');
     const css = styleTag.textContent;

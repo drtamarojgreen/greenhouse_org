@@ -9,153 +9,123 @@ const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-const createMockElement = (tag) => ({
-    tagName: tag.toUpperCase(),
-    id: '', className: '', textContent: '', innerHTML: '',
-    style: {}, dataset: {}, children: [],
-    appendChild: function (c) { this.children.push(c); return c; },
-    after: function (el) { this.nextSibling = el; },
-    querySelector: function () { return null; },
-    querySelectorAll: function () { return []; },
-    getContext: function () {
-        return {
-            fillRect: function () {},
-            strokeRect: function () {},
-            fillText: function () {},
-            measureText: function () { return { width: 100 }; },
-            beginPath: function() {},
-            moveTo: function() {},
-            lineTo: function() {},
-            stroke: function() {}
-        };
-    },
-    classList: { add: function () {} },
-    addEventListener: function () {}
-});
+// --- Standard Environment Builder ---
+const createEnv = (overrides = {}) => {
+    const mockWindow = {
+        innerWidth: overrides.innerWidth || 1200,
+        navigator: overrides.navigator || { userAgent: 'Desktop', maxTouchPoints: 0 },
+        location: { pathname: '/tech', search: '', ...(overrides.location || {}) },
+        setTimeout: (fn) => fn(),
+        setInterval: () => 123,
+        clearInterval: () => {},
+        CustomEvent: class { constructor(n, d) { this.name = n; this.detail = d ? d.detail : null; } },
+        dispatchEvent: () => {},
+        addEventListener: () => {}
+    };
 
-const mockWindow = {
-    innerWidth: 1200,
-    navigator: { userAgent: 'Desktop', maxTouchPoints: 0 },
-    location: { pathname: '/tech', search: '' },
-    document: {
+    const createMockElement = (tag) => ({
+        tagName: tag.toUpperCase(), id: '', className: '', textContent: '', innerHTML: '',
+        style: {}, dataset: {}, children: [],
+        appendChild: function(c) { this.children.push(c); return c; },
+        after: function(el) { this.nextSibling = el; },
+        querySelector: function(sel) {
+            if (sel.includes('wixui-column-strip')) return createMockElement('section');
+            return null;
+        },
+        querySelectorAll: () => [],
+        getContext: function() {
+            return {
+                fillRect: () => {}, strokeRect: () => {},
+                fillText: function(t) { if (t === 'Mobile Browser Detected') this._mobileDetected = true; },
+                measureText: () => ({ width: 100 }),
+                beginPath: () => {}, moveTo: () => {}, lineTo: () => {}, stroke: () => {}
+            };
+        },
+        classList: { add: () => {} },
+        addEventListener: () => {}
+    });
+
+    const mockDocument = {
         readyState: 'complete',
         createElement: createMockElement,
-        querySelector: function () { return createMockElement('div'); },
-        body: {
-            contains: () => true,
-            appendChild: () => {},
-            children: []
-        },
+        querySelector: () => createMockElement('div'),
+        body: { contains: () => true, appendChild: () => {}, children: [] },
+        head: { appendChild: () => {} },
         addEventListener: () => {}
-    },
-    console: {
-        log: () => {},
-        error: () => {},
-        warn: () => {},
-        debug: () => {}
-    },
-    setTimeout: (fn) => fn(),
-    setInterval: () => 123,
-    clearInterval: () => {},
-    Promise: Promise,
-    Map: Map,
-    Set: Set,
-    CustomEvent: class { constructor(name, data) { this.name = name; this.detail = data ? data.detail : null; } },
-    dispatchEvent: () => {},
-    addEventListener: () => {}
+    };
+
+    const context = vm.createContext({ ...mockWindow, document: mockDocument, window: mockWindow });
+    context.global = context;
+
+    const load = (n) => {
+        const c = fs.readFileSync(path.join(__dirname, '../../docs/js', n), 'utf8');
+        vm.runInContext(c, context);
+    };
+
+    load('GreenhouseUtils.js');
+    context.GreenhouseUtils.waitForElement = (sel) => {
+        if (sel.includes('column-strip')) return Promise.resolve(createMockElement('section'));
+        return Promise.resolve(createMockElement('div'));
+    };
+
+    context.loadTech = () => load('tech.js');
+
+    return context;
 };
-
-const context = vm.createContext(mockWindow);
-context.global = context;
-context.window = context;
-
-// Load GreenhouseUtils first
-const utilsPath = path.join(__dirname, '../../docs/js/GreenhouseUtils.js');
-const utilsCode = fs.readFileSync(utilsPath, 'utf8');
-vm.runInContext(utilsCode, context);
-
-// Mock waitForElement to skip async delays
-context.GreenhouseUtils.waitForElement = () => Promise.resolve(createMockElement('div'));
-
-// Load tech.js
-const techPath = path.join(__dirname, '../../docs/js/tech.js');
-const techCode = fs.readFileSync(techPath, 'utf8');
 
 TestFramework.describe('Tech Page Canvas Mobile Detection', () => {
 
     TestFramework.it('should draw "Mobile Browser Detected" on canvas when isMobileUser is true', async () => {
-        // 1. Setup Mobile Environment
-        mockWindow.innerWidth = 500;
-        mockWindow.navigator.maxTouchPoints = 1;
-        mockWindow.navigator.userAgent = 'iPhone';
+        const env = createEnv({
+            innerWidth: 500,
+            navigator: { userAgent: 'iPhone', maxTouchPoints: 5 }
+        });
 
-        let fillTextCalled = false;
-        let messageDetected = false;
-
-        // 2. Instrument getContext to track fillText
-        const originalCreateElement = mockWindow.document.createElement;
-        mockWindow.document.createElement = (tag) => {
-            const el = originalCreateElement(tag);
+        // Use a proxy to capture the created canvas
+        let capturedCtx = null;
+        const originalCreate = env.document.createElement;
+        env.document.createElement = (tag) => {
+            const el = originalCreate(tag);
             if (tag === 'canvas') {
-                const originalGetContext = el.getContext;
+                const originalGet = el.getContext;
                 el.getContext = () => {
-                    const ctx = originalGetContext();
-                    ctx.fillText = (text) => {
-                        fillTextCalled = true;
-                        if (text === 'Mobile Browser Detected') {
-                            messageDetected = true;
-                        }
-                    };
-                    return ctx;
+                    capturedCtx = originalGet.call(el);
+                    return capturedCtx;
                 };
             }
             return el;
         };
 
-        // 3. Execute tech.js logic
-        // The IIFE will run and initialize TechApp
-        vm.runInContext(techCode, context);
+        env.loadTech();
+        await new Promise(res => setTimeout(res, 50));
 
-        // Give it a tiny bit for any promises to resolve
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        assert.isTrue(messageDetected, 'Canvas should have drawn "Mobile Browser Detected"');
+        assert.isTrue(capturedCtx && capturedCtx._mobileDetected, 'Canvas should have drawn "Mobile Browser Detected"');
     });
 
     TestFramework.it('should NOT draw mobile message when isMobileUser is false', async () => {
-        // 1. Setup Desktop Environment
-        mockWindow.innerWidth = 1920;
-        mockWindow.navigator.maxTouchPoints = 0;
-        mockWindow.navigator.userAgent = 'Desktop';
+        const env = createEnv({
+            innerWidth: 1920,
+            navigator: { userAgent: 'Desktop', maxTouchPoints: 0 }
+        });
 
-        let messageDetected = false;
-
-        // 2. Instrument
-        const originalCreateElement = mockWindow.document.createElement;
-        mockWindow.document.createElement = (tag) => {
-            const el = originalCreateElement(tag);
+        let capturedCtx = null;
+        const originalCreate = env.document.createElement;
+        env.document.createElement = (tag) => {
+            const el = originalCreate(tag);
             if (tag === 'canvas') {
-                const originalGetContext = el.getContext;
+                const originalGet = el.getContext;
                 el.getContext = () => {
-                    const ctx = originalGetContext();
-                    ctx.fillText = (text) => {
-                        if (text === 'Mobile Browser Detected') {
-                            messageDetected = true;
-                        }
-                    };
-                    return ctx;
+                    capturedCtx = originalGet.call(el);
+                    return capturedCtx;
                 };
             }
             return el;
         };
 
-        // 3. Execute
-        vm.runInContext(techCode, context);
+        env.loadTech();
+        await new Promise(res => setTimeout(res, 50));
 
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        assert.isFalse(messageDetected, 'Canvas should NOT have drawn mobile message on desktop');
+        assert.isFalse(capturedCtx && capturedCtx._mobileDetected, 'Canvas should NOT have drawn mobile message on desktop');
     });
 });
 

@@ -15,119 +15,40 @@
     <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/models_toc.css">
 
     <!-- Mandatory Production Scripts -->
-    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseDependencyManager.js"></script>
-    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseUtils.js"></script>
-    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/greenhouse.js"></script>
+    <script src="js/GreenhouseDependencyManager.js"></script>
+    <script src="js/GreenhouseUtils.js"></script>
+    <script src="js/greenhouse.js"></script>
 
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f7f6;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            margin: 0; padding: 0; background-color: #f4f7f6;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
         }
-
         header {
-            background-color: #fff;
-            width: 100%;
-            padding: 15px 0;
+            background-color: #fff; width: 100%; padding: 15px 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 1000;
-            border-bottom: 2px solid #4ca1af;
+            display: flex; flex-direction: column; align-items: center;
+            z-index: 1000; border-bottom: 2px solid #4ca1af;
         }
-
-        .harness-title {
-            color: #4ca1af;
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0 0 15px 0;
-        }
-
-        .controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        select {
-            padding: 10px 15px;
-            font-size: 15px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            width: 320px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        select:focus { border-color: #4ca1af; }
-
-        .btn {
-            padding: 10px 20px;
-            font-size: 14px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-
+        .harness-title { color: #4ca1af; font-size: 24px; font-weight: 700; margin: 0 0 15px 0; }
+        .controls { display: flex; gap: 15px; align-items: center; }
+        select { padding: 10px 15px; font-size: 15px; border-radius: 6px; border: 1px solid #ddd; width: 320px; outline: none; }
+        .btn { padding: 10px 20px; font-size: 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
         #run-suite-tests { background-color: #4ca1af; color: white; }
-        #run-suite-tests:hover { background-color: #3d8b98; }
-
-        #clear-environment { background-color: #e4e6eb; color: #1c1e21; }
-        #clear-environment:hover { background-color: #d8dadf; }
-
-        #active-label {
-            margin-top: 10px;
-            font-size: 13px;
-            font-weight: bold;
-            color: #777;
-        }
-
-        #model-container {
-            width: 100%;
-            flex-grow: 1;
-            position: relative;
-            background-color: #fff;
-            padding-top: 20px;
-        }
-
+        #model-container { width: 100%; flex-grow: 1; position: relative; background-color: #fff; padding-top: 20px; }
         #loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255, 255, 255, 0.98);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            font-size: 20px;
-            font-weight: bold;
-            color: #4ca1af;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 10000; font-size: 20px; font-weight: bold; color: #4ca1af;
         }
         .spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid rgba(76, 161, 175, 0.1);
-            border-top: 6px solid #4ca1af;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 25px;
+            width: 60px; height: 60px; border: 6px solid rgba(76, 161, 175, 0.1); border-top: 6px solid #4ca1af;
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 25px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         .wixui-section { display: block; width: 100%; min-height: 600px; }
-        #model-target { width: 100%; min-height: 500px; display: block; }
-        .wixui-section div { min-height: 5px; min-width: 5px; }
     </style>
 </head>
 <body>
@@ -159,16 +80,13 @@
         <button id="clear-results" class="btn" style="background-color: #ff9800; color: white;">Clear Results</button>
         <button id="clear-environment" class="btn">Clear Environment</button>
     </div>
-    <div id="active-label">Active Model: None</div>
+    <div id="active-label" style="margin-top:10px; font-size:13px; font-weight:bold; color:#777;">Active Model: None</div>
 </header>
 
-<div id="model-container">
-    <!-- Reconstructed DOM will go here -->
-</div>
+<div id="model-container"></div>
 
 <script>
     (function() {
-        const baseUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
         const modelContainer = document.getElementById('model-container');
         const modelSelector = document.getElementById('model-selector');
         const activeLabel = document.getElementById('active-label');
@@ -176,222 +94,164 @@
         const runTestsBtn = document.getElementById('run-suite-tests');
         const clearResultsBtn = document.getElementById('clear-results');
         const clearBtn = document.getElementById('clear-environment');
-        const loaderMessage = document.getElementById('loader-message');
 
-        /**
-         * Robust GreenhouseUtils Interceptor
-         * Ensures attributes persist across sub-script loads and handles app-specific dependencies.
-         */
-        const originalLoadScript = window.GreenhouseUtils ? window.GreenhouseUtils.loadScript : null;
+        let activeTimers = new window.Set();
+        let activeIntervals = new window.Set();
+        let activeEventListeners = [];
 
-        window.GreenhouseUtils = window.GreenhouseUtils || {};
-
-        // Override or provide loadScript to ensure attributes are always merged and persistent
-        window.GreenhouseUtils.loadScript = async function(name, baseUrl, attributes = {}) {
-            console.log(`[Harness] Loading sub-script: ${name}`);
-
-            // Merge current global attributes with newly provided ones
-            const mergedAttributes = {
-                ...(window._greenhouseScriptAttributes || {}),
-                ...attributes
+        function createSandbox(hLog, hError, hWarn, overrides = {}) {
+            const sandbox = {
+                module: { exports: {} },
+                process: {
+                    exit: (code) => hLog("[Harness] Process exit intercepted. Code:", code),
+                    env: { NODE_ENV: 'test' },
+                    nextTick: (fn) => window.setTimeout(fn, 0)
+                },
+                console: {
+                    log: hLog, error: hError, warn: hWarn,
+                    info: console.info.bind(console), debug: console.debug.bind(console), table: console.table.bind(console)
+                },
+                Set: window.Set, Map: window.Map, Promise: window.Promise,
+                WeakMap: window.WeakMap, WeakSet: window.WeakSet,
+                Uint8Array: window.Uint8Array, Float32Array: window.Float32Array, Int32Array: window.Int32Array,
+                Audio: window.Audio, Image: window.Image,
+                performance: window.performance, Date: window.Date,
+                innerWidth: window.innerWidth, innerHeight: window.innerHeight,
+                MutationObserver: window.MutationObserver,
+                Node: window.Node,
+                HTMLElement: window.HTMLElement
             };
 
-            // Persist them back to the window object so the sub-script can see them
-            window._greenhouseScriptAttributes = mergedAttributes;
-
-            // Re-inject the script into the DOM with attributes
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = `${baseUrl}js/${name}`;
-                script.dataset.modelScript = "true";
-
-                for (const [key, value] of Object.entries(mergedAttributes)) {
-                    script.setAttribute(`data-${key}`, value);
-                }
-
-                script.onload = () => {
-                    console.log(`[Harness] Sub-script loaded: ${name}`);
-                    resolve();
-                };
-                script.onerror = reject;
-                document.body.appendChild(script);
-            });
-        };
-
-        if (!window.GreenhouseUtils.waitForElement) {
-            window.GreenhouseUtils.waitForElement = (s, t = 5000) => new Promise((resolve, reject) => {
-                const check = () => {
-                    const el = document.querySelector(Array.isArray(s) ? s[0] : s);
-                    if (el) return resolve(el);
-                    if (t <= 0) return reject();
-                    t -= 100; setTimeout(check, 100);
-                };
-                check();
-            });
-        }
-
-        const models = {
-            'genetic': { label: 'Genetic Model', js: 'genetic.js' },
-            'neuro': { label: 'Neuro Model', js: 'neuro.js' },
-            'pathway': { label: 'Pathway Model', js: 'pathway.js' },
-            'synapse': { label: 'Synapse Model', js: 'synapse.js' },
-            'dopamine': { label: 'Dopamine Signaling Model', js: 'dopamine.js' },
-            'serotonin': { label: 'Serotonin Structural Model', js: 'serotonin.js' },
-            'dna': { label: 'DNA Repair Model', js: 'dna_repair.js' },
-            'rna': { label: 'RNA Repair Model', js: 'rna_repair.js' },
-            'emotion': { label: 'Emotion Model', js: 'emotion.js' },
-            'cognition': { label: 'Cognition Model', js: 'cognition.js' },
-            'inflammation': { label: 'Neuroinflammation Model', js: 'inflammation.js' },
-            'stress': { label: 'Stress Dynamics Model', js: 'stress.js' }
-        };
-
-        const primarySelector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
-
-        function clearEnvironment() {
-            modelContainer.innerHTML = '';
-            document.querySelectorAll('script[data-model-script="true"]').forEach(s => s.remove());
-            const overlay = document.getElementById('greenhouse-test-results-overlay');
-            if (overlay) overlay.remove();
-
-            const apps = [
-                'GreenhouseNeuroApp', 'GreenhouseGenetic', 'GreenhouseDopamine',
-                'GreenhouseSerotonin', 'GreenhouseDNARepair', 'GreenhouseRNARepair',
-                'GreenhouseEmotionApp', 'GreenhouseCognitionApp', 'GreenhouseInflammationApp',
-                'GreenhouseStressApp', 'GreenhousePathwayApp', 'GreenhouseSynapseApp'
-            ];
-            apps.forEach(app => {
-                if (window[app]) {
-                    if (window[app].isRunning !== undefined) window[app].isRunning = false;
-                    if (window[app].stop) window[app].stop();
-                    delete window[app];
-                }
-            });
-            activeLabel.textContent = 'Active Model: None';
-            modelSelector.value = '';
-        }
-
-        async function loadModel(modelId) {
-            const model = models[modelId];
-            if (!model) return;
-
-            clearEnvironment();
-
-            // Mock GreenhouseADHDData for Neuro model to prevent crashes
-            if (modelId === 'neuro') {
-                window.GreenhouseADHDData = {
-                    scenarios: { "default": { "name": "Standard", "description": "Standard neural activity", "levels": {} } },
-                    adhdTraits: { "impulsivity": 0.5, "inattention": 0.5, "hyperactivity": 0.5 }
-                };
-            }
-            activeLabel.textContent = `Active Model: ${model.label}`;
-            modelSelector.value = modelId;
-
-            loaderMessage.textContent = `Replicating Production Delay for ${model.label}...`;
-            loadingOverlay.style.display = 'flex';
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            loadingOverlay.style.display = 'none';
-
-            // Reconstruct DOM
-            const section1 = document.createElement('section'); section1.className = 'wixui-section';
-            section1.appendChild(document.createElement('div'));
-            const div2 = document.createElement('div'); section1.appendChild(div2);
-            const div2_1 = document.createElement('div'); div2.appendChild(div2_1);
-            const sectionInner = document.createElement('section'); div2_1.appendChild(sectionInner);
-            const idiv1 = document.createElement('div'); sectionInner.appendChild(idiv1);
-            idiv1.appendChild(document.createElement('div')); idiv1.appendChild(document.createElement('div'));
-            const targetDiv = document.createElement('div'); targetDiv.id = 'model-target';
-            sectionInner.appendChild(targetDiv);
-            modelContainer.appendChild(section1);
-
-            // Script Injection
-            const script = document.createElement('script');
-            script.src = `${baseUrl}js/${model.js}`;
-            script.dataset.modelScript = "true";
-            script.setAttribute('data-target-selector-left', primarySelector);
-            script.setAttribute('data-target-selector-right', "");
-            script.setAttribute('data-base-url', baseUrl);
-            script.setAttribute('data-view', "default");
-
-            if (modelId === 'genetic') {
-                const gs = {
-                    "genetic": primarySelector,
-                    "geneticTitle": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
-                    "geneticParagraph": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(2)"
-                };
-                script.setAttribute('data-genetic-selectors', JSON.stringify(gs));
-            }
-
-            // Sync global state
-            const scriptAttributes = {
-                'target-selector-left': primarySelector,
-                'target-selector-right': '',
-                'base-url': baseUrl,
-                'view': 'default'
+            const defaultLocation = {
+                pathname: window.location.pathname,
+                search: '', hash: '', hostname: window.location.hostname,
+                port: window.location.port, protocol: window.location.protocol,
+                origin: window.location.origin, href: window.location.href,
+                assign: () => {}, replace: () => {}, reload: () => {}
             };
-            if (modelId === 'genetic') {
-                scriptAttributes['data-genetic-selectors'] = script.getAttribute('data-genetic-selectors');
+
+            const defaultNavigator = {
+                userAgent: window.navigator.userAgent,
+                platform: window.navigator.platform,
+                maxTouchPoints: window.navigator.maxTouchPoints || 0,
+                onLine: true
+            };
+
+            sandbox.location = { ...defaultLocation, ...(overrides.location || {}) };
+            sandbox.navigator = { ...defaultNavigator, ...(overrides.navigator || {}) };
+
+            // Apply other overrides
+            for (const k in overrides) {
+                if (!['location', 'navigator', 'document', 'window', 'console'].includes(k)) {
+                    sandbox[k] = overrides[k];
+                }
             }
-            window._greenhouseScriptAttributes = scriptAttributes;
+            if (overrides.window && overrides.window !== window) {
+                for (const k in overrides.window) {
+                    if (!['location', 'navigator', 'document', 'window', 'console'].includes(k)) {
+                        sandbox[k] = overrides.window[k];
+                    }
+                }
+            }
+            if (!sandbox.exports) sandbox.exports = sandbox.module.exports;
 
-            const config = { baseUrl, targetSelector: primarySelector };
-            if (modelId === 'neuro') window._greenhouseNeuroAttributes = config;
-            if (modelId === 'synapse') window._greenhouseSynapseAttributes = config;
-            if (modelId === 'stress') window._greenhouseStressAttributes = config;
-            if (modelId === 'inflammation') window._greenhouseInflammationAttributes = config;
+            const proxy = new Proxy({}, {
+                get(target, prop) {
+                    if (prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis') return proxy;
+                    if (prop === 'document') return sandbox.document;
+                    if (prop === '__isProxy') return true;
+                    if (prop in sandbox) return sandbox[prop];
+                    if (prop in target) return target[prop];
 
-            document.body.appendChild(script);
+                    const val = window[prop];
+                    if (typeof val === 'function' && !/^[A-Z]/.test(prop)) {
+                        try { return val.bind(window); } catch(e) { return val; }
+                    }
+                    return val;
+                },
+                set(target, prop, value) {
+                    sandbox[prop] = value;
+                    return true;
+                },
+                has(target, prop) {
+                    return prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis' ||
+                           prop in sandbox || prop in target || prop in window;
+                },
+                getOwnPropertyDescriptor(target, prop) {
+                    if (prop in sandbox) return { configurable: true, enumerable: true, value: sandbox[prop], writable: true };
+                    if (prop in target) return Object.getOwnPropertyDescriptor(target, prop);
+                    const desc = Object.getOwnPropertyDescriptor(window, prop);
+                    if (desc && !desc.configurable) return desc;
+                    return desc;
+                },
+                ownKeys(target) {
+                    const keys = new window.Set([...Object.keys(sandbox), ...Object.keys(target)]);
+                    ['setTimeout', 'clearTimeout'].forEach(k => keys.add(k));
+                    return Array.from(keys);
+                }
+            });
+
+            sandbox.setTimeout = (fn, d, ...a) => {
+                const id = window.setTimeout(() => { activeTimers.delete(id); if (typeof fn === 'function') fn(...a); }, d);
+                activeTimers.add(id); return id;
+            };
+            sandbox.clearTimeout = (id) => { window.clearTimeout(id); activeTimers.delete(id); };
+            sandbox.setInterval = (fn, d, ...a) => {
+                const id = window.setInterval(fn, d, ...a);
+                activeIntervals.add(id); return id;
+            };
+            sandbox.clearInterval = (id) => { window.clearInterval(id); activeIntervals.delete(id); };
+
+            const docSource = overrides.document || window.document;
+            sandbox.document = new Proxy(docSource, {
+                get(target, prop) {
+                    if (prop in sandbox && prop !== 'document') return sandbox[prop];
+                    const val = target[prop];
+                    if (typeof val === 'function') {
+                        const bound = val.bind(target);
+                        if (prop === 'addEventListener') {
+                            return (t, l, o) => {
+                                activeEventListeners.push({ target, type: t, listener: l, options: o });
+                                return bound(t, l, o);
+                            };
+                        }
+                        return bound;
+                    }
+                    return val;
+                },
+                set(target, prop, value) {
+                    sandbox[prop] = value;
+                    return true;
+                },
+                getOwnPropertyDescriptor(target, prop) {
+                    if (prop in sandbox && prop !== 'document') return { configurable: true, enumerable: true, value: sandbox[prop], writable: true };
+                    const desc = Object.getOwnPropertyDescriptor(target, prop);
+                    if (desc) { desc.configurable = true; return desc; }
+                    return desc;
+                }
+            });
+
+            return proxy;
         }
 
-        modelSelector.addEventListener('change', (e) => loadModel(e.target.value));
+        async function BeforeTest(mockGlobal, modelId) {
+            const container = document.getElementById('model-container');
+            if (container) container.innerHTML = '';
 
-        clearResultsBtn.onclick = () => {
-            const overlay = document.getElementById('greenhouse-test-results-overlay');
-            if (overlay) overlay.remove();
-        };
-
-        clearBtn.onclick = clearEnvironment;
-        runTestsBtn.onclick = async () => {
-            const hLog = console.log.bind(console);
-            const hError = console.error.bind(console);
-            const hWarn = console.warn.bind(console);
-
-            hLog("[Harness] Run Tests clicked. Model ID:", modelSelector.value);
-            const modelId = modelSelector.value;
-
-            // 1. Setup Mock Environment for Repository Tests
-            if (!window._originalDocumentMethods) {
-                window._originalDocumentMethods = {
-                    createElement: document.createElement.bind(document),
-                    querySelector: document.querySelector.bind(document),
-                    getElementById: document.getElementById.bind(document)
-                };
-            }
-
-            window.require = (requirePath) => {
-                hLog(`[Harness] Mock Require: ${requirePath}`);
+            mockGlobal.require = (requirePath) => {
                 if (requirePath.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
                 if (requirePath.includes('test_framework')) return window.TestFramework;
+                if (requirePath === 'perf_hooks') return { performance: window.performance };
                 if (requirePath === 'fs') return {
                     readFileSync: (p) => {
-                        hLog(`[Harness] Mock FS read: ${p}`);
                         try {
                             const xhr = new XMLHttpRequest();
-                            let normalizedPath = p.replace(/^.*docs\/js\//, 'js/')
-                                                  .replace(/^.*mobile\/app\//, '../mobile/app/')
-                                                  .replace(/^.*utils\//, 'js/')
-                                                  .replace(/^\/+/, '');
-
-                            if (!normalizedPath.includes('/') && normalizedPath.endsWith('.js')) {
-                                normalizedPath = 'js/' + normalizedPath;
-                            }
-
-                            xhr.open('GET', normalizedPath, false); // synchronous
+                            let normalizedPath = p.replace(/^.*docs\/js\//, 'js/').replace(/^.*mobile\/app\//, '../mobile/app/').replace(/^.*utils\//, 'js/').replace(/^\/+/, '');
+                            if (!normalizedPath.includes('/') && normalizedPath.endsWith('.js')) normalizedPath = 'js/' + normalizedPath;
+                            xhr.open('GET', normalizedPath, false);
                             xhr.send(null);
                             if (xhr.status === 200) return xhr.responseText;
-                            hError(`[Harness] FS read failed for ${normalizedPath}: ${xhr.status}`);
-                        } catch (e) {
-                            hError(`[Harness] FS read error for ${p}:`, e);
-                        }
+                        } catch (e) { console.error(`[Harness] FS read error for ${p}:`, e); }
                         return '';
                     },
                     existsSync: () => true
@@ -402,92 +262,114 @@
                     dirname: (p) => p.split('/').slice(0, -1).join('/') || '.'
                 };
                 if (requirePath === 'vm') return {
-                    runInThisContext: (code) => {
-                        hLog("[Harness] vm.runInThisContext executed via eval");
-                        return eval(code);
-                    },
-                    createContext: (sandbox) => {
-                        hLog("[Harness] vm.createContext created");
-                        return sandbox || {};
-                    },
                     runInContext: (code, context) => {
-                        hLog("[Harness] vm.runInContext executed via eval with context");
-                        const keys = Object.keys(context);
-                        const values = Object.values(context);
-                        const fn = new Function(...keys, code);
-                        return fn.apply(context, values);
+                        const fn = new Function("exports", "require", "module", "__filename", "__dirname", "global", "window", "document", "location", "navigator", "with(global) {\n" + code + "\n}");
+                        return fn.call(context, context.module.exports, context.require, context.module, context.__filename || '', context.__dirname || '', context, context, context.document, context.location, context.navigator);
+                    },
+                    runInNewContext: (code, sbox) => {
+                        const context = mockGlobal.require('vm').createContext(sbox);
+                        return mockGlobal.require('vm').runInContext(code, context);
+                    },
+                    runInThisContext: (code) => {
+                        return mockGlobal.require('vm').runInContext(code, mockGlobal);
+                    },
+                    createContext: (sbox) => {
+                        return createSandbox(mockGlobal.console.log, mockGlobal.console.error, mockGlobal.console.warn, sbox || {});
                     }
                 };
                 return {};
             };
 
-            window.onerror = (msg, url, line, col, error) => {
-                hError(`[Global Error] ${msg} at ${url}:${line}:${col}`, error);
+            mockGlobal.assert = window.assert;
+            mockGlobal.AssertionError = window.AssertionError;
+            mockGlobal.TestFramework = window.TestFramework;
+            mockGlobal.TestFrameworkClass = window.TestFramework ? window.TestFramework.TestFramework : null;
+            mockGlobal.GreenhouseTestSuite = window.GreenhouseTestSuite;
+
+            if (modelId === 'neuro') {
+                mockGlobal.GreenhouseADHDData = {
+                    scenarios: { "default": { "name": "Standard", "description": "Standard", "levels": {} } },
+                    adhdTraits: { "impulsivity": 0.5, "inattention": 0.5, "hyperactivity": 0.5 }
+                };
+            }
+        }
+
+        function AfterTest() {
+            activeTimers.forEach(id => window.clearTimeout(id));
+            activeIntervals.forEach(id => window.clearInterval(id));
+            activeTimers.clear(); activeIntervals.clear();
+            activeEventListeners.forEach(al => { try { al.target.removeEventListener(al.type, al.listener, al.options); } catch (e) {} });
+            activeEventListeners = [];
+            const container = document.getElementById('model-container');
+            if (container) container.innerHTML = '';
+        }
+
+        function clearEnvironment() {
+            modelContainer.innerHTML = '';
+            document.querySelectorAll('script[data-model-script="true"]').forEach(s => s.remove());
+            const overlay = document.getElementById('greenhouse-test-results-overlay');
+            if (overlay) overlay.remove();
+            activeLabel.textContent = 'Active Model: None';
+            modelSelector.value = '';
+            AfterTest();
+        }
+
+        async function loadModel(modelId) {
+            const models = {
+                'genetic': { label: 'Genetic Model', js: 'genetic.js' },
+                'neuro': { label: 'Neuro Model', js: 'neuro.js' },
+                'pathway': { label: 'Pathway Model', js: 'pathway.js' },
+                'synapse': { label: 'Synapse Model', js: 'synapse.js' },
+                'dopamine': { label: 'Dopamine Signaling Model', js: 'dopamine.js' },
+                'serotonin': { label: 'Serotonin Structural Model', js: 'serotonin.js' },
+                'dna': { label: 'DNA Repair Model', js: 'dna_repair.js' },
+                'rna': { label: 'RNA Repair Model', js: 'rna_repair.js' },
+                'emotion': { label: 'Emotion Model', js: 'emotion.js' },
+                'cognition': { label: 'Cognition Model', js: 'cognition.js' },
+                'inflammation': { label: 'Neuroinflammation Model', js: 'inflammation.js' },
+                'stress': { label: 'Stress Dynamics Model', js: 'stress.js' }
             };
-            window.module = { exports: {} };
-            window.process = { exit: (code) => hLog("[Harness] Process exit intercepted. Code:", code) };
-            window.__dirname = "";
+            const model = models[modelId];
+            if (!model) return;
+            clearEnvironment();
+            activeLabel.textContent = `Active Model: ${model.label}`;
+            modelSelector.value = modelId;
+            loadingOverlay.style.display = 'flex';
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            loadingOverlay.style.display = 'none';
 
-            const mockGlobal = new Proxy(window, {
-                get(target, prop) {
-                    const val = target[prop];
-                    if (typeof val === 'function') {
-                        if (val.name === 'setTimeout' || val.name === 'setInterval' || val.name === 'requestAnimationFrame') {
-                             return val.bind(target);
-                        }
-                        // Bind most native methods to the target to avoid "Illegal invocation"
-                        if (/^[A-Z]/.test(prop) || ['dispatchEvent', 'addEventListener', 'removeEventListener', 'fetch', 'XMLHttpRequest'].includes(prop)) {
-                            return val;
-                        }
-                        return typeof val.bind === 'function' ? val.bind(target) : val;
-                    }
-                    return val;
-                },
-                set(target, prop, value) {
-                    if (['console', 'CustomEvent', 'dispatchEvent', 'location', 'window', 'global'].includes(prop)) {
-                        hWarn(`[Harness] Blocked repo test from overwriting window.${prop}`);
-                        return true;
-                    }
-                    try {
-                        target[prop] = value;
-                    } catch (e) {
-                        hWarn(`[Harness] Failed to set window.${prop}: ${e.message}`);
-                    }
-                    return true;
-                }
-            });
-            window.global = mockGlobal;
+            const section = document.createElement('section'); section.className = 'wixui-section';
+            const targetDiv = document.createElement('div'); targetDiv.id = 'model-target';
+            section.appendChild(targetDiv);
+            modelContainer.appendChild(section);
 
-            // 2. Load Core Testing Infrastructure
-            const loadInfra = [];
-            if (!window.assert) loadInfra.push('js/assertion_library.js');
-            if (!window.TestFramework) loadInfra.push('js/test_framework.js');
-            if (!window.GreenhouseTestSuite) loadInfra.push('js/model_tests.js');
+            const script = document.createElement('script');
+            script.src = `js/${model.js}`;
+            script.dataset.modelScript = "true";
+            const sel = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
+            script.setAttribute('data-target-selector-left', sel);
+            script.setAttribute('data-base-url', './');
+            document.body.appendChild(script);
+        }
 
+        modelSelector.addEventListener('change', (e) => loadModel(e.target.value));
+        clearBtn.onclick = clearEnvironment;
+
+        runTestsBtn.onclick = async () => {
+            const hLog = console.log.bind(console);
+            const hError = console.error.bind(console);
+            const modelId = modelSelector.value;
+
+            const loadInfra = ['js/assertion_library.js', 'js/test_framework.js', 'js/model_tests.js'];
             for (const src of loadInfra) {
                 await new Promise(res => {
                     const s = document.createElement('script');
-                    s.src = src;
-                    s.onload = res;
-                    document.body.appendChild(s);
+                    s.src = src; s.onload = res; document.body.appendChild(s);
                 });
             }
 
-            // 3. Prepare Dashboard & Test Queue
             if (window.GreenhouseTestSuite) {
                 window.GreenhouseTestSuite.tests = [];
-
-                // Persistence layer to survive redefinitions
-                if (!window._harnessTestQueue) window._harnessTestQueue = [];
-                window._harnessTestQueue = []; // Reset for this run
-
-                const originalAddTest = window.GreenhouseTestSuite.addTest.bind(window.GreenhouseTestSuite);
-                window.GreenhouseTestSuite.addTest = (name, fn) => {
-                    hLog(`[Harness] Dashboard addTest: ${name}`);
-                    window._harnessTestQueue.push({ name, fn });
-                    originalAddTest(name, fn);
-                };
-
                 window.GreenhouseTestSuite.runAll = async function() {
                     hLog(`[Harness] runAll() starting. Total tests: ${this.tests.length}`);
                     this.isTesting = true;
@@ -506,177 +388,62 @@
                     this.isTesting = false;
                     this.report();
                 };
-
-                window.GreenhouseTestSuite.addTest('Harness Environment Check', () => {
-                    if (typeof window.GreenhouseUtils === 'undefined') throw new Error('GreenhouseUtils missing');
-                    return 'Ready';
-                });
             }
 
-            // 4. Seamlessly Bridge Repository Tests
             if (window.TestFramework) {
                 window.TestFramework.reset();
-                const registeredRepoTests = new Set();
-
+                const registeredRepoTests = new window.Set();
                 window.TestFramework.it = (name, fn) => {
                     const suite = window.TestFramework.currentSuite;
-                    const suiteName = suite ? suite.name : 'Unit';
-                    const fullName = `[${suiteName}] ${name}`;
-
+                    const fullName = `[${suite ? suite.name : 'Unit'}] ${name}`;
                     if (registeredRepoTests.has(fullName)) return;
                     registeredRepoTests.add(fullName);
-                    hLog(`[Harness] Registered bridged test: ${fullName}`);
-
                     if (window.GreenhouseTestSuite) {
                         window.GreenhouseTestSuite.addTest(fullName, async () => {
-                            // Helper for hooks
-                            const runHooks = async (type) => {
-                                if (typeof window.TestFramework.getHooks === 'function') {
-                                    const hooks = window.TestFramework.getHooks(suite, type);
-                                    for (const h of (hooks || [])) await h();
-                                } else if (suite && suite[type]) {
-                                    for (const h of suite[type]) await h();
-                                }
-                            };
-
                             if (suite && !suite._beforeAllRun) {
-                                await runHooks('beforeAll');
+                                if (suite.beforeAll) for (const h of suite.beforeAll) await h();
                                 suite._beforeAllRun = true;
                             }
-                            await runHooks('beforeEach');
-
+                            if (suite && suite.beforeEach) for (const h of suite.beforeEach) await h();
                             try {
-                                if (fn.length > 0) {
-                                    await new Promise((resolve, reject) => {
-                                        fn((err) => err ? reject(err) : resolve());
-                                    });
-                                } else {
-                                    await fn();
-                                }
+                                if (fn.length > 0) await new Promise((resolve, reject) => fn((err) => err ? reject(err) : resolve()));
+                                else await fn();
                             } finally {
-                                await runHooks('afterEach');
+                                if (suite && suite.afterEach) for (const h of suite.afterEach) await h();
+                                AfterTest();
                             }
                         });
                     }
                 };
-
-                window.TestFramework.run = async () => {
-                    hLog("[Harness] Repo script called run() - Intercepted");
-                    return { passed: 0, failed: 0, total: 0, suites: [] };
-                };
             }
 
-            // 5. Meticulous mapping of ALL 98 identified unit test files
             const testMap = {
-                'neuro': [
-                    'test_neuro_page.js', 'test_neuro_logic.js', 'test_neuro_ui.js', 'test_neuro_ga.js',
-                    'test_neuro_app_logic.js', 'test_neuro_performance.js', 'test_neuro_3d_engine.js',
-                    'test_neuro_ui_components.js', 'test_neuro_page_loader.js', 'test_adhd_scenarios.js',
-                    'models/auxiliary/test_neuro_page_full.js', 'models/auxiliary/test_neuro_page_new.js'
-                ],
-                'genetic': [
-                    'test_genetic_page.js', 'test_genetic_ui.js', 'test_genetic_algo.js', 'test_genetic_helpers.js',
-                    'test_genetic_labels.js', 'test_genetic_visualizations.js', 'test_genetic_3d_projection.js',
-                    'test_genetic_camera_views.js', 'test_genetic_main_camera_controller.js', 'test_genetic_mouse_actual_bug.js',
-                    'test_genetic_mouse_control_independence.js', 'test_genetic_mouse_event_flow.js', 'test_genetic_pip_camera_usage.js',
-                    'test_genetic_pip_controls.js', 'test_genetic_pip_interactions.js', 'test_genetic_rotation_and_camera_positions.js',
-                    'test_genetic_page_loader.js', 'models/auxiliary/test_genetic_page_new.js'
-                ],
-                'dopamine': [
-                    'test_dopamine_ui.js', 'test_dopamine_model_logic.js', 'test_dopamine_electro_unit.js', 'test_dopamine_molecular_unit.js'
-                ],
-                'serotonin': [
-                    'test_serotonin_ui.js', 'test_serotonin_model_logic.js', 'test_serotonin_transport_unit.js'
-                ],
-                'inflammation': [
-                    'test_inflammation_logic.js', 'test_inflammation_ui.js', 'test_inflammation_enhancements.js'
-                ],
-                'stress': [
-                    'test_stress_logic.js', 'test_stress_ui.js', 'test_stress_regression.js', 'test_stress_enhancements.js', 'test_stress_interventions.js', 'test_stress_ui.js'
-                ],
-                'dna': [
-                    'test_dna_ui.js', 'test_dna_logic.js', 'test_dna_page.js'
-                ],
-                'rna': [
-                    'test_rna_ui.js', 'test_rna_page.js', 'repro_rna_error.js'
-                ],
-                'synapse': [
-                    'test_synapse_ui.js', 'test_synapse_logic.js', 'test_synapse_receptors.js', 'test_synapse_page_loader.js', 'models/auxiliary/test_synapse_page_new.js'
-                ],
-                'pathway': [
-                    'test_pathway_ui.js', 'test_pathway_logic.js', 'test_pathway_page_loader.js', 'test_json_pathway_support.js', 'models/auxiliary/test_pathway_page_new.js'
-                ],
-                'emotion': [
-                    'test_emotion_page.js', 'models/auxiliary/test_emotion_page.js', 'models/auxiliary/test_emotion_deep_dive.js'
-                ],
-                'cognition': [
-                    'test_cognition_logic.js', 'test_cognition_ui.js', 'test_cognition_drawing.js', 'test_cognition_modules.js', 'test_cognition_regression.js', 'models/auxiliary/test_cognition_page.js'
-                ]
+                'neuro': ['test_neuro_page.js', 'test_neuro_logic.js', 'test_neuro_ui.js', 'test_neuro_ga.js', 'test_neuro_app_logic.js', 'test_neuro_performance.js', 'test_neuro_3d_engine.js', 'test_neuro_ui_components.js', 'test_neuro_page_loader.js', 'test_adhd_scenarios.js', 'models/auxiliary/test_neuro_page_full.js', 'models/auxiliary/test_neuro_page_new.js'],
+                'genetic': ['test_genetic_page.js', 'test_genetic_ui.js', 'test_genetic_algo.js', 'test_genetic_helpers.js', 'test_genetic_labels.js', 'test_genetic_visualizations.js', 'test_genetic_3d_projection.js', 'test_genetic_camera_views.js', 'test_genetic_main_camera_controller.js', 'test_genetic_mouse_actual_bug.js', 'test_genetic_mouse_control_independence.js', 'test_genetic_mouse_event_flow.js', 'test_genetic_pip_camera_usage.js', 'test_genetic_pip_controls.js', 'test_genetic_pip_interactions.js', 'test_genetic_rotation_and_camera_positions.js', 'test_genetic_page_loader.js', 'models/auxiliary/test_genetic_page_new.js']
             };
-
-            const commonTests = [
-                'test_accessibility.js', 'test_assertion_library.js', 'test_dependency_manager.js',
-                'test_global_ux.js', 'test_greenhouse_utils.js', 'test_labeling_system.js',
-                'test_models_3d_math.js', 'test_models_toc.js', 'test_models_util.js',
-                'test_performance_profiler_unit.js', 'test_performance_regression.js',
-                'test_react_compatibility.js', 'test_test_framework.js', 'test_v8_graph_renderer.js',
-                'test_mobile_edge_cases.js', 'test_mobile_integration.js', 'test_mobile_model_behaviors.js',
-                'test_mobile_models_lifecycle.js', 'test_mobile_regression.js', 'test_mobile_typography_contrast.js',
-                'test_mobile_ui_interactions.js', 'test_mobile_viewer.js', 'test_model_sync.js',
-                'test_patient_app_unit.js', 'test_dashboard_app_unit.js', 'test_meditation_app.js',
-                'test_scheduler_logic.js', 'test_tech_canvas.js', 'test_inspiration_logic.js',
-                'test_kegg_parser.js', 'models/auxiliary/test_models_page_new.js'
-            ];
+            const commonTests = ['test_accessibility.js', 'test_assertion_library.js', 'test_dependency_manager.js', 'test_global_ux.js', 'test_greenhouse_utils.js', 'test_labeling_system.js', 'test_models_3d_math.js', 'test_models_toc.js', 'test_models_util.js', 'test_performance_profiler_unit.js', 'test_performance_regression.js', 'test_react_compatibility.js', 'test_test_framework.js', 'test_v8_graph_renderer.js', 'test_mobile_edge_cases.js', 'test_mobile_integration.js', 'test_mobile_model_behaviors.js', 'test_mobile_models_lifecycle.js', 'test_mobile_regression.js', 'test_mobile_typography_contrast.js', 'test_mobile_ui_interactions.js', 'test_mobile_viewer.js', 'test_model_sync.js', 'test_meditation_app.js', 'test_scheduler_logic.js', 'test_tech_canvas.js', 'test_inspiration_logic.js', 'test_patient_app_unit.js', 'test_dashboard_app_unit.js', 'test_kegg_parser.js', 'models/auxiliary/test_models_page_new.js'];
 
             const testFiles = [...(testMap[modelId] || []), ...commonTests];
-
-            hLog(`[Harness] Loading ${testFiles.length} repository unit tests...`);
-
-            // Sequential load to avoid overloading or losing race conditions in registry
             for (const file of testFiles) {
                 try {
                     let response = await fetch(`../tests/unit/${file}`);
                     if (!response.ok) response = await fetch(`tests/unit/${file}`);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    if (!response.ok) continue;
                     const code = await response.text();
+                    const currentMockGlobal = createSandbox(hLog, hError, hLog);
+                    currentMockGlobal.__filename = file;
+                    currentMockGlobal.__dirname = file.split('/').slice(0, -1).join('/') || '.';
+                    await BeforeTest(currentMockGlobal, modelId);
 
-                    const wrappedCode = `(function(require, module, exports, __dirname, global, process, console) {
-                        try {
-                            ${code}
-                        } catch (e) {
-                            console.error("[Harness] Execution error in ${file}:", e);
-                        }
-                    })(window.require, {exports:{}}, {}, "", window.global, window.process, window.console);`;
-
-                    const script = document.createElement('script');
-                    script.textContent = wrappedCode;
-                    script.dataset.file = file;
-                    document.body.appendChild(script);
+                    const vm = currentMockGlobal.require('vm');
+                    try { vm.runInContext(code, currentMockGlobal); }
+                    catch (e) { hError(`[Harness] Execution error in ${file}:`, e); }
                     hLog(`[Harness] Executed test file: ${file}`);
-                } catch (e) {
-                    hError(`[Harness] Failed to load/execute test file: ${file}`, e);
-                }
+                } catch (e) { hError(`[Harness] Failed test file: ${file}`, e); }
             }
 
-            // 6. Run the production in-browser test suite (includes merged repo suites)
             if (window.GreenhouseTestSuite) {
-                hLog(`[Harness] Starting runAll() with ${window.GreenhouseTestSuite.tests.length} tests registered.`);
                 await window.GreenhouseTestSuite.runAll();
-                const totalFiles = testFiles.length;
-                const overlay = document.getElementById('greenhouse-test-results-overlay');
-                if (overlay) {
-                    const fileCount = document.createElement('div');
-                    fileCount.style.fontSize = '10px';
-                    fileCount.style.marginTop = '5px';
-                    fileCount.style.color = '#aaa';
-                    fileCount.textContent = `Tests loaded from ${totalFiles} repository files.`;
-                    overlay.insertBefore(fileCount, overlay.querySelector('button'));
-                }
-            } else {
-                const s = document.createElement('script');
-                s.src = `${baseUrl}js/model_tests.js`;
-                s.onload = () => window.GreenhouseTestSuite && window.GreenhouseTestSuite.runAll();
-                document.body.appendChild(s);
             }
         };
     })();

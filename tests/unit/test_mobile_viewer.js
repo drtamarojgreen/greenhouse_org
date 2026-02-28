@@ -45,34 +45,43 @@ const createMockElement = (tag) => ({
     style: {}, dataset: {}, children: [], appendChild: function(c) { this.children.push(c); return c; }
 });
 
-const runInNewContext = (windowOverrides = {}) => {
-    const mockWindow = createMockWindow();
-    Object.keys(windowOverrides).forEach(key => {
-        if (typeof windowOverrides[key] === 'object' && mockWindow[key] && !Array.isArray(windowOverrides[key])) {
-            Object.assign(mockWindow[key], windowOverrides[key]);
-        } else {
-            mockWindow[key] = windowOverrides[key];
+const runInNewContext = (overrides = {}) => {
+    const mockWindow = {
+        innerWidth: overrides.innerWidth || 1200,
+        innerHeight: overrides.innerHeight || 800,
+        location: { pathname: '/models', search: '', hostname: 'localhost', ...(overrides.location || {}) },
+        navigator: overrides.navigator || { userAgent: 'Desktop', maxTouchPoints: 0, platform: 'Win32' },
+        matchMedia: (query) => ({ media: query, matches: false }),
+        dispatchEvent: () => { },
+        addEventListener: () => { },
+        _greenhouseScriptAttributes: {},
+        fetch: () => Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve('<models><model id="genetic"><title>Genetic</title><url>/genetic</url></model></models>')
+        }),
+        URL: { createObjectURL: () => 'blob:', revokeObjectURL: () => {} },
+        DOMParser: class {
+            parseFromString() {
+                return { querySelectorAll: () => [{ getAttribute: () => 'genetic', querySelector: (q) => ({ textContent: q === 'title' ? 'Genetic' : '/genetic' }) }] };
+            }
         }
-    });
+    };
 
     const mockDocument = {
         createElement: createMockElement,
         body: createMockElement('body'),
         head: createMockElement('head'),
         querySelector: () => null,
-        getElementById: () => null
+        getElementById: () => null,
+        addEventListener: () => {}
     };
-    mockWindow.document = mockDocument;
 
-    const context = vm.createContext(mockWindow);
+    const context = vm.createContext({ ...mockWindow, document: mockDocument, window: mockWindow });
     context.global = context;
-    context.window = context;
-    context.navigator = mockWindow.navigator;
-    context.document = mockDocument;
 
     const utilsCode = fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseUtils.js'), 'utf8');
-    vm.runInContext(utilsCode, context);
     const mobileCode = fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseMobile.js'), 'utf8');
+    vm.runInContext(utilsCode, context);
     vm.runInContext(mobileCode, context);
 
     return context;

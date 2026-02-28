@@ -446,10 +446,16 @@ testFramework.beforeAll = testFramework.beforeAll.bind(testFramework);
 testFramework.afterAll = testFramework.afterAll.bind(testFramework);
 testFramework.run = testFramework.run.bind(testFramework);
 
+// Ensure the class is always available on the instance for testing/isolation
+testFramework.TestFramework = TestFramework;
+
 // Export for use in tests
 if (typeof module !== 'undefined' && module.exports) {
-  testFramework.ResourceReporter = require('./resource_reporter.js');
-  testFramework.TestFramework = TestFramework; // Export class for isolated testing
+  try {
+    testFramework.ResourceReporter = require('./resource_reporter.js');
+  } catch (e) {
+    // Resource reporter might not be available in all environments
+  }
   module.exports = testFramework;
 }
 

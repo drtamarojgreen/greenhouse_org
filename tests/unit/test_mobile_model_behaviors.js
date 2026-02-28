@@ -111,29 +111,53 @@ const createMockElement = (tag) => ({
     classList: { add: () => {}, remove: () => {}, toggle: () => {} }
 });
 
-const runInNewContext = (windowOverrides = {}) => {
-    const mockWindow = createMockWindow();
-    Object.assign(mockWindow, windowOverrides);
-
-    const mockDocument = {
-        createElement: createMockElement,
-        body: createMockElement('body'),
-        head: createMockElement('head'),
-        querySelector: () => null,
-        getElementById: () => null
+const runInNewContext = (overrides = {}) => {
+    const mockWindow = {
+        innerWidth: 500, innerHeight: 800,
+        location: { pathname: '/models', search: '', hostname: 'localhost' },
+        navigator: { userAgent: 'iPhone', maxTouchPoints: 5, platform: 'iPhone' },
+        dispatchEvent: () => { }, addEventListener: () => { },
+        fetch: () => Promise.resolve({
+            ok: true, text: () => Promise.resolve('<models><model id="genetic"><title>Genetic</title><url>/genetic</url></model></models>')
+        }),
+        URL: { createObjectURL: () => 'blob:', revokeObjectURL: () => {} },
+        setTimeout: setTimeout, clearTimeout: clearTimeout,
+        Greenhouse: {},
+        GreenhouseDNARepair: {
+            initializeDNARepairSimulation: function(c) { this._initialized = true; },
+            startSimulation: function(m) { this._dnaMode = m; }
+        },
+        GreenhouseDopamine: { initialize: function(c, s) { this._initialized = true; }, state: { mode: 'D1R' } },
+        GreenhouseSerotonin: { initialize: function(c, s) { this._initialized = true; }, viewMode: '3D' },
+        GreenhouseEmotionApp: {
+            init: function(s) { this._emotionInitialized = true; },
+            config: { theories: [ { name: 'James-Lange', regions: 'Amygdala' }, { name: 'Cannon-Bard', regions: 'Thalamus' } ] },
+            activeTheory: null, activeRegion: null, updateInfoPanel: () => { }
+        },
+        RNARepairSimulation: class { constructor(c) { this.canvas = c; } }
     };
-    mockWindow.document = mockDocument;
 
-    const context = vm.createContext(mockWindow);
+    const createEl = (tag) => ({
+        tagName: tag.toUpperCase(), id: '', className: '', textContent: '', innerHTML: '',
+        style: {}, dataset: {}, children: [], offsetWidth: 400, offsetHeight: 600,
+        appendChild: function(c) { this.children.push(c); c.parentNode = this; return c; },
+        querySelector: () => null, querySelectorAll: () => [],
+        setAttribute: function(k, v) { this[k] = v; },
+        classList: { add: () => {}, remove: () => {}, toggle: () => {} }
+    });
+
+    const mockDocument = createEl('document');
+    mockDocument.body = createEl('body'); mockDocument.head = createEl('head');
+    mockDocument.getElementById = () => null;
+    mockDocument.createElement = createEl;
+    mockDocument.querySelector = () => null;
+    mockDocument.addEventListener = () => {};
+
+    const context = vm.createContext({ ...mockWindow, document: mockDocument, window: mockWindow });
     context.global = context;
-    context.window = context;
-    context.navigator = mockWindow.navigator;
-    context.document = mockDocument;
 
-    const utilsCode = fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseUtils.js'), 'utf8');
-    vm.runInContext(utilsCode, context);
-    const mobileCode = fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseMobile.js'), 'utf8');
-    vm.runInContext(mobileCode, context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseUtils.js'), 'utf8'), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../docs/js/GreenhouseMobile.js'), 'utf8'), context);
 
     return context;
 };

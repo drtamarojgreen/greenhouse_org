@@ -9,167 +9,83 @@ const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Setup Global Environment ---
-const createMockWindow = () => ({
-    innerWidth: 500,
-    innerHeight: 800,
-    location: { pathname: '/models', search: '', hostname: 'localhost' },
-    navigator: { userAgent: 'iPhone', maxTouchPoints: 5, platform: 'iPhone' },
-    matchMedia: (query) => ({
-        media: query,
-        matches: false
-    }),
-    dispatchEvent: () => { },
-    addEventListener: () => { },
-    _greenhouseScriptAttributes: {},
-    document: null,
-    Map: Map,
-    Set: Set,
-    setTimeout: setTimeout,
-    clearTimeout: clearTimeout,
-    setInterval: setInterval,
-    clearInterval: clearInterval,
-    Promise: Promise,
-    AbortController: class { constructor() { this.signal = {}; } abort() {} },
-    CustomEvent: class { constructor(name, data) { this.name = name; this.detail = data ? data.detail : null; } },
-    fetch: () => Promise.resolve({
-        ok: true,
-        text: () => Promise.resolve('<models><model id="genetic"><title>Genetic</title><url>/genetic</url></model></models>')
-    }),
-    DOMParser: class {
-        parseFromString(str, type) {
-            return {
-                querySelectorAll: () => []
-            };
-        }
-    },
-    URL: {
-        createObjectURL: () => 'blob:mock',
-        revokeObjectURL: () => { }
-    },
-    Blob: class { constructor() {} },
-    console: {
-        log: () => {},
-        error: () => {},
-        warn: () => {},
-        debug: () => {}
-    },
-    IntersectionObserver: class {
-        constructor(callback) { this.callback = callback; }
-        observe(target) { setTimeout(() => this.callback([{ isIntersecting: true, target }]), 10); }
-        unobserve() {}
-        disconnect() {}
-    }
-});
+// --- Standard Environment Builder ---
+const runInNewContext = (overrides = {}) => {
+    const mockWindow = {
+        innerWidth: overrides.innerWidth || 500,
+        innerHeight: overrides.innerHeight || 800,
+        location: { pathname: '/models', search: '', hostname: 'localhost', ...(overrides.location || {}) },
+        navigator: overrides.navigator || { userAgent: 'iPhone', maxTouchPoints: 5, platform: 'iPhone' },
+        matchMedia: (query) => ({ media: query, matches: false }),
+        dispatchEvent: () => { },
+        addEventListener: () => { },
+        _greenhouseScriptAttributes: {},
+        fetch: () => Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve('<models><model id="genetic"><title>Genetic</title><url>/genetic</url></model></models>')
+        }),
+        URL: { createObjectURL: () => 'blob:mock', revokeObjectURL: () => { } },
+        IntersectionObserver: class {
+            constructor(cb) { this.cb = cb; }
+            observe(t) { setTimeout(() => this.cb([{ isIntersecting: true, target: t }]), 10); }
+            unobserve() {}
+            disconnect() {}
+        },
+        DOMParser: class { parseFromString() { return { querySelectorAll: () => [] }; } }
+    };
 
-const createMockElement = (tag) => ({
-    tagName: tag.toUpperCase(),
-    tag: tag.toUpperCase(),
-    id: '', className: '', textContent: '', innerHTML: '',
-    style: {}, dataset: {}, children: [], offsetWidth: 400, offsetHeight: 600,
-    appendChild: function (c) {
-        this.children.push(c);
-        c.parentNode = this;
-        return c;
-    },
-    prepend: function (c) {
-        this.children.unshift(c);
-        c.parentNode = this;
-        return c;
-    },
-    remove: function () {
-        if (this.parentNode) {
-            const idx = this.parentNode.children.indexOf(this);
-            if (idx > -1) this.parentNode.children.splice(idx, 1);
-        }
-    },
-    addEventListener: function (evt, handler) {
-        this._listeners = this._listeners || {};
-        this._listeners[evt] = handler;
-    },
-    querySelector: function (sel) {
-        if (sel === '#gh-mobile-scroller' || sel === '#gh-mobile-dots' || sel === '.gh-mobile-canvas-wrapper' || sel === '#greenhouse-mobile-close-btn' || sel === '#gh-mobile-close-btn') {
-            let existing = this.children.find(c => c.id === sel.replace('#', '') || c.className === sel.replace('.', ''));
-            if (existing) return existing;
-            const sub = createMockElement('div');
-            sub.id = sel.startsWith('#') ? sel.substring(1) : '';
-            sub.className = sel.startsWith('.') ? sel.substring(1) : '';
-            this.appendChild(sub);
-            return sub;
-        }
-        return this.children.find(c => c.id === sel.replace('#', '') || c.className === sel.replace('.', '')) || null;
-    },
-    querySelectorAll: function (sel) { return []; },
-    setAttribute: function (k, v) { this[k] = v; },
-    getAttribute: function (k) { return this[k]; },
-    classList: {
-        add: () => {},
-        remove: () => {},
-        toggle: () => {},
-        contains: () => false
-    }
-});
-
-const createMockDocument = () => {
-    const doc = {
-        readyState: 'complete',
-        currentScript: null,
-        querySelector: function (sel) { return null; },
-        getElementById: function (id) {
-            if (id === 'gh-mobile-close-btn' || id === 'greenhouse-mobile-viewer' || id === 'greenhouse-mobile-styles') {
-                let found = null;
-                const findIn = (el) => {
-                    if (el.id === id) return el;
-                    for (let child of el.children) {
-                        const found = findIn(child);
-                        if (found) return found;
-                    }
-                    return null;
-                };
-                found = findIn(this.body) || findIn(this.head);
-                if (found) return found;
-
+    const createMockElement = (tag) => ({
+        tagName: tag.toUpperCase(), tag: tag.toUpperCase(),
+        id: '', className: '', textContent: '', innerHTML: '',
+        style: {}, dataset: {}, children: [], offsetWidth: 400, offsetHeight: 600,
+        appendChild: function(c) { this.children.push(c); c.parentNode = this; return c; },
+        prepend: function(c) { this.children.unshift(c); c.parentNode = this; return c; },
+        remove: function() {
+            if (this.parentNode) {
+                const idx = this.parentNode.children.indexOf(this);
+                if (idx > -1) this.parentNode.children.splice(idx, 1);
+            }
+        },
+        addEventListener: function() {},
+        querySelector: function(sel) {
+            const found = this.children.find(c => c.id === sel.replace('#', '') || c.className === sel.replace('.', ''));
+            if (found) return found;
+            if (sel.includes('scroller') || sel.includes('dots') || sel.includes('canvas') || sel.includes('close-btn')) {
                 const sub = createMockElement('div');
-                sub.id = id;
-                this.body.appendChild(sub);
+                sub.id = sel.startsWith('#') ? sel.substring(1) : '';
+                sub.className = sel.startsWith('.') ? sel.substring(1) : '';
+                this.appendChild(sub);
                 return sub;
             }
             return null;
         },
-        createElement: createMockElement,
-        body: createMockElement('body'),
-        head: createMockElement('head'),
-        addEventListener: () => { }
-    };
-    return doc;
-};
-
-const runInNewContext = (windowOverrides = {}) => {
-    const mockWindow = createMockWindow();
-    Object.keys(windowOverrides).forEach(key => {
-        if (typeof windowOverrides[key] === 'object' && mockWindow[key] && !Array.isArray(windowOverrides[key])) {
-            Object.assign(mockWindow[key], windowOverrides[key]);
-        } else {
-            mockWindow[key] = windowOverrides[key];
-        }
+        querySelectorAll: () => [],
+        setAttribute: function(k, v) { this[k] = v; },
+        getAttribute: function(k) { return this[k]; },
+        classList: { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false }
     });
 
-    const mockDocument = createMockDocument();
-    mockWindow.document = mockDocument;
+    const mockDocument = createMockElement('document');
+    mockDocument.body = createMockElement('body');
+    mockDocument.head = createMockElement('head');
+    mockDocument.getElementById = (id) => {
+        if (id === 'gh-mobile-close-btn' || id === 'greenhouse-mobile-viewer' || id === 'greenhouse-mobile-styles') {
+            const el = createMockElement('div'); el.id = id;
+            mockDocument.body.appendChild(el); return el;
+        }
+        return null;
+    };
+    mockDocument.createElement = createMockElement;
+    mockDocument.querySelector = () => null;
+    mockDocument.addEventListener = () => {};
 
-    const context = vm.createContext(mockWindow);
+    const context = vm.createContext({ ...mockWindow, document: mockDocument, window: mockWindow });
     context.global = context;
-    context.window = context;
-    context.navigator = mockWindow.navigator;
-    context.document = mockDocument;
 
     const utilsPath = path.join(__dirname, '../../docs/js/GreenhouseUtils.js');
-    const utilsCode = fs.readFileSync(utilsPath, 'utf8');
-    vm.runInContext(utilsCode, context);
-
     const mobilePath = path.join(__dirname, '../../docs/js/GreenhouseMobile.js');
-    const mobileCode = fs.readFileSync(mobilePath, 'utf8');
-    vm.runInContext(mobileCode, context);
+    vm.runInContext(fs.readFileSync(utilsPath, 'utf8'), context);
+    vm.runInContext(fs.readFileSync(mobilePath, 'utf8'), context);
 
     return context;
 };
