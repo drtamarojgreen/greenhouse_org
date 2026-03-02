@@ -3,23 +3,44 @@
  * @description Unit tests for Synapse Chemistry and Logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
 
-// --- Load Script ---
-const filePath = path.join(__dirname, '../../docs/js/synapse_chemistry.js');
-const code = fs.readFileSync(filePath, 'utf8');
-vm.runInThisContext(code);
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console
+    };
+
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const filePath = path.join(__dirname, '../../docs/js/synapse_chemistry.js');
+    const code = fs.readFileSync(filePath, 'utf8');
+    vm.runInContext(code, context);
+
+    return context;
+};
 
 TestFramework.describe('Synapse Chemistry Logic (Unit)', () => {
 
-    const Chem = global.window.GreenhouseSynapseApp.Chemistry;
+    let env;
+    let Chem;
+
+    TestFramework.beforeEach(() => {
+        env = createEnv();
+        Chem = env.window.GreenhouseSynapseApp.Chemistry;
+    });
 
     TestFramework.it('should define core neurotransmitters with correct types', () => {
         assert.isDefined(Chem.neurotransmitters);
@@ -66,6 +87,8 @@ TestFramework.describe('Synapse Chemistry Logic (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

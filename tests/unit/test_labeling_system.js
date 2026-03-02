@@ -3,38 +3,52 @@
  * @description Unit tests for GreenhouseLabelingSystem.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    querySelector: () => null,
-    createElement: () => ({ style: {} }),
-    body: { appendChild: () => { } }
-};
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
 
-// Mock the 3D Math dependency
-global.window.GreenhouseModels3DMath = {
-    project3DTo2D: (x, y, z, cam, proj) => {
-        // Simple mock projection: return x, y directly if z is positive relative to camera
-        return { x: x + 400, y: 300 - y, scale: 1, depth: 0.5 };
-    }
-};
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console,
+        document: {
+            querySelector: () => null,
+            createElement: () => ({ style: {} }),
+            body: { appendChild: () => { } }
+        },
+        GreenhouseModels3DMath: {
+            project3DTo2D: (x, y, z, cam, proj) => {
+                return { x: x + 400, y: 300 - y, scale: 1, depth: 0.5 };
+            }
+        }
+    };
 
-// --- Load Script ---
-const filePath = path.join(__dirname, '../../docs/js/labeling_system.js');
-const code = fs.readFileSync(filePath, 'utf8');
-vm.runInThisContext(code);
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const filePath = path.join(__dirname, '../../docs/js/labeling_system.js');
+    const code = fs.readFileSync(filePath, 'utf8');
+    vm.runInContext(code, context);
+
+    return context;
+};
 
 TestFramework.describe('GreenhouseLabelingSystem (Unit)', () => {
-
-    const LS = global.window.GreenhouseLabelingSystem;
+    let env;
+    let LS;
 
     TestFramework.beforeEach(() => {
+        env = createEnv();
+        LS = env.window.GreenhouseLabelingSystem;
         LS.init();
     });
 
@@ -107,6 +121,8 @@ TestFramework.describe('GreenhouseLabelingSystem (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

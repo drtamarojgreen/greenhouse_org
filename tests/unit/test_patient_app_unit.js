@@ -3,51 +3,66 @@
  * @description Unit tests for GreenhousePatientApp logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    querySelector: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
-    createElement: (tag) => {
-        const el = {
-            tag,
-            dataset: {},
-            style: {},
-            appendChild: () => { },
-            removeChild: () => { },
-            querySelector: () => null,
-            setAttribute: function (k, v) { this[k] = v; },
-            addEventListener: () => { }
-        };
-        return el;
-    },
-    addEventListener: () => { },
-    body: { classList: { add: () => { }, remove: () => { } } }
-};
-global.console = { log: () => { }, error: () => { }, warn: () => { } };
-global.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
 
-// --- Load Dependencies ---
-global.window.GreenhouseUtils = {
-    displayError: () => { },
-    displaySuccess: () => { },
-    validateForm: () => true
-};
-global.window.GreenhouseSchedulerUI = {};
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console,
+        fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
+        document: {
+            querySelector: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
+            createElement: (tag) => ({
+                tag,
+                tagName: tag.toUpperCase(),
+                dataset: {},
+                style: {},
+                appendChild: () => { },
+                removeChild: () => { },
+                querySelector: () => null,
+                setAttribute: function (k, v) { this[k] = v; },
+                addEventListener: () => { }
+            }),
+            addEventListener: () => { },
+            body: { classList: { add: () => { }, remove: () => { } } }
+        },
+        GreenhouseUtils: {
+            displayError: () => { },
+            displaySuccess: () => { },
+            validateForm: () => true
+        },
+        GreenhouseSchedulerUI: {}
+    };
 
-// --- Load Script ---
-const filePath = path.join(__dirname, '../../docs/js/GreenhousePatientApp.js');
-const code = fs.readFileSync(filePath, 'utf8');
-vm.runInThisContext(code);
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const filePath = path.join(__dirname, '../../docs/js/GreenhousePatientApp.js');
+    const code = fs.readFileSync(filePath, 'utf8');
+    vm.runInContext(code, context);
+
+    return context;
+};
 
 TestFramework.describe('GreenhousePatientApp (Unit)', () => {
+    let env;
+    let App;
 
-    const App = global.window.GreenhousePatientApp;
+    TestFramework.beforeEach(() => {
+        env = createEnv();
+        App = env.window.GreenhousePatientApp;
+    });
 
     TestFramework.describe('Core API', () => {
         TestFramework.it('should be defined on global window', () => {
@@ -58,16 +73,12 @@ TestFramework.describe('GreenhousePatientApp (Unit)', () => {
 
     TestFramework.describe('UI Population Helpers', () => {
         TestFramework.it('populateServices should handle empty API response', async () => {
-            // Mock fetch to return empty list
-            global.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
-
-            // We can't easily test the DOM mutation without full internal state injection, 
-            // but we verify the method is async and returns correctly.
+            env.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
             await App.populateServices();
         });
 
         TestFramework.it('populateAppointments should create list items', async () => {
-            global.fetch = () => Promise.resolve({
+            env.fetch = () => Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve([{ _id: '1', title: 'Test', date: '2024-01-01', time: '10:00', platform: 'Zoom' }])
             });
@@ -78,13 +89,14 @@ TestFramework.describe('GreenhousePatientApp (Unit)', () => {
 
     TestFramework.describe('Conflict Management', () => {
         TestFramework.it('showConflictModal should not crash with null data', () => {
-            // This might log an error in console, which is fine for our mock.
             App.showConflictModal(null);
         });
     });
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

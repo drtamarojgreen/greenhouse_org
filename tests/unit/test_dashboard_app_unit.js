@@ -3,44 +3,77 @@
  * @description Unit tests for GreenhouseDashboardApp logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    querySelector: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
-    createElement: (tag) => ({
-        tag,
-        dataset: {},
-        style: {},
-        appendChild: function (c) { this.firstChild = c; },
-        removeChild: function (c) { this.firstChild = null; },
-        querySelector: () => null,
-        setAttribute: function (k, v) { this[k] = v; }
-    }),
-    body: { appendChild: () => { } }
-};
-global.console = { log: () => { }, error: () => { }, warn: () => { } };
-global.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
 
-// --- Load Dependencies ---
-global.window.GreenhouseUtils = {
-    displayError: () => { },
-    displaySuccess: () => { }
-};
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console,
+        fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
+        document: {
+            querySelector: (sel) => {
+                const el = {
+                    appendChild: () => { },
+                    innerHTML: '',
+                    style: {},
+                    prepend: () => { },
+                    addEventListener: () => { },
+                    removeEventListener: () => { }
+                };
+                return el;
+            },
+            createElement: (tag) => ({
+                tag,
+                tagName: tag.toUpperCase(),
+                dataset: {},
+                style: {},
+                appendChild: function (c) { this.firstChild = c; },
+                removeChild: function (c) { this.firstChild = null; },
+                querySelector: () => null,
+                setAttribute: function (k, v) { this[k] = v; },
+                addEventListener: () => { },
+                removeEventListener: () => { }
+            }),
+            addEventListener: () => { },
+            body: { appendChild: () => { } }
+        },
+        GreenhouseUtils: {
+            displayError: () => { },
+            displaySuccess: () => { }
+        },
+        GreenhouseSchedulerUI: {}
+    };
 
-// --- Load Script ---
-const filePath = path.join(__dirname, '../../docs/js/GreenhouseDashboardApp.js');
-const code = fs.readFileSync(filePath, 'utf8');
-vm.runInThisContext(code);
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const filePath = path.join(__dirname, '../../docs/js/GreenhouseDashboardApp.js');
+    const code = fs.readFileSync(filePath, 'utf8');
+    vm.runInContext(code, context);
+
+    return context;
+};
 
 TestFramework.describe('GreenhouseDashboardApp (Unit)', () => {
 
-    const App = global.window.GreenhouseDashboardApp;
+    let env;
+    let App;
+
+    TestFramework.beforeEach(() => {
+        env = createEnv();
+        App = env.window.GreenhouseDashboardApp;
+    });
 
     TestFramework.describe('Initialization', () => {
         TestFramework.it('should define App object', () => {
@@ -51,11 +84,11 @@ TestFramework.describe('GreenhouseDashboardApp (Unit)', () => {
 
     TestFramework.describe('Calendar Logic', () => {
         TestFramework.it('should populate calendar cells for a given month', () => {
-            // Setup mock containers with data-identifiers
             const tbody = {
                 firstChild: true,
                 appendChild: () => { },
-                removeChild: function () { this.firstChild = null; }
+                removeChild: function () { this.firstChild = null; },
+                addEventListener: () => { }
             };
             const mockContainer = {
                 querySelector: (sel) => {
@@ -63,12 +96,10 @@ TestFramework.describe('GreenhouseDashboardApp (Unit)', () => {
                     if (sel.includes('calendar-title')) return { textContent: '' };
                     return null;
                 },
-                prepend: () => { }
+                prepend: () => { },
+                addEventListener: () => { }
             };
 
-            // This requires manual state injection or init.
-            // We can test the exposed methods if they don't crash.
-            // But first we need to 'init' to set internal state.
             App.init(mockContainer, mockContainer);
             App.populateCalendar(2024, 0); // Jan 2024
             assert.isNotNull(tbody);
@@ -77,9 +108,8 @@ TestFramework.describe('GreenhouseDashboardApp (Unit)', () => {
 
     TestFramework.describe('Data Fetching Triggers', () => {
         TestFramework.it('triggerDataFetchAndPopulation should attempt to fetch', async () => {
-            // Setup fetch mock
             let fetchCalled = 0;
-            global.fetch = () => { fetchCalled++; return Promise.resolve({ ok: true, json: () => Promise.resolve([]) }); };
+            env.fetch = () => { fetchCalled++; return Promise.resolve({ ok: true, json: () => Promise.resolve([]) }); };
 
             await App.triggerDataFetchAndPopulation();
             assert.greaterThan(fetchCalled, 0);
@@ -88,6 +118,8 @@ TestFramework.describe('GreenhouseDashboardApp (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

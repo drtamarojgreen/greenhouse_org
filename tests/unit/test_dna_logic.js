@@ -3,31 +3,47 @@
  * @description Unit tests for DNA Mutation and Mechanism logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
 
-// --- Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../docs/js', filename);
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console
+    };
+
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const filePath = path.join(__dirname, '../../docs/js/dna_repair_mutations.js');
     const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
+    vm.runInContext(code, context);
 
-loadScript('dna_repair_mutations.js');
+    return context;
+};
 
 TestFramework.describe('DNA Mutation Logic (Unit)', () => {
 
-    const G = global.window.GreenhouseDNARepair;
+    let env;
+    let G;
+
+    TestFramework.beforeEach(() => {
+        env = createEnv();
+        G = env.window.GreenhouseDNARepair;
+    });
 
     TestFramework.describe('Damage Induction', () => {
         TestFramework.beforeEach(() => {
-            // Reset state for each test
             G.state = {
                 radiationLevel: 50,
                 basePairs: [
@@ -68,9 +84,8 @@ TestFramework.describe('DNA Mutation Logic (Unit)', () => {
         });
 
         TestFramework.it('should induce spontaneous damage scaled by radiation', () => {
-            G.state.radiationLevel = 10000; // 100% prob per tick (rad/10000)
+            G.state.radiationLevel = 10000;
             G.induceSpontaneousDamage();
-            // Since prob is 1.0, all pairs should be damaged unless already damaged
             G.state.basePairs.forEach(p => {
                 assert.isTrue(p.isDamaged, `Pair ${p.id} should be damaged`);
             });
@@ -79,6 +94,8 @@ TestFramework.describe('DNA Mutation Logic (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

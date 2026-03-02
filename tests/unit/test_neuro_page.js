@@ -2,86 +2,99 @@
  * Unit Tests for Neuro Page Models
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    getElementById: () => ({
+const createEnv = () => {
+    // If running in harness with pre-initialized state
+    if (typeof window !== 'undefined' && window.GreenhouseNeuroConfig) {
+        return window;
+    }
+
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
+
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console,
+        performance: { now: () => Date.now() },
+        requestAnimationFrame: (cb) => setTimeout(cb, 16),
         addEventListener: () => { },
-        getContext: () => ({
-            save: () => { },
-            restore: () => { },
-            translate: () => { },
-            rotate: () => { },
-            scale: () => { },
-            beginPath: () => { },
-            moveTo: () => { },
-            lineTo: () => { },
-            stroke: () => { },
-            fill: () => { },
-            rect: () => { },
-            clip: () => { },
-            fillText: () => { },
-            measureText: () => ({ width: 0 }),
-            createLinearGradient: () => ({ addColorStop: () => { } }),
-            clearRect: () => { },
-            fillRect: () => { },
-            strokeRect: () => { }
-        }),
-        width: 800,
-        height: 600,
-        getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
-    }),
-    createElement: () => ({
-        getContext: () => ({})
-    })
+        document: {
+            getElementById: (id) => ({
+                addEventListener: () => { },
+                getContext: () => ({
+                    save: () => { },
+                    restore: () => { },
+                    translate: () => { },
+                    rotate: () => { },
+                    scale: () => { },
+                    beginPath: () => { },
+                    moveTo: () => { },
+                    lineTo: () => { },
+                    stroke: () => { },
+                    fill: () => { },
+                    rect: () => { },
+                    clip: () => { },
+                    fillText: () => { },
+                    measureText: () => ({ width: 0 }),
+                    createLinearGradient: () => ({ addColorStop: () => { } }),
+                    clearRect: () => { },
+                    fillRect: () => { },
+                    strokeRect: () => { }
+                }),
+                width: 800,
+                height: 600,
+                getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
+            }),
+            createElement: (tag) => ({
+                tag,
+                tagName: tag.toUpperCase(),
+                getContext: () => ({})
+            })
+        }
+    };
+
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const scripts = ['neuro_config.js', 'neuro_camera_controls.js', 'neuro_ga.js'];
+    scripts.forEach(s => {
+        const code = fs.readFileSync(path.join(__dirname, '../../docs/js', s), 'utf8');
+        vm.runInContext(code, context);
+    });
+
+    return context;
 };
-global.addEventListener = () => { };
-global.console = console;
-global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-// --- Load Dependencies ---
-loadScript('neuro_config.js');
-loadScript('neuro_camera_controls.js');
-loadScript('neuro_ga.js');
-
-// --- Test Suites ---
 
 TestFramework.describe('Neuro Page Models', () => {
 
-    // 1. Neuro Config Tests
+    let env;
+
+    TestFramework.beforeEach(() => {
+        env = createEnv();
+    });
+
     TestFramework.describe('GreenhouseNeuroConfig', () => {
         TestFramework.it('should initialize with default values', () => {
-            assert.isDefined(window.GreenhouseNeuroConfig);
-            const config = window.GreenhouseNeuroConfig;
+            assert.isDefined(env.window.GreenhouseNeuroConfig);
+            const config = env.window.GreenhouseNeuroConfig;
             assert.isDefined(config.camera);
         });
 
         TestFramework.it('should get configuration values', () => {
-            const config = window.GreenhouseNeuroConfig;
-            // Assuming 'simulation.speed' exists based on typical config structure
-            // If not, this test might fail, but serves as a template
-            const val = config.get('simulation.speed');
-            // We assert it doesn't throw, value might be undefined if key doesn't exist
-            // Let's check a known key if possible. 
-            // Usually 'camera' or 'simulation' exists.
+            const config = env.window.GreenhouseNeuroConfig;
             assert.isDefined(config.get);
         });
     });
 
-    // 2. Neuro Camera Controls Tests
     TestFramework.describe('GreenhouseNeuroCameraControls', () => {
         let controller;
         let mockCamera;
@@ -89,11 +102,9 @@ TestFramework.describe('Neuro Page Models', () => {
 
         TestFramework.beforeEach(() => {
             mockCamera = { x: 0, y: 0, z: -500, rotationX: 0, rotationY: 0, rotationZ: 0 };
-            mockCanvas = document.getElementById('canvas');
-            const config = window.GreenhouseNeuroConfig;
-
-            // It's a singleton object, not a class
-            controller = window.GreenhouseNeuroCameraControls;
+            mockCanvas = env.document.getElementById('canvas');
+            const config = env.window.GreenhouseNeuroConfig;
+            controller = env.window.GreenhouseNeuroCameraControls;
             controller.init(mockCanvas, mockCamera, config);
         });
 
@@ -115,16 +126,15 @@ TestFramework.describe('Neuro Page Models', () => {
         });
     });
 
-    // 3. Neuro Genetic Algorithm Tests
     TestFramework.describe('NeuroGA', () => {
         TestFramework.it('should initialize', () => {
-            assert.isDefined(window.NeuroGA);
-            const ga = new window.NeuroGA();
+            assert.isDefined(env.window.NeuroGA);
+            const ga = new env.window.NeuroGA();
             assert.isDefined(ga);
         });
 
         TestFramework.it('should create random genome', () => {
-            const ga = new window.NeuroGA();
+            const ga = new env.window.NeuroGA();
             ga.init({ bounds: { x: 100, y: 100, z: 100 } });
             const genome = ga.createRandomGenome();
             assert.isDefined(genome);
@@ -135,5 +145,8 @@ TestFramework.describe('Neuro Page Models', () => {
 
 });
 
-// Run the tests
-TestFramework.run();
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

@@ -3,26 +3,42 @@
  * @description Unit tests for Neuro Genetic Algorithm and Core Logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
 
-// --- Load Script ---
-const filePath = path.join(__dirname, '../../docs/js/neuro_ga.js');
-const code = fs.readFileSync(filePath, 'utf8');
-vm.runInThisContext(code);
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console
+    };
+
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const filePath = path.join(__dirname, '../../docs/js/neuro_ga.js');
+    const code = fs.readFileSync(filePath, 'utf8');
+    vm.runInContext(code, context);
+
+    return context;
+};
 
 TestFramework.describe('Neuro Genetic Algorithm (Unit)', () => {
 
     let GA;
 
     TestFramework.beforeEach(() => {
-        GA = new window.NeuroGA();
+        const env = createEnv();
+        GA = new env.window.NeuroGA();
         GA.init({ populationSize: 10 });
     });
 
@@ -70,8 +86,7 @@ TestFramework.describe('Neuro Genetic Algorithm (Unit)', () => {
             const p2 = GA.population[1];
             const child = GA.crossover(p1, p2);
 
-            assert.equal(child.neurons.length, p1.neurons.length); // neurons length is fixed in mock
-            // Verify IDs are fixed
+            assert.equal(child.neurons.length, p1.neurons.length);
             assert.equal(child.neurons[0].id, 0);
             assert.equal(child.neurons[child.neurons.length - 1].id, child.neurons.length - 1);
         });
@@ -80,7 +95,6 @@ TestFramework.describe('Neuro Genetic Algorithm (Unit)', () => {
             const genome = GA.createRandomGenome();
             const originalX = genome.neurons[1].x;
 
-            // Force mutation
             GA.mutationRate = 1.0;
             GA.mutate(genome);
 
@@ -91,6 +105,8 @@ TestFramework.describe('Neuro Genetic Algorithm (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

@@ -3,54 +3,82 @@
  * @description Unit tests for Pathway Viewer and Metabolic Logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    querySelector: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
-    querySelectorAll: () => [],
-    getElementById: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
-    createElement: () => ({
-        getContext: () => ({ fillRect: () => { }, clearRect: () => { }, beginPath: () => { }, arc: () => { }, fill: () => { }, stroke: () => { }, save: () => { }, restore: () => { } }),
-        width: 800, height: 600, addEventListener: () => { },
-        appendChild: () => { },
-        setAttribute: () => { },
-        style: {}
-    }),
-    body: { appendChild: () => { } },
-    head: { appendChild: () => { } },
-    readyState: 'complete'
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
+
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console,
+        requestAnimationFrame: () => { },
+        performance: { now: () => Date.now() },
+        navigator: { userAgent: 'node' },
+        document: {
+            querySelector: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
+            querySelectorAll: () => [],
+            getElementById: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
+            createElement: (tag) => ({
+                tag,
+                tagName: tag.toUpperCase(),
+                getContext: () => ({
+                    fillRect: () => { },
+                    clearRect: () => { },
+                    beginPath: () => { },
+                    arc: () => { },
+                    fill: () => { },
+                    stroke: () => { },
+                    save: () => { },
+                    restore: () => { },
+                    measureText: () => ({ width: 50 }),
+                    fillText: () => { }
+                }),
+                width: 800, height: 600, addEventListener: () => { },
+                appendChild: () => { },
+                setAttribute: () => { },
+                style: {}
+            }),
+            body: { appendChild: () => { } },
+            head: { appendChild: () => { } },
+            readyState: 'complete'
+        },
+        GreenhouseUtils: {
+            loadScript: async () => { },
+            observeAndReinitializeApplication: () => { },
+            startSentinel: () => { }
+        }
+    };
+
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const scripts = ['pathway.js', 'pathway_viewer.js'];
+    scripts.forEach(s => {
+        const code = fs.readFileSync(path.join(__dirname, '../../docs/js', s), 'utf8');
+        vm.runInContext(code, context);
+    });
+
+    return context;
 };
-global.console = { log: console.log, error: () => { }, warn: () => { } };
-global.requestAnimationFrame = () => { };
-global.performance = { now: () => Date.now() };
-global.navigator = { userAgent: 'node' };
-
-// --- Script Loading Helper ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-// --- Load Dependencies ---
-global.window.GreenhouseUtils = {
-    loadScript: async () => { },
-    observeAndReinitializeApplication: () => { },
-    startSentinel: () => { }
-};
-
-loadScript('pathway.js');
-loadScript('pathway_viewer.js');
 
 TestFramework.describe('Pathway Viewer (Unit)', () => {
 
-    const Viewer = global.window.GreenhousePathwayViewer;
+    let env;
+    let Viewer;
+
+    TestFramework.beforeEach(() => {
+        env = createEnv();
+        Viewer = env.window.GreenhousePathwayViewer;
+    });
 
     TestFramework.it('should define Viewer object', () => {
         assert.isDefined(Viewer);
@@ -59,14 +87,11 @@ TestFramework.describe('Pathway Viewer (Unit)', () => {
     TestFramework.describe('Dynamic Anchors', () => {
         TestFramework.it('should generate 3D layout based on anatomical regions', async () => {
             Viewer.availablePathways = [{ id: 'test', name: 'Test', regions: ['gut', 'raphe'] }];
-
-            // Trigger switchPathway which uses internal PathwayLayout
             await Viewer.switchPathway('test');
 
             assert.isDefined(Viewer.pathwayData);
             assert.greaterThan(Viewer.pathwayData.length, 0);
 
-            // Check if 3D positions are assigned
             const firstNode = Viewer.pathwayData[0];
             assert.isDefined(firstNode.position3D);
             assert.isDefined(firstNode.position3D.x);
@@ -75,7 +100,6 @@ TestFramework.describe('Pathway Viewer (Unit)', () => {
         });
 
         TestFramework.it('should verify anatomical mapping logic', () => {
-            // mapKeggNodeToRegion is public on Viewer
             assert.equal(Viewer.mapKeggNodeToRegion({ name: 'Tryptophan' }, 'tryptophan'), 'gut');
             assert.equal(Viewer.mapKeggNodeToRegion({ name: 'Cortisol' }, 'hpa'), 'adrenals');
             assert.equal(Viewer.mapKeggNodeToRegion({ name: 'CRH' }, 'hpa'), 'hypothalamus');
@@ -84,9 +108,6 @@ TestFramework.describe('Pathway Viewer (Unit)', () => {
 
     TestFramework.describe('Semantic Zoom', () => {
         TestFramework.it('should verify label visibility logic', () => {
-            // The logic is in drawPathwayGraph:
-            // const showLabel = isHighlighted || node.projected.scale > semanticZoomThreshold;
-
             const semanticZoomThreshold = 0.5;
 
             let isHighlighted = false;
@@ -107,6 +128,8 @@ TestFramework.describe('Pathway Viewer (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

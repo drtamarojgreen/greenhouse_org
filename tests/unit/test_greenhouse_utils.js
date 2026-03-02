@@ -3,58 +3,82 @@
  * @description Unit tests for GreenhouseUtils shared library.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.window.dispatchEvent = () => { };
-global.document = {
-    currentScript: null,
-    querySelector: () => null,
-    createElement: (tag) => {
-        const el = {
-            tag,
-            className: '',
-            textContent: '',
-            appendChild: () => { },
-            remove: () => { },
-            addEventListener: () => { },
-            style: {},
-            dataset: {},
-            set src(val) {
-                if (tag === 'script') {
-                    setTimeout(() => { if (el.onload) el.onload(); }, 0);
-                }
-            }
-        };
-        return el;
-    },
-    body: { appendChild: () => { } },
-    head: { appendChild: () => { } }
-};
-global.MutationObserver = class {
-    constructor(cb) { this.cb = cb; }
-    observe() { }
-    disconnect() { }
-};
-global.console = console;
-global.fetch = () => Promise.resolve({ ok: true, text: () => Promise.resolve('console.log("loaded");') });
-global.Blob = class { };
-global.URL = { createObjectURL: () => 'blob:url', revokeObjectURL: () => { } };
-global.CustomEvent = class { };
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
 
-// --- Load Script ---
-const filePath = path.join(__dirname, '../../docs/js/GreenhouseUtils.js');
-const code = fs.readFileSync(filePath, 'utf8');
-vm.runInThisContext(code);
+    const mockWindow = {
+        innerWidth: 1200,
+        navigator: { userAgent: 'Desktop', maxTouchPoints: 0 },
+        location: { pathname: '/', search: '', hostname: 'localhost' },
+        dispatchEvent: () => { },
+        addEventListener: () => { },
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        fetch: () => Promise.resolve({ ok: true, text: () => Promise.resolve('console.log("loaded");') }),
+        Blob: class { },
+        URL: { createObjectURL: () => 'blob:url', revokeObjectURL: () => { } },
+        CustomEvent: class { },
+        MutationObserver: class {
+            constructor(cb) { this.cb = cb; }
+            observe() { }
+            disconnect() { }
+        },
+        console: console,
+        document: {
+            currentScript: null,
+            querySelector: () => null,
+            createElement: (tag) => {
+                const el = {
+                    tag,
+                    className: '',
+                    textContent: '',
+                    appendChild: () => { },
+                    remove: () => { },
+                    addEventListener: () => { },
+                    style: {},
+                    dataset: {},
+                    classList: { add: () => { }, remove: () => { } },
+                    set src(val) {
+                        if (tag === 'script') {
+                            setTimeout(() => { if (el.onload) el.onload(); }, 0);
+                        }
+                    }
+                };
+                return el;
+            },
+            body: { appendChild: () => { } },
+            head: { appendChild: () => { } }
+        }
+    };
+
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const filePath = path.join(__dirname, '../../docs/js/GreenhouseUtils.js');
+    const code = fs.readFileSync(filePath, 'utf8');
+    vm.runInContext(code, context);
+
+    return context;
+};
 
 TestFramework.describe('GreenhouseUtils (Unit)', () => {
+    let env;
+    let Utils;
 
-    const Utils = global.window.GreenhouseUtils;
+    TestFramework.beforeEach(() => {
+        env = createEnv();
+        Utils = env.window.GreenhouseUtils;
+    });
 
     TestFramework.it('should initialize app state', () => {
         assert.isDefined(Utils.appState);
@@ -125,6 +149,8 @@ TestFramework.describe('GreenhouseUtils (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

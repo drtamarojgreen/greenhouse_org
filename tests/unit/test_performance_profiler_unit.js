@@ -3,40 +3,55 @@
  * @description Unit tests for the Performance Profiler utility.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.performance = {
-    now: () => Date.now(),
-    memory: {
-        usedJSHeapSize: 100 * 1048576,
-        jsHeapSizeLimit: 2000 * 1048576
-    }
-};
-global.document = {
-    currentScript: null,
-    createElement: () => ({ style: {}, appendChild: () => { } }),
-    getElementById: () => null,
-    body: { appendChild: () => { } }
-};
-global.requestAnimationFrame = (cb) => { setTimeout(cb, 16); };
-global.console = { log: () => { } };
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
 
-// --- Load Script ---
-const filePath = path.join(__dirname, '../../docs/js/performance_profiler.js');
-const code = fs.readFileSync(filePath, 'utf8');
-vm.runInThisContext(code);
+    const mockWindow = {
+        performance: {
+            now: () => Date.now(),
+            memory: {
+                usedJSHeapSize: 100 * 1048576,
+                jsHeapSizeLimit: 2000 * 1048576
+            }
+        },
+        document: {
+            currentScript: null,
+            createElement: () => ({ style: {}, appendChild: () => { } }),
+            getElementById: () => null,
+            body: { appendChild: () => { } }
+        },
+        requestAnimationFrame: (cb) => { setTimeout(cb, 16); },
+        console: { log: () => { } },
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Map: Map,
+        Set: Set
+    };
+
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const filePath = path.join(__dirname, '../../docs/js/performance_profiler.js');
+    const code = fs.readFileSync(filePath, 'utf8');
+    vm.runInContext(code, context);
+
+    return context;
+};
 
 TestFramework.describe('Performance Profiler (Unit)', () => {
-
-    const Profiler = global.window.GreenhouseProfiler;
+    let env;
+    let Profiler;
 
     TestFramework.beforeEach(() => {
+        env = createEnv();
+        Profiler = env.window.GreenhouseProfiler;
         Profiler.isRunning = false;
         Profiler.warnings = [];
         Profiler.memoryUsage = [];
@@ -67,7 +82,7 @@ TestFramework.describe('Performance Profiler (Unit)', () => {
     });
 
     TestFramework.it('should detect high memory usage', () => {
-        global.window.performance.memory.usedJSHeapSize = 1900 * 1048576; // 95% of limit
+        env.window.performance.memory.usedJSHeapSize = 1900 * 1048576; // 95% of limit
         Profiler.checkHealth();
         assert.isTrue(Profiler.warnings.some(w => w.includes('High Memory')));
     });
@@ -83,6 +98,8 @@ TestFramework.describe('Performance Profiler (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

@@ -30,9 +30,10 @@ class TestFramework {
    * Create a test suite
    */
   describe(suiteName, suiteFunction) {
+    const parentSuite = this.currentSuite;
     const suite = {
       name: suiteName,
-      parent: this.currentSuite,
+      parent: parentSuite,
       tests: [],
       beforeEach: [],
       afterEach: [],
@@ -46,7 +47,6 @@ class TestFramework {
     };
 
     this.suites.push(suite);
-    const parentSuite = this.currentSuite;
     this.currentSuite = suite;
 
     // Execute the suite function to register tests
@@ -218,31 +218,23 @@ class TestFramework {
   }
 
   /**
-   * Get all hooks of a certain type for a suite and its parents
-   */
-  getHooks(suite, type) {
-    let hooks = [];
-    let current = suite;
-    while (current) {
-      hooks = [...current[type], ...hooks];
-      current = current.parent;
-    }
-    if (type === 'beforeEach') hooks = [...this.beforeEachHooks, ...hooks];
-    if (type === 'afterEach') hooks = [...hooks, ...this.afterEachHooks];
-    if (type === 'beforeAll') hooks = [...this.beforeAllHooks, ...hooks];
-    if (type === 'afterAll') hooks = [...hooks, ...this.afterAllHooks];
-    return hooks;
-  }
-
-  /**
    * Run a single test
    */
   async runTest(test, suite) {
     const startTime = Date.now();
 
     try {
+      // Collect all beforeEach hooks from parents
+      const beforeEachHooks = [...this.beforeEachHooks];
+      const suites = [];
+      let s = suite;
+      while (s) {
+        suites.unshift(s);
+        s = s.parent;
+      }
+      suites.forEach(s => beforeEachHooks.push(...s.beforeEach));
+
       // Run beforeEach hooks
-      const beforeEachHooks = this.getHooks(suite, 'beforeEach');
       for (const hook of beforeEachHooks) {
         await hook();
       }
@@ -276,8 +268,16 @@ class TestFramework {
         }
       }
     } finally {
-      // Run afterEach hooks
-      const afterEachHooks = this.getHooks(suite, 'afterEach');
+      // Run afterEach hooks in reverse order
+      const afterEachHooks = [...this.afterEachHooks];
+      let s2 = suite;
+      const afterSuites = [];
+      while (s2) {
+        afterSuites.push(s2);
+        s2 = s2.parent;
+      }
+      afterSuites.forEach(s => afterEachHooks.push(...s.afterEach));
+
       for (const hook of afterEachHooks) {
         try {
           await hook();
@@ -294,8 +294,6 @@ class TestFramework {
    * Run a function with timeout
    */
   runWithTimeout(fn, timeout) {
-    // Check if setTimeout is mocked to execute immediately (like in some of our tests)
-    // or if it's the real one.
     return new Promise((resolve, reject) => {
       let isResolved = false;
       const timer = setTimeout(() => {
@@ -312,21 +310,21 @@ class TestFramework {
         else resolve();
       };
 
-      // Support for (done) callback
-      if (fn.length > 0) {
-        try {
+      try {
+        if (fn.length > 0) {
+          // Function expects a 'done' callback
           fn(done);
-        } catch (error) {
-          done(error);
-        }
-      } else {
-        Promise.resolve(fn())
-          .then(() => {
+        } else {
+          // Synchronous or Promise-returning function
+          const result = fn();
+          if (result && typeof result.then === 'function') {
+            result.then(() => done(), (err) => done(err));
+          } else {
             done();
-          })
-          .catch((error) => {
-            done(error);
-          });
+          }
+        }
+      } catch (error) {
+        done(error);
       }
     });
   }
@@ -434,6 +432,7 @@ class TestFramework {
 
 // Create singleton instance
 const testFramework = new TestFramework();
+testFramework.TestFramework = TestFramework; // Allow access to class via instance
 
 // Bind methods to the instance to allow for destructuring in tests
 testFramework.describe = testFramework.describe.bind(testFramework);
@@ -446,22 +445,16 @@ testFramework.beforeAll = testFramework.beforeAll.bind(testFramework);
 testFramework.afterAll = testFramework.afterAll.bind(testFramework);
 testFramework.run = testFramework.run.bind(testFramework);
 
-// Ensure the class is always available on the instance for testing/isolation
-testFramework.TestFramework = TestFramework;
-
 // Export for use in tests
 if (typeof module !== 'undefined' && module.exports) {
-  try {
-    testFramework.ResourceReporter = require('./resource_reporter.js');
-  } catch (e) {
-    // Resource reporter might not be available in all environments
-  }
+  testFramework.ResourceReporter = require('./resource_reporter.js');
   module.exports = testFramework;
 }
 
 // Make available globally
 if (typeof window !== 'undefined') {
   window.TestFramework = testFramework;
+  window.TestFrameworkClass = TestFramework; // Export the class itself for constructor use
 }
 
 console.log('[Test Framework] Lightweight testing framework loaded');

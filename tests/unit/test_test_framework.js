@@ -7,7 +7,6 @@
 // Load assertion library and test framework
 const { assert } = require('../utils/assertion_library.js');
 const Runner = require('../utils/test_framework.js');
-const TestFrameworkClass = Runner.TestFramework;
 
 // Create a new test suite using the Runner
 Runner.describe('Test Framework Core', () => {
@@ -16,7 +15,9 @@ Runner.describe('Test Framework Core', () => {
 
   Runner.beforeEach(() => {
     // Create a fresh instance for each test
-    tf = new TestFrameworkClass();
+    // In some environments, TestFramework might be on window or passed as a class
+    const TFClass = Runner.TestFramework || (typeof TestFrameworkClass !== 'undefined' ? TestFrameworkClass : Runner.constructor);
+    tf = new TFClass();
   });
 
   Runner.it('should create a test suite with describe', () => {
@@ -152,4 +153,6 @@ Runner.describe('Test Framework Core', () => {
 });
 
 // Run the tests for the framework itself
-Runner.run();
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    Runner.run();
+}

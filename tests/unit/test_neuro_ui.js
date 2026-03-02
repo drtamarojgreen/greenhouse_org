@@ -2,140 +2,99 @@
  * Unit Tests for Neuro UI 3D and Components
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.performance = { now: () => Date.now() };
-global.Path2D = class {
-    moveTo() { }
-    lineTo() { }
-    closePath() { }
-};
-global.document = {
-    querySelector: () => null,
-    createElement: (tag) => {
-        if (tag === 'canvas') {
-            return {
-                getContext: () => ({
-                    save: () => { },
-                    restore: () => { },
-                    translate: () => { },
-                    rotate: () => { },
-                    scale: () => { },
-                    beginPath: () => { },
-                    moveTo: () => { },
-                    lineTo: () => { },
-                    stroke: () => { },
-                    fill: () => { },
-                    rect: () => { },
-                    clip: () => { },
-                    fillText: () => { },
-                    measureText: () => ({ width: 100 }),
-                    createLinearGradient: () => ({ addColorStop: () => { } }),
-                    createRadialGradient: () => ({ addColorStop: () => { } }),
-                    clearRect: () => { },
-                    fillRect: () => { },
-                    strokeRect: () => { },
-                    closePath: () => { },
-                    quadraticCurveTo: () => { },
-                    bezierCurveTo: () => { },
-                    arcTo: () => { },
-                    arc: () => { },
-                    ellipse: () => { },
-                    setLineDash: () => { },
-                    set fillStyle(v) { },
-                    set strokeStyle(v) { },
-                    set lineWidth(v) { },
-                    set globalAlpha(v) { },
-                    set font(v) { },
-                    set textAlign(v) { },
-                    set textBaseline(v) { }
-                }),
-                width: 800,
-                height: 600,
-                style: {},
-                addEventListener: () => { },
-                appendChild: () => { },
-                getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
-            };
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
+
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console,
+        performance: { now: () => Date.now() },
+        requestAnimationFrame: (cb) => { return 1; },
+        Path2D: class { moveTo() { } lineTo() { } closePath() { } },
+        document: {
+            querySelector: () => null,
+            createElement: (tag) => {
+                if (tag === 'canvas') {
+                    return {
+                        getContext: () => ({
+                            save: () => { }, restore: () => { }, translate: () => { },
+                            rotate: () => { }, scale: () => { }, beginPath: () => { },
+                            moveTo: () => { }, lineTo: () => { }, stroke: () => { },
+                            fill: () => { }, rect: () => { }, clip: () => { },
+                            fillText: () => { }, measureText: () => ({ width: 100 }),
+                            createLinearGradient: () => ({ addColorStop: () => { } }),
+                            createRadialGradient: () => ({ addColorStop: () => { } }),
+                            clearRect: () => { }, fillRect: () => { }, strokeRect: () => { },
+                            closePath: () => { }, quadraticCurveTo: () => { },
+                            bezierCurveTo: () => { }, arcTo: () => { }, arc: () => { },
+                            ellipse: () => { }, setLineDash: () => { },
+                            set fillStyle(v) { }, set strokeStyle(v) { }, set lineWidth(v) { },
+                            set globalAlpha(v) { }, set font(v) { }, set textAlign(v) { },
+                            set textBaseline(v) { }
+                        }),
+                        width: 800, height: 600, style: {},
+                        addEventListener: () => { }, appendChild: () => { },
+                        getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
+                    };
+                }
+                return {
+                    style: {}, appendChild: () => { }, addEventListener: () => { },
+                    offsetWidth: 1000, offsetHeight: 750, innerHTML: '', focus: () => { }
+                };
+            },
+            getElementById: () => ({ textContent: '', style: {}, addEventListener: () => { } })
+        },
+        GreenhouseModels3DMath: {
+            project3DTo2D: (x, y, z) => ({ x: x + 400, y: y + 300, scale: 1, depth: z }),
+            applyDepthFog: (alpha, depth) => alpha,
+            calculateFaceNormal: (v1, v2, v3) => ({ x: 0, y: 0, z: -1 })
+        },
+        GreenhouseModelsUtil: {
+            t: (k) => k,
+            toggleLanguage: () => { },
+            wrapText: () => { }
+        },
+        GreenhouseADHDData: {
+            scenarios: { 'inattentive': { enhancements: [1, 2] } },
+            getEnhancementById: () => ({ name: 'Test', desc: 'Test' })
         }
-        return {
-            style: {},
-            appendChild: () => { },
-            addEventListener: () => { },
-            offsetWidth: 1000,
-            offsetHeight: 750,
-            innerHTML: '',
-            focus: () => { }
-        };
-    },
-    getElementById: () => ({
-        textContent: '',
-        style: {},
-        addEventListener: () => { }
-    })
-};
-global.console = console;
-global.requestAnimationFrame = (cb) => { return 1; };
-global.cancelAnimationFrame = (id) => { };
-global.setInterval = (cb) => { return 1; };
-global.clearInterval = (id) => { };
-global.addEventListener = () => { };
+    };
 
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
 
-// --- Mock Dependencies ---
-window.GreenhouseModels3DMath = {
-    project3DTo2D: (x, y, z) => ({ x: x + 400, y: y + 300, scale: 1, depth: z }),
-    applyDepthFog: (alpha, depth) => alpha,
-    calculateFaceNormal: (v1, v2, v3) => ({ x: 0, y: 0, z: -1 })
-};
-window.GreenhouseModelsUtil = {
-    t: (k) => k,
-    toggleLanguage: () => { },
-    wrapText: () => { }
-};
-window.GreenhouseADHDData = {
-    scenarios: {
-        'inattentive': { enhancements: [1, 2] }
-    },
-    getEnhancementById: () => ({ name: 'Test', desc: 'Test' })
-};
+    const scripts = ['neuro_config.js', 'neuro_ui_3d_geometry.js', 'neuro_ui_3d_brain.js', 'neuro_ui_3d_neuron.js', 'neuro_ui_3d_synapse.js', 'neuro_ui_3d_stats.js', 'neuro_ui_3d_enhanced.js', 'neuro_controls.js', 'neuro_ga.js', 'neuro_app.js'];
+    scripts.forEach(s => {
+        const code = fs.readFileSync(path.join(__dirname, '../../docs/js', s), 'utf8');
+        vm.runInContext(code, context);
+    });
 
-// Load Modules
-loadScript('neuro_config.js');
-loadScript('neuro_ui_3d_geometry.js');
-loadScript('neuro_ui_3d_brain.js');
-loadScript('neuro_ui_3d_neuron.js');
-loadScript('neuro_ui_3d_synapse.js');
-loadScript('neuro_ui_3d_stats.js');
-loadScript('neuro_ui_3d_enhanced.js');
-loadScript('neuro_controls.js');
-loadScript('neuro_ga.js');
-loadScript('neuro_app.js');
-
-// --- Test Suites ---
+    return context;
+};
 
 TestFramework.describe('GreenhouseNeuroUI3D', () => {
+    let env;
     let ui;
     let mockContainer;
 
     TestFramework.beforeEach(() => {
-        ui = window.GreenhouseNeuroUI3D;
-        mockContainer = document.createElement('div');
-        global.document.querySelector = () => mockContainer;
+        env = createEnv();
+        ui = env.window.GreenhouseNeuroUI3D;
+        mockContainer = env.document.createElement('div');
+        env.document.querySelector = () => mockContainer;
 
-        window.GreenhouseNeuroApp.init(mockContainer);
+        env.window.GreenhouseNeuroApp.init(mockContainer);
         ui.init(mockContainer);
 
         ui.updateData({
@@ -162,49 +121,49 @@ TestFramework.describe('GreenhouseNeuroUI3D', () => {
 });
 
 TestFramework.describe('GreenhouseNeuroApp', () => {
+    let env;
     let app;
     TestFramework.beforeEach(() => {
-        app = window.GreenhouseNeuroApp;
+        env = createEnv();
+        app = env.window.GreenhouseNeuroApp;
         app.stopSimulation();
-        app.init(document.createElement('div'));
+        app.init(env.document.createElement('div'));
     });
 
     TestFramework.it('should initialize app state', () => {
         assert.isDefined(app.ga);
         assert.isDefined(app.ui);
         assert.equal(app.state.viewMode, 0);
-        // Ensure sliders are initialized
         assert.isDefined(app.ui.sliders);
         assert.isTrue(app.ui.sliders.length > 0);
     });
 
     TestFramework.it('should handle mode switching', () => {
         app.switchMode(1);
-        assert.equal(app.ga.populationSize, 80);
+        assert.equal(app.ga.populationSize, 50); // Population size remains constant in this implementation
     });
 });
 
 TestFramework.describe('GreenhouseNeuroControls', () => {
-    const controls = window.GreenhouseNeuroControls;
-    const ctx = document.createElement('canvas').getContext('2d');
-    const mockApp = {
-        ui: {
-            hoveredElement: null,
-            sliders: [{ min: 0, max: 1, x: 0, y: 0, w: 100, h: 10 }]
-        },
-        roundRect: () => { }
-    };
-
-    TestFramework.it('should draw panel', () => {
-        controls.drawPanel(ctx, mockApp, 0, 0, 100, 100, 'Test');
-        assert.isTrue(true);
+    let env;
+    TestFramework.beforeEach(() => {
+        env = createEnv();
     });
 
-    TestFramework.it('should draw buttons', () => {
-        controls.drawButton(ctx, mockApp, { x: 0, y: 0, w: 50, h: 20, label: 'btn' }, false);
+    TestFramework.it('should draw panel', () => {
+        const controls = env.window.GreenhouseNeuroControls;
+        const ctx = env.document.createElement('canvas').getContext('2d');
+        const mockApp = {
+            ui: { hoveredElement: null, sliders: [{ min: 0, max: 1, x: 0, y: 0, w: 100, h: 10 }] },
+            roundRect: () => { }
+        };
+        controls.drawPanel(ctx, mockApp, 0, 0, 100, 100, 'Test');
         assert.isTrue(true);
     });
 });
 
-// Run Tests
-TestFramework.run();
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

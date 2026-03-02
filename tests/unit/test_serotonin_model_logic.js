@@ -3,109 +3,116 @@
  * @description Unit tests for Serotonin Structural Model logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    currentScript: {
-        getAttribute: () => './'
-    },
-    querySelector: (selector) => {
-        return {
-            getBoundingClientRect: () => ({ width: 800, height: 600, left: 0, top: 0 }),
-            innerHTML: '',
-            appendChild: () => { },
-            style: {},
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
+
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console,
+        navigator: { userAgent: 'node' },
+        performance: { now: () => Date.now() },
+        requestAnimationFrame: () => { },
+        addEventListener: () => { },
+        document: {
+            currentScript: { getAttribute: () => './' },
+            querySelector: (selector) => {
+                return {
+                    getBoundingClientRect: () => ({ width: 800, height: 600, left: 0, top: 0 }),
+                    innerHTML: '',
+                    appendChild: () => { },
+                    style: {},
+                    addEventListener: () => { }
+                };
+            },
+            getElementById: (id) => {
+                return {
+                    innerHTML: '',
+                    style: {},
+                    appendChild: () => { },
+                    getContext: () => ({})
+                };
+            },
+            createElement: (tag) => {
+                const element = {
+                    tag,
+                    style: {},
+                    getContext: () => ({
+                        save: () => { },
+                        restore: () => { },
+                        translate: () => { },
+                        rotate: () => { },
+                        scale: () => { },
+                        beginPath: () => { },
+                        moveTo: () => { },
+                        lineTo: () => { },
+                        stroke: () => { },
+                        fill: () => { },
+                        rect: () => { },
+                        arc: () => { },
+                        closePath: () => { },
+                        clip: () => { },
+                        fillText: () => { },
+                        measureText: () => ({ width: 50 }),
+                        clearRect: () => { },
+                        fillRect: () => { },
+                        strokeRect: () => { },
+                        drawImage: () => { },
+                        createLinearGradient: () => ({ addColorStop: () => { } }),
+                        createRadialGradient: () => ({ addColorStop: () => { } }),
+                        setLineDash: () => { }
+                    }),
+                    width: 800,
+                    height: 600,
+                    addEventListener: () => { },
+                    appendChild: () => { },
+                    getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
+                };
+                return element;
+            },
+            body: { appendChild: () => { } },
+            head: { appendChild: () => { } },
             addEventListener: () => { }
-        };
-    },
-    getElementById: (id) => {
-        return {
-            innerHTML: '',
-            style: {},
-            appendChild: () => { },
-            getContext: () => ({})
-        };
-    },
-    createElement: (tag) => {
-        const element = {
-            tag,
-            style: {},
-            getContext: () => ({
-                save: () => { },
-                restore: () => { },
-                translate: () => { },
-                rotate: () => { },
-                scale: () => { },
-                beginPath: () => { },
-                moveTo: () => { },
-                lineTo: () => { },
-                stroke: () => { },
-                fill: () => { },
-                rect: () => { },
-                arc: () => { },
-                closePath: () => { },
-                clip: () => { },
-                fillText: () => { },
-                measureText: () => ({ width: 50 }),
-                clearRect: () => { },
-                fillRect: () => { },
-                strokeRect: () => { },
-                drawImage: () => { },
-                createLinearGradient: () => ({ addColorStop: () => { } }),
-                createRadialGradient: () => ({ addColorStop: () => { } }),
-                setLineDash: () => { }
-            }),
-            width: 800,
-            height: 600,
-            addEventListener: () => { },
-            appendChild: () => { },
-            getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
-        };
-        return element;
-    },
-    body: { appendChild: () => { } },
-    head: { appendChild: () => { } },
-    addEventListener: () => { }
-};
-global.navigator = { userAgent: 'node' };
-global.console = {
-    log: console.log,
-    error: () => { },
-    warn: () => { }
-};
-global.requestAnimationFrame = (cb) => { };
-global.performance = { now: () => Date.now() };
+        },
+        GreenhouseUtils: {
+            loadScript: async () => { },
+            observeAndReinitializeApplication: () => { },
+            startSentinel: () => { },
+            appState: { targetSelectorLeft: '#serotonin-app-container', baseUrl: './' }
+        }
+    };
 
-// --- Script Loading Helper ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
 
-// --- Load Serotonin Modules ---
-global.window.GreenhouseUtils = {
-    loadScript: async () => { },
-    observeAndReinitializeApplication: () => { },
-    startSentinel: () => { },
-    appState: { targetSelectorLeft: '#serotonin-app-container', baseUrl: './' }
+    const scripts = ['models_3d_math.js', 'serotonin.js', 'serotonin_receptors.js', 'serotonin_kinetics.js', 'serotonin_signaling.js'];
+    scripts.forEach(s => {
+        const code = fs.readFileSync(path.join(__dirname, '../../docs/js', s), 'utf8');
+        vm.runInContext(code, context);
+    });
+
+    return context;
 };
-
-loadScript('models_3d_math.js');
-loadScript('serotonin.js');
-loadScript('serotonin_receptors.js');
-loadScript('serotonin_kinetics.js');
-loadScript('serotonin_signaling.js');
 
 TestFramework.describe('Serotonin Model Logic (Unit)', () => {
 
-    const G = global.window.GreenhouseSerotonin;
+    let env;
+    let G;
+
+    TestFramework.beforeEach(() => {
+        env = createEnv();
+        G = env.window.GreenhouseSerotonin;
+    });
 
     TestFramework.it('should define core G object', () => {
         assert.isDefined(G);
@@ -155,13 +162,14 @@ TestFramework.describe('Serotonin Model Logic (Unit)', () => {
         TestFramework.it('should update secondary messengers', () => {
             G.Signaling.cAMP = 50;
             G.Signaling.updateSignaling();
-            // Should decay slightly if no activity
             assert.lessThan(G.Signaling.cAMP, 50.1);
         });
     });
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

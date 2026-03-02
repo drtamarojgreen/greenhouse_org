@@ -3,23 +3,49 @@
  * @description Unit tests for the 3D Mathematics Foundation.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
 
-// --- Load Script ---
-const filePath = path.join(__dirname, '../../docs/js/models_3d_math.js');
-const code = fs.readFileSync(filePath, 'utf8');
-vm.runInThisContext(code);
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console,
+        document: {
+            currentScript: null,
+            querySelector: () => null,
+            createElement: () => ({ style: {} }),
+            body: { appendChild: () => { } }
+        }
+    };
+
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const filePath = path.join(__dirname, '../../docs/js/models_3d_math.js');
+    const code = fs.readFileSync(filePath, 'utf8');
+    vm.runInContext(code, context);
+
+    return context;
+};
 
 TestFramework.describe('GreenhouseModels3DMath', () => {
+    let env;
+    let Math3D;
 
-    const Math3D = global.window.GreenhouseModels3DMath;
+    TestFramework.beforeEach(() => {
+        env = createEnv();
+        Math3D = env.window.GreenhouseModels3DMath;
+    });
 
     TestFramework.describe('Basic Translations & Conversions', () => {
         TestFramework.it('should convert degrees to radians', () => {
@@ -44,7 +70,6 @@ TestFramework.describe('GreenhouseModels3DMath', () => {
         TestFramework.it('should rotate a point around X axis', () => {
             const point = { x: 0, y: 10, z: 0 };
             const rotated = Math3D.rotatePoint3D(point, Math.PI / 2, 0, 0);
-            // After 90 deg rotation around X, Y(10) becomes Z(10)
             assert.lessThan(Math.abs(rotated.y), 0.0001);
             assert.lessThan(Math.abs(rotated.z - 10), 0.0001);
         });
@@ -52,14 +77,13 @@ TestFramework.describe('GreenhouseModels3DMath', () => {
         TestFramework.it('should rotate a point around Y axis', () => {
             const point = { x: 10, y: 0, z: 0 };
             const rotated = Math3D.rotatePoint3D(point, 0, Math.PI / 2, 0);
-            // After 90 deg rotation around Y, X(10) becomes Z(-10)
             assert.lessThan(Math.abs(rotated.x), 0.0001);
             assert.lessThan(Math.abs(rotated.z + 10), 0.0001);
         });
     });
 
     TestFramework.describe('Perspective Projection', () => {
-        const camera = { x: 0, y: 0, z: -500, fov: 500 };
+        const camera = { x: 0, y: 0, z: -500, fov: 500, rotationX: 0, rotationY: 0, rotationZ: 0 };
         const projection = { width: 800, height: 600, near: 10, far: 5000 };
 
         TestFramework.it('should project a centered point to the center of screen', () => {
@@ -79,8 +103,6 @@ TestFramework.describe('GreenhouseModels3DMath', () => {
             const cameraWithRot = { ...camera, rotationY: Math.PI / 2 };
             const point = { x: 100, y: 0, z: 0 };
             const result = Math3D.project3DTo2D(point.x, point.y, point.z, cameraWithRot, projection);
-            // Rotating camera 90 deg Y means the point at X:100 is now behind or centered depending on rotation dir
-            // The check is that it doesn't crash and changes coordinates
             assert.notEqual(result.x, 400);
         });
     });
@@ -104,7 +126,6 @@ TestFramework.describe('GreenhouseModels3DMath', () => {
             const p2 = { x: 1, y: 0, z: 0 };
             const p3 = { x: 0, y: 1, z: 0 };
             const normal = Math3D.calculateNormal(p1, p2, p3);
-            // Triangle in XY plane should have normal on Z axis
             assert.equal(normal.x, 0);
             assert.equal(normal.y, 0);
             assert.equal(normal.z, 1);
@@ -120,6 +141,8 @@ TestFramework.describe('GreenhouseModels3DMath', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

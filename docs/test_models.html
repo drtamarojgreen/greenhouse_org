@@ -14,7 +14,12 @@
     <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/model.css">
     <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/models_toc.css">
 
-    <!-- Mandatory Production Scripts -->
+    <!-- Mandatory Test Infrastructure -->
+    <script src="js/assertion_library.js"></script>
+    <script src="js/test_framework.js"></script>
+    <script src="js/model_tests.js"></script>
+
+    <!-- Mandatory Production Scripts (Loader Infrastructure) -->
     <script src="js/GreenhouseDependencyManager.js"></script>
     <script src="js/GreenhouseUtils.js"></script>
     <script src="js/greenhouse.js"></script>
@@ -32,10 +37,11 @@
             z-index: 1000; border-bottom: 2px solid #4ca1af;
         }
         .harness-title { color: #4ca1af; font-size: 24px; font-weight: 700; margin: 0 0 15px 0; }
-        .controls { display: flex; gap: 15px; align-items: center; }
+        .controls { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center; }
         select { padding: 10px 15px; font-size: 15px; border-radius: 6px; border: 1px solid #ddd; width: 320px; outline: none; }
         .btn { padding: 10px 20px; font-size: 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
         #run-suite-tests { background-color: #4ca1af; color: white; }
+        #simulate-react-update { background-color: #e91e63; color: white; }
         #model-container { width: 100%; flex-grow: 1; position: relative; background-color: #fff; padding-top: 20px; }
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -77,6 +83,7 @@
             <option value="stress">Stress Dynamics Model</option>
         </select>
         <button id="run-suite-tests" class="btn">Run Suite Tests</button>
+        <button id="simulate-react-update" class="btn">Simulate React Update</button>
         <button id="clear-results" class="btn" style="background-color: #ff9800; color: white;">Clear Results</button>
         <button id="clear-environment" class="btn">Clear Environment</button>
     </div>
@@ -92,76 +99,210 @@
         const activeLabel = document.getElementById('active-label');
         const loadingOverlay = document.getElementById('loading-overlay');
         const runTestsBtn = document.getElementById('run-suite-tests');
-        const clearResultsBtn = document.getElementById('clear-results');
-        const clearBtn = document.getElementById('clear-environment');
+        const reactUpdateBtn = document.getElementById('simulate-react-update');
 
         let activeTimers = new window.Set();
         let activeIntervals = new window.Set();
-        let activeEventListeners = [];
+
+        function unwrap(obj) {
+            if (!obj) return obj;
+            if (obj.__isProxy) return obj.__target;
+            if (Array.isArray(obj)) return obj.map(unwrap);
+            return obj;
+        }
+
+        function isDOMObject(obj) {
+            if (!obj || typeof obj !== 'object') return false;
+            try {
+                return obj instanceof Node || obj instanceof Window || obj instanceof CanvasRenderingContext2D || obj instanceof Path2D ||
+                       ['Node', 'Element', 'HTMLElement', 'HTMLDivElement', 'HTMLCanvasElement', 'CanvasRenderingContext2D', 'Window', 'Path2D', 'WebGLRenderingContext', 'MutationObserver', 'ResizeObserver', 'IntersectionObserver'].includes(obj.constructor.name);
+            } catch (e) { return false; }
+        }
+
+        function wrapNode(node, ctxTarget) {
+            if (!node || node.__isProxy || typeof node !== 'object') return node;
+            if (!isDOMObject(node)) return node;
+
+            return new Proxy(node, {
+                get(target, prop) {
+                    if (prop === '__isProxy') return true;
+                    if (prop === '__target') return target;
+
+                    const val = target[prop];
+                    if (typeof val === 'function') {
+                        return (...args) => {
+                            const unwrappedArgs = args.map(unwrap);
+                            try {
+                                const result = target[prop].apply(target, unwrappedArgs);
+                                return wrapNode(result, ctxTarget);
+                            } catch (e) {
+                                if (e.name === 'TypeError') {
+                                    const bound = target[prop].bind(target);
+                                    const res = bound(...unwrappedArgs);
+                                    return wrapNode(res, ctxTarget);
+                                }
+                                throw e;
+                            }
+                        };
+                    }
+
+                    if (['parentNode', 'parentElement', 'nextSibling', 'previousSibling', 'firstChild', 'lastChild', 'offsetParent'].includes(prop)) {
+                        return wrapNode(val, ctxTarget);
+                    }
+                    if (['childNodes', 'children'].includes(prop)) {
+                        return Array.from(val).map(n => wrapNode(n, ctxTarget));
+                    }
+                    return val;
+                },
+                set(target, prop, value) {
+                    target[prop] = unwrap(value);
+                    return true;
+                }
+            });
+        }
+
+        function setupPageDOM(modelId) {
+            modelContainer.innerHTML = '';
+            if (!modelId) return;
+
+            const sitePages = document.createElement('div');
+            sitePages.id = 'SITE_PAGES_TRANSITION_GROUP';
+            modelContainer.appendChild(sitePages);
+
+            const section1 = document.createElement('section');
+            section1.className = 'wixui-section';
+            sitePages.appendChild(section1);
+
+            const div1_2 = document.createElement('div');
+            section1.appendChild(document.createElement('div'));
+            section1.appendChild(div1_2);
+
+            const div2_1 = document.createElement('div');
+            div1_2.appendChild(div2_1);
+
+            const section2_1 = document.createElement('section');
+            div2_1.appendChild(section2_1);
+
+            const div3_1 = document.createElement('div');
+            const div3_2 = document.createElement('div');
+            div3_2.id = 'models-app-container';
+            section2_1.appendChild(div3_1);
+            section2_1.appendChild(div3_2);
+
+            if (modelId === 'genetic') {
+                div3_1.appendChild(document.createElement('div'));
+                div3_1.appendChild(document.createElement('div'));
+            }
+
+            const columnStrip = document.createElement('div');
+            columnStrip.className = 'wixui-column-strip';
+            const column1 = document.createElement('div');
+            column1.className = 'wixui-column-strip__column';
+            const column2 = document.createElement('div');
+            column2.className = 'wixui-column-strip__column';
+            columnStrip.appendChild(column1);
+            columnStrip.appendChild(column2);
+            div3_2.appendChild(columnStrip);
+
+            return div3_2;
+        }
 
         function createSandbox(hLog, hError, hWarn, overrides = {}) {
             const sandbox = {
                 module: { exports: {} },
+                exports: {},
                 process: {
                     exit: (code) => hLog("[Harness] Process exit intercepted. Code:", code),
                     env: { NODE_ENV: 'test' },
                     nextTick: (fn) => window.setTimeout(fn, 0)
-                },
+                }
+            };
+            sandbox.module.exports = sandbox.exports;
+
+            const target = {
+                ...sandbox,
                 console: {
                     log: hLog, error: hError, warn: hWarn,
-                    info: console.info.bind(console), debug: console.debug.bind(console), table: console.table.bind(console)
+                    info: (...args) => console.info(...args),
+                    debug: (...args) => console.debug(...args),
+                    table: (...args) => console.table(...args)
                 },
-                Set: window.Set, Map: window.Map, Promise: window.Promise,
-                WeakMap: window.WeakMap, WeakSet: window.WeakSet,
-                Uint8Array: window.Uint8Array, Float32Array: window.Float32Array, Int32Array: window.Int32Array,
-                Audio: window.Audio, Image: window.Image,
-                performance: window.performance, Date: window.Date,
-                innerWidth: window.innerWidth, innerHeight: window.innerHeight,
-                MutationObserver: window.MutationObserver,
-                Node: window.Node,
-                HTMLElement: window.HTMLElement
+                MutationObserver: class {
+                    constructor(cb) { this._obs = new window.MutationObserver(cb); }
+                    observe(t, o) { this._obs.observe(unwrap(t), o); }
+                    disconnect() { this._obs.disconnect(); }
+                    takeRecords() { return this._obs.takeRecords(); }
+                },
+                ResizeObserver: class {
+                    constructor(cb) { this._obs = new window.ResizeObserver(cb); }
+                    observe(t, o) { this._obs.observe(unwrap(t), o); }
+                    unobserve(t) { this._obs.unobserve(unwrap(t)); }
+                    disconnect() { this._obs.disconnect(); }
+                },
+                IntersectionObserver: class {
+                    constructor(cb, o) { this._obs = new window.IntersectionObserver(cb, o); }
+                    observe(t) { this._obs.observe(unwrap(t)); }
+                    unobserve(t) { this._obs.unobserve(unwrap(t)); }
+                    disconnect() { this._obs.disconnect(); }
+                },
+                location: window.location,
+                navigator: window.navigator,
+                fetch: (...args) => window.fetch(...args),
+                setTimeout: (fn, d, ...a) => {
+                    const id = window.setTimeout(() => { activeTimers.delete(id); if (typeof fn === 'function') fn(...a); }, d);
+                    activeTimers.add(id); return id;
+                },
+                clearTimeout: (id) => { window.clearTimeout(id); activeTimers.delete(id); },
+                setInterval: (fn, d, ...a) => {
+                    const id = window.setInterval(fn, d, ...a);
+                    activeIntervals.add(id); return id;
+                },
+                clearInterval: (id) => { window.clearInterval(id); activeIntervals.delete(id); }
             };
 
-            const defaultLocation = {
-                pathname: window.location.pathname,
-                search: '', hash: '', hostname: window.location.hostname,
-                port: window.location.port, protocol: window.location.protocol,
-                origin: window.location.origin, href: window.location.href,
-                assign: () => {}, replace: () => {}, reload: () => {}
-            };
+            const browserGlobals = ['Set', 'Map', 'Promise', 'WeakMap', 'WeakSet', 'Uint8Array', 'Float32Array', 'Int32Array', 'Audio', 'Image', 'performance', 'Date', 'innerWidth', 'innerHeight', 'Node', 'HTMLElement', 'Event', 'CustomEvent', 'XMLHttpRequest', 'AbortController', 'DOMParser', 'Blob', 'URL', 'Path2D', 'CanvasRenderingContext2D', 'matchMedia'];
+            browserGlobals.forEach(g => { if (window[g]) target[g] = window[g]; });
 
-            const defaultNavigator = {
-                userAgent: window.navigator.userAgent,
-                platform: window.navigator.platform,
-                maxTouchPoints: window.navigator.maxTouchPoints || 0,
-                onLine: true
-            };
-
-            sandbox.location = { ...defaultLocation, ...(overrides.location || {}) };
-            sandbox.navigator = { ...defaultNavigator, ...(overrides.navigator || {}) };
-
-            // Apply other overrides
             for (const k in overrides) {
-                if (!['location', 'navigator', 'document', 'window', 'console'].includes(k)) {
-                    sandbox[k] = overrides[k];
-                }
+                target[k] = overrides[k];
             }
-            if (overrides.window && overrides.window !== window) {
-                for (const k in overrides.window) {
-                    if (!['location', 'navigator', 'document', 'window', 'console'].includes(k)) {
-                        sandbox[k] = overrides.window[k];
-                    }
-                }
-            }
-            if (!sandbox.exports) sandbox.exports = sandbox.module.exports;
 
-            const proxy = new Proxy({}, {
-                get(target, prop) {
-                    if (prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis') return proxy;
-                    if (prop === 'document') return sandbox.document;
+            // Document Proxy
+            const docSource = (overrides && overrides.document) ? unwrap(overrides.document) : window.document;
+            target.document = new Proxy(docSource, {
+                get(t, prop) {
                     if (prop === '__isProxy') return true;
-                    if (prop in sandbox) return sandbox[prop];
-                    if (prop in target) return target[prop];
+                    if (prop === '__target') return t;
+                    if (prop === 'currentScript') {
+                        const scripts = document.querySelectorAll('script[data-model-script="true"]');
+                        return scripts[scripts.length - 1] || null;
+                    }
+                    if (prop in target && prop !== 'document') return target[prop];
+
+                    const val = t[prop];
+                    if (typeof val === 'function') {
+                        return (...args) => {
+                            const result = t[prop].apply(t, args.map(unwrap));
+                            return wrapNode(result, target);
+                        };
+                    }
+                    if (['body', 'head', 'documentElement'].includes(prop)) return wrapNode(val, target);
+                    return val;
+                },
+                set(t, prop, value) {
+                    target[prop] = value;
+                    return true;
+                }
+            });
+
+            const proxy = new Proxy(target, {
+                get(t, prop) {
+                    if (prop === '__isProxy') return true;
+                    if (prop === '__target') return t;
+                    if (prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis') return proxy;
+                    if (prop === 'TestFrameworkClass') return window.TestFrameworkClass;
+
+                    if (prop in t) return t[prop];
 
                     const val = window[prop];
                     if (typeof val === 'function' && !/^[A-Z]/.test(prop)) {
@@ -169,78 +310,37 @@
                     }
                     return val;
                 },
-                set(target, prop, value) {
-                    sandbox[prop] = value;
+                set(t, prop, value) {
+                    if (['window', 'global', 'self', 'globalThis'].includes(prop)) return true;
+                    t[prop] = unwrap(value);
                     return true;
                 },
-                has(target, prop) {
-                    return prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis' ||
-                           prop in sandbox || prop in target || prop in window;
-                },
-                getOwnPropertyDescriptor(target, prop) {
-                    if (prop in sandbox) return { configurable: true, enumerable: true, value: sandbox[prop], writable: true };
-                    if (prop in target) return Object.getOwnPropertyDescriptor(target, prop);
-                    const desc = Object.getOwnPropertyDescriptor(window, prop);
-                    if (desc && !desc.configurable) return desc;
-                    return desc;
-                },
-                ownKeys(target) {
-                    const keys = new window.Set([...Object.keys(sandbox), ...Object.keys(target)]);
-                    ['setTimeout', 'clearTimeout'].forEach(k => keys.add(k));
-                    return Array.from(keys);
+                has(t, prop) {
+                    return prop in t || prop in window;
                 }
             });
 
-            sandbox.setTimeout = (fn, d, ...a) => {
-                const id = window.setTimeout(() => { activeTimers.delete(id); if (typeof fn === 'function') fn(...a); }, d);
-                activeTimers.add(id); return id;
-            };
-            sandbox.clearTimeout = (id) => { window.clearTimeout(id); activeTimers.delete(id); };
-            sandbox.setInterval = (fn, d, ...a) => {
-                const id = window.setInterval(fn, d, ...a);
-                activeIntervals.add(id); return id;
-            };
-            sandbox.clearInterval = (id) => { window.clearInterval(id); activeIntervals.delete(id); };
-
-            const docSource = overrides.document || window.document;
-            sandbox.document = new Proxy(docSource, {
-                get(target, prop) {
-                    if (prop in sandbox && prop !== 'document') return sandbox[prop];
-                    const val = target[prop];
-                    if (typeof val === 'function') {
-                        const bound = val.bind(target);
-                        if (prop === 'addEventListener') {
-                            return (t, l, o) => {
-                                activeEventListeners.push({ target, type: t, listener: l, options: o });
-                                return bound(t, l, o);
-                            };
+            if (window.GreenhouseUtils && !target.GreenhouseUtils) {
+                target.GreenhouseUtils = new Proxy(window.GreenhouseUtils, {
+                    get(gTarget, gProp) {
+                        const val = gTarget[gProp];
+                        if (typeof val === 'function') {
+                            return (...args) => val.apply(gTarget, args.map(unwrap));
                         }
-                        return bound;
+                        return val;
                     }
-                    return val;
-                },
-                set(target, prop, value) {
-                    sandbox[prop] = value;
-                    return true;
-                },
-                getOwnPropertyDescriptor(target, prop) {
-                    if (prop in sandbox && prop !== 'document') return { configurable: true, enumerable: true, value: sandbox[prop], writable: true };
-                    const desc = Object.getOwnPropertyDescriptor(target, prop);
-                    if (desc) { desc.configurable = true; return desc; }
-                    return desc;
-                }
-            });
+                });
+            }
 
             return proxy;
         }
 
         async function BeforeTest(mockGlobal, modelId) {
-            const container = document.getElementById('model-container');
-            if (container) container.innerHTML = '';
+            setupPageDOM(modelId);
 
-            mockGlobal.require = (requirePath) => {
+            const requireMock = (requirePath) => {
                 if (requirePath.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
-                if (requirePath.includes('test_framework')) return window.TestFramework;
+                if (requirePath.includes('test_framework')) return mockGlobal.TestFramework || window.TestFramework;
                 if (requirePath === 'perf_hooks') return { performance: window.performance };
                 if (requirePath === 'fs') return {
                     readFileSync: (p) => {
@@ -261,35 +361,88 @@
                     resolve: (...args) => args.join('/').replace(/\/+/g, '/'),
                     dirname: (p) => p.split('/').slice(0, -1).join('/') || '.'
                 };
-                if (requirePath === 'vm') return {
-                    runInContext: (code, context) => {
-                        const fn = new Function("exports", "require", "module", "__filename", "__dirname", "global", "window", "document", "location", "navigator", "with(global) {\n" + code + "\n}");
-                        return fn.call(context, context.module.exports, context.require, context.module, context.__filename || '', context.__dirname || '', context, context, context.document, context.location, context.navigator);
-                    },
-                    runInNewContext: (code, sbox) => {
-                        const context = mockGlobal.require('vm').createContext(sbox);
-                        return mockGlobal.require('vm').runInContext(code, context);
-                    },
-                    runInThisContext: (code) => {
-                        return mockGlobal.require('vm').runInContext(code, mockGlobal);
-                    },
-                    createContext: (sbox) => {
-                        return createSandbox(mockGlobal.console.log, mockGlobal.console.error, mockGlobal.console.warn, sbox || {});
-                    }
-                };
+                if (requirePath === 'vm') {
+                    const vmInternal = {
+                        runInContext: (code, context) => {
+                            const apps = ['GreenhousePatientApp', 'GreenhouseDashboardApp', 'KeggParser', 'GreenhouseSchedulerUI'];
+                            apps.forEach(app => {
+                                const regex = new RegExp(`^const\\s+${app}\\s*=`, 'm');
+                                if (regex.test(code)) {
+                                    code = code.replace(regex, `${app} =`);
+                                }
+                            });
+
+                            const exportCode = `
+                                (function(g) {
+                                    const possibleExports = ['GreenhousePatientApp', 'GreenhouseDashboardApp', 'KeggParser', 'GreenhouseSchedulerUI'];
+                                    possibleExports.forEach(ep => {
+                                        try {
+                                            const val = eval(ep);
+                                            if (typeof val !== 'undefined') g[ep] = val;
+                                        } catch(e) {}
+                                    });
+                                })(global);
+                            `;
+
+                            const fullCode = code + "\n" + exportCode;
+                            const fn = new Function("exports", "require", "module", "__filename", "__dirname", "global", "window", "document", "location", "navigator", "console", "with(global) {\n" + fullCode + "\n}");
+                            const exports = context.module ? context.module.exports : (context.exports || {});
+                            const module = context.module || { exports: exports };
+
+                            const doc = context.document || (context.__target ? context.__target.document : null);
+                            return fn.call(context, exports, context.require, module, context.__filename || '', context.__dirname || '', context, context, doc, context.location, context.navigator, context.console);
+                        },
+                        createContext: (sbox) => {
+                            const inherited = {
+                                TestFrameworkClass: mockGlobal.TestFrameworkClass,
+                                TestFramework: mockGlobal.TestFramework,
+                                assert: mockGlobal.assert,
+                                AssertionError: mockGlobal.AssertionError,
+                                GreenhouseTestSuite: mockGlobal.GreenhouseTestSuite,
+                                document: mockGlobal.document,
+                                location: mockGlobal.location,
+                                navigator: mockGlobal.navigator,
+                                ...sbox
+                            };
+                            const newSandbox = createSandbox(mockGlobal.console.log, mockGlobal.console.error, mockGlobal.console.warn, inherited);
+                            newSandbox.require = requireMock;
+                            return newSandbox;
+                        }
+                    };
+                    vmInternal.runInNewContext = (code, sbox) => {
+                        const context = vmInternal.createContext(sbox);
+                        return vmInternal.runInContext(code, context);
+                    };
+                    vmInternal.runInThisContext = (code) => {
+                        return vmInternal.runInContext(code, mockGlobal);
+                    };
+                    return vmInternal;
+                }
                 return {};
             };
 
+            mockGlobal.require = requireMock;
             mockGlobal.assert = window.assert;
             mockGlobal.AssertionError = window.AssertionError;
-            mockGlobal.TestFramework = window.TestFramework;
-            mockGlobal.TestFrameworkClass = window.TestFramework ? window.TestFramework.TestFramework : null;
+            mockGlobal.TestFrameworkClass = window.TestFrameworkClass;
+            mockGlobal.TestFramework = new window.TestFrameworkClass();
+            mockGlobal.TestFramework.TestFramework = window.TestFrameworkClass;
+            mockGlobal.describe = (...args) => mockGlobal.TestFramework.describe(...args);
+            mockGlobal.it = (...args) => mockGlobal.TestFramework.it(...args);
+            mockGlobal.xit = (...args) => mockGlobal.TestFramework.xit(...args);
+            mockGlobal.fit = (...args) => mockGlobal.TestFramework.fit(...args);
+            mockGlobal.beforeEach = (...args) => mockGlobal.TestFramework.beforeEach(...args);
+            mockGlobal.afterEach = (...args) => mockGlobal.TestFramework.afterEach(...args);
+            mockGlobal.beforeAll = (...args) => mockGlobal.TestFramework.beforeAll(...args);
+            mockGlobal.afterAll = (...args) => mockGlobal.TestFramework.afterAll(...args);
             mockGlobal.GreenhouseTestSuite = window.GreenhouseTestSuite;
 
             if (modelId === 'neuro') {
                 mockGlobal.GreenhouseADHDData = {
-                    scenarios: { "default": { "name": "Standard", "description": "Standard", "levels": {} } },
-                    adhdTraits: { "impulsivity": 0.5, "inattention": 0.5, "hyperactivity": 0.5 }
+                    categories: { symptoms: [{ id: "impulsivity", name: "Impulsivity", description: "Impulsivity" }] },
+                    scenarios: { "default": { "name": "Standard", "description": "Standard", "levels": {}, enhancements: [] } },
+                    adhdTraits: { "impulsivity": 0.5 },
+                    enhancements: {}
                 };
             }
         }
@@ -298,20 +451,6 @@
             activeTimers.forEach(id => window.clearTimeout(id));
             activeIntervals.forEach(id => window.clearInterval(id));
             activeTimers.clear(); activeIntervals.clear();
-            activeEventListeners.forEach(al => { try { al.target.removeEventListener(al.type, al.listener, al.options); } catch (e) {} });
-            activeEventListeners = [];
-            const container = document.getElementById('model-container');
-            if (container) container.innerHTML = '';
-        }
-
-        function clearEnvironment() {
-            modelContainer.innerHTML = '';
-            document.querySelectorAll('script[data-model-script="true"]').forEach(s => s.remove());
-            const overlay = document.getElementById('greenhouse-test-results-overlay');
-            if (overlay) overlay.remove();
-            activeLabel.textContent = 'Active Model: None';
-            modelSelector.value = '';
-            AfterTest();
         }
 
         async function loadModel(modelId) {
@@ -331,17 +470,14 @@
             };
             const model = models[modelId];
             if (!model) return;
-            clearEnvironment();
+
+            document.querySelectorAll('script[data-model-script="true"]').forEach(s => s.remove());
             activeLabel.textContent = `Active Model: ${model.label}`;
-            modelSelector.value = modelId;
             loadingOverlay.style.display = 'flex';
             await new Promise(resolve => setTimeout(resolve, 3000));
             loadingOverlay.style.display = 'none';
 
-            const section = document.createElement('section'); section.className = 'wixui-section';
-            const targetDiv = document.createElement('div'); targetDiv.id = 'model-target';
-            section.appendChild(targetDiv);
-            modelContainer.appendChild(section);
+            setupPageDOM(modelId);
 
             const script = document.createElement('script');
             script.src = `js/${model.js}`;
@@ -349,79 +485,50 @@
             const sel = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
             script.setAttribute('data-target-selector-left', sel);
             script.setAttribute('data-base-url', './');
+
+            if (modelId === 'genetic') {
+                const geneticSelectors = {
+                    genetic: sel,
+                    geneticTitle: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(1)',
+                    geneticParagraph: 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(2)'
+                };
+                script.setAttribute('data-genetic-selectors', JSON.stringify(geneticSelectors));
+            }
+
             document.body.appendChild(script);
+
+            // Manual resilience hooks for models that don't have them in production
+            if (modelId === 'neuro') {
+                const checkReady = setInterval(() => {
+                    if (window.GreenhouseNeuroApp && window.GreenhouseUtils) {
+                        clearInterval(checkReady);
+                        window.GreenhouseUtils.observeAndReinitializeApplication(
+                            document.querySelector(sel),
+                            sel,
+                            window.GreenhouseNeuroApp,
+                            'init'
+                        );
+                        window.GreenhouseUtils.startSentinel(
+                            document.querySelector(sel),
+                            sel,
+                            window.GreenhouseNeuroApp,
+                            'init'
+                        );
+                    }
+                }, 1000);
+            }
         }
 
         modelSelector.addEventListener('change', (e) => loadModel(e.target.value));
-        clearBtn.onclick = clearEnvironment;
 
         runTestsBtn.onclick = async () => {
-            const hLog = console.log.bind(console);
-            const hError = console.error.bind(console);
+            if (window.GreenhouseTestSuite) window.GreenhouseTestSuite.tests = [];
             const modelId = modelSelector.value;
-
-            const loadInfra = ['js/assertion_library.js', 'js/test_framework.js', 'js/model_tests.js'];
-            for (const src of loadInfra) {
-                await new Promise(res => {
-                    const s = document.createElement('script');
-                    s.src = src; s.onload = res; document.body.appendChild(s);
-                });
-            }
-
-            if (window.GreenhouseTestSuite) {
-                window.GreenhouseTestSuite.tests = [];
-                window.GreenhouseTestSuite.runAll = async function() {
-                    hLog(`[Harness] runAll() starting. Total tests: ${this.tests.length}`);
-                    this.isTesting = true;
-                    this.results = [];
-                    for (let test of this.tests) {
-                        try {
-                            const startTime = performance.now();
-                            const result = await test.fn();
-                            const duration = performance.now() - startTime;
-                            this.results.push({ name: test.name, status: 'PASS', duration: duration.toFixed(2) + 'ms', details: result });
-                        } catch (error) {
-                            hError(`[Harness] Test FAILED: ${test.name}`, error);
-                            this.results.push({ name: test.name, status: 'FAIL', error: error.message });
-                        }
-                    }
-                    this.isTesting = false;
-                    this.report();
-                };
-            }
-
-            if (window.TestFramework) {
-                window.TestFramework.reset();
-                const registeredRepoTests = new window.Set();
-                window.TestFramework.it = (name, fn) => {
-                    const suite = window.TestFramework.currentSuite;
-                    const fullName = `[${suite ? suite.name : 'Unit'}] ${name}`;
-                    if (registeredRepoTests.has(fullName)) return;
-                    registeredRepoTests.add(fullName);
-                    if (window.GreenhouseTestSuite) {
-                        window.GreenhouseTestSuite.addTest(fullName, async () => {
-                            if (suite && !suite._beforeAllRun) {
-                                if (suite.beforeAll) for (const h of suite.beforeAll) await h();
-                                suite._beforeAllRun = true;
-                            }
-                            if (suite && suite.beforeEach) for (const h of suite.beforeEach) await h();
-                            try {
-                                if (fn.length > 0) await new Promise((resolve, reject) => fn((err) => err ? reject(err) : resolve()));
-                                else await fn();
-                            } finally {
-                                if (suite && suite.afterEach) for (const h of suite.afterEach) await h();
-                                AfterTest();
-                            }
-                        });
-                    }
-                };
-            }
-
             const testMap = {
                 'neuro': ['test_neuro_page.js', 'test_neuro_logic.js', 'test_neuro_ui.js', 'test_neuro_ga.js', 'test_neuro_app_logic.js', 'test_neuro_performance.js', 'test_neuro_3d_engine.js', 'test_neuro_ui_components.js', 'test_neuro_page_loader.js', 'test_adhd_scenarios.js', 'models/auxiliary/test_neuro_page_full.js', 'models/auxiliary/test_neuro_page_new.js'],
                 'genetic': ['test_genetic_page.js', 'test_genetic_ui.js', 'test_genetic_algo.js', 'test_genetic_helpers.js', 'test_genetic_labels.js', 'test_genetic_visualizations.js', 'test_genetic_3d_projection.js', 'test_genetic_camera_views.js', 'test_genetic_main_camera_controller.js', 'test_genetic_mouse_actual_bug.js', 'test_genetic_mouse_control_independence.js', 'test_genetic_mouse_event_flow.js', 'test_genetic_pip_camera_usage.js', 'test_genetic_pip_controls.js', 'test_genetic_pip_interactions.js', 'test_genetic_rotation_and_camera_positions.js', 'test_genetic_page_loader.js', 'models/auxiliary/test_genetic_page_new.js']
             };
-            const commonTests = ['test_accessibility.js', 'test_assertion_library.js', 'test_dependency_manager.js', 'test_global_ux.js', 'test_greenhouse_utils.js', 'test_labeling_system.js', 'test_models_3d_math.js', 'test_models_toc.js', 'test_models_util.js', 'test_performance_profiler_unit.js', 'test_performance_regression.js', 'test_react_compatibility.js', 'test_test_framework.js', 'test_v8_graph_renderer.js', 'test_mobile_edge_cases.js', 'test_mobile_integration.js', 'test_mobile_model_behaviors.js', 'test_mobile_models_lifecycle.js', 'test_mobile_regression.js', 'test_mobile_typography_contrast.js', 'test_mobile_ui_interactions.js', 'test_mobile_viewer.js', 'test_model_sync.js', 'test_meditation_app.js', 'test_scheduler_logic.js', 'test_tech_canvas.js', 'test_inspiration_logic.js', 'test_patient_app_unit.js', 'test_dashboard_app_unit.js', 'test_kegg_parser.js', 'models/auxiliary/test_models_page_new.js'];
+            const commonTests = ['test_accessibility.js', 'test_assertion_library.js', 'test_dependency_manager.js', 'test_global_ux.js', 'test_greenhouse_utils.js', 'test_labeling_system.js', 'test_models_3d_math.js', 'test_models_toc.js', 'test_models_util.js', 'test_performance_profiler_unit.js', 'test_performance_regression.js', 'test_react_compatibility.js', 'test_test_framework.js', 'test_v8_graph_renderer.js', 'test_mobile_edge_cases.js', 'test_mobile_integration.js', 'test_mobile_model_behaviors.js', 'test_mobile_models_lifecycle.js', 'test_mobile_regression.js', 'test_mobile_typography_contrast.js', 'test_mobile_ui_interactions.js', 'test_mobile_viewer.js', 'test_model_sync.js', 'test_meditation_app.js', 'test_scheduler_logic.js', 'test_tech_canvas.js', 'test_inspiration_logic.js', 'test_patient_app_unit.js', 'test_dashboard_app_unit.js', 'test_kegg_parser.js', 'test_production_resilience.js', 'models/auxiliary/test_models_page_new.js'];
 
             const testFiles = [...(testMap[modelId] || []), ...commonTests];
             for (const file of testFiles) {
@@ -430,21 +537,54 @@
                     if (!response.ok) response = await fetch(`tests/unit/${file}`);
                     if (!response.ok) continue;
                     const code = await response.text();
-                    const currentMockGlobal = createSandbox(hLog, hError, hLog);
+                    const currentMockGlobal = createSandbox(console.log, console.error, console.warn);
                     currentMockGlobal.__filename = file;
                     currentMockGlobal.__dirname = file.split('/').slice(0, -1).join('/') || '.';
                     await BeforeTest(currentMockGlobal, modelId);
 
-                    const vm = currentMockGlobal.require('vm');
-                    try { vm.runInContext(code, currentMockGlobal); }
-                    catch (e) { hError(`[Harness] Execution error in ${file}:`, e); }
-                    hLog(`[Harness] Executed test file: ${file}`);
-                } catch (e) { hError(`[Harness] Failed test file: ${file}`, e); }
+                    try { currentMockGlobal.require('vm').runInContext(code, currentMockGlobal); }
+                    catch (e) { console.error(`[Harness] Execution error in ${file}:`, e); }
+                    console.log(`[Harness] Executed test file: ${file}`);
+
+                    if (currentMockGlobal.TestFramework.suites.length > 0) {
+                        await currentMockGlobal.TestFramework.run();
+                    }
+                } catch (e) { console.error(`[Harness] Failed test file: ${file}`, e); }
             }
 
-            if (window.GreenhouseTestSuite) {
-                await window.GreenhouseTestSuite.runAll();
+            if (window.GreenhouseTestSuite) await window.GreenhouseTestSuite.runAll();
+        };
+
+        reactUpdateBtn.onclick = async () => {
+            console.log("[Harness] Simulating React/Wix DOM Update (Container Replacement)...");
+            const container = document.getElementById('models-app-container');
+            if (!container) {
+                console.error("[Harness] models-app-container not found!");
+                return;
             }
+            const parent = container.parentNode;
+            container.remove();
+            console.log("[Harness] Container removed from DOM.");
+
+            await new Promise(r => setTimeout(r, 1000));
+
+            const newContainer = document.createElement('div');
+            newContainer.id = 'models-app-container';
+            parent.appendChild(newContainer);
+            console.log("[Harness] New container injected. Sentinel should detect this.");
+        };
+
+        document.getElementById('clear-results').onclick = () => {
+            const overlay = document.getElementById('greenhouse-test-results-overlay');
+            if (overlay) overlay.remove();
+        };
+
+        document.getElementById('clear-environment').onclick = () => {
+            modelContainer.innerHTML = '';
+            document.querySelectorAll('script[data-model-script="true"]').forEach(s => s.remove());
+            activeLabel.textContent = 'Active Model: None';
+            modelSelector.value = '';
+            AfterTest();
         };
     })();
 </script>

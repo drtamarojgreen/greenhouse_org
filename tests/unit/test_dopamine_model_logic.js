@@ -3,64 +3,75 @@
  * @description Unit tests for Dopamine Signaling Simulation logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    currentScript: null,
-    querySelector: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
-    createElement: () => ({
-        getContext: () => ({
-            fillRect: () => { },
-            clearRect: () => { },
-            beginPath: () => { },
-            arc: () => { },
-            fill: () => { },
-            stroke: () => { },
-            save: () => { },
-            restore: () => { },
-            createRadialGradient: () => ({ addColorStop: () => { } }),
-            createLinearGradient: () => ({ addColorStop: () => { } }),
-            ellipse: () => { }
-        }),
-        width: 800, height: 600, addEventListener: () => { }
-    }),
-    body: { appendChild: () => { } },
-    head: { appendChild: () => { } }
+const createEnv = () => {
+    const { runInNewContext } = require('vm');
+    const path = require('path');
+    const fs = require('fs');
+
+    const mockWindow = {
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        Map: Map,
+        Set: Set,
+        console: console,
+        performance: { now: () => Date.now() },
+        requestAnimationFrame: () => { },
+        document: {
+            currentScript: null,
+            querySelector: () => ({ appendChild: () => { }, innerHTML: '', style: {} }),
+            createElement: () => ({
+                getContext: () => ({
+                    fillRect: () => { },
+                    clearRect: () => { },
+                    beginPath: () => { },
+                    arc: () => { },
+                    fill: () => { },
+                    stroke: () => { },
+                    save: () => { },
+                    restore: () => { },
+                    createRadialGradient: () => ({ addColorStop: () => { } }),
+                    createLinearGradient: () => ({ addColorStop: () => { } }),
+                    ellipse: () => { }
+                }),
+                width: 800, height: 600, addEventListener: () => { }
+            }),
+            body: { appendChild: () => { } },
+            head: { appendChild: () => { } }
+        },
+        GreenhouseUtils: {
+            loadScript: async () => { },
+            observeAndReinitializeApplication: () => { },
+            startSentinel: () => { }
+        }
+    };
+
+    const vm = require('vm');
+    const context = vm.createContext(mockWindow);
+    context.global = context;
+    context.window = context;
+
+    const scripts = ['models_3d_math.js', 'dopamine.js', 'dopamine_synapse.js', 'dopamine_molecular.js', 'dopamine_controls.js'];
+    scripts.forEach(s => {
+        const code = fs.readFileSync(path.join(__dirname, '../../docs/js', s), 'utf8');
+        vm.runInContext(code, context);
+    });
+
+    return context;
 };
-global.console = { log: console.log, error: () => { }, warn: () => { } };
-global.requestAnimationFrame = () => { };
-global.performance = { now: () => Date.now() };
-global.setTimeout = setTimeout;
-
-// --- Script Loading Helper ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-// --- Load Dependencies ---
-global.window.GreenhouseUtils = {
-    loadScript: async () => { },
-    observeAndReinitializeApplication: () => { },
-    startSentinel: () => { }
-};
-
-loadScript('models_3d_math.js');
-loadScript('dopamine.js');
-loadScript('dopamine_synapse.js');
-loadScript('dopamine_molecular.js');
-loadScript('dopamine_controls.js');
 
 TestFramework.describe('Dopamine Model Logic (Unit)', () => {
 
-    const G = global.window.GreenhouseDopamine;
+    let env;
+    let G;
+
+    TestFramework.beforeEach(() => {
+        env = createEnv();
+        G = env.window.GreenhouseDopamine;
+    });
 
     TestFramework.it('should define core G object', () => {
         assert.isDefined(G);
@@ -80,20 +91,14 @@ TestFramework.describe('Dopamine Model Logic (Unit)', () => {
 
     TestFramework.describe('Synaptic Dynamics', () => {
         TestFramework.it('should handle synaptic updates', () => {
-            const initialCleftCount = G.synapseState.cleftDA.length;
-            // Force a release by increasing releaseRate
             G.synapseState.releaseRate = 1.0;
             G.updateSynapse();
-            // Since release is probabilistic but rate is 1.0, it should likely release
-            // But let's just check if the function runs without error
             assert.isDefined(G.synapseState.cleftDA);
         });
 
         TestFramework.it('should handle synthesis pathway', () => {
-            const initialDA = G.synapseState.synthesis.dopamine;
             G.synapseState.synthesis.tyrosine = 100;
             G.updateSynapse();
-            // Should have some L-DOPA or DA synthesized
             assert.isDefined(G.synapseState.synthesis.ldopa);
         });
     });
@@ -109,6 +114,8 @@ TestFramework.describe('Dopamine Model Logic (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}
