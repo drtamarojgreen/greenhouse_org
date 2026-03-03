@@ -15,8 +15,8 @@
     <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/models_toc.css">
 
     <!-- Mandatory Production Scripts -->
-    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseUtils.js"></script>
     <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseDependencyManager.js"></script>
+    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseUtils.js"></script>
     <script src="https://drtamarojgreen.github.io/greenhouse_org/js/greenhouse.js"></script>
 
     <style>
@@ -396,7 +396,10 @@
                 hError(`[Global Error] ${msg} at ${url}:${line}:${col}`, error);
             };
             window.module = { exports: {} };
-            window.process = { exit: (code) => hLog("[Harness] Process exit intercepted. Code:", code) };
+            window.process = {
+                env: { NODE_ENV: 'test' },
+                exit: (code) => hLog("[Harness] Process exit intercepted. Code:", code)
+            };
             window.__dirname = "";
 
             const mockGlobal = new Proxy(window, {
@@ -405,8 +408,18 @@
                         hWarn(`[Harness] Blocked repo test from overwriting window.${prop}`);
                         return true;
                     }
-                    target[prop] = value;
+                    try {
+                        target[prop] = value;
+                    } catch (e) {
+                        hWarn(`[Harness] Setting property "${prop}" failed on target object. Skipping.`);
+                    }
                     return true;
+                },
+                get(target, prop) {
+                    if (prop === 'window' || prop === 'global' || prop === 'self') return mockGlobal;
+                    const value = target[prop];
+                    if (typeof value === 'function') return value.bind(target);
+                    return value;
                 }
             });
             window.global = mockGlobal;
@@ -482,6 +495,16 @@
 
                     if (window.GreenhouseTestSuite) {
                         window.GreenhouseTestSuite.addTest(fullName, async () => {
+                            const runTestFn = () => {
+                                if (fn.length > 0) {
+                                    return new Promise((resolve, reject) => {
+                                        const done = (err) => err ? reject(err) : resolve();
+                                        try { fn(done); } catch (e) { reject(e); }
+                                    });
+                                }
+                                return fn();
+                            };
+
                             // Check if getHooks exists (it's in tests/utils but not in docs/js)
                             if (typeof window.TestFramework.getHooks === 'function') {
                                 if (suite && !suite._beforeAllRun) {
@@ -491,7 +514,7 @@
                                 }
                                 const beHooks = window.TestFramework.getHooks(suite, 'beforeEach');
                                 for (const h of (beHooks || [])) await h();
-                                try { await fn(); } finally {
+                                try { await runTestFn(); } finally {
                                     const aeHooks = window.TestFramework.getHooks(suite, 'afterEach');
                                     for (const h of (aeHooks || [])) await h();
                                 }
@@ -502,7 +525,7 @@
                                     suite._beforeAllRun = true;
                                 }
                                 for (const h of (suite.beforeEach || [])) await h();
-                                try { await fn(); } finally {
+                                try { await runTestFn(); } finally {
                                     for (const h of (suite.afterEach || [])) await h();
                                 }
                             }
