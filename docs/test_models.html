@@ -168,7 +168,10 @@
 
 <script>
     (function() {
-        const baseUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
+        // Detect local vs production
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        // Production baseUrl is Greenhouse base, Local baseUrl should point to /docs/ for scripts
+        const baseUrl = isLocal ? window.location.origin + '/docs/' : "https://drtamarojgreen.github.io/greenhouse_org/";
         const modelContainer = document.getElementById('model-container');
         const modelSelector = document.getElementById('model-selector');
         const activeLabel = document.getElementById('active-label');
@@ -367,28 +370,60 @@
                 };
             }
 
-            window.require = (path) => {
-                hLog(`[Harness] Mock Require: ${path}`);
-                if (path.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
-                if (path.includes('test_framework')) return window.TestFramework;
-                if (path === 'fs') return {
+            window.require = (pathName) => {
+                hLog(`[Harness] Mock Require: ${pathName}`);
+                if (pathName.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
+                if (pathName.includes('test_framework')) return window.TestFramework;
+                if (pathName.includes('test_env_factory')) return {
+                    createEnv: (overrides = {}) => {
+                        const t = { ...overrides };
+                        const p = new Proxy(t, {
+                            get(target, prop) {
+                                if (prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis') return p;
+                                if (prop in target) return target[prop];
+                                return window.global[prop];
+                            },
+                            set(target, prop, value) { target[prop] = value; return true; },
+                            has(target, prop) { return prop in target || prop in window.global; }
+                        });
+                        return p;
+                    },
+                    loadScript: (context, scriptPath) => {
+                        const code = window.require('fs').readFileSync(scriptPath);
+                        return window.require('vm').runInContext(code, context);
+                    }
+                };
+                if (pathName === 'fs') return {
                     readFileSync: (p) => {
                         hLog(`[Harness] Mock FS read: ${p}`);
-                        return '';
+                        let url = p;
+                        if (url.startsWith('../')) url = url.substring(3);
+                        if (url.startsWith('../../')) url = url.substring(6);
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('GET', '/' + url, false);
+                        xhr.send();
+                        if (xhr.status === 200) return xhr.responseText;
+                        throw new Error(`FS Mock: Failed to load ${p} (${xhr.status})`);
                     },
                     existsSync: () => true
                 };
-                if (path === 'path') return { join: (...args) => args.join('/'), resolve: (...args) => args.join('/') };
-                if (path === 'vm') return {
-                    createContext: (sandbox) => sandbox,
-                    runInContext: (code, context) => {
-                        const fn = new Function('require', 'module', 'exports', '__dirname', 'global', 'process', 'console', 'window', 'document', code);
-                        return fn(window.require, {exports:{}}, {}, "", context, window.process, window.console, context, context.document);
-                    },
-                    runInThisContext: (code) => {
-                        hLog("[Harness] vm.runInThisContext ignored for browser-loaded scripts");
-                    }
+                if (pathName === 'path') return {
+                    join: (...args) => args.join('/').replace(/\/+/g, '/'),
+                    resolve: (...args) => args.join('/').replace(/\/+/g, '/'),
+                    dirname: (p) => p.split('/').slice(0, -1).join('/')
                 };
+                if (pathName === 'vm') {
+                    const vm = {
+                        createContext: (sandbox) => sandbox,
+                        runInContext: (code, context) => {
+                            const fn = new Function('require', 'module', 'exports', '__dirname', 'global', 'process', 'console', 'window', 'document', code);
+                            return fn.call(context, window.require, {exports:{}}, {}, "", context, window.process, window.console, context, context.document);
+                        },
+                        runInThisContext: (code) => vm.runInContext(code, window.global),
+                        runInNewContext: (code, sandbox) => vm.runInContext(code, sandbox || {})
+                    };
+                    return vm;
+                }
                 return {};
             };
 
@@ -402,25 +437,34 @@
             };
             window.__dirname = "";
 
-            const mockGlobal = new Proxy(window, {
+            // Robust Sandbox Proxy to prevent Invariant Violations
+            const sandbox = Object.create(null);
+            const mockGlobal = new Proxy(sandbox, {
+                get(target, prop) {
+                    if (prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis') return mockGlobal;
+                    if (prop in target) return target[prop];
+                    const val = window[prop];
+                    if (typeof val === 'function') {
+                        if (/^[A-Z]/.test(prop) || ['Object', 'Array', 'Promise', 'Map', 'Set', 'Function', 'Symbol'].includes(prop)) return val;
+                        const targetObj = (prop in document && !(prop in window)) ? document : window;
+                        return val.bind(targetObj);
+                    }
+                    return val;
+                },
                 set(target, prop, value) {
-                    if (['console', 'CustomEvent', 'dispatchEvent', 'location'].includes(prop)) {
-                        hWarn(`[Harness] Blocked repo test from overwriting window.${prop}`);
-                        return true;
-                    }
-                    try {
-                        target[prop] = value;
-                    } catch (e) {
-                        hWarn(`[Harness] Setting property "${prop}" failed on target object. Skipping.`);
-                    }
+                    if (['console', 'location', 'history'].includes(prop)) return true;
+                    target[prop] = value;
                     return true;
                 },
-                get(target, prop) {
-                    if (prop === 'window' || prop === 'global' || prop === 'self') return mockGlobal;
-                    const value = target[prop];
-                    if (typeof value === 'function') return value.bind(target);
-                    return value;
-                }
+                has(target, prop) { return prop in target || prop in window; },
+                getOwnPropertyDescriptor(target, prop) {
+                    if (prop in target) return Object.getOwnPropertyDescriptor(target, prop);
+                    const desc = Object.getOwnPropertyDescriptor(window, prop);
+                    if (desc && !desc.configurable) return { ...desc, configurable: true };
+                    return desc;
+                },
+                defineProperty(target, prop, desc) { return Object.defineProperty(target, prop, { ...desc, configurable: true }); },
+                getPrototypeOf() { return Object.getPrototypeOf(window); }
             });
             window.global = mockGlobal;
 
@@ -437,6 +481,32 @@
                     s.onload = res;
                     document.body.appendChild(s);
                 });
+            }
+
+            // Patch TestFramework for Suite Hook Inheritance
+            if (window.TestFramework) {
+                const originalDescribe = window.TestFramework.describe.bind(window.TestFramework);
+                window.TestFramework.describe = (name, fn) => {
+                    const parent = window.TestFramework.currentSuite;
+                    const suite = originalDescribe(name, fn);
+                    if (suite) suite.parent = parent;
+                    return suite;
+                };
+
+                window.TestFramework.getHooks = (suite, type) => {
+                    let hooks = [];
+                    let curr = suite;
+                    while (curr) {
+                        if (curr[type]) hooks = [...curr[type], ...hooks];
+                        curr = curr.parent;
+                    }
+                    return hooks;
+                };
+            }
+
+            // Add assert.fail fallback
+            if (window.assert && !window.assert.fail) {
+                window.assert.fail = (msg) => { throw new window.AssertionError(msg || "Test failed explicitly"); };
             }
 
             // 3. Prepare Dashboard & Test Queue
@@ -519,14 +589,17 @@
                                     for (const h of (aeHooks || [])) await h();
                                 }
                             } else {
-                                // Fallback for docs/js version
+                                // Fallback for docs/js version with Manual Inheritance
                                 if (suite && !suite._beforeAllRun) {
-                                    for (const h of (suite.beforeAll || [])) await h();
+                                    const allBeforeAll = window.TestFramework.getHooks(suite, 'beforeAll');
+                                    for (const h of allBeforeAll) await h();
                                     suite._beforeAllRun = true;
                                 }
-                                for (const h of (suite.beforeEach || [])) await h();
+                                const allBeforeEach = window.TestFramework.getHooks(suite, 'beforeEach');
+                                for (const h of allBeforeEach) await h();
                                 try { await runTestFn(); } finally {
-                                    for (const h of (suite.afterEach || [])) await h();
+                                    const allAfterEach = window.TestFramework.getHooks(suite, 'afterEach');
+                                    for (const h of allAfterEach) await h();
                                 }
                             }
                         });
@@ -643,7 +716,13 @@
                     fileCount.style.marginTop = '5px';
                     fileCount.style.color = '#aaa';
                     fileCount.textContent = `Tests loaded from ${totalFiles} repository files.`;
-                    overlay.insertBefore(fileCount, overlay.querySelector('button'));
+
+                    const btn = overlay.querySelector('button');
+                    if (btn && btn.parentNode) {
+                        btn.parentNode.insertBefore(fileCount, btn);
+                    } else {
+                        overlay.appendChild(fileCount);
+                    }
                 }
             } else {
                 const s = document.createElement('script');
