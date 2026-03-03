@@ -5,65 +5,7 @@
 
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
-
-const createEnv = () => {
-    const { runInNewContext } = require('vm');
-    const path = require('path');
-    const fs = require('fs');
-
-    const mockWindow = {
-        setTimeout: setTimeout,
-        clearTimeout: clearTimeout,
-        Promise: Promise,
-        Map: Map,
-        Set: Set,
-        console: console,
-        fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
-        document: {
-            querySelector: (sel) => {
-                const el = {
-                    appendChild: () => { },
-                    innerHTML: '',
-                    style: {},
-                    prepend: () => { },
-                    addEventListener: () => { },
-                    removeEventListener: () => { }
-                };
-                return el;
-            },
-            createElement: (tag) => ({
-                tag,
-                tagName: tag.toUpperCase(),
-                dataset: {},
-                style: {},
-                appendChild: function (c) { this.firstChild = c; },
-                removeChild: function (c) { this.firstChild = null; },
-                querySelector: () => null,
-                setAttribute: function (k, v) { this[k] = v; },
-                addEventListener: () => { },
-                removeEventListener: () => { }
-            }),
-            addEventListener: () => { },
-            body: { appendChild: () => { } }
-        },
-        GreenhouseUtils: {
-            displayError: () => { },
-            displaySuccess: () => { }
-        },
-        GreenhouseSchedulerUI: {}
-    };
-
-    const vm = require('vm');
-    const context = vm.createContext(mockWindow);
-    context.global = context;
-    context.window = context;
-
-    const filePath = path.join(__dirname, '../../docs/js/GreenhouseDashboardApp.js');
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInContext(code, context);
-
-    return context;
-};
+const { createEnv, loadScript } = require('../utils/test_env_factory.js');
 
 TestFramework.describe('GreenhouseDashboardApp (Unit)', () => {
 
@@ -71,7 +13,33 @@ TestFramework.describe('GreenhouseDashboardApp (Unit)', () => {
     let App;
 
     TestFramework.beforeEach(() => {
-        env = createEnv();
+        env = createEnv({
+            fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
+            GreenhouseUtils: {
+                displayError: () => { },
+                displaySuccess: () => { }
+            },
+            GreenhouseSchedulerUI: {}
+        });
+
+        // Specific mock for querySelector needed by App
+        const originalQuerySelector = env.document.querySelector;
+        env.document.querySelector = (sel) => {
+            if (sel) {
+                return {
+                    appendChild: () => { },
+                    innerHTML: '',
+                    style: {},
+                    prepend: () => { },
+                    addEventListener: () => { },
+                    removeEventListener: () => { },
+                    textContent: ''
+                };
+            }
+            return originalQuerySelector(sel);
+        };
+
+        loadScript(env, 'docs/js/GreenhouseDashboardApp.js');
         App = env.window.GreenhouseDashboardApp;
     });
 

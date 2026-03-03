@@ -5,32 +5,7 @@
 
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
-
-const createEnv = () => {
-    const { runInNewContext } = require('vm');
-    const path = require('path');
-    const fs = require('fs');
-
-    const mockWindow = {
-        setTimeout: setTimeout,
-        clearTimeout: clearTimeout,
-        Promise: Promise,
-        Map: Map,
-        Set: Set,
-        console: console
-    };
-
-    const vm = require('vm');
-    const context = vm.createContext(mockWindow);
-    context.global = context;
-    context.window = context;
-
-    const filePath = path.join(__dirname, '../../docs/js/neuro_ga.js');
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInContext(code, context);
-
-    return context;
-};
+const { createEnv, loadScript } = require('../utils/test_env_factory.js');
 
 TestFramework.describe('Neuro Genetic Algorithm (Unit)', () => {
 
@@ -38,6 +13,7 @@ TestFramework.describe('Neuro Genetic Algorithm (Unit)', () => {
 
     TestFramework.beforeEach(() => {
         const env = createEnv();
+        loadScript(env, 'docs/js/neuro_ga.js');
         GA = new env.window.NeuroGA();
         GA.init({ populationSize: 10 });
     });

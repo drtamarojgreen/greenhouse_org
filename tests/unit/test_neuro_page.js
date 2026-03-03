@@ -5,74 +5,7 @@
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
 
-const createEnv = () => {
-    // If running in harness with pre-initialized state
-    if (typeof window !== 'undefined' && window.GreenhouseNeuroConfig) {
-        return window;
-    }
-
-    const { runInNewContext } = require('vm');
-    const path = require('path');
-    const fs = require('fs');
-
-    const mockWindow = {
-        setTimeout: setTimeout,
-        clearTimeout: clearTimeout,
-        Promise: Promise,
-        Map: Map,
-        Set: Set,
-        console: console,
-        performance: { now: () => Date.now() },
-        requestAnimationFrame: (cb) => setTimeout(cb, 16),
-        addEventListener: () => { },
-        document: {
-            getElementById: (id) => ({
-                addEventListener: () => { },
-                getContext: () => ({
-                    save: () => { },
-                    restore: () => { },
-                    translate: () => { },
-                    rotate: () => { },
-                    scale: () => { },
-                    beginPath: () => { },
-                    moveTo: () => { },
-                    lineTo: () => { },
-                    stroke: () => { },
-                    fill: () => { },
-                    rect: () => { },
-                    clip: () => { },
-                    fillText: () => { },
-                    measureText: () => ({ width: 0 }),
-                    createLinearGradient: () => ({ addColorStop: () => { } }),
-                    clearRect: () => { },
-                    fillRect: () => { },
-                    strokeRect: () => { }
-                }),
-                width: 800,
-                height: 600,
-                getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
-            }),
-            createElement: (tag) => ({
-                tag,
-                tagName: tag.toUpperCase(),
-                getContext: () => ({})
-            })
-        }
-    };
-
-    const vm = require('vm');
-    const context = vm.createContext(mockWindow);
-    context.global = context;
-    context.window = context;
-
-    const scripts = ['neuro_config.js', 'neuro_camera_controls.js', 'neuro_ga.js'];
-    scripts.forEach(s => {
-        const code = fs.readFileSync(path.join(__dirname, '../../docs/js', s), 'utf8');
-        vm.runInContext(code, context);
-    });
-
-    return context;
-};
+const { createEnv, loadScript } = require('../utils/test_env_factory.js');
 
 TestFramework.describe('Neuro Page Models', () => {
 
@@ -80,6 +13,9 @@ TestFramework.describe('Neuro Page Models', () => {
 
     TestFramework.beforeEach(() => {
         env = createEnv();
+        loadScript(env, 'docs/js/neuro_config.js');
+        loadScript(env, 'docs/js/neuro_camera_controls.js');
+        loadScript(env, 'docs/js/neuro_ga.js');
     });
 
     TestFramework.describe('GreenhouseNeuroConfig', () => {

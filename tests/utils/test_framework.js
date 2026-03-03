@@ -421,6 +421,7 @@ class TestFramework {
 
 // Create singleton instance
 const testFramework = new TestFramework();
+testFramework.TestFrameworkClass = TestFramework; // Export the class itself for constructor use
 
 // Bind methods to the instance to allow for destructuring in tests
 testFramework.describe = testFramework.describe.bind(testFramework);
@@ -443,6 +444,7 @@ if (typeof module !== 'undefined' && module.exports) {
 // Make available globally
 if (typeof window !== 'undefined') {
   window.TestFramework = testFramework;
+  window.TestFrameworkClass = TestFramework;
 }
 
 console.log('[Test Framework] Lightweight testing framework loaded');

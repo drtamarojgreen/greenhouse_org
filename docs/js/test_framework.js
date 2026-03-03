@@ -30,10 +30,8 @@ class TestFramework {
    * Create a test suite
    */
   describe(suiteName, suiteFunction) {
-    const parentSuite = this.currentSuite;
     const suite = {
       name: suiteName,
-      parent: parentSuite,
       tests: [],
       beforeEach: [],
       afterEach: [],
@@ -47,6 +45,7 @@ class TestFramework {
     };
 
     this.suites.push(suite);
+    const prevSuite = this.currentSuite;
     this.currentSuite = suite;
 
     // Execute the suite function to register tests
@@ -56,7 +55,7 @@ class TestFramework {
       console.error(`Error in suite "${suiteName}":`, error);
     }
 
-    this.currentSuite = parentSuite;
+    this.currentSuite = prevSuite;
     return suite;
   }
 
@@ -145,10 +144,6 @@ class TestFramework {
    * Run all test suites
    */
   async run() {
-    console.log('\n========================================');
-    console.log('Running Test Suite');
-    console.log('========================================\n');
-
     const startTime = Date.now();
 
     // Run global beforeAll hooks
@@ -167,10 +162,6 @@ class TestFramework {
     }
 
     const duration = Date.now() - startTime;
-
-    // Print summary
-    this.printSummary(duration);
-
     return this.results;
   }
 
@@ -178,11 +169,6 @@ class TestFramework {
    * Run a single test suite
    */
   async runSuite(suite) {
-    if (this.verbose) {
-      console.log(`\n${suite.name}`);
-      console.log('─'.repeat(suite.name.length));
-    }
-
     // Run suite beforeAll hooks
     for (const hook of suite.beforeAll) {
       await hook();
@@ -197,9 +183,6 @@ class TestFramework {
       if (test.skip) {
         this.results.skipped++;
         suite.results.skipped++;
-        if (this.verbose) {
-          console.log(`  ⊘ ${test.name} (skipped)`);
-        }
         continue;
       }
 
@@ -224,18 +207,8 @@ class TestFramework {
     const startTime = Date.now();
 
     try {
-      // Collect all beforeEach hooks from parents
-      const beforeEachHooks = [...this.beforeEachHooks];
-      const suites = [];
-      let s = suite;
-      while (s) {
-        suites.unshift(s);
-        s = s.parent;
-      }
-      suites.forEach(s => beforeEachHooks.push(...s.beforeEach));
-
       // Run beforeEach hooks
-      for (const hook of beforeEachHooks) {
+      for (const hook of [...this.beforeEachHooks, ...suite.beforeEach]) {
         await hook();
       }
 
@@ -248,10 +221,6 @@ class TestFramework {
       this.results.passed++;
       suite.results.passed++;
 
-      if (this.verbose) {
-        console.log(`  ✓ ${test.name} (${test.duration}ms)`);
-      }
-
     } catch (error) {
       // Test failed
       test.result = 'failed';
@@ -259,26 +228,9 @@ class TestFramework {
       test.duration = Date.now() - startTime;
       this.results.failed++;
       suite.results.failed++;
-
-      if (this.verbose) {
-        console.log(`  ✗ ${test.name}`);
-        console.log(`    ${error.message}`);
-        if (error.stack) {
-          console.log(`    ${error.stack.split('\n')[1]?.trim()}`);
-        }
-      }
     } finally {
-      // Run afterEach hooks in reverse order
-      const afterEachHooks = [...this.afterEachHooks];
-      let s2 = suite;
-      const afterSuites = [];
-      while (s2) {
-        afterSuites.push(s2);
-        s2 = s2.parent;
-      }
-      afterSuites.forEach(s => afterEachHooks.push(...s.afterEach));
-
-      for (const hook of afterEachHooks) {
+      // Run afterEach hooks
+      for (const hook of [...this.afterEachHooks, ...suite.afterEach]) {
         try {
           await hook();
         } catch (error) {
@@ -302,63 +254,18 @@ class TestFramework {
         }
       }, timeout);
 
-      const done = (err) => {
-        if (isResolved) return;
-        isResolved = true;
-        clearTimeout(timer);
-        if (err) reject(err instanceof Error ? err : new Error(err));
-        else resolve();
-      };
-
-      try {
-        if (fn.length > 0) {
-          // Function expects a 'done' callback
-          fn(done);
-        } else {
-          // Synchronous or Promise-returning function
-          const result = fn();
-          if (result && typeof result.then === 'function') {
-            result.then(() => done(), (err) => done(err));
-          } else {
-            done();
-          }
-        }
-      } catch (error) {
-        done(error);
-      }
+      Promise.resolve(fn())
+        .then(() => {
+          isResolved = true;
+          clearTimeout(timer);
+          resolve();
+        })
+        .catch((error) => {
+          isResolved = true;
+          clearTimeout(timer);
+          reject(error);
+        });
     });
-  }
-
-  /**
-   * Print test summary
-   */
-  printSummary(duration) {
-    console.log('\n========================================');
-    console.log('Test Summary');
-    console.log('========================================');
-    console.log(`Total:   ${this.results.total}`);
-    console.log(`Passed:  ${this.results.passed} ✓`);
-    console.log(`Failed:  ${this.results.failed} ✗`);
-    console.log(`Skipped: ${this.results.skipped} ⊘`);
-    console.log(`Duration: ${duration}ms`);
-    console.log('========================================\n');
-
-    if (typeof module !== 'undefined' && module.exports && this.ResourceReporter) {
-      console.log(this.ResourceReporter.generateReport());
-    }
-
-    if (this.results.failed > 0) {
-      console.log('❌ Tests failed');
-    } else {
-      console.log('✅ All tests passed');
-    }
-  }
-
-  /**
-   * Set verbose mode
-   */
-  setVerbose(verbose) {
-    this.verbose = verbose;
   }
 
   /**
@@ -379,60 +286,10 @@ class TestFramework {
     this.beforeAllHooks = [];
     this.afterAllHooks = [];
   }
-
-  /**
-   * Generate HTML report
-   */
-  generateHTMLReport() {
-    const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Test Report</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .summary { background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-    .suite { margin-bottom: 20px; }
-    .suite-name { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-    .test { padding: 5px; margin: 5px 0; }
-    .passed { color: green; }
-    .failed { color: red; }
-    .skipped { color: gray; }
-    .error { background: #ffe6e6; padding: 10px; margin: 5px 0; border-left: 3px solid red; }
-  </style>
-</head>
-<body>
-  <h1>Test Report</h1>
-  <div class="summary">
-    <h2>Summary</h2>
-    <p>Total: ${this.results.total}</p>
-    <p class="passed">Passed: ${this.results.passed}</p>
-    <p class="failed">Failed: ${this.results.failed}</p>
-    <p class="skipped">Skipped: ${this.results.skipped}</p>
-  </div>
-  ${this.suites.map(suite => `
-    <div class="suite">
-      <div class="suite-name">${suite.name}</div>
-      ${suite.tests.map(test => `
-        <div class="test ${test.result || 'skipped'}">
-          ${test.result === 'passed' ? '✓' : test.result === 'failed' ? '✗' : '⊘'}
-          ${test.name}
-          ${test.duration ? `(${test.duration}ms)` : ''}
-        </div>
-        ${test.error ? `<div class="error">${test.error.message}</div>` : ''}
-      `).join('')}
-    </div>
-  `).join('')}
-</body>
-</html>
-    `;
-    return html;
-  }
 }
 
 // Create singleton instance
 const testFramework = new TestFramework();
-testFramework.TestFramework = TestFramework; // Allow access to class via instance
 
 // Bind methods to the instance to allow for destructuring in tests
 testFramework.describe = testFramework.describe.bind(testFramework);
@@ -447,14 +304,16 @@ testFramework.run = testFramework.run.bind(testFramework);
 
 // Export for use in tests
 if (typeof module !== 'undefined' && module.exports) {
-  testFramework.ResourceReporter = require('./resource_reporter.js');
-  module.exports = testFramework;
+  module.exports = {
+    testFramework,
+    TestFrameworkClass: TestFramework
+  };
 }
 
 // Make available globally
 if (typeof window !== 'undefined') {
   window.TestFramework = testFramework;
-  window.TestFrameworkClass = TestFramework; // Export the class itself for constructor use
+  window.TestFrameworkClass = TestFramework;
 }
 
 console.log('[Test Framework] Lightweight testing framework loaded');

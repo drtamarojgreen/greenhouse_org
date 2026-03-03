@@ -5,60 +5,7 @@
 
 const { assert } = require('../utils/assertion_library.js');
 const TestFramework = require('../utils/test_framework.js');
-
-const createEnv = () => {
-    const { runInNewContext } = require('vm');
-    const path = require('path');
-    const fs = require('fs');
-
-    const mockWindow = {
-        setTimeout: setTimeout,
-        clearTimeout: clearTimeout,
-        Promise: Promise,
-        Map: Map,
-        Set: Set,
-        console: console,
-        requestAnimationFrame: () => { },
-        addEventListener: () => { },
-        dispatchEvent: () => { },
-        CustomEvent: class { constructor(name, options) { this.name = name; this.detail = options ? options.detail : null; } },
-        document: {
-            createElement: (tag) => ({
-                tag,
-                tagName: tag.toUpperCase(),
-                getContext: () => ({
-                    fillRect: () => {}, fillText: () => {}, beginPath: () => {},
-                    moveTo: () => {}, lineTo: () => {}, quadraticCurveTo: () => {},
-                    closePath: () => {}, fill: () => {}, stroke: () => {},
-                    measureText: () => ({ width: 10 }), save: () => {}, restore: () => {}
-                }),
-                appendChild: () => {},
-                style: {}
-            }),
-            querySelector: () => ({
-                appendChild: () => {},
-                innerHTML: '',
-                offsetWidth: 1000,
-                style: {}
-            }),
-            body: { appendChild: () => {} },
-            currentScript: null
-        }
-    };
-
-    const vm = require('vm');
-    const context = vm.createContext(mockWindow);
-    context.global = context;
-    context.window = context;
-
-    const scripts = ['models_util.js', 'inflammation_config.js', 'inflammation_app.js'];
-    scripts.forEach(s => {
-        const code = fs.readFileSync(path.join(__dirname, '../../docs/js', s), 'utf8');
-        vm.runInContext(code, context);
-    });
-
-    return context;
-};
+const { createEnv, loadScript } = require('../utils/test_env_factory.js');
 
 TestFramework.describe('Inflammation Model Logic', () => {
     let env;
@@ -67,8 +14,14 @@ TestFramework.describe('Inflammation Model Logic', () => {
 
     TestFramework.beforeEach(() => {
         env = createEnv();
+        loadScript(env, 'docs/js/models_util.js');
+        loadScript(env, 'docs/js/inflammation_config.js');
+        loadScript(env, 'docs/js/inflammation_app.js');
+
         app = env.window.GreenhouseInflammationApp;
-        app.init(env.document.querySelector('div'));
+        // Mock container for init
+        const mockDiv = env.document.createElement('div');
+        app.init(mockDiv);
         engine = app.engine;
     });
 
@@ -76,8 +29,11 @@ TestFramework.describe('Inflammation Model Logic', () => {
         engine.state.metrics.tnfAlpha = 0.1;
         const initialTnf = engine.state.metrics.tnfAlpha;
 
+        // Activate triggers
         engine.state.factors.pathogenActive = 1;
         engine.state.factors.chronicStress = 1;
+
+        // Disable protective factors to isolate trigger effect
         engine.state.factors.cleanDiet = 0;
         engine.state.factors.socialSupport = 0;
         engine.state.factors.exerciseRegular = 0;
@@ -116,10 +72,72 @@ TestFramework.describe('Inflammation Model Logic', () => {
 
         assert.lessThan(engine.state.metrics.neuroprotection, initialNeuro);
     });
+
+    TestFramework.it('should verify Advanced Signaling Metrics', () => {
+        engine.state.metrics.tnfAlpha = 0.8;
+        engine.state.factors.pathogenActive = 1;
+
+        app.updateModel(engine.state, 1000/60);
+
+        assert.greaterThan(engine.state.metrics.tryptase, 0);
+        assert.greaterThan(engine.state.metrics.atp, 0);
+        assert.greaterThan(engine.state.metrics.ros, 0);
+        assert.greaterThan(engine.state.metrics.nfkbActivation, 0);
+    });
+
+    TestFramework.it('should verify NLRP3 Inflammasome activation', () => {
+        // NLRP3 is driven by ATP and ROS
+        // Set factors to keep drive high
+        engine.state.factors.leakyGut = 1;
+        engine.state.factors.pathogenActive = 1;
+
+        // Ensure GreenhouseBioStatus is defined
+        env.window.GreenhouseBioStatus = env.window.GreenhouseBioStatus || { stress: { load: 0 } };
+        env.window.GreenhouseBioStatus.stress.load = 1.0;
+
+        // Manual boost to metrics to speed up
+        engine.state.metrics.stressBurden = 0.9;
+        engine.state.metrics.tnfAlpha = 0.9;
+        engine.state.metrics.microgliaActivation = 0.8;
+
+        for (let i = 0; i < 100; i++) {
+            app.updateModel(engine.state, 16);
+        }
+
+        assert.greaterThan(engine.state.metrics.nlrp3State, 0.5);
+    });
+
+    TestFramework.it('should verify Clinical Burden Impacts', () => {
+        const initialState = JSON.parse(JSON.stringify(engine.state));
+
+        engine.state.factors.agePreset = 1;
+        engine.state.factors.comorbidityDiabetes = 1;
+
+        app.updateModel(engine.state, 1000/60);
+        const tnfWithBurden = engine.state.metrics.tnfAlpha;
+
+        // Reset and run without burden
+        engine.state.metrics.tnfAlpha = initialState.metrics.tnfAlpha;
+        engine.state.factors.agePreset = 0;
+        engine.state.factors.comorbidityDiabetes = 0;
+
+        app.updateModel(engine.state, 1000/60);
+        const tnfWithoutBurden = engine.state.metrics.tnfAlpha;
+
+        assert.greaterThan(tnfWithBurden, tnfWithoutBurden);
+    });
+
+    TestFramework.it('should integrate Diurnal Clock', () => {
+        app.clock.timeInHours = 12;
+        app.updateModel(engine.state, 0); // dt = 0 to avoid time advancement
+        assert.equal(engine.state.factors.timeOfDay, 12);
+
+        app.clock.timeInHours = 18;
+        app.updateModel(engine.state, 0);
+        assert.equal(engine.state.factors.timeOfDay, 18);
+    });
 });
 
-if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
-    TestFramework.run().then(results => {
-        process.exit(results.failed > 0 ? 1 : 0);
-    });
-}
+TestFramework.run().then(results => {
+    process.exit(results.failed > 0 ? 1 : 0);
+});
