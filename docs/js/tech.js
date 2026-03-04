@@ -360,7 +360,7 @@
                 console.error('TechApp: Could not find mock-user-output');
                 return;
             }
-            outputBox.textContent = 'Fetching...';
+            outputBox.textColntent = 'Fetching...';
             const mockData = { userId: "test-clientside-789", source: "Generated in tech.js" };
             outputBox.textContent = JSON.stringify(mockData, null, 2);
         }

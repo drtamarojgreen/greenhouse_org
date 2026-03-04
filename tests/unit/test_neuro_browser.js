@@ -12,7 +12,7 @@
         return;
     }
 
-    const { describe, it, beforeAll, beforeEach } = framework;
+    const { describe, it, beforeAll } = framework;
 
     describe('GreenhouseNeuroApp (Browser Native)', () => {
 
@@ -61,11 +61,7 @@
             const app = window.GreenhouseNeuroApp;
             const tab = app.ui.tabs.find(t => t.val === 'adhd');
 
-            // Get canvas position
             const rect = app.ui3d.canvas.getBoundingClientRect();
-
-            // HandleMouseDown uses getMousePos which maps clientX/Y to internal resolution
-            // We need to provide clientX/Y that maps to tab.x/y
             const event = {
                 clientX: rect.left + tab.x + 5,
                 clientY: rect.top + tab.y + 5
@@ -107,12 +103,9 @@
         it('should update dosage via slider', () => {
             const app = window.GreenhouseNeuroApp;
             const slider = app.ui.sliders[0];
-
-            // Click middle of slider
             const middleX = slider.x + slider.w / 2;
             app.updateSlider(middleX, slider);
 
-            // min: 0.1, max: 2.0 -> middle is ~1.05
             assert.isTrue(app.state.dosage > 1.0 && app.state.dosage < 1.1, 'Dosage should be updated to approximately midpoint');
         });
 

@@ -20,29 +20,122 @@
     <script src="https://drtamarojgreen.github.io/greenhouse_org/js/greenhouse.js"></script>
 
     <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        header { background-color: #fff; width: 100%; padding: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; z-index: 1000; border-bottom: 2px solid #4ca1af; }
-        .harness-title { color: #4ca1af; font-size: 24px; font-weight: 700; margin: 0 0 15px 0; }
-        .controls { display: flex; gap: 15px; align-items: center; }
-        select { padding: 10px 15px; font-size: 15px; border-radius: 6px; border: 1px solid #ddd; width: 320px; outline: none; transition: border-color 0.2s; }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #fff;
+            width: 100%;
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 2px solid #4ca1af;
+        }
+
+        .harness-title {
+            color: #4ca1af;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 0 15px 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        select {
+            padding: 10px 15px;
+            font-size: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            width: 320px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
         select:focus { border-color: #4ca1af; }
-        .btn { padding: 10px 20px; font-size: 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: background-color 0.2s; }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
         #run-suite-tests { background-color: #4ca1af; color: white; }
         #run-suite-tests:hover { background-color: #3d8b98; }
-        #clear-results { background-color: #ff9800; color: white; }
+
         #clear-environment { background-color: #e4e6eb; color: #1c1e21; }
-        #active-label { margin-top: 10px; font-size: 13px; font-weight: bold; color: #777; }
-        #model-container { width: 100%; flex-grow: 1; position: relative; background-color: #fff; padding-top: 20px; }
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.98); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; font-size: 20px; font-weight: bold; color: #4ca1af; }
-        .spinner { width: 60px; height: 60px; border: 6px solid rgba(76, 161, 175, 0.1); border-top: 6px solid #4ca1af; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 25px; }
+        #clear-environment:hover { background-color: #d8dadf; }
+
+        #active-label {
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #777;
+        }
+
+        #model-container {
+            width: 100%;
+            flex-grow: 1;
+            position: relative;
+            background-color: #fff;
+            padding-top: 20px;
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-size: 20px;
+            font-weight: bold;
+            color: #4ca1af;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(76, 161, 175, 0.1);
+            border-top: 6px solid #4ca1af;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 25px;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         .wixui-section { display: block; width: 100%; min-height: 600px; }
         #model-target { width: 100%; min-height: 500px; display: block; }
+        .wixui-section div { min-height: 5px; min-width: 5px; }
     </style>
 </head>
 <body>
 
-<div id="loading-overlay"><div class="spinner"></div><div id="loader-message">Initializing Live Site Environment...</div></div>
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loader-message">Initializing Live Site Environment...</div>
+</div>
 
 <header>
     <h1 class="harness-title">Greenhouse Live Simulator</h1>
@@ -64,50 +157,19 @@
         </select>
         <button id="run-suite-tests" class="btn">Run Suite Tests</button>
         <button id="run-neuro-test" class="btn" style="background-color: #673ab7; color: white;">Run Neuro Test</button>
-        <button id="clear-results" class="btn">Clear Results</button>
+        <button id="clear-results" class="btn" style="background-color: #ff9800; color: white;">Clear Results</button>
         <button id="clear-environment" class="btn">Clear Environment</button>
     </div>
     <div id="active-label">Active Model: None</div>
 </header>
 
-<div id="model-container"></div>
+<div id="model-container">
+    <!-- Reconstructed DOM will go here -->
+</div>
 
 <script>
     (function() {
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const baseUrl = isLocal ? window.location.origin + '/docs/' : "https://drtamarojgreen.github.io/greenhouse_org/";
-
-        // Production Globals Patching
-        (function patchProductionGlobals() {
-            const safePatch = (objName, patchFn) => {
-                let val = window[objName];
-                Object.defineProperty(window, objName, {
-                    get() { return val; },
-                    set(newVal) { val = newVal; if (val) { try { patchFn(val); } catch (e) {} } },
-                    configurable: true, enumerable: true
-                });
-                if (val) { try { patchFn(val); } catch (e) {} }
-            };
-
-            safePatch('GreenhouseADHDData', (data) => {
-                if (data.categories && !data.enhancements) {
-                    const flat = {};
-                    for (const k in data.categories) {
-                        if (Array.isArray(data.categories[k])) {
-                            data.categories[k].forEach(e => { if (e && e.id) flat[e.id] = { ...e, category: Array.isArray(e.category) ? e.category : [k] }; });
-                        }
-                    }
-                    data.enhancements = flat;
-                }
-            });
-
-            safePatch('GreenhouseModelsUtil', (util) => {
-                const originalT = util.t;
-                util.t = function(key) { const res = originalT ? originalT.apply(this, arguments) : undefined; return (res === undefined || res === null) ? key : res; };
-            });
-
-        })();
-
+        const baseUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
         const modelContainer = document.getElementById('model-container');
         const modelSelector = document.getElementById('model-selector');
         const activeLabel = document.getElementById('active-label');
@@ -117,20 +179,57 @@
         const clearBtn = document.getElementById('clear-environment');
         const loaderMessage = document.getElementById('loader-message');
 
+        /**
+         * Robust GreenhouseUtils Interceptor
+         * Ensures attributes persist across sub-script loads and handles app-specific dependencies.
+         */
+        const originalLoadScript = window.GreenhouseUtils ? window.GreenhouseUtils.loadScript : null;
+
         window.GreenhouseUtils = window.GreenhouseUtils || {};
+
+        // Override or provide loadScript to ensure attributes are always merged and persistent
         window.GreenhouseUtils.loadScript = async function(name, baseUrl, attributes = {}) {
-            const mergedAttributes = { ...(window._greenhouseScriptAttributes || {}), ...attributes };
+            console.log(`[Harness] Loading sub-script: ${name}`);
+
+            // Merge current global attributes with newly provided ones
+            const mergedAttributes = {
+                ...(window._greenhouseScriptAttributes || {}),
+                ...attributes
+            };
+
+            // Persist them back to the window object so the sub-script can see them
             window._greenhouseScriptAttributes = mergedAttributes;
+
+            // Re-inject the script into the DOM with attributes
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
                 script.src = `${baseUrl}js/${name}`;
                 script.dataset.modelScript = "true";
-                for (const [key, value] of Object.entries(mergedAttributes)) { script.setAttribute(`data-${key}`, value); }
-                script.onload = () => resolve();
+
+                for (const [key, value] of Object.entries(mergedAttributes)) {
+                    script.setAttribute(`data-${key}`, value);
+                }
+
+                script.onload = () => {
+                    console.log(`[Harness] Sub-script loaded: ${name}`);
+                    resolve();
+                };
                 script.onerror = reject;
                 document.body.appendChild(script);
             });
         };
+
+        if (!window.GreenhouseUtils.waitForElement) {
+            window.GreenhouseUtils.waitForElement = (s, t = 5000) => new Promise((resolve, reject) => {
+                const check = () => {
+                    const el = document.querySelector(Array.isArray(s) ? s[0] : s);
+                    if (el) return resolve(el);
+                    if (t <= 0) return reject();
+                    t -= 100; setTimeout(check, 100);
+                };
+                check();
+            });
+        }
 
         const models = {
             'genetic': { label: 'Genetic Model', js: 'genetic.js' },
@@ -149,10 +248,6 @@
 
         const primarySelector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
 
-        /**
-         * Systematically refreshes the environment by clearing window globals,
-         * stopping intervals, and resetting the DOM.
-         */
         function clearEnvironment() {
             console.log('[Harness] Systematically refreshing environment...');
 
@@ -200,17 +295,25 @@
         async function loadModel(modelId) {
             const model = models[modelId];
             if (!model) return;
+
             clearEnvironment();
+
+            // Mock GreenhouseADHDData for Neuro model to prevent crashes
             if (modelId === 'neuro') {
-                window.GreenhouseADHDData = { scenarios: { "default": { "name": "Standard", "description": "Standard neural activity", "levels": {} } }, adhdTraits: { "impulsivity": 0.5, "inattention": 0.5, "hyperactivity": 0.5 } };
+                window.GreenhouseADHDData = {
+                    scenarios: { "default": { "name": "Standard", "description": "Standard neural activity", "levels": {} } },
+                    adhdTraits: { "impulsivity": 0.5, "inattention": 0.5, "hyperactivity": 0.5 }
+                };
             }
             activeLabel.textContent = `Active Model: ${model.label}`;
             modelSelector.value = modelId;
+
             loaderMessage.textContent = `Replicating Production Delay for ${model.label}...`;
             loadingOverlay.style.display = 'flex';
             await new Promise(resolve => setTimeout(resolve, 3000));
             loadingOverlay.style.display = 'none';
 
+            // Reconstruct DOM
             const section1 = document.createElement('section'); section1.className = 'wixui-section';
             section1.appendChild(document.createElement('div'));
             const div2 = document.createElement('div'); section1.appendChild(div2);
@@ -222,6 +325,7 @@
             sectionInner.appendChild(targetDiv);
             modelContainer.appendChild(section1);
 
+            // Script Injection
             const script = document.createElement('script');
             script.src = `${baseUrl}js/${model.js}`;
             script.dataset.modelScript = "true";
@@ -230,7 +334,25 @@
             script.setAttribute('data-base-url', baseUrl);
             script.setAttribute('data-view', "default");
 
-            const scriptAttributes = { 'target-selector-left': primarySelector, 'target-selector-right': '', 'base-url': baseUrl, 'view': 'default' };
+            if (modelId === 'genetic') {
+                const gs = {
+                    "genetic": primarySelector,
+                    "geneticTitle": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+                    "geneticParagraph": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(2)"
+                };
+                script.setAttribute('data-genetic-selectors', JSON.stringify(gs));
+            }
+
+            // Sync global state
+            const scriptAttributes = {
+                'target-selector-left': primarySelector,
+                'target-selector-right': '',
+                'base-url': baseUrl,
+                'view': 'default'
+            };
+            if (modelId === 'genetic') {
+                scriptAttributes['data-genetic-selectors'] = script.getAttribute('data-genetic-selectors');
+            }
             window._greenhouseScriptAttributes = scriptAttributes;
 
             const config = { baseUrl, targetSelector: primarySelector };
@@ -243,7 +365,12 @@
         }
 
         modelSelector.addEventListener('change', (e) => loadModel(e.target.value));
-        clearResultsBtn.onclick = () => { const overlay = document.getElementById('greenhouse-test-results-overlay'); if (overlay) overlay.remove(); };
+
+        clearResultsBtn.onclick = () => {
+            const overlay = document.getElementById('greenhouse-test-results-overlay');
+            if (overlay) overlay.remove();
+        };
+
         clearBtn.onclick = clearEnvironment;
 
         /**

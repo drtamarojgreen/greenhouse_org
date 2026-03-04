@@ -58,7 +58,7 @@ When using source control systems, do not use wildcards to stage and commit file
 ## 5. Implementation and Integration
 **do not forget the landing gear Capitan!**
 
-*   **5.1 integration Pattern Identification:** The agent must learn to identify common, abstract integration patterns that appear across different codebases. At times, the agent may be asked to create isolated files. In other instances, the agent may be asked to develop code that connects to a database or API. The agent must provide code that does not disrupt other systems or services.
+*   **5.1 Integration Pattern Identification:** The agent must learn to identify common, abstract integration patterns that appear across different codebases. At times, the agent may be asked to create isolated files. In other instances, the agent may be asked to develop code that connects to a database or API. The agent must provide code that does not disrupt other systems or services.
 *   **5.2 Pattern Variety Development:** The agent must be able to develop code for a variety of patterns:
     *   **5.2.1 Static Data Retrieval:** Code is developed to fetch from a static file based data source such as json or xml. No backend code should be created to access a static file source.
     *   **5.2.2 Internal API:** The frontend code calls a backend service hosted within the same repository. These are frontend calls to internal API endpoints.
@@ -69,13 +69,16 @@ When using source control systems, do not use wildcards to stage and commit file
 
 During the course of the Greenhouse Live Simulator Refactor, the following technical requirements and course corrections were identified and mandated:
 
-*   **Objective:** Resolve fatal TypeErrors and dependency timeouts in the `docs/test_models.html` harness environment as documented in the provided logs (e.g., `_resilienceObserver` is undefined, `utils` dependency timeout).
-*   **Harness Refactoring:**
-    *   **Abandon Node.js Emulation:** Transition away from forcing Node.js shims (like `vm`, `fs`, `require`) in the browser. These emulations caused "Illegal invocation" errors when interacting with native browser APIs.
-    *   **Browser-Native Execution:** Switch to a browser-native testing strategy where tests interact directly with the live DOM and native window globals.
-    *   **Systematic Environment Refresh:** Implement a robust `clearEnvironment()` function to ensure isolation between test runs. This includes clearing window globals, stopping all timers (timeouts/intervals), and resetting the DOM container.
-*   **Feature Implementation:**
-    *   **Run Neuro Test:** Implement a dedicated button and browser-native test suite (`test_neuro_browser.js`) to provide accurate, verifiable results for the Neuro model.
-    *   **Model Loading Reliability:** Fix synchronization issues where scripts were loaded before their dependencies, specifically ensuring the `GreenhouseDependencyManager` and `GreenhouseUtils` are properly initialized.
-    *   **Global Context Integrity:** Patch global data structures (like `GreenhouseADHDData`) at runtime to ensure model compatibility with production data formats.
-*   **Safety Mandate:** Do not use prototype pollution (e.g., `Node.prototype.contains` modifications) in production-grade solutions.
+*   **Objective:** Resolve fatal TypeErrors and dependency timeouts in the `docs/test_models.html` harness environment (e.g., `_resilienceObserver` is undefined, `utils` dependency timeout).
+*   **Harness Refactoring Strategy:**
+    *   **Abandon Node.js Emulation:** Stop trying to force Node.js dependencies (like `require`, `fs`, `path`, `vm`) into the browser context. These emulations cause "Illegal invocation" errors and prevent the scripts from interacting correctly with the browser's native environment.
+    *   **Browser-Native Execution:** Pivot to browser-native execution where tests interact directly with the live DOM.
+    *   **Systematic Environment Refresh:** Implement a robust `clearEnvironment()` function to ensure isolation between test runs. This includes:
+        *   Systematically deleting all relevant window globals (App instances, Data objects, Attribute caches).
+        *   Stopping all active animation frames, intervals, and timeouts.
+        *   Resetting the DOM (clearing the container, removing previous model/test scripts).
+*   **Specific Features and Fixes:**
+    *   **Dedicated Neuro Validation:** Create a "Run Neuro Test" button that loads the Neuro model and executes a specific browser-native test suite (`test_neuro_browser.js`).
+    *   **Integrity of Global Context:** Ensure that globals like `GreenhouseADHDData` are correctly mapped and available to the models at runtime.
+    *   **No Prototype Pollution:** Avoid modifying native browser prototypes (like `Node.prototype`) as it is an unsafe practice for production-grade code.
+    *   **Accurate Reporting:** The dashboard must reflect actual browser-native execution results, not simulated successes.
