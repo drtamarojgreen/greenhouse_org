@@ -29,6 +29,7 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         header {
@@ -96,7 +97,71 @@
             position: relative;
             background-color: #fff;
             padding-top: 20px;
+            margin-bottom: 300px; /* Space for console */
         }
+
+        /* Harness UI Components */
+        #harness-ui {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 300px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            display: flex;
+            flex-direction: column;
+            z-index: 10001;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            border-top: 3px solid #4ca1af;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+        }
+
+        .harness-ui-header {
+            background: #2d2d2d;
+            padding: 5px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3f3f3f;
+        }
+
+        .harness-ui-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .harness-tab {
+            padding: 5px 15px;
+            cursor: pointer;
+            font-size: 12px;
+            border-bottom: 2px solid transparent;
+        }
+
+        .harness-tab.active {
+            border-bottom: 2px solid #4ca1af;
+            color: white;
+            background: #383838;
+        }
+
+        .harness-ui-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .console-log { margin-bottom: 4px; border-bottom: 1px solid #2d2d2d; padding-bottom: 2px; }
+        .log-info { color: #4ca1af; }
+        .log-warn { color: #ff9800; background: rgba(255, 152, 0, 0.1); }
+        .log-error { color: #f44336; background: rgba(244, 67, 54, 0.1); }
+        .log-debug { color: #9e9e9e; }
+        .log-harness { color: #e91e63; font-weight: bold; }
+
+        .state-item { margin-bottom: 5px; }
+        .state-key { color: #9cdcfe; font-weight: bold; }
+        .state-val { color: #ce9178; }
 
         #loading-overlay {
             position: fixed;
@@ -167,8 +232,89 @@
     <!-- Reconstructed DOM will go here -->
 </div>
 
+<div id="harness-ui">
+    <div class="harness-ui-header">
+        <div class="harness-ui-tabs">
+            <div class="harness-tab active" data-tab="console">Console</div>
+            <div class="harness-tab" data-tab="state">State Inspector</div>
+            <div class="harness-tab" data-tab="health">Health Check</div>
+        </div>
+        <div style="font-size: 11px; color: #777;">Greenhouse Harness v1.1</div>
+    </div>
+    <div id="console-tab" class="harness-ui-content"></div>
+    <div id="state-tab" class="harness-ui-content" style="display: none;"></div>
+    <div id="health-tab" class="harness-ui-content" style="display: none;"></div>
+</div>
+
 <script>
     (function() {
+        // Observer Tracking
+        const activeObservers = new Set();
+        const OriginalMutationObserver = window.MutationObserver;
+        const OriginalIntersectionObserver = window.IntersectionObserver;
+        const OriginalResizeObserver = window.ResizeObserver;
+
+        window.MutationObserver = function(callback) {
+            const observer = new OriginalMutationObserver(callback);
+            const originalObserve = observer.observe.bind(observer);
+            const originalDisconnect = observer.disconnect.bind(observer);
+            observer.observe = function(t, o) { activeObservers.add(observer); return originalObserve(t, o); };
+            observer.disconnect = function() { activeObservers.delete(observer); return originalDisconnect(); };
+            return observer;
+        };
+        window.IntersectionObserver = function(callback, options) {
+            const observer = new OriginalIntersectionObserver(callback, options);
+            const originalObserve = observer.observe.bind(observer);
+            const originalDisconnect = observer.disconnect.bind(observer);
+            observer.observe = function(t) { activeObservers.add(observer); return originalObserve(t); };
+            observer.disconnect = function() { activeObservers.delete(observer); return originalDisconnect(); };
+            return observer;
+        };
+        if (OriginalResizeObserver) {
+            window.ResizeObserver = function(callback) {
+                const observer = new OriginalResizeObserver(callback);
+                const originalObserve = observer.observe.bind(observer);
+                const originalDisconnect = observer.disconnect.bind(observer);
+                observer.observe = function(t, o) { activeObservers.add(observer); return originalObserve(t, o); };
+                observer.disconnect = function() { activeObservers.delete(observer); return originalDisconnect(); };
+                return observer;
+            };
+        }
+
+        // Harness UI Logic
+        const consoleTab = document.getElementById('console-tab');
+        const stateTab = document.getElementById('state-tab');
+        const healthTab = document.getElementById('health-tab');
+        const tabs = document.querySelectorAll('.harness-tab');
+
+        tabs.forEach(tab => {
+            tab.onclick = () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                [consoleTab, stateTab, healthTab].forEach(c => c.style.display = 'none');
+                document.getElementById(`${tab.dataset.tab}-tab`).style.display = 'block';
+                if (tab.dataset.tab === 'state') updateStateInspector();
+            };
+        });
+
+        function logToHarness(msg, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `console-log log-${type}`;
+            const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            entry.innerHTML = `<span style="color: #6a9955;">[${time}]</span> ${msg}`;
+            consoleTab.appendChild(entry);
+            consoleTab.scrollTop = consoleTab.scrollHeight;
+        }
+
+        // Intercept native console
+        ['log', 'info', 'warn', 'error', 'debug'].forEach(m => {
+            const orig = console[m];
+            console[m] = (...args) => {
+                orig.apply(console, args);
+                logToHarness(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '), m);
+            };
+        });
+
         const baseUrl = "https://drtamarojgreen.github.io/greenhouse_org/";
         const modelContainer = document.getElementById('model-container');
         const modelSelector = document.getElementById('model-selector');
@@ -188,8 +334,8 @@
         window.GreenhouseUtils = window.GreenhouseUtils || {};
 
         // Override or provide loadScript to ensure attributes are always merged and persistent
-        window.GreenhouseUtils.loadScript = async function(name, baseUrl, attributes = {}) {
-            console.log(`[Harness] Loading sub-script: ${name}`);
+        window.GreenhouseUtils.loadScript = async function(name, baseUrl, attributes = {}, retries = 3) {
+            logToHarness(`Loading sub-script: ${name} (Base: ${baseUrl})`, 'harness');
 
             // Merge current global attributes with newly provided ones
             const mergedAttributes = {
@@ -200,23 +346,36 @@
             // Persist them back to the window object so the sub-script can see them
             window._greenhouseScriptAttributes = mergedAttributes;
 
-            // Re-inject the script into the DOM with attributes
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = `${baseUrl}js/${name}`;
-                script.dataset.modelScript = "true";
+            const attemptLoad = (currentAttempt) => {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    const fullUrl = name.startsWith('http') ? name : `${baseUrl}js/${name}`;
+                    script.src = fullUrl;
+                    script.dataset.modelScript = "true";
 
-                for (const [key, value] of Object.entries(mergedAttributes)) {
-                    script.setAttribute(`data-${key}`, value);
-                }
+                    for (const [key, value] of Object.entries(mergedAttributes)) {
+                        script.setAttribute(`data-${key}`, value);
+                    }
 
-                script.onload = () => {
-                    console.log(`[Harness] Sub-script loaded: ${name}`);
-                    resolve();
-                };
-                script.onerror = reject;
-                document.body.appendChild(script);
-            });
+                    script.onload = () => {
+                        logToHarness(`Successfully loaded: ${name}`, 'info');
+                        resolve();
+                    };
+
+                    script.onerror = (err) => {
+                        logToHarness(`Failed to load: ${name} (Attempt ${currentAttempt}/${retries})`, 'error');
+                        if (currentAttempt < retries) {
+                            script.remove();
+                            setTimeout(() => resolve(attemptLoad(currentAttempt + 1)), 1000);
+                        } else {
+                            reject(new Error(`Failed to load script ${name} after ${retries} attempts`));
+                        }
+                    };
+                    document.body.appendChild(script);
+                });
+            };
+
+            return attemptLoad(1);
         };
 
         if (!window.GreenhouseUtils.waitForElement) {
@@ -248,8 +407,50 @@
 
         const primarySelector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
 
+        function updateStateInspector() {
+            stateTab.innerHTML = '';
+            const tracked = [
+                'GreenhouseNeuroApp', 'GreenhouseGenetic', 'GreenhouseDopamine', 'GreenhouseSerotonin',
+                'GreenhouseDNARepair', 'GreenhouseRNARepair', 'GreenhouseEmotionApp', 'GreenhouseCognitionApp',
+                'GreenhouseInflammationApp', 'GreenhouseStressApp', 'GreenhousePathwayApp', 'GreenhouseSynapseApp',
+                'GreenhouseADHDData', 'GreenhouseBioStatus', 'GreenhouseMobile', 'GreenhouseUtils', 'GreenhouseDependencyManager'
+            ];
+            tracked.forEach(key => {
+                const item = document.createElement('div');
+                item.className = 'state-item';
+                const status = window[key] ? '<span style="color: #4ec9b0;">ACTIVE</span>' : '<span style="color: #f44336;">NULL</span>';
+                item.innerHTML = `<span class="state-key">${key}:</span> ${status}`;
+                stateTab.appendChild(item);
+            });
+        }
+
+        function runHealthCheck() {
+            healthTab.innerHTML = '<h3>Post-Cleanup Health Check</h3>';
+            const checks = [];
+
+            // 1. Timers
+            let id = window.setTimeout(() => {}, 0);
+            checks.push({ name: 'Active Timers', value: id > 100 ? `${id} (Possible Leak)` : 'Low/None', pass: id < 500 });
+
+            // 2. Observers
+            checks.push({ name: 'Tracked Observers', value: activeObservers.size, pass: activeObservers.size === 0 });
+
+            // 3. Globals
+            const leakCandidates = ['GreenhouseNeuroApp', 'GreenhouseGenetic', '_greenhouseScriptAttributes'];
+            const leaks = leakCandidates.filter(c => window[c] !== undefined);
+            checks.push({ name: 'Global Leaks', value: leaks.length ? leaks.join(', ') : 'None', pass: leaks.length === 0 });
+
+            checks.forEach(c => {
+                const div = document.createElement('div');
+                div.style.padding = '5px';
+                div.style.borderBottom = '1px solid #333';
+                div.innerHTML = `<span style="color: ${c.pass ? '#4ec9b0' : '#f44336'}">${c.pass ? '✓' : '✗'}</span> <b>${c.name}:</b> ${c.value}`;
+                healthTab.appendChild(div);
+            });
+        }
+
         function clearEnvironment() {
-            console.log('[Harness] Systematically refreshing environment...');
+            logToHarness('Systematically refreshing environment...', 'harness');
 
             // 1. Clear DOM
             modelContainer.innerHTML = '';
@@ -261,7 +462,14 @@
             let id = window.setTimeout(function() {}, 0);
             while (id--) { window.clearTimeout(id); window.clearInterval(id); }
 
-            // 3. Clear Window Globals
+            // 3. Disconnect Observers
+            logToHarness(`Disconnecting ${activeObservers.size} active observers...`, 'harness');
+            activeObservers.forEach(obs => {
+                try { obs.disconnect(); } catch(e) {}
+            });
+            activeObservers.clear();
+
+            // 4. Clear Window Globals
             const toClear = [
                 // App Instances
                 'GreenhouseNeuroApp', 'GreenhouseGenetic', 'GreenhouseDopamine', 'GreenhouseSerotonin',
@@ -279,17 +487,19 @@
             ];
 
             toClear.forEach(prop => {
-                if (window[prop]) {
-                    if (window[prop].stop) try { window[prop].stop(); } catch(e) {}
-                    if (window[prop].isRunning !== undefined) window[prop].isRunning = false;
-                    delete window[prop];
+                if (window[prop] !== undefined) {
+                    if (window[prop] && window[prop].stop) try { window[prop].stop(); } catch(e) {}
+                    if (window[prop] && window[prop].isRunning !== undefined) window[prop].isRunning = false;
+                    try { delete window[prop]; } catch(e) { window[prop] = undefined; }
                 }
             });
 
-            // 4. Reset UI state
+            // 5. Reset UI state
             activeLabel.textContent = 'Active Model: None';
             modelSelector.value = '';
-            console.log('[Harness] Environment refresh complete.');
+
+            runHealthCheck();
+            logToHarness('Environment refresh complete.', 'harness');
         }
 
         async function loadModel(modelId) {
