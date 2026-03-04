@@ -20,122 +20,29 @@
     <script src="https://drtamarojgreen.github.io/greenhouse_org/js/greenhouse.js"></script>
 
     <style>
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f7f6;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        header {
-            background-color: #fff;
-            width: 100%;
-            padding: 15px 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 1000;
-            border-bottom: 2px solid #4ca1af;
-        }
-
-        .harness-title {
-            color: #4ca1af;
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0 0 15px 0;
-        }
-
-        .controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        select {
-            padding: 10px 15px;
-            font-size: 15px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            width: 320px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        header { background-color: #fff; width: 100%; padding: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; z-index: 1000; border-bottom: 2px solid #4ca1af; }
+        .harness-title { color: #4ca1af; font-size: 24px; font-weight: 700; margin: 0 0 15px 0; }
+        .controls { display: flex; gap: 15px; align-items: center; }
+        select { padding: 10px 15px; font-size: 15px; border-radius: 6px; border: 1px solid #ddd; width: 320px; outline: none; transition: border-color 0.2s; }
         select:focus { border-color: #4ca1af; }
-
-        .btn {
-            padding: 10px 20px;
-            font-size: 14px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-
+        .btn { padding: 10px 20px; font-size: 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: background-color 0.2s; }
         #run-suite-tests { background-color: #4ca1af; color: white; }
         #run-suite-tests:hover { background-color: #3d8b98; }
-
+        #clear-results { background-color: #ff9800; color: white; }
         #clear-environment { background-color: #e4e6eb; color: #1c1e21; }
-        #clear-environment:hover { background-color: #d8dadf; }
-
-        #active-label {
-            margin-top: 10px;
-            font-size: 13px;
-            font-weight: bold;
-            color: #777;
-        }
-
-        #model-container {
-            width: 100%;
-            flex-grow: 1;
-            position: relative;
-            background-color: #fff;
-            padding-top: 20px;
-        }
-
-        #loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.98);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            font-size: 20px;
-            font-weight: bold;
-            color: #4ca1af;
-        }
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid rgba(76, 161, 175, 0.1);
-            border-top: 6px solid #4ca1af;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 25px;
-        }
+        #active-label { margin-top: 10px; font-size: 13px; font-weight: bold; color: #777; }
+        #model-container { width: 100%; flex-grow: 1; position: relative; background-color: #fff; padding-top: 20px; }
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.98); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; font-size: 20px; font-weight: bold; color: #4ca1af; }
+        .spinner { width: 60px; height: 60px; border: 6px solid rgba(76, 161, 175, 0.1); border-top: 6px solid #4ca1af; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 25px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         .wixui-section { display: block; width: 100%; min-height: 600px; }
         #model-target { width: 100%; min-height: 500px; display: block; }
-        .wixui-section div { min-height: 5px; min-width: 5px; }
     </style>
 </head>
 <body>
 
-<div id="loading-overlay">
-    <div class="spinner"></div>
-    <div id="loader-message">Initializing Live Site Environment...</div>
-</div>
+<div id="loading-overlay"><div class="spinner"></div><div id="loader-message">Initializing Live Site Environment...</div></div>
 
 <header>
     <h1 class="harness-title">Greenhouse Live Simulator</h1>
@@ -156,86 +63,60 @@
             <option value="stress">Stress Dynamics Model</option>
         </select>
         <button id="run-suite-tests" class="btn">Run Suite Tests</button>
-        <button id="clear-results" class="btn" style="background-color: #ff9800; color: white;">Clear Results</button>
+        <button id="run-neuro-test" class="btn" style="background-color: #673ab7; color: white;">Run Neuro Test</button>
+        <button id="clear-results" class="btn">Clear Results</button>
         <button id="clear-environment" class="btn">Clear Environment</button>
     </div>
     <div id="active-label">Active Model: None</div>
 </header>
 
-<div id="model-container">
-    <!-- Reconstructed DOM will go here -->
-</div>
+<div id="model-container"></div>
 
 <script>
     (function() {
-        // Detect local vs production
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const baseUrl = isLocal ? window.location.origin + '/docs/' : "https://drtamarojgreen.github.io/greenhouse_org/";
 
-        // Global Polyfills for Production Bugs & Data Mismatches
+        // Production Globals Patching
         (function patchProductionGlobals() {
-            const hLog = console.log.bind(console);
-            const hWarn = console.warn.bind(console);
-
             const safePatch = (objName, patchFn) => {
                 let val = window[objName];
                 Object.defineProperty(window, objName, {
                     get() { return val; },
-                    set(newVal) {
-                        val = newVal;
-                        if (val) {
-                            try { patchFn(val); } catch (e) { hWarn(`[Harness] Failed to patch ${objName}:`, e); }
-                        }
-                    },
-                    configurable: true,
-                    enumerable: true
+                    set(newVal) { val = newVal; if (val) { try { patchFn(val); } catch (e) {} } },
+                    configurable: true, enumerable: true
                 });
-                if (val) {
-                    try { patchFn(val); } catch (e) { hWarn(`[Harness] Failed to initial patch ${objName}:`, e); }
-                }
+                if (val) { try { patchFn(val); } catch (e) {} }
             };
 
-            // Fix ADHD data mapping mismatch in neuro_app.js
             safePatch('GreenhouseADHDData', (data) => {
                 if (data.categories && !data.enhancements) {
-                    hLog("[Harness] Polyfilling GreenhouseADHDData.enhancements...");
                     const flat = {};
                     for (const k in data.categories) {
                         if (Array.isArray(data.categories[k])) {
-                            data.categories[k].forEach(e => {
-                                if (e && e.id) flat[e.id] = { ...e, category: Array.isArray(e.category) ? e.category : [k] };
-                            });
+                            data.categories[k].forEach(e => { if (e && e.id) flat[e.id] = { ...e, category: Array.isArray(e.category) ? e.category : [k] }; });
                         }
                     }
                     data.enhancements = flat;
                 }
             });
 
-            // Fix missing calculateFaceNormal in legacy/production 3D Math
-            safePatch('GreenhouseModels3DMath', (math) => {
-                if (math.calculateNormal && !math.calculateFaceNormal) {
-                    hLog("[Harness] Polyfilling GreenhouseModels3DMath.calculateFaceNormal...");
-                    math.calculateFaceNormal = math.calculateNormal;
-                }
+            safePatch('GreenhouseModelsUtil', (util) => {
+                const originalT = util.t;
+                util.t = function(key) { const res = originalT ? originalT.apply(this, arguments) : undefined; return (res === undefined || res === null) ? key : res; };
             });
 
-            safePatch('GreenhouseUtils', (utils) => {
-                if (utils.observeAndReinitializeApp) {
-                    const original = utils.observeAndReinitializeApp;
-                    utils.observeAndReinitializeApp = function(app, selector) {
-                        const el = document.querySelector(selector);
-                        if (!el) {
-                            hWarn(`[Harness] observeAndReinitializeApp: Selector not found: ${selector}`);
-                            return;
-                        }
-                        try {
-                            return original.apply(this, arguments);
-                        } catch (e) {
-                            hWarn(`[Harness] observeAndReinitializeApp failed for ${selector}:`, e);
-                        }
-                    };
-                }
-            });
+            if (typeof Node !== 'undefined' && Node.prototype && !Node.prototype._patched) {
+                const original = Node.prototype.contains;
+                Node.prototype.contains = function(other) {
+                    if (this === other) return true;
+                    if (!other) return false;
+                    if (this.children && Array.from(this.children).includes(other)) return true;
+                    if (this.children) { for (const child of this.children) { if (child.contains && child.contains(other)) return true; } }
+                    return original ? original.apply(this, arguments) : false;
+                };
+                Node.prototype._patched = true;
+            }
         })();
 
         const modelContainer = document.getElementById('model-container');
@@ -247,57 +128,20 @@
         const clearBtn = document.getElementById('clear-environment');
         const loaderMessage = document.getElementById('loader-message');
 
-        /**
-         * Robust GreenhouseUtils Interceptor
-         * Ensures attributes persist across sub-script loads and handles app-specific dependencies.
-         */
-        const originalLoadScript = window.GreenhouseUtils ? window.GreenhouseUtils.loadScript : null;
-
         window.GreenhouseUtils = window.GreenhouseUtils || {};
-
-        // Override or provide loadScript to ensure attributes are always merged and persistent
         window.GreenhouseUtils.loadScript = async function(name, baseUrl, attributes = {}) {
-            console.log(`[Harness] Loading sub-script: ${name}`);
-
-            // Merge current global attributes with newly provided ones
-            const mergedAttributes = {
-                ...(window._greenhouseScriptAttributes || {}),
-                ...attributes
-            };
-
-            // Persist them back to the window object so the sub-script can see them
+            const mergedAttributes = { ...(window._greenhouseScriptAttributes || {}), ...attributes };
             window._greenhouseScriptAttributes = mergedAttributes;
-
-            // Re-inject the script into the DOM with attributes
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
                 script.src = `${baseUrl}js/${name}`;
                 script.dataset.modelScript = "true";
-
-                for (const [key, value] of Object.entries(mergedAttributes)) {
-                    script.setAttribute(`data-${key}`, value);
-                }
-
-                script.onload = () => {
-                    console.log(`[Harness] Sub-script loaded: ${name}`);
-                    resolve();
-                };
+                for (const [key, value] of Object.entries(mergedAttributes)) { script.setAttribute(`data-${key}`, value); }
+                script.onload = () => resolve();
                 script.onerror = reject;
                 document.body.appendChild(script);
             });
         };
-
-        if (!window.GreenhouseUtils.waitForElement) {
-            window.GreenhouseUtils.waitForElement = (s, t = 5000) => new Promise((resolve, reject) => {
-                const check = () => {
-                    const el = document.querySelector(Array.isArray(s) ? s[0] : s);
-                    if (el) return resolve(el);
-                    if (t <= 0) return reject();
-                    t -= 100; setTimeout(check, 100);
-                };
-                check();
-            });
-        }
 
         const models = {
             'genetic': { label: 'Genetic Model', js: 'genetic.js' },
@@ -316,51 +160,68 @@
 
         const primarySelector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
 
+        /**
+         * Systematically refreshes the environment by clearing window globals,
+         * stopping intervals, and resetting the DOM.
+         */
         function clearEnvironment() {
+            console.log('[Harness] Systematically refreshing environment...');
+
+            // 1. Clear DOM
             modelContainer.innerHTML = '';
-            document.querySelectorAll('script[data-model-script="true"]').forEach(s => s.remove());
+            document.querySelectorAll('script[data-model-script="true"], script[data-test-script="true"]').forEach(s => s.remove());
             const overlay = document.getElementById('greenhouse-test-results-overlay');
             if (overlay) overlay.remove();
 
-            const apps = [
-                'GreenhouseNeuroApp', 'GreenhouseGenetic', 'GreenhouseDopamine',
-                'GreenhouseSerotonin', 'GreenhouseDNARepair', 'GreenhouseRNARepair',
-                'GreenhouseEmotionApp', 'GreenhouseCognitionApp', 'GreenhouseInflammationApp',
-                'GreenhouseStressApp', 'GreenhousePathwayApp', 'GreenhouseSynapseApp'
+            // 2. Stop all intervals and timeouts
+            let id = window.setTimeout(function() {}, 0);
+            while (id--) { window.clearTimeout(id); window.clearInterval(id); }
+
+            // 3. Clear Window Globals
+            const toClear = [
+                // App Instances
+                'GreenhouseNeuroApp', 'GreenhouseGenetic', 'GreenhouseDopamine', 'GreenhouseSerotonin',
+                'GreenhouseDNARepair', 'GreenhouseRNARepair', 'GreenhouseEmotionApp', 'GreenhouseCognitionApp',
+                'GreenhouseInflammationApp', 'GreenhouseStressApp', 'GreenhousePathwayApp', 'GreenhouseSynapseApp',
+                'GreenhouseModels', 'GreenhouseModelsUX', 'GreenhouseInspiration', 'GreenhouseScheduler',
+                // Data Objects
+                'GreenhouseADHDData', 'GreenhouseBioStatus', 'GreenhouseModelsData', 'GreenhouseModelsUI',
+                'GreenhouseMobile', 'V8GraphRenderer', 'GreenhouseKeggParser',
+                // Attribute Caches
+                '_greenhouseScriptAttributes', '_greenhouseNeuroAttributes', '_greenhouseSynapseAttributes',
+                '_greenhouseStressAttributes', '_greenhouseInflammationAttributes', '_greenhouseModelsAttributes',
+                // Legacy / Harness leftovers
+                'global', 'require', 'module', 'exports', 'process', '__dirname'
             ];
-            apps.forEach(app => {
-                if (window[app]) {
-                    if (window[app].isRunning !== undefined) window[app].isRunning = false;
-                    if (window[app].stop) window[app].stop();
-                    delete window[app];
+
+            toClear.forEach(prop => {
+                if (window[prop]) {
+                    if (window[prop].stop) try { window[prop].stop(); } catch(e) {}
+                    if (window[prop].isRunning !== undefined) window[prop].isRunning = false;
+                    delete window[prop];
                 }
             });
+
+            // 4. Reset UI state
             activeLabel.textContent = 'Active Model: None';
             modelSelector.value = '';
+            console.log('[Harness] Environment refresh complete.');
         }
 
         async function loadModel(modelId) {
             const model = models[modelId];
             if (!model) return;
-
             clearEnvironment();
-
-            // Mock GreenhouseADHDData for Neuro model to prevent crashes
             if (modelId === 'neuro') {
-                window.GreenhouseADHDData = {
-                    scenarios: { "default": { "name": "Standard", "description": "Standard neural activity", "levels": {} } },
-                    adhdTraits: { "impulsivity": 0.5, "inattention": 0.5, "hyperactivity": 0.5 }
-                };
+                window.GreenhouseADHDData = { scenarios: { "default": { "name": "Standard", "description": "Standard neural activity", "levels": {} } }, adhdTraits: { "impulsivity": 0.5, "inattention": 0.5, "hyperactivity": 0.5 } };
             }
             activeLabel.textContent = `Active Model: ${model.label}`;
             modelSelector.value = modelId;
-
             loaderMessage.textContent = `Replicating Production Delay for ${model.label}...`;
             loadingOverlay.style.display = 'flex';
             await new Promise(resolve => setTimeout(resolve, 3000));
             loadingOverlay.style.display = 'none';
 
-            // Reconstruct DOM
             const section1 = document.createElement('section'); section1.className = 'wixui-section';
             section1.appendChild(document.createElement('div'));
             const div2 = document.createElement('div'); section1.appendChild(div2);
@@ -372,7 +233,6 @@
             sectionInner.appendChild(targetDiv);
             modelContainer.appendChild(section1);
 
-            // Script Injection
             const script = document.createElement('script');
             script.src = `${baseUrl}js/${model.js}`;
             script.dataset.modelScript = "true";
@@ -381,25 +241,7 @@
             script.setAttribute('data-base-url', baseUrl);
             script.setAttribute('data-view', "default");
 
-            if (modelId === 'genetic') {
-                const gs = {
-                    "genetic": primarySelector,
-                    "geneticTitle": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
-                    "geneticParagraph": "section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(1) > div:nth-child(2)"
-                };
-                script.setAttribute('data-genetic-selectors', JSON.stringify(gs));
-            }
-
-            // Sync global state
-            const scriptAttributes = {
-                'target-selector-left': primarySelector,
-                'target-selector-right': '',
-                'base-url': baseUrl,
-                'view': 'default'
-            };
-            if (modelId === 'genetic') {
-                scriptAttributes['data-genetic-selectors'] = script.getAttribute('data-genetic-selectors');
-            }
+            const scriptAttributes = { 'target-selector-left': primarySelector, 'target-selector-right': '', 'base-url': baseUrl, 'view': 'default' };
             window._greenhouseScriptAttributes = scriptAttributes;
 
             const config = { baseUrl, targetSelector: primarySelector };
@@ -412,195 +254,63 @@
         }
 
         modelSelector.addEventListener('change', (e) => loadModel(e.target.value));
-
-        clearResultsBtn.onclick = () => {
-            const overlay = document.getElementById('greenhouse-test-results-overlay');
-            if (overlay) overlay.remove();
-        };
-
+        clearResultsBtn.onclick = () => { const overlay = document.getElementById('greenhouse-test-results-overlay'); if (overlay) overlay.remove(); };
         clearBtn.onclick = clearEnvironment;
-        runTestsBtn.onclick = async () => {
-            const hLog = console.log.bind(console);
-            const hError = console.error.bind(console);
-            const hWarn = console.warn.bind(console);
 
-            hLog("[Harness] Run Tests clicked. Model ID:", modelSelector.value);
-            const modelId = modelSelector.value;
+        /**
+         * Global Test Bridge
+         * Connects the repository-style TestFramework to the harness-style GreenhouseTestSuite.
+         */
+        function setupTestBridge() {
+            if (!window.TestFramework || !window.GreenhouseTestSuite) return;
 
-            // 1. Setup Mock Environment for Repository Tests
-            if (!window._originalDocumentMethods) {
-                window._originalDocumentMethods = {
-                    createElement: document.createElement.bind(document),
-                    querySelector: document.querySelector.bind(document),
-                    getElementById: document.getElementById.bind(document)
-                };
-            }
+            console.log('[Harness] Establishing Test Bridge...');
 
-            window.require = (pathName) => {
-                hLog(`[Harness] Mock Require: ${pathName}`);
-                if (pathName.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
-                if (pathName.includes('test_framework')) return window.TestFramework;
-                if (pathName.includes('GreenhouseUtils')) return window.GreenhouseUtils;
-                if (pathName.includes('GreenhouseMobile')) return window.GreenhouseMobile;
-                if (pathName.includes('GreenhouseModelsUtil')) return window.GreenhouseModelsUtil;
-                if (pathName.includes('test_env_factory')) return {
-                    createEnv: (overrides = {}) => {
-                        const t = { ...overrides };
-                        const p = new Proxy(t, {
-                            get(target, prop) {
-                                if (prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis') return p;
-                                if (prop in target) return target[prop];
-                                if (prop === 'performance') return window.performance;
-                                return window.global[prop];
-                            },
-                            set(target, prop, value) { target[prop] = value; return true; },
-                            has(target, prop) { return prop in target || prop in window.global; }
-                        });
-                        return p;
-                    },
-                    loadScript: (context, scriptPath) => {
-                        const code = window.require('fs').readFileSync(scriptPath);
-                        return window.require('vm').runInContext(code, context);
-                    }
-                };
-                if (pathName === 'fs') return {
-                    readFileSync: (p) => {
-                        hLog(`[Harness] Mock FS read: ${p}`);
-                        const cleanPath = p.replace(/^(\.\.\/)+/, '').replace(/^(\/app\/)+/, '').replace(/^\/+/, '');
-                        const xhr = new XMLHttpRequest();
-                        const origins = [window.location.origin, ''];
-                        const bases = ['', '/docs'];
+            // Intercept TestFramework.it to also register with the dashboard
+            const originalIt = window.TestFramework.it.bind(window.TestFramework);
+            window.TestFramework.it = (name, fn) => {
+                const suite = window.TestFramework.currentSuite;
+                const fullName = `[${suite ? suite.name : 'Unit'}] ${name}`;
 
-                        for (const origin of origins) {
-                            for (const base of bases) {
-                                try {
-                                    const url = origin + base + '/' + cleanPath;
-                                    xhr.open('GET', url, false);
-                                    xhr.send();
-                                    if (xhr.status === 200) return xhr.responseText;
-                                } catch (e) {}
-                            }
+                // Call original to keep TestFramework state correct
+                originalIt(name, fn);
+
+                // Register with Dashboard
+                window.GreenhouseTestSuite.addTest(fullName, async () => {
+                    const runWithDone = (innerFn) => {
+                        if (innerFn.length > 0) {
+                            return new Promise((resolve, reject) => {
+                                const done = (err) => err ? reject(err) : resolve();
+                                try { innerFn(done); } catch (e) { reject(e); }
+                            });
                         }
-                        throw new Error(`FS Mock: Failed to load ${p} after trying multiple paths.`);
-                    },
-                    existsSync: () => true
-                };
-                if (pathName === 'path') return {
-                    join: (...args) => args.filter(Boolean).join('/').replace(/\/+/g, '/'),
-                    resolve: (...args) => args.filter(Boolean).join('/').replace(/\/+/g, '/'),
-                    dirname: (p) => p.split('/').slice(0, -1).join('/')
-                };
-                if (pathName === 'vm') {
-                    const vm = {
-                        createContext: (sandboxInput) => {
-                            if (sandboxInput && sandboxInput.window === sandboxInput) return sandboxInput;
-                            const ctx = Object.create(mockGlobal);
-                            if (sandboxInput) Object.assign(ctx, sandboxInput);
-                            ctx.window = ctx;
-                            ctx.global = ctx;
-                            ctx.self = ctx;
-                            return ctx;
-                        },
-                        runInContext: (code, context) => {
-                            const fn = new Function('require', 'module', 'exports', '__dirname', 'global', 'process', 'console', 'window', 'document', 'performance', code);
-                            const perf = window.performance;
-                            const doc = window.document;
-                            return fn.call(context, window.require, {exports:{}}, {}, "", context, window.process, window.console, context, doc, perf);
-                        },
-                        runInThisContext: (code) => vm.runInContext(code, window.global),
-                        runInNewContext: (code, sandboxInput) => vm.runInContext(code, vm.createContext(sandboxInput || {}))
+                        return innerFn();
                     };
-                    return vm;
-                }
-                return {};
+
+                    try {
+                        if (window.TestFramework.sinon) window.TestFramework.sinon.restore();
+                        try { await runWithDone(fn); } finally {}
+                    } finally {
+                        if (window.TestFramework.sinon) window.TestFramework.sinon.restore();
+                    }
+                });
             };
+        }
 
-            window.onerror = (msg, url, line, col, error) => {
-                hError(`[Global Error] ${msg} at ${url}:${line}:${col}`, error);
-            };
-            window.module = { exports: {} };
-            window.process = {
-                env: { NODE_ENV: 'test' },
-                exit: (code) => hLog("[Harness] Process exit intercepted. Code:", code)
-            };
-            window.__dirname = "";
+        document.getElementById('run-neuro-test').onclick = async () => {
+            console.log('[Harness] Manual Neuro Test requested.');
 
-            // Robust Sandbox Proxy to prevent Invariant Violations
-            const sandbox = Object.create(null);
-            // Pre-seed sandbox with critical globals
-            sandbox.console = window.console;
-            sandbox.process = window.process;
-            sandbox.performance = window.performance;
-            sandbox.document = window.document;
+            // 1. Refresh Environment
+            clearEnvironment();
 
-            const mockGlobal = new Proxy(sandbox, {
-                get(target, prop) {
-                    if (prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis') return mockGlobal;
-                    if (prop in target) return target[prop];
-                    if (prop === 'performance') return window.performance;
-                    if (prop === 'document') return window.document;
+            // 2. Load Model
+            await loadModel('neuro');
+            // Wait for production delay + script load
+            await new Promise(r => setTimeout(r, 4000));
 
-                    const val = window[prop];
-                    if (typeof val === 'function') {
-                        // Don't bind constructors or built-ins
-                        if (/^[A-Z]/.test(prop) || ['Object', 'Array', 'Promise', 'Map', 'Set', 'Function', 'Symbol', 'Error', 'TypeError', 'AssertionError'].includes(prop)) return val;
-
-                        // Bind native methods to their original targets
-                        const targetObj = (prop in document && !(prop in window)) ? document : window;
-                        try { return val.bind(targetObj); } catch(e) { return val; }
-                    }
-                    return val;
-                },
-                set(target, prop, value) {
-                    if (['console', 'location', 'history'].includes(prop)) return true;
-
-                    // Direct polyfill on global GreenhouseADHDData if it's being set in sandbox
-                    if (prop === 'GreenhouseADHDData' && value && value.categories && !value.enhancements) {
-                        value.enhancements = [].concat(...Object.values(value.categories)).reduce((acc, e) => {
-                            acc[e.id] = { ...e, category: Array.isArray(e.category) ? e.category : [e.category] };
-                            return acc;
-                        }, {});
-                    }
-
-                    // Preserve critical math methods if GreenhouseModels3DMath is mocked without them
-                    if (prop === 'GreenhouseModels3DMath' && value && window.GreenhouseModels3DMath) {
-                        for (const m of ['calculateFaceNormal', 'calculateNormal', 'applyDepthFog', 'project3DTo2D']) {
-                            if (!value[m] && window.GreenhouseModels3DMath[m]) value[m] = window.GreenhouseModels3DMath[m];
-                        }
-                    }
-
-                    // Preserve critical utility methods
-                    if (prop === 'GreenhouseModelsUtil' && value && window.GreenhouseModelsUtil) {
-                        for (const m of ['SimulationEngine', 'GreenhouseComponent', 'GreenhouseSystem', 'DiurnalClock', 'PathwayService']) {
-                            if (!value[m] && window.GreenhouseModelsUtil[m]) value[m] = window.GreenhouseModelsUtil[m];
-                        }
-                    }
-
-                    // Avoid accessor invariants: always define as data property on sandbox
-                    Object.defineProperty(target, prop, { value, configurable: true, writable: true, enumerable: true });
-                    return true;
-                },
-                has(target, prop) { return prop in target || prop in window; },
-                getOwnPropertyDescriptor(target, prop) {
-                    if (prop in target) return Object.getOwnPropertyDescriptor(target, prop);
-                    const desc = Object.getOwnPropertyDescriptor(window, prop);
-                    if (desc) return { ...desc, configurable: true, writable: desc.writable !== undefined ? true : undefined };
-                    return undefined;
-                },
-                defineProperty(target, prop, desc) {
-                    return Object.defineProperty(target, prop, { ...desc, configurable: true });
-                },
-                getPrototypeOf() { return Object.getPrototypeOf(window); }
-            });
-            window.global = mockGlobal;
-
-            // 2. Load Core Testing Infrastructure
-            const loadInfra = [];
-            if (!window.assert) loadInfra.push('js/assertion_library.js');
-            if (!window.TestFramework) loadInfra.push('js/test_framework.js');
-            if (!window.GreenhouseTestSuite) loadInfra.push('js/model_tests.js');
-
-            for (const src of loadInfra) {
+            // 3. Ensure Testing Infra
+            const infra = ['js/assertion_library.js', 'js/test_framework.js', 'js/GreenhouseMobile.js', 'js/model_tests.js'];
+            for (const src of infra) {
                 await new Promise(res => {
                     const s = document.createElement('script');
                     s.src = src;
@@ -609,254 +319,241 @@
                 });
             }
 
-            // Patch TestFramework for Suite Hook Inheritance
-            if (window.TestFramework) {
-                const originalDescribe = window.TestFramework.describe.bind(window.TestFramework);
-                window.TestFramework.describe = (name, fn) => {
-                    const parent = window.TestFramework.currentSuite;
-                    const suite = originalDescribe(name, fn);
-                    if (suite) suite.parent = parent;
-                    return suite;
-                };
+            // 4. Setup Bridge
+            setupTestBridge();
 
-                window.TestFramework.getHooks = (suite, type) => {
-                    let hooks = [];
-                    let curr = suite;
-                    while (curr) {
-                        if (curr[type]) hooks = [...curr[type], ...hooks];
-                        curr = curr.parent;
-                    }
-                    return hooks;
-                };
-            }
+            // 5. Load and Run Test
+            console.log('[Harness] Loading Neuro Browser Test...');
+            const response = await fetch('../tests/unit/test_neuro_browser.js');
+            const code = await response.text();
+            const script = document.createElement('script');
+            script.textContent = code;
+            script.dataset.testScript = "true";
+            document.body.appendChild(script);
 
-            // Add assert.fail fallback
-            if (window.assert && !window.assert.fail) {
-                window.assert.fail = (msg) => { throw new window.AssertionError(msg || "Test failed explicitly"); };
-            }
-            if (window.AssertionError) window.global.AssertionError = window.AssertionError;
-
-            // 3. Prepare Dashboard & Test Queue
             if (window.GreenhouseTestSuite) {
-                window.GreenhouseTestSuite.tests = [];
-
-                // Persistence layer to survive redefinitions
-                if (!window._harnessTestQueue) window._harnessTestQueue = [];
-                window._harnessTestQueue = []; // Reset for this run
-
-                const originalAddTest = window.GreenhouseTestSuite.addTest.bind(window.GreenhouseTestSuite);
-                window.GreenhouseTestSuite.addTest = (name, fn) => {
-                    hLog(`[Harness] Dashboard addTest: ${name}`);
-                    window._harnessTestQueue.push({ name, fn });
-                    originalAddTest(name, fn);
-                };
-
-                window.GreenhouseTestSuite.runAll = async function() {
-                    hLog(`[Harness] runAll() starting. Total tests: ${this.tests.length}`);
-                    this.isTesting = true;
-                    this.results = [];
-                    for (let test of this.tests) {
-                        try {
-                            const startTime = performance.now();
-                            const result = await test.fn();
-                            const duration = performance.now() - startTime;
-                            this.results.push({ name: test.name, status: 'PASS', duration: duration.toFixed(2) + 'ms', details: result });
-                        } catch (error) {
-                            hError(`[Harness] Test FAILED: ${test.name}`, error);
-                            this.results.push({ name: test.name, status: 'FAIL', error: error.message });
-                        }
-                    }
-                    this.isTesting = false;
-                    this.report();
-                };
-
-                window.GreenhouseTestSuite.addTest('Harness Environment Check', () => {
-                    if (typeof window.GreenhouseUtils === 'undefined') throw new Error('GreenhouseUtils missing');
-                    return 'Ready';
-                });
+                window.GreenhouseTestSuite.results = [];
+                await window.GreenhouseTestSuite.runAll();
             }
+        };
 
-            // 4. Seamlessly Bridge Repository Tests
-            if (window.TestFramework) {
-                window.TestFramework.reset();
-                const registeredRepoTests = new Set();
+        runTestsBtn.onclick = async () => {
+            const hLog = console.log.bind(console);
+            const hError = console.error.bind(console);
 
-                window.TestFramework.it = (name, fn) => {
-                    const suite = window.TestFramework.currentSuite;
-                    const suiteName = suite ? suite.name : 'Unit';
-                    const fullName = `[${suiteName}] ${name}`;
-
-                    if (registeredRepoTests.has(fullName)) return;
-                    registeredRepoTests.add(fullName);
-                    hLog(`[Harness] Registered bridged test: ${fullName}`);
-
-                    if (window.GreenhouseTestSuite) {
-                        window.GreenhouseTestSuite.addTest(fullName, async () => {
-                            const runWithDone = (innerFn) => {
-                                if (innerFn.length > 0) {
-                                    return new Promise((resolve, reject) => {
-                                        const done = (err) => err ? reject(err) : resolve();
-                                        try { innerFn(done); } catch (e) { reject(e); }
-                                    });
-                                }
-                                return innerFn();
-                            };
-
-                            // Check if getHooks exists (it's in tests/utils but not in docs/js)
-                            if (typeof window.TestFramework.getHooks === 'function') {
-                                if (suite && !suite._beforeAllRun) {
-                                    const hooks = window.TestFramework.getHooks(suite, 'beforeAll');
-                                    for (const h of (hooks || [])) await runWithDone(h);
-                                    suite._beforeAllRun = true;
-                                }
-                                const beHooks = window.TestFramework.getHooks(suite, 'beforeEach');
-                                for (const h of (beHooks || [])) await runWithDone(h);
-                                try { await runWithDone(fn); } finally {
-                                    const aeHooks = window.TestFramework.getHooks(suite, 'afterEach');
-                                    for (const h of (aeHooks || [])) await runWithDone(h);
-                                }
-                            } else {
-                                // Fallback for docs/js version with Manual Inheritance
-                                if (suite && !suite._beforeAllRun) {
-                                    const allBeforeAll = (suite.beforeAll || []);
-                                    for (const h of allBeforeAll) await runWithDone(h);
-                                    suite._beforeAllRun = true;
-                                }
-                                const allBeforeEach = (suite.beforeEach || []);
-                                for (const h of allBeforeEach) await runWithDone(h);
-                                try { await runWithDone(fn); } finally {
-                                    const allAfterEach = (suite.afterEach || []);
-                                    for (const h of allAfterEach) await runWithDone(h);
-                                }
-                            }
-                        });
-                    }
+            // --- Unified Mock Infrastructure ---
+            const createMockElement = (tag = 'div') => {
+                const el = {
+                    tagName: tag.toUpperCase(), nodeType: 1, style: {}, _classList: new Set(),
+                    get classList() { const s = el._classList; return { add: (c) => s.add(c), remove: (c) => s.delete(c), contains: (c) => s.has(c), toggle: (c) => s.has(c) ? s.delete(c) : s.add(c), entries: () => Array.from(s).entries(), values: () => Array.from(s).values(), toString: () => Array.from(s).join(' ') }; },
+                    get className() { return Array.from(el._classList).join(' '); },
+                    set className(v) { el._classList = new Set(v.split(' ').filter(Boolean)); },
+                    children: [], childNodes: [], attributes: {}, dataset: {}, _innerHTML: '',
+                    get innerHTML() { return el.children.length > 0 ? el.children.map(c => c.outerHTML || '').join('') : el._innerHTML; },
+                    set innerHTML(v) { el._innerHTML = v; el.children = []; el.childNodes = []; },
+                    get outerHTML() { const attrs = Object.entries(el.attributes).map(([k, v]) => ` ${k}="${v}"`).join(''); return `<${el.tagName.toLowerCase()}${attrs}>${el.innerHTML}</${el.tagName.toLowerCase()}>`; },
+                    get textContent() { return el.children.length > 0 ? el.children.map(c => c.textContent).join('') : (el._innerHTML || '').replace(/<[^>]*>/g, ''); },
+                    set textContent(v) { el._innerHTML = v; el.children = []; el.childNodes = []; },
+                    get id() { return el.attributes.id || ''; }, set id(v) { el.attributes.id = v; },
+                    get value() { return el._value || ''; }, set value(v) { el._value = v; },
+                    get checked() { return !!el._checked; }, set checked(v) { el._checked = !!v; },
+                    setAttribute: (n, v) => { el.attributes[n] = String(v); if (n === 'id') el.id = v; if (n === 'class') el.className = v; },
+                    getAttribute: (n) => el.attributes[n] || null,
+                    removeAttribute: (n) => delete el.attributes[n],
+                    appendChild: (c) => { if (!c) return; el.children.push(c); el.childNodes.push(c); c.parentNode = el; return c; },
+                    append: (...nodes) => nodes.forEach(n => el.appendChild(typeof n === 'string' ? createMockDocument().createTextNode(n) : n)),
+                    prepend: (c) => { if (!c) return; el.children.unshift(c); el.childNodes.unshift(c); c.parentNode = el; return c; },
+                    removeChild: (c) => { el.children = el.children.filter(x => x !== c); el.childNodes = el.childNodes.filter(x => x !== c); if (c) c.parentNode = null; return c; },
+                    insertBefore: (n, r) => { const idx = el.childNodes.indexOf(r); if (idx === -1) el.appendChild(n); else { el.childNodes.splice(idx, 0, n); el.children = el.childNodes.filter(x => x.nodeType === 1); } if (n) n.parentNode = el; return n; },
+                    remove: () => { if (el.parentNode) el.parentNode.removeChild(el); },
+                    matches: (s) => { if (s === '*') return true; if (s.startsWith('.') && el.classList.contains(s.slice(1))) return true; if (s.startsWith('#') && el.id === s.slice(1)) return true; if (el.tagName === s.toUpperCase()) return true; return false; },
+                    querySelector: (s) => { const find = (node) => { if (node.matches && node.matches(s)) return node; for (let c of node.children) { const res = find(c); if (res) return res; } return null; }; for (let c of el.children) { const res = find(c); if (res) return res; } return null; },
+                    querySelectorAll: (s) => { const results = []; const findAll = (node) => { if (node.matches && node.matches(s)) results.push(node); for (let c of node.children) findAll(c); }; for (let c of el.children) findAll(c); return results; },
+                    getContext: () => ({ fillRect:()=>{}, fillText:()=>{}, beginPath:()=>{}, moveTo:()=>{}, lineTo:()=>{}, stroke:()=>{}, fill:()=>{}, arc:()=>{}, clearRect:()=>{}, save:()=>{}, restore:()=>{}, measureText: () => ({ width: 10 }), setTransform:()=>{}, transform:()=>{}, drawImage:()=>{}, createPattern:()=>{}, createLinearGradient:()=>({ addColorStop:()=>{} }), createRadialGradient:()=>({ addColorStop:()=>{} }), scale:()=>{}, rotate:()=>{}, translate:()=>{} }),
+                    getBoundingClientRect: () => ({ top: 0, left: 0, width: 800, height: 600, right: 800, bottom: 600 }),
+                    get offsetWidth() { return 800; }, get offsetHeight() { return 600; }, get clientWidth() { return 800; }, get clientHeight() { return 600; },
+                    addEventListener: (n, f) => { el._listeners = el._listeners || {}; el._listeners[n] = el._listeners[n] || []; el._listeners[n].push(f); },
+                    removeEventListener: (n, f) => { if (el._listeners?.[n]) el._listeners[n] = el._listeners[n].filter(l => l !== f); },
+                    dispatchEvent: (e) => { const n = typeof e === 'string' ? e : e.type; const evt = typeof e === 'string' ? { type: e, target: el } : e; if (el._listeners?.[n]) el._listeners[n].forEach(f => f(evt)); return true; },
+                    contains: function(o) { return this === o || (this.children && Array.from(this.children).some(c => c.contains && c.contains(o))); },
+                    focus: () => {}, blur: () => {}, click: () => { el.dispatchEvent('click'); }
                 };
-
-                window.TestFramework.run = async () => {
-                    hLog("[Harness] Repo script called run() - Intercepted");
-                    return { passed: 0, failed: 0, total: 0, suites: [] };
-                };
-            }
-
-            // 5. Meticulous mapping of ALL 98 identified unit test files
-            const testMap = {
-                'neuro': [
-                    'test_neuro_page.js', 'test_neuro_logic.js', 'test_neuro_ui.js', 'test_neuro_ga.js',
-                    'test_neuro_app_logic.js', 'test_neuro_performance.js', 'test_neuro_3d_engine.js',
-                    'test_neuro_ui_components.js', 'test_neuro_page_loader.js', 'test_adhd_scenarios.js',
-                    'models/auxiliary/test_neuro_page_full.js', 'models/auxiliary/test_neuro_page_new.js'
-                ],
-                'genetic': [
-                    'test_genetic_page.js', 'test_genetic_ui.js', 'test_genetic_algo.js', 'test_genetic_helpers.js',
-                    'test_genetic_labels.js', 'test_genetic_visualizations.js', 'test_genetic_3d_projection.js',
-                    'test_genetic_camera_views.js', 'test_genetic_main_camera_controller.js', 'test_genetic_mouse_actual_bug.js',
-                    'test_genetic_mouse_control_independence.js', 'test_genetic_mouse_event_flow.js', 'test_genetic_pip_camera_usage.js',
-                    'test_genetic_pip_controls.js', 'test_genetic_pip_interactions.js', 'test_genetic_rotation_and_camera_positions.js',
-                    'test_genetic_page_loader.js', 'models/auxiliary/test_genetic_page_new.js'
-                ],
-                'dopamine': [
-                    'test_dopamine_ui.js', 'test_dopamine_model_logic.js', 'test_dopamine_electro_unit.js', 'test_dopamine_molecular_unit.js'
-                ],
-                'serotonin': [
-                    'test_serotonin_ui.js', 'test_serotonin_model_logic.js', 'test_serotonin_transport_unit.js'
-                ],
-                'inflammation': [
-                    'test_inflammation_logic.js', 'test_inflammation_ui.js', 'test_inflammation_enhancements.js'
-                ],
-                'stress': [
-                    'test_stress_logic.js', 'test_stress_ui.js', 'test_stress_regression.js', 'test_stress_enhancements.js', 'test_stress_interventions.js', 'test_stress_ui.js'
-                ],
-                'dna': [
-                    'test_dna_ui.js', 'test_dna_logic.js', 'test_dna_page.js'
-                ],
-                'rna': [
-                    'test_rna_ui.js', 'test_rna_page.js', 'repro_rna_error.js'
-                ],
-                'synapse': [
-                    'test_synapse_ui.js', 'test_synapse_logic.js', 'test_synapse_receptors.js', 'test_synapse_page_loader.js', 'models/auxiliary/test_synapse_page_new.js'
-                ],
-                'pathway': [
-                    'test_pathway_ui.js', 'test_pathway_logic.js', 'test_pathway_page_loader.js', 'test_json_pathway_support.js', 'models/auxiliary/test_pathway_page_new.js'
-                ],
-                'emotion': [
-                    'test_emotion_page.js', 'models/auxiliary/test_emotion_page.js', 'models/auxiliary/test_emotion_deep_dive.js'
-                ],
-                'cognition': [
-                    'test_cognition_logic.js', 'test_cognition_ui.js', 'test_cognition_drawing.js', 'test_cognition_modules.js', 'test_cognition_regression.js', 'models/auxiliary/test_cognition_page.js'
-                ]
+                return el;
             };
 
-            const commonTests = [
-                'test_accessibility.js', 'test_assertion_library.js', 'test_dependency_manager.js',
-                'test_global_ux.js', 'test_greenhouse_utils.js', 'test_labeling_system.js',
-                'test_models_3d_math.js', 'test_models_toc.js', 'test_models_util.js',
-                'test_performance_profiler_unit.js', 'test_performance_regression.js',
-                'test_react_compatibility.js', 'test_test_framework.js', 'test_v8_graph_renderer.js',
-                'test_mobile_edge_cases.js', 'test_mobile_integration.js', 'test_mobile_model_behaviors.js',
-                'test_mobile_models_lifecycle.js', 'test_mobile_regression.js', 'test_mobile_typography_contrast.js',
-                'test_mobile_ui_interactions.js', 'test_mobile_viewer.js', 'test_model_sync.js',
-                'test_patient_app_unit.js', 'test_dashboard_app_unit.js', 'test_meditation_app.js',
-                'test_scheduler_logic.js', 'test_tech_canvas.js', 'test_inspiration_logic.js',
-                'test_kegg_parser.js', 'models/auxiliary/test_models_page_new.js'
-            ];
+            const createMockDocument = () => {
+                const doc = createMockElement('document');
+                doc.nodeType = 9; doc.createElement = createMockElement;
+                doc.createTextNode = (t) => ({ nodeType: 3, textContent: t, nodeValue: t, remove: function(){ if(this.parentNode) this.parentNode.removeChild(this); } });
+                doc.body = createMockElement('body'); doc.head = createMockElement('head'); doc.documentElement = doc; doc.location = { href: '', reload: () => {} }; doc.cookie = "";
+                doc.getElementById = (id) => { const find = (el) => { if (el.id === id) return el; for (let c of el.children) { const r = find(c); if (r) return r; } return null; }; return find(doc.body) || find(doc.head); };
+                doc.addEventListener = (n, f) => { doc._listeners = doc._listeners || {}; doc._listeners[n] = doc._listeners[n] || []; doc._listeners[n].push(f); };
+                doc.removeEventListener = (n, f) => { if (doc._listeners?.[n]) doc._listeners[n] = doc._listeners[n].filter(l => l !== f); };
+                return doc;
+            };
+
+            const _hSandbox = Object.create(null);
+            const mockGlobal = new Proxy(_hSandbox, {
+                get(target, prop) {
+                    if (prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis') return mockGlobal;
+                    if (prop in target) return target[prop];
+                    if (prop === 'performance') return window.performance;
+                    if (prop === 'document') return _hSandbox.document || window.document;
+                    if (prop === 'navigator') return _hSandbox.navigator || window.navigator;
+                    const val = window[prop];
+                    if (typeof val === 'function') {
+                        if (/^[A-Z]/.test(prop) || ['Object', 'Array', 'Promise', 'Map', 'Set', 'Function', 'Symbol', 'Error', 'TypeError', 'AssertionError'].includes(prop)) return val;
+                        try { return val.bind(window); } catch(e) { return val; }
+                    }
+                    return val;
+                },
+                set(target, prop, value) {
+                    if (['console', 'location', 'history'].includes(prop)) return true;
+                    if (prop === 'window' || prop === 'global') return true;
+                    if (prop === 'GreenhouseADHDData' && value && value.categories && !value.enhancements) {
+                        const flat = {};
+                        for (const k in value.categories) { if (Array.isArray(value.categories[k])) { value.categories[k].forEach(e => { if (e && e.id) flat[e.id] = { ...e, category: Array.isArray(e.category) ? e.category : [k] }; }); } }
+                        value.enhancements = flat;
+                    }
+                    Object.defineProperty(target, prop, { value, configurable: true, writable: true, enumerable: true });
+                    return true;
+                },
+                has(target, prop) { return prop in target || prop in window; }
+            });
+            window.global = mockGlobal;
+
+            _hSandbox.console = window.console;
+            _hSandbox.process = { env: { NODE_ENV: 'test' }, exit: (c) => hLog("[Harness] Process exit intercepted:", c) };
+            _hSandbox.performance = window.performance;
+            _hSandbox.navigator = { userAgent: 'Mozilla/5.0 (Test)', maxTouchPoints: 0 };
+            _hSandbox.document = createMockDocument();
+            _hSandbox.MutationObserver = class { constructor(){} observe(){} disconnect(){} };
+            _hSandbox.IntersectionObserver = class { constructor(cb){this.cb=cb;} observe(t){ if(t)setTimeout(()=>this.cb([{isIntersecting:true, target:t}]),0);} unobserve(){} disconnect(){} };
+            _hSandbox.ResizeObserver = class { constructor(cb){this.cb=cb;} observe(t){ if(t)setTimeout(()=>this.cb([{content_rect:{width:800, height:600}, target:t}]),0);} unobserve(){} disconnect(){} };
+            _hSandbox.Image = class { constructor(){ setTimeout(()=>this.onload?.(), 10); } };
+            _hSandbox.CustomEvent = class { constructor(n, d){ this.type = n; this.detail = d; } };
+            _hSandbox.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+            _hSandbox.setTimeout = window.setTimeout.bind(window);
+            _hSandbox.clearTimeout = window.clearTimeout.bind(window);
+            _hSandbox.setInterval = window.setInterval.bind(window);
+            _hSandbox.clearInterval = window.clearInterval.bind(window);
+
+            // --- Mock Node.js Env ---
+            window.require = (pathName) => {
+                if (pathName.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
+                if (pathName.includes('test_framework')) return window.TestFramework;
+                if (pathName.includes('GreenhouseUtils')) return window.GreenhouseUtils;
+                if (pathName.includes('GreenhouseMobile')) return window.GreenhouseMobile;
+                if (pathName.includes('GreenhouseModelsUtil')) return window.GreenhouseModelsUtil;
+                if (pathName.includes('GreenhouseBrainMeshRealistic')) return window.GreenhouseBrainMeshRealistic || {};
+                if (pathName.includes('test_env_factory')) return {
+                    createEnv: (overrides = {}) => window.require('vm').createContext(overrides),
+                    loadScript: (context, scriptPath) => {
+                        const code = window.require('fs').readFileSync(scriptPath);
+                        return window.require('vm').runInContext(code, context);
+                    }
+                };
+                if (pathName === 'fs') return {
+                    readFileSync: (p) => {
+                        const cleanPath = p.replace(/^(\.\.\/)+/, '').replace(/^(\/app\/)+/, '').replace(/^\/+/, '');
+                        const xhr = new XMLHttpRequest();
+                        const origins = [window.location.origin, ''];
+                        const bases = ['', '/docs'];
+                        for (const origin of origins) { for (const base of bases) { try { const url = origin + base + '/' + cleanPath; xhr.open('GET', url, false); xhr.send(); if (xhr.status === 200) return xhr.responseText; } catch (e) {} } }
+                        throw new Error(`FS Mock: Failed to load ${p}`);
+                    },
+                    existsSync: () => true
+                };
+                if (pathName === 'path') return { join: (...args) => args.filter(Boolean).join('/').replace(/\/+/g, '/'), resolve: (...args) => args.filter(Boolean).join('/').replace(/\/+/g, '/'), dirname: (p) => p.split('/').slice(0, -1).join('/') };
+                if (pathName === 'vm') return {
+                    createContext: (sandboxInput) => { const ctx = Object.create(mockGlobal); Object.assign(ctx, sandboxInput || {}); ctx.window = ctx; ctx.global = ctx; ctx.self = ctx; return ctx; },
+                    runInContext: (code, context) => { const fn = new Function('require', 'module', 'exports', '__dirname', 'with(this) { ' + code + ' }'); const m = { exports: {} }; return fn.call(context, window.require, m, m.exports, ""); },
+                    runInThisContext: (code) => { const fn = new Function('require', 'module', 'exports', '__dirname', 'with(window.global) { ' + code + ' }'); const m = { exports: {} }; return fn.call(window.global, window.require, m, m.exports, ""); },
+                    runInNewContext: (code, sandboxInput) => { const ctx = window.require('vm').createContext(sandboxInput || {}); return window.require('vm').runInContext(code, ctx); }
+                };
+                return {};
+            };
+
+            // 2. Load Testing Infrastructure
+            const loadInfra = [];
+            if (!window.assert) loadInfra.push('js/assertion_library.js');
+            if (!window.TestFramework) loadInfra.push('js/test_framework.js');
+            if (!window.GreenhouseTestSuite) loadInfra.push('js/model_tests.js');
+            for (const src of loadInfra) { await new Promise(res => { const s = document.createElement('script'); s.src = src; s.onload = res; document.body.appendChild(s); }); }
+
+            // Patch TestFramework
+            if (window.TestFramework) {
+                const originalDescribe = window.TestFramework.describe.bind(window.TestFramework);
+                window.TestFramework.describe = (name, fn) => { const parent = window.TestFramework.currentSuite; const suite = originalDescribe(name, fn); if (suite) suite.parent = parent; return suite; };
+                window.TestFramework.getHooks = (suite, type) => { let hooks = []; let curr = suite; while (curr) { if (curr[type]) hooks = [...curr[type], ...hooks]; curr = curr.parent; } return hooks; };
+                window.TestFramework.sinon = {
+                    _stubs: [],
+                    spy: (fn) => { const s = function () { s.called = true; s.callCount++; if (fn) return fn.apply(this, arguments); }; s.called = false; s.callCount = 0; s.returns = (val) => { s._ret = val; return s; }; s.callsFake = (f) => { s._fake = f; return s; }; return s; },
+                    stub: function (obj, method) {
+                        const s = window.TestFramework.sinon.spy();
+                        if (obj && method) {
+                            const original = obj[method];
+                            obj[method] = function () { s.apply(this, arguments); if (s._fake) return s._fake.apply(this, arguments); return s._ret !== undefined ? s._ret : (original ? original.apply(this, arguments) : undefined); };
+                            window.TestFramework.sinon._stubs.push({ obj, method, original }); return s;
+                        }
+                        const fn = function () { s.apply(this, arguments); if (s._fake) return s._fake.apply(this, arguments); return s._ret; }; Object.assign(fn, s); return fn;
+                    },
+                    restore: () => { window.TestFramework.sinon._stubs.forEach(s => s.obj[s.method] = s.original); window.TestFramework.sinon._stubs = []; }
+                };
+            }
+            if (window.assert && !window.assert.fail) window.assert.fail = (msg) => { throw new window.AssertionError(msg || "Test failed explicitly"); };
+
+            // 3. Setup Bridge
+            setupTestBridge();
+
+            // 4. Test File Selection
+            const modelId = modelSelector.value;
+            const testMap = {
+                'neuro': ['test_neuro_page.js', 'test_neuro_logic.js', 'test_neuro_ui.js', 'test_neuro_ga.js', 'test_neuro_app_logic.js', 'test_neuro_performance.js', 'test_neuro_3d_engine.js', 'test_neuro_ui_components.js', 'test_neuro_page_loader.js', 'test_adhd_scenarios.js', 'models/auxiliary/test_neuro_page_full.js', 'models/auxiliary/test_neuro_page_new.js'],
+                'genetic': ['test_genetic_page.js', 'test_genetic_ui.js', 'test_genetic_algo.js', 'test_genetic_helpers.js', 'test_genetic_labels.js', 'test_genetic_visualizations.js', 'test_genetic_3d_projection.js', 'test_genetic_camera_views.js', 'test_genetic_main_camera_controller.js', 'test_genetic_mouse_actual_bug.js', 'test_genetic_mouse_control_independence.js', 'test_genetic_mouse_event_flow.js', 'test_genetic_pip_camera_usage.js', 'test_genetic_pip_controls.js', 'test_genetic_pip_interactions.js', 'test_genetic_rotation_and_camera_positions.js', 'test_genetic_page_loader.js', 'models/auxiliary/test_genetic_page_new.js'],
+                'dopamine': ['test_dopamine_ui.js', 'test_dopamine_model_logic.js', 'test_dopamine_electro_unit.js', 'test_dopamine_molecular_unit.js'],
+                'serotonin': ['test_serotonin_ui.js', 'test_serotonin_model_logic.js', 'test_serotonin_transport_unit.js'],
+                'inflammation': ['test_inflammation_logic.js', 'test_inflammation_ui.js', 'test_inflammation_enhancements.js'],
+                'stress': ['test_stress_logic.js', 'test_stress_ui.js', 'test_stress_regression.js', 'test_stress_enhancements.js', 'test_stress_interventions.js'],
+                'dna': ['test_dna_ui.js', 'test_dna_logic.js', 'test_dna_page.js'],
+                'rna': ['test_rna_ui.js', 'test_rna_page.js', 'repro_rna_error.js'],
+                'synapse': ['test_synapse_ui.js', 'test_synapse_logic.js', 'test_synapse_receptors.js', 'test_synapse_page_loader.js', 'models/auxiliary/test_synapse_page_new.js'],
+                'pathway': ['test_pathway_ui.js', 'test_pathway_logic.js', 'test_pathway_page_loader.js', 'test_json_pathway_support.js', 'models/auxiliary/test_pathway_page_new.js'],
+                'emotion': ['test_emotion_page.js', 'models/auxiliary/test_emotion_page.js', 'models/auxiliary/test_emotion_deep_dive.js'],
+                'cognition': ['test_cognition_logic.js', 'test_cognition_ui.js', 'test_cognition_drawing.js', 'test_cognition_modules.js', 'test_cognition_regression.js', 'models/auxiliary/test_cognition_page.js']
+            };
+            const commonTests = ['test_accessibility.js', 'test_assertion_library.js', 'test_dependency_manager.js', 'test_global_ux.js', 'test_greenhouse_utils.js', 'test_labeling_system.js', 'test_models_3d_math.js', 'test_models_toc.js', 'test_models_util.js', 'test_performance_profiler_unit.js', 'test_performance_regression.js', 'test_react_compatibility.js', 'test_test_framework.js', 'test_v8_graph_renderer.js', 'test_mobile_edge_cases.js', 'test_mobile_integration.js', 'test_mobile_model_behaviors.js', 'test_mobile_models_lifecycle.js', 'test_mobile_regression.js', 'test_mobile_typography_contrast.js', 'test_mobile_ui_interactions.js', 'test_mobile_viewer.js', 'test_model_sync.js', 'test_patient_app_unit.js', 'test_dashboard_app_unit.js', 'test_meditation_app.js', 'test_scheduler_logic.js', 'test_tech_canvas.js', 'test_inspiration_logic.js', 'test_kegg_parser.js', 'models/auxiliary/test_models_page_new.js'];
 
             const testFiles = [...(testMap[modelId] || []), ...commonTests];
-
             hLog(`[Harness] Loading ${testFiles.length} repository unit tests...`);
 
-            // Sequential load to avoid overloading or losing race conditions in registry
             for (const file of testFiles) {
                 try {
                     let response = await fetch(`../tests/unit/${file}`);
                     if (!response.ok) response = await fetch(`tests/unit/${file}`);
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const code = await response.text();
-
-                    const wrappedCode = `(function(require, module, exports, __dirname, global, process, console, window, self, performance, document) {
-                        try {
-                            ${code}
-                        } catch (e) {
-                            console.error("[Harness] Execution error in ${file}:", e);
-                        }
-                    })(window.require, {exports:{}}, { exports: {} }, "", window.global, window.process, window.console, window.global, window.global, window.performance, window.document);`;
-
+                    const wrappedCode = "(function(require, module, exports, __dirname) { try { with(window.global) { " + code + " } } catch (e) { console.error('[Harness] Execution error in " + file + ":', e); } })(window.require, {exports:{}}, { exports: {} }, '');";
                     const script = document.createElement('script');
                     script.textContent = wrappedCode;
                     script.dataset.file = file;
                     document.body.appendChild(script);
                     hLog(`[Harness] Executed test file: ${file}`);
-                } catch (e) {
-                    hError(`[Harness] Failed to load/execute test file: ${file}`, e);
-                }
+                } catch (e) { hError(`[Harness] Failed to load/execute test file: ${file}`, e); }
             }
 
-            // 6. Run the production in-browser test suite (includes merged repo suites)
             if (window.GreenhouseTestSuite) {
+                window.GreenhouseTestSuite.results = [];
                 hLog(`[Harness] Starting runAll() with ${window.GreenhouseTestSuite.tests.length} tests registered.`);
                 await window.GreenhouseTestSuite.runAll();
-                const totalFiles = testFiles.length;
                 const overlay = document.getElementById('greenhouse-test-results-overlay');
                 if (overlay) {
-                    const fileCount = document.createElement('div');
-                    fileCount.style.fontSize = '10px';
-                    fileCount.style.marginTop = '5px';
-                    fileCount.style.color = '#aaa';
-                    fileCount.textContent = `Tests loaded from ${totalFiles} repository files.`;
-
-                    // Safely insert before the first button or append
+                    const fc = document.createElement('div');
+                    fc.style.fontSize = '10px'; fc.style.marginTop = '5px'; fc.style.color = '#aaa';
+                    fc.textContent = `Tests loaded from ${testFiles.length} repository files.`;
                     const firstBtn = overlay.getElementsByTagName('button')[0];
-                    if (firstBtn && firstBtn.parentNode) {
-                        firstBtn.parentNode.insertBefore(fileCount, firstBtn);
-                    } else {
-                        overlay.appendChild(fileCount);
-                    }
+                    if (firstBtn && firstBtn.parentNode) firstBtn.parentNode.insertBefore(fc, firstBtn); else overlay.appendChild(fc);
                 }
-            } else {
-                const s = document.createElement('script');
-                s.src = `${baseUrl}js/model_tests.js`;
-                s.onload = () => window.GreenhouseTestSuite && window.GreenhouseTestSuite.runAll();
-                document.body.appendChild(s);
             }
         };
     })();

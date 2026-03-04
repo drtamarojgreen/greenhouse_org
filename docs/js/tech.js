@@ -360,7 +360,7 @@
                 console.error('TechApp: Could not find mock-user-output');
                 return;
             }
-            outputBox.textColntent = 'Fetching...';
+            outputBox.textContent = 'Fetching...';
             const mockData = { userId: "test-clientside-789", source: "Generated in tech.js" };
             outputBox.textContent = JSON.stringify(mockData, null, 2);
         }
@@ -371,7 +371,7 @@
         async runTestCase2() {
             const container = this.dashboardContainer.querySelector('#models-prototype-container');
             const button = this.dashboardContainer.querySelector('#load-models-prototype-btn');
-            l
+
             if (!container || !button) {
                 console.error('TechApp: Required elements for Test Case 2 not found.');
                 return;
