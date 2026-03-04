@@ -54,6 +54,10 @@ class TestFramework {
       suiteFunction();
     } catch (error) {
       console.error(`Error in suite "${suiteName}":`, error);
+      // Register a failing test to ensure the error is visible in the reporter
+      this.it('Suite Initialization', () => {
+        throw new Error(`Failed to initialize suite "${suiteName}": ${error.message}`);
+      });
     }
 
     this.currentSuite = parentSuite;

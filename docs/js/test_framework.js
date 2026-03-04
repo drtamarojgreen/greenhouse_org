@@ -53,6 +53,10 @@ class TestFramework {
       suiteFunction();
     } catch (error) {
       console.error(`Error in suite "${suiteName}":`, error);
+      // Register a failing test to ensure the error is visible in the reporter
+      this.it('Suite Initialization', () => {
+        throw new Error(`Failed to initialize suite "${suiteName}": ${error.message}`);
+      });
     }
 
     this.currentSuite = prevSuite;
@@ -304,10 +308,9 @@ testFramework.run = testFramework.run.bind(testFramework);
 
 // Export for use in tests
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    testFramework,
-    TestFrameworkClass: TestFramework
-  };
+  testFramework.testFramework = testFramework;
+  testFramework.TestFrameworkClass = TestFramework;
+  module.exports = testFramework;
 }
 
 // Make available globally
