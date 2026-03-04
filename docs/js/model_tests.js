@@ -6,6 +6,8 @@
 (function () {
     'use strict';
 
+    if (window.GreenhouseTestSuite) return;
+
     const GreenhouseTestSuite = {
         tests: [],
         results: [],

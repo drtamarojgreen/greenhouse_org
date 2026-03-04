@@ -355,7 +355,12 @@
             const hError = console.error.bind(console);
             const hWarn = console.warn.bind(console);
 
-            hLog("[Harness] Run Tests clicked. Model ID:", modelSelector.value);
+            // 0. Immediate State Cleanup
+            const existingOverlay = document.getElementById('greenhouse-test-results-overlay');
+            if (existingOverlay) existingOverlay.remove();
+
+            try {
+                hLog("[Harness] Run Tests clicked. Model ID:", modelSelector.value);
             const modelId = modelSelector.value;
 
             // 1. Setup Mock Environment for Repository Tests
@@ -459,10 +464,11 @@
             if (!window.GreenhouseTestSuite) loadInfra.push('js/model_tests.js');
 
             for (const src of loadInfra) {
-                await new Promise(res => {
+                await new Promise((res, rej) => {
                     const s = document.createElement('script');
                     s.src = src;
                     s.onload = res;
+                    s.onerror = () => rej(new Error(`Failed to load infrastructure script: ${src}`));
                     document.body.appendChild(s);
                 });
             }
@@ -690,25 +696,50 @@
                 }
             }
 
-            // 6. Run the production in-browser test suite (includes merged repo suites)
-            if (window.GreenhouseTestSuite) {
-                hLog(`[Harness] Starting runAll() with ${window.GreenhouseTestSuite.tests.length} tests registered.`);
-                await window.GreenhouseTestSuite.runAll();
-                const totalFiles = testFiles.length;
-                const overlay = document.getElementById('greenhouse-test-results-overlay');
-                if (overlay) {
-                    const fileCount = document.createElement('div');
-                    fileCount.style.fontSize = '10px';
-                    fileCount.style.marginTop = '5px';
-                    fileCount.style.color = '#aaa';
-                    fileCount.textContent = `Tests loaded from ${totalFiles} repository files.`;
-                    overlay.appendChild(fileCount);
+                // 6. Run the production in-browser test suite (includes merged repo suites)
+                if (window.GreenhouseTestSuite) {
+                    hLog(`[Harness] Starting runAll() with ${window.GreenhouseTestSuite.tests.length} tests registered.`);
+                    await window.GreenhouseTestSuite.runAll();
+                    const totalFiles = testFiles.length;
+                    const overlay = document.getElementById('greenhouse-test-results-overlay');
+                    if (overlay) {
+                        const fileCount = document.createElement('div');
+                        fileCount.style.fontSize = '10px';
+                        fileCount.style.marginTop = '5px';
+                        fileCount.style.color = '#aaa';
+                        fileCount.textContent = `Tests loaded from ${totalFiles} repository files.`;
+                        overlay.appendChild(fileCount);
+                    }
+                } else {
+                    const s = document.createElement('script');
+                    s.src = `${baseUrl}js/model_tests.js`;
+                    s.onload = () => window.GreenhouseTestSuite && window.GreenhouseTestSuite.runAll();
+                    document.body.appendChild(s);
                 }
-            } else {
-                const s = document.createElement('script');
-                s.src = `${baseUrl}js/model_tests.js`;
-                s.onload = () => window.GreenhouseTestSuite && window.GreenhouseTestSuite.runAll();
-                document.body.appendChild(s);
+            } catch (fatalError) {
+                hError("[Harness] Fatal error during test execution:", fatalError);
+
+                // Fallback reporter if GreenhouseTestSuite failed
+                const summary = { total: 1, passed: 0, failed: 1 };
+                const results = [{
+                    name: "Fatal Harness Error",
+                    status: "FAIL",
+                    error: fatalError.message || "Unknown fatal error during test setup"
+                }];
+
+                if (window.GreenhouseTestSuite) {
+                    window.GreenhouseTestSuite.results = results;
+                    window.GreenhouseTestSuite.report();
+                } else {
+                    // Minimal standalone reporter
+                    const el = document.createElement('div');
+                    el.id = 'greenhouse-test-results-overlay';
+                    el.style.cssText = 'position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.95);color:#fff;padding:20px;border-radius:12px;z-index:100000;border:1px solid #ff5533;';
+                    el.innerHTML = `<h3 style="color:#ff5533;margin-top:0;">Fatal Test Setup Error</h3>
+                                    <p>${fatalError.message}</p>
+                                    <button onclick="this.parentElement.remove()" style="background:#444;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;">Close</button>`;
+                    document.body.appendChild(el);
+                }
             }
         };
     })();
