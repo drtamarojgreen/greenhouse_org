@@ -106,17 +106,6 @@
                 util.t = function(key) { const res = originalT ? originalT.apply(this, arguments) : undefined; return (res === undefined || res === null) ? key : res; };
             });
 
-            if (typeof Node !== 'undefined' && Node.prototype && !Node.prototype._patched) {
-                const original = Node.prototype.contains;
-                Node.prototype.contains = function(other) {
-                    if (this === other) return true;
-                    if (!other) return false;
-                    if (this.children && Array.from(this.children).includes(other)) return true;
-                    if (this.children) { for (const child of this.children) { if (child.contains && child.contains(other)) return true; } }
-                    return original ? original.apply(this, arguments) : false;
-                };
-                Node.prototype._patched = true;
-            }
         })();
 
         const modelContainer = document.getElementById('model-container');
@@ -338,176 +327,46 @@
         };
 
         runTestsBtn.onclick = async () => {
-            const hLog = console.log.bind(console);
-            const hError = console.error.bind(console);
+            console.log('[Harness] Running suite tests (Browser-Native)...');
 
-            // --- Unified Mock Infrastructure ---
-            const createMockElement = (tag = 'div') => {
-                const el = {
-                    tagName: tag.toUpperCase(), nodeType: 1, style: {}, _classList: new Set(),
-                    get classList() { const s = el._classList; return { add: (c) => s.add(c), remove: (c) => s.delete(c), contains: (c) => s.has(c), toggle: (c) => s.has(c) ? s.delete(c) : s.add(c), entries: () => Array.from(s).entries(), values: () => Array.from(s).values(), toString: () => Array.from(s).join(' ') }; },
-                    get className() { return Array.from(el._classList).join(' '); },
-                    set className(v) { el._classList = new Set(v.split(' ').filter(Boolean)); },
-                    children: [], childNodes: [], attributes: {}, dataset: {}, _innerHTML: '',
-                    get innerHTML() { return el.children.length > 0 ? el.children.map(c => c.outerHTML || '').join('') : el._innerHTML; },
-                    set innerHTML(v) { el._innerHTML = v; el.children = []; el.childNodes = []; },
-                    get outerHTML() { const attrs = Object.entries(el.attributes).map(([k, v]) => ` ${k}="${v}"`).join(''); return `<${el.tagName.toLowerCase()}${attrs}>${el.innerHTML}</${el.tagName.toLowerCase()}>`; },
-                    get textContent() { return el.children.length > 0 ? el.children.map(c => c.textContent).join('') : (el._innerHTML || '').replace(/<[^>]*>/g, ''); },
-                    set textContent(v) { el._innerHTML = v; el.children = []; el.childNodes = []; },
-                    get id() { return el.attributes.id || ''; }, set id(v) { el.attributes.id = v; },
-                    get value() { return el._value || ''; }, set value(v) { el._value = v; },
-                    get checked() { return !!el._checked; }, set checked(v) { el._checked = !!v; },
-                    setAttribute: (n, v) => { el.attributes[n] = String(v); if (n === 'id') el.id = v; if (n === 'class') el.className = v; },
-                    getAttribute: (n) => el.attributes[n] || null,
-                    removeAttribute: (n) => delete el.attributes[n],
-                    appendChild: (c) => { if (!c) return; el.children.push(c); el.childNodes.push(c); c.parentNode = el; return c; },
-                    append: (...nodes) => nodes.forEach(n => el.appendChild(typeof n === 'string' ? createMockDocument().createTextNode(n) : n)),
-                    prepend: (c) => { if (!c) return; el.children.unshift(c); el.childNodes.unshift(c); c.parentNode = el; return c; },
-                    removeChild: (c) => { el.children = el.children.filter(x => x !== c); el.childNodes = el.childNodes.filter(x => x !== c); if (c) c.parentNode = null; return c; },
-                    insertBefore: (n, r) => { const idx = el.childNodes.indexOf(r); if (idx === -1) el.appendChild(n); else { el.childNodes.splice(idx, 0, n); el.children = el.childNodes.filter(x => x.nodeType === 1); } if (n) n.parentNode = el; return n; },
-                    remove: () => { if (el.parentNode) el.parentNode.removeChild(el); },
-                    matches: (s) => { if (s === '*') return true; if (s.startsWith('.') && el.classList.contains(s.slice(1))) return true; if (s.startsWith('#') && el.id === s.slice(1)) return true; if (el.tagName === s.toUpperCase()) return true; return false; },
-                    querySelector: (s) => { const find = (node) => { if (node.matches && node.matches(s)) return node; for (let c of node.children) { const res = find(c); if (res) return res; } return null; }; for (let c of el.children) { const res = find(c); if (res) return res; } return null; },
-                    querySelectorAll: (s) => { const results = []; const findAll = (node) => { if (node.matches && node.matches(s)) results.push(node); for (let c of node.children) findAll(c); }; for (let c of el.children) findAll(c); return results; },
-                    getContext: () => ({ fillRect:()=>{}, fillText:()=>{}, beginPath:()=>{}, moveTo:()=>{}, lineTo:()=>{}, stroke:()=>{}, fill:()=>{}, arc:()=>{}, clearRect:()=>{}, save:()=>{}, restore:()=>{}, measureText: () => ({ width: 10 }), setTransform:()=>{}, transform:()=>{}, drawImage:()=>{}, createPattern:()=>{}, createLinearGradient:()=>({ addColorStop:()=>{} }), createRadialGradient:()=>({ addColorStop:()=>{} }), scale:()=>{}, rotate:()=>{}, translate:()=>{} }),
-                    getBoundingClientRect: () => ({ top: 0, left: 0, width: 800, height: 600, right: 800, bottom: 600 }),
-                    get offsetWidth() { return 800; }, get offsetHeight() { return 600; }, get clientWidth() { return 800; }, get clientHeight() { return 600; },
-                    addEventListener: (n, f) => { el._listeners = el._listeners || {}; el._listeners[n] = el._listeners[n] || []; el._listeners[n].push(f); },
-                    removeEventListener: (n, f) => { if (el._listeners?.[n]) el._listeners[n] = el._listeners[n].filter(l => l !== f); },
-                    dispatchEvent: (e) => { const n = typeof e === 'string' ? e : e.type; const evt = typeof e === 'string' ? { type: e, target: el } : e; if (el._listeners?.[n]) el._listeners[n].forEach(f => f(evt)); return true; },
-                    contains: function(o) { return this === o || (this.children && Array.from(this.children).some(c => c.contains && c.contains(o))); },
-                    focus: () => {}, blur: () => {}, click: () => { el.dispatchEvent('click'); }
-                };
-                return el;
-            };
+            // 1. Refresh Environment
+            clearEnvironment();
 
-            const createMockDocument = () => {
-                const doc = createMockElement('document');
-                doc.nodeType = 9; doc.createElement = createMockElement;
-                doc.createTextNode = (t) => ({ nodeType: 3, textContent: t, nodeValue: t, remove: function(){ if(this.parentNode) this.parentNode.removeChild(this); } });
-                doc.body = createMockElement('body'); doc.head = createMockElement('head'); doc.documentElement = doc; doc.location = { href: '', reload: () => {} }; doc.cookie = "";
-                doc.getElementById = (id) => { const find = (el) => { if (el.id === id) return el; for (let c of el.children) { const r = find(c); if (r) return r; } return null; }; return find(doc.body) || find(doc.head); };
-                doc.addEventListener = (n, f) => { doc._listeners = doc._listeners || {}; doc._listeners[n] = doc._listeners[n] || []; doc._listeners[n].push(f); };
-                doc.removeEventListener = (n, f) => { if (doc._listeners?.[n]) doc._listeners[n] = doc._listeners[n].filter(l => l !== f); };
-                return doc;
-            };
+            // 2. Load Model if one is selected
+            const modelId = modelSelector.value;
+            if (modelId) {
+                await loadModel(modelId);
+                // Wait for production delay + script load
+                await new Promise(r => setTimeout(r, 4000));
+            }
 
-            const _hSandbox = Object.create(null);
-            const mockGlobal = new Proxy(_hSandbox, {
-                get(target, prop) {
-                    if (prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis') return mockGlobal;
-                    if (prop in target) return target[prop];
-                    if (prop === 'performance') return window.performance;
-                    if (prop === 'document') return _hSandbox.document || window.document;
-                    if (prop === 'navigator') return _hSandbox.navigator || window.navigator;
-                    const val = window[prop];
-                    if (typeof val === 'function') {
-                        if (/^[A-Z]/.test(prop) || ['Object', 'Array', 'Promise', 'Map', 'Set', 'Function', 'Symbol', 'Error', 'TypeError', 'AssertionError'].includes(prop)) return val;
-                        try { return val.bind(window); } catch(e) { return val; }
-                    }
-                    return val;
-                },
-                set(target, prop, value) {
-                    if (['console', 'location', 'history'].includes(prop)) return true;
-                    if (prop === 'window' || prop === 'global') return true;
-                    if (prop === 'GreenhouseADHDData' && value && value.categories && !value.enhancements) {
-                        const flat = {};
-                        for (const k in value.categories) { if (Array.isArray(value.categories[k])) { value.categories[k].forEach(e => { if (e && e.id) flat[e.id] = { ...e, category: Array.isArray(e.category) ? e.category : [k] }; }); } }
-                        value.enhancements = flat;
-                    }
-                    Object.defineProperty(target, prop, { value, configurable: true, writable: true, enumerable: true });
-                    return true;
-                },
-                has(target, prop) { return prop in target || prop in window; }
-            });
-            window.global = mockGlobal;
+            // 3. Ensure Testing Infra
+            const infra = ['js/assertion_library.js', 'js/test_framework.js', 'js/GreenhouseMobile.js', 'js/model_tests.js'];
+            for (const src of infra) {
+                await new Promise(res => {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.dataset.testScript = "true";
+                    s.onload = res;
+                    document.body.appendChild(s);
+                });
+            }
 
-            _hSandbox.console = window.console;
-            _hSandbox.process = { env: { NODE_ENV: 'test' }, exit: (c) => hLog("[Harness] Process exit intercepted:", c) };
-            _hSandbox.performance = window.performance;
-            _hSandbox.navigator = { userAgent: 'Mozilla/5.0 (Test)', maxTouchPoints: 0 };
-            _hSandbox.document = createMockDocument();
-            _hSandbox.MutationObserver = class { constructor(){} observe(){} disconnect(){} };
-            _hSandbox.IntersectionObserver = class { constructor(cb){this.cb=cb;} observe(t){ if(t)setTimeout(()=>this.cb([{isIntersecting:true, target:t}]),0);} unobserve(){} disconnect(){} };
-            _hSandbox.ResizeObserver = class { constructor(cb){this.cb=cb;} observe(t){ if(t)setTimeout(()=>this.cb([{content_rect:{width:800, height:600}, target:t}]),0);} unobserve(){} disconnect(){} };
-            _hSandbox.Image = class { constructor(){ setTimeout(()=>this.onload?.(), 10); } };
-            _hSandbox.CustomEvent = class { constructor(n, d){ this.type = n; this.detail = d; } };
-            _hSandbox.requestAnimationFrame = (cb) => setTimeout(cb, 16);
-            _hSandbox.setTimeout = window.setTimeout.bind(window);
-            _hSandbox.clearTimeout = window.clearTimeout.bind(window);
-            _hSandbox.setInterval = window.setInterval.bind(window);
-            _hSandbox.clearInterval = window.clearInterval.bind(window);
-
-            // --- Mock Node.js Env ---
-            window.require = (pathName) => {
-                if (pathName.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
-                if (pathName.includes('test_framework')) return window.TestFramework;
-                if (pathName.includes('GreenhouseUtils')) return window.GreenhouseUtils;
-                if (pathName.includes('GreenhouseMobile')) return window.GreenhouseMobile;
-                if (pathName.includes('GreenhouseModelsUtil')) return window.GreenhouseModelsUtil;
-                if (pathName.includes('GreenhouseBrainMeshRealistic')) return window.GreenhouseBrainMeshRealistic || {};
-                if (pathName.includes('test_env_factory')) return {
-                    createEnv: (overrides = {}) => window.require('vm').createContext(overrides),
-                    loadScript: (context, scriptPath) => {
-                        const code = window.require('fs').readFileSync(scriptPath);
-                        return window.require('vm').runInContext(code, context);
-                    }
-                };
-                if (pathName === 'fs') return {
-                    readFileSync: (p) => {
-                        const cleanPath = p.replace(/^(\.\.\/)+/, '').replace(/^(\/app\/)+/, '').replace(/^\/+/, '');
-                        const xhr = new XMLHttpRequest();
-                        const origins = [window.location.origin, ''];
-                        const bases = ['', '/docs'];
-                        for (const origin of origins) { for (const base of bases) { try { const url = origin + base + '/' + cleanPath; xhr.open('GET', url, false); xhr.send(); if (xhr.status === 200) return xhr.responseText; } catch (e) {} } }
-                        throw new Error(`FS Mock: Failed to load ${p}`);
-                    },
-                    existsSync: () => true
-                };
-                if (pathName === 'path') return { join: (...args) => args.filter(Boolean).join('/').replace(/\/+/g, '/'), resolve: (...args) => args.filter(Boolean).join('/').replace(/\/+/g, '/'), dirname: (p) => p.split('/').slice(0, -1).join('/') };
-                if (pathName === 'vm') return {
-                    createContext: (sandboxInput) => { const ctx = Object.create(mockGlobal); Object.assign(ctx, sandboxInput || {}); ctx.window = ctx; ctx.global = ctx; ctx.self = ctx; return ctx; },
-                    runInContext: (code, context) => { const fn = new Function('require', 'module', 'exports', '__dirname', 'with(this) { ' + code + ' }'); const m = { exports: {} }; return fn.call(context, window.require, m, m.exports, ""); },
-                    runInThisContext: (code) => { const fn = new Function('require', 'module', 'exports', '__dirname', 'with(window.global) { ' + code + ' }'); const m = { exports: {} }; return fn.call(window.global, window.require, m, m.exports, ""); },
-                    runInNewContext: (code, sandboxInput) => { const ctx = window.require('vm').createContext(sandboxInput || {}); return window.require('vm').runInContext(code, ctx); }
-                };
+            // Compatibility Shims
+            window.process = { env: { NODE_ENV: 'test' } };
+            window.require = (name) => {
+                if (name.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
+                if (name.includes('test_framework')) return window.TestFramework;
+                if (name.includes('utils') || name.includes('GreenhouseUtils')) return window.GreenhouseUtils;
+                if (name.includes('mobile') || name.includes('GreenhouseMobile')) return window.GreenhouseMobile;
+                if (name.includes('util') || name.includes('GreenhouseModelsUtil')) return window.GreenhouseModelsUtil;
                 return {};
             };
 
-            // 2. Load Testing Infrastructure
-            const loadInfra = [];
-            if (!window.assert) loadInfra.push('js/assertion_library.js');
-            if (!window.TestFramework) loadInfra.push('js/test_framework.js');
-            if (!window.GreenhouseTestSuite) loadInfra.push('js/model_tests.js');
-            for (const src of loadInfra) { await new Promise(res => { const s = document.createElement('script'); s.src = src; s.onload = res; document.body.appendChild(s); }); }
-
-            // Patch TestFramework
-            if (window.TestFramework) {
-                const originalDescribe = window.TestFramework.describe.bind(window.TestFramework);
-                window.TestFramework.describe = (name, fn) => { const parent = window.TestFramework.currentSuite; const suite = originalDescribe(name, fn); if (suite) suite.parent = parent; return suite; };
-                window.TestFramework.getHooks = (suite, type) => { let hooks = []; let curr = suite; while (curr) { if (curr[type]) hooks = [...curr[type], ...hooks]; curr = curr.parent; } return hooks; };
-                window.TestFramework.sinon = {
-                    _stubs: [],
-                    spy: (fn) => { const s = function () { s.called = true; s.callCount++; if (fn) return fn.apply(this, arguments); }; s.called = false; s.callCount = 0; s.returns = (val) => { s._ret = val; return s; }; s.callsFake = (f) => { s._fake = f; return s; }; return s; },
-                    stub: function (obj, method) {
-                        const s = window.TestFramework.sinon.spy();
-                        if (obj && method) {
-                            const original = obj[method];
-                            obj[method] = function () { s.apply(this, arguments); if (s._fake) return s._fake.apply(this, arguments); return s._ret !== undefined ? s._ret : (original ? original.apply(this, arguments) : undefined); };
-                            window.TestFramework.sinon._stubs.push({ obj, method, original }); return s;
-                        }
-                        const fn = function () { s.apply(this, arguments); if (s._fake) return s._fake.apply(this, arguments); return s._ret; }; Object.assign(fn, s); return fn;
-                    },
-                    restore: () => { window.TestFramework.sinon._stubs.forEach(s => s.obj[s.method] = s.original); window.TestFramework.sinon._stubs = []; }
-                };
-            }
-            if (window.assert && !window.assert.fail) window.assert.fail = (msg) => { throw new window.AssertionError(msg || "Test failed explicitly"); };
-
-            // 3. Setup Bridge
+            // 4. Setup Bridge
             setupTestBridge();
 
-            // 4. Test File Selection
-            const modelId = modelSelector.value;
+            // 5. Test File Selection
             const testMap = {
                 'neuro': ['test_neuro_page.js', 'test_neuro_logic.js', 'test_neuro_ui.js', 'test_neuro_ga.js', 'test_neuro_app_logic.js', 'test_neuro_performance.js', 'test_neuro_3d_engine.js', 'test_neuro_ui_components.js', 'test_neuro_page_loader.js', 'test_adhd_scenarios.js', 'models/auxiliary/test_neuro_page_full.js', 'models/auxiliary/test_neuro_page_new.js'],
                 'genetic': ['test_genetic_page.js', 'test_genetic_ui.js', 'test_genetic_algo.js', 'test_genetic_helpers.js', 'test_genetic_labels.js', 'test_genetic_visualizations.js', 'test_genetic_3d_projection.js', 'test_genetic_camera_views.js', 'test_genetic_main_camera_controller.js', 'test_genetic_mouse_actual_bug.js', 'test_genetic_mouse_control_independence.js', 'test_genetic_mouse_event_flow.js', 'test_genetic_pip_camera_usage.js', 'test_genetic_pip_controls.js', 'test_genetic_pip_interactions.js', 'test_genetic_rotation_and_camera_positions.js', 'test_genetic_page_loader.js', 'models/auxiliary/test_genetic_page_new.js'],
@@ -525,35 +384,25 @@
             const commonTests = ['test_accessibility.js', 'test_assertion_library.js', 'test_dependency_manager.js', 'test_global_ux.js', 'test_greenhouse_utils.js', 'test_labeling_system.js', 'test_models_3d_math.js', 'test_models_toc.js', 'test_models_util.js', 'test_performance_profiler_unit.js', 'test_performance_regression.js', 'test_react_compatibility.js', 'test_test_framework.js', 'test_v8_graph_renderer.js', 'test_mobile_edge_cases.js', 'test_mobile_integration.js', 'test_mobile_model_behaviors.js', 'test_mobile_models_lifecycle.js', 'test_mobile_regression.js', 'test_mobile_typography_contrast.js', 'test_mobile_ui_interactions.js', 'test_mobile_viewer.js', 'test_model_sync.js', 'test_patient_app_unit.js', 'test_dashboard_app_unit.js', 'test_meditation_app.js', 'test_scheduler_logic.js', 'test_tech_canvas.js', 'test_inspiration_logic.js', 'test_kegg_parser.js', 'models/auxiliary/test_models_page_new.js'];
 
             const testFiles = [...(testMap[modelId] || []), ...commonTests];
-            hLog(`[Harness] Loading ${testFiles.length} repository unit tests...`);
+            console.log(`[Harness] Loading ${testFiles.length} repository unit tests...`);
 
             for (const file of testFiles) {
                 try {
                     let response = await fetch(`../tests/unit/${file}`);
                     if (!response.ok) response = await fetch(`tests/unit/${file}`);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    if (!response.ok) continue;
                     const code = await response.text();
-                    const wrappedCode = "(function(require, module, exports, __dirname) { try { with(window.global) { " + code + " } } catch (e) { console.error('[Harness] Execution error in " + file + ":', e); } })(window.require, {exports:{}}, { exports: {} }, '');";
                     const script = document.createElement('script');
-                    script.textContent = wrappedCode;
+                    script.textContent = code;
+                    script.dataset.testScript = "true";
                     script.dataset.file = file;
                     document.body.appendChild(script);
-                    hLog(`[Harness] Executed test file: ${file}`);
-                } catch (e) { hError(`[Harness] Failed to load/execute test file: ${file}`, e); }
+                } catch (e) { console.error(`[Harness] Failed to load/execute test file: ${file}`, e); }
             }
 
             if (window.GreenhouseTestSuite) {
                 window.GreenhouseTestSuite.results = [];
-                hLog(`[Harness] Starting runAll() with ${window.GreenhouseTestSuite.tests.length} tests registered.`);
                 await window.GreenhouseTestSuite.runAll();
-                const overlay = document.getElementById('greenhouse-test-results-overlay');
-                if (overlay) {
-                    const fc = document.createElement('div');
-                    fc.style.fontSize = '10px'; fc.style.marginTop = '5px'; fc.style.color = '#aaa';
-                    fc.textContent = `Tests loaded from ${testFiles.length} repository files.`;
-                    const firstBtn = overlay.getElementsByTagName('button')[0];
-                    if (firstBtn && firstBtn.parentNode) firstBtn.parentNode.insertBefore(fc, firstBtn); else overlay.appendChild(fc);
-                }
             }
         };
     })();
