@@ -31,3 +31,9 @@ This report documents identified bugs and architectural flaws in the Greenhouse 
 **Status:** Identified (Fallback implemented in harness)
 **Description:** Several unit tests (e.g., `test_mobile_integration.js`) call `assert.fail()`, but this method is not defined in the production assertion library. This causes tests to crash with `TypeError: assert.fail is not a function` when an assertion failure is manually triggered.
 **Recommendation:** Add a `fail(message)` method to the `assert` object that unconditionally throws an `AssertionError`.
+
+## 6. Neuro Application Missing Enhancements Mapping
+**File:** `docs/js/neuro_app.js`
+**Status:** Identified (Fallback implemented in harness)
+**Description:** The ADHD enhancement rendering logic in `updateADHDCheckboxes` attempts to map over `data.enhancements`. However, `window.GreenhouseADHDData` (provided by `neuro_adhd_data.js`) stores this information under a `categories` object containing nested arrays (symptoms, treatments, etc.). This mismatch causes a `TypeError: can't convert undefined to object` when the app attempts to render the enhancement list.
+**Recommendation:** Update `neuro_app.js` to correctly flatten the `categories` into an `enhancements` mapping, or use the `getFlatList()` helper provided by the data module.

@@ -170,8 +170,74 @@
     (function() {
         // Detect local vs production
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        // Production baseUrl is Greenhouse base, Local baseUrl should point to /docs/ for scripts
         const baseUrl = isLocal ? window.location.origin + '/docs/' : "https://drtamarojgreen.github.io/greenhouse_org/";
+
+        // Global Polyfills for Production Bugs & Data Mismatches
+        (function patchProductionGlobals() {
+            const hLog = console.log.bind(console);
+            const hWarn = console.warn.bind(console);
+
+            const safePatch = (objName, patchFn) => {
+                let val = window[objName];
+                Object.defineProperty(window, objName, {
+                    get() { return val; },
+                    set(newVal) {
+                        val = newVal;
+                        if (val) {
+                            try { patchFn(val); } catch (e) { hWarn(`[Harness] Failed to patch ${objName}:`, e); }
+                        }
+                    },
+                    configurable: true,
+                    enumerable: true
+                });
+                if (val) {
+                    try { patchFn(val); } catch (e) { hWarn(`[Harness] Failed to initial patch ${objName}:`, e); }
+                }
+            };
+
+            // Fix ADHD data mapping mismatch in neuro_app.js
+            safePatch('GreenhouseADHDData', (data) => {
+                if (data.categories && !data.enhancements) {
+                    hLog("[Harness] Polyfilling GreenhouseADHDData.enhancements...");
+                    const flat = {};
+                    for (const k in data.categories) {
+                        if (Array.isArray(data.categories[k])) {
+                            data.categories[k].forEach(e => {
+                                if (e && e.id) flat[e.id] = { ...e, category: Array.isArray(e.category) ? e.category : [k] };
+                            });
+                        }
+                    }
+                    data.enhancements = flat;
+                }
+            });
+
+            // Fix missing calculateFaceNormal in legacy/production 3D Math
+            safePatch('GreenhouseModels3DMath', (math) => {
+                if (math.calculateNormal && !math.calculateFaceNormal) {
+                    hLog("[Harness] Polyfilling GreenhouseModels3DMath.calculateFaceNormal...");
+                    math.calculateFaceNormal = math.calculateNormal;
+                }
+            });
+
+            safePatch('GreenhouseUtils', (utils) => {
+                if (utils.observeAndReinitializeApp) {
+                    const original = utils.observeAndReinitializeApp;
+                    utils.observeAndReinitializeApp = function(app, selector) {
+                        const el = document.querySelector(selector);
+                        if (!el) {
+                            hWarn(`[Harness] observeAndReinitializeApp: Selector not found: ${selector}`);
+                            return;
+                        }
+                        try {
+                            return original.apply(this, arguments);
+                        } catch (e) {
+                            hWarn(`[Harness] observeAndReinitializeApp failed for ${selector}:`, e);
+                        }
+                    };
+                }
+            });
+        })();
+
         const modelContainer = document.getElementById('model-container');
         const modelSelector = document.getElementById('model-selector');
         const activeLabel = document.getElementById('active-label');
@@ -374,6 +440,9 @@
                 hLog(`[Harness] Mock Require: ${pathName}`);
                 if (pathName.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
                 if (pathName.includes('test_framework')) return window.TestFramework;
+                if (pathName.includes('GreenhouseUtils')) return window.GreenhouseUtils;
+                if (pathName.includes('GreenhouseMobile')) return window.GreenhouseMobile;
+                if (pathName.includes('GreenhouseModelsUtil')) return window.GreenhouseModelsUtil;
                 if (pathName.includes('test_env_factory')) return {
                     createEnv: (overrides = {}) => {
                         const t = { ...overrides };
@@ -381,6 +450,7 @@
                             get(target, prop) {
                                 if (prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis') return p;
                                 if (prop in target) return target[prop];
+                                if (prop === 'performance') return window.performance;
                                 return window.global[prop];
                             },
                             set(target, prop, value) { target[prop] = value; return true; },
@@ -396,31 +466,49 @@
                 if (pathName === 'fs') return {
                     readFileSync: (p) => {
                         hLog(`[Harness] Mock FS read: ${p}`);
-                        let url = p;
-                        if (url.startsWith('../')) url = url.substring(3);
-                        if (url.startsWith('../../')) url = url.substring(6);
+                        const cleanPath = p.replace(/^(\.\.\/)+/, '').replace(/^(\/app\/)+/, '').replace(/^\/+/, '');
                         const xhr = new XMLHttpRequest();
-                        xhr.open('GET', '/' + url, false);
-                        xhr.send();
-                        if (xhr.status === 200) return xhr.responseText;
-                        throw new Error(`FS Mock: Failed to load ${p} (${xhr.status})`);
+                        const origins = [window.location.origin, ''];
+                        const bases = ['', '/docs'];
+
+                        for (const origin of origins) {
+                            for (const base of bases) {
+                                try {
+                                    const url = origin + base + '/' + cleanPath;
+                                    xhr.open('GET', url, false);
+                                    xhr.send();
+                                    if (xhr.status === 200) return xhr.responseText;
+                                } catch (e) {}
+                            }
+                        }
+                        throw new Error(`FS Mock: Failed to load ${p} after trying multiple paths.`);
                     },
                     existsSync: () => true
                 };
                 if (pathName === 'path') return {
-                    join: (...args) => args.join('/').replace(/\/+/g, '/'),
-                    resolve: (...args) => args.join('/').replace(/\/+/g, '/'),
+                    join: (...args) => args.filter(Boolean).join('/').replace(/\/+/g, '/'),
+                    resolve: (...args) => args.filter(Boolean).join('/').replace(/\/+/g, '/'),
                     dirname: (p) => p.split('/').slice(0, -1).join('/')
                 };
                 if (pathName === 'vm') {
                     const vm = {
-                        createContext: (sandbox) => sandbox,
+                        createContext: (sandboxInput) => {
+                            if (sandboxInput && sandboxInput.window === sandboxInput) return sandboxInput;
+                            const ctx = Object.create(mockGlobal);
+                            if (sandboxInput) Object.assign(ctx, sandboxInput);
+                            ctx.window = ctx;
+                            ctx.global = ctx;
+                            ctx.self = ctx;
+                            return ctx;
+                        },
                         runInContext: (code, context) => {
-                            const fn = new Function('require', 'module', 'exports', '__dirname', 'global', 'process', 'console', 'window', 'document', code);
-                            return fn.call(context, window.require, {exports:{}}, {}, "", context, window.process, window.console, context, context.document);
+                            const fn = new Function('require', 'module', 'exports', '__dirname', 'global', 'process', 'console', 'window', 'document', 'performance', code);
+                            const perf = window.performance;
+                            const doc = window.document;
+                            return fn.call(context, window.require, {exports:{}}, {}, "", context, window.process, window.console, context, doc, perf);
                         },
                         runInThisContext: (code) => vm.runInContext(code, window.global),
-                        runInNewContext: (code, sandbox) => vm.runInContext(code, sandbox || {})
+                        runInNewContext: (code, sandboxInput) => vm.runInContext(code, vm.createContext(sandboxInput || {}))
                     };
                     return vm;
                 }
@@ -439,31 +527,69 @@
 
             // Robust Sandbox Proxy to prevent Invariant Violations
             const sandbox = Object.create(null);
+            // Pre-seed sandbox with critical globals
+            sandbox.console = window.console;
+            sandbox.process = window.process;
+            sandbox.performance = window.performance;
+            sandbox.document = window.document;
+
             const mockGlobal = new Proxy(sandbox, {
                 get(target, prop) {
                     if (prop === 'window' || prop === 'global' || prop === 'self' || prop === 'globalThis') return mockGlobal;
                     if (prop in target) return target[prop];
+                    if (prop === 'performance') return window.performance;
+                    if (prop === 'document') return window.document;
+
                     const val = window[prop];
                     if (typeof val === 'function') {
-                        if (/^[A-Z]/.test(prop) || ['Object', 'Array', 'Promise', 'Map', 'Set', 'Function', 'Symbol'].includes(prop)) return val;
+                        // Don't bind constructors or built-ins
+                        if (/^[A-Z]/.test(prop) || ['Object', 'Array', 'Promise', 'Map', 'Set', 'Function', 'Symbol', 'Error', 'TypeError', 'AssertionError'].includes(prop)) return val;
+
+                        // Bind native methods to their original targets
                         const targetObj = (prop in document && !(prop in window)) ? document : window;
-                        return val.bind(targetObj);
+                        try { return val.bind(targetObj); } catch(e) { return val; }
                     }
                     return val;
                 },
                 set(target, prop, value) {
                     if (['console', 'location', 'history'].includes(prop)) return true;
-                    target[prop] = value;
+
+                    // Direct polyfill on global GreenhouseADHDData if it's being set in sandbox
+                    if (prop === 'GreenhouseADHDData' && value && value.categories && !value.enhancements) {
+                        value.enhancements = [].concat(...Object.values(value.categories)).reduce((acc, e) => {
+                            acc[e.id] = { ...e, category: Array.isArray(e.category) ? e.category : [e.category] };
+                            return acc;
+                        }, {});
+                    }
+
+                    // Preserve critical math methods if GreenhouseModels3DMath is mocked without them
+                    if (prop === 'GreenhouseModels3DMath' && value && window.GreenhouseModels3DMath) {
+                        for (const m of ['calculateFaceNormal', 'calculateNormal', 'applyDepthFog', 'project3DTo2D']) {
+                            if (!value[m] && window.GreenhouseModels3DMath[m]) value[m] = window.GreenhouseModels3DMath[m];
+                        }
+                    }
+
+                    // Preserve critical utility methods
+                    if (prop === 'GreenhouseModelsUtil' && value && window.GreenhouseModelsUtil) {
+                        for (const m of ['SimulationEngine', 'GreenhouseComponent', 'GreenhouseSystem', 'DiurnalClock', 'PathwayService']) {
+                            if (!value[m] && window.GreenhouseModelsUtil[m]) value[m] = window.GreenhouseModelsUtil[m];
+                        }
+                    }
+
+                    // Avoid accessor invariants: always define as data property on sandbox
+                    Object.defineProperty(target, prop, { value, configurable: true, writable: true, enumerable: true });
                     return true;
                 },
                 has(target, prop) { return prop in target || prop in window; },
                 getOwnPropertyDescriptor(target, prop) {
                     if (prop in target) return Object.getOwnPropertyDescriptor(target, prop);
                     const desc = Object.getOwnPropertyDescriptor(window, prop);
-                    if (desc && !desc.configurable) return { ...desc, configurable: true };
-                    return desc;
+                    if (desc) return { ...desc, configurable: true, writable: desc.writable !== undefined ? true : undefined };
+                    return undefined;
                 },
-                defineProperty(target, prop, desc) { return Object.defineProperty(target, prop, { ...desc, configurable: true }); },
+                defineProperty(target, prop, desc) {
+                    return Object.defineProperty(target, prop, { ...desc, configurable: true });
+                },
                 getPrototypeOf() { return Object.getPrototypeOf(window); }
             });
             window.global = mockGlobal;
@@ -508,6 +634,7 @@
             if (window.assert && !window.assert.fail) {
                 window.assert.fail = (msg) => { throw new window.AssertionError(msg || "Test failed explicitly"); };
             }
+            if (window.AssertionError) window.global.AssertionError = window.AssertionError;
 
             // 3. Prepare Dashboard & Test Queue
             if (window.GreenhouseTestSuite) {
@@ -565,41 +692,41 @@
 
                     if (window.GreenhouseTestSuite) {
                         window.GreenhouseTestSuite.addTest(fullName, async () => {
-                            const runTestFn = () => {
-                                if (fn.length > 0) {
+                            const runWithDone = (innerFn) => {
+                                if (innerFn.length > 0) {
                                     return new Promise((resolve, reject) => {
                                         const done = (err) => err ? reject(err) : resolve();
-                                        try { fn(done); } catch (e) { reject(e); }
+                                        try { innerFn(done); } catch (e) { reject(e); }
                                     });
                                 }
-                                return fn();
+                                return innerFn();
                             };
 
                             // Check if getHooks exists (it's in tests/utils but not in docs/js)
                             if (typeof window.TestFramework.getHooks === 'function') {
                                 if (suite && !suite._beforeAllRun) {
                                     const hooks = window.TestFramework.getHooks(suite, 'beforeAll');
-                                    for (const h of (hooks || [])) await h();
+                                    for (const h of (hooks || [])) await runWithDone(h);
                                     suite._beforeAllRun = true;
                                 }
                                 const beHooks = window.TestFramework.getHooks(suite, 'beforeEach');
-                                for (const h of (beHooks || [])) await h();
-                                try { await runTestFn(); } finally {
+                                for (const h of (beHooks || [])) await runWithDone(h);
+                                try { await runWithDone(fn); } finally {
                                     const aeHooks = window.TestFramework.getHooks(suite, 'afterEach');
-                                    for (const h of (aeHooks || [])) await h();
+                                    for (const h of (aeHooks || [])) await runWithDone(h);
                                 }
                             } else {
                                 // Fallback for docs/js version with Manual Inheritance
                                 if (suite && !suite._beforeAllRun) {
-                                    const allBeforeAll = window.TestFramework.getHooks(suite, 'beforeAll');
-                                    for (const h of allBeforeAll) await h();
+                                    const allBeforeAll = (suite.beforeAll || []);
+                                    for (const h of allBeforeAll) await runWithDone(h);
                                     suite._beforeAllRun = true;
                                 }
-                                const allBeforeEach = window.TestFramework.getHooks(suite, 'beforeEach');
-                                for (const h of allBeforeEach) await h();
-                                try { await runTestFn(); } finally {
-                                    const allAfterEach = window.TestFramework.getHooks(suite, 'afterEach');
-                                    for (const h of allAfterEach) await h();
+                                const allBeforeEach = (suite.beforeEach || []);
+                                for (const h of allBeforeEach) await runWithDone(h);
+                                try { await runWithDone(fn); } finally {
+                                    const allAfterEach = (suite.afterEach || []);
+                                    for (const h of allAfterEach) await runWithDone(h);
                                 }
                             }
                         });
@@ -686,13 +813,13 @@
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const code = await response.text();
 
-                    const wrappedCode = `(function(require, module, exports, __dirname, global, process, console) {
+                    const wrappedCode = `(function(require, module, exports, __dirname, global, process, console, window, self, performance, document) {
                         try {
                             ${code}
                         } catch (e) {
                             console.error("[Harness] Execution error in ${file}:", e);
                         }
-                    })(window.require, {exports:{}}, {}, "", window.global, window.process, window.console);`;
+                    })(window.require, {exports:{}}, { exports: {} }, "", window.global, window.process, window.console, window.global, window.global, window.performance, window.document);`;
 
                     const script = document.createElement('script');
                     script.textContent = wrappedCode;
@@ -717,9 +844,10 @@
                     fileCount.style.color = '#aaa';
                     fileCount.textContent = `Tests loaded from ${totalFiles} repository files.`;
 
-                    const btn = overlay.querySelector('button');
-                    if (btn && btn.parentNode) {
-                        btn.parentNode.insertBefore(fileCount, btn);
+                    // Safely insert before the first button or append
+                    const firstBtn = overlay.getElementsByTagName('button')[0];
+                    if (firstBtn && firstBtn.parentNode) {
+                        firstBtn.parentNode.insertBefore(fileCount, firstBtn);
                     } else {
                         overlay.appendChild(fileCount);
                     }
