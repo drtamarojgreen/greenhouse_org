@@ -48,5 +48,5 @@ Modify `scripts/research/mesh/v4/core/client.py` to include a mandatory `asyncio
 Run the v4 pipeline and observe the logs for a significant reduction in 429 warnings.
 
 ## 6. Testing and Regression
-- Run existing unit tests: `pytest tests/unit/test_mesh_v6.py tests/unit/test_mesh_v8.py`.
+- Run existing unit tests: `pytest tests/unit/mesh/test_mesh_v6.py tests/unit/mesh/test_mesh_v8.py`.
 - Conduct end-to-end runs of each affected pipeline.
