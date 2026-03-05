@@ -51,7 +51,7 @@ function loadScript(filename) {
     vm.runInThisContext(code);
 }
 
-loadScript('serotonin_controls.js');
+loadScript('serotonin/serotonin_controls.js');
 
 TestFramework.describe('Serotonin UI Components', () => {
     const G = window.GreenhouseSerotonin;

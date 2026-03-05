@@ -76,10 +76,10 @@ window.GreenhouseNeuroGeometry = {
     createSynapseGeometry: () => ({ vertices: [], indices: [] })
 };
 
-loadScript('neuro_ga.js');
-loadScript('neuro_ui_3d_enhanced.js');
-loadScript('neuro_controls.js');
-loadScript('neuro_app.js');
+loadScript('neuro/neuro_ga.js');
+loadScript('neuro/neuro_ui_3d_enhanced.js');
+loadScript('neuro/neuro_controls.js');
+loadScript('neuro/neuro_app.js');
 
 TestFramework.describe('GreenhouseNeuroApp Robustness', () => {
     let app;

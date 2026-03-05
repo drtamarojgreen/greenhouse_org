@@ -347,14 +347,14 @@
                 // Load modular simulation components
                 await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
                 await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-                await GreenhouseUtils.loadScript('dna_repair_mechanisms.js', baseUrl);
-                await GreenhouseUtils.loadScript('dna_repair_mutations.js', baseUrl);
-                await GreenhouseUtils.loadScript('dna_repair_buttons.js', baseUrl);
-                await GreenhouseUtils.loadScript('dna_replication.js', baseUrl);
+                await GreenhouseUtils.loadScript('dna/dna_repair_mechanisms.js', baseUrl);
+                await GreenhouseUtils.loadScript('dna/dna_repair_mutations.js', baseUrl);
+                await GreenhouseUtils.loadScript('dna/dna_repair_buttons.js', baseUrl);
+                await GreenhouseUtils.loadScript('dna/dna_replication.js', baseUrl);
 
                 // Load core dependencies
                 await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-                await GreenhouseUtils.loadScript('dna_tooltip.js', baseUrl);
+                await GreenhouseUtils.loadScript('dna/dna_tooltip.js', baseUrl);
             }
             if (targetSelector) {
                 const container = await GreenhouseUtils.waitForElement(targetSelector);

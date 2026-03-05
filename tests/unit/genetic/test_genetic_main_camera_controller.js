@@ -19,8 +19,8 @@ function loadScript(filename) {
     vm.runInThisContext(code);
 }
 
-loadScript('genetic_config.js');
-loadScript('genetic_camera_controls.js');
+loadScript('genetic/genetic_config.js');
+loadScript('genetic/genetic_camera_controls.js');
 
 const expect = (actual) => ({
     toBeDefined: () => assert.isDefined(actual),

@@ -1023,9 +1023,9 @@
             if (baseUrl) {
                 await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
                 await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-                await GreenhouseUtils.loadScript('rna_tooltip.js', baseUrl);
-                await GreenhouseUtils.loadScript('rna_display.js', baseUrl);
-                await GreenhouseUtils.loadScript('rna_legend.js', baseUrl);
+                await GreenhouseUtils.loadScript('rna/rna_tooltip.js', baseUrl);
+                await GreenhouseUtils.loadScript('rna/rna_display.js', baseUrl);
+                await GreenhouseUtils.loadScript('rna/rna_legend.js', baseUrl);
             }
 
             if (targetSelector) {

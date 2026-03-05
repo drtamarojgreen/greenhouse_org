@@ -74,9 +74,9 @@ global.GreenhouseModelsUtil = {
 };
 
 // Load Cognition files
-const cognitionAppPath = path.join(__dirname, '../../../docs/js/cognition_app.js');
-const cognitionConfigPath = path.join(__dirname, '../../../docs/js/cognition_config.js');
-const cognitionDrawingUtilsPath = path.join(__dirname, '../../../docs/js/cognition_drawing_utils.js');
+const cognitionAppPath = path.join(__dirname, '../../../docs/js/cognition/cognition_app.js');
+const cognitionConfigPath = path.join(__dirname, '../../../docs/js/cognition/cognition_config.js');
+const cognitionDrawingUtilsPath = path.join(__dirname, '../../../docs/js/cognition/cognition_drawing_utils.js');
 
 const cognitionAppCode = fs.readFileSync(cognitionAppPath, 'utf8');
 const cognitionConfigCode = fs.readFileSync(cognitionConfigPath, 'utf8');

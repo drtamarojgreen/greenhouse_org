@@ -52,7 +52,7 @@ function loadScript(filename) {
     vm.runInThisContext(code);
 }
 
-loadScript('dopamine_controls.js');
+loadScript('dopamine/dopamine_controls.js');
 
 TestFramework.describe('Dopamine UI Components', () => {
     const G = window.GreenhouseDopamine;

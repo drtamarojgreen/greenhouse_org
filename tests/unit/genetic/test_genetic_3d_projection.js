@@ -31,7 +31,7 @@ function loadScript(filename) {
     vm.runInThisContext(code);
 }
 
-loadScript('genetic_config.js');
+loadScript('genetic/genetic_config.js');
 loadScript('models_3d_math.js');
 
 const expect = (actual) => ({

@@ -55,10 +55,10 @@ function loadScript(filename) {
 
 // --- Load Dependencies ---
 // Load Config first as others depend on it
-loadScript('genetic_config.js');
-loadScript('genetic_camera_controls.js');
-loadScript('genetic_pip_controls.js');
-loadScript('genetic_algo.js');
+loadScript('genetic/genetic_config.js');
+loadScript('genetic/genetic_camera_controls.js');
+loadScript('genetic/genetic_pip_controls.js');
+loadScript('genetic/genetic_algo.js');
 
 // --- Test Suites ---
 

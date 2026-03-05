@@ -91,12 +91,12 @@ function loadScript(filename) {
 }
 
 // --- Load Dependencies ---
-loadScript('rna_repair_atp.js');
-loadScript('rna_repair_enzymes.js');
-loadScript('rna_repair_physics.js');
-loadScript('rna_repair.js');
-loadScript('rna_legend.js');
-loadScript('rna_display.js');
+loadScript('rna/rna_repair_atp.js');
+loadScript('rna/rna_repair_enzymes.js');
+loadScript('rna/rna_repair_physics.js');
+loadScript('rna/rna_repair.js');
+loadScript('rna/rna_legend.js');
+loadScript('rna/rna_display.js');
 
 // --- Test Suites ---
 

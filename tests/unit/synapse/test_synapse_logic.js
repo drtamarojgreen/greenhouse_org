@@ -13,7 +13,7 @@ const TestFramework = require('../../utils/test_framework.js');
 global.window = global;
 
 // --- Load Script ---
-const filePath = path.join(__dirname, '../../../docs/js/synapse_chemistry.js');
+const filePath = path.join(__dirname, '../../../docs/js/synapse/synapse_chemistry.js');
 const code = fs.readFileSync(filePath, 'utf8');
 vm.runInThisContext(code);
 

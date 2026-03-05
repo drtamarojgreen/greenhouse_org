@@ -113,16 +113,16 @@ window.GreenhouseADHDData = {
 };
 
 // Load Modules
-loadScript('neuro_config.js');
-loadScript('neuro_ui_3d_geometry.js');
-loadScript('neuro_ui_3d_brain.js');
-loadScript('neuro_ui_3d_neuron.js');
-loadScript('neuro_ui_3d_synapse.js');
-loadScript('neuro_ui_3d_stats.js');
-loadScript('neuro_ui_3d_enhanced.js');
-loadScript('neuro_controls.js');
-loadScript('neuro_ga.js');
-loadScript('neuro_app.js');
+loadScript('neuro/neuro_config.js');
+loadScript('neuro/neuro_ui_3d_geometry.js');
+loadScript('neuro/neuro_ui_3d_brain.js');
+loadScript('neuro/neuro_ui_3d_neuron.js');
+loadScript('neuro/neuro_ui_3d_synapse.js');
+loadScript('neuro/neuro_ui_3d_stats.js');
+loadScript('neuro/neuro_ui_3d_enhanced.js');
+loadScript('neuro/neuro_controls.js');
+loadScript('neuro/neuro_ga.js');
+loadScript('neuro/neuro_app.js');
 
 // --- Test Suites ---
 

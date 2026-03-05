@@ -58,22 +58,22 @@
             await window.GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await window.GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await window.GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress_geometry.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('neuro/neuro_ui_3d_geometry.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('stress/stress_geometry.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('neuro/neuro_ui_3d_brain.js', baseUrl);
 
             // Graph Visualization Modules
             await window.GreenhouseUtils.loadScript('graph_parser.js', baseUrl);
             await window.GreenhouseUtils.loadScript('model_graph_viewer.js', baseUrl);
 
-            await window.GreenhouseUtils.loadScript('stress_config.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress_ui_3d.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress_macro.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress_pathway.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress_systemic.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress_tooltips.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress_controls.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('stress_app.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('stress/stress_config.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('stress/stress_ui_3d.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('stress/stress_macro.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('stress/stress_pathway.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('stress/stress_systemic.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('stress/stress_tooltips.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('stress/stress_controls.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('stress/stress_app.js', baseUrl);
 
             if (window.GreenhouseStressApp) {
                 window.GreenhouseStressApp.init(targetSelector, baseUrl);

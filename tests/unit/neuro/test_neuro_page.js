@@ -53,9 +53,9 @@ function loadScript(filename) {
 }
 
 // --- Load Dependencies ---
-loadScript('neuro_config.js');
-loadScript('neuro_camera_controls.js');
-loadScript('neuro_ga.js');
+loadScript('neuro/neuro_config.js');
+loadScript('neuro/neuro_camera_controls.js');
+loadScript('neuro/neuro_ga.js');
 
 // --- Test Suites ---
 

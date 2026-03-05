@@ -65,7 +65,7 @@ global.setInterval = () => { };
 global.clearInterval = () => { };
 
 // --- Load Script ---
-const filePath = path.join(__dirname, '../../../docs/js/rna_repair.js');
+const filePath = path.join(__dirname, '../../../docs/js/rna/rna_repair.js');
 const code = fs.readFileSync(filePath, 'utf8');
 vm.runInThisContext(code);
 

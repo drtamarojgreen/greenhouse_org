@@ -50,8 +50,8 @@ function loadScript(filename) {
 
 // Load Dependencies
 loadScript('models_util.js');
-loadScript('stress_config.js');
-loadScript('stress_app.js');
+loadScript('stress/stress_config.js');
+loadScript('stress/stress_app.js');
 
 TestFramework.describe('GreenhouseStressApp Regression', () => {
 

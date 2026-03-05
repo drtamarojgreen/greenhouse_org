@@ -46,7 +46,7 @@ global.window.GreenhouseUtils = {
 };
 
 loadScript('pathway.js');
-loadScript('pathway_viewer.js');
+loadScript('pathway/pathway_viewer.js');
 
 TestFramework.describe('Pathway Viewer (Unit)', () => {
 

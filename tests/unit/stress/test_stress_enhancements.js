@@ -75,9 +75,9 @@ function loadScript(filename) {
 loadScript('models_util.js');
 loadScript('models_3d_math.js');
 loadScript('neuro_ui_3d_geometry.js');
-loadScript('stress_config.js');
-loadScript('stress_app.js');
-loadScript('stress_systemic.js');
+loadScript('stress/stress_config.js');
+loadScript('stress/stress_app.js');
+loadScript('stress/stress_systemic.js');
 
 TestFramework.describe('GreenhouseStressApp Enhancements', () => {
 

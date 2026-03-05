@@ -98,14 +98,14 @@ function loadScript(filename) {
 
 // Load Dependencies in correct order
 loadScript('models_util.js');
-loadScript('inflammation_config.js');
-loadScript('inflammation_geometry.js');
-loadScript('inflammation_pathway.js');
-loadScript('inflammation_ui_3d.js');
-loadScript('inflammation_analysis.js');
-loadScript('inflammation_app.js');
-loadScript('inflammation_controls.js');
-loadScript('inflammation_tooltips.js');
+loadScript('inflammation/inflammation_config.js');
+loadScript('inflammation/inflammation_geometry.js');
+loadScript('inflammation/inflammation_pathway.js');
+loadScript('inflammation/inflammation_ui_3d.js');
+loadScript('inflammation/inflammation_analysis.js');
+loadScript('inflammation/inflammation_app.js');
+loadScript('inflammation/inflammation_controls.js');
+loadScript('inflammation/inflammation_tooltips.js');
 
 TestFramework.describe('Neuroinflammation Enhancements', () => {
 

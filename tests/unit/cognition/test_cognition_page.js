@@ -94,15 +94,15 @@ global.GreenhouseNeuroBrain = { drawBrainShell: () => {} };
 TestFramework.describe('Cognition Page Enhancements', () => {
 
     TestFramework.it('should load all cognition scripts', () => {
-        loadScript('cognition_config.js');
-        loadScript('cognition_analytics.js');
-        loadScript('cognition_theories.js');
-        loadScript('cognition_development.js');
-        loadScript('cognition_interventions.js');
-        loadScript('cognition_medications.js');
-        loadScript('cognition_research.js');
-        loadScript('cognition_educational.js');
-        loadScript('cognition_app.js');
+        loadScript('cognition/cognition_config.js');
+        loadScript('cognition/cognition_analytics.js');
+        loadScript('cognition/cognition_theories.js');
+        loadScript('cognition/cognition_development.js');
+        loadScript('cognition/cognition_interventions.js');
+        loadScript('cognition/cognition_medications.js');
+        loadScript('cognition/cognition_research.js');
+        loadScript('cognition/cognition_educational.js');
+        loadScript('cognition/cognition_app.js');
 
         assert.isDefined(global.window.GreenhouseCognitionConfig);
         assert.isDefined(global.window.GreenhouseCognitionApp);

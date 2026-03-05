@@ -99,9 +99,9 @@ global.window.GreenhouseUtils = {
 
 loadScript('models_3d_math.js');
 loadScript('serotonin.js');
-loadScript('serotonin_receptors.js');
-loadScript('serotonin_kinetics.js');
-loadScript('serotonin_signaling.js');
+loadScript('serotonin/serotonin_receptors.js');
+loadScript('serotonin/serotonin_kinetics.js');
+loadScript('serotonin/serotonin_signaling.js');
 
 TestFramework.describe('Serotonin Model Logic (Unit)', () => {
 

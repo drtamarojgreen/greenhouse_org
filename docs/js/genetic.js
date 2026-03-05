@@ -80,19 +80,19 @@
             await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_config.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_camera_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_lighting.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_pip_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_algo.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_geometry.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_dna.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_gene.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_chromosome.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_protein.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_brain.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d_stats.js', baseUrl);
-            await GreenhouseUtils.loadScript('genetic_ui_3d.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_config.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_camera_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_lighting.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_pip_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_algo.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_ui_3d_geometry.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_ui_3d_dna.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_ui_3d_gene.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_ui_3d_chromosome.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_ui_3d_protein.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_ui_3d_brain.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_ui_3d_stats.js', baseUrl);
+            await GreenhouseUtils.loadScript('genetic/genetic_ui_3d.js', baseUrl);
 
             if (window.GreenhouseGeneticAlgo && window.GreenhouseGeneticUI3D) {
                 console.log('Genetic App: All modules loaded.');

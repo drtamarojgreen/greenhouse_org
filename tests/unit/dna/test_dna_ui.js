@@ -53,7 +53,7 @@ function loadScript(filename) {
 }
 
 loadScript('dna_tooltip.js');
-loadScript('dna_repair_buttons.js');
+loadScript('dna/dna_repair_buttons.js');
 
 TestFramework.describe('DNA UI Components', () => {
 

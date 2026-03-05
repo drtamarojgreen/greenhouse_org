@@ -46,9 +46,9 @@ global.GreenhouseCognitionBrain = {
 };
 
 // Load app and drawing utils
-const drawingUtilsCode = fs.readFileSync(path.join(__dirname, '../../../docs/js/cognition_drawing_utils.js'), 'utf8');
-const appCode = fs.readFileSync(path.join(__dirname, '../../../docs/js/cognition_app.js'), 'utf8');
-const configCode = fs.readFileSync(path.join(__dirname, '../../../docs/js/cognition_config.js'), 'utf8');
+const drawingUtilsCode = fs.readFileSync(path.join(__dirname, '../../../docs/js/cognition/cognition_drawing_utils.js'), 'utf8');
+const appCode = fs.readFileSync(path.join(__dirname, '../../../docs/js/cognition/cognition_app.js'), 'utf8');
+const configCode = fs.readFileSync(path.join(__dirname, '../../../docs/js/cognition/cognition_config.js'), 'utf8');
 
 eval(configCode);
 eval(drawingUtilsCode);

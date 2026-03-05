@@ -53,8 +53,8 @@ function loadScript(filename) {
 }
 
 loadScript('models_util.js');
-loadScript('inflammation_config.js');
-loadScript('inflammation_app.js');
+loadScript('inflammation/inflammation_config.js');
+loadScript('inflammation/inflammation_app.js');
 
 TestFramework.describe('Inflammation Model Logic (Restored Metrics)', () => {
     let app;

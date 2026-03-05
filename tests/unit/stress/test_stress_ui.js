@@ -74,11 +74,11 @@ global.window.GreenhouseNeuroGeometry = {
 
 // Load Dependencies
 loadScript('models_util.js');
-loadScript('stress_config.js');
-loadScript('stress_geometry.js');
-loadScript('stress_app.js');
-loadScript('stress_systemic.js');
-loadScript('stress_ui_3d.js');
+loadScript('stress/stress_config.js');
+loadScript('stress/stress_geometry.js');
+loadScript('stress/stress_app.js');
+loadScript('stress/stress_systemic.js');
+loadScript('stress/stress_ui_3d.js');
 
 TestFramework.describe('GreenhouseStressApp UI', () => {
 

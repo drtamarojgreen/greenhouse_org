@@ -73,10 +73,10 @@ global.window.GreenhouseModels3DMath = {
 
 // Load Dependencies
 loadScript('models_util.js');
-loadScript('inflammation_config.js');
-loadScript('inflammation_geometry.js');
-loadScript('inflammation_app.js');
-loadScript('inflammation_ui_3d.js');
+loadScript('inflammation/inflammation_config.js');
+loadScript('inflammation/inflammation_geometry.js');
+loadScript('inflammation/inflammation_app.js');
+loadScript('inflammation/inflammation_ui_3d.js');
 
 TestFramework.describe('GreenhouseInflammationApp UI', () => {
 

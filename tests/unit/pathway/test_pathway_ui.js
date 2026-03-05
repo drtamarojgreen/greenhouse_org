@@ -54,7 +54,7 @@ loadScript('models_util.js');
 global.window.GreenhouseModels3DMath = {
     project3DTo2D: () => ({ x: 0, y: 0, scale: 1 })
 };
-loadScript('pathway_viewer.js');
+loadScript('pathway/pathway_viewer.js');
 
 TestFramework.describe('Pathway Viewer UI', () => {
     const Viewer = window.GreenhousePathwayViewer;
