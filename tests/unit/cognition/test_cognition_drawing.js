@@ -8,7 +8,7 @@ global.window = global;
 global.document = { addEventListener: () => {} };
 global.GreenhouseModelsUtil = { t: (k) => k };
 
-const drawingUtilsCode = fs.readFileSync(path.join(__dirname, '../../../docs/js/cognition_drawing_utils.js'), 'utf8');
+const drawingUtilsCode = fs.readFileSync(path.join(__dirname, '../../../docs/js/cognition/cognition_drawing_utils.js'), 'utf8');
 eval(drawingUtilsCode);
 
 TestFramework.describe('Cognition Drawing Utilities', () => {

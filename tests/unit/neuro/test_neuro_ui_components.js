@@ -55,7 +55,7 @@ function loadScript(filename) {
     vm.runInThisContext(code);
 }
 
-loadScript('neuro_controls.js');
+loadScript('neuro/neuro_controls.js');
 
 TestFramework.describe('GreenhouseNeuroControls', () => {
     let ctx;

@@ -20,7 +20,7 @@ function loadScript(filename) {
 }
 
 // Load GA
-loadScript('neuro_ga.js');
+loadScript('neuro/neuro_ga.js');
 
 TestFramework.describe('NeuroGA', () => {
     let ga;

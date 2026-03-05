@@ -57,17 +57,17 @@
             await window.GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await window.GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await window.GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition_ui_3d_brain.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition_drawing_utils.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition_config.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition_analytics.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition_theories.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition_development.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition_interventions.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition_medications.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition_research.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition_educational.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('cognition_app.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition/cognition_ui_3d_brain.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition/cognition_drawing_utils.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition/cognition_config.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition/cognition_analytics.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition/cognition_theories.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition/cognition_development.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition/cognition_interventions.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition/cognition_medications.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition/cognition_research.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition/cognition_educational.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('cognition/cognition_app.js', baseUrl);
 
             if (window.GreenhouseCognitionApp) {
                 window.GreenhouseCognitionApp.init(targetSelector);

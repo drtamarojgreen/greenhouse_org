@@ -54,9 +54,9 @@ global.window.GreenhouseUtils = {
 
 loadScript('models_3d_math.js');
 loadScript('dopamine.js');
-loadScript('dopamine_synapse.js');
-loadScript('dopamine_molecular.js');
-loadScript('dopamine_controls.js');
+loadScript('dopamine/dopamine_synapse.js');
+loadScript('dopamine/dopamine_molecular.js');
+loadScript('dopamine/dopamine_controls.js');
 
 TestFramework.describe('Dopamine Model Logic (Unit)', () => {
 

@@ -55,10 +55,10 @@ window.GreenhouseModels3DMath = {
 };
 
 // Load Modules
-loadScript('genetic_lighting.js');
-loadScript('genetic_ui_3d_geometry.js');
-loadScript('genetic_ui_3d_stats.js');
-loadScript('genetic_ui_3d_chromosome.js');
+loadScript('genetic/genetic_lighting.js');
+loadScript('genetic/genetic_ui_3d_geometry.js');
+loadScript('genetic/genetic_ui_3d_stats.js');
+loadScript('genetic/genetic_ui_3d_chromosome.js');
 
 // --- Test Suites ---
 

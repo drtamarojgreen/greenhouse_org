@@ -19,7 +19,7 @@ function loadScript(filename) {
     vm.runInThisContext(code);
 }
 
-loadScript('dna_repair_mutations.js');
+loadScript('dna/dna_repair_mutations.js');
 
 TestFramework.describe('DNA Mutation Logic (Unit)', () => {
 

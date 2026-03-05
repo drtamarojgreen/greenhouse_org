@@ -32,7 +32,7 @@ global.window.GreenhouseDopamine = {
     }
 };
 
-loadScript('dopamine_molecular.js');
+loadScript('dopamine/dopamine_molecular.js');
 
 TestFramework.describe('Dopamine Molecular Logic (Unit)', () => {
 

@@ -36,7 +36,7 @@ const loadScript = (filename) => {
     vm.runInThisContext(code);
 };
 
-loadScript('synapse_chemistry.js');
+loadScript('synapse/synapse_chemistry.js');
 global.window.GreenhouseSynapseApp.Particles = {
     plasticityFactor: 1.0,
     particles: [],
@@ -44,7 +44,7 @@ global.window.GreenhouseSynapseApp.Particles = {
     createIon: () => {},
     updateAndDraw: () => {}
 };
-loadScript('synapse_analytics.js');
+loadScript('synapse/synapse_analytics.js');
 
 // Mock other dependencies
 const G = global.window.GreenhouseSynapseApp;
@@ -54,7 +54,7 @@ G.Controls = { render: () => {} };
 G.Visuals3D = { applyDepth: () => {}, drawElectrostaticPotential: () => {}, drawBBB: () => {}, drawVesicleShadows: () => {}, restoreDepth: () => {}, drawShadows: () => {}, drawDynamicLighting: () => {}, drawIonHeatMap: () => {} };
 G.Molecular = { drawECM: () => {}, drawAstrocyte: () => {}, drawMitochondria: () => {}, drawLipidBilayer: () => {}, drawElectrochemicalGradient: () => {}, drawScaffolding: () => {}, drawCascades: () => {}, drawRetrograde: () => {}, drawSNARE: () => {}, drawPhosphorylation: () => {}, drawGPCRTopology: () => {}, triggerCascade: () => {} };
 
-loadScript('synapse_app.js');
+loadScript('synapse/synapse_app.js');
 
 TestFramework.describe('Synapse Receptors Integration', () => {
 

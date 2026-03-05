@@ -70,10 +70,10 @@ global.window.GreenhouseModels3DMath = {
 };
 
 // Load Dependencies
-loadScript('genetic_config.js');
-loadScript('genetic_camera_controls.js');
-loadScript('genetic_pip_controls.js');
-loadScript('genetic_ui_3d.js');
+loadScript('genetic/genetic_config.js');
+loadScript('genetic/genetic_camera_controls.js');
+loadScript('genetic/genetic_pip_controls.js');
+loadScript('genetic/genetic_ui_3d.js');
 
 const jasmine = {
     createSpy: (name) => {

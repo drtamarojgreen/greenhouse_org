@@ -57,15 +57,15 @@ function loadScript(filename) {
 
 loadScript('models_3d_math.js');
 loadScript('models_util.js');
-loadScript('neuro_config.js');
-loadScript('neuro_adhd_data.js');
-loadScript('neuro_ui_3d_geometry.js');
-loadScript('neuro_ui_3d_brain.js');
-loadScript('neuro_ui_3d_neuron.js');
-loadScript('neuro_ui_3d_synapse.js');
-loadScript('neuro_ui_3d_enhanced.js');
-loadScript('neuro_ga.js');
-loadScript('neuro_app.js');
+loadScript('neuro/neuro_config.js');
+loadScript('neuro/neuro_adhd_data.js');
+loadScript('neuro/neuro_ui_3d_geometry.js');
+loadScript('neuro/neuro_ui_3d_brain.js');
+loadScript('neuro/neuro_ui_3d_neuron.js');
+loadScript('neuro/neuro_ui_3d_synapse.js');
+loadScript('neuro/neuro_ui_3d_enhanced.js');
+loadScript('neuro/neuro_ga.js');
+loadScript('neuro/neuro_app.js');
 
 TestFramework.describe('ADHD Scenarios Integration', () => {
 

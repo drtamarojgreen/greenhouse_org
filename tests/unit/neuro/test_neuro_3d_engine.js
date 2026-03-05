@@ -111,7 +111,7 @@ window.GreenhouseModels3DMath = {
     calculateFaceNormal: () => ({ x: 0, y: 0, z: 1 })
 };
 
-loadScript('neuro_ui_3d_enhanced.js');
+loadScript('neuro/neuro_ui_3d_enhanced.js');
 
 TestFramework.describe('GreenhouseNeuroUI3D', () => {
     let ui;

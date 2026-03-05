@@ -88,13 +88,13 @@ loadScript('GreenhouseUtils.js');
 loadScript('models_util.js');
 loadScript('models_3d_math.js');
 loadScript('brain_mesh_realistic.js');
-loadScript('emotion_ui_3d_brain.js');
-loadScript('emotion_config.js');
-loadScript('emotion_diagrams.js');
-loadScript('emotion_regions.js');
-loadScript('emotion_interventions.js');
-loadScript('emotion_theories.js');
-loadScript('emotion_app.js');
+loadScript('emotion/emotion_ui_3d_brain.js');
+loadScript('emotion/emotion_config.js');
+loadScript('emotion/emotion_diagrams.js');
+loadScript('emotion/emotion_regions.js');
+loadScript('emotion/emotion_interventions.js');
+loadScript('emotion/emotion_theories.js');
+loadScript('emotion/emotion_app.js');
 
 // --- Test Suites ---
 

@@ -27,7 +27,7 @@ global.window.GreenhouseSerotonin = {
     }
 };
 
-loadScript('serotonin_transport.js');
+loadScript('serotonin/serotonin_transport.js');
 
 TestFramework.describe('Serotonin Transport Logic (Unit)', () => {
 

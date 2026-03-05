@@ -39,7 +39,7 @@ window.GreenhouseGeneticCameraController = class {
 window.GreenhouseGeneticConfig = {};
 
 // Load Module
-loadScript('genetic_pip_controls.js');
+loadScript('genetic/genetic_pip_controls.js');
 
 // --- Test Suites ---
 

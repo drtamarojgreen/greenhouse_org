@@ -48,9 +48,9 @@ function loadScript(filename) {
     vm.runInThisContext(code);
 }
 
-loadScript('rna_tooltip.js');
-loadScript('rna_legend.js');
-loadScript('rna_display.js');
+loadScript('rna/rna_tooltip.js');
+loadScript('rna/rna_legend.js');
+loadScript('rna/rna_display.js');
 
 TestFramework.describe('RNA UI Components', () => {
 

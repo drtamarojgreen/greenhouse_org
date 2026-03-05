@@ -69,11 +69,11 @@ window.GreenhouseGeneticConfig = {
 };
 
 // Load Modules
-loadScript('genetic_camera_controls.js');
-loadScript('genetic_pip_controls.js');
-loadScript('genetic_ui_3d_gene.js');
-loadScript('genetic_ui_3d_protein.js');
-loadScript('genetic_ui_3d_brain.js');
+loadScript('genetic/genetic_camera_controls.js');
+loadScript('genetic/genetic_pip_controls.js');
+loadScript('genetic/genetic_ui_3d_gene.js');
+loadScript('genetic/genetic_ui_3d_protein.js');
+loadScript('genetic/genetic_ui_3d_brain.js');
 
 // --- Test Suites ---
 

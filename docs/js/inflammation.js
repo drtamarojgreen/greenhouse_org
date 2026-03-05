@@ -58,22 +58,22 @@
             await window.GreenhouseUtils.loadScript('models_util.js', baseUrl);
             await window.GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
             await window.GreenhouseUtils.loadScript('brain_mesh_realistic.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro_ui_3d_geometry.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_geometry.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro_ui_3d_brain.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('neuro_ui_3d_neuron.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_config.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_pathway.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_ui_3d.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_signaling.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_macro.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_micro.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_molecular.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_tooltips.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_controls.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_analysis.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_test_harness.js', baseUrl);
-            await window.GreenhouseUtils.loadScript('inflammation_app.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('neuro/neuro_ui_3d_geometry.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_geometry.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('neuro/neuro_ui_3d_brain.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('neuro/neuro_ui_3d_neuron.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_config.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_pathway.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_ui_3d.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_signaling.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_macro.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_micro.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_molecular.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_tooltips.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_controls.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_analysis.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_test_harness.js', baseUrl);
+            await window.GreenhouseUtils.loadScript('inflammation/inflammation_app.js', baseUrl);
 
             if (window.GreenhouseInflammationApp) {
                 window.GreenhouseInflammationApp.init(targetSelector, baseUrl);

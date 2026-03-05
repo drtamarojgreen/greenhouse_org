@@ -198,7 +198,7 @@ TestFramework.describe('Synapse UI Rendering', () => {
     TestFramework.beforeEach(() => {
         mockCtx.calls = [];
         mockContainer.children = [];
-        loadScript('synapse_app.js');
+        loadScript('synapse/synapse_app.js');
     });
 
     TestFramework.it('should initialize and setup DOM', () => {

@@ -37,7 +37,7 @@ global.window.GreenhouseDopamine = {
     }
 };
 
-loadScript('dopamine_electrophysiology.js');
+loadScript('dopamine/dopamine_electrophysiology.js');
 
 TestFramework.describe('Dopamine Electrophysiology (Unit)', () => {
 

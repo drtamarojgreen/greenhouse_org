@@ -45,9 +45,9 @@ window.GreenhouseGeneticConfig = {
 };
 
 // Load Modules
-loadScript('genetic_ui_3d_dna.js');
-loadScript('genetic_ui_3d_protein.js');
-loadScript('genetic_ui_3d_brain.js');
+loadScript('genetic/genetic_ui_3d_dna.js');
+loadScript('genetic/genetic_ui_3d_protein.js');
+loadScript('genetic/genetic_ui_3d_brain.js');
 
 // --- Test Suites ---
 

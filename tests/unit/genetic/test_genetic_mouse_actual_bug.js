@@ -47,8 +47,8 @@ window.GreenhouseGeneticConfig = {
 };
 
 // Load Modules
-loadScript('genetic_camera_controls.js');
-loadScript('genetic_pip_controls.js');
+loadScript('genetic/genetic_camera_controls.js');
+loadScript('genetic/genetic_pip_controls.js');
 
 // --- Test Suites ---
 

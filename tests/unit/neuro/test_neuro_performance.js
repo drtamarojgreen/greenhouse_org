@@ -53,12 +53,12 @@ global.document = {
 
 loadScript('models_3d_math.js');
 loadScript('models_util.js');
-loadScript('neuro_config.js');
-loadScript('neuro_ui_3d_geometry.js');
-loadScript('neuro_ui_3d_brain.js');
-loadScript('neuro_ui_3d_neuron.js');
-loadScript('neuro_ui_3d_synapse.js');
-loadScript('neuro_ga.js');
+loadScript('neuro/neuro_config.js');
+loadScript('neuro/neuro_ui_3d_geometry.js');
+loadScript('neuro/neuro_ui_3d_brain.js');
+loadScript('neuro/neuro_ui_3d_neuron.js');
+loadScript('neuro/neuro_ui_3d_synapse.js');
+loadScript('neuro/neuro_ga.js');
 
 TestFramework.describe('Neuro Performance Profiling', () => {
 
