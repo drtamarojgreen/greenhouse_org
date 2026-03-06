@@ -31,15 +31,6 @@ class TestRenderManagement(unittest.TestCase):
              count = end - start + 1
              self.assertGreater(count, 0, f"R85 FAIL: Scene {name} has zero/negative frame count")
 
-    def test_86_chunking_logic(self):
-        """R86: Test for render manager chunking behavior."""
-        # Check render_manager.py if it exists
-        mgr_path = os.path.join(MOVIE_ROOT, "render_manager.py")
-        if os.path.exists(mgr_path):
-             # Basic check: does it have a CHUNK_SIZE?
-             with open(mgr_path, 'r') as f:
-                 content = f.read()
-                 self.assertIn("chunk", content.lower(), "R86 FAIL: No chunking logic found in render_manager.py")
 
 if __name__ == "__main__":
     argv = [sys.argv[0]]

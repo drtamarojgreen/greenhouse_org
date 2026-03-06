@@ -10,6 +10,11 @@ def get_compositor_node_tree(scene):
     if not scene: return None
     scene.use_nodes = True
     
+    # Force creation if missing (Point 142)
+    if not scene.node_tree:
+        try: bpy.ops.node.new_node_tree(type='CompositorNodeTree', name="Compositing")
+        except: pass
+
     # In some versions it's scene.node_tree, in others it's compositing_node_tree
     # or compositor_node_tree (Blender 5.x variability)
     tree = getattr(scene, 'node_tree', None) or \
@@ -19,7 +24,7 @@ def get_compositor_node_tree(scene):
     if not tree:
         # Check if we can find it in bpy.data.node_groups as a fallback
         for ng in bpy.data.node_groups:
-            if ng.type == 'COMPOSITOR' and ng.name == "Compositing":
+            if ng.type == 'COMPOSITOR' and (ng.name == "Compositing" or ng.name == "CompositorNodeTree"):
                 tree = ng
                 break
                 
