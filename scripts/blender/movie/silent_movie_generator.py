@@ -41,7 +41,7 @@ class MovieMaster(BaseMaster):
         camera_controls.ensure_camera(self)
         
         base_p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.greenhouse = greenhouse_structure.create_greenhouse_structure()
+        self.greenhouse = greenhouse_structure.create_greenhouse_structure(location=(0, 15, 0))
         greenhouse_interior.setup_greenhouse_interior()
         exterior_garden.create_exterior_garden()
         environment_props.create_stage_floor()
@@ -50,10 +50,10 @@ class MovieMaster(BaseMaster):
         self.brain, self.neuron = brain_neuron.load_brain(base_p), brain_neuron.load_neuron(base_p)
         self.book = library_props.create_open_book((0, 0, 1.3))
         self.pedestal = library_props.create_pedestal((0, 0, 0))
-        # Replace stoic pillars with organic trees for a more natural greenhouse feel
+        # Trees: placed inside the greenhouse walls (which are now at Y+15)
         _bark = plant_humanoid.create_bark_material("GH_TreeBark")
         _leaf = plant_humanoid.create_leaf_material("GH_TreeLeaf")
-        for x, y in [(-8,-8), (8,8), (-12,0), (12,0)]:
+        for x, y in [(-6, 8), (6, 8), (-6, 22), (6, 22)]:
             exterior_garden.create_procedural_tree((x, y, -1), _bark, _leaf)
 
     def animate_master(self):

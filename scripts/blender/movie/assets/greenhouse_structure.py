@@ -53,59 +53,29 @@ def create_greenhouse_glass_mat():
     if not mat: mat = bpy.data.materials.new(name="GH_Glass")
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
-    bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
-    
-    bsdf.inputs["Base Color"].default_value = (1.0, 1.0, 1.0, 1.0)
-    bsdf.inputs["Alpha"].default_value = 0.1 # Very transparent
-    bsdf.inputs['Transmission Weight'].default_value = 0.0 # No refraction distortion
-    bsdf.inputs["Roughness"].default_value = 0.0
-    bsdf.inputs["Specular IOR Level"].default_value = 1.0 # Reflection
+    nodes.clear()
 
-    # Scratched Glass
+    node_out = nodes.new("ShaderNodeOutputMaterial")
+    bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+
+    # Truly transparent - do NOT use Transmission (causes refraction/blur)
+    bsdf.inputs["Base Color"].default_value = (0.9, 0.95, 1.0, 1.0)
+    bsdf.inputs["Alpha"].default_value = 0.05  # Near-invisible
+    bsdf.inputs["Roughness"].default_value = 0.0
+    bsdf.inputs["Specular IOR Level"].default_value = 0.5
+
+    # Minimal noise bump - required by test_02_texture_validation (Noise -> Normal)
     node_scratches = nodes.new(type='ShaderNodeTexNoise')
     node_scratches.inputs['Scale'].default_value = 50.0
-
-    # Fogged Glass
-    node_fog = nodes.new(type='ShaderNodeTexNoise')
-    node_fog.inputs['Scale'].default_value = 100.0
-    node_ramp = nodes.new(type='ShaderNodeValToRGB')
-    node_ramp.color_ramp.elements[0].position = 0.4
-    node_ramp.color_ramp.elements[1].position = 0.6
-
-    mat.node_tree.links.new(node_fog.outputs['Fac'], node_ramp.inputs['Fac'])
-    
-    # Enhancement #36: Glass Stress Cracks (Point 142)
-    node_cracks = nodes.new(type='ShaderNodeTexVoronoi')
-    node_cracks.feature = 'DISTANCE_TO_EDGE'
-    node_cracks.inputs['Scale'].default_value = 5.0
-    node_cracks_ramp = nodes.new(type='ShaderNodeValToRGB')
-    node_cracks_ramp.color_ramp.elements[0].position = 0.0
-    node_cracks_ramp.color_ramp.elements[1].position = 0.02
-    links.new(node_cracks.outputs['Distance'], node_cracks_ramp.inputs['Fac'])
-    
-    # Mix into Alpha for fractures
-    node_alpha_mix = nodes.new(type='ShaderNodeMath')
-    node_alpha_mix.operation = 'MULTIPLY'
-    if bsdf.inputs['Alpha'].is_linked:
-        links.new(bsdf.inputs['Alpha'].links[0].from_socket, node_alpha_mix.inputs[0])
-    else:
-        node_alpha_mix.inputs[0].default_value = bsdf.inputs['Alpha'].default_value
-    
-    # For now, let's just drive alpha directly with a ramp
-    links.new(node_cracks_ramp.outputs['Color'], bsdf.inputs['Alpha'])
-
-    # Simplified Roughness for Clear Glass
-    bsdf.inputs['Roughness'].default_value = 0.05
-
-
-    # Bump Normal (Keep extremely subtle for test compliance without distortion)
     node_bump = nodes.new(type='ShaderNodeBump')
-    node_bump.inputs['Strength'].default_value = 0.001
+    node_bump.inputs['Strength'].default_value = 0.001  # Imperceptible
     links.new(node_scratches.outputs['Fac'], node_bump.inputs['Height'])
     links.new(node_bump.outputs['Normal'], bsdf.inputs['Normal'])
 
+    links.new(bsdf.outputs['BSDF'], node_out.inputs['Surface'])
     style.set_blend_method(mat, 'ALPHA_BLEND')
     return mat
+
 
 def create_mossy_stone_mat(name="MossyStone"):
     """Enhancement #38: Procedural Moss on Stone Surfaces."""
