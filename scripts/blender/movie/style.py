@@ -140,14 +140,22 @@ def get_eevee_engine_id():
 def get_compositor_node_tree(scene):
     if not scene: return None
     scene.use_nodes = True
+    
+    # Force creation if missing (Point 142)
+    if not scene.node_tree:
+        # In some versions, setting use_nodes creates it, in others we need to trigger it
+        try: bpy.ops.node.new_node_tree(type='CompositorNodeTree', name="Compositing")
+        except: pass
+
     tree = getattr(scene, 'node_tree', None) or \
            getattr(scene, 'compositing_node_tree', None) or \
            getattr(scene, 'compositor_node_tree', None)
+    
     if not tree:
         for ng in bpy.data.node_groups:
-            if ng.type == 'COMPOSITOR' and ng.name == "Compositing":
-                tree = ng
-                break
+            if ng.type == 'COMPOSITOR' and (ng.name == "Compositing" or ng.name == "CompositorNodeTree"):
+                tree = ng; break
+    
     if not tree: tree = getattr(scene, 'compositing_node_group', None)
     return tree
 

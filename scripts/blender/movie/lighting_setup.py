@@ -67,7 +67,7 @@ def setup_lighting(master_instance):
             con = light.constraints.new(type='TRACK_TO')
             con.target = target
             con.track_axis = 'TRACK_NEGATIVE_Z'
-            con.up_axis = 'UP_Z'
+            con.up_axis = 'UP_Y'
         return light
 
     # Positioned as rims/kicker lights to satisfy Test 4.2.1 and 4.2.2

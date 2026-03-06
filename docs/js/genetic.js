@@ -195,6 +195,8 @@
     }
 
     // --- Global API and Execution ---
+    main();
+
     window.GreenhouseGenetic = {
         reinitialize: () => {
             isInitialized = false;
@@ -208,7 +210,5 @@
         initApplication: initApplication, // Expose for utility to call
         startSimulation: startEvolutionLoop
     };
-
-    main();
 
 })();

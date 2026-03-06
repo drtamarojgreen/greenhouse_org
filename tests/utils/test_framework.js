@@ -54,6 +54,10 @@ class TestFramework {
       suiteFunction();
     } catch (error) {
       console.error(`Error in suite "${suiteName}":`, error);
+      // Register a failing test to ensure the error is visible in the reporter
+      this.it('Suite Initialization', () => {
+        throw new Error(`Failed to initialize suite "${suiteName}": ${error.message}`);
+      });
     }
 
     this.currentSuite = parentSuite;
@@ -421,6 +425,7 @@ class TestFramework {
 
 // Create singleton instance
 const testFramework = new TestFramework();
+testFramework.TestFrameworkClass = TestFramework; // Export the class itself for constructor use
 
 // Bind methods to the instance to allow for destructuring in tests
 testFramework.describe = testFramework.describe.bind(testFramework);
@@ -443,6 +448,7 @@ if (typeof module !== 'undefined' && module.exports) {
 // Make available globally
 if (typeof window !== 'undefined') {
   window.TestFramework = testFramework;
+  window.TestFrameworkClass = TestFramework;
 }
 
 console.log('[Test Framework] Lightweight testing framework loaded');

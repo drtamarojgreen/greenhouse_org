@@ -9,24 +9,23 @@ def get_compositor_node_tree(scene):
     """Directly retrieves the compositor node tree for Blender 5.x."""
     if not scene: return None
     scene.use_nodes = True
-    
-    # In some versions it's scene.node_tree, in others it's compositing_node_tree
-    # or compositor_node_tree (Blender 5.x variability)
-    tree = getattr(scene, 'node_tree', None) or \
-           getattr(scene, 'compositing_node_tree', None) or \
-           getattr(scene, 'compositor_node_tree', None)
+    # Force creation if missing
+    current_tree = getattr(scene, 'node_tree', None)
+    if not current_tree:
+        try: bpy.ops.node.new_node_tree(type='CompositorNodeTree', name="Compositing")
+        except: pass
+
+    tree = getattr(scene, 'node_tree', None)
     
     if not tree:
         # Check if we can find it in bpy.data.node_groups as a fallback
         for ng in bpy.data.node_groups:
-            if ng.type == 'COMPOSITOR' and ng.name == "Compositing":
+            if ng.type == 'COMPOSITOR' and (ng.name == "Compositing" or ng.name == "CompositorNodeTree"):
                 tree = ng
                 break
                 
     if not tree:
-        # Final fallback: return what we have even if None, 
-        # but try to access standard attributes
-        tree = getattr(scene, 'compositing_node_group', None)
+        tree = getattr(scene, 'node_tree', None)
         
     return tree
 

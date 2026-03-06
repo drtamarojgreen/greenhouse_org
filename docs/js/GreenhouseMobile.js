@@ -113,7 +113,6 @@
                         container.appendChild(canvas);
                         const sim = new window.RNARepairSimulation(canvas);
                         container._sim = sim;
-                        window.Greenhouse = window.Greenhouse || {};
                         window.Greenhouse.rnaSimulation = sim;
                     }
                 },

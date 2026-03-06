@@ -15,8 +15,8 @@
     <link rel="stylesheet" href="https://drtamarojgreen.github.io/greenhouse_org/css/models_toc.css">
 
     <!-- Mandatory Production Scripts -->
-    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseDependencyManager.js"></script>
     <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseUtils.js"></script>
+    <script src="https://drtamarojgreen.github.io/greenhouse_org/js/GreenhouseDependencyManager.js"></script>
     <script src="https://drtamarojgreen.github.io/greenhouse_org/js/greenhouse.js"></script>
 
     <style>
@@ -359,7 +359,12 @@
             const hError = console.error.bind(console);
             const hWarn = console.warn.bind(console);
 
-            hLog("[Harness] Run Tests clicked. Model ID:", modelSelector.value);
+            // 0. Immediate State Cleanup
+            const existingOverlay = document.getElementById('greenhouse-test-results-overlay');
+            if (existingOverlay) existingOverlay.remove();
+
+            try {
+                hLog("[Harness] Run Tests clicked. Model ID:", modelSelector.value);
             const modelId = modelSelector.value;
 
             // 1. Setup Mock Environment for Repository Tests
@@ -371,55 +376,42 @@
                 };
             }
 
-            window.require = (requirePath) => {
-                hLog(`[Harness] Mock Require: ${requirePath}`);
-                if (requirePath.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
-                if (requirePath.includes('test_framework')) return window.TestFramework;
-                if (requirePath === 'fs') return {
+            window.require = (path) => {
+                hLog(`[Harness] Mock Require: ${path}`);
+                if (path.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
+                if (path.includes('test_framework')) return window.TestFramework;
+                if (path.includes('test_env_factory')) return {
+                    createEnv: (config) => {
+                        const env = {
+                            window: window.global,
+                            document: document,
+                            context: {
+                                GreenhouseMobile: window.GreenhouseMobile,
+                                GreenhouseUtils: window.GreenhouseUtils,
+                                GreenhouseBioStatus: window.GreenhouseBioStatus,
+                                injectStyles: () => {} // Mock for mobile typography tests
+                            },
+                            cleanup: () => {}
+                        };
+                        return env;
+                    }
+                };
+                if (path === 'fs') return {
                     readFileSync: (p) => {
                         hLog(`[Harness] Mock FS read: ${p}`);
-                        try {
-                            const xhr = new XMLHttpRequest();
-                            let normalizedPath = p.replace(/^.*docs\/js\//, 'js/')
-                                                  .replace(/^.*mobile\/app\//, '../mobile/app/')
-                                                  .replace(/^.*utils\//, 'js/')
-                                                  .replace(/^\/+/, '');
-
-                            if (!normalizedPath.includes('/') && normalizedPath.endsWith('.js')) {
-                                normalizedPath = 'js/' + normalizedPath;
-                            }
-
-                            xhr.open('GET', normalizedPath, false); // synchronous
-                            xhr.send(null);
-                            if (xhr.status === 200) return xhr.responseText;
-                            hError(`[Harness] FS read failed for ${normalizedPath}: ${xhr.status}`);
-                        } catch (e) {
-                            hError(`[Harness] FS read error for ${p}:`, e);
-                        }
                         return '';
                     },
                     existsSync: () => true
                 };
-                if (requirePath === 'path') return {
-                    join: (...args) => args.join('/').replace(/\/+/g, '/'),
-                    resolve: (...args) => args.join('/').replace(/\/+/g, '/'),
-                    dirname: (p) => p.split('/').slice(0, -1).join('/') || '.'
-                };
-                if (requirePath === 'vm') return {
-                    runInThisContext: (code) => {
-                        hLog("[Harness] vm.runInThisContext executed via eval");
-                        return eval(code);
-                    },
-                    createContext: (sandbox) => {
-                        hLog("[Harness] vm.createContext created");
-                        return sandbox || {};
-                    },
+                if (path === 'path') return { join: (...args) => args.join('/'), resolve: (...args) => args.join('/') };
+                if (path === 'vm') return {
+                    createContext: (sandbox) => sandbox,
                     runInContext: (code, context) => {
-                        hLog("[Harness] vm.runInContext executed via eval with context");
-                        const keys = Object.keys(context);
-                        const values = Object.values(context);
-                        const fn = new Function(...keys, code);
-                        return fn.apply(context, values);
+                        const fn = new Function('require', 'module', 'exports', '__dirname', 'global', 'process', 'console', 'window', 'document', code);
+                        return fn(window.require, {exports:{}}, {}, "", context, window.process, window.console, context, context.document);
+                    },
+                    runInThisContext: (code) => {
+                        hLog("[Harness] vm.runInThisContext ignored for browser-loaded scripts");
                     }
                 };
                 return {};
@@ -429,35 +421,42 @@
                 hError(`[Global Error] ${msg} at ${url}:${line}:${col}`, error);
             };
             window.module = { exports: {} };
-            window.process = { exit: (code) => hLog("[Harness] Process exit intercepted. Code:", code) };
+            window.process = {
+                exit: (code) => hLog("[Harness] Process exit intercepted. Code:", code),
+                env: { NODE_ENV: 'test' }
+            };
             window.__dirname = "";
 
-            const mockGlobal = new Proxy(window, {
+            const shadowGlobal = {
+                process: window.process,
+                require: window.require,
+                module: window.module,
+                __dirname: window.__dirname,
+                exports: window.module.exports,
+                TestFramework: window.TestFramework,
+                assert: window.assert,
+                AssertionError: window.AssertionError
+            };
+            const mockGlobal = new Proxy({}, {
                 get(target, prop) {
-                    const val = target[prop];
+                    if (prop === 'window' || prop === 'global' || prop === 'self') return mockGlobal;
+                    if (prop in shadowGlobal) return shadowGlobal[prop];
+                    const val = window[prop];
                     if (typeof val === 'function') {
-                        if (val.name === 'setTimeout' || val.name === 'setInterval' || val.name === 'requestAnimationFrame') {
-                             return val.bind(target);
-                        }
-                        // Bind most native methods to the target to avoid "Illegal invocation"
-                        if (/^[A-Z]/.test(prop) || ['dispatchEvent', 'addEventListener', 'removeEventListener', 'fetch', 'XMLHttpRequest'].includes(prop)) {
-                            return val;
-                        }
-                        return typeof val.bind === 'function' ? val.bind(target) : val;
+                        try { return val.bind(window); } catch(e) { return val; }
                     }
                     return val;
                 },
                 set(target, prop, value) {
-                    if (['console', 'CustomEvent', 'dispatchEvent', 'location', 'window', 'global'].includes(prop)) {
+                    if (['console', 'CustomEvent', 'dispatchEvent', 'location', 'window', 'global', 'self'].includes(prop)) {
                         hWarn(`[Harness] Blocked repo test from overwriting window.${prop}`);
                         return true;
                     }
-                    try {
-                        target[prop] = value;
-                    } catch (e) {
-                        hWarn(`[Harness] Failed to set window.${prop}: ${e.message}`);
-                    }
+                    shadowGlobal[prop] = value;
                     return true;
+                },
+                has(target, prop) {
+                    return prop in shadowGlobal || prop in window;
                 }
             });
             window.global = mockGlobal;
@@ -469,10 +468,11 @@
             if (!window.GreenhouseTestSuite) loadInfra.push('js/model_tests.js');
 
             for (const src of loadInfra) {
-                await new Promise(res => {
+                await new Promise((res, rej) => {
                     const s = document.createElement('script');
                     s.src = src;
                     s.onload = res;
+                    s.onerror = () => rej(new Error(`Failed to load infrastructure script: ${src}`));
                     document.body.appendChild(s);
                 });
             }
@@ -496,17 +496,35 @@
                     hLog(`[Harness] runAll() starting. Total tests: ${this.tests.length}`);
                     this.isTesting = true;
                     this.results = [];
+
+                    // Mark all tests as 'pending' initially
+                    this.tests.forEach(t => t.status = 'PENDING');
+
                     for (let test of this.tests) {
                         try {
                             const startTime = performance.now();
                             const result = await test.fn();
                             const duration = performance.now() - startTime;
+                            test.status = 'PASS';
                             this.results.push({ name: test.name, status: 'PASS', duration: duration.toFixed(2) + 'ms', details: result });
                         } catch (error) {
                             hError(`[Harness] Test FAILED: ${test.name}`, error);
+                            test.status = 'FAIL';
                             this.results.push({ name: test.name, status: 'FAIL', error: error.message });
                         }
                     }
+
+                    // Check for any tests that never actually ran (e.g. if the loop crashed or was interrupted)
+                    this.tests.forEach(test => {
+                        if (test.status === 'PENDING') {
+                            this.results.push({
+                                name: test.name,
+                                status: 'FAIL',
+                                error: 'Test remained in PENDING state (execution failed to start or complete)'
+                            });
+                        }
+                    });
+
                     this.isTesting = false;
                     this.report();
                 };
@@ -518,12 +536,21 @@
             }
 
             // 4. Seamlessly Bridge Repository Tests
-            if (window.TestFramework) {
-                window.TestFramework.reset();
+            const tf = window.TestFramework;
+            if (tf) {
+                tf.reset();
+
                 const registeredRepoTests = new Set();
 
-                window.TestFramework.it = (name, fn) => {
-                    const suite = window.TestFramework.currentSuite;
+                const originalIt = tf.it.bind(tf);
+                const originalDescribe = tf.describe.bind(tf);
+
+                tf.describe = (name, fn) => {
+                    return originalDescribe(name, fn);
+                };
+
+                tf.it = (name, fn) => {
+                    const suite = tf.currentSuite;
                     const suiteName = suite ? suite.name : 'Unit';
                     const fullName = `[${suiteName}] ${name}`;
 
@@ -533,14 +560,14 @@
 
                     if (window.GreenhouseTestSuite) {
                         window.GreenhouseTestSuite.addTest(fullName, async () => {
-                            // Helper for hooks
                             const runHooks = async (type) => {
-                                if (typeof window.TestFramework.getHooks === 'function') {
-                                    const hooks = window.TestFramework.getHooks(suite, type);
-                                    for (const h of (hooks || [])) await h();
+                                let hooks = [];
+                                if (typeof tf.getHooks === 'function') {
+                                    hooks = tf.getHooks(suite, type);
                                 } else if (suite && suite[type]) {
-                                    for (const h of suite[type]) await h();
+                                    hooks = suite[type];
                                 }
+                                for (const h of hooks) await h();
                             };
 
                             if (suite && !suite._beforeAllRun) {
@@ -551,8 +578,9 @@
 
                             try {
                                 if (fn.length > 0) {
-                                    await new Promise((resolve, reject) => {
-                                        fn((err) => err ? reject(err) : resolve());
+                                    return new Promise((resolve, reject) => {
+                                        const done = (err) => err ? reject(err) : resolve();
+                                        fn(done);
                                     });
                                 } else {
                                     await fn();
@@ -564,7 +592,7 @@
                     }
                 };
 
-                window.TestFramework.run = async () => {
+                tf.run = async () => {
                     hLog("[Harness] Repo script called run() - Intercepted");
                     return { passed: 0, failed: 0, total: 0, suites: [] };
                 };
@@ -644,13 +672,18 @@
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const code = await response.text();
 
-                    const wrappedCode = `(function(require, module, exports, __dirname, global, process, console) {
+                    const wrappedCode = `(function(require, module, exports, __dirname, global, process, console, TestFramework) {
                         try {
                             ${code}
                         } catch (e) {
                             console.error("[Harness] Execution error in ${file}:", e);
+                            if (window.GreenhouseTestSuite) {
+                                window.GreenhouseTestSuite.addTest("[Script Error] " + "${file}", () => {
+                                    throw e;
+                                });
+                            }
                         }
-                    })(window.require, {exports:{}}, {}, "", window.global, window.process, window.console);`;
+                    })(window.require, {exports:{}}, {}, "", window.global, window.process, window.console, window.TestFramework);`;
 
                     const script = document.createElement('script');
                     script.textContent = wrappedCode;
@@ -659,28 +692,58 @@
                     hLog(`[Harness] Executed test file: ${file}`);
                 } catch (e) {
                     hError(`[Harness] Failed to load/execute test file: ${file}`, e);
+                    if (window.GreenhouseTestSuite) {
+                        window.GreenhouseTestSuite.addTest(`[File Load] ${file}`, () => {
+                            throw new Error(`Failed to load or execute test file: ${e.message}`);
+                        });
+                    }
                 }
             }
 
-            // 6. Run the production in-browser test suite (includes merged repo suites)
-            if (window.GreenhouseTestSuite) {
-                hLog(`[Harness] Starting runAll() with ${window.GreenhouseTestSuite.tests.length} tests registered.`);
-                await window.GreenhouseTestSuite.runAll();
-                const totalFiles = testFiles.length;
-                const overlay = document.getElementById('greenhouse-test-results-overlay');
-                if (overlay) {
-                    const fileCount = document.createElement('div');
-                    fileCount.style.fontSize = '10px';
-                    fileCount.style.marginTop = '5px';
-                    fileCount.style.color = '#aaa';
-                    fileCount.textContent = `Tests loaded from ${totalFiles} repository files.`;
-                    overlay.insertBefore(fileCount, overlay.querySelector('button'));
+                // 6. Run the production in-browser test suite (includes merged repo suites)
+                if (window.GreenhouseTestSuite) {
+                    hLog(`[Harness] Starting runAll() with ${window.GreenhouseTestSuite.tests.length} tests registered.`);
+                    await window.GreenhouseTestSuite.runAll();
+                    const totalFiles = testFiles.length;
+                    const overlay = document.getElementById('greenhouse-test-results-overlay');
+                    if (overlay) {
+                        const fileCount = document.createElement('div');
+                        fileCount.style.fontSize = '10px';
+                        fileCount.style.marginTop = '5px';
+                        fileCount.style.color = '#aaa';
+                        fileCount.textContent = `Tests loaded from ${totalFiles} repository files.`;
+                        overlay.appendChild(fileCount);
+                    }
+                } else {
+                    const s = document.createElement('script');
+                    s.src = `${baseUrl}js/model_tests.js`;
+                    s.onload = () => window.GreenhouseTestSuite && window.GreenhouseTestSuite.runAll();
+                    document.body.appendChild(s);
                 }
-            } else {
-                const s = document.createElement('script');
-                s.src = `${baseUrl}js/model_tests.js`;
-                s.onload = () => window.GreenhouseTestSuite && window.GreenhouseTestSuite.runAll();
-                document.body.appendChild(s);
+            } catch (fatalError) {
+                hError("[Harness] Fatal error during test execution:", fatalError);
+
+                // Fallback reporter if GreenhouseTestSuite failed
+                const summary = { total: 1, passed: 0, failed: 1 };
+                const results = [{
+                    name: "Fatal Harness Error",
+                    status: "FAIL",
+                    error: fatalError.message || "Unknown fatal error during test setup"
+                }];
+
+                if (window.GreenhouseTestSuite) {
+                    window.GreenhouseTestSuite.results = results;
+                    window.GreenhouseTestSuite.report();
+                } else {
+                    // Minimal standalone reporter
+                    const el = document.createElement('div');
+                    el.id = 'greenhouse-test-results-overlay';
+                    el.style.cssText = 'position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.95);color:#fff;padding:20px;border-radius:12px;z-index:100000;border:1px solid #ff5533;';
+                    el.innerHTML = `<h3 style="color:#ff5533;margin-top:0;">Fatal Test Setup Error</h3>
+                                    <p>${fatalError.message}</p>
+                                    <button onclick="this.parentElement.remove()" style="background:#444;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;">Close</button>`;
+                    document.body.appendChild(el);
+                }
             }
         };
     })();

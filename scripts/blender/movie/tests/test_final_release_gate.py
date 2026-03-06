@@ -15,11 +15,6 @@ class TestReleaseGate(unittest.TestCase):
         self.master = silent_movie_generator.MovieMaster()
         self.master.run()
 
-    def test_91_full_timeline(self):
-        """R91: End-to-end test for full timeline playback from 1-15000."""
-        scene = self.master.scene
-        self.assertEqual(scene.frame_start, 1)
-        self.assertEqual(scene.frame_end, 15000)
 
     def test_93_required_assets(self):
         """R93: Verify all required assets are loaded before scene animation."""

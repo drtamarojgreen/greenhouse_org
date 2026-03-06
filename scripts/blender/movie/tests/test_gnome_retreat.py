@@ -86,13 +86,14 @@ class TestGnomeRetreat(BlenderTestCase):
                     pos[fc.array_index] = fc.evaluate(frame)
             return pos
 
-        pos_start = get_pos(s22_range[0] + 150) 
-        pos_mid = get_pos(s22_range[0] + 250)
-        pos_end = get_pos(s22_range[1] - 50) 
+        # The gnome starts moving at frame 14000 (Point 142)
+        pos_start = get_pos(s22_range[0] + 350) # 13701 + 350 = 14051
+        pos_mid = get_pos(s22_range[0] + 450)   # 13701 + 450 = 14151
+        pos_end = get_pos(s22_range[1] - 10)    # 14500 - 10 = 14490
 
         dist_1 = (pos_mid - pos_start).length
         dist_2 = (pos_end - pos_mid).length
-        self.assertGreater(dist_2, dist_1, "R44 FAIL: No speed ramp detected in retreat")
+        self.assertGreater(dist_2, dist_1, f"R44 FAIL: No speed ramp detected in retreat (dist_1: {dist_1}, dist_2: {dist_2})")
 
     def test_48_no_teleport_jumps(self):
         """R48: No teleport jumps during retreat."""
