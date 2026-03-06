@@ -279,8 +279,12 @@
             // Mock GreenhouseADHDData for Neuro model to prevent crashes
             if (modelId === 'neuro') {
                 window.GreenhouseADHDData = {
-                    scenarios: { "default": { "name": "Standard", "description": "Standard neural activity", "levels": {} } },
-                    adhdTraits: { "impulsivity": 0.5, "inattention": 0.5, "hyperactivity": 0.5 }
+                    scenarios: { "default": { "name": "Standard", "description": "Standard neural activity", "enhancements": [] } },
+                    categories: {
+                        "symptoms": [{ id: 1, name: "Symptom 1", category: "logic", description: "Desc" }],
+                        "treatments": [], "pathology": [], "etiology": [], "conditions": []
+                    },
+                    getEnhancementById: (id) => null
                 };
             }
             activeLabel.textContent = `Active Model: ${model.label}`;

@@ -16,24 +16,36 @@ global.requestAnimationFrame = (cb) => { return 1; };
 global.cancelAnimationFrame = (id) => { };
 global.performance = { now: () => Date.now() };
 global.Path2D = class { moveTo() { } lineTo() { } };
-global.document = {
-    createElement: (tag) => ({
-        getContext: () => ({
-            save: () => { }, restore: () => { }, translate: () => { }, rotate: () => { }, scale: () => { },
-            beginPath: () => { }, moveTo: () => { }, lineTo: () => { }, stroke: () => { }, fill: () => { },
-            rect: () => { }, clip: () => { }, fillText: () => { }, measureText: () => ({ width: 100 }),
-            createLinearGradient: () => ({ addColorStop: () => { } }),
-            createRadialGradient: () => ({ addColorStop: () => { } }),
-            clearRect: () => { }, fillRect: () => { }, strokeRect: () => { }, closePath: () => { },
-            quadraticCurveTo: () => { }, bezierCurveTo: () => { }, arcTo: () => { }, arc: () => { },
-            setLineDash: () => { },
-            set fillStyle(v) { }, set strokeStyle(v) { }, set lineWidth(v) { }, set globalAlpha(v) { },
-            set font(v) { }, set textAlign(v) { }, set textBaseline(v) { }, set filter(v) { }
-        }),
-        width: 800, height: 600, style: {},
-        addEventListener: () => { }, appendChild: () => { }, getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
+const createMockElement = (tag) => ({
+    tagName: tag.toUpperCase(),
+    getContext: () => ({
+        save: () => { }, restore: () => { }, translate: () => { }, rotate: () => { }, scale: () => { },
+        beginPath: () => { }, moveTo: () => { }, lineTo: () => { }, stroke: () => { }, fill: () => { },
+        rect: () => { }, clip: () => { }, fillText: () => { }, measureText: () => ({ width: 100 }),
+        createLinearGradient: () => ({ addColorStop: () => { } }),
+        createRadialGradient: () => ({ addColorStop: () => { } }),
+        clearRect: () => { }, fillRect: () => { }, strokeRect: () => { }, closePath: () => { },
+        quadraticCurveTo: () => { }, bezierCurveTo: () => { }, arcTo: () => { }, arc: () => { },
+        setLineDash: () => { },
+        set fillStyle(v) { }, set strokeStyle(v) { }, set lineWidth(v) { }, set globalAlpha(v) { },
+        set font(v) { }, set textAlign(v) { }, set textBaseline(v) { }, set filter(v) { }
     }),
-    querySelector: () => null
+    width: 800, height: 600, style: {},
+    addEventListener: () => { },
+    removeEventListener: () => { },
+    appendChild: () => { },
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
+    focus: () => { },
+    blur: () => { }
+});
+
+global.document = {
+    createElement: createMockElement,
+    querySelector: () => null,
+    getElementById: () => null,
+    body: {
+        appendChild: () => { }
+    }
 };
 
 // --- Helper to Load Scripts ---
@@ -67,8 +79,29 @@ TestFramework.describe('ADHD Scenarios Integration', () => {
         assert.equal(ga.adhdConfig.activeEnhancements.size, 0);
         assert.equal(ga.adhdConfig.snr, 0);
 
-        // Toggle 'adhd_symptoms' scenario
-        app.toggleScenario('adhd_symptoms', true);
+        // Test dynamic hit detection: Click on the first scenario at its rendered position (startY=180)
+        // We need to trigger handleMouseDown with simulated coordinates
+        const firstScenarioId = 'adhd_symptoms'; // Based on neuro_adhd_data.js
+        const clickEvent = {
+            clientX: 55, // 40 + offsetX(15)
+            clientY: 180 + 10, // startY + h/2
+            preventDefault: () => { }
+        };
+
+        // Mock getBoundingClientRect for the canvas to make getMousePos work
+        const canvas = app.ui3d.canvas;
+        canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: 800, height: 600 });
+        canvas.width = 800;
+        canvas.height = 600;
+
+        app.state.activeTab = 'adhd';
+        app.state.adhdCategory = 'scenarios';
+        app.updateADHDCheckboxes(); console.log("Checkboxes count:", app.ui.checkboxes.length);
+
+        app.handleMouseDown(clickEvent);
+
+        // Verify scenario was toggled via click
+        assert.isTrue(app.state.activeScenarios.has(firstScenarioId), 'Scenario should be active after click');
 
         // Verify GA logic updated
         assert.greaterThan(ga.adhdConfig.activeEnhancements.size, 0);

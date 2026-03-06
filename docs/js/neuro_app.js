@@ -126,8 +126,9 @@
 
             // ADHD Scenarios
             this.ui.checkboxes = [];
-            if (window.GreenhouseADHDData) {
-                Object.keys(window.GreenhouseADHDData.scenarios).forEach((key) => {
+            const data = window.GreenhouseADHDData;
+            if (data && data.scenarios) {
+                Object.keys(data.scenarios).forEach((key) => {
                     if (key === 'none') return;
                     this.ui.checkboxes.push({
                         id: `scenario_${key}`,
@@ -275,12 +276,18 @@
                         const filtered = this.getFilteredCheckboxes();
                         const scrollAreaY = 160;
                         const scrollAreaH = 320;
+                        const startY = 180;
+                        let currentY = startY - this.state.scrollOffset;
+                        const lineHeight = 25;
 
                         for (const c of filtered) {
-                            // Check if within visible area before hit detection
-                            if (c.y < scrollAreaY || c.y + c.h > scrollAreaY + scrollAreaH) continue;
+                            const cy = currentY;
+                            currentY += lineHeight;
 
-                            if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
+                            // Check if within visible area before hit detection
+                            if (cy < scrollAreaY || cy + c.h > scrollAreaY + scrollAreaH) continue;
+
+                            if (mx >= c.x && mx <= c.x + c.w && my >= cy && my <= cy + c.h) {
                                 if (this.state.adhdCategory === 'scenarios') {
                                     const active = !this.state.activeScenarios.has(c.scenarioId);
                                     if (active) this.state.activeScenarios.add(c.scenarioId);
@@ -355,7 +362,18 @@
             if (this.state.activeTab === 'adhd') {
                 const scrollAreaY = 160;
                 const scrollAreaH = 320;
-                const visibleCheckboxes = this.getFilteredCheckboxes().filter(c => c.y >= scrollAreaY && c.y + c.h <= scrollAreaY + scrollAreaH);
+                const startY = 180;
+                let currentY = startY - this.state.scrollOffset;
+                const lineHeight = 25;
+
+                const visibleCheckboxes = this.getFilteredCheckboxes()
+                    .map(c => {
+                        const cy = currentY;
+                        currentY += lineHeight;
+                        return { ...c, y: cy };
+                    })
+                    .filter(c => c.y >= scrollAreaY && c.y + c.h <= scrollAreaY + scrollAreaH);
+
                 all.push(...visibleCheckboxes, this.ui.searchInput, ...this.ui.categoryButtons);
             }
 
@@ -649,41 +667,54 @@
         },
 
         updateADHDCheckboxes() {
-            if (!window.GreenhouseADHDData) return;
+            const data = window.GreenhouseADHDData;
+            if (!data) return;
 
             this.ui.checkboxes = []; // Clear existing for dynamic rebuild
-
-            const data = window.GreenhouseADHDData;
             let items = [];
 
+            const query = (this.state.searchQuery || '').toLowerCase();
+            const offsetX = 15;
+            const x = 40 + offsetX;
+
             if (this.state.adhdCategory === 'scenarios') {
-                items = Object.entries(data.scenarios)
-                    .filter(([key]) => key !== 'none' && t(`adhd_scenario_${key}`).toLowerCase().includes(this.state.searchQuery.toLowerCase()))
-                    .map(([key, val]) => ({
+                const scenarios = data.scenarios || {};
+                items = Object.entries(scenarios)
+                    .filter(([key]) => {
+                        if (key === 'none') return false;
+                        const label = (t(`adhd_scenario_${key}`) || '').toLowerCase();
+                        const desc = (t(`adhd_scenario_${key}_desc`) || '').toLowerCase();
+                        return label.includes(query) || desc.includes(query) || key.toLowerCase().includes(query);
+                    })
+                    .map(([key]) => ({
                         id: `scenario_${key}`,
                         scenarioId: key,
                         labelKey: `adhd_scenario_${key}`,
-                        description: t(`adhd_scenario_${key}_desc`),
+                        description: t(`adhd_scenario_${key}_desc`) || '',
                         category: 'scenarios',
+                        x: x,
                         y: 0,
                         w: this.ui.panelW - 80,
                         h: 20
                     }));
             } else {
-                items = Object.entries(data.enhancements)
-                    .filter(([id, enh]) => {
-                        const label = t(`adhd_enh_${id}_name`);
-                        const description = t(`adhd_enh_${id}_desc`);
-                        const matchesCategory = enh.category.includes(this.state.adhdCategory);
-                        const matchesSearch = label.toLowerCase().includes(this.state.searchQuery.toLowerCase()) || description.toLowerCase().includes(this.state.searchQuery.toLowerCase());
-                        return matchesCategory && matchesSearch;
+                const categoryData = data.categories || {};
+                const enhancements = categoryData[this.state.adhdCategory] || [];
+                items = enhancements
+                    .filter((enh) => {
+                        if (!enh) return false;
+                        const label = (t(`adhd_enh_${enh.id}_name`) || '').toLowerCase();
+                        const description = (t(`adhd_enh_${enh.id}_desc`) || '').toLowerCase();
+                        const idStr = String(enh.id).toLowerCase();
+                        return label.includes(query) || description.includes(query) || idStr.includes(query);
                     })
-                    .map(([id, enh]) => ({
-                        id: `enhancement_${id}`,
-                        enhancementId: parseInt(id),
-                        labelKey: `adhd_enh_${id}_name`,
-                        description: t(`adhd_enh_${id}_desc`),
-                        category: enh.category[0],
+                    .map((enh) => ({
+                        id: `enhancement_${enh.id}`,
+                        enhancementId: enh.id,
+                        labelKey: `adhd_enh_${enh.id}_name`,
+                        description: t(`adhd_enh_${enh.id}_desc`) || '',
+                        category: enh.category || 'misc',
+                        x: x,
                         y: 0,
                         w: this.ui.panelW - 80,
                         h: 20
@@ -752,6 +783,7 @@
         },
 
         switchMode(mode) {
+            this.state.viewMode = mode;
             if (this.ga) {
                 this.ga.adhdConfig.viewMode = mode;
                 if (mode === 1) { // Synaptic View
