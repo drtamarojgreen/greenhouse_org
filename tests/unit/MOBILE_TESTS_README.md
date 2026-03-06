@@ -226,31 +226,31 @@ Comprehensive test coverage for the mobile version of Greenhouse models pages, e
 ### Individual Test Files
 ```bash
 # Lifecycle tests
-node tests/unit/test_mobile_models_lifecycle.js
+node tests/unit/mobile/test_mobile_models_lifecycle.js
 
 # Behavior tests
-node tests/unit/test_mobile_model_behaviors.js
+node tests/unit/mobile/test_mobile_model_behaviors.js
 
 # Edge case tests
-node tests/unit/test_mobile_edge_cases.js
+node tests/unit/mobile/test_mobile_edge_cases.js
 
 # UI interaction tests
-node tests/unit/test_mobile_ui_interactions.js
+node tests/unit/mobile/test_mobile_ui_interactions.js
 
 # Typography and contrast tests
-node tests/unit/test_mobile_typography_contrast.js
+node tests/unit/mobile/test_mobile_typography_contrast.js
 ```
 
 ### All Mobile Tests
 ```bash
 # Run all mobile-related tests
-node tests/unit/test_mobile_viewer.js
-node tests/unit/test_mobile_integration.js
-node tests/unit/test_mobile_models_lifecycle.js
-node tests/unit/test_mobile_model_behaviors.js
-node tests/unit/test_mobile_edge_cases.js
-node tests/unit/test_mobile_ui_interactions.js
-node tests/unit/test_mobile_typography_contrast.js
+node tests/unit/mobile/test_mobile_viewer.js
+node tests/unit/mobile/test_mobile_integration.js
+node tests/unit/mobile/test_mobile_models_lifecycle.js
+node tests/unit/mobile/test_mobile_model_behaviors.js
+node tests/unit/mobile/test_mobile_edge_cases.js
+node tests/unit/mobile/test_mobile_ui_interactions.js
+node tests/unit/mobile/test_mobile_typography_contrast.js
 ```
 
 ---

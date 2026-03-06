@@ -452,19 +452,19 @@
             // Load modular simulation components
             await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_legend.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_tooltips.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_molecular.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_synapse.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_electrophysiology.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_circuit.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_plasticity.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_clinical.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_pharmacology.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_scientific.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_analytics.js', baseUrl);
-            await GreenhouseUtils.loadScript('dopamine_ux.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_legend.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_tooltips.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_molecular.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_synapse.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_electrophysiology.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_circuit.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_plasticity.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_clinical.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_pharmacology.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_scientific.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_analytics.js', baseUrl);
+            await GreenhouseUtils.loadScript('dopamine/dopamine_ux.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
 
             window.Greenhouse = window.Greenhouse || {};

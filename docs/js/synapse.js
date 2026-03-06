@@ -74,15 +74,15 @@
             // Sequential loading of all modular components
             await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await GreenhouseUtils.loadScript('synapse_chemistry.js', baseUrl);
-            await GreenhouseUtils.loadScript('synapse_neurotransmitters.js', baseUrl);
-            await GreenhouseUtils.loadScript('synapse_sidebar.js', baseUrl);
-            await GreenhouseUtils.loadScript('synapse_tooltips.js', baseUrl);
-            await GreenhouseUtils.loadScript('synapse_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('synapse_analytics.js', baseUrl);
-            await GreenhouseUtils.loadScript('synapse_3d.js', baseUrl);
-            await GreenhouseUtils.loadScript('synapse_molecular.js', baseUrl);
-            await GreenhouseUtils.loadScript('synapse_app.js', baseUrl);
+            await GreenhouseUtils.loadScript('synapse/synapse_chemistry.js', baseUrl);
+            await GreenhouseUtils.loadScript('synapse/synapse_neurotransmitters.js', baseUrl);
+            await GreenhouseUtils.loadScript('synapse/synapse_sidebar.js', baseUrl);
+            await GreenhouseUtils.loadScript('synapse/synapse_tooltips.js', baseUrl);
+            await GreenhouseUtils.loadScript('synapse/synapse_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('synapse/synapse_analytics.js', baseUrl);
+            await GreenhouseUtils.loadScript('synapse/synapse_3d.js', baseUrl);
+            await GreenhouseUtils.loadScript('synapse/synapse_molecular.js', baseUrl);
+            await GreenhouseUtils.loadScript('synapse/synapse_app.js', baseUrl);
 
             // Check if all modules are loaded
             if (window.GreenhouseSynapseApp) {

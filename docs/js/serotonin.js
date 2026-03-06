@@ -607,14 +607,14 @@
             // Load modular simulation components
             await GreenhouseUtils.loadScript('models_lang.js', baseUrl);
             await GreenhouseUtils.loadScript('models_util.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin_controls.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin_legend.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin_tooltips.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin_receptors.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin_kinetics.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin_signaling.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin_transport.js', baseUrl);
-            await GreenhouseUtils.loadScript('serotonin_analytics.js', baseUrl);
+            await GreenhouseUtils.loadScript('serotonin/serotonin_controls.js', baseUrl);
+            await GreenhouseUtils.loadScript('serotonin/serotonin_legend.js', baseUrl);
+            await GreenhouseUtils.loadScript('serotonin/serotonin_tooltips.js', baseUrl);
+            await GreenhouseUtils.loadScript('serotonin/serotonin_receptors.js', baseUrl);
+            await GreenhouseUtils.loadScript('serotonin/serotonin_kinetics.js', baseUrl);
+            await GreenhouseUtils.loadScript('serotonin/serotonin_signaling.js', baseUrl);
+            await GreenhouseUtils.loadScript('serotonin/serotonin_transport.js', baseUrl);
+            await GreenhouseUtils.loadScript('serotonin/serotonin_analytics.js', baseUrl);
             await GreenhouseUtils.loadScript('models_3d_math.js', baseUrl);
 
             if (targetSelector) {

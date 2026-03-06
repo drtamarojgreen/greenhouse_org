@@ -25,10 +25,10 @@
                     'js/models_util.js',
                     'js/models_3d_math.js',
                     'js/brain_mesh_realistic.js',
-                    'js/pathway_ui_3d_geometry.js',
-                    'js/pathway_camera_controls.js',
-                    'js/pathway_ui_3d_brain.js',
-                    'js/pathway_viewer.js',
+                    'js/pathway/pathway_ui_3d_geometry.js',
+                    'js/pathway/pathway_camera_controls.js',
+                    'js/pathway/pathway_ui_3d_brain.js',
+                    'js/pathway/pathway_viewer.js',
                     'js/V8GraphRenderer.js'
                 ];
 
