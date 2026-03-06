@@ -430,9 +430,13 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     sway_mod.texture = tex_sway
     sway_mod.strength = 0.05
     sway_mod.vertex_group = "Head" # Target the foliage area
-    
-    # Animate texture offset for wind-like effect
     sway_mod.texture_coords = 'GLOBAL'
+
+    # Critical: Armature modifier so vertex-weighted limbs follow the bones
+    arm_mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE')
+    arm_mod.object = armature_obj
+    arm_mod.use_vertex_groups = True
+
 
     # Brows - Parented to new Brow bones
     for side in ["L", "R"]:

@@ -32,10 +32,13 @@ def create_marble_floor_mat():
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface']); mat.displacement_method = 'BOTH'
     return mat
 
-def setup_volumetric_haze(density=0.005):
+def setup_volumetric_haze(density=0.0):
+    """Volumetric haze - disabled by default to avoid foggy scenes."""
+    if density <= 0.0:
+        return  # Skip haze entirely - it makes everything foggy
     nodes, links = bpy.context.scene.world.node_tree.nodes, bpy.context.scene.world.node_tree.links
     vol = nodes.get("Volume Scatter") or nodes.new(type='ShaderNodeVolumeScatter')
-    vol.inputs['Density'].default_value, vol.inputs['Anisotropy'].default_value = density, 0.5
+    vol.inputs['Density'].default_value, vol.inputs['Anisotropy'].default_value = density, 0.0
     out = nodes.get("World Output")
     if out: links.new(vol.outputs['Volume'], out.inputs['Volume'])
 

@@ -67,7 +67,7 @@ def create_soil_material():
     mat.displacement_method = 'BOTH'
     return mat
 
-def create_hedge_row(start, end, height=2.5, depth=1.2, name="Hedge"):
+def create_hedge_row(start, end, height=1.0, depth=0.6, name="Hedge"):
     import bmesh
     direction = (mathutils.Vector(end) - mathutils.Vector(start))
     mid = (mathutils.Vector(start) + mathutils.Vector(end)) / 2
