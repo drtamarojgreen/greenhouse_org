@@ -155,9 +155,9 @@
             <option value="inflammation">Neuroinflammation Model</option>
             <option value="stress">Stress Dynamics Model</option>
         </select>
-        <button id="run-suite-tests" class="btn">Run Suite Tests</button>
-        <button id="clear-results" class="btn" style="background-color: #ff9800; color: white;">Clear Results</button>
-        <button id="clear-environment" class="btn">Clear Environment</button>
+        <button id="run-suite-tests" class="btn" type="button">Run Suite Tests</button>
+        <button id="clear-results" class="btn" type="button" style="background-color: #ff9800; color: white;">Clear Results</button>
+        <button id="clear-environment" class="btn" type="button">Clear Environment</button>
     </div>
     <div id="active-label">Active Model: None</div>
 </header>
@@ -354,10 +354,22 @@
         };
 
         clearBtn.onclick = clearEnvironment;
-        runTestsBtn.onclick = async () => {
+
+        let isTesting = false;
+        runTestsBtn.onclick = async (event) => {
+            if (isTesting) return;
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
             const hLog = console.log.bind(console);
             const hError = console.error.bind(console);
             const hWarn = console.warn.bind(console);
+
+            isTesting = true;
+            runTestsBtn.disabled = true;
+            runTestsBtn.textContent = "Running...";
 
             // 0. Immediate State Cleanup
             const existingOverlay = document.getElementById('greenhouse-test-results-overlay');
@@ -376,71 +388,116 @@
                 };
             }
 
-            window.require = (path) => {
-                hLog(`[Harness] Mock Require: ${path}`);
-                if (path.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
-                if (path.includes('test_framework')) return window.TestFramework;
-                if (path.includes('test_env_factory')) return {
-                    createEnv: (config) => {
-                        const env = {
-                            window: window.global,
-                            document: document,
-                            context: {
-                                GreenhouseMobile: window.GreenhouseMobile,
-                                GreenhouseUtils: window.GreenhouseUtils,
-                                GreenhouseBioStatus: window.GreenhouseBioStatus,
-                                injectStyles: () => {} // Mock for mobile typography tests
-                            },
-                            cleanup: () => {}
-                        };
-                        return env;
-                    }
-                };
-                if (path === 'fs') return {
-                    readFileSync: (p) => {
-                        hLog(`[Harness] Mock FS read: ${p}`);
-                        return '';
-                    },
-                    existsSync: () => true
-                };
-                if (path === 'path') return { join: (...args) => args.join('/'), resolve: (...args) => args.join('/') };
-                if (path === 'vm') return {
-                    createContext: (sandbox) => sandbox,
-                    runInContext: (code, context) => {
-                        const fn = new Function('require', 'module', 'exports', '__dirname', 'global', 'process', 'console', 'window', 'document', code);
-                        return fn(window.require, {exports:{}}, {}, "", context, window.process, window.console, context, context.document);
-                    },
-                    runInThisContext: (code) => {
-                        hLog("[Harness] vm.runInThisContext ignored for browser-loaded scripts");
-                    }
-                };
-                return {};
-            };
+            // Core testing infrastructure must be loaded BEFORE sandbox initialization
+            const loadInfra = [];
+            if (!window.assert) loadInfra.push('js/assertion_library.js');
+            if (!window.TestFramework) loadInfra.push('js/test_framework.js');
+            if (!window.GreenhouseUtils) loadInfra.push('js/GreenhouseUtils.js');
+            if (!window.GreenhouseMobile) loadInfra.push('js/GreenhouseMobile.js');
+            if (!window.GreenhouseTestSuite) loadInfra.push('js/model_tests.js');
 
-            window.onerror = (msg, url, line, col, error) => {
-                hError(`[Global Error] ${msg} at ${url}:${line}:${col}`, error);
-            };
-            window.module = { exports: {} };
-            window.process = {
-                exit: (code) => hLog("[Harness] Process exit intercepted. Code:", code),
-                env: { NODE_ENV: 'test' }
-            };
-            window.__dirname = "";
+            for (const src of loadInfra) {
+                await new Promise((res, rej) => {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = res;
+                    s.onerror = () => rej(new Error(`Failed to load infrastructure script: ${src}`));
+                    document.body.appendChild(s);
+                });
+            }
 
             const shadowGlobal = {
-                process: window.process,
-                require: window.require,
-                module: window.module,
-                __dirname: window.__dirname,
-                exports: window.module.exports,
+                process: { exit: (code) => hLog("[Harness] Process exit intercepted. Code:", code), env: { NODE_ENV: 'test' } },
+                require: null, // defined below
+                module: { exports: {} },
+                __dirname: "",
+                exports: {},
                 TestFramework: window.TestFramework,
                 assert: window.assert,
-                AssertionError: window.AssertionError
+                AssertionError: window.AssertionError,
+                GreenhouseUtils: window.GreenhouseUtils,
+                GreenhouseMobile: window.GreenhouseMobile,
+                performance: window.performance,
+                // Ensure common methods are available for mobile tests
+                injectStyles: (...args) => (window.GreenhouseMobile && window.GreenhouseMobile.injectStyles(...args)),
+                renderHub: (...args) => (window.GreenhouseMobile && window.GreenhouseMobile.renderHub(...args)),
+                isMobileUser: (...args) => (window.GreenhouseUtils && window.GreenhouseUtils.isMobileUser(...args)),
+                modelRegistry: window.GreenhouseMobile ? window.GreenhouseMobile.modelRegistry : {},
+                // Mock fetch for integration tests
+                fetch: (...args) => window.fetch(...args),
+                // Mock location to prevent page reloads
+                location: {
+                    reload: () => {
+                        hLog("[Harness] Prevented location.reload()");
+                        throw new Error("Navigation blocked: location.reload()");
+                    },
+                    get href() { return window.location.href; },
+                    set href(val) {
+                        hLog("[Harness] Prevented location.href = " + val);
+                        throw new Error("Navigation blocked: location.href");
+                    },
+                    pathname: window.location.pathname,
+                    search: window.location.search,
+                    hostname: window.location.hostname,
+                    origin: window.location.origin,
+                    assign: (url) => {
+                        hLog("[Harness] Prevented location.assign(" + url + ")");
+                        throw new Error("Navigation blocked: location.assign");
+                    },
+                    replace: (url) => {
+                        hLog("[Harness] Prevented location.replace(" + url + ")");
+                        throw new Error("Navigation blocked: location.replace");
+                    },
+                    toString: () => window.location.toString()
+                },
+                // Add common utilities that might be expected on window
+                waitForElement: (...args) => (window.GreenhouseUtils && window.GreenhouseUtils.waitForElement(...args)),
+                loadScript: (...args) => (window.GreenhouseUtils && window.GreenhouseUtils.loadScript(...args)),
+                // Fix for test_models_page_new.js and others
+                GreenhouseDependencyManager: window.GreenhouseDependencyManager,
+                // Proxy apps that might be initialized by tests
+                get GreenhouseModelsData() { return window.GreenhouseModelsData; },
+                get GreenhouseModelsUI() { return window.GreenhouseModelsUI; },
+                get GreenhouseModelsUX() { return window.GreenhouseModelsUX; },
+                get GreenhouseDataAdapter() { return window.GreenhouseDataAdapter; },
+                get GreenhouseInspiration() { return window.GreenhouseInspiration; },
+                get GreenhouseScheduler() { return window.GreenhouseScheduler; },
+                get KeggParser() { return window.KeggParser; },
+                get GreenhouseModelsTOC() { return window.GreenhouseModelsTOC; },
+                // Support for generic tests
+                get Greenhouse() { return window.Greenhouse; },
+                // App-specific globals for tests
+                get GreenhouseNeuroApp() { return window.GreenhouseNeuroApp; },
+                get GreenhouseGenetic() { return window.GreenhouseGenetic; },
+                get GreenhouseDopamine() { return window.GreenhouseDopamine; },
+                get GreenhouseSerotonin() { return window.GreenhouseSerotonin; },
+                get GreenhouseDNARepair() { return window.GreenhouseDNARepair; },
+                get GreenhouseRNARepair() { return window.GreenhouseRNARepair; },
+                get GreenhouseEmotionApp() { return window.GreenhouseEmotionApp; },
+                get GreenhouseCognitionApp() { return window.GreenhouseCognitionApp; },
+                get GreenhouseInflammationApp() { return window.GreenhouseInflammationApp; },
+                get GreenhouseStressApp() { return window.GreenhouseStressApp; },
+                get GreenhousePathwayApp() { return window.GreenhousePathwayApp; },
+                get GreenhouseSynapseApp() { return window.GreenhouseSynapseApp; },
+                get GreenhousePathwayViewer() { return window.GreenhousePathwayViewer; },
+                get GreenhouseGeneticAlgo() { return window.GreenhouseGeneticAlgo; },
+                get GreenhouseGeneticUI3D() { return window.GreenhouseGeneticUI3D; },
+                get NeuroGA() { return window.NeuroGA; },
+                get GreenhouseNeuroUI3D() { return window.GreenhouseNeuroUI3D; }
             };
+
             const mockGlobal = new Proxy({}, {
                 get(target, prop) {
-                    if (prop === 'window' || prop === 'global' || prop === 'self') return mockGlobal;
-                    if (prop in shadowGlobal) return shadowGlobal[prop];
+                    if (['window', 'global', 'self', 'top', 'parent', 'opener', 'frames'].includes(prop)) return mockGlobal;
+                    if (prop === 'location') return shadowGlobal.location;
+                    if (prop === 'document') return document;
+                    if (prop in shadowGlobal) {
+                        const val = shadowGlobal[prop];
+                        if (typeof val === 'function' && val !== window.fetch && !val.name.startsWith('bound ')) {
+                            try { return val.bind(mockGlobal); } catch(e) { return val; }
+                        }
+                        return val;
+                    }
                     const val = window[prop];
                     if (typeof val === 'function') {
                         try { return val.bind(window); } catch(e) { return val; }
@@ -461,21 +518,53 @@
             });
             window.global = mockGlobal;
 
-            // 2. Load Core Testing Infrastructure
-            const loadInfra = [];
-            if (!window.assert) loadInfra.push('js/assertion_library.js');
-            if (!window.TestFramework) loadInfra.push('js/test_framework.js');
-            if (!window.GreenhouseTestSuite) loadInfra.push('js/model_tests.js');
+            const vmRegistry = {
+                createContext: (sandbox) => sandbox,
+                runInContext: (code, context) => {
+                    const g = {
+                        require: window.require, module: { exports: shadowGlobal.module.exports }, exports: shadowGlobal.module.exports,
+                        __dirname: "", global: context, process: shadowGlobal.process, console: window.console,
+                        window: context, document: document, location: context.location || shadowGlobal.location,
+                        performance: window.performance, TestFramework: window.TestFramework,
+                        GreenhouseUtils: window.GreenhouseUtils, GreenhouseMobile: window.GreenhouseMobile
+                    };
+                    const keys = Object.keys(g);
+                    return (new Function(...keys, code))(...keys.map(k => g[k]));
+                },
+                runInThisContext: (code) => vmRegistry.runInContext(code, mockGlobal)
+            };
 
-            for (const src of loadInfra) {
-                await new Promise((res, rej) => {
-                    const s = document.createElement('script');
-                    s.src = src;
-                    s.onload = res;
-                    s.onerror = () => rej(new Error(`Failed to load infrastructure script: ${src}`));
-                    document.body.appendChild(s);
-                });
-            }
+            window.require = (path) => {
+                hLog(`[Harness] Mock Require: ${path}`);
+                if (path.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
+                if (path.includes('test_framework')) return window.TestFramework;
+                if (path.includes('GreenhouseUtils')) return window.GreenhouseUtils;
+                if (path.includes('GreenhouseMobile')) return window.GreenhouseMobile;
+                if (path.includes('test_env_factory')) return {
+                    createEnv: (config) => ({ window: mockGlobal, document: document, context: mockGlobal, cleanup: () => {} }),
+                    createMockElement: (tag) => {
+                        const el = document.createElement(tag);
+                        el.dataset = el.dataset || {};
+                        return el;
+                    }
+                };
+                if (path === 'fs') return { readFileSync: () => '', existsSync: () => true };
+                if (path === 'path') return { join: (...args) => args.join('/'), resolve: (...args) => args.join('/') };
+                if (path === 'vm') return vmRegistry;
+                return {};
+            };
+            shadowGlobal.require = window.require;
+
+            window.onerror = (msg, url, line, col, error) => {
+                if (typeof msg === 'string' && msg.includes('Navigation blocked')) {
+                    hLog(`[Harness] Intercepted navigation error: ${msg}`);
+                    return true;
+                }
+                hError(`[Global Error] ${msg} at ${url}:${line}:${col}`, error);
+                return false;
+            };
+
+            // 2. Already loaded infrastructure
 
             // 3. Prepare Dashboard & Test Queue
             if (window.GreenhouseTestSuite) {
@@ -537,7 +626,8 @@
 
             // 4. Seamlessly Bridge Repository Tests
             const tf = window.TestFramework;
-            if (tf) {
+            if (tf && !tf._isBridged) {
+                tf._isBridged = true;
                 tf.reset();
 
                 const registeredRepoTests = new Set();
@@ -598,13 +688,13 @@
                 };
             }
 
-            // 5. Meticulous mapping of ALL 98 identified unit test files
+            // 5. Meticulous mapping of ALL unit test files
             const testMap = {
                 'neuro': [
                     'neuro/test_neuro_page.js', 'neuro/test_neuro_logic.js', 'neuro/test_neuro_ui.js', 'neuro/test_neuro_ga.js',
                     'neuro/test_neuro_app_logic.js', 'neuro/test_neuro_performance.js', 'neuro/test_neuro_3d_engine.js',
                     'neuro/test_neuro_ui_components.js', 'neuro/test_neuro_page_loader.js', 'neuro/test_adhd_scenarios.js',
-                    'neuro/test_neuro_page_full.js', 'neuro/test_neuro_page_new.js'
+                    'neuro/test_neuro_page_full.js', 'neuro/test_neuro_page_new.js', 'neuro/test_neuro_app_robustness.js'
                 ],
                 'genetic': [
                     'genetic/test_genetic_page.js', 'genetic/test_genetic_ui.js', 'genetic/test_genetic_helpers.js',
@@ -642,7 +732,7 @@
                     'emotion/test_emotion_page.js', 'emotion/test_emotion_deep_dive.js'
                 ],
                 'cognition': [
-                    'cognition/test_cognition_logic.js', 'cognition/test_cognition_ui.js', 'cognition/test_cognition_drawing.js', 'cognition/test_cognition_modules.js', 'cognition/test_cognition_regression.js', 'cognition/test_cognition_page.js'
+                    'cognition/test_cognition_logic.js', 'cognition/test_cognition_drawing.js', 'cognition/test_cognition_modules.js', 'cognition/test_cognition_regression.js', 'cognition/test_cognition_page.js'
                 ]
             };
 
@@ -657,7 +747,7 @@
                 'mobile/test_mobile_ui_interactions.js', 'mobile/test_mobile_viewer.js', 'common/test_model_sync.js',
                 'common/test_patient_app_unit.js', 'common/test_dashboard_app_unit.js', 'common/test_meditation_app.js',
                 'common/test_scheduler_logic.js', 'common/test_tech_canvas.js', 'common/test_inspiration_logic.js',
-                'common/test_kegg_parser.js', 'common/test_models_page_new.js'
+                'common/test_kegg_parser.js', 'common/test_models_page_new.js', 'test_production_resilience.js'
             ];
 
             const testFiles = [...(testMap[modelId] || []), ...commonTests];
@@ -672,7 +762,7 @@
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const code = await response.text();
 
-                    const wrappedCode = `(function(require, module, exports, __dirname, global, process, console, TestFramework) {
+                    const wrappedCode = `(function(require, module, exports, __dirname, global, process, console, TestFramework, GreenhouseUtils, GreenhouseMobile, location, window, self, performance) {
                         try {
                             ${code}
                         } catch (e) {
@@ -683,7 +773,7 @@
                                 });
                             }
                         }
-                    })(window.require, {exports:{}}, {}, "", window.global, window.process, window.console, window.TestFramework);`;
+                    })(window.require, {exports:{}}, {}, "", window.global, window.process, window.console, window.TestFramework, window.GreenhouseUtils, window.GreenhouseMobile, window.global.location, window.global, window.global, window.global.performance);`;
 
                     const script = document.createElement('script');
                     script.textContent = wrappedCode;
@@ -744,6 +834,10 @@
                                     <button onclick="this.parentElement.remove()" style="background:#444;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;">Close</button>`;
                     document.body.appendChild(el);
                 }
+            } finally {
+                isTesting = false;
+                runTestsBtn.disabled = false;
+                runTestsBtn.textContent = "Run Suite Tests";
             }
         };
     })();
