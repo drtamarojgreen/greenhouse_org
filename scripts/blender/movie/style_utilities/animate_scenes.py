@@ -95,6 +95,7 @@ def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 
     mat = bpy.data.materials.get(mat_name)
     if not mat:
         mat = bpy.data.materials.new(name=mat_name)
+        core.ensure_material_node_tree(mat)
         bsdf = mat.node_tree.nodes["Principled BSDF"]
         bsdf.inputs["Base Color"].default_value = color
         bsdf.inputs["Emission Strength"].default_value = 2.0
@@ -375,7 +376,7 @@ def animate_floating_spores(center, volume_size=(10, 10, 5), density=50, frame_s
     container = bpy.data.collections.get(container_name) or bpy.data.collections.new(container_name)
     if container_name not in bpy.context.scene.collection.children: bpy.context.scene.collection.children.link(container)
     mat = bpy.data.materials.get("SporeMat") or bpy.data.materials.new(name="SporeMat")
-    if not mat.use_nodes: mat.use_nodes = True
+    core.ensure_material_node_tree(mat)
     core.set_principled_socket(mat, "Base Color", (0.2, 1.0, 0.5, 1))
     core.set_principled_socket(mat, "Emission Color", (0.2, 1.0, 0.5, 1))
     core.set_principled_socket(mat, "Emission Strength", 5.0)
@@ -402,7 +403,7 @@ def apply_neuron_color_coding(neuron_mat, frame, color=(1, 0, 0)):
 def create_noise_based_material(name, colors=None, noise_type='NOISE', noise_scale=5.0, roughness=0.5, color_ramp_colors=None):
     """Exclusive 5.0+ noise-based material helper."""
     if colors is None: colors = color_ramp_colors or [(0,0,0,1), (1,1,1,1)]
-    mat = bpy.data.materials.new(name=name); mat.use_nodes = True
+    mat = bpy.data.materials.new(name=name); core.ensure_material_node_tree(mat)
     nodes, links = mat.node_tree.nodes, mat.node_tree.links; nodes.clear()
     node_out = nodes.new(type='ShaderNodeOutputMaterial')
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled'); node_bsdf.inputs['Roughness'].default_value = roughness

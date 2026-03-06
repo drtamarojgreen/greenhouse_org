@@ -83,8 +83,9 @@ def diagnose():
 
     print_header("COMPOSITOR")
 
-    print(f"Use Nodes: {scene.use_nodes}")
-    if scene.use_nodes and scene.node_tree:
+    has_nodes = getattr(scene, "node_tree", None) is not None
+    print(f"Compositor active: {has_nodes}")
+    if has_nodes:
         nodes = scene.node_tree.nodes
         links = scene.node_tree.links
 

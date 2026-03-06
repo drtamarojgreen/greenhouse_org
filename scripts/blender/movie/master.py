@@ -47,7 +47,7 @@ class BaseMaster:
             if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
         else:
             scene.render.engine = style.get_eevee_engine_id()
-            scene.world.use_nodes = True
+            style.ensure_world_node_tree(scene.world)
             bg = scene.world.node_tree.nodes.get("Background")
             if bg: bg.inputs[0].default_value = (0.05, 0.05, 0.1, 1)
 

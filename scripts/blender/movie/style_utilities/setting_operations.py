@@ -8,14 +8,9 @@ from .fcurves_operations import get_action_curves
 def get_compositor_node_tree(scene):
     """Directly retrieves the compositor node tree for Blender 5.x."""
     if not scene: return None
-    scene.use_nodes = True
-    # Force creation if missing
-    current_tree = getattr(scene, 'node_tree', None)
-    if not current_tree:
-        try: bpy.ops.node.new_node_tree(type='CompositorNodeTree', name="Compositing")
-        except: pass
 
-    tree = getattr(scene, 'node_tree', None)
+    from .compat import ensure_compositor_tree
+    tree = ensure_compositor_tree(scene)
     
     if not tree:
         # Check if we can find it in bpy.data.node_groups as a fallback

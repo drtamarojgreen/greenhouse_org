@@ -121,7 +121,7 @@ def replace_with_soft_boxes():
         plane.scale = (5, 5, 1)
 
         mat = bpy.data.materials.new(name=f"Mat_{plane.name}")
-        mat.use_nodes = True
+        core.ensure_material_node_tree(mat)
         # Set emission in Principled BSDF
         core.set_principled_socket(mat, "Emission Color", color + [1])
         # Higher factor for physical accumulation

@@ -231,7 +231,7 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
 def create_iris_material(name, color=(0.2, 0.4, 0.2)):
     """Phase 3: Integrated Scale-Aware Eye Shader (Coat/Refraction)."""
     mat = bpy.data.materials.new(name=name)
-    mat.use_nodes = True
+    style.ensure_material_node_tree(mat)
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
     

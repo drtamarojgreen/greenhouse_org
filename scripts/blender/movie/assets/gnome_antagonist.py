@@ -224,7 +224,7 @@ def create_gnome(name, location, scale=0.6):
         links.new(style.get_mix_output(node_mix_ao), bsdf.inputs['Base Color'])
 
     mat_body = bpy.data.materials.new(name=f"{name}_MatBody")
-    mat_body.use_nodes = True
+    style.ensure_material_node_tree(mat_body)
     style.set_principled_socket(mat_body, "Base Color", (0.4, 0.2, 0.6, 1))
     style.set_principled_socket(mat_body, "Metallic", 0.0)
     style.set_principled_socket(mat_body, "Roughness", 0.8)
@@ -232,13 +232,13 @@ def create_gnome(name, location, scale=0.6):
     setup_ao_grit(mat_body)
     
     mat_hat = bpy.data.materials.new(name=f"{name}_MatHat")
-    mat_hat.use_nodes = True
+    style.ensure_material_node_tree(mat_hat)
     style.set_principled_socket(mat_hat, "Base Color", (0.2, 0.1, 0.4, 1))
     style.set_principled_socket(mat_hat, "Metallic", 0.0)
     style.set_principled_socket(mat_hat, "Roughness", 0.9)
     setup_ao_grit(mat_hat)
     mat_beard = bpy.data.materials.new(name=f"{name}_MatBeard")
-    mat_beard.use_nodes = True
+    style.ensure_material_node_tree(mat_beard)
     style.set_principled_socket(mat_beard, "Base Color", (0.8, 0.8, 0.8, 1))
     setup_ao_grit(mat_beard)
     
@@ -255,7 +255,7 @@ def create_gnome(name, location, scale=0.6):
         if f.material_index == 0 and f.center.z > 0.6 and f.center.z < 0.9:
             f.material_index = 3
     mat_gloom = bpy.data.materials.new(name=f"{name}_MatGloom")
-    mat_gloom.use_nodes = True
+    style.ensure_material_node_tree(mat_gloom)
     # Point 76: Macroscopic Rusted Staff (Phase 3 Scale)
     nodes = mat_gloom.node_tree.nodes
     links = mat_gloom.node_tree.links

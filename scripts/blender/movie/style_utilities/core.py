@@ -8,3 +8,4 @@ from .fcurves_operations import *
 from .engine_operations import *
 from .camera_operations import *
 from .setting_operations import *
+from .compat import *
