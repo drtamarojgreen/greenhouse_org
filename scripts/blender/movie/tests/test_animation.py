@@ -26,7 +26,7 @@ class TestAnimation(BlenderTestCase):
         """Verify that character limbs have appropriate range of movement."""
         chars = ["Herbaceous", "Arbor"]
         # Essential bones for "thriller" acting
-        bones = ["Neck", "Jaw", "Mouth", "Eye.", "Brow."]
+        bones = ["Neck", "Jaw", "Mouth", "Eye.L", "Brow.L"]
         
         for char_name in chars:
             obj = bpy.data.objects.get(char_name)

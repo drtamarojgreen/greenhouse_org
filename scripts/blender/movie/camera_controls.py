@@ -21,12 +21,13 @@ def ensure_camera(master):
         target = bpy.data.objects.new("CamTarget", None)
         bpy.context.scene.collection.objects.link(target)
     
-    # Ensure helper is invisible in render (Point 142)
     target.display_type = 'WIRE'
     target.hide_render = target.hide_viewport = True
+    target.empty_display_size = 0.01  # Hide the "fence" crosshairs
     # Key it at start, middle, end to ensure it doesn't get toggled
     for f in [1, 7500, 15000]:
         target.keyframe_insert(data_path="hide_render", frame=f)
+        target.keyframe_insert(data_path="hide_viewport", frame=f)
     
     master.cam_target = target
 
@@ -36,7 +37,7 @@ def ensure_camera(master):
         con.name = "TrackCharacters"
         con.target = target
         con.track_axis = 'TRACK_NEGATIVE_Z'
-        con.up_axis = 'UP_Z' # Standard for Z-up world (Point 142)
+        con.up_axis = 'UP_Y' # Standard for Z-up world is Y-up for camera local
     
     # Point 92: Set focus object to target Empty (animatable focus via target location)
     cam.data.dof.use_dof = True
@@ -85,8 +86,10 @@ def ensure_secondary_camera(master):
     # Ensure helper is invisible in render
     target.display_type = 'WIRE'
     target.hide_render = target.hide_viewport = True
+    target.empty_display_size = 0.01
     for f in [1, 7500, 15000]:
         target.keyframe_insert(data_path="hide_render", frame=f)
+        target.keyframe_insert(data_path="hide_viewport", frame=f)
     
     # Basic constraints
     if not cam.constraints.get("TrackTarget"):
@@ -94,7 +97,7 @@ def ensure_secondary_camera(master):
         con.name = "TrackTarget"
         con.target = target
         con.track_axis = 'TRACK_NEGATIVE_Z'
-        con.up_axis = 'UP_Z'
+        con.up_axis = 'UP_Y'
     
     return cam, target
 

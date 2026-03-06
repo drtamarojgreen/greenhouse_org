@@ -61,7 +61,9 @@ def create_soil_material():
     links.new(node_disp.outputs['Displacement'], node_out.inputs['Displacement'])
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
 
-    node_bsdf.inputs['Roughness'].default_value = 0.95
+    node_bsdf.inputs['Roughness'].default_value = 0.9
+    node_bsdf.inputs['Specular IOR Level'].default_value = 0.4
+    node_bsdf.inputs['Metallic'].default_value = 0.05
     mat.displacement_method = 'BOTH'
     return mat
 
@@ -77,10 +79,19 @@ def create_hedge_row(start, end, height=2.5, depth=1.2, name="Hedge"):
     hedge.location = mid
 
     bm = bmesh.new()
-    matrix = mathutils.Euler((0, 0, angle)).to_matrix().to_4x4()
-    ret = bmesh.ops.create_cube(bm, size=1.0, matrix=matrix)
-    for v in ret['verts']:
-        v.co.x *= direction.length; v.co.y *= depth; v.co.z *= height
+    num_clusters = int(direction.length / 0.8) + 1
+    for i in range(num_clusters):
+        t = i / max(1, num_clusters - 1)
+        p = direction * t
+        # Random bush cluster
+        ret = bmesh.ops.create_cone(bm, segments=8, radius1=0.5, radius2=0.4, depth=height, matrix=mathutils.Matrix.Translation(p + mathutils.Vector((0,0,height/2))))
+        for v in ret['verts']:
+            # Deform for organic volume
+            v.co.y *= (depth / 0.8)
+            v.co.x += random.uniform(-0.1, 0.1); v.co.y += random.uniform(-0.1, 0.1)
+    
+    # Rotate toward direction
+    bm.transform(mathutils.Euler((0, 0, angle)).to_matrix().to_4x4())
 
     bm.to_mesh(mesh_data)
     bm.free()
@@ -174,13 +185,14 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     
     import bmesh
     bm = bmesh.new()
-    bmesh.ops.create_grid(bm, x_segments=64, y_segments=64, size=250.0)
+    # Phase 6: Massive Ground Plane (No "End of Earth")
+    bmesh.ops.create_grid(bm, x_segments=256, y_segments=256, size=2000.0)
     
     for v in bm.verts:
         dist = v.co.length
-        # Gaussian hill peak at center, peak is at Z=0
-        v.co.z = 15.0 * math.exp(-(dist**2) / (2 * (60.0**2))) - 15.0
-        v.co.z -= (dist / 250.0) * 15.0
+        # Maintain hill peak but extend falloff
+        v.co.z = 25.0 * math.exp(-(dist**2) / (2 * (150.0**2))) - 25.0
+        v.co.z -= (dist / 1000.0) * 50.0 # Gradual slope
 
     bm.to_mesh(ground_data)
     bm.free()

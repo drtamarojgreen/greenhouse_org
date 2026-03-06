@@ -4,6 +4,8 @@ import random
 import mathutils
 from . import core
 from constants import SCENE_MAP
+from assets import plant_humanoid, gnome_antagonist
+import style_utilities as style
 
 def set_obj_visibility(obj, visible, frame):
     """Recursively sets hide_render for an object and its children (Point 142)."""
@@ -239,10 +241,28 @@ def animate_dialogue_v2(char_or_obj, frame_start, frame_end, intensity=1.0, spee
             jaw_bone.rotation_euler[0] = rot_val
             target_obj.keyframe_insert(data_path=f'pose.bones["{jaw_bone.name}"].rotation_euler', index=0, frame=frame)
 
+        # Phase 6: Sync Bark Wrinkles
+        # Find mesh child with Displace modifier
+        for mesh in [c for c in target_obj.children if c.type == 'MESH']:
+            if "BarkWrinkles" in mesh.modifiers:
+                # Wrinkle strength spikes with mouth opening
+                mesh.modifiers["BarkWrinkles"].strength = (val - 0.4) * 0.2
+                mesh.keyframe_insert(data_path='modifiers["BarkWrinkles"].strength', frame=frame)
+
         # Subtle Neck movement during speech
         if neck_bone:
             neck_bone.rotation_euler[2] += random.uniform(-0.01, 0.01)
             target_obj.keyframe_insert(data_path=f'pose.bones["{neck_bone.name}"].rotation_euler', index=2, frame=frame)
+        
+        # Phase 6: Lip Stretching (X-Scale)
+        if "pose.bones" in data_path:
+            try:
+                bname = data_path.split('"')[1]
+                if bname in target_obj.pose.bones:
+                    # Stretch wide as mouth opens
+                    target_obj.pose.bones[bname].scale[0] = 1.0 + (val - 0.4) * 0.5
+                    target_obj.keyframe_insert(data_path=f'pose.bones["{bname}"].scale', index=0, frame=frame)
+            except: pass
 
     current_f = frame_start
     while current_f < frame_end:
@@ -257,9 +277,20 @@ def animate_dialogue_v2(char_or_obj, frame_start, frame_end, intensity=1.0, spee
         
         set_mouth_val(0.4, current_f)
         
+        # Open -> Closed
         mid_f = current_f + cycle_len / 2
         if mid_f < frame_end:
             set_mouth_val(open_amount, mid_f)
+            
+            # Phase 6: Eye Darting (Saccades) during speech
+            for side in ["L", "R"]:
+                eye = target_obj.pose.bones.get(f"Eye.{side}") if hasattr(target_obj, "pose") else None
+                if eye: 
+                    # Use saccadic logic but on-demand
+                    eye.rotation_euler[0] += random.uniform(-0.05, 0.05)
+                    eye.rotation_euler[2] += random.uniform(-0.05, 0.05)
+                    target_obj.keyframe_insert(data_path=f'pose.bones["{eye.name}"].rotation_euler', frame=mid_f)
+        
         current_f += cycle_len
 
     set_mouth_val(0.4, frame_end)
@@ -558,10 +589,13 @@ def animate_characters(master_instance):
         arm = h1.pose.bones.get("Arm.L") if h1.type == 'ARMATURE' else bpy.data.objects.get("Herbaceous_Arm_L")
         if arm: animate_thinking_gesture(arm, SCENE_MAP['scene16_dialogue'][0] + 50)
 
-    from assets import plant_humanoid
     moving_scenes = ['scene01_intro', 'scene02_garden', 'scene05_bridge', 'scene13_walking', 'scene15_interaction', 'scene22_retreat']
     for s_name in moving_scenes:
         if s_name in SCENE_MAP:
             start, end = SCENE_MAP[s_name]
             for char in [h1, h2, gnome]:
-                if char: plant_humanoid.animate_walk(char, start, end)
+                if char: 
+                    plant_humanoid.animate_walk(char, start, end)
+                    # Phase 4: Orientation Alignment (Point 142)
+                    # Ensure character faces the direction of travel
+                    style.apply_anticipation(char, "rotation_euler", start, mathutils.Vector((0,0,0.1)))

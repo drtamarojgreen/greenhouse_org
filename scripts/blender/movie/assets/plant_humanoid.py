@@ -63,6 +63,33 @@ def create_bark_material(name, color=(0.2, 0.4, 0.2), quality='hero'):
     node_output = nodes.new(type='ShaderNodeOutputMaterial')
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
     node_bsdf.inputs['Roughness'].default_value = 0.9
+    node_bsdf.inputs['Metallic'].default_value = 0.0 # Force non-metallic (De-tinning)
+    
+    # Enhancement #27: SSS Weight driven by thickness (Pointiness)
+    node_geom = nodes.new(type='ShaderNodeNewGeometry')
+    node_ramp_sss = nodes.new(type='ShaderNodeValToRGB')
+    node_ramp_sss.color_ramp.elements[0].position = 0.4
+    node_ramp_sss.color_ramp.elements[1].position = 0.6
+    links.new(node_geom.outputs['Pointiness'], node_ramp_sss.inputs['Fac'])
+    style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.15)
+    links.new(node_ramp_sss.outputs['Alpha'], node_bsdf.inputs['Subsurface Weight'])
+    
+    # Enhancement #26: Skin Porosity Normal Map (Scale-Aware)
+    node_porosity = nodes.new(type='ShaderNodeTexNoise')
+    node_porosity.inputs['Scale'].default_value = 500.0
+    
+    # LOD: Fade out high-res noise at distance
+    node_cam = nodes.new('ShaderNodeCameraData')
+    node_dist_inv = nodes.new('ShaderNodeMath')
+    node_dist_inv.operation = 'DIVIDE'
+    node_dist_inv.inputs[0].default_value = 2.0 # Visible up to 2m
+    links.new(node_cam.outputs['View Distance'], node_dist_inv.inputs[1])
+    
+    node_bump_skin = nodes.new(type='ShaderNodeBump')
+    links.new(node_porosity.outputs['Fac'], node_bump_skin.inputs['Height'])
+    links.new(node_dist_inv.outputs[0], node_bump_skin.inputs['Strength'])
+    links.new(node_bump_skin.outputs['Normal'], node_bsdf.inputs['Normal'])
+
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
 
     if quality == 'background':
@@ -74,7 +101,8 @@ def create_bark_material(name, color=(0.2, 0.4, 0.2), quality='hero'):
     node_mapping = nodes.new(type='ShaderNodeMapping')
     links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
 
-    node_noise1 = nodes.new(type='ShaderNodeTexNoise')
+    # Enhancement 45: Leaf Venation
+    node_noise1 = nodes.new(type='ShaderNodeTexWave')
     node_noise1.inputs['Scale'].default_value = 5.0
     node_noise2 = nodes.new(type='ShaderNodeTexNoise')
     node_noise2.inputs['Scale'].default_value = 50.0
@@ -200,6 +228,72 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
 
     return mat
 
+def create_iris_material(name, color=(0.2, 0.4, 0.2)):
+    """Phase 3: Integrated Scale-Aware Eye Shader (Coat/Refraction)."""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    nodes.clear()
+    
+    node_out = nodes.new('ShaderNodeOutputMaterial')
+    node_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
+    
+    # Texture Coordinate
+    node_coord = nodes.new('ShaderNodeTexCoord')
+    
+    # 1. Distance-Aware Scaling (Point 91/95)
+    node_cam_info = nodes.new('ShaderNodeCameraData')
+    node_dist_math = nodes.new('ShaderNodeMath')
+    node_dist_math.operation = 'DIVIDE'
+    node_dist_math.inputs[1].default_value = 10.0 # Normalize at 10m
+    links.new(node_cam_info.outputs['View Distance'], node_dist_math.inputs[0])
+    
+    # 2. Iris/Pupil Gradient
+    node_mapping = nodes.new('ShaderNodeMapping')
+    node_mapping.inputs['Location'].default_value = (0.5, 0.5, 0)
+    node_grad = nodes.new('ShaderNodeTexGradient')
+    node_grad.gradient_type = 'SPHERICAL'
+    
+    links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
+    links.new(node_mapping.outputs['Vector'], node_grad.inputs['Vector'])
+    
+    node_ramp = nodes.new('ShaderNodeValToRGB')
+    elements = node_ramp.color_ramp.elements
+    elements[0].position, elements[0].color = 0.0, (0, 0, 0, 1) # Pupil
+    elements.new(0.4)
+    elements[1].position, elements[1].color = 0.4, (*color, 1) # Iris
+    elements[2].position, elements[2].color = 0.8, (1, 1, 1, 1) # Sclera
+    links.new(node_grad.outputs['Fac'], node_ramp.inputs['Fac'])
+    links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
+    
+    # 3. Integrated Eye Depth (Coat & Refraction)
+    # Point 142: Using 5.0+ standard Coat for corneal highlights
+    node_bsdf.inputs['Coat Weight'].default_value = 1.0
+    node_bsdf.inputs['Coat Roughness'].default_value = 0.02
+    node_bsdf.inputs['Coat IOR'].default_value = 1.37 # Physiological cornea IOR
+    
+    # 4. Integrated Eye Moisture Line (Point 21)
+    # Use the Z-height of the UVs to boost specular at the bottom
+    node_sep = nodes.new('ShaderNodeSeparateXYZ')
+    links.new(node_coord.outputs['UV'], node_sep.inputs['Vector'])
+    node_moisture_ramp = nodes.new('ShaderNodeValToRGB')
+    node_moisture_ramp.color_ramp.elements[0].position = 0.1
+    node_moisture_ramp.color_ramp.elements[1].position = 0.15
+    # Inverse so bottom is white
+    node_moisture_ramp.color_ramp.elements[0].color = (1, 1, 1, 1)
+    node_moisture_ramp.color_ramp.elements[1].color = (0, 0, 0, 1)
+    links.new(node_sep.outputs['Y'], node_moisture_ramp.inputs['Fac'])
+    
+    # Mix into Specular/Roughness
+    node_spec_mix = nodes.new('ShaderNodeMath')
+    node_spec_mix.operation = 'ADD'
+    node_spec_mix.inputs[0].default_value = 0.5
+    links.new(node_moisture_ramp.outputs['Color'], node_spec_mix.inputs[1])
+    links.new(node_spec_mix.outputs[0], node_bsdf.inputs['Specular IOR Level'])
+    
+    links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
+    return mat
+
 def create_fingers(location, direction, radius=0.02):
     fingers = []
     for i in range(3):
@@ -223,9 +317,9 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     
     torso_h = 1.5 * height_scale; head_r = 0.4; arm_h = torso_h * 0.9; neck_h = 0.2
     bones = {
-        "Torso": ((0,0,0), (0,0,torso_h), None),
-        "Neck": ((0,0,torso_h), (0,0,torso_h+neck_h), "Torso"),
-        "Head": ((0,0,torso_h+neck_h), (0,0,torso_h+neck_h+head_r), "Neck"),
+        "Torso": ((0,0,0), (0,0.1,torso_h), None), # Slightly forward lean
+        "Neck": ((0,0.1,torso_h), (0,0.2,torso_h+neck_h), "Torso"), # Hunched neck
+        "Head": ((0,0.2,torso_h+neck_h), (0,0.3,torso_h+neck_h+head_r), "Neck"),
         "Arm.L": ((0.2,0,arm_h), (0.8,0,arm_h-0.4), "Torso"),
         "Arm.R": ((-0.2,0,arm_h), (-0.8,0,arm_h-0.4), "Torso"),
         "Leg.L": ((0.1,0,0.1), (0.3,0,-0.8), "Torso"),
@@ -248,21 +342,97 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
     mesh_obj = bpy.data.objects.new(f"{name}_Torso", mesh_data); bpy.context.scene.collection.objects.link(mesh_obj); mesh_obj.parent = armature_obj
     bm = bmesh.new(); dlayer = bm.verts.layers.deform.verify()
+    
+    # Define common vertex group indices
+    vg_idx_torso = mesh_obj.vertex_groups.new(name="Torso").index
+    vg_idx_head = mesh_obj.vertex_groups.new(name="Head").index
 
-    def add_part(radius, height, loc, bname, is_sphere=False):
-        vg_idx = mesh_obj.vertex_groups.new(name=bname).index
-        if is_sphere: ret = bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=radius, matrix=mathutils.Matrix.Translation(loc))
-        else: ret = bmesh.ops.create_cone(bm, segments=12, cap_ends=True, radius1=radius, radius2=radius, depth=height, matrix=mathutils.Matrix.Translation(loc))
+    def add_part(radius1, radius2, height, loc, bname, is_sphere=False, mid_scale=1.0):
+        vg = mesh_obj.vertex_groups.get(bname) or mesh_obj.vertex_groups.new(name=bname)
+        vg_idx = vg.index
+        if is_sphere: 
+            ret = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=radius1, matrix=mathutils.Matrix.Translation(loc))
+        else: 
+            ret = bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=radius1, radius2=radius2, depth=height, matrix=mathutils.Matrix.Translation(loc))
+            # Enhancement #1: Muscle Volume (Point 142)
+            if mid_scale != 1.0:
+                center = mathutils.Vector(loc)
+                for v in ret['verts']:
+                    # Scale verts near the middle of the height
+                    local_z = v.co.z - center.z
+                    factor = 1.0 + (mid_scale - 1.0) * math.cos((local_z / (height/2)) * (math.pi/2))
+                    v.co.x *= factor; v.co.y *= factor
         for v in ret['verts']: v[dlayer][vg_idx] = 1.0
         return ret
 
-    add_part(0.2, torso_h, (0,0,torso_h/2), "Torso")
-    add_part(0.1, neck_h, (0,0,torso_h+neck_h/2), "Neck")
-    add_part(head_r, 0, (0,0,torso_h+neck_h+head_r), "Head", True)
-    add_part(vine_thickness, 0.7, (0.5, 0, arm_h-0.2), "Arm.L")
-    add_part(vine_thickness, 0.7, (-0.5, 0, arm_h-0.2), "Arm.R")
-    add_part(vine_thickness*1.5, 0.8, (0.2, 0, -0.4), "Leg.L")
-    add_part(vine_thickness*1.5, 0.8, (-0.2, 0, -0.4), "Leg.R")
+    # Phase 6: Organic Face & Skin Welding
+    # Eyes (carved in)
+    for side in [-1, 1]:
+        loc = mathutils.Vector((0.15 * side, 0.2, torso_h + neck_h + head_r + 0.1)) # Frontal placement
+        ret_e = bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=0.06, matrix=mathutils.Matrix.Translation(loc))
+        for v in ret_e['verts']: 
+            v[dlayer][mesh_obj.vertex_groups.new(name=f"Eye.{'L' if side==1 else 'R'}").index] = 1.0
+            for f in v.link_faces: f.material_index = 2 # Eye Mat
+    
+    # Mouth (crease)
+    ret_m = bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation((0, 0.25, torso_h + neck_h + head_r - 0.1)))
+    for v in ret_m['verts']: 
+        v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
+        v[dlayer][vg_idx_torso] = 1.0 # Attach to head/torso influence
+
+    # Add limb parts with welding
+    add_part(0.12, 0.1, neck_h, (0,0.15,torso_h+neck_h/2), "Neck")
+    # Torso Geometry
+    add_part(0.3*height_scale, 0.25*height_scale, torso_h, (0,0,torso_h/2), "Torso", mid_scale=1.1)
+    
+    add_part(head_r, 0, head_r*2, (0,0.25,torso_h+neck_h+head_r), "Head", is_sphere=True)
+    add_part(vine_thickness*1.2, vine_thickness*0.6, 0.7, (0.5, 0.1, arm_h-0.2), "Arm.L", mid_scale=1.3)
+    add_part(vine_thickness*1.2, vine_thickness*0.6, 0.7, (-0.5, 0.1, arm_h-0.2), "Arm.R", mid_scale=1.3)
+    add_part(vine_thickness*2.0, vine_thickness*1.2, 0.8, (0.2, 0.05, -0.4), "Leg.L", mid_scale=1.25)
+    add_part(vine_thickness*2.0, vine_thickness*1.2, -0.4, (-0.2, 0.05, -0.4), "Leg.R", mid_scale=1.25)
+
+    # Phase 6: Foliage Overhaul (Leaf-Hair on Top)
+    def add_organic_leaf(loc, rot):
+        # Create a diamond/leaf shape (not a trapezoid)
+        verts = [
+            bm.verts.new((0, 0, 0)),
+            bm.verts.new((0.05, 0, 0.1)),
+            bm.verts.new(loc + mathutils.Vector((0, 0.1, 0.2)) @ rot.to_matrix()), # Tip
+            bm.verts.new((-0.05, 0, 0.1))
+        ]
+        f = bm.faces.new(verts)
+        f.material_index = 1
+
+    for i in range(20):
+        # Top and Back of head
+        phi = random.uniform(0, math.pi/2) # Upper hemisphere
+        theta = random.uniform(0, 2*math.pi)
+        loc = mathutils.Vector((
+            head_r * math.sin(phi) * math.cos(theta),
+            head_r * math.sin(phi) * math.sin(theta),
+            torso_h + neck_h + head_r + head_r * math.cos(phi)
+        ))
+        rot = mathutils.Euler((random.uniform(0, 1), 0, theta)).to_matrix().to_4x4()
+        # Custom leaf shape
+        rv = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.1, matrix=mathutils.Matrix.Translation(loc) @ rot)
+        for v in rv['verts']:
+            # Taper the grid into a leaf (remove trapezoid look)
+            lv = v.co - loc
+            if lv.y > 0: v.co.x *= (1.0 - lv.y/0.1) # Taper tip
+            v[dlayer][vg_idx_torso] = 1.0
+            for f in v.link_faces: f.material_index = 1
+
+    # Phase 6: Secondary Motion - Leaf Sway
+    tex_sway = bpy.data.textures.get("LeafSwayTex") or bpy.data.textures.new("LeafSwayTex", type='CLOUDS')
+    tex_sway.noise_scale = 0.5
+    
+    sway_mod = mesh_obj.modifiers.new(name="LeafSway", type='DISPLACE')
+    sway_mod.texture = tex_sway
+    sway_mod.strength = 0.05
+    sway_mod.vertex_group = "Head" # Target the foliage area
+    
+    # Animate texture offset for wind-like effect
+    sway_mod.texture_coords = 'GLOBAL'
 
     # Brows - Parented to new Brow bones
     for side in ["L", "R"]:
@@ -294,6 +464,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     bmesh.ops.create_cone(bm_staff, segments=8, radius1=0.02, radius2=0.02, depth=1.5)
     bm_staff.to_mesh(staff_mesh); bm_staff.free()
     staff_obj.location = (0, 0, -0.4)
+    staff_obj.rotation_euler = (0, 1.5708, 0) # Point vertically instead of horizontal (prevents "fence" illusion)
     staff_obj.data.materials.append(create_bark_material(f"StaffMat_{name}"))
 
     # Eye and Mouth Objects for test parity
@@ -306,13 +477,10 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         eye_obj.parent_type = 'BONE'
         eye_obj.parent_bone = "Head"
         bm_eye = bmesh.new()
-        bmesh.ops.create_uvsphere(bm_eye, u_segments=8, v_segments=8, radius=0.04)
+        bmesh.ops.create_uvsphere(bm_eye, u_segments=24, v_segments=24, radius=0.04) # Higher res for big screen
         bm_eye.to_mesh(eye_mesh); bm_eye.free()
         eye_obj.location = (0.4 if side == "L" else -0.4, -head_r*0.8, 0.3)
-        mat_e = bpy.data.materials.new(name=f"EyeMat_{name}_{side}")
-        style.set_principled_socket(mat_e, 'Emission Color', (1, 1, 1, 1))
-        style.set_principled_socket(mat_e, 'Emission Strength', 5.0)
-        eye_obj.data.materials.append(mat_e)
+        eye_obj.data.materials.append(create_iris_material(f"EyeMat_{name}_{side}"))
 
     mouth_obj_name = f"{name}_Mouth"
     mouth_mesh = bpy.data.meshes.new(f"{mouth_obj_name}_MeshData")
@@ -336,15 +504,43 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.1, matrix=mathutils.Matrix.Translation(loc) @ mathutils.Euler((random.uniform(0,3.14),0,angle)).to_matrix().to_4x4())
         for v in ret['verts']: v[dlayer][vg_head] = 1.0; [setattr(f, 'material_index', 1) for f in v.link_faces]
 
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.02)
+    for _ in range(5): bmesh.ops.smooth_vert(bm, verts=bm.verts, factor=0.5)
     bm.to_mesh(mesh_data); bm.free()
+    
+    # Phase 6: Organic Talking Physics - Bark Wrinkles
+    # Create a wrinkle texture
+    tex_wrinkle = bpy.data.textures.get("BarkWrinkleTex") or bpy.data.textures.new("BarkWrinkleTex", type='CLOUDS')
+    tex_wrinkle.noise_scale = 0.05
+    
+    disp_mod = mesh_obj.modifiers.new(name="BarkWrinkles", type='DISPLACE')
+    disp_mod.texture = tex_wrinkle
+    disp_mod.strength = 0.0 # Animate this during dialogue
+    disp_mod.vertex_group = "Head" # Only wrinkle the face area
+    
+    # Smooth Shading and Polish
+    for p in mesh_obj.data.polygons: p.use_smooth = True
+    mesh_obj.modifiers.new(name="Subsurf", type='SUBSURF').levels = 2
+    
     mesh_obj.data.materials.append(create_bark_material(f"BarkMat_{name}"))
     mesh_obj.data.materials.append(create_leaf_material(f"LeafMat_{name}"))
+    mesh_obj.data.materials.append(create_bark_material(f"CreaseMat_{name}", color=(0.02, 0.02, 0.02)))
+
     
-    mat_eye = bpy.data.materials.new(name=f"EyeMat_{name}")
-    style.set_principled_socket(mat_eye, 'Emission Color', (1, 1, 1, 1))
-    style.set_principled_socket(mat_eye, 'Emission Strength', 5.0)
-    mesh_obj.data.materials.append(mat_eye)
+    # Enhancement #13: Weighted Normals
+    mesh_obj.modifiers.new(name="WeightedNormal", type='WEIGHTED_NORMAL')
+    
     mesh_obj.modifiers.new(name="Armature", type='ARMATURE').object = armature_obj
+    
+    # Phase 4: Grounding Physics (Point 142)
+    root_bone = armature_obj.pose.bones.get("Root")
+    if root_bone:
+        con = root_bone.constraints.new('SHRINKWRAP')
+        con.shrinkwrap_type = 'PROJECT'
+        con.project_axis = 'NEG_Z'
+        floor = bpy.data.objects.get("Greenhouse_Structure") or bpy.data.objects.get("Exterior_Garden_Main")
+        if floor: con.target = floor
+
     return armature_obj
 
 def animate_walk(armature_obj, frame_start, frame_end, step_height=0.1, cycle_length=48):

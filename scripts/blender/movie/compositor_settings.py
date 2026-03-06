@@ -26,9 +26,10 @@ def setup_compositor(master_instance):
     style.set_node_input(distort, 'distort', 0.0)
     style.set_node_input(distort, 'Dispersion', 0.02)
 
-    # Enhancement #60: Wet Glass Refraction (Simplified displacement)
+    # Enhancement #60: Wet Glass Refraction (Simplified displacement) - muted by default
     displace = tree.nodes.new('CompositorNodeDisplace')
     displace.name = "WetGlass"
+    displace.mute = True  # Disable by default; scene22 can enable it
     
     # Point 92: Safe creation of Texture node (often missing in 5.0+)
     try:
@@ -44,10 +45,11 @@ def setup_compositor(master_instance):
     bright = tree.nodes.new('CompositorNodeBrightContrast')
     bright.name = "Bright/Contrast"
 
-    # Glow Trail (Vector Blur)
+    # Glow Trail (Vector Blur) - disabled by default to prevent blurriness
     blur = tree.nodes.new('CompositorNodeVecBlur')
     blur.name = "GlowTrail"
-    style.set_node_input(blur, 'Factor', 0.8)
+    blur.mute = True  # Mute entirely; enable per-scene if needed
+    style.set_node_input(blur, 'Factor', 0.0)
 
     # Global Saturation
     huesat = tree.nodes.new('CompositorNodeHueSat')

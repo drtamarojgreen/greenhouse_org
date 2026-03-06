@@ -50,19 +50,30 @@ class MovieMaster(BaseMaster):
         self.brain, self.neuron = brain_neuron.load_brain(base_p), brain_neuron.load_neuron(base_p)
         self.book = library_props.create_open_book((0, 0, 1.3))
         self.pedestal = library_props.create_pedestal((0, 0, 0))
-        for x, y in [(-8,-8), (8,8), (-12,0), (12,0)]: plant_humanoid.create_inscribed_pillar((x, y, 0))
+        # Replace stoic pillars with organic trees for a more natural greenhouse feel
+        _bark = plant_humanoid.create_bark_material("GH_TreeBark")
+        _leaf = plant_humanoid.create_leaf_material("GH_TreeLeaf")
+        for x, y in [(-8,-8), (8,8), (-12,0), (12,0)]:
+            exterior_garden.create_procedural_tree((x, y, -1), _bark, _leaf)
 
     def animate_master(self):
         camera_controls.setup_all_camera_logic(self); setup_characters.setup_gaze_system(self)
         scene_orchestrator.orchestrate_scenes(self); animate_characters.animate_characters(self); animate_props.animate_props(self)
         
-        # Point 142: Visibility management for main actors
+        # Point 142: Visibility management for main actors & Secondary props
+        hero_ranges = [(101, 15000)]
         if self.h1 and self.h2:
-            self._set_visibility([self.h1, self.h2], [(101, 15000)])
+            self._set_visibility([self.h1, self.h2], hero_ranges)
         if self.gnome:
-            self._set_visibility([self.gnome], [(10901, 14450)]) # Visible during dialogue and retreat
+            self._set_visibility([self.gnome], [(10901, 14450)])
             
-        # Point 142: Aggressively hide helpers and unwanted lights
+        # Clear "Random Assets" outside greenhouse (#22)
+        secondary_props = [o for o in bpy.data.objects if any(x in o.name for x in ["Title", "Logo", "Spark", "Diag", "Book", "Pedestal", "MentalBloom"])]
+        # Trees are always visible during the greenhouse interior scenes
+        trees = [o for o in bpy.data.objects if o.name.startswith("Tree_")]
+        self._set_visibility(trees, [(101, 15000)]) # Trees visible for any scene with characters
+        
+        # Hide helpers and unwanted lights
         helpers = [bpy.data.objects.get(n) for n in ["CamTarget", "GazeTarget", "IntroLight"]]
         for h in [obj for obj in helpers if obj]:
             style.set_obj_visibility(h, False, 1)
@@ -100,21 +111,38 @@ class MovieMaster(BaseMaster):
                 if s_name in SCENE_MAP:
                     start, end = SCENE_MAP[s_name]
                     # Pre-setup hold: capture current position to prevent drift from previous scene
-                    self.place_character(self.h1, self.h1.location, self.h1.rotation_euler, start)
-                    self.place_character(self.h2, self.h2.location, self.h2.rotation_euler, start)
-                    self.place_character(self.gnome, self.gnome.location, self.gnome.rotation_euler, start)
+                    # Phase 6: Reset Z from Holding Pen
+                    loc1 = self.h1.location.copy(); loc1.z = 0
+                    loc2 = self.h2.location.copy(); loc2.z = 0
+                    locG = self.gnome.location.copy(); locG.z = 0
+                    self.place_character(self.h1, loc1, self.h1.rotation_euler, start)
+                    self.place_character(self.h2, loc2, self.h2.rotation_euler, start)
+                    self.place_character(self.gnome, locG, self.gnome.rotation_euler, start)
 
                 s.setup_scene(self)
 
                 if s_name in SCENE_MAP:
                     start, end = SCENE_MAP[s_name]
                     # Post-setup hold: ensure final scene position is keyed to prevent drift to next
-                    self.place_character(self.h1, self.h1.location, self.h1.rotation_euler, end)
-                    self.place_character(self.h2, self.h2.location, self.h2.rotation_euler, end)
-                    self.place_character(self.gnome, self.gnome.location, self.gnome.rotation_euler, end)
-
-        # Point 142: Camera Safety Pass (P1-4) - Moved to END so it sees final scene placements
-        camera_controls.apply_camera_safety(self, self.scene.camera, [self.h1, self.h2, self.gnome], 1, 15000)
+    def place_character(self, char, loc, rot, frame):
+        """Phase 6: Place character with simple collision avoidance."""
+        import mathutils
+        loc_vec = mathutils.Vector(loc)
+        # Simple avoidance: push apart if too close
+        others = [self.h1, self.h2, self.gnome]
+        for other in others:
+            if other != char and other and other.name in bpy.data.objects:
+                o_obj = bpy.data.objects[other.name]
+                if not o_obj.hide_render:
+                    dist = (loc_vec - o_obj.location).length
+                    if dist < 0.8 and dist > 0.001: # Personal space
+                        offset = (loc_vec - o_obj.location).normalized() * (0.8 - dist)
+                        loc_vec += offset
+        
+        char.location = loc_vec
+        char.rotation_euler = rot
+        char.keyframe_insert(data_path="location", frame=frame)
+        char.keyframe_insert(data_path="rotation_euler", frame=frame)
 
     def setup_lighting(self): lighting_setup.setup_lighting(self)
     def setup_compositor(self): compositor_settings.setup_compositor(self)

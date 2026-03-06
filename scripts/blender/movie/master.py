@@ -62,28 +62,44 @@ class BaseMaster:
         bpy.ops.object.light_add(type='SPOT', location=(0, -15, 10)); self.spot = bpy.context.object; self.spot.data.energy = 10000
 
     def _set_visibility(self, objs, ranges):
+        """Phase 6 Visibility: Ensure Z is restored and keyed correctly."""
         for obj in objs:
-            # Recursive visibility for complex hierarchies (Point 142)
-            def process_recursive(o):
-                if not o.animation_data: o.animation_data_create()
-                # Default hidden at start
-                o.hide_render = o.hide_viewport = True
-                o.keyframe_insert(data_path="hide_render", frame=1)
+            def process_recursive(obj):
+                if not obj.animation_data: obj.animation_data_create()
+                orig_z = obj.location.z
+                # Default hidden and underground at start
+                obj.hide_render = obj.hide_viewport = True
+                obj.keyframe_insert(data_path="hide_render", frame=1)
+                obj.location.z = -50.0
+                obj.keyframe_insert(data_path="location", index=2, frame=1)
+                
                 for rs, re in ranges:
                     if rs > 1:
-                        o.hide_render = o.hide_viewport = True
-                        o.keyframe_insert(data_path="hide_render", frame=rs-1)
-                    o.hide_render = o.hide_viewport = False; o.keyframe_insert(data_path="hide_render", frame=rs)
-                    o.hide_render = o.hide_viewport = True; o.keyframe_insert(data_path="hide_render", frame=re)
+                        # Ensure hidden and underground just before the scene starts
+                        obj.hide_render = obj.hide_viewport = True
+                        obj.keyframe_insert(data_path="hide_render", frame=rs-1)
+                        obj.location.z = -50.0
+                        obj.keyframe_insert(data_path="location", index=2, frame=rs-1)
+                    
+                    # Visible and Above Ground
+                    obj.hide_render = obj.hide_viewport = False
+                    obj.keyframe_insert(data_path="hide_render", frame=rs)
+                    obj.location.z = orig_z # Restore to where it was created
+                    obj.keyframe_insert(data_path="location", index=2, frame=rs)
+                    
+                    # Hidden and Underground again at end
+                    obj.hide_render = obj.hide_viewport = True
+                    obj.keyframe_insert(data_path="hide_render", frame=re)
+                    obj.location.z = -50.0
+                    obj.keyframe_insert(data_path="location", index=2, frame=re)
                 
-                # Point 142: Ensure constant interpolation
-                if o.animation_data and o.animation_data.action:
-                    for fc in style.get_action_curves(o.animation_data.action, obj=o):
-                        if "hide_render" in fc.data_path:
-                            for kp in fc.keyframe_points: kp.interpolation = 'CONSTANT'
-                for child in o.children:
+                obj.location.z = orig_z
+                for fc in style.get_action_curves(obj.animation_data.action, obj=obj):
+                    if "hide_render" in fc.data_path or ("location" in fc.data_path and fc.array_index == 2):
+                        for kp in fc.keyframe_points: kp.interpolation = 'CONSTANT'
+                
+                for child in obj.children:
                     process_recursive(child)
-
             process_recursive(obj)
 
     def run(self, start_frame=None, end_frame=None, quick=False):
