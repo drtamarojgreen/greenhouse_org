@@ -40,7 +40,7 @@ from .style_utilities import (
 __all__ = [
     'get_action_curves', 'get_or_create_fcurve', 'get_eevee_engine_id',
     'get_compositor_node_tree', 'create_mix_node', 'get_mix_sockets',
-    'get_mix_output', 'set_principled_socket', 'patch_fbx_importer',
+    'get_mix_output', 'get_principled_socket', 'set_principled_socket', 'patch_fbx_importer',
     'get_socket_by_identifier', 'set_socket_value', 'clear_scene_selective', 'create_noise_based_material',
     'apply_scene_grade', 'animate_foliage_wind', 'animate_light_flicker',
     'insert_looping_noise', 'animate_breathing', 'animate_dust_particles',

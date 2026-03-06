@@ -43,6 +43,14 @@ def animate_pulsing_emission(obj, frame_start, frame_end, base_strength=5.0, pul
             core.set_principled_socket(mat, "Emission Strength", base_strength, frame=f)
             core.set_principled_socket(mat, "Emission Strength", base_strength + pulse_amplitude, frame=f + cycle // 2)
 
+def setup_bioluminescent_flora(mat, color=(0, 1, 0.5)):
+    """Point 131: Rapid bioluminescent flora setup."""
+    if mat and mat.node_tree:
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf:
+            bsdf.inputs["Emission Color"].default_value = (*color, 1)
+            bsdf.inputs["Emission Strength"].default_value = 2.0
+
 def setup_god_rays(scene, beam_obj=None):
     """Point 98: Support passing direct beam object reference."""
     beam = beam_obj or bpy.data.objects.get("LightShaftBeam")

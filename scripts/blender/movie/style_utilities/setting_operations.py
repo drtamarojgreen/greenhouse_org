@@ -150,6 +150,18 @@ def get_mix_sockets(node):
         
     return factor, in1, in2
 
+def get_principled_socket(mat_or_node, socket_name):
+    """Safely retrieves a socket from Principled BSDF."""
+    node = mat_or_node
+    if hasattr(mat_or_node, "node_tree"):
+        node = mat_or_node.node_tree.nodes.get("Principled BSDF")
+    if not node: return None
+    mapping = {'Specular': ['Specular', 'Specular IOR Level'], 'Transmission': ['Transmission', 'Transmission Weight'], 'Emission': ['Emission', 'Emission Color'], 'Emission Strength': ['Emission Strength']}
+    target_sockets = mapping.get(socket_name, [socket_name])
+    for s in target_sockets:
+        if s in node.inputs: return node.inputs[s]
+    return None
+
 def get_mix_output(node):
     """Returns the main output socket."""
     if node is None: return None
