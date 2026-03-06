@@ -141,29 +141,39 @@ def create_koi_pond(location, size=(4, 6)):
     return pond
 
 def create_procedural_tree(location, bark_mat, leaf_mat):
-    import bmesh
+    import bmesh, random, math
     name = f"Tree_{random.randint(0, 1000000)}"
     mesh = bpy.data.meshes.new(f"{name}_MeshData")
     obj = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(obj)
     obj.location = location
-    
+
     bm = bmesh.new()
-    trunk_h = random.uniform(5, 10)
-    ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.5, radius2=0.3, depth=trunk_h, matrix=mathutils.Matrix.Translation((0,0,trunk_h/2)))
-    for f in {f for v in ret['verts'] for f in v.link_faces}: f.material_index = 0
-    
-    for i in range(3):
-        canopy_r = random.uniform(3, 5)
-        z_off = trunk_h + i * 2.0
-        ret = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=canopy_r, matrix=mathutils.Matrix.Translation((0,0,z_off)))
-        for f in {f for v in ret['verts'] for f in v.link_faces}: f.material_index = 1
-    
+    trunk_h = random.uniform(4, 7)
+
+    # Trunk: tapered cone, not a cylinder - looks natural
+    bmesh.ops.create_cone(bm, segments=6, cap_ends=True,
+                          radius1=0.35, radius2=0.08, depth=trunk_h,
+                          matrix=mathutils.Matrix.Translation((0, 0, trunk_h / 2)))
+
+    # Canopy: many small offset spheres to create an organic crown, not a lollipop
+    num_clusters = random.randint(8, 14)
+    for i in range(num_clusters):
+        angle = (i / num_clusters) * 2 * math.pi + random.uniform(-0.3, 0.3)
+        radius_offset = random.uniform(0.5, 2.0)
+        cx = math.cos(angle) * radius_offset
+        cy = math.sin(angle) * radius_offset
+        cz = trunk_h + random.uniform(-0.8, 2.0)
+        cluster_r = random.uniform(0.8, 1.6)
+        bmesh.ops.create_uvsphere(bm, u_segments=6, v_segments=5, radius=cluster_r,
+                                  matrix=mathutils.Matrix.Translation((cx, cy, cz)))
+
     bm.to_mesh(mesh)
     bm.free()
     obj.data.materials.append(bark_mat)
     obj.data.materials.append(leaf_mat)
     return obj
+
 
 def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     w, d = greenhouse_size[0], greenhouse_size[1]

@@ -5,14 +5,16 @@ def setup_scene(master):
     """Brain Focus Scene Logic."""
     if not master.brain: return
 
-    # Point 42: Dedicated brain animation logic
-    # Point 142: Enhanced framing with Z-lift to avoid flat origin feel
+    # Move brain forward (negative Y) so it floats in front of the greenhouse wall
+    master.brain.location = (0, -3, 2.0)
+    master.brain.keyframe_insert(data_path="location", frame=201)
+
+    # Enhanced framing: lift camera target to center of brain
     target = bpy.data.objects.get("CamTarget")
     if target:
-        # Lift target to center of brain
-        target.location = (0, 0, 2.5)
+        target.location = (0, -3, 4.0)
         target.keyframe_insert(data_path="location", frame=201)
-        target.location = (0, 0, 3.0) # Slow drift up
+        target.location = (0, -3, 4.5)  # Slow drift up
         target.keyframe_insert(data_path="location", frame=400)
 
     # Brain Pulsing

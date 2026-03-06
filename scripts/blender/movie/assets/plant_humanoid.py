@@ -475,11 +475,11 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         bpy.context.scene.collection.objects.link(eye_obj)
         eye_obj.parent = armature_obj
         eye_obj.parent_type = 'BONE'
-        eye_obj.parent_bone = "Head"
+        eye_obj.parent_bone = bname  # Parent to the Eye bone directly
         bm_eye = bmesh.new()
-        bmesh.ops.create_uvsphere(bm_eye, u_segments=24, v_segments=24, radius=0.04) # Higher res for big screen
+        bmesh.ops.create_uvsphere(bm_eye, u_segments=24, v_segments=24, radius=0.06)
         bm_eye.to_mesh(eye_mesh); bm_eye.free()
-        eye_obj.location = (0.4 if side == "L" else -0.4, -head_r*0.8, 0.3)
+        eye_obj.location = (0, 0, 0)  # Sits at its parent bone head
         eye_obj.data.materials.append(create_iris_material(f"EyeMat_{name}_{side}"))
 
     mouth_obj_name = f"{name}_Mouth"
@@ -488,12 +488,12 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     bpy.context.scene.collection.objects.link(mouth_obj)
     mouth_obj.parent = armature_obj
     mouth_obj.parent_type = 'BONE'
-    mouth_obj.parent_bone = "Mouth"
+    mouth_obj.parent_bone = "Mouth"  # Parent to the Mouth bone directly
     bm_mouth = bmesh.new()
     bmesh.ops.create_cube(bm_mouth, size=0.1)
     for v in bm_mouth.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
     bm_mouth.to_mesh(mouth_mesh); bm_mouth.free()
-    mouth_obj.location = (0, 0, 0)
+    mouth_obj.location = (0, 0, 0)  # Sits at its parent bone head
     mouth_obj.data.materials.append(create_bark_material(f"MouthMat_{name}"))
 
     # Also keep influence on main mesh (optional, but keep per original design)
