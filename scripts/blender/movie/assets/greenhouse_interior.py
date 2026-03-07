@@ -38,7 +38,7 @@ def create_terracotta_material():
     node_coord = nodes.new('ShaderNodeTexCoord')
     node_mapping = nodes.new('ShaderNodeMapping')
     node_mapping.inputs['Scale'].default_value = (3, 3, 3)
-    links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
+    links.new(node_coord.outputs['UV'], node_mapping.inputs['Vector'])
 
     # Aged clay look: two-layer noise
     node_noise1 = nodes.new('ShaderNodeTexNoise')
@@ -84,6 +84,8 @@ def create_terracotta_material():
     links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
 
     node_bsdf.inputs['Roughness'].default_value = 0.88
+    if node_bsdf.inputs.get("Specular IOR Level"):
+        node_bsdf.inputs["Specular IOR Level"].default_value = 0.04
     return mat
 
 def _bmesh_vine(bm, start, end, radius, mat_idx):
@@ -184,7 +186,7 @@ def create_potting_bench(location, name="PottingBench"):
     return obj
 
 def create_hanging_basket_master():
-    """Master asset for hanging baskets."""
+    """Point 79/Showcase: High-fidelity hanging basket master asset."""
     cache_key = "HangingBasketMaster"
     if cache_key in _plant_cache: return _plant_cache[cache_key]
 
@@ -197,11 +199,38 @@ def create_hanging_basket_master():
     obj = bpy.data.objects.new(f"Master_{cache_key}", mesh_data)
     sub_col.objects.link(obj)
     
-    bm = bmesh.new(); bmesh.ops.create_icosphere(bm, subdivisions=2, radius=0.2)
+    bm = bmesh.new()
+    # Showcase-inspired lathe bowl geometry
+    RINGS = 8; SEGS = 16
+    radius = 0.25; depth = 0.20
+    for ri in range(RINGS + 1):
+        t = ri / RINGS
+        angle = math.pi * 0.5 * t
+        r = radius * math.cos(angle)
+        z = -depth * math.sin(angle)
+        for si in range(SEGS):
+            a = 2 * math.pi * si / SEGS
+            bm.verts.new((r * math.cos(a), r * math.sin(a), z))
+
+    bm.verts.ensure_lookup_table()
+    for ri in range(RINGS):
+        for si in range(SEGS):
+            nsi = (si + 1) % SEGS
+            v1 = bm.verts[ri * SEGS + si]
+            v2 = bm.verts[ri * SEGS + nsi]
+            v3 = bm.verts[(ri + 1) * SEGS + nsi]
+            v4 = bm.verts[(ri + 1) * SEGS + si]
+            bm.faces.new([v1, v2, v3, v4])
+
     for f in bm.faces: f.material_index = 0
-    for i in range(6):
-        angle = (i / 6) * 6.28; start = mathutils.Vector((math.cos(angle)*0.15, math.sin(angle)*0.15, -0.2))
-        _bmesh_vine(bm, start, start + mathutils.Vector((math.cos(angle)*0.1, math.sin(angle)*0.1, -random.uniform(0.4, 0.8))), 0.005, 1)
+
+    # Trailing vines
+    for i in range(12):
+        angle = (i / 12) * 6.28 + random.uniform(-0.1, 0.1)
+        r_off = radius * random.uniform(0.7, 0.9)
+        start = mathutils.Vector((r_off * math.cos(angle), r_off * math.sin(angle), -0.05))
+        _bmesh_vine(bm, start, start + mathutils.Vector((0, 0, -random.uniform(0.3, 0.6))), 0.005, 1)
+
     bm.to_mesh(mesh_data); bm.free()
     
     obj.data.materials.append(bpy.data.materials.get("GH_Iron") or bpy.data.materials.new("GH_Iron"))
@@ -253,18 +282,28 @@ def create_orchid_master(hue=(0.72, 0.12, 0.55)):
         links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
 
         node_bsdf.inputs['Roughness'].default_value = 0.12
+        # Showcase SSS and Transmission settings
         style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.25)
+        if node_bsdf.inputs.get("Subsurface Radius"):
+            node_bsdf.inputs["Subsurface Radius"].default_value = (0.9, 0.4, 0.5)
+        if node_bsdf.inputs.get("Transmission Weight"):
+            node_bsdf.inputs["Transmission Weight"].default_value = 0.15
+        if node_bsdf.inputs.get("Subsurface Color"):
+            node_bsdf.inputs["Subsurface Color"].default_value = (*p_hue, 1.0)
         return mat
 
     petal_mat = make_petal_mat(f"Mat_OrchidPetal_{cache_key}", hue)
     labellum_mat = make_petal_mat(f"Mat_OrchidLabellum_{cache_key}", (0.9, 0.55, 0.1), is_labellum=True)
 
     def add_petal_mesh(name, mat, loc, rot, sca):
+        """Point 79/Showcase: Higher-fidelity petal geometry."""
         mesh = bpy.data.meshes.new(f"Mesh_{name}")
         obj = bpy.data.objects.new(name, mesh)
         sub_col.objects.link(obj)
         obj.location, obj.rotation_euler, obj.scale = loc, rot, sca
-        bm = bmesh.new(); SEGS = 8
+        bm = bmesh.new()
+        # Increased SEGS for smoother curves
+        SEGS = 12
         for li in range(SEGS+1):
             t = li/SEGS; w = math.sin(math.pi * t) * 0.5
             for wi in range(SEGS+1):

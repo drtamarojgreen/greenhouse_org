@@ -20,7 +20,7 @@ def _ensure_action(obj, prefix="Anim"):
     return action
 
 def create_leaf_mesh(width=0.2, length=0.8):
-    """Creates a high-fidelity organic leaf mesh with droop and cupping."""
+    """Point 79/Showcase: Creates a high-fidelity organic leaf mesh with refined droop and cupping."""
     if "LeafTemplate" in bpy.data.meshes:
         return bpy.data.objects.new("Leaf", bpy.data.meshes["LeafTemplate"])
 
@@ -29,21 +29,24 @@ def create_leaf_mesh(width=0.2, length=0.8):
 
     bm = bmesh.new()
 
-    SEGS_L = 12
-    SEGS_W = 4
+    # Increased resolution for showcase-level fidelity
+    SEGS_L = 20
+    SEGS_W = 8
     verts = []
 
     for li in range(SEGS_L + 1):
         t = li / SEGS_L
         y = length * t
-        droop = -0.15 * (t**2) * length
+        # Refined showcase droop math
+        droop = -0.18 * (t**2) * length
         taper = math.sin(math.pi * t)
         w = width * taper
 
         row = []
         for wi in range(SEGS_W + 1):
             s = wi / SEGS_W - 0.5
-            cup = -0.08 * (1 - (2*s)**2) * t * width
+            # Refined showcase cupping math
+            cup = -0.06 * (1 - (2*s)**2) * t * width
             v = bm.verts.new((s * w * 2,
                                y,
                                droop + cup))
@@ -239,7 +242,10 @@ def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
     links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
 
     node_bsdf.inputs['Roughness'].default_value = 0.18
-    style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.1)
+    # Showcase SSS settings for thin-leaf translucency
+    style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.08)
+    if node_bsdf.inputs.get("Subsurface Radius"):
+        node_bsdf.inputs["Subsurface Radius"].default_value = (0.4, 0.8, 0.3)
 
     return mat
 
