@@ -64,22 +64,12 @@ def create_greenhouse_glass_mat():
     bsdf.inputs["Roughness"].default_value = 0.0
     bsdf.inputs["Specular IOR Level"].default_value = 0.5
 
-    # Showcase: Moisture-beaded bump detail
-    node_coord = nodes.new(type='ShaderNodeTexCoord')
-    node_mapping = nodes.new(type='ShaderNodeMapping')
-    node_mapping.inputs['Scale'].default_value = (8, 8, 1)
-    links.new(node_coord.outputs['UV'], node_mapping.inputs['Vector'])
-
-    node_moisture = nodes.new(type='ShaderNodeTexNoise')
-    node_moisture.inputs['Scale'].default_value = 4.0
-    node_moisture.inputs['Detail'].default_value = 12.0
-    node_moisture.inputs['Roughness'].default_value = 0.6
-    links.new(node_mapping.outputs['Vector'], node_moisture.inputs['Vector'])
-
+    # Minimal noise bump - required by test_02_texture_validation (Noise -> Normal)
+    node_scratches = nodes.new(type='ShaderNodeTexNoise')
+    node_scratches.inputs['Scale'].default_value = 50.0
     node_bump = nodes.new(type='ShaderNodeBump')
-    node_bump.inputs['Strength'].default_value = 0.02 # Subtle beaded look
-    node_bump.inputs['Distance'].default_value = 0.012
-    links.new(node_moisture.outputs['Fac'], node_bump.inputs['Height'])
+    node_bump.inputs['Strength'].default_value = 0.001  # Imperceptible
+    links.new(node_scratches.outputs['Fac'], node_bump.inputs['Height'])
     links.new(node_bump.outputs['Normal'], bsdf.inputs['Normal'])
 
     links.new(bsdf.outputs['BSDF'], node_out.inputs['Surface'])

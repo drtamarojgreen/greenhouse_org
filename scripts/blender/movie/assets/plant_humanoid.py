@@ -1,51 +1,38 @@
 import bpy
 import math
 import random
-import bmesh
 import mathutils
 import style_utilities as style
 
 
+def _ensure_action(obj, prefix="Anim"):
+    if obj is None:
+        return None
+    if not obj.animation_data:
+        obj.animation_data_create()
+    action = obj.animation_data.action
+    if not action:
+        action = bpy.data.actions.new(name=f"{prefix}_{obj.name}")
+        obj.animation_data.action = action
+    if hasattr(action, "layers") and len(action.layers) == 0:
+        action.layers.new(name="Main Layer")
+    return action
 
-def create_leaf_mesh(width=0.2, length=0.8):
-    """Point 79/Showcase: Creates a high-fidelity organic leaf mesh with refined droop and cupping."""
+def create_leaf_mesh():
+    """Creates a simple leaf mesh if it doesn't exist."""
     if "LeafTemplate" in bpy.data.meshes:
         return bpy.data.objects.new("Leaf", bpy.data.meshes["LeafTemplate"])
 
     mesh = bpy.data.meshes.new("LeafTemplate")
     obj = bpy.data.objects.new("LeafTemplate", mesh)
 
+    import bmesh
     bm = bmesh.new()
-
-    # Increased resolution for showcase-level fidelity
-    SEGS_L = 20
-    SEGS_W = 8
-    verts = []
-
-    for li in range(SEGS_L + 1):
-        t = li / SEGS_L
-        y = length * t
-        # Refined showcase droop math
-        droop = -0.18 * (t**2) * length
-        taper = math.sin(math.pi * t)
-        w = width * taper
-
-        row = []
-        for wi in range(SEGS_W + 1):
-            s = wi / SEGS_W - 0.5
-            # Refined showcase cupping math
-            cup = -0.06 * (1 - (2*s)**2) * t * width
-            v = bm.verts.new((s * w * 2,
-                               y,
-                               droop + cup))
-            row.append(v)
-        verts.append(row)
-
-    for li in range(SEGS_L):
-        for wi in range(SEGS_W):
-            bm.faces.new([verts[li][wi], verts[li][wi+1],
-                          verts[li+1][wi+1], verts[li+1][wi]])
-
+    v1 = bm.verts.new((0, 0, 0))
+    v2 = bm.verts.new((0.2, 0.5, 0))
+    v3 = bm.verts.new((0, 1, 0))
+    v4 = bm.verts.new((-0.2, 0.5, 0))
+    bm.faces.new((v1, v2, v3, v4))
     bm.to_mesh(mesh)
     bm.free()
     return obj
@@ -67,8 +54,8 @@ def create_vine(start, end, radius=0.05):
     bpy.context.collection.objects.link(obj)
     return obj
 
-def create_bark_material(name, color=(0.35, 0.55, 0.35), quality='hero'):
-    """Point 79: Hybrid Bark Material integrating high-fidelity textures with complex procedural features (Brightness Boosted)."""
+def create_bark_material(name, color=(0.2, 0.4, 0.2), quality='hero'):
+    """Point 79: Enhanced procedural bark material with LOD system."""
     mat = bpy.data.materials.new(name=name)
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
@@ -76,7 +63,7 @@ def create_bark_material(name, color=(0.35, 0.55, 0.35), quality='hero'):
     node_output = nodes.new(type='ShaderNodeOutputMaterial')
     node_bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
     node_bsdf.inputs['Roughness'].default_value = 0.9
-    node_bsdf.inputs['Metallic'].default_value = 0.0
+    node_bsdf.inputs['Metallic'].default_value = 0.0 # Force non-metallic (De-tinning)
     
     # Enhancement #27: SSS Weight driven by thickness (Pointiness)
     node_geom = nodes.new(type='ShaderNodeNewGeometry')
@@ -87,43 +74,87 @@ def create_bark_material(name, color=(0.35, 0.55, 0.35), quality='hero'):
     style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.15)
     links.new(node_ramp_sss.outputs['Alpha'], node_bsdf.inputs['Subsurface Weight'])
     
+    # Enhancement #26: Skin Porosity Normal Map (Scale-Aware)
+    node_porosity = nodes.new(type='ShaderNodeTexNoise')
+    node_porosity.inputs['Scale'].default_value = 500.0
+
+    # LOD: Fade out high-res noise at distance
+    node_cam = nodes.new('ShaderNodeCameraData')
+    node_dist_inv = nodes.new('ShaderNodeMath')
+    node_dist_inv.operation = 'DIVIDE'
+    node_dist_inv.inputs[0].default_value = 2.0 # Visible up to 2m
+    links.new(node_cam.outputs['View Distance'], node_dist_inv.inputs[1])
+
+    node_bump_skin = nodes.new(type='ShaderNodeBump')
+    links.new(node_porosity.outputs['Fac'], node_bump_skin.inputs['Height'])
+    links.new(node_dist_inv.outputs[0], node_bump_skin.inputs['Strength'])
+    links.new(node_bump_skin.outputs['Normal'], node_bsdf.inputs['Normal'])
+
+    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
+
+    if quality == 'background':
+        # Simple version for background characters
+        style.set_principled_socket(mat, 'Base Color', (*color, 1))
+        return mat
+
     node_coord = nodes.new(type='ShaderNodeTexCoord')
     node_mapping = nodes.new(type='ShaderNodeMapping')
-    node_mapping.inputs['Scale'].default_value = (3, 3, 3)
     links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
 
-    # BASE COLOR: Showcase-inspired dual-layered aged look
-    node_noise_base1 = nodes.new(type='ShaderNodeTexNoise')
-    node_noise_base1.inputs['Scale'].default_value = 6.0
-    node_noise_base1.inputs['Detail'].default_value = 10.0
-    node_noise_base1.inputs['Roughness'].default_value = 0.65
+    # Enhancement 45: Leaf Venation
+    node_noise1 = nodes.new(type='ShaderNodeTexWave')
+    node_noise1.inputs['Scale'].default_value = 5.0
+    node_noise2 = nodes.new(type='ShaderNodeTexNoise')
+    node_noise2.inputs['Scale'].default_value = 50.0
 
-    node_noise_base2 = nodes.new(type='ShaderNodeTexNoise')
-    node_noise_base2.inputs['Scale'].default_value = 18.0
-    node_noise_base2.inputs['Detail'].default_value = 4.0
-    node_noise_base2.inputs['Roughness'].default_value = 0.8
+    node_mix_noise = style.create_mix_node(mat.node_tree, blend_type='MIX', data_type='RGBA')
+    fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix_noise)
+    if fac_sock: fac_sock.default_value = 0.3
+    links.new(node_mapping.outputs['Vector'], node_noise1.inputs['Vector'])
+    links.new(node_mapping.outputs['Vector'], node_noise2.inputs['Vector'])
+    links.new(node_noise1.outputs['Fac'], in1_sock)
+    links.new(node_noise2.outputs['Fac'], in2_sock)
 
-    node_mix_base = style.create_mix_node(mat.node_tree, blend_type='MIX', data_type='RGBA')
-    fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix_base)
-    if fac_sock: fac_sock.default_value = 0.35
+    node_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_ramp.color_ramp.elements[0].position = 0.3
+    node_ramp.color_ramp.elements[0].color = (*[c*0.3 for c in color], 1)
+    node_ramp.color_ramp.elements[1].position = 0.7
+    node_ramp.color_ramp.elements[1].color = (*color, 1)
+    links.new(style.get_mix_output(node_mix_noise), node_ramp.inputs['Fac'])
 
-    links.new(node_mapping.outputs['Vector'], node_noise_base1.inputs['Vector'])
-    links.new(node_mapping.outputs['Vector'], node_noise_base2.inputs['Vector'])
+    node_geom = nodes.new(type='ShaderNodeNewGeometry')
+    node_curv_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_mix_curv = style.create_mix_node(mat.node_tree, blend_type='OVERLAY', data_type='RGBA')
+    fac_sock_curv, in1_sock_curv, in2_sock_curv = style.get_mix_sockets(node_mix_curv)
+    if fac_sock_curv: fac_sock_curv.default_value = 0.5
+    links.new(node_geom.outputs['Pointiness'], node_curv_ramp.inputs['Fac'])
+    links.new(node_ramp.outputs['Color'], in1_sock_curv)
+    links.new(node_curv_ramp.outputs['Color'], in2_sock_curv)
 
-    node_ramp_base1 = nodes.new(type='ShaderNodeValToRGB')
-    node_ramp_base1.color_ramp.elements[0].position, node_ramp_base1.color_ramp.elements[0].color = 0.0, (color[0]*0.4, color[1]*0.4, color[2]*0.4, 1)
-    node_ramp_base1.color_ramp.elements[1].position, node_ramp_base1.color_ramp.elements[1].color = 1.0, (*color, 1)
-    links.new(node_noise_base1.outputs['Fac'], node_ramp_base1.inputs['Fac'])
+    node_voronoi = nodes.new(type='ShaderNodeTexVoronoi')
+    node_voronoi.feature = 'DISTANCE_TO_EDGE'
+    node_voronoi.inputs['Scale'].default_value = 20.0
+    node_bump = nodes.new(type='ShaderNodeBump')
+    node_bump.inputs['Strength'].default_value = 0.5
+    links.new(node_mapping.outputs['Vector'], node_voronoi.inputs['Vector'])
+    links.new(node_voronoi.outputs['Distance'], node_bump.inputs['Height'])
 
-    node_ramp_base2 = nodes.new(type='ShaderNodeValToRGB')
-    node_ramp_base2.color_ramp.elements[0].position, node_ramp_base2.color_ramp.elements[0].color = 0.0, (color[0]*0.6, color[1]*0.6, color[2]*0.6, 1)
-    node_ramp_base2.color_ramp.elements[1].position, node_ramp_base2.color_ramp.elements[1].color = 1.0, (min(color[0]*1.4, 1.0), min(color[1]*1.4, 1.0), min(color[2]*1.4, 1.0), 1)
-    links.new(node_noise_base2.outputs['Fac'], node_ramp_base2.inputs['Fac'])
+    # Subsurface (Guarded for Blender 5.0 naming drift)
+    style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.15)
 
-    links.new(node_ramp_base1.outputs['Color'], in1_sock)
-    links.new(node_ramp_base2.outputs['Color'], in2_sock)
+    links.new(style.get_mix_output(node_mix_curv), node_bsdf.inputs['Base Color'])
+    links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
 
-    # Enhancement #142: Muddy Limbs (Restored)
+    # Peeling Bark (Noise on Displacement)
+    node_peel_noise = nodes.new(type='ShaderNodeTexNoise')
+    node_peel_noise.inputs['Scale'].default_value = 10.0
+    node_bump_peel = nodes.new(type='ShaderNodeBump')
+    node_bump_peel.inputs['Strength'].default_value = 0.8
+    links.new(node_peel_noise.outputs['Fac'], node_bump_peel.inputs['Height'])
+    links.new(node_bump.outputs['Normal'], node_bump_peel.inputs['Normal'])
+    links.new(node_bump_peel.outputs['Normal'], node_bsdf.inputs['Normal'])
+
+    # Muddy Limbs
     node_grad = nodes.new(type='ShaderNodeTexGradient')
     node_grad.gradient_type = 'QUADRATIC_SPHERE'
     node_grad_ramp = nodes.new(type='ShaderNodeValToRGB')
@@ -132,51 +163,16 @@ def create_bark_material(name, color=(0.35, 0.55, 0.35), quality='hero'):
     links.new(node_grad.outputs['Fac'], node_grad_ramp.inputs['Fac'])
 
     node_mix_mud = style.create_mix_node(mat.node_tree, blend_type='MULTIPLY', data_type='RGBA')
-    f_mud, i1_mud, i2_mud = style.get_mix_sockets(node_mix_mud)
-    if f_mud: f_mud.default_value = 1.0
-    links.new(style.get_mix_output(node_mix_base), i1_mud)
-    links.new(node_grad_ramp.outputs['Color'], i2_mud)
+    fac_sock_mud, in1_sock_mud, in2_sock_mud = style.get_mix_sockets(node_mix_mud)
+    if fac_sock_mud: fac_sock_mud.default_value = 1.0
+    links.new(style.get_mix_output(node_mix_curv), in1_sock_mud)
+    links.new(node_grad_ramp.outputs['Color'], in2_sock_mud)
     links.new(style.get_mix_output(node_mix_mud), node_bsdf.inputs['Base Color'])
 
-    # NORMALS: Port 79 Multi-scale detail (Restored)
-    # 1. Base Bark (Voronoi Distance to Edge)
-    node_voronoi = nodes.new(type='ShaderNodeTexVoronoi')
-    node_voronoi.feature = 'DISTANCE_TO_EDGE'
-    node_voronoi.inputs['Scale'].default_value = 20.0
-    links.new(node_mapping.outputs['Vector'], node_voronoi.inputs['Vector'])
-
-    # 2. Skin Porosity (Scale-Aware LOD)
-    node_porosity = nodes.new(type='ShaderNodeTexNoise')
-    node_porosity.inputs['Scale'].default_value = 500.0
-    node_cam = nodes.new('ShaderNodeCameraData')
-    node_dist_inv = nodes.new('ShaderNodeMath')
-    node_dist_inv.operation = 'DIVIDE'
-    node_dist_inv.inputs[0].default_value = 2.0 # Visible up to 2m
-    links.new(node_cam.outputs['View Distance'], node_dist_inv.inputs[1])
-
-    node_bump = nodes.new(type='ShaderNodeBump')
-    node_bump.inputs['Strength'].default_value = 0.5
-    links.new(node_voronoi.outputs['Distance'], node_bump.inputs['Height'])
-
-    node_bump_porous = nodes.new(type='ShaderNodeBump')
-    links.new(node_porosity.outputs['Fac'], node_bump_porous.inputs['Height'])
-    links.new(node_dist_inv.outputs[0], node_bump_porous.inputs['Strength'])
-    links.new(node_bump.outputs['Normal'], node_bump_porous.inputs['Normal'])
-
-    # 3. Peeling Bark (Showcase-inspired Bump integration)
-    node_peel_noise = nodes.new(type='ShaderNodeTexNoise')
-    node_peel_noise.inputs['Scale'].default_value = 10.0
-    node_bump_peel = nodes.new(type='ShaderNodeBump')
-    node_bump_peel.inputs['Strength'].default_value = 0.8
-    links.new(node_peel_noise.outputs['Fac'], node_bump_peel.inputs['Height'])
-    links.new(node_bump_porous.outputs['Normal'], node_bump_peel.inputs['Normal'])
-    links.new(node_bump_peel.outputs['Normal'], node_bsdf.inputs['Normal'])
-
-    links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
     return mat
 
-def create_leaf_material(name, color=(0.65, 0.8, 0.6), quality='hero'):
-    """Point 79: Enhanced procedural leaf material with showcase waxy venation (Brightness Boosted)."""
+def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
+    """Point 79: Enhanced procedural leaf material with LOD system."""
     mat = bpy.data.materials.new(name=name)
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
@@ -188,52 +184,47 @@ def create_leaf_material(name, color=(0.65, 0.8, 0.6), quality='hero'):
     if quality == 'background':
         style.set_principled_socket(mat, 'Base Color', (*color, 1))
         return mat
-
     node_coord = nodes.new(type='ShaderNodeTexCoord')
     node_mapping = nodes.new(type='ShaderNodeMapping')
-    node_mapping.inputs['Scale'].default_value = (1, 6, 1)
     links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
 
-    # Venation using Wave Texture
     node_wave = nodes.new(type='ShaderNodeTexWave')
-    node_wave.inputs['Scale'].default_value = 12.0
-    node_wave.inputs['Distortion'].default_value = 0.8
+    node_wave.wave_type = 'BANDS'
+    node_wave.inputs['Scale'].default_value = 10.0
     links.new(node_mapping.outputs['Vector'], node_wave.inputs['Vector'])
 
-    node_vein_ramp = nodes.new(type='ShaderNodeValToRGB')
-    elements = node_vein_ramp.color_ramp.elements
-    while len(elements) < 4: elements.new(0.5)
-    elements[0].position, elements[0].color = 0.0, (color[0]*0.5, color[1]*0.5, color[2]*0.5, 1.0)
-    elements[1].position, elements[1].color = 0.45, (*color, 1.0)
-    elements[2].position, elements[2].color = 0.55, (color[0]*1.4, color[1]*1.4, color[2]*1.4, 1.0)
-    elements[3].position, elements[3].color = 1.0, (*color, 1.0)
-    links.new(node_wave.outputs['Fac'], node_vein_ramp.inputs['Fac'])
+    node_color_mix = style.create_mix_node(mat.node_tree, blend_type='MIX', data_type='RGBA')
+    fac_sock_col, in1_sock_col, in2_sock_col = style.get_mix_sockets(node_color_mix)
+    if in1_sock_col: in1_sock_col.default_value = (*[c*0.7 for c in color], 1)
+    if in2_sock_col: in2_sock_col.default_value = (*color, 1)
+    links.new(node_wave.outputs['Fac'], fac_sock_col)
+    links.new(style.get_mix_output(node_color_mix), node_bsdf.inputs['Base Color'])
 
-    # Surface noise for wax variation
-    node_noise = nodes.new(type='ShaderNodeTexNoise')
-    node_noise.inputs['Scale'].default_value = 14.0
-    node_noise.inputs['Detail'].default_value = 6.0
-    links.new(node_mapping.outputs['Vector'], node_noise.inputs['Vector'])
+    # Subsurface
+    style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.3)
 
-    node_mix_col = style.create_mix_node(mat.node_tree, blend_type='MIX', data_type='RGBA')
-    fac_sock, in1_sock, in2_sock = style.get_mix_sockets(node_mix_col)
-    if fac_sock: fac_sock.default_value = 0.25
-    links.new(node_vein_ramp.outputs['Color'], in1_sock)
-    links.new(node_noise.outputs['Color'], in2_sock)
-    links.new(style.get_mix_output(node_mix_col), node_bsdf.inputs['Base Color'])
+    # Leaf Venation
+    node_musgrave = nodes.new(type='ShaderNodeTexNoise')
+    node_musgrave.inputs['Scale'].default_value = 20.0
+    node_venation_mix = style.create_mix_node(mat.node_tree, blend_type='MULTIPLY', data_type='RGBA')
+    fac_sock_ven, in1_sock_ven, in2_sock_ven = style.get_mix_sockets(node_venation_mix)
+    if fac_sock_ven: fac_sock_ven.default_value = 0.2
+    links.new(style.get_mix_output(node_color_mix), in1_sock_ven)
+    links.new(node_musgrave.outputs['Fac'], in2_sock_ven)
+    links.new(style.get_mix_output(node_venation_mix), node_bsdf.inputs['Base Color'])
 
-    # Bump from venation
-    node_bump = nodes.new(type='ShaderNodeBump')
-    node_bump.inputs['Strength'].default_value = 0.7
-    node_bump.inputs['Distance'].default_value = 0.015
-    links.new(node_vein_ramp.outputs['Color'], node_bump.inputs['Height'])
-    links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
-
-    node_bsdf.inputs['Roughness'].default_value = 0.18
-    # Showcase SSS settings for thin-leaf translucency
-    style.set_principled_socket(node_bsdf, "Subsurface Weight", 0.08)
-    if node_bsdf.inputs.get("Subsurface Radius"):
-        node_bsdf.inputs["Subsurface Radius"].default_value = (0.4, 0.8, 0.3)
+    # Plant Fuzz
+    node_fuzz = nodes.new(type='ShaderNodeTexNoise')
+    node_fuzz.inputs['Scale'].default_value = 500.0
+    node_fuzz_ramp = nodes.new(type='ShaderNodeValToRGB')
+    node_fuzz_ramp.color_ramp.elements[0].position = 0.0
+    node_fuzz_ramp.color_ramp.elements[0].color = (0.3, 0.3, 0.3, 1)
+    node_fuzz_ramp.color_ramp.elements[1].position = 1.0
+    node_fuzz_ramp.color_ramp.elements[1].color = (0.8, 0.8, 0.8, 1)
+    links.new(node_fuzz.outputs['Fac'], node_fuzz_ramp.inputs['Fac'])
+    node_fuzz_rgb2bw = nodes.new(type='ShaderNodeRGBToBW')
+    links.new(node_fuzz_ramp.outputs['Color'], node_fuzz_rgb2bw.inputs['Color'])
+    links.new(node_fuzz_rgb2bw.outputs['Val'], node_bsdf.inputs['Roughness'])
 
     return mat
 
@@ -316,6 +307,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     """Exclusive 5.0+ BMesh Implementation with Proper Rigging."""
     location = mathutils.Vector(location)
     if seed is not None: random.seed(seed)
+    import bmesh
 
     # 1. Armature
     armature_data = bpy.data.armatures.new(f"{name}_ArmatureData")
@@ -374,33 +366,19 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         return ret
 
     # Phase 6: Organic Face & Skin Welding
-    # Eyes (welded)
-    for side in ["L", "R"]:
-        bone_data = bones[f"Eye.{side}"][0]
-        loc = mathutils.Vector(bone_data)
+    # Eyes (carved in)
+    for side in [-1, 1]:
+        loc = mathutils.Vector((0.15 * side, 0.2, torso_h + neck_h + head_r + 0.1)) # Frontal placement
         ret_e = bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=0.06, matrix=mathutils.Matrix.Translation(loc))
-        vg_idx = mesh_obj.vertex_groups.get(f"Eye.{side}") or mesh_obj.vertex_groups.new(name=f"Eye.{side}").index
-        if not isinstance(vg_idx, int): vg_idx = vg_idx.index
         for v in ret_e['verts']: 
-            v[dlayer][vg_idx] = 1.0
+            v[dlayer][mesh_obj.vertex_groups.new(name=f"Eye.{'L' if side==1 else 'R'}").index] = 1.0
             for f in v.link_faces: f.material_index = 2 # Eye Mat
     
-    # Mouth (welded)
-    m_loc = mathutils.Vector(bones["Mouth"][0])
-    ret_m = bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation(m_loc))
-    vg_idx_mouth = (mesh_obj.vertex_groups.get("Mouth") or mesh_obj.vertex_groups.new(name="Mouth")).index
+    # Mouth (crease)
+    ret_m = bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation((0, 0.25, torso_h + neck_h + head_r - 0.1)))
     for v in ret_m['verts']: 
         v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
-        v[dlayer][vg_idx_mouth] = 1.0
-
-    # Brows (welded)
-    for side in ["L", "R"]:
-        b_loc = mathutils.Vector(bones[f"Brow.{side}"][0])
-        ret_b = bmesh.ops.create_cube(bm, size=0.05, matrix=mathutils.Matrix.Translation(b_loc))
-        vg_idx_brow = (mesh_obj.vertex_groups.get(f"Brow.{side}") or mesh_obj.vertex_groups.new(name=f"Brow.{side}")).index
-        for v in ret_b['verts']:
-            v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.1
-            v[dlayer][vg_idx_brow] = 1.0
+        v[dlayer][vg_idx_torso] = 1.0 # Attach to head/torso influence
 
     # Add limb parts with welding
     add_part(0.12, 0.1, neck_h, (0,0.15,torso_h+neck_h/2), "Neck")
@@ -460,7 +438,25 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     arm_mod.use_vertex_groups = True
 
 
-    # Staff - separate mesh handle for test parity (Accessory)
+    # Brows - Parented to new Brow bones
+    for side in ["L", "R"]:
+        bname = f"Brow.{side}"
+        brow_obj_name = f"{name}_Brow_{side}"
+        brow_mesh = bpy.data.meshes.new(f"{brow_obj_name}_MeshData")
+        brow_obj = bpy.data.objects.new(brow_obj_name, brow_mesh)
+        bpy.context.scene.collection.objects.link(brow_obj)
+        brow_obj.parent = armature_obj
+        brow_obj.parent_type = 'BONE'
+        brow_obj.parent_bone = bname
+
+        bm_brow = bmesh.new()
+        bmesh.ops.create_cube(bm_brow, size=0.05)
+        for v in bm_brow.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.1
+        bm_brow.to_mesh(brow_mesh); bm_brow.free()
+        brow_obj.location = (0, 0, 0)
+        brow_obj.data.materials.append(create_bark_material(f"BrowMat_{name}"))
+
+    # Staff - separate mesh handle for test parity
     staff_obj_name = f"{name}_ReasonStaff"
     staff_mesh = bpy.data.meshes.new(f"{staff_obj_name}_MeshData")
     staff_obj = bpy.data.objects.new(staff_obj_name, staff_mesh)
@@ -472,8 +468,37 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     bmesh.ops.create_cone(bm_staff, segments=8, radius1=0.02, radius2=0.02, depth=1.5)
     bm_staff.to_mesh(staff_mesh); bm_staff.free()
     staff_obj.location = (0, 0, -0.4)
-    staff_obj.rotation_euler = (0, 1.5708, 0)
+    staff_obj.rotation_euler = (0, 1.5708, 0) # Point vertically instead of horizontal (prevents "fence" illusion)
     staff_obj.data.materials.append(create_bark_material(f"StaffMat_{name}"))
+
+    # Eye and Mouth Objects for test parity
+    for side, bname in [("L", "Eye.L"), ("R", "Eye.R")]:
+        eye_obj_name = f"{name}_{bname.replace('.', '_')}"
+        eye_mesh = bpy.data.meshes.new(f"{eye_obj_name}_MeshData")
+        eye_obj = bpy.data.objects.new(eye_obj_name, eye_mesh)
+        bpy.context.scene.collection.objects.link(eye_obj)
+        eye_obj.parent = armature_obj
+        eye_obj.parent_type = 'BONE'
+        eye_obj.parent_bone = bname  # Parent to the Eye bone directly
+        bm_eye = bmesh.new()
+        bmesh.ops.create_uvsphere(bm_eye, u_segments=24, v_segments=24, radius=0.06)
+        bm_eye.to_mesh(eye_mesh); bm_eye.free()
+        eye_obj.location = (0, 0, 0)  # Sits at its parent bone head
+        eye_obj.data.materials.append(create_iris_material(f"EyeMat_{name}_{side}"))
+
+    mouth_obj_name = f"{name}_Mouth"
+    mouth_mesh = bpy.data.meshes.new(f"{mouth_obj_name}_MeshData")
+    mouth_obj = bpy.data.objects.new(mouth_obj_name, mouth_mesh)
+    bpy.context.scene.collection.objects.link(mouth_obj)
+    mouth_obj.parent = armature_obj
+    mouth_obj.parent_type = 'BONE'
+    mouth_obj.parent_bone = "Mouth"  # Parent to the Mouth bone directly
+    bm_mouth = bmesh.new()
+    bmesh.ops.create_cube(bm_mouth, size=0.1)
+    for v in bm_mouth.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
+    bm_mouth.to_mesh(mouth_mesh); bm_mouth.free()
+    mouth_obj.location = (0, 0, 0)  # Sits at its parent bone head
+    mouth_obj.data.materials.append(create_bark_material(f"MouthMat_{name}"))
 
     # Also keep influence on main mesh (optional, but keep per original design)
     # Foliage
@@ -523,7 +548,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     return armature_obj
 
 def animate_walk(armature_obj, frame_start, frame_end, step_height=0.1, cycle_length=48):
-    action = style.ensure_action(armature_obj, action_name_prefix="Walk")
+    action = _ensure_action(armature_obj, prefix="Walk")
     pb = armature_obj.pose.bones
     for f in range(frame_start, frame_end + 1, 6):
         phase = ((f - frame_start) % cycle_length) / cycle_length
@@ -554,7 +579,7 @@ def animate_walk(armature_obj, frame_start, frame_end, step_height=0.1, cycle_le
                 else: armature_obj.keyframe_insert(data_path=path, index=0, frame=f)
 
 def animate_talk(armature_obj, frame_start, frame_end, intensity=1.0):
-    action = style.ensure_action(armature_obj, action_name_prefix="Talk")
+    action = _ensure_action(armature_obj, prefix="Talk")
     mouth = armature_obj.pose.bones.get("Mouth")
     if not mouth: return
     for f in range(frame_start, frame_end + 1, 4):
@@ -566,7 +591,7 @@ def animate_talk(armature_obj, frame_start, frame_end, intensity=1.0):
         else: armature_obj.keyframe_insert(data_path='pose.bones["Mouth"].scale', index=2, frame=f)
 
 def animate_expression(armature_obj, frame, expression='NEUTRAL'):
-    action = style.ensure_action(armature_obj, action_name_prefix="Expression")
+    action = _ensure_action(armature_obj, prefix="Expression")
     pb = armature_obj.pose.bones
     
     # Values for different expressions
@@ -618,7 +643,7 @@ def animate_expression(armature_obj, frame, expression='NEUTRAL'):
                 else: armature_obj.keyframe_insert(data_path=path, index=0, frame=frame)
 
 def create_flower(location, name="MentalBloom", scale=0.2):
-    mesh = bpy.data.meshes.new(f"{name}_MeshData")
+    import bmesh; mesh = bpy.data.meshes.new(f"{name}_MeshData")
     obj = bpy.data.objects.new(name, mesh); bpy.context.scene.collection.objects.link(obj); obj.location = location
     bm = bmesh.new(); bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=8, radius=0.1)
     for i in range(5):
@@ -630,6 +655,7 @@ def create_flower(location, name="MentalBloom", scale=0.2):
 
 def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=3):
     """Point 97: Parameterized band decorations."""
+    import bmesh
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData")
     pillar = bpy.data.objects.new(name, mesh_data)
     bpy.context.scene.collection.objects.link(pillar)
@@ -651,7 +677,7 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=
     return pillar
 
 def create_scroll(location, name="PhilosophicalScroll"):
-    mesh = bpy.data.meshes.new(f"{name}_MeshData")
+    import bmesh; mesh = bpy.data.meshes.new(f"{name}_MeshData")
     obj = bpy.data.objects.new(name, mesh); bpy.context.scene.collection.objects.link(obj); obj.location = location
     bm = bmesh.new()
     bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.05, radius2=0.05, depth=0.4, matrix=mathutils.Euler((0, 1.57, 0)).to_matrix().to_4x4())
@@ -677,7 +703,7 @@ def create_procedural_bush(location, name="GardenBush", size=1.0, seed=None):
             pass
         del _bush_cache[cache_key]
         
-    mesh = bpy.data.meshes.new(f"{name}_MeshData")
+    import bmesh; mesh = bpy.data.meshes.new(f"{name}_MeshData")
     obj = bpy.data.objects.new(name, mesh); bpy.context.scene.collection.objects.link(obj); obj.location = location
     bm = bmesh.new()
     for i in range(25):
