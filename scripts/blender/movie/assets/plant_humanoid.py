@@ -5,6 +5,16 @@ import mathutils
 import style_utilities as style
 
 
+def _create_capped_cone(bm, **kwargs):
+    """Create a capped cone across Blender versions (cap_ends vs cap_tris)."""
+    import bmesh
+    try:
+        return bmesh.ops.create_cone(bm, cap_ends=True, **kwargs)
+    except TypeError:
+        # Blender 5+ API uses cap_tris instead of cap_ends.
+        return bmesh.ops.create_cone(bm, cap_tris=False, **kwargs)
+
+
 def _ensure_action(obj, prefix="Anim"):
     if obj is None:
         return None
@@ -16,6 +26,14 @@ def _ensure_action(obj, prefix="Anim"):
         obj.animation_data.action = action
     if hasattr(action, "layers") and len(action.layers) == 0:
         action.layers.new(name="Main Layer")
+    # Blender 5+ slotted actions: ensure we keep the object bound to an available slot.
+    if hasattr(obj.animation_data, "action_slot") and getattr(obj.animation_data, "action_slot", None) is None:
+        slots = getattr(action, "slots", None)
+        if slots and len(slots) > 0:
+            try:
+                obj.animation_data.action_slot = slots[0]
+            except Exception:
+                pass
     return action
 
 def create_leaf_mesh():
@@ -353,7 +371,14 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         if is_sphere: 
             ret = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=radius1, matrix=mathutils.Matrix.Translation(loc))
         else: 
-            ret = bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=radius1, radius2=radius2, depth=height, matrix=mathutils.Matrix.Translation(loc))
+            ret = _create_capped_cone(
+                bm,
+                segments=16,
+                radius1=radius1,
+                radius2=radius2,
+                depth=height,
+                matrix=mathutils.Matrix.Translation(loc),
+            )
             # Enhancement #1: Muscle Volume (Point 142)
             if mid_scale != 1.0:
                 center = mathutils.Vector(loc)
@@ -389,7 +414,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     add_part(vine_thickness*1.2, vine_thickness*0.6, 0.7, (0.5, 0.1, arm_h-0.2), "Arm.L", mid_scale=1.3)
     add_part(vine_thickness*1.2, vine_thickness*0.6, 0.7, (-0.5, 0.1, arm_h-0.2), "Arm.R", mid_scale=1.3)
     add_part(vine_thickness*2.0, vine_thickness*1.2, 0.8, (0.2, 0.05, -0.4), "Leg.L", mid_scale=1.25)
-    add_part(vine_thickness*2.0, vine_thickness*1.2, -0.4, (-0.2, 0.05, -0.4), "Leg.R", mid_scale=1.25)
+    add_part(vine_thickness*2.0, vine_thickness*1.2, 0.8, (-0.2, 0.05, -0.4), "Leg.R", mid_scale=1.25)
 
     # Phase 6: Foliage Overhaul (Leaf-Hair on Top)
     def add_organic_leaf(loc, rot):
@@ -437,23 +462,41 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     arm_mod.object = armature_obj
     arm_mod.use_vertex_groups = True
 
+    def _pin_feature_to_bone(obj, bone_name, offset=(0.0, 0.0, 0.0)):
+        """Rigidly bind a feature mesh to a pose bone via armature deformation."""
+        # Place feature in armature space at the target bone head with a local offset.
+        bone = armature_obj.data.bones.get(bone_name)
+        pose_bone = armature_obj.pose.bones.get(bone_name)
+        if bone and pose_bone:
+            obj.parent = armature_obj
+            obj.parent_type = 'OBJECT'
+            obj.parent_bone = ""
+            bone_head_world = armature_obj.matrix_world @ bone.head_local
+            offset_world = (armature_obj.matrix_world.to_3x3() @ pose_bone.matrix.to_3x3()) @ mathutils.Vector(offset)
+            obj.location = bone_head_world + offset_world
 
-    # Brows - Parented to new Brow bones
+        # Ensure object follows the same bone through an armature modifier + full bone weight.
+        armature_mod = obj.modifiers.new(name="Armature", type='ARMATURE')
+        armature_mod.object = armature_obj
+        armature_mod.use_vertex_groups = True
+
+        vg = obj.vertex_groups.get(bone_name) or obj.vertex_groups.new(name=bone_name)
+        if obj.type == 'MESH' and obj.data and obj.data.vertices:
+            vg.add([v.index for v in obj.data.vertices], 1.0, 'REPLACE')
+
+
+    # Brows - Bound to Brow bones
     for side in ["L", "R"]:
         bname = f"Brow.{side}"
         brow_obj_name = f"{name}_Brow_{side}"
         brow_mesh = bpy.data.meshes.new(f"{brow_obj_name}_MeshData")
         brow_obj = bpy.data.objects.new(brow_obj_name, brow_mesh)
         bpy.context.scene.collection.objects.link(brow_obj)
-        brow_obj.parent = armature_obj
-        brow_obj.parent_type = 'BONE'
-        brow_obj.parent_bone = bname
-
         bm_brow = bmesh.new()
         bmesh.ops.create_cube(bm_brow, size=0.05)
         for v in bm_brow.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.1
         bm_brow.to_mesh(brow_mesh); bm_brow.free()
-        brow_obj.location = (0, 0, 0)
+        _pin_feature_to_bone(brow_obj, bname, offset=(0.0, -0.04, 0.01))
         brow_obj.data.materials.append(create_bark_material(f"BrowMat_{name}"))
 
     # Staff - separate mesh handle for test parity
@@ -465,7 +508,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     staff_obj.parent_type = 'BONE'
     staff_obj.parent_bone = "Arm.R"
     bm_staff = bmesh.new()
-    bmesh.ops.create_cone(bm_staff, segments=8, radius1=0.02, radius2=0.02, depth=1.5)
+    _create_capped_cone(bm_staff, segments=8, radius1=0.02, radius2=0.02, depth=1.5)
     bm_staff.to_mesh(staff_mesh); bm_staff.free()
     staff_obj.location = (0, 0, -0.4)
     staff_obj.rotation_euler = (0, 1.5708, 0) # Point vertically instead of horizontal (prevents "fence" illusion)
@@ -477,27 +520,21 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         eye_mesh = bpy.data.meshes.new(f"{eye_obj_name}_MeshData")
         eye_obj = bpy.data.objects.new(eye_obj_name, eye_mesh)
         bpy.context.scene.collection.objects.link(eye_obj)
-        eye_obj.parent = armature_obj
-        eye_obj.parent_type = 'BONE'
-        eye_obj.parent_bone = bname  # Parent to the Eye bone directly
         bm_eye = bmesh.new()
         bmesh.ops.create_uvsphere(bm_eye, u_segments=24, v_segments=24, radius=0.06)
         bm_eye.to_mesh(eye_mesh); bm_eye.free()
-        eye_obj.location = (0, 0, 0)  # Sits at its parent bone head
+        _pin_feature_to_bone(eye_obj, bname, offset=(0.0, -0.06, 0.0))
         eye_obj.data.materials.append(create_iris_material(f"EyeMat_{name}_{side}"))
 
     mouth_obj_name = f"{name}_Mouth"
     mouth_mesh = bpy.data.meshes.new(f"{mouth_obj_name}_MeshData")
     mouth_obj = bpy.data.objects.new(mouth_obj_name, mouth_mesh)
     bpy.context.scene.collection.objects.link(mouth_obj)
-    mouth_obj.parent = armature_obj
-    mouth_obj.parent_type = 'BONE'
-    mouth_obj.parent_bone = "Mouth"  # Parent to the Mouth bone directly
     bm_mouth = bmesh.new()
     bmesh.ops.create_cube(bm_mouth, size=0.1)
     for v in bm_mouth.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
     bm_mouth.to_mesh(mouth_mesh); bm_mouth.free()
-    mouth_obj.location = (0, 0, 0)  # Sits at its parent bone head
+    _pin_feature_to_bone(mouth_obj, "Mouth", offset=(0.0, -0.03, 0.0))
     mouth_obj.data.materials.append(create_bark_material(f"MouthMat_{name}"))
 
     # Also keep influence on main mesh (optional, but keep per original design)
@@ -533,8 +570,6 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     
     # Enhancement #13: Weighted Normals
     mesh_obj.modifiers.new(name="WeightedNormal", type='WEIGHTED_NORMAL')
-    
-    mesh_obj.modifiers.new(name="Armature", type='ARMATURE').object = armature_obj
     
     # Phase 4: Grounding Physics (Point 142)
     root_bone = armature_obj.pose.bones.get("Root")
@@ -662,7 +697,7 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=
     pillar.location = location
     
     bm = bmesh.new()
-    bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=0.4, radius2=0.4, depth=height, matrix=mathutils.Matrix.Translation((0,0,height/2)))
+    _create_capped_cone(bm, segments=16, radius1=0.4, radius2=0.4, depth=height, matrix=mathutils.Matrix.Translation((0,0,height/2)))
     
     for i in range(num_bands):
         z_offset = height * (0.1 + (i+1) * (0.8 / (num_bands + 1)))
@@ -670,7 +705,7 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=
         # Actually we can just join regular objects if needed, but for OOM we prefer BMesh.
         # Let's use a simple ring of icospheres or just skip bands for now if complex.
         # For compatibility, I'll use a cylinder as a band.
-        bmesh.ops.create_cone(bm, segments=12, cap_ends=True, radius1=0.42, radius2=0.42, depth=0.05, matrix=mathutils.Matrix.Translation((0,0,z_offset)))
+        _create_capped_cone(bm, segments=12, radius1=0.42, radius2=0.42, depth=0.05, matrix=mathutils.Matrix.Translation((0,0,z_offset)))
 
     bm.to_mesh(mesh_data); bm.free()
     pillar.data.materials.append(create_bark_material(f"PillarMat_{name}"))
@@ -680,7 +715,7 @@ def create_scroll(location, name="PhilosophicalScroll"):
     import bmesh; mesh = bpy.data.meshes.new(f"{name}_MeshData")
     obj = bpy.data.objects.new(name, mesh); bpy.context.scene.collection.objects.link(obj); obj.location = location
     bm = bmesh.new()
-    bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.05, radius2=0.05, depth=0.4, matrix=mathutils.Euler((0, 1.57, 0)).to_matrix().to_4x4())
+    _create_capped_cone(bm, segments=8, radius1=0.05, radius2=0.05, depth=0.4, matrix=mathutils.Euler((0, 1.57, 0)).to_matrix().to_4x4())
     bm.to_mesh(mesh); bm.free()
     return obj
 
