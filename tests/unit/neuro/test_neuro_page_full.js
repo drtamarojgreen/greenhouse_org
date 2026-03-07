@@ -2,13 +2,16 @@
  * Unit Tests for Neuro Page Models
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Mock Browser Environment ---
+if (!isBrowser) {
 global.window = global;
 global.document = {
     getElementById: () => ({
@@ -46,12 +49,20 @@ global.document = {
 global.addEventListener = () => { };
 global.console = console;
 global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+}
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code, { filename });
+    if (isBrowser) {
+        if (filename.includes('neuro_config.js') && window.GreenhouseNeuroConfig) return;
+        if (filename.includes('neuro_camera_controls.js') && window.GreenhouseNeuroCameraControls) return;
+        if (filename.includes('neuro_ga.js') && window.NeuroGA) return;
+    }
+    if (!isBrowser) {
+        const filePath = path.join(__dirname, '../../../docs/js', filename);
+        const code = fs.readFileSync(filePath, 'utf8');
+        vm.runInThisContext(code, { filename });
+    }
 }
 
 // --- Load Dependencies ---
@@ -136,99 +147,106 @@ TestFramework.describe('Neuro Page Models', () => {
     });
 
     // 4. GreenhouseNeuroApp Tests
-    TestFramework.describe('GreenhouseNeuroApp', () => {
-        let app;
-        let mockGA;
-        let mockUI;
-        let mockSelector;
+    if (!isBrowser) {
+        // Skip Sinon-heavy tests in browser for now unless Sinon is integrated into harness
+        TestFramework.describe('GreenhouseNeuroApp', () => {
+            let app;
+            let mockGA;
+            let mockUI;
+            let mockSelector;
 
-        TestFramework.beforeEach(() => {
-            app = window.GreenhouseNeuroApp;
-            mockSelector = '#neuro-app-container';
+            TestFramework.beforeEach(() => {
+                app = window.GreenhouseNeuroApp;
+                mockSelector = '#neuro-app-container';
 
-            // Mock dependencies
-            mockGA = {
-                init: TestFramework.sinon.spy(),
-                step: TestFramework.sinon.spy(),
-                bestGenome: { fitness: 0 },
-                generation: 0,
-            };
-            mockUI = {
-                init: TestFramework.sinon.spy(),
-                updateData: TestFramework.sinon.spy(),
-            };
-            
-            global.window.NeuroGA = TestFramework.sinon.stub().returns(mockGA);
-            global.window.GreenhouseNeuroUI3D = mockUI;
-            global.window.GreenhouseModels3DMath = {}; // Dummy object
+                // Mock dependencies
+                mockGA = {
+                    init: TestFramework.sinon.spy(),
+                    step: TestFramework.sinon.spy(),
+                    bestGenome: { fitness: 0 },
+                    generation: 0,
+                };
+                mockUI = {
+                    init: TestFramework.sinon.spy(),
+                    updateData: TestFramework.sinon.spy(),
+                };
 
-            // Mock document.querySelector for createControls
-            const mockContainer = {
-                appendChild: TestFramework.sinon.spy(),
-                style: {},
-            };
-            TestFramework.sinon.stub(document, 'querySelector').withArgs(mockSelector).returns(mockContainer);
-            TestFramework.sinon.stub(document, 'createElement').returns({
-                appendChild: TestFramework.sinon.spy(),
-                style: {},
-                onclick: null,
+                global.window.NeuroGA = TestFramework.sinon.stub().returns(mockGA);
+                global.window.GreenhouseNeuroUI3D = mockUI;
+                global.window.GreenhouseModels3DMath = {}; // Dummy object
+
+                // Mock document.querySelector for createControls
+                const mockContainer = {
+                    appendChild: TestFramework.sinon.spy(),
+                    style: {},
+                };
+                TestFramework.sinon.stub(document, 'querySelector').withArgs(mockSelector).returns(mockContainer);
+                TestFramework.sinon.stub(document, 'createElement').returns({
+                    appendChild: TestFramework.sinon.spy(),
+                    style: {},
+                    onclick: null,
+                });
+
+                // Clear intervals set by startSimulation
+                TestFramework.sinon.stub(global, 'setInterval').returns(123);
+                TestFramework.sinon.stub(global, 'clearInterval');
+
+                // Reset app state
+                app.isRunning = false;
+                app.intervalId = null;
+                app.resilienceObserver = null;
+                app.lastSelector = null;
             });
 
-            // Clear intervals set by startSimulation
-            TestFramework.sinon.stub(global, 'setInterval').returns(123);
-            TestFramework.sinon.stub(global, 'clearInterval');
+            TestFramework.afterEach(() => {
+                TestFramework.sinon.restore();
+            });
 
-            // Reset app state
-            app.isRunning = false;
-            app.intervalId = null;
-            app.resilienceObserver = null;
-            app.lastSelector = null;
+            TestFramework.it('should initialize dependencies and UI on delayedInit', async () => {
+                await app._delayedInit(mockSelector);
+
+                assert.isTrue(window.NeuroGA.calledOnce, 'NeuroGA constructor should be called once');
+                assert.isTrue(mockGA.init.calledOnce, 'NeuroGA init should be called once');
+                assert.isTrue(mockUI.init.calledWith(mockSelector), 'UI init should be called with selector');
+                assert.isTrue(document.querySelector.calledWith(mockSelector), 'document.querySelector should be called for controls');
+                // Check for resilience observer setup.
+                assert.isDefined(app.resilienceObserver, 'Resilience observer should be set up');
+            });
+
+            TestFramework.it('should start simulation and set interval', () => {
+                app.ga = mockGA; // Manually set ga for this test as _delayedInit is not called
+                app.ui = mockUI; // Manually set ui for this test
+                app.startSimulation();
+
+                assert.isTrue(app.isRunning, 'isRunning should be true');
+                assert.isDefined(app.intervalId, 'intervalId should be set');
+                assert.isTrue(global.setInterval.calledOnce, 'setInterval should be called once');
+            });
+
+            TestFramework.it('should stop simulation and clear interval', () => {
+                app.startSimulation(); // Start it first
+                app.stopSimulation();
+
+                assert.isFalse(app.isRunning, 'isRunning should be false');
+                assert.isTrue(global.clearInterval.calledWith(123), 'clearInterval should be called with correct id');
+            });
+
+            TestFramework.it('should reinitialize by calling init again', () => {
+                app.lastSelector = mockSelector;
+                TestFramework.sinon.stub(app, 'init'); // Mock init itself to prevent recursion
+                app.reinitialize();
+
+                assert.isTrue(app.stopSimulation.calledOnce, 'stopSimulation should be called');
+                assert.isTrue(app.init.calledWith(mockSelector), 'init should be called with the last selector');
+            });
         });
-
-        TestFramework.afterEach(() => {
-            TestFramework.sinon.restore();
-        });
-
-        TestFramework.it('should initialize dependencies and UI on delayedInit', async () => {
-            await app._delayedInit(mockSelector);
-
-            assert.isTrue(window.NeuroGA.calledOnce, 'NeuroGA constructor should be called once');
-            assert.isTrue(mockGA.init.calledOnce, 'NeuroGA init should be called once');
-            assert.isTrue(mockUI.init.calledWith(mockSelector), 'UI init should be called with selector');
-            assert.isTrue(document.querySelector.calledWith(mockSelector), 'document.querySelector should be called for controls');
-            // Check for resilience observer setup.
-            assert.isDefined(app.resilienceObserver, 'Resilience observer should be set up');
-        });
-
-        TestFramework.it('should start simulation and set interval', () => {
-            app.ga = mockGA; // Manually set ga for this test as _delayedInit is not called
-            app.ui = mockUI; // Manually set ui for this test
-            app.startSimulation();
-
-            assert.isTrue(app.isRunning, 'isRunning should be true');
-            assert.isDefined(app.intervalId, 'intervalId should be set');
-            assert.isTrue(global.setInterval.calledOnce, 'setInterval should be called once');
-        });
-
-        TestFramework.it('should stop simulation and clear interval', () => {
-            app.startSimulation(); // Start it first
-            app.stopSimulation();
-
-            assert.isFalse(app.isRunning, 'isRunning should be false');
-            assert.isTrue(global.clearInterval.calledWith(123), 'clearInterval should be called with correct id');
-        });
-
-        TestFramework.it('should reinitialize by calling init again', () => {
-            app.lastSelector = mockSelector;
-            TestFramework.sinon.stub(app, 'init'); // Mock init itself to prevent recursion
-            app.reinitialize();
-
-            assert.isTrue(app.stopSimulation.calledOnce, 'stopSimulation should be called');
-            assert.isTrue(app.init.calledWith(mockSelector), 'init should be called with the last selector');
-        });
-    });
+    }
 
 });
 
 // Run the tests
-TestFramework.run();
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

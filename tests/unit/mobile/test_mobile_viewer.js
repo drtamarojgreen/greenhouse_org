@@ -3,13 +3,16 @@
  * @description Unit tests for the expanded mobile model viewer utility.
  */
 
-const path = require('path');
-const fs = require('fs');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const path = !isBrowser ? require('path') : null;
+const fs = !isBrowser ? require('fs') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Setup Global Environment ---
+if (!isBrowser) {
 const createMockWindow = () => ({
     innerWidth: 1200,
     innerHeight: 800,
@@ -77,27 +80,38 @@ const runInNewContext = (windowOverrides = {}) => {
 
     return context;
 };
+}
 
 TestFramework.describe('Mobile Model Viewer (Unit)', () => {
 
     TestFramework.describe('isMobileUser detection', () => {
         TestFramework.it('should return false for desktop width and UA', () => {
+            if (isBrowser) {
+                // In browser, GreenhouseUtils is already there, but we can't easily override navigator/location
+                // for this specific test without a lot of complexity. We check it doesn't crash.
+                assert.isType(window.GreenhouseUtils.isMobileUser(), 'boolean');
+                return;
+            }
             const context = runInNewContext();
             assert.isFalse(context.GreenhouseUtils.isMobileUser(), 'Should not be mobile');
         });
 
         TestFramework.it('should return true for mobile=true query param', () => {
+            if (isBrowser) return; // Skip VM-based test in browser
             const context = runInNewContext({ location: { search: '?mobile=true' } });
             assert.isTrue(context.GreenhouseUtils.isMobileUser(), 'Should be mobile via query param');
         });
 
         TestFramework.it('should return true for mobile UA', () => {
+            if (isBrowser) return; // Skip VM-based test in browser
             const context = runInNewContext({ navigator: { userAgent: 'iPhone', maxTouchPoints: 5 } });
             assert.isTrue(context.GreenhouseUtils.isMobileUser(), 'Should be mobile via UA');
         });
     });
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

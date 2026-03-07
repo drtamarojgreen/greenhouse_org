@@ -2,13 +2,16 @@
  * Unit Tests for Genetic Labels
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Mock Browser Environment ---
+if (!isBrowser) {
 global.window = global;
 global.document = {
     getElementById: () => ({
@@ -54,12 +57,27 @@ global.console = console;
 global.requestAnimationFrame = (cb) => { };
 global.addEventListener = () => { };
 global.ResizeObserver = class { observe() { } };
+}
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
+    if (isBrowser) {
+        if (filename.includes('models_util.js') && window.GreenhouseModelsUtil) return;
+        if (filename.includes('genetic_ui_3d_stats.js') && window.GreenhouseGeneticStats) return;
+        if (filename.includes('genetic_config.js') && window.GreenhouseGeneticConfig) return;
+        if (filename.includes('genetic_camera_controls.js') && window.GreenhouseGeneticCameraController) return;
+        if (filename.includes('genetic_pip_controls.js') && window.GreenhouseGeneticPiPControls) return;
+        if (filename.includes('genetic_ui_3d_gene.js') && window.GreenhouseGeneticUI3DGene) return;
+        if (filename.includes('genetic_ui_3d_protein.js') && window.GreenhouseGeneticUI3DProtein) return;
+        if (filename.includes('genetic_ui_3d_brain.js') && window.GreenhouseGeneticUI3DBrain) return;
+        if (filename.includes('genetic_ui_3d_dna.js') && window.GreenhouseGeneticUI3DDNA) return;
+        if (filename.includes('genetic_ui_3d.js') && window.GreenhouseGeneticUI3D) return;
+    }
+    if (!isBrowser) {
+        const filePath = path.join(__dirname, '../../../docs/js', filename);
+        const code = fs.readFileSync(filePath, 'utf8');
+        vm.runInThisContext(code);
+    }
 }
 
 // --- Load Dependencies ---
@@ -107,14 +125,6 @@ TestFramework.describe('Genetic Labels', () => {
 
         // Check labels
         const genes = ui.neurons3D.filter(n => n.type === 'gene');
-        const expectedGenes = [
-            'BDNF', 'SLC6A4', 'DRD2', 'HTR2A', 'COMT', 'DISC1', 'NRG1', 'DAOA',
-            'GRIN2A', 'GRIK2', 'HOMER1', 'NTRK2', 'SHANK3', 'OXTR', 'MAOA',
-            'CHRNA7', 'GABRA1', 'SYP', 'MBP', 'APOE', 'TREM2', 'CACNA1C', 'FOXP2'
-        ];
-
-        // isGenotype is i < nodes.length / 2 (i < 25)
-        // i % 5 === 0 -> i = 0, 5, 10, 15, 20
 
         assert.equal(genes[0].label, 'BDNF', 'Gene 0 should be BDNF');
         assert.equal(genes[1].label, 'SLC6A4', 'Gene 1 should be SLC6A4');
@@ -156,4 +166,8 @@ TestFramework.describe('Genetic Labels', () => {
 });
 
 // Run tests
-TestFramework.run();
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

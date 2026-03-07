@@ -1,10 +1,13 @@
 // tests/unit/test_genetic_camera_views.js
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
 
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
+
+if (!isBrowser) {
 global.window = global;
 global.HTMLElement = class { };
 global.document = {
@@ -12,11 +15,18 @@ global.document = {
         tag, style: {}, appendChild: () => {}, getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }), addEventListener: () => {}
     })
 };
+}
 
 function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
+    if (isBrowser) {
+        if (filename.includes('genetic_config.js') && window.GreenhouseGeneticConfig) return;
+        if (filename.includes('genetic_camera_controls.js') && window.GreenhouseGeneticCameraController) return;
+    }
+    if (!isBrowser) {
+        const filePath = path.join(__dirname, '../../../docs/js', filename);
+        const code = fs.readFileSync(filePath, 'utf8');
+        vm.runInThisContext(code);
+    }
 }
 
 loadScript('genetic/genetic_config.js');
@@ -67,4 +77,8 @@ describe('Genetic Camera Views', () => {
     });
 });
 
-TestFramework.run();
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

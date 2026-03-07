@@ -3,13 +3,16 @@
  * @description Unit tests for the conditional canvas drawing logic on the tech page.
  */
 
-const path = require('path');
-const fs = require('fs');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const path = !isBrowser ? require('path') : null;
+const fs = !isBrowser ? require('fs') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Mock Browser Environment ---
+if (!isBrowser) {
 const createMockElement = (tag) => ({
     tagName: tag.toUpperCase(),
     id: '', className: '', textContent: '', innerHTML: '',
@@ -81,10 +84,12 @@ context.GreenhouseUtils.waitForElement = () => Promise.resolve(createMockElement
 // Load tech.js
 const techPath = path.join(__dirname, '../../../docs/js/tech.js');
 const techCode = fs.readFileSync(techPath, 'utf8');
+}
 
 TestFramework.describe('Tech Page Canvas Mobile Detection', () => {
 
     TestFramework.it('should draw "Mobile Browser Detected" on canvas when isMobileUser is true', async () => {
+        if (isBrowser) return; // Skip VM test
         // 1. Setup Mobile Environment
         mockWindow.innerWidth = 500;
         mockWindow.navigator.maxTouchPoints = 1;
@@ -124,6 +129,7 @@ TestFramework.describe('Tech Page Canvas Mobile Detection', () => {
     });
 
     TestFramework.it('should NOT draw mobile message when isMobileUser is false', async () => {
+        if (isBrowser) return; // Skip VM test
         // 1. Setup Desktop Environment
         mockWindow.innerWidth = 1920;
         mockWindow.navigator.maxTouchPoints = 0;
@@ -159,6 +165,8 @@ TestFramework.describe('Tech Page Canvas Mobile Detection', () => {
     });
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

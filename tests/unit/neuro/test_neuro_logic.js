@@ -3,19 +3,23 @@
  * @description Unit tests for Neuro Genetic Algorithm and Core Logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Mock Browser Environment ---
+if (!isBrowser) {
 global.window = global;
 
 // --- Load Script ---
 const filePath = path.join(__dirname, '../../../docs/js/neuro/neuro_ga.js');
 const code = fs.readFileSync(filePath, 'utf8');
 vm.runInThisContext(code);
+}
 
 TestFramework.describe('Neuro Genetic Algorithm (Unit)', () => {
 
@@ -91,6 +95,8 @@ TestFramework.describe('Neuro Genetic Algorithm (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

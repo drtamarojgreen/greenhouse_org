@@ -3,13 +3,16 @@
  * @description Unit tests for GreenhouseReactCompatibility.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Mock Browser Environment ---
+if (!isBrowser) {
 global.window = global;
 global.navigator = { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0' }; // Mock Firefox
 global.document = {
@@ -31,16 +34,29 @@ global.requestAnimationFrame = (cb) => { setTimeout(cb, 16); };
 const filePath = path.join(__dirname, '../../../docs/js/GreenhouseReactCompatibility.js');
 const code = fs.readFileSync(filePath, 'utf8');
 vm.runInThisContext(code);
+}
 
 TestFramework.describe('GreenhouseReactCompatibility (Unit - Firefox Mock)', () => {
 
-    const RC = global.window.GreenhouseReactCompatibility;
+    const RC = isBrowser ? window.GreenhouseReactCompatibility : global.window.GreenhouseReactCompatibility;
 
     TestFramework.it('should detect Firefox from user agent', () => {
+        if (isBrowser) {
+            assert.isType(RC.isFirefox, 'boolean');
+            return;
+        }
         assert.isTrue(RC.isFirefox);
     });
 
     TestFramework.it('detectReact should check global window.React', () => {
+        if (isBrowser) {
+            const originalReact = window.React;
+            window.React = { version: '18.2.0' };
+            assert.isTrue(RC.detectReact());
+            assert.equal(RC.reactVersion, '18.2.0');
+            window.React = originalReact;
+            return;
+        }
         global.window.React = { version: '18.2.0' };
         assert.isTrue(RC.detectReact());
         assert.equal(RC.reactVersion, '18.2.0');
@@ -81,6 +97,8 @@ TestFramework.describe('GreenhouseReactCompatibility (Unit - Firefox Mock)', () 
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

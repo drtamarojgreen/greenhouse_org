@@ -3,13 +3,19 @@
  * Loads actual source code to verify logic
  */
 
-const fs = require('fs');
-const path = require('path');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // Helper to load and execute source files in a mock browser context
 function loadSource(context) {
+    if (isBrowser) {
+        context.GreenhouseDNARepair = window.GreenhouseDNARepair;
+        return;
+    }
     const files = [
         'docs/js/dna_repair_mechanisms.js',
         'docs/js/dna_repair_mutations.js',
@@ -56,6 +62,13 @@ function loadSource(context) {
 }
 
 TestFramework.describe('DNA Repair Simulation Logic (Comprehensive)', () => {
+    if (isBrowser) {
+        // Simple sanity check in browser, as logic is complex to re-initialize
+        TestFramework.it('Should have GreenhouseDNARepair available', () => {
+            assert.isDefined(window.GreenhouseDNARepair);
+        });
+        return;
+    }
     const context = { GreenhouseDNARepair: {} };
     loadSource(context);
     const G = context.GreenhouseDNARepair;
@@ -246,4 +259,8 @@ TestFramework.describe('DNA Repair Simulation Logic (Comprehensive)', () => {
     });
 });
 
-TestFramework.run();
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

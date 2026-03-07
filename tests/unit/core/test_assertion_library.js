@@ -4,9 +4,11 @@
  * Test cases for each assertion in the custom assertion library.
  */
 
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
 // Load assertion library and test framework
-const { assert, AssertionError } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const { assert, AssertionError } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert, AssertionError: window.AssertionError };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // Create a new test suite
 TestFramework.describe('Assertion Library', () => {
@@ -232,4 +234,8 @@ TestFramework.describe('Assertion Library', () => {
 });
 
 // Run the tests
-TestFramework.run();
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}
