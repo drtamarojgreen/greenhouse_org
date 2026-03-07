@@ -76,12 +76,18 @@ def create_terracotta_material():
     links.new(node_ramp2.outputs['Color'], in2_sock)
     links.new(style.get_mix_output(node_mix_noise), node_bsdf.inputs['Base Color'])
 
-    # Normal Bump
-    node_bump = nodes.new('ShaderNodeBump')
-    node_bump.inputs['Strength'].default_value = 0.6
-    node_bump.inputs['Distance'].default_value = 0.008
-    links.new(node_noise1.outputs['Fac'], node_bump.inputs['Height'])
-    links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
+    # Normal Bump - Port 72: Combined Normals/Bump (Bark-like complexity)
+    node_bump1 = nodes.new('ShaderNodeBump')
+    node_bump1.inputs['Strength'].default_value = 0.3
+    node_bump1.inputs['Distance'].default_value = 0.004
+    links.new(node_noise2.outputs['Fac'], node_bump1.inputs['Height'])
+
+    node_bump2 = nodes.new('ShaderNodeBump')
+    node_bump2.inputs['Strength'].default_value = 0.6
+    node_bump2.inputs['Distance'].default_value = 0.010
+    links.new(node_noise1.outputs['Fac'], node_bump2.inputs['Height'])
+    links.new(node_bump1.outputs['Normal'], node_bump2.inputs['Normal'])
+    links.new(node_bump2.outputs['Normal'], node_bsdf.inputs['Normal'])
 
     node_bsdf.inputs['Roughness'].default_value = 0.88
     if node_bsdf.inputs.get("Specular IOR Level"):
@@ -279,7 +285,35 @@ def create_orchid_master(hue=(0.72, 0.12, 0.55)):
         elements[1].position, elements[1].color = 0.5, (min(p_hue[0]+0.1,1), min(p_hue[1]+0.12,1), min(p_hue[2]+0.1,1), 1.0)
         elements[2].position, elements[2].color = 1.0, (1.0, 0.92, 0.95, 1.0)
         links.new(node_grad.outputs['Fac'], node_ramp.inputs['Fac'])
-        links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
+
+        # Showcase: Vein noise overlay
+        node_noise = nodes.new('ShaderNodeTexNoise')
+        node_noise.inputs['Scale'].default_value = 8.0
+        node_noise.inputs['Detail'].default_value = 10.0
+        node_noise.inputs['Roughness'].default_value = 0.7
+        links.new(node_mapping.outputs['Vector'], node_noise.inputs['Vector'])
+
+        node_vein_ramp = nodes.new('ShaderNodeValToRGB')
+        v_elements = node_vein_ramp.color_ramp.elements
+        while len(v_elements) < 3: v_elements.new(0.5)
+        v_elements[0].position, v_elements[0].color = 0.0, (p_hue[0]*0.6, p_hue[1]*0.3, p_hue[2]*0.5, 1.0)
+        v_elements[1].position, v_elements[1].color = 0.7, (*p_hue, 1.0)
+        v_elements[2].position, v_elements[2].color = 1.0, (*p_hue, 1.0)
+        links.new(node_noise.outputs['Fac'], node_vein_ramp.inputs['Fac'])
+
+        node_mix_col = style.create_mix_node(mat.node_tree, blend_type='MIX', data_type='RGBA')
+        f_sock, i1_sock, i2_sock = style.get_mix_sockets(node_mix_col)
+        if f_sock: f_sock.default_value = 0.3
+        links.new(node_ramp.outputs['Color'], i1_sock)
+        links.new(node_vein_ramp.outputs['Color'], i2_sock)
+        links.new(style.get_mix_output(node_mix_col), node_bsdf.inputs['Base Color'])
+
+        # Showcase: Petal Bump
+        node_bump = nodes.new('ShaderNodeBump')
+        node_bump.inputs['Strength'].default_value = 0.3
+        node_bump.inputs['Distance'].default_value = 0.005
+        links.new(node_noise.outputs['Fac'], node_bump.inputs['Height'])
+        links.new(node_bump.outputs['Normal'], node_bsdf.inputs['Normal'])
 
         node_bsdf.inputs['Roughness'].default_value = 0.12
         # Showcase SSS and Transmission settings

@@ -6,18 +6,6 @@ import mathutils
 import style_utilities as style
 
 
-def _ensure_action(obj, prefix="Anim"):
-    if obj is None:
-        return None
-    if not obj.animation_data:
-        obj.animation_data_create()
-    action = obj.animation_data.action
-    if not action:
-        action = bpy.data.actions.new(name=f"{prefix}_{obj.name}")
-        obj.animation_data.action = action
-    if hasattr(action, "layers") and len(action.layers) == 0:
-        action.layers.new(name="Main Layer")
-    return action
 
 def create_leaf_mesh(width=0.2, length=0.8):
     """Point 79/Showcase: Creates a high-fidelity organic leaf mesh with refined droop and cupping."""
@@ -535,7 +523,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     return armature_obj
 
 def animate_walk(armature_obj, frame_start, frame_end, step_height=0.1, cycle_length=48):
-    action = _ensure_action(armature_obj, prefix="Walk")
+    action = style.ensure_action(armature_obj, action_name_prefix="Walk")
     pb = armature_obj.pose.bones
     for f in range(frame_start, frame_end + 1, 6):
         phase = ((f - frame_start) % cycle_length) / cycle_length
@@ -566,7 +554,7 @@ def animate_walk(armature_obj, frame_start, frame_end, step_height=0.1, cycle_le
                 else: armature_obj.keyframe_insert(data_path=path, index=0, frame=f)
 
 def animate_talk(armature_obj, frame_start, frame_end, intensity=1.0):
-    action = _ensure_action(armature_obj, prefix="Talk")
+    action = style.ensure_action(armature_obj, action_name_prefix="Talk")
     mouth = armature_obj.pose.bones.get("Mouth")
     if not mouth: return
     for f in range(frame_start, frame_end + 1, 4):
@@ -578,7 +566,7 @@ def animate_talk(armature_obj, frame_start, frame_end, intensity=1.0):
         else: armature_obj.keyframe_insert(data_path='pose.bones["Mouth"].scale', index=2, frame=f)
 
 def animate_expression(armature_obj, frame, expression='NEUTRAL'):
-    action = _ensure_action(armature_obj, prefix="Expression")
+    action = style.ensure_action(armature_obj, action_name_prefix="Expression")
     pb = armature_obj.pose.bones
     
     # Values for different expressions
