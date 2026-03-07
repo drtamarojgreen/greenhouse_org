@@ -3,13 +3,16 @@
  * @description Unit tests for Greenhouse Inspiration logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Mock Browser Environment ---
+if (!isBrowser) {
 global.window = global;
 global.Node = class { constructor() { this.firstChild = null; } };
 global.document = {
@@ -53,10 +56,11 @@ let code = fs.readFileSync(filePath, 'utf8');
 // Remove the leading/trailing triple quotes if present from previous view_file artifacts
 code = code.replace(/^'''/, '').replace(/'''$/, '');
 vm.runInThisContext(code);
+}
 
 TestFramework.describe('Greenhouse Inspiration (Unit)', () => {
 
-    const Inspiration = global.window.GreenhouseInspiration;
+    const Inspiration = isBrowser ? window.GreenhouseInspiration : global.window.GreenhouseInspiration;
 
     TestFramework.it('should initialize and export public API', () => {
         assert.isDefined(Inspiration);
@@ -92,6 +96,8 @@ TestFramework.describe('Greenhouse Inspiration (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

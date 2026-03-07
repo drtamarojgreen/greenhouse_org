@@ -4,8 +4,10 @@
  * This mimics the behavior of React/Wix which may swap container elements during state changes.
  */
 
-const { assert } = require('../utils/assertion_library.js');
-const TestFramework = require('../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const { assert } = !isBrowser ? require('../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../utils/test_framework.js') : window.TestFramework;
 
 TestFramework.describe('Production Resilience', () => {
 
@@ -115,6 +117,114 @@ TestFramework.describe('Production Resilience', () => {
             if (attempts++ > 20) {
                 clearInterval(checkRecovery);
                 done(new Error("RNA App failed to recover"));
+            }
+        }, 500);
+    });
+
+    TestFramework.it('Dopamine Model should survive container replacement', async (done) => {
+        const App = window.GreenhouseDopamine;
+        if (typeof window === 'undefined' || !App) return done();
+
+        const selector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
+        const container = document.querySelector(selector);
+        const parent = container.parentNode;
+        container.remove();
+
+        await new Promise(r => setTimeout(r, 500));
+        const newContainer = document.createElement('div');
+        newContainer.id = 'models-app-container';
+        parent.appendChild(newContainer);
+
+        let attempts = 0;
+        const check = setInterval(() => {
+            if (newContainer.querySelector('canvas') && App.isRunning) {
+                clearInterval(check);
+                done();
+            }
+            if (attempts++ > 20) {
+                clearInterval(check);
+                done(new Error("Dopamine App failed to recover"));
+            }
+        }, 500);
+    });
+
+    TestFramework.it('Serotonin Model should survive container replacement', async (done) => {
+        const App = window.GreenhouseSerotonin;
+        if (typeof window === 'undefined' || !App) return done();
+
+        const selector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
+        const container = document.querySelector(selector);
+        const parent = container.parentNode;
+        container.remove();
+
+        await new Promise(r => setTimeout(r, 500));
+        const newContainer = document.createElement('div');
+        newContainer.id = 'models-app-container';
+        parent.appendChild(newContainer);
+
+        let attempts = 0;
+        const check = setInterval(() => {
+            if (newContainer.querySelector('canvas') && App.isRunning) {
+                clearInterval(check);
+                done();
+            }
+            if (attempts++ > 20) {
+                clearInterval(check);
+                done(new Error("Serotonin App failed to recover"));
+            }
+        }, 500);
+    });
+
+    TestFramework.it('Synapse Model should survive container replacement', async (done) => {
+        const App = window.GreenhouseSynapseApp;
+        if (typeof window === 'undefined' || !App) return done();
+
+        const selector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
+        const container = document.querySelector(selector);
+        const parent = container.parentNode;
+        container.remove();
+
+        await new Promise(r => setTimeout(r, 500));
+        const newContainer = document.createElement('div');
+        newContainer.id = 'models-app-container';
+        parent.appendChild(newContainer);
+
+        let attempts = 0;
+        const check = setInterval(() => {
+            if (newContainer.querySelector('canvas') && App.isRunning) {
+                clearInterval(check);
+                done();
+            }
+            if (attempts++ > 20) {
+                clearInterval(check);
+                done(new Error("Synapse App failed to recover"));
+            }
+        }, 500);
+    });
+
+    TestFramework.it('Stress Model should survive container replacement', async (done) => {
+        const App = window.GreenhouseStressApp;
+        if (typeof window === 'undefined' || !App) return done();
+
+        const selector = 'section.wixui-section:nth-child(1) > div:nth-child(2) > div:nth-child(1) > section:nth-child(1) > div:nth-child(2)';
+        const container = document.querySelector(selector);
+        const parent = container.parentNode;
+        container.remove();
+
+        await new Promise(r => setTimeout(r, 500));
+        const newContainer = document.createElement('div');
+        newContainer.id = 'models-app-container';
+        parent.appendChild(newContainer);
+
+        let attempts = 0;
+        const check = setInterval(() => {
+            if (newContainer.querySelector('canvas') && App.isRunning) {
+                clearInterval(check);
+                done();
+            }
+            if (attempts++ > 20) {
+                clearInterval(check);
+                done(new Error("Stress App failed to recover"));
             }
         }, 500);
     });

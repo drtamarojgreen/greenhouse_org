@@ -2,13 +2,16 @@
  * Unit Tests for Genetic Helpers (Lighting, Geometry, Stats, Chromosome)
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Mock Browser Environment ---
+if (!isBrowser) {
 global.window = global;
 global.document = {
     createElement: () => ({
@@ -33,15 +36,25 @@ global.document = {
     })
 };
 global.console = console;
+}
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
+    if (isBrowser) {
+        if (filename.includes('genetic_lighting.js') && window.GreenhouseGeneticLighting) return;
+        if (filename.includes('genetic_ui_3d_geometry.js') && window.GreenhouseGeneticGeometry) return;
+        if (filename.includes('genetic_ui_3d_stats.js') && window.GreenhouseGeneticStats) return;
+        if (filename.includes('genetic_ui_3d_chromosome.js') && window.GreenhouseGeneticChromosome) return;
+    }
+    if (!isBrowser) {
+        const filePath = path.join(__dirname, '../../../docs/js', filename);
+        const code = fs.readFileSync(filePath, 'utf8');
+        vm.runInThisContext(code);
+    }
 }
 
 // --- Mock Dependencies ---
+if (!isBrowser) {
 window.GreenhouseGeneticConfig = {
     get: (path) => {
         if (path === 'lighting.ambient') return { color: { r: 255, g: 255, b: 255 }, intensity: 0.5 };
@@ -53,6 +66,7 @@ window.GreenhouseGeneticConfig = {
 window.GreenhouseModels3DMath = {
     project3DTo2D: (x, y, z) => ({ x: x + 400, y: y + 300, scale: 1, depth: z })
 };
+}
 
 // Load Modules
 loadScript('genetic/genetic_lighting.js');
@@ -172,4 +186,8 @@ TestFramework.describe('GreenhouseGeneticChromosome', () => {
 });
 
 // Run Tests
-TestFramework.run();
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

@@ -2,13 +2,16 @@
  * Unit Tests for Neuro Page Models
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Mock Browser Environment ---
+if (!isBrowser) {
 global.window = global;
 global.document = {
     getElementById: () => ({
@@ -44,12 +47,20 @@ global.document = {
 global.addEventListener = () => { };
 global.console = console;
 global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+}
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
+    if (isBrowser) {
+        if (filename.includes('neuro_config.js') && window.GreenhouseNeuroConfig) return;
+        if (filename.includes('neuro_camera_controls.js') && window.GreenhouseNeuroCameraControls) return;
+        if (filename.includes('neuro_ga.js') && window.NeuroGA) return;
+    }
+    if (!isBrowser) {
+        const filePath = path.join(__dirname, '../../../docs/js', filename);
+        const code = fs.readFileSync(filePath, 'utf8');
+        vm.runInThisContext(code);
+    }
 }
 
 // --- Load Dependencies ---
@@ -136,4 +147,8 @@ TestFramework.describe('Neuro Page Models', () => {
 });
 
 // Run the tests
-TestFramework.run();
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

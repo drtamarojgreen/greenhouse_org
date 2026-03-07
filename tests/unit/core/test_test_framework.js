@@ -4,10 +4,12 @@
  * Test cases for the core functionality of the test framework.
  */
 
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && window.location;
+
 // Load assertion library and test framework
-const { assert } = require('../../utils/assertion_library.js');
-const Runner = require('../../utils/test_framework.js');
-const TestFrameworkClass = Runner.TestFramework;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const Runner = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
+const TestFrameworkClass = !isBrowser ? Runner.TestFramework : (window.TestFrameworkClass || (window.TestFramework ? window.TestFramework.TestFrameworkClass : null));
 
 // Create a new test suite using the Runner
 Runner.describe('Test Framework Core', () => {
@@ -152,4 +154,8 @@ Runner.describe('Test Framework Core', () => {
 });
 
 // Run the tests for the framework itself
-Runner.run();
+if (!isBrowser) {
+    Runner.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

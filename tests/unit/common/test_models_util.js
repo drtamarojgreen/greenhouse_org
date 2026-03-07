@@ -3,13 +3,16 @@
  * @description Unit tests for GreenhouseModelsUtil (i18n and shared components).
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Mock Browser Environment ---
+if (!isBrowser) {
 global.window = global;
 global.performance = { now: () => Date.now() };
 global.Image = class {
@@ -46,10 +49,11 @@ vm.runInThisContext(langCode);
 const filePath = path.join(__dirname, '../../../docs/js/models_util.js');
 const code = fs.readFileSync(filePath, 'utf8');
 vm.runInThisContext(code);
+}
 
 TestFramework.describe('GreenhouseModelsUtil (i18n)', () => {
 
-    const Util = global.window.GreenhouseModelsUtil;
+    const Util = isBrowser ? window.GreenhouseModelsUtil : global.window.GreenhouseModelsUtil;
 
     TestFramework.beforeEach(() => {
         Util.currentLanguage = 'en';
@@ -143,6 +147,8 @@ TestFramework.describe('GreenhouseModelsUtil (i18n)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

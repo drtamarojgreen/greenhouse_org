@@ -2,14 +2,17 @@
  * Unit Tests for Models Page Loader
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { performance } = require('perf_hooks');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { performance } = !isBrowser ? require('perf_hooks') : { performance: window.performance };
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Mock Browser Environment ---
+if (!isBrowser) {
 global.window = global;
 global.document = {
     currentScript: {
@@ -92,6 +95,10 @@ global.window.GreenhouseUtils = mockGreenhouseUtils;
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
+    if (isBrowser) {
+        if (filename === 'models.js' && window.GreenhouseModels) return Promise.resolve();
+        return Promise.resolve();
+    }
     const filePath = path.join(__dirname, '../../../docs/js', filename);
     const startTime = performance.now();
     const code = fs.readFileSync(filePath, 'utf8');
@@ -100,6 +107,7 @@ function loadScript(filename) {
     if (TestFramework.ResourceReporter) {
         TestFramework.ResourceReporter.recordScript(filePath, duration);
     }
+}
 }
 
 // --- Test Suites ---
@@ -157,4 +165,8 @@ TestFramework.describe('Models Page Loader', () => {
 });
 
 // Run the tests
-TestFramework.run();
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}

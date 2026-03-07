@@ -3,13 +3,16 @@
  * @description Unit tests for GreenhouseLabelingSystem.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined' && (window.location.hostname || window.location.port);
+
+const fs = !isBrowser ? require('fs') : null;
+const path = !isBrowser ? require('path') : null;
+const vm = !isBrowser ? require('vm') : null;
+const { assert } = !isBrowser ? require('../../utils/assertion_library.js') : { assert: window.assert };
+const TestFramework = !isBrowser ? require('../../utils/test_framework.js') : window.TestFramework;
 
 // --- Mock Browser Environment ---
+if (!isBrowser) {
 global.window = global;
 global.document = {
     querySelector: () => null,
@@ -29,10 +32,11 @@ global.window.GreenhouseModels3DMath = {
 const filePath = path.join(__dirname, '../../../docs/js/labeling_system.js');
 const code = fs.readFileSync(filePath, 'utf8');
 vm.runInThisContext(code);
+}
 
 TestFramework.describe('GreenhouseLabelingSystem (Unit)', () => {
 
-    const LS = global.window.GreenhouseLabelingSystem;
+    const LS = isBrowser ? window.GreenhouseLabelingSystem : global.window.GreenhouseLabelingSystem;
 
     TestFramework.beforeEach(() => {
         LS.init();
@@ -107,6 +111,8 @@ TestFramework.describe('GreenhouseLabelingSystem (Unit)', () => {
 
 });
 
-TestFramework.run().then(results => {
-    process.exit(results.failed > 0 ? 1 : 0);
-});
+if (!isBrowser) {
+    TestFramework.run().then(results => {
+        process.exit(results.failed > 0 ? 1 : 0);
+    });
+}
