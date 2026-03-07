@@ -79,8 +79,8 @@ def create_vine(start, end, radius=0.05):
     bpy.context.collection.objects.link(obj)
     return obj
 
-def create_bark_material(name, color=(0.2, 0.4, 0.2), quality='hero'):
-    """Point 79: Hybrid Bark Material integrating high-fidelity textures with complex procedural features."""
+def create_bark_material(name, color=(0.35, 0.55, 0.35), quality='hero'):
+    """Point 79: Hybrid Bark Material integrating high-fidelity textures with complex procedural features (Brightness Boosted)."""
     mat = bpy.data.materials.new(name=name)
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
@@ -123,13 +123,13 @@ def create_bark_material(name, color=(0.2, 0.4, 0.2), quality='hero'):
     links.new(node_mapping.outputs['Vector'], node_noise_base2.inputs['Vector'])
 
     node_ramp_base1 = nodes.new(type='ShaderNodeValToRGB')
-    node_ramp_base1.color_ramp.elements[0].position, node_ramp_base1.color_ramp.elements[0].color = 0.0, (color[0]*0.3, color[1]*0.3, color[2]*0.3, 1)
+    node_ramp_base1.color_ramp.elements[0].position, node_ramp_base1.color_ramp.elements[0].color = 0.0, (color[0]*0.4, color[1]*0.4, color[2]*0.4, 1)
     node_ramp_base1.color_ramp.elements[1].position, node_ramp_base1.color_ramp.elements[1].color = 1.0, (*color, 1)
     links.new(node_noise_base1.outputs['Fac'], node_ramp_base1.inputs['Fac'])
 
     node_ramp_base2 = nodes.new(type='ShaderNodeValToRGB')
-    node_ramp_base2.color_ramp.elements[0].position, node_ramp_base2.color_ramp.elements[0].color = 0.0, (color[0]*0.5, color[1]*0.5, color[2]*0.5, 1)
-    node_ramp_base2.color_ramp.elements[1].position, node_ramp_base2.color_ramp.elements[1].color = 1.0, (color[0]*1.2, color[1]*1.2, color[2]*1.2, 1)
+    node_ramp_base2.color_ramp.elements[0].position, node_ramp_base2.color_ramp.elements[0].color = 0.0, (color[0]*0.6, color[1]*0.6, color[2]*0.6, 1)
+    node_ramp_base2.color_ramp.elements[1].position, node_ramp_base2.color_ramp.elements[1].color = 1.0, (min(color[0]*1.4, 1.0), min(color[1]*1.4, 1.0), min(color[2]*1.4, 1.0), 1)
     links.new(node_noise_base2.outputs['Fac'], node_ramp_base2.inputs['Fac'])
 
     links.new(node_ramp_base1.outputs['Color'], in1_sock)
@@ -187,8 +187,8 @@ def create_bark_material(name, color=(0.2, 0.4, 0.2), quality='hero'):
     links.new(node_bsdf.outputs['BSDF'], node_output.inputs['Surface'])
     return mat
 
-def create_leaf_material(name, color=(0.522, 0.631, 0.490), quality='hero'):
-    """Point 79: Enhanced procedural leaf material with showcase waxy venation."""
+def create_leaf_material(name, color=(0.65, 0.8, 0.6), quality='hero'):
+    """Point 79: Enhanced procedural leaf material with showcase waxy venation (Brightness Boosted)."""
     mat = bpy.data.materials.new(name=name)
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
@@ -386,19 +386,33 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         return ret
 
     # Phase 6: Organic Face & Skin Welding
-    # Eyes (carved in)
-    for side in [-1, 1]:
-        loc = mathutils.Vector((0.15 * side, 0.2, torso_h + neck_h + head_r + 0.1)) # Frontal placement
+    # Eyes (welded)
+    for side in ["L", "R"]:
+        bone_data = bones[f"Eye.{side}"][0]
+        loc = mathutils.Vector(bone_data)
         ret_e = bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=0.06, matrix=mathutils.Matrix.Translation(loc))
+        vg_idx = mesh_obj.vertex_groups.get(f"Eye.{side}") or mesh_obj.vertex_groups.new(name=f"Eye.{side}").index
+        if not isinstance(vg_idx, int): vg_idx = vg_idx.index
         for v in ret_e['verts']: 
-            v[dlayer][mesh_obj.vertex_groups.new(name=f"Eye.{'L' if side==1 else 'R'}").index] = 1.0
+            v[dlayer][vg_idx] = 1.0
             for f in v.link_faces: f.material_index = 2 # Eye Mat
     
-    # Mouth (crease)
-    ret_m = bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation((0, 0.25, torso_h + neck_h + head_r - 0.1)))
+    # Mouth (welded)
+    m_loc = mathutils.Vector(bones["Mouth"][0])
+    ret_m = bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation(m_loc))
+    vg_idx_mouth = (mesh_obj.vertex_groups.get("Mouth") or mesh_obj.vertex_groups.new(name="Mouth")).index
     for v in ret_m['verts']: 
         v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
-        v[dlayer][vg_idx_torso] = 1.0 # Attach to head/torso influence
+        v[dlayer][vg_idx_mouth] = 1.0
+
+    # Brows (welded)
+    for side in ["L", "R"]:
+        b_loc = mathutils.Vector(bones[f"Brow.{side}"][0])
+        ret_b = bmesh.ops.create_cube(bm, size=0.05, matrix=mathutils.Matrix.Translation(b_loc))
+        vg_idx_brow = (mesh_obj.vertex_groups.get(f"Brow.{side}") or mesh_obj.vertex_groups.new(name=f"Brow.{side}")).index
+        for v in ret_b['verts']:
+            v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.1
+            v[dlayer][vg_idx_brow] = 1.0
 
     # Add limb parts with welding
     add_part(0.12, 0.1, neck_h, (0,0.15,torso_h+neck_h/2), "Neck")
@@ -458,25 +472,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     arm_mod.use_vertex_groups = True
 
 
-    # Brows - Parented to new Brow bones
-    for side in ["L", "R"]:
-        bname = f"Brow.{side}"
-        brow_obj_name = f"{name}_Brow_{side}"
-        brow_mesh = bpy.data.meshes.new(f"{brow_obj_name}_MeshData")
-        brow_obj = bpy.data.objects.new(brow_obj_name, brow_mesh)
-        bpy.context.scene.collection.objects.link(brow_obj)
-        brow_obj.parent = armature_obj
-        brow_obj.parent_type = 'BONE'
-        brow_obj.parent_bone = bname
-        
-        bm_brow = bmesh.new()
-        bmesh.ops.create_cube(bm_brow, size=0.05)
-        for v in bm_brow.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.1
-        bm_brow.to_mesh(brow_mesh); bm_brow.free()
-        brow_obj.location = (0, 0, 0)
-        brow_obj.data.materials.append(create_bark_material(f"BrowMat_{name}"))
-
-    # Staff - separate mesh handle for test parity
+    # Staff - separate mesh handle for test parity (Accessory)
     staff_obj_name = f"{name}_ReasonStaff"
     staff_mesh = bpy.data.meshes.new(f"{staff_obj_name}_MeshData")
     staff_obj = bpy.data.objects.new(staff_obj_name, staff_mesh)
@@ -488,37 +484,8 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     bmesh.ops.create_cone(bm_staff, segments=8, radius1=0.02, radius2=0.02, depth=1.5)
     bm_staff.to_mesh(staff_mesh); bm_staff.free()
     staff_obj.location = (0, 0, -0.4)
-    staff_obj.rotation_euler = (0, 1.5708, 0) # Point vertically instead of horizontal (prevents "fence" illusion)
+    staff_obj.rotation_euler = (0, 1.5708, 0)
     staff_obj.data.materials.append(create_bark_material(f"StaffMat_{name}"))
-
-    # Eye and Mouth Objects for test parity
-    for side, bname in [("L", "Eye.L"), ("R", "Eye.R")]:
-        eye_obj_name = f"{name}_{bname.replace('.', '_')}"
-        eye_mesh = bpy.data.meshes.new(f"{eye_obj_name}_MeshData")
-        eye_obj = bpy.data.objects.new(eye_obj_name, eye_mesh)
-        bpy.context.scene.collection.objects.link(eye_obj)
-        eye_obj.parent = armature_obj
-        eye_obj.parent_type = 'BONE'
-        eye_obj.parent_bone = bname  # Parent to the Eye bone directly
-        bm_eye = bmesh.new()
-        bmesh.ops.create_uvsphere(bm_eye, u_segments=24, v_segments=24, radius=0.06)
-        bm_eye.to_mesh(eye_mesh); bm_eye.free()
-        eye_obj.location = (0, 0, 0)  # Sits at its parent bone head
-        eye_obj.data.materials.append(create_iris_material(f"EyeMat_{name}_{side}"))
-
-    mouth_obj_name = f"{name}_Mouth"
-    mouth_mesh = bpy.data.meshes.new(f"{mouth_obj_name}_MeshData")
-    mouth_obj = bpy.data.objects.new(mouth_obj_name, mouth_mesh)
-    bpy.context.scene.collection.objects.link(mouth_obj)
-    mouth_obj.parent = armature_obj
-    mouth_obj.parent_type = 'BONE'
-    mouth_obj.parent_bone = "Mouth"  # Parent to the Mouth bone directly
-    bm_mouth = bmesh.new()
-    bmesh.ops.create_cube(bm_mouth, size=0.1)
-    for v in bm_mouth.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
-    bm_mouth.to_mesh(mouth_mesh); bm_mouth.free()
-    mouth_obj.location = (0, 0, 0)  # Sits at its parent bone head
-    mouth_obj.data.materials.append(create_bark_material(f"MouthMat_{name}"))
 
     # Also keep influence on main mesh (optional, but keep per original design)
     # Foliage

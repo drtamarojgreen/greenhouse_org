@@ -61,15 +61,15 @@ def create_terracotta_material():
     node_ramp1 = nodes.new('ShaderNodeValToRGB')
     elements1 = node_ramp1.color_ramp.elements
     while len(elements1) < 3: elements1.new(0.5)
-    elements1[0].position, elements1[0].color = 0.0, (0.55, 0.22, 0.10, 1.0)
-    elements1[1].position, elements1[1].color = 0.4, (0.68, 0.30, 0.14, 1.0)
-    elements1[2].position, elements1[2].color = 1.0, (0.38, 0.14, 0.06, 1.0)
+    elements1[0].position, elements1[0].color = 0.0, (0.65, 0.32, 0.20, 1.0)
+    elements1[1].position, elements1[1].color = 0.4, (0.78, 0.40, 0.24, 1.0)
+    elements1[2].position, elements1[2].color = 1.0, (0.48, 0.24, 0.16, 1.0)
     links.new(node_noise1.outputs['Fac'], node_ramp1.inputs['Fac'])
 
     node_ramp2 = nodes.new('ShaderNodeValToRGB')
     elements2 = node_ramp2.color_ramp.elements
-    elements2[0].position, elements2[0].color = 0.0, (0.42, 0.16, 0.07, 1.0)
-    elements2[1].position, elements2[1].color = 1.0, (0.72, 0.35, 0.18, 1.0)
+    elements2[0].position, elements2[0].color = 0.0, (0.52, 0.26, 0.17, 1.0)
+    elements2[1].position, elements2[1].color = 1.0, (0.82, 0.45, 0.28, 1.0)
     links.new(node_noise2.outputs['Fac'], node_ramp2.inputs['Fac'])
 
     links.new(node_ramp1.outputs['Color'], in1_sock)
