@@ -5,6 +5,16 @@ import mathutils
 import style_utilities as style
 
 
+def _create_capped_cone(bm, **kwargs):
+    """Create a capped cone across Blender versions (cap_ends vs cap_tris)."""
+    import bmesh
+    try:
+        return bmesh.ops.create_cone(bm, cap_ends=True, **kwargs)
+    except TypeError:
+        # Blender 5+ API uses cap_tris instead of cap_ends.
+        return bmesh.ops.create_cone(bm, cap_tris=False, **kwargs)
+
+
 def _ensure_action(obj, prefix="Anim"):
     if obj is None:
         return None
@@ -16,6 +26,14 @@ def _ensure_action(obj, prefix="Anim"):
         obj.animation_data.action = action
     if hasattr(action, "layers") and len(action.layers) == 0:
         action.layers.new(name="Main Layer")
+    # Blender 5+ slotted actions: ensure we keep the object bound to an available slot.
+    if hasattr(obj.animation_data, "action_slot") and getattr(obj.animation_data, "action_slot", None) is None:
+        slots = getattr(action, "slots", None)
+        if slots and len(slots) > 0:
+            try:
+                obj.animation_data.action_slot = slots[0]
+            except Exception:
+                pass
     return action
 
 def create_leaf_mesh():
@@ -259,17 +277,18 @@ def create_iris_material(name, color=(0.2, 0.4, 0.2)):
     
     node_ramp = nodes.new('ShaderNodeValToRGB')
     elements = node_ramp.color_ramp.elements
-    elements[0].position, elements[0].color = 0.0, (0, 0, 0, 1) # Pupil
-    elements.new(0.4)
-    elements[1].position, elements[1].color = 0.4, (*color, 1) # Iris
-    elements[2].position, elements[2].color = 0.8, (1, 1, 1, 1) # Sclera
+    # Stylized "big black eyeball" palette: mostly black with subtle edge rolloff.
+    elements[0].position, elements[0].color = 0.0, (0.0, 0.0, 0.0, 1)
+    elements.new(0.7)
+    elements[1].position, elements[1].color = 0.7, (0.02, 0.02, 0.02, 1)
+    elements[2].position, elements[2].color = 0.95, (0.08, 0.08, 0.08, 1)
     links.new(node_grad.outputs['Fac'], node_ramp.inputs['Fac'])
     links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
     
     # 3. Integrated Eye Depth (Coat & Refraction)
     # Point 142: Using 5.0+ standard Coat for corneal highlights
-    node_bsdf.inputs['Coat Weight'].default_value = 1.0
-    node_bsdf.inputs['Coat Roughness'].default_value = 0.02
+    node_bsdf.inputs['Coat Weight'].default_value = 0.18
+    node_bsdf.inputs['Coat Roughness'].default_value = 0.2
     node_bsdf.inputs['Coat IOR'].default_value = 1.37 # Physiological cornea IOR
     
     # 4. Integrated Eye Moisture Line (Point 21)
@@ -287,11 +306,35 @@ def create_iris_material(name, color=(0.2, 0.4, 0.2)):
     # Mix into Specular/Roughness
     node_spec_mix = nodes.new('ShaderNodeMath')
     node_spec_mix.operation = 'ADD'
-    node_spec_mix.inputs[0].default_value = 0.5
+    node_spec_mix.inputs[0].default_value = 0.12
     links.new(node_moisture_ramp.outputs['Color'], node_spec_mix.inputs[1])
     links.new(node_spec_mix.outputs[0], node_bsdf.inputs['Specular IOR Level'])
     
     links.new(node_bsdf.outputs['BSDF'], node_out.inputs['Surface'])
+    return mat
+
+
+def create_nose_material(name):
+    """Green carrot-style matte/gloss hybrid for a stylized nose."""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
+    bsdf.inputs['Base Color'].default_value = (0.15, 0.6, 0.2, 1)
+    bsdf.inputs['Roughness'].default_value = 0.55
+    bsdf.inputs['Specular IOR Level'].default_value = 0.35
+    return mat
+
+
+def create_lip_material(name, color=(0.62, 0.26, 0.30)):
+    """Full stylized lips with warm color and mild gloss."""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    bsdf = nodes.get("Principled BSDF") or nodes.new("ShaderNodeBsdfPrincipled")
+    bsdf.inputs['Base Color'].default_value = (*color, 1)
+    bsdf.inputs['Roughness'].default_value = 0.33
+    bsdf.inputs['Specular IOR Level'].default_value = 0.5
     return mat
 
 def create_fingers(location, direction, radius=0.02):
@@ -303,11 +346,24 @@ def create_fingers(location, direction, radius=0.02):
         fingers.append(f)
     return fingers
 
-def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05, seed=None, include_facial_details=True):
+def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05, seed=None, include_facial_details=True, style_profile=None):
     """Exclusive 5.0+ BMesh Implementation with Proper Rigging."""
     location = mathutils.Vector(location)
     if seed is not None: random.seed(seed)
     import bmesh
+
+    # Visual style profile to support intentional character representation.
+    profile = {
+        "body_color": (0.30, 0.20, 0.14),
+        "brow_color": (0.22, 0.14, 0.10),
+        "mouth_color": (0.46, 0.20, 0.24),
+        "nose_color": (0.15, 0.60, 0.20),
+        "eye_scale": 1.5,
+        "lip_scale": 1.32,
+        "nose_scale": 1.18,
+    }
+    if isinstance(style_profile, dict):
+        profile.update(style_profile)
 
     # 1. Armature
     armature_data = bpy.data.armatures.new(f"{name}_ArmatureData")
@@ -316,16 +372,30 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     bpy.context.view_layer.objects.active = armature_obj; bpy.ops.object.mode_set(mode='EDIT')
     
     torso_h = 1.5 * height_scale; head_r = 0.4; arm_h = torso_h * 0.9; neck_h = 0.2
+    hip_z = 0.12
     bones = {
-        "Torso": ((0,0,0), (0,0.1,torso_h), None), # Slightly forward lean
+        "Root": ((0, 0, -0.05), (0, 0, 0.08), None),
+        "Torso": ((0,0,0), (0,0.1,torso_h), "Root"), # Slightly forward lean
+        "Hip": ((0,0,hip_z), (0,0.03,hip_z + 0.12), "Torso"),
         "Neck": ((0,0.1,torso_h), (0,0.2,torso_h+neck_h), "Torso"), # Hunched neck
         "Head": ((0,0.2,torso_h+neck_h), (0,0.3,torso_h+neck_h+head_r), "Neck"),
-        "Arm.L": ((0.2,0,arm_h), (0.8,0,arm_h-0.4), "Torso"),
-        "Arm.R": ((-0.2,0,arm_h), (-0.8,0,arm_h-0.4), "Torso"),
-        "Leg.L": ((0.1,0,0.1), (0.3,0,-0.8), "Torso"),
-        "Leg.R": ((-0.1,0,0.1), (-0.3,0,-0.8), "Torso"),
+        "Shoulder.L": ((0.12,0.06,arm_h + 0.05), (0.28,0.04,arm_h + 0.02), "Torso"),
+        "Shoulder.R": ((-0.12,0.06,arm_h + 0.05), (-0.28,0.04,arm_h + 0.02), "Torso"),
+        "Arm.L": ((0.28,0.04,arm_h + 0.02), (0.58,0.02,arm_h - 0.16), "Shoulder.L"),
+        "Arm.R": ((-0.28,0.04,arm_h + 0.02), (-0.58,0.02,arm_h - 0.16), "Shoulder.R"),
+        "Forearm.L": ((0.58,0.02,arm_h - 0.16), (0.82,0.0,arm_h - 0.42), "Arm.L"),
+        "Forearm.R": ((-0.58,0.02,arm_h - 0.16), (-0.82,0.0,arm_h - 0.42), "Arm.R"),
+        "Hand.L": ((0.82,0.0,arm_h - 0.42), (0.95,-0.03,arm_h - 0.54), "Forearm.L"),
+        "Hand.R": ((-0.82,0.0,arm_h - 0.42), (-0.95,-0.03,arm_h - 0.54), "Forearm.R"),
+        "Leg.L": ((0.1,0.02,hip_z), (0.2,0.03,-0.32), "Hip"),
+        "Leg.R": ((-0.1,0.02,hip_z), (-0.2,0.03,-0.32), "Hip"),
+        "Shin.L": ((0.2,0.03,-0.32), (0.24,0.02,-0.82), "Leg.L"),
+        "Shin.R": ((-0.2,0.03,-0.32), (-0.24,0.02,-0.82), "Leg.R"),
+        "Foot.L": ((0.24,0.02,-0.82), (0.33,-0.09,-0.87), "Shin.L"),
+        "Foot.R": ((-0.24,0.02,-0.82), (-0.33,-0.09,-0.87), "Shin.R"),
         "Eye.L": ((head_r*0.4, -head_r*0.8, torso_h+neck_h+head_r*0.3), (head_r*0.4, -head_r*0.9, torso_h+neck_h+head_r*0.3), "Head"),
         "Eye.R": ((-head_r*0.4, -head_r*0.8, torso_h+neck_h+head_r*0.3), (-head_r*0.4, -head_r*0.9, torso_h+neck_h+head_r*0.3), "Head"),
+        "Nose": ((0, -head_r*0.70, torso_h+neck_h+head_r*0.35), (0, -head_r*1.00, torso_h+neck_h+head_r*0.28), "Head"),
         "Jaw": ((0,-head_r*0.2,torso_h+neck_h+head_r*0.1), (0,-head_r*0.9,torso_h+neck_h+head_r*0.1), "Head"),
         "Mouth": ((0,-head_r*0.9,torso_h+neck_h+head_r*0.1), (0,-head_r,torso_h+neck_h+head_r*0.1), "Jaw"),
         "Brow.L": ((head_r*0.3, -head_r*0.8, torso_h+neck_h+head_r*0.7), (head_r*0.5, -head_r*0.8, torso_h+neck_h+head_r*0.7), "Head"),
@@ -347,21 +417,40 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     vg_idx_torso = mesh_obj.vertex_groups.new(name="Torso").index
     vg_idx_head = mesh_obj.vertex_groups.new(name="Head").index
 
-    def add_part(radius1, radius2, height, loc, bname, is_sphere=False, mid_scale=1.0):
+    def add_part(radius1, radius2, bname, is_sphere=False, mid_scale=1.0, sphere_center=None):
         vg = mesh_obj.vertex_groups.get(bname) or mesh_obj.vertex_groups.new(name=bname)
         vg_idx = vg.index
+        start = mathutils.Vector(bones[bname][0])
+        end = mathutils.Vector(bones[bname][1])
+        seg_vec = end - start
+        seg_len = max(seg_vec.length, 1e-4)
         if is_sphere: 
-            ret = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=radius1, matrix=mathutils.Matrix.Translation(loc))
+            center = mathutils.Vector(sphere_center) if sphere_center is not None else ((start + end) / 2)
+            ret = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=16, radius=radius1, matrix=mathutils.Matrix.Translation(center))
         else: 
-            ret = bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=radius1, radius2=radius2, depth=height, matrix=mathutils.Matrix.Translation(loc))
+            axis = seg_vec.normalized()
+            rot = mathutils.Vector((0, 0, 1)).rotation_difference(axis).to_matrix().to_4x4()
+            matrix = mathutils.Matrix.Translation((start + end) / 2) @ rot
+            ret = _create_capped_cone(
+                bm,
+                segments=16,
+                radius1=radius1,
+                radius2=radius2,
+                depth=seg_len,
+                matrix=matrix,
+            )
             # Enhancement #1: Muscle Volume (Point 142)
             if mid_scale != 1.0:
-                center = mathutils.Vector(loc)
+                center = (start + end) / 2
+                axis = seg_vec.normalized()
                 for v in ret['verts']:
-                    # Scale verts near the middle of the height
-                    local_z = v.co.z - center.z
-                    factor = 1.0 + (mid_scale - 1.0) * math.cos((local_z / (height/2)) * (math.pi/2))
-                    v.co.x *= factor; v.co.y *= factor
+                    along_axis = (v.co - center).dot(axis)
+                    t = along_axis / (seg_len / 2)
+                    if -1.0 <= t <= 1.0:
+                        factor = 1.0 + (mid_scale - 1.0) * math.cos(t * (math.pi / 2))
+                        axis_point = center + axis * along_axis
+                        radial = v.co - axis_point
+                        v.co = axis_point + radial * factor
         for v in ret['verts']: v[dlayer][vg_idx] = 1.0
         return ret
 
@@ -381,15 +470,26 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         v[dlayer][vg_idx_torso] = 1.0 # Attach to head/torso influence
 
     # Add limb parts with welding
-    add_part(0.12, 0.1, neck_h, (0,0.15,torso_h+neck_h/2), "Neck")
+    add_part(0.12, 0.1, "Neck")
     # Torso Geometry
-    add_part(0.3*height_scale, 0.25*height_scale, torso_h, (0,0,torso_h/2), "Torso", mid_scale=1.1)
+    add_part(0.3*height_scale, 0.25*height_scale, "Torso", mid_scale=1.1)
+    add_part(0.24*height_scale, 0.22*height_scale, "Hip", mid_scale=1.08)
     
-    add_part(head_r, 0, head_r*2, (0,0.25,torso_h+neck_h+head_r), "Head", is_sphere=True)
-    add_part(vine_thickness*1.2, vine_thickness*0.6, 0.7, (0.5, 0.1, arm_h-0.2), "Arm.L", mid_scale=1.3)
-    add_part(vine_thickness*1.2, vine_thickness*0.6, 0.7, (-0.5, 0.1, arm_h-0.2), "Arm.R", mid_scale=1.3)
-    add_part(vine_thickness*2.0, vine_thickness*1.2, 0.8, (0.2, 0.05, -0.4), "Leg.L", mid_scale=1.25)
-    add_part(vine_thickness*2.0, vine_thickness*1.2, -0.4, (-0.2, 0.05, -0.4), "Leg.R", mid_scale=1.25)
+    add_part(head_r, 0, "Head", is_sphere=True, sphere_center=(0, 0.25, torso_h + neck_h + head_r))
+    add_part(vine_thickness*1.5, vine_thickness*1.0, "Shoulder.L", mid_scale=1.15)
+    add_part(vine_thickness*1.5, vine_thickness*1.0, "Shoulder.R", mid_scale=1.15)
+    add_part(vine_thickness*1.3, vine_thickness*0.85, "Arm.L", mid_scale=1.2)
+    add_part(vine_thickness*1.3, vine_thickness*0.85, "Arm.R", mid_scale=1.2)
+    add_part(vine_thickness*0.9, vine_thickness*0.7, "Forearm.L", mid_scale=1.12)
+    add_part(vine_thickness*0.9, vine_thickness*0.7, "Forearm.R", mid_scale=1.12)
+    add_part(vine_thickness*0.75, vine_thickness*0.55, "Hand.L", mid_scale=1.05)
+    add_part(vine_thickness*0.75, vine_thickness*0.55, "Hand.R", mid_scale=1.05)
+    add_part(vine_thickness*2.0, vine_thickness*1.45, "Leg.L", mid_scale=1.2)
+    add_part(vine_thickness*2.0, vine_thickness*1.45, "Leg.R", mid_scale=1.2)
+    add_part(vine_thickness*1.55, vine_thickness*1.15, "Shin.L", mid_scale=1.15)
+    add_part(vine_thickness*1.55, vine_thickness*1.15, "Shin.R", mid_scale=1.15)
+    add_part(vine_thickness*1.35, vine_thickness*0.95, "Foot.L", mid_scale=1.05)
+    add_part(vine_thickness*1.35, vine_thickness*0.95, "Foot.R", mid_scale=1.05)
 
     # Phase 6: Foliage Overhaul (Leaf-Hair on Top)
     def add_organic_leaf(loc, rot):
@@ -403,7 +503,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         f = bm.faces.new(verts)
         f.material_index = 1
 
-    for i in range(20):
+    for i in range(40):
         # Top and Back of head
         phi = random.uniform(0, math.pi/2) # Upper hemisphere
         theta = random.uniform(0, 2*math.pi)
@@ -414,11 +514,11 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         ))
         rot = mathutils.Euler((random.uniform(0, 1), 0, theta)).to_matrix().to_4x4()
         # Custom leaf shape
-        rv = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.1, matrix=mathutils.Matrix.Translation(loc) @ rot)
+        rv = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.24, matrix=mathutils.Matrix.Translation(loc) @ rot)
         for v in rv['verts']:
             # Taper the grid into a leaf (remove trapezoid look)
             lv = v.co - loc
-            if lv.y > 0: v.co.x *= (1.0 - lv.y/0.1) # Taper tip
+            if lv.y > 0: v.co.x *= (1.0 - lv.y/0.24) # Taper tip
             v[dlayer][vg_idx_torso] = 1.0
             for f in v.link_faces: f.material_index = 1
 
@@ -437,24 +537,33 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     arm_mod.object = armature_obj
     arm_mod.use_vertex_groups = True
 
+    def _pin_feature_to_bone(obj, bone_name, offset=(0.0, 0.0, 0.0)):
+        """Rigidly attach a feature object directly to a specific armature bone."""
+        if bone_name not in armature_obj.data.bones:
+            return
 
-    # Brows - Parented to new Brow bones
+        # True bone attachment for Blender 5+: stable bone-local transform.
+        obj.parent = armature_obj
+        obj.parent_type = 'BONE'
+        obj.parent_bone = bone_name
+        obj.matrix_parent_inverse = mathutils.Matrix.Identity(4)
+        obj.location = mathutils.Vector(offset)
+        obj.rotation_euler = (0.0, 0.0, 0.0)
+
+
+    # Brows - Bound to Brow bones
     for side in ["L", "R"]:
         bname = f"Brow.{side}"
         brow_obj_name = f"{name}_Brow_{side}"
         brow_mesh = bpy.data.meshes.new(f"{brow_obj_name}_MeshData")
         brow_obj = bpy.data.objects.new(brow_obj_name, brow_mesh)
         bpy.context.scene.collection.objects.link(brow_obj)
-        brow_obj.parent = armature_obj
-        brow_obj.parent_type = 'BONE'
-        brow_obj.parent_bone = bname
-
         bm_brow = bmesh.new()
         bmesh.ops.create_cube(bm_brow, size=0.05)
         for v in bm_brow.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.1
         bm_brow.to_mesh(brow_mesh); bm_brow.free()
-        brow_obj.location = (0, 0, 0)
-        brow_obj.data.materials.append(create_bark_material(f"BrowMat_{name}"))
+        _pin_feature_to_bone(brow_obj, bname, offset=(0.0, -0.04, 0.01))
+        brow_obj.data.materials.append(create_bark_material(f"BrowMat_{name}", color=profile["brow_color"]))
 
     # Staff - separate mesh handle for test parity
     staff_obj_name = f"{name}_ReasonStaff"
@@ -465,11 +574,11 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     staff_obj.parent_type = 'BONE'
     staff_obj.parent_bone = "Arm.R"
     bm_staff = bmesh.new()
-    bmesh.ops.create_cone(bm_staff, segments=8, radius1=0.02, radius2=0.02, depth=1.5)
+    _create_capped_cone(bm_staff, segments=8, radius1=0.02, radius2=0.02, depth=1.5)
     bm_staff.to_mesh(staff_mesh); bm_staff.free()
     staff_obj.location = (0, 0, -0.4)
     staff_obj.rotation_euler = (0, 1.5708, 0) # Point vertically instead of horizontal (prevents "fence" illusion)
-    staff_obj.data.materials.append(create_bark_material(f"StaffMat_{name}"))
+    staff_obj.data.materials.append(create_bark_material(f"StaffMat_{name}", color=profile["body_color"]))
 
     # Eye and Mouth Objects for test parity
     for side, bname in [("L", "Eye.L"), ("R", "Eye.R")]:
@@ -477,35 +586,55 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         eye_mesh = bpy.data.meshes.new(f"{eye_obj_name}_MeshData")
         eye_obj = bpy.data.objects.new(eye_obj_name, eye_mesh)
         bpy.context.scene.collection.objects.link(eye_obj)
-        eye_obj.parent = armature_obj
-        eye_obj.parent_type = 'BONE'
-        eye_obj.parent_bone = bname  # Parent to the Eye bone directly
         bm_eye = bmesh.new()
-        bmesh.ops.create_uvsphere(bm_eye, u_segments=24, v_segments=24, radius=0.06)
+        bmesh.ops.create_uvsphere(bm_eye, u_segments=32, v_segments=32, radius=0.14 * profile["eye_scale"])
         bm_eye.to_mesh(eye_mesh); bm_eye.free()
-        eye_obj.location = (0, 0, 0)  # Sits at its parent bone head
+        _pin_feature_to_bone(eye_obj, bname, offset=(0.0, -0.125, 0.0))
         eye_obj.data.materials.append(create_iris_material(f"EyeMat_{name}_{side}"))
+
+    nose_obj_name = f"{name}_Nose"
+    nose_mesh = bpy.data.meshes.new(f"{nose_obj_name}_MeshData")
+    nose_obj = bpy.data.objects.new(nose_obj_name, nose_mesh)
+    bpy.context.scene.collection.objects.link(nose_obj)
+    bm_nose = bmesh.new()
+    _create_capped_cone(
+        bm_nose,
+        segments=12,
+        radius1=0.09 * profile["nose_scale"],
+        radius2=0.02 * profile["nose_scale"],
+        depth=0.3 * profile["nose_scale"],
+    )
+    rot_nose = mathutils.Euler((math.radians(94), 0, 0)).to_matrix().to_4x4()
+    bmesh.ops.transform(bm_nose, verts=bm_nose.verts, matrix=rot_nose)
+    bm_nose.to_mesh(nose_mesh); bm_nose.free()
+    _pin_feature_to_bone(nose_obj, "Nose", offset=(0.0, -0.15, 0.05))
+    nose_mat = create_nose_material(f"NoseMat_{name}")
+    nose_bsdf = nose_mat.node_tree.nodes.get("Principled BSDF") if nose_mat and nose_mat.node_tree else None
+    if nose_bsdf:
+        nose_bsdf.inputs['Base Color'].default_value = (*profile["nose_color"], 1)
+    nose_obj.data.materials.append(nose_mat)
 
     mouth_obj_name = f"{name}_Mouth"
     mouth_mesh = bpy.data.meshes.new(f"{mouth_obj_name}_MeshData")
     mouth_obj = bpy.data.objects.new(mouth_obj_name, mouth_mesh)
     bpy.context.scene.collection.objects.link(mouth_obj)
-    mouth_obj.parent = armature_obj
-    mouth_obj.parent_type = 'BONE'
-    mouth_obj.parent_bone = "Mouth"  # Parent to the Mouth bone directly
     bm_mouth = bmesh.new()
-    bmesh.ops.create_cube(bm_mouth, size=0.1)
-    for v in bm_mouth.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
+    bmesh.ops.create_uvsphere(bm_mouth, u_segments=18, v_segments=12, radius=0.08 * profile["lip_scale"], matrix=mathutils.Matrix.Translation((0, 0.0, 0.03)))
+    bmesh.ops.create_uvsphere(bm_mouth, u_segments=18, v_segments=12, radius=0.09 * profile["lip_scale"], matrix=mathutils.Matrix.Translation((0, 0.0, -0.035)))
+    for v in bm_mouth.verts:
+        v.co.x *= 2.1
+        v.co.y *= 0.85
+        v.co.z *= 0.55
     bm_mouth.to_mesh(mouth_mesh); bm_mouth.free()
-    mouth_obj.location = (0, 0, 0)  # Sits at its parent bone head
-    mouth_obj.data.materials.append(create_bark_material(f"MouthMat_{name}"))
+    _pin_feature_to_bone(mouth_obj, "Mouth", offset=(0.0, -0.09, 0.0))
+    mouth_obj.data.materials.append(create_lip_material(f"MouthMat_{name}", color=profile["mouth_color"]))
 
     # Also keep influence on main mesh (optional, but keep per original design)
     # Foliage
     vg_head = (mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head")).index
-    for i in range(15):
-        angle = (i/15)*6.28; loc = (math.cos(angle)*head_r, math.sin(angle)*head_r, torso_h+head_r+random.uniform(-0.2,0.2))
-        ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.1, matrix=mathutils.Matrix.Translation(loc) @ mathutils.Euler((random.uniform(0,3.14),0,angle)).to_matrix().to_4x4())
+    for i in range(28):
+        angle = (i/28)*6.28; loc = (math.cos(angle)*(head_r*1.35), math.sin(angle)*(head_r*1.35), torso_h+head_r+random.uniform(-0.25,0.25))
+        ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.21, matrix=mathutils.Matrix.Translation(loc) @ mathutils.Euler((random.uniform(0,3.14),0,angle)).to_matrix().to_4x4())
         for v in ret['verts']: v[dlayer][vg_head] = 1.0; [setattr(f, 'material_index', 1) for f in v.link_faces]
 
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.02)
@@ -526,15 +655,13 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     for p in mesh_obj.data.polygons: p.use_smooth = True
     mesh_obj.modifiers.new(name="Subsurf", type='SUBSURF').levels = 2
     
-    mesh_obj.data.materials.append(create_bark_material(f"BarkMat_{name}"))
+    mesh_obj.data.materials.append(create_bark_material(f"BarkMat_{name}", color=profile["body_color"]))
     mesh_obj.data.materials.append(create_leaf_material(f"LeafMat_{name}"))
     mesh_obj.data.materials.append(create_bark_material(f"CreaseMat_{name}", color=(0.02, 0.02, 0.02)))
 
     
     # Enhancement #13: Weighted Normals
     mesh_obj.modifiers.new(name="WeightedNormal", type='WEIGHTED_NORMAL')
-    
-    mesh_obj.modifiers.new(name="Armature", type='ARMATURE').object = armature_obj
     
     # Phase 4: Grounding Physics (Point 142)
     root_bone = armature_obj.pose.bones.get("Root")
@@ -662,7 +789,7 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=
     pillar.location = location
     
     bm = bmesh.new()
-    bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=0.4, radius2=0.4, depth=height, matrix=mathutils.Matrix.Translation((0,0,height/2)))
+    _create_capped_cone(bm, segments=16, radius1=0.4, radius2=0.4, depth=height, matrix=mathutils.Matrix.Translation((0,0,height/2)))
     
     for i in range(num_bands):
         z_offset = height * (0.1 + (i+1) * (0.8 / (num_bands + 1)))
@@ -670,7 +797,7 @@ def create_inscribed_pillar(location, name="StoicPillar", height=5.0, num_bands=
         # Actually we can just join regular objects if needed, but for OOM we prefer BMesh.
         # Let's use a simple ring of icospheres or just skip bands for now if complex.
         # For compatibility, I'll use a cylinder as a band.
-        bmesh.ops.create_cone(bm, segments=12, cap_ends=True, radius1=0.42, radius2=0.42, depth=0.05, matrix=mathutils.Matrix.Translation((0,0,z_offset)))
+        _create_capped_cone(bm, segments=12, radius1=0.42, radius2=0.42, depth=0.05, matrix=mathutils.Matrix.Translation((0,0,z_offset)))
 
     bm.to_mesh(mesh_data); bm.free()
     pillar.data.materials.append(create_bark_material(f"PillarMat_{name}"))
@@ -680,7 +807,7 @@ def create_scroll(location, name="PhilosophicalScroll"):
     import bmesh; mesh = bpy.data.meshes.new(f"{name}_MeshData")
     obj = bpy.data.objects.new(name, mesh); bpy.context.scene.collection.objects.link(obj); obj.location = location
     bm = bmesh.new()
-    bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.05, radius2=0.05, depth=0.4, matrix=mathutils.Euler((0, 1.57, 0)).to_matrix().to_4x4())
+    _create_capped_cone(bm, segments=8, radius1=0.05, radius2=0.05, depth=0.4, matrix=mathutils.Euler((0, 1.57, 0)).to_matrix().to_4x4())
     bm.to_mesh(mesh); bm.free()
     return obj
 
