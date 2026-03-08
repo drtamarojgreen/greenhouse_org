@@ -538,26 +538,17 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     arm_mod.use_vertex_groups = True
 
     def _pin_feature_to_bone(obj, bone_name, offset=(0.0, 0.0, 0.0)):
-        """Rigidly bind a feature mesh to a pose bone via armature deformation."""
-        # Place feature in armature space at the target bone head with a local offset.
-        bone = armature_obj.data.bones.get(bone_name)
-        pose_bone = armature_obj.pose.bones.get(bone_name)
-        if bone and pose_bone:
-            obj.parent = armature_obj
-            obj.parent_type = 'OBJECT'
-            obj.parent_bone = ""
-            bone_head_world = armature_obj.matrix_world @ bone.head_local
-            offset_world = (armature_obj.matrix_world.to_3x3() @ pose_bone.matrix.to_3x3()) @ mathutils.Vector(offset)
-            obj.location = bone_head_world + offset_world
+        """Rigidly attach a feature object directly to a specific armature bone."""
+        if bone_name not in armature_obj.data.bones:
+            return
 
-        # Ensure object follows the same bone through an armature modifier + full bone weight.
-        armature_mod = obj.modifiers.new(name="Armature", type='ARMATURE')
-        armature_mod.object = armature_obj
-        armature_mod.use_vertex_groups = True
-
-        vg = obj.vertex_groups.get(bone_name) or obj.vertex_groups.new(name=bone_name)
-        if obj.type == 'MESH' and obj.data and obj.data.vertices:
-            vg.add([v.index for v in obj.data.vertices], 1.0, 'REPLACE')
+        # True bone attachment for Blender 5+: stable bone-local transform.
+        obj.parent = armature_obj
+        obj.parent_type = 'BONE'
+        obj.parent_bone = bone_name
+        obj.matrix_parent_inverse = mathutils.Matrix.Identity(4)
+        obj.location = mathutils.Vector(offset)
+        obj.rotation_euler = (0.0, 0.0, 0.0)
 
 
     # Brows - Bound to Brow bones
