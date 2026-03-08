@@ -8,6 +8,15 @@ import style_utilities as style
 _MASTER_COLLECTION_NAME = "Master_Assets"
 _plant_cache = {}
 
+
+def _create_capped_cone(bm, **kwargs):
+    """Create a capped cone across Blender versions (cap_ends vs cap_tris)."""
+    import bmesh
+    try:
+        return bmesh.ops.create_cone(bm, cap_ends=True, **kwargs)
+    except TypeError:
+        return bmesh.ops.create_cone(bm, cap_tris=False, **kwargs)
+
 def get_master_collection():
     """Retrieves or creates the hidden master collection for assets."""
     master = bpy.data.collections.get(_MASTER_COLLECTION_NAME)
@@ -26,7 +35,7 @@ def get_master_collection():
 def create_terracotta_material():
     mat = bpy.data.materials.get("TerracottaMat") or bpy.data.materials.new(name="TerracottaMat")
     if mat.node_tree: return mat
-    
+
     mat.use_nodes = True # Standard 5.0 practice despite warning
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
@@ -42,7 +51,7 @@ def _bmesh_vine(bm, start, end, radius, mat_idx):
     import bmesh
     segment_vec = end - start; rot = segment_vec.normalized().to_track_quat('Z', 'Y').to_matrix().to_4x4()
     # DEPTH is the length of the cylinder. BMesh create_cone depth is the total height.
-    ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=radius, radius2=radius, depth=segment_vec.length, matrix=mathutils.Matrix.Translation((start + end) / 2) @ rot)
+    ret = _create_capped_cone(bm, segments=8, radius1=radius, radius2=radius, depth=segment_vec.length, matrix=mathutils.Matrix.Translation((start + end) / 2) @ rot)
     for f in {f for v in ret['verts'] for f in v.link_faces}: f.material_index = mat_idx
 
 def get_potted_plant_master(plant_type='FERN'):
@@ -64,10 +73,10 @@ def get_potted_plant_master(plant_type='FERN'):
     
     bm = bmesh.new(); pot_h, rad = 0.2, 0.15
     # Pot body
-    bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=rad, radius2=rad*1.3, depth=pot_h, matrix=mathutils.Matrix.Translation((0,0,pot_h/2)))
+    _create_capped_cone(bm, segments=16, radius1=rad, radius2=rad*1.3, depth=pot_h, matrix=mathutils.Matrix.Translation((0,0,pot_h/2)))
     for f in bm.faces: f.material_index = 0
     # Pot rim
-    ret = bmesh.ops.create_cone(bm, segments=16, cap_ends=True, radius1=rad*1.25, radius2=rad*1.25, depth=0.02, matrix=mathutils.Matrix.Translation((0,0,pot_h + 0.01)))
+    ret = _create_capped_cone(bm, segments=16, radius1=rad*1.25, radius2=rad*1.25, depth=0.02, matrix=mathutils.Matrix.Translation((0,0,pot_h + 0.01)))
     for f in {f for v in ret['verts'] for f in v.link_faces}: f.material_index = 1
     
     plant_top = mathutils.Vector((0, 0, pot_h + 0.02))
@@ -117,21 +126,40 @@ def create_potted_plant(location, plant_type='FERN', name="PottedPlant"):
 def create_potting_bench(location, name="PottingBench"):
     import bmesh; import assets.library_props as library_props
     mesh_data = bpy.data.meshes.new(f"{name}_MeshData"); obj = bpy.data.objects.new(name, mesh_data); bpy.context.scene.collection.objects.link(obj); obj.location = location
-    bm = bmesh.new(); table_h, table_w, table_d = 1.0, 2.4, 0.8
-    # Table top (merged planks)
-    for i in range(8):
-        x = -table_w/2 + (table_w/8) * (i + 0.5); ret = bmesh.ops.create_cube(bm, size=1.0, matrix=mathutils.Matrix.Translation((x, 0, table_h)))
-        for v in ret['verts']: v.co.x *= (table_w/8 - 0.02); v.co.y *= table_d; v.co.z *= 0.05
+    bm = bmesh.new(); table_h, table_w, table_d = 0.95, 2.4, 0.95
+
+    # Raised planter geometry (clear flower-bed silhouette, not "phone + pillars").
+    outer = bmesh.ops.create_cube(bm, size=1.0, matrix=mathutils.Matrix.Translation((0, 0, table_h)))
+    for v in outer['verts']:
+        v.co.x *= table_w/2
+        v.co.y *= table_d/2
+        v.co.z *= 0.24
+    for f in {f for v in outer['verts'] for f in v.link_faces}: f.material_index = 0
+
+    # Soil top inset.
+    soil = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=1.0, matrix=mathutils.Matrix.Translation((0, 0, table_h + 0.21)))
+    for v in soil['verts']:
+        v.co.x *= (table_w/2 - 0.14)
+        v.co.y *= (table_d/2 - 0.14)
+    for f in {f for v in soil['verts'] for f in v.link_faces}: f.material_index = 1
+
+    # Corner supports: run from near-ground to the planter underside so they visibly connect.
+    support_h = table_h - 0.24
+    support_z = support_h / 2
+    for lx, ly in [(-table_w/2 + 0.14, table_d/2 - 0.14), (table_w/2 - 0.14, table_d/2 - 0.14), (-table_w/2 + 0.14, -table_d/2 + 0.14), (table_w/2 - 0.14, -table_d/2 + 0.14)]:
+        ret = _create_capped_cone(bm, segments=8, radius1=0.06, radius2=0.06, depth=support_h, matrix=mathutils.Matrix.Translation((lx, ly, support_z)))
         for f in {f for v in ret['verts'] for f in v.link_faces}: f.material_index = 0
-    # Legs
-    for lx, ly in [(-table_w/2 + 0.05, table_d/2 - 0.05), (table_w/2 - 0.05, table_d/2 - 0.05), (-table_w/2 + 0.05, -table_d/2 + 0.05), (table_w/2 - 0.05, -table_d/2 + 0.05)]:
-        ret = bmesh.ops.create_cone(bm, segments=8, cap_ends=True, radius1=0.025, radius2=0.025, depth=table_h, matrix=mathutils.Matrix.Translation((lx, ly, table_h/2)))
-        for f in {f for v in ret['verts'] for f in v.link_faces}: f.material_index = 1
     bm.to_mesh(mesh_data); bm.free()
-    obj.data.materials.append(library_props.create_wood_material(f"{name}_WoodMat")); obj.data.materials.append(bpy.data.materials.get("GH_Iron") or bpy.data.materials.new("GH_Iron"))
+    obj.data.materials.append(library_props.create_wood_material(f"{name}_WoodMat"))
+    soil_mat = bpy.data.materials.get("SoilMat") or bpy.data.materials.new("SoilMat")
+    soil_mat.use_nodes = True
+    soil_bsdf = soil_mat.node_tree.nodes.get("Principled BSDF") or soil_mat.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
+    soil_bsdf.inputs['Base Color'].default_value = (0.22, 0.14, 0.08, 1)
+    soil_bsdf.inputs['Roughness'].default_value = 0.9
+    obj.data.materials.append(soil_mat)
     
     # Use Instancing for plants on bench
-    for i, (pos, ptype) in enumerate(zip([(-0.8, -0.15, 1.02), (-0.3, 0.1, 1.02), (0.15, -0.05, 1.02), (0.6, 0.1, 1.02), (0.9, -0.15, 1.02)], ['FERN', 'SUCCULENT', 'VINE', 'SUCCULENT', 'FERN'])):
+    for i, (pos, ptype) in enumerate(zip([(-0.85, -0.22, 1.17), (-0.35, 0.2, 1.17), (0.15, -0.08, 1.17), (0.65, 0.2, 1.17), (0.95, -0.2, 1.17)], ['FERN', 'SUCCULENT', 'VINE', 'SUCCULENT', 'FERN'])):
         p_obj = create_potted_plant(mathutils.Vector(location) + mathutils.Vector(pos), plant_type=ptype, name=f"{name}_Plant_{i}")
         p_obj.parent = obj
     return obj
