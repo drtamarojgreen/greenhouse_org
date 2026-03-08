@@ -5,6 +5,15 @@ import random
 import style_utilities as style
 
 
+def _create_capped_cone(bm, **kwargs):
+    """Create a capped cone across Blender versions (cap_ends vs cap_tris)."""
+    import bmesh
+    try:
+        return bmesh.ops.create_cone(bm, cap_ends=True, **kwargs)
+    except TypeError:
+        return bmesh.ops.create_cone(bm, cap_tris=False, **kwargs)
+
+
 def _ensure_forest_materials(bark_mat, leaf_mat):
     """Avoid gray distant trees when hero character mats are unavailable."""
     if bark_mat and bark_mat.use_nodes and bark_mat.node_tree and bark_mat.node_tree.nodes.get("Principled BSDF"):
@@ -122,7 +131,7 @@ def create_hedge_row(start, end, height=1.0, depth=0.6, name="Hedge"):
         t = i / max(1, num_clusters - 1)
         p = direction * t
         # Random bush cluster
-        ret = bmesh.ops.create_cone(bm, segments=8, radius1=0.5, radius2=0.4, depth=height, matrix=mathutils.Matrix.Translation(p + mathutils.Vector((0,0,height/2))))
+        ret = _create_capped_cone(bm, segments=8, radius1=0.5, radius2=0.4, depth=height, matrix=mathutils.Matrix.Translation(p + mathutils.Vector((0,0,height/2))))
         for v in ret['verts']:
             # Deform for organic volume
             v.co.y *= (depth / 0.8)
@@ -190,7 +199,7 @@ def create_procedural_tree(location, bark_mat, leaf_mat):
     trunk_h = random.uniform(4, 7)
 
     # Trunk: tapered cone, not a cylinder - looks natural
-    bmesh.ops.create_cone(bm, segments=6, cap_ends=True,
+    _create_capped_cone(bm, segments=6,
                           radius1=0.35, radius2=0.08, depth=trunk_h,
                           matrix=mathutils.Matrix.Translation((0, 0, trunk_h / 2)))
 

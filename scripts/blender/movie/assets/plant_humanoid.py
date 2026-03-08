@@ -514,11 +514,17 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         ))
         rot = mathutils.Euler((random.uniform(0, 1), 0, theta)).to_matrix().to_4x4()
         # Custom leaf shape
-        rv = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.24, matrix=mathutils.Matrix.Translation(loc) @ rot)
+        rv = bmesh.ops.create_grid(bm, x_segments=2, y_segments=3, size=0.24, matrix=mathutils.Matrix.Translation(loc) @ rot)
+        inv_rot = rot.inverted()
         for v in rv['verts']:
-            # Taper the grid into a leaf (remove trapezoid look)
-            lv = v.co - loc
-            if lv.y > 0: v.co.x *= (1.0 - lv.y/0.24) # Taper tip
+            # Shape into a pointed, curved leaf (avoid flat trapezoid cards).
+            lv = inv_rot @ (v.co - loc)
+            lv.y *= 1.45
+            y_norm = min(abs(lv.y) / 0.34, 1.0)
+            width_scale = max(0.08, 1.0 - (y_norm ** 1.2))
+            lv.x *= width_scale
+            lv.z += (1.0 - y_norm) * 0.03
+            v.co = loc + (rot @ lv)
             v[dlayer][vg_idx_torso] = 1.0
             for f in v.link_faces: f.material_index = 1
 
@@ -634,8 +640,18 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     vg_head = (mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head")).index
     for i in range(28):
         angle = (i/28)*6.28; loc = (math.cos(angle)*(head_r*1.35), math.sin(angle)*(head_r*1.35), torso_h+head_r+random.uniform(-0.25,0.25))
-        ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.21, matrix=mathutils.Matrix.Translation(loc) @ mathutils.Euler((random.uniform(0,3.14),0,angle)).to_matrix().to_4x4())
-        for v in ret['verts']: v[dlayer][vg_head] = 1.0; [setattr(f, 'material_index', 1) for f in v.link_faces]
+        leaf_rot = mathutils.Euler((random.uniform(0,3.14),0,angle)).to_matrix().to_4x4()
+        ret = bmesh.ops.create_grid(bm, x_segments=2, y_segments=2, size=0.21, matrix=mathutils.Matrix.Translation(loc) @ leaf_rot)
+        inv_leaf_rot = leaf_rot.inverted()
+        for v in ret['verts']:
+            lv = inv_leaf_rot @ (v.co - mathutils.Vector(loc))
+            lv.y *= 1.3
+            y_norm = min(abs(lv.y) / 0.28, 1.0)
+            lv.x *= max(0.12, 1.0 - (y_norm ** 1.1))
+            lv.z += (1.0 - y_norm) * 0.02
+            v.co = mathutils.Vector(loc) + (leaf_rot @ lv)
+            v[dlayer][vg_head] = 1.0
+            [setattr(f, 'material_index', 1) for f in v.link_faces]
 
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.02)
     for _ in range(5): bmesh.ops.smooth_vert(bm, verts=bm.verts, factor=0.5)
