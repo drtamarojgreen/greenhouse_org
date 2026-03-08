@@ -287,8 +287,8 @@ def create_iris_material(name, color=(0.2, 0.4, 0.2)):
     
     # 3. Integrated Eye Depth (Coat & Refraction)
     # Point 142: Using 5.0+ standard Coat for corneal highlights
-    node_bsdf.inputs['Coat Weight'].default_value = 1.0
-    node_bsdf.inputs['Coat Roughness'].default_value = 0.02
+    node_bsdf.inputs['Coat Weight'].default_value = 0.18
+    node_bsdf.inputs['Coat Roughness'].default_value = 0.2
     node_bsdf.inputs['Coat IOR'].default_value = 1.37 # Physiological cornea IOR
     
     # 4. Integrated Eye Moisture Line (Point 21)
@@ -306,7 +306,7 @@ def create_iris_material(name, color=(0.2, 0.4, 0.2)):
     # Mix into Specular/Roughness
     node_spec_mix = nodes.new('ShaderNodeMath')
     node_spec_mix.operation = 'ADD'
-    node_spec_mix.inputs[0].default_value = 0.5
+    node_spec_mix.inputs[0].default_value = 0.12
     links.new(node_moisture_ramp.outputs['Color'], node_spec_mix.inputs[1])
     links.new(node_spec_mix.outputs[0], node_bsdf.inputs['Specular IOR Level'])
     
@@ -358,7 +358,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         "brow_color": (0.22, 0.14, 0.10),
         "mouth_color": (0.46, 0.20, 0.24),
         "nose_color": (0.15, 0.60, 0.20),
-        "eye_scale": 1.38,
+        "eye_scale": 1.5,
         "lip_scale": 1.32,
         "nose_scale": 1.18,
     }
@@ -503,7 +503,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         f = bm.faces.new(verts)
         f.material_index = 1
 
-    for i in range(20):
+    for i in range(40):
         # Top and Back of head
         phi = random.uniform(0, math.pi/2) # Upper hemisphere
         theta = random.uniform(0, 2*math.pi)
@@ -514,11 +514,11 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         ))
         rot = mathutils.Euler((random.uniform(0, 1), 0, theta)).to_matrix().to_4x4()
         # Custom leaf shape
-        rv = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.1, matrix=mathutils.Matrix.Translation(loc) @ rot)
+        rv = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.24, matrix=mathutils.Matrix.Translation(loc) @ rot)
         for v in rv['verts']:
             # Taper the grid into a leaf (remove trapezoid look)
             lv = v.co - loc
-            if lv.y > 0: v.co.x *= (1.0 - lv.y/0.1) # Taper tip
+            if lv.y > 0: v.co.x *= (1.0 - lv.y/0.24) # Taper tip
             v[dlayer][vg_idx_torso] = 1.0
             for f in v.link_faces: f.material_index = 1
 
@@ -632,9 +632,9 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     # Also keep influence on main mesh (optional, but keep per original design)
     # Foliage
     vg_head = (mesh_obj.vertex_groups.get("Head") or mesh_obj.vertex_groups.new(name="Head")).index
-    for i in range(15):
-        angle = (i/15)*6.28; loc = (math.cos(angle)*head_r, math.sin(angle)*head_r, torso_h+head_r+random.uniform(-0.2,0.2))
-        ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.1, matrix=mathutils.Matrix.Translation(loc) @ mathutils.Euler((random.uniform(0,3.14),0,angle)).to_matrix().to_4x4())
+    for i in range(28):
+        angle = (i/28)*6.28; loc = (math.cos(angle)*(head_r*1.35), math.sin(angle)*(head_r*1.35), torso_h+head_r+random.uniform(-0.25,0.25))
+        ret = bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.21, matrix=mathutils.Matrix.Translation(loc) @ mathutils.Euler((random.uniform(0,3.14),0,angle)).to_matrix().to_4x4())
         for v in ret['verts']: v[dlayer][vg_head] = 1.0; [setattr(f, 'material_index', 1) for f in v.link_faces]
 
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.02)
