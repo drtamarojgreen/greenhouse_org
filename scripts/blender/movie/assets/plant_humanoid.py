@@ -358,9 +358,9 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         "brow_color": (0.22, 0.14, 0.10),
         "mouth_color": (0.46, 0.20, 0.24),
         "nose_color": (0.15, 0.60, 0.20),
-        "eye_scale": 1.0,
-        "lip_scale": 1.0,
-        "nose_scale": 1.0,
+        "eye_scale": 1.38,
+        "lip_scale": 1.32,
+        "nose_scale": 1.18,
     }
     if isinstance(style_profile, dict):
         profile.update(style_profile)
@@ -395,7 +395,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         "Foot.R": ((-0.24,0.02,-0.82), (-0.33,-0.09,-0.87), "Shin.R"),
         "Eye.L": ((head_r*0.4, -head_r*0.8, torso_h+neck_h+head_r*0.3), (head_r*0.4, -head_r*0.9, torso_h+neck_h+head_r*0.3), "Head"),
         "Eye.R": ((-head_r*0.4, -head_r*0.8, torso_h+neck_h+head_r*0.3), (-head_r*0.4, -head_r*0.9, torso_h+neck_h+head_r*0.3), "Head"),
-        "Nose": ((0, -head_r*0.72, torso_h+neck_h+head_r*0.2), (0, -head_r*1.05, torso_h+neck_h+head_r*0.15), "Head"),
+        "Nose": ((0, -head_r*0.70, torso_h+neck_h+head_r*0.35), (0, -head_r*1.00, torso_h+neck_h+head_r*0.28), "Head"),
         "Jaw": ((0,-head_r*0.2,torso_h+neck_h+head_r*0.1), (0,-head_r*0.9,torso_h+neck_h+head_r*0.1), "Head"),
         "Mouth": ((0,-head_r*0.9,torso_h+neck_h+head_r*0.1), (0,-head_r,torso_h+neck_h+head_r*0.1), "Jaw"),
         "Brow.L": ((head_r*0.3, -head_r*0.8, torso_h+neck_h+head_r*0.7), (head_r*0.5, -head_r*0.8, torso_h+neck_h+head_r*0.7), "Head"),
@@ -596,9 +596,9 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         eye_obj = bpy.data.objects.new(eye_obj_name, eye_mesh)
         bpy.context.scene.collection.objects.link(eye_obj)
         bm_eye = bmesh.new()
-        bmesh.ops.create_uvsphere(bm_eye, u_segments=28, v_segments=28, radius=0.13 * profile["eye_scale"])
+        bmesh.ops.create_uvsphere(bm_eye, u_segments=32, v_segments=32, radius=0.14 * profile["eye_scale"])
         bm_eye.to_mesh(eye_mesh); bm_eye.free()
-        _pin_feature_to_bone(eye_obj, bname, offset=(0.0, -0.11, 0.0))
+        _pin_feature_to_bone(eye_obj, bname, offset=(0.0, -0.125, 0.0))
         eye_obj.data.materials.append(create_iris_material(f"EyeMat_{name}_{side}"))
 
     nose_obj_name = f"{name}_Nose"
@@ -616,7 +616,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     rot_nose = mathutils.Euler((math.radians(94), 0, 0)).to_matrix().to_4x4()
     bmesh.ops.transform(bm_nose, verts=bm_nose.verts, matrix=rot_nose)
     bm_nose.to_mesh(nose_mesh); bm_nose.free()
-    _pin_feature_to_bone(nose_obj, "Nose", offset=(0.0, -0.16, -0.02))
+    _pin_feature_to_bone(nose_obj, "Nose", offset=(0.0, -0.15, 0.05))
     nose_mat = create_nose_material(f"NoseMat_{name}")
     nose_bsdf = nose_mat.node_tree.nodes.get("Principled BSDF") if nose_mat and nose_mat.node_tree else None
     if nose_bsdf:
@@ -635,7 +635,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         v.co.y *= 0.85
         v.co.z *= 0.55
     bm_mouth.to_mesh(mouth_mesh); bm_mouth.free()
-    _pin_feature_to_bone(mouth_obj, "Mouth", offset=(0.0, -0.075, 0.0))
+    _pin_feature_to_bone(mouth_obj, "Mouth", offset=(0.0, -0.09, 0.0))
     mouth_obj.data.materials.append(create_lip_material(f"MouthMat_{name}", color=profile["mouth_color"]))
 
     # Also keep influence on main mesh (optional, but keep per original design)
