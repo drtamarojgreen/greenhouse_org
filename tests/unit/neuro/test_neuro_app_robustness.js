@@ -2,62 +2,9 @@
  * Unit Tests for Neuro App Robustness and IDENTIFIED fix
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
-
 // --- Mock Browser Environment ---
-global.window = global;
-global.addEventListener = () => { };
-global.removeEventListener = () => { };
-global.performance = { now: () => Date.now() };
-global.requestAnimationFrame = (cb) => 1;
-global.cancelAnimationFrame = (id) => { };
-
-global.document = {
-    querySelector: (sel) => {
-        if (sel === 'body') return global.document.body;
-        return {
-            innerHTML: '',
-            style: {},
-            appendChild: () => { },
-            addEventListener: () => { },
-            offsetWidth: 1000,
-            offsetHeight: 750
-        };
-    },
-    getElementById: () => null,
-    body: {
-        appendChild: () => { }
-    },
-    createElement: (tag) => {
-        if (tag === 'canvas') {
-            const canvas = {
-                getContext: () => ({
-                    save: () => { }, restore: () => { }, translate: () => { }, rotate: () => { }, scale: () => { },
-                    beginPath: () => { }, moveTo: () => { }, lineTo: () => { }, stroke: () => { }, fill: () => { },
-                    rect: () => { }, clip: () => { }, fillText: () => { }, measureText: () => ({ width: 0 }),
-                    clearRect: () => { }, fillRect: () => { }, strokeRect: () => { }, closePath: () => { },
-                    set fillStyle(v) { }, set strokeStyle(v) { }, set lineWidth(v) { }, set font(v) { }
-                }),
-                width: 1000, height: 600, style: {}, addEventListener: () => { }, appendChild: () => { },
-                getBoundingClientRect: () => ({ left: 0, top: 0, width: 1000, height: 600 })
-            };
-            return canvas;
-        }
-        return { style: {}, appendChild: () => { }, addEventListener: () => { }, focus: () => { } };
-    }
-};
-
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-// Mock Dependencies
+// Harness provides window, document, location, performance, etc.
+// Specific Mocks for robustness test:
 window.GreenhouseModels3DMath = { project3DTo2D: (x, y, z) => ({ x, y, scale: 1, depth: z }) };
 window.GreenhouseModelsUtil = {
     t: (k) => {
@@ -72,14 +19,11 @@ window.GreenhouseModelsUtil = {
 window.GreenhouseNeuroConfig = { get: () => ({ x: 0, y: 0, z: 0, fov: 600 }), set: () => { } };
 window.GreenhouseNeuroGeometry = {
     getRegionVertices: () => [0],
-    initializeBrainShell: (shell) => { shell.vertices = [{x:0, y:0, z:0}]; },
+    initializeBrainShell: (shell) => { shell.vertices = [{ x: 0, y: 0, z: 0 }]; },
     createSynapseGeometry: () => ({ vertices: [], indices: [] })
 };
 
-loadScript('neuro/neuro_ga.js');
-loadScript('neuro/neuro_ui_3d_enhanced.js');
-loadScript('neuro/neuro_controls.js');
-loadScript('neuro/neuro_app.js');
+// --- Test Suites ---
 
 TestFramework.describe('GreenhouseNeuroApp Robustness', () => {
     let app;

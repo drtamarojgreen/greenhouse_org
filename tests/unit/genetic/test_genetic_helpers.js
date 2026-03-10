@@ -2,44 +2,8 @@
  * Unit Tests for Genetic Helpers (Lighting, Geometry, Stats, Chromosome)
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    createElement: () => ({
-        getContext: () => ({
-            createRadialGradient: () => ({ addColorStop: () => { } }),
-            fillRect: () => { },
-            beginPath: () => { },
-            arc: () => { },
-            fill: () => { },
-            moveTo: () => { },
-            lineTo: () => { },
-            stroke: () => { },
-            closePath: () => { },
-            save: () => { },
-            restore: () => { },
-            set fillStyle(v) { },
-            set strokeStyle(v) { },
-            set globalAlpha(v) { }
-        }),
-        width: 0,
-        height: 0
-    })
-};
-global.console = console;
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
 
 // --- Mock Dependencies ---
 window.GreenhouseGeneticConfig = {
@@ -55,10 +19,6 @@ window.GreenhouseModels3DMath = {
 };
 
 // Load Modules
-loadScript('genetic/genetic_lighting.js');
-loadScript('genetic/genetic_ui_3d_geometry.js');
-loadScript('genetic/genetic_ui_3d_stats.js');
-loadScript('genetic/genetic_ui_3d_chromosome.js');
 
 // --- Test Suites ---
 

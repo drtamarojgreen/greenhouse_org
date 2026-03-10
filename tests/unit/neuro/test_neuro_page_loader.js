@@ -2,28 +2,10 @@
  * Unit Tests for Neuro Page Loader
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
-
 // --- Mock Browser Environment ---
-global.window = global;
+// Harness provides window, document, location, performance, etc.
+// Specific Mocks for loader test:
 global.HTMLElement = class { };
-global.document = {
-    currentScript: {
-        getAttribute: (attr) => {
-            if (attr === 'data-base-url') return '/';
-            if (attr === 'data-target-selector-left') return '.neuro-container';
-            return null;
-        }
-    },
-    querySelectorAll: (sel) => [],
-    getElementById: (id) => ({ innerHTML: '' }),
-    querySelector: (sel) => null
-};
-
 global.window.GreenhouseDependencyManager = {
     waitFor: () => Promise.resolve()
 };
@@ -43,19 +25,7 @@ const mockUtils = {
 };
 global.window.GreenhouseUtils = mockUtils;
 
-// --- Helper to Load Script ---
-function loadScript(filename, attributes = null) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-
-    if (attributes) {
-        global.window._greenhouseNeuroAttributes = attributes;
-    } else {
-        delete global.window._greenhouseNeuroAttributes;
-    }
-
-    vm.runInThisContext(code, { filename });
-}
+// --- Test Suite ---
 
 // --- Test Suite ---
 

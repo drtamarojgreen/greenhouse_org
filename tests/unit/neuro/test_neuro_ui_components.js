@@ -2,15 +2,9 @@
  * Unit Tests for Neuro UI Components (Canvas Controls)
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
-
 // --- Mock Browser Environment ---
-global.window = global;
-
+// Harness provides window, document, location, performance, etc.
+// Specific Mocks for UI components test:
 function createMockCtx() {
     return {
         save: () => { },
@@ -48,14 +42,7 @@ function createMockCtx() {
     };
 }
 
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-loadScript('neuro/neuro_controls.js');
+// --- Test Suites ---
 
 TestFramework.describe('GreenhouseNeuroControls', () => {
     let ctx;

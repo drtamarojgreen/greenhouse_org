@@ -2,99 +2,9 @@
  * Unit Tests for Neuro UI 3D and Components
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
-
 // --- Mock Browser Environment ---
-global.window = global;
-global.performance = { now: () => Date.now() };
-global.Path2D = class {
-    moveTo() { }
-    lineTo() { }
-    closePath() { }
-};
-global.document = {
-    querySelector: () => null,
-    createElement: (tag) => {
-        if (tag === 'canvas') {
-            return {
-                getContext: () => ({
-                    save: () => { },
-                    restore: () => { },
-                    translate: () => { },
-                    rotate: () => { },
-                    scale: () => { },
-                    beginPath: () => { },
-                    moveTo: () => { },
-                    lineTo: () => { },
-                    stroke: () => { },
-                    fill: () => { },
-                    rect: () => { },
-                    clip: () => { },
-                    fillText: () => { },
-                    measureText: () => ({ width: 100 }),
-                    createLinearGradient: () => ({ addColorStop: () => { } }),
-                    createRadialGradient: () => ({ addColorStop: () => { } }),
-                    clearRect: () => { },
-                    fillRect: () => { },
-                    strokeRect: () => { },
-                    closePath: () => { },
-                    quadraticCurveTo: () => { },
-                    bezierCurveTo: () => { },
-                    arcTo: () => { },
-                    arc: () => { },
-                    ellipse: () => { },
-                    setLineDash: () => { },
-                    set fillStyle(v) { },
-                    set strokeStyle(v) { },
-                    set lineWidth(v) { },
-                    set globalAlpha(v) { },
-                    set font(v) { },
-                    set textAlign(v) { },
-                    set textBaseline(v) { }
-                }),
-                width: 800,
-                height: 600,
-                style: {},
-                addEventListener: () => { },
-                appendChild: () => { },
-                getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
-            };
-        }
-        return {
-            style: {},
-            appendChild: () => { },
-            addEventListener: () => { },
-            offsetWidth: 1000,
-            offsetHeight: 750,
-            innerHTML: '',
-            focus: () => { }
-        };
-    },
-    getElementById: () => ({
-        textContent: '',
-        style: {},
-        addEventListener: () => { }
-    })
-};
-global.console = console;
-global.requestAnimationFrame = (cb) => { return 1; };
-global.cancelAnimationFrame = (id) => { };
-global.setInterval = (cb) => { return 1; };
-global.clearInterval = (id) => { };
-global.addEventListener = () => { };
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-// --- Mock Dependencies ---
+// Harness provides window, document, location, performance, etc.
+// Specific Mocks for UI test:
 window.GreenhouseModels3DMath = {
     project3DTo2D: (x, y, z) => ({ x: x + 400, y: y + 300, scale: 1, depth: z }),
     applyDepthFog: (alpha, depth) => alpha,
@@ -112,17 +22,7 @@ window.GreenhouseADHDData = {
     getEnhancementById: () => ({ name: 'Test', desc: 'Test' })
 };
 
-// Load Modules
-loadScript('neuro/neuro_config.js');
-loadScript('neuro/neuro_ui_3d_geometry.js');
-loadScript('neuro/neuro_ui_3d_brain.js');
-loadScript('neuro/neuro_ui_3d_neuron.js');
-loadScript('neuro/neuro_ui_3d_synapse.js');
-loadScript('neuro/neuro_ui_3d_stats.js');
-loadScript('neuro/neuro_ui_3d_enhanced.js');
-loadScript('neuro/neuro_controls.js');
-loadScript('neuro/neuro_ga.js');
-loadScript('neuro/neuro_app.js');
+// --- Test Suites ---
 
 // --- Test Suites ---
 

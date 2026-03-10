@@ -2,7 +2,7 @@
 const assert = require('assert');
 
 // Mock window and GreenhouseModelsUtil
-global.window = {
+window = {
     GreenhouseModelsUtil: {
         SimulationEngine: class {
             constructor(options) {
@@ -50,25 +50,16 @@ global.window = {
 // Load the app logic
 require('../../docs/js/stress_app.js');
 
-const app = global.window.GreenhouseStressApp;
+const app = window.GreenhouseStressApp;
 
 function runTests() {
     console.log("Running Clinical Intervention Logic Tests...");
 
     console.log("Setting up Mock DOM...");
     // Setup Mock DOM for init
-    global.document = {
-        querySelector: () => ({ innerHTML: '', style: {}, appendChild: () => {} }),
-        createElement: () => ({
-            getContext: () => ({}),
-            style: {},
-            width: 1000,
-            height: 750
-        })
-    };
-    global.requestAnimationFrame = () => {};
+        global.requestAnimationFrame = () => {};
     global.cancelAnimationFrame = () => {};
-    global.window.addEventListener = () => {};
+    window.addEventListener = () => {};
 
     console.log("Initializing App...");
     app.init('#dummy');

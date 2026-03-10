@@ -1,79 +1,13 @@
 // tests/unit/test_genetic_pip_interactions.js
 // Unit tests for PiP window interactions and controls
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.HTMLElement = class { };
-global.document = {
-    body: {
-        appendChild: () => { },
-        removeChild: () => { }
-    },
-    createElement: (tag) => ({
-        tag,
-        getContext: () => ({
-            save: () => { },
-            restore: () => { },
-            beginPath: () => { },
-            arc: () => { },
-            fill: () => { },
-            stroke: () => { },
-            fillRect: () => { },
-            strokeRect: () => { },
-            rect: () => { },
-            clip: () => { },
-            translate: () => { },
-            scale: () => { },
-            rotate: () => { },
-            clearRect: () => { },
-            fillText: () => { },
-            measureText: () => ({ width: 0 }),
-            createLinearGradient: () => ({ addColorStop: () => { } }),
-            createRadialGradient: () => ({ addColorStop: () => { } }),
-            closePath: () => { }
-        }),
-        appendChild: () => { },
-        parentNode: { removeChild: () => { } },
-        getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
-        width: 800,
-        height: 600,
-        style: {},
-        addEventListener: () => { },
-        removeEventListener: () => { },
-        querySelector: () => ({ addEventListener: () => { } }),
-        id: ''
-    }),
-    getElementById: (id) => ({ style: {}, appendChild: () => { }, innerHTML: '', addEventListener: () => { }, textContent: '' }),
-    querySelector: () => ({ style: {}, addEventListener: () => { } }),
-    addEventListener: () => { }
-};
-global.cancelAnimationFrame = () => { };
-global.requestAnimationFrame = (cb) => { };
-global.performance = { now: () => Date.now() };
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
 
 // Mock GreenhouseModels3DMath
 global.window.GreenhouseModels3DMath = {
     project3DTo2D: (x, y, z) => ({ x, y, scale: 1, depth: z })
 };
-
-// Load Dependencies
-loadScript('genetic/genetic_config.js');
-loadScript('genetic/genetic_camera_controls.js');
-loadScript('genetic/genetic_pip_controls.js');
-loadScript('genetic/genetic_ui_3d.js');
 
 const jasmine = {
     createSpy: (name) => {

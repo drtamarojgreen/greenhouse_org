@@ -2,25 +2,10 @@
  * Unit Tests for Neuro GA (Genetic Algorithm)
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
-
 // --- Mock Browser Environment ---
-global.window = global;
-global.performance = { now: () => Date.now() };
+// Harness provides window, document, location, performance, etc.
 
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-// Load GA
-loadScript('neuro/neuro_ga.js');
+// --- Test Suites ---
 
 TestFramework.describe('NeuroGA', () => {
     let ga;

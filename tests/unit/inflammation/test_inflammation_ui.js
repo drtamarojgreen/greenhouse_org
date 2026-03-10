@@ -3,80 +3,13 @@
  * @description Unit tests for the Neuroinflammation UI and Interaction logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.addEventListener = () => {}; // Added missing addEventListener
-global.dispatchEvent = () => {};
-global.CustomEvent = class { constructor(name, detail) { this.name = name; this.detail = detail; } };
-global.document = {
-    createElement: (tag) => {
-        if (tag === 'canvas') {
-            return {
-                getContext: () => ({
-                    fillRect: () => {},
-                    fillText: () => {},
-                    beginPath: () => {},
-                    moveTo: () => {},
-                    lineTo: () => {},
-                    quadraticCurveTo: () => {},
-                    closePath: () => {},
-                    fill: () => {},
-                    stroke: () => {},
-                    measureText: () => ({ width: 0 }),
-                    save: () => {},
-                    restore: () => {},
-                    rect: () => {}
-                }),
-                width: 1000,
-                height: 750,
-                style: {},
-                getBoundingClientRect: () => ({ left: 0, top: 0, width: 1000, height: 750 }),
-                onmousedown: null,
-                onmousemove: null,
-                onmouseup: null,
-                onwheel: null
-            };
-        }
-        return { appendChild: () => {}, innerHTML: '', style: {} };
-    },
-    querySelector: () => ({
-        appendChild: () => {},
-        innerHTML: '',
-        offsetWidth: 1000,
-        offsetHeight: 750,
-        style: {}
-    }),
-    currentScript: null
-};
-global.navigator = { userAgent: 'node' };
-global.console = console;
-global.requestAnimationFrame = (cb) => {};
-global.prompt = (msg, def) => def; // Mock prompt
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
 
 // Mock 3D Math
 global.window.GreenhouseModels3DMath = {
     project3DTo2D: (x, y, z) => ({ x: x + 500, y: y + 350, scale: 1, depth: z })
 };
-
-// Load Dependencies
-loadScript('models_util.js');
-loadScript('inflammation/inflammation_config.js');
-loadScript('inflammation/inflammation_geometry.js');
-loadScript('inflammation/inflammation_app.js');
-loadScript('inflammation/inflammation_ui_3d.js');
 
 TestFramework.describe('GreenhouseInflammationApp UI', () => {
 

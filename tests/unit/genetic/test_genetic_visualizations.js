@@ -2,26 +2,8 @@
  * Unit Tests for Genetic Visualizations (DNA, Protein, Brain)
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    createElement: () => ({}),
-    getElementById: () => ({})
-};
-global.console = console;
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
 
 // --- Mock Dependencies ---
 // Mock GreenhouseModels3DMath
@@ -45,9 +27,6 @@ window.GreenhouseGeneticConfig = {
 };
 
 // Load Modules
-loadScript('genetic/genetic_ui_3d_dna.js');
-loadScript('genetic/genetic_ui_3d_protein.js');
-loadScript('genetic/genetic_ui_3d_brain.js');
 
 // --- Test Suites ---
 

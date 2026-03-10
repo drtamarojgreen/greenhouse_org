@@ -2,63 +2,11 @@
  * Unit Tests for Genetic Page Models
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.HTMLElement = class { };
-global.document = {
-    getElementById: () => ({
-        addEventListener: () => { },
-        getContext: () => ({
-            save: () => { },
-            restore: () => { },
-            translate: () => { },
-            rotate: () => { },
-            scale: () => { },
-            beginPath: () => { },
-            moveTo: () => { },
-            lineTo: () => { },
-            stroke: () => { },
-            fill: () => { },
-            rect: () => { },
-            clip: () => { },
-            fillText: () => { },
-            measureText: () => ({ width: 0 }),
-            createLinearGradient: () => ({ addColorStop: () => { } }),
-            clearRect: () => { },
-            fillRect: () => { },
-            strokeRect: () => { }
-        }),
-        width: 800,
-        height: 600,
-        getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 })
-    }),
-    createElement: () => ({
-        getContext: () => ({})
-    })
-};
-global.addEventListener = () => { };
-global.console = console;
-global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
 // --- Load Dependencies ---
 // Load Config first as others depend on it
-loadScript('genetic/genetic_config.js');
-loadScript('genetic/genetic_camera_controls.js');
-loadScript('genetic/genetic_pip_controls.js');
-loadScript('genetic/genetic_algo.js');
 
 // --- Test Suites ---
 
