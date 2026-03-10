@@ -324,6 +324,40 @@
                 assign: () => { }, replace: () => { }, reload: () => { }
             };
 
+            const originalCreateElement = window._originalDocumentMethods.createElement;
+            const shadowDocument = {
+                ...document,
+                getElementById: window._originalDocumentMethods.getElementById,
+                querySelector: window._originalDocumentMethods.querySelector,
+                createElement: (tagName, ...args) => {
+                    const el = originalCreateElement(tagName, ...args);
+                    if (String(tagName).toLowerCase() === 'canvas' && !el.getBoundingClientRect) {
+                        el.getBoundingClientRect = () => ({
+                            top: 0,
+                            left: 0,
+                            width: el.width || 800,
+                            height: el.height || 600
+                        });
+                    }
+                    return el;
+                }
+            };
+
+            const shadowUtils = new Proxy(window.GreenhouseUtils || {}, {
+                get(target, prop) {
+                    if (prop === 'observeAndReinitializeApplication') {
+                        return (app) => {
+                            if (!app) {
+                                hWarn('[Harness] Guarded observeAndReinitializeApplication(undefined)');
+                                return;
+                            }
+                            if (typeof target[prop] === 'function') return target[prop](app);
+                        };
+                    }
+                    return target[prop];
+                }
+            });
+
             const harnessLoadedScriptCode = new Set();
             const vmExecutedScriptCode = new Set();
 
@@ -360,14 +394,15 @@
                 assert: window.assert,
                 AssertionError: window.AssertionError,
                 location: mockLocation,
-                document: document,
+                document: shadowDocument,
                 performance: safePerformance,
                 loadScript: (...args) => {
-                    if (window.GreenhouseUtils && typeof window.GreenhouseUtils.loadScript === 'function') {
-                        return window.GreenhouseUtils.loadScript(...args);
+                    if (typeof shadowUtils.loadScript === 'function') {
+                        return shadowUtils.loadScript(...args);
                     }
                     return Promise.reject(new Error('GreenhouseUtils.loadScript is unavailable in harness'));
                 },
+                GreenhouseUtils: shadowUtils,
                 HTMLElement: window.HTMLElement || class HTMLElement { },
                 HTMLScriptElement: window.HTMLScriptElement || class HTMLScriptElement { },
                 MutationObserver: window.MutationObserver || class MutationObserver {
