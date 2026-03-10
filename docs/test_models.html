@@ -376,6 +376,29 @@
                 };
             }
 
+            const normalizePath = (...parts) => {
+                const raw = parts.join('/').replace(/\\/g, '/');
+                const stack = [];
+                raw.split('/').forEach(part => {
+                    if (!part || part === '.') return;
+                    if (part === '..') {
+                        stack.pop();
+                        return;
+                    }
+                    stack.push(part);
+                });
+                return stack.join('/');
+            };
+
+            const readTextSync = (path) => {
+                const cleanPath = String(path || '').replace(/^\/+/, '');
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', cleanPath, false);
+                xhr.send(null);
+                if (xhr.status >= 200 && xhr.status < 300) return xhr.responseText;
+                throw new Error(`Mock FS read failed for ${cleanPath}: HTTP ${xhr.status}`);
+            };
+
             window.require = (path) => {
                 hLog(`[Harness] Mock Require: ${path}`);
                 if (path.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
@@ -399,11 +422,21 @@
                 if (path === 'fs') return {
                     readFileSync: (p) => {
                         hLog(`[Harness] Mock FS read: ${p}`);
-                        return '';
+                        return readTextSync(p);
                     },
-                    existsSync: () => true
+                    existsSync: (p) => {
+                        try {
+                            readTextSync(p);
+                            return true;
+                        } catch {
+                            return false;
+                        }
+                    }
                 };
-                if (path === 'path') return { join: (...args) => args.join('/'), resolve: (...args) => args.join('/') };
+                if (path === 'path') return {
+                    join: (...args) => normalizePath(...args),
+                    resolve: (...args) => normalizePath(...args)
+                };
                 if (path === 'vm') return {
                     createContext: (sandbox) => sandbox,
                     runInContext: (code, context) => {
@@ -411,7 +444,8 @@
                         return fn(window.require, {exports:{}}, {}, "", context, window.process, window.console, context, context.document);
                     },
                     runInThisContext: (code) => {
-                        hLog("[Harness] vm.runInThisContext ignored for browser-loaded scripts");
+                        hLog('[Harness] vm.runInThisContext executing browser script payload');
+                        return (0, eval)(code);
                     }
                 };
                 return {};
@@ -672,6 +706,7 @@
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const code = await response.text();
 
+                    const fileDir = file.includes('/') ? `tests/unit/${file.substring(0, file.lastIndexOf('/'))}` : 'tests/unit';
                     const wrappedCode = `(function(require, module, exports, __dirname, global, process, console, TestFramework) {
                         try {
                             ${code}
@@ -683,7 +718,7 @@
                                 });
                             }
                         }
-                    })(window.require, {exports:{}}, {}, "", window.global, window.process, window.console, window.TestFramework);`;
+                    })(window.require, {exports:{}}, {}, "${fileDir}", window.global, window.process, window.console, window.TestFramework);`;
 
                     const script = document.createElement('script');
                     script.textContent = wrappedCode;
