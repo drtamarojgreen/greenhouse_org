@@ -129,11 +129,13 @@
                 descContainer.style.flex = '1';
 
                 const description = model.querySelector('description');
-                const firstPara = description.getElementsByTagName('paragraph')[0];
-                if (firstPara) {
-                    const pElem = document.createElement('p');
-                    pElem.textContent = firstPara.textContent;
-                    descContainer.appendChild(pElem);
+                if (description) {
+                    const firstPara = description.getElementsByTagName('paragraph')[0];
+                    if (firstPara) {
+                        const pElem = document.createElement('p');
+                        pElem.textContent = firstPara.textContent;
+                        descContainer.appendChild(pElem);
+                    }
                 }
                 card.appendChild(descContainer);
 

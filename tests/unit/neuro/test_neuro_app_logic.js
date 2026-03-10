@@ -2,98 +2,9 @@
  * Unit Tests for Neuro App Logic
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
-
 // --- Mock Browser Environment ---
-global.window = global;
-global.addEventListener = () => { };
-global.removeEventListener = () => { };
-global.performance = { now: () => Date.now() };
-global.requestAnimationFrame = (cb) => 1;
-global.cancelAnimationFrame = (id) => { };
-
-global.document = {
-    querySelector: () => ({
-        innerHTML: '',
-        style: {},
-        appendChild: () => { },
-        addEventListener: () => { },
-        offsetWidth: 1000,
-        offsetHeight: 750
-    }),
-    getElementById: () => null,
-    body: {
-        appendChild: () => { }
-    },
-    createElement: (tag) => {
-        if (tag === 'canvas') {
-            const canvas = {
-                getContext: () => ({
-                    save: () => { },
-                    restore: () => { },
-                    translate: () => { },
-                    rotate: () => { },
-                    scale: () => { },
-                    beginPath: () => { },
-                    moveTo: () => { },
-                    lineTo: () => { },
-                    stroke: () => { },
-                    fill: () => { },
-                    rect: () => { },
-                    clip: () => { },
-                    fillText: () => { },
-                    measureText: () => ({ width: 0 }),
-                    createLinearGradient: () => ({ addColorStop: () => { } }),
-                    createRadialGradient: () => ({ addColorStop: () => { } }),
-                    clearRect: () => { },
-                    fillRect: () => { },
-                    strokeRect: () => { },
-                    closePath: () => { },
-                    quadraticCurveTo: () => { },
-                    bezierCurveTo: () => { },
-                    arcTo: () => { },
-                    arc: () => { },
-                    setLineDash: () => { },
-                    set fillStyle(v) { },
-                    set strokeStyle(v) { },
-                    set lineWidth(v) { },
-                    set globalAlpha(v) { },
-                    set font(v) { },
-                    set textAlign(v) { },
-                    set textBaseline(v) { }
-                }),
-                width: 1000,
-                height: 600,
-                style: {},
-                addEventListener: () => { },
-                appendChild: () => { },
-                getBoundingClientRect: () => ({ left: 0, top: 0, width: canvas.width, height: canvas.height })
-            };
-            return canvas;
-        }
-        return {
-            style: {},
-            appendChild: () => { },
-            addEventListener: () => { },
-            focus: () => { },
-            offsetWidth: 1000,
-            offsetHeight: 750
-        };
-    }
-};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-// Mock Dependencies
+// Harness provides window, document, location, performance, etc.
+// Specific Mocks for this logic test:
 window.GreenhouseModels3DMath = {
     project3DTo2D: (x, y, z) => ({ x, y, scale: 1, depth: z }),
     applyDepthFog: (a, d) => a
@@ -118,15 +29,11 @@ window.GreenhouseBrainMeshRealistic = {
 window.GreenhouseNeuroGeometry = {
     getRegionVertices: () => [0],
     generateTubeMesh: () => ({ vertices: [], indices: [] }),
-    initializeBrainShell: (shell) => { shell.vertices = [{x:0, y:0, z:0}]; },
+    initializeBrainShell: (shell) => { shell.vertices = [{ x: 0, y: 0, z: 0 }]; },
     createSynapseGeometry: () => ({ vertices: [], indices: [] })
 };
 
-// Load modules
-loadScript('neuro/neuro_ga.js');
-loadScript('neuro/neuro_ui_3d_enhanced.js');
-loadScript('neuro/neuro_controls.js');
-loadScript('neuro/neuro_app.js');
+// --- Test Suites ---
 
 TestFramework.describe('GreenhouseNeuroApp', () => {
     let app;
@@ -148,7 +55,7 @@ TestFramework.describe('GreenhouseNeuroApp', () => {
         app.handleMouseDown({
             clientX: tab.x + 5,
             clientY: tab.y + 5,
-            preventDefault: () => {}
+            preventDefault: () => { }
         });
         assert.equal(app.state.activeTab, 'adhd');
     });
@@ -209,7 +116,7 @@ TestFramework.describe('GreenhouseNeuroApp', () => {
             clientX: 100,
             clientY: 300,
             deltaY: 100,
-            preventDefault: () => {}
+            preventDefault: () => { }
         });
 
         assert.equal(app.state.scrollOffset, 100);

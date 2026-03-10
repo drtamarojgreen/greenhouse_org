@@ -3,69 +3,11 @@
  * @description Verify that ADHD scenarios trigger both GA logic and visual rendering changes.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const { assert } = require('../../utils/assertion_library.js');
-const TestFramework = require('../../utils/test_framework.js');
-
 // --- Mock Browser Environment ---
-global.window = global;
-global.addEventListener = () => { };
-global.requestAnimationFrame = (cb) => { return 1; };
-global.cancelAnimationFrame = (id) => { };
-global.performance = { now: () => Date.now() };
-global.Path2D = class { moveTo() { } lineTo() { } };
-const createMockElement = (tag) => ({
-    tagName: tag.toUpperCase(),
-    getContext: () => ({
-        save: () => { }, restore: () => { }, translate: () => { }, rotate: () => { }, scale: () => { },
-        beginPath: () => { }, moveTo: () => { }, lineTo: () => { }, stroke: () => { }, fill: () => { },
-        rect: () => { }, clip: () => { }, fillText: () => { }, measureText: () => ({ width: 100 }),
-        createLinearGradient: () => ({ addColorStop: () => { } }),
-        createRadialGradient: () => ({ addColorStop: () => { } }),
-        clearRect: () => { }, fillRect: () => { }, strokeRect: () => { }, closePath: () => { },
-        quadraticCurveTo: () => { }, bezierCurveTo: () => { }, arcTo: () => { }, arc: () => { },
-        setLineDash: () => { },
-        set fillStyle(v) { }, set strokeStyle(v) { }, set lineWidth(v) { }, set globalAlpha(v) { },
-        set font(v) { }, set textAlign(v) { }, set textBaseline(v) { }, set filter(v) { }
-    }),
-    width: 800, height: 600, style: {},
-    addEventListener: () => { },
-    removeEventListener: () => { },
-    appendChild: () => { },
-    getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
-    focus: () => { },
-    blur: () => { }
-});
+// Harness provides window, document, location, performance, etc.
+// Specific Mocks for ADHD scenarios test if needed:
 
-global.document = {
-    createElement: createMockElement,
-    querySelector: () => null,
-    getElementById: () => null,
-    body: {
-        appendChild: () => { }
-    }
-};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-loadScript('models_3d_math.js');
-loadScript('models_util.js');
-loadScript('neuro/neuro_config.js');
-loadScript('neuro/neuro_adhd_data.js');
-loadScript('neuro/neuro_ui_3d_geometry.js');
-loadScript('neuro/neuro_ui_3d_brain.js');
-loadScript('neuro/neuro_ui_3d_neuron.js');
-loadScript('neuro/neuro_ui_3d_synapse.js');
-loadScript('neuro/neuro_ui_3d_enhanced.js');
-loadScript('neuro/neuro_ga.js');
-loadScript('neuro/neuro_app.js');
+// --- Test Suites ---
 
 TestFramework.describe('ADHD Scenarios Integration', () => {
 
