@@ -52,6 +52,14 @@ global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
+    const constructorByScript = {
+        'neuro/neuro_ga.js': 'NeuroGA',
+        'neuro/neuro_app.js': 'GreenhouseNeuroApp',
+        'neuro/neuro_ui_3d.js': 'GreenhouseNeuroUI3D'
+    };
+    const constructorName = constructorByScript[filename];
+    if (constructorName && typeof window[constructorName] !== 'undefined') return;
+
     const filePath = path.join(__dirname, '../../../docs/js', filename);
     const startTime = performance.now();
     const code = fs.readFileSync(filePath, 'utf8');
