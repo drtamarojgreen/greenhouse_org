@@ -20,6 +20,16 @@ global.Path2D = class {
 
 // --- Helper to Load Scripts ---
 function loadScript(filename) {
+    const neuroConstructorMap = {
+        'neuro/neuro_ga.js': 'NeuroGA',
+        'neuro/neuro_ui_3d_geometry.js': 'GreenhouseNeuroGeometry',
+        'neuro/neuro_ui_3d_brain.js': 'GreenhouseNeuroBrain',
+        'neuro/neuro_ui_3d_neuron.js': 'GreenhouseNeuroNeuron',
+        'neuro/neuro_ui_3d_synapse.js': 'GreenhouseNeuroSynapse'
+    };
+    const constructorName = neuroConstructorMap[filename];
+    if (constructorName && typeof window[constructorName] !== 'undefined') return;
+
     const filePath = path.join(__dirname, '../../../docs/js', filename);
     const code = fs.readFileSync(filePath, 'utf8');
     vm.runInThisContext(code);

@@ -2,6 +2,10 @@
  * Unit Tests for Neuro App Logic
  */
 
+if (typeof window === 'undefined') {
+    global.window = global;
+}
+
 // --- Mock Browser Environment ---
 // Harness provides window, document, location, performance, etc.
 // Specific Mocks for this logic test:
@@ -10,7 +14,23 @@ window.GreenhouseModels3DMath = {
     applyDepthFog: (a, d) => a
 };
 window.GreenhouseModelsUtil = { t: (k) => k, toggleLanguage: () => { }, wrapText: () => { } };
-window.GreenhouseNeuroConfig = { get: () => ({ x: 0, y: 0, z: 0, fov: 600 }), set: () => { } };
+const neuroConfigStore = {
+    camera: {
+        initial: { x: 0, y: 0, z: 0, fov: 600 }
+    }
+};
+window.GreenhouseNeuroConfig = {
+    get: (path) => path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), neuroConfigStore),
+    set: (path, value) => {
+        const keys = path.split('.');
+        const leaf = keys.pop();
+        const target = keys.reduce((acc, key) => {
+            if (!acc[key] || typeof acc[key] !== 'object') acc[key] = {};
+            return acc[key];
+        }, neuroConfigStore);
+        target[leaf] = value;
+    }
+};
 window.GreenhouseADHDData = {
     scenarios: {
         'inattentive': { id: 'inattentive', enhancements: [1] }

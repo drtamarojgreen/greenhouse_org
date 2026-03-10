@@ -15,7 +15,9 @@ global.window = global;
 // --- Load Script ---
 const filePath = path.join(__dirname, '../../../docs/js/neuro/neuro_ga.js');
 const code = fs.readFileSync(filePath, 'utf8');
-vm.runInThisContext(code);
+if (typeof window.NeuroGA === 'undefined') {
+    vm.runInThisContext(code);
+}
 
 TestFramework.describe('Neuro Genetic Algorithm (Unit)', () => {
 
