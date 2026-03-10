@@ -1,0 +1,146 @@
+body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+header {
+    background-color: #fff;
+    width: 100%;
+    padding: 15px 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1000;
+    border-bottom: 2px solid #4ca1af;
+}
+
+.harness-title {
+    color: #4ca1af;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 15px 0;
+}
+
+.controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+select {
+    padding: 10px 15px;
+    font-size: 15px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    width: 320px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+select:focus {
+    border-color: #4ca1af;
+}
+
+.btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+#run-suite-tests {
+    background-color: #4ca1af;
+    color: white;
+}
+
+#run-suite-tests:hover {
+    background-color: #3d8b98;
+}
+
+#clear-environment {
+    background-color: #e4e6eb;
+    color: #1c1e21;
+}
+
+#clear-environment:hover {
+    background-color: #d8dadf;
+}
+
+#active-label {
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #777;
+}
+
+#model-container {
+    width: 100%;
+    flex-grow: 1;
+    position: relative;
+    background-color: #fff;
+    padding-top: 20px;
+}
+
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.98);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    font-size: 20px;
+    font-weight: bold;
+    color: #4ca1af;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid rgba(76, 161, 175, 0.1);
+    border-top: 6px solid #4ca1af;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 25px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.wixui-section {
+    display: block;
+    width: 100%;
+    min-height: 600px;
+}
+
+#model-target {
+    width: 100%;
+    min-height: 500px;
+    display: block;
+}
+
+.wixui-section div {
+    min-height: 5px;
+    min-width: 5px;
+}
