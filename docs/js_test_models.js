@@ -348,6 +348,9 @@
 
             window.module = { exports: {} };
             window.process = { exit: () => { }, env: { NODE_ENV: 'test' } };
+            const safePerformance = (window.performance && typeof window.performance.now === 'function')
+                ? window.performance
+                : { now: () => Date.now() };
             const shadowGlobal = {
                 process: window.process,
                 require: window.require,
@@ -358,11 +361,20 @@
                 AssertionError: window.AssertionError,
                 location: mockLocation,
                 document: document,
-                performance: window.performance || { now: () => Date.now() },
-                loadScript: (...args) => window.GreenhouseUtils.loadScript(...args),
-                HTMLElement: window.HTMLElement,
-                HTMLScriptElement: window.HTMLScriptElement,
-                MutationObserver: window.MutationObserver
+                performance: safePerformance,
+                loadScript: (...args) => {
+                    if (window.GreenhouseUtils && typeof window.GreenhouseUtils.loadScript === 'function') {
+                        return window.GreenhouseUtils.loadScript(...args);
+                    }
+                    return Promise.reject(new Error('GreenhouseUtils.loadScript is unavailable in harness'));
+                },
+                HTMLElement: window.HTMLElement || class HTMLElement { },
+                HTMLScriptElement: window.HTMLScriptElement || class HTMLScriptElement { },
+                MutationObserver: window.MutationObserver || class MutationObserver {
+                    disconnect() { }
+                    observe() { }
+                    takeRecords() { return []; }
+                }
             };
             window.global = new Proxy({}, {
                 get(t, p) {

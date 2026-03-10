@@ -2,6 +2,10 @@
  * Unit Tests for Neuro App Logic
  */
 
+if (typeof window === 'undefined') {
+    global.window = global;
+}
+
 // --- Mock Browser Environment ---
 // Harness provides window, document, location, performance, etc.
 // Specific Mocks for this logic test:
