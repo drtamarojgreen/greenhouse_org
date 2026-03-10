@@ -3,40 +3,8 @@
  * Tests the actual position of objects and cameras in PiPs and main window
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    getElementById: (id) => null,
-    createElement: (tag) => ({
-        style: {},
-        addEventListener: () => {},
-        appendChild: () => {},
-        querySelector: () => null
-    })
-};
-global.console = console;
-
-// Mock requestAnimationFrame
-global.requestAnimationFrame = (callback) => {
-    return setTimeout(callback, 16); // ~60fps
-};
-
-global.cancelAnimationFrame = (id) => {
-    clearTimeout(id);
-};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
 
 // --- Mock Config ---
 window.GreenhouseGeneticConfig = {
@@ -148,8 +116,6 @@ function createKeyboardEvent(type, key) {
 
 // Load Modules
 try {
-    loadScript('genetic/genetic_camera_controls.js');
-    loadScript('genetic/genetic_pip_controls.js');
     console.log('✓ Modules loaded successfully');
 } catch (error) {
     console.error('✗ Error loading modules:', error.message);

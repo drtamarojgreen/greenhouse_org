@@ -802,9 +802,27 @@
                             'neuro/neuro_ga.js', 'neuro/neuro_app.js', 'neuro/neuro_controls.js',
                             'neuro/neuro_ui_3d.js', 'neuro/neuro_adhd_data.js'
                         ],
-                        'genetic': ['greenhouse.js', 'models_toc.js'], // Basic dependencies
-                        'stress': ['stress/stress_config.js'],
-                        'inflammation': ['inflammation/inflammation_config.js']
+                        'genetic': [
+                            'models_util.js', 'models_3d_math.js',
+                            'genetic/genetic_config.js', 'genetic/genetic_camera_controls.js', 'genetic/genetic_lighting.js',
+                            'genetic/genetic_pip_controls.js', 'genetic/genetic_algo.js', 'genetic/genetic_ui_3d_geometry.js',
+                            'genetic/genetic_ui_3d_dna.js', 'genetic/genetic_ui_3d_gene.js', 'genetic/genetic_ui_3d_chromosome.js',
+                            'genetic/genetic_ui_3d_protein.js', 'genetic/genetic_ui_3d_brain.js', 'genetic/genetic_ui_3d_stats.js',
+                            'genetic/genetic_ui_3d.js', 'genetic.js'
+                        ],
+                        'stress': [
+                            'models_util.js', 'models_3d_math.js', 'neuro_ui_3d_geometry.js',
+                            'stress/stress_config.js', 'stress/stress_geometry.js', 'stress/stress_app.js', 'stress/stress_macro.js',
+                            'stress/stress_pathway.js', 'stress/stress_systemic.js', 'stress/stress_controls.js',
+                            'stress/stress_tooltips.js', 'stress/stress_ui_3d.js'
+                        ],
+                        'inflammation': [
+                            'models_util.js',
+                            'inflammation/inflammation_config.js', 'inflammation/inflammation_geometry.js',
+                            'inflammation/inflammation_pathway.js', 'inflammation/inflammation_ui_3d.js',
+                            'inflammation/inflammation_analysis.js', 'inflammation/inflammation_app.js',
+                            'inflammation/inflammation_controls.js', 'inflammation/inflammation_tooltips.js'
+                        ]
                     };
 
                     const implFiles = implementationMap[modelId] || [];

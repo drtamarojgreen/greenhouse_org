@@ -3,75 +3,8 @@
  * Diagnoses why main window and PiP controls are not independent
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    getElementById: () => null,
-    createElement: () => ({
-        style: {},
-        addEventListener: () => {},
-        appendChild: () => {},
-        getContext: () => ({
-            save: () => {},
-            restore: () => {},
-            clearRect: () => {},
-            fillRect: () => {},
-            strokeRect: () => {},
-            fillText: () => {},
-            beginPath: () => {},
-            moveTo: () => {},
-            lineTo: () => {},
-            stroke: () => {},
-            fill: () => {},
-            arc: () => {},
-            rect: () => {},
-            clip: () => {},
-            translate: () => {},
-            rotate: () => {},
-            scale: () => {},
-            createLinearGradient: () => ({ addColorStop: () => {} }),
-            createRadialGradient: () => ({ addColorStop: () => {} }),
-            measureText: () => ({ width: 0 }),
-            set fillStyle(val) {},
-            set strokeStyle(val) {},
-            set lineWidth(val) {},
-            set font(val) {},
-            set textAlign(val) {},
-            set textBaseline(val) {},
-            set globalAlpha(val) {},
-            set lineCap(val) {}
-        }),
-        getBoundingClientRect: () => ({ left: 0, top: 0, width: 1000, height: 800 }),
-        width: 1000,
-        height: 800,
-        offsetWidth: 1000,
-        offsetHeight: 800
-    }),
-    querySelector: () => null,
-    querySelectorAll: () => []
-};
-global.console = console;
-global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
-global.addEventListener = () => {};
-global.Date = Date;
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-// --- Load Dependencies ---
-loadScript('genetic/genetic_config.js');
-loadScript('genetic/genetic_camera_controls.js');
-loadScript('genetic/genetic_pip_controls.js');
 
 // --- Test Suites ---
 

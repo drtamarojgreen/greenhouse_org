@@ -1,60 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
 
 /**
  * Unit Test for Inflammation Model Logic
  */
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {
-    createElement: () => ({
-        getContext: () => ({
-            fillRect: () => {},
-            fillText: () => {},
-            beginPath: () => {},
-            moveTo: () => {},
-            lineTo: () => {},
-            quadraticCurveTo: () => {},
-            closePath: () => {},
-            fill: () => {},
-            stroke: () => {},
-            measureText: () => ({ width: 10 }),
-            save: () => {},
-            restore: () => {}
-        }),
-        appendChild: () => {},
-        style: {}
-    }),
-    querySelector: () => ({
-        appendChild: () => {},
-        innerHTML: '',
-        offsetWidth: 1000,
-        style: {}
-    }),
-    body: { appendChild: () => {} },
-    currentScript: null
-};
-global.navigator = { userAgent: 'node' };
-global.console = console;
-global.requestAnimationFrame = (cb) => {};
-global.addEventListener = () => {};
-global.CustomEvent = class { constructor(name, options) { this.name = name; this.detail = options ? options.detail : null; } };
-global.dispatchEvent = () => {};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-loadScript('models_util.js');
-loadScript('inflammation/inflammation_config.js');
-loadScript('inflammation/inflammation_app.js');
 
 TestFramework.describe('Inflammation Model Logic (Restored Metrics)', () => {
     let app;

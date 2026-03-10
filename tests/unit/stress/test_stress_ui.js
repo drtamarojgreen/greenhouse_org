@@ -3,65 +3,8 @@
  * @description Unit tests for the Stress Dynamics UI and Interaction logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.addEventListener = () => {};
-global.dispatchEvent = () => {};
-global.CustomEvent = class { constructor(name, detail) { this.name = name; this.detail = detail; } };
-global.document = {
-    createElement: (tag) => {
-        if (tag === 'canvas') {
-            return {
-                getContext: () => ({
-                    fillRect: () => {},
-                    fillText: () => {},
-                    beginPath: () => {},
-                    moveTo: () => {},
-                    lineTo: () => {},
-                    quadraticCurveTo: () => {},
-                    closePath: () => {},
-                    fill: () => {},
-                    stroke: () => {},
-                    measureText: () => ({ width: 0 }),
-                    save: () => {},
-                    restore: () => {},
-                    rect: () => {},
-                    strokeRect: () => {},
-                    createRadialGradient: () => ({ addColorStop: () => {} })
-                }),
-                width: 1440,
-                height: 900,
-                style: {},
-                getBoundingClientRect: () => ({ left: 0, top: 0, width: 1440, height: 900 }),
-                addEventListener: () => {}
-            };
-        }
-        return { appendChild: () => {}, innerHTML: '', style: {}, addEventListener: () => {} };
-    },
-    querySelector: () => ({
-        appendChild: () => {},
-        innerHTML: '',
-        offsetWidth: 1440,
-        offsetHeight: 900,
-        style: {}
-    })
-};
-global.navigator = { userAgent: 'node' };
-global.console = console;
-global.requestAnimationFrame = (cb) => {};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
 
 // Mock 3D Math and Geometry
 global.window.GreenhouseModels3DMath = {
@@ -71,14 +14,6 @@ global.window.GreenhouseModels3DMath = {
 global.window.GreenhouseNeuroGeometry = {
     generateSphere: () => ({ vertices: [], faces: [] })
 };
-
-// Load Dependencies
-loadScript('models_util.js');
-loadScript('stress/stress_config.js');
-loadScript('stress/stress_geometry.js');
-loadScript('stress/stress_app.js');
-loadScript('stress/stress_systemic.js');
-loadScript('stress/stress_ui_3d.js');
 
 TestFramework.describe('GreenhouseStressApp UI', () => {
 

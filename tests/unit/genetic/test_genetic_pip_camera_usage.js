@@ -3,37 +3,8 @@
  * User reports: Only bottom right (brain region) PiP works
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {};
-global.console = console;
-
-// Mock GreenhouseModels3DMath
-global.GreenhouseModels3DMath = {
-    project3DTo2D: (x, y, z, camera, projection) => {
-        // Simple projection for testing
-        const scale = 1.0;
-        return {
-            x: x + projection.width / 2,
-            y: y + projection.height / 2,
-            scale: scale,
-            depth: z
-        };
-    }
-};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
 
 // --- Mock Config ---
 window.GreenhouseGeneticConfig = {
@@ -69,11 +40,6 @@ window.GreenhouseGeneticConfig = {
 };
 
 // Load Modules
-loadScript('genetic/genetic_camera_controls.js');
-loadScript('genetic/genetic_pip_controls.js');
-loadScript('genetic/genetic_ui_3d_gene.js');
-loadScript('genetic/genetic_ui_3d_protein.js');
-loadScript('genetic/genetic_ui_3d_brain.js');
 
 // --- Test Suites ---
 
