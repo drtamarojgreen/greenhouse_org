@@ -3,55 +3,8 @@
  * @description Regression and boundary tests for the Stress Dynamics Model.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.addEventListener = () => {};
-global.dispatchEvent = () => {};
-global.CustomEvent = class { constructor(name, detail) { this.name = name; this.detail = detail; } };
-global.document = {
-    createElement: (tag) => {
-        if (tag === 'canvas') {
-            return {
-                getContext: () => ({
-                    fillRect: () => {}, fillText: () => {}, beginPath: () => {},
-                    moveTo: () => {}, lineTo: () => {}, quadraticCurveTo: () => {},
-                    closePath: () => {}, fill: () => {}, stroke: () => {},
-                    measureText: () => ({ width: 0 }), save: () => {}, restore: () => {},
-                    createRadialGradient: () => ({ addColorStop: () => {} })
-                }),
-                appendChild: () => {}, style: {}, width: 1000, height: 750
-            };
-        }
-        return { appendChild: () => {}, style: {}, innerHTML: '' };
-    },
-    querySelector: () => ({
-        appendChild: () => {},
-        innerHTML: '',
-        offsetWidth: 1000,
-        style: {}
-    })
-};
-global.navigator = { userAgent: 'node' };
-global.console = console;
-global.requestAnimationFrame = (cb) => {};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-// Load Dependencies
-loadScript('models_util.js');
-loadScript('stress/stress_config.js');
-loadScript('stress/stress_app.js');
 
 TestFramework.describe('GreenhouseStressApp Regression', () => {
 

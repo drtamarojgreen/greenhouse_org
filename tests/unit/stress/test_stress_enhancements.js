@@ -3,81 +3,8 @@
  * @description Unit tests for new enhancements: scrubber, telemetry, and geometries.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.addEventListener = () => {};
-global.dispatchEvent = () => {};
-global.CustomEvent = class { constructor(name, detail) { this.name = name; this.detail = detail; } };
-
-const mockCanvas = {
-    width: 1000,
-    height: 750,
-    style: {},
-    getContext: function() { return this.ctx; },
-    getBoundingClientRect: () => ({ left: 0, top: 0, width: 1000, height: 750 })
-};
-
-const mockCtx = {
-    canvas: mockCanvas,
-    fillRect: () => {},
-    fillText: () => {},
-    beginPath: () => {},
-    moveTo: () => {},
-    lineTo: () => {},
-    quadraticCurveTo: () => {},
-    closePath: () => {},
-    fill: () => {},
-    stroke: () => {},
-    measureText: () => ({ width: 0 }),
-    save: () => {},
-    restore: () => {},
-    createRadialGradient: () => ({ addColorStop: () => {} }),
-    strokeRect: () => {},
-    arc: () => {},
-    drawImage: () => {},
-    setLineDash: () => {},
-    translate: () => {},
-    rotate: () => {},
-    scale: () => {}
-};
-mockCanvas.ctx = mockCtx;
-
-global.document = {
-    createElement: (tag) => {
-        if (tag === 'canvas') return mockCanvas;
-        return { appendChild: () => {}, style: {}, innerHTML: '' };
-    },
-    querySelector: () => ({
-        appendChild: () => {},
-        innerHTML: '',
-        offsetWidth: 1000,
-        style: {}
-    })
-};
-global.navigator = { userAgent: 'node' };
-global.console = console;
-global.requestAnimationFrame = (cb) => {};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-// Load Dependencies
-loadScript('models_util.js');
-loadScript('models_3d_math.js');
-loadScript('neuro_ui_3d_geometry.js');
-loadScript('stress/stress_config.js');
-loadScript('stress/stress_app.js');
-loadScript('stress/stress_systemic.js');
 
 TestFramework.describe('GreenhouseStressApp Enhancements', () => {
 

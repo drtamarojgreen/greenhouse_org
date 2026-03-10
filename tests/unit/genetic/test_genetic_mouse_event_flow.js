@@ -3,23 +3,8 @@
  * Simplified tests to diagnose event handling issues
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.document = {};
-global.console = console;
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
 
 // --- Mock Config ---
 window.GreenhouseGeneticConfig = {
@@ -47,8 +32,6 @@ window.GreenhouseGeneticConfig = {
 };
 
 // Load Modules
-loadScript('genetic/genetic_camera_controls.js');
-loadScript('genetic/genetic_pip_controls.js');
 
 // --- Test Suites ---
 

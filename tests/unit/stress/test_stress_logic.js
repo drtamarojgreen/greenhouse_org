@@ -3,53 +3,8 @@
  * @description Unit tests for the Stress Dynamics Model logic.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
-
-// --- Mock Browser Environment ---
-global.window = global;
-global.dispatchEvent = () => {};
-global.CustomEvent = class { constructor(name, detail) { this.name = name; this.detail = detail; } };
-global.document = {
-    createElement: () => ({
-        getContext: () => ({
-            fillRect: () => {},
-            fillText: () => {},
-            beginPath: () => {},
-            moveTo: () => {},
-            lineTo: () => {},
-            quadraticCurveTo: () => {},
-            closePath: () => {},
-            fill: () => {},
-            stroke: () => {},
-            measureText: () => ({ width: 0 })
-        }),
-        appendChild: () => {},
-        style: {}
-    }),
-    querySelector: () => ({
-        appendChild: () => {},
-        innerHTML: ''
-    })
-};
-global.navigator = { userAgent: 'node' };
-global.console = console;
-global.requestAnimationFrame = (cb) => {};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-// Load Dependencies
-loadScript('models_util.js');
-loadScript('stress/stress_config.js');
-loadScript('stress/stress_app.js');
 
 TestFramework.describe('GreenhouseStressApp Logic', () => {
 

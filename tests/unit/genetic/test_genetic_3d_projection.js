@@ -1,38 +1,13 @@
 // tests/unit/test_genetic_3d_projection.js
 // Unit tests for 3D projection and rendering math
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
 
 // --- Mock Browser Environment ---
-global.window = global;
 global.HTMLElement = class { };
-global.document = {
-    body: { appendChild: () => {}, removeChild: () => {} },
-    createElement: (tag) => ({
-        tag,
-        style: {},
-        appendChild: () => {},
-        getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
-        width: 800, height: 600,
-        addEventListener: () => {}
-    })
-};
 global.requestAnimationFrame = () => {};
 global.cancelAnimationFrame = () => {};
-global.performance = { now: () => Date.now() };
-
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
-loadScript('genetic/genetic_config.js');
-loadScript('models_3d_math.js');
 
 const expect = (actual) => ({
     toBeDefined: () => assert.isDefined(actual),

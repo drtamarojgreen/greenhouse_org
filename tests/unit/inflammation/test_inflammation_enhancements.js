@@ -3,109 +3,10 @@
  * @description Unit and regression tests for the 100-enhancement pass of the Neuroinflammation Simulation.
  */
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
 const { assert } = require('../../utils/assertion_library.js');
 const TestFramework = require('../../utils/test_framework.js');
 
-// --- Mock Browser Environment ---
-global.window = global;
-global.navigator = { userAgent: 'node' };
-global.console = console;
-global.window.addEventListener = () => {};
-global.window.removeEventListener = () => {};
-
-// Mock Fetch
-global.fetch = () => Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve({ pathways: [{ id: 'tryptophan', source: 'data/tryptophan.json' }] }),
-    headers: { get: () => 'application/json' },
-    text: () => Promise.resolve('{}')
-});
-
-// Mock LocalStorage
-let storage = {};
-global.localStorage = {
-    setItem: (key, val) => { storage[key] = val; },
-    getItem: (key) => storage[key] || null,
-    clear: () => { storage = {}; }
-};
-
-const mockContainer = {
-    appendChild: (c) => c,
-    innerHTML: '',
-    offsetWidth: 1000,
-    offsetHeight: 750,
-    style: {}
-};
-
-global.document = {
-    createElement: (tag) => {
-        const el = {
-            tagName: tag.toUpperCase(),
-            style: {},
-            appendChild: (c) => c,
-            removeChild: (c) => c,
-            setAttribute: () => {},
-            getAttribute: () => null
-        };
-        if (tag === 'canvas') {
-            return {
-                ...el,
-                getContext: () => ({
-                    fillRect: () => {}, fillText: () => {}, beginPath: () => {}, moveTo: () => {},
-                    lineTo: () => {}, quadraticCurveTo: () => {}, closePath: () => {}, fill: () => {},
-                    stroke: () => {}, measureText: () => ({ width: 50 }), save: () => {}, restore: () => {},
-                    rect: () => {}, arc: () => {}, ellipse: () => {}, setLineDash: () => {},
-                    translate: () => {}, rotate: () => {}, scale: () => {}, roundRect: () => {},
-                    closePath: () => {}, clip: () => {}
-                }),
-                width: 1000, height: 750,
-                getBoundingClientRect: () => ({ left: 0, top: 0, width: 1000, height: 750 }),
-                onmousedown: null, onmousemove: null, onmouseup: null, onwheel: null, toDataURL: () => 'data:image/png;base64,00'
-            };
-        }
-        if (tag === 'a') {
-            return { ...el, href: '', download: '', click: () => {} };
-        }
-        return el;
-    },
-    querySelector: (sel) => mockContainer,
-    currentScript: null,
-    body: { appendChild: (c) => c, removeChild: (c) => c }
-};
-
-global.requestAnimationFrame = (cb) => {};
-global.prompt = (msg, def) => def;
-global.URL = { createObjectURL: () => 'blob:url' };
-global.Blob = class { constructor(parts, options) { this.parts = parts; this.options = options; this.size = (parts[0] || '').length; } };
-global.CustomEvent = class { constructor(name, options) { this.name = name; this.detail = options ? options.detail : null; } };
-global.dispatchEvent = () => {};
-
-// Mock 3D Math
-global.window.GreenhouseModels3DMath = {
-    project3DTo2D: (x, y, z) => ({ x: x + 500, y: y + 350, scale: 1, depth: z }),
-    applyDepthFog: (a) => a
-};
-
-// --- Helper to Load Scripts ---
-function loadScript(filename) {
-    const filePath = path.join(__dirname, '../../../docs/js', filename);
-    const code = fs.readFileSync(filePath, 'utf8');
-    vm.runInThisContext(code);
-}
-
 // Load Dependencies in correct order
-loadScript('models_util.js');
-loadScript('inflammation/inflammation_config.js');
-loadScript('inflammation/inflammation_geometry.js');
-loadScript('inflammation/inflammation_pathway.js');
-loadScript('inflammation/inflammation_ui_3d.js');
-loadScript('inflammation/inflammation_analysis.js');
-loadScript('inflammation/inflammation_app.js');
-loadScript('inflammation/inflammation_controls.js');
-loadScript('inflammation/inflammation_tooltips.js');
 
 TestFramework.describe('Neuroinflammation Enhancements', () => {
 
