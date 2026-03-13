@@ -6,6 +6,7 @@ import style_utilities as style
 
 def create_hedge_material():
     mat = bpy.data.materials.get("HedgeMat") or bpy.data.materials.new(name="HedgeMat")
+    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
@@ -37,6 +38,7 @@ def create_hedge_material():
 
 def create_soil_material():
     mat = bpy.data.materials.get("SoilMat") or bpy.data.materials.new(name="SoilMat")
+    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
