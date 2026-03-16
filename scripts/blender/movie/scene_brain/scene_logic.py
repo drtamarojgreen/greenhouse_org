@@ -1,5 +1,6 @@
 import bpy
 import style_utilities as style
+from assets.nature_environments import create_bioluminescent_cave
 
 def setup_scene(master):
     """Brain Focus Scene Logic."""
@@ -19,3 +20,8 @@ def setup_scene(master):
 
     # Brain Pulsing
     style.animate_pulsing_emission(master.brain, 201, 400, base_strength=1.0, pulse_amplitude=5.0, cycle=48)
+
+    cave = bpy.data.objects.get("BioCave") or create_bioluminescent_cave()
+    style.set_obj_visibility(cave, False, 1)
+    style.set_obj_visibility(cave, True, 201)
+    style.set_obj_visibility(cave, False, 401)

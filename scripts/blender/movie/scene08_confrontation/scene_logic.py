@@ -1,5 +1,7 @@
 import bpy
 import math
+import random
+from assets.wilderness_assets import create_proc_terrain, create_proc_rock_formation, create_proc_water_body
 
 def setup_scene(master):
     """
@@ -11,6 +13,20 @@ def setup_scene(master):
     # Point 142: Correct frame range (2101 - 2500)
     from constants import SCENE_MAP
     start_f, end_f = SCENE_MAP['scene08_confrontation']
+
+    # Coastal cliff environment
+    if not bpy.data.objects.get("Terrain_CoastalCliff"):
+        cliff = create_proc_terrain((0, 5, 2), size=30.0, type="hill")
+        cliff.name = "Terrain_CoastalCliff"
+        # Jagged coastal rocks framing the cliff edge
+        for i in range(6):
+            r = create_proc_rock_formation(
+                (random.uniform(-8, 8), random.uniform(0, 4), random.uniform(0, 3)),
+                scale=random.uniform(1.5, 3.5), style_type="jagged")
+            r.name = f"CoastalRock_{i}"
+        # Ocean stretching to the horizon
+        ocean = create_proc_water_body((0, -20, -4), size=60.0, type="pond")
+        ocean.name = "CoastalOcean"
     
     # Plants reaction
     if master.h1:

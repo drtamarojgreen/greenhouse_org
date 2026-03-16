@@ -2,6 +2,7 @@ import bpy
 import mathutils
 import random
 import style_utilities as style
+from assets.wilderness_assets import create_proc_rock_formation, create_proc_water_body, create_proc_terrain
 
 def setup_scene(master):
     """
@@ -14,6 +15,22 @@ def setup_scene(master):
     from constants import SCENE_MAP
     start_f, end_f = SCENE_MAP['scene05_bridge']
     master.create_intertitle("The Bridge of\nConnectivity", start_f, start_f + 100)
+
+    # River gorge environment
+    if not bpy.data.objects.get("Terrain_LeftCliff"):
+        left_cliff = create_proc_terrain((-15, 0, -1), size=20.0, type="flat")
+        left_cliff.name = "Terrain_LeftCliff"
+        right_cliff = create_proc_terrain((15, 0, -1), size=20.0, type="flat")
+        right_cliff.name = "Terrain_RightCliff"
+        # Stack layered rock formations to simulate canyon walls
+        for i in range(3):
+            r = create_proc_rock_formation((-18, random.uniform(-5, 5), i * 4.0 - 1), scale=3.0, style_type="layered")
+            r.name = f"GorgeWallL_{i}"
+            r2 = create_proc_rock_formation((18, random.uniform(-5, 5), i * 4.0 - 1), scale=3.0, style_type="layered")
+            r2.name = f"GorgeWallR_{i}"
+        # River at the bottom
+        river = create_proc_water_body((0, 0, -6), size=8.0, type="river")
+        river.name = "GorgeRiver"
 
     style.apply_scene_grade(master, 'resonance', start_f, end_f)
 

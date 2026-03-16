@@ -1,5 +1,7 @@
 import bpy
 import math
+import style_utilities as style
+from assets.nature_environments import create_forest_clearing
 
 def setup_scene(master):
     """
@@ -17,3 +19,8 @@ def setup_scene(master):
         master.place_character(master.h2, (2, -1, 0), (0, 0, 0), 101)
         master.place_character(master.h2, (2, 0, 0), (0, 0, 0), 200)
         master.hold_position(master.gnome, 101, 200)
+
+    clearing = bpy.data.objects.get("ForestClearing") or create_forest_clearing()
+    style.set_obj_visibility(clearing, False, 1)
+    style.set_obj_visibility(clearing, True, 101)
+    style.set_obj_visibility(clearing, False, 201)

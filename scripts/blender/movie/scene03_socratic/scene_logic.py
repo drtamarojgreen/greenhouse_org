@@ -2,6 +2,7 @@ import bpy
 import math
 
 import style_utilities as style
+from assets.wilderness_assets import create_proc_terrain, create_proc_rock_formation, create_proc_water_body
 
 def setup_scene(master):
     """
@@ -11,6 +12,25 @@ def setup_scene(master):
     """
     # MUSIC CUE: Harp and light percussion.
     master.create_intertitle("The Dialectic of\nGrowth", 651, 750)
+
+    # Zen Rock Garden environment
+    terrain_sg = bpy.data.objects.get("Terrain_ZenGarden")
+    if not terrain_sg:
+        terrain_sg = create_proc_terrain((0, 0, -0.5), size=30.0, type="flat")
+        terrain_sg.name = "Terrain_ZenGarden"
+    
+    pond = bpy.data.objects.get("Pond_ZenGarden")
+    if not pond:
+        pond = create_proc_water_body((3, 2, -0.3), size=4.0, type="pond")
+        pond.name = "Pond_ZenGarden"
+    
+    import mathutils as _mu
+    boulder_positions = [(-2.5, -1.5), (1.5, -2.5), (-1.0, 3.5), (4.0, 0.5)]
+    for i, (bx, by) in enumerate(boulder_positions):
+        b_name = f"ZenBoulder_{i}"
+        if not bpy.data.objects.get(b_name):
+            b = create_proc_rock_formation(_mu.Vector((bx, by, -0.5)), scale=0.7, style_type="smooth")
+            b.name = b_name
 
     # Symbolic Thought Motes
     if master.h1:

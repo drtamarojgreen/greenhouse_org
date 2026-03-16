@@ -2,6 +2,7 @@ import bpy
 import math
 import random
 import style_utilities as style
+from assets.wilderness_assets import create_proc_terrain, create_proc_dead_tree, create_proc_water_body
 
 def setup_scene(master):
     """
@@ -17,6 +18,28 @@ def setup_scene(master):
 
     # Apply shadow grade
     style.apply_scene_grade(master, 'shadow', start_f, end_f)
+
+    # Foggy marshland environment
+    if not bpy.data.objects.get("Terrain_Marsh"):
+        marsh = create_proc_terrain((0, 0, -1), size=40.0, type="flat")
+        marsh.name = "Terrain_Marsh"
+        for mat in marsh.data.materials:
+            bsdf = mat.node_tree.nodes.get("Principled BSDF")
+            if bsdf: bsdf.inputs['Base Color'].default_value = (0.08, 0.1, 0.07, 1) # Dark muddy green
+        # Scattered shallow water pools
+        for i in range(5):
+            w = create_proc_water_body(
+                (random.uniform(-8, 8), random.uniform(-8, 8), -0.9),
+                size=random.uniform(2, 5), type="pond")
+            w.name = f"MarshPool_{i}"
+        # Weeping dead trees around the perimeter
+        for i in range(6):
+            import mathutils
+            angle = (i / 6) * 2 * 3.1415
+            dt = create_proc_dead_tree(
+                (math.cos(angle)*10, math.sin(angle)*10, -1),
+                scale=random.uniform(0.8, 1.4))
+            dt.name = f"MarshTree_{i}"
 
     # Mood-Based Fog (Thick in Shadow)
     style.animate_mood_fog(master.scene, 1901, density=0.02)

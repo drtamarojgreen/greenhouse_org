@@ -524,7 +524,7 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     
     # Smooth Shading and Polish
     for p in mesh_obj.data.polygons: p.use_smooth = True
-    mesh_obj.modifiers.new(name="Subsurf", type='SUBSURF').levels = 2
+    mesh_obj.modifiers.new(name="Subsurf", type='SUBSURF').levels = 1
     
     mesh_obj.data.materials.append(create_bark_material(f"BarkMat_{name}"))
     mesh_obj.data.materials.append(create_leaf_material(f"LeafMat_{name}"))

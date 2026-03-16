@@ -1,5 +1,7 @@
 import bpy
 import math
+import mathutils
+from assets.wilderness_assets import create_proc_terrain, create_proc_rock_formation, create_proc_dead_tree
 
 def setup_scene(master):
     """
@@ -13,6 +15,61 @@ def setup_scene(master):
     from constants import SCENE_MAP
     start_f, end_f = SCENE_MAP['scene04_forge']
     master.create_intertitle("The Exchange of\nKnowledge", start_f, start_f + 100)
+
+    # Volcanic wasteland environment
+    terrain_v = bpy.data.objects.get("Terrain_Volcano")
+    if not terrain_v:
+        terrain_v = create_proc_terrain((0, 0, -1), size=50.0, type="flat")
+        terrain_v.name = "Terrain_Volcano"
+        # Override material to dark basalt
+        for mat in terrain_v.data.materials:
+            bsdf = mat.node_tree.nodes.get("Principled BSDF")
+            if bsdf: bsdf.inputs['Base Color'].default_value = (0.04, 0.04, 0.04, 1)
+
+    for i in range(8):
+        r_name = f"VolcanoRock_{i}"
+        if not bpy.data.objects.get(r_name):
+            import random
+            r = create_proc_rock_formation(
+                mathutils.Vector((random.uniform(-10, 10), random.uniform(-8, 8), -0.8)),
+                scale=random.uniform(1.0, 3.0), style_type="jagged")
+            r.name = r_name
+
+    for i in range(4):
+        dt_name = f"VolcanoDeadTree_{i}"
+        if not bpy.data.objects.get(dt_name):
+            import random
+            from assets.wilderness_assets import create_proc_dead_tree
+            dt = create_proc_dead_tree(
+                mathutils.Vector((random.uniform(-8, 8), random.uniform(-8, 8), -1)),
+                scale=random.uniform(0.8, 1.5))
+            dt.name = dt_name
+
+    # Lava fissure: emissive planes on the ground
+    import bmesh
+    for i in range(4):
+        import random
+        lr_name = f"LavaFissure_{i}"
+        if not bpy.data.objects.get(lr_name):
+            lava_mesh = bpy.data.meshes.new(f"{lr_name}_MeshData")
+            lava_obj = bpy.data.objects.new(lr_name, lava_mesh)
+            bpy.context.scene.collection.objects.link(lava_obj)
+            lava_obj.location = (random.uniform(-6, 6), random.uniform(-6, 6), -0.98)
+            lava_obj.rotation_euler[2] = random.uniform(0, 3.14)
+            bm = bmesh.new()
+            bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=1.0)
+            for v in bm.verts:
+                v.co.x *= random.uniform(0.2, 0.5)
+                v.co.y *= random.uniform(1.0, 3.0)
+            bm.to_mesh(lava_mesh)
+            bm.free()
+            lava_mat = bpy.data.materials.get("LavaMat") or bpy.data.materials.new("LavaMat")
+            lava_mat.use_nodes = True
+            bsdf = lava_mat.node_tree.nodes.get("Principled BSDF") or lava_mat.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
+            bsdf.inputs['Base Color'].default_value = (1.0, 0.3, 0.0, 1)
+            bsdf.inputs['Emission Color'].default_value = (1.0, 0.2, 0.0, 1)
+            bsdf.inputs['Emission Strength'].default_value = 8.0
+            lava_obj.data.materials.append(lava_mat)
 
     # Point 43: Add simple anvil prop for the forge scene (BMesh)
     import bmesh
