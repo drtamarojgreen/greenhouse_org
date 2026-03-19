@@ -1,6 +1,7 @@
 import bpy
 import math
 import style_utilities as style
+from assets.wilderness_assets import create_proc_terrain, create_proc_crystal, create_proc_rock_formation
 
 def setup_scene(master):
     """
@@ -13,6 +14,31 @@ def setup_scene(master):
     from constants import SCENE_MAP
     start_f, end_f = SCENE_MAP['scene06_resonance']
     master.create_intertitle("The Resonance of\nLogos", start_f, start_f + 100)
+
+    # Ice cave environment
+    if not bpy.data.objects.get("Terrain_IceCave"):
+        import random
+        cave_floor = create_proc_terrain((0, 0, -1), size=25.0, type="flat")
+        cave_floor.name = "Terrain_IceCave"
+        # Ice blue material
+        for mat in cave_floor.data.materials:
+            bsdf = mat.node_tree.nodes.get("Principled BSDF")
+            if bsdf:
+                bsdf.inputs['Base Color'].default_value = (0.7, 0.9, 1.0, 1)
+                bsdf.inputs['Roughness'].default_value = 0.05
+                bsdf.inputs['Specular IOR Level'].default_value = 1.0
+        # Crystal formations as primary light sources
+        for i in range(12):
+            cx, cy = random.uniform(-8, 8), random.uniform(-8, 8)
+            c = create_proc_crystal((cx, cy, -0.9), scale=random.uniform(1.0, 2.5))
+            c.name = f"IceCrystal_{i}"
+        # Enclosing rock walls
+        for i in range(6):
+            angle = (i / 6) * 2 * 3.1415
+            rx = math.cos(angle) * 12
+            ry = math.sin(angle) * 12
+            rk = create_proc_rock_formation((rx, ry, 0), scale=2.5, style_type="layered")
+            rk.name = f"CaveWall_{i}"
 
     peak_f = (start_f + end_f) // 2
 

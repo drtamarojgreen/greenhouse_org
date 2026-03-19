@@ -4,6 +4,7 @@ import style_utilities as style
 from assets import plant_humanoid
 import mathutils
 import random
+from assets.wilderness_assets import create_proc_terrain, create_proc_fern
 
 def setup_scene(master):
     """
@@ -20,6 +21,19 @@ def setup_scene(master):
     style.animate_dust_particles(mathutils.Vector((0, 0, 2)), density=20, frame_start=501, frame_end=650)
     # Pollen particles
     style.animate_dust_particles(mathutils.Vector((0, 0, 2)), density=30, color=(1, 0.9, 0.2, 1), frame_start=501, frame_end=650)
+
+    # Initialize meadow terrain relative to origin (Master coordinates will translate it)
+    terrain = bpy.data.objects.get("Terrain_Meadow")
+    if not terrain:
+        terrain = create_proc_terrain((0, 0, -1), size=40.0, type="flat")
+        terrain.name = "Terrain_Meadow"
+    
+    ferns = []
+    for i in range(15):
+        loc = mathutils.Vector((random.uniform(-10, 10), random.uniform(-5, 15), -0.5))
+        f = create_proc_fern(loc, scale=random.uniform(0.5, 1.2))
+        f.name = f"MeadowFern_{i}"
+        ferns.append(f)
 
     # Add extra foliage for vibrancy
     bushes = []
@@ -40,6 +54,9 @@ def setup_scene(master):
 
         style.apply_fade_transition(objs_to_animate, 501, 650, mode='IN', duration=12)
         style.animate_foliage_wind(objs_to_animate, strength=0.03, frame_start=501, frame_end=650)
+
+    for f in ferns:
+        style.animate_foliage_wind([f], strength=0.05, frame_start=501, frame_end=650)
 
     # Atmospheric Fauna (Butterflies) - BMesh
     import bmesh

@@ -170,7 +170,7 @@ def create_gnome(name, location, scale=0.6):
     
     # Subdivision and Smooth Shading
     mod = mesh_obj.modifiers.new(name="SubSurf", type='SUBSURF')
-    mod.levels = 2
+    mod.levels = 1
     for p in mesh_obj.data.polygons: p.use_smooth = True
 
     # Staff
@@ -310,7 +310,7 @@ def create_gnome(name, location, scale=0.6):
     
     # Subsurface & High-Fidelity Smoothing (Phase 4)
     sub = mesh_obj.modifiers.new(name="Subsurf", type='SUBSURF')
-    sub.levels = 2 # Production quality
+    sub.levels = 1 # Production quality
     sub.render_levels = 3
     
     mod = mesh_obj.modifiers.new(name="Armature", type='ARMATURE'); mod.object = armature_obj; armature_obj.scale = (scale, scale, scale)

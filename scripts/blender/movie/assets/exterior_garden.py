@@ -6,6 +6,7 @@ import style_utilities as style
 
 def create_hedge_material():
     mat = bpy.data.materials.get("HedgeMat") or bpy.data.materials.new(name="HedgeMat")
+    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
@@ -37,6 +38,7 @@ def create_hedge_material():
 
 def create_soil_material():
     mat = bpy.data.materials.get("SoilMat") or bpy.data.materials.new(name="SoilMat")
+    mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
 
@@ -196,7 +198,7 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     import bmesh
     bm = bmesh.new()
     # Phase 6: Massive Ground Plane (No "End of Earth")
-    bmesh.ops.create_grid(bm, x_segments=256, y_segments=256, size=2000.0)
+    bmesh.ops.create_grid(bm, x_segments=64, y_segments=64, size=4000.0)
     
     for v in bm.verts:
         dist = v.co.length
@@ -214,9 +216,9 @@ def create_exterior_garden(greenhouse_size=(15, 15, 8)):
     bark_mat = bpy.data.materials.get("BarkMat_Herbaceous") or bpy.data.materials.new("BarkMat_Forest")
     leaf_mat = bpy.data.materials.get("LeafMat_Herbaceous") or bpy.data.materials.new("LeafMat_Forest")
     
-    for i in range(150):
+    for i in range(300):
         angle = random.uniform(0, 2*math.pi)
-        radius = random.uniform(35, 150)
+        radius = random.uniform(35, 300)
         x = math.cos(angle) * radius
         y = math.sin(angle) * radius
         

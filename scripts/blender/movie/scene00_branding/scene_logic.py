@@ -1,6 +1,7 @@
 import bpy
 import math
 import style_utilities as style
+from assets.nature_environments import create_misty_mountain
 
 def setup_scene(master):
     """
@@ -21,7 +22,13 @@ def setup_scene(master):
         # Only hide top-level if possible to avoid redundant keys, 
         # but set_obj_visibility handles recursion.
         style.set_obj_visibility(obj, False, 1)
+        style.set_obj_visibility(obj, False, 1)
         style.set_obj_visibility(obj, True, 101)
+
+    # Show Misty Mountain only for this scene
+    mountain = bpy.data.objects.get("MistyMountain") or create_misty_mountain()
+    style.set_obj_visibility(mountain, True, 1)
+    style.set_obj_visibility(mountain, False, 101)
 
     # Apply default/reset grade for branding
     style.apply_scene_grade(master, 'reset', 1, 100)

@@ -47,27 +47,17 @@ def setup_blender_engine(master):
     scene.render.use_motion_blur = True
 
     if master.mode == 'SILENT_FILM':
-        scene.render.engine = 'CYCLES'
-
-        # Point 66: GPU device selection
-        try:
-            prefs = bpy.context.preferences.addons['cycles'].preferences
-            prefs.compute_device_type = master.device_type
-            prefs.get_devices()
-            for device in prefs.devices:
-                if device.type == master.device_type:
-                    device.use = True
-        except Exception:
-            pass
-
-        scene.cycles.device = 'GPU'
+        scene.render.engine = style.get_eevee_engine_id()
 
         # Point 30 & 67: Quality settings
         q = QUALITY_PRESETS.get(master.quality, QUALITY_PRESETS['test'])
-        scene.cycles.samples = q['samples']
-        scene.cycles.use_denoising = q['denoising']
-        if hasattr(scene.cycles, "denoiser"):
-            scene.cycles.denoiser = 'OPENIMAGEDENOISE'
+        scene.eevee.taa_render_samples = q['samples']
+        
+        # Eevee-specific optimizations (Blender 5.0 handles these differently)
+        if hasattr(scene.eevee, "use_gtao"): scene.eevee.use_gtao = True
+        if hasattr(scene.eevee, "use_bloom"): scene.eevee.use_bloom = True
+        if hasattr(scene.eevee, "use_ssr"): scene.eevee.use_ssr = True
+        if hasattr(scene.eevee, "use_volumetric_shadows"): scene.eevee.use_volumetric_shadows = True
 
         bg = scene.world.node_tree.nodes.get("Background")
         if bg: bg.inputs[0].default_value = (0, 0, 0, 1)

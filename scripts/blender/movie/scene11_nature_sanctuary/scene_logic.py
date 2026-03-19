@@ -4,6 +4,7 @@ import mathutils
 import random
 from assets import plant_humanoid
 import style_utilities as style
+from assets.wilderness_assets import create_proc_terrain, create_proc_water_body, create_proc_fern, create_proc_rock_formation
 
 def setup_scene(master):
     """
@@ -20,6 +21,32 @@ def setup_scene(master):
     # Apply sanctuary grade
     style.apply_scene_grade(master, 'sanctuary', start_frame, end_frame)
     style.animate_dust_particles(mathutils.Vector((0, 0, 2)), density=40, frame_start=start_frame, frame_end=end_frame)
+
+    # Hidden Oasis environment
+    if not bpy.data.objects.get("Terrain_Oasis"):
+        oasis_floor = create_proc_terrain((0, 0, -1), size=30.0, type="bowl")
+        oasis_floor.name = "Terrain_Oasis"
+        # Lush grass override
+        for mat in oasis_floor.data.materials:
+            bsdf = mat.node_tree.nodes.get("Principled BSDF")
+            if bsdf: bsdf.inputs['Base Color'].default_value = (0.15, 0.35, 0.1, 1)
+        # Central oasis pond
+        pond = create_proc_water_body((0, 0, -0.5), size=5.0, type="pond")
+        pond.name = "OasisPond"
+        # Lush ferns around the water
+        for i in range(12):
+            angle = (i / 12) * 2 * math.pi
+            f = create_proc_fern(
+                (math.cos(angle) * 4, math.sin(angle) * 4, -0.7),
+                scale=random.uniform(0.5, 1.2))
+            f.name = f"OasisFern_{i}"
+        # Framing boulders
+        for i in range(4):
+            angle = (i / 4) * 2 * math.pi + 0.5
+            r = create_proc_rock_formation(
+                (math.cos(angle) * 8, math.sin(angle) * 8, -0.8),
+                scale=random.uniform(0.8, 1.5), style_type="smooth")
+            r.name = f"OasisRock_{i}"
 
     # Dense Foliage
     bushes = []

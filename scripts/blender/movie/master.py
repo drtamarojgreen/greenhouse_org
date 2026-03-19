@@ -8,6 +8,23 @@ import style_utilities as style
 import scene_utils
 from constants import SCENE_MAP, QUALITY_PRESETS
 
+# Wilderness set coordinates relative to origin
+WILDERNESS_SETS = {
+    'scene00_branding': (0, -500, 0),
+    'scene01_intro': (500, 0, 0),
+    'scene_brain': (1000, 0, 0),
+    'scene02_garden': (1500, 0, 0),
+    'scene03_socratic': (2000, 0, 0),
+    'scene04_forge': (2500, 0, 0),
+    'scene05_bridge': (3000, 0, 0),
+    'scene06_resonance': (3500, 0, 0),
+    'scene07_shadow': (4000, 0, 0),
+    'scene08_confrontation': (4500, 0, 0),
+    'scene09_library': (5000, 0, 0),
+    'scene10_futuristic_lab': (5500, 0, 0),
+    'scene11_nature_sanctuary': (6000, 0, 0),
+}
+
 def ensure_dependencies():
     import site
     paths = site.getsitepackages()
@@ -35,12 +52,18 @@ class BaseMaster:
         scene.render.film_transparent = True
 
         if self.mode == 'SILENT_FILM':
-            scene.render.engine = 'CYCLES'
-            prefs = bpy.context.preferences.addons['cycles'].preferences
-            prefs.compute_device_type = self.device_type; prefs.get_devices()
-            for d in prefs.devices:
-                if d.type == self.device_type: d.use = True
-            scene.cycles.device = 'GPU'
+            scene.render.engine = style.get_eevee_engine_id()
+            q = QUALITY_PRESETS.get(self.quality, QUALITY_PRESETS['test'])
+            scene.eevee.taa_render_samples = q['samples']
+            
+            # Eevee-specific optimizations (Blender 5.0 handles these differently)
+            if hasattr(scene.eevee, "use_gtao"): scene.eevee.use_gtao = True
+            if hasattr(scene.eevee, "use_bloom"): scene.eevee.use_bloom = True
+            if hasattr(scene.eevee, "use_ssr"): scene.eevee.use_ssr = True
+            if hasattr(scene.eevee, "use_volumetric_shadows"): scene.eevee.use_volumetric_shadows = True
+            
+            bg = scene.world.node_tree.nodes.get("Background")
+            if bg: bg.inputs[0].default_value = (0, 0, 0, 1)
             q = QUALITY_PRESETS.get(self.quality, QUALITY_PRESETS['test'])
             scene.cycles.samples, scene.cycles.use_denoising, scene.cycles.denoiser = q['samples'], q['denoising'], 'OPENIMAGEDENOISE'
             bg = scene.world.node_tree.nodes.get("Background")
