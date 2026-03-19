@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greenhouse MeSH Discovery VA</title>
+    <style>
+        :root {
+            --primary-color: #4caf50;
+            --secondary-color: #2e3d2f;
+            --bg-color: #f0faf4;
+            --text-color: #333;
+            --border-radius: 8px;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+        header img {
+            max-height: 60px;
+            margin-right: 20px;
+        }
+        h1 {
+            color: var(--secondary-color);
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        .config-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--secondary-color);
+        }
+        input, select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        #run-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        #run-btn:hover {
+            background-color: #45a049;
+        }
+        #run-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #clear-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        .status-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .status-box {
+            flex: 1;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background: #eee;
+            text-align: center;
+        }
+        .status-box .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: block;
+        }
+        .log-container {
+            height: 200px;
+            overflow-y: auto;
+            background: #222;
+            color: #0f0;
+            padding: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .accepted {
+            color: green;
+            font-weight: bold;
+        }
+        .rejected {
+            color: red;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            background: #e0e0e0;
+            margin: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <img src="../../../../docs/images/Greenhouse_Logo.png" alt="Greenhouse Logo">
+        <h1>MeSH Discovery Visual Analysis (VA)</h1>
+    </header>
+
+    <div class="config-section">
+        <div class="form-group">
+            <label for="seed-term">Seed Term</label>
+            <input type="text" id="seed-term" value="Mental Health" placeholder="e.g. Depression">
+        </div>
+        <div class="form-group">
+            <label for="max-depth">Max Depth</label>
+            <input type="number" id="max-depth" value="2" min="1" max="5">
+        </div>
+        <div class="form-group">
+            <label for="min-count">Min Publication Count</label>
+            <input type="number" id="min-count" value="5000" step="500">
+        </div>
+        <div class="form-group">
+            <label for="max-terms">Max Terms to Discover</label>
+            <input type="number" id="max-terms" value="20" min="5" max="100">
+        </div>
+    </div>
+
+    <div class="actions">
+        <button id="run-btn">Run Discovery</button>
+        <button id="stop-btn" style="background-color: #ff9800; color: white;">Stop</button>
+        <button id="clear-btn">Clear Results</button>
+    </div>
+
+    <div class="status-container">
+        <div class="status-box">
+            <span class="label">Visited</span>
+            <span class="value" id="visited-count">0</span>
+        </div>
+        <div class="status-box">
+            <span class="label">Accepted</span>
+            <span class="value" id="accepted-count">0</span>
+        </div>
+        <div class="status-box">
+            <span class="label">Queue Size</span>
+            <span class="value" id="queue-count">0</span>
+        </div>
+    </div>
+
+    <div class="log-container" id="log">
+        [System] Ready to start discovery...
+    </div>
+
+    <div id="results-section">
+        <h2>Discovered Terms</h2>
+        <table id="results-table">
+            <thead>
+                <tr>
+                    <th>Term</th>
+                    <th>Count</th>
+                    <th>Status</th>
+                    <th>Related Terms</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Results will be injected here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const logEl = document.getElementById('log');
+    const resultsTableBody = document.querySelector('#results-table tbody');
+    const runBtn = document.getElementById('run-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const clearBtn = document.getElementById('clear-btn');
+
+    const visitedCountEl = document.getElementById('visited-count');
+    const acceptedCountEl = document.getElementById('accepted-count');
+    const queueCountEl = document.getElementById('queue-count');
+
+    let isRunning = false;
+    let stopRequested = false;
+
+    function log(message, type = 'info') {
+        const time = new Date().toLocaleTimeString();
+        const div = document.createElement('div');
+        div.textContent = `[${time}] ${message}`;
+        if (type === 'error') div.style.color = '#ff5555';
+        if (type === 'success') div.style.color = '#55ff55';
+        logEl.appendChild(div);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    async function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function getTermPublicationCount(term) {
+        const query = encodeURIComponent(`(${term}[MeSH Major Topic])`);
+        const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${query}&retmode=json&retmax=0`;
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            return parseInt(data.esearchresult.count);
+        } catch (e) {
+            log(`Error fetching count for ${term}: ${e.message}`, 'error');
+            return 0;
+        }
+    }
+
+    async function discoverRelatedTerms(term) {
+        const query = encodeURIComponent(`(${term}[MeSH Major Topic])`);
+        // Get IDs of recent papers
+        const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${query}&retmax=50&sort=pub_date&retmode=json`;
+
+        try {
+            const searchResponse = await fetch(searchUrl);
+            const searchData = await searchResponse.json();
+            const ids = searchData.esearchresult.idlist;
+
+            if (!ids || ids.length === 0) return [];
+
+            await sleep(400); // Rate limit
+
+            // Fetch metadata
+            const fetchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${ids.join(',')}&retmode=xml`;
+            const fetchResponse = await fetch(fetchUrl);
+            const xmlText = await fetchResponse.text();
+
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+            const relatedTerms = new Set();
+            const descriptors = xmlDoc.querySelectorAll('DescriptorName');
+
+            descriptors.forEach(desc => {
+                const name = desc.textContent;
+                if (name.toLowerCase() !== term.toLowerCase()) {
+                    relatedTerms.add(name);
+                }
+            });
+
+            return Array.from(relatedTerms);
+        } catch (e) {
+            log(`Error discovering related terms for ${term}: ${e.message}`, 'error');
+            return [];
+        }
+    }
+
+    async function runDiscovery() {
+        if (isRunning) return;
+
+        const seed = document.getElementById('seed-term').value.trim();
+        const maxDepth = parseInt(document.getElementById('max-depth').value);
+        const minCount = parseInt(document.getElementById('min-count').value);
+        const maxTerms = parseInt(document.getElementById('max-terms').value);
+
+        if (!seed) {
+            alert('Please enter a seed term.');
+            return;
+        }
+
+        isRunning = true;
+        runBtn.disabled = true;
+        runBtn.textContent = 'Running...';
+        log(`Starting discovery for "${seed}"...`, 'success');
+
+        const queue = [{ term: seed, depth: 0 }];
+        const visited = new Set();
+        const accepted = [];
+
+        while (queue.length > 0 && accepted.length < maxTerms) {
+            if (stopRequested) break;
+
+            const { term, depth } = queue.shift();
+            queueCountEl.textContent = queue.length;
+
+            if (visited.has(term)) continue;
+            visited.add(term);
+            visitedCountEl.textContent = visited.size;
+
+            log(`Processing: "${term}" (Depth: ${depth})`);
+
+            const count = await getTermPublicationCount(term);
+            await sleep(400); // Respect NCBI rate limits
+
+            const isAccepted = count >= minCount;
+            const statusClass = isAccepted ? 'accepted' : 'rejected';
+
+            let related = [];
+            if (isAccepted) {
+                log(`-> Accepted! Count: ${count.toLocaleString()}`, 'success');
+                accepted.push(term);
+                acceptedCountEl.textContent = accepted.length;
+
+                if (depth < maxDepth) {
+                    log(`-> Fetching related terms...`);
+                    related = await discoverRelatedTerms(term);
+                    await sleep(400);
+
+                    related.forEach(rel => {
+                        if (!visited.has(rel)) {
+                            queue.push({ term: rel, depth: depth + 1 });
+                        }
+                    });
+                    queueCountEl.textContent = queue.length;
+                }
+            } else {
+                log(`-> Rejected. Count: ${count.toLocaleString()}`);
+            }
+
+            // Update UI table
+            const row = resultsTableBody.insertRow(0);
+
+            const termCell = row.insertCell(0);
+            termCell.textContent = term;
+
+            const countCell = row.insertCell(1);
+            countCell.textContent = count.toLocaleString();
+
+            const statusCell = row.insertCell(2);
+            statusCell.textContent = isAccepted ? 'Accepted' : 'Rejected';
+            statusCell.className = statusClass;
+
+            const relatedCell = row.insertCell(3);
+            related.slice(0, 5).forEach(r => {
+                const badge = document.createElement('span');
+                badge.className = 'badge';
+                badge.textContent = r;
+                relatedCell.appendChild(badge);
+            });
+            if (related.length > 5) {
+                relatedCell.appendChild(document.createTextNode('...'));
+            }
+        }
+
+        isRunning = false;
+        runBtn.disabled = false;
+        runBtn.textContent = 'Run Discovery';
+        log(`Discovery complete. Found ${accepted.length} accepted terms.`, 'success');
+    }
+
+    runBtn.addEventListener('click', runDiscovery);
+
+    stopBtn.addEventListener('click', () => {
+        if (isRunning) {
+            stopRequested = true;
+            log('Stop requested. Waiting for current term to finish...', 'error');
+        }
+    });
+
+    clearBtn.addEventListener('click', () => {
+        resultsTableBody.innerHTML = '';
+        logEl.innerHTML = '[System] Results cleared. Ready.';
+        visitedCountEl.textContent = '0';
+        acceptedCountEl.textContent = '0';
+        queueCountEl.textContent = '0';
+    });
+
+</script>
+
+</body>
+</html>
