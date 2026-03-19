@@ -37,8 +37,20 @@ window.GreenhouseModels3DMath = {
 
 TestFramework.describe('GreenhouseNeuroUI3D', () => {
     let ui;
+    let mockCamera;
 
     TestFramework.beforeEach(() => {
+        mockCamera = {
+            x: 0,
+            y: 0,
+            z: -600,
+            rotationX: 0,
+            rotationY: 0,
+            rotationZ: 0,
+            fov: 600
+        };
+        window.GreenhouseNeuroCameraControls.camera = mockCamera;
+
         ui = window.GreenhouseNeuroUI3D;
         ui.init(document.createElement('div'));
     });

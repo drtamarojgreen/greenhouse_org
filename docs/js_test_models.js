@@ -140,8 +140,11 @@
     const implementationMap = {
         'neuro': [
             'neuro/neuro_config.js', 'neuro/neuro_camera_controls.js',
+            'neuro/neuro_synapse_camera_controls.js', 'neuro/neuro_lighting.js',
             'neuro/neuro_ga.js', 'neuro/neuro_app.js', 'neuro/neuro_controls.js',
-            'neuro/neuro_ui_3d.js', 'neuro/neuro_adhd_data.js'
+            'neuro/neuro_ui_3d_geometry.js', 'neuro/neuro_ui_3d_brain.js',
+            'neuro/neuro_ui_3d_neuron.js', 'neuro/neuro_ui_3d_synapse.js',
+            'neuro/neuro_ui_3d_stats.js', 'neuro/neuro_ui_3d.js', 'neuro/neuro_adhd_data.js'
         ],
         'genetic': [
             'models_util.js', 'models_3d_math.js',
@@ -321,6 +324,43 @@
                 assign: () => { }, replace: () => { }, reload: () => { }
             };
 
+            const originalCreateElement = window._originalDocumentMethods.createElement;
+            const shadowDocument = {
+                ...document,
+                getElementById: window._originalDocumentMethods.getElementById,
+                querySelector: window._originalDocumentMethods.querySelector,
+                createElement: (tagName, ...args) => {
+                    const el = originalCreateElement(tagName, ...args);
+                    if (String(tagName).toLowerCase() === 'canvas' && !el.getBoundingClientRect) {
+                        el.getBoundingClientRect = () => ({
+                            top: 0,
+                            left: 0,
+                            width: el.width || 800,
+                            height: el.height || 600
+                        });
+                    }
+                    return el;
+                }
+            };
+
+            const shadowUtils = new Proxy(window.GreenhouseUtils || {}, {
+                get(target, prop) {
+                    if (prop === 'observeAndReinitializeApplication') {
+                        return (app) => {
+                            if (!app) {
+                                hWarn('[Harness] Guarded observeAndReinitializeApplication(undefined)');
+                                return;
+                            }
+                            if (typeof target[prop] === 'function') return target[prop](app);
+                        };
+                    }
+                    return target[prop];
+                }
+            });
+
+            const harnessLoadedScriptCode = new Set();
+            const vmExecutedScriptCode = new Set();
+
             window.require = (path) => {
                 if (path.includes('assertion_library')) return { assert: window.assert, AssertionError: window.AssertionError };
                 if (path.includes('test_framework')) return window.TestFramework;
@@ -329,15 +369,47 @@
                 if (path === 'vm') return {
                     createContext: (s) => s,
                     runInContext: (code, ctx) => { const fn = new Function('require', 'module', 'exports', '__dirname', 'global', 'process', 'console', 'window', 'document', 'location', code); return fn(window.require, { exports: {} }, {}, "", ctx, window.process, window.console, ctx, ctx.document, ctx.location); },
-                    runInThisContext: (code) => { const fn = new Function('require', 'module', 'exports', '__dirname', 'global', 'process', 'console', 'window', 'document', 'location', code); const ctx = window.global; return fn(window.require, { exports: {} }, {}, "", ctx, window.process, window.console, ctx, ctx.document, ctx.location); }
+                    runInThisContext: (code) => {
+                        if (harnessLoadedScriptCode.has(code) || vmExecutedScriptCode.has(code)) return;
+                        vmExecutedScriptCode.add(code);
+                        const fn = new Function('require', 'module', 'exports', '__dirname', 'global', 'process', 'console', 'window', 'document', 'location', code);
+                        const ctx = window.global;
+                        return fn(window.require, { exports: {} }, {}, "", ctx, window.process, window.console, ctx, ctx.document, ctx.location);
+                    }
                 };
                 return {};
             };
 
             window.module = { exports: {} };
             window.process = { exit: () => { }, env: { NODE_ENV: 'test' } };
+            const safePerformance = (window.performance && typeof window.performance.now === 'function')
+                ? window.performance
+                : { now: () => Date.now() };
             const shadowGlobal = {
-                process: window.process, require: window.require, module: window.module, exports: window.module.exports, TestFramework: window.TestFramework, assert: window.assert, AssertionError: window.AssertionError, location: mockLocation, document: document, performance: window.performance
+                process: window.process,
+                require: window.require,
+                module: window.module,
+                exports: window.module.exports,
+                TestFramework: window.TestFramework,
+                assert: window.assert,
+                AssertionError: window.AssertionError,
+                location: mockLocation,
+                document: shadowDocument,
+                performance: safePerformance,
+                loadScript: (...args) => {
+                    if (typeof shadowUtils.loadScript === 'function') {
+                        return shadowUtils.loadScript(...args);
+                    }
+                    return Promise.reject(new Error('GreenhouseUtils.loadScript is unavailable in harness'));
+                },
+                GreenhouseUtils: shadowUtils,
+                HTMLElement: window.HTMLElement || class HTMLElement { },
+                HTMLScriptElement: window.HTMLScriptElement || class HTMLScriptElement { },
+                MutationObserver: window.MutationObserver || class MutationObserver {
+                    disconnect() { }
+                    observe() { }
+                    takeRecords() { return []; }
+                }
             };
             window.global = new Proxy({}, {
                 get(t, p) {
@@ -387,6 +459,7 @@
             const implFiles = modelId ? (implementationMap[modelId] || []) : [];
             for (const file of implFiles) {
                 const code = readTextSync(file);
+                harnessLoadedScriptCode.add(code);
                 const s = document.createElement('script');
                 s.textContent = `(function(window, document, location, global, self, globalThis) { ${code} })(window.global, window.global.document, window.global.location, window.global, window.global, window.global);`;
                 document.body.appendChild(s);
