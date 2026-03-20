@@ -272,17 +272,19 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(1100, (4, -2, 12), origin, lens=35, easing='EASE_OUT')
 
     # Forge (1101 - 1250): Low angle, strong shadows
-    kf_eased(1101, (-5, -5, 0.5), (0, 0, 2.0), lens=35, easing='EASE_IN')
-    # Point 142: Move inside wall (Y=-8 -> Y=-6)
-    kf_eased(1250, (-3, -6, 0.4), (0, 0, 2.5), lens=35, easing='EASE_OUT')
+    # Point 142: Raise Z to 1.4 for anvil/fissure clearance and use longer lens
+    kf_eased(1101, (-6, -6, 1.4), (0, 0, 2.0), lens=50, easing='EASE_IN')
+    # Point 142: Move inside wall (Y=-8 -> Y=-6) and maintain height
+    kf_eased(1250, (-4, -7, 1.4), (0, 0, 2.5), lens=50, easing='EASE_OUT')
 
     # Bridge, Resonance (1251 - 1800)
     kf_eased(1251, (12, -12, 8), (8, 0, 2))
     kf_eased(1800, (15, -8, 6), (10, 0, 2))
 
     # Shadow / Confrontation (1801 - 2500): Low angle, strong shadows
-    kf_eased(1801, (-6, -6, 0.8), (0, 0, 1.5))
-    kf_eased(2500, (-4, -8, 0.5), (2, 2, 1.5))
+    # Point 142: Raise Z to 1.2 to avoid marsh/ground clipping
+    kf_eased(1801, (-7, -7, 1.2), (0, 0, 1.5))
+    kf_eased(2500, (-5, -9, 1.2), (2, 2, 1.5))
 
     # Library (2501 - 2800): Seeking wisdom
     kf_eased(2501, (-8, -8, 2.2), (0, 0, 1.3))
@@ -304,8 +306,8 @@ def setup_camera_keyframes(master, cam, target):
 
     # Duel (4101-4500): Dynamic tracking
     # Point 142: Shift Y to -16 to avoid hedge collision
-    kf_eased(4101, (-8, -16, 3), (0, 0, 1.5))
-    kf_eased(4500, (8, -10, 4), (0, 0, 1.5))
+    kf_eased(4101, (-10, -18, 4.5), (0, 0, 1.5), lens=50)
+    kf_eased(4500, (10, -12, 5.5), (0, 0, 1.5), lens=50)
 
     # Interaction sequence: Storytelling observer (4501 - 9500)
     kf_eased(4501, (-12, -18, 8), (0, 0, 1), easing='EASE_IN', lens=24) 
@@ -324,40 +326,42 @@ def setup_camera_keyframes(master, cam, target):
     gnome_obj = bpy.data.objects.get("GloomGnome")
 
     # Scene 16 (9501-10200)
-    kf_eased(9501,  (-6, -10, 3),    (0, 0, 1.5), lens=35)        # wide
-    # OTS shots (dist < 4) - Moved closer to satisfy Test 2.3.2
-    kf_eased(9525,  (1.5, -1.0, 1.6), (-1, 0, 1.6), focus_obj=h1_obj, lens=85) # OTS Arbor to Herbaceous
-    kf_eased(9780,  (-6, -10, 3),    (0, 0, 1.5), lens=35)        # wide
-    kf_eased(9830,  (-1.5, -1.0, 1.6), (1, 0, 1.6), focus_obj=h2_obj, lens=85) # OTS Herbaceous to Arbor
-    kf_eased(10100, (-6, -10, 3),    (0, 0, 1.5), lens=35)
+    kf_eased(9501,  (-8, -12, 4),    (0, 0, 1.5), lens=35)        # wide
+    # OTS shots (dist < 4) - Adjusted for new spacing (-1.75, -0.3) / (1.75, 0.3)
+    kf_eased(9525,  (2.5, -2.0, 1.8), (-1.75, -0.3, 1.6), focus_obj=h1_obj, lens=105) # OTS Arbor to Herbaceous
+    kf_eased(9780,  (-8, -12, 4),    (0, 0, 1.5), lens=35)        # wide
+    kf_eased(9830,  (-2.5, -2.0, 1.8), (1.75, 0.3, 1.6), focus_obj=h2_obj, lens=105) # OTS Herbaceous to Arbor
+    kf_eased(10100, (-8, -12, 4),    (0, 0, 1.5), lens=35)
 
     # Scene 17 (10201-10900)
-    kf_eased(10201, (6, -10, 3),    (0, 0, 1.5), lens=35)
-    kf_eased(10250, (-1.5, -1.0, 1.6), (1, 0, 1.6), focus_obj=h2_obj, lens=85) # Arbor closeup
-    kf_eased(10540, (6, -10, 3),    (0, 0, 1.5), lens=35)
-    kf_eased(10590, (1.5, -1.0, 1.6), (-1, 0, 1.6), focus_obj=h1_obj, lens=85) # Herbaceous closeup
-    kf_eased(10850, (6, -10, 3),    (0, 0, 1.5), lens=35)
+    kf_eased(10201, (8, -12, 4),    (0, 0, 1.5), lens=35)
+    kf_eased(10250, (-2.5, -2.0, 1.8), (1.75, 0.3, 1.6), focus_obj=h2_obj, lens=105) # Arbor closeup
+    kf_eased(10540, (8, -12, 4),    (0, 0, 1.5), lens=35)
+    kf_eased(10590, (2.5, -2.0, 1.8), (-1.75, -0.3, 1.6), focus_obj=h1_obj, lens=105) # Herbaceous closeup
+    kf_eased(10850, (8, -12, 4),    (0, 0, 1.5), lens=35)
 
     # Scene 18 (10901-11600): Gnome enters
     # Point 142: Shift Y to -16 to avoid hedge
-    kf_eased(10901, (10, -16, 4),    (0, 0, 1.5), roll=0, lens=35)
+    kf_eased(10901, (12, -18, 5),    (0, 0, 1.5), roll=0, lens=35)
     crash_zoom(10901, 80, duration=5) 
-    kf_eased(10950, (0, -4, 0.8), (-1.5, 0, 1.8), roll=5, focus_obj=h1_obj, lens=50)      # Herbaceous Low Angle
-    kf_eased(11200, (6, 0, 1.2),   (3, 3, 1.2), roll=-15, focus_obj=gnome_obj, lens=24)  # Gnome Dutch Angle
-    kf_eased(11500, (12, -15, 6),    (0, 0, 1), roll=0, lens=35)
+    # Raise Z to 1.4 for Herbaceous Low Angle
+    kf_eased(10950, (0, -5, 1.4), (-1.75, 0, 1.8), roll=5, focus_obj=h1_obj, lens=65)      # Herbaceous Low Angle
+    # Gnome Dutch Angle (wider spacing)
+    kf_eased(11200, (8, 1, 1.5),   (4.5, 4.5, 1.2), roll=-15, focus_obj=gnome_obj, lens=35)  # Gnome Dutch Angle
+    kf_eased(11500, (14, -18, 7),    (0, 0, 1), roll=0, lens=35)
 
     # Scenes 19-21: peaks
-    kf_eased(11601, (0, -4, 0.6), (-1.5, 0, 1.8), roll=10, focus_obj=h1_obj, lens=85)     # Extreme Low Angle
-    kf_eased(11900, (5.5, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21) 
+    kf_eased(11601, (0, -5, 1.2), (-1.75, 0, 1.8), roll=10, focus_obj=h1_obj, lens=85)     # Extreme Low Angle
+    kf_eased(11900, (7.5, 2, 1.6), (4.5, 4.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=35) 
 
     apply_impact_shake(11900, intensity=0.2)
 
-    kf_eased(12000, (0, -4, 0.5), (-1.5, 0, 1.8), roll=15, focus_obj=h1_obj, lens=105) 
-    kf_eased(12200, (5.5, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
-    kf_eased(12300, (3, -3, 0.8),  (1.5, 0, 1.8), roll=15, focus_obj=h2_obj, lens=85)      # Arbor Hero Shot
-    kf_eased(12500, (5.5, 1, 1.4), (3.5, 3.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=21)
-    kf_eased(12700, (15, -20, 10),   (0, 0, 1), roll=0, lens=35)          
-    kf_eased(13000, (0, -4, 0.5), (-1.5, 0, 1.8), roll=20, focus_obj=h1_obj, lens=85)     
+    kf_eased(12000, (0, -5, 1.2), (-1.75, 0, 1.8), roll=15, focus_obj=h1_obj, lens=105) 
+    kf_eased(12200, (7.5, 2, 1.6), (4.5, 4.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=35)
+    kf_eased(12300, (4, -4, 1.4),  (1.75, 0, 1.8), roll=15, focus_obj=h2_obj, lens=105)      # Arbor Hero Shot
+    kf_eased(12500, (7.5, 2, 1.6), (4.5, 4.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=35)
+    kf_eased(12700, (18, -25, 12),   (0, 0, 1), roll=0, lens=35)          
+    kf_eased(13000, (0, -5, 1.2), (-1.75, 0, 1.8), roll=20, focus_obj=h1_obj, lens=105)     
 
     # Enhancement #10: Circular Dolly Around Characters during climax
     # Enhancement #12: Anticipation before circular dolly

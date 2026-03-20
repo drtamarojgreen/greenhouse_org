@@ -3,6 +3,8 @@ import math
 import random
 import style_utilities as style
 from assets.wilderness_assets import create_proc_terrain, create_proc_dead_tree, create_proc_water_body
+from scene_utils import place_random_prop
+import mathutils
 
 def setup_scene(master):
     """
@@ -26,12 +28,17 @@ def setup_scene(master):
         for mat in marsh.data.materials:
             bsdf = mat.node_tree.nodes.get("Principled BSDF")
             if bsdf: bsdf.inputs['Base Color'].default_value = (0.08, 0.1, 0.07, 1) # Dark muddy green
-        # Scattered shallow water pools
+        # Scattered shallow water pools with corridor clearance
+        cam_pos_s = (-7, -7, 1.2)
+        target_pos_s = (0, 0, 1.5)
         for i in range(5):
-            w = create_proc_water_body(
-                (random.uniform(-8, 8), random.uniform(-8, 8), -0.9),
-                size=random.uniform(2, 5), type="pond")
-            w.name = f"MarshPool_{i}"
+            w = place_random_prop(
+                None,
+                lambda l: create_proc_water_body(l, size=random.uniform(2, 5), type="pond"),
+                (-8, 8), (-8, 8), (-0.9, -0.9),
+                cam_pos_s, target_pos_s, seed=i
+            )
+            if w: w.name = f"MarshPool_{i}"
         # Weeping dead trees around the perimeter
         for i in range(6):
             import mathutils

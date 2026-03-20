@@ -1,5 +1,7 @@
 import bpy
 import math
+import random
+import mathutils
 import style_utilities as style
 
 def create_intertitle(master_instance, text, frame_start, frame_end):
@@ -147,6 +149,60 @@ def create_diagnostic_highlight(master_instance, label, location, frame_start, f
     sphere.keyframe_insert(data_path="hide_render", frame=frame_start)
     sphere.hide_render = True
     sphere.keyframe_insert(data_path="hide_render", frame=frame_end)
+
+def is_in_camera_corridor(pos, cam_pos, target_pos, width=2.5):
+    """
+    Returns True if a position lies within a cylindrical corridor 
+    between the camera and its target.
+    """
+    p = mathutils.Vector(pos)
+    c = mathutils.Vector(cam_pos)
+    t = mathutils.Vector(target_pos)
+    
+    # Line segment from C to T
+    v = t - c
+    if v.length < 0.001: return False
+    
+    # Project P onto the line (C, T)
+    # v_hat is the normalized direction
+    v_hat = v.normalized()
+    d = (p - c).dot(v_hat)
+    
+    # Check if projection is between C and T
+    if d < 0 or d > v.length:
+        return False
+        
+    # Closest point on line
+    closest = c + v_hat * d
+    dist = (p - closest).length
+    
+    return dist < width
+
+def place_random_prop(target_collection, asset_func, bounds_x, bounds_y, bounds_z, cam_pos, target_pos, seed=None, width=2.5):
+    """
+    Wraps asset creation with a camera-corridor filter.
+    """
+    if seed is not None: random.seed(seed)
+    
+    # Try multiple times to find a clear spot
+    for _ in range(10):
+        loc = (
+            random.uniform(bounds_x[0], bounds_x[1]),
+            random.uniform(bounds_y[0], bounds_y[1]),
+            random.uniform(bounds_z[0], bounds_z[1])
+        )
+        
+        if not is_in_camera_corridor(loc, cam_pos, target_pos, width=width):
+            obj = asset_func(loc)
+            if obj and target_collection:
+                # If obj is a list/tuple (like create_gnome might return something else)
+                o = obj[0] if isinstance(obj, (list, tuple)) else obj
+                if o.name in bpy.context.collection.objects:
+                    # Move to target collection if set
+                    target_collection.objects.link(o)
+                    bpy.context.collection.objects.unlink(o)
+            return obj
+    return None
 
 def generate_subtitles(master, output_path="movie_subtitles.srt"):
     """Enhancement #85: Generates an SRT file based on intertitles and scene ranges."""
