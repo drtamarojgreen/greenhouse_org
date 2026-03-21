@@ -41,9 +41,8 @@ def setup_scene(master):
     pedestal = master.pedestal
 
     if book and pedestal:
-        # Visibility
+        # Visibility (delegated to prop_layer or handled here for timing)
         for obj in [book, pedestal]:
-            import style_utilities as style
             style.set_obj_visibility(obj, False, 2600)
             style.set_obj_visibility(obj, True, 2601)
             style.set_obj_visibility(obj, False, 2801)

@@ -7,7 +7,7 @@ if script_dir not in sys.path:
     sys.path.append(script_dir)
 
 import bpy, os, sys, math, mathutils, random, logging
-import setup_engine, camera_controls, lighting_setup, compositor_settings, scene_orchestrator, scene_utils, setup_characters, animate_characters, animate_props
+import setup_engine, camera_controls, lighting_setup, compositor_settings, scene_orchestrator, scene_utils, setup_characters, animate_characters, animate_props, detail_config
 from assets import plant_humanoid, gnome_antagonist, library_props, futuristic_props, greenhouse_structure, environment_props, weather_system, exterior_garden, greenhouse_interior, brain_neuron
 from master import BaseMaster
 from constants import SCENE_MAP
@@ -127,11 +127,18 @@ class MovieMaster(BaseMaster):
                     self.place_character(self.h2, loc2, self.h2.rotation_euler, start)
                     self.place_character(self.gnome, locG, self.gnome.rotation_euler, start)
 
+                    # Point 155: Load detail profile
+                    self.detail_profile = detail_config.get_detail_profile(s_name)
+
                 s.setup_scene(self)
 
                 if s_name in SCENE_MAP:
                     start, end = SCENE_MAP[s_name]
                     # Post-setup hold: ensure final scene position is keyed to prevent drift to next
+
+                    # Point 155: Apply detail layers
+                    if hasattr(self, 'detail_profile'):
+                        scene_orchestrator.apply_detail_layers(self, s_name, self.detail_profile, start, end)
     def place_character(self, char, loc, rot, frame):
         """Phase 6: Place character with simple collision avoidance."""
         import mathutils
