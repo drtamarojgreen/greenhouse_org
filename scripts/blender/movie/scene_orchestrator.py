@@ -2,6 +2,26 @@ import bpy
 import style_utilities as style
 import math
 from constants import SCENE_MAP
+from detail_layers import EnvironmentLayer, CharacterLayer, PropLayer, BiologyLayer, SymbolicLayer, DiagnosticLayer
+
+def apply_detail_layers(master, scene_name, profile, frame_start, frame_end):
+    """
+    Modular Detail Layer Application.
+    Point 155: Mirrors the composition style of models_ui_environment.js
+    """
+    layers = [
+        EnvironmentLayer(),
+        CharacterLayer(),
+        PropLayer(),
+        BiologyLayer(),
+        SymbolicLayer(),
+        DiagnosticLayer()
+    ]
+
+    for layer in layers:
+        layer.init(master, scene_name, profile)
+        layer.apply(frame_start, frame_end)
+        layer.validate()
 
 def orchestrate_scenes(master_instance):
     """Coordinates global scene-specific events and transitions."""
