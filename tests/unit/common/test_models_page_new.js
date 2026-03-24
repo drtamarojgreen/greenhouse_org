@@ -137,6 +137,8 @@ TestFramework.describe('Models Page Loader', () => {
             'models_ui_environment.js',
             'models_3d_math.js',
             'models_ui_3d.js',
+            'models_graph.js',
+            'model_graph_viewer.js',
             'models_ui.js',
             'models_ux.js'
         ];

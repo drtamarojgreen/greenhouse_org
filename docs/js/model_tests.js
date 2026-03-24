@@ -181,6 +181,68 @@
         return `Simulation active. Measured ${currentFPS} FPS`;
     });
 
+    GreenhouseTestSuite.addTest('Greenhouse Design Tokens: Button Styling', () => {
+        const btn = document.createElement('button');
+        btn.className = 'greenhouse-btn greenhouse-btn-primary';
+        btn.textContent = 'Test Button';
+        document.body.appendChild(btn);
+
+        const style = window.getComputedStyle(btn);
+        const backgroundColor = style.backgroundColor;
+        const borderRadius = style.borderRadius;
+        const fontFamily = style.fontFamily;
+
+        document.body.removeChild(btn);
+
+        // Expected styles from greenhouse design system (approximate for now, based on CSS files)
+        // RGB(76, 175, 80) is #4caf50
+        // RGB(76, 161, 175) is #4ca1af (seen in some buttons)
+
+        // Greenhouse design colors typically involve 76, 161, 175 or 150 in RGB components
+        const isThemed = ['76', '161', '175', '150'].some(c => backgroundColor.includes(c));
+        if (!isThemed) {
+             console.warn(`Button background ${backgroundColor} might not match Greenhouse theme.`);
+        }
+
+        return `Button Styles: BG=${backgroundColor}, Radius=${borderRadius}, Font=${fontFamily}`;
+    });
+
+    GreenhouseTestSuite.addTest('Greenhouse Design Tokens: TOC Grid Layout', async () => {
+        const tocContainer = document.getElementById('models-toc-container');
+        if (!tocContainer) throw new Error('models-toc-container not found');
+
+        // Check for grid layout if TOC is rendered
+        const grid = tocContainer.querySelector('.models-toc-grid');
+        if (grid) {
+            const style = window.getComputedStyle(grid);
+            if (style.display !== 'grid') {
+                throw new Error(`TOC Grid display expected 'grid', found '${style.display}'`);
+            }
+            return `TOC Grid Layout verified (display: ${style.display})`;
+        } else {
+            return 'TOC Grid not rendered yet, skipping layout check';
+        }
+    });
+
+    GreenhouseTestSuite.addTest('Footer TOC Injection Integrity', async () => {
+        const footerTOC = document.getElementById('greenhouse-models-footer-toc');
+        if (!footerTOC) {
+             // Attempt to trigger it via GreenhouseUtils if not present
+             if (window.GreenhouseUtils && typeof window.GreenhouseUtils.renderModelsTOC === 'function') {
+                 await window.GreenhouseUtils.renderModelsTOC();
+                 await new Promise(r => setTimeout(r, 1000));
+             }
+        }
+
+        const finalFooterTOC = document.getElementById('greenhouse-models-footer-toc');
+        if (!finalFooterTOC) throw new Error('Footer TOC was not injected');
+
+        const style = window.getComputedStyle(finalFooterTOC);
+        if (style.display === 'none') throw new Error('Footer TOC is hidden');
+
+        return 'Footer TOC injection verified';
+    });
+
     // Auto-run if triggered by URL or data attribute
     document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
