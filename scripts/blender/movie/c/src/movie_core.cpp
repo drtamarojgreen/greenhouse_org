@@ -6,6 +6,9 @@
 #include <cmath>
 #include <memory>
 #include <algorithm>
+#include <chrono>
+#include "status.h"
+#include "threading.h"
 
 using namespace std;
 
@@ -26,6 +29,7 @@ class MovieCore {
 public:
     // Ported from style.py: insert_looping_noise
     float get_noise(int f, float scale, float str) {
+        if (scale == 0.0f) return 0.0f;
         return sin(f / scale) * str;
     }
 
@@ -35,7 +39,7 @@ public:
             State& h = actors["Herbaceous"];
             h.vis = true;
             h.loc = {0, 0, 0};
-            h.scale.z = 1.0f + get_noise(f, 48.0f, 0.05f); // Ported Breathing
+            h.scale.z = 1.0f + get_noise(f, 48.0f, 0.05f);
         }
     }
 
@@ -44,33 +48,54 @@ public:
         if (f >= 1300 && f <= 1600) {
             State& g = actors["GloomGnome"];
             g.vis = true;
-            g.loc.y = (f - 1300) * 0.05f; // Constant movement
+            g.loc.y = (f - 1300) * 0.05f;
         }
     }
 
-    void execute(int start, int end, string output_bin) {
+    Movie::Status execute(int start, int end, string output_bin) {
+        auto start_time = std::chrono::high_resolution_clock::now();
+
+        if (start < 0 || end < 0 || start > end) {
+            return {Movie::StatusCode::INVALID_ARGUMENT, "Invalid frame range"};
+        }
+
         ofstream out(output_bin, ios::binary);
-        // Header: Number of frames
+        if (!out) {
+            return {Movie::StatusCode::NOT_FOUND, "Could not open output file"};
+        }
+
         int frame_count = end - start + 1;
         out.write((char*)&frame_count, sizeof(int));
 
         for (int f = start; f <= end; ++f) {
             map<string, State> actors;
-            // Defaults (Zeroing Python dictionaries)
             actors["Herbaceous"] = {{0,0,0}, {0,0,0}, {1,1,1}, false};
             actors["GloomGnome"] = {{0,0,0}, {0,0,0}, {1,1,1}, false};
 
             port_garden(f, actors);
             port_shadow(f, actors);
 
-            // Write Binary Instruction Packet
             for (auto const& [name, s] : actors) {
                 out.write((char*)&s.loc, sizeof(Vector3));
                 out.write((char*)&s.rot, sizeof(Vector3));
                 out.write((char*)&s.scale, sizeof(Vector3));
                 out.write((char*)&s.vis, sizeof(bool));
             }
+
+            if (f % 500 == 0) {
+                cout << "[C++ Movie Core] Processed frame " << f << endl;
+            }
         }
+
+        auto end_time = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff = end_time - start_time;
+
+        // Structured Metric Export
+        cout << "[METRIC] execution_time_sec=" << diff.count() << endl;
+        cout << "[METRIC] frames_processed=" << frame_count << endl;
+        cout << "[METRIC] avg_ms_per_frame=" << (diff.count() * 1000.0 / frame_count) << endl;
+
+        return Movie::Status::OK();
     }
 };
 
@@ -80,9 +105,13 @@ int main(int argc, char* argv[]) {
 
     MovieCore engine;
     string path = "renders/movie_logic_" + to_string(start) + ".bin";
-    cout << "[C++ Movie Core] Compiling logic for frames " << start << "-" << end << "..." << endl;
-    engine.execute(start, end, path);
-    cout << "[C++ Movie Core] Logic binary saved: " << path << endl;
+    cout << "[C++ Movie Core] Starting logic compilation for frames " << start << "-" << end << "..." << endl;
+    auto status = engine.execute(start, end, path);
+    if (!status.ok()) {
+        cerr << "[C++ Movie Core] Error: " << status.message << endl;
+        return 1;
+    }
+    cout << "[C++ Movie Core] Done. Result: " << path << endl;
 
     return 0;
 }
