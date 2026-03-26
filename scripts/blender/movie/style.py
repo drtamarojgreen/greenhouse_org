@@ -326,7 +326,8 @@ def apply_scene_grade(master, scene_name, frame_start, frame_end):
                 light_obj.data.color = color[:3]
                 light_obj.data.keyframe_insert(data_path="color", frame=frame_start)
 
-def animate_foliage_wind(objects, strength=0.05, frame_start=1, frame_end=15000):
+def animate_foliage_wind(objects, strength=0.05, frame_start=1, frame_end=None):
+    if frame_end is None: frame_end = bpy.context.scene.frame_end
     for obj in objects:
         if obj.type != 'MESH': continue
         insert_looping_noise(obj, "rotation_euler", strength=strength, frame_start=frame_start, frame_end=frame_end)
@@ -343,7 +344,8 @@ def animate_light_flicker(light_name, frame_start, frame_end, strength=0.2, seed
     modifier.use_restricted_range, modifier.frame_start, modifier.frame_end = True, frame_start, frame_end
     modifier.blend_in, modifier.blend_out = 5, 5
 
-def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=15000, strength=0.05, scale=10.0, phase=None):
+def insert_looping_noise(obj, data_path, index=-1, frame_start=1, frame_end=None, strength=0.05, scale=10.0, phase=None):
+    if frame_end is None: frame_end = bpy.context.scene.frame_end
     anim_target = obj; path_prefix = ""
     if hasattr(obj, "id_data") and obj.rna_type.identifier == 'PoseBone': anim_target = obj.id_data; path_prefix = f'pose.bones["{obj.name}"].'
     elif hasattr(obj, "bone") and hasattr(obj, "id_data") and obj.id_data.type == 'ARMATURE': anim_target = obj.id_data; path_prefix = f'pose.bones["{obj.name}"].'
@@ -366,7 +368,8 @@ def animate_breathing(obj, frame_start, frame_end, axis=2, amplitude=0.03, cycle
     if not obj: return
     insert_looping_noise(obj, "scale", index=axis, strength=amplitude, scale=cycle, frame_start=frame_start, frame_end=frame_end)
 
-def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 1, 1, 1), frame_start=1, frame_end=15000):
+def animate_dust_particles(center, volume_size=(5, 5, 5), density=20, color=(1, 1, 1, 1), frame_start=1, frame_end=None):
+    if frame_end is None: frame_end = bpy.context.scene.frame_end
     color_hex = f"{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}"
     container_name = f"DustParticles_{color_hex}"
     container = bpy.data.collections.get(container_name) or bpy.data.collections.new(container_name)

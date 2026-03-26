@@ -3,6 +3,7 @@ import style_utilities as style
 import math
 from constants import SCENE_MAP
 from detail_layers import EnvironmentLayer, CharacterLayer, PropLayer, BiologyLayer, SymbolicLayer, DiagnosticLayer
+from profiler import Profiler
 
 def apply_detail_layers(master, scene_name, profile, frame_start, frame_end):
     """
@@ -25,59 +26,60 @@ def apply_detail_layers(master, scene_name, profile, frame_start, frame_end):
 
 def orchestrate_scenes(master_instance):
     """Coordinates global scene-specific events and transitions."""
-    scene = master_instance.scene
+    with Profiler.profile("orchestrate_scenes"):
+        scene = master_instance.scene
 
-    # Enhancement #74: Markers
-    style.add_scene_markers(master_instance)
+        # Enhancement #74: Markers
+        style.add_scene_markers(master_instance)
 
-    # Enhancement #48: Parallel Editing Markers (specific logic beats)
-    # We add markers for the 'intercuts' between brain and characters
-    if 'scene05_bridge' in SCENE_MAP:
-        start, end = SCENE_MAP['scene05_bridge']
-        scene.timeline_markers.new("Intercut_Brain", frame=start + 50)
-        scene.timeline_markers.new("Intercut_Face", frame=start + 100)
+        # Enhancement #48: Parallel Editing Markers (specific logic beats)
+        # We add markers for the 'intercuts' between brain and characters
+        if 'scene05_bridge' in SCENE_MAP:
+            start, end = SCENE_MAP['scene05_bridge']
+            scene.timeline_markers.new("Intercut_Brain", frame=start + 50)
+            scene.timeline_markers.new("Intercut_Face", frame=start + 100)
 
-    # Enhancement #71: Sound Design Cues
-    add_sound_design_cues(master_instance)
+        # Enhancement #71: Sound Design Cues
+        add_sound_design_cues(master_instance)
 
-    # Enhancement #42: Foreshadowing Shadow
-    # In scene 07, we want a shadow of the gnome to appear before him
-    if 'scene07_shadow' in SCENE_MAP:
-        start, end = SCENE_MAP['scene07_shadow']
-        setup_foreshadowing_shadow(master_instance, start, start + 100)
+        # Enhancement #42: Foreshadowing Shadow
+        # In scene 07, we want a shadow of the gnome to appear before him
+        if 'scene07_shadow' in SCENE_MAP:
+            start, end = SCENE_MAP['scene07_shadow']
+            setup_foreshadowing_shadow(master_instance, start, start + 100)
 
-    # Enhancement #44: Reacting Props
-    # Flowers droop during shadow scene, bloom during finale
-    if 'scene07_shadow' in SCENE_MAP:
-        start, end = SCENE_MAP['scene07_shadow']
-        animate_flower_reaction(master_instance, start, end, mode='DROOP')
+        # Enhancement #44: Reacting Props
+        # Flowers droop during shadow scene, bloom during finale
+        if 'scene07_shadow' in SCENE_MAP:
+            start, end = SCENE_MAP['scene07_shadow']
+            animate_flower_reaction(master_instance, start, end, mode='DROOP')
 
-    if 'scene22_retreat' in SCENE_MAP:
-        start, end = SCENE_MAP['scene22_retreat']
-        animate_flower_reaction(master_instance, start, end, mode='BLOOM')
+        if 'scene22_retreat' in SCENE_MAP:
+            start, end = SCENE_MAP['scene22_retreat']
+            animate_flower_reaction(master_instance, start, end, mode='BLOOM')
 
-    # Enhancement #88: Bioluminescent Veins
-    chars = [master_instance.h1, master_instance.h2, master_instance.gnome]
-    style.apply_bioluminescent_veins([c for c in chars if c], 1, 15000)
+        # Enhancement #88: Bioluminescent Veins
+        chars = [master_instance.h1, master_instance.h2, master_instance.gnome]
+        style.apply_bioluminescent_veins([c for c in chars if c], master_instance.start_frame, master_instance.end_frame)
 
-    # Enhancement #83: Distance Based Glow
-    if master_instance.gnome:
-        style.animate_distance_based_glow(master_instance.gnome, [master_instance.h1, master_instance.h2], 1, 15000)
+        # Enhancement #83: Distance Based Glow
+        if master_instance.gnome:
+            style.animate_distance_based_glow(master_instance.gnome, [master_instance.h1, master_instance.h2], master_instance.start_frame, master_instance.end_frame)
 
-    # Enhancement #54: Volumetric Fog Cues
-    # Dense fog during shadow scene, clearing for sanctuary
-    if 'scene07_shadow' in SCENE_MAP:
-        start, end = SCENE_MAP['scene07_shadow']
-        style.animate_mood_fog(scene, start, density=0.05)
-    if 'scene09_climbing' in SCENE_MAP:
-        start, end = SCENE_MAP['scene09_climbing']
-        style.animate_mood_fog(scene, start, density=0.01)
+        # Enhancement #54: Volumetric Fog Cues
+        # Dense fog during shadow scene, clearing for sanctuary
+        if 'scene07_shadow' in SCENE_MAP:
+            start, end = SCENE_MAP['scene07_shadow']
+            style.animate_mood_fog(scene, start, density=0.05)
+        if 'scene09_climbing' in SCENE_MAP:
+            start, end = SCENE_MAP['scene09_climbing']
+            style.animate_mood_fog(scene, start, density=0.01)
 
-    # Enhancement #60: Wet Glass Refraction
-    # Heavy refraction during the rain scenes
-    import compositor_settings
-    compositor_settings.animate_wet_glass(scene, 1801, 2500, strength=15.0)
-    compositor_settings.animate_wet_glass(scene, 13701, 14200, strength=30.0) # Heavier in storm
+        # Enhancement #60: Wet Glass Refraction
+        # Heavy refraction during the rain scenes
+        import compositor_settings
+        compositor_settings.animate_wet_glass(scene, 1801, 2500, strength=15.0)
+        compositor_settings.animate_wet_glass(scene, 13701, 14200, strength=30.0) # Heavier in storm
 
 def add_sound_design_cues(master):
     """Enhancement #71: Adds markers for sound design synchronization."""
@@ -93,7 +95,10 @@ def add_sound_design_cues(master):
     # SFX Cues
     # Footsteps during gait
     for start, end in [(401, 1500), (13701, 14500)]:
-        for f in range(start, end, 32): # Every step
+        # Clamp to master range
+        c_start = max(start, master.start_frame)
+        c_end = min(end, master.end_frame)
+        for f in range(c_start, c_end, 32): # Every step
             scene.timeline_markers.new("SFX_Footstep", frame=f)
 
     # Wind/Rain

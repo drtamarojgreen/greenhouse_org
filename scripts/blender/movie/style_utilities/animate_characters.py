@@ -539,8 +539,8 @@ def animate_characters(master_instance):
 
         torso = char.pose.bones.get("Torso") if char.type == 'ARMATURE' else None
         target = torso if torso else char
-        animate_weight_shift(target, 1, 15000)
-        animate_breathing(target, 1, 15000)
+        animate_weight_shift(target, master_instance.start_frame, master_instance.end_frame)
+        animate_breathing(target, master_instance.start_frame, master_instance.end_frame)
 
     # Baseline acting for tests
     test_bones = ["Arm.L", "Arm.R", "Leg.L", "Leg.R", "Neck", "Jaw", "Mouth", "Eye.L", "Brow.L", "Eye.R", "Brow.R"]
@@ -549,7 +549,7 @@ def animate_characters(master_instance):
         pb = char.pose.bones
         torso = pb.get("Torso")
         if torso: 
-            core.insert_looping_noise(char, 'pose.bones["Torso"].location', index=2, strength=0.05, scale=5.0, frame_start=1, frame_end=15000)
+            core.insert_looping_noise(char, 'pose.bones["Torso"].location', index=2, strength=0.05, scale=5.0, frame_start=master_instance.start_frame, frame_end=master_instance.end_frame)
             # Explicit acting keys for movement tests
             char.keyframe_insert(data_path='pose.bones["Torso"].location', index=2, frame=100)
             char.keyframe_insert(data_path='pose.bones["Torso"].location', index=2, frame=200)
@@ -557,11 +557,16 @@ def animate_characters(master_instance):
         for bname in test_bones:
             bone = char.pose.bones.get(bname)
             if not bone: continue
-            core.insert_looping_noise(bone, "rotation_euler", strength=0.005, scale=10.0, frame_start=1, frame_end=15000)
+            core.insert_looping_noise(bone, "rotation_euler", strength=0.005, scale=10.0, frame_start=master_instance.start_frame, frame_end=master_instance.end_frame)
             orig_rot = bone.rotation_euler.copy()
-            bone.rotation_euler[0] += 0.01; char.keyframe_insert(data_path=f'pose.bones["{bname}"].rotation_euler', index=0, frame=1)
-            bone.rotation_euler[0] -= 0.02; char.keyframe_insert(data_path=f'pose.bones["{bname}"].rotation_euler', index=0, frame=7500)
-            bone.rotation_euler = orig_rot; char.keyframe_insert(data_path=f'pose.bones["{bname}"].rotation_euler', index=0, frame=15000)
+            
+            # Clamp test acting keys to chunk
+            if master_instance.start_frame <= 1 <= master_instance.end_frame:
+                bone.rotation_euler[0] += 0.01; char.keyframe_insert(data_path=f'pose.bones["{bname}"].rotation_euler', index=0, frame=1)
+            if master_instance.start_frame <= 7500 <= master_instance.end_frame:
+                bone.rotation_euler[0] -= 0.02; char.keyframe_insert(data_path=f'pose.bones["{bname}"].rotation_euler', index=0, frame=7500)
+            if master_instance.start_frame <= 15000 <= master_instance.end_frame:
+                bone.rotation_euler = orig_rot; char.keyframe_insert(data_path=f'pose.bones["{bname}"].rotation_euler', index=0, frame=15000)
 
     # Scene specific acting
     dialogue_scenes = [('scene16_dialogue', 'Herbaceous'), ('scene17_dialogue', 'Arbor'), ('scene18_dialogue', 'Herbaceous'), ('scene19_dialogue', 'Arbor'), ('scene20_dialogue', 'GloomGnome'), ('scene21_dialogue', 'GloomGnome')]

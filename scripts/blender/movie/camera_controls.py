@@ -46,25 +46,48 @@ def ensure_camera(master):
     
     return cam, target
 
-def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dist=4.5):
-    """P1-4: Prevent camera clipping through character bounds."""
-    # We'll sample and auto-offset if too close
+def apply_camera_safety(master, cam, characters, frame_start, frame_end, min_dist=4.5, env_min_dist=2.5):
+    """
+    P1-4: Prevent camera clipping through character and environmental bounds.
+    """
+    # Identify large environmental objects to avoid (Trees, Rocks, Structures)
+    env_objs = [obj for obj in bpy.data.objects if any(k in obj.name for k in ["Tree", "Rock", "Structure", "Bush", "Anvil", "Pillar"])]
+    
     for f in range(frame_start, frame_end + 1, 120): # Sparse sampling for speed
         master.scene.frame_set(f)
         dg = bpy.context.evaluated_depsgraph_get()
         cam_eval = cam.evaluated_get(dg)
         cam_world_loc = cam_eval.matrix_world.translation
         
+        # 1. Character Safety (High Priority)
         for char in characters:
             if not char: continue
             char_eval = char.evaluated_get(dg)
             char_loc = char_eval.matrix_world.translation
             dist = (cam_world_loc - char_loc).length
             if dist < min_dist:
-                # Push camera back along view vector
                 direction = (cam_world_loc - char_loc).normalized()
                 offset = direction * (min_dist - dist + 0.2)
                 cam.location += offset
+                cam.keyframe_insert(data_path="location", frame=f)
+
+        # 2. Environmental Safety (Prevent "Drunk Cameraman" Wall-Smacks)
+        for env in env_objs:
+            if env == cam: continue
+            env_eval = env.evaluated_get(dg)
+            env_loc = env_eval.matrix_world.translation
+            
+            # Use a simple bounding sphere check for speed
+            dist = (cam_world_loc - env_loc).length
+            # Approximate size based on dimension
+            env_size = max(env.dimensions) / 2.0
+            
+            if dist < (env_min_dist + env_size):
+                # Push camera away from the object center
+                direction = (cam_world_loc - env_loc).normalized()
+                # If we're inside or very close, push out
+                push = (env_min_dist + env_size) - dist + 0.5
+                cam.location += direction * push
                 cam.keyframe_insert(data_path="location", frame=f)
 
 def ensure_secondary_camera(master):

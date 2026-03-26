@@ -1,0 +1,4 @@
+Situation: Release Gate Contiguity
+Is target_card = contiguity
+Is frame_end_retreat = 14500
+Is frame_start_credits = 14501
