@@ -1,0 +1,6 @@
+Situation: Retreat Speed Ramp
+Is target_card = ramp
+Is frame_1 = 13860
+Is frame_2 = 14340
+# 13701 + (14500-13701)*0.2 = 13860
+# 13701 + (14500-13701)*0.8 = 14340

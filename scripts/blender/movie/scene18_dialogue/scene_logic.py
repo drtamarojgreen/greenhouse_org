@@ -34,11 +34,11 @@ def setup_scene(master):
     ensure_scene_keyframe(master, start_frame)
 
     # Position characters for dialogue (Point 142)
-    master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), start_frame)
-    master.place_character(master.h2, (1, 0, 0), (0, 0, 0), start_frame)
+    master.place_character(master.h1, (-1.75, -0.3, 0), (0, 0, 0), start_frame)
+    master.place_character(master.h2, (1.75, 0.3, 0), (0, 0, 0), start_frame)
 
-    # Fix B: Position gnome across from the plants, closer than his escape position (Point 105)
-    master.place_character(master.gnome, (3, 3, 0), (0, 0, math.radians(225)), start_frame)
+    # Fix B: Position gnome across from the plants, slightly deeper for clearance (Point 105)
+    master.place_character(master.gnome, (4.5, 4.5, 0), (0, 0, math.radians(225)), start_frame)
     master.gnome.scale = (0.6, 0.6, 0.6)
     master.gnome.keyframe_insert(data_path="scale", frame=start_frame)
 

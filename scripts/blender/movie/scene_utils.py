@@ -1,5 +1,7 @@
 import bpy
 import math
+import random
+import mathutils
 import style_utilities as style
 
 def create_intertitle(master_instance, text, frame_start, frame_end):
@@ -147,6 +149,102 @@ def create_diagnostic_highlight(master_instance, label, location, frame_start, f
     sphere.keyframe_insert(data_path="hide_render", frame=frame_start)
     sphere.hide_render = True
     sphere.keyframe_insert(data_path="hide_render", frame=frame_end)
+
+def is_in_camera_corridor(pos, cam_pos, target_pos, width=2.5):
+    """
+    Returns True if a position lies within a cylindrical corridor 
+    between the camera and its target.
+    """
+    p = mathutils.Vector(pos)
+    c = mathutils.Vector(cam_pos)
+    t = mathutils.Vector(target_pos)
+    
+    # Line segment from C to T
+    v = t - c
+    if v.length < 0.001: return False
+    
+    # Project P onto the line (C, T)
+    # v_hat is the normalized direction
+    v_hat = v.normalized()
+    d = (p - c).dot(v_hat)
+    
+    # Check if projection is between C and T
+    if d < 0 or d > v.length:
+        return False
+        
+    # Closest point on line
+    closest = c + v_hat * d
+    dist = (p - closest).length
+    
+    return dist < width
+
+def is_view_blocked(cam_pos, target_pos, ignore_objects=None):
+    """
+    Raycasts from camera to target to check for physical occlusions.
+    """
+    if ignore_objects is None: ignore_objects = []
+    
+    c = mathutils.Vector(cam_pos)
+    t = mathutils.Vector(target_pos)
+    direction = (t - c).normalized()
+    distance = (t - c).length
+    
+    # Perform raycast
+    # Note: We use the scene-wide ray_cast.
+    res, hit_pos, _, _, hit_obj, _ = bpy.context.scene.ray_cast(
+        bpy.context.evaluated_depsgraph_get(),
+        c, direction, distance=distance
+    )
+    
+    if res:
+        # If we hit something that isn't in our ignore list, it's an occlusion.
+        if hit_obj and hit_obj not in ignore_objects:
+            # Check if hit is significantly before the target
+            if (hit_pos - c).length < (distance - 0.1):
+                return True
+    return False
+
+def place_random_prop(target_collection, asset_func, bounds_x, bounds_y, bounds_z, cam_pos, target_pos, seed=None, width=3.5):
+    """
+    Wraps asset creation with a camera-corridor filter and raycast validation.
+    """
+    if seed is not None: random.seed(seed)
+    
+    # Try multiple times to find a clear spot
+    for trial in range(15): # Point 142: Increased trials from 10 to 15 for complex scenes
+        loc = (
+            random.uniform(bounds_x[0], bounds_x[1]),
+            random.uniform(bounds_y[0], bounds_y[1]),
+            random.uniform(bounds_z[0], bounds_z[1])
+        )
+        
+        # 1. Simple spatial corridor check (fast)
+        if not is_in_camera_corridor(loc, cam_pos, target_pos, width=width):
+            # 2. Potential asset creation
+            obj = asset_func(loc)
+            if not obj: continue
+            
+            # Ensure we have a list of objects (handled for multi-object assets)
+            objs = [obj] if not isinstance(obj, (list, tuple)) else list(obj)
+            main_obj = objs[0]
+            
+            # 3. Raycast validation (slow but "thoughtful")
+            # We check if the NEWLY PLACED object blocks the view.
+            # We check a few points on the target area if target_pos is a cluster.
+            if is_view_blocked(cam_pos, target_pos):
+                # Oops, we blocked the view. Delete and try again.
+                for o in objs:
+                    bpy.data.objects.remove(o, do_unlink=True)
+                continue
+            
+            # Success! Link to collection
+            if target_collection:
+                for o in objs:
+                    if o.name in bpy.context.collection.objects:
+                        target_collection.objects.link(o)
+                        bpy.context.collection.objects.unlink(o)
+            return obj
+    return None
 
 def generate_subtitles(master, output_path="movie_subtitles.srt"):
     """Enhancement #85: Generates an SRT file based on intertitles and scene ranges."""

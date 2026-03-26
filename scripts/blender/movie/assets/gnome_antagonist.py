@@ -109,32 +109,10 @@ def create_gnome(name, location, scale=0.6):
     ret = bmesh.ops.create_cone(bm, segments=12, cap_ends=True, radius1=0.25, radius2=0.05, depth=0.5, matrix=mathutils.Matrix.Translation((0,-0.2,0.7)) @ rot_beard)
     for v in ret['verts']: v[dlayer][vg_indices["Head"]] = 1.0
     
-    # Phase 6: Connected Facial Features
-    # Nose (welded bulb)
-    ret_n = bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=0.08, matrix=mathutils.Matrix.Translation((0,-0.25,0.95)))
-    for v in ret_n['verts']: v[dlayer][vg_indices["Head"]] = 1.0
+    # Removal of redundant internal facial BMesh
+    # Facial features are now generated as standalone objects.
     
-    # Eyes (Nested UV Spheres, slightly protruding)
-    for side in [-1, 1]:
-        vg_eye = vg_indices["Eye.L" if side == 1 else "Eye.R"]
-        loc = mathutils.Vector((0.12 * side, -0.22, 1.0))
-        ret_e = bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=0.04, matrix=mathutils.Matrix.Translation(loc))
-        for v in ret_e['verts']: v[dlayer][vg_eye] = 1.0
-        # Pupillary protrusion
-        for f in {f for v in ret_e['verts'] for f in v.link_faces}: f.material_index = 2 # Eye material index
-
-    # Brows
-    for side in [1, -1]:
-        ret = bmesh.ops.create_cube(bm, matrix=mathutils.Matrix.Translation((side * 0.15, -0.2, 1.0)))
-        vg_name = "Brow.L" if side == 1 else "Brow.R"
-        for v in ret['verts']: 
-            v.co.x, v.co.y, v.co.z = v.co.x * 0.05, v.co.y * 0.01, v.co.z * 0.01; v[dlayer][vg_indices[vg_name]] = 1.0
-        for f in {f for v in ret['verts'] for f in v.link_faces}: f.material_index = 2
-
-    # Mouth
-    ret = bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation((0, -0.28, 0.9)))
-    for v in ret['verts']: 
-        v.co.x, v.co.y, v.co.z = v.co.x * 1.5, v.co.y * 0.1, v.co.z * 0.2; v[dlayer][vg_indices["Mouth"]] = 1.0
+    # Procedural limbs and joints
 
     # Helper for Knobby Joints (Phase 5)
     def add_gnome_limb(r1, r2, h, loc, bname, knob_scale=1.2):
@@ -282,31 +260,32 @@ def create_gnome(name, location, scale=0.6):
     links.new(node_flicker.outputs['Fac'], bsdf.inputs.get('Emission Strength', bsdf.inputs[0]))
     style.set_principled_socket(mat_gloom, "Emission Color", (0.2, 0, 0.4, 1))
     
-    mat_eye = create_iris_material(f"{name}_Iris", color=(0.5, 0, 0)) # Red eyes for gnome
-    # Enhanced Phase 3 vascularity
-    nodes_e = mat_eye.node_tree.nodes
-    links_e = mat_eye.node_tree.links
+    # Standardized Eye, Mouth, and Brow Objects
+    from .facial_utilities import create_facial_props
+    bones_map = {
+        "Eye.L": "Eye.L", "Eye.R": "Eye.R",
+        "Mouth": "Mouth",
+        "Brow.L": "Brow.L", "Brow.R": "Brow.R"
+    }
+    # Red eyes for gnome
+    mat_eye_red = create_iris_material(f"{name}_Iris_Red", color=(0.5, 0, 0))
+    # Add vascularity to the red eye material
+    nodes_e = mat_eye_red.node_tree.nodes
+    links_e = mat_eye_red.node_tree.links
     bsdf_e = nodes_e.get("Principled BSDF")
     node_vasc = nodes_e.new('ShaderNodeTexNoise')
     node_vasc.inputs['Scale'].default_value = 100.0
-    
-    # Distance-aware vascularity (LOD)
-    node_cam_v = nodes_e.new('ShaderNodeCameraData')
-    node_v_fac = nodes_e.new('ShaderNodeMath')
-    node_v_fac.operation = 'DIVIDE'
-    node_v_fac.inputs[0].default_value = 1.0 # Visible up to 1m
-    links_e.new(node_cam_v.outputs['View Distance'], node_v_fac.inputs[1])
-
-    node_mix_v = style.create_mix_node(mat_eye.node_tree, blend_type='OVERLAY', data_type='RGBA')
+    node_mix_v = style.create_mix_node(mat_eye_red.node_tree, blend_type='OVERLAY', data_type='RGBA')
     fac_v, in1_v, in2_v = style.get_mix_sockets(node_mix_v)
-    links_e.new(node_v_fac.outputs[0], fac_v)
-    
-    # Trace the base color link
+    fac_v.default_value = 0.5
     links_e.new(bsdf_e.inputs['Base Color'].links[0].from_socket, in1_v)
     links_e.new(node_vasc.outputs['Color'], in2_v)
     links_e.new(style.get_mix_output(node_mix_v), bsdf_e.inputs['Base Color'])
 
-    for m in [mat_body, mat_hat, mat_beard, mat_gloom, mat_eye]: mesh_obj.data.materials.append(m)
+    create_facial_props(name, armature_obj, bones_map, mat_eye_red, mat_body, eye_radius=0.04)
+
+    for m in [mat_body, mat_hat, mat_beard, mat_gloom, mat_eye_red]: 
+        mesh_obj.data.materials.append(m)
     
     # Subsurface & High-Fidelity Smoothing (Phase 4)
     sub = mesh_obj.modifiers.new(name="Subsurf", type='SUBSURF')

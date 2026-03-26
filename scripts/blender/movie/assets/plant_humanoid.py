@@ -243,10 +243,6 @@ def create_iris_material(name, color=(0.2, 0.4, 0.2)):
     
     # 1. Distance-Aware Scaling (Point 91/95)
     node_cam_info = nodes.new('ShaderNodeCameraData')
-    node_dist_math = nodes.new('ShaderNodeMath')
-    node_dist_math.operation = 'DIVIDE'
-    node_dist_math.inputs[1].default_value = 10.0 # Normalize at 10m
-    links.new(node_cam_info.outputs['View Distance'], node_dist_math.inputs[0])
     
     # 2. Iris/Pupil Gradient
     node_mapping = nodes.new('ShaderNodeMapping')
@@ -254,15 +250,18 @@ def create_iris_material(name, color=(0.2, 0.4, 0.2)):
     node_grad = nodes.new('ShaderNodeTexGradient')
     node_grad.gradient_type = 'SPHERICAL'
     
-    links.new(node_coord.outputs['Generated'], node_mapping.inputs['Vector'])
+    # Point 142: Using UV for iris placement
+    links.new(node_coord.outputs['UV'], node_mapping.inputs['Vector'])
     links.new(node_mapping.outputs['Vector'], node_grad.inputs['Vector'])
     
     node_ramp = nodes.new('ShaderNodeValToRGB')
     elements = node_ramp.color_ramp.elements
+    # Sclera-dominant ramp for better visibility
     elements[0].position, elements[0].color = 0.0, (0, 0, 0, 1) # Pupil
+    elements.new(0.05)
+    elements[1].position, elements[1].color = 0.05, (*color, 1) # Iris
     elements.new(0.4)
-    elements[1].position, elements[1].color = 0.4, (*color, 1) # Iris
-    elements[2].position, elements[2].color = 0.8, (1, 1, 1, 1) # Sclera
+    elements[2].position, elements[2].color = 0.4, (1, 1, 1, 1) # Sclera
     links.new(node_grad.outputs['Fac'], node_ramp.inputs['Fac'])
     links.new(node_ramp.outputs['Color'], node_bsdf.inputs['Base Color'])
     
@@ -365,20 +364,8 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
         for v in ret['verts']: v[dlayer][vg_idx] = 1.0
         return ret
 
-    # Phase 6: Organic Face & Skin Welding
-    # Eyes (carved in)
-    for side in [-1, 1]:
-        loc = mathutils.Vector((0.15 * side, 0.2, torso_h + neck_h + head_r + 0.1)) # Frontal placement
-        ret_e = bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=12, radius=0.06, matrix=mathutils.Matrix.Translation(loc))
-        for v in ret_e['verts']: 
-            v[dlayer][mesh_obj.vertex_groups.new(name=f"Eye.{'L' if side==1 else 'R'}").index] = 1.0
-            for f in v.link_faces: f.material_index = 2 # Eye Mat
-    
-    # Mouth (crease)
-    ret_m = bmesh.ops.create_cube(bm, size=0.1, matrix=mathutils.Matrix.Translation((0, 0.25, torso_h + neck_h + head_r - 0.1)))
-    for v in ret_m['verts']: 
-        v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
-        v[dlayer][vg_idx_torso] = 1.0 # Attach to head/torso influence
+    # Point 142: Removal of redundant internal facial BMesh in favor of shared prop system.
+    # Facial features are now generated as standalone objects for clean deformation.
 
     # Add limb parts with welding
     add_part(0.12, 0.1, neck_h, (0,0.15,torso_h+neck_h/2), "Neck")
@@ -438,67 +425,20 @@ def create_plant_humanoid(name, location, height_scale=1.0, vine_thickness=0.05,
     arm_mod.use_vertex_groups = True
 
 
-    # Brows - Parented to new Brow bones
-    for side in ["L", "R"]:
-        bname = f"Brow.{side}"
-        brow_obj_name = f"{name}_Brow_{side}"
-        brow_mesh = bpy.data.meshes.new(f"{brow_obj_name}_MeshData")
-        brow_obj = bpy.data.objects.new(brow_obj_name, brow_mesh)
-        bpy.context.scene.collection.objects.link(brow_obj)
-        brow_obj.parent = armature_obj
-        brow_obj.parent_type = 'BONE'
-        brow_obj.parent_bone = bname
-        
-        bm_brow = bmesh.new()
-        bmesh.ops.create_cube(bm_brow, size=0.05)
-        for v in bm_brow.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.1
-        bm_brow.to_mesh(brow_mesh); bm_brow.free()
-        brow_obj.location = (0, 0, 0)
-        brow_obj.data.materials.append(create_bark_material(f"BrowMat_{name}"))
-
-    # Staff - separate mesh handle for test parity
-    staff_obj_name = f"{name}_ReasonStaff"
-    staff_mesh = bpy.data.meshes.new(f"{staff_obj_name}_MeshData")
-    staff_obj = bpy.data.objects.new(staff_obj_name, staff_mesh)
-    bpy.context.collection.objects.link(staff_obj)
-    staff_obj.parent = armature_obj
-    staff_obj.parent_type = 'BONE'
-    staff_obj.parent_bone = "Arm.R"
-    bm_staff = bmesh.new()
-    bmesh.ops.create_cone(bm_staff, segments=8, radius1=0.02, radius2=0.02, depth=1.5)
-    bm_staff.to_mesh(staff_mesh); bm_staff.free()
-    staff_obj.location = (0, 0, -0.4)
-    staff_obj.rotation_euler = (0, 1.5708, 0) # Point vertically instead of horizontal (prevents "fence" illusion)
-    staff_obj.data.materials.append(create_bark_material(f"StaffMat_{name}"))
-
-    # Eye and Mouth Objects for test parity
-    for side, bname in [("L", "Eye.L"), ("R", "Eye.R")]:
-        eye_obj_name = f"{name}_{bname.replace('.', '_')}"
-        eye_mesh = bpy.data.meshes.new(f"{eye_obj_name}_MeshData")
-        eye_obj = bpy.data.objects.new(eye_obj_name, eye_mesh)
-        bpy.context.scene.collection.objects.link(eye_obj)
-        eye_obj.parent = armature_obj
-        eye_obj.parent_type = 'BONE'
-        eye_obj.parent_bone = bname  # Parent to the Eye bone directly
-        bm_eye = bmesh.new()
-        bmesh.ops.create_uvsphere(bm_eye, u_segments=24, v_segments=24, radius=0.06)
-        bm_eye.to_mesh(eye_mesh); bm_eye.free()
-        eye_obj.location = (0, 0, 0)  # Sits at its parent bone head
-        eye_obj.data.materials.append(create_iris_material(f"EyeMat_{name}_{side}"))
-
-    mouth_obj_name = f"{name}_Mouth"
-    mouth_mesh = bpy.data.meshes.new(f"{mouth_obj_name}_MeshData")
-    mouth_obj = bpy.data.objects.new(mouth_obj_name, mouth_mesh)
-    bpy.context.scene.collection.objects.link(mouth_obj)
-    mouth_obj.parent = armature_obj
-    mouth_obj.parent_type = 'BONE'
-    mouth_obj.parent_bone = "Mouth"  # Parent to the Mouth bone directly
-    bm_mouth = bmesh.new()
-    bmesh.ops.create_cube(bm_mouth, size=0.1)
-    for v in bm_mouth.verts: v.co.x *= 1.5; v.co.y *= 0.1; v.co.z *= 0.2
-    bm_mouth.to_mesh(mouth_mesh); bm_mouth.free()
-    mouth_obj.location = (0, 0, 0)  # Sits at its parent bone head
-    mouth_obj.data.materials.append(create_bark_material(f"MouthMat_{name}"))
+    # Standardized Eye, Mouth, and Brow Objects
+    from .facial_utilities import create_facial_props
+    bones_map = {
+        "Eye.L": "Eye.L", "Eye.R": "Eye.R",
+        "Mouth": "Mouth",
+        "Brow.L": "Brow.L", "Brow.R": "Brow.R"
+    }
+    bark_mat = create_bark_material(f"FacialBarkMat_{name}")
+    iris_mat_l = create_iris_material(f"EyeMat_{name}_L")
+    iris_mat_r = create_iris_material(f"EyeMat_{name}_R") # Separate mats for potential asymmetry
+    
+    facial_objs = create_facial_props(name, armature_obj, bones_map, iris_mat_l, bark_mat)
+    # Special material for right eye if needed, but here we just reuse similar for now.
+    facial_objs["Eye.R"].data.materials[0] = iris_mat_r
 
     # Also keep influence on main mesh (optional, but keep per original design)
     # Foliage

@@ -3,6 +3,7 @@ import math
 import mathutils
 import random
 import style_utilities as style
+import c_accel
 
 def create_hedge_material():
     mat = bpy.data.materials.get("HedgeMat") or bpy.data.materials.new(name="HedgeMat")
@@ -153,22 +154,33 @@ def create_procedural_tree(location, bark_mat, leaf_mat):
     bm = bmesh.new()
     trunk_h = random.uniform(4, 7)
 
-    # Trunk: tapered cone, not a cylinder - looks natural
+    # Trunk: tapered cone
     bmesh.ops.create_cone(bm, segments=6, cap_ends=True,
                           radius1=0.35, radius2=0.08, depth=trunk_h,
                           matrix=mathutils.Matrix.Translation((0, 0, trunk_h / 2)))
 
-    # Canopy: many small offset spheres to create an organic crown, not a lollipop
+    # Canopy: organic crown
     num_clusters = random.randint(8, 14)
-    for i in range(num_clusters):
-        angle = (i / num_clusters) * 2 * math.pi + random.uniform(-0.3, 0.3)
-        radius_offset = random.uniform(0.5, 2.0)
-        cx = math.cos(angle) * radius_offset
-        cy = math.sin(angle) * radius_offset
-        cz = trunk_h + random.uniform(-0.8, 2.0)
-        cluster_r = random.uniform(0.8, 1.6)
-        bmesh.ops.create_uvsphere(bm, u_segments=6, v_segments=5, radius=cluster_r,
-                                  matrix=mathutils.Matrix.Translation((cx, cy, cz)))
+    
+    # C++ Acceleration (Phase 2)
+    accel_data = c_accel.generate_tree_geometry(num_clusters, trunk_h, 1.5)
+    
+    if accel_data:
+        for cx, cy, cz in accel_data:
+            cluster_r = random.uniform(0.8, 1.6)
+            bmesh.ops.create_uvsphere(bm, u_segments=6, v_segments=5, radius=cluster_r,
+                                      matrix=mathutils.Matrix.Translation((cx, cy, cz)))
+    else:
+        # Fallback to pure Python (Point 142)
+        for i in range(num_clusters):
+            angle = (i / num_clusters) * 2 * math.pi + random.uniform(-0.3, 0.3)
+            radius_offset = random.uniform(0.5, 2.0)
+            cx = math.cos(angle) * radius_offset
+            cy = math.sin(angle) * radius_offset
+            cz = trunk_h + random.uniform(-0.8, 2.0)
+            cluster_r = random.uniform(0.8, 1.6)
+            bmesh.ops.create_uvsphere(bm, u_segments=6, v_segments=5, radius=cluster_r,
+                                      matrix=mathutils.Matrix.Translation((cx, cy, cz)))
 
     bm.to_mesh(mesh)
     bm.free()

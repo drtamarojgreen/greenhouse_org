@@ -21,7 +21,10 @@ def animate_props(master_instance):
         scene_utils.create_diagnostic_highlight(master_instance, "Prefrontal", b_loc + mathutils.Vector((0.5, -0.5, 0.8)), 3720, 3780, color=(1, 0.5, 0, 1))
 
     # Enhancement #22: Fireflies
-    style.animate_fireflies(mathutils.Vector((0, 0, 2)), volume_size=(10, 10, 5), density=15, frame_start=401, frame_end=3800)
+    ff_start = max(401, master_instance.start_frame)
+    ff_end = min(3800, master_instance.end_frame)
+    if ff_start <= ff_end:
+        style.animate_fireflies(mathutils.Vector((0, 0, 2)), volume_size=(10, 10, 5), density=15, frame_start=ff_start, frame_end=ff_end)
 
     # Enhancement #33: Floating Spores (Sanctuary)
     if 'scene11_nature_sanctuary' in SCENE_MAP:

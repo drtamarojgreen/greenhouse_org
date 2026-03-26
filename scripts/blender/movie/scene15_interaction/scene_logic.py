@@ -96,15 +96,7 @@ def setup_scene(master):
         style.animate_finger_curl(fingers, 7000, 7100)
 
     # Phase 3: Emotional Resonance (7501 - 9000)
-    # Both characters breathing and subtle movements (pass the armature object)
-    style.animate_breathing(master.h1, 7501, 9000, amplitude=0.04)
-    style.animate_breathing(master.h2, 7501, 9000, amplitude=0.02)
-    
-    # Shoulder shrug (use armature, animate_shoulder_shrug should handle bones internally)
-    h1_torso = master.h1.pose.bones.get("Torso") if master.h1.type == 'ARMATURE' else master.h1
-    h2_torso = master.h2.pose.bones.get("Torso") if master.h2.type == 'ARMATURE' else master.h2
-    style.animate_shoulder_shrug(h1_torso, 7800, 8000)
-    style.animate_shoulder_shrug(h2_torso, 8200, 8400)
+    # Both characters breathing and subtle movements handled by character_layer
 
     # Looking at each other
     gaze = bpy.data.objects.get("GazeTarget")

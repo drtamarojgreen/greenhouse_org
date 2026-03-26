@@ -5,6 +5,7 @@ import random
 from assets import plant_humanoid
 import style_utilities as style
 from assets.wilderness_assets import create_proc_terrain, create_proc_water_body, create_proc_fern, create_proc_rock_formation
+from scene_utils import place_random_prop
 
 def setup_scene(master):
     """
@@ -48,12 +49,18 @@ def setup_scene(master):
                 scale=random.uniform(0.8, 1.5), style_type="smooth")
             r.name = f"OasisRock_{i}"
 
-    # Dense Foliage
+    # Dense Foliage with corridor clearance (Point 142)
+    cam_pos_sanct = (-6, -10, 2.6)
+    target_pos_sanct = (0, 0, 1.5)
     bushes = []
     for i in range(10):
-        loc = mathutils.Vector((random.uniform(-10, 10), random.uniform(-10, 10), 0))
-        b = plant_humanoid.create_procedural_bush(loc, name=f"SanctuaryBush_{i}", size=random.uniform(0.5, 2.0))
-        bushes.append(b)
+        b = place_random_prop(
+            None,
+            lambda l: plant_humanoid.create_procedural_bush(l, name=f"SanctuaryBush_{i}", size=random.uniform(0.5, 2.0)),
+            (-10, 10), (-10, 10), (0, 0),
+            cam_pos_sanct, target_pos_sanct, seed=i
+        )
+        if b: bushes.append(b)
 
     # Visibility and Transitions
     for b in bushes:

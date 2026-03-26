@@ -35,8 +35,8 @@ def setup_blender_engine(master):
     scene.render.resolution_x = 1280
     scene.render.resolution_y = 720
 
-    # Point 62: Default render output
-    scene.render.filepath = f"//renders/{'sequel' if master.total_frames == 6000 else 'full_movie'}/"
+    # Point 62: Default render output with 5-digit padding (#####) for 15,000 frame production
+    scene.render.filepath = f"//renders/{'sequel' if master.total_frames == 6000 else 'full_movie'}/#####"
 
     # Point 61: Color Management
     scene.display_settings.display_device = 'sRGB'

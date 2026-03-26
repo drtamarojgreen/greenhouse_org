@@ -73,14 +73,14 @@ def setup_scene(master):
     cam = master.scene.camera
     target = bpy.data.objects.get("CamTarget")
     if cam and target:
-        # Tense close up during gnome flare
-        cam.keyframe_insert(data_path="location", frame=4640)
-        target.keyframe_insert(data_path="location", frame=4640)
-
-        cam.location = (4, 4, 1.5)
-        target.location = (6, 6, 1)
+        # Tense close up during gnome flare (Point 142: Use lens compression)
+        cam.location = (2, 2, 2.5) # Pulled back and higher for clearance
+        target.location = (6, 8, 1.2) # Target the gnome
         cam.keyframe_insert(data_path="location", frame=4670)
         target.keyframe_insert(data_path="location", frame=4670)
+        
+        cam.data.lens = 105 # High intensity compression
+        cam.data.keyframe_insert(data_path="lens", frame=4670)
 
         cam.location = (0, -15, 5)
         target.location = (0, 0, 1.5)
