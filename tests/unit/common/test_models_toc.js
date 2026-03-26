@@ -12,8 +12,23 @@ const TestFramework = require('../../utils/test_framework.js');
 global.window = global;
 global.HTMLElement = class { };
 global.Node = class { };
+global.MutationObserver = class {
+    constructor(callback) { }
+    observe(node, options) { }
+    disconnect() { }
+};
 global.location = {
     hostname: 'localhost'
+};
+
+global.window.GreenhouseModelsUtil = {
+    t: (k) => {
+        const translations = {
+            'err_loading_models': 'Error loading model descriptions',
+            'launch_btn': 'Launch'
+        };
+        return translations[k] || k;
+    }
 };
 
 global.document = {
@@ -180,7 +195,7 @@ TestFramework.describe('Models Table of Contents (TOC)', () => {
     });
 
     TestFramework.it('should generate correct canonical URLs for production', async () => {
-        global.location.hostname = 'greenhousemhd.org';
+        global.location.hostname = 'greenhousemd.org';
         window.GreenhouseModelsTOC.init({ target: '#models-toc-container' });
 
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -190,7 +205,7 @@ TestFramework.describe('Models Table of Contents (TOC)', () => {
         const buttonGroup = card.children.find(c => c.className === 'button-group');
         const launchLink = buttonGroup.children[0];
 
-        assert.equal(launchLink.href, 'https://greenhousemhd.org/genetic');
+        assert.equal(launchLink.href, 'https://greenhousemd.org/genetic');
     });
 
     TestFramework.it('should generate canonical URLs even for local development', async () => {
@@ -204,7 +219,7 @@ TestFramework.describe('Models Table of Contents (TOC)', () => {
         const buttonGroup = card.children.find(c => c.className === 'button-group');
         const launchLink = buttonGroup.children[0];
 
-        assert.equal(launchLink.href, 'https://greenhousemhd.org/genetic');
+        assert.equal(launchLink.href, 'https://greenhousemd.org/genetic');
     });
 
 });
