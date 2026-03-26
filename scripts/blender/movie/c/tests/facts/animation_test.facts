@@ -1,0 +1,10 @@
+Situation: Test Animation
+Is frame = 500
+Is target_actor = Herbaceous
+Is target_prop = lz
+Is anim_type = PULSE
+Is start = 400
+Is end = 600
+Is intensity = 1.0
+Is scale = 10.0
+Is offset = 0.0

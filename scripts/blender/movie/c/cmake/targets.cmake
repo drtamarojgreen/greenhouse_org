@@ -7,6 +7,10 @@ foreach(CARD_SRC ${CHAI_TEST_CARDS})
     target_include_directories(${CARD_NAME} PRIVATE include tests/cpp/util)
 endforeach()
 
+# Add unit tests
+add_executable(core_unit_tests tests/cpp/core_unit_tests.cpp)
+target_include_directories(core_unit_tests PRIVATE include)
+
 # Add benchmark targets
 file(GLOB BENCH_SRCS "bench/*.cpp")
 foreach(BENCH_SRC ${BENCH_SRCS})
