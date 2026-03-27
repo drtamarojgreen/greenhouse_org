@@ -2,17 +2,28 @@
 #include <map>
 #include <string>
 #include "../cpp/util/FactReader.hpp"
-#include "../../src/SceneNodes.hpp"
+#include "../../include/SceneNodes.hpp"
 
 // @Card: validate_asset_existence
 void validate_asset_card(const std::map<std::string, std::string>& facts) {
     int f = std::stoi(facts.at("frame"));
     std::map<std::string, float> states;
-    // We check if the node for this frame populates the asset list
     BrandingScene s; s.animate(f, states);
     
-    bool exists = states.count("GreenhouseLogo_vis") > 0;
+    bool exists = (states.count("GreenhouseLogo_vis") > 0);
+    float alpha = states["GreenhouseLogo_alpha"];
+    bool visible = states["GreenhouseLogo_vis"] == 1.0f;
+
+    bool check_passed = false;
+    if (f >= 1 && f <= 100) {
+        check_passed = visible && (alpha >= 0.0f && alpha <= 1.0f);
+    } else {
+        check_passed = !visible;
+    }
+
     std::cout << "asset_status = " << (exists ? "PASS" : "FAIL") << std::endl;
+    std::cout << "asset_alpha = " << alpha << std::endl;
+    std::cout << "functional_check = " << (check_passed ? "PASS" : "FAIL") << std::endl;
 }
 
 int main(int argc, char* argv[]) {
