@@ -12,5 +12,9 @@ include_directories(include)
 add_executable(movie_engine src/movie_engine.cpp)
 target_include_directories(movie_engine PRIVATE include)
 
+# Library for Python bindings
+add_library(movie_accel SHARED src/bindings.cpp src/mesh_math.cpp)
+target_include_directories(movie_accel PRIVATE include)
+
 # Sub-CMake for tests and benchmarks if needed
 include(cmake/targets.cmake)

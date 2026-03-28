@@ -90,9 +90,31 @@ public:
         if (f >= 1 && f <= 100) {
             states["GreenhouseLogo_vis"] = 1.0f;
             states["GreenhouseLogo_alpha"] = (f < 20) ? f / 20.0f : 1.0f;
+            // RGB: #4caf50 (76, 175, 80)
+            states["GreenhouseLogo_r"] = 0.298f;
+            states["GreenhouseLogo_g"] = 0.686f;
+            states["GreenhouseLogo_b"] = 0.314f;
         } else {
             states["GreenhouseLogo_vis"] = 0.0f;
         }
+    }
+};
+
+// Camera State Management
+class CameraNode : public SceneNode {
+    float x, y, z, rx, ry, rz, fov;
+public:
+    CameraNode(float _x, float _y, float _z, float _rx, float _ry, float _rz, float _fov)
+        : x(_x), y(_y), z(_z), rx(_rx), ry(_ry), rz(_rz), fov(_fov) {}
+
+    void animate(int f, std::map<std::string, float>& states) override {
+        states["Camera_lx"] = x;
+        states["Camera_ly"] = y;
+        states["Camera_lz"] = z;
+        states["Camera_rx"] = rx;
+        states["Camera_ry"] = ry;
+        states["Camera_rz"] = rz;
+        states["Camera_fov"] = fov;
     }
 };
 

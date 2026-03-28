@@ -1,0 +1,6 @@
+Situation: Garden Hero Placement
+Is frame = 450
+Is target_actor = Herbaceous
+Is expected_lx = 0.0
+Is expected_ly = 0.0
+Is expected_lz = 0.0

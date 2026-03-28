@@ -1,6 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "mesh_math.cpp"
+#include "MeshMath.hpp"
 #include "status.h"
 
 namespace py = pybind11;

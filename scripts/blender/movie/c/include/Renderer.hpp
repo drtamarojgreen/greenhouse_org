@@ -1,3 +1,6 @@
+#ifndef RENDERER_HPP
+#define RENDERER_HPP
+
 #include <vector>
 #include <fstream>
 #include <string>
