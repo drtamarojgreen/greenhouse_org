@@ -12,12 +12,12 @@ def setup_scene(master):
     # MUSIC CUE: Wind chimes and soft strings. (Point 47)
     master.create_intertitle("The Seat of\nStoic Reason", 101, 200)
 
-    # Move characters during intro reveal
+    # Point 142: Strategic Intro Positioning (Symmetrical framing)
     if master.h1 and master.h2:
-        master.place_character(master.h1, (-2, -1, 0), (0, 0, 0), 101)
-        master.place_character(master.h1, (-2, 0, 0), (0, 0, 0), 200)
-        master.place_character(master.h2, (2, -1, 0), (0, 0, 0), 101)
-        master.place_character(master.h2, (2, 0, 0), (0, 0, 0), 200)
+        master.place_character(master.h1, (-2.5, -2, 0), (0, 0, 0), 101)
+        master.place_character(master.h1, (-1.5, 0, 0), (0, 0, 0), 200)
+        master.place_character(master.h2, (2.5, -2, 0), (0, 0, 0), 101)
+        master.place_character(master.h2, (1.5, 0, 0), (0, 0, 0), 200)
         master.hold_position(master.gnome, 101, 200)
 
     clearing = bpy.data.objects.get("ForestClearing") or create_forest_clearing()

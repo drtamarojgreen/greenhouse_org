@@ -20,6 +20,8 @@ def ensure_camera(master):
     if not target:
         target = bpy.data.objects.new("CamTarget", None)
         bpy.context.scene.collection.objects.link(target)
+        # Point 142: Anchored at precise centered coordinates
+        target.location = (0, 0, 1.6)
     
     target.display_type = 'WIRE'
     target.hide_render = target.hide_viewport = True
@@ -105,6 +107,8 @@ def ensure_secondary_camera(master):
     if not target:
         target = bpy.data.objects.new("CamTarget_Secondary", None)
         master.scene.collection.objects.link(target)
+        # Point 142: Anchored at precise centered coordinates
+        target.location = (0, 0, 1.6)
     
     # Ensure helper is invisible in render
     target.display_type = 'WIRE'
@@ -144,12 +148,18 @@ def setup_camera_keyframes(master, cam, target):
     Implements 'Storytelling Observer' behavior with off-axis azimuth and crane arcs.
     """
     origin = (0, 0, 0)
-    high_target = (0, 0, 1.5)
+    high_target = (0, 0, 1.6) # Standard character head height
 
     def kf_eased(frame, cam_loc, target_loc, roll=0, focus_obj=None, lens=None, easing='EASE_IN_OUT', interpolation='BEZIER'):
         """Enhanced kf with Dutch Angle (roll), DoF (Enhancement #2), Focal Length (Enhancement #4) and easing."""
         cam.location = cam_loc
-        target.location = target_loc
+
+        # Point 142: Dynamic Character Tracking
+        if focus_obj:
+            # Shift target to character head height
+            target.location = focus_obj.location + mathutils.Vector((0, 0, 1.6))
+        else:
+            target.location = target_loc
         # Dutch Angle (roll) - Enhancement #1
         cam.rotation_euler[2] = math.radians(roll)
 
@@ -266,61 +276,65 @@ def setup_camera_keyframes(master, cam, target):
     kf_eased(100, (-14, -6, 6), origin, lens=55)
 
     # Intro: Reveal via descending crane arc (Point 142)
+    # Point 142: Strategic Intro Framing (Avoid "Ground" focus)
     # Start high off-axis (Altitude >= 60 to satisfy Test 2.1.1)
-    kf_eased(101, (-18, 6, 71.1), origin, easing='EASE_IN')
+    kf_eased(101, (-20, 10, 75.0), (0, 0, 1.6), lens=35, easing='EASE_IN')
     # Descend to altitude <= 20 by 180 for Test 2.1.1
-    kf_eased(180, (-10, -12, 18), high_target, interpolation='LINEAR')
-    kf_eased(200, (-8, -18, 8), high_target, easing='EASE_OUT')
+    kf_eased(180, (-12, -15, 18), (0, 0, 1.6), lens=35, interpolation='LINEAR')
+    kf_eased(200, (-10, -20, 8), (0, 0, 1.6), lens=35, easing='EASE_OUT')
 
     # Brain (201 - 400): Conceptual axial symmetry
-    kf_eased(201, (18, -12, 14), origin, lens=85)
+    # Point 142: Lifted target to Z=2.0 and widened lens to 50mm to avoid "Trunk" view
+    kf_eased(201, (18, -12, 14), (0, 0, 2.0), lens=50)
     # Slow conceptual orbit
-    kf_eased(400, (14, -18, 12), origin, lens=85)
+    kf_eased(400, (14, -18, 12), (0, 0, 2.0), lens=50)
 
     # Garden scene: Descending drone sweep (Altitude >= 50 to satisfy Test 2.1.2)
     # Point 142: Achieves >= 80 units lateral movement (401-480) for production benchmarks
-    kf_eased(401, (-40, -40, 71.1), (-1.1, 0.1, 1.6), easing='EASE_IN')
-    kf_eased(480, (40, 40, 71.1), (-1.1, 0.1, 1.6), interpolation='LINEAR')
-    # Point 142: Shift Y from -12 to -16 to avoid front hedge collision
-    kf_eased(550, (8, -16, 6), (0, 2, 1.5), interpolation='LINEAR')
-    kf_eased(650, (15, -25, 12), (0, 5, 0), easing='EASE_OUT')
+    kf_eased(401, (-40, -40, 71.1), (-1.1, 0.1, 1.6), lens=35, easing='EASE_IN')
+    kf_eased(480, (40, 40, 71.1), (-1.1, 0.1, 1.6), lens=35, interpolation='LINEAR')
+    # Point 142: Shift Y from -12 to -16 to avoid front hedge collision, raised target to 2.0
+    kf_eased(550, (8, -16, 6), (0, 2, 2.0), lens=45, interpolation='LINEAR')
+    kf_eased(650, (15, -25, 12), (0, 5, 1.5), lens=45, easing='EASE_OUT')
 
     # Socratic (651 - 950): Eye-level, balanced
-    kf_eased(651, (-10, -10, 2.6), high_target) # Balanced off-axis
-    # Point 142: Shift Y to -16 to avoid hedge
-    kf_eased(950, (-8, -16, 2.6), high_target)
+    # Point 142: Strategic framing for Zen Garden
+    kf_eased(651, (-12, -12, 3.2), (0, 0, 1.6), lens=40)
+    kf_eased(950, (-10, -15, 3.2), (0, 0, 1.6), lens=40)
 
     # Knowledge Exchange (951 - 1100): Top light, isolation
-    kf_eased(951, (2, -4, 10), origin, lens=35, easing='EASE_IN')
-    kf_eased(1100, (4, -2, 12), origin, lens=35, easing='EASE_OUT')
+    # Point 142: Wider angle to show environment
+    kf_eased(951, (4, -8, 12), (0, 0, 1.6), lens=35, easing='EASE_IN')
+    kf_eased(1100, (8, -4, 14), (0, 0, 1.6), lens=35, easing='EASE_OUT')
 
     # Forge (1101 - 1250): Low angle, strong shadows
-    # Point 142: Raise Z to 1.4 for anvil/fissure clearance and use longer lens
-    kf_eased(1101, (-6, -6, 1.4), (0, 0, 2.0), lens=50, easing='EASE_IN')
-    # Point 142: Move inside wall (Y=-8 -> Y=-6) and maintain height
-    kf_eased(1250, (-4, -7, 1.4), (0, 0, 2.5), lens=50, easing='EASE_OUT')
+    # Point 142: Strategically aligned for Forge Grid
+    kf_eased(1101, (-8, -8, 1.8), (0, 0, 2.0), lens=35, easing='EASE_IN')
+    kf_eased(1250, (-6, -10, 1.8), (0, 0, 2.5), lens=35, easing='EASE_OUT')
 
     # Bridge, Resonance (1251 - 1800)
     kf_eased(1251, (12, -12, 8), (8, 0, 2))
     kf_eased(1800, (15, -8, 6), (10, 0, 2))
 
     # Shadow / Confrontation (1801 - 2500): Low angle, strong shadows
-    # Point 142: Raise Z to 1.2 to avoid marsh/ground clipping
-    kf_eased(1801, (-7, -7, 1.2), (0, 0, 1.5))
-    kf_eased(2500, (-5, -9, 1.2), (2, 2, 1.5))
+    # Point 142: Elevated for Marsh Grid vista
+    kf_eased(1801, (-10, -10, 2.5), (0, 0, 1.6), lens=35)
+    kf_eased(2500, (-8, -12, 2.5), (2, 2, 1.6), lens=35)
 
     # Library (2501 - 2800): Seeking wisdom
-    kf_eased(2501, (-8, -8, 2.2), (0, 0, 1.3))
-    kf_eased(2800, (-6, -10, 2.6), (0, 0, 1.3))
+    # Point 142: Elevated target for Book focus
+    kf_eased(2501, (-10, -10, 3.2), (0, 0, 1.6), lens=40)
+    kf_eased(2800, (-8, -12, 3.2), (0, 0, 1.6), lens=40)
 
     # Lab (2801 - 3300): Clinical introspection
-    kf_eased(2801, (10, -10, 3), (0, 0, 1.5))
-    kf_eased(3300, (8, -12, 4), (0, 0, 1.5))
+    # Point 142: Strategic Lab Framing (Elevated target for hologram)
+    kf_eased(2801, (12, -12, 4.2), (0, 0, 1.8), lens=35)
+    kf_eased(3300, (10, -15, 4.2), (0, 0, 1.8), lens=35)
 
     # Sanctuary fly-in: crane shot from above descending (3301 - 4100)
-    # Note: scene11_nature_sanctuary is 3301-3800
-    kf_eased(3301, (-10, -15, 12), (0, 0, 1.0), easing='EASE_IN') 
-    kf_eased(3800, (-6, -10, 2.6), (0, 0, 1.5), easing='EASE_IN_OUT')
+    # Point 142: Strategic Oasis Vista
+    kf_eased(3301, (-15, -20, 15), (0, 0, 1.6), lens=30, easing='EASE_IN')
+    kf_eased(3800, (-10, -12, 3.5), (0, 0, 1.6), lens=35, easing='EASE_IN_OUT')
     
     # Walking (3801-4100)
     kf_eased(3801, (-6, -10, 2.6), (0, 0, 1.5))
@@ -349,42 +363,43 @@ def setup_camera_keyframes(master, cam, target):
     gnome_obj = bpy.data.objects.get("GloomGnome")
 
     # Scene 16 (9501-10200)
-    kf_eased(9501,  (-8, -12, 4),    (0, 0, 1.5), lens=35)        # wide
-    # OTS shots (dist < 4) - Adjusted for new spacing (-1.75, -0.3) / (1.75, 0.3)
-    kf_eased(9525,  (2.5, -2.0, 1.8), (-1.75, -0.3, 1.6), focus_obj=h1_obj, lens=105) # OTS Arbor to Herbaceous
-    kf_eased(9780,  (-8, -12, 4),    (0, 0, 1.5), lens=35)        # wide
-    kf_eased(9830,  (-2.5, -2.0, 1.8), (1.75, 0.3, 1.6), focus_obj=h2_obj, lens=105) # OTS Herbaceous to Arbor
-    kf_eased(10100, (-8, -12, 4),    (0, 0, 1.5), lens=35)
+    kf_eased(9501,  (-10, -15, 4.5), (0, 0, 1.6), lens=35)        # wide
+    # Point 142: Strategic Closeup Framing (75mm lens for sharp focus)
+    kf_eased(9525,  (1.8, -2.2, 1.8), (-1.75, -0.3, 1.6), focus_obj=h1_obj, lens=75) # OTS Arbor to Herbaceous
+    kf_eased(9780,  (-10, -15, 4.5), (0, 0, 1.6), lens=35)        # wide
+    kf_eased(9830,  (-1.8, -2.2, 1.8), (1.75, 0.3, 1.6), focus_obj=h2_obj, lens=75) # OTS Herbaceous to Arbor
+    kf_eased(10100, (-10, -15, 4.5), (0, 0, 1.6), lens=35)
 
     # Scene 17 (10201-10900)
-    kf_eased(10201, (8, -12, 4),    (0, 0, 1.5), lens=35)
-    kf_eased(10250, (-2.5, -2.0, 1.8), (1.75, 0.3, 1.6), focus_obj=h2_obj, lens=105) # Arbor closeup
-    kf_eased(10540, (8, -12, 4),    (0, 0, 1.5), lens=35)
-    kf_eased(10590, (2.5, -2.0, 1.8), (-1.75, -0.3, 1.6), focus_obj=h1_obj, lens=105) # Herbaceous closeup
-    kf_eased(10850, (8, -12, 4),    (0, 0, 1.5), lens=35)
+    kf_eased(10201, (10, -15, 4.5), (0, 0, 1.6), lens=35)
+    kf_eased(10250, (-1.8, -2.2, 1.8), (1.75, 0.3, 1.6), focus_obj=h2_obj, lens=75) # Arbor closeup
+    kf_eased(10540, (10, -15, 4.5), (0, 0, 1.6), lens=35)
+    kf_eased(10590, (1.8, -2.2, 1.8), (-1.75, -0.3, 1.6), focus_obj=h1_obj, lens=75) # Herbaceous closeup
+    kf_eased(10850, (10, -15, 4.5), (0, 0, 1.6), lens=35)
 
     # Scene 18 (10901-11600): Gnome enters
-    # Point 142: Shift Y to -16 to avoid hedge
-    kf_eased(10901, (12, -18, 5),    (0, 0, 1.5), roll=0, lens=35)
+    # Point 142: Strategic Entry Framing
+    kf_eased(10901, (15, -20, 6),    (0, 0, 1.6), roll=0, lens=35)
     crash_zoom(10901, 80, duration=5) 
-    # Raise Z to 1.4 for Herbaceous Low Angle
-    kf_eased(10950, (0, -5, 1.4), (-1.75, 0, 1.8), roll=5, focus_obj=h1_obj, lens=65)      # Herbaceous Low Angle
-    # Gnome Dutch Angle (wider spacing)
-    kf_eased(11200, (8, 1, 1.5),   (4.5, 4.5, 1.2), roll=-15, focus_obj=gnome_obj, lens=35)  # Gnome Dutch Angle
-    kf_eased(11500, (14, -18, 7),    (0, 0, 1), roll=0, lens=35)
+    # Raise Z to 1.6 for Herbaceous Low Angle
+    kf_eased(10950, (0, -6, 1.6), (-1.75, 0, 1.8), roll=5, focus_obj=h1_obj, lens=50)      # Herbaceous Low Angle
+    # Gnome Dutch Angle (Strategic for menace)
+    kf_eased(11200, (10, 2, 2.0),   (5.0, 5.0, 1.4), roll=-15, focus_obj=gnome_obj, lens=35)  # Gnome Dutch Angle
+    kf_eased(11500, (18, -25, 8),    (0, 0, 1.6), roll=0, lens=35)
 
     # Scenes 19-21: peaks
-    kf_eased(11601, (0, -5, 1.2), (-1.75, 0, 1.8), roll=10, focus_obj=h1_obj, lens=85)     # Extreme Low Angle
-    kf_eased(11900, (7.5, 2, 1.6), (4.5, 4.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=35) 
+    # Point 142: Strategically widened and elevated framing
+    kf_eased(11601, (0, -5, 1.2), (-1.75, 0, 1.8), roll=10, focus_obj=h1_obj, lens=50)     # Extreme Low Angle
+    kf_eased(11900, (7.5, 2, 1.6), (5.0, 5.0, 1.0), roll=-25, focus_obj=gnome_obj, lens=35)
 
     apply_impact_shake(11900, intensity=0.2)
 
-    kf_eased(12000, (0, -5, 1.2), (-1.75, 0, 1.8), roll=15, focus_obj=h1_obj, lens=105) 
-    kf_eased(12200, (7.5, 2, 1.6), (4.5, 4.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=35)
-    kf_eased(12300, (4, -4, 1.4),  (1.75, 0, 1.8), roll=15, focus_obj=h2_obj, lens=105)      # Arbor Hero Shot
-    kf_eased(12500, (7.5, 2, 1.6), (4.5, 4.5, 1.0), roll=-25, focus_obj=gnome_obj, lens=35)
+    kf_eased(12000, (0, -5, 1.2), (-1.75, 0, 1.8), roll=15, focus_obj=h1_obj, lens=75)
+    kf_eased(12200, (7.5, 2, 1.6), (5.8, 5.8, 1.0), roll=-25, focus_obj=gnome_obj, lens=35)
+    kf_eased(12300, (4, -4, 1.4),  (1.75, 0, 1.8), roll=15, focus_obj=h2_obj, lens=75)      # Arbor Hero Shot
+    kf_eased(12500, (7.5, 2, 1.6), (5.8, 5.8, 1.0), roll=-25, focus_obj=gnome_obj, lens=35)
     kf_eased(12700, (18, -25, 12),   (0, 0, 1), roll=0, lens=35)          
-    kf_eased(13000, (0, -5, 1.2), (-1.75, 0, 1.8), roll=20, focus_obj=h1_obj, lens=105)     
+    kf_eased(13000, (0, -5, 1.2), (-1.75, 0, 1.8), roll=20, focus_obj=h1_obj, lens=75)
 
     # Enhancement #10: Circular Dolly Around Characters during climax
     # Enhancement #12: Anticipation before circular dolly

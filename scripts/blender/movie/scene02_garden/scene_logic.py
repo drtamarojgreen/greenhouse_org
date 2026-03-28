@@ -30,29 +30,22 @@ def setup_scene(master):
     cam_start = (10, -10, 4)
     target_pos = (0, 0, 1.5)
     
-    ferns = []
-    for i in range(15):
-        f_obj = place_random_prop(
-            None, 
-            lambda l: create_proc_fern(l, scale=random.uniform(0.5, 1.2)),
-            (-10, 10), (-5, 15), (-0.5, -0.5), 
-            cam_start, target_pos, seed=i
-        )
-        if f_obj:
-            f_obj.name = f"MeadowFern_{i}"
-            ferns.append(f_obj)
+    from scene_utils import place_prop_on_grid
 
-    # Add extra foliage for vibrancy
-    bushes = []
-    for i in range(5):
-        b_obj = place_random_prop(
-            None,
-            lambda l: plant_humanoid.create_procedural_bush(l, name=f"GardenBush_{i}", size=random.uniform(0.8, 1.5)),
-            (-5, 5), (0, 5), (0, 0),
-            cam_start, target_pos, seed=i+100
-        )
-        if b_obj:
-            bushes.append(b_obj)
+    # Point 142: Strategic Grid-Based Placement (Order vs Haphazard)
+    fern_grid = [(-8, 8, -0.5), (8, 8, -0.5), (0, 12, -0.5)]
+    ferns = place_prop_on_grid(
+        None,
+        lambda l: create_proc_fern(l, scale=1.1),
+        fern_grid, cam_start, target_pos, width=5.0
+    )
+
+    bush_grid = [(-5, 6, 0), (5, 6, 0)]
+    bushes = place_prop_on_grid(
+        None,
+        lambda l: plant_humanoid.create_procedural_bush(l, name=f"GardenBush_Grid", size=1.3),
+        bush_grid, cam_start, target_pos, width=5.0
+    )
 
     # Visibility and Transitions
     for b in bushes:
@@ -81,7 +74,12 @@ def setup_scene(master):
 
     # Character movement: Walking through the garden
     if master.h1 and master.h2:
-        master.place_character(master.h1, (-3, 2, 0), (0, 0, math.radians(-30)), 401)
-        master.place_character(master.h1, (-1, 0, 0), (0, 0, 0), 650)
-        master.place_character(master.h2, (1, 2, 0), (0, 0, math.radians(30)), 401)
-        master.place_character(master.h2, (1, 0, 0), (0, 0, 0), 650)
+        # Point 142: Symmetrical and strategic movement path
+        master.place_character(master.h1, (-4, 5, 0), (0, 0, math.radians(-30)), 401)
+        master.place_character(master.h1, (-1.5, 0, 0), (0, 0, 0), 650)
+        master.place_character(master.h2, (4, 5, 0), (0, 0, math.radians(30)), 401)
+        master.place_character(master.h2, (1.5, 0, 0), (0, 0, 0), 650)
+
+        # Point 142: Sharp arm gestures to indicate environment
+        style.animate_arm_gesture(master.h1, side='L', frame_start=550, intensity=0.8)
+        style.animate_arm_gesture(master.h2, side='R', frame_start=580, intensity=0.8)

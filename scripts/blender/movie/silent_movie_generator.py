@@ -53,19 +53,21 @@ class MovieMaster(BaseMaster):
             camera_controls.ensure_camera(self)
             
             base_p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            self.greenhouse = greenhouse_structure.create_greenhouse_structure(location=(0, 15, 0))
+            # Point 142: Architectural Centering (Centering on Origin)
+            self.greenhouse = greenhouse_structure.create_greenhouse_structure(location=(0, 0, 0))
             greenhouse_interior.setup_greenhouse_interior()
             exterior_garden.create_exterior_garden()
-            environment_props.create_stage_floor()
+            environment_props.create_stage_floor(location=(0, 0, -1.0))
             environment_props.setup_volumetric_haze()
             setup_characters.setup_all_characters(self)
             self.brain, self.neuron = brain_neuron.load_brain(base_p), brain_neuron.load_neuron(base_p)
             self.book = library_props.create_open_book((0, 0, 1.3))
             self.pedestal = library_props.create_pedestal((0, 0, 0))
-            # Trees: placed inside the greenhouse walls (which are now at Y+15)
+            # Trees: placed inside the greenhouse walls (now centered)
             _bark = plant_humanoid.create_bark_material("GH_TreeBark")
             _leaf = plant_humanoid.create_leaf_material("GH_TreeLeaf")
-            for x, y in [(-6, 8), (6, 8), (-6, 22), (6, 22)]:
+            # Point 142: Specific architectural anchor points for better framing
+            for x, y in [(-10, -10), (10, -10), (-10, 10), (10, 10)]:
                 exterior_garden.create_procedural_tree((x, y, -1), _bark, _leaf)
 
     def animate_master(self):

@@ -35,7 +35,7 @@ def setup_scene(master):
     # Position characters (Point 142)
     master.place_character(master.h1, (-1.75, -0.3, 0), (0, 0, 0), start_frame)
     master.place_character(master.h2, (1.75, 0.3, 0), (0, 0, 0), start_frame)
-    master.place_character(master.gnome, (5.8, 5.8, 0), (0, 0, math.radians(225)), start_frame)
+    master.place_character(master.gnome, (7.0, 7.0, 0), (0, 0, math.radians(225)), start_frame)
 
     # Metadata
     # Shot ID: S21_01
@@ -44,9 +44,12 @@ def setup_scene(master):
     style.animate_dialogue_v2("Arbor", start_frame + 24, start_frame + 300, intensity=1.0)
     style.animate_expression_blend("Arbor", start_frame + 50, expression='NEUTRAL')
 
+    # Point 142: Final Logical Emphasis
+    style.animate_arm_gesture(master.h2, side='R', frame_start=start_frame + 100, intensity=1.0)
+
     # Gnome retreats a few steps on both X and Y
-    master.gnome.location = (5.8, 5.8, 0)
-    master.gnome.keyframe_insert(data_path="location", frame=start_frame)
     master.gnome.location = (7.0, 7.0, 0)
+    master.gnome.keyframe_insert(data_path="location", frame=start_frame)
+    master.gnome.location = (9.0, 9.0, 0)
     master.gnome.keyframe_insert(data_path="location", frame=end_frame)
     style.animate_expression_blend("GloomGnome", start_frame + 100, expression='SURPRISED')

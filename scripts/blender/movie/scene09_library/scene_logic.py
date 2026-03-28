@@ -29,11 +29,10 @@ def setup_scene(master):
                 bark_mat, leaf_mat)
             t.scale = (2.0, 2.0, 3.0)
             t.name = f"RedwoodTree_{i}"
-        # Scattered boulders
-        for i in range(5):
-            r = create_proc_rock_formation(
-                (random.uniform(-5, 5), random.uniform(-5, 5), -0.8),
-                scale=random.uniform(0.5, 1.2), style_type="smooth")
+        # Point 142: Strategic Boulder Grid (Ordered framing around pedestal)
+        boulder_grid = [(-3, -3, -0.8), (3, -3, -0.8), (-4, 4, -0.8), (4, 4, -0.8), (0, 6, -0.8)]
+        for i, loc in enumerate(boulder_grid):
+            r = create_proc_rock_formation(loc, scale=1.1, style_type="smooth")
             r.name = f"RedwoodBoulder_{i}"
 
     # Props for this scene

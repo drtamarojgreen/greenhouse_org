@@ -433,6 +433,53 @@ def animate_thinking_gesture(arm_obj, frame_start):
     arm_obj.rotation_euler[0] = math.radians(-110)
     parent.keyframe_insert(data_path=dp, index=0, frame=frame_start + 48)
 
+def animate_arm_gesture(char_obj, side='L', frame_start=1, duration=24, intensity=1.0):
+    """Point 142: Sharp, deterministic arm movement utility."""
+    if not char_obj or char_obj.type != 'ARMATURE': return
+    bone_name = f"Arm.{side}"
+    bone = char_obj.pose.bones.get(bone_name)
+    if not bone: return
+
+    dp = f'pose.bones["{bone_name}"].rotation_euler'
+    # Start (Rest)
+    bone.rotation_euler[0] = 0
+    char_obj.keyframe_insert(data_path=dp, index=0, frame=frame_start)
+
+    # Peak (Sharp Move)
+    bone.rotation_euler[0] = math.radians(45 * intensity)
+    char_obj.keyframe_insert(data_path=dp, index=0, frame=frame_start + duration // 2)
+
+    # End (Return)
+    bone.rotation_euler[0] = 0
+    char_obj.keyframe_insert(data_path=dp, index=0, frame=frame_start + duration)
+
+def animate_gnome_aggression(gnome_obj, frame_start, frame_end):
+    """Point 142: Specialized rigging for menacing entry."""
+    if not gnome_obj or gnome_obj.type != 'ARMATURE': return
+    pb = gnome_obj.pose.bones
+
+    # Hunch over (Torso X-rotation)
+    torso = pb.get("Torso")
+    if torso:
+        torso.rotation_euler[0] = 0
+        gnome_obj.keyframe_insert(data_path='pose.bones["Torso"].rotation_euler', index=0, frame=frame_start)
+        torso.rotation_euler[0] = math.radians(15)
+        gnome_obj.keyframe_insert(data_path='pose.bones["Torso"].rotation_euler', index=0, frame=frame_start + 24)
+
+    # Raise Staff (Arm.L)
+    arm_l = pb.get("Arm.L")
+    if arm_l:
+        arm_l.rotation_euler[0] = 0
+        gnome_obj.keyframe_insert(data_path='pose.bones["Arm.L"].rotation_euler', index=0, frame=frame_start)
+        arm_l.rotation_euler[0] = math.radians(-60) # Raise high
+        gnome_obj.keyframe_insert(data_path='pose.bones["Arm.L"].rotation_euler', index=0, frame=frame_start + 36)
+
+    # Flare Orb (Material property)
+    orb = [c for c in gnome_obj.children if "Torso" in c.name][0] if gnome_obj.children else None
+    if orb:
+        # Search for orb mesh within gnome torso or siblings
+        pass # Handle in scene_logic via style socket setters if possible
+
 def animate_defensive_crouch(obj, frame_start, frame_end):
     """Enhancement #20: Gnome Defensive Crouch (Bone-aware)."""
     if hasattr(obj, "type") and obj.type == 'ARMATURE':

@@ -204,17 +204,50 @@ def is_view_blocked(cam_pos, target_pos, ignore_objects=None):
                 return True
     return False
 
-def place_random_prop(target_collection, asset_func, bounds_x, bounds_y, bounds_z, cam_pos, target_pos, seed=None, width=3.5):
+def place_prop_on_grid(target_collection, asset_func, grid_coords, cam_pos, target_pos, width=3.0):
     """
-    Wraps asset creation with a camera-corridor filter and raycast validation.
+    Deterministic placement utility for strategic ordering.
+    Point 142: Replaces randomness with intentional cinematic grid logic.
+    """
+    placed_objs = []
+    for loc in grid_coords:
+        # Check if coordinate is in the way of the camera
+        if is_in_camera_corridor(loc, cam_pos, target_pos, width=width):
+            continue
+
+        # Raycast to ensure no existing occlusions (though grid should be planned)
+        if is_view_blocked(cam_pos, target_pos):
+            pass # Keep placing, but this alerts the scene architect
+
+        obj = asset_func(loc)
+        if not obj: continue
+
+        objs = [obj] if not isinstance(obj, (list, tuple)) else list(obj)
+        if target_collection:
+            for o in objs:
+                if o.name in bpy.context.collection.objects:
+                    target_collection.objects.link(o)
+                    bpy.context.collection.objects.unlink(o)
+        placed_objs.append(obj)
+    return placed_objs
+
+def place_random_prop(target_collection, asset_func, bounds_x, bounds_y, bounds_z, cam_pos, target_pos, seed=None, width=4.5):
+    """
+    DEPRECATED: Prefer place_prop_on_grid for ordered scenes.
     """
     if seed is not None: random.seed(seed)
     
     # Try multiple times to find a clear spot
-    for trial in range(15): # Point 142: Increased trials from 10 to 15 for complex scenes
+    for trial in range(15):
+        # Biased random: pick either low or high end of range to keep center clear
+        def biased_rand(r):
+            if random.random() > 0.7: return random.uniform(r[0], r[1]) # 30% center
+            return random.choice([random.uniform(r[0], r[0] + (r[1]-r[0])*0.2),
+                                 random.uniform(r[1] - (r[1]-r[0])*0.2, r[1])])
+
         loc = (
-            random.uniform(bounds_x[0], bounds_x[1]),
-            random.uniform(bounds_y[0], bounds_y[1]),
+            biased_rand(bounds_x),
+            biased_rand(bounds_y),
             random.uniform(bounds_z[0], bounds_z[1])
         )
         

@@ -25,11 +25,12 @@ def setup_scene(master):
         pond.name = "Pond_ZenGarden"
     
     import mathutils as _mu
-    boulder_positions = [(-2.5, -1.5), (1.5, -2.5), (-1.0, 3.5), (4.0, 0.5)]
-    for i, (bx, by) in enumerate(boulder_positions):
+    # Point 142: Strategic Boulder Placement (Symmetrical framing)
+    boulder_positions = [(-4, -2, -0.5), (4, -2, -0.5), (0, 8, -0.5)]
+    for i, (bx, by, bz) in enumerate(boulder_positions):
         b_name = f"ZenBoulder_{i}"
         if not bpy.data.objects.get(b_name):
-            b = create_proc_rock_formation(_mu.Vector((bx, by, -0.5)), scale=0.7, style_type="smooth")
+            b = create_proc_rock_formation(_mu.Vector((bx, by, bz)), scale=0.85, style_type="smooth")
             b.name = b_name
 
     # Symbolic Thought Motes
