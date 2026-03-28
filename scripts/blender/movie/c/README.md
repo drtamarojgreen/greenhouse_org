@@ -1,21 +1,75 @@
-# Greenhouse C++ Engine: The Raw Truth
+# Greenhouse Movie Engine: C++ Production Layer
 
-## What this IS
-This is a **Deterministic Acting Orchestrator**. It exists to ensure that every frame of the 15,000-frame movie has a mathematically verifiable state. It replaces Python's slow logic loops with high-speed C++17 templates.
+This directory contains the high-performance C++17 core for the Greenhouse Movie production pipeline. It provides deterministic animation orchestration, geometry optimization (SoA), and a robust verification suite.
 
-## What this IS NOT
-- **It is NOT a Blender replacement.** If you expect Cycles-level lighting or Eevee-level real-time visuals, you will be disappointed.
-- **The "Renderer"** is a basic software rasterizer that draws points and simple shaded primitives to a PPM file. It is a tool for *previewing coordinates*, not for final cinematic pixels.
-- **The "Modeler"** is a vertex-and-face storage kernel. It handles simple extrusions and transforms, but lacks a full B-Rep or Sub-D engine.
-- **"Mathematical Parity"** currently means we match the *locations and properties* defined in the acting scripts. We do not yet account for complex deformers, dual-quaternion skinning, or hair simulations found in the Blender source.
+## 🏗️ Building the Project
 
-## Technical Debt & Limitations
-- **No GPU**: Everything runs on the CPU.
-- **PPM Output**: There is no video compression or PNG encoding; we just dump raw pixels.
-- **Simple Lighting**: Our "Gouraud shader" is a 10-line dot-product approximation.
+The project uses CMake for cross-platform builds.
 
-## The Aspiration
-To build a trusted, 100% C++ production path where we can *eventually* drop in a real Vulkan renderer or a professional CAD kernel without re-writing the 15,000-frame acting logic.
+### Prerequisites
+- **Compiler**: C++17 compatible (g++ 9+, clang 10+, MSVC 2019+)
+- **Build System**: CMake 3.10+
+
+### Build Steps
+
+1. **Bootstrap the environment**:
+   ```bash
+   ./bootstrap.sh
+   ```
+
+2. **Configure and Build**:
+   ```bash
+   mkdir build && cd build
+   cmake .. -DCMAKE_BUILD_TYPE=Release
+   make -j$(nproc)
+   ```
+
+### Build Options
+- `-DENABLE_SANITIZERS=ON`: Enables Address and Undefined Behavior Sanitizers (Debug builds only).
+- `-DENABLE_PROFILING=ON`: Enables gprof profiling instrumentation.
+
+## 🧪 Testing and Verification
+
+We utilize **Chai-Driven Development (CDD)** to maintain strict parity between cinematic vision and logical implementation.
+
+### 1. Running the Full Suite
+From the `build/` directory, you can run all unit tests:
+```bash
+./core_unit_tests
+```
+
+### 2. Executing Chai Verification Cards
+Chai cards are specialized test executables that validate logic against `.facts` ground truth files.
+
+**Example: Validate Camera Cinematography**
+```bash
+./CameraValidationCards ../tests/facts/camera_branding.facts
+```
+
+**Example: Validate Asset Placement**
+```bash
+./PlacementValidationCards ../tests/facts/placement_garden.facts
+```
+
+**Example: Validate Chromatic Accuracy (Colors)**
+```bash
+./ColorValidationCards ../tests/facts/color_branding.facts
+```
+
+## 📈 Performance Benchmarking
+To run the microbenchmark suite and verify kernel optimizations:
+```bash
+./kernel_bench
+```
+
+## 📂 Directory Structure
+- `src/`: Core engine implementation.
+- `include/`: Public headers and shared interfaces.
+- `tests/cards/`: Chai verification card implementations.
+- `tests/facts/`: Data-driven ground truth definitions.
+- `bench/`: Performance microbenchmarks.
+- `cmake/`: Modular build configurations.
+- `docs/`: Architectural documentation.
 
 ---
-*Honest Engineering. Greenhouse 2026.*
+*Precision. Reliability. Greenhouse 2026.*

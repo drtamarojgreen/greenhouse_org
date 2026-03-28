@@ -10,13 +10,10 @@ void validate_colors(const std::map<std::string, std::string>& facts) {
     int f = std::stoi(facts.at("frame"));
     std::string actor = facts.at("target_actor");
 
-    // Simulate color state
+    // Use the concrete BrandingScene to verify actual color logic
+    BrandingScene scene;
     std::map<std::string, float> states;
-
-    // RGB: #4caf50 (76, 175, 80)
-    states[actor + "_r"] = 0.298f;
-    states[actor + "_g"] = 0.686f;
-    states[actor + "_b"] = 0.314f;
+    scene.animate(f, states);
 
     float r = states[actor + "_r"];
     float g = states[actor + "_g"];
