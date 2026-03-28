@@ -262,6 +262,43 @@
 
         spawnParticles(x, y, z, count, color) { for (let i = 0; i < count; i++) this.state.particles.push({ x: x + (Math.random() - 0.5) * 100, y: y + (Math.random() - 0.5) * 100, z: z + (Math.random() - 0.5) * 100, targetX: x, targetY: y, targetZ: z, life: 60, color: color }); },
 
+        drawBaseShape(ctx, x, y, type, scale, color) {
+            const r = 9 * scale;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            switch (type) {
+                case 'A': // Box
+                    ctx.rect(x - r, y - r, r * 2, r * 2);
+                    break;
+                case 'T': // Triangle/Cone
+                    ctx.moveTo(x, y - r);
+                    ctx.lineTo(x + r, y + r);
+                    ctx.lineTo(x - r, y + r);
+                    break;
+                case 'C': // Diamond
+                    ctx.moveTo(x, y - r);
+                    ctx.lineTo(x + r, y);
+                    ctx.lineTo(x, y + r);
+                    ctx.lineTo(x - r, y);
+                    break;
+                case 'G': // Hexagon
+                    for (let i = 0; i < 6; i++) {
+                        const angle = i * Math.PI / 3;
+                        ctx.lineTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+                    }
+                    break;
+                default:
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            // Internal detail for grayscale distinguishability
+            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        },
+
         render() {
             const ctx = this.ctx; const w = this.width; const h = this.height; const cam = this.state.camera;
             ctx.clearRect(0, 0, w, h); ctx.fillStyle = '#101015'; ctx.fillRect(0, 0, w, h);
@@ -301,6 +338,10 @@
                         ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
                     }
                     ctx.shadowBlur = 0;
+
+                    // Geometric base coding at the end of the rung
+                    const color = dam ? '#ff0000' : (this.config.colors[type] || '#fff');
+                    this.drawBaseShape(ctx, sp.x, sp.y, type, sp.scale, color);
                 };
 
                 if (!p.isReplicating) {
@@ -310,7 +351,7 @@
                         p2.y += Math.cos(Date.now() * 0.02) * 5;
                     }
                     drawB(p1, { x: midX, y: midY }, p.base1, p.isDamaged);
-                    drawB({ x: midX, y: midY }, p2, p.base2, p.isDamaged);
+                    drawB(p2, { x: midX, y: midY }, p.base2, p.isDamaged);
                 } else {
                     const drawT = (sp, ep, type) => { ctx.strokeStyle = (this.config.colors[type] || '#fff'); ctx.lineWidth = 5 * p1.scale; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke(); ctx.globalAlpha = 1.0; };
                     drawT(p1, { x: p1.x + (midX - p1.x) * 0.4, y: p1.y + (midY - p1.y) * 0.4 }, p.base1);
@@ -327,8 +368,8 @@
 
                 const drawP = (x, y, r) => { ctx.fillStyle = '#e2e8f0'; ctx.beginPath(); for (let j = 0; j < 5; j++) { const a = (j * 2 * Math.PI / 5) - Math.PI / 2; ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } ctx.closePath(); ctx.fill(); };
                 if (p1.scale > 0.3) drawP(p1.x, p1.y, 6 * p1.scale); if (p2.scale > 0.3) drawP(p2.x, p2.y, 6 * p2.scale);
-                if (p1.scale > 0.4 && p.base1) { ctx.fillStyle = "#000"; ctx.font = `bold ${8 * p1.scale}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.base1, (p1.x + midX) / 2, (p1.y + midY) / 2); }
-                if (p2.scale > 0.4 && p.base2) { ctx.fillStyle = "#000"; ctx.font = `bold ${8 * p2.scale}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.base2, (p2.x + midX) / 2, (p2.y + midY) / 2); }
+                if (p1.scale > 0.4 && p.base1) { ctx.fillStyle = "#000"; ctx.font = `bold ${8 * p1.scale}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.base1, p1.x, p1.y); }
+                if (p2.scale > 0.4 && p.base2) { ctx.fillStyle = "#000"; ctx.font = `bold ${8 * p2.scale}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.base2, p2.x, p2.y); }
                 if (i > 0 && !this.state.basePairs[i - 1].isBroken) {
                     const prev = this.state.basePairs[i - 1]; const pdAngle = prev.angle * rotS;
                     const ps1O = prev.s1Offset || { y: 0, z: 0 }; const ps2O = prev.s2Offset || { y: 0, z: 0 };

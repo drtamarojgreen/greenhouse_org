@@ -1125,7 +1125,32 @@
 
                     ctx.fillStyle = gradient;
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+                    switch (p.type === 'gene' ? GENE_SYMBOLS[dnaGenes.indexOf(dnaGenes.find(g => g.id === p.id)) % 4] : null) {
+                        case GENE_SYMBOLS[0]: // Use A/T/C/G logic based on index
+                        case "BDNF": // A-like (Box)
+                            ctx.rect(p.x - radius, p.y - radius, radius * 2, radius * 2);
+                            break;
+                        case "SLC6A4": // T-like (Triangle)
+                            ctx.moveTo(p.x, p.y - radius);
+                            ctx.lineTo(p.x + radius, p.y + radius);
+                            ctx.lineTo(p.x - radius, p.y + radius);
+                            break;
+                        case "DRD2": // C-like (Diamond)
+                            ctx.moveTo(p.x, p.y - radius);
+                            ctx.lineTo(p.x + radius, p.y);
+                            ctx.lineTo(p.x, p.y + radius);
+                            ctx.lineTo(p.x - radius, p.y);
+                            break;
+                        case "HTR2A": // G-like (Hexagon)
+                            for (let j = 0; j < 6; j++) {
+                                const angle = j * Math.PI / 3;
+                                ctx.lineTo(p.x + Math.cos(angle) * radius, p.y + Math.sin(angle) * radius);
+                            }
+                            break;
+                        default:
+                            ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+                    }
+                    ctx.closePath();
                     ctx.fill();
 
                     // Add glow
@@ -1207,7 +1232,7 @@
                     const midY = (p1.y + p2.y) / 2;
 
                     // Draw with gradient
-                    const drawSegment = (x1, y1, x2, y2, color) => {
+                    const drawSegment = (x1, y1, x2, y2, color, typeChar) => {
                         const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
                         gradient.addColorStop(0, 'rgba(0, 0, 0, 0.3)');
                         gradient.addColorStop(0.5, color);
@@ -1220,10 +1245,41 @@
                         ctx.moveTo(x1, y1);
                         ctx.lineTo(x2, y2);
                         ctx.stroke();
+
+                        // Geometric coding at the connection point
+                        ctx.fillStyle = color;
+                        ctx.beginPath();
+                        const r = 5 * avgScale;
+                        switch (typeChar) {
+                            case 'A': ctx.rect(x1 - r, y1 - r, r * 2, r * 2); break;
+                            case 'T':
+                                ctx.moveTo(x1, y1 - r); ctx.lineTo(x1 + r, y1 + r); ctx.lineTo(x1 - r, y1 + r);
+                                break;
+                            case 'C':
+                                ctx.moveTo(x1, y1 - r); ctx.lineTo(x1 + r, y1); ctx.lineTo(x1, y1 + r); ctx.lineTo(x1 - r, y1);
+                                break;
+                            case 'G':
+                                for (let j = 0; j < 6; j++) {
+                                    const angle = j * Math.PI / 3;
+                                    ctx.lineTo(x1 + Math.cos(angle) * r, y1 + Math.sin(angle) * r);
+                                }
+                                break;
+                        }
+                        ctx.closePath();
+                        ctx.fill();
                     };
 
-                    drawSegment(p1.x, p1.y, midX, midY, color1);
-                    drawSegment(midX, midY, p2.x, p2.y, color2);
+                    const typeChars = ['A', 'T', 'C', 'G'];
+                    let t1, t2;
+                    switch (type) {
+                        case 0: t1 = 'A'; t2 = 'T'; break;
+                        case 1: t1 = 'T'; t2 = 'A'; break;
+                        case 2: t1 = 'C'; t2 = 'G'; break;
+                        case 3: t1 = 'G'; t2 = 'C'; break;
+                    }
+
+                    drawSegment(p1.x, p1.y, midX, midY, color1, t1);
+                    drawSegment(midX, midY, p2.x, p2.y, color2, t2);
                 }
             }
 

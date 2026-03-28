@@ -451,14 +451,14 @@
                 }
             }
             brainShell.regions = {
-                pfc: { color: 'rgba(100, 150, 255, 0.6)', vertices: this.getRegionVertices(brainShell, 'pfc'), roughness: 0.7, metallic: 0.1 },
-                amygdala: { color: 'rgba(255, 100, 100, 0.6)', vertices: this.getRegionVertices(brainShell, 'amygdala'), roughness: 0.4, metallic: 0.2 },
-                hippocampus: { color: 'rgba(100, 255, 150, 0.6)', vertices: this.getRegionVertices(brainShell, 'hippocampus'), roughness: 0.4, metallic: 0.2 },
-                temporalLobe: { color: 'rgba(255, 165, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'temporalLobe'), roughness: 0.7, metallic: 0.1 },
-                parietalLobe: { color: 'rgba(147, 112, 219, 0.6)', vertices: this.getRegionVertices(brainShell, 'parietalLobe'), roughness: 0.7, metallic: 0.1 },
-                occipitalLobe: { color: 'rgba(255, 192, 203, 0.6)', vertices: this.getRegionVertices(brainShell, 'occipitalLobe'), roughness: 0.7, metallic: 0.1 },
-                cerebellum: { color: 'rgba(64, 224, 208, 0.6)', vertices: this.getRegionVertices(brainShell, 'cerebellum'), roughness: 0.8, metallic: 0.0 },
-                brainstem: { color: 'rgba(255, 215, 0, 0.6)', vertices: this.getRegionVertices(brainShell, 'brainstem'), roughness: 0.5, metallic: 0.1 }
+                pfc: { color: 'rgba(220, 220, 220, 0.6)', vertices: this.getRegionVertices(brainShell, 'pfc'), roughness: 0.8, metallic: 0.0 },
+                amygdala: { color: 'rgba(200, 200, 200, 0.6)', vertices: this.getRegionVertices(brainShell, 'amygdala'), roughness: 0.2, metallic: 0.4 },
+                hippocampus: { color: 'rgba(210, 210, 210, 0.6)', vertices: this.getRegionVertices(brainShell, 'hippocampus'), roughness: 0.3, metallic: 0.3 },
+                temporalLobe: { color: 'rgba(225, 225, 225, 0.6)', vertices: this.getRegionVertices(brainShell, 'temporalLobe'), roughness: 0.6, metallic: 0.1 },
+                parietalLobe: { color: 'rgba(220, 220, 220, 0.6)', vertices: this.getRegionVertices(brainShell, 'parietalLobe'), roughness: 0.7, metallic: 0.1 },
+                occipitalLobe: { color: 'rgba(215, 215, 215, 0.6)', vertices: this.getRegionVertices(brainShell, 'occipitalLobe'), roughness: 0.9, metallic: 0.0 },
+                cerebellum: { color: 'rgba(190, 190, 190, 0.6)', vertices: this.getRegionVertices(brainShell, 'cerebellum'), roughness: 1.0, metallic: 0.0 },
+                brainstem: { color: 'rgba(230, 230, 230, 0.6)', vertices: this.getRegionVertices(brainShell, 'brainstem'), roughness: 0.5, metallic: 0.2 }
             };
 
             // Define topological cut planes for smooth boundary rendering

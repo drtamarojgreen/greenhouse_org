@@ -76,18 +76,16 @@
             const faces = [];
             const centers = [];
 
-            // Pro-inflammatory (TNF): Trimeric/Complex shape
+            // Neutral coloring for molecules - identity encoded in geometry
             if (type === 'tnf' || type === 'pro-cytokine') {
-                centers.push({ x: 0, y: 10, z: 0, color: '#ff4444' });
-                centers.push({ x: -8, y: -5, z: 5, color: '#ff8844' });
-                centers.push({ x: 8, y: -5, z: 5, color: '#ff8844' });
+                centers.push({ x: 0, y: 10, z: 0, color: '#cccccc' });
+                centers.push({ x: -8, y: -5, z: 5, color: '#bbbbbb' });
+                centers.push({ x: 8, y: -5, z: 5, color: '#bbbbbb' });
             } else if (type === 'il10' || type === 'anti-cytokine') {
-                // IL-10: Dimeric/Oval shape
-                centers.push({ x: -6, y: 0, z: 0, color: '#44ffaa' });
-                centers.push({ x: 6, y: 0, z: 0, color: '#44ffaa' });
+                centers.push({ x: -6, y: 0, z: 0, color: '#dddddd' });
+                centers.push({ x: 6, y: 0, z: 0, color: '#dddddd' });
             } else {
-                // Generic small cluster
-                centers.push({ x: 0, y: 0, z: 0, color: '#ffffff' });
+                centers.push({ x: 0, y: 0, z: 0, color: '#eeeeee' });
             }
 
             centers.forEach(c => {
@@ -147,9 +145,9 @@
             const branchesCount = Math.floor((type === 'astrocyte' ? 12 : 8) * (1 - activationLevel * 0.8));
             const somaRadius = 10 * scale * (1 + activationLevel);
 
-            // Central Soma
+            // Central Soma - neutral coloring
             const soma = this.generateSphere(somaRadius, 8);
-            vertices.push(...soma.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff4444' })));
+            vertices.push(...soma.vertices.map(v => ({ ...v, color: '#d0d0d0' })));
             faces.push(...soma.faces);
 
             // Processes (Dendrite-like branches)
@@ -173,7 +171,7 @@
 
                 const tube = this.generateTubeMesh(p1, p2, cp, 2 * scale * (1 + activationLevel * 0.5), 6);
                 const offset = vertices.length;
-                vertices.push(...tube.vertices.map(v => ({ ...v, color: type === 'astrocyte' ? '#ffcc00' : '#ff6666' })));
+                vertices.push(...tube.vertices.map(v => ({ ...v, color: '#c0c0c0' })));
                 tube.faces.forEach(f => faces.push([f[0] + offset, f[1] + offset, f[2] + offset]));
             }
             return { vertices, faces };
@@ -300,47 +298,47 @@
                 }
             }
 
-            // Define Regions
+            // Define Regions with neutral base palette - differentiation via material props
             brainShell.regions = {
                 pfc: {
-                    color: 'rgba(100, 150, 255, 0.6)',
+                    color: 'rgba(220, 220, 220, 0.6)', // Neutral Grey
                     vertices: this.getRegionVertices(brainShell, 'pfc'),
-                    roughness: 0.7, metallic: 0.1
+                    roughness: 0.8, metallic: 0.0 // Very Matte
                 },
                 amygdala: {
-                    color: 'rgba(255, 100, 100, 0.6)',
+                    color: 'rgba(200, 200, 200, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'amygdala'),
-                    roughness: 0.4, metallic: 0.2
+                    roughness: 0.2, metallic: 0.4 // Glossy/Small
                 },
                 hippocampus: {
-                    color: 'rgba(100, 255, 150, 0.6)',
+                    color: 'rgba(210, 210, 210, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'hippocampus'),
-                    roughness: 0.4, metallic: 0.2
+                    roughness: 0.3, metallic: 0.3 // Semi-gloss
                 },
                 temporalLobe: {
-                    color: 'rgba(255, 165, 0, 0.6)',
+                    color: 'rgba(225, 225, 225, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'temporalLobe'),
-                    roughness: 0.7, metallic: 0.1
+                    roughness: 0.6, metallic: 0.1 // Satin
                 },
                 parietalLobe: {
-                    color: 'rgba(147, 112, 219, 0.6)',
+                    color: 'rgba(220, 220, 220, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'parietalLobe'),
                     roughness: 0.7, metallic: 0.1
                 },
                 occipitalLobe: {
-                    color: 'rgba(255, 192, 203, 0.6)',
+                    color: 'rgba(215, 215, 215, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'occipitalLobe'),
-                    roughness: 0.7, metallic: 0.1
+                    roughness: 0.9, metallic: 0.0 // Ultra-matte
                 },
                 cerebellum: {
-                    color: 'rgba(64, 224, 208, 0.6)',
+                    color: 'rgba(190, 190, 190, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'cerebellum'),
-                    roughness: 0.8, metallic: 0.0
+                    roughness: 1.0, metallic: 0.0 // Bone-dry texture
                 },
                 brainstem: {
-                    color: 'rgba(255, 215, 0, 0.6)',
+                    color: 'rgba(230, 230, 230, 0.6)',
                     vertices: this.getRegionVertices(brainShell, 'brainstem'),
-                    roughness: 0.5, metallic: 0.1
+                    roughness: 0.5, metallic: 0.2
                 }
             };
 

@@ -668,11 +668,15 @@
 
             // Draw Bases
             this.rnaStrand.forEach((base, index) => {
+                const r = 9;
+                const x = base.x;
+                const y = base.y;
+
                 // Enhancement 30: Metal Ion Binding (Mg2+)
                 if (index % 5 === 0) {
                     this.ctx.save();
                     this.ctx.beginPath();
-                    this.ctx.arc(base.x - 15, base.y, 3, 0, Math.PI * 2);
+                    this.ctx.arc(x - 15, y, 3, 0, Math.PI * 2);
                     this.ctx.fillStyle = this.colors.METAL;
                     this.ctx.shadowBlur = 5;
                     this.ctx.shadowColor = this.colors.METAL;
@@ -684,7 +688,7 @@
                 if (index === 0) {
                     this.ctx.save();
                     this.ctx.beginPath();
-                    this.ctx.arc(base.x, base.y, 16, 0, Math.PI * 2);
+                    this.ctx.arc(x, y, 16, 0, Math.PI * 2);
                     this.ctx.strokeStyle = '#FFD700';
                     this.ctx.lineWidth = 3;
                     this.ctx.shadowBlur = 15;
@@ -694,33 +698,54 @@
                     this.ctx.restore();
                 }
 
-                // Enhancement 21: Uracil visual distinction
+                // Base Core with Geometric Coding
+                this.ctx.save();
+                this.ctx.shadowBlur = 15;
+                this.ctx.shadowColor = this.colors[base.type];
+                this.ctx.fillStyle = this.colors[base.type];
+                this.ctx.beginPath();
+
+                switch (base.type) {
+                    case 'A': // Box
+                        this.ctx.rect(x - r, y - r, r * 2, r * 2);
+                        break;
+                    case 'U': // Triangle (pointing down for RNA contrast)
+                        this.ctx.moveTo(x, y + r);
+                        this.ctx.lineTo(x + r, y - r);
+                        this.ctx.lineTo(x - r, y - r);
+                        break;
+                    case 'G': // Hexagon
+                        for (let i = 0; i < 6; i++) {
+                            const angle = i * Math.PI / 3;
+                            this.ctx.lineTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+                        }
+                        break;
+                    case 'C': // Diamond
+                        this.ctx.moveTo(x, y - r);
+                        this.ctx.lineTo(x + r, y);
+                        this.ctx.lineTo(x, y + r);
+                        this.ctx.lineTo(x - r, y);
+                        break;
+                    default:
+                        this.ctx.arc(x, y, r, 0, Math.PI * 2);
+                }
+                this.ctx.closePath();
+                this.ctx.fill();
+
+                // Enhancement 21: Uracil visual distinction (extra outline)
                 if (base.type === 'U') {
-                    this.ctx.save();
-                    this.ctx.beginPath();
-                    this.ctx.arc(base.x, base.y, 13, 0, Math.PI * 2);
                     this.ctx.strokeStyle = 'white';
                     this.ctx.lineWidth = 1;
                     this.ctx.globalAlpha = 0.4;
                     this.ctx.stroke();
-                    this.ctx.restore();
                 }
-
-                // Base Core with Glow (#31)
-                this.ctx.save();
-                this.ctx.shadowBlur = 15;
-                this.ctx.shadowColor = this.colors[base.type];
-                this.ctx.beginPath();
-                this.ctx.arc(base.x, base.y, 9, 0, Math.PI * 2);
-                this.ctx.fillStyle = this.colors[base.type];
-                this.ctx.fill();
 
                 // Enhancement 35: Reaction Flash Overlay
                 if (base.flash > 0) {
                     this.ctx.globalAlpha = base.flash;
                     this.ctx.fillStyle = 'white';
                     this.ctx.beginPath();
-                    this.ctx.arc(base.x, base.y, 15 * base.flash, 0, Math.PI * 2);
+                    this.ctx.arc(x, y, 15 * base.flash, 0, Math.PI * 2);
                     this.ctx.fill();
                 }
                 this.ctx.restore();
@@ -734,7 +759,7 @@
                     this.ctx.textAlign = 'center';
                     // Enhancement 7: Pseudouridine
                     const label = base.damageType === this.damageTypes.PSEUDOURIDINE ? 'Ψ' : base.type;
-                    this.ctx.fillText(label, base.x, base.y + 4);
+                    this.ctx.fillText(label, x, y + 4);
                 }
 
                 // Damage indicator

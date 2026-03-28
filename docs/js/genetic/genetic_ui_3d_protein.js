@@ -185,7 +185,21 @@
 
                         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.beginPath();
-                        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                        // Geometric coding for atoms
+                        switch (atomType) {
+                            case 0: // N: Triangle
+                                ctx.moveTo(p.x, p.y - size);
+                                ctx.lineTo(p.x + size, p.y + size);
+                                ctx.lineTo(p.x - size, p.y + size);
+                                break;
+                            case 1: // C: Box
+                                ctx.rect(p.x - size, p.y - size, size * 2, size * 2);
+                                break;
+                            case 2: // O: Circle
+                                ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                                break;
+                        }
+                        ctx.closePath();
                         ctx.fill();
 
                         // Highlight
@@ -215,7 +229,21 @@
 
                         ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
                         ctx.beginPath();
-                        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                        // Geometric coding for atoms
+                        switch (atomType) {
+                            case 0: // N: Triangle
+                                ctx.moveTo(p.x, p.y - size);
+                                ctx.lineTo(p.x + size, p.y + size);
+                                ctx.lineTo(p.x - size, p.y + size);
+                                break;
+                            case 1: // C: Box
+                                ctx.rect(p.x - size, p.y - size, size * 2, size * 2);
+                                break;
+                            case 2: // O: Circle
+                                ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                                break;
+                        }
+                        ctx.closePath();
                         ctx.fill();
 
                         // Highlight

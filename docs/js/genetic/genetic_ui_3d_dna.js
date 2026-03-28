@@ -112,8 +112,8 @@
                         case 3: color1 = baseColors.G; color2 = baseColors.C; break;
                     }
 
-                    // Enhanced rectangular rung drawing
-                    const drawRung = (x1, y1, x2, y2, color, depth) => {
+                    // Enhanced rectangular rung drawing with geometric base coding
+                    const drawRung = (x1, y1, x2, y2, color, depth, typeChar) => {
                         const dx = x2 - x1;
                         const dy = y2 - y1;
                         const len = Math.sqrt(dx * dx + dy * dy);
@@ -140,14 +140,44 @@
                         // Top face highlight
                         ctx.fillStyle = 'rgba(255,255,255,0.1)';
                         ctx.fillRect(0, -h/2, w, h/4);
+                        ctx.restore();
 
+                        // Geometric coding at the connection point
+                        ctx.save();
+                        ctx.fillStyle = color;
+                        ctx.beginPath();
+                        const r = 8 * avgScale;
+                        switch (typeChar) {
+                            case 'A': ctx.rect(x1 - r, y1 - r, r * 2, r * 2); break;
+                            case 'T':
+                                ctx.moveTo(x1, y1 - r); ctx.lineTo(x1 + r, y1 + r); ctx.lineTo(x1 - r, y1 + r);
+                                break;
+                            case 'C':
+                                ctx.moveTo(x1, y1 - r); ctx.lineTo(x1 + r, y1); ctx.lineTo(x1, y1 + r); ctx.lineTo(x1 - r, y1);
+                                break;
+                            case 'G':
+                                for (let j = 0; j < 6; j++) {
+                                    const angle = j * Math.PI / 3;
+                                    ctx.lineTo(x1 + Math.cos(angle) * r, y1 + Math.sin(angle) * r);
+                                }
+                                break;
+                        }
+                        ctx.closePath();
+                        ctx.fill();
                         ctx.restore();
                     };
 
                     // Draw two halves with depth
                     const avgDepth = (p1.depth + p2.depth) / 2;
-                    drawRung(p1.x, p1.y, midX, midY, color1, avgDepth);
-                    drawRung(midX, midY, p2.x, p2.y, color2, avgDepth);
+                    let t1, t2;
+                    switch (type) {
+                        case 0: t1 = 'A'; t2 = 'T'; break;
+                        case 1: t1 = 'T'; t2 = 'A'; break;
+                        case 2: t1 = 'C'; t2 = 'G'; break;
+                        case 3: t1 = 'G'; t2 = 'C'; break;
+                    }
+                    drawRung(p1.x, p1.y, midX, midY, color1, avgDepth, t1);
+                    drawRung(p2.x, p2.y, midX, midY, color2, avgDepth, t2); // Note: flipped second half for correct base orientation
                 }
             }
 
