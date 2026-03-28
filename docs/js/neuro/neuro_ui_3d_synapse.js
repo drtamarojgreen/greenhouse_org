@@ -143,11 +143,15 @@
                 const seed = (conn.from.id + conn.to.id) * 0.1;
                 const cycle = (now * 0.001 + seed) % 2.0;
 
-                if (cycle < 1.0) {
-                    const t = cycle;
-                    const mt = 1 - t;
+                // --- Activity Signatures: Dynamic Particle Flow ---
+                const activityLevel = Math.abs(conn.weight);
+                const sparkCount = Math.floor(activityLevel * 3) + 1;
+                const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
 
-                    const adhdActive = window.GreenhouseNeuroApp?.ga?.adhdConfig?.activeEnhancements || new Set();
+                for (let s = 0; s < sparkCount; s++) {
+                    const sparkOffset = s / sparkCount;
+                    const t = (cycle + sparkOffset) % 1.0;
+                    const mt = 1 - t;
 
                     const sparkP = {
                         x: mt * mt * conn.from.x + 2 * mt * t * conn.controlPoint.x + t * t * conn.to.x,
@@ -158,7 +162,8 @@
                     const sparkProj = GreenhouseModels3DMath.project3DTo2D(sparkP.x, sparkP.y, sparkP.z, camera, projection);
 
                     if (sparkProj.scale > 0) {
-                        const size = 4 * sparkProj.scale;
+                        // Vary size and speed by weight (activityLevel)
+                        const size = (2 + activityLevel * 4) * sparkProj.scale;
                         const alpha = GreenhouseModels3DMath.applyDepthFog(1, sparkProj.depth);
 
                         ctx.save();
@@ -166,12 +171,12 @@
 
                         ctx.fillStyle = '#FFF';
                         ctx.beginPath();
-                        ctx.arc(sparkProj.x, sparkProj.y, size * 0.5, 0, Math.PI * 2);
+                        ctx.arc(sparkProj.x, sparkProj.y, size * 0.3, 0, Math.PI * 2);
                         ctx.fill();
 
-                        const grad = ctx.createRadialGradient(sparkProj.x, sparkProj.y, size * 0.5, sparkProj.x, sparkProj.y, size * 2);
+                        const grad = ctx.createRadialGradient(sparkProj.x, sparkProj.y, size * 0.3, sparkProj.x, sparkProj.y, size * 1.5);
 
-                        let glowColor = '255, 255, 100';
+                        let glowColor = conn.weight > 0 ? '255, 255, 100' : '150, 200, 255';
                         if (adhdActive.has(16) && conn.weight < 0) {
                             glowColor = '255, 50, 50';
                         }
@@ -180,7 +185,7 @@
                         grad.addColorStop(1, `rgba(${glowColor}, 0)`);
                         ctx.fillStyle = grad;
                         ctx.beginPath();
-                        ctx.arc(sparkProj.x, sparkProj.y, size * 2, 0, Math.PI * 2);
+                        ctx.arc(sparkProj.x, sparkProj.y, size * 1.5, 0, Math.PI * 2);
                         ctx.fill();
 
                         ctx.restore();
@@ -401,11 +406,13 @@
             };
 
             connection.synapseDetails.vesicles.forEach(v => {
-                // ADHD: Hyperactive Firing (3) / Procrastination (22) / Amphetamine (28) / LC Instability (74)
-                let vSpeed = 0.5;
-                if (adhdActive.has(3)) vSpeed = 1.2;
-                if (adhdActive.has(28)) vSpeed = 1.5;
-                if (adhdActive.has(22)) vSpeed = 0.1;
+                // --- Activity Signature for Vesicles ---
+                let vSpeed = 0.5 * (1 + Math.abs(connection.weight));
+
+                // ADHD Modifiers
+                if (adhdActive.has(3)) vSpeed *= 1.5;
+                if (adhdActive.has(28)) vSpeed *= 2.0;
+                if (adhdActive.has(22)) vSpeed *= 0.2;
                 if (adhdActive.has(74)) vSpeed *= (0.5 + Math.random());
 
                 // ADHD: Epigenetic Methylation (84) - Locked vesicles

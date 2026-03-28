@@ -4,7 +4,7 @@
     const GreenhouseNeuroNeuron = {
         neuronMeshes: {}, // Cache for neuron meshes
 
-        drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq = 0.005) {
+        drawNeuron(ctx, neuron, camera, projection, colorOverride, pulseFreq = 0.005, isHovered = false) {
             // Project Center for LOD and Culling
             const p = GreenhouseModels3DMath.project3DTo2D(neuron.x, neuron.y, neuron.z, camera, projection);
 
@@ -45,6 +45,21 @@
             const transformedVertices = mesh.vertices.map(v => {
                 // Rotate
                 let x = v.x, y = v.y, z = v.z;
+
+            // --- Vertex Displacement for Hover/Pulsing ---
+                if (isHovered) {
+                    const disp = Math.sin(Date.now() * 0.01 + (x + y + z)) * 2.0;
+                    x += (x / 5) * disp;
+                    y += (y / 5) * disp;
+                    z += (z / 5) * disp;
+                }
+
+                // Rhythmic pulsing based on activity/pulseFreq
+                const activityPulse = Math.sin(Date.now() * pulseFreq * 2) * 0.5 + 0.5;
+                const activityDisp = activityPulse * (type === 'pyramidal' ? 1.2 : 0.8);
+                x *= (1 + activityDisp * 0.05);
+                y *= (1 + activityDisp * 0.05);
+                z *= (1 + activityDisp * 0.05);
 
                 // Rotate Y
                 let tx = x * Math.cos(rotY) - z * Math.sin(rotY);
@@ -150,11 +165,30 @@
                     const litB = Math.min(255, b * intensity);
 
                     ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${alpha})`;
+
+                    // --- Structural Neuron Shading ---
+                    ctx.save();
                     ctx.beginPath();
                     ctx.moveTo(v1.x, v1.y);
                     ctx.lineTo(v2.x, v2.y);
                     ctx.lineTo(v3.x, v3.y);
+                    ctx.closePath();
                     ctx.fill();
+
+                    // Pattern overlay for accessibility
+                    if (type === 'pyramidal') {
+                        // Sharp wireframe highlight for pyramidals
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.4})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    } else {
+                        // Soft stipple effect for stellates
+                        if (Math.random() < 0.2) {
+                            ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.3})`;
+                            ctx.fill();
+                        }
+                    }
+                    ctx.restore();
                 }
             });
         },
@@ -167,12 +201,13 @@
                 { x: 0, y: -h, z: 0 }, // 0: Apex (Top)
                 { x: r, y: r, z: r },  // 1: Base 1
                 { x: -r, y: r, z: r }, // 2: Base 2
-                { x: 0, y: r, z: -r }  // 3: Base 3
+                { x: 0, y: r, z: -r }, // 3: Base 3
+                // Add more complexity for geometric signature
+                { x: 0, y: -h * 1.5, z: 0 } // 4: Tip of apical dendrite
             ];
             const faces = [
-                [0, 1, 2], // Side 1
-                [0, 2, 3], // Side 2
-                [0, 3, 1], // Side 3
+                [4, 1, 2], [4, 2, 3], [4, 3, 1], // Elongated head
+                [0, 1, 2], [0, 2, 3], [0, 3, 1], // Body
                 [1, 3, 2]  // Base
             ];
             return { vertices, faces };
@@ -188,17 +223,16 @@
                 { x: -s, y: -s, z: -s }, { x: s, y: -s, z: -s }, { x: s, y: s, z: -s }, { x: -s, y: s, z: -s },
                 { x: -s, y: -s, z: s }, { x: s, y: -s, z: s }, { x: s, y: s, z: s }, { x: -s, y: s, z: s },
                 // Spikes (8-13)
-                { x: 0, y: 0, z: -s - p }, // Back
-                { x: 0, y: 0, z: s + p },  // Front
-                { x: 0, y: -s - p, z: 0 }, // Top
-                { x: 0, y: s + p, z: 0 },  // Bottom
-                { x: -s - p, y: 0, z: 0 }, // Left
-                { x: s + p, y: 0, z: 0 }   // Right
+                { x: 0, y: 0, z: -s - p * 1.5 }, // Back (varied spike length)
+                { x: 0, y: 0, z: s + p },       // Front
+                { x: 0, y: -s - p, z: 0 },      // Top
+                { x: 0, y: s + p * 1.2, z: 0 }, // Bottom
+                { x: -s - p, z: 0, y: 0 },      // Left
+                { x: s + p * 0.8, y: 0, z: 0 }  // Right
             ];
 
             const faces = [];
             // Add faces for spikes connecting to cube corners...
-            // Simplified for performance: Just a few spikes
             // Top Spike
             faces.push([10, 0, 1], [10, 1, 5], [10, 5, 4], [10, 4, 0]);
             // Bottom Spike

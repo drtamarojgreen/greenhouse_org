@@ -141,6 +141,11 @@
                 if (targetRegion && f.region === targetRegion) {
                     const fog = GreenhouseModels3DMath.applyDepthFog(0.9, f.depth);
                     ctx.fillStyle = `rgba(57, 255, 20, ${fog})`; // Neon green for ROI with fog
+                    ctx.beginPath();
+                    ctx.moveTo(f.p1.x, f.p1.y);
+                    ctx.lineTo(f.p2.x, f.p2.y);
+                    ctx.lineTo(f.p3.x, f.p3.y);
+                    ctx.fill();
                 } else {
                     // Apply Lighting for all other regions
                     const ambient = 0.2;
@@ -152,13 +157,47 @@
 
                     // Depth Fog for Alpha
                     const fog = GreenhouseModels3DMath.applyDepthFog(a, f.depth);
-                    ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
+
+                    // --- Structural Shading ---
+                    // Instead of pure color, use regional modifiers
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(f.p1.x, f.p1.y);
+                    ctx.lineTo(f.p2.x, f.p2.y);
+                    ctx.lineTo(f.p3.x, f.p3.y);
+                    ctx.closePath();
+
+                    // Pattern-based differentiation for grayscale accessibility
+                    if (f.region === 'pfc') {
+                        // High density stippling / Crosshatch for PFC
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
+                        ctx.fill();
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.3})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    } else if (f.region === 'cerebellum') {
+                        // Horizontal hatching for Cerebellum
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog * 0.8})`;
+                        ctx.fill();
+                        // Hatching lines
+                        if (Math.floor(f.p1.y / 2) % 2 === 0) {
+                            ctx.fillStyle = `rgba(255, 255, 255, ${fog * 0.2})`;
+                            ctx.fill();
+                        }
+                    } else if (f.region === 'temporalLobe') {
+                        // Dotted wireframe overlay
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
+                        ctx.fill();
+                        ctx.setLineDash([1, 2]);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.5})`;
+                        ctx.stroke();
+                    } else {
+                        // Standard shaded fill
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
+                        ctx.fill();
+                    }
+                    ctx.restore();
                 }
-                ctx.beginPath();
-                ctx.moveTo(f.p1.x, f.p1.y);
-                ctx.lineTo(f.p2.x, f.p2.y);
-                ctx.lineTo(f.p3.x, f.p3.y);
-                ctx.fill();
             }
 
             // NEW: Topological Projection - Smooth Surface Overlay

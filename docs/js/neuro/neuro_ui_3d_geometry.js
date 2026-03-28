@@ -229,9 +229,21 @@
                     }
 
                     // 5. Gyri/Sulci Noise (The brain surface 'wrinkles')
-                    // Using layered sine waves to remove the 'soccer ball' look
-                    const noise = (Math.sin(x * 12) * Math.cos(y * 12) * Math.sin(z * 12)) * 0.03 +
-                        (Math.sin(x * 25) * Math.cos(y * 25)) * 0.01;
+                    // Regional Morphological Variations
+                    let freq = 12;
+                    let amp = 0.03;
+
+                    // Approximate region check for noise variance
+                    if (y < -0.3 && z < -0.4) { // Cerebellum area
+                        freq = 40; amp = 0.015; // Denser, finer folds
+                    } else if (z > 0.4) { // PFC area
+                        freq = 15; amp = 0.04;  // Deeper, more pronounced
+                    } else if (Math.abs(x) > 0.6) { // Temporal
+                        freq = 8; amp = 0.025;  // Wider, smoother
+                    }
+
+                    const noise = (Math.sin(x * freq) * Math.cos(y * freq) * Math.sin(z * freq)) * amp +
+                        (Math.sin(x * freq * 2) * Math.cos(y * freq * 2)) * (amp * 0.3);
 
                     x = x * radius * (1 + noise);
                     y = y * radius * (1 + noise);
@@ -257,9 +269,10 @@
 
                     // Apply texture to geometry (displacement mapping)
                     if (texture > 0.6) {
-                        x += (x / len) * 2;
-                        y += (y / len) * 2;
-                        z += (z / len) * 2;
+                        const disp = (texture - 0.6) * 5;
+                        x += (x / len) * disp;
+                        y += (y / len) * disp;
+                        z += (z / len) * disp;
                     }
 
                     brainShell.vertices.push({ x, y, z });

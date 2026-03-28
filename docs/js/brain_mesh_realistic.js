@@ -43,8 +43,11 @@
                     y = deformed.y * baseRadius;
                     z = deformed.z * baseRadius;
 
+                    // Determine region
+                    const region = this.determineRegion(x / baseRadius, y / baseRadius, z / baseRadius);
+
                     // Add cortical folds (gyri and sulci)
-                    const folds = this.addCorticalFolds(x, y, z, baseRadius);
+                    const folds = this.addCorticalFolds(x, y, z, baseRadius, region);
                     x += folds.x;
                     y += folds.y;
                     z += folds.z;
@@ -77,7 +80,7 @@
 
             // Define regions with labels
             brain.regions = {
-                prefrontalCortex: {
+                pfc: {
                     name: 'Prefrontal Cortex',
                     color: 'rgba(100, 150, 255, 0.6)',
                     vertices: []
@@ -220,11 +223,12 @@
          * @param {number} y - Y coordinate
          * @param {number} z - Z coordinate
          * @param {number} baseRadius - Base radius
+         * @param {string} region - Brain region name
          * @returns {Object} Displacement vector
          */
-        addCorticalFolds(x, y, z, baseRadius) {
+        addCorticalFolds(x, y, z, baseRadius, region) {
             // Only add folds to cortex (upper regions)
-            if (y < -0.2 * baseRadius) {
+            if (y < -0.2 * baseRadius && region !== 'cerebellum') {
                 return { x: 0, y: 0, z: 0 };
             }
 
@@ -235,14 +239,41 @@
             // Multiple frequency components for realistic folds
             let displacement = 0;
 
+            // Region-specific Morphological Detailing
+            let freqMult = 1.0;
+            let ampMult = 1.0;
+
+            switch (region) {
+                case 'pfc':
+                case 'prefrontalCortex':
+                    freqMult = 1.2; // Denser folds for complex processing
+                    ampMult = 1.1;  // Deeper sulci
+                    break;
+                case 'cerebellum':
+                    freqMult = 3.0; // Very fine, dense folia (leaf-like folds)
+                    ampMult = 0.5;
+                    break;
+                case 'temporalLobe':
+                    freqMult = 0.8; // Wider, smoother gyri
+                    ampMult = 0.9;
+                    break;
+                case 'occipitalLobe':
+                    freqMult = 1.5;
+                    ampMult = 0.8;
+                    break;
+                default:
+                    freqMult = 1.0;
+                    ampMult = 1.0;
+            }
+
             // Large gyri (major folds)
-            displacement += Math.sin(nx * 4 + nz * 3) * Math.cos(ny * 3) * 0.08;
+            displacement += Math.sin(nx * 4 * freqMult + nz * 3 * freqMult) * Math.cos(ny * 3 * freqMult) * 0.08 * ampMult;
             
             // Medium sulci (grooves)
-            displacement += Math.sin(nx * 8 + nz * 6) * Math.cos(ny * 7) * 0.04;
+            displacement += Math.sin(nx * 8 * freqMult + nz * 6 * freqMult) * Math.cos(ny * 7 * freqMult) * 0.04 * ampMult;
             
             // Fine detail
-            displacement += Math.sin(nx * 16 + nz * 12) * Math.cos(ny * 14) * 0.02;
+            displacement += Math.sin(nx * 16 * freqMult + nz * 12 * freqMult) * Math.cos(ny * 14 * freqMult) * 0.02 * ampMult;
 
             // Radial displacement (outward from center)
             const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
@@ -267,7 +298,7 @@
         determineRegion(x, y, z) {
             // Prefrontal Cortex (front, upper)
             if (z > 0.4 && y > 0.1) {
-                return 'prefrontalCortex';
+                return 'pfc';
             }
 
             // Motor Cortex (top front-center)
@@ -326,7 +357,7 @@
             }
 
             // Default to cortex
-            return 'prefrontalCortex';
+            return 'pfc';
         }
     };
 
