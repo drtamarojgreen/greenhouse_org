@@ -154,10 +154,19 @@
                         ctx.strokeStyle = gradient;
                         ctx.lineWidth = thickness;
                         ctx.lineCap = 'butt'; // Butt cap for clean join at middle
+
+                        // Structural differentiation for base pair types
+                        if (type === 0 || type === 1) { // A-T
+                            ctx.setLineDash([thickness * 0.5, thickness * 0.2]);
+                        } else { // C-G
+                            ctx.setLineDash([]);
+                        }
+
                         ctx.beginPath();
                         ctx.moveTo(x1, y1);
                         ctx.lineTo(x2, y2);
                         ctx.stroke();
+                        ctx.setLineDash([]);
 
                         // Add specular highlight
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';

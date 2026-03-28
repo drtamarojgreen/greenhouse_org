@@ -206,8 +206,11 @@
                     const py = p.y + (tp.y - p.y) * pulse;
 
                     ctx.beginPath();
+                    // Geometric factor signature
+                    if (fid.includes('sleep')) ctx.setLineDash([10, 10]);
+                    else if (fid.includes('noise')) ctx.setLineDash([2, 2]);
+                    else ctx.setLineDash([5, 5, 2, 2]);
                     ctx.strokeStyle = `rgba(100, 200, 255, ${alpha * 0.3})`;
-                    ctx.setLineDash([2, 4]);
                     ctx.moveTo(p.x, p.y); ctx.lineTo(tp.x, tp.y);
                     ctx.stroke();
                     ctx.setLineDash([]);

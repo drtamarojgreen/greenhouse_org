@@ -525,10 +525,10 @@
                         ctx.strokeStyle = '#667eea';
                         ctx.lineWidth = 15 * top.scale;
                         ctx.lineCap = 'round';
-                        ctx.beginPath();
-                        ctx.moveTo(top.x, top.y);
-                        ctx.lineTo(bottom.x, bottom.y);
-                        ctx.stroke();
+                        // Structural signature for 5-HT helices
+                        ctx.setLineDash([15, 10, 5, 10]);
+                        ctx.beginPath(); ctx.moveTo(top.x, top.y); ctx.lineTo(bottom.x, bottom.y); ctx.stroke();
+                        ctx.setLineDash([]);
                     }
                 }
             }

@@ -153,9 +153,13 @@
                     ctx.arc(ion.x, ion.y, ion.r, 0, Math.PI * 2);
                     ctx.fill();
 
-                    ctx.fillStyle = '#000';
+                    // Structural Ion Identification
+                    ctx.save();
+                    ctx.fillStyle = '#fff';
                     ctx.font = 'bold 8px Arial';
-                    ctx.fillText(ion.charge, ion.x - 3, ion.y + 3);
+                    ctx.textAlign = 'center';
+                    ctx.fillText(ion.charge, ion.x, ion.y + 3);
+                    ctx.restore();
                 }
             }
 

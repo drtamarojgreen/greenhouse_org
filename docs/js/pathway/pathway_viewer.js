@@ -1032,7 +1032,20 @@
                     this.ctx.shadowColor = glow;
 
                     this.ctx.beginPath();
-                    this.ctx.arc(node.projected.x, node.projected.y, radius, 0, Math.PI * 2);
+                    if (node.type === 'gene') { // Triangle
+                        this.ctx.moveTo(node.projected.x, node.projected.y - radius * 1.5);
+                        this.ctx.lineTo(node.projected.x + radius * 1.3, node.projected.y + radius);
+                        this.ctx.lineTo(node.projected.x - radius * 1.3, node.projected.y + radius);
+                        this.ctx.closePath();
+                    } else if (node.type === 'map') { // Hexagon
+                        for (let i = 0; i < 6; i++) {
+                            const a = i * Math.PI / 3;
+                            this.ctx.lineTo(node.projected.x + Math.cos(a) * radius * 1.2, node.projected.y + Math.sin(a) * radius * 1.2);
+                        }
+                        this.ctx.closePath();
+                    } else { // Circle for compounds
+                        this.ctx.arc(node.projected.x, node.projected.y, radius, 0, Math.PI * 2);
+                    }
                     this.ctx.fillStyle = color;
                     this.ctx.fill();
 

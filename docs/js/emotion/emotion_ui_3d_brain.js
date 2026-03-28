@@ -256,10 +256,14 @@
                     ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
                 }
                 ctx.beginPath();
-                ctx.moveTo(f.p1.x, f.p1.y);
-                ctx.lineTo(f.p2.x, f.p2.y);
-                ctx.lineTo(f.p3.x, f.p3.y);
+                ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y);
                 ctx.fill();
+                // Structural Emotion Signature
+                if (f.region === 'amygdala' || f.region === 'striatum') {
+                    if (Math.random() < 0.4) { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fill(); }
+                } else if (f.region === 'dlPFC' || f.region === 'ofc') {
+                    ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.setLineDash([1, 3]); ctx.stroke(); ctx.restore();
+                }
             });
 
             this.drawSurfaceGrid(ctx, projectedVertices, brainShell);

@@ -275,7 +275,24 @@
                 const p2 = project(p.x, s2Y, s2Z, cam, { width: w, height: h, near: 10, far: 5000 });
                 if (p1.scale <= 0 || p2.scale <= 0) continue;
                 const midX = (p1.x + p2.x) / 2; const midY = (p1.y + p2.y) / 2;
-                const drawB = (sp, ep, type, dam) => { if (!type) return; ctx.strokeStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff'); ctx.lineWidth = 5 * p1.scale; if (dam) { ctx.shadowBlur = 15; ctx.shadowColor = '#ff0000'; } ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke(); ctx.shadowBlur = 0; };
+                const drawB = (sp, ep, type, dam) => {
+                    if (!type) return;
+                    ctx.strokeStyle = dam ? '#ff0000' : (this.config.colors[type] || '#fff');
+                    ctx.lineWidth = 5 * p1.scale;
+                    // Structural signature for DNA base types
+                    ctx.setLineDash(type === 'A' || type === 'T' ? [5, 2] : []);
+                    ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(ep.x, ep.y); ctx.stroke();
+                    ctx.setLineDash([]);
+                    if (dam) {
+                        ctx.save(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1 * p1.scale;
+                        for (let j = 0; j < 5; j++) {
+                            const tx = sp.x + (ep.x - sp.x) * (j / 5);
+                            const ty = sp.y + (ep.y - sp.y) * (j / 5);
+                            ctx.beginPath(); ctx.moveTo(tx - 4, ty + 4); ctx.lineTo(tx + 4, ty - 4); ctx.stroke();
+                        }
+                        ctx.restore();
+                    }
+                };
 
                 if (!p.isReplicating) {
                     drawB(p1, { x: midX, y: midY }, p.base1, p.isDamaged);

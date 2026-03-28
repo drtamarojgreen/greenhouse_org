@@ -128,9 +128,16 @@
                     }
 
                     if (p.molId === 'QUIN' && p.progress > 0.9) {
-                        // Excitotoxic visualization
+                        // Excitotoxic visualization (Structural Spike)
                         ctx.strokeStyle = `rgba(255, 50, 0, ${(1.0 - p.progress) * 10})`;
-                        ctx.beginPath(); ctx.arc(proj.x, proj.y, 12 * proj.scale, 0, Math.PI * 2); ctx.stroke();
+                        ctx.beginPath();
+                        for (let i = 0; i < 8; i++) {
+                            const a = i * Math.PI / 4;
+                            const r1 = 10 * proj.scale, r2 = 15 * proj.scale;
+                            ctx.moveTo(proj.x + Math.cos(a) * r1, proj.y + Math.sin(a) * r1);
+                            ctx.lineTo(proj.x + Math.cos(a) * r2, proj.y + Math.sin(a) * r2);
+                        }
+                        ctx.stroke();
                     }
                 }
 
@@ -237,7 +244,14 @@
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = ctx.fillStyle;
                     ctx.beginPath();
-                    ctx.rect(p.x - 5, p.y - 5, 10 * p.scale, 10 * p.scale);
+                    // Structural Trigger Signature
+                    if (fid.includes('patho') || fid.includes('stress')) {
+                        // Diamond for threats
+                        ctx.moveTo(p.x, p.y - 6); ctx.lineTo(p.x + 6, p.y); ctx.lineTo(p.x, p.y + 6); ctx.lineTo(p.x - 6, p.y); ctx.closePath();
+                    } else {
+                        // Square for environmental
+                        ctx.rect(p.x - 5, p.y - 5, 10 * p.scale, 10 * p.scale);
+                    }
                     ctx.fill();
                     ctx.shadowBlur = 0;
 

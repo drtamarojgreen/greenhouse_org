@@ -66,6 +66,10 @@
                     ctx.beginPath();
                     ctx.arc(ion.x, ion.y, 15, 0, Math.PI * 2);
                     ctx.fill();
+                    // Structural Ion Identification
+                    ctx.save(); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center';
+                    ctx.fillText(ion.color === '#ffd700' ? '+' : '-', ion.x, ion.y + 4);
+                    ctx.restore();
                 }
             });
             ctx.restore();

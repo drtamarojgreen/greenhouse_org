@@ -704,7 +704,15 @@
                 this.ctx.shadowBlur = 15;
                 this.ctx.shadowColor = this.colors[base.type];
                 this.ctx.beginPath();
-                this.ctx.arc(base.x, base.y, 9, 0, Math.PI * 2);
+                if (base.type === 'A') { // Triangle
+                    this.ctx.moveTo(base.x, base.y - 12); this.ctx.lineTo(base.x + 10, base.y + 8); this.ctx.lineTo(base.x - 10, base.y + 8); this.ctx.closePath();
+                } else if (base.type === 'G') { // Hexagon
+                    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; this.ctx.lineTo(base.x + Math.cos(a) * 11, base.y + Math.sin(a) * 11); } this.ctx.closePath();
+                } else if (base.type === 'C') { // Diamond
+                    this.ctx.moveTo(base.x, base.y - 12); this.ctx.lineTo(base.x + 10, base.y); this.ctx.lineTo(base.x, base.y + 12); this.ctx.lineTo(base.x - 10, base.y); this.ctx.closePath();
+                } else { // Square for U/PSI
+                    this.ctx.rect(base.x - 9, base.y - 9, 18, 18);
+                }
                 this.ctx.fillStyle = this.colors[base.type];
                 this.ctx.fill();
 

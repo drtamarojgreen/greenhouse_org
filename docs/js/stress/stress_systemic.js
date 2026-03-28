@@ -253,6 +253,16 @@
                     if (this.nodeMeshes[catKey]) {
                         ctx.strokeStyle = cat.color;
                         ctx.lineWidth = isHovered ? 2 : 1;
+
+                        // Structural Signature per Category
+                        if (catKey === 'env' || catKey === 'hpa') {
+                            ctx.setLineDash([5, 2]); // Jagged for stressors
+                        } else if (catKey === 'psych' || catKey === 'research') {
+                            ctx.setLineDash([]); // Smooth for resilience
+                        } else {
+                            ctx.setLineDash([1, 1]);
+                        }
+
                         const sphereRad = 10 + score * 3;
                         this.nodeMeshes[catKey].faces.forEach(face => {
                             const v1 = this.nodeMeshes[catKey].vertices[face[0]];

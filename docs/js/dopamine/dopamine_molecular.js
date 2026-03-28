@@ -504,11 +504,19 @@
                 const size = gp.subunit === 'alpha' ? 4 : 3;
                 ctx.beginPath();
                 if (gp.subunit === 'alpha') {
-                    ctx.arc(p.x, p.y, size * p.scale, 0, Math.PI * 2);
+                    // Structural Alpha Identification (Triangle)
+                    ctx.moveTo(p.x, p.y - size * p.scale);
+                    ctx.lineTo(p.x + size * p.scale, p.y + size * p.scale);
+                    ctx.lineTo(p.x - size * p.scale, p.y + size * p.scale);
+                    ctx.closePath();
+
                     // 3. GDP/GTP Visual indicator (Glow if bound)
                     if (gp.gtpBound) {
                         ctx.shadowBlur = 5 * p.scale;
                         ctx.shadowColor = ctx.fillStyle;
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
                     }
                     ctx.fill();
                     ctx.shadowBlur = 0;

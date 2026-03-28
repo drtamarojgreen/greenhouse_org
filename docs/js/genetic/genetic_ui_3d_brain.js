@@ -100,6 +100,13 @@
                     ctx.fillStyle = `rgba(${Math.min(255, r * intensity)}, ${Math.min(255, g * intensity)}, ${Math.min(255, b * intensity)}, ${GreenhouseModels3DMath.applyDepthFog(a, f.depth)})`;
                 }
                 ctx.beginPath(); ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y); ctx.fill();
+                // Morphological Signature Overlay
+                if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
+                    ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 0.5;
+                    ctx.setLineDash([2, 4]); ctx.stroke(); ctx.restore();
+                } else if (f.region === 'cerebellum') {
+                    if (Math.floor(f.p1.y / 3) % 2 === 0) { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fill(); }
+                }
             });
 
             // NEW: Topological Projection - Smooth Surface Overlay

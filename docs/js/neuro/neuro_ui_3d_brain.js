@@ -168,21 +168,14 @@
                     ctx.closePath();
 
                     // Pattern-based differentiation for grayscale accessibility
-                    if (f.region === 'pfc') {
-                        // High density stippling / Crosshatch for PFC
-                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`;
-                        ctx.fill();
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.3})`;
-                        ctx.lineWidth = 0.5;
-                        ctx.stroke();
+                    if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog})`; ctx.fill();
+                        ctx.save(); ctx.strokeStyle = `rgba(255, 255, 255, ${fog * 0.4})`; ctx.lineWidth = 0.5;
+                        ctx.setLineDash([2, 4]); ctx.stroke(); ctx.restore();
                     } else if (f.region === 'cerebellum') {
-                        // Horizontal hatching for Cerebellum
-                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog * 0.8})`;
-                        ctx.fill();
-                        // Hatching lines
+                        ctx.fillStyle = `rgba(${litR}, ${litG}, ${litB}, ${fog * 0.8})`; ctx.fill();
                         if (Math.floor(f.p1.y / 2) % 2 === 0) {
-                            ctx.fillStyle = `rgba(255, 255, 255, ${fog * 0.2})`;
-                            ctx.fill();
+                            ctx.fillStyle = `rgba(255, 255, 255, ${fog * 0.25})`; ctx.fill();
                         }
                     } else if (f.region === 'temporalLobe') {
                         // Dotted wireframe overlay

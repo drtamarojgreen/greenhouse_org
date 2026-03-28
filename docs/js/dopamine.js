@@ -347,10 +347,12 @@
                         ctx.lineWidth = 8 * top.scale;
                         ctx.lineCap = 'round';
                         ctx.globalAlpha = 0.7;
-                        ctx.beginPath();
-                        ctx.moveTo(top.x, top.y);
-                        ctx.lineTo(bottom.x, bottom.y);
-                        ctx.stroke();
+                        // Structural signature for receptor helices
+                        if (r.type === 'D1' || r.type === 'D5') ctx.setLineDash([10, 5]);
+                        else if (r.type === 'D2') ctx.setLineDash([2, 2]);
+                        else if (r.type === 'D3') ctx.setLineDash([5, 5, 2, 2]);
+                        ctx.beginPath(); ctx.moveTo(top.x, top.y); ctx.lineTo(bottom.x, bottom.y); ctx.stroke();
+                        ctx.setLineDash([]);
                         ctx.globalAlpha = 1.0;
                     }
                 }

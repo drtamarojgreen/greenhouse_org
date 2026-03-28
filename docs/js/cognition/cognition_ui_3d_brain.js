@@ -132,10 +132,15 @@
                 }
 
                 ctx.beginPath();
-                ctx.moveTo(f.p1.x, f.p1.y);
-                ctx.lineTo(f.p2.x, f.p2.y);
-                ctx.lineTo(f.p3.x, f.p3.y);
+                ctx.moveTo(f.p1.x, f.p1.y); ctx.lineTo(f.p2.x, f.p2.y); ctx.lineTo(f.p3.x, f.p3.y);
                 ctx.fill();
+                // Structural regional overlay
+                if (f.region === 'pfc' || f.region === 'prefrontalCortex') {
+                    ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 0.5;
+                    ctx.setLineDash([2, 4]); ctx.stroke(); ctx.restore();
+                } else if (f.region === 'amygdala') {
+                    if (Math.random() < 0.3) { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fill(); }
+                }
             });
 
             // Topological Overlays
